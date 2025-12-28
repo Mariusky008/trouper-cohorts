@@ -62,11 +62,11 @@ export default function DashboardPage() {
               .select('target_user_id')
               .eq('subscriber_id', user.id)
             
-            const subscribedIds = new Set(subscriptions?.map(s => s.target_user_id))
+            const subscribedIds = new Set(subscriptions?.map((s: { target_user_id: string }) => s.target_user_id))
             
             // Check if user is subscribed to all members
             const allMembers = members || []
-            const isSubscribedToAll = allMembers.length === 0 || allMembers.every(m => subscribedIds.has(m.profiles?.id))
+            const isSubscribedToAll = allMembers.length === 0 || allMembers.every((m: any) => subscribedIds.has(m.profiles?.id))
             setIsFullyOnboarded(isSubscribedToAll)
 
             // Update is_fully_onboarded in profile if changed

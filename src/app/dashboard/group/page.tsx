@@ -35,7 +35,7 @@ export default function GroupPage() {
            .select('target_user_id')
            .eq('subscriber_id', user.id)
          
-         const subscribedIds = new Set(subscriptions?.map(s => s.target_user_id))
+         const subscribedIds = new Set(subscriptions?.map((s: { target_user_id: string }) => s.target_user_id))
 
          if (squadMembers) {
             const formattedMembers = squadMembers.map((m: any, index: number) => {
@@ -87,6 +87,18 @@ export default function GroupPage() {
       toast.error("Erreur lors de la validation")
     }
   }
+
+  // Handle visibility change to detect when user comes back from social media
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+       if (document.visibilityState === 'visible') {
+          // If we had a pending subscription check, we could trigger it here
+          // For now, we rely on the manual confirmation or the button click flow
+       }
+    }
+    document.addEventListener("visibilitychange", handleVisibilityChange)
+    return () => document.removeEventListener("visibilitychange", handleVisibilityChange)
+  }, [])
 
   if (loading) return <div className="p-8 text-center">Chargement du classement...</div>
 
@@ -146,9 +158,12 @@ export default function GroupPage() {
                       className="h-8 gap-2 text-xs"
                       onClick={() => {
                         window.open(member.platform_link, '_blank')
-                        // We ask them to confirm they subscribed
-                        const confirmed = window.confirm("As-tu bien suivi ce compte ?")
-                        if (confirmed) handleSubscribe(member.id)
+                        
+                        // Small delay to allow tab to open before showing confirmation toast/dialog
+                        setTimeout(() => {
+                           const confirmed = window.confirm(`As-tu bien suivi ${member.name} ?`)
+                           if (confirmed) handleSubscribe(member.id)
+                        }, 1000)
                       }}
                     >
                       <ExternalLink className="h-3 w-3" />
