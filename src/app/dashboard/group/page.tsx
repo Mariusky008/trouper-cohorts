@@ -5,11 +5,20 @@ import { Trophy, TrendingUp, AlertTriangle, ExternalLink, CheckCircle } from "lu
 import { useEffect, useState } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { toast } from "sonner"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 
 export default function GroupPage() {
   const [members, setMembers] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [currentUser, setUser] = useState<any>(null)
+  const [confirmingSubscription, setConfirmingSubscription] = useState<string | null>(null) // ID of member being subscribed to
   const supabase = createClient()
 
   const fetchMembers = async () => {
@@ -67,11 +76,13 @@ export default function GroupPage() {
     fetchMembers()
   }, [])
 
-  const handleSubscribe = async (targetUserId: string) => {
+  const handleSubscribe = async () => {
+    if (!confirmingSubscription) return
+
     try {
       const { error } = await supabase.from('member_subscriptions').insert({
         subscriber_id: currentUser.id,
-        target_user_id: targetUserId
+        target_user_id: confirmingSubscription
       })
 
       if (error) throw error
@@ -80,25 +91,14 @@ export default function GroupPage() {
       
       // Optimistic update
       setMembers(members.map(m => 
-        m.id === targetUserId ? { ...m, isSubscribed: true } : m
+        m.id === confirmingSubscription ? { ...m, isSubscribed: true } : m
       ))
+      setConfirmingSubscription(null)
 
     } catch (error) {
       toast.error("Erreur lors de la validation")
     }
   }
-
-  // Handle visibility change to detect when user comes back from social media
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-       if (document.visibilityState === 'visible') {
-          // If we had a pending subscription check, we could trigger it here
-          // For now, we rely on the manual confirmation or the button click flow
-       }
-    }
-    document.addEventListener("visibilitychange", handleVisibilityChange)
-    return () => document.removeEventListener("visibilitychange", handleVisibilityChange)
-  }, [])
 
   if (loading) return <div className="p-8 text-center">Chargement du classement...</div>
 
@@ -158,12 +158,8 @@ export default function GroupPage() {
                       className="h-8 gap-2 text-xs"
                       onClick={() => {
                         window.open(member.platform_link, '_blank')
-                        
-                        // Small delay to allow tab to open before showing confirmation toast/dialog
-                        setTimeout(() => {
-                           const confirmed = window.confirm(`As-tu bien suivi ${member.name} ?`)
-                           if (confirmed) handleSubscribe(member.id)
-                        }, 1000)
+                        // Trigger confirmation dialog
+                        setConfirmingSubscription(member.id)
                       }}
                     >
                       <ExternalLink className="h-3 w-3" />
@@ -184,6 +180,28 @@ export default function GroupPage() {
           </div>
         </div>
       </div>
+
+      <Dialog open={!!confirmingSubscription} onOpenChange={(open) => !open && setConfirmingSubscription(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirmation d'abonnement</DialogTitle>
+            <DialogDescription>
+              Pour valider cette action, tu dois t'être abonné au compte de ce membre.
+              <br />
+              C'est important pour le soutien mutuel de l'escouade !
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex gap-2 sm:justify-end">
+            <Button variant="outline" onClick={() => setConfirmingSubscription(null)}>
+              Pas encore
+            </Button>
+            <Button onClick={handleSubscribe} className="bg-green-600 hover:bg-green-700">
+              <CheckCircle className="mr-2 h-4 w-4" />
+              C'est fait, je suis abonné
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
