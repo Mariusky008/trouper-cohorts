@@ -1,57 +1,92 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { Trophy, TrendingUp, AlertTriangle } from "lucide-react"
+import { Trophy, TrendingUp, AlertTriangle, ExternalLink, CheckCircle } from "lucide-react"
 import { useEffect, useState } from "react"
 import { createClient } from "@/lib/supabase/client"
+import { toast } from "sonner"
 
 export default function GroupPage() {
   const [members, setMembers] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [currentUser, setUser] = useState<any>(null)
   const supabase = createClient()
 
-  useEffect(() => {
-    const fetchMembers = async () => {
-      try {
-        const { data: { user } } = await supabase.auth.getUser()
-        if (!user) return
+  const fetchMembers = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      setUser(user)
 
-        // 1. Get Squad ID
-        const { data: membership } = await supabase.from('squad_members').select('squad_id').eq('user_id', user.id).single()
-        
-        if (membership) {
-           // 2. Fetch all members with their profiles
-           const { data: squadMembers } = await supabase
-             .from('squad_members')
-             .select('joined_at, profiles(id, username, discipline_score)')
-             .eq('squad_id', membership.squad_id)
-             .order('profiles(discipline_score)', { ascending: false })
+      // 1. Get Squad ID
+      const { data: membership } = await supabase.from('squad_members').select('squad_id').eq('user_id', user.id).single()
+      
+      if (membership) {
+         // 2. Fetch all members with their profiles
+         const { data: squadMembers } = await supabase
+           .from('squad_members')
+           .select('joined_at, profiles(id, username, discipline_score, main_platform)')
+           .eq('squad_id', membership.squad_id)
+           .order('profiles(discipline_score)', { ascending: false })
 
-           if (squadMembers) {
-              const formattedMembers = squadMembers.map((m: any, index: number) => {
-                 const score = m.profiles?.discipline_score || 0
-                 let status = "active"
-                 
-                 return {
-                   id: m.profiles?.id,
-                   name: m.profiles?.username || "Membre",
-                   score,
-                   status,
-                   rank: index + 1,
-                   isMe: m.profiles?.id === user.id
-                 }
-              })
-              setMembers(formattedMembers)
-           }
-        }
-      } catch (e) {
-        console.error(e)
-      } finally {
-        setLoading(false)
+         // 3. Fetch current user's subscriptions
+         const { data: subscriptions } = await supabase
+           .from('member_subscriptions')
+           .select('target_user_id')
+           .eq('subscriber_id', user.id)
+         
+         const subscribedIds = new Set(subscriptions?.map(s => s.target_user_id))
+
+         if (squadMembers) {
+            const formattedMembers = squadMembers.map((m: any, index: number) => {
+               const score = m.profiles?.discipline_score || 0
+               let status = "active"
+               
+               return {
+                 id: m.profiles?.id,
+                 name: m.profiles?.username || "Membre",
+                 platform_link: m.profiles?.main_platform || "https://tiktok.com",
+                 score,
+                 status,
+                 rank: index + 1,
+                 isMe: m.profiles?.id === user.id,
+                 isSubscribed: subscribedIds.has(m.profiles?.id)
+               }
+            })
+            setMembers(formattedMembers)
+         }
       }
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setLoading(false)
     }
+  }
+
+  useEffect(() => {
     fetchMembers()
   }, [])
+
+  const handleSubscribe = async (targetUserId: string) => {
+    try {
+      const { error } = await supabase.from('member_subscriptions').insert({
+        subscriber_id: currentUser.id,
+        target_user_id: targetUserId
+      })
+
+      if (error) throw error
+
+      toast.success("Abonnement confirmé !")
+      
+      // Optimistic update
+      setMembers(members.map(m => 
+        m.id === targetUserId ? { ...m, isSubscribed: true } : m
+      ))
+
+    } catch (error) {
+      toast.error("Erreur lors de la validation")
+    }
+  }
 
   if (loading) return <div className="p-8 text-center">Chargement du classement...</div>
 
@@ -79,7 +114,7 @@ export default function GroupPage() {
             members.map((member) => (
               <div 
                 key={member.id} 
-                className={`flex items-center justify-between border-b py-4 last:border-0 hover:bg-muted/50 px-2 rounded-lg transition-colors ${member.isMe ? 'bg-primary/5 border-primary/20' : ''}`}
+                className={`flex flex-col sm:flex-row sm:items-center justify-between border-b py-4 last:border-0 hover:bg-muted/50 px-2 rounded-lg transition-colors gap-4 ${member.isMe ? 'bg-primary/5 border-primary/20' : ''}`}
               >
                 <div className="flex items-center gap-4">
                   <div className="flex h-8 w-8 items-center justify-center font-bold text-muted-foreground">
@@ -91,19 +126,42 @@ export default function GroupPage() {
                   <div>
                     <p className="font-medium flex items-center gap-2">
                       {member.name} {member.isMe && "(Toi)"}
-                      {member.status === "warning" && <AlertTriangle className="h-4 w-4 text-orange-500" />}
-                      {member.status === "danger" && <AlertTriangle className="h-4 w-4 text-red-500" />}
+                      {member.isSubscribed && !member.isMe && (
+                        <span className="flex items-center gap-1 text-[10px] bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">
+                          <CheckCircle className="h-3 w-3" /> Abonné
+                        </span>
+                      )}
                     </p>
                     <p className="text-xs text-muted-foreground">
                       {member.status === "active" ? "En feu 🔥" : member.status === "warning" ? "Attention ⚠️" : "En danger 🚨"}
                     </p>
                   </div>
                 </div>
-                <div className="text-right">
-                  <div className={`font-bold text-lg text-primary`}>
-                    {member.score} XP
+
+                <div className="flex items-center gap-4 ml-12 sm:ml-0">
+                  {!member.isMe && !member.isSubscribed && (
+                    <Button 
+                      size="sm" 
+                      variant="outline" 
+                      className="h-8 gap-2 text-xs"
+                      onClick={() => {
+                        window.open(member.platform_link, '_blank')
+                        // We ask them to confirm they subscribed
+                        const confirmed = window.confirm("As-tu bien suivi ce compte ?")
+                        if (confirmed) handleSubscribe(member.id)
+                      }}
+                    >
+                      <ExternalLink className="h-3 w-3" />
+                      S'abonner
+                    </Button>
+                  )}
+                  
+                  <div className="text-right min-w-[60px]">
+                    <div className={`font-bold text-lg text-primary`}>
+                      {member.score} XP
+                    </div>
+                    <p className="text-xs text-muted-foreground">Discipline</p>
                   </div>
-                  <p className="text-xs text-muted-foreground">Discipline</p>
                 </div>
               </div>
             ))

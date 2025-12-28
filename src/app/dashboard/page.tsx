@@ -1,7 +1,7 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { CheckCircle, Upload, Clock, AlertCircle, ExternalLink, Heart } from "lucide-react"
+import { CheckCircle, Upload, Clock, AlertCircle, ExternalLink, Heart, Lock } from "lucide-react"
 import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
 
@@ -20,6 +20,7 @@ export default function DashboardPage() {
   const [userProfile, setUserProfile] = useState<any>(null)
   const [squadMembers, setSquadMembers] = useState<any[]>([])
   const [dayProgress, setDayProgress] = useState(1)
+  const [isFullyOnboarded, setIsFullyOnboarded] = useState(false)
   const supabase = createClient()
 
   useEffect(() => {
@@ -51,13 +52,31 @@ export default function DashboardPage() {
          if (membership) {
             const { data: members } = await supabase
               .from('squad_members')
-              .select('user_id, profiles(username, current_video_url)')
+              .select('user_id, profiles(id, username, current_video_url)')
               .eq('squad_id', membership.squad_id)
               .neq('user_id', user.id) // Exclude self
-              .limit(3) // Just 3 for daily tasks
+              
+            // Check subscriptions status
+            const { data: subscriptions } = await supabase
+              .from('member_subscriptions')
+              .select('target_user_id')
+              .eq('subscriber_id', user.id)
+            
+            const subscribedIds = new Set(subscriptions?.map(s => s.target_user_id))
+            
+            // Check if user is subscribed to all members
+            const allMembers = members || []
+            const isSubscribedToAll = allMembers.length === 0 || allMembers.every(m => subscribedIds.has(m.profiles?.id))
+            setIsFullyOnboarded(isSubscribedToAll)
 
-            if (members && members.length > 0) {
-               setSquadMembers(members)
+            // Update is_fully_onboarded in profile if changed
+            if (isSubscribedToAll !== profile?.is_fully_onboarded) {
+               await supabase.from('profiles').update({ is_fully_onboarded: isSubscribedToAll }).eq('id', user.id)
+            }
+
+            if (allMembers.length > 0) {
+               setSquadMembers(allMembers)
+               
                // Generate tasks based on real members
                const newTasks = [
                  { 
@@ -67,7 +86,7 @@ export default function DashboardPage() {
                    actionLabel: "Ouvrir TikTok Studio",
                    actionUrl: "https://www.tiktok.com/creator-center/upload"
                  },
-                 ...members.map((m: any, index: number) => ({
+                 ...allMembers.slice(0, 3).map((m: any, index: number) => ({
                    id: index + 2,
                    text: `Soutien: ${m.profiles?.username || 'Membre'}`,
                    completed: false,
@@ -94,6 +113,7 @@ export default function DashboardPage() {
                    actionUrl: "#"
                  }
                ])
+               setIsFullyOnboarded(true) // Alone means fully onboarded
             }
          } else {
             // Not in a squad yet?
@@ -106,6 +126,7 @@ export default function DashboardPage() {
                    actionUrl: "https://www.tiktok.com/creator-center/upload"
                  }
             ])
+            setIsFullyOnboarded(true)
          }
 
        } catch (e) {
@@ -204,7 +225,29 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      <div className="grid gap-8 md:grid-cols-3">
+      {!isFullyOnboarded && (
+        <div className="rounded-xl border border-orange-200 bg-orange-50 p-6 shadow-sm">
+          <div className="flex items-start gap-4">
+            <div className="p-2 bg-orange-100 rounded-full">
+              <Lock className="h-6 w-6 text-orange-600" />
+            </div>
+            <div className="space-y-2">
+              <h2 className="text-lg font-semibold text-orange-900">Missions bloquées</h2>
+              <p className="text-orange-800">
+                Tu dois t'abonner à tous les membres de ton escouade avant de pouvoir commencer tes missions quotidiennes.
+                C'est la règle d'or : le soutien mutuel avant tout.
+              </p>
+              <Button asChild variant="default" className="bg-orange-600 hover:bg-orange-700 mt-2">
+                <Link href="/dashboard/group">
+                  Voir mon escouade et m'abonner ({squadMembers.length} membres)
+                </Link>
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className={`grid gap-8 md:grid-cols-3 ${!isFullyOnboarded ? 'opacity-50 pointer-events-none grayscale-[0.5]' : ''}`}>
         {/* Daily Tasks */}
         <div className="md:col-span-2 space-y-6">
           
@@ -331,7 +374,7 @@ export default function DashboardPage() {
                           const { error } = await supabase.storage
                             .from('proofs')
                             .upload(filename, file)
-
+                          
                           if (error) throw error
 
                           toast.dismiss(toastId)
@@ -379,7 +422,7 @@ export default function DashboardPage() {
                     </div>
                     <div className="space-y-1">
                       <p className="text-sm font-medium leading-none">{m.profiles?.username || `Membre #${i+1}`}</p>
-                      <p className="text-xs text-muted-foreground">a rejoint l'escouade �</p>
+                      <p className="text-xs text-muted-foreground">a rejoint l'escouade </p>
                     </div>
                     <span className="ml-auto text-xs text-muted-foreground">
                       {(i + 1) * 2}m
