@@ -1,7 +1,7 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { CheckCircle, Upload, Clock, AlertCircle, ExternalLink, Heart, Lock } from "lucide-react"
+import { CheckCircle, Upload, Clock, AlertCircle, ExternalLink, Heart, Lock, Shield } from "lucide-react"
 import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
 
@@ -21,6 +21,7 @@ export default function DashboardPage() {
   const [squadMembers, setSquadMembers] = useState<any[]>([])
   const [dayProgress, setDayProgress] = useState(1)
   const [isFullyOnboarded, setIsFullyOnboarded] = useState(false)
+  const [isAdmin, setIsAdmin] = useState(false)
   const supabase = createClient()
 
   useEffect(() => {
@@ -28,6 +29,10 @@ export default function DashboardPage() {
        try {
          const { data: { user } } = await supabase.auth.getUser()
          if (!user) return
+
+         if (user.email === "mariustalk@yahoo.fr") {
+            setIsAdmin(true)
+         }
 
          // 1. Fetch Profile
          const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single()
@@ -197,6 +202,18 @@ export default function DashboardPage() {
   return (
     <div className="space-y-8">
       {/* Header Stats */}
+      {isAdmin && (
+        <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+             <Shield className="h-5 w-5 text-primary" />
+             <span className="font-semibold text-primary">Mode Administrateur activé</span>
+          </div>
+          <Button size="sm" asChild>
+            <Link href="/admin">Accéder au Panel Admin</Link>
+          </Button>
+        </div>
+      )}
+
       <div className="grid gap-4 md:grid-cols-3">
         <div className="rounded-xl border bg-card p-6 shadow-sm">
           <h3 className="text-sm font-medium text-muted-foreground">Objectif</h3>
