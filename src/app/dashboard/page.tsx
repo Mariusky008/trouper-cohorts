@@ -26,7 +26,9 @@ export default function DashboardPage() {
   
   // New States
   const [supportsReceived, setSupportsReceived] = useState<any[]>([])
+  const [supportsReceivedYesterday, setSupportsReceivedYesterday] = useState<any[]>([])
   const [missingSupporters, setMissingSupporters] = useState<any[]>([])
+  const [missingSupportersYesterday, setMissingSupportersYesterday] = useState<any[]>([])
   const [stats, setStats] = useState({
     day: 0,
     week: 0,
@@ -93,20 +95,36 @@ export default function DashboardPage() {
             if (allMembers.length > 0) {
                setSquadMembers(allMembers)
                
-               // === FEATURE 1: Check Supports Received Today ===
+               // === FEATURE 1: Check Supports Received ===
                const today = new Date().toISOString().split('T')[0]
-               const { data: supports } = await supabase
+               const yesterdayDate = new Date()
+               yesterdayDate.setDate(yesterdayDate.getDate() - 1)
+               const yesterday = yesterdayDate.toISOString().split('T')[0]
+
+               // 1. Fetch Today's supports
+               const { data: supportsToday } = await supabase
                  .from('daily_supports')
                  .select('supporter_id')
                  .eq('target_user_id', user.id)
-                 .gte('created_at', today) // Supports from today only
+                 .gte('created_at', today)
 
-               const supporterIds = new Set(supports?.map((s: any) => s.supporter_id))
-               setSupportsReceived(supports || [])
+               const supporterIdsToday = new Set(supportsToday?.map((s: any) => s.supporter_id))
+               setSupportsReceived(supportsToday || [])
+               const missingToday = allMembers.filter((m: any) => !supporterIdsToday.has(m.user_id))
+               setMissingSupporters(missingToday)
 
-               // Identify missing supporters
-               const missing = allMembers.filter((m: any) => !supporterIds.has(m.user_id))
-               setMissingSupporters(missing)
+               // 2. Fetch Yesterday's supports
+               const { data: supportsYesterday } = await supabase
+                 .from('daily_supports')
+                 .select('supporter_id')
+                 .eq('target_user_id', user.id)
+                 .gte('created_at', yesterday)
+                 .lt('created_at', today)
+
+               const supporterIdsYesterday = new Set(supportsYesterday?.map((s: any) => s.supporter_id))
+               setSupportsReceivedYesterday(supportsYesterday || [])
+               const missingYesterday = allMembers.filter((m: any) => !supporterIdsYesterday.has(m.user_id))
+               setMissingSupportersYesterday(missingYesterday)
 
                // Generate tasks based on real members
                const newTasks = [
@@ -354,58 +372,98 @@ export default function DashboardPage() {
         
         {/* SQUAD SURVEILLANCE */}
         <div className="rounded-xl border bg-card shadow-sm h-full">
-          <div className="border-b p-6 flex items-center justify-between">
-            <div>
-              <h2 className="text-lg font-semibold flex items-center gap-2">
-                <Eye className="h-5 w-5 text-indigo-500" />
-                Surveillance Escouade
-              </h2>
-              <p className="text-sm text-muted-foreground">Qui a soutenu ta vidéo aujourd'hui ?</p>
-            </div>
-            <div className="text-right">
-              <span className={`text-2xl font-bold ${missingSupporters.length > 0 ? 'text-orange-500' : 'text-green-500'}`}>
-                {supportsReceived.length}/{squadMembers.length}
-              </span>
-            </div>
+          <div className="border-b p-6">
+            <h2 className="text-lg font-semibold flex items-center gap-2">
+              <Eye className="h-5 w-5 text-indigo-500" />
+              Surveillance Escouade
+            </h2>
+            <p className="text-sm text-muted-foreground">Suivi des soutiens reçus</p>
           </div>
           
-          <div className="p-6 space-y-4">
-            {squadMembers.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">Pas encore de membres.</div>
-            ) : missingSupporters.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-8 text-green-600 gap-2">
-                <CheckCircle className="h-12 w-12" />
-                <p className="font-medium">Escouade exemplaire ! Tout le monde a liké.</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                <div className="flex items-center gap-2 text-sm font-medium text-orange-600 bg-orange-50 p-3 rounded-md">
-                  <AlertTriangle className="h-4 w-4" />
-                  {missingSupporters.length} soldat(s) manquent à l'appel !
+          <div className="p-6">
+            <Tabs defaultValue="today" className="w-full">
+              <TabsList className="grid w-full grid-cols-2 mb-4">
+                <TabsTrigger value="today">Aujourd'hui (En cours)</TabsTrigger>
+                <TabsTrigger value="yesterday">Hier (Bilan)</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="today" className="space-y-4">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-muted-foreground">Progression du jour</span>
+                  <span className={`text-xl font-bold ${missingSupporters.length > 0 ? 'text-orange-500' : 'text-green-500'}`}>
+                    {supportsReceived.length}/{squadMembers.length}
+                  </span>
                 </div>
-                <div className="space-y-2 max-h-[200px] overflow-y-auto pr-2">
-                  {missingSupporters.map((m: any) => (
-                    <div key={m.user_id} className="flex items-center justify-between p-2 border rounded-md bg-background">
-                      <div className="flex items-center gap-3">
-                        <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center text-xs font-bold">
-                          {m.profiles?.username?.charAt(0) || "?"}
+                
+                {squadMembers.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">Pas encore de membres.</div>
+                ) : missingSupporters.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-8 text-green-600 gap-2">
+                    <CheckCircle className="h-12 w-12" />
+                    <p className="font-medium">Tout le monde a déjà liké ! 🔥</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2 max-h-[200px] overflow-y-auto pr-2">
+                    <p className="text-xs text-muted-foreground mb-2">Ces membres n'ont pas encore liké (ils ont jusqu'à minuit) :</p>
+                    {missingSupporters.map((m: any) => (
+                      <div key={m.user_id} className="flex items-center justify-between p-2 border rounded-md bg-muted/30">
+                        <div className="flex items-center gap-3">
+                          <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center text-xs font-bold">
+                            {m.profiles?.username?.charAt(0) || "?"}
+                          </div>
+                          <span className="font-medium text-sm text-muted-foreground">{m.profiles?.username || "Inconnu"}</span>
                         </div>
-                        <span className="font-medium text-sm">{m.profiles?.username || "Inconnu"}</span>
+                        <span className="text-xs text-muted-foreground italic">En attente...</span>
                       </div>
-                      <Button 
-                        size="sm" 
-                        variant="ghost" 
-                        className="text-orange-600 hover:text-orange-700 hover:bg-orange-50 h-8"
-                        onClick={() => handleReportMissing(m.profiles?.username)}
-                      >
-                        <MessageSquareWarning className="h-4 w-4 mr-2" />
-                        Signaler
-                      </Button>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
+                )}
+              </TabsContent>
+
+              <TabsContent value="yesterday" className="space-y-4">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-muted-foreground">Résultat final d'hier</span>
+                  <span className={`text-xl font-bold ${missingSupportersYesterday.length > 0 ? 'text-red-500' : 'text-green-500'}`}>
+                    {supportsReceivedYesterday.length}/{squadMembers.length}
+                  </span>
                 </div>
-              </div>
-            )}
+
+                {missingSupportersYesterday.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-8 text-green-600 gap-2">
+                    <CheckCircle className="h-12 w-12" />
+                    <p className="font-medium">Journée parfaite hier !</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2 text-sm font-medium text-red-600 bg-red-50 p-3 rounded-md">
+                      <AlertTriangle className="h-4 w-4" />
+                      {missingSupportersYesterday.length} traître(s) détecté(s) !
+                    </div>
+                    <div className="space-y-2 max-h-[200px] overflow-y-auto pr-2">
+                      {missingSupportersYesterday.map((m: any) => (
+                        <div key={m.user_id} className="flex items-center justify-between p-2 border rounded-md bg-background border-red-100">
+                          <div className="flex items-center gap-3">
+                            <div className="h-8 w-8 rounded-full bg-red-100 text-red-600 flex items-center justify-center text-xs font-bold">
+                              {m.profiles?.username?.charAt(0) || "?"}
+                            </div>
+                            <span className="font-medium text-sm">{m.profiles?.username || "Inconnu"}</span>
+                          </div>
+                          <Button 
+                            size="sm" 
+                            variant="ghost" 
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50 h-8"
+                            onClick={() => handleReportMissing(m.profiles?.username)}
+                          >
+                            <MessageSquareWarning className="h-4 w-4 mr-2" />
+                            Signaler
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </TabsContent>
+            </Tabs>
           </div>
         </div>
 
