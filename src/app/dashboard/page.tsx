@@ -108,8 +108,11 @@ export default function DashboardPage() {
                  .eq('target_user_id', user.id)
                  .gte('created_at', today)
 
-               const supporterIdsToday = new Set(supportsToday?.map((s: any) => s.supporter_id))
-               setSupportsReceived(supportsToday || [])
+               // Filter to ensure we only count supports from CURRENT squad members
+               const validSupportsToday = supportsToday?.filter((s: any) => allMembers.some((m: any) => m.user_id === s.supporter_id)) || []
+               const supporterIdsToday = new Set(validSupportsToday.map((s: any) => s.supporter_id))
+               
+               setSupportsReceived(validSupportsToday)
                const missingToday = allMembers.filter((m: any) => !supporterIdsToday.has(m.user_id))
                setMissingSupporters(missingToday)
 
@@ -121,8 +124,10 @@ export default function DashboardPage() {
                  .gte('created_at', yesterday)
                  .lt('created_at', today)
 
-               const supporterIdsYesterday = new Set(supportsYesterday?.map((s: any) => s.supporter_id))
-               setSupportsReceivedYesterday(supportsYesterday || [])
+               const validSupportsYesterday = supportsYesterday?.filter((s: any) => allMembers.some((m: any) => m.user_id === s.supporter_id)) || []
+               const supporterIdsYesterday = new Set(validSupportsYesterday.map((s: any) => s.supporter_id))
+               
+               setSupportsReceivedYesterday(validSupportsYesterday)
                const missingYesterday = allMembers.filter((m: any) => !supporterIdsYesterday.has(m.user_id))
                setMissingSupportersYesterday(missingYesterday)
 
