@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Mail, ShieldAlert, AlertTriangle, CheckCircle, XCircle } from "lucide-react"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 export default function AdminPage() {
@@ -46,6 +47,8 @@ export default function AdminPage() {
       const { data: profiles } = await supabase
         .from('profiles')
         .select('*')
+        .not('email', 'is', null)
+        .not('username', 'is', null)
         .order('discipline_score', { ascending: false })
 
       setUsers(profiles || [])
@@ -134,8 +137,15 @@ export default function AdminPage() {
           <h1 className="text-3xl font-bold">Administration Troupers</h1>
           <p className="text-muted-foreground">Suivi des performances des recrues</p>
         </div>
-        <div className="rounded-full bg-primary/10 px-4 py-2 text-primary font-mono text-sm">
-          Admin: Marius
+        <div className="flex items-center gap-4">
+          <Button variant="outline" asChild>
+            <Link href="/admin/pre-registrations">
+              Voir les Pré-inscriptions
+            </Link>
+          </Button>
+          <div className="rounded-full bg-primary/10 px-4 py-2 text-primary font-mono text-sm">
+            Admin: Marius
+          </div>
         </div>
       </div>
 

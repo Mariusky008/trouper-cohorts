@@ -34,7 +34,7 @@ export function Hero() {
         
         <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
           <Button size="lg" className="h-12 px-8 text-base" asChild>
-            <Link href="/signup">
+            <Link href="/pre-inscription">
               Rejoindre le programme gratuit (7 jours)
               <ArrowRight className="ml-2 h-4 w-4" />
             </Link>
