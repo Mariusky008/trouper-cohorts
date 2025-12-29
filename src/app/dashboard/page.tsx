@@ -438,315 +438,266 @@ export default function DashboardPage() {
         </div>
       )}
 
-      <div className="grid gap-4 md:grid-cols-3">
-        <div className="rounded-xl border bg-card p-6 shadow-sm">
-          <h3 className="text-sm font-medium text-muted-foreground">Objectif</h3>
-          <div className="mt-2 text-2xl font-bold">Visibilité TikTok</div>
-          <p className="text-xs text-muted-foreground mt-1">Pack Starter</p>
-        </div>
-        <div className="rounded-xl border bg-card p-6 shadow-sm">
-          <h3 className="text-sm font-medium text-muted-foreground">Progression</h3>
-          <div className="mt-2 text-2xl font-bold">Jour {dayProgress} <span className="text-muted-foreground text-lg font-normal">/ 30</span></div>
-          <div className="mt-2 h-2 w-full rounded-full bg-secondary">
-            <div className="h-2 rounded-full bg-primary" style={{ width: `${(dayProgress/30)*100}%` }} />
-          </div>
-        </div>
-        <div className="rounded-xl border bg-card p-6 shadow-sm">
-          <h3 className="text-sm font-medium text-muted-foreground">Ta Fiabilité</h3>
-          <div className={`mt-2 text-2xl font-bold flex items-center gap-2`}>
-            100%
-            <Shield className="h-5 w-5 fill-green-500 text-green-500" />
-          </div>
-          <div className="mt-2 h-2 w-full rounded-full bg-secondary">
-             <div className="h-2 rounded-full bg-green-500" style={{ width: `100%` }} />
-          </div>
-          <p className="text-xs text-muted-foreground mt-1">
-             Tu es un partenaire de confiance.
-          </p>
-        </div>
-      </div>
-
-      {!isFullyOnboarded && (
-        <div className="rounded-xl border border-orange-200 bg-orange-50 p-6 shadow-sm">
-          <div className="flex items-start gap-4">
-            <div className="p-2 bg-orange-100 rounded-full">
-              <Lock className="h-6 w-6 text-orange-600" />
-            </div>
-            <div className="space-y-2">
-              <h2 className="text-lg font-semibold text-orange-900">Missions bloquées</h2>
-              <p className="text-orange-800">
-                Tu dois t'abonner à tous les membres de ton escouade avant de pouvoir commencer tes missions quotidiennes.
-                C'est la règle d'or : le soutien mutuel avant tout.
-              </p>
-              <Button asChild variant="default" className="bg-orange-600 hover:bg-orange-700 mt-2">
-                <Link href="/dashboard/group">
-                  Voir mon escouade et m'abonner ({squadMembers.length} membres)
-                </Link>
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* NEW SECTION: Squad Surveillance & Stats */}
-      <div className="grid gap-8 md:grid-cols-2">
-        
-        {/* SQUAD SURVEILLANCE */}
-        <div className="rounded-xl border bg-card shadow-sm h-full">
-          <div className="border-b p-6">
-            <h2 className="text-lg font-semibold flex items-center gap-2">
-              <Eye className="h-5 w-5 text-indigo-500" />
-              Surveillance Escouade
+      {/* HERO SECTION: MY VIDEO */}
+      <div className="rounded-xl border bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-pink-500/10 p-1">
+        <div className="bg-card rounded-lg p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="space-y-2 text-center md:text-left">
+            <h2 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600">
+              🚀 Ta Vidéo à Promouvoir
             </h2>
-            <p className="text-sm text-muted-foreground">Suivi des soutiens reçus</p>
+            <p className="text-muted-foreground max-w-lg">
+              C'est le lien que ton escouade va recevoir aujourd'hui. <br/>
+              <span className="font-medium text-foreground">Pas de lien = Pas de soutien !</span>
+            </p>
           </div>
           
-          <div className="p-6">
-            <Tabs defaultValue="today" className="w-full">
-              <TabsList className="grid w-full grid-cols-2 mb-4">
-                <TabsTrigger value="today">Aujourd'hui (En cours)</TabsTrigger>
-                <TabsTrigger value="yesterday">Hier (Bilan)</TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="today" className="space-y-4">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-muted-foreground">Progression du jour</span>
-                  <span className={`text-xl font-bold ${missingSupporters.length > 0 ? 'text-orange-500' : 'text-green-500'}`}>
-                    {supportsReceived.length}/{squadMembers.length}
-                  </span>
+          <div className="w-full md:w-auto min-w-[300px]">
+            {isEditingVideo ? (
+              <div className="flex flex-col gap-3 p-4 bg-background border rounded-lg shadow-sm">
+                <label className="text-xs font-semibold uppercase text-muted-foreground">Lien de ta vidéo (TikTok, YouTube...)</label>
+                <div className="flex gap-2">
+                  <input 
+                    type="url" 
+                    placeholder="https://..."
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-blue-500"
+                    value={myVideoUrl}
+                    onChange={(e) => setMyVideoUrl(e.target.value)}
+                    autoFocus
+                  />
+                  <Button onClick={handleUpdateVideo}>Enregistrer</Button>
                 </div>
-                
-                {squadMembers.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">Pas encore de membres.</div>
-                ) : missingSupporters.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-8 text-green-600 gap-2">
-                    <CheckCircle className="h-12 w-12" />
-                    <p className="font-medium">Tout le monde a déjà liké ! 🔥</p>
-                  </div>
-                ) : (
-                  <div className="space-y-2 max-h-[200px] overflow-y-auto pr-2">
-                    <p className="text-xs text-muted-foreground mb-2">Ces membres n'ont pas encore liké (ils ont jusqu'à minuit) :</p>
-                    {missingSupporters.map((m: any) => (
-                      <div key={m.user_id} className="flex items-center justify-between p-2 border rounded-md bg-muted/30">
-                        <div className="flex items-center gap-3">
-                          <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center text-xs font-bold">
-                            {m.profiles?.username?.charAt(0) || "?"}
-                          </div>
-                          <span className="font-medium text-sm text-muted-foreground">{m.profiles?.username || "Inconnu"}</span>
-                        </div>
-                        <span className="text-xs text-muted-foreground italic">En attente...</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </TabsContent>
-
-              <TabsContent value="yesterday" className="space-y-4">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-muted-foreground">Résultat final d'hier</span>
-                  <span className={`text-xl font-bold ${missingSupportersYesterday.length > 0 ? 'text-red-500' : 'text-green-500'}`}>
-                    {supportsReceivedYesterday.length}/{squadMembers.length}
-                  </span>
-                </div>
-
-                {missingSupportersYesterday.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-8 text-green-600 gap-2">
-                    <CheckCircle className="h-12 w-12" />
-                    <p className="font-medium">Journée parfaite hier !</p>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-2 text-sm font-medium text-red-600 bg-red-50 p-3 rounded-md">
-                      <AlertTriangle className="h-4 w-4" />
-                      {missingSupportersYesterday.length} traître(s) détecté(s) !
-                    </div>
-                    <div className="space-y-2 max-h-[200px] overflow-y-auto pr-2">
-                      {missingSupportersYesterday.map((m: any) => (
-                        <div key={m.user_id} className="flex items-center justify-between p-2 border rounded-md bg-background border-red-100">
-                          <div className="flex items-center gap-3">
-                            <div className="h-8 w-8 rounded-full bg-red-100 text-red-600 flex items-center justify-center text-xs font-bold">
-                              {m.profiles?.username?.charAt(0) || "?"}
-                            </div>
-                            <span className="font-medium text-sm">{m.profiles?.username || "Inconnu"}</span>
-                          </div>
-                          <Button 
-                            size="sm" 
-                            variant="ghost" 
-                            className="text-orange-600 hover:text-orange-700 hover:bg-orange-50 h-8"
-                            onClick={() => handleReportMissing(m.user_id, m.profiles?.username)}
-                          >
-                            <MessageSquareWarning className="h-4 w-4 mr-2" />
-                            Signaler
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </TabsContent>
-            </Tabs>
-          </div>
-        </div>
-
-        {/* GLOBAL STATS */}
-        <div className="rounded-xl border bg-card shadow-sm h-full">
-          <div className="border-b p-6">
-            <h2 className="text-lg font-semibold flex items-center gap-2">
-              <BarChart3 className="h-5 w-5 text-purple-500" />
-              Rapport du QG
-            </h2>
-            <p className="text-sm text-muted-foreground">Tes performances globales</p>
-          </div>
-          <div className="p-6">
-            <Tabs defaultValue="day" className="w-full">
-              <TabsList className="grid w-full grid-cols-3 mb-6">
-                <TabsTrigger value="day">Jour</TabsTrigger>
-                <TabsTrigger value="week">Semaine</TabsTrigger>
-                <TabsTrigger value="month">Mois</TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="day" className="space-y-4">
-                <div className="flex flex-col items-center justify-center py-4">
-                  <span className="text-xl font-bold text-primary">
-                    {stats.day > 0 ? "Validé ✅" : "En attente"}
-                  </span>
-                  <span className="text-sm text-muted-foreground">État du jour</span>
-                </div>
-                <div className="text-xs text-center text-muted-foreground">
-                  Continue comme ça pour maintenir ta série !
-                </div>
-              </TabsContent>
-              
-              <TabsContent value="week" className="space-y-4">
-                <div className="flex flex-col items-center justify-center py-4">
-                  <span className="text-4xl font-bold text-primary">{Math.min(7, Math.ceil(stats.week / 5))}/7</span>
-                  <span className="text-sm text-muted-foreground">jours validés</span>
-                </div>
-                <div className="h-2 w-full bg-secondary rounded-full overflow-hidden">
-                  <div className="h-full bg-purple-500" style={{ width: `${(Math.min(7, Math.ceil(stats.week / 5)) / 7) * 100}%` }} />
-                </div>
-                <div className="text-xs text-center text-muted-foreground">
-                  Tu es dans le top 10% de ton escouade.
-                </div>
-              </TabsContent>
-              
-              <TabsContent value="month" className="space-y-4">
-                <div className="flex flex-col items-center justify-center py-4">
-                  <span className="text-4xl font-bold text-primary">
-                    {Math.min(100, Math.round((stats.month / 150) * 100))}%
-                  </span>
-                  <span className="text-sm text-muted-foreground">Taux de présence</span>
-                </div>
-                <div className="grid grid-cols-2 gap-4 text-center">
-                  <div className="bg-muted/50 p-3 rounded-lg">
-                    <div className="text-xl font-bold text-green-600">A+</div>
-                    <div className="text-xs text-muted-foreground">Note</div>
-                  </div>
-                  <div className="bg-muted/50 p-3 rounded-lg">
-                    <div className="text-xl font-bold">Soldat</div>
-                    <div className="text-xs text-muted-foreground">Rang</div>
-                  </div>
-                </div>
-              </TabsContent>
-            </Tabs>
-          </div>
-        </div>
-      </div>
-
-      <div className={`grid gap-8 md:grid-cols-3 ${!isFullyOnboarded ? 'opacity-50 pointer-events-none grayscale-[0.5]' : ''}`}>
-        {/* Daily Tasks */}
-        <div className="md:col-span-2 space-y-6">
-          
-          {/* Current Video Section */}
-          <div className="rounded-xl border bg-card shadow-sm border-blue-500/20 bg-blue-50/5">
-            <div className="p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
-              <div className="space-y-1">
-                <h2 className="text-lg font-semibold flex items-center gap-2">
-                  <ExternalLink className="h-5 w-5 text-blue-500" />
-                  Ta Vidéo du Moment
-                </h2>
-                <p className="text-sm text-muted-foreground">C'est le lien que ton escouade va recevoir pour te soutenir.</p>
               </div>
-              
-              <div className="flex-1 max-w-md">
-                {isEditingVideo ? (
-                  <div className="flex gap-2">
-                    <input 
-                      type="url" 
-                      placeholder="Colle le lien de ta dernière vidéo..."
-                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                      value={myVideoUrl}
-                      onChange={(e) => setMyVideoUrl(e.target.value)}
-                    />
-                    <Button size="sm" onClick={handleUpdateVideo}>Sauvegarder</Button>
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-between gap-4 bg-background border rounded-md px-3 py-2">
-                    <span className="text-sm truncate max-w-[200px] text-muted-foreground">
-                      {myVideoUrl || "Aucune vidéo définie"}
-                    </span>
-                    <Button variant="ghost" size="sm" className="h-6" onClick={() => setIsEditingVideo(true)}>
+            ) : (
+              <div className="flex flex-col gap-3 p-4 bg-background border rounded-lg shadow-sm">
+                 <label className="text-xs font-semibold uppercase text-muted-foreground">Lien Actif</label>
+                 <div className="flex items-center justify-between gap-4">
+                    {myVideoUrl ? (
+                      <div className="flex items-center gap-2 overflow-hidden">
+                        <CheckCircle className="h-4 w-4 text-green-500 shrink-0" />
+                        <a href={myVideoUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 hover:underline truncate max-w-[200px]">
+                          {myVideoUrl}
+                        </a>
+                      </div>
+                    ) : (
+                      <span className="text-sm text-muted-foreground italic flex items-center gap-2">
+                        <AlertCircle className="h-4 w-4 text-orange-500" />
+                        Aucune vidéo définie !
+                      </span>
+                    )}
+                    <Button variant="outline" size="sm" onClick={() => setIsEditingVideo(true)}>
                       Modifier
                     </Button>
-                  </div>
-                )}
+                 </div>
               </div>
-            </div>
-          </div>
-
-          <div className="rounded-xl border bg-card shadow-sm">
-            <div className="border-b p-6">
-              <h2 className="text-lg font-semibold flex items-center gap-2">
-                <Clock className="h-5 w-5 text-primary" />
-                Missions du jour
-              </h2>
-              <p className="text-sm text-muted-foreground">Tu as jusqu'à minuit pour valider.</p>
-            </div>
-            <div className="p-6 space-y-4">
-              {tasks.length === 0 ? (
-                <div className="text-center text-muted-foreground py-8">Aucune mission pour le moment.</div>
-              ) : (
-              tasks.map((task) => (
-                <div 
-                  key={task.id} 
-                  className={`flex flex-col gap-3 rounded-lg border p-4 transition-all ${task.completed ? 'bg-green-500/10 border-green-500/20' : 'bg-background'}`}
-                >
-                  <div 
-                    className="flex items-center gap-4 cursor-pointer"
-                    onClick={() => toggleTask(task.id)}
-                  >
-                    <div
-                      className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border transition-colors ${task.completed ? 'bg-green-600 border-green-600 text-white' : 'border-muted-foreground'}`}
-                    >
-                      {task.completed && <CheckCircle className="h-4 w-4" />}
-                    </div>
-                    <span className={`font-medium ${task.completed ? 'line-through text-muted-foreground' : ''}`}>{task.text}</span>
-                  </div>
-                  
-                  {task.actionUrl && !task.completed && (
-                    <div className="ml-10">
-                       <Button variant="outline" size="sm" className="h-8 gap-2" asChild>
-                         <a href={task.actionUrl} target="_blank" rel="noopener noreferrer">
-                           {task.actionLabel}
-                           <ExternalLink className="h-3 w-3" />
-                         </a>
-                       </Button>
-                    </div>
-                  )}
-                </div>
-              ))
-              )}
-            </div>
+            )}
           </div>
         </div>
+      </div>
 
-        {/* Group Activity Feed (Mini) & Chat */}
+      <div className="grid gap-8 md:grid-cols-3">
+        {/* LEFT COLUMN (Wide): MISSIONS */}
+        <div className="md:col-span-2 space-y-8">
+           
+           {/* MAIN MISSION CARD */}
+           <div className="rounded-xl border-2 border-indigo-500/20 bg-indigo-50/10 shadow-lg overflow-hidden relative">
+              <div className="absolute top-0 left-0 w-1 h-full bg-indigo-500" />
+              <div className="p-6 border-b bg-indigo-50/20">
+                <h2 className="text-xl font-bold flex items-center gap-3 text-indigo-900">
+                  <Clock className="h-6 w-6 text-indigo-600" />
+                  TES MISSIONS DU JOUR
+                </h2>
+                <p className="text-indigo-700/80 mt-1">
+                  Tu as jusqu'à <span className="font-bold">minuit</span> pour valider ces actions.
+                </p>
+              </div>
+              
+              <div className="p-6 space-y-4 bg-card">
+                  {tasks.length === 0 ? (
+                    <div className="text-center py-12">
+                      <p className="text-muted-foreground">Aucune mission pour le moment.</p>
+                    </div>
+                  ) : (
+                    tasks.map((task) => (
+                      <div 
+                        key={task.id} 
+                        className={`flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-xl border p-4 transition-all hover:shadow-md ${task.completed ? 'bg-green-50 border-green-200' : 'bg-background hover:border-indigo-200'}`}
+                      >
+                        <div 
+                          className="flex items-center gap-4 cursor-pointer flex-1"
+                          onClick={() => toggleTask(task.id)}
+                        >
+                          <div
+                            className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 transition-all ${task.completed ? 'bg-green-500 border-green-500 text-white shadow-sm' : 'border-muted-foreground/30 bg-muted/10'}`}
+                          >
+                            {task.completed && <CheckCircle className="h-5 w-5" />}
+                          </div>
+                          <div className="space-y-1">
+                             <span className={`font-semibold text-base ${task.completed ? 'line-through text-muted-foreground' : 'text-foreground'}`}>
+                               {task.text}
+                             </span>
+                             {task.completed && <span className="text-xs text-green-600 font-medium block">Mission accomplie !</span>}
+                          </div>
+                        </div>
+                        
+                        {task.actionUrl && !task.completed && (
+                           <Button className="shrink-0 bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm" asChild>
+                             <a href={task.actionUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2">
+                               {task.actionLabel}
+                               <ExternalLink className="h-4 w-4" />
+                             </a>
+                           </Button>
+                        )}
+                      </div>
+                    ))
+                  )}
+              </div>
+              
+              {allTasksCompleted && tasks.length > 0 && (
+                <div className="bg-green-100 p-4 text-center text-green-800 font-medium border-t border-green-200">
+                  🎉 Bravo ! Toutes les missions sont validées. Repose-toi soldat.
+                </div>
+              )}
+           </div>
+
+           {/* SQUAD SURVEILLANCE */}
+           <div className="rounded-xl border bg-card shadow-sm">
+             <div className="border-b p-6 flex items-center justify-between">
+                <div>
+                  <h2 className="text-lg font-semibold flex items-center gap-2">
+                    <Eye className="h-5 w-5 text-muted-foreground" />
+                    Surveillance Escouade
+                  </h2>
+                  <p className="text-sm text-muted-foreground">Qui a fait le job ?</p>
+                </div>
+             </div>
+             <div className="p-6">
+                <Tabs defaultValue="today" className="w-full">
+                  {/* ... (Keep existing Tabs content) ... */}
+                  <TabsList className="grid w-full grid-cols-2 mb-4">
+                    <TabsTrigger value="today">Aujourd'hui (En cours)</TabsTrigger>
+                    <TabsTrigger value="yesterday">Hier (Bilan)</TabsTrigger>
+                  </TabsList>
+
+                  <TabsContent value="today" className="space-y-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-medium text-muted-foreground">Progression du jour</span>
+                      <span className={`text-xl font-bold ${missingSupporters.length > 0 ? 'text-orange-500' : 'text-green-500'}`}>
+                        {supportsReceived.length}/{squadMembers.length}
+                      </span>
+                    </div>
+                    
+                    {squadMembers.length === 0 ? (
+                      <div className="text-center py-8 text-muted-foreground">Pas encore de membres.</div>
+                    ) : missingSupporters.length === 0 ? (
+                      <div className="flex flex-col items-center justify-center py-8 text-green-600 gap-2">
+                        <CheckCircle className="h-12 w-12" />
+                        <p className="font-medium">Tout le monde a déjà liké ! 🔥</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-2 max-h-[200px] overflow-y-auto pr-2">
+                        <p className="text-xs text-muted-foreground mb-2">Ces membres n'ont pas encore liké (ils ont jusqu'à minuit) :</p>
+                        {missingSupporters.map((m: any) => (
+                          <div key={m.user_id} className="flex items-center justify-between p-2 border rounded-md bg-muted/30">
+                            <div className="flex items-center gap-3">
+                              <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center text-xs font-bold">
+                                {m.profiles?.username?.charAt(0) || "?"}
+                              </div>
+                              <span className="font-medium text-sm text-muted-foreground">{m.profiles?.username || "Inconnu"}</span>
+                            </div>
+                            <span className="text-xs text-muted-foreground italic">En attente...</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </TabsContent>
+
+                  <TabsContent value="yesterday" className="space-y-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-medium text-muted-foreground">Résultat final d'hier</span>
+                      <span className={`text-xl font-bold ${missingSupportersYesterday.length > 0 ? 'text-red-500' : 'text-green-500'}`}>
+                        {supportsReceivedYesterday.length}/{squadMembers.length}
+                      </span>
+                    </div>
+
+                    {missingSupportersYesterday.length === 0 ? (
+                      <div className="flex flex-col items-center justify-center py-8 text-green-600 gap-2">
+                        <CheckCircle className="h-12 w-12" />
+                        <p className="font-medium">Journée parfaite hier !</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-2 text-sm font-medium text-red-600 bg-red-50 p-3 rounded-md">
+                          <AlertTriangle className="h-4 w-4" />
+                          {missingSupportersYesterday.length} traître(s) détecté(s) !
+                        </div>
+                        <div className="space-y-2 max-h-[200px] overflow-y-auto pr-2">
+                          {missingSupportersYesterday.map((m: any) => (
+                            <div key={m.user_id} className="flex items-center justify-between p-2 border rounded-md bg-background border-red-100">
+                              <div className="flex items-center gap-3">
+                                <div className="h-8 w-8 rounded-full bg-red-100 text-red-600 flex items-center justify-center text-xs font-bold">
+                                  {m.profiles?.username?.charAt(0) || "?"}
+                                </div>
+                                <span className="font-medium text-sm">{m.profiles?.username || "Inconnu"}</span>
+                              </div>
+                              <Button 
+                                size="sm" 
+                                variant="ghost" 
+                                className="text-orange-600 hover:text-orange-700 hover:bg-orange-50 h-8"
+                                onClick={() => handleReportMissing(m.user_id, m.profiles?.username)}
+                              >
+                                <MessageSquareWarning className="h-4 w-4 mr-2" />
+                                Signaler
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </TabsContent>
+                </Tabs>
+             </div>
+           </div>
+        </div>
+
+        {/* RIGHT COLUMN: STATS & CHAT */}
         <div className="space-y-6">
-          <div className="rounded-xl border bg-card shadow-sm h-[500px] flex flex-col">
+           
+           {/* STATS CARDS (Vertical Stack) */}
+           <div className="grid gap-4">
+              <div className="rounded-xl border bg-card p-4 shadow-sm flex items-center justify-between">
+                <div>
+                   <p className="text-xs text-muted-foreground font-medium uppercase">Ta Fiabilité</p>
+                   <div className="flex items-center gap-2 mt-1">
+                      <span className="text-2xl font-bold">100%</span>
+                      <Shield className="h-5 w-5 text-green-500 fill-green-500" />
+                   </div>
+                </div>
+                <div className="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center">
+                   <span className="text-lg">🛡️</span>
+                </div>
+              </div>
+
+              <div className="rounded-xl border bg-card p-4 shadow-sm flex items-center justify-between">
+                <div>
+                   <p className="text-xs text-muted-foreground font-medium uppercase">Progression</p>
+                   <div className="flex items-center gap-2 mt-1">
+                      <span className="text-2xl font-bold">J{dayProgress}</span>
+                      <span className="text-sm text-muted-foreground">/ 30</span>
+                   </div>
+                </div>
+                <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
+                   <span className="text-lg">📅</span>
+                </div>
+              </div>
+           </div>
+
+           {/* CHAT */}
+           <div className="rounded-xl border bg-card shadow-sm h-[500px] flex flex-col">
+              {/* ... (Keep Chat code) ... */}
             <div className="border-b p-6">
               <h2 className="text-lg font-semibold flex items-center gap-2">
                 <MessageCircle className="h-5 w-5 text-indigo-500" />
-                Taverne de l'Escouade
+                Taverne
               </h2>
               <p className="text-sm text-muted-foreground">Motive tes troupes !</p>
             </div>
@@ -791,44 +742,26 @@ export default function DashboardPage() {
                 </Button>
               </form>
             </div>
-          </div>
+           </div>
 
-          <div className="rounded-xl border bg-card shadow-sm">
-            <div className="p-6 space-y-6">
-              <div className="flex items-center justify-between text-xs text-muted-foreground pb-2 border-b">
-                <span>Membres actifs</span>
-                <span>{squadMembers.length + 1} / 30</span>
+           {/* MEMBERS LIST (Compact) */}
+           <div className="rounded-xl border bg-card shadow-sm p-4">
+              <div className="flex items-center justify-between mb-4">
+                 <h3 className="font-semibold text-sm">Membres ({squadMembers.length})</h3>
+                 <Link href="/dashboard/group" className="text-xs text-blue-500 hover:underline">Voir tout</Link>
               </div>
-              {/* ... existing member list ... */}
-              <div className="space-y-4 max-h-[300px] overflow-y-auto pr-2">
-                {squadMembers.length === 0 ? (
-                   <div className="text-sm text-muted-foreground text-center py-4">
-                     Tu es le premier ! Invite des amis.
-                   </div>
-                ) : (
-                squadMembers.map((m: any, i) => (
-                  <div key={i} className="flex gap-3">
-                    <div className="h-8 w-8 rounded-full bg-muted shrink-0 flex items-center justify-center text-[10px] font-bold">
-                      {i + 1}
+              <div className="space-y-2">
+                {squadMembers.slice(0, 5).map((m: any, i) => (
+                  <div key={i} className="flex items-center gap-2 text-sm">
+                    <div className="h-6 w-6 rounded-full bg-muted flex items-center justify-center text-[10px] font-bold">
+                      {m.profiles?.username?.charAt(0) || "?"}
                     </div>
-                    <div className="space-y-1">
-                      <p className="text-sm font-medium leading-none">{m.profiles?.username || `Membre #${i+1}`}</p>
-                      <p className="text-xs text-muted-foreground">a rejoint l'escouade </p>
-                    </div>
-                    <span className="ml-auto text-xs text-muted-foreground">
-                      {(i + 1) * 2}m
-                    </span>
+                    <span className="truncate">{m.profiles?.username}</span>
                   </div>
-                ))
-                )}
+                ))}
               </div>
-              <Button variant="outline" className="w-full" size="sm" asChild>
-                <Link href="/dashboard/group">
-                  Voir les membres
-                </Link>
-              </Button>
-            </div>
-          </div>
+           </div>
+
         </div>
       </div>
     </div>
