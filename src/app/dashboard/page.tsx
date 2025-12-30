@@ -596,6 +596,30 @@ export default function DashboardPage() {
   return (
     <div className="space-y-8">
       <WelcomePopup userId={userProfile?.id} />
+
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+           <div className="flex items-center gap-4">
+             <Image src="/logo.png" alt="Troupers Logo" width={48} height={48} className="rounded-xl shadow-sm" />
+             <div>
+               <h1 className="text-3xl font-black text-slate-900 tracking-tight">
+                 QG OPÉRATIONNEL
+               </h1>
+               <p className="text-slate-500 font-medium">
+                 Bienvenue, Soldat {userProfile?.username || "Inconnu"}.
+               </p>
+             </div>
+           </div>
+           <div className="flex items-center gap-3">
+              <div className="bg-white px-4 py-2 rounded-lg border shadow-sm flex items-center gap-2">
+                <Zap className="h-4 w-4 text-yellow-500 fill-yellow-500" />
+                <span className="font-bold text-slate-700">{boostCredits} Crédits Boost</span>
+              </div>
+              <Button variant="outline" className="gap-2 font-bold border-2">
+                <Shield className="h-4 w-4" />
+                Escouade {mySquadId ? "Alpha" : "..."}
+              </Button>
+           </div>
+      </div>
       
       {/* === BOOST WINDOW BANNER === */}
         {activeBoostWindow ? (
@@ -739,45 +763,6 @@ export default function DashboardPage() {
               <Link href="/admin">Accéder au Panel Admin</Link>
             </Button>
           </div>
-        </div>
-      )}
-
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <Image src="/logo.png" alt="Troupers Logo" width={48} height={48} className="rounded-xl shadow-sm" />
-            <div>
-              <h1 className="text-3xl font-black text-slate-900 tracking-tight">
-                QG OPÉRATIONNEL
-              </h1>
-              <p className="text-slate-500 font-medium">
-                Bienvenue, Soldat {userProfile?.username || "Inconnu"}.
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-             <div className="bg-white px-4 py-2 rounded-lg border shadow-sm flex items-center gap-2">
-               <Zap className="h-4 w-4 text-yellow-500 fill-yellow-500" />
-               <span className="font-bold text-slate-700">{boostCredits} Crédits Boost</span>
-             </div>
-             <Button variant="outline" className="gap-2 font-bold border-2">
-               <Shield className="h-4 w-4" />
-               Escouade {mySquadId ? "Alpha" : "..."}
-             </Button>
-          </div>
-        </div>
-
-      {/* Broadcast Channel Button for Everyone */}
-      {!isAdmin && (
-        <div className="bg-green-50 border border-green-200 rounded-xl p-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-             <MessageCircle className="h-5 w-5 text-green-600" />
-             <span className="font-semibold text-green-800">Rejoins le QG du Général</span>
-          </div>
-          <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white" asChild>
-            <a href="https://whatsapp.com/channel/0029Va..." target="_blank" rel="noopener noreferrer">
-              Rejoindre sur WhatsApp
-            </a>
-          </Button>
         </div>
       )}
 
@@ -1225,6 +1210,21 @@ export default function DashboardPage() {
                 ))}
               </div>
            </div>
+
+           {/* Broadcast Channel Button for Everyone */}
+           {!isAdmin && (
+            <div className="bg-green-50 border border-green-200 rounded-xl p-4">
+              <div className="flex items-center gap-3 mb-3">
+                 <MessageCircle className="h-5 w-5 text-green-600" />
+                 <span className="font-semibold text-green-800 text-sm">Rejoins le QG du Général</span>
+              </div>
+              <Button size="sm" className="w-full bg-green-600 hover:bg-green-700 text-white" asChild>
+                <a href="https://whatsapp.com/channel/0029Va..." target="_blank" rel="noopener noreferrer">
+                  Rejoindre sur WhatsApp
+                </a>
+              </Button>
+            </div>
+           )}
 
         </div>
       </div>
