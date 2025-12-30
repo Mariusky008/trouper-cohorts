@@ -29,6 +29,7 @@ export default function DashboardPage() {
   const [supportsReceivedYesterday, setSupportsReceivedYesterday] = useState<any[]>([])
   const [missingSupporters, setMissingSupporters] = useState<any[]>([])
   const [missingSupportersYesterday, setMissingSupportersYesterday] = useState<any[]>([])
+  const [videoTrackingData, setVideoTrackingData] = useState<any[]>([])
   const [stats, setStats] = useState({
     day: 0,
     week: 0,
@@ -167,6 +168,15 @@ export default function DashboardPage() {
                const missingYesterday = isNewUser ? [] : allMembers.filter((m: any) => !supporterIdsYesterday.has(m.user_id))
                setMissingSupportersYesterday(missingYesterday)
 
+               // 3. Fetch Video Tracking to determine specific actions (Like/Comment/Save)
+               const { data: videoTracking } = await supabase
+                  .from('video_tracking')
+                  .select('*')
+                  .eq('supporter_id', user.id)
+                  .in('target_user_id', allMembers.map((m: any) => m.user_id))
+               
+               setVideoTrackingData(videoTracking || [])
+
                const newTasks = [
                  { 
                    id: 1, 
@@ -175,14 +185,50 @@ export default function DashboardPage() {
                    actionLabel: "Ouvrir TikTok Studio",
                    actionUrl: "https://www.tiktok.com/creator-center/upload"
                  },
-                 ...allMembers.map((m: any, index: number) => ({
-                   id: index + 2,
-                   text: `Soutien: ${m.profiles?.username || 'Membre'}`,
-                   completed: false,
-                   actionLabel: "Voir la vidéo",
-                   actionUrl: m.profiles?.current_video_url || "https://tiktok.com",
-                   targetUserId: m.user_id // Store ID to log support later
-                 }))
+                 ...allMembers.map((m: any, index: number) => {
+                   // Determine Action Text based on history
+                   const videoUrl = m.profiles?.current_video_url || "https://tiktok.com"
+                   const record = videoTracking?.find((t: any) => 
+                      t.target_user_id === m.user_id && t.video_url === videoUrl
+                   )
+                   
+                   let count = record?.action_count || 0
+                   // If completed today, show the action that was just done (count - 1)
+                   if (supporterIdsToday.has(m.user_id) && count > 0) {
+                      count = count - 1
+                   }
+                   
+                   const actionStep = count % 3
+                   let actionText = ""
+                   let actionIcon = "❤️"
+                   
+                   switch(actionStep) {
+                       case 0: 
+                          actionText = `Liker la vidéo de ${m.profiles?.username || 'Membre'}`
+                          actionIcon = "❤️"
+                          break
+                       case 1: 
+                          actionText = `Commenter la vidéo de ${m.profiles?.username || 'Membre'}`
+                          actionIcon = "💬"
+                          break
+                       case 2: 
+                          actionText = `Ajouter aux favoris la vidéo de ${m.profiles?.username || 'Membre'}`
+                          actionIcon = "⭐"
+                          break
+                       default:
+                          actionText = `Soutenir ${m.profiles?.username || 'Membre'}`
+                   }
+
+                   return {
+                     id: index + 2,
+                     text: actionText,
+                     icon: actionIcon,
+                     completed: supporterIdsToday.has(m.user_id),
+                     actionLabel: "Voir la vidéo",
+                     actionUrl: videoUrl,
+                     targetUserId: m.user_id
+                   }
+                 })
                ]
                setTasks(newTasks)
             } else {
