@@ -12,7 +12,7 @@ export function Hero() {
         </div>
         
         <h1 className="text-4xl font-extrabold tracking-tight text-foreground sm:text-5xl md:text-6xl lg:text-7xl">
-          Ton contenu mérite mieux que <span className="text-primary">l’invisibilité</span>.
+          Ton contenu mérite mieux que <span className="text-primary glitch-text" data-text="l’invisibilité">l’invisibilité</span>.
         </h1>
         
         <p className="mx-auto max-w-2xl text-lg text-muted-foreground md:text-xl">
