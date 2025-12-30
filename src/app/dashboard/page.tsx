@@ -159,10 +159,14 @@ export default function DashboardPage() {
                const supporterIdsYesterday = new Set(validSupportsYesterday.map((s: any) => s.supporter_id))
                
                setSupportsReceivedYesterday(validSupportsYesterday)
-               const missingYesterday = allMembers.filter((m: any) => !supporterIdsYesterday.has(m.user_id))
+               
+               // Only calculate missing supporters if the user existed yesterday
+               const userCreatedAt = new Date(profile?.created_at || new Date())
+               const isNewUser = userCreatedAt > new Date(yesterdayDate.setHours(0, 0, 0, 0))
+               
+               const missingYesterday = isNewUser ? [] : allMembers.filter((m: any) => !supporterIdsYesterday.has(m.user_id))
                setMissingSupportersYesterday(missingYesterday)
 
-               // Generate tasks based on real members
                const newTasks = [
                  { 
                    id: 1, 
@@ -171,7 +175,7 @@ export default function DashboardPage() {
                    actionLabel: "Ouvrir TikTok Studio",
                    actionUrl: "https://www.tiktok.com/creator-center/upload"
                  },
-                 ...allMembers.slice(0, 3).map((m: any, index: number) => ({
+                 ...allMembers.map((m: any, index: number) => ({
                    id: index + 2,
                    text: `Soutien: ${m.profiles?.username || 'Membre'}`,
                    completed: false,
@@ -513,7 +517,21 @@ export default function DashboardPage() {
                 </p>
               </div>
               
-              <div className="p-6 space-y-4 bg-card">
+              <div className="p-6 space-y-4 bg-card relative">
+                  {!isFullyOnboarded && (
+                    <div className="absolute inset-0 z-10 bg-background/80 backdrop-blur-[2px] flex flex-col items-center justify-center text-center p-4">
+                      <Lock className="h-12 w-12 text-muted-foreground mb-2" />
+                      <h3 className="text-lg font-bold text-foreground">Missions Verrouillées</h3>
+                      <p className="text-sm text-muted-foreground mb-4 max-w-xs">
+                        Tu dois t'abonner à tous les membres de ton escouade pour débloquer tes missions du jour.
+                      </p>
+                      <Button asChild>
+                        <Link href="/dashboard/group">
+                          Voir mon escouade
+                        </Link>
+                      </Button>
+                    </div>
+                  )}
                   {tasks.length === 0 ? (
                     <div className="text-center py-12">
                       <p className="text-muted-foreground">Aucune mission pour le moment.</p>
@@ -522,7 +540,7 @@ export default function DashboardPage() {
                     tasks.map((task) => (
                       <div 
                         key={task.id} 
-                        className={`flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-xl border p-4 transition-all hover:shadow-md ${task.completed ? 'bg-green-50 border-green-200' : 'bg-background hover:border-indigo-200'}`}
+                        className={`flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-xl border p-4 transition-all hover:shadow-md ${task.completed ? 'bg-green-50 border-green-200' : 'bg-background hover:border-indigo-200'} ${!isFullyOnboarded ? 'opacity-50 pointer-events-none' : ''}`}
                       >
                         <div 
                           className="flex items-center gap-4 cursor-pointer flex-1"
@@ -574,7 +592,6 @@ export default function DashboardPage() {
              </div>
              <div className="p-6">
                 <Tabs defaultValue="today" className="w-full">
-                  {/* ... (Keep existing Tabs content) ... */}
                   <TabsList className="grid w-full grid-cols-2 mb-4">
                     <TabsTrigger value="today">Aujourd'hui (En cours)</TabsTrigger>
                     <TabsTrigger value="yesterday">Hier (Bilan)</TabsTrigger>
@@ -621,7 +638,13 @@ export default function DashboardPage() {
                       </span>
                     </div>
 
-                    {missingSupportersYesterday.length === 0 ? (
+                    {dayProgress === 1 ? (
+                       <div className="flex flex-col items-center justify-center py-8 text-muted-foreground gap-2">
+                         <Clock className="h-12 w-12 opacity-50" />
+                         <p className="font-medium">Tu n'étais pas encore là hier !</p>
+                         <p className="text-xs">Reviens demain pour voir ton premier bilan.</p>
+                       </div>
+                    ) : missingSupportersYesterday.length === 0 ? (
                       <div className="flex flex-col items-center justify-center py-8 text-green-600 gap-2">
                         <CheckCircle className="h-12 w-12" />
                         <p className="font-medium">Journée parfaite hier !</p>
@@ -702,7 +725,6 @@ export default function DashboardPage() {
 
            {/* CHAT */}
            <div className="rounded-xl border bg-card shadow-sm h-[500px] flex flex-col">
-              {/* ... (Keep Chat code) ... */}
             <div className="border-b p-6">
               <h2 className="text-lg font-semibold flex items-center gap-2">
                 <MessageCircle className="h-5 w-5 text-indigo-500" />
