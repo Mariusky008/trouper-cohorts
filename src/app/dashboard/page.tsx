@@ -31,6 +31,15 @@ export default function DashboardPage() {
   const [videoTrackingData, setVideoTrackingData] = useState<any[]>([])
   // Track which videos have been viewed in the current session
   const [viewedVideos, setViewedVideos] = useState<Set<string>>(new Set())
+
+  // Load from session storage on mount
+  useEffect(() => {
+    const stored = sessionStorage.getItem('viewedVideos')
+    if (stored) {
+      setViewedVideos(new Set(JSON.parse(stored)))
+    }
+  }, [])
+
   const [stats, setStats] = useState({
     day: 0,
     week: 0,
@@ -621,9 +630,18 @@ export default function DashboardPage() {
                         </div>
                         
                         {task.actionUrl && !task.completed && (
-                           <Button className="shrink-0 bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm" asChild>
-                             <a href={task.actionUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2">
-                               {task.actionLabel}
+                           <Button 
+                             className={`shrink-0 text-white shadow-sm ${viewedVideos.has(task.actionUrl) ? 'bg-green-600 hover:bg-green-700' : 'bg-indigo-600 hover:bg-indigo-700'}`} 
+                             asChild
+                           >
+                             <a 
+                               href={task.actionUrl} 
+                               target="_blank" 
+                               rel="noopener noreferrer" 
+                               className="flex items-center gap-2"
+                               onClick={() => handleViewVideo(task.actionUrl)}
+                             >
+                               {viewedVideos.has(task.actionUrl) ? "Revoir la vidéo" : task.actionLabel}
                                <ExternalLink className="h-4 w-4" />
                              </a>
                            </Button>
