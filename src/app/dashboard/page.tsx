@@ -612,7 +612,7 @@ export default function DashboardPage() {
                     tasks.map((task) => (
                       <div 
                         key={task.id} 
-                        className={`flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-xl border p-4 transition-all hover:shadow-md ${task.completed ? 'bg-green-50 border-green-200' : 'bg-background hover:border-indigo-200'} ${!isFullyOnboarded ? 'opacity-50 pointer-events-none' : ''}`}
+                        className={`flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-xl border p-4 transition-all hover:shadow-md ${task.completed ? 'bg-green-50 border-green-200' : 'bg-background hover:border-indigo-200'} ${(!isFullyOnboarded || !myVideoUrl) ? 'opacity-50 pointer-events-none' : ''}`}
                       >
                         <div 
                           className={`flex items-center gap-4 flex-1 ${!task.completed && task.actionUrl && !viewedVideos.has(task.actionUrl) ? 'cursor-not-allowed opacity-70' : 'cursor-pointer'}`}
