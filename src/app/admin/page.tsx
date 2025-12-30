@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/client"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Mail, ShieldAlert, AlertTriangle, CheckCircle, XCircle, AlertCircle } from "lucide-react"
+import { Mail, ShieldAlert, AlertTriangle, CheckCircle, XCircle, AlertCircle, Zap } from "lucide-react"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
@@ -14,6 +14,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 export default function AdminPage() {
   const [users, setUsers] = useState<any[]>([])
   const [reports, setReports] = useState<any[]>([])
+  const [boostWindows, setBoostWindows] = useState<any[]>([])
+  const [boostVideoUrl, setBoostVideoUrl] = useState("")
+  const [boostDuration, setBoostDuration] = useState("15") // minutes
   const [loading, setLoading] = useState(true)
   const [isAdmin, setIsAdmin] = useState(false)
   const supabase = createClient()
@@ -66,6 +69,14 @@ export default function AdminPage() {
       
       setReports(reportsData || [])
 
+      // Fetch Boost Windows
+      const { data: boostData } = await supabase
+        .from('boost_windows')
+        .select('*')
+        .order('created_at', { ascending: false })
+      
+      setBoostWindows(boostData || [])
+
     } catch (error) {
       toast.error("Erreur lors du chargement des données")
     } finally {
@@ -116,6 +127,42 @@ export default function AdminPage() {
     }
   }
 
+  const handleCreateBoostWindow = async () => {
+    if (!boostVideoUrl) {
+      toast.error("L'URL de la vidéo est requise")
+      return
+    }
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+
+      const durationMinutes = parseInt(boostDuration)
+      const startsAt = new Date()
+      const endsAt = new Date(startsAt.getTime() + durationMinutes * 60000)
+
+      const { data, error } = await supabase
+        .from('boost_windows')
+        .insert({
+          target_video_url: boostVideoUrl,
+          starts_at: startsAt.toISOString(),
+          ends_at: endsAt.toISOString(),
+          created_by: user.id
+        })
+        .select()
+        .single()
+
+      if (error) throw error
+
+      setBoostWindows([data, ...boostWindows])
+      setBoostVideoUrl("")
+      toast.success(`Boost Window lancée pour ${durationMinutes} minutes !`)
+    } catch (error) {
+      console.error(error)
+      toast.error("Erreur lors de la création de la Boost Window")
+    }
+  }
+
   if (loading) return <div className="p-8 text-center">Chargement...</div>
 
   if (!isAdmin) {
@@ -154,6 +201,10 @@ export default function AdminPage() {
         <Tabs defaultValue="users">
           <TabsList className="mb-6">
             <TabsTrigger value="users">Recrues ({users.length})</TabsTrigger>
+            <TabsTrigger value="boost" className="flex items-center gap-2">
+              <Zap className="h-4 w-4" />
+              Boost Windows
+            </TabsTrigger>
             <TabsTrigger value="reports" className="flex items-center gap-2">
               Signalements
               {reports.filter(r => r.status !== 'resolved').length > 0 && (
@@ -226,6 +277,85 @@ export default function AdminPage() {
                 })}
               </TableBody>
             </Table>
+          </TabsContent>
+
+          <TabsContent value="boost">
+            <div className="space-y-8">
+              {/* Creator Card */}
+              <div className="rounded-lg border bg-gradient-to-r from-yellow-500/10 to-orange-500/10 p-6">
+                 <h2 className="text-xl font-bold flex items-center gap-2 mb-4">
+                   <Zap className="h-6 w-6 text-orange-500" />
+                   Lancer une Boost Window
+                 </h2>
+                 <div className="grid gap-4 max-w-xl">
+                   <div>
+                     <label className="text-sm font-medium">URL de la vidéo cible</label>
+                     <input 
+                        type="url" 
+                        placeholder="https://tiktok.com/@..." 
+                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                        value={boostVideoUrl}
+                        onChange={(e) => setBoostVideoUrl(e.target.value)}
+                     />
+                   </div>
+                   <div>
+                     <label className="text-sm font-medium">Durée</label>
+                     <select 
+                       className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                       value={boostDuration}
+                       onChange={(e) => setBoostDuration(e.target.value)}
+                     >
+                       <option value="15">15 minutes</option>
+                       <option value="30">30 minutes</option>
+                       <option value="60">1 heure (Exceptionnel)</option>
+                     </select>
+                   </div>
+                   <Button onClick={handleCreateBoostWindow} className="w-full bg-orange-500 hover:bg-orange-600">
+                     🚀 ACTIVER LE BOOST MAINTENANT
+                   </Button>
+                 </div>
+              </div>
+
+              {/* History Table */}
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Vidéo</TableHead>
+                      <TableHead>Statut</TableHead>
+                      <TableHead>Fin</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {boostWindows.map((window) => {
+                      const now = new Date()
+                      const endsAt = new Date(window.ends_at)
+                      const isActive = now < endsAt
+                      
+                      return (
+                        <TableRow key={window.id}>
+                          <TableCell>{new Date(window.created_at).toLocaleDateString()}</TableCell>
+                          <TableCell className="max-w-[200px] truncate">
+                            <a href={window.target_video_url} target="_blank" className="text-blue-500 hover:underline">
+                              {window.target_video_url}
+                            </a>
+                          </TableCell>
+                          <TableCell>
+                            {isActive ? (
+                              <Badge className="bg-green-500 animate-pulse">EN COURS</Badge>
+                            ) : (
+                              <Badge variant="outline">Terminé</Badge>
+                            )}
+                          </TableCell>
+                          <TableCell>{endsAt.toLocaleTimeString()}</TableCell>
+                        </TableRow>
+                      )
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
           </TabsContent>
 
           <TabsContent value="reports">

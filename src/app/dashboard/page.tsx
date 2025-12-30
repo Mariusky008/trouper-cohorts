@@ -1,10 +1,11 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { CheckCircle, Upload, Clock, AlertCircle, ExternalLink, Heart, Lock, Shield, Eye, BarChart3, AlertTriangle, MessageSquareWarning, MessageCircle, Send, Trophy, PartyPopper } from "lucide-react"
+import { CheckCircle, Upload, Clock, AlertCircle, ExternalLink, Heart, Lock, Shield, Eye, BarChart3, AlertTriangle, MessageSquareWarning, MessageCircle, Send, Trophy, PartyPopper, Zap, Play, Gift } from "lucide-react"
 import { useState, useEffect, useRef } from "react"
 import { motion } from "framer-motion"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from "@/components/ui/dialog"
 
 import Link from "next/link"
 
@@ -24,6 +25,11 @@ export default function DashboardPage() {
   const [dayProgress, setDayProgress] = useState(1)
   const [isFullyOnboarded, setIsFullyOnboarded] = useState(false)
   const [isAdmin, setIsAdmin] = useState(false)
+  
+  // Boost Window State
+  const [activeBoostWindow, setActiveBoostWindow] = useState<any>(null)
+  const [hasParticipatedInBoost, setHasParticipatedInBoost] = useState(false)
+  const [boostCredits, setBoostCredits] = useState(0)
   
   const [supportsReceived, setSupportsReceived] = useState<any[]>([])
   const [supportsReceivedYesterday, setSupportsReceivedYesterday] = useState<any[]>([])
@@ -70,6 +76,29 @@ export default function DashboardPage() {
            setUserProfile(profile)
            setDisciplineScore(profile.discipline_score || 0)
            setMyVideoUrl(profile.current_video_url || "")
+           setBoostCredits(profile.boost_credits || 0)
+         }
+
+         // === FEATURE BOOST WINDOW ===
+         const nowISO = new Date().toISOString()
+         const { data: activeWindow } = await supabase
+           .from('boost_windows')
+           .select('*')
+           .lte('starts_at', nowISO)
+           .gte('ends_at', nowISO)
+           .single()
+
+         if (activeWindow) {
+            setActiveBoostWindow(activeWindow)
+            // Check participation
+            const { data: participation } = await supabase
+              .from('boost_participations')
+              .select('id')
+              .eq('window_id', activeWindow.id)
+              .eq('user_id', user.id)
+              .single()
+            
+            if (participation) setHasParticipatedInBoost(true)
          }
 
          // Calculate days since creation for "Progression"
@@ -506,6 +535,41 @@ export default function DashboardPage() {
      }
   }
 
+  const handleBoostValidation = async () => {
+    if (!activeBoostWindow) return
+    
+    try {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) return
+
+        // 1. Insert Participation
+        const { error: partError } = await supabase.from('boost_participations').insert({
+            window_id: activeBoostWindow.id,
+            user_id: user.id
+        })
+        
+        if (partError) {
+          // If already participated (unique constraint), just ignore or toast info
+          toast.info("Déjà participé !")
+          return
+        }
+
+        // 2. Update Credits (Optimistic UI)
+        setBoostCredits(prev => prev + 1)
+        setHasParticipatedInBoost(true)
+
+        // 3. Direct Update
+        await supabase.from('profiles').update({ 
+            boost_credits: boostCredits + 1 
+        }).eq('id', user.id)
+
+        toast.success("Boost Validé ! +1 Crédit", { icon: <Zap className="h-4 w-4 text-yellow-500" /> })
+
+    } catch (e) {
+        toast.error("Erreur validation")
+    }
+  }
+
   const allTasksCompleted = tasks.length > 0 && tasks.every(t => t.completed)
   
   if (loading) {
@@ -515,6 +579,104 @@ export default function DashboardPage() {
   return (
     <div className="space-y-8">
       <WelcomePopup userId={userProfile?.id} />
+      
+      {/* === BOOST WINDOW BANNER === */}
+        {activeBoostWindow && (
+          <motion.div 
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="w-full rounded-xl border border-yellow-500/30 bg-gradient-to-r from-yellow-500/10 via-orange-500/10 to-red-500/10 p-6 relative overflow-hidden mb-6"
+          >
+             <div className="absolute top-0 right-0 p-4 opacity-10">
+               <Zap className="h-24 w-24 text-yellow-500" />
+             </div>
+             
+             <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
+               <div className="flex items-center gap-4">
+                 <div className="h-12 w-12 rounded-full bg-yellow-100 flex items-center justify-center animate-pulse">
+                   <Zap className="h-6 w-6 text-yellow-600" />
+                 </div>
+                 <div>
+                   <h3 className="text-xl font-black text-yellow-700 uppercase tracking-tight">Boost Window Active !</h3>
+                   <p className="text-sm text-yellow-800/80 font-medium">Fenêtre d'opportunité ouverte. Participe pour gagner des crédits.</p>
+                 </div>
+               </div>
+
+               <div className="flex items-center gap-4">
+                  {hasParticipatedInBoost ? (
+                    <div className="flex items-center gap-2 bg-white/50 px-4 py-2 rounded-full border border-yellow-200">
+                      <CheckCircle className="h-5 w-5 text-green-500" />
+                      <span className="font-bold text-green-700">Participation Validée</span>
+                    </div>
+                  ) : (
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button className="bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white font-bold shadow-lg shadow-orange-500/20 px-8 py-6 text-lg animate-bounce-slow">
+                           PARTICIPER MAINTENANT
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="sm:max-w-md">
+                        <DialogHeader>
+                          <DialogTitle className="text-2xl font-black flex items-center gap-2 text-indigo-900">
+                            <Zap className="h-6 w-6 text-yellow-500 fill-yellow-500" />
+                            MISSION BOOST
+                          </DialogTitle>
+                          <DialogDescription className="text-base">
+                            Aide un membre de l'escouade à percer l'algorithme. Fais les 3 actions ci-dessous rapidement.
+                          </DialogDescription>
+                        </DialogHeader>
+                        
+                        <div className="grid gap-6 py-4">
+                          <div className="p-4 bg-indigo-50 rounded-lg border border-indigo-100 text-center">
+                            <p className="text-xs font-bold text-indigo-400 uppercase mb-2">Cible du jour</p>
+                            <a 
+                              href={activeBoostWindow.target_video_url} 
+                              target="_blank" 
+                              className="text-lg font-bold text-indigo-600 hover:underline flex items-center justify-center gap-2"
+                            >
+                              <ExternalLink className="h-4 w-4" />
+                              Ouvrir la Vidéo
+                            </a>
+                          </div>
+
+                          <div className="space-y-3">
+                             <div className="flex items-center gap-3 p-3 rounded-md hover:bg-slate-50 border border-transparent hover:border-slate-100 transition-all">
+                               <div className="h-8 w-8 rounded-full bg-pink-100 flex items-center justify-center">
+                                 <Heart className="h-4 w-4 text-pink-600" />
+                               </div>
+                               <span className="font-medium text-slate-700">Liker la vidéo</span>
+                             </div>
+                             <div className="flex items-center gap-3 p-3 rounded-md hover:bg-slate-50 border border-transparent hover:border-slate-100 transition-all">
+                               <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
+                                 <MessageCircle className="h-4 w-4 text-blue-600" />
+                               </div>
+                               <span className="font-medium text-slate-700">Laisser un commentaire (4 mots min)</span>
+                             </div>
+                             <div className="flex items-center gap-3 p-3 rounded-md hover:bg-slate-50 border border-transparent hover:border-slate-100 transition-all">
+                               <div className="h-8 w-8 rounded-full bg-yellow-100 flex items-center justify-center">
+                                 <Gift className="h-4 w-4 text-yellow-600" />
+                               </div>
+                               <span className="font-medium text-slate-700">Ajouter aux Favoris</span>
+                             </div>
+                          </div>
+                        </div>
+
+                        <DialogFooter className="sm:justify-center">
+                          <Button 
+                            onClick={handleBoostValidation}
+                            className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-6 text-lg"
+                          >
+                            J'AI FAIT LES ACTIONS (+1 CRÉDIT)
+                          </Button>
+                        </DialogFooter>
+                      </DialogContent>
+                    </Dialog>
+                  )}
+               </div>
+             </div>
+          </motion.div>
+        )}
+
       {/* Header Stats */}
       {isAdmin && (
         <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 flex items-center justify-between">
@@ -877,6 +1039,20 @@ export default function DashboardPage() {
            
            {/* STATS CARDS (Vertical Stack) */}
            <div className="grid gap-4">
+              {/* Boost Credits Card */}
+              <div className="rounded-xl border bg-gradient-to-r from-orange-500 to-red-500 p-4 shadow-sm flex items-center justify-between text-white">
+                <div>
+                   <p className="text-xs font-bold uppercase opacity-90">Boost Credits</p>
+                   <div className="flex items-center gap-2 mt-1">
+                      <span className="text-3xl font-black">{boostCredits}</span>
+                      <span className="text-sm opacity-90 font-medium">crédits</span>
+                   </div>
+                </div>
+                <div className="h-12 w-12 rounded-full bg-white/20 flex items-center justify-center backdrop-blur-sm">
+                   <Zap className="h-6 w-6 text-white" />
+                </div>
+              </div>
+
               <div className="rounded-xl border bg-card p-4 shadow-sm flex items-center justify-between">
                 <div>
                    <p className="text-xs text-muted-foreground font-medium uppercase">Ta Fiabilité</p>
