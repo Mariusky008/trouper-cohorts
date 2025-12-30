@@ -70,7 +70,9 @@ export default function LoginForm() {
       <div className="w-full max-w-md space-y-8 rounded-xl border bg-background p-8 shadow-lg">
         <div className="text-center space-y-4">
           <div className="flex justify-center">
-            <Image src="/logo-v2.png" alt="Troupers Logo" width={128} height={128} className="rounded-2xl shadow-sm" />
+            <div className="glitch-wrapper w-32 h-32 rounded-2xl overflow-hidden shadow-sm">
+              <Image src="/logo-v2.png" alt="Troupers Logo" width={128} height={128} className="rounded-2xl" />
+            </div>
           </div>
           <div>
             <h1 className="text-2xl font-bold">Connexion</h1>
