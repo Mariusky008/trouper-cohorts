@@ -1074,24 +1074,6 @@ export default function DashboardPage() {
             </div>
            </div>
 
-           {/* MEMBERS LIST (Compact) */}
-           <div className="rounded-xl border bg-card shadow-sm p-4">
-              <div className="flex items-center justify-between mb-4">
-                 <h3 className="font-semibold text-sm">Membres ({squadMembers.length})</h3>
-                 <Link href="/dashboard/group" className="text-xs text-blue-500 hover:underline">Voir tout</Link>
-              </div>
-              <div className="space-y-2">
-                {squadMembers.slice(0, 5).map((m: any, i) => (
-                  <div key={i} className="flex items-center gap-2 text-sm">
-                    <div className="h-6 w-6 rounded-full bg-muted flex items-center justify-center text-[10px] font-bold">
-                      {m.profiles?.username?.charAt(0) || "?"}
-                    </div>
-                    <span className="truncate">{m.profiles?.username}</span>
-                  </div>
-                ))}
-              </div>
-           </div>
-
            {/* Broadcast Channel Button for Everyone */}
            {!isAdmin && (
             <div className="bg-green-50 border border-green-200 rounded-xl p-4">
