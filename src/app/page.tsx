@@ -20,7 +20,7 @@ export default function Home() {
       <nav className="absolute top-0 w-full z-50 p-6 flex justify-between items-center container mx-auto">
         <div className="flex items-center gap-2">
            <Image 
-             src="/logo.png" 
+             src="/logo.png?v=2" 
              alt="Troupers Logo" 
              width={0} 
              height={0} 
