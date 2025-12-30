@@ -8,7 +8,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from "@/components/ui/dialog"
 
 import Link from "next/link"
-import Image from "next/image"
 
 import { toast } from "sonner"
 import { createClient } from "@/lib/supabase/client"
@@ -599,7 +598,6 @@ export default function DashboardPage() {
 
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
            <div className="flex items-center gap-4">
-             <Image src="/logo.png" alt="Troupers Logo" width={64} height={64} className="rounded-xl shadow-sm" priority />
              <div>
                <h1 className="text-3xl font-black text-slate-900 tracking-tight">
                  QG OPÉRATIONNEL

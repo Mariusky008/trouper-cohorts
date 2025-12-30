@@ -18,8 +18,14 @@ export default function Home() {
     <main className="flex min-h-screen flex-col">
       <nav className="absolute top-0 w-full z-50 p-6 flex justify-between items-center container mx-auto">
         <div className="flex items-center gap-2">
-           <Image src="/logo.png" alt="Troupers Logo" width={40} height={40} className="rounded-lg" />
-           <span className="font-black text-xl tracking-tighter">TROUPERS</span>
+           <Image 
+             src="/logo.png" 
+             alt="Troupers Logo" 
+             width={0} 
+             height={0} 
+             sizes="100vw"
+             className="rounded-lg h-10 w-auto" 
+           />
         </div>
       </nav>
       <Hero />
