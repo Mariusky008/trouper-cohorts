@@ -12,6 +12,7 @@ export default function SignupForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [loading, setLoading] = useState(false)
+  const [success, setSuccess] = useState(false)
   const [firstName, setFirstName] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
@@ -28,6 +29,9 @@ export default function SignupForm() {
   }, [searchParams])
 
   const getURL = () => {
+    if (typeof window !== 'undefined') {
+      return `${window.location.origin}/`
+    }
     let url =
       process.env.NEXT_PUBLIC_SITE_URL ??
       process.env.NEXT_PUBLIC_VERCEL_URL ??
@@ -46,7 +50,7 @@ export default function SignupForm() {
       email,
       password,
       options: {
-        emailRedirectTo: `https://troupers.vercel.app/auth/callback`,
+        emailRedirectTo: `${getURL()}auth/callback`,
         data: {
           username: firstName, // Save first name as username in metadata
           full_name: firstName // Standard field often used
