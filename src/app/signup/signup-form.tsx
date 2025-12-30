@@ -69,12 +69,64 @@ export default function SignupForm() {
          toast.success("Connexion réussie !")
          router.push("/onboarding")
       } else {
-         toast.success("Inscription réussie !", {
-           description: "Vérifie tes emails pour confirmer ton compte."
-         })
+         setSuccess(true)
          setLoading(false)
       }
     }
+  }
+
+  const handleResend = async () => {
+    setLoading(true)
+    const { error } = await supabase.auth.resend({
+      type: 'signup',
+      email: email,
+      options: {
+        emailRedirectTo: `https://troupers.vercel.app/auth/callback`
+      }
+    })
+    
+    if (error) {
+      toast.error("Erreur d'envoi", { description: error.message })
+    } else {
+      toast.success("Email renvoyé !", { description: "Vérifie tes spams/indésirables." })
+    }
+    setLoading(false)
+  }
+
+  if (success) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center bg-muted/20 p-4">
+        <div className="w-full max-w-md space-y-8 rounded-xl border bg-background p-8 shadow-lg text-center">
+          <div className="flex justify-center">
+            <div className="h-16 w-16 bg-green-100 rounded-full flex items-center justify-center">
+              <svg className="h-8 w-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+              </svg>
+            </div>
+          </div>
+          <h2 className="text-2xl font-bold">Vérifie ta boîte mail</h2>
+          <p className="text-muted-foreground">
+            Un lien de confirmation a été envoyé à <span className="font-medium text-foreground">{email}</span>.
+          </p>
+          <div className="space-y-4 pt-4">
+            <p className="text-sm text-muted-foreground bg-muted p-3 rounded-md">
+              💡 Pense à vérifier tes <strong>SPAMS</strong> ou courriers indésirables.
+            </p>
+            <Button 
+              variant="outline" 
+              className="w-full" 
+              onClick={handleResend}
+              disabled={loading}
+            >
+              {loading ? "Envoi en cours..." : "Renvoyer l'email"}
+            </Button>
+            <Button variant="ghost" className="w-full" onClick={() => setSuccess(false)}>
+              Retour
+            </Button>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   const handleGoogleLogin = async () => {

@@ -403,6 +403,7 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-8">
+      <WelcomePopup />
       {/* Header Stats */}
       {isAdmin && (
         <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 flex items-center justify-between">
