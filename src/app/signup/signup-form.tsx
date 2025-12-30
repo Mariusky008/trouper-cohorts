@@ -167,7 +167,11 @@ export default function SignupForm() {
               />
             </div>
             <div className="space-y-2">
+              <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70" htmlFor="password">
+                Mot de passe
+              </label>
               <input
+                id="password"
                 type="password"
                 placeholder="Mot de passe"
                 required
@@ -184,6 +188,8 @@ export default function SignupForm() {
 
         <p className="text-center text-xs text-muted-foreground">
           En continuant, tu acceptes nos conditions d'utilisation et notre politique de confidentialité.
+          <br/>
+          <span className="text-[10px] text-gray-300">v1.1</span>
         </p>
       </div>
     </div>
