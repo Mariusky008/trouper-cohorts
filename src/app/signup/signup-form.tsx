@@ -46,7 +46,7 @@ export default function SignupForm() {
       email,
       password,
       options: {
-        emailRedirectTo: `${getURL()}auth/callback`,
+        emailRedirectTo: `https://troupers.vercel.app/auth/callback`,
         data: {
           username: firstName, // Save first name as username in metadata
           full_name: firstName // Standard field often used
