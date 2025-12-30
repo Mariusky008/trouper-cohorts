@@ -189,7 +189,7 @@ export default function SignupForm() {
         <p className="text-center text-xs text-muted-foreground">
           En continuant, tu acceptes nos conditions d'utilisation et notre politique de confidentialité.
           <br/>
-          <span className="text-[10px] text-gray-300">v1.1</span>
+          <span className="text-[10px] text-red-500 font-bold">v1.2 - DEBUG</span>
         </p>
       </div>
     </div>
