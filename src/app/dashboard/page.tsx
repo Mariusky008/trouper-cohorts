@@ -24,12 +24,13 @@ export default function DashboardPage() {
   const [isFullyOnboarded, setIsFullyOnboarded] = useState(false)
   const [isAdmin, setIsAdmin] = useState(false)
   
-  // New States
   const [supportsReceived, setSupportsReceived] = useState<any[]>([])
   const [supportsReceivedYesterday, setSupportsReceivedYesterday] = useState<any[]>([])
   const [missingSupporters, setMissingSupporters] = useState<any[]>([])
   const [missingSupportersYesterday, setMissingSupportersYesterday] = useState<any[]>([])
   const [videoTrackingData, setVideoTrackingData] = useState<any[]>([])
+  // Track which videos have been viewed in the current session
+  const [viewedVideos, setViewedVideos] = useState<Set<string>>(new Set())
   const [stats, setStats] = useState({
     day: 0,
     week: 0,
@@ -344,10 +345,24 @@ export default function DashboardPage() {
     }
   }
 
+  const handleViewVideo = (videoUrl: string) => {
+    setViewedVideos(prev => new Set(prev).add(videoUrl))
+  }
+
   const toggleTask = async (id: number) => {
     // Optimistic Update
     const taskIndex = tasks.findIndex(t => t.id === id)
     const task = tasks[taskIndex]
+    
+    // Prevent toggling if video hasn't been viewed (unless it's already completed or not a video task)
+    if (task.actionUrl && !task.completed && !viewedVideos.has(task.actionUrl)) {
+       toast.error("Action impossible", { 
+         description: "Tu dois d'abord voir la vidéo avant de valider la mission !",
+         icon: <Lock className="h-4 w-4 text-orange-500" />
+       })
+       return
+    }
+
     const newStatus = !task.completed
     
     const newTasks = [...tasks]
@@ -589,13 +604,13 @@ export default function DashboardPage() {
                         className={`flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-xl border p-4 transition-all hover:shadow-md ${task.completed ? 'bg-green-50 border-green-200' : 'bg-background hover:border-indigo-200'} ${!isFullyOnboarded ? 'opacity-50 pointer-events-none' : ''}`}
                       >
                         <div 
-                          className="flex items-center gap-4 cursor-pointer flex-1"
+                          className={`flex items-center gap-4 flex-1 ${!task.completed && task.actionUrl && !viewedVideos.has(task.actionUrl) ? 'cursor-not-allowed opacity-70' : 'cursor-pointer'}`}
                           onClick={() => toggleTask(task.id)}
                         >
                           <div
-                            className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 transition-all ${task.completed ? 'bg-green-500 border-green-500 text-white shadow-sm' : 'border-muted-foreground/30 bg-muted/10'}`}
+                            className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 transition-all ${task.completed ? 'bg-green-500 border-green-500 text-white shadow-sm' : (!task.completed && task.actionUrl && !viewedVideos.has(task.actionUrl) ? 'border-gray-300 bg-gray-100' : 'border-muted-foreground/30 bg-muted/10')}`}
                           >
-                            {task.completed && <CheckCircle className="h-5 w-5" />}
+                            {task.completed ? <CheckCircle className="h-5 w-5" /> : (!task.completed && task.actionUrl && !viewedVideos.has(task.actionUrl) ? <Lock className="h-4 w-4 text-gray-400" /> : null)}
                           </div>
                           <div className="space-y-1">
                              <span className={`font-semibold text-base ${task.completed ? 'line-through text-muted-foreground' : 'text-foreground'}`}>
