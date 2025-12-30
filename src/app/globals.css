@@ -243,14 +243,14 @@
 
 .glitch-text::before {
   left: 2px;
-  text-shadow: -1px 0 #ff00c1;
+  opacity: 0.5;
   clip-path: inset(44% 0 61% 0);
   animation: glitch-anim-text-1 2.5s infinite linear alternate-reverse;
 }
 
 .glitch-text::after {
   left: -2px;
-  text-shadow: -1px 0 #00fff9;
+  opacity: 0.5;
   clip-path: inset(54% 0 10% 0);
   animation: glitch-anim-text-2 3s infinite linear alternate-reverse;
 }
