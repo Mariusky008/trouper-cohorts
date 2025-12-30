@@ -1082,7 +1082,7 @@ export default function DashboardPage() {
                  <span className="font-semibold text-green-800 text-sm">Rejoins le QG du Général</span>
               </div>
               <Button size="sm" className="w-full bg-green-600 hover:bg-green-700 text-white" asChild>
-                <a href="https://whatsapp.com/channel/0029Va..." target="_blank" rel="noopener noreferrer">
+                <a href="https://whatsapp.com/channel/0029VbBcgs71iUxRPnXEdF1z" target="_blank" rel="noopener noreferrer">
                   Rejoindre sur WhatsApp
                 </a>
               </Button>
