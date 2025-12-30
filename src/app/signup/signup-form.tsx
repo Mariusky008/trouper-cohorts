@@ -139,7 +139,11 @@ export default function SignupForm() {
 
           <form onSubmit={handleSignup} className="space-y-4">
             <div className="space-y-2">
+              <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70" htmlFor="firstname">
+                Prénom
+              </label>
               <input
+                id="firstname"
                 type="text"
                 placeholder="Ton Prénom"
                 required
@@ -149,7 +153,11 @@ export default function SignupForm() {
               />
             </div>
             <div className="space-y-2">
+              <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70" htmlFor="email">
+                Email
+              </label>
               <input
+                id="email"
                 type="email"
                 placeholder="Email"
                 required
