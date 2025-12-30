@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/client"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Mail, ShieldAlert, AlertTriangle, CheckCircle, XCircle } from "lucide-react"
+import { Mail, ShieldAlert, AlertTriangle, CheckCircle, XCircle, AlertCircle } from "lucide-react"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
@@ -49,6 +49,7 @@ export default function AdminPage() {
         .select('*')
         .not('email', 'is', null)
         .not('username', 'is', null)
+        .neq('username', '') // Ensure username is not empty string
         .order('discipline_score', { ascending: false })
 
       setUsers(profiles || [])
