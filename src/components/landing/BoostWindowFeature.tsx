@@ -19,39 +19,25 @@ export function BoostWindowFeature() {
     
     // Reset cycle
     const startCycle = () => {
+      // RESET - BOOST OFF (0s)
       setLikes(12)
       setComments(3)
-      setShares(1)
-      setBookmarks(3)
+      setShares(2)
+      setBookmarks(1)
       setIsBoosting(false)
 
-      // Phase 1: Static / Very slow organic (0-2s)
-      // We keep it mostly static to contrast with the boost
-
-      // Phase 2: BOOST START (at 2s)
+      // START BOOST after 2.5 seconds
       boostTimeout = setTimeout(() => {
         setIsBoosting(true)
         
-        // Rapid growth
+        // INCREMENT ANIMATION
         interval = setInterval(() => {
-          setLikes(prev => {
-            if (prev >= 330) return 330
-            return prev + Math.floor(Math.random() * 10) + 5
-          })
-          setComments(prev => {
-             if (prev >= 45) return 45
-             return prev + Math.floor(Math.random() * 2) + 1
-          })
-          setShares(prev => {
-             if (prev >= 34) return 34
-             return prev + Math.floor(Math.random() * 2)
-          })
-          setBookmarks(prev => {
-             if (prev >= 48) return 48
-             return prev + Math.floor(Math.random() * 3)
-          })
+          setLikes(prev => (prev < 330 ? prev + Math.floor(Math.random() * 25) + 10 : 330))
+          setComments(prev => (prev < 42 ? prev + Math.floor(Math.random() * 3) + 1 : 42))
+          setShares(prev => (prev < 45 ? prev + Math.floor(Math.random() * 3) + 1 : 45))
+          setBookmarks(prev => (prev < 48 ? prev + Math.floor(Math.random() * 3) + 1 : 48))
         }, 50)
-      }, 2000)
+      }, 2500)
     }
 
     startCycle()
