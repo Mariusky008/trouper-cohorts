@@ -3,57 +3,55 @@
 import { Zap, Clock, TrendingUp, Check, Users, Activity, Heart, MessageCircle, Share2, Music2, Bookmark } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef } from "react"
 import Image from "next/image"
+import { useInView, animate } from "framer-motion"
 
 export function BoostWindowFeature() {
+  const containerRef = useRef(null)
+  const isInView = useInView(containerRef, { amount: 0.3, once: false })
+  
   const [likes, setLikes] = useState(12)
-  const [comments, setComments] = useState(3)
-  const [shares, setShares] = useState(1)
-  const [bookmarks, setBookmarks] = useState(3)
+  const [comments, setComments] = useState(2)
+  const [shares, setShares] = useState(2)
+  const [bookmarks, setBookmarks] = useState(1)
   const [isBoosting, setIsBoosting] = useState(false)
 
   useEffect(() => {
-    let interval: NodeJS.Timeout
-    let boostTimeout: NodeJS.Timeout
-    
-    // Reset cycle
-    const startCycle = () => {
-      // RESET - BOOST OFF (0s)
+    if (!isInView) {
+      // Reset when out of view
       setLikes(12)
-      setComments(3)
+      setComments(2)
       setShares(2)
       setBookmarks(1)
       setIsBoosting(false)
-
-      // START BOOST after 2.5 seconds
-      boostTimeout = setTimeout(() => {
-        setIsBoosting(true)
-        
-        // INCREMENT ANIMATION
-        interval = setInterval(() => {
-          setLikes(prev => (prev < 330 ? prev + Math.floor(Math.random() * 25) + 10 : 330))
-          setComments(prev => (prev < 42 ? prev + Math.floor(Math.random() * 3) + 1 : 42))
-          setShares(prev => (prev < 45 ? prev + Math.floor(Math.random() * 3) + 1 : 45))
-          setBookmarks(prev => (prev < 48 ? prev + Math.floor(Math.random() * 3) + 1 : 48))
-        }, 50)
-      }, 2500)
+      return
     }
 
-    startCycle()
-    
-    // Restart every 8 seconds
-    const cycleInterval = setInterval(startCycle, 8000)
+    // When in view, wait 2s then start boost
+    const timer = setTimeout(() => {
+      setIsBoosting(true)
+      
+      // Animate numbers over 10 seconds
+      const controls = animate(0, 1, {
+        duration: 10,
+        ease: "easeOut",
+        onUpdate: (value) => {
+          setLikes(Math.floor(12 + (449 - 12) * value))
+          setComments(Math.floor(2 + (56 - 2) * value))
+          setShares(Math.floor(2 + (76 - 2) * value))
+          setBookmarks(Math.floor(1 + (89 - 1) * value))
+        }
+      })
 
-    return () => {
-      clearInterval(interval)
-      clearTimeout(boostTimeout)
-      clearInterval(cycleInterval)
-    }
-  }, [])
+      return () => controls.stop()
+    }, 2000)
+
+    return () => clearTimeout(timer)
+  }, [isInView])
 
   return (
-    <section className="py-24 md:py-32 bg-slate-950 text-white relative overflow-hidden">
+    <section ref={containerRef} className="py-24 md:py-32 bg-slate-950 text-white relative overflow-hidden">
       {/* Background Pulse Effect */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-yellow-500/10 via-transparent to-transparent opacity-50 animate-pulse" />
       
@@ -81,7 +79,7 @@ export function BoostWindowFeature() {
         <div className="mb-20 flex justify-center relative h-[600px] items-center">
           
           {/* External Signal - Outside Phone */}
-          <div className={`absolute top-0 z-20 flex flex-col items-center transition-all duration-500 ${isBoosting ? 'opacity-100 translate-y-0 scale-110' : 'opacity-0 -translate-y-10 scale-90'}`}>
+          <div className={`absolute top-0 z-20 flex flex-col items-center transition-all duration-700 ${isBoosting ? 'opacity-100 translate-y-0 scale-110' : 'opacity-0 -translate-y-10 scale-90'}`}>
              <div className="bg-yellow-500 text-slate-950 font-black text-lg px-6 py-2 uppercase rounded-full border-4 border-slate-900 shadow-[0_0_50px_rgba(234,179,8,0.8)] flex items-center gap-2 animate-bounce">
                ⚡️ Boost Window Active ⚡️
              </div>
@@ -90,7 +88,7 @@ export function BoostWindowFeature() {
           </div>
 
           {/* The Phone */}
-          <div className={`relative w-[300px] h-[580px] bg-black rounded-[3rem] border-8 border-slate-900 shadow-2xl overflow-hidden mt-8 ring-1 ring-white/10 group transition-all duration-300 ${isBoosting ? 'shadow-[0_0_60px_rgba(234,179,8,0.3)] scale-105' : ''}`}>
+          <div className={`relative w-[300px] h-[580px] bg-black rounded-[3rem] border-8 border-slate-900 shadow-2xl overflow-hidden mt-8 ring-1 ring-white/10 group transition-all duration-500 ${isBoosting ? 'shadow-[0_0_60px_rgba(234,179,8,0.3)] scale-105' : ''}`}>
              
              {/* Dynamic Notch */}
              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-7 bg-black rounded-b-2xl z-50" />
@@ -141,7 +139,7 @@ export function BoostWindowFeature() {
 
                          {/* Likes */}
                          <div className="flex flex-col items-center gap-1">
-                            <div className={`transition-all duration-100 ${isBoosting ? 'scale-125 text-red-500' : 'text-white'}`}>
+                            <div className={`transition-all duration-300 ${isBoosting ? 'scale-125 text-red-500' : 'text-white'}`}>
                                <Heart className={`w-8 h-8 fill-current ${isBoosting ? 'animate-pulse' : ''}`} />
                             </div>
                             <span className="text-white font-bold text-xs shadow-black drop-shadow-md">
