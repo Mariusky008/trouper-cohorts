@@ -1,15 +1,16 @@
 "use client"
 
-import { Zap, Clock, TrendingUp, Check, Users, Activity, Heart, MessageCircle, Share2, Music2 } from "lucide-react"
+import { Zap, Clock, TrendingUp, Check, Users, Activity, Heart, MessageCircle, Share2, Music2, Bookmark } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { useEffect, useState } from "react"
 import Image from "next/image"
 
 export function BoostWindowFeature() {
-  const [likes, setLikes] = useState(142)
-  const [comments, setComments] = useState(12)
-  const [shares, setShares] = useState(4)
+  const [likes, setLikes] = useState(12)
+  const [comments, setComments] = useState(3)
+  const [shares, setShares] = useState(1)
+  const [bookmarks, setBookmarks] = useState(3)
   const [isBoosting, setIsBoosting] = useState(false)
 
   useEffect(() => {
@@ -18,29 +19,39 @@ export function BoostWindowFeature() {
     
     // Reset cycle
     const startCycle = () => {
-      setLikes(142)
-      setComments(12)
-      setShares(4)
+      setLikes(12)
+      setComments(3)
+      setShares(1)
+      setBookmarks(3)
       setIsBoosting(false)
 
-      // Phase 1: Slow organic growth (0-3s)
-      interval = setInterval(() => {
-        setLikes(prev => prev + 1)
-        if (Math.random() > 0.7) setComments(prev => prev + 1)
-      }, 800)
+      // Phase 1: Static / Very slow organic (0-2s)
+      // We keep it mostly static to contrast with the boost
 
-      // Phase 2: BOOST START (at 3s)
+      // Phase 2: BOOST START (at 2s)
       boostTimeout = setTimeout(() => {
-        clearInterval(interval)
         setIsBoosting(true)
         
         // Rapid growth
         interval = setInterval(() => {
-          setLikes(prev => prev + Math.floor(Math.random() * 15) + 5)
-          setComments(prev => prev + Math.floor(Math.random() * 5) + 1)
-          setShares(prev => prev + Math.floor(Math.random() * 3))
-        }, 100)
-      }, 3000)
+          setLikes(prev => {
+            if (prev >= 330) return 330
+            return prev + Math.floor(Math.random() * 10) + 5
+          })
+          setComments(prev => {
+             if (prev >= 45) return 45
+             return prev + Math.floor(Math.random() * 2) + 1
+          })
+          setShares(prev => {
+             if (prev >= 34) return 34
+             return prev + Math.floor(Math.random() * 2)
+          })
+          setBookmarks(prev => {
+             if (prev >= 48) return 48
+             return prev + Math.floor(Math.random() * 3)
+          })
+        }, 50)
+      }, 2000)
     }
 
     startCycle()
@@ -107,12 +118,12 @@ export function BoostWindowFeature() {
                    {/* Realistic Video Placeholder */}
                    <div className="absolute inset-0 bg-slate-800">
                       <Image 
-                        src="https://images.unsplash.com/photo-1611162617474-5b21e879e113?q=80&w=1000&auto=format&fit=crop" 
+                        src="https://images.unsplash.com/photo-1515934751635-c81c6bc9a2d8?q=80&w=1000&auto=format&fit=crop" 
                         alt="TikTok Video Content"
                         fill
-                        className="object-cover opacity-80"
+                        className="object-cover opacity-60"
                       />
-                      <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/60" />
+                      <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black/80" />
                    </div>
                    
                    {/* TikTok UI Overlay */}
@@ -131,7 +142,7 @@ export function BoostWindowFeature() {
                          <div className="relative">
                             <div className="w-12 h-12 rounded-full border-2 border-white overflow-hidden bg-slate-700">
                                <Image 
-                                 src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=60" 
+                                 src="/logo-v2.png" 
                                  alt="User" 
                                  width={48} 
                                  height={48} 
@@ -159,6 +170,16 @@ export function BoostWindowFeature() {
                             </div>
                             <span className="text-white font-bold text-xs shadow-black drop-shadow-md">
                               {comments.toLocaleString()}
+                            </span>
+                         </div>
+
+                         {/* Bookmarks (Favoris) */}
+                         <div className="flex flex-col items-center gap-1">
+                            <div className="text-white">
+                               <Bookmark className="w-8 h-8 fill-white" />
+                            </div>
+                            <span className="text-white font-bold text-xs shadow-black drop-shadow-md">
+                              {bookmarks.toLocaleString()}
                             </span>
                          </div>
 
@@ -191,25 +212,6 @@ export function BoostWindowFeature() {
                    {isBoosting && (
                       <div className="absolute inset-0 pointer-events-none z-20">
                          <div className="absolute inset-0 bg-yellow-500/10 mix-blend-overlay animate-pulse" />
-                         
-                         {/* Notifications Burst */}
-                         <div className="absolute top-20 left-4 right-16 flex flex-col gap-2">
-                            {Array.from({ length: 5 }).map((_, i) => (
-                               <div 
-                                 key={i} 
-                                 className="bg-black/60 backdrop-blur-md border border-white/10 p-2 rounded-lg flex items-center gap-3 animate-[slideRight_0.4s_ease-out_forwards]"
-                                 style={{ animationDelay: `${i * 0.1}s` }}
-                               >
-                                  <div className={`w-8 h-8 rounded-full bg-gradient-to-br ${['from-blue-400 to-blue-600', 'from-purple-400 to-pink-600', 'from-green-400 to-emerald-600'][i % 3]} flex items-center justify-center text-xs font-bold`}>
-                                     {['JD', 'AL', 'KP'][i % 3]}
-                                  </div>
-                                  <div className="text-xs text-white">
-                                     <span className="font-bold">User_{Math.floor(Math.random() * 999)}</span> <br/>
-                                     a aimé votre vidéo
-                                  </div>
-                               </div>
-                            ))}
-                         </div>
                       </div>
                    )}
                 </div>
