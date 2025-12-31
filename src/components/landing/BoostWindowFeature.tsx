@@ -46,24 +46,28 @@ export function BoostWindowFeature() {
             <div className="flex items-end gap-1 md:gap-2 w-full h-full px-8 pb-px">
                {/* Before */}
                {Array.from({ length: 15 }).map((_, i) => (
-                 <div key={`pre-${i}`} className="flex-1 bg-slate-800/50 rounded-t-sm" style={{ height: `${Math.random() * 10 + 5}%` }} />
+                 <div key={`pre-${i}`} className="flex-1 bg-slate-800/80 rounded-t-sm border-t border-slate-700/50" style={{ height: `${Math.random() * 10 + 5}%` }} />
                ))}
                
                {/* THE WINDOW */}
-               <div className="flex-[10] flex items-end gap-1 relative group">
-                  <div className="absolute -top-12 left-1/2 -translate-x-1/2 bg-yellow-500 text-slate-950 text-xs font-bold px-3 py-1 rounded shadow-[0_0_20px_rgba(234,179,8,0.5)] animate-bounce whitespace-nowrap z-10">
-                    ⚡️ BOOST WINDOW ⚡️
+               <div className="flex-[10] flex items-end gap-1 relative group mx-2">
+                  <div className="absolute -top-16 left-1/2 -translate-x-1/2 flex flex-col items-center z-20">
+                    <div className="bg-yellow-500 text-slate-950 text-sm font-black px-4 py-2 rounded shadow-[0_0_30px_rgba(234,179,8,0.8)] animate-bounce whitespace-nowrap uppercase tracking-wider border-2 border-white">
+                      ⚡️ BOOST WINDOW ⚡️
+                    </div>
+                    <div className="w-0.5 h-8 bg-yellow-500/50" />
                   </div>
+                  
                   {/* Highlight Glow */}
-                  <div className="absolute inset-0 bg-yellow-500/20 blur-2xl" />
+                  <div className="absolute inset-0 bg-yellow-500/20 blur-xl rounded-t-xl" />
                   
                   {Array.from({ length: 20 }).map((_, i) => (
                     <div 
                       key={`boost-${i}`} 
-                      className="flex-1 bg-gradient-to-t from-yellow-600 via-yellow-400 to-white rounded-t-sm animate-[pulse_0.5s_ease-in-out_infinite]" 
+                      className="flex-1 bg-gradient-to-t from-yellow-600 via-yellow-300 to-white rounded-t-sm shadow-[0_0_10px_rgba(234,179,8,0.5)] animate-[pulse_0.2s_ease-in-out_infinite]" 
                       style={{ 
-                        height: `${Math.random() * 60 + 40}%`,
-                        animationDelay: `${i * 0.05}s`
+                        height: `${Math.random() * 50 + 50}%`,
+                        animationDelay: `${i * 0.02}s`
                       }} 
                     />
                   ))}
@@ -71,7 +75,7 @@ export function BoostWindowFeature() {
 
                {/* After */}
                {Array.from({ length: 15 }).map((_, i) => (
-                 <div key={`post-${i}`} className="flex-1 bg-slate-800/50 rounded-t-sm" style={{ height: `${Math.random() * 15 + 10}%` }} />
+                 <div key={`post-${i}`} className="flex-1 bg-slate-800/80 rounded-t-sm border-t border-slate-700/50" style={{ height: `${Math.random() * 15 + 10}%` }} />
                ))}
             </div>
           </div>
