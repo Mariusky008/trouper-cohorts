@@ -11,7 +11,7 @@ export function BoostWindowFeature() {
       <div className="container mx-auto max-w-6xl px-4 relative z-10">
         
         {/* 1 & 2: Titre & Sous-titre */}
-        <div className="text-center mb-16 space-y-4">
+        <div className="text-center mb-8 space-y-4">
           <div className="inline-flex items-center gap-2 rounded-full bg-yellow-500/20 px-4 py-1.5 text-sm font-bold text-yellow-400 border border-yellow-500/30 mb-4">
             <Zap className="h-4 w-4 fill-yellow-400" />
             FEATURE EXCLUSIVE
@@ -51,16 +51,16 @@ export function BoostWindowFeature() {
                
                {/* THE WINDOW */}
                <div className="flex-[10] flex items-end gap-1 relative group">
-                  <div className="absolute -top-12 left-1/2 -translate-x-1/2 bg-yellow-500 text-slate-950 text-xs font-bold px-3 py-1 rounded shadow-[0_0_20px_rgba(234,179,8,0.5)] animate-bounce">
-                    BOOST WINDOW
+                  <div className="absolute -top-12 left-1/2 -translate-x-1/2 bg-yellow-500 text-slate-950 text-xs font-bold px-3 py-1 rounded shadow-[0_0_20px_rgba(234,179,8,0.5)] animate-bounce whitespace-nowrap z-10">
+                    ⚡️ BOOST WINDOW ⚡️
                   </div>
                   {/* Highlight Glow */}
-                  <div className="absolute inset-0 bg-yellow-500/10 blur-xl" />
+                  <div className="absolute inset-0 bg-yellow-500/20 blur-2xl" />
                   
                   {Array.from({ length: 20 }).map((_, i) => (
                     <div 
                       key={`boost-${i}`} 
-                      className="flex-1 bg-gradient-to-t from-yellow-600 to-yellow-400 rounded-t-sm animate-[pulse_1s_ease-in-out_infinite]" 
+                      className="flex-1 bg-gradient-to-t from-yellow-600 via-yellow-400 to-white rounded-t-sm animate-[pulse_0.5s_ease-in-out_infinite]" 
                       style={{ 
                         height: `${Math.random() * 60 + 40}%`,
                         animationDelay: `${i * 0.05}s`

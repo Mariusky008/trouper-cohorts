@@ -39,11 +39,11 @@ export default function Home() {
         </div>
       </nav>
       <Hero />
+      <HowItWorks />
       <BoostWindowFeature />
       <Problem />
       <Truth />
       <Solution />
-      <HowItWorks />
       <AntiFeatures />
       <MarketPosition />
       <FreeTrial />
