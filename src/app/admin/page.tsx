@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/client"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Mail, ShieldAlert, AlertTriangle, CheckCircle, XCircle, AlertCircle, Zap } from "lucide-react"
+import { Mail, ShieldAlert, AlertTriangle, CheckCircle, XCircle, AlertCircle, Zap, TrendingUp, Music } from "lucide-react"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
@@ -16,6 +16,10 @@ export default function AdminPage() {
   const [users, setUsers] = useState<any[]>([])
   const [reports, setReports] = useState<any[]>([])
   const [boostWindows, setBoostWindows] = useState<any[]>([])
+  const [trends, setTrends] = useState<any[]>([])
+  const [trendTitle, setTrendTitle] = useState("")
+  const [trendDescription, setTrendDescription] = useState("")
+  const [trendSoundUrl, setTrendSoundUrl] = useState("")
   const [boostVideoUrl, setBoostVideoUrl] = useState("")
   const [boostDuration, setBoostDuration] = useState("15") // minutes
   const [scheduledTime, setScheduledTime] = useState("")
@@ -79,10 +83,54 @@ export default function AdminPage() {
       
       setBoostWindows(boostData || [])
 
+      // Fetch Trends
+      const { data: trendsData } = await supabase
+        .from('daily_trends')
+        .select('*')
+        .order('created_at', { ascending: false })
+      
+      setTrends(trendsData || [])
+
     } catch (error) {
       toast.error("Erreur lors du chargement des données")
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleCreateTrend = async () => {
+    if (!trendTitle || !trendDescription) {
+      toast.error("Titre et description requis")
+      return
+    }
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+
+      const { data, error } = await supabase
+        .from('daily_trends')
+        .insert({
+          title: trendTitle,
+          description: trendDescription,
+          sound_url: trendSoundUrl,
+          created_by: user.id,
+          active_date: new Date().toISOString()
+        })
+        .select()
+        .single()
+
+      if (error) throw error
+
+      setTrends([data, ...trends])
+      setTrendTitle("")
+      setTrendDescription("")
+      setTrendSoundUrl("")
+      
+      toast.success("Trend du jour publiée !")
+    } catch (error) {
+      console.error(error)
+      toast.error("Erreur création trend")
     }
   }
 
@@ -218,6 +266,10 @@ export default function AdminPage() {
             <TabsTrigger value="boost" className="flex items-center gap-2">
               <Zap className="h-4 w-4" />
               Boost Windows
+            </TabsTrigger>
+            <TabsTrigger value="trends" className="flex items-center gap-2">
+              <TrendingUp className="h-4 w-4" />
+              Radar Tactique
             </TabsTrigger>
             <TabsTrigger value="reports" className="flex items-center gap-2">
               Signalements
@@ -377,6 +429,80 @@ export default function AdminPage() {
                         </TableRow>
                       )
                     })}
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="trends">
+            <div className="space-y-8">
+              {/* Creator Card */}
+              <div className="rounded-lg border bg-gradient-to-r from-blue-500/10 to-indigo-500/10 p-6">
+                 <h2 className="text-xl font-bold flex items-center gap-2 mb-4">
+                   <TrendingUp className="h-6 w-6 text-indigo-500" />
+                   Définir la Trend du Jour
+                 </h2>
+                 <div className="grid gap-4 max-w-xl">
+                   <div>
+                     <label className="text-sm font-medium">Titre (ex: Le Son qui buzz)</label>
+                     <input 
+                        type="text" 
+                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                        value={trendTitle}
+                        onChange={(e) => setTrendTitle(e.target.value)}
+                     />
+                   </div>
+                   <div>
+                     <label className="text-sm font-medium">Description / Conseil</label>
+                     <textarea 
+                       className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                       value={trendDescription}
+                       onChange={(e) => setTrendDescription(e.target.value)}
+                       placeholder="Utilisez ce son avec une transition..."
+                     />
+                   </div>
+                   <div>
+                     <label className="text-sm font-medium">Lien du Son / Exemple</label>
+                     <input 
+                       type="url" 
+                       className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                       value={trendSoundUrl}
+                       onChange={(e) => setTrendSoundUrl(e.target.value)}
+                       placeholder="https://tiktok.com/music/..."
+                     />
+                   </div>
+
+                   <Button onClick={handleCreateTrend} className="w-full bg-indigo-500 hover:bg-indigo-600">
+                     📡 PUBLIER L'ALERTE RADAR
+                   </Button>
+                 </div>
+              </div>
+
+              {/* History Table */}
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Titre</TableHead>
+                      <TableHead>Lien</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {trends.map((trend) => (
+                      <TableRow key={trend.id}>
+                        <TableCell>{new Date(trend.created_at).toLocaleDateString()}</TableCell>
+                        <TableCell className="font-medium">{trend.title}</TableCell>
+                        <TableCell className="max-w-[200px] truncate">
+                          {trend.sound_url ? (
+                            <a href={trend.sound_url} target="_blank" className="text-blue-500 hover:underline flex items-center gap-1">
+                              <Music className="h-3 w-3" /> Link
+                            </a>
+                          ) : "-"}
+                        </TableCell>
+                      </TableRow>
+                    ))}
                   </TableBody>
                 </Table>
               </div>
