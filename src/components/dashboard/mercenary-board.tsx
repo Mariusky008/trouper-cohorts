@@ -27,11 +27,11 @@ export function MercenaryBoard({ onCreditsEarned }: { onCreditsEarned?: () => vo
   const [strikeAlert, setStrikeAlert] = useState<any>(null)
   
   const supabase = createClient()
-  const [debugInfo, setDebugInfo] = useState<string>("")
+  // const [debugInfo, setDebugInfo] = useState<string>("") // Removed unused state
 
   const fetchBounties = async () => {
     try {
-      setDebugInfo("Fetching...")
+      // setDebugInfo("Fetching...")
       // Fix: Remove the relation query for now to debug basic access
       // Try simple fetch first
       const { data, error } = await supabase
@@ -54,19 +54,19 @@ export function MercenaryBoard({ onCreditsEarned }: { onCreditsEarned?: () => vo
 
       
       if (error) {
-         setDebugInfo(`Error: ${error.message} (${error.code})`)
+         // setDebugInfo(`Error: ${error.message} (${error.code})`)
          console.error("Supabase Error:", error)
          if (error.code === '42P01') {
              toast.error("Table 'bounties' introuvable")
          }
        } else {
-         setDebugInfo(`Success: Got ${data?.length || 0} bounties.`)
+         // setDebugInfo(`Success: Got ${data?.length || 0} bounties.`)
        }
        
        // Filter out bounties where I am the defector
        let visibleBounties = (data || []).filter((b: any) => b.defector_user_id !== user?.id)
        
-       setDebugInfo(prev => `${prev} | Visible: ${visibleBounties.length} | My ID: ${user?.id}`)
+       // setDebugInfo(prev => `${prev} | Visible: ${visibleBounties.length} | My ID: ${user?.id}`)
        
        // MANUALLY FETCH USER NAMES to fix display
        // Extract all user IDs we need to look up
