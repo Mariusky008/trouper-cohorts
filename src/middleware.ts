@@ -2,6 +2,10 @@ import { type NextRequest } from 'next/server'
 import { updateSession } from '@/lib/supabase/middleware'
 
 export async function middleware(request: NextRequest) {
+  // Bypass auth for cron jobs
+  if (request.nextUrl.pathname.startsWith('/api/cron')) {
+    return 
+  }
   return await updateSession(request)
 }
 
