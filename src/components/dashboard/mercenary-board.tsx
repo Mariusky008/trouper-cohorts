@@ -21,8 +21,11 @@ export function MercenaryBoard({ onCreditsEarned }: { onCreditsEarned?: () => vo
   
   const supabase = createClient()
 
+  const [debugInfo, setDebugInfo] = useState<string>("")
+
   const fetchBounties = async () => {
     try {
+      setDebugInfo("Fetching...")
       const { data, error } = await supabase
         .from('bounties')
         .select(`
@@ -39,20 +42,23 @@ export function MercenaryBoard({ onCreditsEarned }: { onCreditsEarned?: () => vo
         .order('created_at', { ascending: false })
       
       if (error) {
+        setDebugInfo(`Error: ${error.message} (${error.code})`)
         console.error("Supabase Error:", error)
-        // If table doesn't exist (code 42P01), we don't crash, just show empty
         if (error.code === '42P01') {
-            toast.error("Table 'bounties' introuvable", { description: "Demandez à l'admin d'exécuter la migration SQL." })
+            toast.error("Table 'bounties' introuvable")
         }
+      } else {
+        setDebugInfo(`Success: Got ${data?.length || 0} bounties.`)
       }
       
-      console.log("BOUNTIES FETCHED:", data) // DEBUG: See what we actually get
-
-      // Filter out bounties where I am the defector (I cannot claim my own bounty)
-      const visibleBounties = (data || []).filter((b: any) => b.defector_user_id !== user.id)
+      // Filter out bounties where I am the defector
+      const visibleBounties = (data || []).filter((b: any) => b.defector_user_id !== user?.id)
+      
+      setDebugInfo(prev => `${prev} | Visible: ${visibleBounties.length} | My ID: ${user?.id}`)
+      
       setBounties(visibleBounties)
       
-      // DIAGNOSTIC: If we see 0 bounties, check if it's a permission issue
+      // DIAGNOSTIC...
       if ((data || []).length === 0) {
           fetch('/api/cron/debug-bounties').then(res => res.json()).then(debugData => {
               if (debugData.count > 0) {
@@ -344,9 +350,13 @@ export function MercenaryBoard({ onCreditsEarned }: { onCreditsEarned?: () => vo
              <Skull className="h-6 w-6 text-red-600" />
              Protocole Mercenaire Actif
           </h2>
-          <Badge variant="destructive" className="animate-pulse">
-             {bounties.length} Missions Urgentes
-          </Badge>
+          <div className="flex flex-col items-end">
+             <Badge variant="destructive" className="animate-pulse">
+                {bounties.length} Missions Urgentes
+             </Badge>
+             {/* DEBUG DISPLAY */}
+             <span className="text-[10px] text-slate-400 font-mono mt-1">{debugInfo}</span>
+          </div>
        </div>
 
        <div className="grid gap-4 md:grid-cols-2">
