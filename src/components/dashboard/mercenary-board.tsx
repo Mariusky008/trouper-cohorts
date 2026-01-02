@@ -163,6 +163,8 @@ export function MercenaryBoard({ onCreditsEarned }: { onCreditsEarned?: () => vo
         setTimeout(() => triggerConfetti(), 100)
         if (onCreditsEarned) onCreditsEarned() // Trigger parent animation
         setSelectedBounty(null)
+        
+        // Refresh the list immediately to show remaining bounties
         fetchBounties()
 
     } catch (e) {
