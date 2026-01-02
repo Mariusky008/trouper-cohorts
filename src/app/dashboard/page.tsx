@@ -175,10 +175,10 @@ export default function DashboardPage() {
             
             const { data: members } = await supabase
               .from('squad_members')
-              .select('user_id, created_at, profiles(id, username, current_video_url)')
+              .select('user_id, joined_at, profiles(id, username, current_video_url)')
               .eq('squad_id', membership.squad_id)
               .neq('user_id', user.id) // Exclude self
-              .order('created_at', { ascending: true })
+              .order('joined_at', { ascending: true })
               
             // Check subscriptions status
             const { data: subscriptions } = await supabase
