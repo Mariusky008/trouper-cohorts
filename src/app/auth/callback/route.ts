@@ -17,31 +17,38 @@ export async function GET(request: Request) {
     const supabase = await createClient();
     const { data, error: authError } = await supabase.auth.exchangeCodeForSession(code);
     
-    if (!authError && data?.user) {
-      // Force sync profile from metadata to ensure "Recrue" is replaced
+    if (authError) {
+      console.error("Auth callback error:", authError);
+      return NextResponse.redirect(`${origin}/signup?error=auth_code_error`);
+    }
+
+    if (data?.user) {
+      console.log("User authenticated:", data.user.id);
+
+      // Force sync profile from metadata
       const metadata = data.user.user_metadata;
       if (metadata?.username || metadata?.full_name) {
         await supabase.from('profiles').upsert({
             id: data.user.id,
             username: metadata.username || metadata.full_name,
             full_name: metadata.full_name,
-            // Keep existing fields if any
-          }, { onConflict: 'id', ignoreDuplicates: false }); // We want to update
+          }, { onConflict: 'id', ignoreDuplicates: false });
       }
 
-      // Check if user is already onboarded
-      const { data: profile } = await supabase
+      // Check profile status
+      const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('is_fully_onboarded, current_video_url')
         .eq('id', data.user.id)
         .single();
+      
+      console.log("Profile fetch result:", { profile, error: profileError });
 
-      // If they have a video URL or are marked as onboarded, go to dashboard
-      // Assuming that having a video URL is a strong signal they passed onboarding
-      if (profile?.is_fully_onboarded || profile?.current_video_url) {
-         return NextResponse.redirect(`${origin}/dashboard`);
-      }
-    }
+      // RELAXED CONDITION: Always redirect to dashboard if authenticated.
+       // Let the dashboard handle missing data states.
+       console.log("User authenticated, redirecting to dashboard");
+       return NextResponse.redirect(`${origin}/dashboard`);
+     }
   }
 
   return NextResponse.redirect(`${origin}/onboarding`);
