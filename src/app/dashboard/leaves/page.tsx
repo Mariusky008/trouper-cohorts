@@ -33,7 +33,7 @@ export default function LeavesPage() {
         .gte('off_date', new Date().toISOString()) // Only future/current
 
       if (data) {
-        setOffDays(data.map(d => new Date(d.off_date)))
+        setOffDays(data.map((d: { off_date: string }) => new Date(d.off_date)))
       }
     } catch (e) {
       console.error(e)
