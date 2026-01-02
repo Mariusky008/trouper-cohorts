@@ -184,84 +184,103 @@ export default function MyPostsPage() {
       </div>
 
       {/* === TABLEAU DE CHASSE (STATS) === */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm relative overflow-hidden">
-             <div className="absolute top-0 right-0 p-3 opacity-10">
-                <UserPlus className="h-16 w-16 text-blue-600" />
-             </div>
-             <div className="relative z-10">
-                <p className="text-xs font-bold uppercase text-slate-500 mb-1">Abonnés Gagnés</p>
-                <p className="text-3xl font-black text-slate-900">{myStats.total_followers_gained}</p>
-             </div>
-          </div>
-          
-          <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm relative overflow-hidden">
-             <div className="absolute top-0 right-0 p-3 opacity-10">
-                <Heart className="h-16 w-16 text-red-600" />
-             </div>
-             <div className="relative z-10">
-                <p className="text-xs font-bold uppercase text-slate-500 mb-1">Likes Reçus</p>
-                <p className="text-3xl font-black text-slate-900">{myStats.total_likes}</p>
-             </div>
-          </div>
-
-          <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm relative overflow-hidden">
-             <div className="absolute top-0 right-0 p-3 opacity-10">
-                <MessageCircle className="h-16 w-16 text-green-600" />
-             </div>
-             <div className="relative z-10">
-                <p className="text-xs font-bold uppercase text-slate-500 mb-1">Commentaires</p>
-                <p className="text-3xl font-black text-slate-900">{myStats.total_comments}</p>
-             </div>
-          </div>
-
-          <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm relative overflow-hidden">
-             <div className="absolute top-0 right-0 p-3 opacity-10">
-                <Bookmark className="h-16 w-16 text-yellow-600" />
-             </div>
-             <div className="relative z-10 flex items-center justify-between">
-                <div>
-                  <p className="text-xs font-bold uppercase text-slate-500 mb-1">Favoris</p>
-                  <p className="text-3xl font-black text-slate-900">{myStats.total_saves}</p>
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+           <h2 className="text-xl font-bold flex items-center gap-2">
+            <Trophy className="h-5 w-5 text-yellow-600" />
+            Mon Tableau de Chasse (Stats TikTok)
+           </h2>
+           <Dialog open={isStatsOpen} onOpenChange={setIsStatsOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm" className="gap-2 border-yellow-200 bg-yellow-50 text-yellow-800 hover:bg-yellow-100">
+                   <Edit3 className="h-4 w-4" />
+                   Mettre à jour mes chiffres
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[425px]">
+                <DialogHeader>
+                  <DialogTitle>Mettre à jour mon Tableau de Chasse</DialogTitle>
+                  <DialogDescription>
+                    Rentre ici les stats que tu vois sur ton profil TikTok.
+                    C'est manuel : l'app ne peut pas (encore) lire tes pensées ! 😉
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="followers" className="text-right">Abonnés</Label>
+                    <Input id="followers" type="number" value={statsForm.total_followers_gained} onChange={(e) => setStatsForm({...statsForm, total_followers_gained: parseInt(e.target.value)})} className="col-span-3" />
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="likes" className="text-right">Likes</Label>
+                    <Input id="likes" type="number" value={statsForm.total_likes} onChange={(e) => setStatsForm({...statsForm, total_likes: parseInt(e.target.value)})} className="col-span-3" />
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="comments" className="text-right">Commentaires</Label>
+                    <Input id="comments" type="number" value={statsForm.total_comments} onChange={(e) => setStatsForm({...statsForm, total_comments: parseInt(e.target.value)})} className="col-span-3" />
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="saves" className="text-right">Favoris</Label>
+                    <Input id="saves" type="number" value={statsForm.total_saves} onChange={(e) => setStatsForm({...statsForm, total_saves: parseInt(e.target.value)})} className="col-span-3" />
+                  </div>
                 </div>
-                <Dialog open={isStatsOpen} onOpenChange={setIsStatsOpen}>
-                  <DialogTrigger asChild>
-                    <Button size="icon" variant="ghost" className="h-8 w-8 text-slate-400 hover:text-slate-600">
-                       <Edit3 className="h-4 w-4" />
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="sm:max-w-[425px]">
-                    <DialogHeader>
-                      <DialogTitle>Mettre à jour mon Tableau de Chasse</DialogTitle>
-                      <DialogDescription>
-                        Rentre tes stats cumulées depuis le début de l'aventure Troupers. Sois honnête soldat !
-                      </DialogDescription>
-                    </DialogHeader>
-                    <div className="grid gap-4 py-4">
-                      <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="followers" className="text-right">Abonnés</Label>
-                        <Input id="followers" type="number" value={statsForm.total_followers_gained} onChange={(e) => setStatsForm({...statsForm, total_followers_gained: parseInt(e.target.value)})} className="col-span-3" />
-                      </div>
-                      <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="likes" className="text-right">Likes</Label>
-                        <Input id="likes" type="number" value={statsForm.total_likes} onChange={(e) => setStatsForm({...statsForm, total_likes: parseInt(e.target.value)})} className="col-span-3" />
-                      </div>
-                      <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="comments" className="text-right">Commentaires</Label>
-                        <Input id="comments" type="number" value={statsForm.total_comments} onChange={(e) => setStatsForm({...statsForm, total_comments: parseInt(e.target.value)})} className="col-span-3" />
-                      </div>
-                      <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="saves" className="text-right">Favoris</Label>
-                        <Input id="saves" type="number" value={statsForm.total_saves} onChange={(e) => setStatsForm({...statsForm, total_saves: parseInt(e.target.value)})} className="col-span-3" />
-                      </div>
-                    </div>
-                    <DialogFooter>
-                      <Button onClick={updateStats}>Sauvegarder les stats</Button>
-                    </DialogFooter>
-                  </DialogContent>
-                </Dialog>
-             </div>
+                <DialogFooter>
+                  <Button onClick={updateStats}>Sauvegarder les stats</Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+        </div>
+
+        {myStats.total_likes === 0 && myStats.total_followers_gained === 0 ? (
+           <div className="bg-yellow-50 border border-yellow-100 rounded-xl p-6 text-center">
+              <p className="text-yellow-800 font-medium mb-2">Tu n'as pas encore rentré tes statistiques TikTok !</p>
+              <p className="text-sm text-yellow-700/80 mb-4">Clique sur "Mettre à jour" pour suivre ta progression et motiver l'escouade.</p>
+              <Button onClick={() => setIsStatsOpen(true)} className="bg-yellow-600 hover:bg-yellow-700 text-white">
+                 Commencer le tracking
+              </Button>
+           </div>
+        ) : (
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+              <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm relative overflow-hidden">
+                <div className="absolute top-0 right-0 p-3 opacity-10">
+                    <UserPlus className="h-16 w-16 text-blue-600" />
+                </div>
+                <div className="relative z-10">
+                    <p className="text-xs font-bold uppercase text-slate-500 mb-1">Abonnés Gagnés</p>
+                    <p className="text-3xl font-black text-slate-900">{myStats.total_followers_gained}</p>
+                </div>
+              </div>
+              
+              <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm relative overflow-hidden">
+                <div className="absolute top-0 right-0 p-3 opacity-10">
+                    <Heart className="h-16 w-16 text-red-600" />
+                </div>
+                <div className="relative z-10">
+                    <p className="text-xs font-bold uppercase text-slate-500 mb-1">Likes Reçus</p>
+                    <p className="text-3xl font-black text-slate-900">{myStats.total_likes}</p>
+                </div>
+              </div>
+
+              <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm relative overflow-hidden">
+                <div className="absolute top-0 right-0 p-3 opacity-10">
+                    <MessageCircle className="h-16 w-16 text-green-600" />
+                </div>
+                <div className="relative z-10">
+                    <p className="text-xs font-bold uppercase text-slate-500 mb-1">Commentaires</p>
+                    <p className="text-3xl font-black text-slate-900">{myStats.total_comments}</p>
+                </div>
+              </div>
+
+              <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm relative overflow-hidden">
+                <div className="absolute top-0 right-0 p-3 opacity-10">
+                    <Bookmark className="h-16 w-16 text-yellow-600" />
+                </div>
+                <div className="relative z-10">
+                    <p className="text-xs font-bold uppercase text-slate-500 mb-1">Favoris</p>
+                    <p className="text-3xl font-black text-slate-900">{myStats.total_saves}</p>
+                </div>
+              </div>
           </div>
+        )}
       </div>
 
       {/* === TOP SECTION: RADAR TACTIQUE === */}
