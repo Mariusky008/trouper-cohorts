@@ -168,10 +168,10 @@ export default function GroupPage() {
                   )}
                   
                   <div className="text-right min-w-[60px]">
-                    <div className={`font-bold text-lg text-primary`}>
-                      {member.score >= 90 ? "Excellent" : member.score >= 70 ? "Bon" : "Moyen"}
+                    <div className={`font-bold text-lg ${member.score >= 90 ? "text-green-600" : member.score >= 50 ? "text-orange-500" : "text-red-500"}`}>
+                      {member.score} pts
                     </div>
-                    <p className="text-xs text-muted-foreground">Fiabilité</p>
+                    <p className="text-xs text-muted-foreground">Discipline</p>
                   </div>
                 </div>
               </div>
