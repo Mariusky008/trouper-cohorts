@@ -48,23 +48,44 @@ export function MercenaryBoard({ onCreditsEarned }: { onCreditsEarned?: () => vo
 
       
       if (error) {
-        setDebugInfo(`Error: ${error.message} (${error.code})`)
-        console.error("Supabase Error:", error)
-        if (error.code === '42P01') {
-            toast.error("Table 'bounties' introuvable")
-        }
-      } else {
-        setDebugInfo(`Success: Got ${data?.length || 0} bounties.`)
-      }
-      
-      // Filter out bounties where I am the defector
-      const visibleBounties = (data || []).filter((b: any) => b.defector_user_id !== user?.id)
-      
-      setDebugInfo(prev => `${prev} | Visible: ${visibleBounties.length} | My ID: ${user?.id}`)
-      
-      setBounties(visibleBounties)
-      
-      // DIAGNOSTIC...
+         setDebugInfo(`Error: ${error.message} (${error.code})`)
+         console.error("Supabase Error:", error)
+         if (error.code === '42P01') {
+             toast.error("Table 'bounties' introuvable")
+         }
+       } else {
+         setDebugInfo(`Success: Got ${data?.length || 0} bounties.`)
+       }
+       
+       // Filter out bounties where I am the defector
+       let visibleBounties = (data || []).filter((b: any) => b.defector_user_id !== user?.id)
+       
+       setDebugInfo(prev => `${prev} | Visible: ${visibleBounties.length} | My ID: ${user?.id}`)
+       
+       // MANUALLY FETCH USER NAMES to fix display
+       // Extract all user IDs we need to look up
+       const targetIds = [...new Set(visibleBounties.map((b: any) => b.target_user_id))]
+       
+       if (targetIds.length > 0) {
+           const { data: profiles } = await supabase
+            .from('profiles')
+            .select('id, username, current_video_url')
+            .in('id', targetIds)
+            
+           // Create a map for quick lookup
+           const profileMap = new Map()
+           profiles?.forEach((p: any) => profileMap.set(p.id, p))
+           
+           // Enrich bounties with profile data manually
+           visibleBounties = visibleBounties.map((b: any) => ({
+               ...b,
+               target: profileMap.get(b.target_user_id) || { username: 'Soldat Inconnu', current_video_url: b.video_url }
+           }))
+       }
+
+       setBounties(visibleBounties)
+       
+       // REMOVE DIAGNOSTIC LOGIC (Clean up)
       if ((data || []).length === 0) {
           fetch('/api/cron/debug-bounties').then(res => res.json()).then(debugData => {
               if (debugData.count > 0) {
@@ -308,11 +329,6 @@ export function MercenaryBoard({ onCreditsEarned }: { onCreditsEarned?: () => vo
                 <Button variant="ghost" size="sm" onClick={simulateProtocol} className="mt-4 opacity-0 hover:opacity-100 text-[10px] text-slate-300 transition-opacity absolute bottom-2 right-2">
                    (Dev: Test)
                 </Button>
-
-                {/* DEBUG INFO ALWAYS VISIBLE */}
-                <div className="mt-4 p-2 bg-slate-100 rounded text-[10px] text-slate-500 font-mono w-full break-all">
-                    DEBUG: {debugInfo}
-                </div>
              </div>
           </div>
           
@@ -365,8 +381,6 @@ export function MercenaryBoard({ onCreditsEarned }: { onCreditsEarned?: () => vo
              <Badge variant="destructive" className="animate-pulse">
                 {bounties.length} Missions Urgentes
              </Badge>
-             {/* DEBUG DISPLAY */}
-             <span className="text-[10px] text-slate-400 font-mono mt-1">{debugInfo}</span>
           </div>
        </div>
 
