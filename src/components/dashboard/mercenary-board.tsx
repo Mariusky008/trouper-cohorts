@@ -56,19 +56,23 @@ export function MercenaryBoard({ onCreditsEarned }: { onCreditsEarned?: () => vo
 
   const checkMyStrikes = async (userId: string) => {
       // Check if I have caused any bounties TODAY (meaning I got a strike today)
-      const today = new Date().toISOString().split('T')[0]
+      // IMPORTANT: bounties created_at is in UTC. We need to match the day correctly.
+      const now = new Date()
+      // Create date string for start of today UTC
+      const today = now.toISOString().split('T')[0]
+      
       const { data: myFaults } = await supabase
         .from('bounties')
         .select('id')
         .eq('defector_user_id', userId)
         .gte('created_at', today)
-        .limit(1)
-      
+        
       if (myFaults && myFaults.length > 0) {
+          const count = myFaults.length
           // Check if user has already acknowledged this alert (using localStorage to avoid spamming every refresh)
           const ackKey = `strike_ack_${today}_${userId}`
           if (!localStorage.getItem(ackKey)) {
-             setStrikeAlert(true)
+             setStrikeAlert({ count })
              localStorage.setItem(ackKey, 'true')
           }
       }
@@ -508,12 +512,12 @@ export function MercenaryBoard({ onCreditsEarned }: { onCreditsEarned?: () => vo
                       
                       <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4 space-y-2">
                          <div className="flex items-center justify-between text-red-200">
-                            <span>Avertissement (Strike)</span>
-                            <span className="font-bold text-red-500">+1</span>
+                            <span>Avertissements (Strikes)</span>
+                            <span className="font-bold text-red-500">+{strikeAlert.count}</span>
                          </div>
                          <div className="flex items-center justify-between text-red-200">
-                            <span>Discipline</span>
-                            <span className="font-bold text-red-500">-10 pts</span>
+                            <span>Discipline Perdue</span>
+                            <span className="font-bold text-red-500">-{strikeAlert.count * 10} pts</span>
                          </div>
                       </div>
                       
