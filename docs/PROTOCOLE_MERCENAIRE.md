@@ -31,9 +31,11 @@ Un script tourne automatiquement chaque nuit (idéalement à minuit ou 01h00 du 
 Le score de Discipline commence à **100 points**.
 
 *   **-10 points** par mission manquée non justifiée.
-*   **Zone Rouge (< 50 points) :** Le soldat voit une bannière d'alerte critique sur son tableau de bord. Ses missions normales sont suspendues tant qu'il ne remonte pas son score.
+*   **Zone Rouge (< 50 points) :** Le soldat voit une bannière d'alerte critique sur son tableau de bord.
+    *   **Conséquence :** Ses missions normales sont suspendues.
+    *   **Comment s'en sortir ?** Il doit attendre que ses camarades accomplissent les missions mercenaires pour lui (le sauvetage) ou attendre le lendemain minuit pour une réinitialisation partielle (si le score le permet).
 
-## 4. Les Missions Mercenaires (Bounties)
+## 4. Les Missions Mercenaires (Bounties) & Réinitialisation Minuit
 
 Quand une mission est ratée, elle devient une "Bounty" publique pour l'escouade.
 
@@ -41,6 +43,13 @@ Quand une mission est ratée, elle devient une "Bounty" publique pour l'escouade
 *   **Récompense :** +1 Crédit Boost + 50 XP Gloire.
 *   **Action :** Le Mercenaire doit faire l'action (Liker/Commenter) à la place du déserteur.
 *   **Résultat :** La victime reçoit quand même son like, et le Mercenaire est récompensé.
+
+### Que se passe-t-il à Minuit ?
+Chaque jour à minuit (heure du serveur), le cycle recommence :
+1.  **Réinitialisation :** Les anciennes missions du jour précédent disparaissent.
+2.  **Nouvelles Missions :** De nouvelles missions (tâches) sont générées pour tous les soldats valides.
+3.  **Rotation :** Les tâches changent (ex: si hier c'était "Liker", demain ce sera peut-être "Commenter").
+4.  **Restriction :** Si votre score est toujours en Zone Rouge (< 50 pts), vous resterez bloqué même après minuit tant que vous n'aurez pas racheté votre conduite (via des missions mercenaires futures).
 
 ## 5. Fonctionnement Technique (Base de Données)
 
