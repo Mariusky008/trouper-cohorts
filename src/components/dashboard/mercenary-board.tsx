@@ -46,7 +46,9 @@ export function MercenaryBoard({ onCreditsEarned }: { onCreditsEarned?: () => vo
         }
       }
 
-      setBounties(data || [])
+      // Filter out bounties where I am the defector (I cannot claim my own bounty)
+      const visibleBounties = (data || []).filter((b: any) => b.defector_user_id !== user.id)
+      setBounties(visibleBounties)
     } catch (e) {
       console.error("Error fetching bounties", e)
     } finally {
