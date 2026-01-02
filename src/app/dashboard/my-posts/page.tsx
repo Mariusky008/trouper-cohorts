@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
-import { TrendingUp, Music, Lightbulb, PenTool, Sparkles, Copy, Check, FileText, CheckSquare, RefreshCw, Trophy, Zap, Shield, Target } from "lucide-react"
+import { TrendingUp, Music, Lightbulb, PenTool, Sparkles, Copy, Check, FileText, CheckSquare, RefreshCw, Trophy, Zap, Shield, Target, UserPlus, Heart, MessageCircle, Bookmark } from "lucide-react"
 import { motion } from "framer-motion"
 import { toast } from "sonner"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -19,10 +19,10 @@ export default function MyPostsPage() {
   
   // Stats State (Internal Activity)
   const [myStats, setMyStats] = useState({
-    supports_received: 0,
-    missions_done: 0,
-    squad_size: 0,
-    boost_credits: 0
+    nb_followers: 0,
+    nb_likes: 0,
+    nb_comments: 0,
+    nb_saves: 0
   })
 
   // Script Builder State
@@ -77,26 +77,7 @@ export default function MyPostsPage() {
          const { data: { user } } = await supabase.auth.getUser()
          
          if (user) {
-            // 1. Fetch Profile for Boost Credits
-            const { data: profile } = await supabase
-              .from('profiles')
-              .select('boost_credits')
-              .eq('id', user.id)
-              .single()
-            
-            // 2. Fetch Supports Received (How many times I was supported)
-            const { count: supportsReceivedCount } = await supabase
-               .from('daily_supports')
-               .select('*', { count: 'exact', head: true })
-               .eq('target_user_id', user.id)
-
-            // 3. Fetch Missions Done (How many times I supported others)
-            const { count: missionsDoneCount } = await supabase
-               .from('daily_supports')
-               .select('*', { count: 'exact', head: true })
-               .eq('supporter_id', user.id)
-
-            // 4. Fetch Squad Size
+            // 1. Fetch Squad Size (Considered as "Followers" from Troupers)
             let squadSize = 0
             const { data: membership } = await supabase.from('squad_members').select('squad_id').eq('user_id', user.id).single()
             if (membership) {
@@ -104,14 +85,33 @@ export default function MyPostsPage() {
                   .from('squad_members')
                   .select('*', { count: 'exact', head: true })
                   .eq('squad_id', membership.squad_id)
-               squadSize = count || 0
+               squadSize = (count || 1) - 1 // Exclude self
+            }
+
+            // 2. Fetch Video Tracking to calculate detailed stats
+            const { data: tracking } = await supabase
+               .from('video_tracking')
+               .select('action_count')
+               .eq('target_user_id', user.id)
+
+            let likes = 0
+            let comments = 0
+            let saves = 0
+
+            if (tracking) {
+               tracking.forEach((t: any) => {
+                  const count = t.action_count || 0
+                  if (count >= 1) likes++
+                  if (count >= 2) comments++
+                  if (count >= 3) saves++
+               })
             }
 
             setMyStats({
-               supports_received: supportsReceivedCount || 0,
-               missions_done: missionsDoneCount || 0,
-               squad_size: squadSize,
-               boost_credits: profile?.boost_credits || 0
+               nb_followers: squadSize,
+               nb_likes: likes,
+               nb_comments: comments,
+               nb_saves: saves
             })
          }
 
@@ -175,51 +175,51 @@ export default function MyPostsPage() {
          </div>
          
          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-             {/* SOUTIENS REÇUS */}
+             {/* ABONNÉS */}
              <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm relative overflow-hidden">
                 <div className="absolute top-0 right-0 p-3 opacity-10">
-                   <Target className="h-16 w-16 text-red-600" />
+                   <UserPlus className="h-16 w-16 text-blue-600" />
                 </div>
                 <div className="relative z-10">
-                   <p className="text-xs font-bold uppercase text-slate-500 mb-1">Soutiens Reçus</p>
-                   <p className="text-3xl font-black text-slate-900">{myStats.supports_received}</p>
-                   <p className="text-[10px] text-muted-foreground mt-1">De la part de l'escouade</p>
+                   <p className="text-xs font-bold uppercase text-slate-500 mb-1">Abonnés Troupers</p>
+                   <p className="text-3xl font-black text-slate-900">{myStats.nb_followers}</p>
+                   <p className="text-[10px] text-muted-foreground mt-1">Membres de ton escouade</p>
                 </div>
              </div>
              
-             {/* MISSIONS ACCOMPLIES */}
+             {/* LIKES */}
              <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm relative overflow-hidden">
                 <div className="absolute top-0 right-0 p-3 opacity-10">
-                   <CheckSquare className="h-16 w-16 text-green-600" />
+                   <Heart className="h-16 w-16 text-red-600" />
                 </div>
                 <div className="relative z-10">
-                   <p className="text-xs font-bold uppercase text-slate-500 mb-1">Missions Validées</p>
-                   <p className="text-3xl font-black text-slate-900">{myStats.missions_done}</p>
-                   <p className="text-[10px] text-muted-foreground mt-1">Ton engagement</p>
+                   <p className="text-xs font-bold uppercase text-slate-500 mb-1">Likes Reçus</p>
+                   <p className="text-3xl font-black text-slate-900">{myStats.nb_likes}</p>
+                   <p className="text-[10px] text-muted-foreground mt-1">Sur tes vidéos</p>
                 </div>
              </div>
 
-             {/* TAILLE ESCOUADE */}
+             {/* COMMENTAIRES */}
              <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm relative overflow-hidden">
                 <div className="absolute top-0 right-0 p-3 opacity-10">
-                   <Shield className="h-16 w-16 text-blue-600" />
+                   <MessageCircle className="h-16 w-16 text-green-600" />
                 </div>
                 <div className="relative z-10">
-                   <p className="text-xs font-bold uppercase text-slate-500 mb-1">Membres Escouade</p>
-                   <p className="text-3xl font-black text-slate-900">{myStats.squad_size}</p>
-                   <p className="text-[10px] text-muted-foreground mt-1">Tes frères d'armes</p>
+                   <p className="text-xs font-bold uppercase text-slate-500 mb-1">Commentaires Reçus</p>
+                   <p className="text-3xl font-black text-slate-900">{myStats.nb_comments}</p>
+                   <p className="text-[10px] text-muted-foreground mt-1">Engagement confirmé</p>
                 </div>
              </div>
 
-             {/* CRÉDITS BOOST */}
+             {/* FAVORIS */}
              <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm relative overflow-hidden">
                 <div className="absolute top-0 right-0 p-3 opacity-10">
-                   <Zap className="h-16 w-16 text-yellow-600" />
+                   <Bookmark className="h-16 w-16 text-yellow-600" />
                 </div>
                 <div className="relative z-10">
-                   <p className="text-xs font-bold uppercase text-slate-500 mb-1">Crédits Boost</p>
-                   <p className="text-3xl font-black text-slate-900">{myStats.boost_credits}</p>
-                   <p className="text-[10px] text-muted-foreground mt-1">Pour ta promo</p>
+                   <p className="text-xs font-bold uppercase text-slate-500 mb-1">Favoris Reçus</p>
+                   <p className="text-3xl font-black text-slate-900">{myStats.nb_saves}</p>
+                   <p className="text-[10px] text-muted-foreground mt-1">Soutien ultime</p>
                 </div>
              </div>
          </div>
