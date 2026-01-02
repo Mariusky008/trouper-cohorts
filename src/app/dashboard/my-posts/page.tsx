@@ -184,7 +184,7 @@ export default function MyPostsPage() {
            </div>
 
            <div className="border rounded-xl bg-white shadow-sm overflow-hidden">
-              <Tabs defaultValue="educatif" onValueChange={(val) => setScriptStyle(val)} className="w-full">
+              <Tabs value={scriptType} onValueChange={(val) => setScriptStyle(val)} className="w-full">
                 <div className="bg-slate-50 border-b px-4 py-2">
                   <TabsList className="bg-slate-200/50">
                     <TabsTrigger value="educatif">Éducatif</TabsTrigger>
@@ -194,9 +194,15 @@ export default function MyPostsPage() {
                 </div>
 
                 <div className="p-6 space-y-6">
+                   <div className="flex items-center gap-2 mb-4 p-3 bg-blue-50 text-blue-800 rounded-lg text-sm">
+                      <Lightbulb className="h-4 w-4" />
+                      <span>Mode : <strong>{scriptTemplates[scriptType].title}</strong></span>
+                   </div>
+
                    <div className="space-y-2">
                       <Label className="text-blue-600 font-bold">1. L'Accroche (Hook) - 3 premières secondes</Label>
                       <Input 
+                        key={`hook-${scriptType}`}
                         placeholder={scriptTemplates[scriptType].hookPlaceholder} 
                         className="font-medium text-lg border-blue-100 focus-visible:ring-blue-500"
                         value={scriptData.hook}
@@ -208,6 +214,7 @@ export default function MyPostsPage() {
                    <div className="space-y-2">
                       <Label className="font-bold">2. Le Corps (La Valeur)</Label>
                       <Textarea 
+                        key={`body-${scriptType}`}
                         placeholder={scriptTemplates[scriptType].bodyPlaceholder} 
                         className="min-h-[150px] resize-none border-slate-200"
                         value={scriptData.body}
@@ -218,6 +225,7 @@ export default function MyPostsPage() {
                    <div className="space-y-2">
                       <Label className="text-green-600 font-bold">3. L'Appel à l'action (CTA)</Label>
                       <Input 
+                        key={`cta-${scriptType}`}
                         placeholder={scriptTemplates[scriptType].ctaPlaceholder} 
                         className="border-green-100 focus-visible:ring-green-500"
                         value={scriptData.cta}
