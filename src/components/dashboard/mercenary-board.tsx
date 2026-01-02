@@ -441,6 +441,11 @@ export function MercenaryBoard({ onCreditsEarned }: { onCreditsEarned?: () => vo
                           Récompense : 1 Crédit + Gloire
                        </div>
 
+                       <div className="flex items-center justify-between text-xs text-slate-500 px-1">
+                          <span>Mission #{bounty.id.toString().slice(-4)}</span>
+                          <span className="font-mono">{safeBounties.indexOf(bounty) + 1}/{safeBounties.length}</span>
+                       </div>
+
                        <Button 
                          className="w-full bg-red-600 hover:bg-red-700 text-white font-bold shadow-lg shadow-red-500/20"
                          onClick={() => handleClaimBounty(bounty)}
