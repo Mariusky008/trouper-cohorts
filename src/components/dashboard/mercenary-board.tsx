@@ -26,20 +26,26 @@ export function MercenaryBoard({ onCreditsEarned }: { onCreditsEarned?: () => vo
   const fetchBounties = async () => {
     try {
       setDebugInfo("Fetching...")
+      // Fix: Remove the relation query for now to debug basic access
+      // Try simple fetch first
       const { data, error } = await supabase
         .from('bounties')
         .select(`
-            *,
-            target:target_user_id (
-                username,
-                current_video_url
-            ),
-            squad:squad_id (
-                name
-            )
+            id,
+            squad_id,
+            defector_user_id,
+            target_user_id,
+            status,
+            video_url,
+            reward_credits,
+            created_at
         `)
         .eq('status', 'open')
         .order('created_at', { ascending: false })
+      
+      // If basic fetch works, we can manually fetch profiles later if needed
+      // But let's fix the immediate crash first
+
       
       if (error) {
         setDebugInfo(`Error: ${error.message} (${error.code})`)
