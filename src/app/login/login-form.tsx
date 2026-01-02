@@ -49,10 +49,16 @@ export default function LoginForm() {
   }
 
   const handleGoogleLogin = async () => {
+    // Dynamically get the current origin to support different ports (3000, 3001, etc.)
+    // Fallback to configured URL or localhost:3000 if window is undefined (SSR)
+    const origin = typeof window !== 'undefined' && window.location.origin 
+      ? window.location.origin 
+      : (process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000');
+
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${getURL()}auth/callback`,
+        redirectTo: `${origin}/auth/callback`,
       },
     })
     if (error) {

@@ -135,10 +135,16 @@ export default function SignupForm() {
     // Supabase will automatically use Google's 'name' as full_name.
     // Our handle_new_user trigger in SQL uses raw_user_meta_data->>'username'.
     // We might need to adjust the SQL trigger to fallback to full_name if username is missing.
+
+    // Dynamically get the current origin to support different ports (3000, 3001, etc.)
+    const origin = typeof window !== 'undefined' && window.location.origin 
+      ? window.location.origin 
+      : (process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000');
+
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${getURL()}auth/callback`,
+        redirectTo: `${origin}/auth/callback`,
         // We can try to pass query params to force prompt, but metadata is usually from provider
       },
     })
