@@ -13,6 +13,7 @@ import Link from "next/link"
 import { toast } from "sonner"
 import { createClient } from "@/lib/supabase/client"
 import { WelcomePopup } from "@/components/welcome-popup"
+import { MercenaryBoard } from "@/components/dashboard/mercenary-board"
 
 export default function DashboardPage() {
   const [tasks, setTasks] = useState<any[]>([])
@@ -599,6 +600,9 @@ export default function DashboardPage() {
   return (
     <div className="space-y-8">
       <WelcomePopup userId={userProfile?.id} />
+
+      {/* MERCENARY PROTOCOL ALERT ZONE */}
+      <MercenaryBoard />
 
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
            <div className="flex items-center gap-4">
