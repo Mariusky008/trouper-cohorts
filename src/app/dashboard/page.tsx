@@ -692,8 +692,8 @@ export default function DashboardPage() {
                    Tu as abandonné ton escouade trop souvent. <br/>
                    Tes missions sont suspendues tant que tu n'as pas racheté ta conduite en accomplissant des missions mercenaires.
                 </p>
-                <Button variant="destructive" className="w-full sm:w-auto" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
-                   VOIR LES MISSIONS MERCENAIRES
+                <Button variant="destructive" className="w-full sm:w-auto opacity-50 cursor-not-allowed" title="Tes missions sont masquées pour toi">
+                   ACCÈS MERCENAIRE RESTREINT
                 </Button>
              </div>
            )}
