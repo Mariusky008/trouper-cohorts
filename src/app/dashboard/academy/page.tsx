@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 
 export default function AcademyPage() {
   const [currentLevel, setCurrentLevel] = useState(1)
-  const [selectedResource, setSelectedResource] = useState<{title: string, type: string} | null>(null)
+  const [selectedResource, setSelectedResource] = useState<{title: string, type: string, url?: string, content?: string} | null>(null)
   
   // Progression simulée (à connecter à la DB plus tard)
   const [stats, setStats] = useState({
@@ -191,21 +191,93 @@ export default function AcademyPage() {
                   </p>
                   <ul className="space-y-3">
                      <li 
-                        onClick={() => setSelectedResource({ title: "Comprendre l'Algo TikTok en 2026", type: "video" })}
+                        onClick={() => setSelectedResource({ 
+                           title: "Comprendre l'Algo TikTok en 2026", 
+                           type: "video",
+                           url: "https://www.youtube.com/embed/_J8M-kBMb7Q"
+                        })}
                         className="flex items-center gap-2 text-sm hover:text-indigo-300 cursor-pointer transition-colors"
                      >
                         <Play className="h-4 w-4 fill-indigo-400 text-indigo-400" />
                         Comprendre l'Algo TikTok en 2026
                      </li>
                      <li 
-                        onClick={() => setSelectedResource({ title: "Tuto : Monter une vidéo virale", type: "video" })}
+                        onClick={() => setSelectedResource({ 
+                           title: "Tuto : Monter une vidéo virale", 
+                           type: "video",
+                           url: "https://www.youtube.com/embed/Zeh4jVVuGDE"
+                        })}
                         className="flex items-center gap-2 text-sm hover:text-indigo-300 cursor-pointer transition-colors"
                      >
                         <Play className="h-4 w-4 fill-indigo-400 text-indigo-400" />
                         Tuto : Monter une vidéo virale
                      </li>
                      <li 
-                        onClick={() => setSelectedResource({ title: "La liste des 50 niches rentables", type: "pdf" })}
+                        onClick={() => setSelectedResource({ 
+                           title: "La liste des 50 niches rentables", 
+                           type: "pdf",
+                           content: `
+1.  **Business & Argent**
+    *   Intelligence Artificielle (Outils, Tutos)
+    *   Cryptomonnaie & Trading
+    *   Dropshipping & E-commerce
+    *   Affiliate Marketing
+    *   Investissement Immobilier
+    *   Budget & Finances Personnelles
+    *   Productivité & Notion
+    *   Side Hustles (Gagner de l'argent en ligne)
+    *   Marketing Digital & Vente
+    *   Leadership & Management
+
+2.  **Santé & Bien-être**
+    *   Musculation & Fitness (Gym)
+    *   Perte de poids & Nutrition
+    *   Santé Mentale & Anxiété
+    *   Yoga & Méditation
+    *   Biohacking & Sommeil
+    *   Recettes Healthy Rapides
+    *   Calisthenics (Street Workout)
+    *   Soins de la peau (Skincare)
+    *   Santé Féminine
+    *   Stop Tabac / Addictions
+
+3.  **Relations & Développement Perso**
+    *   Séduction & Dating (Hommes/Femmes)
+    *   Psychologie & Langage Corporel
+    *   Confiance en soi
+    *   Rupture & Recovery
+    *   Conseils de couple
+    *   Stoïcisme & Philosophie
+    *   Communication & Charisme
+    *   Spiritualité & Astrologie
+    *   Motivation & Discipline
+    *   Lifestyle "That Girl" / "Alpha"
+
+4.  **Tech & Gaming**
+    *   Astuces iPhone / Android
+    *   Setup Gaming & PC
+    *   News Tech & Gadgets
+    *   Minecraft (Builds, Mods)
+    *   Roblox
+    *   GTA VI News & Leaks
+    *   Valorant / League of Legends (Clips)
+    *   Coding & Programmation
+    *   Excel & Google Sheets Tips
+    *   Photoshop & Design
+
+5.  **Loisirs & Créativité**
+    *   Voyage (Travel Hacks, Destinations)
+    *   Cuisine & Pâtisserie (ASMR)
+    *   Mode & Streetwear
+    *   Bricolage & DIY
+    *   Dessin & Art Numérique
+    *   Photographie & Vidéo
+    *   Automobile (Supercars, Mécanique)
+    *   Animaux de compagnie (Chiens/Chats)
+    *   Jardinage & Plantes
+    *   Magie & Mentalisme
+                           `
+                        })}
                         className="flex items-center gap-2 text-sm hover:text-indigo-300 cursor-pointer transition-colors"
                      >
                         <FileText className="h-4 w-4 text-indigo-400" />
@@ -216,8 +288,8 @@ export default function AcademyPage() {
 
                {/* Resource Viewer Modal */}
                <Dialog open={!!selectedResource} onOpenChange={(open) => !open && setSelectedResource(null)}>
-                 <DialogContent className="sm:max-w-lg">
-                   <DialogHeader>
+                 <DialogContent className="sm:max-w-4xl h-[80vh] flex flex-col p-0 overflow-hidden">
+                   <DialogHeader className="p-6 pb-2 shrink-0">
                      <DialogTitle className="flex items-center gap-2">
                         {selectedResource?.type === 'video' ? <Play className="h-5 w-5 text-red-500" /> : <FileText className="h-5 w-5 text-blue-500" />}
                         {selectedResource?.title}
@@ -227,28 +299,32 @@ export default function AcademyPage() {
                      </DialogDescription>
                    </DialogHeader>
                    
-                   <div className="py-8 text-center space-y-4 bg-slate-50 rounded-lg border border-dashed border-slate-200">
+                   <div className="flex-1 bg-slate-50 p-4 overflow-hidden flex flex-col">
                       {selectedResource?.type === 'video' ? (
-                         <div className="flex flex-col items-center gap-3">
-                            <div className="h-16 w-16 bg-red-100 rounded-full flex items-center justify-center">
-                               <Play className="h-8 w-8 text-red-600 ml-1" />
-                            </div>
-                            <p className="font-medium text-slate-700">La vidéo est en cours de montage.</p>
-                            <p className="text-xs text-slate-500">Disponible dans la prochaine mise à jour.</p>
+                         <div className="w-full h-full rounded-lg overflow-hidden bg-black shadow-inner">
+                            <iframe 
+                              width="100%" 
+                              height="100%" 
+                              src={selectedResource.url} 
+                              title="YouTube video player" 
+                              frameBorder="0" 
+                              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                              allowFullScreen
+                            ></iframe>
                          </div>
                       ) : (
-                         <div className="flex flex-col items-center gap-3">
-                            <div className="h-16 w-16 bg-blue-100 rounded-full flex items-center justify-center">
-                               <FileText className="h-8 w-8 text-blue-600" />
+                         <div className="w-full h-full overflow-y-auto pr-2">
+                            <div className="bg-white p-8 rounded-lg shadow-sm border border-slate-200 min-h-full prose prose-slate max-w-none">
+                               <div className="whitespace-pre-wrap font-medium text-slate-700">
+                                  {selectedResource?.content}
+                               </div>
                             </div>
-                            <p className="font-medium text-slate-700">Le document est en cours de rédaction.</p>
-                            <p className="text-xs text-slate-500">Disponible dans la prochaine mise à jour.</p>
                          </div>
                       )}
                    </div>
                    
-                   <div className="flex justify-end">
-                      <Button onClick={() => setSelectedResource(null)}>Compris</Button>
+                   <div className="p-4 bg-white border-t flex justify-end shrink-0">
+                      <Button onClick={() => setSelectedResource(null)}>Fermer</Button>
                    </div>
                  </DialogContent>
                </Dialog>
