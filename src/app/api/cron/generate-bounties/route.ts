@@ -9,10 +9,19 @@ const supabaseAdmin = createClient(
 
 export async function GET(request: Request) {
   // Check for secret key to prevent unauthorized access
+  // Supports both Header (Bearer) and Query Parameter (?key=...)
   const authHeader = request.headers.get('authorization')
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    // Optional: Allow development testing without secret
-    if (process.env.NODE_ENV === 'production') {
+  const url = new URL(request.url)
+  const queryKey = url.searchParams.get('key')
+  const secret = process.env.CRON_SECRET
+
+  const isValid = (authHeader === `Bearer ${secret}`) || (queryKey === secret)
+
+  if (!isValid) {
+    // Optional: Allow development testing without secret if strictly in dev mode
+    if (process.env.NODE_ENV === 'development') {
+        console.log("Dev mode: bypassing cron auth")
+    } else {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
   }
