@@ -99,8 +99,11 @@ export default function LeavesPage() {
          setDate(undefined)
       }
 
-    } catch (e) {
-      toast.error("Erreur lors de la demande")
+    } catch (e: any) {
+      console.error(e)
+      toast.error("Erreur lors de la demande", { 
+        description: e.message || "Une erreur technique est survenue. Vérifie ta connexion." 
+      })
     } finally {
       setSubmitting(false)
     }
@@ -166,7 +169,7 @@ export default function LeavesPage() {
                   mode="single"
                   selected={date}
                   onSelect={setDate}
-                  disabled={(date) => isBefore(date, addDays(startOfToday(), 1))} // Disable past and today
+                  disabled={(date: Date) => isBefore(date, addDays(startOfToday(), 1))} // Disable past and today
                   className="rounded-md border shadow"
                   modifiers={{
                      off: offDays
