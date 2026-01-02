@@ -80,6 +80,20 @@ export function MercenaryBoard() {
     if (!selectedBounty || !user) return
     setProcessing(true)
 
+    // Handle simulation completion locally
+    if (selectedBounty.id.toString().startsWith('simulated-')) {
+        setTimeout(() => {
+            setBounties(prev => prev.filter(b => b.id !== selectedBounty.id))
+            toast.success("Mission Mercenaire Accomplie ! (Simulation)", {
+                description: "Tu as sauvé l'escouade. +1 Crédit + Gloire.",
+                icon: <Sword className="h-4 w-4 text-red-600" />
+            })
+            setSelectedBounty(null)
+            setProcessing(false)
+        }, 1000)
+        return
+    }
+
     try {
         // 1. Mark bounty as completed
         const { error } = await supabase
@@ -93,8 +107,18 @@ export function MercenaryBoard() {
         if (error) throw error
 
         // 2. Give Credits to Mercenary
-        // (Assuming we have a logic for credits, simplified here)
-        await supabase.rpc('increment_credits', { user_id: user.id, amount: 1 })
+        // We handle credits update via RPC or direct update if RPC is missing
+        const { error: creditError } = await supabase.rpc('increment_credits', { user_id: user.id, amount: 1 })
+        
+        // Fallback if RPC fails (e.g. function doesn't exist yet)
+        if (creditError) {
+             console.log("RPC failed, trying direct update", creditError)
+             // Fetch current credits first
+             const { data: profile } = await supabase.from('profiles').select('boost_credits').eq('id', user.id).single()
+             if (profile) {
+                 await supabase.from('profiles').update({ boost_credits: (profile.boost_credits || 0) + 1 }).eq('id', user.id)
+             }
+        }
 
         toast.success("Mission Mercenaire Accomplie !", {
             description: "Tu as sauvé l'escouade. +1 Crédit + Gloire.",
@@ -259,11 +283,7 @@ export function MercenaryBoard() {
                <div className="space-y-2">
                   <div className="flex items-center gap-3 p-2 bg-white rounded border border-slate-100">
                      <div className="h-6 w-6 rounded-full bg-red-100 flex items-center justify-center text-red-600 text-xs font-bold">1</div>
-                     <span className="text-sm">Liker la vidéo</span>
-                  </div>
-                  <div className="flex items-center gap-3 p-2 bg-white rounded border border-slate-100">
-                     <div className="h-6 w-6 rounded-full bg-red-100 flex items-center justify-center text-red-600 text-xs font-bold">2</div>
-                     <span className="text-sm">Mettre un commentaire (4 mots min)</span>
+                     <span className="text-sm">Effectuer 1 action (Like, Commentaire ou Favori)</span>
                   </div>
                </div>
             </div>
