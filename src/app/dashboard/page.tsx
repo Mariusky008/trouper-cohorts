@@ -1162,15 +1162,25 @@ export default function DashboardPage() {
               
               {/* SURVEILLANCE SHORTCUT */}
               <Link href="/dashboard/surveillance">
-                <div className="rounded-xl border bg-card p-4 shadow-sm flex items-center justify-between hover:bg-muted/50 transition-colors cursor-pointer group">
-                  <div>
-                    <p className="text-xs text-muted-foreground font-medium uppercase group-hover:text-blue-600 transition-colors">Surveillance</p>
-                    <div className="flex items-center gap-2 mt-1">
-                        <span className="text-lg font-bold">Tableau de Bord</span>
+                <div className="rounded-xl border bg-gradient-to-br from-slate-900 to-slate-800 p-5 shadow-lg flex items-center justify-between hover:scale-[1.02] transition-transform cursor-pointer group relative overflow-hidden">
+                  {/* Radar Effect Background */}
+                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-green-500/10 to-transparent opacity-50 animate-pulse-slow pointer-events-none" />
+                  
+                  <div className="relative z-10">
+                    <div className="flex items-center gap-2 mb-1">
+                       <div className="h-2 w-2 rounded-full bg-red-500 animate-pulse" />
+                       <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Accès Classifié</p>
                     </div>
+                    <div className="flex items-center gap-2">
+                        <span className="text-xl font-black text-white tracking-tight">SURVEILLANCE</span>
+                    </div>
+                    <p className="text-xs text-slate-400 mt-1 group-hover:text-green-400 transition-colors">
+                       Accéder au radar tactique
+                    </p>
                   </div>
-                  <div className="h-10 w-10 rounded-full bg-slate-100 group-hover:bg-blue-100 flex items-center justify-center transition-colors">
-                      <Eye className="h-5 w-5 text-slate-500 group-hover:text-blue-600" />
+                  
+                  <div className="h-12 w-12 rounded-xl bg-slate-800 border border-slate-700 group-hover:border-green-500/50 flex items-center justify-center transition-colors relative z-10">
+                      <Eye className="h-6 w-6 text-green-500 group-hover:animate-pulse" />
                   </div>
                 </div>
               </Link>
