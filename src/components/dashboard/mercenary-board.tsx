@@ -83,6 +83,8 @@ export function MercenaryBoard({ onCreditsEarned }: { onCreditsEarned?: () => vo
     setProcessing(true)
 
     // Handle simulation completion locally
+    // REMOVED FOR PRODUCTION - Simulation logic commented out to force real DB interaction
+    /*
     if (selectedBounty.id.toString().startsWith('simulated-')) {
         setProcessing(false) // Stop loading immediately
         setSelectedBounty(null) // Close mission dialog
@@ -99,6 +101,7 @@ export function MercenaryBoard({ onCreditsEarned }: { onCreditsEarned?: () => vo
         if (onCreditsEarned) onCreditsEarned()
         return
     }
+    */
 
     try {
         // 1. Mark bounty as completed
@@ -223,17 +226,31 @@ export function MercenaryBoard({ onCreditsEarned }: { onCreditsEarned?: () => vo
   if (bounties.length === 0) {
       return (
           <>
-          <div className="rounded-xl border border-dashed border-slate-200 p-6 text-center bg-slate-50/50">
-             <div className="flex justify-center mb-2">
-                <ShieldAlert className="h-8 w-8 text-slate-300" />
+          <div className="rounded-xl bg-gradient-to-r from-slate-50 to-white border border-slate-200 p-8 text-center shadow-sm relative overflow-hidden group hover:shadow-md transition-all duration-300">
+             {/* Background Decoration */}
+             <div className="absolute top-0 right-0 p-8 opacity-5 transform rotate-12 group-hover:rotate-0 transition-transform duration-500">
+                <ShieldAlert className="h-32 w-32 text-slate-400" />
              </div>
-             <h3 className="text-sm font-semibold text-slate-500">Aucune alerte Mercenaire</h3>
-             <p className="text-xs text-slate-400">Toutes les escouades sont opérationnelles.</p>
              
-             {/* Hidden Trigger for Demo */}
-             <Button variant="ghost" size="sm" onClick={simulateProtocol} className="mt-4 opacity-10 hover:opacity-100 text-xs">
-                (Dev: Simuler Alerte)
-             </Button>
+             <div className="relative z-10 flex flex-col items-center gap-3">
+                <div className="h-16 w-16 rounded-full bg-green-100 flex items-center justify-center mb-2 animate-pulse-slow">
+                   <CheckCircle className="h-8 w-8 text-green-600" />
+                </div>
+                
+                <h3 className="text-lg font-bold text-slate-800 tracking-tight uppercase">
+                   Secteur Sécurisé
+                </h3>
+                
+                <p className="text-sm text-slate-500 max-w-sm font-medium">
+                   Aucune alerte Mercenaire en cours. <br/>
+                   <span className="text-slate-400 font-normal">Toutes les escouades sont opérationnelles. Repose-toi soldat.</span>
+                </p>
+
+                {/* Hidden Trigger for Demo - Kept for Admin testing if needed */}
+                <Button variant="ghost" size="sm" onClick={simulateProtocol} className="mt-4 opacity-0 hover:opacity-100 text-[10px] text-slate-300 transition-opacity absolute bottom-2 right-2">
+                   (Dev: Test)
+                </Button>
+             </div>
           </div>
           
           {/* Victory Modal needs to be here too if state persists after clearing bounties */}
