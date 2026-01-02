@@ -17,6 +17,7 @@ export default function SurveillancePage() {
   const [missingSupporters, setMissingSupporters] = useState<any[]>([])
   const [missingSupportersYesterday, setMissingSupportersYesterday] = useState<any[]>([])
   const [dayProgress, setDayProgress] = useState(1)
+  const [reportedUsers, setReportedUsers] = useState<Set<string>>(new Set())
   
   const supabase = createClient()
 
@@ -123,6 +124,8 @@ export default function SurveillancePage() {
           description: `${username} a été signalé à l'admin pour manque de soutien.`,
           icon: <MessageSquareWarning className="h-4 w-4 text-orange-500" />
        })
+       
+       setReportedUsers(prev => new Set(prev).add(targetUserId))
      } catch (error) {
        toast.error("Erreur lors de l'envoi du signalement")
      }
@@ -239,25 +242,35 @@ export default function SurveillancePage() {
                       {missingSupportersYesterday.length} traître(s) détecté(s) !
                     </div>
                     <div className="grid gap-3">
-                      {missingSupportersYesterday.map((m: any) => (
-                        <div key={m.user_id} className="flex items-center justify-between p-4 border rounded-xl bg-white border-red-100 shadow-sm">
+                      {missingSupportersYesterday.map((m: any) => {
+                        const isReported = reportedUsers.has(m.user_id)
+                        return (
+                        <div key={m.user_id} className={`flex items-center justify-between p-4 border rounded-xl shadow-sm transition-all ${isReported ? 'bg-muted/50 border-muted opacity-60' : 'bg-white border-red-100'}`}>
                           <div className="flex items-center gap-4">
-                            <div className="h-10 w-10 rounded-full bg-red-100 text-red-600 flex items-center justify-center text-sm font-bold">
+                            <div className={`h-10 w-10 rounded-full flex items-center justify-center text-sm font-bold ${isReported ? 'bg-muted text-muted-foreground' : 'bg-red-100 text-red-600'}`}>
                               {m.profiles?.username?.charAt(0) || "?"}
                             </div>
-                            <span className="font-bold text-foreground">{m.profiles?.username || "Inconnu"}</span>
+                            <span className={`font-bold text-foreground ${isReported ? 'line-through decoration-red-500 decoration-2' : ''}`}>{m.profiles?.username || "Inconnu"}</span>
                           </div>
-                          <Button 
-                            size="sm" 
-                            variant="destructive" 
-                            className="gap-2"
-                            onClick={() => handleReportMissing(m.user_id, m.profiles?.username)}
-                          >
-                            <MessageSquareWarning className="h-4 w-4" />
-                            Signaler
-                          </Button>
+                          {isReported ? (
+                            <span className="text-xs font-bold text-orange-600 flex items-center gap-1 bg-orange-100 px-3 py-1 rounded-full">
+                               <CheckCircle className="h-3 w-3" />
+                               Signalé
+                            </span>
+                          ) : (
+                            <Button 
+                              size="sm" 
+                              variant="destructive" 
+                              className="gap-2"
+                              onClick={() => handleReportMissing(m.user_id, m.profiles?.username)}
+                            >
+                              <MessageSquareWarning className="h-4 w-4" />
+                              Signaler
+                            </Button>
+                          )}
                         </div>
-                      ))}
+                        )
+                      })}
                     </div>
                   </div>
                 )}
