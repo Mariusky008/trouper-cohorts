@@ -45,6 +45,8 @@ export function MercenaryBoard({ onCreditsEarned }: { onCreditsEarned?: () => vo
             toast.error("Table 'bounties' introuvable", { description: "Demandez à l'admin d'exécuter la migration SQL." })
         }
       }
+      
+      console.log("BOUNTIES FETCHED:", data) // DEBUG: See what we actually get
 
       // Filter out bounties where I am the defector (I cannot claim my own bounty)
       // DEBUG: Temporarily show ALL bounties to verify they exist
