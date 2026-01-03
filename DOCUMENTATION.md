@@ -1,129 +1,109 @@
 # 📚 Documentation Fonctionnelle et Technique - Troupers
 
-Ce document sert de référence complète (ancre de repérage) pour comprendre le fonctionnement de l'application Troupers, ses fonctionnalités clés et son implémentation technique.
+Ce document sert de référence complète pour comprendre le fonctionnement de l'application Troupers, ses fonctionnalités clés et son implémentation technique.
+
+*Dernière mise à jour : 03 Janvier 2026*
 
 ---
 
-## 1. Dashboard & Missions du Jour
+## 1. Dashboard & Missions du Jour (Gamification)
 **Fichier Principal :** `src/app/dashboard/page.tsx`
 
-C'est le cœur de l'application où l'utilisateur passe le plus clair de son temps.
+C'est le cœur de l'application où l'utilisateur progresse dans ses tâches quotidiennes.
 
 ### Fonctionnalités
-*   **Affichage des Missions :** Liste les membres de l'escouade que l'utilisateur doit soutenir aujourd'hui.
-*   **Logique de Rotation des Actions :** L'action demandée change cycliquement pour chaque membre (Like -> Commentaire -> Favori) basé sur l'historique.
-*   **Gating (Verrouillage) :**
-    *   Les missions sont **verrouillées** si l'utilisateur n'a pas ajouté le lien de sa propre vidéo ("Pas de lien = Pas de soutien").
-    *   Les missions sont **verrouillées** si l'utilisateur n'est pas abonné à tous les membres de son escouade.
+*   **Système de Vagues (Waves) :** Les missions ne sont pas affichées en vrac. Elles sont présentées par paquets de 5 (Vague 1, Vague 2...).
+    *   L'utilisateur doit finir la vague 1 pour débloquer la vague 2.
+    *   Cela réduit la charge mentale et gamifie la progression.
+*   **Rangs Dynamiques :** Une barre de progression en haut affiche le grade du jour selon l'avancement :
+    *   0% : **Recrue**
+    *   25% : **Soldat**
+    *   50% : **Sergent**
+    *   75% : **Vétéran**
+    *   100% : **Légende** 🏆
+*   **Rotation des Actions :** L'action demandée change cycliquement pour chaque membre (Like -> Commentaire -> Favori) basé sur l'historique `video_tracking`.
 
 ### Implémentation Technique
-*   **State `tasks` :** Tableau d'objets généré dynamiquement en croisant les membres de l'escouade (`squad_members`) avec l'historique de tracking (`video_tracking`).
-*   **Calcul de l'Action :** Utilise `action_count % 3` pour déterminer si c'est un Like (0), Comment (1) ou Favori (2).
-*   **Sécurité :** Vérifie `!myVideoUrl` pour afficher l'overlay de blocage.
+*   **State `tasks` :** Tableau d'objets généré dynamiquement.
+*   **Pagination :** Utilisation de `slice()` pour n'afficher que les 5 tâches de la vague courante.
+*   **Sécurité Cache :** L'état "Vu" des vidéos est stocké dans `sessionStorage` avec une **date d'expiration**. Si la date stockée n'est pas aujourd'hui, le cache est purgé au chargement pour éviter de valider des missions d'hier.
 
 ---
 
-## 2. Système de Vidéo & Validation
+## 2. Protocole Mercenaire (Pénalités & Rattrapage)
+**Doc détaillée :** `docs/PROTOCOLE_MERCENAIRE.md`
+**Composant :** `src/components/dashboard/mercenary-board.tsx`
+
+Système qui garantit que tout le monde reçoit du soutien, même si un membre déserte.
+
+### Fonctionnalités
+*   **Détection des Déserteurs :** Chaque nuit, un script vérifie qui n'a pas fait ses missions la veille.
+*   **Punition :** Le déserteur perd des points de Discipline et prend un "Strike".
+*   **Bounties (Primes) :** Les missions ratées deviennent des missions mercenaires publiques pour les autres membres.
+*   **Récompense :** Accomplir une mission mercenaire rapporte +1 Crédit Boost.
+*   **Anti-Triche :** Le bouton "J'ai fait le job" est désactivé tant que la vidéo n'a pas été ouverte.
+
+### Implémentation Technique
+*   **Cron Job :** `/api/cron/generate-bounties`. Vérifie les supports de la veille (`yesterday`) pour éviter les faux positifs liés au fuseau horaire.
+*   **RPC PostgreSQL :** `increment_strikes` gère atomiquement la pénalité.
+
+---
+
+## 3. Boost Window (Fenêtres de Gain)
 **Fichier Principal :** `src/app/dashboard/page.tsx`
 
-Le mécanisme qui assure que les utilisateurs font réellement le travail.
+Moments clés de la journée où l'engagement est maximisé.
 
 ### Fonctionnalités
-*   **Ajout de Vidéo :** L'utilisateur doit fournir une URL (TikTok/YouTube) dans le bloc "Ta Vidéo à Promouvoir".
-*   **Visualisation Obligatoire :** Le bouton de validation (rond) est inactif tant que l'utilisateur n'a pas cliqué sur "Voir la vidéo".
-*   **Persistence de la Vue :** Si l'utilisateur clique sur "Voir la vidéo", quitte l'app et revient, l'état "Vu" est conservé.
+*   **Fenêtre Active :** Si une fenêtre est ouverte (ex: 18h-20h), une bannière spéciale apparaît.
+*   **Objectif :** Une "Cible Prioritaire" est désignée. L'utilisateur doit faire 3 actions (Like + Com + Fav) sur cette cible.
+*   **Gain :** +1 Crédit Boost immédiat.
 
 ### Implémentation Technique
-*   **SessionStorage :** Utilise `sessionStorage.getItem('viewedVideos')` pour stocker les IDs des utilisateurs dont la vidéo a été ouverte. Cela survit au rafraîchissement de la page.
-*   **Tracking Unique :** On track via `targetUserId` et non l'URL de la vidéo (pour éviter de valider 5 missions d'un coup si tout le monde a la même URL par défaut).
-*   **Validation (`toggleTask`) :**
-    1.  Vérifie si la vidéo a été vue.
-    2.  Insère une ligne dans `daily_supports` (pour les stats du jour).
-    3.  Met à jour ou crée une entrée dans `video_tracking` (pour l'historique long terme).
-    4.  Déclenche la **Rotation d'Escouade** si le compteur atteint 3.
+*   **Table `boost_windows` :** Définit les créneaux horaires (`starts_at`, `ends_at`) et la vidéo cible.
+*   **Table `boost_participations` :** Empêche de participer deux fois à la même fenêtre.
 
 ---
 
-## 3. Chat & Notifications ("Taverne")
-**Fichier Principal :** `src/app/dashboard/page.tsx`
-**Table BDD :** `squad_messages`
+## 4. Jours Off (Gestion des Congés)
+**Page :** `src/app/dashboard/leaves/page.tsx`
 
-L'espace social pour motiver les troupes.
+Permet aux soldats de se reposer sans être pénalisés par le Protocole Mercenaire.
 
-### Fonctionnalités
-*   **Messagerie Instantanée :** Chat en temps réel entre les membres de la même escouade.
-*   **Notifications Automatiques :** Lorsqu'un utilisateur valide une mission, un message est posté automatiquement en son nom (ex: "J'ai liké la vidéo de Username ! ❤️").
-
-### Implémentation Technique
-*   **Supabase Realtime :** Souscription via `supabase.channel` aux INSERT sur la table `squad_messages`.
-*   **Insertion Auto :** Dans la fonction `toggleTask`, le code détecte le type d'action (Like/Comment/Favori) et insère un message système dans la table.
-*   **Sécurité (RLS) :** Une policy SQL permet aux utilisateurs d'insérer des messages pour eux-mêmes.
+### Règles
+*   Max 2 jours par semaine.
+*   Doit être posé au moins 24h à l'avance (pour demain min).
+*   **Conséquence :** Le script Mercenaire voit le jour OFF, ne met pas de Strike, mais génère quand même une Bounty pour que l'escouade ne perde pas de soutien.
 
 ---
 
-## 4. Gestion des Escouades & Rotation (Le "Swap")
-**Fichier Principal :** `src/app/dashboard/page.tsx` (Appel RPC)
-**Fichier SQL :** `supabase/migrations/create_swap_member_rpc.sql`
+## 5. Binôme (Buddy System)
+**Widget :** Sidebar Dashboard
 
-Le moteur de renouvellement de l'application.
+Chaque utilisateur se voit attribuer un binôme pour se motiver mutuellement.
 
-### Fonctionnalités
-*   **Cycle de 3 jours/actions :** Une fois qu'un utilisateur a soutenu un membre 3 fois (Like + Com + Fav), sa "mission" envers ce membre est terminée.
-*   **Remplacement Automatique :** Le membre soutenu est retiré de l'escouade de l'utilisateur et remplacé par un nouveau membre inconnu.
-
-### Implémentation Technique
-*   **Fonction RPC `swap_squad_member` :** C'est une fonction stockée en base de données (PostgreSQL) qui :
-    1.  Supprime la relation `squad_members` existante avec la cible.
-    2.  Cherche un utilisateur éligible (qui a une vidéo, qui n'est pas déjà dans l'escouade).
-    3.  L'ajoute à l'escouade.
-*   **Déclenchement :** Appelé dans `toggleTask` quand `newCount >= 3`.
+*   Affichage du partenaire dans la barre latérale.
+*   Score Duo partagé.
 
 ---
 
-## 5. Surveillance & Signalement
-**Fichier Principal :** `src/app/dashboard/page.tsx`
-
-Outil de contrôle social pour maintenir la discipline.
-
-### Fonctionnalités
-*   **Onglet Aujourd'hui :** Montre la progression en temps réel (X/Y membres soutenus).
-*   **Onglet Hier (Bilan) :** Montre qui a joué le jeu la veille.
-*   **Signalement :** Bouton pour signaler un membre ("Traître") qui n'a pas rendu les soutiens la veille.
-
-### Implémentation Technique
-*   **Comparaison de Sets :** Le code compare la liste des membres (`squadMembers`) avec la liste des soutiens reçus (`supportsReceived`) pour déduire les manquants (`missingSupporters`).
-*   **Table `reports` :** Les signalements sont enregistrés en base pour l'admin.
-
----
-
-## 6. Gamification & Célébration
-**Fichier Principal :** `src/app/dashboard/page.tsx`
-
-### Fonctionnalités
-*   **Score de Discipline :** Affiché sous forme de bouclier (En Probation / 100%).
-*   **Animation de Victoire :** Une fois toutes les missions cochées, une animation avec Trophée et Confettis apparaît.
-
-### Implémentation Technique
-*   **Framer Motion :** Utilisé pour les animations fluides du trophée (rebond, apparition).
-*   **Logique conditionnelle :** `allTasksCompleted` déclenche le rendu du bloc de félicitations.
-
----
-
-## 7. Structure de la Base de Données (Supabase)
+## 6. Structure de la Base de Données (Supabase)
 
 Voici les tables clés utilisées par l'application :
 
-*   **`profiles`** : Infos utilisateur, score, URL vidéo courante.
-*   **`squads`** : Groupes d'utilisateurs.
-*   **`squad_members`** : Table de liaison (Qui est dans quelle escouade).
+*   **`profiles`** : Infos utilisateur, score discipline, crédits boost, URL vidéo courante.
+*   **`squads`** & **`squad_members`** : Gestion des équipes.
 *   **`daily_supports`** : Historique court terme (qui a aidé qui aujourd'hui ?).
-*   **`video_tracking`** : Historique long terme (combien de fois j'ai aidé X sur cette vidéo ?). Sert au compteur de 3.
-*   **`squad_messages`** : Historique du chat.
-*   **`reports`** : Signalements des utilisateurs.
+*   **`video_tracking`** : Historique long terme (compteur d'actions par vidéo).
+*   **`bounties`** : Missions mercenaires générées par le système.
+*   **`user_off_days`** : Calendrier des congés posés.
+*   **`boost_windows`** : Créneaux horaires pour les événements Boost.
+*   **`daily_trends`** : Tendances globales affichées.
 
 ---
 
-## 8. Commandes Utiles (Développement)
+## 7. Commandes Utiles (Développement)
 
 *   **Lancer le projet :** `npm run dev`
-*   **Déployer migrations :** Les fichiers SQL sont dans `supabase/migrations/`. Il faut souvent les appliquer via le dashboard Supabase ou un outil SQL si pas de CLI connecté.
+*   **Déployer migrations :** Les fichiers SQL sont dans `supabase/migrations/`.
+*   **Simuler Cron Mercenaire :** `GET /api/cron/generate-bounties?key=XXX`
