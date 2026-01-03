@@ -54,11 +54,29 @@ export default function DashboardPage() {
   // Track which videos have been viewed in the current session (using Target User ID to be unique)
   const [viewedVideos, setViewedVideos] = useState<Set<string>>(new Set())
 
-  // Load from session storage on mount
+  // Load from session storage on mount with DATE CHECK
   useEffect(() => {
+    const todayStr = new Date().toISOString().split('T')[0]
     const stored = sessionStorage.getItem('viewedVideos')
+    
     if (stored) {
-      setViewedVideos(new Set(JSON.parse(stored)))
+      try {
+          const parsed = JSON.parse(stored)
+          // Check if it's the old format (array) or new format (object with date)
+          if (Array.isArray(parsed)) {
+              // Old format: Clear it to be safe
+              sessionStorage.removeItem('viewedVideos')
+          } else if (parsed.date === todayStr && Array.isArray(parsed.ids)) {
+              // Valid cache for TODAY
+              setViewedVideos(new Set(parsed.ids))
+          } else {
+              // Expired cache (from yesterday or before)
+              console.log("Clearing expired viewed videos cache")
+              sessionStorage.removeItem('viewedVideos')
+          }
+      } catch (e) {
+          sessionStorage.removeItem('viewedVideos')
+      }
     }
   }, [])
 
@@ -410,7 +428,12 @@ export default function DashboardPage() {
   const handleViewVideo = (targetId: string) => {
     setViewedVideos(prev => {
       const newSet = new Set(prev).add(targetId)
-      sessionStorage.setItem('viewedVideos', JSON.stringify(Array.from(newSet)))
+      // Store with Date to allow expiration
+      const cacheData = {
+          date: new Date().toISOString().split('T')[0],
+          ids: Array.from(newSet)
+      }
+      sessionStorage.setItem('viewedVideos', JSON.stringify(cacheData))
       return newSet
     })
   }
