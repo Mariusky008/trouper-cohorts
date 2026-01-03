@@ -99,7 +99,7 @@ export default function DashboardLayout({
         <div className="flex h-16 items-center border-b px-6">
           <Link href="/dashboard" className="flex items-center gap-2 font-bold text-xl">
             <div className="relative h-8 w-8 overflow-hidden rounded">
-               <GlitchLogo />
+               <GlitchLogo width={32} height={32} />
             </div>
             <span>Troupers</span>
           </Link>
