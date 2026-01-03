@@ -133,21 +133,6 @@ export default function DashboardLayout({
 
       {/* Main Content */}
       <div className="flex flex-1 flex-col">
-        <header className="flex h-16 items-center justify-between border-b bg-background px-6 md:px-8">
-          <h1 className="text-lg font-semibold md:hidden">Troupers</h1>
-          <div className="flex items-center gap-4 ml-auto">
-            <Link href="/dashboard/settings" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-              <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center text-xs font-bold text-primary overflow-hidden">
-                {userProfile.avatar_url ? (
-                  <img src={userProfile.avatar_url} alt="Avatar" className="h-full w-full object-cover" />
-                ) : (
-                  userProfile.username.charAt(0).toUpperCase()
-                )}
-              </div>
-              <span className="text-sm font-medium">{userProfile.username}</span>
-            </Link>
-          </div>
-        </header>
         <main className="flex-1 p-6 md:p-8 overflow-y-auto">
           {children}
         </main>
