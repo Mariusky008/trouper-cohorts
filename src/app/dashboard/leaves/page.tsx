@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Calendar } from "@/components/ui/calendar"
+import { Calendar } from "../../../components/ui/calendar"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Coffee, AlertCircle, CheckCircle, CalendarDays } from "lucide-react"
@@ -174,8 +174,8 @@ export default function LeavesPage() {
                   modifiers={{
                      off: offDays
                   }}
-                  modifiersStyles={{
-                     off: { color: 'white', backgroundColor: '#f97316', fontWeight: 'bold' }
+                  modifiersClassNames={{
+                     off: "bg-orange-500 text-white font-bold hover:bg-orange-600"
                   }}
                />
                <Button 
