@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { Home, Users, Settings, LogOut, Trophy, Video, GraduationCap, BookOpen, Coffee } from "lucide-react"
+import { Home, Users, Settings, LogOut, Trophy, Video, GraduationCap, BookOpen, Coffee, Menu, X } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { useRouter, usePathname } from "next/navigation"
 import { useEffect, useState } from "react"
@@ -20,6 +20,7 @@ export default function DashboardLayout({
   const router = useRouter()
   const pathname = usePathname()
   const [userProfile, setUserProfile] = useState<{username: string, avatar_url: string | null}>({username: "Recrue", avatar_url: null})
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const supabase = createClient()
 
   useEffect(() => {
@@ -77,6 +78,11 @@ export default function DashboardLayout({
     getUser()
   }, [router, pathname]) // Re-fetch on navigation (e.g. after settings update)
 
+  // Close mobile menu on navigation
+  useEffect(() => {
+    setIsMobileMenuOpen(false)
+  }, [pathname])
+
   const handleSignOut = async () => {
     await supabase.auth.signOut()
     router.push("/")
@@ -132,8 +138,56 @@ export default function DashboardLayout({
       </aside>
 
       {/* Main Content */}
-      <div className="flex flex-1 flex-col">
-        <main className="flex-1 p-6 md:p-8 overflow-y-auto">
+      <div className="flex flex-1 flex-col h-screen overflow-hidden">
+        {/* Mobile Header */}
+        <header className="flex h-16 items-center justify-between border-b bg-background px-4 md:hidden shrink-0">
+           <div className="flex items-center gap-2">
+              <div className="relative h-8 w-8 overflow-hidden rounded">
+                 <GlitchLogo width={32} height={32} />
+              </div>
+              <span className="font-bold text-lg">Troupers</span>
+           </div>
+           <button 
+             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+             className="p-2 text-muted-foreground hover:text-foreground"
+           >
+             {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+           </button>
+        </header>
+
+        {/* Mobile Menu Overlay */}
+        {isMobileMenuOpen && (
+           <div className="fixed inset-0 top-16 z-50 bg-background md:hidden flex flex-col p-4 animate-in slide-in-from-top-5 duration-200">
+              <nav className="flex-1 space-y-2">
+                {navItems.map((item) => (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={cn(
+                      "flex items-center gap-3 rounded-lg px-3 py-3 font-medium transition-colors text-lg",
+                      pathname === item.href 
+                        ? "bg-primary/10 text-primary" 
+                        : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                    )}
+                  >
+                    <item.icon className="h-6 w-6" />
+                    {item.label}
+                  </Link>
+                ))}
+              </nav>
+              <div className="border-t pt-4 mt-auto">
+                 <button
+                    onClick={handleSignOut}
+                    className="flex w-full items-center gap-3 rounded-lg px-3 py-3 text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors text-left text-lg"
+                 >
+                    <LogOut className="h-6 w-6" />
+                    Déconnexion
+                 </button>
+              </div>
+           </div>
+        )}
+
+        <main className="flex-1 p-4 md:p-8 overflow-y-auto">
           {children}
         </main>
       </div>
