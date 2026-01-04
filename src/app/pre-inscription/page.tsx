@@ -36,17 +36,21 @@ export default function PreInscriptionPage() {
 
         {/* CTA HAUT DE PAGE */}
         <div className="flex flex-col items-center -mt-8 mb-12 space-y-4">
-          <Button size="lg" className="h-16 px-10 text-xl w-full md:w-auto shadow-xl shadow-primary/20 animate-in fade-in zoom-in duration-500 delay-300 rounded-full font-bold" asChild>
+          <Button 
+            size="lg" 
+            className="h-16 px-12 text-xl w-full max-w-md shadow-2xl shadow-primary/30 animate-in fade-in zoom-in duration-500 delay-300 rounded-full font-black tracking-wide hover:scale-105 transition-transform" 
+            asChild
+          >
             <Link href="/reservation">
-              Je réserve ma place (Accès Gratuit)
+              JE RÉSERVE MA PLACE
               <ArrowRight className="ml-2 h-6 w-6" />
             </Link>
           </Button>
           
           <div className="flex flex-col items-center gap-3">
-             <p className="text-xs text-muted-foreground font-medium flex items-center gap-1.5 animate-in fade-in slide-in-from-top-2 duration-700 delay-500">
+             <p className="text-sm text-muted-foreground font-medium flex items-center gap-1.5 animate-in fade-in slide-in-from-top-2 duration-700 delay-500">
                <Lock className="w-3 h-3 text-slate-400" />
-               100% confidentiel • Aucun spam • Désinscription en 1 clic
+               Pas de spam. Tu recevras juste l'alerte de lancement.
              </p>
              
              <div className="bg-orange-50 text-orange-600 text-xs font-bold px-4 py-1.5 rounded-full inline-flex items-center gap-2 border border-orange-100 animate-pulse">
@@ -285,9 +289,13 @@ export default function PreInscriptionPage() {
 
         {/* FINAL CTA */}
         <section className="text-center py-12 space-y-6">
-          <Button size="lg" className="h-16 px-10 text-xl w-full md:w-auto shadow-xl shadow-primary/20 rounded-full font-bold" asChild>
+          <Button 
+            size="lg" 
+            className="h-16 px-12 text-xl w-full max-w-md shadow-2xl shadow-primary/30 rounded-full font-black tracking-wide hover:scale-105 transition-transform" 
+            asChild
+          >
             <Link href="/reservation">
-              Je réserve ma place (Accès Gratuit)
+              JE RÉSERVE MA PLACE
               <ArrowRight className="ml-2 h-6 w-6" />
             </Link>
           </Button>
@@ -296,7 +304,7 @@ export default function PreInscriptionPage() {
                Aucun paiement requis aujourd'hui.
              </p>
              <p className="text-xs text-muted-foreground flex items-center justify-center gap-1">
-               <Lock className="w-3 h-3" /> Vos données sont protégées.
+               <Lock className="w-3 h-3" /> Pas de spam. Tu recevras juste l'alerte de lancement.
              </p>
           </div>
         </section>
