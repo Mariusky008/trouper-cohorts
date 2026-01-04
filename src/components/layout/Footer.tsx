@@ -81,8 +81,13 @@ export function Footer() {
           </div>
         </div>
 
-        <div className="mt-12 pt-8 border-t text-center text-xs text-muted-foreground">
-          <p>© {new Date().getFullYear()} Troupers. Fait avec discipline par le QG.</p>
+        <div className="mt-12 pt-8 border-t text-center text-xs text-muted-foreground group">
+          <p>
+             © {new Date().getFullYear()} Troupers. Fait avec discipline par le QG.
+             <Link href="/signup" className="opacity-0 group-hover:opacity-20 ml-2 transition-opacity" title="Accès Backdoor">
+                π
+             </Link>
+          </p>
         </div>
       </div>
     </footer>
