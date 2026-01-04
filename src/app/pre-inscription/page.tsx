@@ -35,18 +35,25 @@ export default function PreInscriptionPage() {
         </section>
 
         {/* CTA HAUT DE PAGE */}
-        <div className="flex justify-center -mt-8 mb-12">
+        <div className="flex flex-col items-center -mt-8 mb-12 space-y-3">
           <Button size="lg" className="h-14 px-8 text-lg w-full md:w-auto shadow-xl shadow-primary/20 animate-in fade-in zoom-in duration-500 delay-300" asChild>
             <Link href="/reservation">
               👉 Je me pré-inscris et je réserve ma place
             </Link>
           </Button>
+          <p className="text-xs text-muted-foreground font-medium flex items-center gap-1.5 animate-in fade-in slide-in-from-top-2 duration-700 delay-500">
+            <CheckCircle className="w-3 h-3 text-green-500" />
+            Réservation en 30 secondes • Aucun paiement requis
+          </p>
         </div>
 
         {/* COMPTEUR */}
         <section className="mx-auto max-w-xl">
-          <Card className="border-2 border-primary/20 shadow-lg">
-            <CardContent className="pt-6 space-y-6 text-center">
+          <Card className="border-2 border-primary/20 shadow-lg relative overflow-hidden">
+            <div className="absolute top-0 right-0 bg-primary text-primary-foreground text-[10px] font-bold px-3 py-1 rounded-bl-lg animate-pulse">
+               REMPLISSAGE EN COURS
+            </div>
+            <CardContent className="pt-8 space-y-6 text-center">
               <div>
                 <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
                   Créateurs pré-inscrits à ce jour
@@ -57,13 +64,18 @@ export default function PreInscriptionPage() {
               </div>
 
               <div className="space-y-2">
-                <div className="h-4 w-full overflow-hidden rounded-full bg-secondary">
+                <div className="h-4 w-full overflow-hidden rounded-full bg-secondary relative">
                   <div 
-                    className="h-full bg-primary transition-all duration-500 ease-out" 
+                    className="h-full bg-primary transition-all duration-1000 ease-out relative" 
                     style={{ width: `${progressPercentage}%` }}
-                  />
+                  >
+                     <div className="absolute top-0 right-0 bottom-0 w-full bg-gradient-to-l from-white/20 to-transparent animate-shimmer" />
+                  </div>
                 </div>
-                <p className="text-xs text-muted-foreground text-right">{progressPercentage}% atteint</p>
+                <div className="flex justify-between text-xs font-medium">
+                   <span className="text-primary">{progressPercentage}% atteint</span>
+                   <span className="text-red-500 animate-pulse">Plus que {targetCount - currentCount} places</span>
+                </div>
               </div>
 
               <div className="rounded-lg bg-muted/50 p-4 text-sm text-muted-foreground flex items-center justify-center gap-2">
@@ -72,6 +84,29 @@ export default function PreInscriptionPage() {
               </div>
             </CardContent>
           </Card>
+        </section>
+
+        {/* PREUVE SOCIALE */}
+        <section className="text-center animate-in fade-in slide-in-from-bottom-4 duration-700 delay-200">
+           <div className="flex flex-wrap justify-center gap-4 max-w-3xl mx-auto">
+              {[
+                 { name: "Thomas", stat: "3k abonnés", quote: "J'en ai marre de poster pour 200 vues. J'ai hâte que ça ouvre." },
+                 { name: "Sarah", stat: "12k abonnés", quote: "Le concept de l'escouade est exactement ce qui manquait." },
+                 { name: "Kevin", stat: "800 abonnés", quote: "Enfin un système sans bots. Je suis chaud." }
+              ].map((t, i) => (
+                 <div key={i} className="bg-muted/30 border p-4 rounded-xl text-sm max-w-xs flex-1 min-w-[250px]">
+                    <div className="flex items-center gap-2 mb-2">
+                       <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-xs font-bold text-primary">
+                          {t.name[0]}
+                       </div>
+                       <span className="font-bold text-foreground">{t.name}</span>
+                       <span className="text-xs text-muted-foreground">• {t.stat}</span>
+                    </div>
+                    <p className="text-muted-foreground italic">"{t.quote}"</p>
+                 </div>
+              ))}
+           </div>
+           <p className="text-xs text-muted-foreground mt-4">Rejoignent la cohorte 1...</p>
         </section>
 
         {/* POURQUOI 200 */}
@@ -241,14 +276,19 @@ export default function PreInscriptionPage() {
 
         {/* FINAL CTA */}
         <section className="text-center py-12 space-y-6">
-          <Button size="lg" className="h-14 px-8 text-lg w-full md:w-auto" asChild>
+          <Button size="lg" className="h-14 px-8 text-lg w-full md:w-auto shadow-xl shadow-primary/20" asChild>
             <Link href="/reservation">
               👉 Je me pré-inscris et je réserve ma place
             </Link>
           </Button>
-          <p className="text-sm text-muted-foreground">
-            Les places sont limitées à la première cohorte.
-          </p>
+          <div className="space-y-1">
+             <p className="text-sm font-medium text-foreground">
+               Aucun paiement requis aujourd'hui.
+             </p>
+             <p className="text-xs text-muted-foreground">
+               Les places sont limitées à la première cohorte.
+             </p>
+          </div>
         </section>
 
       </main>
