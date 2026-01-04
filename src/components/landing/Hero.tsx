@@ -52,12 +52,12 @@ export function Hero() {
         </div>
 
         <h1 className="text-4xl font-extrabold tracking-tight text-foreground sm:text-5xl md:text-6xl lg:text-7xl">
-          Ton contenu mérite mieux que <span className="text-primary">l’invisibilité</span>.
+          Arrête de poster <span className="text-primary">dans le vide</span>.
         </h1>
        
         <p className="mx-auto max-w-2xl text-lg text-muted-foreground md:text-xl">
-         Ton contenu n’est pas mauvais. Il est juste invisible. Tik Tok ne pousse pas le talent.
-Il pousse les signaux. Troupers crée ce signal. Collectivement. Humainement.
+         L'algorithme ignore le talent, il ne respecte que le signal. <br className="hidden md:block" />
+         Troupers génère ce signal. Collectivement. Humainement.
         </p>
         
         <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
