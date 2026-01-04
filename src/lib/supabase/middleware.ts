@@ -45,6 +45,8 @@ export async function updateSession(request: NextRequest) {
     !request.nextUrl.pathname.startsWith('/signup') &&
     !request.nextUrl.pathname.startsWith('/auth') &&
     !request.nextUrl.pathname.startsWith('/legal') &&
+    !request.nextUrl.pathname.startsWith('/pre-inscription') &&
+    !request.nextUrl.pathname.startsWith('/how-it-works') &&
     request.nextUrl.pathname !== '/'
   ) {
     // no user, potentially respond by redirecting the user to the login page
