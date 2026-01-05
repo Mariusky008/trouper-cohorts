@@ -43,6 +43,28 @@ export function MercenaryBoard({ onCreditsEarned }: { onCreditsEarned?: () => vo
        // Filter out bounties where I am the defector
        let visibleBounties = (data || []).filter((b: any) => b.defector_user_id !== user?.id)
        
+       // DEV SIMULATION IF EMPTY (To show UI for demo)
+       if (visibleBounties.length === 0) {
+           const fakeBounty = {
+               id: "simulated-demo-" + Date.now(),
+               target_user_id: "demo-target",
+               defector_user_id: "demo-defector",
+               video_url: "https://tiktok.com/@demo/video/123",
+               status: 'open',
+               reward_credits: 1,
+               created_at: new Date().toISOString(),
+               target: { username: "Simulation Cible", current_video_url: "#" },
+               type: 'like'
+           }
+           // Only add fake bounty if explicitly requested or for admin demo? 
+           // NO: User complained "should be bounties". 
+           // Real fix: Check if cron job ran. If not, maybe simulate ONE for demo purposes if environment is dev/demo.
+           // For now, let's inject a fake one if list is empty to verify UI.
+           // visibleBounties = [fakeBounty] 
+           // COMMENTED OUT: We prefer real logic. 
+           // The issue is likely that the CRON job hasn't run or hasn't found missing supports yesterday.
+       }
+       
        // MANUALLY FETCH USER NAMES to fix display
        // Extract all user IDs we need to look up
        const targetIds = [...new Set(visibleBounties.map((b: any) => b.target_user_id))]
@@ -307,9 +329,10 @@ export function MercenaryBoard({ onCreditsEarned }: { onCreditsEarned?: () => vo
                    <span className="text-slate-400 font-normal">Toutes les escouades sont opérationnelles. Repose-toi soldat.</span>
                 </p>
 
-                {/* Hidden Trigger for Demo - Kept for Admin testing if needed */}
-                <Button variant="ghost" size="sm" onClick={simulateProtocol} className="mt-4 opacity-0 hover:opacity-100 text-[10px] text-slate-300 transition-opacity absolute bottom-2 right-2">
-                   (Dev: Test)
+                {/* TRIGGER FOR DEMO - ALWAYS VISIBLE FOR NOW IF EMPTY */}
+                <Button variant="outline" size="sm" onClick={simulateProtocol} className="mt-4 text-xs text-red-500 hover:text-red-700 hover:bg-red-50 border-red-100">
+                   <AlertTriangle className="mr-2 h-3 w-3" />
+                   (Admin) Simuler Alerte Mercenaire
                 </Button>
              </div>
           </div>
