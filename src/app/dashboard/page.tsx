@@ -1062,17 +1062,37 @@ export default function DashboardPage() {
                     ) : tasks[currentTaskIndex] ? (
                         // ACTIVE TASK
                         <div className="space-y-6">
-                           <MissionPlan 
-                              type={tasks[currentTaskIndex].type}
-                              scenario={tasks[currentTaskIndex].scenario}
-                              delayMinutes={tasks[currentTaskIndex].delayMinutes}
-                              trafficSource={tasks[currentTaskIndex].trafficSource}
-                              targetUsername={tasks[currentTaskIndex].targetUsername}
-                           />
+                           {!tasks[currentTaskIndex].completed ? (
+                              <MissionPlan 
+                                 type={tasks[currentTaskIndex].type}
+                                 scenario={tasks[currentTaskIndex].scenario}
+                                 delayMinutes={tasks[currentTaskIndex].delayMinutes}
+                                 trafficSource={tasks[currentTaskIndex].trafficSource}
+                                 targetUsername={tasks[currentTaskIndex].targetUsername}
+                              />
+                           ) : (
+                              <div className="p-8 text-center bg-slate-50 rounded-xl border border-slate-200 animate-in fade-in zoom-in-95 duration-300">
+                                 <div className="h-16 w-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <CheckCircle className="h-8 w-8 text-green-600" />
+                                 </div>
+                                 <h3 className="text-xl font-bold text-slate-900 mb-2">Mission Terminée !</h3>
+                                 <p className="text-slate-500 mb-6">
+                                    Tu as bien effectué l'action : <br/>
+                                    <span className="font-medium text-slate-900">{tasks[currentTaskIndex].text}</span>
+                                 </p>
+                                 <Button 
+                                    onClick={handleNextTask} 
+                                    size="lg"
+                                    className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-12 shadow-lg shadow-indigo-200"
+                                 >
+                                    PASSER À LA SUIVANTE <ChevronRight className="ml-2 h-5 w-5" />
+                                 </Button>
+                              </div>
+                           )}
                            
+                           {!tasks[currentTaskIndex].completed && (
                            <div className="flex flex-col gap-3 pt-4 border-t">
-                              {!tasks[currentTaskIndex].completed ? (
-                                 !viewedVideos.has(tasks[currentTaskIndex].targetUserId) ? (
+                                 {!viewedVideos.has(tasks[currentTaskIndex].targetUserId) ? (
                                     <Button 
                                        size="lg" 
                                        className="w-full h-14 text-lg font-bold bg-indigo-600 hover:bg-indigo-700 shadow-xl shadow-indigo-200"
@@ -1100,21 +1120,14 @@ export default function DashboardPage() {
                                        J'AI TERMINÉ LA MISSION
                                     </Button>
                                  )
-                              ) : (
-                                 <div className="text-center py-4 bg-green-50 rounded-lg border border-green-100">
-                                    <p className="text-green-700 font-bold mb-2">Mission déjà validée</p>
-                                    <Button onClick={handleNextTask} variant="outline" className="border-green-200 text-green-700 hover:bg-green-100">
-                                       Passer à la suivante <ChevronRight className="ml-1 h-4 w-4" />
-                                    </Button>
-                                 </div>
-                              )}
                               
-                              {viewedVideos.has(tasks[currentTaskIndex].targetUserId) && !tasks[currentTaskIndex].completed && (
+                              {viewedVideos.has(tasks[currentTaskIndex].targetUserId) && (
                                 <p className="text-xs text-center text-muted-foreground">
                                    En validant, tu confirmes avoir respecté le protocole ci-dessus.
                                 </p>
                               )}
                            </div>
+                           )}
                         </div>
                     ) : (
                         <div className="py-12 text-center text-slate-400">Chargement de la mission...</div>
