@@ -61,6 +61,10 @@ export async function GET(request: Request) {
         `)
 
     if (membersError) throw membersError
+    
+    // DEBUG: Log all members to understand why it might be empty
+    console.log(`Found ${allMembers?.length || 0} squad members`)
+    
     if (!allMembers || allMembers.length === 0) return NextResponse.json({ message: 'No members found' })
 
     const bountiesCreated = []
@@ -116,11 +120,18 @@ export async function GET(request: Request) {
             
             // Find missed targets
             const missedTargets = targetsToSupport.filter((target: any) => !supportedTargets.has(target.user_id))
+            
+            // DEBUG
+            console.log(`User ${defector.profiles?.username} (ID: ${defector.user_id}) missed ${missedTargets.length} targets`)
 
             // 4. Create a Bounty for each missed target
             for (const victim of missedTargets) {
                 // Check if victim has a video to support
-                if (!victim.profiles?.current_video_url) continue
+                // FORCE ALLOW EVEN IF NO VIDEO FOR DEMO if requested? No, keep it real.
+                if (!victim.profiles?.current_video_url) {
+                    console.log(`Skipping bounty for ${victim.profiles?.username} because no current_video_url`)
+                    continue
+                }
 
                 // Check if bounty already exists for this pair TODAY (created just now)
                 const { data: existing } = await supabaseAdmin
@@ -129,7 +140,8 @@ export async function GET(request: Request) {
                     .eq('defector_user_id', defector.user_id)
                     .eq('target_user_id', victim.user_id)
                     .eq('status', 'open')
-                    .gte('created_at', todayStr) // Created TODAY
+                    // Removed date check to force creation if it was missing regardless of time
+                    // But keep status=open to avoid duplicate ACTIVE bounties
                     .single()
 
                 if (!existing) {
