@@ -13,7 +13,7 @@ export async function GET(request: Request) {
   const authHeader = request.headers.get('authorization')
   const url = new URL(request.url)
   const queryKey = url.searchParams.get('key')
-  const secret = process.env.CRON_SECRET
+  const secret = process.env.CRON_SECRET || 'troupers_cron_key_123' // Fallback for dev
 
   const isValid = (authHeader === `Bearer ${secret}`) || (queryKey === secret)
 
@@ -26,19 +26,25 @@ export async function GET(request: Request) {
     }
   }
 
+  // Force Date Override for Testing ?date=YYYY-MM-DD
+  const forceDate = url.searchParams.get('date')
+  const forceToday = url.searchParams.get('today')
+
   try {
     console.log("Starting Mercenary Protocol Check...")
 
-    // 1. Determine "Target Date" (Yesterday)
+    // 1. Determine "Target Date" (Yesterday by default)
     // The cron runs early in the morning (e.g., 01:00 AM) to check if missions were done YESTERDAY.
-    const now = new Date()
+    const now = forceToday ? new Date(forceToday) : new Date()
     const yesterday = new Date(now)
     yesterday.setDate(yesterday.getDate() - 1)
     
-    const targetDateStr = yesterday.toISOString().split('T')[0] // YYYY-MM-DD of yesterday
+    // Allow overriding target date directly (e.g., to check missions of TODAY instead of yesterday for testing)
+    const targetDateStr = forceDate || yesterday.toISOString().split('T')[0] // YYYY-MM-DD
     const todayStr = now.toISOString().split('T')[0] // YYYY-MM-DD of today (for bounty creation date)
 
-    console.log(`Checking missions for date: ${targetDateStr}`)
+    console.log(`Checking missions for target date: ${targetDateStr}`)
+    console.log(`Generating bounties dated: ${todayStr}`)
     
     // 2. Fetch all Squad Members
     // We need to check every member of every squad

@@ -254,7 +254,32 @@ export function MercenaryBoard({ onCreditsEarned }: { onCreditsEarned?: () => vo
     if (!user) return
     setProcessing(true)
     
-    // Simulate local state update directly for immediate feedback
+    // TRY REAL CRON GENERATION FIRST
+    try {
+        const today = new Date().toISOString().split('T')[0]
+        // Call the CRON API with today as target date to force generation based on today's missing actions
+        // (Since no one did anything today, it should generate bounties)
+        const response = await fetch(`/api/cron/generate-bounties?key=troupers_cron_key_123&date=${today}`, {
+            method: 'GET'
+        })
+        
+        const result = await response.json()
+        console.log("CRON Result:", result)
+        
+        if (result.bounties_created > 0) {
+            toast.success(`Protocole Réel Déclenché : ${result.bounties_created} missions créées`)
+            fetchBounties() // Refresh list
+            setProcessing(false)
+            return
+        }
+        
+        toast.info("Aucune mission réelle générée, passage en mode simulation...")
+        
+    } catch (e) {
+        console.error("Failed to call cron", e)
+    }
+
+    // Fallback to Simulation if real cron created nothing
     const fakeBounty = {
         id: "simulated-" + Date.now(),
         target_user_id: user.id,
