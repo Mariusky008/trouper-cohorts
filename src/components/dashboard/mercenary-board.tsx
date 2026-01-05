@@ -38,11 +38,13 @@ export function MercenaryBoard({ onCreditsEarned }: { onCreditsEarned?: () => vo
     try {
       setDebugLog("Fetching...")
       // USE API PROXY TO BYPASS RLS ISSUES (Temporary Fix)
-      const response = await fetch('/api/bounties')
+      // Force cache busting to avoid stale data
+      const response = await fetch(`/api/bounties?t=${Date.now()}`)
+      
       if (!response.ok) throw new Error("Failed to fetch bounties API: " + response.status)
       
       const json = await response.json()
-      setDebugLog("API Response: " + JSON.stringify(json).slice(0, 200))
+      setDebugLog("API: " + (json.bounties?.length || 0) + " items found.")
       
       const { bounties: data } = json
       
@@ -319,7 +321,8 @@ export function MercenaryBoard({ onCreditsEarned }: { onCreditsEarned?: () => vo
         type: 'like'
     }
     
-    // Use functional update to ensure we don't lose previous state and force re-render
+    // FORCE LOCAL STATE UPDATE EVEN IF API FAILS
+    // This ensures the user SEES something immediately
     setBounties(prev => {
         // Ensure prev is an array
         const current = Array.isArray(prev) ? prev : []
@@ -340,7 +343,7 @@ export function MercenaryBoard({ onCreditsEarned }: { onCreditsEarned?: () => vo
         return newState
     })
     
-    toast.success("Mission de Test Générée !")
+    toast.success("Mission de Test Générée (Locale) !")
     setProcessing(false)
   }
 
