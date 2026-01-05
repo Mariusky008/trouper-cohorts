@@ -58,6 +58,17 @@ export function MissionPlan({ type, scenario = 'engagement', delayMinutes = 0, t
       </div>
 
       <div className="space-y-3">
+        {/* STEP -1: WARNING DOUBLE DIP (Safety) */}
+        <div className="p-2 bg-red-50 border border-red-100 rounded text-xs text-red-800 mb-2 flex gap-2 items-start">
+           <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+           <div>
+              <strong>STOP !</strong> Si tu as déjà vu et liké cette vidéo naturellement dans ton "Pour Toi" : <br/>
+              1. Ne fais RIEN (ne retire pas ton like). <br/>
+              2. Valide juste cette mission ici. <br/>
+              <span className="text-[10px] opacity-80">Double-cliquer est suspect pour l'algo.</span>
+           </div>
+        </div>
+
         {/* STEP 0: DELAY (Strategic Timing) */}
         {delayMinutes > 0 ? (
            <div className="flex items-start gap-3 p-2 bg-amber-50 rounded border border-amber-100 mb-2">
