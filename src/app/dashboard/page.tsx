@@ -313,29 +313,37 @@ export default function DashboardPage() {
                    }
                    
                    // Calculate deterministic rotation based on date and index
-                   // This ensures 33% distribution across the squad daily regardless of individual history
                    const todayDate = new Date()
                    const dayOfYear = Math.floor((todayDate.getTime() - new Date(todayDate.getFullYear(), 0, 0).getTime()) / 1000 / 60 / 60 / 24)
-                   const actionStep = (index + dayOfYear) % 3
+                   
+                   // ALGO V2: Smart Distribution (30% Com, 20% Reply, 10% Share, 40% Like/Fav)
+                   // We use modulo 10 to create buckets
+                   const distributionKey = (index + dayOfYear) % 10
 
                    let actionText = ""
                    let actionIcon = "❤️"
                    
-                   switch(actionStep) {
-                       case 0: 
-                          actionText = `Liker la vidéo de ${m.profiles?.username || 'Membre'}`
-                          actionIcon = "❤️"
-                          break
-                       case 1: 
-                          actionText = `Commenter la vidéo de ${m.profiles?.username || 'Membre'}`
-                          actionIcon = "💬"
-                          break
-                       case 2: 
-                          actionText = `Ajouter aux favoris la vidéo de ${m.profiles?.username || 'Membre'}`
-                          actionIcon = "⭐"
-                          break
-                       default:
-                          actionText = `Soutenir ${m.profiles?.username || 'Membre'}`
+                   if (distributionKey < 3) { 
+                      // 0, 1, 2 = 30% -> COMMENTAIRE QUALIFIÉ
+                      actionText = `Commenter (Expert) la vidéo de ${m.profiles?.username || 'Membre'}`
+                      actionIcon = "💬"
+                   } else if (distributionKey < 5) {
+                      // 3, 4 = 20% -> RÉPONSE (REPLY LOOP)
+                      actionText = `Répondre à un commentaire sous la vidéo de ${m.profiles?.username || 'Membre'}`
+                      actionIcon = "↩️"
+                   } else if (distributionKey < 6) {
+                      // 5 = 10% -> PARTAGE SILENCIEUX
+                      actionText = `Partager (Copier lien) la vidéo de ${m.profiles?.username || 'Membre'}`
+                      actionIcon = "🔗"
+                   } else {
+                      // 6, 7, 8, 9 = 40% -> LIKE / FAVORIS (Alternance)
+                      if (distributionKey % 2 === 0) {
+                         actionText = `Liker la vidéo de ${m.profiles?.username || 'Membre'}`
+                         actionIcon = "❤️"
+                      } else {
+                         actionText = `Ajouter aux favoris la vidéo de ${m.profiles?.username || 'Membre'}`
+                         actionIcon = "⭐"
+                      }
                    }
 
                    return {
