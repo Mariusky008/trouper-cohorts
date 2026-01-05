@@ -498,11 +498,12 @@ export function MercenaryBoard({ onCreditsEarned }: { onCreditsEarned?: () => vo
                </DialogDescription>
             </DialogHeader>
 
+            {selectedBounty && (
             <div className="py-4 space-y-4">
                <div className="bg-white p-4 rounded-lg border border-slate-200 text-center">
                   <p className="text-xs font-bold text-slate-400 uppercase mb-2">Cible à soutenir</p>
                   <a 
-                     href={selectedBounty?.video_url} 
+                     href={selectedBounty.video_url} 
                      target="_blank"
                      onClick={() => setHasViewedVideo(true)}
                      className="text-lg font-bold text-blue-600 hover:underline flex items-center justify-center gap-2"
@@ -529,6 +530,7 @@ export function MercenaryBoard({ onCreditsEarned }: { onCreditsEarned?: () => vo
                   targetUsername={selectedBounty.target?.username || "inconnu"}
                />
             </div>
+            )}
 
             <DialogFooter>
                <Button 
