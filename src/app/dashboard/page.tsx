@@ -47,6 +47,8 @@ function seededShuffle(array: any[], seed: number) {
   return result
 }
 
+import { extractTikTokUsername } from "@/lib/utils"
+
 export default function DashboardPage() {
   // ALGO V2.1 - CACHE BUSTER
   const [tasks, setTasks] = useState<any[]>([])
@@ -406,6 +408,10 @@ export default function DashboardPage() {
                    // We don't have follow status here easily, so we just suggest it rarely
                    const shouldFollow = seededRandom(dailySeed + index + 400) > 0.9
 
+                   // Extract handle from profile URL or Video URL
+                   const handle = extractTikTokUsername(m.profiles?.main_platform) || extractTikTokUsername(videoUrl) || m.profiles?.username || "Inconnu"
+                   const displayUsername = handle.startsWith('@') ? handle.substring(1) : handle
+
                    return {
                      id: index + 2,
                      text: actionText,
@@ -419,7 +425,7 @@ export default function DashboardPage() {
                      scenario: scenario,
                      trafficSource: trafficSource,
                      delayMinutes: delayVal,
-                     targetUsername: m.profiles?.username || "Inconnu",
+                     targetUsername: displayUsername,
                      shouldFollow: shouldFollow
                    }
                  })
@@ -1183,7 +1189,7 @@ export default function DashboardPage() {
                  {/* PROFILE INPUT */}
                  <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                       <label className="text-xs font-bold uppercase text-slate-500">Mon Profil Principal</label>
+                       <label className="text-xs font-bold uppercase text-slate-500">Mon Profil TikTok</label>
                        {!isEditingProfile && (
                           <button onClick={() => setIsEditingProfile(true)} className="text-xs text-indigo-600 hover:underline font-medium">Modifier</button>
                        )}
@@ -1193,7 +1199,7 @@ export default function DashboardPage() {
                           <input 
                              type="url" 
                              className="flex-1 h-9 rounded-md border px-3 text-sm"
-                             placeholder="Profil URL..."
+                             placeholder="https://tiktok.com/@tonpseudo"
                              value={myProfileUrl}
                              onChange={(e) => setMyProfileUrl(e.target.value)}
                           />
@@ -1203,7 +1209,7 @@ export default function DashboardPage() {
                        <div className="flex items-center gap-2 p-2 rounded-md bg-slate-50 border border-slate-100">
                           {myProfileUrl ? <CheckCircle className="h-4 w-4 text-green-500" /> : <AlertCircle className="h-4 w-4 text-red-500" />}
                           <span className={`text-sm truncate ${!myProfileUrl && 'text-red-500 font-medium'}`}>
-                             {myProfileUrl || "Profil manquant !"}
+                             {extractTikTokUsername(myProfileUrl) ? `@${extractTikTokUsername(myProfileUrl)}` : (myProfileUrl || "Lien profil manquant")}
                           </span>
                        </div>
                     )}
