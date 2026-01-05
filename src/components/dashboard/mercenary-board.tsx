@@ -41,10 +41,18 @@ export function MercenaryBoard({ onCreditsEarned }: { onCreditsEarned?: () => vo
       // Force cache busting to avoid stale data
       const response = await fetch(`/api/bounties?t=${Date.now()}`)
       
-      if (!response.ok) throw new Error("Failed to fetch bounties API: " + response.status)
+      // DEBUG: Log status explicitly
+      if (!response.ok) {
+         const errorText = await response.text()
+         setDebugLog(`Error ${response.status}: ${errorText.slice(0, 50)}`)
+         throw new Error("Failed to fetch bounties API: " + response.status)
+      }
       
       const json = await response.json()
-      setDebugLog("API: " + (json.bounties?.length || 0) + " items found.")
+      // FORCE UPDATE DEBUG LOG
+      const msg = "API: " + (json.bounties?.length || 0) + " items."
+      setDebugLog(msg)
+      console.log(msg)
       
       const { bounties: data } = json
       
@@ -102,8 +110,9 @@ export function MercenaryBoard({ onCreditsEarned }: { onCreditsEarned?: () => vo
 
        setBounties(visibleBounties)
        
-    } catch (e) {
+    } catch (e: any) {
       console.error("Error fetching bounties", e)
+      setDebugLog("Exception: " + e.message)
     } finally {
       setLoading(false)
     }
