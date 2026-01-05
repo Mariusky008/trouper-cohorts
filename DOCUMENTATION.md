@@ -139,3 +139,21 @@ Chaque mission est enveloppée dans une session de surf naturelle :
 *   **Décalage Temporel :** Un délai ("Attends 5 min") est imposé aléatoirement pour éviter les pics simultanés.
 *   **Anti-Double Dip :** Avertissement rouge : "Si tu as déjà vu/liké cette vidéo organiquement, NE FAIS RIEN (valide juste la mission)".
 
+---
+
+## 9. Charge de Travail & Échantillonnage Tactique
+**Architecture :** `src/app/dashboard/page.tsx`
+
+Pour garantir la durabilité du système et le réalisme des actions.
+
+### A. Limitation Quotidienne
+*   Chaque membre ne reçoit que **8 à 12 missions maximum par jour** (au lieu de 50+).
+*   Sélection aléatoire (Shuffle) des membres de l'escouade à soutenir, renouvelée chaque jour.
+*   **But :** Éviter l'épuisement des membres et le comportement "ferme à clics".
+
+### B. Stratégie d'Abonnement (Follow)
+*   **Règle d'or :** Ne jamais forcer le follow massif.
+*   **Probabilité :** Seulement **10%** de chance de voir une instruction "S'abonner (Optionnel)".
+*   **Limite :** Max 2 à 5 follows par jour par personne.
+*   **Logique :** Le follow doit rester un signal rare et fort pour être valorisé par l'algo.
+

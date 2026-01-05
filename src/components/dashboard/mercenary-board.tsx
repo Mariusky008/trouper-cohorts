@@ -34,43 +34,14 @@ export function MercenaryBoard({ onCreditsEarned }: { onCreditsEarned?: () => vo
 
   const fetchBounties = async () => {
     try {
-      // setDebugInfo("Fetching...")
-      // Fix: Remove the relation query for now to debug basic access
-      // Try simple fetch first
-      const { data, error } = await supabase
-        .from('bounties')
-        .select(`
-            id,
-            squad_id,
-            defector_user_id,
-            target_user_id,
-            status,
-            type,
-            video_url,
-            reward_credits,
-            created_at
-        `)
-        .eq('status', 'open')
-        .order('created_at', { ascending: false })
+      // USE API PROXY TO BYPASS RLS ISSUES (Temporary Fix)
+      const response = await fetch('/api/bounties')
+      if (!response.ok) throw new Error("Failed to fetch bounties API")
       
-      // If basic fetch works, we can manually fetch profiles later if needed
-      // But let's fix the immediate crash first
-
+      const { bounties: data } = await response.json()
       
-      if (error) {
-         // setDebugInfo(`Error: ${error.message} (${error.code})`)
-         console.error("Supabase Error:", error)
-         if (error.code === '42P01') {
-             toast.error("Table 'bounties' introuvable")
-         }
-       } else {
-         // setDebugInfo(`Success: Got ${data?.length || 0} bounties.`)
-       }
-       
        // Filter out bounties where I am the defector
        let visibleBounties = (data || []).filter((b: any) => b.defector_user_id !== user?.id)
-       
-       // setDebugInfo(prev => `${prev} | Visible: ${visibleBounties.length} | My ID: ${user?.id}`)
        
        // MANUALLY FETCH USER NAMES to fix display
        // Extract all user IDs we need to look up
@@ -95,17 +66,6 @@ export function MercenaryBoard({ onCreditsEarned }: { onCreditsEarned?: () => vo
 
        setBounties(visibleBounties)
        
-       // REMOVE DIAGNOSTIC LOGIC (Clean up)
-      if ((data || []).length === 0) {
-          fetch('/api/cron/debug-bounties').then(res => res.json()).then(debugData => {
-              if (debugData.count > 0) {
-                  toast.error("Erreur de Permissions Détectée", {
-                      description: `Il y a ${debugData.count} missions dans la base, mais vous ne pouvez pas les voir. Exécutez le script SQL de réparation (RLS).`,
-                      duration: 10000
-                  })
-              }
-          })
-      }
     } catch (e) {
       console.error("Error fetching bounties", e)
     } finally {

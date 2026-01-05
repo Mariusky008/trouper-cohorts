@@ -10,7 +10,7 @@ export async function GET(request: Request) {
 
   // Handle errors (like expired link)
   if (error) {
-    return NextResponse.redirect(`${origin}/signup?error=${encodeURIComponent(error_description || "Une erreur est survenue")}`);
+    return NextResponse.redirect(`${origin}/login?error=${encodeURIComponent(error_description || "Une erreur est survenue")}`);
   }
 
   if (code) {
@@ -19,7 +19,7 @@ export async function GET(request: Request) {
     
     if (authError) {
       console.error("Auth callback error:", authError);
-      return NextResponse.redirect(`${origin}/signup?error=auth_code_error`);
+      return NextResponse.redirect(`${origin}/login?error=auth_code_error`);
     }
 
     if (data?.user) {

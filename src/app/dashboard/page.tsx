@@ -15,13 +15,46 @@ import { toast } from "sonner"
 import { createClient } from "@/lib/supabase/client"
 import { WelcomePopup } from "@/components/welcome-popup"
 import { MercenaryBoard } from "@/components/dashboard/mercenary-board"
+import { MissionPlan } from "@/components/dashboard/MissionPlan"
+
+// Helper for deterministic shuffling based on date + userId
+function getDailySeed(userId: string) {
+  const today = new Date().toISOString().split('T')[0]
+  let hash = 0
+  const str = userId + today
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i)
+    hash = ((hash << 5) - hash) + char
+    hash = hash & hash
+  }
+  return Math.abs(hash)
+}
+
+function seededRandom(seed: number) {
+    const x = Math.sin(seed) * 10000;
+    return x - Math.floor(x);
+}
+
+function seededShuffle(array: any[], seed: number) {
+  const result = [...array]
+  let m = result.length, t, i
+  while (m) {
+    i = Math.floor(seededRandom(seed + m) * m--)
+    t = result[m]
+    result[m] = result[i]
+    result[i] = t
+  }
+  return result
+}
 
 export default function DashboardPage() {
   const [tasks, setTasks] = useState<any[]>([])
   // Pagination State for Missions
-  const TASKS_PER_WAVE = 5
+  const TASKS_PER_WAVE = 12 // Increased to match daily limit
   const [currentWave, setCurrentWave] = useState(0)
   const [showWaveComplete, setShowWaveComplete] = useState(false)
+  
+  const [selectedTask, setSelectedTask] = useState<any>(null) // For MissionPlan Dialog
 
   const [disciplineScore, setDisciplineScore] = useState(0)
   const [loading, setLoading] = useState(true)
@@ -226,15 +259,10 @@ export default function DashboardPage() {
             
             const subscribedIds = new Set(subscriptions?.map((s: { target_user_id: string }) => s.target_user_id))
             
-            // Check if user is subscribed to all members
+            // Check if user is subscribed to all members (DEPRECATED: No longer required)
             const allMembers = members || []
-            const isSubscribedToAll = allMembers.length === 0 || allMembers.every((m: any) => subscribedIds.has(m.profiles?.id))
-            setIsFullyOnboarded(isSubscribedToAll)
-
-            // Update is_fully_onboarded in profile if changed
-            if (isSubscribedToAll !== profile?.is_fully_onboarded) {
-               await supabase.from('profiles').update({ is_fully_onboarded: isSubscribedToAll }).eq('id', user.id)
-            }
+            // We set it to true by default to unlock missions immediately
+            setIsFullyOnboarded(true)
 
             if (allMembers.length > 0) {
                setSquadMembers(allMembers)
@@ -298,8 +326,18 @@ export default function DashboardPage() {
                
                setVideoTrackingData(videoTracking || [])
 
+               // === TACTICAL SAMPLING (ALGO V2) ===
+               // 1. Deterministic Shuffle
+               const dailySeed = getDailySeed(user.id)
+               const shuffledMembers = seededShuffle(allMembers, dailySeed)
+               
+               // 2. Limit Workload (8-12 videos max)
+               // Use seed to decide between 8 and 12
+               const workloadLimit = 8 + Math.floor(seededRandom(dailySeed) * 5) // 8 to 12
+               const selectedMembers = shuffledMembers.slice(0, workloadLimit)
+               
                const newTasks = [
-                 ...allMembers.map((m: any, index: number) => {
+                 ...selectedMembers.map((m: any, index: number) => {
                    // Determine Action Text based on history
                    const videoUrl = m.profiles?.current_video_url || "https://tiktok.com"
                    const record = videoTracking?.find((t: any) => 
@@ -312,51 +350,73 @@ export default function DashboardPage() {
                       count = count - 1
                    }
                    
-                   // Calculate deterministic rotation based on date and index
-                   const todayDate = new Date()
-                   const dayOfYear = Math.floor((todayDate.getTime() - new Date(todayDate.getFullYear(), 0, 0).getTime()) / 1000 / 60 / 60 / 24)
-                   
-                   // ALGO V2: Smart Distribution (30% Com, 20% Reply, 10% Share, 40% Like/Fav)
-                   // We use modulo 10 to create buckets
-                   const distributionKey = (index + dayOfYear) % 10
+                   // ALGO V2: Smart Distribution (30% Watch, 30% Like, 20% Comment, 10% Fav, 10% Scroll)
+                   // We use the seed + index to create a stable random per user per day
+                   const distributionVal = seededRandom(dailySeed + index + 100) * 100 // 0-100
+                   const trafficSourceVal = seededRandom(dailySeed + index + 200) * 100 // 0-100
+                   const delayVal = Math.floor(seededRandom(dailySeed + index + 300) * 20) // 0-20 min
 
+                   let actionType = 'watch'
                    let actionText = ""
-                   let actionIcon = "❤️"
+                   let actionIcon = "👀"
+                   let scenario = 'engagement'
                    
-                   if (distributionKey < 3) { 
-                      // 0, 1, 2 = 30% -> COMMENTAIRE QUALIFIÉ
-                      actionText = `Commenter (Expert) la vidéo de ${m.profiles?.username || 'Membre'}`
+                   if (distributionVal < 30) { 
+                      // 0-30% -> WATCH ONLY
+                      actionType = 'watch'
+                      actionText = `Regarder uniquement la vidéo de ${m.profiles?.username || 'Membre'}`
+                      actionIcon = "👀"
+                   } else if (distributionVal < 60) {
+                      // 30-60% -> WATCH + LIKE
+                      actionType = 'like'
+                      actionText = `Liker la vidéo de ${m.profiles?.username || 'Membre'}`
+                      actionIcon = "❤️"
+                   } else if (distributionVal < 80) {
+                      // 60-80% -> WATCH + COMMENT
+                      actionType = 'comment'
+                      actionText = `Commenter la vidéo de ${m.profiles?.username || 'Membre'}`
                       actionIcon = "💬"
-                   } else if (distributionKey < 5) {
-                      // 3, 4 = 20% -> RÉPONSE (REPLY LOOP)
-                      actionText = `Répondre à un commentaire sous la vidéo de ${m.profiles?.username || 'Membre'}`
-                      actionIcon = "↩️"
-                   } else if (distributionKey < 6) {
-                      // 5 = 10% -> PARTAGE SILENCIEUX
-                      actionText = `Partager (Copier lien) la vidéo de ${m.profiles?.username || 'Membre'}`
-                      actionIcon = "🔗"
+                   } else if (distributionVal < 90) {
+                      // 80-90% -> WATCH + FAVORITE
+                      actionType = 'favorite'
+                      actionText = `Ajouter aux favoris la vidéo de ${m.profiles?.username || 'Membre'}`
+                      actionIcon = "⭐"
                    } else {
-                      // 6, 7, 8, 9 = 40% -> LIKE / FAVORIS (Alternance)
-                      if (distributionKey % 2 === 0) {
-                         actionText = `Liker la vidéo de ${m.profiles?.username || 'Membre'}`
-                         actionIcon = "❤️"
-                      } else {
-                         actionText = `Ajouter aux favoris la vidéo de ${m.profiles?.username || 'Membre'}`
-                         actionIcon = "⭐"
-                      }
+                      // 90-100% -> SCROLL FAST (MICRO-ABANDON)
+                      actionType = 'scroll_fast'
+                      actionText = `Micro-Abandon sur la vidéo de ${m.profiles?.username || 'Membre'}`
+                      actionIcon = "⏩"
+                      scenario = 'abandon'
                    }
+                   
+                   // Traffic Source Distribution
+                   // 50% Search, 30% Profile, 20% Direct
+                   let trafficSource = 'search'
+                   if (trafficSourceVal > 50) trafficSource = 'profile'
+                   if (trafficSourceVal > 80) trafficSource = 'direct'
+                   
+                   // Follow Logic (Rare: 10% chance if not already following)
+                   // We don't have follow status here easily, so we just suggest it rarely
+                   const shouldFollow = seededRandom(dailySeed + index + 400) > 0.9
 
                    return {
                      id: index + 2,
                      text: actionText,
                      icon: actionIcon,
                      completed: supportedIdsToday.has(m.user_id),
-                     actionLabel: "Voir la vidéo",
+                     actionLabel: "Voir la mission",
                      actionUrl: videoUrl,
-                     targetUserId: m.user_id
+                     targetUserId: m.user_id,
+                     // Meta for MissionPlan
+                     type: actionType,
+                     scenario: scenario,
+                     trafficSource: trafficSource,
+                     delayMinutes: delayVal,
+                     targetUsername: m.profiles?.username || "Inconnu",
+                     shouldFollow: shouldFollow
                    }
                  })
-               ].filter(t => !t.text.toLowerCase().includes('publier 1 vidéo') && !t.text.toLowerCase().includes('tiktok studio')) // Filter out potential ghost tasks
+               ].filter(t => !t.text.toLowerCase().includes('publier 1 vidéo')) 
                
                setTasks(newTasks)
             } else {
@@ -674,6 +734,17 @@ export default function DashboardPage() {
 
   const currentRank = getRank(progressPercentage)
 
+  // Calculate Boost Action for current user
+  const boostActionType = (() => {
+     if (!activeBoostWindow || !userProfile) return 'like'
+     const seed = getDailySeed(activeBoostWindow.id + (userProfile.id || ''))
+     const val = seededRandom(seed) * 100
+     if (val < 30) return 'comment'
+     if (val < 50) return 'reply'
+     if (val < 60) return 'share'
+     return 'like'
+  })()
+
   // Get current wave tasks
   const waveStartIndex = currentWave * TASKS_PER_WAVE
   const currentWaveTasks = tasks.slice(waveStartIndex, waveStartIndex + TASKS_PER_WAVE)
@@ -955,7 +1026,7 @@ export default function DashboardPage() {
 
               <div className="grid gap-4">
                   {/* LOCK STATE */}
-                  {(!isFullyOnboarded || !myVideoUrl) && (
+                  {!myVideoUrl && (
                     <div className="rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 p-8 text-center space-y-4">
                        <div className="mx-auto h-16 w-16 rounded-full bg-slate-200 flex items-center justify-center">
                           <Lock className="h-8 w-8 text-slate-400" />
@@ -963,29 +1034,22 @@ export default function DashboardPage() {
                        <div>
                           <h3 className="text-lg font-bold text-slate-700">Missions Verrouillées</h3>
                           <p className="text-slate-500 max-w-sm mx-auto mt-1">
-                             {!isFullyOnboarded 
-                               ? "Tu dois t'abonner à tous les membres de ton escouade pour commencer." 
-                               : "Ajoute le lien de ta vidéo du jour dans la barre latérale pour débloquer les missions."}
+                             Ajoute le lien de ta vidéo du jour dans la barre latérale pour débloquer les missions.
                           </p>
                        </div>
                        <Button onClick={() => {
-                          if (!isFullyOnboarded) {
-                             // Navigate handled by link usually
-                             window.location.href = "/dashboard/group"
-                          } else {
                              // Scroll to sidebar on mobile or focus
                              const sidebar = document.getElementById('sidebar-config')
                              sidebar?.scrollIntoView({ behavior: 'smooth' })
                              setIsEditingVideo(true)
-                          }
                        }}>
-                          {isFullyOnboarded ? "Configurer ma vidéo" : "Voir mon escouade"}
+                          Configurer ma vidéo
                        </Button>
                     </div>
                   )}
 
                   {/* TASKS LIST */}
-                  {isFullyOnboarded && myVideoUrl && (
+                  {myVideoUrl && (
                      tasks.length === 0 ? (
                         <div className="text-center py-12 text-muted-foreground italic">
                            Aucune mission disponible. Reviens plus tard ou invite des amis.

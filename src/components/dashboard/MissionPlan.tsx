@@ -163,6 +163,20 @@ export function MissionPlan({ type, scenario = 'engagement', delayMinutes = 0, t
                  <p className="text-xs text-slate-500">Utilise "Copier le lien" ou envoie en MP (Message Privé).</p>
                  <Badge variant="outline" className="text-[10px] border-green-200 bg-green-50 text-green-700">Partage Silencieux</Badge>
               </div>
+            ) : type === 'watch' ? (
+               <div className="space-y-1">
+                  <p className="text-xs text-slate-500 font-medium">Ne fais <span className="text-red-600 font-bold uppercase">aucune interaction</span> (pas de like, pas de com).</p>
+                  <p className="text-[10px] text-slate-400">Le simple visionnage complet + rewind est un signal fort.</p>
+               </div>
+            ) : type === 'like' ? (
+               <p className="text-xs text-slate-500">Double-tap pour liker la vidéo.</p>
+            ) : type === 'favorite' ? (
+               <p className="text-xs text-slate-500">Ajoute la vidéo à tes favoris (Marque-page).</p>
+            ) : type === 'reply' ? (
+               <div className="space-y-1">
+                  <p className="text-xs text-slate-500 font-medium">Ne poste pas un nouveau commentaire.</p>
+                  <p className="text-[10px] text-slate-400">Trouve un commentaire existant (ou une réponse du créateur) et réponds-y pour créer une boucle.</p>
+               </div>
             ) : (
               <p className="text-xs text-slate-500">Effectue l'action {type} maintenant.</p>
             )}
