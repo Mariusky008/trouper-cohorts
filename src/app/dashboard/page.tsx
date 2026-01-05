@@ -186,9 +186,9 @@ export default function DashboardPage() {
          
          const total = totalInteractions || 0
          setHuntingStats({
-            likes: Math.max(5, Math.ceil(total * 0.6)), // Min 5 for demo motivation
-            comments: Math.max(1, Math.ceil(total * 0.3)), // Min 1
-            favorites: Math.max(1, Math.ceil(total * 0.1)) // Min 1
+            likes: Math.ceil(total * 0.6),
+            comments: Math.ceil(total * 0.3),
+            favorites: Math.ceil(total * 0.1)
          })
 
          // === FEATURE BOOST WINDOW ===
