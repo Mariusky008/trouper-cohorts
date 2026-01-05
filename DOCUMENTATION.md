@@ -159,3 +159,29 @@ Pour garantir la durabilité du système et le réalisme des actions.
 *   **Limite :** Max 2 à 5 follows par jour par personne.
 *   **Logique :** Le follow doit rester un signal rare et fort pour être valorisé par l'algo.
 
+---
+
+## 10. Améliorations UX (Mise à jour V2.2)
+
+### A. Affichage des Cibles (Handle vs Username)
+Pour éviter la confusion lors de la recherche manuelle (SEO Protocol), l'affichage de la cible a été standardisé :
+*   Le système extrait automatiquement le **@pseudo** TikTok à partir du lien de profil ou du lien vidéo fourni par le membre.
+*   Si le membre a mis son lien de profil `tiktok.com/@david`, la mission affichera `Cible : @david` (prêt à copier-coller) au lieu de son prénom d'inscription `David`.
+*   **Sidebar Config :** Le champ "Mon Profil Principal" a été renommé "Mon Profil TikTok" avec un placeholder explicite pour encourager la saisie du lien correct.
+
+### B. Affichage des Scores (Escouade)
+Le classement de l'escouade (`/dashboard/group`) a été affiné pour refléter la réalité :
+*   **Nouveaux membres :** Au lieu d'afficher "0 pts" (démotivant) ou "60 pts" (faux), un score progressif est calculé basé sur l'ancienneté (simulé pour la démo : 10 pts + 5 pts/jour).
+*   **Statuts Réalistes :** Le statut "En feu 🔥" n'est plus attribué par défaut.
+    *   Score < 20 : "En danger 🚨"
+    *   Score < 50 : "Attention ⚠️"
+    *   Score > 50 : "En feu 🔥"
+
+### C. Humanisation des Consignes (MissionPlan)
+Les instructions des missions ont été réécrites pour être moins "robotiques" et plus flexibles :
+*   **Timing :** "Attends 2 min" -> "Attends entre 30s et 2 min".
+*   **Visionnage :** "Regarde 70%" -> "Regarde entre 60% et 80%".
+*   **Interaction :** "Reviens 3s en arrière" -> "Reviens légèrement en arrière si un passage t'a marqué".
+*   **Wording :** "Camouflage Anti-Bot" remplacé par "Navigation Naturelle".
+*   **Suppression des % visibles :** Les pourcentages précis (ex: "Engagement 85%") sont masqués pour l'utilisateur final afin de réduire la charge mentale.
+
