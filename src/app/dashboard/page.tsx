@@ -61,9 +61,18 @@ export default function DashboardPage() {
        const firstIncomplete = tasks.findIndex(t => !t.completed)
        if (firstIncomplete !== -1) {
           setCurrentTaskIndex(firstIncomplete)
+       } else {
+          // All completed? Stay on last one or handle completion state
        }
     }
   }, [tasks])
+
+  // SAFETY: Prevent Index Out of Bounds
+  useEffect(() => {
+    if (tasks.length > 0 && currentTaskIndex >= tasks.length) {
+        setCurrentTaskIndex(Math.max(0, tasks.length - 1))
+    }
+  }, [tasks.length, currentTaskIndex])
 
   const [disciplineScore, setDisciplineScore] = useState(0)
   const [loading, setLoading] = useState(true)
@@ -1028,18 +1037,18 @@ export default function DashboardPage() {
                  <div className="bg-slate-900 p-4 flex items-center justify-between text-white">
                     <div className="flex items-center gap-3">
                        <div className="h-10 w-10 rounded-full bg-indigo-600 flex items-center justify-center font-bold text-lg">
-                          {currentTaskIndex + 1}
+                          {Math.min(currentTaskIndex + 1, tasks.length)}
                        </div>
                        <div>
                           <p className="text-xs text-indigo-300 font-bold uppercase tracking-wider">Mission Actuelle</p>
                           <h3 className="font-bold text-lg leading-none">
-                             {tasks[currentTaskIndex]?.targetUsername ? `Cible : @${tasks[currentTaskIndex].targetUsername}` : 'Chargement...'}
+                             {allTasksCompleted ? "Mission Accomplie !" : (tasks[currentTaskIndex]?.targetUsername ? `Cible : @${tasks[currentTaskIndex].targetUsername}` : 'Chargement...')}
                           </h3>
                        </div>
                     </div>
                     <div className="text-right">
                        <p className="text-xs text-slate-400 font-mono">
-                          {currentTaskIndex + 1} / {tasks.length}
+                          {Math.min(currentTaskIndex + 1, tasks.length)} / {tasks.length}
                        </p>
                     </div>
                  </div>
