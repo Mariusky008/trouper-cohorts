@@ -505,6 +505,11 @@ export function MercenaryBoard({ onCreditsEarned }: { onCreditsEarned?: () => vo
                         : 'engagement'
                   }
                   delayMinutes={(parseInt(selectedBounty.id) || Date.parse(selectedBounty.created_at)) % 20} // Simulation déterministe du délai
+                  trafficSource={
+                      // 50% Search, 30% Profile, 20% Direct
+                      (parseInt(selectedBounty.id) || 0) % 2 === 0 ? 'search' : ((parseInt(selectedBounty.id) || 0) % 3 === 0 ? 'profile' : 'direct')
+                  }
+                  targetUsername={selectedBounty.target?.username || "inconnu"}
                />
             </div>
 

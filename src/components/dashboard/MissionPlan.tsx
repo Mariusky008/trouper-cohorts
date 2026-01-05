@@ -6,10 +6,12 @@ import { Badge } from "@/components/ui/badge"
 interface MissionPlanProps {
   type: 'like' | 'comment' | 'favorite' | 'share' | string
   scenario?: 'engagement' | 'abandon' | string
-  delayMinutes?: number // Nouveau paramètre pour le décalage temporel
+  delayMinutes?: number
+  trafficSource?: 'search' | 'profile' | 'direct'
+  targetUsername?: string
 }
 
-export function MissionPlan({ type, scenario = 'engagement', delayMinutes = 0 }: MissionPlanProps) {
+export function MissionPlan({ type, scenario = 'engagement', delayMinutes = 0, trafficSource = 'search', targetUsername = "le créateur" }: MissionPlanProps) {
   if (scenario === 'abandon') {
     return (
       <div className="space-y-4 p-4 bg-slate-50 rounded-xl border border-slate-200">
@@ -33,10 +35,14 @@ export function MissionPlan({ type, scenario = 'engagement', delayMinutes = 0 }:
 
           <div className="flex items-start gap-3">
             <div className="h-6 w-6 rounded-full bg-slate-200 flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">1</div>
+            <p className="text-sm text-slate-700">Ouvre la vidéo via <strong>Lien Direct</strong> (Mode Rapide).</p>
+          </div>
+          <div className="flex items-start gap-3">
+            <div className="h-6 w-6 rounded-full bg-slate-200 flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">2</div>
             <p className="text-sm text-slate-700">Regarde la vidéo pendant environ <strong>70% de sa durée</strong>.</p>
           </div>
           <div className="flex items-start gap-3">
-            <div className="h-6 w-6 rounded-full bg-red-100 flex items-center justify-center text-[10px] font-bold text-red-600 shrink-0 mt-0.5">2</div>
+            <div className="h-6 w-6 rounded-full bg-red-100 flex items-center justify-center text-[10px] font-bold text-red-600 shrink-0 mt-0.5">3</div>
             <p className="text-sm text-slate-700">Quitte la vidéo <strong>sans aucune interaction</strong> (pas de like, pas de com).</p>
           </div>
         </div>
@@ -67,27 +73,49 @@ export function MissionPlan({ type, scenario = 'engagement', delayMinutes = 0 }:
            </div>
         ) : null}
 
-        {/* STEP 1: Visionnage */}
+        {/* STEP 1: TRAFFIC SOURCE (The Hunt) */}
         <div className="flex items-start gap-3 group">
-          <div className="h-6 w-6 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5 group-hover:scale-110 transition-transform">1</div>
+          <div className="h-6 w-6 rounded-full bg-indigo-600 text-white flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5 group-hover:scale-110 transition-transform">1</div>
+          <div className="space-y-1 w-full">
+            <p className="text-sm font-bold text-slate-800">Source d'Entrée : {trafficSource === 'search' ? 'RECHERCHE (SEO)' : (trafficSource === 'profile' ? 'VISITE PROFIL' : 'LIEN DIRECT')}</p>
+            
+            {trafficSource === 'search' ? (
+                <div className="bg-slate-100 p-2 rounded text-xs border border-slate-200 mt-1">
+                    <p className="text-slate-500 mb-1">Ouvre TikTok et tape dans la recherche :</p>
+                    <div className="flex items-center gap-2 bg-white px-2 py-1 rounded border border-slate-200 font-mono font-bold text-slate-800 select-all cursor-pointer" onClick={() => navigator.clipboard.writeText(targetUsername)}>
+                        {targetUsername}
+                    </div>
+                    <p className="text-[10px] text-slate-400 mt-1">Trouve sa dernière vidéo dans les résultats.</p>
+                </div>
+            ) : trafficSource === 'profile' ? (
+                <p className="text-xs text-slate-500">Va sur le profil <strong>@{targetUsername}</strong> et clique sur sa dernière vidéo (ne clique pas le lien direct).</p>
+            ) : (
+                <p className="text-xs text-slate-500">Utilise le bouton "Voir la Vidéo" ci-dessus.</p>
+            )}
+          </div>
+        </div>
+
+        {/* STEP 2: Visionnage */}
+        <div className="flex items-start gap-3 group">
+          <div className="h-6 w-6 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5 group-hover:scale-110 transition-transform">2</div>
           <div className="space-y-1">
             <p className="text-sm font-bold text-slate-800">Visionnage Complet</p>
             <p className="text-xs text-slate-500">Regarde la vidéo jusqu'à la toute dernière seconde. Ne saute pas.</p>
           </div>
         </div>
 
-        {/* STEP 2: Rewatch */}
+        {/* STEP 3: Rewatch */}
         <div className="flex items-start gap-3 group">
-          <div className="h-6 w-6 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5 group-hover:scale-110 transition-transform">2</div>
+          <div className="h-6 w-6 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5 group-hover:scale-110 transition-transform">3</div>
           <div className="space-y-1">
             <p className="text-sm font-bold text-slate-800">Signal d'intérêt</p>
             <p className="text-xs text-slate-500">Reviens en arrière de 3 à 5 secondes pour simuler une re-lecture d'un passage.</p>
           </div>
         </div>
 
-        {/* STEP 3: Action */}
+        {/* STEP 4: Action */}
         <div className="flex items-start gap-3 group">
-          <div className="h-6 w-6 rounded-full bg-indigo-600 text-white flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5 group-hover:scale-110 transition-transform">3</div>
+          <div className="h-6 w-6 rounded-full bg-indigo-600 text-white flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5 group-hover:scale-110 transition-transform">4</div>
           <div className="space-y-1">
             <p className="text-sm font-bold text-slate-800 uppercase">Action Finale : {type}</p>
             
