@@ -504,6 +504,7 @@ export function MercenaryBoard({ onCreditsEarned }: { onCreditsEarned?: () => vo
                         ? 'abandon' 
                         : 'engagement'
                   }
+                  delayMinutes={(parseInt(selectedBounty.id) || Date.parse(selectedBounty.created_at)) % 20} // Simulation déterministe du délai
                />
             </div>
 
