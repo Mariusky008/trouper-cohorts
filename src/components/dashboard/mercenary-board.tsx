@@ -306,7 +306,18 @@ export function MercenaryBoard({ onCreditsEarned }: { onCreditsEarned?: () => vo
     setBounties(prev => {
         // Ensure prev is an array
         const current = Array.isArray(prev) ? prev : []
-        const newState = [fakeBounty, ...current]
+        
+        // MANUALLY ENRICH THE FAKE BOUNTY WITH TARGET PROFILE
+        // This is likely where it crashes: the UI expects bounty.target to exist
+        const enrichedBounty = {
+            ...fakeBounty,
+            target: { 
+                username: "Simulation Cible", 
+                current_video_url: "#" 
+            }
+        }
+        
+        const newState = [enrichedBounty, ...current]
         console.log("Simulating Bounty. New State:", newState)
         return newState
     })
