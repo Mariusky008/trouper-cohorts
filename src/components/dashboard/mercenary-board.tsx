@@ -10,6 +10,8 @@ import { motion, AnimatePresence } from "framer-motion"
 import { toast } from "sonner"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
 
+import { MissionPlan } from "./MissionPlan"
+
 export function MercenaryBoard({ onCreditsEarned }: { onCreditsEarned?: () => void }) {
   const [isMounted, setIsMounted] = useState(false)
   const [bounties, setBounties] = useState<any[]>([])
@@ -43,6 +45,7 @@ export function MercenaryBoard({ onCreditsEarned }: { onCreditsEarned?: () => vo
             defector_user_id,
             target_user_id,
             status,
+            type,
             video_url,
             reward_credits,
             created_at
@@ -492,12 +495,16 @@ export function MercenaryBoard({ onCreditsEarned }: { onCreditsEarned?: () => vo
                   </a>
                </div>
 
-               <div className="space-y-2">
-                  <div className="flex items-center gap-3 p-2 bg-white rounded border border-slate-100">
-                     <div className="h-6 w-6 rounded-full bg-red-100 flex items-center justify-center text-red-600 text-xs font-bold">1</div>
-                     <span className="text-sm">Effectuer 1 action (Like, Commentaire ou Favori)</span>
-                  </div>
-               </div>
+               <MissionPlan 
+                  type={selectedBounty.type || 'like'} 
+                  scenario={
+                      // Simulation de la répartition 85/15 en attendant le backend
+                      // On utilise le dernier chiffre de l'ID ou du timestamp
+                      (parseInt(selectedBounty.id) || Date.parse(selectedBounty.created_at)) % 7 === 0 
+                        ? 'abandon' 
+                        : 'engagement'
+                  }
+               />
             </div>
 
             <DialogFooter>
