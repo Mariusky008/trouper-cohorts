@@ -28,7 +28,6 @@ export async function GET() {
           defector_user_id,
           target_user_id,
           status,
-          type,
           video_url,
           reward_credits,
           created_at
