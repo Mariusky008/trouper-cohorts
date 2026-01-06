@@ -43,11 +43,19 @@ export default function AdminPlanningPage() {
                         updated_at
                     )
                 `)
-                .gte('scheduled_date', today)
+                //.gte('scheduled_date', today) // Commented out for debug
                 .order('scheduled_date', { ascending: true })
                 .order('start_time', { ascending: true })
 
-            if (data) setWaves(data)
+            if (error) {
+                console.error("Supabase Error:", error)
+                toast.error(`Erreur DB: ${error.message}`)
+            }
+
+            if (data) {
+                console.log("Waves fetched:", data)
+                setWaves(data)
+            }
             setLoading(false)
         }
         
