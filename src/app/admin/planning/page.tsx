@@ -56,18 +56,31 @@ export default function AdminPlanningPage() {
 
     const handleSimulatePlanning = async () => {
         setLoading(true)
+        console.log("Launching simulation...")
         try {
              // Call the scheduling API manually
              const res = await fetch('/api/cron/schedule-waves')
+             console.log("Response status:", res.status)
+             
+             if (!res.ok) {
+                 const text = await res.text()
+                 console.error("API Error:", text)
+                 toast.error(`Erreur API: ${res.status}`)
+                 return
+             }
+
              const json = await res.json()
+             console.log("API Result:", json)
+
              if (json.success) {
                  toast.success("Planning généré avec succès !")
                  window.location.reload()
              } else {
-                 toast.error("Erreur lors de la génération")
+                 toast.error(`Erreur: ${json.message || 'Inconnue'}`)
              }
-        } catch (e) {
-            toast.error("Erreur API")
+        } catch (e: any) {
+            console.error("Fetch error:", e)
+            toast.error(`Erreur Client: ${e.message}`)
         } finally {
             setLoading(false)
         }
