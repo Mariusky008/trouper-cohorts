@@ -2,6 +2,12 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
 export async function GET(request: Request) {
+    // Debug: Check env vars presence
+    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+        console.error("CRITICAL: SUPABASE_SERVICE_ROLE_KEY is missing")
+        return NextResponse.json({ success: false, error: "Configuration Error: Service Role Key missing" }, { status: 500 })
+    }
+
     // 1. Setup Admin Client (Service Role - Bypasses RLS)
     const supabaseAdmin = createClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -9,6 +15,7 @@ export async function GET(request: Request) {
     )
 
     try {
+        console.log("Admin API: Fetching waves...")
         const today = new Date().toISOString().split('T')[0]
         
         // 1. Fetch waves

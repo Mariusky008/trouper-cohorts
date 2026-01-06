@@ -17,16 +17,23 @@ export default function AdminPlanningPage() {
             // Use internal API to bypass RLS issues on profiles table
             try {
                 const res = await fetch('/api/admin/get-planning')
+                
+                if (!res.ok) {
+                    const text = await res.text()
+                    throw new Error(`API Error ${res.status}: ${text}`)
+                }
+
                 const json = await res.json()
                 
                 if (json.success) {
                     setWaves(json.data)
                 } else {
-                    console.error("API Error:", json.error)
-                    toast.error("Erreur chargement planning")
+                    console.error("API Logic Error:", json.error)
+                    toast.error(`Erreur Logic: ${json.error}`)
                 }
-            } catch (e) {
+            } catch (e: any) {
                 console.error("Fetch Error:", e)
+                toast.error(`Erreur Chargement: ${e.message}`)
             } finally {
                 setLoading(false)
             }
