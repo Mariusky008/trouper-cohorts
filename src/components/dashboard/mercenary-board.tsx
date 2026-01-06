@@ -562,8 +562,12 @@ export function MercenaryBoard({ onCreditsEarned }: { onCreditsEarned?: () => vo
                       (parseInt(selectedBounty.id.toString().slice(-2)) || 0) % 10 < 9 ? 'comment' : 'share'
                   )} 
                   scenario={
-                      // 20% Abandon / 80% Engagement (Matches Doc)
-                      (parseInt(selectedBounty.id.toString().slice(-2)) || Date.parse(selectedBounty.created_at)) % 5 === 0 
+                      // 20% Abandon / 80% Engagement
+                      // NEW V2.3 LOGIC: (MissionID + UserID) % 5 == 0
+                      // Ensures that "No-Action" is distributed among users, not just missions.
+                      // For a given mission, User A might abandon while User B engages.
+                      ((parseInt(selectedBounty.id.toString().slice(-2)) || 0) + 
+                       (parseInt((user?.id || "0").slice(-2), 16) || 0)) % 5 === 0 
                         ? 'abandon' 
                         : 'engagement'
                   }

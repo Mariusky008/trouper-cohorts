@@ -198,12 +198,17 @@ Le composant `MissionPlan` a été entièrement redessiné pour être plus immer
     *   🚀 **Viral (Rose/Rouge) :** "Impulsion Virale" (High Energy)
 *   **Copywriting Sécurisé :** Intégration stricte des consignes de sécurité (Ghost Viewing, Rewind, SEO Boost).
 
-### B. Variété des Actions
+### B. Variété des Actions & Algorithme Humain
 Les missions mercenaires ne se limitent plus au "Like". Le système génère désormais une variété d'ordres :
 *   **70% :** Like + Favori (Engagement standard)
 *   **20% :** Like + Commentaire (Engagement fort)
 *   **10% :** Like + Partage (Viralité)
-*   **Scénario d'Abandon (20%) :** Une mission sur 5 demande explicitement de NE RIEN FAIRE (Ghost Viewing) pour crédibiliser le compte aux yeux de TikTok.
+
+**Amélioration "Ghost Viewing" (20%) :**
+L'ordre de "NE RIEN FAIRE" (Abandon) n'est plus lié uniquement à la mission, mais au couple **(Mission + Utilisateur)**.
+*   *Avant :* La Mission #5 demandait à TOUT LE MONDE d'abandonner (Pattern détectable).
+*   *Maintenant :* Sur la Mission #5, l'utilisateur A devra abandonner, mais l'utilisateur B devra liker.
+*   **Résultat :** Le comportement devient 100% organique et imprévisible pour l'algorithme TikTok.
 
 ### C. Stabilisation Technique
 *   **Correction API Bounties :** Résolution des erreurs 500 liées à des colonnes manquantes (`type`) et ajout d'une gestion d'erreur robuste.
