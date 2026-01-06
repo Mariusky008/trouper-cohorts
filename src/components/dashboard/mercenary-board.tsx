@@ -540,17 +540,34 @@ export function MercenaryBoard({ onCreditsEarned }: { onCreditsEarned?: () => vo
 
             {selectedBounty && (
             <div className="py-4 space-y-4">
-               <div className="bg-white p-4 rounded-lg border border-slate-200 text-center">
-                  <p className="text-xs font-bold text-slate-400 uppercase mb-2">Cible à soutenir</p>
-                  <a 
-                     href={selectedBounty.video_url} 
-                     target="_blank"
-                     onClick={() => setHasViewedVideo(true)}
-                     className="text-lg font-bold text-blue-600 hover:underline flex items-center justify-center gap-2"
+               {/* TARGET IDENTITY & SEARCH PROTOCOL */}
+               <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 text-center space-y-3">
+                  <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Cible Prioritaire</p>
+                  
+                  <div className="flex flex-col items-center justify-center gap-2">
+                     <div className="bg-white px-4 py-2 rounded-lg border border-indigo-100 shadow-sm flex items-center gap-2">
+                        <span className="text-xl font-black text-indigo-900">
+                           @{selectedBounty.target?.username?.replace('@', '') || "inconnu"}
+                        </span>
+                     </div>
+                     <p className="text-xs text-indigo-600 font-medium">
+                        Ouvre TikTok et tape ce pseudo dans la recherche.
+                     </p>
+                  </div>
+
+                  <Button 
+                     variant="outline"
+                     size="sm"
+                     onClick={() => {
+                        const username = selectedBounty.target?.username?.replace('@', '') || ""
+                        navigator.clipboard.writeText(username)
+                        toast.success("Pseudo copié !")
+                        setHasViewedVideo(true) // Allow validation after copy
+                     }}
+                     className="w-full border-indigo-200 text-indigo-700 hover:bg-indigo-50"
                   >
-                     <ExternalLink className="h-4 w-4" />
-                     Voir la Vidéo
-                  </a>
+                     <span className="mr-2">📋</span> COPIER LE PSEUDO
+                  </Button>
                </div>
 
                <MissionPlan 
@@ -587,13 +604,13 @@ export function MercenaryBoard({ onCreditsEarned }: { onCreditsEarned?: () => vo
                <Button 
                   onClick={handleCompleteBounty} 
                   disabled={processing || !hasViewedVideo}
-                  className={`w-full font-bold transition-all ${
+                  className={`w-full font-bold transition-all h-14 text-lg ${
                      !hasViewedVideo 
-                        ? 'bg-slate-300 text-slate-500 cursor-not-allowed' 
-                        : 'bg-red-600 hover:bg-red-700 text-white'
+                        ? 'bg-slate-200 text-slate-400 cursor-not-allowed' 
+                        : 'bg-red-600 hover:bg-red-700 text-white shadow-lg shadow-red-200'
                   }`}
                >
-                  {processing ? <Loader2 className="h-4 w-4 animate-spin" /> : (!hasViewedVideo ? "VOIR LA VIDÉO D'ABORD" : "J'AI FAIT LE JOB (RÉCLAMER)")}
+                  {processing ? <Loader2 className="h-5 w-5 animate-spin" /> : (!hasViewedVideo ? "COPIER LE PSEUDO POUR DÉBLOQUER" : "J'AI TERMINÉ LA MISSION")}
                </Button>
             </DialogFooter>
          </DialogContent>
