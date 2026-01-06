@@ -46,10 +46,46 @@ export function WaveNotification({ userId }: { userId: string }) {
 
     // Publish Deadline (45 min before wave)
     const publishDeadline = new Date(waveDate.getTime() - 45 * 60000)
-    
-    // Notification Logic: Show if wave is within 72h
-    // Already filtered by query .gte('scheduled_date', today) and .limit(1)
-    
+
+    // State for video submission
+    const [videoLink, setVideoLink] = useState("")
+    const [submitting, setSubmitting] = useState(false)
+    const [isSubmitted, setIsSubmitted] = useState(false)
+
+    // Handle Submission
+    const handleSubmitVideo = async () => {
+        if (!videoLink.includes("tiktok.com")) {
+            toast.error("Lien invalide", { description: "Le lien doit provenir de TikTok." })
+            return
+        }
+        
+        setSubmitting(true)
+        const supabase = createClient()
+        
+        // 1. Update Profile
+        const { error: profileError } = await supabase
+            .from('profiles')
+            .update({ 
+                current_video_url: videoLink,
+                updated_at: new Date().toISOString()
+            })
+            .eq('id', userId)
+
+        if (profileError) {
+            toast.error("Erreur", { description: "Impossible d'enregistrer le lien." })
+            setSubmitting(false)
+            return
+        }
+        
+        // 2. Success UI
+        setIsSubmitted(true)
+        toast.success("Cible Verrouillée !", { 
+            description: "Ta vidéo est prête pour la vague.",
+            icon: <CheckCircle2 className="h-5 w-5 text-green-500" />
+        })
+        setSubmitting(false)
+    }
+
     return (
         <motion.div 
             initial={{ opacity: 0, y: -20 }}
@@ -71,6 +107,7 @@ export function WaveNotification({ userId }: { userId: string }) {
             </div>
             
             <div className="p-4 md:p-6 grid md:grid-cols-2 gap-6">
+                {/* LEFT: INFO */}
                 <div className="space-y-4">
                     <div className="flex items-start gap-3">
                         <Calendar className="h-5 w-5 text-amber-600 mt-1" />
@@ -94,38 +131,57 @@ export function WaveNotification({ userId }: { userId: string }) {
                             </p>
                         </div>
                     </div>
+
+                    <div className="mt-3 bg-red-50 border border-red-100 p-2 rounded text-[10px] text-red-700 leading-tight">
+                         <strong>⚠️ Attention :</strong> Si tu ne respectes pas ce créneau ou si tu ne publies pas, ta vague sera annulée et tu seras replacé en fin de file d'attente (pénalité de 7 à 10 jours).
+                    </div>
                 </div>
 
-                <div className="bg-white rounded-lg border-2 border-amber-100 p-4 relative overflow-hidden">
-                    <div className="absolute top-0 right-0 bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-1 rounded-bl-lg">
-                        ACTION REQUISE
-                    </div>
+                {/* RIGHT: ACTION MODULE */}
+                <div className={`bg-white rounded-lg border-2 p-4 relative overflow-hidden transition-all duration-500 ${isSubmitted ? 'border-green-500 ring-4 ring-green-100' : 'border-amber-100'}`}>
                     
-                    <div className="flex flex-col h-full justify-between">
-                        <div>
-                            <h4 className="font-bold text-slate-900 flex items-center gap-2 mb-2">
-                                <UploadCloud className="h-5 w-5 text-indigo-600" />
-                                Publication Vidéo
-                            </h4>
-                            <p className="text-sm text-slate-600 leading-relaxed">
-                                Tu dois publier ta vidéo <strong>impérativement</strong> avant :
-                            </p>
-                            <p className="text-2xl font-black text-indigo-600 mt-1">
-                                {publishDeadline.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                            </p>
-                            <p className="text-xs text-red-500 font-bold mt-2">
-                                (30 à 45 min avant la vague)
-                            </p>
-                            
-                            <div className="mt-3 bg-red-50 border border-red-100 p-2 rounded text-[10px] text-red-700 leading-tight">
-                                <strong>⚠️ Attention :</strong> Si tu ne respectes pas ce créneau ou si tu ne publies pas, ta vague sera annulée et tu seras replacé en fin de file d'attente (pénalité de 7 à 10 jours).
+                    {isSubmitted ? (
+                        <div className="flex flex-col h-full justify-center items-center text-center space-y-3 py-4">
+                            <div className="h-16 w-16 bg-green-100 rounded-full flex items-center justify-center mb-2">
+                                <CheckCircle2 className="h-8 w-8 text-green-600" />
                             </div>
+                            <h4 className="text-xl font-black text-green-700">PRÊT AU COMBAT</h4>
+                            <p className="text-sm text-green-600 font-medium">
+                                Ta vidéo a été enregistrée.<br/>Elle sera distribuée à 18h30.
+                            </p>
                         </div>
-                        
-                        <Button className="w-full mt-4 bg-indigo-600 hover:bg-indigo-700 font-bold">
-                            J'AI COMPRIS LES ORDRES
-                        </Button>
-                    </div>
+                    ) : (
+                        <div className="flex flex-col h-full justify-between">
+                            <div>
+                                <div className="absolute top-0 right-0 bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-1 rounded-bl-lg">
+                                    ACTION REQUISE
+                                </div>
+                                <h4 className="font-bold text-slate-900 flex items-center gap-2 mb-2">
+                                    <UploadCloud className="h-5 w-5 text-indigo-600" />
+                                    Publication Vidéo
+                                </h4>
+                                <p className="text-sm text-slate-600 leading-relaxed mb-4">
+                                    Publie ta vidéo sur TikTok et colle le lien ici avant <strong>{publishDeadline.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</strong> :
+                                </p>
+                                
+                                <input 
+                                    type="text" 
+                                    placeholder="https://www.tiktok.com/@user/video/..." 
+                                    className="w-full border-2 border-slate-200 rounded-lg p-2 text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition-all"
+                                    value={videoLink}
+                                    onChange={(e) => setVideoLink(e.target.value)}
+                                />
+                            </div>
+                            
+                            <Button 
+                                onClick={handleSubmitVideo}
+                                disabled={submitting || !videoLink}
+                                className="w-full mt-4 bg-indigo-600 hover:bg-indigo-700 font-bold shadow-lg shadow-indigo-200"
+                            >
+                                {submitting ? "Validation..." : "CONFIRMER LA PUBLICATION"}
+                            </Button>
+                        </div>
+                    )}
                 </div>
             </div>
         </motion.div>
