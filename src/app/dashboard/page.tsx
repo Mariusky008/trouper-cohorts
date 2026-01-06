@@ -17,7 +17,7 @@ import { WelcomePopup } from "@/components/welcome-popup"
 import { MercenaryBoard } from "@/components/dashboard/mercenary-board"
 import { MissionPlan } from "@/components/dashboard/MissionPlan"
 
-import { WaveNotification, WaveNotificationDemo } from "@/components/dashboard/WaveNotification"
+import { WaveNotification } from "@/components/dashboard/WaveNotification"
 
 // Helper for deterministic shuffling based on date + userId
 function getDailySeed(userId: string) {
@@ -140,7 +140,7 @@ export default function DashboardPage() {
     month: 0
   })
 
-  const [showDemoWave, setShowDemoWave] = useState(false)
+  const [showDemoWave, setShowDemoWave] = useState(false) // Deprecated
 
   const supabase = createClient()
 
@@ -947,15 +947,6 @@ export default function DashboardPage() {
           <div className="flex items-center gap-2 text-muted-foreground text-sm font-medium uppercase tracking-wider">
              <Shield className="h-4 w-4" />
              QG Opérationnel • {new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
-             
-             {/* DEV: Simulate Wave Button */}
-             <button 
-                onClick={() => setShowDemoWave(!showDemoWave)}
-                className="ml-4 text-[10px] text-slate-300 hover:text-indigo-500 border border-transparent hover:border-indigo-200 px-1 rounded transition-colors"
-                title="Simuler une notification de vague (Dev Only)"
-             >
-                [Simuler Vague]
-             </button>
           </div>
           <h1 className="text-4xl font-black text-slate-900 tracking-tight">
             Bonjour, {userProfile?.username || "Soldat"}
@@ -1009,7 +1000,6 @@ export default function DashboardPage() {
            
            {/* WAVE NOTIFICATION AREA (V3) */}
            {userProfile && <WaveNotification userId={userProfile.id} />}
-           {showDemoWave && <WaveNotificationDemo />}
 
            {/* HUNTING BOARD (TABLEAU DE CHASSE) */}
            <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm relative overflow-hidden group">
