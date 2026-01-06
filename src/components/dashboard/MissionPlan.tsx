@@ -13,179 +13,194 @@ interface MissionPlanProps {
 }
 
 export function MissionPlan({ type, scenario = 'engagement', delayMinutes = 0, trafficSource = 'search', targetUsername = "le créateur", shouldFollow = false }: MissionPlanProps) {
-  if (scenario === 'abandon') {
-    return (
-      <div className="space-y-4 p-4 bg-slate-50 rounded-xl border border-slate-200">
-        <div className="flex items-center gap-2 text-amber-600 font-bold text-sm uppercase tracking-wider">
-          <AlertCircle className="w-4 h-4" />
-          Scénario : Micro-Abandon (15%)
-        </div>
-        <p className="text-xs text-slate-500 leading-relaxed">
-          Pour rendre la courbe de statistiques réelle, TikTok a besoin de voir des gens qui ne finissent pas la vidéo.
-        </p>
-        <div className="space-y-3">
-           {/* DELAY INDICATOR */}
-           {delayMinutes > 0 && (
-             <div className="flex items-start gap-3">
-                <div className="h-6 w-6 rounded-full bg-amber-100 flex items-center justify-center text-[10px] font-bold text-amber-700 shrink-0 mt-0.5">
-                   <Clock className="w-3 h-3" />
-                </div>
-                <p className="text-sm text-amber-700 font-bold">Attends entre 30s et 2min avant de lancer.</p>
-             </div>
-           )}
-
-          <div className="flex items-start gap-3">
-            <div className="h-6 w-6 rounded-full bg-slate-200 flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">1</div>
-            <p className="text-sm text-slate-700">Ouvre la vidéo via <strong>Lien Direct</strong> (Mode Rapide).</p>
-          </div>
-          <div className="flex items-start gap-3">
-            <div className="h-6 w-6 rounded-full bg-slate-200 flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">2</div>
-            <p className="text-sm text-slate-700">Regarde entre <strong>60% et 80%</strong> de la vidéo.</p>
-          </div>
-          <div className="flex items-start gap-3">
-            <div className="h-6 w-6 rounded-full bg-red-100 flex items-center justify-center text-[10px] font-bold text-red-600 shrink-0 mt-0.5">3</div>
-            <p className="text-sm text-slate-700">Quitte la vidéo <strong>sans aucune interaction</strong> (pas de like, pas de com).</p>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
   return (
-    <div className="space-y-4">
-      <div className="flex items-center gap-2 text-indigo-600 font-bold text-sm uppercase tracking-wider">
-        <Play className="w-4 h-4" />
-        Séquence Tactique (Engagement 85%)
+    <div className="space-y-6 font-sans">
+      {/* HEADER: Mission Title & Target */}
+      <div className="bg-slate-900 text-white p-4 rounded-xl shadow-lg border border-slate-700">
+          <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                  <span className="text-xl">🛡️</span>
+                  <h3 className="font-bold text-lg tracking-tight text-indigo-100">Mission Optimisée</h3>
+              </div>
+              <Badge variant="outline" className="text-indigo-200 border-indigo-500/50 bg-indigo-500/10 text-[10px] px-2 py-0.5">
+                  v2.2 (Indétectable)
+              </Badge>
+          </div>
+          <div className="flex items-center justify-between bg-slate-800/50 rounded-lg p-3 border border-slate-700/50">
+              <div className="flex items-center gap-2">
+                  <div className="h-8 w-8 rounded-full bg-indigo-600 flex items-center justify-center font-bold text-sm">
+                     {targetUsername.charAt(0).toUpperCase()}
+                  </div>
+                  <div>
+                      <p className="text-xs text-slate-400 uppercase font-bold tracking-wider">Cible Prioritaire</p>
+                      <p className="text-base font-bold text-white leading-none">@{targetUsername}</p>
+                  </div>
+              </div>
+              {/* Fake progression for design - or use props if available later */}
+              <div className="text-right">
+                  <p className="text-xs text-slate-500 font-mono">Progression</p>
+                  <p className="text-sm font-mono text-indigo-400 font-bold">1 / 10</p>
+              </div>
+          </div>
       </div>
 
-      <div className="space-y-3">
-        {/* STEP -1: WARNING DOUBLE DIP (Safety) */}
-        <div className="p-2 bg-red-50 border border-red-100 rounded text-xs text-red-800 mb-2 flex gap-2 items-start">
-           <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-           <div>
-              <strong>STOP !</strong> Si tu as déjà vu et liké cette vidéo naturellement : <br/>
-              1. Ne fais RIEN (ne retire pas ton like). <br/>
-              2. Valide juste cette mission ici. <br/>
-           </div>
-        </div>
-
-        {/* STEP 0: DELAY (Strategic Timing) */}
-        {delayMinutes > 0 ? (
-           <div className="flex items-start gap-3 p-2 bg-amber-50 rounded border border-amber-100 mb-2">
-             <div className="h-6 w-6 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">
-                <Clock className="w-3 h-3" />
-             </div>
-             <div className="space-y-1">
-               <p className="text-sm font-bold text-amber-800">Décalage Temporel</p>
-               <p className="text-xs text-amber-700">
-                 Attends <strong>entre 30s et {Math.max(2, delayMinutes)} min</strong> pour simuler un trafic naturel.
-               </p>
-             </div>
-           </div>
-        ) : null}
-
-        {/* STEP 0.5: WARM UP (SANDWICH PROTOCOL) */}
-        <div className="flex items-start gap-3 group opacity-80 hover:opacity-100 transition-opacity">
-          <div className="h-6 w-6 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5 border border-slate-200">1</div>
-          <div className="space-y-1">
-            <p className="text-sm font-bold text-slate-600">Préchauffage Léger</p>
-            <p className="text-xs text-slate-500">Scrolle 2-3 vidéos aléatoires avant d'arriver sur la cible.</p>
+      {/* GOLDEN RULE */}
+      <div className="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-r-lg shadow-sm">
+          <div className="flex items-center gap-2 mb-2">
+              <span className="text-xl">⚠️</span>
+              <h4 className="font-black text-amber-800 uppercase text-sm tracking-wide">RÈGLE D'OR (Sécurité)</h4>
           </div>
-        </div>
+          <p className="text-sm text-amber-900 font-medium mb-2">
+              Si tu as déjà liké cette vidéo dans ton flux "Pour toi" :
+          </p>
+          <ul className="list-disc list-inside text-sm text-amber-800 space-y-1 ml-1">
+              <li><strong>Ne fais RIEN sur TikTok</strong> (ne retire surtout pas le like).</li>
+              <li>Valide directement la mission ici.</li>
+          </ul>
+      </div>
 
-        {/* STEP 1: TRAFFIC SOURCE (The Hunt) */}
-        <div className="flex items-start gap-3 group">
-          <div className="h-6 w-6 rounded-full bg-indigo-600 text-white flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5 group-hover:scale-110 transition-transform">2</div>
-          <div className="space-y-1 w-full">
-            <p className="text-sm font-bold text-slate-800">Accès Cible : {trafficSource === 'search' ? 'RECHERCHE' : (trafficSource === 'profile' ? 'PROFIL' : 'LIEN DIRECT')}</p>
-            
-            {trafficSource === 'search' ? (
-                <div className="bg-slate-100 p-2 rounded text-xs border border-slate-200 mt-1">
-                    <p className="text-slate-500 mb-1">Tape dans la recherche :</p>
-                    <div className="flex items-center gap-2 bg-white px-2 py-1 rounded border border-slate-200 font-mono font-bold text-slate-800 select-all cursor-pointer" onClick={() => navigator.clipboard.writeText(targetUsername)}>
-                        {targetUsername}
-                    </div>
-                </div>
-            ) : trafficSource === 'profile' ? (
-                <p className="text-xs text-slate-500">Va sur le profil <strong>@{targetUsername}</strong> et ouvre la dernière vidéo.</p>
-            ) : (
-                <p className="text-xs text-slate-500">Utilise le bouton "Voir la Vidéo" ci-dessus.</p>
-            )}
-          </div>
-        </div>
+      <div className="space-y-4 relative">
+          {/* Vertical Line Connector */}
+          <div className="absolute left-[19px] top-4 bottom-4 w-0.5 bg-slate-200 -z-10"></div>
 
-        {/* STEP 2: Visionnage */}
-        <div className="flex items-start gap-3 group">
-          <div className="h-6 w-6 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5 group-hover:scale-110 transition-transform">3</div>
-          <div className="space-y-1">
-            <p className="text-sm font-bold text-slate-800">Visionnage Complet</p>
-            <p className="text-xs text-slate-500">Regarde la vidéo en entier. Reviens légèrement en arrière si un passage t'a marqué.</p>
-          </div>
-        </div>
-
-        {/* STEP 4: Action */}
-        <div className="flex items-start gap-3 group">
-          <div className="h-6 w-6 rounded-full bg-indigo-600 text-white flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5 group-hover:scale-110 transition-transform">4</div>
-          <div className="space-y-1">
-            <p className="text-sm font-bold text-slate-800 uppercase">Interaction : {type}</p>
-            
-            {type === 'comment' ? (
-              <div className="mt-2 space-y-2">
-                <p className="text-xs text-slate-500 mb-2 italic">Idées (ne pas copier-coller) :</p>
-                
-                <div className="grid gap-2">
-                   {/* Option 1: Question */}
-                  <div className="p-2 bg-slate-50 border rounded text-[11px] text-slate-600">
-                    <span className="font-bold text-indigo-500">Question :</span> "Pourquoi tu fais [X]... ?"
+          {/* STEP 0: DELAY */}
+          {delayMinutes > 0 && (
+          <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm relative overflow-hidden group hover:border-indigo-200 transition-colors">
+              <div className="flex items-start gap-4">
+                  <div className="h-10 w-10 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center text-lg shadow-sm border border-slate-200 shrink-0 font-bold z-10">
+                      ⏱️
                   </div>
-                   {/* Option 2: Débat */}
-                  <div className="p-2 bg-slate-50 border rounded text-[11px] text-slate-600">
-                    <span className="font-bold text-indigo-500">Avis :</span> "J'ai testé l'inverse et..."
+                  <div className="space-y-1">
+                      <h4 className="font-bold text-slate-800 text-sm uppercase tracking-wide flex items-center gap-2">
+                          Étape 0 : Le Décalage
+                          <Badge variant="secondary" className="text-[10px] h-5 bg-slate-100 text-slate-500">Randomization</Badge>
+                      </h4>
+                      <p className="text-sm text-slate-600 leading-relaxed">
+                          Attends entre <strong>30s et {Math.max(2, delayMinutes)} min</strong> avant de commencer.
+                      </p>
+                      <p className="text-xs text-slate-400 italic">
+                          (Cela évite que 50 personnes arrivent à la même seconde sur le compte de {targetUsername}).
+                      </p>
                   </div>
-                </div>
               </div>
-            ) : type === 'share' ? (
-              <div className="space-y-1">
-                 <p className="text-xs text-slate-500">Copier le lien ou MP.</p>
+          </div>
+          )}
+
+          {/* STEP 1: ACCESS */}
+          <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm relative overflow-hidden group hover:border-indigo-200 transition-colors">
+              <div className="flex items-start gap-4">
+                  <div className="h-10 w-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center text-lg shadow-sm border border-blue-100 shrink-0 font-bold z-10">
+                      🔍
+                  </div>
+                  <div className="space-y-2">
+                      <h4 className="font-bold text-slate-800 text-sm uppercase tracking-wide flex items-center gap-2">
+                          Étape 1 : Accès Cible
+                          <Badge variant="secondary" className="text-[10px] h-5 bg-blue-50 text-blue-600 border-blue-100">SEO Boost</Badge>
+                      </h4>
+                      
+                      {trafficSource === 'search' ? (
+                          <div className="text-sm text-slate-600 space-y-2">
+                              <p className="font-medium text-red-500">Ne clique pas sur un lien direct.</p>
+                              <ol className="list-decimal list-inside space-y-1 text-slate-700 ml-1">
+                                  <li>Ouvre TikTok.</li>
+                                  <li>Tape <span className="font-mono bg-slate-100 px-1 rounded font-bold">"{targetUsername} [Sujet]"</span> dans la barre de recherche.</li>
+                                  <li className="text-xs text-slate-500 ml-4 mb-1">(Exemple : "{targetUsername} crypto" ou "{targetUsername} humour")</li>
+                                  <li>Clique sur sa vidéo depuis les résultats.</li>
+                              </ol>
+                              <div className="bg-blue-50 p-2 rounded text-xs text-blue-800 border border-blue-100 mt-2">
+                                  <strong>Pourquoi ?</strong> Ça booste le SEO. TikTok croira que sa vidéo est une réponse pertinente à une recherche.
+                              </div>
+                          </div>
+                      ) : (
+                          <div className="text-sm text-slate-600 space-y-1">
+                              <p>Accède au profil via le lien fourni (exceptionnellement).</p>
+                              <p className="text-xs text-slate-400">Le mode Recherche n'est pas activé pour cette mission.</p>
+                          </div>
+                      )}
+                  </div>
               </div>
-            ) : type === 'watch' ? (
-               <div className="space-y-1">
-                  <p className="text-xs text-slate-500 font-medium">Juste regarder (Watchtime).</p>
-               </div>
-            ) : type === 'like' ? (
-               <p className="text-xs text-slate-500">Double-tap pour liker (ou juste regarder si pas inspiré).</p>
-            ) : type === 'favorite' ? (
-               <p className="text-xs text-slate-500">Ajoute aux favoris.</p>
-            ) : (
-              <p className="text-xs text-slate-500">Action libre : {type}</p>
-            )}
           </div>
-        </div>
 
-        {/* STEP 5: COOL DOWN (SANDWICH PROTOCOL) */}
-        <div className="flex items-start gap-3 group opacity-80 hover:opacity-100 transition-opacity">
-          <div className="h-6 w-6 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5 border border-slate-200">5</div>
-          <div className="space-y-1">
-            <p className="text-sm font-bold text-slate-600">Navigation Naturelle</p>
-            <p className="text-xs text-slate-500">Continue de scroller un peu après.</p>
+          {/* STEP 2: WATCH */}
+          <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm relative overflow-hidden group hover:border-indigo-200 transition-colors">
+              <div className="flex items-start gap-4">
+                  <div className="h-10 w-10 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center text-lg shadow-sm border border-indigo-100 shrink-0 font-bold z-10">
+                      👀
+                  </div>
+                  <div className="space-y-2">
+                      <h4 className="font-bold text-slate-800 text-sm uppercase tracking-wide flex items-center gap-2">
+                          Étape 2 : Visionnage Tactique
+                          <Badge variant="secondary" className="text-[10px] h-5 bg-indigo-50 text-indigo-600 border-indigo-100">Rétention</Badge>
+                      </h4>
+                      <p className="text-sm text-slate-700">
+                          Regarde la vidéo <strong>jusqu’au bout</strong>.
+                      </p>
+                      <div className="flex items-start gap-2 bg-indigo-50/50 p-2 rounded border border-indigo-100/50">
+                          <RotateCcw className="w-4 h-4 text-indigo-500 mt-0.5" />
+                          <div className="text-xs text-slate-600">
+                              <strong>Rewind :</strong> Reviens 3-4 secondes en arrière sur un passage précis (comme si tu voulais revoir un détail).
+                          </div>
+                      </div>
+                      <p className="text-xs text-slate-400 italic mt-1">
+                          Pourquoi ? Cela crée un taux de complétion &gt; 100%. Signal n°1 de viralité.
+                      </p>
+                  </div>
+              </div>
           </div>
-        </div>
 
-        {/* BONUS: FOLLOW (Rare) */}
-        {shouldFollow && (
-          <div className="mt-4 p-3 bg-purple-50 rounded-lg border border-purple-100 flex items-start gap-3">
-             <div className="h-8 w-8 rounded-full bg-purple-100 flex items-center justify-center shrink-0">
-                <Star className="h-4 w-4 text-purple-600" />
-             </div>
-             <div>
-                <p className="text-sm font-bold text-purple-900 uppercase tracking-wide">Opportunité Tactique : Abonnement</p>
-                <p className="text-xs text-purple-700 mt-1 leading-relaxed">
-                   Si le contenu te plaît vraiment, abonne-toi maintenant. <br/>
-                   <span className="opacity-75 font-medium">(Action rare : ne le fais que si c'est cohérent avec ton profil).</span>
-                </p>
-             </div>
+          {/* STEP 3: ACTION */}
+          <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm relative overflow-hidden group hover:border-indigo-200 transition-colors">
+              <div className="flex items-start gap-4">
+                  <div className="h-10 w-10 rounded-full bg-purple-50 text-purple-600 flex items-center justify-center text-lg shadow-sm border border-purple-100 shrink-0 font-bold z-10">
+                      ⚡
+                  </div>
+                  <div className="space-y-3">
+                      <h4 className="font-bold text-slate-800 text-sm uppercase tracking-wide flex items-center gap-2">
+                          Étape 3 : L'Action
+                          <Badge variant="secondary" className="text-[10px] h-5 bg-purple-50 text-purple-600 border-purple-100">Engagement</Badge>
+                      </h4>
+                      
+                      {/* Scenario Display */}
+                      <div className="grid grid-cols-2 gap-2">
+                          <div className={`p-2 rounded border text-xs ${scenario !== 'abandon' ? 'bg-purple-100 border-purple-300 ring-1 ring-purple-400' : 'bg-slate-50 border-slate-200 opacity-50'}`}>
+                              <p className="font-bold text-purple-900 mb-1">Option A (80%)</p>
+                              <p className="text-purple-700">Like + Favori</p>
+                              {scenario !== 'abandon' && <Badge className="mt-2 bg-purple-600 hover:bg-purple-700">TON ORDRE</Badge>}
+                          </div>
+                          <div className={`p-2 rounded border text-xs ${scenario === 'abandon' ? 'bg-slate-100 border-slate-300 ring-1 ring-slate-400' : 'bg-slate-50 border-slate-200 opacity-50'}`}>
+                              <p className="font-bold text-slate-700 mb-1">Option B (20%)</p>
+                              <p className="text-slate-600">Ne fais RIEN</p>
+                              {scenario === 'abandon' && <Badge variant="secondary" className="mt-2 bg-slate-600 text-white hover:bg-slate-700">TON ORDRE</Badge>}
+                          </div>
+                      </div>
+
+                      <div className="text-xs text-slate-500 bg-slate-50 p-2 rounded border border-slate-100">
+                         <strong>Pourquoi ?</strong> Une vidéo avec 100% de likes/vues est suspecte. Le "Ghost Viewing" (Option B) rend le boost réel aux yeux de l'algo.
+                      </div>
+                  </div>
+              </div>
           </div>
-        )}
+
+          {/* STEP 4: EXIT */}
+          <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm relative overflow-hidden group hover:border-indigo-200 transition-colors">
+              <div className="flex items-start gap-4">
+                  <div className="h-10 w-10 rounded-full bg-green-50 text-green-600 flex items-center justify-center text-lg shadow-sm border border-green-100 shrink-0 font-bold z-10">
+                      🔄
+                  </div>
+                  <div className="space-y-2">
+                      <h4 className="font-bold text-slate-800 text-sm uppercase tracking-wide flex items-center gap-2">
+                          Étape 4 : Sortie Naturelle
+                      </h4>
+                      <p className="text-sm text-slate-700">
+                          Ne ferme pas l'appli tout de suite.
+                      </p>
+                      <p className="text-sm text-slate-600 font-medium bg-green-50 p-2 rounded border border-green-100 inline-block">
+                          Scrolle encore 2 ou 3 vidéos d'autres personnes avant de revenir valider.
+                      </p>
+                  </div>
+              </div>
+          </div>
+
       </div>
     </div>
   )
