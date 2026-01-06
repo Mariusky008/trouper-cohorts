@@ -16,6 +16,7 @@ import { createClient } from "@/lib/supabase/client"
 import { WelcomePopup } from "@/components/welcome-popup"
 import { MercenaryBoard } from "@/components/dashboard/mercenary-board"
 import { MissionPlan } from "@/components/dashboard/MissionPlan"
+import { WaveSchedule } from "@/components/dashboard/WaveSchedule"
 import dynamic from "next/dynamic"
 
 // Dynamic import to prevent hydration mismatch on dates
@@ -1260,6 +1261,9 @@ export default function DashboardPage() {
         {/* === RIGHT COLUMN (SIDEBAR) === */}
         <div className="lg:col-span-4 space-y-6" id="sidebar-config">
            
+           {/* OPERATIONAL SCHEDULE (NEW V3.5) */}
+           <WaveSchedule squadId={mySquadId} />
+
            {/* MY CONFIGURATION CARD */}
            <div className="rounded-xl border bg-white shadow-sm overflow-hidden">
               <div className="p-4 border-b bg-slate-50/50 flex items-center gap-2">
