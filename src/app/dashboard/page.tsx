@@ -510,12 +510,31 @@ export default function DashboardPage() {
                    const handle = extractTikTokUsername(m.profiles?.main_platform) || extractTikTokUsername(videoUrl) || m.profiles?.username || "Inconnu"
                    const displayUsername = handle.startsWith('@') ? handle.substring(1) : handle
 
+                   // V3.1: Check Lock Status
+                   let isLocked = false
+                   let lockMessage = ""
+                   
+                   if (isCoreWave || wave?.wave_type === 'noise') {
+                       // Wave Start Time Logic
+                       const now = new Date()
+                       const waveStart = wave ? new Date(wave.scheduled_date + 'T' + wave.start_time) : new Date()
+                       // Unlock 45 min before wave start (publication time)
+                       const unlockTime = new Date(waveStart.getTime() - 45 * 60000) 
+                       
+                       if (now < unlockTime) {
+                           isLocked = true
+                           lockMessage = `🔒 Déverrouillage à ${unlockTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+                           actionText = lockMessage // Override text
+                           actionIcon = "🔒"
+                       }
+                   }
+
                    return {
                      id: index + 2,
                      text: actionText,
                      icon: actionIcon,
                      completed: supportedIdsToday.has(m.user_id),
-                     actionLabel: "Voir la mission",
+                     actionLabel: isLocked ? "En attente" : "Voir la mission",
                      actionUrl: videoUrl,
                      targetUserId: m.user_id,
                      // Meta for MissionPlan
@@ -524,7 +543,8 @@ export default function DashboardPage() {
                      trafficSource: trafficSource,
                      delayMinutes: delayVal,
                      targetUsername: displayUsername,
-                     shouldFollow: shouldFollow
+                     shouldFollow: shouldFollow,
+                     isLocked: isLocked // Pass lock status
                    }
                  })
                ].filter(t => !t.text.toLowerCase().includes('publier 1 vidéo')) 
@@ -635,6 +655,15 @@ export default function DashboardPage() {
     // Optimistic Update
     const taskIndex = tasks.findIndex(t => t.id === id)
     const task = tasks[taskIndex]
+    
+    // V3.1: Prevent Locked Tasks
+    if (task.isLocked) {
+        toast.error("Mission Verrouillée", {
+            description: "Attends l'heure de publication de la cible.",
+            icon: <Lock className="h-4 w-4 text-slate-500" />
+        })
+        return
+    }
     
     // Prevent toggling if video hasn't been viewed (unless it's already completed or not a video task)
     if (task.actionUrl && !task.completed && !viewedVideos.has(task.targetUserId)) {
