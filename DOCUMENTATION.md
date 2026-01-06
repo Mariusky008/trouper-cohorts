@@ -235,10 +235,10 @@ Au lieu de diluer les actions sur 50 vidéos, le moteur concentre la puissance d
 *   **Vague Bruit (Noise) :** 5 à 7 vidéos reçoivent un soutien faible (20% like, 80% abandon) pour crédibiliser l'activité du groupe.
 
 ### B. Notification Préalable
-Les membres sélectionnés ("Élus du jour") reçoivent une alerte 48h à l'avance sur leur Dashboard :
+Les membres sélectionnés ("Élus du jour") reçoivent une alerte **72h à l'avance** (au lieu de 48h) sur leur Dashboard :
 *   **Message :** "Vague imminente détectée".
 *   **Instruction :** "Publie ta vidéo impérativement 30 à 45 min avant le début de la vague".
-*   **But :** Synchroniser la publication avec le pic d'activité artificiel.
+*   **But :** Laisser suffisamment de temps pour produire et planifier le contenu.
 
 ### C. Architecture Technique
 *   **Table `daily_waves` :** Stocke le planning (Qui passe ? Quand ? Quel type ?).

@@ -5,7 +5,7 @@ import { createClient } from '@supabase/supabase-js'
 const CONFIG = {
     WAVES_PER_DAY: 10, // 8-12 target
     CORE_RATIO: 0.6,   // 60% Core (6 videos), 40% Noise (4 videos)
-    PLANNING_HORIZON: 3 // Plan 3 days ahead
+    PLANNING_HORIZON: 3 // Plan 3 days ahead (72 hours)
 }
 
 export async function GET(request: Request) {

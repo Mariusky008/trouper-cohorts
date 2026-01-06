@@ -47,6 +47,9 @@ export function WaveNotification({ userId }: { userId: string }) {
     // Publish Deadline (45 min before wave)
     const publishDeadline = new Date(waveDate.getTime() - 45 * 60000)
     
+    // Notification Logic: Show if wave is within 72h
+    // Already filtered by query .gte('scheduled_date', today) and .limit(1)
+    
     return (
         <motion.div 
             initial={{ opacity: 0, y: -20 }}
