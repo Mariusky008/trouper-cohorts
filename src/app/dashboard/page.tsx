@@ -1201,7 +1201,23 @@ export default function DashboardPage() {
                                        className="w-full h-14 text-lg font-bold bg-indigo-600 hover:bg-indigo-700 shadow-xl shadow-indigo-200"
                                        onClick={() => {
                                           handleViewVideo(activeTask.targetUserId)
-                                          window.open(activeTask.actionUrl, '_blank')
+                                          
+                                          // SMART TRAFFIC LOGIC
+                                          if (activeTask.trafficSource === 'search') {
+                                             // Copy username and open homepage
+                                             const handle = activeTask.targetUsername || ""
+                                             navigator.clipboard.writeText(handle)
+                                             toast.success("Pseudo copié !", { description: "Colle-le dans la recherche TikTok." })
+                                             window.open('https://www.tiktok.com', '_blank')
+                                          } else if (activeTask.trafficSource === 'profile') {
+                                             // Open profile page (need to construct it or use main_platform if available)
+                                             // For now, let's use a safe profile link construction
+                                             const profileUrl = `https://www.tiktok.com/@${activeTask.targetUsername}`
+                                             window.open(profileUrl, '_blank')
+                                          } else {
+                                             // Direct link
+                                             window.open(activeTask.actionUrl, '_blank')
+                                          }
                                        }}
                                     >
                                        <Play className="mr-2 h-5 w-5 fill-white" />
