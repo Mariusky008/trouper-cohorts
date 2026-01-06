@@ -38,14 +38,28 @@ export function WaveNotification({ userId }: { userId: string }) {
     if (loading || !nextWave) return null
 
     // Calculate dates
-    const waveDate = new Date(nextWave.scheduled_date + 'T' + nextWave.start_time)
-    const now = new Date()
-    const timeDiff = waveDate.getTime() - now.getTime()
-    const hoursDiff = Math.ceil(timeDiff / (1000 * 3600))
-    const isToday = new Date().toDateString() === new Date(nextWave.scheduled_date).toDateString()
+    let waveDate = new Date()
+    let publishDeadline = new Date()
+    
+    try {
+        if (nextWave && nextWave.scheduled_date && nextWave.start_time) {
+            waveDate = new Date(nextWave.scheduled_date + 'T' + nextWave.start_time)
+            publishDeadline = new Date(waveDate.getTime() - 45 * 60000)
+        }
+    } catch (e) {
+        console.error("Date parsing error", e)
+    }
 
-    // Publish Deadline (45 min before wave)
-    const publishDeadline = new Date(waveDate.getTime() - 45 * 60000)
+    const isToday = nextWave ? new Date().toDateString() === new Date(nextWave.scheduled_date).toDateString() : false
+
+    // Safety check for display
+    const formatTime = (date: Date) => {
+        try {
+            return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        } catch (e) {
+            return "--:--"
+        }
+    }
 
     // State for video submission
     const [videoLink, setVideoLink] = useState("")
@@ -161,7 +175,7 @@ export function WaveNotification({ userId }: { userId: string }) {
                                     Publication Vidéo
                                 </h4>
                                 <p className="text-sm text-slate-600 leading-relaxed mb-4">
-                                    Publie ta vidéo sur TikTok et colle le lien ici avant <strong>{publishDeadline.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</strong> :
+                                    Publie ta vidéo sur TikTok et colle le lien ici avant <strong>{formatTime(publishDeadline)}</strong> :
                                 </p>
                                 
                                 <input 
