@@ -57,29 +57,21 @@ function seededShuffle(array: any[], seed: number) {
 import { extractTikTokUsername } from "@/lib/utils"
 
 export default function DashboardPage() {
-  // ALGO V2.1 - CACHE BUSTER - FORCE REBUILD V3.4
+  // ALGO V4.0 - AUTO FLOW - STABLE TASKS
   const [tasks, setTasks] = useState<any[]>([])
-  // Pagination State for Missions
-  const [currentTaskIndex, setCurrentTaskIndex] = useState(0)
   
-  // Auto-advance to first incomplete task when tasks are loaded
+  // No more manual index management - we always show the first incomplete task
+  // or the last completed one if all are done (to show success screen)
+  const activeTask = tasks.find(t => !t.completed)
+  const activeTaskIndex = tasks.findIndex(t => !t.completed)
+  const displayIndex = activeTaskIndex === -1 ? tasks.length : activeTaskIndex
+  
+  // Auto-scroll to top when active task changes (Smooth UX)
   useEffect(() => {
-    if (tasks.length > 0) {
-       const firstIncomplete = tasks.findIndex(t => !t.completed)
-       if (firstIncomplete !== -1) {
-          setCurrentTaskIndex(firstIncomplete)
-       } else {
-          // All completed? Stay on last one or handle completion state
-       }
-    }
-  }, [tasks])
-
-  // SAFETY: Prevent Index Out of Bounds
-  useEffect(() => {
-    if (tasks.length > 0 && currentTaskIndex >= tasks.length) {
-        setCurrentTaskIndex(Math.max(0, tasks.length - 1))
-    }
-  }, [tasks.length, currentTaskIndex])
+     if (activeTask) {
+        window.scrollTo({ top: 0, behavior: 'smooth' })
+     }
+  }, [activeTask?.id])
 
   const [disciplineScore, setDisciplineScore] = useState(0)
   const [loading, setLoading] = useState(true)
@@ -351,8 +343,6 @@ export default function DashboardPage() {
                   .eq('supporter_id', user.id)
                   .in('target_user_id', allMembers.map((m: any) => m.user_id))
                
-               setVideoTrackingData(videoTracking || [])
-
                setVideoTrackingData(videoTracking || [])
                
                // === ENGINE V3: WAVE SYSTEM INTEGRATION ===
@@ -721,13 +711,6 @@ export default function DashboardPage() {
                          console.error("Erreur notification chat:", msgError)
                       }
                    }
-                } else {
-                   // Fallback try fetch if state is empty (rare)
-                   const { data: membership } = await supabase.from('squad_members').select('squad_id').eq('user_id', user.id).single()
-                   if (membership) {
-                       // Retry logic could go here but let's keep it simple
-                       console.log("Squad ID missing from state, fetched:", membership.squad_id)
-                   }
                 }
 
                 // 1. Log Daily Support (for visual stats)
@@ -738,11 +721,10 @@ export default function DashboardPage() {
                 
                 if (supportError) {
                   console.error("Support insert error:", supportError)
-                  toast.error("Erreur de sauvegarde de la mission")
                 }
 
                 // 2. Log Video Tracking (for rotation logic)
-                const { data: tracking, error: trackingError } = await supabase
+                const { data: tracking } = await supabase
                   .from('video_tracking')
                   .select('action_count')
                   .eq('supporter_id', user.id)
@@ -751,35 +733,11 @@ export default function DashboardPage() {
                   .single()
 
                 if (tracking) {
-                   // Already supported this video before, check if it reached 3
-                   // (Usually we shouldn't allow re-supporting same video same day if already counted, 
-                   // but here we simplify: toggle = action done)
-                   // Actually, toggle allows unchecking. Real app should handle 'undo'.
-                   // For now, let's assume we just increment or ensure it exists.
-                   // The requirement is: "3 actions". Like + Comment + Sub = 3 actions in ONE go? 
-                   // Or 3 separate days? "au bout de 3 jours (3 actions)". 
-                   // So 1 action per day.
-                   // We update the count.
                    const newCount = (tracking.action_count || 0) + 1
                    await supabase.from('video_tracking').update({ 
                       action_count: newCount,
                       last_action_at: new Date().toISOString()
                    }).eq('supporter_id', user.id).eq('target_user_id', task.targetUserId).eq('video_url', task.actionUrl)
-
-                   if (newCount >= 3) {
-                      // TRIGGER SWAP
-                      await supabase.rpc('swap_squad_member', { 
-                         p_user_id: user.id, 
-                         p_target_id: task.targetUserId 
-                      })
-                      toast("Mission Accomplie !", {
-                         description: `Tu as soutenu ${task.text.split(': ')[1]} 3 fois. Un nouveau membre va être recruté !`,
-                         icon: <Shield className="h-4 w-4 text-purple-500" />
-                      })
-                      // Refresh page/data after short delay
-                      setTimeout(() => window.location.reload(), 2000)
-                   }
-
                 } else {
                    // First time supporting this video
                    await supabase.from('video_tracking').insert({
@@ -925,13 +883,6 @@ export default function DashboardPage() {
      
      return { scenario, type, watchDuration, delayMinutes, trafficSource, targetUsername, combinedSeed }
   })()
-
-  const handleNextTask = () => {
-      if (currentTaskIndex < tasks.length - 1) {
-         setCurrentTaskIndex(prev => prev + 1)
-      }
-      window.scrollTo({ top: 0, behavior: 'smooth' })
-  }
 
   if (loading) {
     return (
@@ -1188,18 +1139,18 @@ export default function DashboardPage() {
                  <div className="bg-slate-900 p-4 flex items-center justify-between text-white">
                     <div className="flex items-center gap-3">
                        <div className="h-10 w-10 rounded-full bg-indigo-600 flex items-center justify-center font-bold text-lg">
-                          {Math.min(currentTaskIndex + 1, tasks.length)}
+                          {Math.min(displayIndex + 1, tasks.length)}
                        </div>
                        <div>
                           <p className="text-xs text-indigo-300 font-bold uppercase tracking-wider">Mission Actuelle</p>
                           <h3 className="font-bold text-lg leading-none">
-                             {allTasksCompleted ? "Mission Accomplie !" : (tasks[currentTaskIndex]?.targetUsername ? `Cible : @${tasks[currentTaskIndex].targetUsername}` : 'Chargement...')}
+                             {allTasksCompleted ? "Mission Accomplie !" : (activeTask?.targetUsername ? `Cible : @${activeTask.targetUsername}` : 'Chargement...')}
                           </h3>
                        </div>
                     </div>
                     <div className="text-right">
                        <p className="text-xs text-slate-400 font-mono">
-                          {Math.min(currentTaskIndex + 1, tasks.length)} / {tasks.length}
+                          {Math.min(displayIndex + 1, tasks.length)} / {tasks.length}
                        </p>
                     </div>
                  </div>
@@ -1225,47 +1176,26 @@ export default function DashboardPage() {
                               Tu as terminé toutes tes missions pour aujourd'hui. Reviens demain pour de nouveaux ordres.
                            </p>
                         </div>
-                    ) : tasks[currentTaskIndex] ? (
+                    ) : activeTask ? (
                         // ACTIVE TASK
                         <div className="space-y-6">
-                           {!tasks[currentTaskIndex].completed ? (
-                              <MissionPlan 
-                                 type={tasks[currentTaskIndex].type}
-                                 scenario={tasks[currentTaskIndex].scenario}
-                                 delayMinutes={tasks[currentTaskIndex].delayMinutes}
-                                 trafficSource={tasks[currentTaskIndex].trafficSource}
-                                 targetUsername={tasks[currentTaskIndex].targetUsername}
-                                 shouldFollow={tasks[currentTaskIndex].shouldFollow}
-                              />
-                           ) : (
-                              <div className="p-8 text-center bg-slate-50 rounded-xl border border-slate-200 animate-in fade-in zoom-in-95 duration-300">
-                                 <div className="h-16 w-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                                    <CheckCircle className="h-8 w-8 text-green-600" />
-                                 </div>
-                                 <h3 className="text-xl font-bold text-slate-900 mb-2">Mission Terminée !</h3>
-                                 <p className="text-slate-500 mb-6">
-                                    Tu as bien effectué l'action : <br/>
-                                    <span className="font-medium text-slate-900">{tasks[currentTaskIndex].text}</span>
-                                 </p>
-                                 <Button 
-                                    onClick={handleNextTask} 
-                                    size="lg"
-                                    className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-12 shadow-lg shadow-indigo-200"
-                                 >
-                                    PASSER À LA SUIVANTE <ChevronRight className="ml-2 h-5 w-5" />
-                                 </Button>
-                              </div>
-                           )}
+                           <MissionPlan 
+                              type={activeTask.type}
+                              scenario={activeTask.scenario}
+                              delayMinutes={activeTask.delayMinutes}
+                              trafficSource={activeTask.trafficSource}
+                              targetUsername={activeTask.targetUsername}
+                              shouldFollow={activeTask.shouldFollow}
+                           />
                            
-                           {!tasks[currentTaskIndex].completed && (
                            <div className="flex flex-col gap-3 pt-4 border-t">
-                                 {!viewedVideos.has(tasks[currentTaskIndex].targetUserId) ? (
+                                 {!viewedVideos.has(activeTask.targetUserId) ? (
                                     <Button 
                                        size="lg" 
                                        className="w-full h-14 text-lg font-bold bg-indigo-600 hover:bg-indigo-700 shadow-xl shadow-indigo-200"
                                        onClick={() => {
-                                          handleViewVideo(tasks[currentTaskIndex].targetUserId)
-                                          window.open(tasks[currentTaskIndex].actionUrl, '_blank')
+                                          handleViewVideo(activeTask.targetUserId)
+                                          window.open(activeTask.actionUrl, '_blank')
                                        }}
                                     >
                                        <Play className="mr-2 h-5 w-5 fill-white" />
@@ -1276,11 +1206,8 @@ export default function DashboardPage() {
                                        size="lg" 
                                        className="w-full h-14 text-lg font-bold bg-green-600 hover:bg-green-700 shadow-xl shadow-green-200 animate-in zoom-in"
                                        onClick={async () => {
-                                          await toggleTask(tasks[currentTaskIndex].id)
-                                          // Auto advance logic is handled in toggleTask or here
-                                          if (currentTaskIndex < tasks.length - 1) {
-                                             setTimeout(() => handleNextTask(), 1500) // Small delay to see success toast
-                                          }
+                                          await toggleTask(activeTask.id)
+                                          // Auto flow handles next task automatically
                                        }}
                                     >
                                        <CheckCircle className="mr-2 h-5 w-5" />
@@ -1288,13 +1215,12 @@ export default function DashboardPage() {
                                     </Button>
                                  )}
                               
-                              {viewedVideos.has(tasks[currentTaskIndex].targetUserId) && (
+                              {viewedVideos.has(activeTask.targetUserId) && (
                                 <p className="text-xs text-center text-muted-foreground">
                                    En validant, tu confirmes avoir respecté le protocole ci-dessus.
                                 </p>
                               )}
                            </div>
-                           )}
                         </div>
                     ) : (
                         <div className="py-12 text-center text-slate-400">Chargement de la mission...</div>
