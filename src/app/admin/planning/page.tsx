@@ -115,10 +115,9 @@ export default function AdminPlanningPage() {
                     ) : (
                         waves.map((wave) => {
                             const waveDate = new Date(wave.created_at)
-                            const videoUpdateDate = new Date(wave.profiles?.updated_at || 0)
-                            // Is video updated AFTER the wave was created? (Means user reacted to notification)
-                            // Or roughly recent (last 24h)
-                            const isVideoFresh = videoUpdateDate > waveDate || (new Date().getTime() - videoUpdateDate.getTime() < 24 * 60 * 60 * 1000)
+                            // const videoUpdateDate = new Date(wave.profiles?.updated_at || 0)
+                            // const isVideoFresh = videoUpdateDate > waveDate || (new Date().getTime() - videoUpdateDate.getTime() < 24 * 60 * 60 * 1000)
+                            const isVideoFresh = false // Disable freshness check for now
                             
                             const hasVideo = !!wave.profiles?.current_video_url && wave.profiles.current_video_url.includes('tiktok')
 

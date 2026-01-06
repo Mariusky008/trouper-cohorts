@@ -33,7 +33,7 @@ export async function GET(request: Request) {
         const userIds = [...new Set(waves.map(w => w.creator_id))]
         const { data: profiles, error: profilesError } = await supabaseAdmin
             .from('profiles')
-            .select('id, username, current_video_url, updated_at')
+            .select('id, username, current_video_url') // Removed updated_at
             .in('id', userIds)
         
         if (profilesError) throw profilesError
