@@ -164,7 +164,11 @@ export function MissionPlan({ type, scenario = 'engagement', delayMinutes = 0, t
                       <div className="grid grid-cols-2 gap-2">
                           <div className={`p-2 rounded border text-xs ${scenario !== 'abandon' ? 'bg-purple-100 border-purple-300 ring-1 ring-purple-400' : 'bg-slate-50 border-slate-200 opacity-50'}`}>
                               <p className="font-bold text-purple-900 mb-1">Option A (80%)</p>
-                              <p className="text-purple-700">Like + Favori</p>
+                              <p className="text-purple-700">
+                                  {type === 'comment' ? 'Like + Commentaire' : 
+                                   type === 'share' ? 'Like + Partage' : 
+                                   'Like + Favori'}
+                              </p>
                               {scenario !== 'abandon' && <Badge className="mt-2 bg-purple-600 hover:bg-purple-700">TON ORDRE</Badge>}
                           </div>
                           <div className={`p-2 rounded border text-xs ${scenario === 'abandon' ? 'bg-slate-100 border-slate-300 ring-1 ring-slate-400' : 'bg-slate-50 border-slate-200 opacity-50'}`}>

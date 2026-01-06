@@ -554,15 +554,18 @@ export function MercenaryBoard({ onCreditsEarned }: { onCreditsEarned?: () => vo
                </div>
 
                <MissionPlan 
-                  type={selectedBounty.type || 'like'} 
+                  type={selectedBounty.type || (
+                      // Deterministic Type Generation based on ID
+                      (parseInt(selectedBounty.id) || 0) % 10 < 7 ? 'like' : 
+                      (parseInt(selectedBounty.id) || 0) % 10 < 9 ? 'comment' : 'share'
+                  )} 
                   scenario={
-                      // Simulation de la répartition 85/15 en attendant le backend
-                      // On utilise le dernier chiffre de l'ID ou du timestamp
-                      (parseInt(selectedBounty.id) || Date.parse(selectedBounty.created_at)) % 7 === 0 
+                      // 20% Abandon / 80% Engagement (Matches Doc)
+                      (parseInt(selectedBounty.id) || Date.parse(selectedBounty.created_at)) % 5 === 0 
                         ? 'abandon' 
                         : 'engagement'
                   }
-                  delayMinutes={(parseInt(selectedBounty.id) || Date.parse(selectedBounty.created_at)) % 20} // Simulation déterministe du délai
+                  delayMinutes={(parseInt(selectedBounty.id) || Date.parse(selectedBounty.created_at)) % 20}
                   trafficSource={
                       // 50% Search, 30% Profile, 20% Direct
                       (parseInt(selectedBounty.id) || 0) % 2 === 0 ? 'search' : ((parseInt(selectedBounty.id) || 0) % 3 === 0 ? 'profile' : 'direct')
