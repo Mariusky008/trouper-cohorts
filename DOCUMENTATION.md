@@ -132,7 +132,7 @@ Pour éviter le trafic "Direct Link" (suspect), 50% des missions demandent à l'
 
 ### C. Sandwich Protocol (Comportement Humain)
 Chaque mission est enveloppée dans une session de surf naturelle :
-1.  **Warm-up :** "Scrolle 2-3 vidéos aléatoires avant de commencer".
+1.  **Warm-up (Préchauffage) :** "Ouvre TikTok et scrolle ton flux 'Pour toi' normalement pendant 30s à 1min. Like une vidéo qui te plaît vraiment (hors mission)."
 2.  **Mission :** Action Troupers.
 3.  **Cool-down :** "Ne quitte pas l'app, scrolle encore un peu".
 

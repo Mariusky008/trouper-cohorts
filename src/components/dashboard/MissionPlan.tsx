@@ -102,8 +102,7 @@ export function MissionPlan({ type, scenario = 'engagement', delayMinutes = 0, t
           {/* Vertical Line Connector */}
           <div className="absolute left-[19px] top-4 bottom-4 w-0.5 bg-slate-200 -z-10"></div>
 
-          {/* STEP 0: DELAY */}
-          {delayMinutes > 0 && (
+          {/* STEP 0: WARM UP */}
           <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm relative overflow-hidden group hover:border-indigo-200 transition-colors">
               <div className="flex items-start gap-4">
                   <div className="h-10 w-10 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center text-lg shadow-sm border border-slate-200 shrink-0 font-bold z-10">
@@ -111,19 +110,21 @@ export function MissionPlan({ type, scenario = 'engagement', delayMinutes = 0, t
                   </div>
                   <div className="space-y-1">
                       <h4 className="font-bold text-slate-800 text-sm uppercase tracking-wide flex items-center gap-2">
-                          Étape 0 : Le Décalage
-                          <Badge variant="secondary" className="text-[10px] h-5 bg-slate-100 text-slate-500">Randomization</Badge>
+                          Étape 0 : Préchauffage
+                          <Badge variant="secondary" className="text-[10px] h-5 bg-slate-100 text-slate-500">Camouflage</Badge>
                       </h4>
                       <p className="text-sm text-slate-600 leading-relaxed">
-                          Attends entre <strong>30s et {Math.max(2, delayMinutes)} min</strong> avant de commencer.
+                          Ouvre TikTok et scrolle ton flux "Pour toi" normalement pendant <strong>30s à 1min</strong>.
+                      </p>
+                      <p className="text-sm text-slate-600 leading-relaxed">
+                          Like une vidéo qui te plaît vraiment (hors mission).
                       </p>
                       <p className="text-xs text-slate-400 italic">
-                          (Cela évite que 50 personnes arrivent à la même seconde sur le compte de {targetUsername}).
+                          Cela montre à TikTok que tu es un utilisateur réel en session de divertissement.
                       </p>
                   </div>
               </div>
           </div>
-          )}
 
           {/* STEP 1: ACCESS */}
           <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm relative overflow-hidden group hover:border-indigo-200 transition-colors">
