@@ -527,7 +527,7 @@ export function MercenaryBoard({ onCreditsEarned }: { onCreditsEarned?: () => vo
 
        {/* Mission Dialog */}
        <Dialog open={!!selectedBounty} onOpenChange={(open) => !open && setSelectedBounty(null)}>
-         <DialogContent className="sm:max-w-md border-red-200 bg-slate-50">
+         <DialogContent className="sm:max-w-md border-red-200 bg-slate-50 max-h-[90vh] overflow-y-auto">
             <DialogHeader>
                <DialogTitle className="flex items-center gap-2 text-red-900">
                   <Sword className="h-5 w-5 text-red-600" />
