@@ -3,7 +3,6 @@ import { NextResponse } from 'next/server'
 
 export async function GET(request: Request) {
   // Initialize Supabase Admin Client (Bypasses RLS)
-  // We need to check if env vars are present
   if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
       return NextResponse.json({ error: 'Service Role Key missing' }, { status: 500 })
   }
@@ -14,14 +13,10 @@ export async function GET(request: Request) {
   )
 
   try {
-    // Fetch Reports (Fallback messages)
+    // Fetch Reports (Raw data, no joins on private tables)
     const { data: reports, error: reportError } = await supabaseAdmin
       .from('reports')
-      .select(`
-        *,
-        reporter:reporter_id(email),
-        target:target_user_id(email)
-      `)
+      .select('*')
       .order('created_at', { ascending: false })
 
     if (reportError) throw reportError
@@ -31,12 +26,11 @@ export async function GET(request: Request) {
     try {
         const { data } = await supabaseAdmin
         .from('admin_messages')
-        .select(`*, user:user_id(email)`)
+        .select('*') // No join on user here to be safe, we'll fetch profiles in client
         .order('created_at', { ascending: false })
         
         msgs = data || []
     } catch (e) {
-        // Table might not exist
         console.log("Admin messages table issue", e)
     }
 

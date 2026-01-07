@@ -92,24 +92,42 @@ export default function AdminPage() {
           console.log("API Reports Data:", reportsData) // DEBUG LOG
 
           if (reportsData || adminMsgs) {
-             // Split into Discipline Reports and Contact Messages
-             // Logic: If reporter == target, it's a contact message (Self-report) OR if username starts with CONTACT_ADMIN
-             // DEBUG LOG FOR FILTERING
-             console.log("Filtering Logic Check:", (reportsData || []).map((r: any) => ({
-                 id: r.id,
-                 reporter: r.reporter_id,
-                 target: r.target_user_id,
-                 username: r.target_username,
-                 isContact: r.reporter_id === r.target_user_id || r.target_username?.startsWith("CONTACT_ADMIN:")
-             })))
+             // 1. Collect all user IDs to fetch their usernames/emails
+             const allUserIds = new Set<string>()
+             const rawReports = reportsData || []
+             
+             rawReports.forEach((r: any) => {
+                 if (r.reporter_id) allUserIds.add(r.reporter_id)
+                 if (r.target_user_id) allUserIds.add(r.target_user_id)
+             })
+             
+             // 2. Fetch Profiles for these IDs
+             let userMap = new Map<string, any>()
+             if (allUserIds.size > 0) {
+                 const { data: profiles } = await supabase
+                    .from('profiles')
+                    .select('id, username')
+                    .in('id', Array.from(allUserIds))
+                 
+                 if (profiles) {
+                      profiles.forEach((p: any) => userMap.set(p.id, p))
+                  }
+              }
 
-             const messages = (reportsData || []).filter((r: any) => 
+             // 3. Hydrate reports with profile data
+             const hydratedReports = rawReports.map((r: any) => ({
+                 ...r,
+                 reporter: { email: userMap.get(r.reporter_id)?.username || "Utilisateur" }, // Fallback to username as email isn't in profiles usually
+                 target: { email: userMap.get(r.target_user_id)?.username || "Inconnu" }
+             }))
+
+             // 4. Filter Logic
+             const messages = hydratedReports.filter((r: any) => 
                  r.reporter_id === r.target_user_id || 
                  r.target_username?.includes("ADMIN")
              )
              
-             // Show EVERYTHING else in reports tab to be safe
-             const realReports = (reportsData || []).filter((r: any) => 
+             const realReports = hydratedReports.filter((r: any) => 
                  !messages.includes(r)
              )
              
@@ -117,7 +135,7 @@ export default function AdminPage() {
              const normalizedAdminMsgs = (adminMsgs || []).map((m: any) => ({
                  id: m.id,
                  created_at: m.created_at,
-                 reporter: m.user,
+                 reporter: m.user, // User object from admin_messages might have email if joined properly, or just ID
                  target_username: "CONTACT_ADMIN: " + m.content,
                  status: m.status === 'read' ? 'resolved' : 'pending'
              }))
@@ -440,12 +458,12 @@ export default function AdminPage() {
                     size="sm" 
                     onClick={async () => {
                         // FORCE FETCH AND SHOW ALL RAW DATA
-                        const { data } = await supabase.from('reports').select('*, reporter:reporter_id(email)')
+                        const { data } = await supabase.from('reports').select('*') // REMOVED FAILING JOIN
                         if (data) {
                             const rawMessages = data.map((r: any) => ({
                                 id: r.id,
                                 created_at: r.created_at,
-                                reporter: r.reporter,
+                                reporter: { email: r.reporter_id }, // Just show ID as email is not available
                                 target_username: "FORCE_RAW: " + (r.target_username || "No content"),
                                 status: r.status
                             }))
