@@ -105,6 +105,11 @@ export default function DashboardPage() {
   const [videoTrackingData, setVideoTrackingData] = useState<any[]>([])
   // Track which videos have been viewed in the current session (using Target User ID to be unique)
   const [viewedVideos, setViewedVideos] = useState<Set<string>>(new Set())
+  
+  // Contact Form State
+  const [contactMessage, setContactMessage] = useState("")
+  const [isContactOpen, setIsContactOpen] = useState(false)
+  const [sendingContact, setSendingContact] = useState(false)
 
   // Load from session storage on mount with DATE CHECK
   useEffect(() => {
@@ -827,6 +832,36 @@ export default function DashboardPage() {
     setTimeout(() => setAnimateCredits(false), 2000)
   }
 
+  const handleSendContact = async () => {
+    if (!contactMessage.trim()) return
+
+    setSendingContact(true)
+    try {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) return
+
+        // Insert into reports table as a fallback (since admin_messages might not exist yet)
+        // We use a special target_username to distinguish it
+        const { error } = await supabase.from('reports').insert({
+            reporter_id: user.id,
+            target_user_id: user.id, // Self-report technically
+            target_username: "CONTACT_ADMIN: " + contactMessage.substring(0, 50) + "..."
+        })
+
+        if (error) throw error
+
+        toast.success("Message envoyé au QG", { description: "L'administrateur vous répondra bientôt." })
+        setContactMessage("")
+        setIsContactOpen(false)
+    } catch (e) {
+        console.error(e)
+        // Fallback: Open mail client if API fails
+        window.location.href = `mailto:mariustalk@yahoo.fr?subject=Problème Troupers&body=${encodeURIComponent(contactMessage)}`
+    } finally {
+        setSendingContact(false)
+    }
+  }
+
   const allTasksCompleted = tasks.length > 0 && tasks.every(t => t.completed)
   
   // Calculate Rank based on progression
@@ -1351,21 +1386,49 @@ export default function DashboardPage() {
            )}
 
            {/* REPORT / CONTACT ADMIN SHORTCUT */}
-           <a 
-              href="mailto:mariustalk@yahoo.fr?subject=Signalement Troupers&body=Bonjour, je souhaite signaler un comportement..."
-              className="block group"
-           >
-              <div className="rounded-xl bg-slate-900 p-5 text-white shadow-lg relative overflow-hidden transition-transform group-hover:scale-[1.02]">
-                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] from-orange-500/20 to-transparent opacity-50" />
-                 <div className="relative z-10 flex items-center justify-between">
-                    <div>
-                       <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">Assistance QG</p>
-                       <h3 className="font-black text-lg tracking-tight">SIGNALER UN PROBLÈME</h3>
+           <Dialog open={isContactOpen} onOpenChange={setIsContactOpen}>
+              <DialogTrigger asChild>
+                <div className="rounded-xl bg-slate-900 p-5 text-white shadow-lg relative overflow-hidden transition-transform hover:scale-[1.02] cursor-pointer group">
+                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] from-orange-500/20 to-transparent opacity-50" />
+                    <div className="relative z-10 flex items-center justify-between">
+                        <div>
+                        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">Assistance QG</p>
+                        <h3 className="font-black text-lg tracking-tight">SIGNALER UN PROBLÈME</h3>
+                        </div>
+                        <MessageSquareWarning className="h-6 w-6 text-orange-500" />
                     </div>
-                    <MessageSquareWarning className="h-6 w-6 text-orange-500" />
-                 </div>
-              </div>
-           </a>
+                </div>
+              </DialogTrigger>
+              <DialogContent>
+                  <DialogHeader>
+                      <DialogTitle className="flex items-center gap-2">
+                          <MessageSquareWarning className="h-5 w-5 text-orange-500" />
+                          Contacter le QG
+                      </DialogTitle>
+                      <DialogDescription>
+                          Rencontrez-vous un bug ou un problème avec un autre soldat ? Décrivez la situation ci-dessous.
+                      </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4 py-4">
+                      <textarea
+                          className="w-full min-h-[120px] p-3 rounded-md border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                          placeholder="Décrivez votre problème ici..."
+                          value={contactMessage}
+                          onChange={(e) => setContactMessage(e.target.value)}
+                      />
+                  </div>
+                  <DialogFooter>
+                      <Button variant="ghost" onClick={() => setIsContactOpen(false)}>Annuler</Button>
+                      <Button 
+                          onClick={handleSendContact} 
+                          disabled={!contactMessage.trim() || sendingContact}
+                          className="bg-indigo-600 hover:bg-indigo-700 text-white"
+                      >
+                          {sendingContact ? "Envoi..." : "Envoyer le rapport"}
+                      </Button>
+                  </DialogFooter>
+              </DialogContent>
+           </Dialog>
            
            {/* DEBRIEFING LINK (OLD SURVEILLANCE) */}
            <Link href="/dashboard/surveillance" className="block mt-4">
