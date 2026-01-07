@@ -438,16 +438,25 @@ export default function AdminPage() {
                 <Button 
                     variant="destructive" 
                     size="sm" 
-                    onClick={() => {
-                        // FORCE SHOW ALL REPORTS AS MESSAGES
-                        const allReports = [...inboxMessages, ...reports].map(r => ({
-                            ...r,
-                            target_username: "FORCE_SHOW: " + (r.target_username || "No content")
-                        }))
-                        setInboxMessages(allReports)
+                    onClick={async () => {
+                        // FORCE FETCH AND SHOW ALL RAW DATA
+                        const { data } = await supabase.from('reports').select('*, reporter:reporter_id(email)')
+                        if (data) {
+                            const rawMessages = data.map((r: any) => ({
+                                id: r.id,
+                                created_at: r.created_at,
+                                reporter: r.reporter,
+                                target_username: "FORCE_RAW: " + (r.target_username || "No content"),
+                                status: r.status
+                            }))
+                            setInboxMessages(rawMessages)
+                            toast.success(`Forcé : ${rawMessages.length} messages chargés`)
+                        } else {
+                            toast.error("Aucune donnée brute trouvée")
+                        }
                     }}
                 >
-                    🔓 Force: Tout Afficher
+                    🔓 Force: Recharger & Afficher Tout
                 </Button>
             </div>
             {inboxMessages.length === 0 ? (
