@@ -89,8 +89,6 @@ export default function AdminPage() {
       if (res.ok) {
           const { reports: reportsData, messages: adminMsgs } = await res.json()
           
-          console.log("API Reports Data:", reportsData) // DEBUG LOG
-
           if (reportsData || adminMsgs) {
              // 1. Collect all user IDs to fetch their usernames/emails
              const allUserIds = new Set<string>()
@@ -441,42 +439,6 @@ export default function AdminPage() {
           </TabsList>
 
           <TabsContent value="inbox">
-            <div className="mb-4 flex gap-2">
-                <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={async () => {
-                        const { data } = await supabase.from('reports').select('*')
-                        console.log("DEBUG RAW REPORTS:", data)
-                        alert("Check Console for Raw Data. Count: " + (data?.length || 0))
-                    }}
-                >
-                    🐞 Debug: Voir Raw Data
-                </Button>
-                <Button 
-                    variant="destructive" 
-                    size="sm" 
-                    onClick={async () => {
-                        // FORCE FETCH AND SHOW ALL RAW DATA
-                        const { data } = await supabase.from('reports').select('*') // REMOVED FAILING JOIN
-                        if (data) {
-                            const rawMessages = data.map((r: any) => ({
-                                id: r.id,
-                                created_at: r.created_at,
-                                reporter: { email: r.reporter_id }, // Just show ID as email is not available
-                                target_username: "FORCE_RAW: " + (r.target_username || "No content"),
-                                status: r.status
-                            }))
-                            setInboxMessages(rawMessages)
-                            toast.success(`Forcé : ${rawMessages.length} messages chargés`)
-                        } else {
-                            toast.error("Aucune donnée brute trouvée")
-                        }
-                    }}
-                >
-                    🔓 Force: Recharger & Afficher Tout
-                </Button>
-            </div>
             {inboxMessages.length === 0 ? (
               <div className="text-center py-12 text-muted-foreground">
                 <Mail className="h-12 w-12 mx-auto text-slate-300 mb-4" />
