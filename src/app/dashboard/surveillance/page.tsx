@@ -1,23 +1,20 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { CheckCircle, Clock, AlertCircle, AlertTriangle, MessageSquareWarning, Eye, ArrowLeft } from "lucide-react"
+import { CheckCircle, Clock, AlertTriangle, ArrowLeft, BarChart3, ShieldAlert } from "lucide-react"
 import { useState, useEffect } from "react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import Link from "next/link"
-import { toast } from "sonner"
 import { createClient } from "@/lib/supabase/client"
 
 export default function SurveillancePage() {
   const [loading, setLoading] = useState(true)
-  const [userProfile, setUserProfile] = useState<any>(null)
   const [squadMembers, setSquadMembers] = useState<any[]>([])
   const [supportsReceived, setSupportsReceived] = useState<any[]>([])
   const [supportsReceivedYesterday, setSupportsReceivedYesterday] = useState<any[]>([])
   const [missingSupporters, setMissingSupporters] = useState<any[]>([])
   const [missingSupportersYesterday, setMissingSupportersYesterday] = useState<any[]>([])
   const [dayProgress, setDayProgress] = useState(1)
-  const [reportedUsers, setReportedUsers] = useState<Set<string>>(new Set())
   
   const supabase = createClient()
 
@@ -30,9 +27,6 @@ export default function SurveillancePage() {
          // 1. Fetch Profile
          const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single()
          if (profile) {
-           setUserProfile(profile)
-           
-           // Calculate days since creation
            const createdDate = new Date(profile.created_at || new Date())
            const now = new Date()
            const diffTime = Math.abs(now.getTime() - createdDate.getTime())
@@ -107,32 +101,8 @@ export default function SurveillancePage() {
     fetchData()
   }, [])
 
-  const handleReportMissing = async (targetUserId: string, username: string) => {
-     try {
-       const { data: { user } } = await supabase.auth.getUser()
-       if (!user) return
-
-       const { error } = await supabase.from('reports').insert({
-         reporter_id: user.id,
-         target_user_id: targetUserId,
-         target_username: username
-       })
-
-       if (error) throw error
-
-       toast.success("Signalement envoyé au QG", { 
-          description: `${username} a été signalé à l'admin pour manque de soutien.`,
-          icon: <MessageSquareWarning className="h-4 w-4 text-orange-500" />
-       })
-       
-       setReportedUsers(prev => new Set(prev).add(targetUserId))
-     } catch (error) {
-       toast.error("Erreur lors de l'envoi du signalement")
-     }
-  }
-
   if (loading) {
-    return <div className="flex h-screen items-center justify-center">Chargement du QG...</div>
+    return <div className="flex h-screen items-center justify-center">Chargement du Bilan...</div>
   }
 
   return (
@@ -144,35 +114,35 @@ export default function SurveillancePage() {
           </Link>
         </Button>
         <div>
-           <h1 className="text-3xl font-black text-slate-900 tracking-tight">
-             SURVEILLANCE ESCOUADE
+           <h1 className="text-3xl font-black text-slate-900 tracking-tight uppercase">
+             Bilan Opérationnel
            </h1>
            <p className="text-slate-500 font-medium">
-             Rapport détaillé de l'activité de tes recrues.
+             Transparence totale sur l'engagement de l'escouade.
            </p>
         </div>
       </div>
 
-      <div className="rounded-xl border bg-card shadow-sm">
-         <div className="border-b p-6 flex items-center justify-between">
+      <div className="rounded-xl border bg-card shadow-sm overflow-hidden">
+         <div className="border-b p-6 flex items-center justify-between bg-slate-50/50">
             <div>
               <h2 className="text-lg font-semibold flex items-center gap-2">
-                <Eye className="h-5 w-5 text-muted-foreground" />
-                Tableau de Contrôle
+                <BarChart3 className="h-5 w-5 text-slate-500" />
+                Rapport de Soutien
               </h2>
-              <p className="text-sm text-muted-foreground">Qui a fait le job ?</p>
+              <p className="text-sm text-muted-foreground">Qui a validé ses missions ?</p>
             </div>
          </div>
          <div className="p-6">
-            <Tabs defaultValue="today" className="w-full">
+            <Tabs defaultValue="yesterday" className="w-full">
               <TabsList className="grid w-full grid-cols-2 mb-8">
+                <TabsTrigger value="yesterday" className="text-lg py-3">Hier (Bilan Final)</TabsTrigger>
                 <TabsTrigger value="today" className="text-lg py-3">Aujourd'hui (En cours)</TabsTrigger>
-                <TabsTrigger value="yesterday" className="text-lg py-3">Hier (Bilan)</TabsTrigger>
               </TabsList>
 
               <TabsContent value="today" className="space-y-6">
-                <div className="flex items-center justify-between p-4 bg-muted/20 rounded-lg">
-                  <span className="text-base font-medium text-muted-foreground">Progression du jour</span>
+                <div className="flex items-center justify-between p-4 bg-slate-50 rounded-lg border border-slate-100">
+                  <span className="text-base font-medium text-slate-600">Avancement Global</span>
                   <span className={`text-3xl font-black ${missingSupporters.length > 0 ? 'text-orange-500' : 'text-green-500'}`}>
                     {supportsReceived.length}/{squadMembers.length}
                   </span>
@@ -182,28 +152,28 @@ export default function SurveillancePage() {
                   <div className="text-center py-12 text-muted-foreground">Pas encore de membres.</div>
                 ) : missingSupporters.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-12 text-green-600 gap-4">
-                    <div className="h-20 w-20 bg-green-100 rounded-full flex items-center justify-center">
+                    <div className="h-20 w-20 bg-green-100 rounded-full flex items-center justify-center animate-bounce">
                         <CheckCircle className="h-10 w-10" />
                     </div>
                     <p className="font-bold text-xl">Tout le monde a déjà liké ! 🔥</p>
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Ces membres n'ont pas encore liké :</p>
+                    <p className="text-sm font-semibold text-slate-500 uppercase tracking-wide">En attente de validation :</p>
                     <div className="grid gap-3">
                         {missingSupporters.map((m: any) => (
-                          <div key={m.user_id} className="flex items-center justify-between p-4 border rounded-xl bg-muted/30 hover:bg-muted/50 transition-colors">
+                          <div key={m.user_id} className="flex items-center justify-between p-4 border rounded-xl bg-slate-50/50">
                             <div className="flex items-center gap-4">
-                              <div className="h-10 w-10 rounded-full bg-white border flex items-center justify-center text-sm font-bold shadow-sm">
+                              <div className="h-10 w-10 rounded-full bg-white border flex items-center justify-center text-sm font-bold shadow-sm text-slate-400">
                                 {m.profiles?.username?.charAt(0) || "?"}
                               </div>
                               <div>
-                                  <span className="font-bold text-foreground block">{m.profiles?.username || "Inconnu"}</span>
-                                  <span className="text-xs text-muted-foreground">En attente...</span>
+                                  <span className="font-bold text-slate-700 block">{m.profiles?.username || "Inconnu"}</span>
+                                  <span className="text-xs text-slate-400">Doit encore passer...</span>
                               </div>
                             </div>
-                            <div className="px-3 py-1 rounded-full bg-orange-100 text-orange-700 text-xs font-bold">
-                                Non Validé
+                            <div className="px-3 py-1 rounded-full bg-slate-200 text-slate-500 text-xs font-bold">
+                                En cours
                             </div>
                           </div>
                         ))}
@@ -213,8 +183,8 @@ export default function SurveillancePage() {
               </TabsContent>
 
               <TabsContent value="yesterday" className="space-y-6">
-                <div className="flex items-center justify-between p-4 bg-muted/20 rounded-lg">
-                  <span className="text-base font-medium text-muted-foreground">Résultat final d'hier</span>
+                <div className="flex items-center justify-between p-4 bg-slate-50 rounded-lg border border-slate-100">
+                  <span className="text-base font-medium text-slate-600">Score Final</span>
                   <span className={`text-3xl font-black ${missingSupportersYesterday.length > 0 ? 'text-red-500' : 'text-green-500'}`}>
                     {supportsReceivedYesterday.length}/{squadMembers.length}
                   </span>
@@ -238,36 +208,22 @@ export default function SurveillancePage() {
                 ) : (
                   <div className="space-y-4">
                     <div className="flex items-center gap-3 text-base font-medium text-red-600 bg-red-50 p-4 rounded-xl border border-red-100">
-                      <AlertTriangle className="h-5 w-5" />
-                      {missingSupportersYesterday.length} traître(s) détecté(s) !
+                      <ShieldAlert className="h-5 w-5" />
+                      {missingSupportersYesterday.length} membre(s) défaillant(s) détecté(s)
                     </div>
                     <div className="grid gap-3">
                       {missingSupportersYesterday.map((m: any) => {
-                        const isReported = reportedUsers.has(m.user_id)
                         return (
-                        <div key={m.user_id} className={`flex items-center justify-between p-4 border rounded-xl shadow-sm transition-all ${isReported ? 'bg-muted/50 border-muted opacity-60' : 'bg-white border-red-100'}`}>
+                        <div key={m.user_id} className="flex items-center justify-between p-4 border rounded-xl shadow-sm bg-white border-red-100">
                           <div className="flex items-center gap-4">
-                            <div className={`h-10 w-10 rounded-full flex items-center justify-center text-sm font-bold ${isReported ? 'bg-muted text-muted-foreground' : 'bg-red-100 text-red-600'}`}>
+                            <div className="h-10 w-10 rounded-full flex items-center justify-center text-sm font-bold bg-red-100 text-red-600">
                               {m.profiles?.username?.charAt(0) || "?"}
                             </div>
-                            <span className={`font-bold text-foreground ${isReported ? 'line-through decoration-red-500 decoration-2' : ''}`}>{m.profiles?.username || "Inconnu"}</span>
+                            <span className="font-bold text-slate-900">{m.profiles?.username || "Inconnu"}</span>
                           </div>
-                          {isReported ? (
-                            <span className="text-xs font-bold text-orange-600 flex items-center gap-1 bg-orange-100 px-3 py-1 rounded-full">
-                               <CheckCircle className="h-3 w-3" />
-                               Signalé
-                            </span>
-                          ) : (
-                            <Button 
-                              size="sm" 
-                              variant="destructive" 
-                              className="gap-2"
-                              onClick={() => handleReportMissing(m.user_id, m.profiles?.username)}
-                            >
-                              <MessageSquareWarning className="h-4 w-4" />
-                              Signaler
-                            </Button>
-                          )}
+                          <span className="text-xs font-bold text-red-600 flex items-center gap-1 bg-red-50 px-3 py-1 rounded-full border border-red-100">
+                             Manqué à l'appel
+                          </span>
                         </div>
                         )
                       })}

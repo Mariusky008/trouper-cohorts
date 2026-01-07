@@ -1350,17 +1350,36 @@ export default function DashboardPage() {
               </div>
            )}
 
-           {/* SURVEILLANCE SHORTCUT */}
-           <Link href="/dashboard/surveillance" className="block group">
+           {/* REPORT / CONTACT ADMIN SHORTCUT */}
+           <a 
+              href="mailto:mariustalk@yahoo.fr?subject=Signalement Troupers&body=Bonjour, je souhaite signaler un comportement..."
+              className="block group"
+           >
               <div className="rounded-xl bg-slate-900 p-5 text-white shadow-lg relative overflow-hidden transition-transform group-hover:scale-[1.02]">
-                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] from-green-500/20 to-transparent opacity-50" />
+                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] from-orange-500/20 to-transparent opacity-50" />
                  <div className="relative z-10 flex items-center justify-between">
                     <div>
-                       <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">Accès Restreint</p>
-                       <h3 className="font-black text-lg tracking-tight">SURVEILLANCE</h3>
+                       <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">Assistance QG</p>
+                       <h3 className="font-black text-lg tracking-tight">SIGNALER UN PROBLÈME</h3>
                     </div>
-                    <Eye className="h-6 w-6 text-green-500" />
+                    <MessageSquareWarning className="h-6 w-6 text-orange-500" />
                  </div>
+              </div>
+           </a>
+           
+           {/* DEBRIEFING LINK (OLD SURVEILLANCE) */}
+           <Link href="/dashboard/surveillance" className="block mt-4">
+              <div className="rounded-xl border border-slate-200 bg-white p-4 flex items-center justify-between hover:bg-slate-50 transition-colors">
+                  <div className="flex items-center gap-3">
+                      <div className="h-10 w-10 rounded-lg bg-slate-100 flex items-center justify-center">
+                          <BarChart3 className="h-5 w-5 text-slate-600" />
+                      </div>
+                      <div>
+                          <p className="text-xs font-bold text-slate-500 uppercase">Transparence</p>
+                          <h3 className="font-bold text-slate-900">Bilan d'Hier</h3>
+                      </div>
+                  </div>
+                  <ChevronRight className="h-5 w-5 text-slate-400" />
               </div>
            </Link>
 
