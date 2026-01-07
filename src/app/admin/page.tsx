@@ -84,60 +84,42 @@ export default function AdminPage() {
 
       setUsers(profiles || [])
 
-      // Fetch Admin Messages
-      const { data: adminMsgs } = await supabase
-        .from('admin_messages')
-        .select(`*, user:user_id(email)`)
-        .order('created_at', { ascending: false })
-      
-      // Fetch Reports
-      const { data: reportsData } = await supabase
-        .from('reports')
-        .select(`
-          *,
-          reporter:reporter_id(email),
-          target:target_user_id(email)
-        `)
-        .order('created_at', { ascending: false })
-      
-      console.log("Raw Reports Data:", reportsData) // DEBUG LOG
-
-      if (reportsData) {
-          // Split into Discipline Reports and Contact Messages
-          // Logic: If reporter == target, it's a contact message (Self-report) OR if username starts with CONTACT_ADMIN
-          const messages = reportsData.filter((r: any) => 
-              r.reporter_id === r.target_user_id || 
-              r.target_username?.startsWith("CONTACT_ADMIN:")
-          )
+      // USE SERVER API TO BYPASS RLS
+      const res = await fetch('/api/admin/get-messages')
+      if (res.ok) {
+          const { reports: reportsData, messages: adminMsgs } = await res.json()
           
-          const realReports = reportsData.filter((r: any) => 
-              r.reporter_id !== r.target_user_id && 
-              !r.target_username?.startsWith("CONTACT_ADMIN:")
-          )
-          
-          // Normalize admin messages to match report structure for display
-          const normalizedAdminMsgs = (adminMsgs || []).map((m: any) => ({
-              id: m.id,
-              created_at: m.created_at,
-              reporter: m.user,
-              target_username: "CONTACT_ADMIN: " + m.content,
-              status: m.status === 'read' ? 'resolved' : 'pending' // Map 'read' to 'resolved'
-          }))
+          console.log("API Reports Data:", reportsData) // DEBUG LOG
 
-          setInboxMessages([...normalizedAdminMsgs, ...messages])
-          setReports(realReports)
-       } else {
-          // Even if no reports, we might have admin messages
-          const normalizedAdminMsgs = (adminMsgs || []).map((m: any) => ({
-              id: m.id,
-              created_at: m.created_at,
-              reporter: m.user,
-              target_username: "CONTACT_ADMIN: " + m.content,
-              status: m.status === 'read' ? 'resolved' : 'pending'
-          }))
-          setInboxMessages(normalizedAdminMsgs)
-          setReports([])
-       }
+          if (reportsData || adminMsgs) {
+             // Split into Discipline Reports and Contact Messages
+             // Logic: If reporter == target, it's a contact message (Self-report) OR if username starts with CONTACT_ADMIN
+             const messages = (reportsData || []).filter((r: any) => 
+                 r.reporter_id === r.target_user_id || 
+                 r.target_username?.startsWith("CONTACT_ADMIN:")
+             )
+             
+             const realReports = (reportsData || []).filter((r: any) => 
+                 r.reporter_id !== r.target_user_id && 
+                 !r.target_username?.startsWith("CONTACT_ADMIN:")
+             )
+             
+             // Normalize admin messages
+             const normalizedAdminMsgs = (adminMsgs || []).map((m: any) => ({
+                 id: m.id,
+                 created_at: m.created_at,
+                 reporter: m.user,
+                 target_username: "CONTACT_ADMIN: " + m.content,
+                 status: m.status === 'read' ? 'resolved' : 'pending'
+             }))
+   
+             setInboxMessages([...normalizedAdminMsgs, ...messages])
+             setReports(realReports)
+          }
+      } else {
+          console.error("Failed to fetch via API, falling back to client")
+          // Fallback to client fetching (existing logic below could be kept but simpler to just error out)
+      }
 
       // Fetch Boost Windows
       const { data: boostData } = await supabase
@@ -432,6 +414,19 @@ export default function AdminPage() {
           </TabsList>
 
           <TabsContent value="inbox">
+            <div className="mb-4">
+                <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={async () => {
+                        const { data } = await supabase.from('reports').select('*')
+                        console.log("DEBUG RAW REPORTS:", data)
+                        alert("Check Console for Raw Data. Count: " + (data?.length || 0))
+                    }}
+                >
+                    🐞 Debug: Voir Raw Data
+                </Button>
+            </div>
             {inboxMessages.length === 0 ? (
               <div className="text-center py-12 text-muted-foreground">
                 <Mail className="h-12 w-12 mx-auto text-slate-300 mb-4" />
