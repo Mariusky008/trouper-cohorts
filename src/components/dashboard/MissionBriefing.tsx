@@ -141,7 +141,7 @@ export function MissionBriefing({
                 </div>
 
                 {/* Text Area */}
-                <div className="min-h-[80px] text-lg font-medium text-slate-700 leading-relaxed cursor-pointer">
+                <div className="min-h-[120px] max-h-[200px] overflow-y-auto text-lg font-medium text-slate-700 leading-relaxed cursor-pointer pr-2 scrollbar-thin scrollbar-thumb-slate-200">
                     {displayedText}
                     {isTyping && <span className="animate-pulse ml-1">|</span>}
                 </div>

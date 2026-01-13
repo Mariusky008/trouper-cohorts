@@ -1273,21 +1273,26 @@ export default function DashboardPage() {
                             ) : (
                                 // STEP 2: ACTION MODE
                                 <div className="space-y-6 animate-in slide-in-from-right duration-500">
-                                    {/* Compact Recap Card */}
-                                    <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 flex items-center justify-between">
-                                        <div className="flex items-center gap-3">
-                                            <div className="h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold text-lg">
-                                                {activeTask.targetUsername?.charAt(0).toUpperCase()}
-                                            </div>
-                                            <div>
-                                                <p className="text-xs font-bold text-slate-400 uppercase">Cible Confirmée</p>
-                                                <p className="text-sm font-black text-slate-900">@{activeTask.targetUsername}</p>
-                                            </div>
-                                        </div>
-                                        <Button variant="ghost" size="sm" onClick={() => setBriefingCompleted(false)}>
-                                            Relire le Briefing
+                                    
+                                    <div className="flex items-center justify-between">
+                                        <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
+                                            <span className="h-2 w-2 rounded-full bg-green-500 animate-pulse"></span>
+                                            MISSION ACTIVE
+                                        </h3>
+                                        <Button variant="ghost" size="xs" onClick={() => setBriefingCompleted(false)} className="text-xs text-indigo-600">
+                                            Rejouer le Briefing
                                         </Button>
                                     </div>
+
+                                    {/* FULL MISSION PLAN (RECAP) */}
+                                    <MissionPlan 
+                                        type={activeTask.type}
+                                        scenario={activeTask.scenario}
+                                        delayMinutes={activeTask.delayMinutes}
+                                        trafficSource={activeTask.trafficSource}
+                                        targetUsername={activeTask.targetUsername}
+                                        shouldFollow={activeTask.shouldFollow}
+                                    />
 
                                     {/* Action Buttons */}
                                     <div className="flex flex-col gap-3 pt-4 border-t">
