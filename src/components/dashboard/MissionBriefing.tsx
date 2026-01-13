@@ -28,6 +28,22 @@ export function MissionBriefing({
     const [displayedText, setDisplayedText] = useState("")
     const [isTyping, setIsTyping] = useState(false)
 
+    const getMissionOrders = () => {
+        if (scenario === 'watch_only') {
+            return "Mission d'infiltration pure.\n\n1. Regarde la vidéo à 80% (ne skippe pas).\n2. NE LIKE PAS.\n3. Quitte la vidéo naturellement.\n\nObjectif : Crédibiliser ton compte comme utilisateur passif."
+        }
+        
+        let actionText = ""
+        switch(type) {
+            case 'comment': actionText = "Lâche un Like et un Commentaire pertinent."; break;
+            case 'favorite': actionText = "Like la vidéo et ajoute-la aux Favoris."; break;
+            case 'share': actionText = "Like et utilise le bouton Partager (Copier le lien suffit)."; break;
+            default: actionText = "Lâche un simple Like.";
+        }
+
+        return `Engagement actif requis.\n\n1. Regarde au moins 50% de la vidéo.\n2. ${actionText}\n3. Scrolle vers la vidéo suivante avant de revenir ici.\n\nExécution immédiate demandée.`
+    }
+
     // Définition des étapes du dialogue
     const steps = [
         {
@@ -41,22 +57,22 @@ export function MissionBriefing({
             title: "PROTOCOLE D'APPROCHE",
             icon: <Shield className="h-6 w-6 text-emerald-400" />,
             text: trafficSource === 'search' 
-                ? "Approche furtive requise. Ne clique pas sur un lien direct. Tu dois passer par la RECHERCHE TikTok." 
+                ? "Approche furtive requise.\n\n1. Ouvre la recherche TikTok.\n2. Tape le pseudo.\n3. Trouve la vidéo manuellement.\n\nInterdiction de cliquer sur un lien direct." 
                 : trafficSource === 'profile'
-                ? "Passe par son profil. Fais semblant de visiter avant de cliquer sur la vidéo."
-                : "Accès direct autorisé via le lien sécurisé.",
+                ? "Infiltration par le profil.\n\n1. Ouvre son profil.\n2. Regarde 1 ou 2 autres vidéos rapidement.\n3. Clique sur la vidéo cible."
+                : "Accès direct autorisé via le lien sécurisé.\n\nTu peux y aller directement.",
             mood: "secret"
         },
         {
-            title: "ORDRES DE MISSION",
+            title: "PLAN D'ACTION",
             icon: <Star className="h-6 w-6 text-amber-400" />,
-            text: scenario, // Le texte brut de la mission
+            text: getMissionOrders(),
             mood: "action"
         },
         {
             title: "CONFIRMATION",
             icon: <AlertTriangle className="h-6 w-6 text-red-400" />,
-            text: `Attends environ ${delayMinutes} min avant d'agir pour simuler un comportement humain. Compris ?`,
+            text: `Attends environ ${delayMinutes} min avant d'agir pour simuler un comportement humain.\n\nSi tu es prêt, lance la mission.`,
             mood: "warning"
         }
     ]
@@ -142,7 +158,7 @@ export function MissionBriefing({
                 </div>
 
                 {/* Text Area */}
-                <div className="bg-slate-50 border border-slate-100 rounded-lg p-4 min-h-[140px] max-h-[240px] overflow-y-auto text-lg font-medium text-slate-700 leading-relaxed cursor-pointer scrollbar-thin scrollbar-thumb-slate-200 shadow-inner">
+                <div className="bg-slate-50 border border-slate-100 rounded-lg p-4 min-h-[140px] max-h-[240px] overflow-y-auto text-lg font-medium text-slate-700 leading-relaxed cursor-pointer scrollbar-thin scrollbar-thumb-slate-200 shadow-inner whitespace-pre-wrap">
                     {displayedText}
                     {isTyping && <span className="animate-pulse ml-1 text-indigo-500">|</span>}
                 </div>
