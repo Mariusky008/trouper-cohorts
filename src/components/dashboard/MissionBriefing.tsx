@@ -142,7 +142,7 @@ export function MissionBriefing({
                 </div>
 
                 {/* Text Area */}
-                <div className="min-h-[140px] max-h-[240px] overflow-y-auto text-lg font-medium text-slate-700 leading-relaxed cursor-pointer pr-2 pl-1 pb-2 scrollbar-thin scrollbar-thumb-slate-200">
+                <div className="bg-slate-50 border border-slate-100 rounded-lg p-4 min-h-[140px] max-h-[240px] overflow-y-auto text-lg font-medium text-slate-700 leading-relaxed cursor-pointer scrollbar-thin scrollbar-thumb-slate-200 shadow-inner">
                     {displayedText}
                     {isTyping && <span className="animate-pulse ml-1 text-indigo-500">|</span>}
                 </div>

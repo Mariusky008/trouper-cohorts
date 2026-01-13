@@ -1286,7 +1286,9 @@ export default function DashboardPage() {
 
                                     {/* FULL MISSION PLAN (RECAP) */}
                                     <div className="border-t border-slate-100 pt-4">
-                                        <p className="text-xs font-bold text-slate-400 mb-2 uppercase tracking-widest">Dossier Tactique (Rappel)</p>
+                                        <p className="text-xs font-bold text-slate-400 mb-2 uppercase tracking-widest flex items-center gap-1">
+                                            📜 Dossier Tactique (Rappel)
+                                        </p>
                                         <MissionPlan 
                                             type={activeTask.type}
                                             scenario={activeTask.scenario}
