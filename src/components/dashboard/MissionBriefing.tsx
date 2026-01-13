@@ -1,3 +1,4 @@
+// Mission Briefing Component V3.6
 "use client"
 
 import { useState, useEffect } from "react"
