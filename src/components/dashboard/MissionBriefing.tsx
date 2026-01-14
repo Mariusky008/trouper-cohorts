@@ -13,6 +13,7 @@ interface MissionBriefingProps {
     delayMinutes: number
     targetUsername: string | null
     trafficSource: string
+    isRescueMode?: boolean
     onBriefingComplete: () => void
 }
 
@@ -22,6 +23,7 @@ export function MissionBriefing({
     delayMinutes, 
     targetUsername, 
     trafficSource,
+    isRescueMode = false,
     onBriefingComplete 
 }: MissionBriefingProps) {
     const [step, setStep] = useState(0)
@@ -53,7 +55,13 @@ export function MissionBriefing({
             highlight: `@${targetUsername}`,
             mood: "neutral"
         },
-        {
+        // STEP 2: PROTOCOL (Normal vs Rescue)
+        isRescueMode ? {
+            title: "ALERTE : LIEN MANQUANT",
+            icon: <AlertTriangle className="h-6 w-6 text-red-500 animate-pulse" />,
+            text: "ATTENTION SOLDAT !\n\nLa cible n'a pas fourni de lien vidéo valide pour cette vague (Absence).\n\nPROTOCOLE SECOURS ACTIVÉ :\n1. Rends-toi sur son profil.\n2. Identifie sa vidéo la plus récente (épinglée ou dernière publiée).\n3. Engage le combat sur cette vidéo.",
+            mood: "warning"
+        } : {
             title: "PROTOCOLE D'APPROCHE",
             icon: <Shield className="h-6 w-6 text-emerald-400" />,
             text: trafficSource === 'search' 

@@ -1296,6 +1296,7 @@ export default function DashboardPage() {
                                     delayMinutes={activeTask.delayMinutes}
                                     trafficSource={activeTask.trafficSource}
                                     targetUsername={activeTask.targetUsername}
+                                    isRescueMode={activeTask.actionUrl && !activeTask.actionUrl.includes('/video/') && !activeTask.actionUrl.includes('vm.tiktok.com')}
                                     onBriefingComplete={() => setBriefingCompleted(true)}
                                 />
                             ) : (
