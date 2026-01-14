@@ -348,3 +348,29 @@ Remplacement des blocs de texte statiques par une expérience interactive immers
     2.  **Protocole :** Instructions de sécurité (Recherche vs Profil).
     3.  **Plan d'Action :** Ordres précis numérotés (1. Regarde, 2. Like...).
 *   **Mémoire Tactique :** Une fois le briefing terminé, le soldat passe en mode "Action", mais peut toujours consulter le **"Dossier Tactique (Rappel)"** (ancien MissionPlan) s'il a oublié les détails.
+
+---
+
+## 16. Mise à jour V3.8 - Automatisation & Fiabilité du Planning (Janvier 2026)
+
+Correction des incohérences de planification et mise en place d'une automatisation robuste.
+
+### A. Automatisation des Vagues (Vercel Cron)
+Le planning ne dépend plus d'une action manuelle de l'administrateur.
+*   **Fichier `vercel.json` :** Configuration de tâches planifiées (Cron Jobs).
+*   **Schedule :**
+    *   **03h00 :** Génération des Bounties (Mercenaires).
+    *   **04h00 :** Planification des Vagues Stratégiques (J+1, J+2, J+3).
+*   **Avantage :** Le système tourne en autonomie totale, garantissant que le planning est toujours prêt au réveil des soldats.
+
+### B. Algorithme de Planification (Day-Zero Fix)
+Correction du moteur de planification (`/api/cron/schedule-waves`) pour combler les trous immédiats.
+*   **Avant :** Le script planifiait à partir de J+1 (Demain). Si un soldat rejoignait l'escouade aujourd'hui, il n'avait aucune mission prévue.
+*   **Après :** Le script vérifie désormais J+0 (Aujourd'hui). S'il n'y a pas de vagues prévues pour aujourd'hui, il les génère immédiatement.
+
+### C. UX Planning & Transparence
+Amélioration du widget "Planning des missions à venir" (`WaveSchedule`) pour éviter les faux positifs ("Repos Accordé").
+*   **Statut "Opérations Courantes" :** Si aucune vague spéciale n'est prévue pour la journée, le widget indique désormais clairement "Opérations Courantes - Toute la journée" au lieu de "Repos", confirmant que des missions standard sont disponibles.
+*   **Indicateur "Mon Tour" :** Ajout d'une section dédiée en bas du widget qui affiche explicitement la date et l'heure de la prochaine vague où l'utilisateur est la cible ("Mon Passage").
+    *   Si planifié : Affiche Date + Heure.
+    *   Si non planifié : Affiche "Aucune vague programmée pour toi cette semaine".
