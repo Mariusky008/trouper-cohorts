@@ -1359,10 +1359,10 @@ export default function DashboardPage() {
               </div>
            </div>
            
-           {/* MERCENARY PROTOCOL (BONUS MISSIONS) */}
-           <div className="mt-8">
+           {/* MERCENARY PROTOCOL (HIDDEN V3.7) */}
+           {/* <div className="mt-8">
                <MercenaryBoard onCreditsEarned={handleCreditsEarned} />
-           </div>
+           </div> */}
         </div>
 
         {/* === RIGHT COLUMN (SIDEBAR) === */}
@@ -1411,8 +1411,8 @@ export default function DashboardPage() {
               </div>
            </div>
 
-           {/* BUDDY WIDGET (COMPACT) */}
-           {myBuddy ? (
+           {/* BUDDY WIDGET (HIDDEN V3.7) */}
+           {/* {myBuddy ? (
               <div className="rounded-xl border border-purple-200 bg-purple-50/30 overflow-hidden">
                  <div className="p-4 flex items-center gap-4">
                     <div className="relative">
@@ -1439,7 +1439,7 @@ export default function DashboardPage() {
                  <Users className="h-8 w-8 mx-auto text-slate-300 mb-2" />
                  <p className="text-sm text-muted-foreground">Recherche de binôme en cours...</p>
               </div>
-           )}
+           )} */}
 
            {/* REPORT / CONTACT ADMIN SHORTCUT */}
            <Dialog open={isContactOpen} onOpenChange={setIsContactOpen}>

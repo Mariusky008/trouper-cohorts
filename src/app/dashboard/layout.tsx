@@ -91,7 +91,7 @@ export default function DashboardLayout({
   const navItems = [
     { href: "/dashboard", label: "Tableau de bord", icon: Home },
     { href: "/dashboard/group", label: "Mon Escouade", icon: Users },
-    { href: "/dashboard/my-posts", label: "Mes posts TikTok", icon: Video },
+    // { href: "/dashboard/my-posts", label: "Mes posts TikTok", icon: Video }, // HIDDEN V3.7
     { href: "/dashboard/leaves", label: "Demain je suis Off", icon: Coffee },
     { href: "/dashboard/rules", label: "Règles du jeu", icon: BookOpen },
     { href: "/dashboard/academy", label: "Academy (Obj 10K)", icon: GraduationCap },
