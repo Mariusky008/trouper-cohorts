@@ -408,3 +408,31 @@ Modification du **Briefing Tactique** pour s'adapter dynamiquement :
 *   **Alerte Visuelle :** Le briefing affiche une alerte rouge ⚠️ **"LIEN MANQUANT"**.
 *   **Nouvel Ordre :** L'instruction change automatiquement : "Va sur son profil et engage la vidéo la plus récente (épinglée ou dernière publiée)".
 *   **Résultat :** La vague n'est pas perdue, l'engagement est redirigé utilement, et l'expérience utilisateur reste fluide.
+
+---
+
+## 19. Mise à jour V3.11 - Analyse de Performance (Admin) (Janvier 2026)
+
+Outil d'intelligence tactique pour le Commandant (Admin).
+
+### Dashboard de Performance
+Nouvelle page d'administration (`/admin/performance`) permettant de suivre l'efficacité des vagues.
+*   **Vue détaillée :** Affiche pour chaque vague passée ou en cours le nombre exact d'interactions générées.
+*   **Granularité :** Distinction des types d'engagement :
+    *   **Likes**
+    *   **Commentaires** (Haute valeur)
+    *   **Favoris** (Signal fort)
+*   **Implémentation Technique :**
+    *   Ajout d'une colonne `support_type` dans la table `daily_supports`.
+    *   Enregistrement automatique du type d'action lors de la validation de mission par le soldat.
+
+---
+
+## 20. Mise à jour V3.12 - UX Responsive (Janvier 2026)
+
+Amélioration de l'accessibilité sur tous les appareils.
+
+### Fenêtre Boost (Responsive)
+Correction des problèmes d'affichage sur les petits écrans d'ordinateur portable.
+*   **Scroll Intelligent :** La fenêtre modale "Mission Boost" est désormais limitée à 85% de la hauteur de l'écran avec une barre de défilement interne automatique.
+*   **Avantage :** Garantit que le bouton "J'AI TERMINÉ" reste toujours accessible, même sur les résolutions 1366x768.
