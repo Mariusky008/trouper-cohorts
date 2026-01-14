@@ -397,6 +397,11 @@ export default function AdminPage() {
               📅 Planning Stratégique (V3)
             </Link>
           </Button>
+          <Button variant="outline" className="border-indigo-200 text-indigo-700 hover:bg-indigo-50" asChild>
+            <Link href="/admin/performance">
+              📊 Analyse Performance
+            </Link>
+          </Button>
           <div className="rounded-full bg-primary/10 px-4 py-2 text-primary font-mono text-sm">
             Admin: Marius
           </div>

@@ -735,9 +735,13 @@ export default function DashboardPage() {
                 }
 
                 // 1. Log Daily Support (for visual stats)
+                // Determine type based on task metadata or fallback to text analysis
+                const supportType = task.type || (task.text.includes("Commenter") ? 'comment' : task.text.includes("favoris") ? 'favorite' : 'like');
+                
                 const { error: supportError } = await supabase.from('daily_supports').insert({
                    supporter_id: user.id,
-                   target_user_id: task.targetUserId
+                   target_user_id: task.targetUserId,
+                   support_type: supportType
                 })
                 
                 if (supportError) {
