@@ -114,11 +114,17 @@ export default function DashboardPage() {
   
   // UX State
   const [briefingCompleted, setBriefingCompleted] = useState(false)
+  const [boostBriefingCompleted, setBoostBriefingCompleted] = useState(false)
 
   // Auto Flow Logic: Reset briefing when task changes
   useEffect(() => {
      setBriefingCompleted(false)
   }, [activeTask?.id])
+
+  // Reset boost briefing when window closes or changes
+  useEffect(() => {
+      if (!activeBoostWindow) setBoostBriefingCompleted(false)
+  }, [activeBoostWindow?.id])
 
   // Load from session storage on mount with DATE CHECK
   useEffect(() => {
@@ -1139,52 +1145,66 @@ export default function DashboardPage() {
                           </Button>
                         </DialogTrigger>
                         <DialogContent className="sm:max-w-md max-h-[85vh] overflow-y-auto">
-                        <DialogHeader>
-                          <DialogTitle className="text-2xl font-black flex items-center gap-2 text-indigo-900">
-                            <Zap className="h-6 w-6 text-yellow-500 fill-yellow-500" />
-                            MISSION BOOST
-                          </DialogTitle>
-                          <DialogDescription className="text-base">
-                            Opportunité Tactique. Suis le plan ci-dessous pour aider l'escouade.
-                          </DialogDescription>
-                        </DialogHeader>
-                        
-                        <div className="py-2">
-                           {boostAlgoState && (
-                             <MissionPlan 
-                                type={boostAlgoState.type}
-                                scenario={boostAlgoState.scenario}
-                                delayMinutes={boostAlgoState.delayMinutes}
-                                trafficSource={boostAlgoState.trafficSource as any}
-                                targetUsername={boostAlgoState.targetUsername}
-                                watchDuration={boostAlgoState.watchDuration}
-                                missionId={boostAlgoState.combinedSeed} // Theme variation
-                                shouldFollow={false}
-                             />
-                           )}
-                           
-                           {/* FALLBACK IF URL LINK NEEDED (Hidden by MissionPlan usually) */}
-                           <div className="mt-4 text-center">
-                              <a 
-                                href={activeBoostWindow.target_video_url} 
-                                target="_blank" 
-                                className="text-xs text-indigo-400 hover:underline flex items-center justify-center gap-1"
-                              >
-                                <ExternalLink className="h-3 w-3" />
-                                Lien de secours
-                              </a>
-                           </div>
-                        </div>
+                        {!boostBriefingCompleted ? (
+                            <MissionBriefing 
+                                type={boostAlgoState?.type || 'like'}
+                                scenario={boostAlgoState?.scenario || 'engagement'}
+                                delayMinutes={boostAlgoState?.delayMinutes || 0}
+                                trafficSource={boostAlgoState?.trafficSource || 'direct'}
+                                targetUsername={boostAlgoState?.targetUsername || "Inconnu"}
+                                isRescueMode={activeBoostWindow.target_video_url && !activeBoostWindow.target_video_url.includes('/video/') && !activeBoostWindow.target_video_url.includes('vm.tiktok.com')}
+                                onBriefingComplete={() => setBoostBriefingCompleted(true)}
+                            />
+                        ) : (
+                            <>
+                                <DialogHeader>
+                                <DialogTitle className="text-2xl font-black flex items-center gap-2 text-indigo-900">
+                                    <Zap className="h-6 w-6 text-yellow-500 fill-yellow-500" />
+                                    MISSION BOOST ACTIVE
+                                </DialogTitle>
+                                <DialogDescription className="text-base">
+                                    Exécution immédiate requise. Suis le plan ci-dessous.
+                                </DialogDescription>
+                                </DialogHeader>
+                                
+                                <div className="py-2">
+                                {boostAlgoState && (
+                                    <MissionPlan 
+                                        type={boostAlgoState.type}
+                                        scenario={boostAlgoState.scenario}
+                                        delayMinutes={boostAlgoState.delayMinutes}
+                                        trafficSource={boostAlgoState.trafficSource as any}
+                                        targetUsername={boostAlgoState.targetUsername}
+                                        watchDuration={boostAlgoState.watchDuration}
+                                        missionId={boostAlgoState.combinedSeed} // Theme variation
+                                        shouldFollow={false}
+                                    />
+                                )}
+                                
+                                {/* FALLBACK IF URL LINK NEEDED (Hidden by MissionPlan usually) */}
+                                <div className="mt-4 text-center">
+                                    <a 
+                                        href={activeBoostWindow.target_video_url} 
+                                        target="_blank" 
+                                        className="text-xs text-indigo-400 hover:underline flex items-center justify-center gap-1"
+                                    >
+                                        <ExternalLink className="h-3 w-3" />
+                                        Lien de secours
+                                    </a>
+                                </div>
+                                </div>
 
-                        <DialogFooter className="sm:justify-center">
-                          <Button 
-                            onClick={handleBoostValidation}
-                            className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-6 text-lg shadow-lg shadow-green-200 animate-in zoom-in"
-                          >
-                            J'AI TERMINÉ LA MISSION (+1 CRÉDIT)
-                          </Button>
-                        </DialogFooter>
-                      </DialogContent>
+                                <DialogFooter className="sm:justify-center">
+                                <Button 
+                                    onClick={handleBoostValidation}
+                                    className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-6 text-lg shadow-lg shadow-green-200 animate-in zoom-in"
+                                >
+                                    J'AI TERMINÉ LA MISSION (+1 CRÉDIT)
+                                </Button>
+                                </DialogFooter>
+                            </>
+                        )}
+                        </DialogContent>
                       </Dialog>
                     )}
                  </div>
