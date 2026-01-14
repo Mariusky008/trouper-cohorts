@@ -1,13 +1,15 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { CheckCircle, Upload, Clock, AlertCircle, ExternalLink, Heart, Lock, Shield, Eye, BarChart3, AlertTriangle, MessageSquareWarning, MessageCircle, Trophy, PartyPopper, Zap, Play, Gift, TrendingUp, Music, Users, Info, ChevronRight, Medal } from "lucide-react"
+import { Check, CheckCircle, Upload, Clock, AlertCircle, ExternalLink, Heart, Lock, Shield, Eye, BarChart3, AlertTriangle, MessageSquareWarning, MessageCircle, Trophy, PartyPopper, Zap, Play, Gift, TrendingUp, Music, Users, Info, ChevronRight, Medal } from "lucide-react"
 import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from "@/components/ui/dialog"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { Progress } from "@/components/ui/progress"
+import { Badge } from "@/components/ui/badge"
+import { TacticalHUD } from "@/components/dashboard/TacticalHUD"
 
 import Link from "next/link"
 
@@ -970,71 +972,132 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="space-y-8 max-w-7xl mx-auto pb-12">
+    <div className="min-h-screen bg-slate-50">
       <WelcomePopup userId={userProfile?.id} />
 
-      {/* HEADER SECTION */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b pb-6">
-        <div className="space-y-2">
-          <div className="flex items-center gap-2 text-muted-foreground text-sm font-medium uppercase tracking-wider">
-             <Shield className="h-4 w-4" />
-             QG Opérationnel • {new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
-          </div>
-          <h1 className="text-4xl font-black text-slate-900 tracking-tight">
-            Bonjour, {userProfile?.username || "Soldat"}
-          </h1>
-          <div className="flex flex-wrap items-center gap-3 pt-1">
-             <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-100 rounded-lg border border-slate-200 text-sm font-semibold text-slate-700">
-                <Trophy className="h-4 w-4 text-slate-500" />
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger>
-                      <span>Grade {Math.floor(dayProgress / 7) + 1}</span>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Ton grade augmente chaque semaine de présence !</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-             </div>
-             {dayProgress <= 3 && !allTasksCompleted ? (
-               <div className="flex items-center gap-2 px-3 py-1.5 bg-yellow-50 rounded-lg border border-yellow-100 text-sm font-semibold text-yellow-700">
-                  <AlertCircle className="h-4 w-4" />
-                  <span>En Formation (J{dayProgress})</span>
-               </div>
-             ) : (
-               <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-50 rounded-lg border border-emerald-100 text-sm font-semibold text-emerald-700">
-                  <Shield className="h-4 w-4" />
-                  <span>Soldat Actif</span>
-               </div>
-             )}
-          </div>
-        </div>
+      {/* 1. TACTICAL HUD (Sticky Top) */}
+      <TacticalHUD 
+          progress={progressPercentage} 
+          rank={currentRank}
+      />
 
-        <div className="flex items-center gap-3">
-           <motion.div 
-              animate={animateCredits ? { scale: [1, 1.1, 1] } : {}}
-              className="flex flex-col items-end px-4 py-2 bg-yellow-50 rounded-xl border border-yellow-100"
-           >
-              <span className="text-xs font-bold text-yellow-600 uppercase">Crédits Boost</span>
-              <div className="flex items-center gap-1">
-                 <Zap className="h-5 w-5 text-yellow-500 fill-yellow-500" />
-                 <span className="text-2xl font-black text-slate-900">{boostCredits}</span>
-              </div>
-           </motion.div>
-        </div>
-      </div>
+      <div className="space-y-6 max-w-5xl mx-auto pb-12 px-4 pt-6">
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        
-        {/* === LEFT COLUMN (MAIN CONTENT) === */}
-        <div className="lg:col-span-8 space-y-8">
+      {/* 2. MAIN COCKPIT (Single Column Focus) */}
+      <div className="space-y-8">
            
-           {/* WAVE NOTIFICATION AREA (V3) */}
+           {/* A. WAVE NOTIFICATION (Top Priority) */}
            {userProfile && <WaveNotification userId={userProfile.id} />}
 
-           {/* HUNTING BOARD (MODERNIZED V3.8) */}
-           <div className="rounded-2xl overflow-hidden shadow-xl bg-slate-900 border border-slate-800 relative group">
+           {/* B. ACTIVE BOOST (High Priority) */}
+           {activeBoostWindow ? (
+              <motion.div 
+                 initial={{ opacity: 0, y: -20 }}
+                 animate={{ opacity: 1, y: 0 }}
+                 className="rounded-2xl border-2 border-indigo-500 bg-indigo-50/50 p-1 shadow-[0_0_20px_rgba(99,102,241,0.2)]"
+              >
+                 <div className="bg-white rounded-xl p-4 md:p-6 flex flex-col md:flex-row items-center justify-between gap-6">
+                    <div className="flex items-center gap-4">
+                       <div className="h-14 w-14 rounded-full bg-yellow-100 flex items-center justify-center animate-pulse">
+                          <Zap className="h-8 w-8 text-yellow-600 fill-yellow-600" />
+                       </div>
+                       <div>
+                          <div className="flex items-center gap-2 mb-1">
+                             <Badge className="bg-indigo-600 hover:bg-indigo-700">URGENCE TACTIQUE</Badge>
+                             <span className="text-xs font-bold text-indigo-600 animate-pulse">● EN COURS</span>
+                          </div>
+                          <h3 className="text-xl font-black text-slate-900">BOOST D'ESCOUADE DÉTECTÉ</h3>
+                          <p className="text-sm text-slate-600 font-medium">Rejoins l'assaut maintenant pour gagner +1 Crédit.</p>
+                       </div>
+                    </div>
+
+                     {hasParticipatedInBoost ? (
+                       <div className="px-6 py-3 bg-green-50 rounded-xl border border-green-100 flex items-center gap-3">
+                          <div className="h-8 w-8 rounded-full bg-green-100 flex items-center justify-center">
+                             <Check className="h-5 w-5 text-green-600" />
+                          </div>
+                          <div>
+                             <p className="font-bold text-green-800">Mission Accomplie</p>
+                             <p className="text-xs text-green-600">Crédit validé</p>
+                          </div>
+                       </div>
+                     ) : (
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <Button size="lg" className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-8 shadow-lg shadow-indigo-200 animate-bounce">
+                             PARTICIPER
+                             <Zap className="ml-2 h-4 w-4 fill-white" />
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent className="sm:max-w-md max-h-[85vh] overflow-y-auto">
+                        {!boostBriefingCompleted ? (
+                            <MissionBriefing 
+                                type={boostAlgoState?.type || 'like'}
+                                scenario={boostAlgoState?.scenario || 'engagement'}
+                                delayMinutes={boostAlgoState?.delayMinutes || 0}
+                                trafficSource={boostAlgoState?.trafficSource || 'direct'}
+                                targetUsername={boostAlgoState?.targetUsername || "Inconnu"}
+                                isRescueMode={activeBoostWindow.target_video_url && !activeBoostWindow.target_video_url.includes('/video/') && !activeBoostWindow.target_video_url.includes('vm.tiktok.com')}
+                                onBriefingComplete={() => setBoostBriefingCompleted(true)}
+                            />
+                        ) : (
+                            <>
+                                <DialogHeader>
+                                <DialogTitle className="text-2xl font-black flex items-center gap-2 text-indigo-900">
+                                    <Zap className="h-6 w-6 text-yellow-500 fill-yellow-500" />
+                                    MISSION BOOST ACTIVE
+                                </DialogTitle>
+                                <DialogDescription className="text-base">
+                                    Exécution immédiate requise. Suis le plan ci-dessous.
+                                </DialogDescription>
+                                </DialogHeader>
+                                
+                                <div className="py-2">
+                                {boostAlgoState && (
+                                    <MissionPlan 
+                                        type={boostAlgoState.type}
+                                        scenario={boostAlgoState.scenario}
+                                        delayMinutes={boostAlgoState.delayMinutes}
+                                        trafficSource={boostAlgoState.trafficSource as any}
+                                        targetUsername={boostAlgoState.targetUsername}
+                                        watchDuration={boostAlgoState.watchDuration}
+                                        missionId={boostAlgoState.combinedSeed} // Theme variation
+                                        shouldFollow={false}
+                                    />
+                                )}
+                                
+                                {/* FALLBACK IF URL LINK NEEDED (Hidden by MissionPlan usually) */}
+                                <div className="mt-4 text-center">
+                                    <a 
+                                        href={activeBoostWindow.target_video_url} 
+                                        target="_blank" 
+                                        className="text-xs text-indigo-400 hover:underline flex items-center justify-center gap-1"
+                                    >
+                                        <ExternalLink className="h-3 w-3" />
+                                        Lien de secours
+                                    </a>
+                                </div>
+                                </div>
+
+                                <DialogFooter className="sm:justify-center">
+                                <Button 
+                                    onClick={handleBoostValidation}
+                                    className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-6 text-lg shadow-lg shadow-green-200 animate-in zoom-in"
+                                >
+                                    J'AI TERMINÉ LA MISSION (+1 CRÉDIT)
+                                </Button>
+                                </DialogFooter>
+                            </>
+                        )}
+                        </DialogContent>
+                      </Dialog>
+                    )}
+                 </div>
+              </motion.div>
+           ) : null}
+
+           {/* C. HUNTING BOARD (Always visible as summary) */}
+           <div className="rounded-2xl overflow-hidden shadow-lg bg-slate-900 border border-slate-800 relative group">
               {/* Background Effects */}
               <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-600/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 group-hover:bg-indigo-500/30 transition-colors duration-700" />
               <div className="absolute bottom-0 left-0 w-48 h-48 bg-purple-600/20 rounded-full blur-3xl translate-y-1/3 -translate-x-1/3 group-hover:bg-purple-500/30 transition-colors duration-700" />
@@ -1047,6 +1110,7 @@ export default function DashboardPage() {
                           <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1 flex items-center gap-2 justify-center md:justify-start">
                               <Trophy className="h-4 w-4 text-yellow-500" />
                               Mon Impact Total
+
                           </h3>
                           <div className="flex items-baseline justify-center md:justify-start gap-2">
                               <span className="text-5xl font-black text-white tracking-tighter drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]">
