@@ -1023,32 +1023,60 @@ export default function DashboardPage() {
            {/* WAVE NOTIFICATION AREA (V3) */}
            {userProfile && <WaveNotification userId={userProfile.id} />}
 
-           {/* HUNTING BOARD (TABLEAU DE CHASSE) */}
-           <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm relative overflow-hidden group">
-              <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
-                 <Trophy className="h-24 w-24 -rotate-12" />
-              </div>
-              <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
-                 <Users className="h-4 w-4" />
-                 Mon Tableau de Chasse (Activité)
-              </h3>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 relative z-10">
-                 <div className="flex flex-col items-center justify-center p-3 bg-slate-50 rounded-xl border border-slate-100 hover:scale-105 transition-transform">
-                    <span className="text-3xl font-black text-slate-900">{squadMembers.length > 0 ? squadMembers.length + 1 : 1}</span>
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide mt-1 text-center leading-tight">Membres<br/>Escouade</span>
-                 </div>
-                 <div className="flex flex-col items-center justify-center p-3 bg-pink-50 rounded-xl border border-pink-100 hover:scale-105 transition-transform">
-                    <span className="text-3xl font-black text-pink-500">{huntingStats.likes}</span>
-                    <span className="text-[10px] font-bold text-pink-300 uppercase tracking-wide mt-1 text-center leading-tight">Likes<br/>Reçus</span>
-                 </div>
-                 <div className="flex flex-col items-center justify-center p-3 bg-blue-50 rounded-xl border border-blue-100 hover:scale-105 transition-transform">
-                    <span className="text-3xl font-black text-blue-500">{huntingStats.comments}</span>
-                    <span className="text-[10px] font-bold text-blue-300 uppercase tracking-wide mt-1 text-center leading-tight">Coms<br/>Reçus</span>
-                 </div>
-                 <div className="flex flex-col items-center justify-center p-3 bg-yellow-50 rounded-xl border border-yellow-100 hover:scale-105 transition-transform">
-                    <span className="text-3xl font-black text-yellow-500">{huntingStats.favorites}</span>
-                    <span className="text-[10px] font-bold text-yellow-400 uppercase tracking-wide mt-1 text-center leading-tight">Favoris<br/>Reçus</span>
-                 </div>
+           {/* HUNTING BOARD (MODERNIZED V3.8) */}
+           <div className="rounded-2xl overflow-hidden shadow-xl bg-slate-900 border border-slate-800 relative group">
+              {/* Background Effects */}
+              <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-600/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 group-hover:bg-indigo-500/30 transition-colors duration-700" />
+              <div className="absolute bottom-0 left-0 w-48 h-48 bg-purple-600/20 rounded-full blur-3xl translate-y-1/3 -translate-x-1/3 group-hover:bg-purple-500/30 transition-colors duration-700" />
+              
+              <div className="relative z-10 p-6">
+                  <div className="flex flex-col md:flex-row items-center justify-between gap-8">
+                      
+                      {/* Left: Total Impact */}
+                      <div className="text-center md:text-left">
+                          <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1 flex items-center gap-2 justify-center md:justify-start">
+                              <Trophy className="h-4 w-4 text-yellow-500" />
+                              Mon Impact Total
+                          </h3>
+                          <div className="flex items-baseline justify-center md:justify-start gap-2">
+                              <span className="text-5xl font-black text-white tracking-tighter drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]">
+                                  {huntingStats.likes + huntingStats.comments + huntingStats.favorites}
+                              </span>
+                              <span className="text-sm font-medium text-slate-400">interactions reçues</span>
+                          </div>
+                          <div className="mt-2 inline-flex items-center px-3 py-1 rounded-full bg-slate-800/50 border border-slate-700 backdrop-blur-sm">
+                              <Users className="h-3 w-3 text-indigo-400 mr-2" />
+                              <span className="text-xs text-indigo-200">Escouade : <span className="text-white font-bold">{squadMembers.length + 1}</span> soldats</span>
+                          </div>
+                      </div>
+
+                      {/* Right: Detailed Gauges */}
+                      <div className="flex-1 w-full grid grid-cols-3 gap-4">
+                          {/* Likes */}
+                          <div className="bg-slate-800/50 rounded-xl p-3 border border-slate-700 flex flex-col items-center relative overflow-hidden group/card hover:border-pink-500/50 transition-colors">
+                              <div className="absolute inset-x-0 bottom-0 h-1 bg-pink-500/20 group-hover/card:bg-pink-500 transition-colors" />
+                              <Heart className="h-5 w-5 text-pink-500 mb-2 fill-pink-500/20" />
+                              <span className="text-2xl font-bold text-white">{huntingStats.likes}</span>
+                              <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Likes</span>
+                          </div>
+
+                          {/* Comments */}
+                          <div className="bg-slate-800/50 rounded-xl p-3 border border-slate-700 flex flex-col items-center relative overflow-hidden group/card hover:border-blue-500/50 transition-colors">
+                              <div className="absolute inset-x-0 bottom-0 h-1 bg-blue-500/20 group-hover/card:bg-blue-500 transition-colors" />
+                              <MessageCircle className="h-5 w-5 text-blue-500 mb-2 fill-blue-500/20" />
+                              <span className="text-2xl font-bold text-white">{huntingStats.comments}</span>
+                              <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Coms</span>
+                          </div>
+
+                          {/* Favorites */}
+                          <div className="bg-slate-800/50 rounded-xl p-3 border border-slate-700 flex flex-col items-center relative overflow-hidden group/card hover:border-yellow-500/50 transition-colors">
+                              <div className="absolute inset-x-0 bottom-0 h-1 bg-yellow-500/20 group-hover/card:bg-yellow-500 transition-colors" />
+                              <Medal className="h-5 w-5 text-yellow-500 mb-2 fill-yellow-500/20" />
+                              <span className="text-2xl font-bold text-white">{huntingStats.favorites}</span>
+                              <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Favoris</span>
+                          </div>
+                      </div>
+                  </div>
               </div>
            </div>
 
