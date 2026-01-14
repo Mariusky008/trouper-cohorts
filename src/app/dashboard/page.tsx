@@ -1545,34 +1545,6 @@ export default function DashboardPage() {
              </div>
            )}
 
-           {/* PLANNING RESET (DEBUG) */}
-           <div className="rounded-xl border border-orange-200 bg-orange-50 p-4 mt-4 opacity-70 hover:opacity-100 transition-opacity">
-               <h4 className="font-bold text-xs mb-2 text-orange-800 uppercase flex items-center gap-2">
-                   <AlertTriangle className="h-3 w-3" /> Zone Reset
-               </h4>
-               <Button size="sm" variant="outline" className="w-full bg-white border-orange-200 text-orange-600 hover:bg-orange-100" onClick={async () => {
-                    try {
-                        // 1. Reset
-                        const res1 = await fetch('/api/admin/reset-planning', { method: 'POST' }).then(r => r.json())
-                        if (res1.error) throw new Error(res1.error)
-                        toast.success(res1.message)
-
-                        // 2. Regenerate
-                        toast.loading("Génération du nouveau planning équitable...")
-                        const res2 = await fetch('/api/cron/schedule-waves').then(r => r.json())
-                        if (res2.error) throw new Error(res2.error)
-                        
-                        toast.dismiss()
-                        toast.success("Nouveau planning généré avec succès !")
-                        setTimeout(() => window.location.reload(), 2000)
-                    } catch (err: any) {
-                        toast.error(err.message)
-                    }
-                 }}>
-                    🔄 Reset & Relancer Planning
-                 </Button>
-           </div>
-
         </div>
 
       </div>
