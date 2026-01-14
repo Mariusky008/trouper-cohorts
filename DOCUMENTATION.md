@@ -374,3 +374,15 @@ Amélioration du widget "Planning des missions à venir" (`WaveSchedule`) pour �
 *   **Indicateur "Mon Tour" :** Ajout d'une section dédiée en bas du widget qui affiche explicitement la date et l'heure de la prochaine vague où l'utilisateur est la cible ("Mon Passage").
     *   Si planifié : Affiche Date + Heure.
     *   Si non planifié : Affiche "Aucune vague programmée pour toi cette semaine".
+
+---
+
+## 17. Mise à jour V3.9 - Scaling de Puissance (Janvier 2026)
+
+Ajustement stratégique pour maximiser l'impact sur l'algorithme TikTok.
+
+### Augmentation de la Taille d'Escouade
+*   **Limite précédente :** 30 membres.
+*   **Nouvelle limite :** **70 membres**.
+*   **Objectif :** Atteindre le seuil critique de viralité (Push Tier 1) en concentrant plus de 50 interactions simultanées sur une vidéo.
+*   **Implémentation :** Mise à jour de la fonction SQL `join_squad` pour accepter jusqu'à 70 recrues avant de créer une nouvelle division.
