@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { X, Rocket, Target, CheckCircle, Shield, TrendingUp } from "lucide-react"
+import { X, Rocket, Target, CheckCircle, Shield, TrendingUp, Clock } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 
 export function WelcomePopup({ userId }: { userId?: string }) {
@@ -31,27 +31,27 @@ export function WelcomePopup({ userId }: { userId?: string }) {
   const steps = [
     {
       icon: Target,
-      title: "1️⃣ Missions Quotidiennes (Devoir)",
-      desc: "Chaque jour, tu recevras 8 à 12 missions ciblées. Tu dois les accomplir pour maintenir ton rang et ton éligibilité.",
+      title: "1️⃣ Le Rendez-vous Tactique",
+      desc: "Chaque jour, l'escouade se regroupe pour prendre d'assaut 8 à 12 vidéos cibles. Tu recevras des ordres précis pour chaque mission (Like, Com, Fav).",
       color: "text-blue-500"
     },
     {
       icon: Rocket,
-      title: "2️⃣ Ton Tour de Gloire (Récompense)",
-      desc: "Une fois par semaine, une 'Vague Stratégique' sera déclenchée sur TA vidéo. Toute l'escouade convergera vers toi en même temps.",
+      title: "2️⃣ Ton Tour : Protocole de Tir",
+      desc: "Quand tu vois 'Vague Imminente Détectée', c'est ton moment. La viralité se joue dans la première heure.",
       color: "text-purple-500"
     },
     {
-      icon: Shield,
-      title: "3️⃣ Discipline de Fer",
-      desc: "Pas de missions = Pas de vague. Le système détecte les déserteurs. Si tu ne donnes pas, tu ne reçois rien.",
-      color: "text-red-500"
+      icon: Clock,
+      title: "3️⃣ Timing Critique (Règle d'Or)",
+      desc: "1. Publie ta vidéo sur TikTok 30 à 60 min AVANT l'ouverture du canal.\n2. À l'heure H, colle ton lien ici pour que l'escouade attaque immédiatement.",
+      color: "text-orange-500"
     },
     {
-      icon: TrendingUp,
-      title: "4️⃣ Impact Algorithmique",
-      desc: "Nos actions sont calibrées pour tromper l'algorithme : Recherche manuelle, visionnage complet, favoris. Joue le jeu à fond.",
-      color: "text-green-500"
+      icon: Shield,
+      title: "4️⃣ Discipline de Fer",
+      desc: "Pas de missions = Pas de vague. Si tu rates l'appel ou si tu triches, l'escouade t'ignorera à ton tour.",
+      color: "text-red-500"
     }
   ]
 
