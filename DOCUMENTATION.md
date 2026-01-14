@@ -351,9 +351,9 @@ Remplacement des blocs de texte statiques par une expérience interactive immers
 
 ---
 
-## 16. Mise à jour V3.8 - Automatisation & Fiabilité du Planning (Janvier 2026)
+## 16. Mise à jour V3.8 - Automatisation, Gamification & Fiabilité (Janvier 2026)
 
-Correction des incohérences de planification et mise en place d'une automatisation robuste.
+Mise à niveau complète de l'infrastructure et de l'expérience utilisateur pour garantir équité et engagement.
 
 ### A. Automatisation des Vagues (Vercel Cron)
 Le planning ne dépend plus d'une action manuelle de l'administrateur.
@@ -363,17 +363,23 @@ Le planning ne dépend plus d'une action manuelle de l'administrateur.
     *   **04h00 :** Planification des Vagues Stratégiques (J+1, J+2, J+3).
 *   **Avantage :** Le système tourne en autonomie totale, garantissant que le planning est toujours prêt au réveil des soldats.
 
-### B. Algorithme de Planification (Day-Zero Fix)
-Correction du moteur de planification (`/api/cron/schedule-waves`) pour combler les trous immédiats.
-*   **Avant :** Le script planifiait à partir de J+1 (Demain). Si un soldat rejoignait l'escouade aujourd'hui, il n'avait aucune mission prévue.
-*   **Après :** Le script vérifie désormais J+0 (Aujourd'hui). S'il n'y a pas de vagues prévues pour aujourd'hui, il les génère immédiatement.
+### B. Algorithme de Planification Équitable (Fair Queue)
+Correction majeure du moteur de distribution (`/api/cron/schedule-waves`) pour éliminer le favoritisme involontaire.
+*   **Avant :** Sélection aléatoire pure. Certains membres passaient 3 jours de suite, d'autres jamais.
+*   **Après :** Implémentation d'une **File d'Attente Prioritaire Persistante**.
+    *   Trie les membres par "Date de dernière vague" (`last_wave_date`).
+    *   Priorité absolue à ceux qui ne sont jamais passés.
+    *   Rotation stricte : Une fois sélectionné, un membre retourne en bas de la file.
 
-### C. UX Planning & Transparence
-Amélioration du widget "Planning des missions à venir" (`WaveSchedule`) pour éviter les faux positifs ("Repos Accordé").
-*   **Statut "Opérations Courantes" :** Si aucune vague spéciale n'est prévue pour la journée, le widget indique désormais clairement "Opérations Courantes - Toute la journée" au lieu de "Repos", confirmant que des missions standard sont disponibles.
-*   **Indicateur "Mon Tour" :** Ajout d'une section dédiée en bas du widget qui affiche explicitement la date et l'heure de la prochaine vague où l'utilisateur est la cible ("Mon Passage").
-    *   Si planifié : Affiche Date + Heure.
-    *   Si non planifié : Affiche "Aucune vague programmée pour toi cette semaine".
+### C. Centre de Commandement (Nouveau Tableau de Chasse)
+Refonte visuelle du widget "Mon Tableau de Chasse" pour augmenter la dopamine.
+*   **Design Gamer :** Thème sombre (`bg-slate-900`), effets néons, et jauges de puissance.
+*   **Score d'Impact :** Mise en avant du total des interactions (Likes + Coms + Favs) comme un score de puissance globale.
+*   **Objectif :** Remplacer l'aspect "comptable" par un aspect "jeu vidéo" pour motiver l'engagement.
+
+### D. Maintenance Automatisée (Ghost Protocol)
+Création d'outils d'administration pour nettoyer la base de données.
+*   **API Cleaner :** `/api/admin/clean-ghosts` détecte et supprime les profils orphelins (utilisateurs supprimés de l'Auth mais présents dans la base publique) pour garder des statistiques d'escouade précises.
 
 ---
 
@@ -386,3 +392,19 @@ Ajustement stratégique pour maximiser l'impact sur l'algorithme TikTok.
 *   **Nouvelle limite :** **70 membres**.
 *   **Objectif :** Atteindre le seuil critique de viralité (Push Tier 1) en concentrant plus de 50 interactions simultanées sur une vidéo.
 *   **Implémentation :** Mise à jour de la fonction SQL `join_squad` pour accepter jusqu'à 70 recrues avant de créer une nouvelle division.
+
+---
+
+## 18. Mise à jour V3.10 - Protocole Secours (No-Show) (Janvier 2026)
+
+Gestion intelligente des défaillances humaines pour ne jamais bloquer l'escouade.
+
+### Le Problème "Lien Manquant"
+Si un soldat programmé (Cible du jour) oublie de soumettre son lien vidéo à temps, l'escouade se retrouvait bloquée ou redirigée vers un profil sans instruction claire.
+
+### La Solution "Rescue Protocol"
+Modification du **Briefing Tactique** pour s'adapter dynamiquement :
+*   **Détection :** Si l'URL de la mission correspond au profil générique (pas de `/video/`), le mode "Secours" s'active.
+*   **Alerte Visuelle :** Le briefing affiche une alerte rouge ⚠️ **"LIEN MANQUANT"**.
+*   **Nouvel Ordre :** L'instruction change automatiquement : "Va sur son profil et engage la vidéo la plus récente (épinglée ou dernière publiée)".
+*   **Résultat :** La vague n'est pas perdue, l'engagement est redirigé utilement, et l'expérience utilisateur reste fluide.
