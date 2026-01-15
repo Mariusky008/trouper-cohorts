@@ -147,7 +147,8 @@ export default function RulesPage() {
           </CardHeader>
           <CardContent className="space-y-3 text-slate-700">
             <p>
-              Les Crédits Boost permettent de déclencher une arme dévastatrice : le <strong>WINDOW BOOST</strong>.
+              Les Crédits Boost permettent de déclencher une arme dévastatrice : le <strong>WINDOW BOOST</strong>. 
+              Pendant 15 minutes, des centaines de soldats convergent vers <strong>TA vidéo</strong> pour générer une explosion d'interactions.
             </p>
             <div className="bg-yellow-50 p-3 rounded-lg border border-yellow-100">
                <ul className="list-disc pl-5 space-y-2 text-sm">
