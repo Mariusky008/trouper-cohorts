@@ -1,4 +1,5 @@
-import { Shield, Star, Trophy, Medal, Zap } from 'lucide-react'
+import { Shield, Star, Trophy, Medal, Zap, Info } from 'lucide-react'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 
 interface TacticalHUDProps {
     progress: number
@@ -34,9 +35,28 @@ export function TacticalHUD({ progress, rank, points }: TacticalHUDProps) {
                 {/* PROGRESS BAR (CENTER) */}
                 <div className="flex-1 max-w-md mx-2">
                     <div className="flex justify-between items-end mb-1 px-1">
-                        <span className="text-[10px] font-bold text-slate-400 tracking-wider">
-                            {points !== undefined ? 'CHARGE VAGUE' : 'PROGRESSION'}
-                        </span>
+                        <div className="flex items-center gap-1">
+                            <span className="text-[10px] font-bold text-slate-400 tracking-wider">
+                                {points !== undefined ? 'CHARGE VAGUE' : 'PROGRESSION'}
+                            </span>
+                            {points !== undefined && (
+                                <TooltipProvider>
+                                    <Tooltip>
+                                        <TooltipTrigger asChild>
+                                            <Info className="h-3 w-3 text-slate-400 hover:text-indigo-500 cursor-help" />
+                                        </TooltipTrigger>
+                                        <TooltipContent className="max-w-xs p-3 bg-slate-900 text-white border-slate-800">
+                                            <p className="font-bold mb-1 text-indigo-400">⚡️ Comment obtenir ma vague ?</p>
+                                            <ul className="text-xs space-y-1 list-disc pl-3">
+                                                <li>Gagne <strong>60 points</strong> pour débloquer ton tour.</li>
+                                                <li>1 Mission accomplie = 1 Point.</li>
+                                                <li>Une fois chargé à 100%, tu passes prioritaire pour le lendemain.</li>
+                                            </ul>
+                                        </TooltipContent>
+                                    </Tooltip>
+                                </TooltipProvider>
+                            )}
+                        </div>
                         <span className={`text-xs font-black ${isReady ? 'text-green-600 animate-pulse' : 'text-slate-900'}`}>
                             {isReady ? 'PRÊT AU DÉPLOIEMENT' : waveLabel}
                         </span>

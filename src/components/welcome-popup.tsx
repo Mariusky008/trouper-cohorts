@@ -31,26 +31,26 @@ export function WelcomePopup({ userId }: { userId?: string }) {
   const steps = [
     {
       icon: Target,
-      title: "1️⃣ Le Rendez-vous Tactique",
-      desc: "Chaque jour, l'escouade se regroupe pour prendre d'assaut 8 à 12 vidéos cibles. Tu recevras des ordres précis pour chaque mission (Like, Com, Fav).",
+      title: "1️⃣ Gagne ton Tour (La Jauge)",
+      desc: "Pour que l'escouade propulse TA vidéo, tu dois le mériter. 1 Mission accomplie = 1 Point de Charge. Remplis ta jauge à 60/60.",
       color: "text-blue-500"
     },
     {
       icon: Rocket,
-      title: "2️⃣ Ton Tour : Protocole de Tir",
-      desc: "Quand tu vois 'Vague Imminente Détectée', c'est ton moment. La viralité se joue dans la première heure.",
+      title: "2️⃣ La Récompense (Vague)",
+      desc: "Dès que tu as tes 60 points, tu es programmé automatiquement. Les 70 soldats de l'escouade convergeront vers TA vidéo.",
       color: "text-purple-500"
     },
     {
       icon: Clock,
       title: "3️⃣ Timing Critique (Règle d'Or)",
-      desc: "1. Publie ta vidéo sur TikTok 30 à 60 min AVANT l'ouverture du canal.\n2. À l'heure H, colle ton lien ici pour que l'escouade attaque immédiatement.",
+      desc: "Le jour J : 1. Publie sur TikTok 30 à 60 min AVANT l'heure H. 2. Colle ton lien ici pour recevoir l'assaut.",
       color: "text-orange-500"
     },
     {
       icon: Shield,
       title: "4️⃣ Discipline de Fer",
-      desc: "Pas de missions = Pas de vague. Si tu rates l'appel ou si tu triches, l'escouade t'ignorera à ton tour.",
+      desc: "Pas de missions = Pas de points = Pas de vague. C'est donnant-donnant. Seuls les actifs sont récompensés.",
       color: "text-red-500"
     }
   ]

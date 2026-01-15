@@ -50,25 +50,25 @@ export default function RulesPage() {
                 <Clock className="h-6 w-6 text-purple-600" />
               </div>
               <div>
-                <CardTitle className="text-xl">2. Le Protocole de Tir (Vague)</CardTitle>
-                <CardDescription>Votre moment de gloire</CardDescription>
+                <CardTitle className="text-xl">2. La Vague Stratégique (Comment l'avoir ?)</CardTitle>
+                <CardDescription>Mérite ta place au front</CardDescription>
               </div>
             </div>
           </CardHeader>
           <CardContent className="space-y-3 text-slate-700">
             <p>
-              Environ une fois par semaine, vous êtes désigné <strong>Cible Prioritaire</strong>.
+              Pour bénéficier de la puissance de l'escouade sur TA vidéo, tu dois charger ta jauge.
             </p>
             <div className="space-y-2 text-sm bg-purple-50 p-3 rounded-lg border border-purple-100">
-               <p className="font-bold text-purple-900">LA RÈGLE D'OR (TIMING) :</p>
-               <ol className="list-decimal pl-5 space-y-1">
-                 <li>Vous recevez une alerte 72h avant ("Vague Imminente").</li>
-                 <li>Le jour J, publiez votre vidéo sur TikTok <strong>30 à 60 min AVANT</strong> l'heure de la vague.</li>
-                 <li>Collez immédiatement le lien dans votre Dashboard.</li>
-               </ol>
+               <ul className="list-disc pl-5 space-y-2">
+                 <li><strong>La Jauge (0/60) :</strong> Visible sur ton tableau de bord.</li>
+                 <li><strong>+1 Point :</strong> Pour chaque mission soldat accomplie (Like/Com/Fav).</li>
+                 <li><strong>Déblocage :</strong> À 60 points, tu es éligible. Tu entres dans la file d'attente prioritaire pour le lendemain.</li>
+                 <li><strong>Reset :</strong> Une fois ta vague passée, ta jauge retombe à 0.</li>
+               </ul>
             </div>
             <p className="text-xs text-muted-foreground mt-2">
-              ⚠️ Si vous ratez le timing, l'escouade tirera à blanc et vous perdrez votre tour.
+              ⚠️ La Règle d'Or : Le jour J, publie ta vidéo 30 à 60 min AVANT l'heure de la vague.
             </p>
           </CardContent>
         </Card>
