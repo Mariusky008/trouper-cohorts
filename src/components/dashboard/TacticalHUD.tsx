@@ -14,9 +14,10 @@ interface TacticalHUDProps {
     points?: number
     userId?: string
     squadId?: string | null
+    missionCount?: string
 }
 
-export function TacticalHUD({ progress, rank, points, userId, squadId }: TacticalHUDProps) {
+export function TacticalHUD({ progress, rank, points, userId, squadId, missionCount }: TacticalHUDProps) {
     // Gamification V4: Use Wave Points if available (Target 60)
     const waveProgress = points !== undefined ? (Math.min(points, 60) / 60) * 100 : progress
     const waveLabel = points !== undefined ? `${points}/60` : `${Math.round(progress)}%`
@@ -40,29 +41,38 @@ export function TacticalHUD({ progress, rank, points, userId, squadId }: Tactica
                 {/* PROGRESS BAR (CENTER) */}
                 <div className="flex-1 max-w-md mx-2">
                     <div className="flex justify-between items-end mb-1 px-1">
-                        <div className="flex items-center gap-2">
-                            <span className="text-[10px] font-bold text-slate-400 tracking-wider">
-                                {points !== undefined ? 'CHARGE VAGUE' : 'PROGRESSION'}
-                            </span>
-                            {points !== undefined && (
-                                <TooltipProvider>
-                                    <Tooltip>
-                                        <TooltipTrigger asChild>
-                                            <div className="cursor-help flex items-center justify-center bg-indigo-100 hover:bg-indigo-200 rounded-full h-5 w-5 transition-colors animate-pulse">
-                                                <HelpCircle className="h-3 w-3 text-indigo-600" />
-                                            </div>
-                                        </TooltipTrigger>
-                                        <TooltipContent className="max-w-xs p-3 bg-slate-900 text-white border-slate-800">
-                                            <p className="font-bold mb-1 text-indigo-400">⚡️ Comment obtenir ma vague ?</p>
-                                            <ul className="text-xs space-y-1 list-disc pl-3">
-                                                <li>Gagne <strong>60 points</strong> pour débloquer ton tour.</li>
-                                                <li>1 Mission accomplie = 1 Point.</li>
-                                                <li>Une fois chargé à 100%, tu passes prioritaire pour le lendemain.</li>
-                                            </ul>
-                                        </TooltipContent>
-                                    </Tooltip>
-                                </TooltipProvider>
+                        <div className="flex items-center gap-3">
+                            {/* Mission Count Badge (New V4) */}
+                            {missionCount && (
+                                <div className="hidden sm:block px-1.5 py-0.5 bg-slate-100 text-slate-700 rounded text-[10px] font-black border border-slate-200">
+                                    MISSION {missionCount}
+                                </div>
                             )}
+
+                            <div className="flex items-center gap-2">
+                                <span className="text-[10px] font-bold text-slate-400 tracking-wider">
+                                    {points !== undefined ? 'CHARGE VAGUE' : 'PROGRESSION'}
+                                </span>
+                                {points !== undefined && (
+                                    <TooltipProvider>
+                                        <Tooltip>
+                                            <TooltipTrigger asChild>
+                                                <div className="cursor-help flex items-center justify-center bg-indigo-100 hover:bg-indigo-200 rounded-full h-5 w-5 transition-colors animate-pulse">
+                                                    <HelpCircle className="h-3 w-3 text-indigo-600" />
+                                                </div>
+                                            </TooltipTrigger>
+                                            <TooltipContent className="max-w-xs p-3 bg-slate-900 text-white border-slate-800">
+                                                <p className="font-bold mb-1 text-indigo-400">⚡️ Comment obtenir ma vague ?</p>
+                                                <ul className="text-xs space-y-1 list-disc pl-3">
+                                                    <li>Gagne <strong>60 points</strong> pour débloquer ton tour.</li>
+                                                    <li>1 Mission accomplie = 1 Point.</li>
+                                                    <li>Une fois chargé à 100%, tu passes prioritaire pour le lendemain.</li>
+                                                </ul>
+                                            </TooltipContent>
+                                        </Tooltip>
+                                    </TooltipProvider>
+                                )}
+                            </div>
                         </div>
                         <span className={`text-xs font-black ${isReady ? 'text-green-600 animate-pulse' : 'text-slate-900'}`}>
                             {isReady ? 'PRÊT AU DÉPLOIEMENT' : waveLabel}

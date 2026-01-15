@@ -991,6 +991,7 @@ export default function DashboardPage() {
           points={userProfile?.wave_points}
           userId={userProfile?.id}
           squadId={mySquadId}
+          missionCount={`${Math.min(displayIndex + 1, tasks.length)}/${tasks.length}`}
       />
 
       <div className="space-y-6 max-w-5xl mx-auto pb-12 px-4 pt-6">
@@ -1302,31 +1303,6 @@ export default function DashboardPage() {
 
            {/* MISSIONS SECTION */}
            <div className="space-y-6">
-              {/* GAMIFIED HEADER */}
-              <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
-                  <div className="flex items-center justify-between mb-4">
-                     <div className="flex items-center gap-3">
-                        <div className={`h-10 w-10 rounded-lg bg-slate-100 flex items-center justify-center ${currentRank.color}`}>
-                           <currentRank.icon className="h-6 w-6" />
-                        </div>
-                        <div>
-                           <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Missions du jour à accomplir</p>
-                           <h3 className={`text-lg font-black ${currentRank.color}`}>{currentRank.name}</h3>
-                        </div>
-                     </div>
-                     <div className="text-right">
-                        <p className="text-2xl font-black text-slate-900">{Math.round(progressPercentage)}%</p>
-                        <p className="text-xs font-medium text-slate-400">Objectif Quotidien</p>
-                     </div>
-                  </div>
-                  <div className="relative h-4 w-full bg-slate-100 rounded-full overflow-hidden">
-                     <div 
-                        className="absolute top-0 left-0 h-full bg-gradient-to-r from-indigo-500 to-purple-600 transition-all duration-1000 ease-out"
-                        style={{ width: `${progressPercentage}%` }}
-                     />
-                  </div>
-              </div>
-
               {/* MISSION CARD ONE-BY-ONE */}
               <div className="bg-white rounded-xl border border-slate-200 shadow-lg overflow-hidden relative">
                  {/* Header: Mission X/Y */}
