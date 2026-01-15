@@ -462,3 +462,29 @@ Mise à jour des textes d'onboarding (`WelcomePopup`) et de la page Règles (`/d
 *   **Timing Critique :** Ajout de la règle explicite "Publier 30-60 min avant l'heure H".
 *   **Discipline :** Clarification du lien "Pas de mission = Pas de vague".
 *   **Vocabulaire :** Adoption définitive des termes "Escouade Tactique", "Protocole de Tir" et "Rendez-vous Tactique".
+
+---
+
+## 22. Mise à jour V4.0 - Système de Charge & Méritocratie (Janvier 2026)
+
+Refonte totale du moteur de distribution des vagues pour passer d'un système rotatif à un système au mérite (Gamification).
+
+### A. Le Système de "Jauge de Charge" (Wave Charge)
+Pour obtenir sa propre vague (Mission du Jour), un soldat doit désormais "charger" sa jauge.
+*   **Objectif :** Atteindre **60 Points de Charge**.
+*   **Gain :** 1 Mission Validée = +1 Point.
+*   **Rythme :** Avec 12 missions/jour, un soldat actif charge sa jauge en 5 jours.
+*   **Déploiement :** Dès que la jauge est pleine (`wave_ready = true`), le soldat entre automatiquement dans la file d'attente prioritaire pour le lendemain.
+*   **Reset :** Une fois la vague programmée, la jauge retombe à 0.
+
+### B. Moteur Hybride (Meritocracy + Bootcamp)
+L'algorithme de planification (`/api/cron/schedule-waves`) a été rendu intelligent pour gérer tous les cas de figure :
+1.  **Priorité Absolue (Méritocratie) :** Les soldats ayant leur jauge pleine (60 pts) passent en premier.
+2.  **Mode Bootcamp (Cold Start) :** Si l'escouade est nouvelle ou si personne n'a assez de points pour remplir les 10 slots quotidiens, le moteur complète automatiquement avec les soldats n'ayant pas eu de vague depuis le plus longtemps.
+    *   *Avantage :* Garantit qu'il y a toujours de l'activité (10 missions/jour) même au démarrage.
+    *   *Justice :* Les actifs sont sûrs de passer, les passifs bouchent les trous.
+
+### C. Architecture Technique
+*   **Base de Données :** Ajout des colonnes `wave_points` (int) et `wave_ready` (bool) sur la table `profiles`.
+*   **RPC Atomique :** Création de la fonction `complete_mission` qui gère l'insertion du support et l'incrémentation des points en une seule transaction sécurisée, déclenchant le flag `wave_ready` instantanément.
+*   **Interface :** Le `TacticalHUD` affiche désormais la "Charge Vague" (ex: 45/60) au lieu de l'XP journalière, offrant un but concret et visible à l'utilisateur.
