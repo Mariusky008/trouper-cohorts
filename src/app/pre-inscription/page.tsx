@@ -27,6 +27,11 @@ export default function PreInscriptionPage() {
           <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl md:text-6xl lg:text-7xl">
             Les missions ouvriront à <span className="text-primary">200 créateurs</span>.
           </h1>
+          <div className="mx-auto max-w-2xl my-6">
+             <p className="text-lg font-bold text-indigo-600 bg-indigo-50 border border-indigo-100 py-3 px-6 rounded-xl inline-block shadow-sm">
+                🔥 Suite au succès phénoménal de la première escouade, nous ouvrons officiellement le recrutement pour la <span className="underline decoration-wavy decoration-indigo-400">2ème Vague</span>.
+             </p>
+          </div>
           <p className="mx-auto max-w-2xl text-lg text-muted-foreground md:text-xl">
             Ce programme repose sur la collaboration et la rotation entre groupes. 
             Pour garantir un système équitable, efficace et discipliné, 
