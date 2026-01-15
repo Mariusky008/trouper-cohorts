@@ -169,8 +169,8 @@ export function WaveNotification({ userId }: { userId: string }) {
                         <br/><br/>
                         <strong>STRATÉGIE DE TIR :</strong><br/>
                         1. Regarde l'heure d'ouverture du canal ci-dessous.<br/>
-                        2. Publie ta vidéo sur TikTok <strong>30 à 60 minutes AVANT</strong> cette heure.<br/>
-                        3. À l'ouverture du canal : Colle ton lien ici immédiatement.
+                        2. Publie ta vidéo sur TikTok <strong>30 à 60 minutes AVANT</strong> cette heure (ou programme-la pour cette heure précise).<br/>
+                        3. À l'ouverture du canal : Colle ton lien ici (tu as jusqu'à la fin de la fenêtre de tir).
                     </p>
                 </div>
             </div>
