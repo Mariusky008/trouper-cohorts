@@ -742,18 +742,27 @@ export default function DashboardPage() {
                    }
                 }
 
-                // 1. Log Daily Support (for visual stats)
+                // 1. Log Daily Support (via RPC for Points)
                 // Determine type based on task metadata or fallback to text analysis
                 const supportType = task.type || (task.text.includes("Commenter") ? 'comment' : task.text.includes("favoris") ? 'favorite' : 'like');
                 
-                const { error: supportError } = await supabase.from('daily_supports').insert({
-                   supporter_id: user.id,
+                const { data: rpcResult, error: supportError } = await supabase.rpc('complete_mission', {
                    target_user_id: task.targetUserId,
-                   support_type: supportType
+                   mission_type: supportType
                 })
                 
                 if (supportError) {
                   console.error("Support insert error:", supportError)
+                } else if (rpcResult && userProfile) {
+                    // Update local points immediately
+                    const newPoints = rpcResult.new_points
+                    setUserProfile({...userProfile, wave_points: newPoints})
+                    if (rpcResult.wave_ready) {
+                        toast.success("JAUGE CHARGÉE ! 🚀", { 
+                            description: "Tu es en file d'attente pour la prochaine vague.",
+                            duration: 5000
+                        })
+                    }
                 }
 
                 // 2. Log Video Tracking (for rotation logic)
@@ -979,6 +988,7 @@ export default function DashboardPage() {
       <TacticalHUD 
           progress={progressPercentage} 
           rank={currentRank}
+          points={userProfile?.wave_points}
       />
 
       <div className="space-y-6 max-w-5xl mx-auto pb-12 px-4 pt-6">
