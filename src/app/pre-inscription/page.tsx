@@ -52,13 +52,16 @@ export default function PreInscriptionPage() {
             </Link>
           </Button>
           
-          <div className="flex flex-col items-center gap-3">
+          <div className="flex flex-col items-center gap-2">
+             <p className="text-sm font-bold text-green-600 bg-green-50 px-3 py-1 rounded-full border border-green-100 animate-in fade-in slide-in-from-top-2 duration-700 delay-400">
+               🎁 7 jours d'essai 100% gratuit
+             </p>
              <p className="text-sm text-muted-foreground font-medium flex items-center gap-1.5 animate-in fade-in slide-in-from-top-2 duration-700 delay-500">
                <Lock className="w-3 h-3 text-slate-400" />
                Pas de spam. Tu recevras juste l'alerte de lancement.
              </p>
              
-             <div className="bg-orange-50 text-orange-600 text-xs font-bold px-4 py-1.5 rounded-full inline-flex items-center gap-2 border border-orange-100 animate-pulse">
+             <div className="bg-orange-50 text-orange-600 text-xs font-bold px-4 py-1.5 rounded-full inline-flex items-center gap-2 border border-orange-100 animate-pulse mt-1">
                 <Flame className="w-3 h-3 fill-orange-500" /> 
                 12 créateurs ont rejoint aujourd'hui
              </div>
@@ -305,6 +308,9 @@ export default function PreInscriptionPage() {
             </Link>
           </Button>
           <div className="space-y-2">
+             <p className="text-sm font-bold text-green-600">
+               🎁 7 jours d'essai 100% gratuit
+             </p>
              <p className="text-sm font-medium text-foreground">
                Aucun paiement requis aujourd'hui.
              </p>
