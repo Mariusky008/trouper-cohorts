@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { Home, Users, Settings, LogOut, Trophy, Video, GraduationCap, BookOpen, Coffee, Menu, X } from "lucide-react"
+import { Home, Users, Settings, LogOut, Trophy, Video, GraduationCap, BookOpen, Coffee, Menu, X, Radio } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { useRouter, usePathname } from "next/navigation"
 import { useEffect, useState } from "react"
@@ -90,6 +90,7 @@ export default function DashboardLayout({
 
   const navItems = [
     { href: "/dashboard", label: "Tableau de bord", icon: Home },
+    { href: "/dashboard/alliances", label: "Fil d'Actualité", icon: Radio }, // NEW V2
     { href: "/dashboard/group", label: "Mon Escouade", icon: Users },
     // { href: "/dashboard/my-posts", label: "Mes posts TikTok", icon: Video }, // HIDDEN V3.7
     { href: "/dashboard/leaves", label: "Demain je suis Off", icon: Coffee },
