@@ -3,6 +3,8 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { WaveSchedule } from "@/components/dashboard/WaveSchedule"
+import { RankSystemModal } from "@/components/dashboard/RankSystemModal"
+import { getRank } from "@/lib/ranks"
 
 interface TacticalHUDProps {
     progress: number
@@ -15,28 +17,35 @@ interface TacticalHUDProps {
     userId?: string
     squadId?: string | null
     missionCount?: string
+    careerPoints?: number
 }
 
-export function TacticalHUD({ progress, rank, points, userId, squadId, missionCount }: TacticalHUDProps) {
+export function TacticalHUD({ progress, rank, points, userId, squadId, missionCount, careerPoints = 0 }: TacticalHUDProps) {
     // Gamification V4: Use Wave Points if available (Target 60)
     const waveProgress = points !== undefined ? (Math.min(points, 60) / 60) * 100 : progress
     const waveLabel = points !== undefined ? `${points}/60` : `${Math.round(progress)}%`
     const isReady = points !== undefined && points >= 60
 
+    // Career Rank (Long Term)
+    const careerRank = getRank(careerPoints)
+    const RankIcon = careerRank.icon
+
     return (
         <div className="bg-white/90 backdrop-blur-md border-b border-slate-200 sticky top-0 z-40 w-full shadow-sm transition-all duration-300">
             <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
                 
-                {/* RANK BADGE */}
-                <div className="flex items-center gap-3">
-                    <div className={`h-10 w-10 rounded-lg flex items-center justify-center shadow-sm border bg-slate-50 ${rank.color.includes('text-yellow') ? 'border-yellow-200 text-yellow-600' : rank.color.includes('text-purple') ? 'border-purple-200 text-purple-600' : 'border-slate-200 text-slate-600'}`}>
-                        <rank.icon className={`h-6 w-6`} />
+                {/* RANK BADGE (CLICKABLE FOR MODAL) */}
+                <RankSystemModal currentPoints={careerPoints}>
+                    <div className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity select-none group">
+                        <div className={`h-10 w-10 rounded-lg flex items-center justify-center shadow-sm border bg-slate-50 group-hover:scale-105 transition-transform ${careerRank.color.includes('text-yellow') ? 'border-yellow-200 bg-yellow-50' : careerRank.color.includes('text-purple') ? 'border-purple-200 bg-purple-50' : 'border-slate-200'}`}>
+                            <RankIcon className={`h-6 w-6 ${careerRank.color}`} />
+                        </div>
+                        <div className="hidden sm:block leading-tight">
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest group-hover:text-indigo-500">Grade Actuel</p>
+                            <h3 className={`text-sm font-black ${careerRank.color}`}>G{careerRank.level} - {careerRank.name}</h3>
+                        </div>
                     </div>
-                    <div className="hidden sm:block leading-tight">
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Grade du jour</p>
-                        <h3 className={`text-sm font-black ${rank.color.includes('text-yellow') ? 'text-yellow-600' : rank.color.includes('text-purple') ? 'text-purple-600' : 'text-slate-700'}`}>{rank.name}</h3>
-                    </div>
-                </div>
+                </RankSystemModal>
 
                 {/* PROGRESS BAR (CENTER) */}
                 <div className="flex-1 max-w-md mx-2">

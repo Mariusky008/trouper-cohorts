@@ -992,6 +992,7 @@ export default function DashboardPage() {
           userId={userProfile?.id}
           squadId={mySquadId}
           missionCount={`${Math.min(displayIndex + 1, tasks.length)}/${tasks.length}`}
+          careerPoints={userProfile?.career_points}
       />
 
       <div className="space-y-6 max-w-5xl mx-auto pb-12 px-4 pt-6">
