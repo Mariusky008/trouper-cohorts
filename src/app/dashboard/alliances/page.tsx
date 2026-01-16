@@ -8,7 +8,9 @@ import { Plus, Users, Play, Trophy, Rocket, Swords, Calendar } from "lucide-reac
 import { Badge } from "@/components/ui/badge"
 import { CreateAllianceDialog } from "@/components/dashboard/alliances/CreateAllianceDialog"
 import { toast } from "sonner"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback, AvatarImage } from "../../../components/ui/avatar"
+
+// Main component for the Alliance Feed
 
 export default function AlliancesPage() {
     const [activeTab, setActiveTab] = useState("market") // Default to market for now
