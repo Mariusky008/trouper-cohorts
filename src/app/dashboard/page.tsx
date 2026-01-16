@@ -10,7 +10,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
 import { TacticalHUD } from "@/components/dashboard/TacticalHUD"
-import { BriefingPopup } from "@/components/dashboard/BriefingPopup"
+import { BriefingPopup } from "../../components/dashboard/BriefingPopup"
 
 import Link from "next/link"
 
