@@ -169,6 +169,12 @@
   }
 }
 
+@layer utilities {
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
 /* GLITCH EFFECT */
 .glitch-wrapper {
   position: relative;

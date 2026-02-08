@@ -2,6 +2,8 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
+import { BottomNav } from "@/components/nav/bottom-nav";
+import { TopNav } from "@/components/nav/top-nav";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient();
@@ -19,28 +21,23 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   }
 
   return (
-    <div className="min-h-screen">
-      <header className="border-b">
-        <div className="container mx-auto max-w-5xl px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Link href="/" className="font-bold">
-              Trouper
-            </Link>
-            <nav className="text-sm text-muted-foreground flex items-center gap-3">
-              <Link href="/app/today">Aujourd’hui</Link>
-              <Link href="/app/proof">Preuves</Link>
-              <Link href="/app/leaderboard">Classement</Link>
-              <Link href="/app/settings">Profil</Link>
-            </nav>
-          </div>
-          <form action={signOut}>
-            <Button type="submit" variant="outline" size="sm">
-              Se déconnecter
-            </Button>
-          </form>
-        </div>
+    <div className="min-h-screen bg-muted/10 pb-20 md:pb-0">
+      <TopNav>
+        <form action={signOut}>
+          <Button type="submit" variant="ghost" size="sm">
+            Se déconnecter
+          </Button>
+        </form>
+      </TopNav>
+      
+      {/* Mobile Header simple */}
+      <header className="md:hidden border-b bg-background/80 backdrop-blur-md sticky top-0 z-40 px-4 py-3 flex items-center justify-between">
+         <span className="bg-primary text-primary-foreground px-2 py-0.5 rounded text-sm font-black uppercase tracking-widest">Trouper</span>
       </header>
-      <main className="container mx-auto max-w-5xl px-4 py-8">{children}</main>
+
+      <main className="container mx-auto max-w-5xl px-4 py-6 md:py-8">{children}</main>
+      
+      <BottomNav />
     </div>
   );
 }

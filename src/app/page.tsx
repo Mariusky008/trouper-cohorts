@@ -1,64 +1,144 @@
-import Link from "next/link"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { ArrowRight, CheckCircle2 } from "lucide-react"
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { GlitchLogo } from "@/components/ui/glitch-logo";
+import { ArrowRight, CheckCircle2, Trophy, Users, Zap } from "lucide-react";
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b">
-        <div className="container mx-auto max-w-5xl px-4 py-5 flex items-center justify-between">
-          <Link href="/" className="text-lg font-bold tracking-tight">
-            Trouper
-          </Link>
-          <Badge variant="secondary">Cohorts</Badge>
+    <div className="min-h-screen bg-background flex flex-col">
+      {/* Header */}
+      <header className="border-b bg-background/80 backdrop-blur-md sticky top-0 z-50">
+        <div className="container mx-auto px-4 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+             <div className="h-8 w-8 relative overflow-hidden rounded bg-primary flex items-center justify-center">
+                <span className="font-black text-primary-foreground text-xs">TR</span>
+             </div>
+            <span className="font-bold text-lg tracking-tight">Trouper</span>
+          </div>
+          <div className="flex items-center gap-4">
+            <Button variant="ghost" asChild className="hidden sm:inline-flex">
+              <Link href="/login">Connexion</Link>
+            </Button>
+            <Button asChild>
+              <Link href="/secret-cohorts">Rejoindre une cohorte</Link>
+            </Button>
+          </div>
         </div>
       </header>
 
-      <main className="container mx-auto max-w-5xl px-4 py-12 space-y-12">
-        <section className="grid gap-8 md:grid-cols-2 md:items-center">
-          <div className="space-y-4">
-            <Badge>Sprint Local</Badge>
-            <h1 className="text-4xl font-black tracking-tight md:text-5xl">
-              24 pros. 24 départements. 14 jours pour rayonner localement.
+      <main className="flex-1">
+        {/* Hero Section */}
+        <section className="py-20 md:py-32 px-4 text-center space-y-8 bg-gradient-to-b from-background to-muted/30">
+          <div className="container mx-auto max-w-4xl space-y-6">
+            <Badge variant="outline" className="px-4 py-1.5 text-sm rounded-full border-primary/20 bg-primary/5 text-primary">
+              🚀 Nouvelle cohorte : Démarrage lundi prochain
+            </Badge>
+            
+            <h1 className="text-4xl md:text-6xl lg:text-7xl font-black tracking-tighter text-balance">
+              Devenez incontournable <br className="hidden md:block" />
+              <span className="text-primary bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/60">
+                dans votre ville.
+              </span>
             </h1>
-            <p className="text-muted-foreground text-lg">
-              Collabs orchestrées, lives, ateliers, retours humains. L’objectif: attirer des clients dans ta localité.
+            
+            <p className="text-xl text-muted-foreground max-w-2xl mx-auto text-balance">
+              14 jours. 24 pros. 1 seul par métier.
+              <br />
+              Le sprint intensif pour dominer votre marché local.
             </p>
-            <div className="flex flex-col gap-2 sm:flex-row">
-              <Button size="lg" asChild>
+
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
+              <Button size="lg" className="h-12 px-8 text-base rounded-full" asChild>
                 <Link href="/secret-cohorts">
-                  Voir le concept <ArrowRight className="ml-2 h-4 w-4" />
+                  Réserver ma place <ArrowRight className="ml-2 h-4 w-4" />
+                </Link>
+              </Button>
+              <Button size="lg" variant="outline" className="h-12 px-8 text-base rounded-full" asChild>
+                <Link href="/login">
+                  J'ai déjà un compte
                 </Link>
               </Button>
             </div>
-            <div className="text-sm text-muted-foreground">
-              Accès privé: la page concept peut être protégée par une clé.
+
+            <div className="pt-8 flex items-center justify-center gap-8 text-sm text-muted-foreground grayscale opacity-70">
+              <div className="flex items-center gap-2">
+                <Users className="h-4 w-4" /> 24 places max
+              </div>
+              <div className="flex items-center gap-2">
+                <Zap className="h-4 w-4" /> 14 jours intensifs
+              </div>
+              <div className="flex items-center gap-2">
+                <Trophy className="h-4 w-4" /> Leaderboard live
+              </div>
             </div>
           </div>
+        </section>
 
-          <Card className="border-primary/15">
-            <CardHeader className="space-y-1">
-              <CardTitle className="text-lg">Ce que tu achètes</CardTitle>
-              <CardDescription>La valeur est dans l’orchestration</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3 text-sm">
+        {/* Features Grid */}
+        <section className="py-20 bg-muted/30 border-y">
+          <div className="container mx-auto px-4 max-w-6xl">
+            <div className="grid md:grid-cols-3 gap-8">
               {[
-                "Collabs planifiées (duo/trio) + débats",
-                "Ateliers 45 min (jour 7 + jour 14) sur TikTok/Instagram",
-                "Feedback humain sur les éléments qui font signer",
-                "Système DM mot-clé → RDV",
-              ].map((t) => (
-                <div key={t} className="flex gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-primary mt-0.5" />
-                  <div>{t}</div>
+                {
+                  icon: Users,
+                  title: "Exclusivité Locale",
+                  desc: "Un seul pro par métier (1 coach, 1 immo, 1 artisan...). Vous ne collaborez pas avec vos concurrents, mais avec vos partenaires.",
+                },
+                {
+                  icon: Zap,
+                  title: "Missions Quotidiennes",
+                  desc: "Chaque matin, une mission concrète (Story, Reel, Collab, DM). 15 à 45 minutes max. Pas de blabla, que de l'action.",
+                },
+                {
+                  icon: Trophy,
+                  title: "Gamification",
+                  desc: "Validez vos preuves, gagnez des points, grimpez au classement. L'émulation de groupe pour ne rien lâcher.",
+                },
+              ].map((feature, i) => (
+                <div key={i} className="bg-background p-8 rounded-2xl border shadow-sm hover:shadow-md transition-all">
+                  <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary mb-6">
+                    <feature.icon className="h-6 w-6" />
+                  </div>
+                  <h3 className="text-xl font-bold mb-3">{feature.title}</h3>
+                  <p className="text-muted-foreground leading-relaxed">
+                    {feature.desc}
+                  </p>
                 </div>
               ))}
-            </CardContent>
-          </Card>
+            </div>
+          </div>
+        </section>
+
+        {/* Value Prop */}
+        <section className="py-20 px-4">
+          <div className="container mx-auto max-w-5xl bg-primary text-primary-foreground rounded-3xl p-8 md:p-16 text-center space-y-8 overflow-hidden relative">
+            {/* Abstract Background Shapes */}
+            <div className="absolute top-0 left-0 w-64 h-64 bg-white/5 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2" />
+            <div className="absolute bottom-0 right-0 w-96 h-96 bg-white/10 rounded-full blur-3xl translate-x-1/3 translate-y-1/3" />
+            
+            <div className="relative z-10 space-y-6">
+              <h2 className="text-3xl md:text-5xl font-black tracking-tight">
+                Prêt à passer à l'action ?
+              </h2>
+              <p className="text-primary-foreground/80 text-lg max-w-2xl mx-auto">
+                Fini de poster dans le vide. Rejoignez une escouade locale et décuplez votre visibilité.
+              </p>
+              <Button size="lg" variant="secondary" className="h-14 px-8 text-lg rounded-full" asChild>
+                <Link href="/secret-cohorts">
+                  Rejoindre la prochaine cohorte
+                </Link>
+              </Button>
+            </div>
+          </div>
         </section>
       </main>
+
+      <footer className="py-8 border-t bg-muted/20">
+        <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
+          <p>© {new Date().getFullYear()} Trouper. Tous droits réservés.</p>
+        </div>
+      </footer>
     </div>
-  )
+  );
 }
