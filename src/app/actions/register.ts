@@ -4,6 +4,13 @@ import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 
 export async function registerInterest(formData: FormData) {
+  // Honeypot check
+  const honeypot = String(formData.get("confirm_email") || "");
+  if (honeypot) {
+    // Silent fail for bots
+    return { success: true, message: "Inscription validée !" }; 
+  }
+
   const supabase = await createClient();
   
   const email = String(formData.get("email") || "").trim().toLowerCase();

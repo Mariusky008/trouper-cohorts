@@ -53,6 +53,13 @@ export function PreRegistrationForm() {
             className="bg-background/50 backdrop-blur-sm"
         />
       </div>
+      
+      {/* Honeypot field - hidden from humans */}
+      <div className="absolute opacity-0 -z-10 w-0 h-0 overflow-hidden">
+        <label htmlFor="confirm_email">Ne pas remplir ce champ</label>
+        <input type="text" name="confirm_email" id="confirm_email" tabIndex={-1} autoComplete="off" />
+      </div>
+
       <p className="text-xs text-muted-foreground text-center">
         Rejoignez la liste d'attente. Places limitées.
       </p>
