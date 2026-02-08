@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { GlitchLogo } from "@/components/ui/glitch-logo";
 import { ArrowRight, CheckCircle2, Trophy, Users, Zap } from "lucide-react";
+import { PreRegistrationForm } from "@/components/pre-registration-form";
 
 export default function Home() {
   return (
@@ -48,17 +49,8 @@ export default function Home() {
               Le sprint intensif pour dominer votre marché local.
             </p>
 
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
-              <Button size="lg" className="h-12 px-8 text-base rounded-full" asChild>
-                <Link href="/secret-cohorts">
-                  Réserver ma place <ArrowRight className="ml-2 h-4 w-4" />
-                </Link>
-              </Button>
-              <Button size="lg" variant="outline" className="h-12 px-8 text-base rounded-full" asChild>
-                <Link href="/login">
-                  J'ai déjà un compte
-                </Link>
-              </Button>
+            <div className="pt-8 w-full max-w-md mx-auto">
+              <PreRegistrationForm />
             </div>
 
             <div className="pt-8 flex items-center justify-center gap-8 text-sm text-muted-foreground grayscale opacity-70">

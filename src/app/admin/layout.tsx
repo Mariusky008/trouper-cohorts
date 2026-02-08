@@ -49,6 +49,9 @@ export default async function AdminLayout({
             <Link href="/admin/cohorts" className="hover:underline">
               Cohortes
             </Link>
+            <Link href="/admin/registrations" className="hover:underline">
+              Inscriptions
+            </Link>
             {/* Add more links later */}
           </nav>
         </div>
