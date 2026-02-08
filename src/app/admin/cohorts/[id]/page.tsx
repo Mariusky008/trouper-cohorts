@@ -9,6 +9,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Link from "next/link";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
+import { Download } from "lucide-react";
+
 export default async function CohortDetailPage({
   params,
   searchParams,
@@ -214,8 +216,15 @@ export default async function CohortDetailPage({
           </Card>
         </TabsContent>
 
-        <TabsContent value="participants" className="space-y-4 mt-4">
-           <Card>
+          <TabsContent value="participants" className="space-y-4 mt-4">
+             <div className="flex justify-end">
+               <Button variant="outline" size="sm" asChild>
+                 <a href={`/admin/cohorts/${id}/export`} target="_blank" rel="noopener noreferrer">
+                   <Download className="mr-2 h-4 w-4" /> Exporter CSV
+                 </a>
+               </Button>
+             </div>
+             <Card>
             <Table>
               <TableHeader>
                 <TableRow>
