@@ -53,15 +53,28 @@ export default async function ProofPage() {
                     </div>
                   </div>
                   {sub.proof_url && (
-                    <div className="text-sm truncate">
-                      <a
-                        href={sub.proof_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-blue-600 hover:underline"
-                      >
-                        {sub.proof_url}
-                      </a>
+                    <div className="mt-2">
+                      {(sub.proof_url.match(/\.(jpeg|jpg|gif|png|webp)$/i) || sub.proof_url.includes("supabase.co/storage")) ? (
+                        <div className="relative h-48 w-full max-w-sm rounded-md overflow-hidden border bg-muted group">
+                           <a href={sub.proof_url} target="_blank" rel="noopener noreferrer">
+                             {/* eslint-disable-next-line @next/next/no-img-element */}
+                             <img 
+                               src={sub.proof_url} 
+                               alt="Preuve" 
+                               className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-300"
+                             />
+                           </a>
+                         </div>
+                      ) : (
+                        <a
+                          href={sub.proof_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-600 hover:underline text-sm break-all"
+                        >
+                          {sub.proof_url}
+                        </a>
+                      )}
                     </div>
                   )}
                   {sub.note && <div className="text-sm text-muted-foreground bg-muted/30 p-2 rounded">{sub.note}</div>}
