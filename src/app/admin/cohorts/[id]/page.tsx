@@ -21,6 +21,7 @@ export default async function CohortDetailPage({
   const { id } = await params;
   const search = await searchParams;
   const saved = search?.saved === "1";
+  const currentTab = typeof search?.tab === "string" ? search.tab : "settings";
 
   const supabase = await createClient();
 
@@ -128,7 +129,7 @@ export default async function CohortDetailPage({
         </div>
       )}
 
-      <Tabs defaultValue={search?.tab || "settings"}>
+      <Tabs defaultValue={currentTab}>
         <TabsList>
           <TabsTrigger value="settings">Paramètres</TabsTrigger>
           <TabsTrigger value="missions">Missions ({missionsRes.data?.length || 0})</TabsTrigger>
@@ -250,8 +251,7 @@ export default async function CohortDetailPage({
               </TableHeader>
               <TableBody>
                 {membersRes.data?.map((m) => {
-                    // @ts-expect-error
-                    const profile = m.profiles;
+                    const profile = m.profiles as unknown as { display_name: string; trade: string; instagram_handle: string };
                     return (
                       <TableRow key={m.user_id}>
                         <TableCell>
@@ -295,7 +295,10 @@ export default async function CohortDetailPage({
         <TabsContent value="groups" className="space-y-6 mt-4">
             <div className="flex justify-between items-center">
                 <h2 className="text-lg font-semibold">Buddy System</h2>
-                <form action={createBuddyGroup} className="flex gap-2">
+                <form action={async (formData) => {
+                  "use server";
+                  await createBuddyGroup(formData);
+                }} className="flex gap-2">
                     <input type="hidden" name="cohort_id" value={id} />
                     <Input name="name" placeholder="Nom du groupe (ex: Duo Alpha)" className="w-64" required />
                     <Button type="submit" size="sm">
@@ -310,7 +313,10 @@ export default async function CohortDetailPage({
                         <CardHeader className="pb-2">
                             <div className="flex justify-between items-start">
                                 <CardTitle className="text-base">{group.name}</CardTitle>
-                                <form action={deleteBuddyGroup}>
+                                <form action={async (formData) => {
+                                  "use server";
+                                  await deleteBuddyGroup(formData);
+                                }}>
                                     <input type="hidden" name="group_id" value={group.id} />
                                     <input type="hidden" name="cohort_id" value={id} />
                                     <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive hover:bg-destructive/10">
@@ -327,7 +333,10 @@ export default async function CohortDetailPage({
                                     group.buddy_group_members.map((member: any) => (
                                         <div key={member.user_id} className="flex justify-between items-center text-sm border p-2 rounded bg-muted/20">
                                             <span>{member.profiles?.display_name || "Anonyme"}</span>
-                                            <form action={removeMemberFromGroup}>
+                                            <form action={async (formData) => {
+                                              "use server";
+                                              await removeMemberFromGroup(formData);
+                                            }}>
                                                 <input type="hidden" name="group_id" value={group.id} />
                                                 <input type="hidden" name="user_id" value={member.user_id} />
                                                 <input type="hidden" name="cohort_id" value={id} />
@@ -340,7 +349,10 @@ export default async function CohortDetailPage({
                                 )}
                             </div>
 
-                            <form action={addMemberToGroup} className="flex gap-2">
+                            <form action={async (formData) => {
+                              "use server";
+                              await addMemberToGroup(formData);
+                            }} className="flex gap-2">
                                 <input type="hidden" name="group_id" value={group.id} />
                                 <input type="hidden" name="cohort_id" value={id} />
                                 <Select name="user_id" required>
@@ -349,8 +361,8 @@ export default async function CohortDetailPage({
                                     </SelectTrigger>
                                     <SelectContent>
                                         {availableMembers.map((m) => {
-                                            // @ts-expect-error
-                                            const name = m.profiles?.display_name || "Anonyme";
+                                            const profile = m.profiles as unknown as { display_name: string };
+                                            const name = profile?.display_name || "Anonyme";
                                             return (
                                                 <SelectItem key={m.user_id} value={m.user_id}>
                                                     {name}
