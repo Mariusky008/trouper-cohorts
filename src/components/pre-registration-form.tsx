@@ -28,8 +28,7 @@ export function PreRegistrationForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-4 max-w-md mx-auto w-full">
-      <div className="flex flex-col sm:flex-row gap-2">
+    <form onSubmit={handleSubmit} className="flex flex-col gap-3 max-w-md mx-auto w-full">
         <Input 
           name="email" 
           type="email" 
@@ -37,10 +36,13 @@ export function PreRegistrationForm() {
           required 
           className="h-12 text-base bg-background/50 backdrop-blur-sm"
         />
-        <Button type="submit" size="lg" className="h-12 px-6" disabled={loading}>
-          {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Rejoindre"}
-        </Button>
-      </div>
+        <Input 
+          name="phone" 
+          type="tel" 
+          placeholder="Téléphone (pour être averti)" 
+          className="h-12 text-base bg-background/50 backdrop-blur-sm"
+        />
+
       <div className="grid grid-cols-2 gap-2">
         <Input 
             name="trade" 
@@ -53,6 +55,10 @@ export function PreRegistrationForm() {
             className="bg-background/50 backdrop-blur-sm"
         />
       </div>
+
+        <Button type="submit" size="lg" className="h-12 w-full mt-2 font-bold uppercase tracking-wider" disabled={loading}>
+          {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Rejoindre la liste d'attente"}
+        </Button>
       
       {/* Honeypot field - hidden from humans */}
       <div className="absolute opacity-0 -z-10 w-0 h-0 overflow-hidden">
@@ -61,7 +67,7 @@ export function PreRegistrationForm() {
       </div>
 
       <p className="text-xs text-muted-foreground text-center">
-        Rejoignez la liste d'attente. Places limitées.
+        Places limitées.
       </p>
     </form>
   );

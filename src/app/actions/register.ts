@@ -14,6 +14,7 @@ export async function registerInterest(formData: FormData) {
   const supabase = await createClient();
   
   const email = String(formData.get("email") || "").trim().toLowerCase();
+  const phone = String(formData.get("phone") || "").trim();
   const trade = String(formData.get("trade") || "").trim();
   const departmentCode = String(formData.get("department_code") || "").trim();
 
@@ -34,6 +35,7 @@ export async function registerInterest(formData: FormData) {
 
   const { error } = await supabase.from("pre_registrations").insert({
     email,
+    phone: phone || null,
     trade: trade || null,
     department_code: departmentCode || null,
     status: "pending",
