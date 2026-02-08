@@ -2,7 +2,8 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle2, Lock, Target, CalendarDays, Users, Video, Rocket, Brain, GlassWater, ArrowDown, Trophy } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { CheckCircle2, Lock, Target, CalendarDays, Users, Video, Rocket, Brain, GlassWater, ArrowDown, Trophy, Clock, Flame, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 function computeDayIndex(startDate: string | null) {
@@ -60,7 +61,7 @@ export default async function ProgramPage() {
   // Récupérer toutes les missions
   const { data: missions } = await supabase
     .from("missions")
-    .select("id, day_index, title, description, proof_type, mission_type")
+    .select("id, day_index, title, description, proof_type, mission_type, duration, energy_level")
     .eq("cohort_id", cohortRes.data.id)
     .order("day_index", { ascending: true });
 
@@ -80,7 +81,7 @@ export default async function ProgramPage() {
       <div className="space-y-2">
         <h1 className="text-2xl font-black tracking-tight">Programme</h1>
         <p className="text-muted-foreground">
-          14 jours pour transformer ton activité.
+          14 jours intensifs. Prépare-toi à transpirer.
         </p>
       </div>
 
@@ -135,12 +136,36 @@ export default async function ProgramPage() {
                             {mission ? mission.title : "Repos / Mystère"}
                         </h3>
                     </div>
+                    {mission && (
+                        <div className="flex items-center gap-4 text-xs font-medium text-muted-foreground mt-1">
+                            {mission.duration && (
+                                <div className="flex items-center gap-1">
+                                    <Clock className="h-3.5 w-3.5" />
+                                    {mission.duration}
+                                </div>
+                            )}
+                            {mission.energy_level === 'extreme' && (
+                                <div className="flex items-center gap-1 text-red-600 font-bold">
+                                    <Flame className="h-3.5 w-3.5 fill-red-600" />
+                                    INTENSE
+                                </div>
+                            )}
+                            {mission.energy_level === 'high' && (
+                                <div className="flex items-center gap-1 text-orange-600">
+                                    <Zap className="h-3.5 w-3.5 fill-orange-600" />
+                                    Énergique
+                                </div>
+                            )}
+                        </div>
+                    )}
                 </CardHeader>
                 <CardContent className="pb-4 px-4">
                   {mission ? (
-                    <p className="text-sm text-muted-foreground line-clamp-2">
-                      {mission.description || "Prépare-toi..."}
-                    </p>
+                    <div className="space-y-4">
+                        <div className="text-sm text-muted-foreground whitespace-pre-wrap">
+                            {mission.description?.replace(/\\n/g, '\n') || "Prépare-toi..."}
+                        </div>
+                    </div>
                   ) : (
                     <p className="text-sm text-muted-foreground italic">
                       Pas de mission programmée.
@@ -148,7 +173,9 @@ export default async function ProgramPage() {
                   )}
                   {isToday && (
                       <div className="mt-3">
-                          <Badge className="animate-pulse">En cours</Badge>
+                          <Button size="sm" className="w-full font-bold">
+                              Voir la mission du jour
+                          </Button>
                       </div>
                   )}
                 </CardContent>
