@@ -106,14 +106,21 @@ export default function Home() {
                 <h1 className="text-5xl md:text-8xl font-black uppercase italic tracking-tighter leading-[0.9]">
                   14 jours pour devenir la Référence<br />
                   <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-red-500">
-                    Locale.
+                    de votre ville.
                   </span>
                 </h1>
                 
-                <p className="text-xl md:text-2xl text-blue-200 max-w-2xl mx-auto font-medium leading-relaxed">
-                  Un programme quotidien de 2h à 3h. Un équipage de 24 pros.
-                  Concentrez votre communication plus efficacement qu'en un an d'efforts isolés.
-                </p>
+                <div className="text-xl md:text-2xl text-blue-200 max-w-3xl mx-auto font-medium leading-relaxed space-y-6">
+                    <p>
+                        Au programme : créations (vidéos, lives, ateliers) pour rendre votre communication impossible à ignorer.
+                    </p>
+                    <p>
+                        Vous faites partie d'un groupe de 24 pros qui s’entraident et se mettent en avant ensemble sur les réseaux sociaux.
+                    </p>
+                    <p className="text-white font-bold border-l-4 border-orange-500 pl-4 md:pl-0 md:border-0">
+                        14 jours pour obtenir plus de clients et de rendez-vous qu’en un an d’efforts isolés.
+                    </p>
+                </div>
 
                 <div className="pt-8 flex flex-col md:flex-row items-center justify-center gap-6">
                     <Button size="lg" className="h-16 px-6 md:px-10 bg-white text-slate-900 hover:bg-slate-200 font-black text-base md:text-xl uppercase tracking-widest rounded-none -skew-x-12 border-b-4 border-slate-400 active:border-b-0 active:translate-y-1 transition-all max-w-full" asChild>
@@ -171,12 +178,6 @@ export default function Home() {
                         </p>
                     </div>
                 </FadeIn>
-
-                <div className="pt-8 text-center">
-                    <Button className="bg-white text-blue-900 hover:bg-blue-50 font-black uppercase tracking-widest h-12 px-8" asChild>
-                        <Link href="#join">Réserver ma place dans l'Armada</Link>
-                    </Button>
-                </div>
             </div>
         </section>
 
@@ -303,6 +304,12 @@ export default function Home() {
                         </div>
                     </div>
                 </FadeIn>
+
+                <div className="pt-8 text-center">
+                    <Button className="bg-white text-blue-900 hover:bg-blue-50 font-black uppercase tracking-widest h-12 px-8" asChild>
+                        <Link href="#join">Réserver ma place dans l'Armada</Link>
+                    </Button>
+                </div>
             </div>
         </section>
 
