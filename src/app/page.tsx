@@ -116,10 +116,12 @@ export default function Home() {
                 </p>
 
                 <div className="pt-8 flex flex-col md:flex-row items-center justify-center gap-6">
-                    <Button size="lg" className="h-16 px-10 bg-white text-slate-900 hover:bg-slate-200 font-black text-xl uppercase tracking-widest rounded-none -skew-x-12 border-b-4 border-slate-400 active:border-b-0 active:translate-y-1 transition-all" asChild>
+                    <Button size="lg" className="h-16 px-6 md:px-10 bg-white text-slate-900 hover:bg-slate-200 font-black text-base md:text-xl uppercase tracking-widest rounded-none -skew-x-12 border-b-4 border-slate-400 active:border-b-0 active:translate-y-1 transition-all max-w-full" asChild>
                         <Link href="#join">
-                            <span className="skew-x-12 flex items-center gap-3">
-                                Je Prends la Barre de ma communication <Ship className="h-6 w-6" />
+                            <span className="skew-x-12 flex items-center gap-2 md:gap-3 text-center whitespace-normal leading-tight">
+                                <span className="md:hidden">Je Prends la Barre</span>
+                                <span className="hidden md:inline">Je Prends la Barre de ma communication</span>
+                                <Ship className="h-5 w-5 md:h-6 md:w-6 shrink-0" />
                             </span>
                         </Link>
                     </Button>
