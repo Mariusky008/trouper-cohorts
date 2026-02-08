@@ -47,7 +47,7 @@ export default function Home() {
   return (
     <div ref={targetRef} className="min-h-screen bg-slate-900 text-slate-50 font-sans selection:bg-orange-500 overflow-x-hidden">
       
-      {/* Header */}
+      {/* Header - Fixed Navigation */}
       <header className="fixed top-0 w-full z-50 border-b border-white/10 bg-slate-900/80 backdrop-blur-md">
         <div className="container mx-auto px-4 h-20 flex items-center justify-between">
           <div className="flex items-center gap-3">
