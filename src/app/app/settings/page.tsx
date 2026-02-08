@@ -40,6 +40,22 @@ export default async function SettingsPage() {
           <ProfileForm initialData={profile || {}} />
         </CardContent>
       </Card>
+
+      <Card className="border-primary/20 bg-primary/5">
+        <CardHeader>
+          <CardTitle>Besoin d'un coup de boost ?</CardTitle>
+          <CardDescription>
+            Réserve une session de coaching 1:1 de 30 min avec ton expert.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Button className="w-full" asChild>
+            <a href="https://calendly.com" target="_blank" rel="noopener noreferrer">
+              Réserver mon créneau
+            </a>
+          </Button>
+        </CardContent>
+      </Card>
     </div>
   );
 }
