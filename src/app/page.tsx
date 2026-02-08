@@ -44,8 +44,6 @@ export default function Home() {
     offset: ["start start", "end start"]
   });
 
-  const textY = useTransform(scrollYProgress, [0, 1], ["0%", "50%"]);
-
   return (
     <div ref={targetRef} className="min-h-screen bg-slate-900 text-slate-50 font-sans selection:bg-orange-500 overflow-x-hidden">
       
@@ -69,7 +67,7 @@ export default function Home() {
 
       <main>
         {/* 1. HERO (Design V7 / Contenu V6) */}
-        <section className="relative h-screen flex items-center justify-center overflow-hidden pt-20">
+        <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-32 md:pt-40 pb-32">
           <div className="absolute inset-0 bg-gradient-to-b from-blue-900 via-slate-900 to-slate-950 z-0" />
           
           {/* Particles */}
@@ -91,7 +89,7 @@ export default function Home() {
           </div>
 
           <div className="container mx-auto px-4 relative z-10 text-center space-y-8">
-            <motion.div style={{ y: textY }} className="space-y-6">
+            <div className="space-y-6">
                 <FloatingIcon>
                     <Badge className="bg-orange-600 text-white border-0 px-4 py-1 text-sm uppercase tracking-widest font-black mb-4">
                         ⚓️ Expédition Business • 14 Jours
@@ -135,7 +133,7 @@ export default function Home() {
                         </div>
                     ))}
                 </div>
-            </motion.div>
+            </div>
           </div>
 
           <div className="absolute bottom-0 w-full text-slate-950 z-20">
