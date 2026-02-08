@@ -1,10 +1,8 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { SubmissionForm } from "@/components/submission-form";
 
 function computeDayIndex(startDate: string | null) {
   if (!startDate) return null;
@@ -17,15 +15,17 @@ function computeDayIndex(startDate: string | null) {
 export default async function TodayPage({
   searchParams,
 }: {
-  searchParams?: Record<string, string | string[] | undefined>;
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const supabase = await createClient();
+  const params = await searchParams;
+  const submitted = params?.submitted === "1";
+
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const submitted = searchParams?.submitted === "1";
 
   const membershipRes = await supabase
     .from("cohort_members")
@@ -173,35 +173,6 @@ export default async function TodayPage({
     .eq("user_id", user.id)
     .maybeSingle();
 
-  async function submitProof(formData: FormData) {
-    "use server";
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) redirect("/login");
-
-    const missionId = String(formData.get("mission_id") || "");
-    const proofUrl = String(formData.get("proof_url") || "").trim();
-    const note = String(formData.get("note") || "").trim();
-
-    if (!missionId) redirect("/app/today");
-
-    const { error } = await supabase.from("submissions").upsert(
-      {
-        mission_id: missionId,
-        user_id: user.id,
-        proof_url: proofUrl,
-        note,
-        status: "submitted",
-      },
-      { onConflict: "mission_id,user_id" }
-    );
-
-    if (error) redirect("/app/today");
-    redirect("/app/today?submitted=1");
-  }
-
   return (
     <div className="space-y-6">
       <Card>
@@ -227,31 +198,13 @@ export default async function TodayPage({
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form action={submitProof} className="space-y-4">
-            <input type="hidden" name="mission_id" value={missionRes.data.id} />
-            <div className="space-y-2">
-              <Label htmlFor="proof_url">Lien</Label>
-              <Input
-                id="proof_url"
-                name="proof_url"
-                type="url"
-                placeholder="https://..."
-                defaultValue={submissionRes.data?.proof_url ?? ""}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="note">Note</Label>
-              <Textarea
-                id="note"
-                name="note"
-                placeholder="Ce que tu as fait, le résultat, ce qui bloque…"
-                defaultValue={submissionRes.data?.note ?? ""}
-              />
-            </div>
-            <Button type="submit" className="w-full">
-              Enregistrer
-            </Button>
-          </form>
+            {submissionRes.data?.proof_url && (
+                <div className="mb-4 p-3 bg-muted rounded-md text-sm break-all">
+                    Actuel: <a href={submissionRes.data.proof_url} target="_blank" className="underline text-primary">Voir la preuve</a>
+                </div>
+            )}
+            
+            <SubmissionForm missionId={missionRes.data.id} />
         </CardContent>
       </Card>
     </div>
