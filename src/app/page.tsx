@@ -76,31 +76,59 @@ export default function Home() {
               {[
                 {
                   icon: Users,
-                  title: "Exclusivité Locale",
-                  desc: "Un seul pro par métier (1 coach, 1 immo, 1 artisan...). Vous ne collaborez pas avec vos concurrents, mais avec vos partenaires.",
+                  title: "VOTRE ÉQUIPAGE DE GUERRE",
+                  desc: "Pas de concurrents. Que des alliés. Un seul pro par métier. Vous formez une alliance stratégique impénétrable sur votre secteur. On avance ensemble, ou on meurt seul.",
                 },
                 {
                   icon: Zap,
-                  title: "Missions Quotidiennes",
-                  desc: "Chaque matin, une mission concrète (Story, Reel, Collab, DM). 15 à 45 minutes max. Pas de blabla, que de l'action.",
+                  title: "COMMANDO 14 JOURS",
+                  desc: "Fini de jouer. Chaque matin : Vidéo, Prospection, Live. Si tu ne fais pas le job, tu fais couler ton équipe. Un programme d'élite pour ceux qui veulent vraiment des résultats.",
                 },
                 {
                   icon: Trophy,
-                  title: "Gamification",
-                  desc: "Validez vos preuves, gagnez des points, grimpez au classement. L'émulation de groupe pour ne rien lâcher.",
+                  title: "SURVIE & GLOIRE",
+                  desc: "Classement impitoyable. Les faibles abandonnent, les forts dominent. Prouve ta valeur chaque jour avec des preuves concrètes. Pas de blabla, que des résultats.",
                 },
               ].map((feature, i) => (
                 <div key={i} className="bg-background p-8 rounded-2xl border shadow-sm hover:shadow-md transition-all">
                   <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary mb-6">
                     <feature.icon className="h-6 w-6" />
                   </div>
-                  <h3 className="text-xl font-bold mb-3">{feature.title}</h3>
-                  <p className="text-muted-foreground leading-relaxed">
+                  <h3 className="text-xl font-black uppercase tracking-tight mb-3">{feature.title}</h3>
+                  <p className="text-muted-foreground leading-relaxed font-medium">
                     {feature.desc}
                   </p>
                 </div>
               ))}
             </div>
+            
+            {/* Program Teaser */}
+            <div className="mt-20 text-center space-y-8">
+                <h2 className="text-3xl font-black tracking-tight">CE QUI VOUS ATTEND</h2>
+                <div className="grid md:grid-cols-4 gap-4 text-left max-w-4xl mx-auto">
+                    <div className="bg-background border p-4 rounded-lg">
+                        <div className="text-xs font-bold text-muted-foreground uppercase mb-1">Jour 1-3</div>
+                        <div className="font-bold">Le Choc</div>
+                        <p className="text-sm text-muted-foreground mt-2">Audit brutal, Vidéo de présentation, Duo "No Mercy".</p>
+                    </div>
+                    <div className="bg-background border p-4 rounded-lg">
+                        <div className="text-xs font-bold text-muted-foreground uppercase mb-1">Jour 4-7</div>
+                        <div className="font-bold">La Production</div>
+                        <p className="text-sm text-muted-foreground mt-2">Création de contenu massive, Masterclass Vente, Trio Pitch.</p>
+                    </div>
+                    <div className="bg-background border p-4 rounded-lg">
+                        <div className="text-xs font-bold text-muted-foreground uppercase mb-1">Jour 8-10</div>
+                        <div className="font-bold">La Chasse</div>
+                        <p className="text-sm text-muted-foreground mt-2">50 contacts/jour, Cold Calling en live, Gestion des objections.</p>
+                    </div>
+                    <div className="bg-background border p-4 rounded-lg">
+                        <div className="text-xs font-bold text-muted-foreground uppercase mb-1">Jour 11-14</div>
+                        <div className="font-bold">Le Closing</div>
+                        <p className="text-sm text-muted-foreground mt-2">Signature de contrats, Examen final, Plan à 90 jours.</p>
+                    </div>
+                </div>
+            </div>
+
           </div>
         </section>
 
