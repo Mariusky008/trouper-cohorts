@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { CalendarCheck, Trophy, History, User, CheckCircle2 } from "lucide-react";
+import { CalendarCheck, Trophy, User, CheckCircle2, Map } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export function BottomNav() {
@@ -15,8 +15,13 @@ export function BottomNav() {
       icon: CalendarCheck,
     },
     {
+      href: "/app/program",
+      label: "Programme",
+      icon: Map,
+    },
+    {
       href: "/app/proof",
-      label: "Historique",
+      label: "Preuves",
       icon: CheckCircle2,
     },
     {

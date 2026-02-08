@@ -10,6 +10,7 @@ export function TopNav({ children }: { children?: React.ReactNode }) {
 
   const links = [
     { href: "/app/today", label: "Aujourd’hui" },
+    { href: "/app/program", label: "Programme" },
     { href: "/app/proof", label: "Preuves" },
     { href: "/app/leaderboard", label: "Classement" },
     { href: "/app/settings", label: "Profil" },
