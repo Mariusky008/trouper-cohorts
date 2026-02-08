@@ -6,6 +6,12 @@ Produit: cohorte de 14 jours (24 pros / 24 départements) pour devenir ultra vis
 
 Voir [CONCEPT.md](file:///Users/jeanphilippe/Desktop/trouper-cohorts/CONCEPT.md).
 
+## Docs
+
+- Produit (cahier des charges): [SPEC.md](file:///Users/jeanphilippe/Desktop/trouper-cohorts/SPEC.md)
+- Sécurité/RLS: [SECURITY_CHECKLIST.md](file:///Users/jeanphilippe/Desktop/trouper-cohorts/SECURITY_CHECKLIST.md)
+- Roadmap (issues): [ROADMAP_ISSUES.md](file:///Users/jeanphilippe/Desktop/trouper-cohorts/ROADMAP_ISSUES.md)
+
 ## Pages
 
 - `/` : page d’accueil (présentation rapide)
