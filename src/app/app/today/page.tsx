@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { SubmissionForm } from "@/components/submission-form";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { CalendarDays, MapPin, Target, CheckCircle2, AlertCircle, Trophy, Users, MessageCircle } from "lucide-react";
+import { CalendarDays, MapPin, Target, CheckCircle2, AlertCircle, Trophy, Users, MessageCircle, Video } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 function computeDayIndex(startDate: string | null) {
@@ -208,6 +208,17 @@ export default async function TodayPage({
     }
   }
 
+  // Events Logic
+  const now = new Date().toISOString();
+  const { data: nextEvent } = await supabase
+    .from("events")
+    .select("*")
+    .eq("cohort_id", cohortRes.data.id)
+    .gte("end_time", now) // Pas encore fini
+    .order("start_time", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+
   const progress = (dayIndex / 14) * 100;
 
   return (
@@ -243,6 +254,38 @@ export default async function TodayPage({
             </div>
         </div>
       </div>
+
+      {/* Next Event Card */}
+      {nextEvent && (
+        <Card className="bg-primary text-primary-foreground border-none shadow-lg">
+          <CardHeader className="flex flex-row items-center gap-4 pb-2">
+            <div className="h-10 w-10 bg-white/20 rounded-full flex items-center justify-center">
+              <Video className="h-5 w-5" />
+            </div>
+            <div>
+              <div className="text-xs font-bold uppercase tracking-wider opacity-80">Prochain Live</div>
+              <CardTitle className="text-lg">{nextEvent.title}</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center gap-2 text-sm opacity-90">
+                <CalendarDays className="h-4 w-4" />
+                {new Date(nextEvent.start_time).toLocaleDateString("fr-FR", { weekday: 'long', day: 'numeric', month: 'long' })}
+                {" à "}
+                {new Date(nextEvent.start_time).toLocaleTimeString("fr-FR", { hour: '2-digit', minute: '2-digit' })}
+              </div>
+              {nextEvent.meeting_url && (
+                <Button variant="secondary" size="sm" className="mt-2 w-full sm:w-auto" asChild>
+                  <a href={nextEvent.meeting_url} target="_blank" rel="noopener noreferrer">
+                    Rejoindre le Live
+                  </a>
+                </Button>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Buddy Card */}
       {buddies.length > 0 && (

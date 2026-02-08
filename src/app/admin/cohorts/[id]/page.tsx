@@ -8,8 +8,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Link from "next/link";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Download, Users, Trash2, UserPlus, X } from "lucide-react";
+import { Download, Users, Trash2, UserPlus, X, Calendar, Video } from "lucide-react";
 import { createBuddyGroup, deleteBuddyGroup, addMemberToGroup, removeMemberFromGroup } from "@/app/actions/buddy";
+import { createEvent, deleteEvent } from "@/app/actions/events";
 
 export default async function CohortDetailPage({
   params,
@@ -53,6 +54,13 @@ export default async function CohortDetailPage({
     .select("*, buddy_group_members(user_id, profiles(display_name))")
     .eq("cohort_id", id)
     .order("created_at", { ascending: true });
+
+  // Récupérer les événements
+  const eventsRes = await supabase
+    .from("events")
+    .select("*")
+    .eq("cohort_id", id)
+    .order("start_time", { ascending: true });
 
   // Calculer les membres sans groupe pour le select
   const membersInGroups = new Set(
@@ -135,6 +143,7 @@ export default async function CohortDetailPage({
           <TabsTrigger value="missions">Missions ({missionsRes.data?.length || 0})</TabsTrigger>
           <TabsTrigger value="participants">Participants ({membersRes.data?.length || 0})</TabsTrigger>
           <TabsTrigger value="groups">Groupes ({groupsRes.data?.length || 0})</TabsTrigger>
+          <TabsTrigger value="agenda">Agenda ({eventsRes.data?.length || 0})</TabsTrigger>
         </TabsList>
 
         <TabsContent value="settings" className="space-y-4 mt-4">
@@ -378,6 +387,88 @@ export default async function CohortDetailPage({
                         </CardContent>
                     </Card>
                 ))}
+            </div>
+        </TabsContent>
+
+        <TabsContent value="agenda" className="space-y-6 mt-4">
+            <div className="flex justify-between items-center">
+                <h2 className="text-lg font-semibold">Événements Live</h2>
+            </div>
+
+            <Card>
+                <CardHeader>
+                    <CardTitle>Ajouter un événement</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <form action={async (formData) => {
+                      "use server";
+                      await createEvent(formData);
+                    }} className="flex flex-wrap gap-4 items-end">
+                        <input type="hidden" name="cohort_id" value={id} />
+                        <div className="space-y-2">
+                            <Label>Titre</Label>
+                            <Input name="title" placeholder="Atelier Démo" required className="w-48" />
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Date</Label>
+                            <Input name="date" type="date" required className="w-40" />
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Heure</Label>
+                            <Input name="time" type="time" required className="w-32" />
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Lien Visio</Label>
+                            <Input name="meeting_url" placeholder="https://meet..." className="w-48" />
+                        </div>
+                        <Button type="submit">
+                            <Calendar className="mr-2 h-4 w-4" /> Ajouter
+                        </Button>
+                    </form>
+                </CardContent>
+            </Card>
+
+            <div className="space-y-4">
+                {eventsRes.data?.map((event) => (
+                    <Card key={event.id}>
+                        <CardContent className="flex items-center justify-between p-4">
+                            <div className="flex items-center gap-4">
+                                <div className="h-10 w-10 bg-primary/10 rounded flex items-center justify-center text-primary">
+                                    <Video className="h-5 w-5" />
+                                </div>
+                                <div>
+                                    <div className="font-bold">{event.title}</div>
+                                    <div className="text-sm text-muted-foreground flex gap-2">
+                                        <span>{new Date(event.start_time).toLocaleDateString()}</span>
+                                        <span>{new Date(event.start_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-4">
+                                {event.meeting_url && (
+                                    <a href={event.meeting_url} target="_blank" className="text-sm text-blue-600 hover:underline truncate max-w-[200px]">
+                                        {event.meeting_url}
+                                    </a>
+                                )}
+                                <form action={async (formData) => {
+                                  "use server";
+                                  await deleteEvent(formData);
+                                }}>
+                                    <input type="hidden" name="event_id" value={event.id} />
+                                    <input type="hidden" name="cohort_id" value={id} />
+                                    <Button variant="ghost" size="icon" className="text-destructive">
+                                        <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                </form>
+                            </div>
+                        </CardContent>
+                    </Card>
+                ))}
+                {eventsRes.data?.length === 0 && (
+                    <div className="text-center py-8 text-muted-foreground bg-muted/20 rounded-lg">
+                        Aucun événement prévu.
+                    </div>
+                )}
             </div>
         </TabsContent>
       </Tabs>
