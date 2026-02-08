@@ -230,6 +230,9 @@ export default async function TodayPage({
           </CardTitle>
         </CardHeader>
         <CardContent className="pt-6">
+          <h4 className="text-sm font-bold uppercase tracking-wider text-muted-foreground mb-3">
+            🎯 Tes objectifs du jour :
+          </h4>
           {missionRes.data.description ? (
             <div className="prose prose-sm sm:prose-base text-muted-foreground max-w-none whitespace-pre-line leading-relaxed">
                 {missionRes.data.description}
