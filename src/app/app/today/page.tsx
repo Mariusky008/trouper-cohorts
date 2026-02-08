@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { SubmissionForm } from "@/components/submission-form";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { CalendarDays, MapPin, Target, CheckCircle2, AlertCircle, Trophy } from "lucide-react";
+import { CalendarDays, MapPin, Target, CheckCircle2, AlertCircle, Trophy, Users, MessageCircle } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 function computeDayIndex(startDate: string | null) {
   if (!startDate) return null;
@@ -183,6 +184,30 @@ export default async function TodayPage({
     .eq("user_id", user.id)
     .maybeSingle();
 
+  // Buddy System Logic
+  const buddyGroupRes = await supabase
+    .from("buddy_group_members")
+    .select("group_id")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  let buddies: { id: string; display_name: string; avatar_url: string; trade: string; instagram_handle: string }[] = [];
+  if (buddyGroupRes.data) {
+    const { data: groupMembers } = await supabase
+      .from("buddy_group_members")
+      .select(`
+        profiles (
+          id, display_name, avatar_url, trade, instagram_handle
+        )
+      `)
+      .eq("group_id", buddyGroupRes.data.group_id)
+      .neq("user_id", user.id); // Exclure soi-même
+    
+    if (groupMembers) {
+      buddies = groupMembers.map((m: any) => m.profiles);
+    }
+  }
+
   const progress = (dayIndex / 14) * 100;
 
   return (
@@ -218,6 +243,41 @@ export default async function TodayPage({
             </div>
         </div>
       </div>
+
+      {/* Buddy Card */}
+      {buddies.length > 0 && (
+        <Card className="bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-950/20 dark:to-purple-950/20 border-indigo-100 dark:border-indigo-900">
+          <CardHeader className="pb-3">
+            <div className="flex items-center gap-2 text-indigo-600 font-bold uppercase tracking-wider text-xs mb-1">
+              <Users className="h-4 w-4" /> Ton Binôme
+            </div>
+            <CardTitle className="text-lg">Ne lâche rien, tu n'es pas seul !</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-4">
+              {buddies.map((buddy) => (
+                <div key={buddy.id} className="flex items-center gap-3 bg-background/50 p-2 rounded-lg border shadow-sm flex-1 min-w-[200px]">
+                  <Avatar>
+                    <AvatarImage src={buddy.avatar_url} />
+                    <AvatarFallback>{buddy.display_name?.substring(0, 2).toUpperCase()}</AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-semibold text-sm truncate">{buddy.display_name}</div>
+                    <div className="text-xs text-muted-foreground truncate">{buddy.trade}</div>
+                  </div>
+                  {buddy.instagram_handle && (
+                    <Button size="icon" variant="ghost" className="h-8 w-8 text-indigo-600" asChild>
+                      <a href={`https://instagram.com/${buddy.instagram_handle.replace('@', '')}`} target="_blank" rel="noopener noreferrer">
+                        <MessageCircle className="h-4 w-4" />
+                      </a>
+                    </Button>
+                  )}
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Mission Card */}
       <Card className="border-l-4 border-l-primary shadow-sm overflow-hidden">
