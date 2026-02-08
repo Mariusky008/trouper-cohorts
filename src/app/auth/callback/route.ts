@@ -8,7 +8,8 @@ export async function GET(request: Request) {
   const type = url.searchParams.get("type");
 
   if (!code && !(tokenHash && type)) {
-    return NextResponse.redirect(new URL("/login", url.origin));
+    console.error("Callback error: Missing code or token_hash/type");
+    return NextResponse.redirect(new URL("/login?error=missing_params", url.origin));
   }
 
   const supabase = await createClient();
@@ -26,7 +27,8 @@ export async function GET(request: Request) {
       });
 
   if (error) {
-    return NextResponse.redirect(new URL("/login", url.origin));
+    console.error("Callback auth error:", error);
+    return NextResponse.redirect(new URL(`/login?error=${encodeURIComponent(error.message)}`, url.origin));
   }
 
   return NextResponse.redirect(new URL("/app/today", url.origin));
