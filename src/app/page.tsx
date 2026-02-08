@@ -59,9 +59,19 @@ export default function Home() {
           <div className="hidden md:flex items-center gap-4">
              <span className="text-sm font-bold text-orange-400 uppercase tracking-widest animate-pulse">● Embarquement Immédiat</span>
           </div>
-          <Button className="bg-orange-600 hover:bg-orange-500 text-white font-black uppercase tracking-wider -skew-x-12" asChild>
-            <Link href="#join"><span className="skew-x-12">Monter à Bord</span></Link>
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" className="text-slate-300 hover:text-white hover:bg-white/10 font-bold uppercase tracking-wider" asChild>
+                <Link href="/login">Connexion</Link>
+            </Button>
+            <Button className="bg-orange-600 hover:bg-orange-500 text-white font-black uppercase tracking-wider -skew-x-12" asChild>
+                <Link href="#join">
+                    <span className="skew-x-12">
+                        <span className="hidden sm:inline">Monter à Bord</span>
+                        <span className="sm:hidden">Go</span>
+                    </span>
+                </Link>
+            </Button>
+          </div>
         </div>
       </header>
 
@@ -161,7 +171,18 @@ export default function Home() {
                             Le problème n'est pas votre compétence, c'est l'absence de <span className="text-orange-400 font-bold uppercase">cadre collectif</span>.
                         </p>
                     </div>
+                    <div className="pt-8">
+                        <Button variant="outline" className="border-orange-500 text-orange-400 hover:bg-orange-500 hover:text-white uppercase font-bold tracking-widest" asChild>
+                            <Link href="#join">Je veux une carte et un cap</Link>
+                        </Button>
+                    </div>
                 </FadeIn>
+
+                <div className="pt-8 text-center">
+                    <Button className="bg-white text-blue-900 hover:bg-blue-50 font-black uppercase tracking-widest h-14 px-8 text-lg" asChild>
+                        <Link href="#join">Réserver ma place dans l'Armada</Link>
+                    </Button>
+                </div>
             </div>
         </section>
 
@@ -237,6 +258,12 @@ export default function Home() {
                             </ul>
                         </div>
                     </FadeIn>
+                </div>
+
+                <div className="pt-16 text-center">
+                    <Button variant="outline" className="border-orange-500 text-orange-400 hover:bg-orange-500 hover:text-white uppercase font-bold tracking-widest h-12 px-8" asChild>
+                        <Link href="#join">Voir mon futur quotidien</Link>
+                    </Button>
                 </div>
             </div>
         </section>
