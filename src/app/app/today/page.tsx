@@ -337,8 +337,8 @@ export default async function TodayPage({
             🎯 Tes objectifs du jour :
           </h4>
           {missionRes.data.description ? (
-            <div className="prose prose-sm sm:prose-base text-muted-foreground max-w-none whitespace-pre-line leading-relaxed">
-                {missionRes.data.description}
+            <div className="prose prose-sm sm:prose-base text-muted-foreground max-w-none whitespace-pre-wrap leading-relaxed">
+                {missionRes.data.description.replace(/\\n/g, '\n')}
             </div>
           ) : (
             <p className="text-muted-foreground italic">Aucune description pour cette mission.</p>
