@@ -1,138 +1,113 @@
-# Cahier des charges — Trouper Cohorts
+# Cahier des charges — Popey Academy (ex-Trouper Cohorts)
 
 ## 0) Objectif
 
-Construire une plateforme très simple pour l’utilisateur, mais robuste techniquement, qui permet d’exécuter un sprint de 14 jours en cohorte et de convertir (DM/RDV/ventes).
+Plateforme de **Bootcamp intensif (14 jours)** pour entrepreneurs (Coachs, Immo, Artisans).
+L'objectif est de créer une **alliance locale** (1 pro par métier par département) et de maximiser l'exécution via la pression sociale et la gamification.
 
 ## 1) Principes non négociables
 
-- Simplicité d’usage > fonctionnalités.
-- Aucune clé secrète côté client. Tout ce qui est `NEXT_PUBLIC_*` est considéré public.
-- RLS partout dans Supabase. Pas de tables “écrites par tout le monde” hors pré-inscription.
-- Le produit doit rester utilisable même si certaines features “nice-to-have” sont absentes.
-- Traçabilité: on doit pouvoir diagnostiquer un problème (logs, erreurs, état DB cohérent).
+- **Intensité & Exécution** : Le produit doit refléter l'urgence. Pas de "nice-to-have", que de l'action.
+- **Simplicité d’usage** : Mobile-first pour les participants.
+- **Robustesse** : RLS partout. Aucune fuite de données entre cohortes.
+- **Identité Visuelle** : Marque forte "Popey Academy" (Force, Groupe, Action).
 
 ## 2) Glossaire
 
-- Cohorte: un sprint de 14 jours pour un métier donné (ex: coachs sportifs).
-- Slot département: 1 place par département dans une cohorte.
-- Mission: tâche du jour (1/jour) avec une preuve attendue.
-- Preuve (submission): lien/capture/compte rendu validant la mission.
+- **Cohorte** : Un "Commando" de 14 jours.
+- **Équipage** : Les participants d'une cohorte (max 1 par département).
+- **Mission** : Tâche quotidienne (Type: Solo, Duo, Trio, Workshop, Quiz, Coaching).
+- **Preuve** : Validation de la mission (Lien, Image, Texte).
+- **Binôme (Buddy)** : Partenaire de responsabilité assigné.
+- **Live (Event)** : Événement synchrone (Zoom/Meet).
 
-## 3) Rôles & permissions
+## 3) Rôles & Permissions
 
 ### Anonyme (anon)
-
-- Peut uniquement créer une pré-inscription.
+- Peut voir la Landing Page (`/`).
+- Peut se pré-inscrire (Lead).
 
 ### Participant (authenticated)
+- Accès au Dashboard (`/app/today`).
+- Voir le Programme complet (`/app/program`).
+- Voir son Équipage (`/app/crew`).
+- Voir le Leaderboard (`/app/leaderboard`).
+- Gérer son Profil (`/app/settings`) avec upload Avatar.
+- Soumettre des preuves.
 
-- Peut lire les infos de sa cohorte.
-- Peut voir la mission du jour.
-- Peut créer/modifier ses preuves.
-- Peut voir un leaderboard agrégé (sans données sensibles).
+### Admin (role 'admin' ou table 'admins')
+- Dashboard KPI (`/admin/cohorts`).
+- CRUD Cohortes & Missions.
+- Gestion Participants (Assignation Départements, Binômes).
+- Modération Preuves.
+- Exports CSV.
 
-### Coach / Admin
+## 4) Fonctionnalités Implémentées (V1.0)
 
-- Peut créer/éditer une cohorte.
-- Peut gérer les participants et l’attribution des départements.
-- Peut créer/éditer les missions.
-- Peut modérer/valider des preuves si besoin.
-- Peut exporter (CSV) les inscriptions/participants.
+### Parcours Acquisition
+- **Landing Page** : Hero "Commando", Features "Alliance/Survie", Formulaire Pré-inscription.
+- **Honeypot** : Protection anti-spam sur les formulaires.
 
-## 4) Périmètre produit — MVP
+### Parcours Participant (App)
+- **Dashboard (/app/today)** :
+  - Mission du jour avec description riche (Markdown/Sauts de ligne).
+  - Statut de validation (Preuve).
+  - Prochain Live (Compte à rebours).
+  - Carte Binôme.
+- **Programme (/app/program)** :
+  - Timeline visuelle 14 jours.
+  - Indicateurs : Durée, Intensité (Flamme/Éclair), Type (Icône).
+  - Statut (Fait/En cours/À venir).
+- **Équipage (/app/crew)** :
+  - Annuaire trombinoscope (Avatar, Métier, Département, Réseaux).
+  - Liens rapides (Insta/LinkedIn).
+- **Profil (/app/settings)** :
+  - Upload Avatar (Supabase Storage).
+  - Bio, Réseaux sociaux.
+- **Preuves (/app/proof)** : Historique des soumissions.
 
-### Parcours acquisition
+### Parcours Admin (Backoffice)
+- **Dashboard Global** : KPI (Inscrits, Actifs, Live, Engagement).
+- **Gestion Cohorte** :
+  - Édition Dates/Titre.
+  - Édition Programme (14 jours, Types, Description détaillée).
+  - Gestion Participants (Tableau, Filtres).
+  - Gestion Binômes (Drag & Drop ou Assignation).
+- **Exports** : CSV des participants.
 
-- Landing concept privée: `/secret-cohorts` (protégée optionnellement par `COHORTS_SECRET_KEY`).
-- Formulaire pré-inscription: insert dans `pre_registrations`.
+## 5) Architecture Technique
 
-### Parcours participant (app)
+- **Framework** : Next.js 15 (App Router).
+- **Langage** : TypeScript.
+- **UI** : Tailwind CSS, Shadcn UI, Lucide Icons.
+- **Base de données** : Supabase (PostgreSQL).
+- **Auth** : Supabase Auth (Email/Password, Magic Link).
+- **Storage** : Supabase Storage (Bucket 'avatars').
+- **Déploiement** : Vercel.
 
-- Auth simple (OTP/magic link recommandé).
-- Page “Aujourd’hui”: mission du jour + CTA “soumettre une preuve”.
-- Page “Preuves”: historique jour par jour (statuts, liens).
-- Page “Classement”: score simple basé sur régularité (streak) + complétion.
-- Paramètres/profil: département, métier, plateforme, objectif, liens.
+## 6) Structure des Données (Supabase)
 
-### Parcours coach/admin (backoffice)
+- `profiles` : Infos user (display_name, bio, avatar_url...).
+- `cohorts` : Sessions (start_date, end_date, trade).
+- `cohort_members` : Liaison User-Cohorte (department_code).
+- `missions` : Contenu (title, description, type, duration, energy_level).
+- `submissions` : Preuves (proof_url, note, status).
+- `events` : Agenda (start_time, meeting_url).
+- `buddy_groups` : Groupes de responsabilité (Duo/Trio).
+- `pre_registrations` : Leads (email, trade, department).
 
-- Créer une cohorte (métier, dates, règles).
-- Voir les pré-inscriptions, convertir en participants.
-- Attribuer un département (1 place par département).
-- Éditer les missions 1..14.
-- Voir la complétion et relancer (email).
-- Export CSV (pré-inscriptions + participants + preuves).
+## 7) Sécurité
 
-## 5) Hors périmètre (pour rester simple)
+- **RLS (Row Level Security)** : Activé sur toutes les tables.
+  - Participants : `select` sur leur cohorte uniquement.
+  - Admins : `all` sur tout (via fonction `is_admin()`).
+- **Storage Policies** :
+  - Public : `select`.
+  - Authenticated : `insert` (upload), `update` (own files).
 
-- Paiement in-app (Stripe) dans le MVP.
-- Chat temps réel.
-- Multi-cohortes simultanées pour un même utilisateur.
-- IA “auto-missions”.
-- Gestion d’équipes complexes / permissions fines (au-delà admin/participant).
+## 8) Prochaines Étapes (Roadmap)
 
-## 6) UX / IA de navigation (pages)
-
-- `/` : home simple → CTA vers concept.
-- `/secret-cohorts` : landing + pré-inscription.
-- `/app` (protégé):
-  - `/app/today`
-  - `/app/proof`
-  - `/app/leaderboard`
-  - `/app/settings`
-- `/admin` (protégé admin):
-  - `/admin/cohorts`
-  - `/admin/cohorts/[id]/missions`
-  - `/admin/cohorts/[id]/participants`
-  - `/admin/pre-registrations`
-  - `/admin/exports`
-
-## 7) Données (Supabase) — schéma cible MVP
-
-### Tables
-
-- `pre_registrations`
-  - Rôle: capture leads (anon write).
-- `profiles`
-  - Rôle: profil participant (1 row par user).
-- `cohorts`
-  - Rôle: définition d’une cohorte (métier, dates).
-- `cohort_slots`
-  - Rôle: mapping cohorte × département → user_id (unicité département).
-- `missions`
-  - Rôle: 14 missions par cohorte (day_index 1..14).
-- `submissions`
-  - Rôle: preuve d’un user pour une mission (1 max par mission/user).
-- `cohort_members`
-  - Rôle: appartenance à une cohorte (si différent de `cohort_slots`).
-
-### Invariants
-
-- 1 cohorte = 14 missions.
-- 1 département = 1 participant par cohorte.
-- 1 participant = 1 preuve maximum par mission (MVP: update, pas versioning).
-- Leaderboard ne doit pas exposer emails/téléphones.
-
-## 8) Sécurité (résumé)
-
-- Le client utilise uniquement la publishable key (`NEXT_PUBLIC_SUPABASE_ANON_KEY`).
-- Les opérations admin doivent se faire côté serveur (route handlers) ou via RLS/policies d’admin.
-- RLS activée sur chaque table, policies minimales.
-- Anti-abus pré-inscription: `unique(email)` + (optionnel) rate-limit server-side si on observe du spam.
-
-## 9) Observabilité & ops
-
-- Erreurs front: au minimum logs console en dev, idéalement un outil type Sentry ensuite.
-- Côté Supabase: audit logs + monitoring quotas.
-- Backups activés quand la cohorte est payante / en prod.
-- Environnements séparés (dev/preview/prod) dès que possible.
-
-## 10) Critères d’acceptation (Definition of Done)
-
-- Pré-inscription: l’insert marche en anon et la ligne apparaît en DB.
-- Auth: un user peut se connecter et accéder à `/app`.
-- Aujourd’hui: mission du jour affichée, preuve soumise puis visible dans “Preuves”.
-- Leaderboard: affiché sans fuite de PII (email/tel).
-- Admin: créer cohorte + missions + participants + export.
-- Sécurité: aucune clé `sb_secret_*` n’est exposée; RLS empêche lectures/écritures non autorisées.
+- Paiement Stripe.
+- Chat temps réel (Supabase Realtime).
+- Notifications (Email/Push).
+- IA Coach (Feedback auto sur preuves).

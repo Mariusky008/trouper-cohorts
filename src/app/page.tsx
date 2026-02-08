@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { GlitchLogo } from "@/components/ui/glitch-logo";
+import { Logo } from "@/components/ui/logo";
 import { ArrowRight, CheckCircle2, Trophy, Users, Zap } from "lucide-react";
 import { PreRegistrationForm } from "@/components/pre-registration-form";
 
@@ -14,9 +14,7 @@ export default function Home() {
       <header className="border-b bg-background/80 backdrop-blur-md sticky top-0 z-50">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
-             <div className="h-8 w-8 relative overflow-hidden rounded bg-primary flex items-center justify-center">
-                <span className="font-black text-primary-foreground text-xs">PA</span>
-             </div>
+             <Logo className="h-8 w-8 text-primary" />
             <span className="font-bold text-lg tracking-tight">Popey Academy</span>
           </div>
           <div className="flex items-center gap-4">
