@@ -50,6 +50,29 @@ create policy "Squad members are viewable by everyone." on squad_members
 create policy "Users can join a squad." on squad_members
   for insert with check (auth.uid() = user_id);
 
+create table pre_registrations (
+  id uuid default gen_random_uuid() primary key,
+  first_name text not null,
+  last_name text not null,
+  email text not null,
+  phone text not null,
+  channel_url text not null,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  unique(email)
+);
+
+alter table pre_registrations enable row level security;
+
+create policy "Anyone can pre-register." on pre_registrations
+  for insert to anon, authenticated
+  with check (
+    char_length(trim(first_name)) > 0
+    and char_length(trim(last_name)) > 0
+    and char_length(trim(email)) > 0
+    and char_length(trim(phone)) > 0
+    and char_length(trim(channel_url)) > 0
+  );
+
 -- Create a function to handle new user signup
 create or replace function public.handle_new_user()
 returns trigger as $$

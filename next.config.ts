@@ -5,14 +5,17 @@ const nextConfig: NextConfig = {
   images: {
     remotePatterns: [
       {
-        protocol: 'https',
-        hostname: 'cdn.simpleicons.org',
+        protocol: "https",
+        hostname: "cdn.simpleicons.org",
       },
       {
-        protocol: 'https',
-        hostname: 'images.unsplash.com',
+        protocol: "https",
+        hostname: "images.unsplash.com",
       },
     ],
+  },
+  turbopack: {
+    root: __dirname,
   },
 };
 

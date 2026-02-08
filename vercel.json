@@ -1,12 +1,3 @@
 {
-  "crons": [
-    {
-      "path": "/api/cron/schedule-waves",
-      "schedule": "0 4 * * *"
-    },
-    {
-      "path": "/api/cron/generate-bounties",
-      "schedule": "0 3 * * *"
-    }
-  ]
+  "crons": []
 }

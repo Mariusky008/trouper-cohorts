@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Troupers - La discipline créative",
-  description: "Rejoins une escouade de créateurs et explose tes résultats.",
+  title: "Trouper — Sprint Local",
+  description: "Cohortes de 14 jours pour devenir ultra visible localement.",
 };
 
 export default function RootLayout({
