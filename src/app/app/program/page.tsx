@@ -2,7 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle2, Lock, Target, CalendarDays } from "lucide-react";
+import { CheckCircle2, Lock, Target, CalendarDays, Users, Video, Rocket, Brain, GlassWater, ArrowDown, Trophy } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 function computeDayIndex(startDate: string | null) {
@@ -12,6 +12,16 @@ function computeDayIndex(startDate: string | null) {
   const diffDays = Math.floor((now - start) / (1000 * 60 * 60 * 24));
   return diffDays + 1;
 }
+
+const TYPE_CONFIG: Record<string, { icon: any, color: string, bg: string, label: string }> = {
+  solo: { icon: Target, color: "text-orange-500", bg: "bg-orange-50 dark:bg-orange-950/20", label: "Challenge" },
+  duo: { icon: Users, color: "text-blue-500", bg: "bg-blue-50 dark:bg-blue-950/20", label: "Duo" },
+  trio: { icon: Users, color: "text-indigo-500", bg: "bg-indigo-50 dark:bg-indigo-950/20", label: "Trio" },
+  workshop: { icon: Video, color: "text-purple-500", bg: "bg-purple-50 dark:bg-purple-950/20", label: "Live" },
+  coaching: { icon: Rocket, color: "text-green-500", bg: "bg-green-50 dark:bg-green-950/20", label: "Coaching" },
+  quiz: { icon: Brain, color: "text-yellow-500", bg: "bg-yellow-50 dark:bg-yellow-950/20", label: "Quiz" },
+  networking: { icon: GlassWater, color: "text-pink-500", bg: "bg-pink-50 dark:bg-pink-950/20", label: "Apéro" },
+};
 
 export default async function ProgramPage() {
   const supabase = await createClient();
@@ -50,7 +60,7 @@ export default async function ProgramPage() {
   // Récupérer toutes les missions
   const { data: missions } = await supabase
     .from("missions")
-    .select("id, day_index, title, description, proof_type")
+    .select("id, day_index, title, description, proof_type, mission_type")
     .eq("cohort_id", cohortRes.data.id)
     .order("day_index", { ascending: true });
 
@@ -74,61 +84,85 @@ export default async function ProgramPage() {
         </p>
       </div>
 
-      <div className="grid gap-4">
+      <div className="relative pl-4 space-y-8">
+        {/* Ligne verticale de timeline */}
+        <div className="absolute left-[27px] top-4 bottom-4 w-0.5 bg-border -z-10" />
+
         {days.map((day) => {
           const mission = missions?.find((m) => m.day_index === day);
           const isCompleted = mission && completedMissionIds.has(mission.id);
           const isToday = day === currentDay;
-          const isLocked = day > currentDay; // On peut changer ça si on veut tout montrer
+          const isLocked = day > currentDay;
           
-          // Si on veut tout montrer (spoiler), on enlève le lock sur le contenu
-          // Mais on garde le style "futur".
-          // Ici je choisis de tout montrer pour "voir ce qui m'attend", 
-          // mais visuellement distinguer passé/présent/futur.
+          const type = mission?.mission_type || "solo";
+          const config = TYPE_CONFIG[type] || TYPE_CONFIG["solo"];
+          const Icon = config.icon;
 
           return (
-            <Card 
-              key={day} 
-              className={cn(
-                "transition-all",
+            <div key={day} className="relative flex gap-4">
+              {/* Badge Jour / Statut */}
+              <div className={cn(
+                "flex h-14 w-14 shrink-0 items-center justify-center rounded-full border-2 bg-background z-10 transition-all",
+                isCompleted ? "border-green-500 text-green-500" :
+                isToday ? "border-primary text-primary shadow-lg scale-110" :
+                "border-muted text-muted-foreground"
+              )}>
+                {isCompleted ? <CheckCircle2 className="h-6 w-6" /> : <span className="font-bold text-lg">{day}</span>}
+              </div>
+
+              {/* Carte Mission */}
+              <Card className={cn(
+                "flex-1 transition-all overflow-hidden",
                 isToday ? "border-primary border-2 shadow-md" : "border-border",
-                isLocked ? "opacity-70 bg-muted/20" : "",
-                isCompleted ? "bg-green-50/50 dark:bg-green-950/10 border-green-200 dark:border-green-900" : ""
-              )}
-            >
-              <CardHeader className="flex flex-row items-start gap-4 space-y-0 pb-3">
-                <div className={cn(
-                  "flex h-10 w-10 shrink-0 items-center justify-center rounded-full border text-sm font-bold",
-                  isCompleted ? "bg-green-100 text-green-600 border-green-200" : 
-                  isToday ? "bg-primary text-primary-foreground border-primary" : "bg-muted text-muted-foreground"
-                )}>
-                  {isCompleted ? <CheckCircle2 className="h-6 w-6" /> : day}
+                isLocked ? "opacity-60 grayscale-[0.5]" : "",
+                config.bg
+              )}>
+                <div className="absolute top-0 right-0 p-2">
+                    <Badge variant="secondary" className={cn("text-[10px] uppercase font-bold", config.color, "bg-white/80 backdrop-blur-sm")}>
+                        {config.label}
+                    </Badge>
                 </div>
                 
-                <div className="space-y-1 flex-1">
-                  <div className="flex items-center justify-between">
-                    <h3 className={cn("font-semibold leading-none", isToday && "text-primary")}>
-                      {mission ? mission.title : `Jour ${day}`}
-                    </h3>
-                    {isToday && <Badge>Aujourd'hui</Badge>}
-                    {isLocked && !isToday && <Lock className="h-3 w-3 text-muted-foreground" />}
-                  </div>
-                  
+                <CardHeader className="pb-2 pt-4 px-4">
+                    <div className="flex items-center gap-2 mb-1">
+                        <Icon className={cn("h-5 w-5", config.color)} />
+                        <h3 className={cn("font-bold text-lg leading-tight", isToday ? "text-foreground" : "text-muted-foreground")}>
+                            {mission ? mission.title : "Repos / Mystère"}
+                        </h3>
+                    </div>
+                </CardHeader>
+                <CardContent className="pb-4 px-4">
                   {mission ? (
                     <p className="text-sm text-muted-foreground line-clamp-2">
-                      {mission.description || "Pas de description."}
+                      {mission.description || "Prépare-toi..."}
                     </p>
                   ) : (
                     <p className="text-sm text-muted-foreground italic">
-                      Mission mystère...
+                      Pas de mission programmée.
                     </p>
                   )}
-                </div>
-              </CardHeader>
-            </Card>
+                  {isToday && (
+                      <div className="mt-3">
+                          <Badge className="animate-pulse">En cours</Badge>
+                      </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
           );
         })}
+        
+        {/* Fin du parcours */}
+        <div className="relative flex gap-4 opacity-50">
+            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full border-2 border-dashed border-muted text-muted-foreground bg-background z-10">
+                <Trophy className="h-6 w-6" />
+            </div>
+            <div className="flex-1 py-4 text-muted-foreground italic">
+                La gloire éternelle...
+            </div>
+        </div>
       </div>
     </div>
   );
 }
+

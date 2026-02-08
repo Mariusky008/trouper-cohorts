@@ -36,6 +36,7 @@ export default async function EditMissionPage({
     const title = String(formData.get("title") || "");
     const description = String(formData.get("description") || "");
     const proofType = String(formData.get("proof_type") || "url");
+    const missionType = String(formData.get("mission_type") || "solo");
 
     await supabase
       .from("missions")
@@ -43,6 +44,7 @@ export default async function EditMissionPage({
         title,
         description,
         proof_type: proofType,
+        mission_type: missionType,
       })
       .eq("id", missionId);
 
@@ -86,18 +88,38 @@ export default async function EditMissionPage({
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="proof_type">Type de preuve attendue</Label>
-              <Select name="proof_type" defaultValue={mission.proof_type}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="url">Lien (URL)</SelectItem>
-                  <SelectItem value="text">Texte libre</SelectItem>
-                  <SelectItem value="image">Image (Upload) - Bientôt</SelectItem>
-                </SelectContent>
-              </Select>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="proof_type">Type de preuve attendue</Label>
+                <Select name="proof_type" defaultValue={mission.proof_type}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="url">Lien (URL)</SelectItem>
+                    <SelectItem value="text">Texte libre</SelectItem>
+                    <SelectItem value="image">Image (Upload)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="mission_type">Type de Journée</Label>
+                <Select name="mission_type" defaultValue={mission.mission_type || "solo"}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="solo">🔥 Mission Solo</SelectItem>
+                    <SelectItem value="duo">🤝 Duo (Binôme)</SelectItem>
+                    <SelectItem value="trio">👥 Trio</SelectItem>
+                    <SelectItem value="workshop">🎥 Atelier Live</SelectItem>
+                    <SelectItem value="coaching">🚀 Coaching</SelectItem>
+                    <SelectItem value="quiz">🧠 Quiz</SelectItem>
+                    <SelectItem value="networking">🍸 Networking</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
             <div className="pt-4 flex justify-between">
