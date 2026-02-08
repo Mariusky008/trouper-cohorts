@@ -22,7 +22,7 @@ export default function Home() {
               <Link href="/login">Connexion</Link>
             </Button>
             <Button asChild>
-              <Link href="/secret-cohorts">Rejoindre une cohorte</Link>
+              <Link href="/#join">Rejoindre une cohorte</Link>
             </Button>
           </div>
         </div>
@@ -49,7 +49,7 @@ export default function Home() {
               Le sprint intensif pour dominer votre marché local.
             </p>
 
-            <div className="pt-8 w-full max-w-md mx-auto">
+            <div id="join" className="pt-8 w-full max-w-md mx-auto">
               <PreRegistrationForm />
             </div>
 
@@ -117,7 +117,7 @@ export default function Home() {
                 Fini de poster dans le vide. Rejoignez une escouade locale et décuplez votre visibilité.
               </p>
               <Button size="lg" variant="secondary" className="h-14 px-8 text-lg rounded-full" asChild>
-                <Link href="/secret-cohorts">
+                <Link href="/#join">
                   Rejoindre la prochaine cohorte
                 </Link>
               </Button>
