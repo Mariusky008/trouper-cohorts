@@ -55,7 +55,7 @@ export default async function CohortDetailPage({
 
   // Calculer les membres sans groupe pour le select
   const membersInGroups = new Set(
-    groupsRes.data?.flatMap(g => g.buddy_group_members.map(m => m.user_id)) || []
+    groupsRes.data?.flatMap(g => g.buddy_group_members.map((m: any) => m.user_id)) || []
   );
   
   const availableMembers = membersRes.data?.filter(m => !membersInGroups.has(m.user_id)) || [];
