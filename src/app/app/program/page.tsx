@@ -92,7 +92,7 @@ export default async function ProgramPage() {
           const mission = missions?.find((m) => m.day_index === day);
           const isCompleted = mission && completedMissionIds.has(mission.id);
           const isToday = day === currentDay;
-          const isLocked = day > currentDay;
+          const isFuture = day > currentDay;
           
           const type = mission?.mission_type || "solo";
           const config = TYPE_CONFIG[type] || TYPE_CONFIG["solo"];
@@ -114,10 +114,15 @@ export default async function ProgramPage() {
               <Card className={cn(
                 "flex-1 transition-all overflow-hidden",
                 isToday ? "border-primary border-2 shadow-md" : "border-border",
-                isLocked ? "opacity-60 grayscale-[0.5]" : "",
+                // J'ai retiré l'opacité et le grayscale pour que tout soit visible
                 config.bg
               )}>
-                <div className="absolute top-0 right-0 p-2">
+                <div className="absolute top-0 right-0 p-2 flex gap-2">
+                    {isFuture && (
+                        <Badge variant="outline" className="text-[10px] uppercase font-bold bg-white/50 backdrop-blur-sm border-muted-foreground/20">
+                            À venir
+                        </Badge>
+                    )}
                     <Badge variant="secondary" className={cn("text-[10px] uppercase font-bold", config.color, "bg-white/80 backdrop-blur-sm")}>
                         {config.label}
                     </Badge>
