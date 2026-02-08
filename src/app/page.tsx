@@ -5,6 +5,8 @@ import { GlitchLogo } from "@/components/ui/glitch-logo";
 import { ArrowRight, CheckCircle2, Trophy, Users, Zap } from "lucide-react";
 import { PreRegistrationForm } from "@/components/pre-registration-form";
 
+import { Footer } from "@/components/footer";
+
 export default function Home() {
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -126,11 +128,7 @@ export default function Home() {
         </section>
       </main>
 
-      <footer className="py-8 border-t bg-muted/20">
-        <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
-          <p>© {new Date().getFullYear()} Popey Academy. Tous droits réservés.</p>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }
