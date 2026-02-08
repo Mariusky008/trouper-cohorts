@@ -12,6 +12,7 @@ import { createClient } from "@/lib/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface ProfileData {
+  id?: string;
   display_name: string | null;
   bio: string | null;
   instagram_handle: string | null;
@@ -55,19 +56,33 @@ export function ProfileForm({ initialData }: { initialData: ProfileData }) {
       
       const supabase = createClient();
       
+      // 1. Upload
       const { error: uploadError } = await supabase.storage.from('avatars').upload(filePath, file);
 
       if (uploadError) {
         throw uploadError;
       }
 
+      // 2. Get URL
       const { data } = supabase.storage.from('avatars').getPublicUrl(filePath);
+      const publicUrl = data.publicUrl;
       
-      setAvatarUrl(data.publicUrl);
-      toast.success("Avatar téléchargé ! Pense à enregistrer.");
-    } catch (error) {
+      // 3. Save directly to profile (Client-side update)
+      if (initialData.id) {
+          const { error: updateError } = await supabase
+            .from('profiles')
+            .update({ avatar_url: publicUrl })
+            .eq('id', initialData.id);
+            
+          if (updateError) throw updateError;
+      }
+
+      setAvatarUrl(publicUrl);
+      toast.success("Photo de profil mise à jour !");
+      
+    } catch (error: any) {
         console.error(error);
-      toast.error("Erreur upload image");
+        toast.error(`Erreur: ${error.message || "Impossible de mettre à jour la photo"}`);
     } finally {
       setUploading(false);
     }

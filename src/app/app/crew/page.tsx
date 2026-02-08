@@ -74,7 +74,7 @@ export default async function CrewPage() {
             <Card key={profile.id} className={isMe ? "border-primary/50 bg-primary/5" : ""}>
               <CardHeader className="flex flex-row items-center gap-4 pb-2">
                 <Avatar className="h-14 w-14 border-2 border-background">
-                  <AvatarImage src={profile.avatar_url} alt={profile.display_name} />
+                  <AvatarImage src={profile.avatar_url || undefined} alt={profile.display_name} className="object-cover" />
                   <AvatarFallback className="font-bold">
                     {profile.display_name?.substring(0, 2).toUpperCase() || "??"}
                   </AvatarFallback>
