@@ -20,7 +20,7 @@ export function TopNav({ children }: { children?: React.ReactNode }) {
       <div className="container mx-auto max-w-5xl px-4 h-16 flex items-center justify-between">
         <div className="flex items-center gap-8">
           <Link href="/app/today" className="font-bold text-xl tracking-tight flex items-center gap-2">
-            <span className="bg-primary text-primary-foreground px-2 py-0.5 rounded text-sm font-black uppercase">Trouper</span>
+            <span className="bg-primary text-primary-foreground px-2 py-0.5 rounded text-sm font-black uppercase">Popey</span>
           </Link>
           <nav className="flex items-center gap-6">
             {links.map((link) => {

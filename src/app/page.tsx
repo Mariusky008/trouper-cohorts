@@ -12,9 +12,9 @@ export default function Home() {
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
              <div className="h-8 w-8 relative overflow-hidden rounded bg-primary flex items-center justify-center">
-                <span className="font-black text-primary-foreground text-xs">TR</span>
+                <span className="font-black text-primary-foreground text-xs">PA</span>
              </div>
-            <span className="font-bold text-lg tracking-tight">Trouper</span>
+            <span className="font-bold text-lg tracking-tight">Popey Academy</span>
           </div>
           <div className="flex items-center gap-4">
             <Button variant="ghost" asChild className="hidden sm:inline-flex">
@@ -36,9 +36,9 @@ export default function Home() {
             </Badge>
             
             <h1 className="text-4xl md:text-6xl lg:text-7xl font-black tracking-tighter text-balance">
-              Devenez incontournable <br className="hidden md:block" />
+              Popey Academy <br className="hidden md:block" />
               <span className="text-primary bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/60">
-                dans votre ville.
+                La force du groupe.
               </span>
             </h1>
             
@@ -136,7 +136,7 @@ export default function Home() {
 
       <footer className="py-8 border-t bg-muted/20">
         <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
-          <p>© {new Date().getFullYear()} Trouper. Tous droits réservés.</p>
+          <p>© {new Date().getFullYear()} Popey Academy. Tous droits réservés.</p>
         </div>
       </footer>
     </div>

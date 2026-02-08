@@ -32,7 +32,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       
       {/* Mobile Header simple */}
       <header className="md:hidden border-b bg-background/80 backdrop-blur-md sticky top-0 z-40 px-4 py-3 flex items-center justify-between">
-         <span className="bg-primary text-primary-foreground px-2 py-0.5 rounded text-sm font-black uppercase tracking-widest">Trouper</span>
+         <span className="bg-primary text-primary-foreground px-2 py-0.5 rounded text-sm font-black uppercase tracking-widest">Popey</span>
       </header>
 
       <main className="container mx-auto max-w-5xl px-4 py-6 md:py-8">{children}</main>

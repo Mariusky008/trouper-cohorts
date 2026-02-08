@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Trouper — Sprint Local",
+  title: "Popey Academy — La force du groupe",
   description: "Cohortes de 14 jours pour devenir ultra visible localement.",
 };
 

@@ -22,9 +22,9 @@ export default async function LoginPage({
       <div className="w-full max-w-md space-y-4">
         <div className="text-center space-y-2">
           <div className="h-10 w-10 mx-auto bg-primary text-primary-foreground rounded flex items-center justify-center font-black text-sm">
-            TR
+            PA
           </div>
-          <h1 className="text-2xl font-bold tracking-tight">Bon retour parmi nous</h1>
+          <h1 className="text-2xl font-bold tracking-tight">Bienvenue sur Popey Academy</h1>
           <p className="text-sm text-muted-foreground">
             Entrez votre email pour recevoir votre lien de connexion magique.
           </p>
