@@ -240,8 +240,10 @@ export default async function CohortDetailPage({
                       {m.department_code || "—"}
                     </TableCell>
                     <TableCell>{m.member_role}</TableCell>
-                    <TableCell className="text-sm text-muted-foreground">
-                      {new Date(m.joined_at).toLocaleDateString()}
+                    <TableCell className="text-right">
+                      <Button variant="ghost" size="sm" asChild>
+                        <Link href={`/admin/cohorts/${id}/participants/${m.user_id}`}>Gérer</Link>
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))}
