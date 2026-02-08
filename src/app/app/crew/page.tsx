@@ -58,8 +58,16 @@ export default async function CrewPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {members?.map((member) => {
-          // @ts-expect-error: supabase join typing
-          const profile = member.profiles;
+          const profile = member.profiles as unknown as {
+            id: string;
+            display_name: string;
+            trade: string;
+            bio: string;
+            instagram_handle: string;
+            linkedin_url: string;
+            website_url: string;
+            avatar_url: string;
+          };
           const isMe = profile.id === user.id;
 
           return (
