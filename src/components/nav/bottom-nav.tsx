@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { CalendarCheck, Trophy, User, CheckCircle2, Map } from "lucide-react";
+import { CalendarCheck, Trophy, User, Users, Map } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export function BottomNav() {
@@ -20,9 +20,9 @@ export function BottomNav() {
       icon: Map,
     },
     {
-      href: "/app/proof",
-      label: "Preuves",
-      icon: CheckCircle2,
+      href: "/app/crew",
+      label: "Équipage",
+      icon: Users,
     },
     {
       href: "/app/leaderboard",
