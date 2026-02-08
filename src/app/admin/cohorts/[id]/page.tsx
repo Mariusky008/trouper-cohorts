@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -8,8 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Link from "next/link";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-
-import { Download } from "lucide-react";
+import { Download, Users, Trash2, UserPlus, X } from "lucide-react";
+import { createBuddyGroup, deleteBuddyGroup, addMemberToGroup, removeMemberFromGroup } from "@/app/actions/buddy";
 
 export default async function CohortDetailPage({
   params,
@@ -42,9 +42,23 @@ export default async function CohortDetailPage({
   // Récupérer les participants
   const membersRes = await supabase
     .from("cohort_members")
-    .select("*, profiles(display_name, trade, department_code)")
+    .select("*, profiles(id, display_name, trade, department_code, instagram_handle)")
     .eq("cohort_id", id)
     .order("joined_at", { ascending: false });
+
+  // Récupérer les groupes
+  const groupsRes = await supabase
+    .from("buddy_groups")
+    .select("*, buddy_group_members(user_id, profiles(display_name))")
+    .eq("cohort_id", id)
+    .order("created_at", { ascending: true });
+
+  // Calculer les membres sans groupe pour le select
+  const membersInGroups = new Set(
+    groupsRes.data?.flatMap(g => g.buddy_group_members.map(m => m.user_id)) || []
+  );
+  
+  const availableMembers = membersRes.data?.filter(m => !membersInGroups.has(m.user_id)) || [];
 
   async function updateCohort(formData: FormData) {
     "use server";
@@ -82,7 +96,6 @@ export default async function CohortDetailPage({
     "use server";
     const supabase = await createClient();
     
-    // Génère 14 missions placeholders si elles n'existent pas
     const missions = Array.from({ length: 14 }, (_, i) => ({
       cohort_id: id,
       day_index: i + 1,
@@ -96,7 +109,7 @@ export default async function CohortDetailPage({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-20">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Button asChild variant="outline" size="sm">
@@ -115,11 +128,12 @@ export default async function CohortDetailPage({
         </div>
       )}
 
-      <Tabs defaultValue={search?.tab === "missions" ? "missions" : search?.tab === "participants" ? "participants" : "settings"}>
+      <Tabs defaultValue={search?.tab || "settings"}>
         <TabsList>
           <TabsTrigger value="settings">Paramètres</TabsTrigger>
           <TabsTrigger value="missions">Missions ({missionsRes.data?.length || 0})</TabsTrigger>
           <TabsTrigger value="participants">Participants ({membersRes.data?.length || 0})</TabsTrigger>
+          <TabsTrigger value="groups">Groupes ({groupsRes.data?.length || 0})</TabsTrigger>
         </TabsList>
 
         <TabsContent value="settings" className="space-y-4 mt-4">
@@ -216,7 +230,7 @@ export default async function CohortDetailPage({
           </Card>
         </TabsContent>
 
-          <TabsContent value="participants" className="space-y-4 mt-4">
+        <TabsContent value="participants" className="space-y-4 mt-4">
              <div className="flex justify-end">
                <Button variant="outline" size="sm" asChild>
                  <a href={`/admin/cohorts/${id}/export`} target="_blank" rel="noopener noreferrer">
@@ -230,32 +244,42 @@ export default async function CohortDetailPage({
                 <TableRow>
                   <TableHead>Nom</TableHead>
                   <TableHead>Dép.</TableHead>
-                  <TableHead>Rôle</TableHead>
-                  <TableHead>Rejoint le</TableHead>
+                  <TableHead>Instagram</TableHead>
+                  <TableHead className="text-right">Action</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {membersRes.data?.map((m) => (
-                  <TableRow key={m.user_id}>
-                    <TableCell>
-                      <div className="font-medium">
-                        {Array.isArray(m.profiles) ? m.profiles[0]?.display_name : m.profiles?.display_name || "Anonyme"}
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        {Array.isArray(m.profiles) ? m.profiles[0]?.trade : m.profiles?.trade}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      {m.department_code || "—"}
-                    </TableCell>
-                    <TableCell>{m.member_role}</TableCell>
-                    <TableCell className="text-right">
-                      <Button variant="ghost" size="sm" asChild>
-                        <Link href={`/admin/cohorts/${id}/participants/${m.user_id}`}>Gérer</Link>
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                {membersRes.data?.map((m) => {
+                    // @ts-expect-error
+                    const profile = m.profiles;
+                    return (
+                      <TableRow key={m.user_id}>
+                        <TableCell>
+                          <div className="font-medium">
+                            {profile?.display_name || "Anonyme"}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            {profile?.trade || "—"}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          {m.department_code || "—"}
+                        </TableCell>
+                        <TableCell>
+                            {profile?.instagram_handle ? (
+                                <span className="text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded">
+                                    @{profile.instagram_handle}
+                                </span>
+                            ) : "—"}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button variant="ghost" size="sm" asChild>
+                            <Link href={`/admin/cohorts/${id}/participants/${m.user_id}`}>Gérer</Link>
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    );
+                })}
                  {membersRes.data?.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={4} className="text-center h-24 text-muted-foreground">
@@ -267,7 +291,85 @@ export default async function CohortDetailPage({
             </Table>
           </Card>
         </TabsContent>
+
+        <TabsContent value="groups" className="space-y-6 mt-4">
+            <div className="flex justify-between items-center">
+                <h2 className="text-lg font-semibold">Buddy System</h2>
+                <form action={createBuddyGroup} className="flex gap-2">
+                    <input type="hidden" name="cohort_id" value={id} />
+                    <Input name="name" placeholder="Nom du groupe (ex: Duo Alpha)" className="w-64" required />
+                    <Button type="submit" size="sm">
+                        <Users className="mr-2 h-4 w-4" /> Créer Groupe
+                    </Button>
+                </form>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {groupsRes.data?.map((group) => (
+                    <Card key={group.id} className="relative">
+                        <CardHeader className="pb-2">
+                            <div className="flex justify-between items-start">
+                                <CardTitle className="text-base">{group.name}</CardTitle>
+                                <form action={deleteBuddyGroup}>
+                                    <input type="hidden" name="group_id" value={group.id} />
+                                    <input type="hidden" name="cohort_id" value={id} />
+                                    <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive hover:bg-destructive/10">
+                                        <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                </form>
+                            </div>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <div className="space-y-2">
+                                {group.buddy_group_members.length === 0 ? (
+                                    <p className="text-sm text-muted-foreground italic">Vide</p>
+                                ) : (
+                                    group.buddy_group_members.map((member: any) => (
+                                        <div key={member.user_id} className="flex justify-between items-center text-sm border p-2 rounded bg-muted/20">
+                                            <span>{member.profiles?.display_name || "Anonyme"}</span>
+                                            <form action={removeMemberFromGroup}>
+                                                <input type="hidden" name="group_id" value={group.id} />
+                                                <input type="hidden" name="user_id" value={member.user_id} />
+                                                <input type="hidden" name="cohort_id" value={id} />
+                                                <Button variant="ghost" size="icon" className="h-5 w-5">
+                                                    <X className="h-3 w-3" />
+                                                </Button>
+                                            </form>
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+
+                            <form action={addMemberToGroup} className="flex gap-2">
+                                <input type="hidden" name="group_id" value={group.id} />
+                                <input type="hidden" name="cohort_id" value={id} />
+                                <Select name="user_id" required>
+                                    <SelectTrigger className="h-8">
+                                        <SelectValue placeholder="Ajouter..." />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {availableMembers.map((m) => {
+                                            // @ts-expect-error
+                                            const name = m.profiles?.display_name || "Anonyme";
+                                            return (
+                                                <SelectItem key={m.user_id} value={m.user_id}>
+                                                    {name}
+                                                </SelectItem>
+                                            );
+                                        })}
+                                    </SelectContent>
+                                </Select>
+                                <Button type="submit" size="sm" variant="outline" className="px-2">
+                                    <UserPlus className="h-4 w-4" />
+                                </Button>
+                            </form>
+                        </CardContent>
+                    </Card>
+                ))}
+            </div>
+        </TabsContent>
       </Tabs>
     </div>
   );
 }
+
