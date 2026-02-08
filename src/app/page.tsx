@@ -65,10 +65,7 @@ export default function Home() {
             </Button>
             <Button className="bg-orange-600 hover:bg-orange-500 text-white font-black uppercase tracking-wider -skew-x-12" asChild>
                 <Link href="#join">
-                    <span className="skew-x-12">
-                        <span className="hidden sm:inline">Monter à Bord</span>
-                        <span className="sm:hidden">Go</span>
-                    </span>
+                    <span className="skew-x-12">Embarquer</span>
                 </Link>
             </Button>
           </div>
@@ -171,15 +168,10 @@ export default function Home() {
                             Le problème n'est pas votre compétence, c'est l'absence de <span className="text-orange-400 font-bold uppercase">cadre collectif</span>.
                         </p>
                     </div>
-                    <div className="pt-8">
-                        <Button variant="outline" className="border-orange-500 text-orange-400 hover:bg-orange-500 hover:text-white uppercase font-bold tracking-widest" asChild>
-                            <Link href="#join">Je veux une carte et un cap</Link>
-                        </Button>
-                    </div>
                 </FadeIn>
 
                 <div className="pt-8 text-center">
-                    <Button className="bg-white text-blue-900 hover:bg-blue-50 font-black uppercase tracking-widest h-14 px-8 text-lg" asChild>
+                    <Button className="bg-white text-blue-900 hover:bg-blue-50 font-black uppercase tracking-widest h-12 px-8" asChild>
                         <Link href="#join">Réserver ma place dans l'Armada</Link>
                     </Button>
                 </div>
