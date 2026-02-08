@@ -122,7 +122,7 @@ export default function Home() {
                     <Button size="lg" className="h-16 px-10 bg-white text-slate-900 hover:bg-slate-200 font-black text-xl uppercase tracking-widest rounded-none -skew-x-12 border-b-4 border-slate-400 active:border-b-0 active:translate-y-1 transition-all" asChild>
                         <Link href="#join">
                             <span className="skew-x-12 flex items-center gap-3">
-                                Je Prends la Barre <Ship className="h-6 w-6" />
+                                Je Prends la Barre de ma communication <Ship className="h-6 w-6" />
                             </span>
                         </Link>
                     </Button>
