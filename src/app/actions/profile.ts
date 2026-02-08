@@ -16,20 +16,23 @@ export async function updateProfile(formData: FormData) {
   const instagram = String(formData.get("instagram") || "").trim();
   const linkedin = String(formData.get("linkedin") || "").trim();
   const website = String(formData.get("website") || "").trim();
-  
-  // Note: Avatar upload is handled client-side via Supabase Storage usually, 
-  // but here we might just store the URL if provided or handle it later.
-  // For MVP, we'll stick to text fields.
+  const avatarUrl = formData.get("avatar_url");
 
-  const { error } = await supabase
-    .from("profiles")
-    .update({
+  const updates: Record<string, any> = {
       display_name: displayName || null,
       bio: bio || null,
       instagram_handle: instagram || null,
       linkedin_url: linkedin || null,
       website_url: website || null,
-    })
+  };
+
+  if (typeof avatarUrl === "string" && avatarUrl.length > 0) {
+      updates.avatar_url = avatarUrl;
+  }
+
+  const { error } = await supabase
+    .from("profiles")
+    .update(updates)
     .eq("id", user.id);
 
   if (error) {

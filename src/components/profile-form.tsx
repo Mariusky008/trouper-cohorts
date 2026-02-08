@@ -7,7 +7,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { updateProfile } from "@/app/actions/profile";
 import { toast } from "sonner";
-import { Loader2, Instagram, Linkedin, Globe } from "lucide-react";
+import { Loader2, Instagram, Linkedin, Globe, Camera } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface ProfileData {
   display_name: string | null;
@@ -15,10 +17,13 @@ interface ProfileData {
   instagram_handle: string | null;
   linkedin_url: string | null;
   website_url: string | null;
+  avatar_url?: string | null;
 }
 
 export function ProfileForm({ initialData }: { initialData: ProfileData }) {
   const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(initialData.avatar_url || null);
 
   async function handleSubmit(formData: FormData) {
     setLoading(true);
@@ -36,8 +41,68 @@ export function ProfileForm({ initialData }: { initialData: ProfileData }) {
     }
   }
 
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    try {
+      setUploading(true);
+      if (!e.target.files || e.target.files.length === 0) {
+        throw new Error('You must select an image to upload.');
+      }
+
+      const file = e.target.files[0];
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+      const filePath = `${fileName}`;
+      
+      const supabase = createClient();
+      
+      const { error: uploadError } = await supabase.storage.from('avatars').upload(filePath, file);
+
+      if (uploadError) {
+        throw uploadError;
+      }
+
+      const { data } = supabase.storage.from('avatars').getPublicUrl(filePath);
+      
+      setAvatarUrl(data.publicUrl);
+      toast.success("Avatar téléchargé ! Pense à enregistrer.");
+    } catch (error) {
+        console.error(error);
+      toast.error("Erreur upload image");
+    } finally {
+      setUploading(false);
+    }
+  };
+
   return (
     <form action={handleSubmit} className="space-y-6">
+      <input type="hidden" name="avatar_url" value={avatarUrl || ""} />
+      
+      <div className="flex flex-col items-center justify-center space-y-4">
+        <div className="relative">
+            <Avatar className="h-24 w-24 border-2 border-border">
+                <AvatarImage src={avatarUrl || undefined} className="object-cover" />
+                <AvatarFallback className="text-2xl font-bold bg-muted">
+                    {initialData.display_name?.substring(0, 2).toUpperCase() || "??"}
+                </AvatarFallback>
+            </Avatar>
+            <label 
+                htmlFor="avatar-upload" 
+                className="absolute bottom-0 right-0 p-1.5 bg-primary text-primary-foreground rounded-full cursor-pointer hover:bg-primary/90 transition-colors shadow-sm"
+            >
+                {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
+            </label>
+            <input 
+                id="avatar-upload" 
+                type="file" 
+                accept="image/*" 
+                className="hidden" 
+                onChange={handleUpload} 
+                disabled={uploading}
+            />
+        </div>
+        <p className="text-xs text-muted-foreground">Clique sur l'icône pour changer ta photo</p>
+      </div>
+
       <div className="space-y-2">
         <Label htmlFor="display_name">Nom affiché</Label>
         <Input 
