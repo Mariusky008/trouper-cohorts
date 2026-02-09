@@ -56,6 +56,33 @@ export function PreRegistrationForm() {
         />
       </div>
 
+      <div className="grid grid-cols-2 gap-2">
+        <select 
+            name="social_network" 
+            className="flex h-10 w-full rounded-md border border-input bg-background/50 backdrop-blur-sm px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 text-slate-600"
+            defaultValue=""
+        >
+            <option value="" disabled>Réseau favori</option>
+            <option value="linkedin">LinkedIn</option>
+            <option value="instagram">Instagram</option>
+            <option value="tiktok">TikTok</option>
+            <option value="facebook">Facebook</option>
+            <option value="autre">Autre</option>
+        </select>
+
+        <select 
+            name="followers_count" 
+            className="flex h-10 w-full rounded-md border border-input bg-background/50 backdrop-blur-sm px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 text-slate-600"
+            defaultValue=""
+        >
+            <option value="" disabled>Audience</option>
+            <option value="debutant">Je débute (0-100)</option>
+            <option value="croissance">100 - 1000</option>
+            <option value="confirme">1000 - 5000</option>
+            <option value="expert">5000+</option>
+        </select>
+      </div>
+
         <Button type="submit" size="lg" className="h-12 w-full mt-2 font-bold uppercase tracking-wider" disabled={loading}>
           {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Rejoindre la liste d'attente"}
         </Button>

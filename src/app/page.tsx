@@ -100,7 +100,7 @@ export default function Home() {
             <div className="space-y-6">
                 <FloatingIcon>
                     <Badge className="bg-orange-600 text-white border-0 px-4 py-1 text-sm uppercase tracking-widest font-black mb-4">
-                        ⚓️ Expédition Business • 14 Jours
+                        ⚓️ Prochaine Session : 10 au 24 Mars • 14 Jours
                     </Badge>
                 </FloatingIcon>
                 

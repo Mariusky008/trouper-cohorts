@@ -15,6 +15,8 @@ export async function registerInterest(formData: FormData) {
   const phone = String(formData.get("phone") || "").trim();
   const trade = String(formData.get("trade") || "").trim();
   const departmentCode = String(formData.get("department_code") || "").trim();
+  const socialNetwork = String(formData.get("social_network") || "").trim();
+  const followersCount = String(formData.get("followers_count") || "").trim();
 
   if (!email) {
     return { error: "L'email est requis." };
@@ -31,20 +33,22 @@ export async function registerInterest(formData: FormData) {
     return { success: true, message: "Vous êtes déjà sur la liste d'attente !" };
   }
 
-  // Tentative 1 : Avec Téléphone
+  // Tentative 1 : Avec tous les champs
   const { error } = await supabase.from("pre_registrations").insert({
     email,
     phone: phone || null,
     trade: trade || null,
     department_code: departmentCode || null,
+    social_network: socialNetwork || null,
+    followers_count: followersCount || null,
     status: "pending",
   });
 
   if (error) {
-    console.error("Registration error (attempt 1 - with phone):", error);
+    console.error("Registration error (attempt 1):", error);
 
-    // Tentative 2 : Sans Téléphone (Fallback systématique)
-    console.log("Retrying without phone column...");
+    // Tentative 2 : Fallback minimal (sans phone ni social si colonnes manquantes)
+    console.log("Retrying minimal insert...");
     const { error: retryError } = await supabase.from("pre_registrations").insert({
         email,
         trade: trade || null,
