@@ -5,13 +5,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { submitRegistration } from "@/app/actions/register";
 import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
+import { Loader2, Check } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 
 export function PreRegistrationForm() {
   const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
   const [sessions, setSessions] = useState<{id: string, label: string}[]>([]);
   const [isOtherTrade, setIsOtherTrade] = useState(false);
 
@@ -35,14 +36,35 @@ export function PreRegistrationForm() {
         if (typeof res.error === 'string') {
              toast.error(res.error);
         } else {
-             // Affiche la première erreur Zod
              const firstError = Object.values(res.error)[0];
              toast.error(Array.isArray(firstError) ? firstError[0] : "Erreur de validation");
         }
     } else {
-      toast.success("Candidature envoyée ! Vérifiez vos emails.");
-      (event.target as HTMLFormElement).reset();
+      setSuccess(true);
+      toast.success("Candidature envoyée !");
     }
+  }
+
+  if (success) {
+    return (
+        <div className="bg-white/95 backdrop-blur-xl p-8 rounded-2xl shadow-2xl border border-white/50 text-center animate-in zoom-in-95 duration-500 max-w-md mx-auto my-10">
+            <div className="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner">
+                <Check className="w-12 h-12 text-green-600" strokeWidth={3} />
+            </div>
+            <h2 className="text-3xl font-extrabold text-slate-900 mb-4 tracking-tight">Bienvenue à bord ! ⚓️</h2>
+            <div className="space-y-4 text-slate-600 mb-8">
+                <p className="text-lg">
+                    Ta candidature a bien été reçue.
+                </p>
+                <p className="text-sm bg-blue-50 p-4 rounded-lg text-blue-800 border border-blue-100">
+                    📧 Un email de confirmation vient de t'être envoyé. Vérifie ta boîte de réception (et tes spams) !
+                </p>
+            </div>
+            <Button onClick={() => window.location.reload()} variant="outline" className="w-full">
+                Retour au site
+            </Button>
+        </div>
+    );
   }
 
   return (
