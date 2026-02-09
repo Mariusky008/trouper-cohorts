@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Trash2, Plus, Save } from "lucide-react";
-import { updateMissionTemplate } from "@/app/actions/admin-program";
+import { updateMissionTemplate } from "@/actions/admin-program";
 import { toast } from "sonner";
 
 interface Template {
