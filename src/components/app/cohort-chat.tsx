@@ -31,34 +31,31 @@ export function CohortChat({ cohortId, currentUserId }: { cohortId: string, curr
         const fetchMessages = async () => {
             const { data, error } = await supabase
                 .from("cohort_messages")
-                .select(`
-                    *,
-                    user:pre_registrations!cohort_messages_user_id_fkey (
-                        first_name, last_name
-                    )
-                `)
+                .select("*")
                 .eq("cohort_id", cohortId)
                 .order("created_at", { ascending: true })
                 .limit(50);
-
-            // Note: La jointure directe user:user_id peut être délicate si la FK pointe vers auth.users et pas pre_registrations.
-            // On va faire simple : charger les messages, puis charger les users.
             
             if (error) {
                 console.error("Error loading chat:", error);
             } else if (data) {
-                // Récupérer les infos users manuellement pour être sûr
+                // Récupérer les infos users manuellement
                 const userIds = [...new Set(data.map((m: any) => m.user_id))];
-                const { data: users } = await supabase
-                    .from("pre_registrations")
-                    .select("user_id, first_name, last_name")
-                    .in("user_id", userIds);
                 
-                const formattedMessages = data.map((msg: any) => ({
-                    ...msg,
-                    user: users?.find((u: any) => u.user_id === msg.user_id)
-                }));
-                setMessages(formattedMessages);
+                if (userIds.length > 0) {
+                    const { data: users } = await supabase
+                        .from("pre_registrations")
+                        .select("user_id, first_name, last_name")
+                        .in("user_id", userIds);
+                    
+                    const formattedMessages = data.map((msg: any) => ({
+                        ...msg,
+                        user: users?.find((u: any) => u.user_id === msg.user_id)
+                    }));
+                    setMessages(formattedMessages);
+                } else {
+                    setMessages(data);
+                }
             }
             setLoading(false);
             scrollToBottom();
