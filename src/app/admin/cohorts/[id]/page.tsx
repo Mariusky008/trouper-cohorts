@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { DailyPairsList } from "@/components/admin/daily-pairs-list";
+import { CohortMembersList } from "@/components/admin/cohort-members-list";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
@@ -32,12 +33,25 @@ export default async function AdminCohortDetailPage({ params }: { params: Promis
       );
   }
 
-  // 2. Membres
-  const { data: members } = await supabase
+  // 2. Membres (Liste complète)
+  const { data: membersData } = await supabase
     .from("cohort_members")
-    .select("count")
-    .eq("cohort_id", id)
-    .single();
+    .select("user_id, department_code, joined_at")
+    .eq("cohort_id", id);
+
+  let membersWithDetails: any[] = [];
+  if (membersData && membersData.length > 0) {
+      const userIds = membersData.map(m => m.user_id);
+      const { data: userDetails } = await supabase
+          .from("pre_registrations")
+          .select("user_id, first_name, last_name, email, trade")
+          .in("user_id", userIds);
+      
+      membersWithDetails = membersData.map(m => {
+          const details = userDetails?.find(u => u.user_id === m.user_id);
+          return { ...m, ...details };
+      });
+  }
 
   // 3. Paires du jour
   const { data: rawPairs } = await supabase
@@ -47,14 +61,15 @@ export default async function AdminCohortDetailPage({ params }: { params: Promis
     .eq("pair_date", today);
 
   // 4. Infos Utilisateurs pour les paires
-  const userIds = rawPairs?.flatMap(p => [p.user1_id, p.user2_id]) || [];
+  const pairUserIds = rawPairs?.flatMap(p => [p.user1_id, p.user2_id]) || [];
   let pairsWithDetails = [];
   
-  if (userIds.length > 0) {
+  if (pairUserIds.length > 0) {
+      // On réutilise userDetails si possible, ou on refait une requête (plus simple ici de refaire)
       const { data: usersInfo } = await supabase
         .from("pre_registrations")
         .select("user_id, first_name, last_name, trade")
-        .in("user_id", userIds);
+        .in("user_id", pairUserIds);
       
       pairsWithDetails = rawPairs?.map(p => ({
         ...p,
@@ -76,7 +91,7 @@ export default async function AdminCohortDetailPage({ params }: { params: Promis
                     <span className="text-red-500 text-xs">VERSION TEST BINOMES</span>
                 </h1>
                 <p className="text-muted-foreground text-sm">
-                    {members?.count || 0} membres • Début: {new Date(cohort.start_date).toLocaleDateString()}
+                    {membersData?.length || 0} membres • Début: {new Date(cohort.start_date).toLocaleDateString()}
                 </p>
             </div>
         </div>
@@ -86,10 +101,9 @@ export default async function AdminCohortDetailPage({ params }: { params: Promis
             <DailyPairsList cohortId={cohort.id} pairs={pairsWithDetails} />
         </section>
 
-        {/* Liste des membres (placeholder pour l'instant) */}
-        <section className="bg-slate-50 border rounded-xl p-6 opacity-50">
-            <h3 className="font-bold mb-4">Liste des Membres (À venir)</h3>
-            <p className="text-sm">La gestion individuelle des membres sera ici.</p>
+        {/* Liste des membres */}
+        <section>
+            <CohortMembersList members={membersWithDetails} />
         </section>
     </div>
   );
