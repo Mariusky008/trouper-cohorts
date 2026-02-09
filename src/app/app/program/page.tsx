@@ -58,10 +58,13 @@ export default async function ProgramPage() {
 
   const currentDay = computeDayIndex(cohortRes.data.start_date) || 0;
 
-  // Récupérer toutes les missions
+  // Récupérer toutes les missions avec leurs étapes
   const { data: missions } = await supabase
     .from("missions")
-    .select("id, day_index, title, description, proof_type, mission_type, duration, energy_level")
+    .select(`
+        id, day_index, title, description, proof_type, mission_type, duration, energy_level,
+        mission_steps ( content, position, category )
+    `)
     .eq("cohort_id", cohortRes.data.id)
     .order("day_index", { ascending: true });
 
@@ -162,9 +165,26 @@ export default async function ProgramPage() {
                 <CardContent className="pb-4 px-4">
                   {mission ? (
                     <div className="space-y-4">
-                        <div className="text-sm text-muted-foreground whitespace-pre-wrap">
+                        <div className="text-sm text-muted-foreground whitespace-pre-wrap font-medium">
                             {mission.description?.replace(/\\n/g, '\n') || "Prépare-toi..."}
                         </div>
+                        
+                        {/* Étapes détaillées */}
+                        {mission.mission_steps && mission.mission_steps.length > 0 && (
+                            <div className="space-y-2 pt-2">
+                                {mission.mission_steps
+                                    .sort((a: any, b: any) => (a.position || 0) - (b.position || 0))
+                                    .map((step: any, idx: number) => (
+                                    <div key={idx} className="flex gap-3 text-sm group">
+                                        <span className="font-mono text-slate-300 font-bold shrink-0 group-hover:text-orange-400 transition-colors">{idx + 1}.</span>
+                                        <span className="text-slate-600 leading-relaxed group-hover:text-slate-900 transition-colors">
+                                            {step.category === 'creative' && step.content.toLowerCase().includes('vidéo') && '🎥 '}
+                                            {step.content}
+                                        </span>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
                     </div>
                   ) : (
                     <p className="text-sm text-muted-foreground italic">
