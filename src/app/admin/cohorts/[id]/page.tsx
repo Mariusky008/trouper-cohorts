@@ -131,7 +131,7 @@ export default async function AdminCohortDetailPage({ params }: { params: Promis
 
         {/* Liste des membres */}
         <section>
-            <CohortMembersList members={allMembers} />
+            <CohortMembersList members={allMembers} cohortId={cohort.id} />
         </section>
     </div>
   );

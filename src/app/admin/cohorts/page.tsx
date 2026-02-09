@@ -12,6 +12,9 @@ import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, TrendingUp, Activity, UserPlus } from "lucide-react";
+import { DeleteCohortButton } from "@/components/admin/delete-cohort-button";
+
+export const dynamic = 'force-dynamic';
 
 export default async function AdminCohortsPage() {
   const supabase = await createClient();
@@ -120,9 +123,12 @@ export default async function AdminCohortsPage() {
                     </Badge>
                     </TableCell>
                     <TableCell className="text-right">
-                    <Button asChild variant="default" size="sm">
-                        <Link href={`/admin/cohorts/${cohort.id}`}>Gérer</Link>
-                    </Button>
+                    <div className="flex justify-end items-center gap-2">
+                        <Button asChild variant="default" size="sm">
+                            <Link href={`/admin/cohorts/${cohort.id}`}>Gérer</Link>
+                        </Button>
+                        <DeleteCohortButton id={cohort.id} title={cohort.title} />
+                    </div>
                     </TableCell>
                 </TableRow>
                 ))}
