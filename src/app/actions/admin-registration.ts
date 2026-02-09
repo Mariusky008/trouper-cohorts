@@ -17,33 +17,41 @@ export async function approveRegistration(registrationId: string) {
     return { error: "Inscription introuvable." };
   }
 
-  const { email, trade, department_code, first_name, last_name } = registration;
+  const { email, trade, department_code, first_name, last_name, selected_session_date } = registration;
 
-  if (!trade || !department_code) {
-    return { error: "Métier ou Département manquant pour l'assignation." };
+  if (!department_code) {
+    return { error: "Département manquant pour l'assignation." };
   }
 
-  // 2. Chercher si une cohorte existe déjà pour ce Métier + Département
-  // On va utiliser un slug simple : "metier-departement" (ex: kinesiologue-40)
-  // On normalise le slug (minuscule, sans espaces)
-  const slug = `${trade.toLowerCase().replace(/\s+/g, '-')}-${department_code}`;
+  // 2. LOGIQUE D'ASSIGNATION INTELLIGENTE
+  // On groupe par : Session (Date) + Département
+  // Ex: "session-mars-2026-40"
+  
+  // Nettoyage de la date pour le slug (ex: "10 au 24 Mars" -> "10-au-24-mars")
+  const sessionSlugPart = selected_session_date 
+    ? selected_session_date.toLowerCase().replace(/[^a-z0-9]+/g, '-') 
+    : 'sans-date';
+    
+  const slug = `session-${sessionSlugPart}-${department_code}`;
   
   let cohortId = null;
 
   const { data: existingCohort } = await supabase
     .from("cohorts")
-    .select("id")
+    .select("id, title")
     .eq("slug", slug)
     .maybeSingle();
 
+  let cohortTitle = "";
+
   if (existingCohort) {
     cohortId = existingCohort.id;
+    cohortTitle = existingCohort.title;
   } else {
     // 3. Créer la cohorte si elle n'existe pas
-    const title = `${trade} - ${department_code}`; // Ex: Kinesiologue - 40
+    cohortTitle = `Cohorte ${department_code} - ${selected_session_date || 'Date indéfinie'}`;
     
-    // On définit une date de début par défaut (ex: dans 1 mois) ou on laisse null
-    // Pour l'instant on met une date fictive pour ne pas bloquer
+    // Date de début approximative (on essaie de parser ou on met aujourd'hui + 1 mois)
     const startDate = new Date();
     startDate.setMonth(startDate.getMonth() + 1);
 
@@ -51,10 +59,10 @@ export async function approveRegistration(registrationId: string) {
       .from("cohorts")
       .insert({
         slug,
-        trade,
-        title,
-        status: "forming", // En cours de formation
-        start_date: startDate.toISOString().split('T')[0], // YYYY-MM-DD
+        title: cohortTitle,
+        trade: "Mixte", // Cohorte multi-métiers
+        status: "forming",
+        start_date: startDate.toISOString().split('T')[0],
       })
       .select("id")
       .single();
@@ -66,31 +74,7 @@ export async function approveRegistration(registrationId: string) {
     cohortId = newCohort.id;
   }
 
-  // 4. Créer le profil utilisateur (s'il n'existe pas encore)
-  // Attention: Normalement le profil est lié à auth.users.
-  // Ici, l'utilisateur n'a peut-être pas encore créé son compte Auth (mot de passe).
-  // C'est un point CRUCIAL.
-  
-  // STRATÉGIE :
-  // On ne peut pas créer un "membre" de cohorte sans "user_id" (qui vient de auth.users).
-  // Si l'utilisateur ne s'est pas encore connecté/inscrit via le lien magique, il n'a pas d'ID Auth.
-  
-  // SOLUTION TEMPORAIRE :
-  // On marque juste l'inscription comme "approved".
-  // Quand l'utilisateur se connectera pour la première fois (via le lien qu'on lui enverra),
-  // un trigger ou une vérification devra l'ajouter à la cohorte.
-  
-  // MAIS tu veux que ce soit fait "quand tu valides".
-  // Donc on suppose que l'utilisateur A DÉJÀ un compte ? Ou on prépare le terrain ?
-  
-  // Si l'utilisateur n'a pas de compte, on ne peut rien insérer dans `cohort_members` car `user_id` est requis.
-  
-  // OPTION : On stocke l'assignation en attente dans pre_registrations.
-  // On ajoute une colonne `assigned_cohort_id` dans pre_registrations.
-  
-  // Je vais modifier pre_registrations pour stocker l'ID de la cohorte assignée.
-  // Comme ça, quand il s'inscrira vraiment (Auth), on pourra le mettre dedans.
-
+  // 4. Validation et Assignation
   const { error: updateError } = await supabase
     .from("pre_registrations")
     .update({ 
@@ -103,12 +87,24 @@ export async function approveRegistration(registrationId: string) {
       return { error: "Erreur lors de la validation." };
   }
   
-  // Pour l'instant, on retourne l'info de la cohorte créée/trouvée
+  // 5. AUTO-BINÔME (Le petit plus magique)
+  // Si c'est le 2ème membre (ou plus), on lance une génération de binômes pour aujourd'hui
+  // pour qu'ils ne soient pas seuls en attendant minuit.
+  const { count } = await supabase
+    .from("cohort_members")
+    .select("*", { count: 'exact', head: true })
+    .eq("cohort_id", cohortId);
+    
+  if (count && count >= 2) {
+      // On déclenche la rotation juste pour cette cohorte, pour aujourd'hui
+      await supabase.rpc("rotate_daily_pairs", { target_cohort_id: cohortId });
+  }
+  
   return { 
       success: true, 
       message: existingCohort 
-        ? `Assigné à la cohorte existante : ${slug}` 
-        : `Nouvelle cohorte créée : ${slug}`,
+        ? `Assigné à la cohorte locale : ${cohortTitle}` 
+        : `Nouvelle cohorte locale créée : ${cohortTitle}`,
       cohortId
   };
 }
