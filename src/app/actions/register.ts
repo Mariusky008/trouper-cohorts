@@ -43,22 +43,18 @@ export async function registerInterest(formData: FormData) {
   if (error) {
     console.error("Registration error (attempt 1 - with phone):", error);
 
-    // Tentative 2 : Sans Téléphone (Fallback si la colonne n'existe pas encore)
-    if (error.code === "42703") { // Code PostgreSQL pour "column does not exist"
-        console.log("Retrying without phone column...");
-        const { error: retryError } = await supabase.from("pre_registrations").insert({
-            email,
-            trade: trade || null,
-            department_code: departmentCode || null,
-            status: "pending",
-        });
+    // Tentative 2 : Sans Téléphone (Fallback systématique)
+    console.log("Retrying without phone column...");
+    const { error: retryError } = await supabase.from("pre_registrations").insert({
+        email,
+        trade: trade || null,
+        department_code: departmentCode || null,
+        status: "pending",
+    });
 
-        if (retryError) {
-             console.error("Registration error (attempt 2 - no phone):", retryError);
-             return { error: `Erreur technique: ${retryError.message}` };
-        }
-    } else {
-        return { error: `Erreur: ${error.message}` };
+    if (retryError) {
+            console.error("Registration error (attempt 2 - no phone):", retryError);
+            return { error: `Erreur technique: ${retryError.message}` };
     }
   }
 
