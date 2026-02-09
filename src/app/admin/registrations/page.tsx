@@ -29,6 +29,7 @@ export default async function AdminRegistrationsPage() {
           <TableHeader>
             <TableRow>
               <TableHead>Email</TableHead>
+              <TableHead>Téléphone</TableHead>
               <TableHead>Métier</TableHead>
               <TableHead>Département</TableHead>
               <TableHead>Date</TableHead>
@@ -39,6 +40,7 @@ export default async function AdminRegistrationsPage() {
             {registrations?.map((reg) => (
               <TableRow key={reg.id}>
                 <TableCell className="font-medium">{reg.email}</TableCell>
+                <TableCell>{reg.phone || "—"}</TableCell>
                 <TableCell>{reg.trade || "—"}</TableCell>
                 <TableCell>{reg.department_code || "—"}</TableCell>
                 <TableCell className="text-sm text-muted-foreground">
@@ -53,7 +55,7 @@ export default async function AdminRegistrationsPage() {
             ))}
             {registrations?.length === 0 && (
               <TableRow>
-                <TableCell colSpan={5} className="text-center h-24 text-muted-foreground">
+                <TableCell colSpan={6} className="text-center h-24 text-muted-foreground">
                   Aucune inscription pour le moment.
                 </TableCell>
               </TableRow>
