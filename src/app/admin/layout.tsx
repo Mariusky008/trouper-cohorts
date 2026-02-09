@@ -52,6 +52,9 @@ export default async function AdminLayout({
             <Link href="/admin/registrations" className="hover:underline">
               Inscriptions
             </Link>
+            <Link href="/admin/members" className="hover:underline">
+              Membres
+            </Link>
             <Link href="/admin/sessions" className="hover:underline">
               Sessions (Dates)
             </Link>
