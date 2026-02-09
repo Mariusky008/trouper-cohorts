@@ -101,6 +101,7 @@ export default async function AdminCohortsPage() {
                 <TableRow key={cohort.id}>
                     <TableCell className="font-medium">
                     {cohort.title}
+                    <div className="text-xs text-muted-foreground">ID: {cohort.id}</div>
                     <div className="text-xs text-muted-foreground">{cohort.slug}</div>
                     </TableCell>
                     <TableCell>
