@@ -37,7 +37,7 @@ export async function registerInterest(formData: FormData) {
   }
 
   // Tentative 1 : Avec tous les champs
-  const { error } = await supabase.from("pre_registrations").insert({
+  const { data: insertedData, error } = await supabase.from("pre_registrations").insert({
     email,
     phone: phone || null,
     trade: trade || null,
@@ -48,12 +48,12 @@ export async function registerInterest(formData: FormData) {
     last_name: lastName || null,
     selected_session_date: selectedSession || null,
     status: "pending",
-  });
+  }).select();
 
   if (error) {
     console.error("Registration error (attempt 1):", error);
 
-    // Tentative 2 : Fallback minimal (sans phone ni social si colonnes manquantes)
+    // Tentative 2 : Fallback minimal
     console.log("Retrying minimal insert...");
     const { error: retryError } = await supabase.from("pre_registrations").insert({
         email,
@@ -66,7 +66,9 @@ export async function registerInterest(formData: FormData) {
             console.error("Registration error (attempt 2 - no phone):", retryError);
             return { error: `Erreur technique: ${retryError.message}` };
     }
+  } else {
+      console.log("Registration SUCCESS (Attempt 1). Data:", insertedData);
   }
 
-  return { success: true, message: "Inscription validée ! On vous recontacte vite." };
+  return { success: true, message: "Vous êtes inscrit sur la liste d'attente !" };
 }
