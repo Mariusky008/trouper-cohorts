@@ -1,13 +1,11 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
-import { revalidatePath } from "next/cache";
 
 export async function registerInterest(formData: FormData) {
   // Honeypot check
   const honeypot = String(formData.get("confirm_email") || "");
   if (honeypot) {
-    // Silent fail for bots
     return { success: true, message: "Inscription validée !" }; 
   }
 
@@ -33,6 +31,7 @@ export async function registerInterest(formData: FormData) {
     return { success: true, message: "Vous êtes déjà sur la liste d'attente !" };
   }
 
+  // Tentative 1 : Avec Téléphone
   const { error } = await supabase.from("pre_registrations").insert({
     email,
     phone: phone || null,
@@ -42,8 +41,25 @@ export async function registerInterest(formData: FormData) {
   });
 
   if (error) {
-    console.error("Registration error:", error);
-    return { error: "Une erreur est survenue. Réessayez plus tard." };
+    console.error("Registration error (attempt 1 - with phone):", error);
+
+    // Tentative 2 : Sans Téléphone (Fallback si la colonne n'existe pas encore)
+    if (error.code === "42703") { // Code PostgreSQL pour "column does not exist"
+        console.log("Retrying without phone column...");
+        const { error: retryError } = await supabase.from("pre_registrations").insert({
+            email,
+            trade: trade || null,
+            department_code: departmentCode || null,
+            status: "pending",
+        });
+
+        if (retryError) {
+             console.error("Registration error (attempt 2 - no phone):", retryError);
+             return { error: "Une erreur technique est survenue. Veuillez réessayer." };
+        }
+    } else {
+        return { error: "Une erreur est survenue. Réessayez plus tard." };
+    }
   }
 
   return { success: true, message: "Inscription validée ! On vous recontacte vite." };
