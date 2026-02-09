@@ -15,6 +15,15 @@ export const dynamic = 'force-dynamic';
 export default async function AdminRegistrationsPage() {
   const supabase = await createClient();
   
+  // DEBUG: Récupérer l'utilisateur courant
+  const { data: { user } } = await supabase.auth.getUser();
+  // DEBUG: Vérifier s'il est dans la table admins
+  const { data: adminEntry } = await supabase
+    .from("admins")
+    .select("*")
+    .eq("user_id", user?.id)
+    .maybeSingle();
+
   const { data: registrations } = await supabase
     .from("pre_registrations")
     .select("*")
@@ -22,6 +31,32 @@ export default async function AdminRegistrationsPage() {
 
   return (
     <div className="space-y-6">
+      {/* PANNEAU DE DIAGNOSTIC TEMPORAIRE */}
+      <div className="bg-yellow-50 border-l-4 border-yellow-500 p-4 mb-6 text-sm font-mono text-slate-800 shadow-sm">
+        <h3 className="font-bold uppercase mb-2">🕵️‍♂️ Diagnostic Admin</h3>
+        <ul className="space-y-1">
+            <li><strong>Mon Email :</strong> {user?.email}</li>
+            <li><strong>Mon User ID :</strong> {user?.id}</li>
+            <li>
+                <strong>Reconnu Admin DB ? :</strong> 
+                {adminEntry ? (
+                    <span className="text-green-600 font-bold ml-2">✅ OUI (Présent dans table 'admins')</span>
+                ) : (
+                    <span className="text-red-600 font-bold ml-2">❌ NON (Absent de la table 'admins')</span>
+                )}
+            </li>
+            <li><strong>Nombre inscriptions visibles :</strong> {registrations?.length || 0}</li>
+        </ul>
+        {!adminEntry && (
+            <div className="mt-4 p-2 bg-white border border-red-200 text-red-600">
+                <strong>Action requise :</strong> Copie l'ID ci-dessus et exécute ce SQL dans Supabase :<br/>
+                <code className="select-all block mt-1 bg-slate-100 p-1 text-slate-900">
+                    INSERT INTO public.admins (user_id) VALUES ('{user?.id}');
+                </code>
+            </div>
+        )}
+      </div>
+
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Pré-inscriptions</h1>
         <Badge variant="outline">{registrations?.length || 0} leads</Badge>
