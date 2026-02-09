@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import { PlayCircle } from "lucide-react";
+import { PlayCircle, Users } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface CockpitProps {
@@ -14,18 +14,20 @@ interface CockpitProps {
     cohort: any;
     mission: any;
     dayIndex: number;
-    buddies: any[];
+    buddy: any;
     steps: any[];
 }
 
-export function CockpitDashboard({ user, cohort, mission, dayIndex, buddies, steps }: CockpitProps) {
-  // Mock binôme si pas de buddies (pour le dev)
-  const currentBuddy = buddies.length > 0 ? buddies[0] : {
-      id: "mock-buddy",
-      display_name: "Binôme en attente",
-      avatar_url: "",
-      trade: "Coach"
+export function CockpitDashboard({ user, cohort, mission, dayIndex, buddy, steps }: CockpitProps) {
+  // Mock binôme si pas de buddy (pour le dev)
+  const currentBuddy = buddy || {
+    first_name: "En attente...",
+    trade: "Recherche en cours",
+    department_code: "??"
   };
+
+  // Calcul du display name pour ChatBox et autres
+  const buddyDisplayName = currentBuddy.first_name ? `${currentBuddy.first_name} ${currentBuddy.last_name || ''}` : "Binôme";
 
   const progress = (dayIndex / 14) * 100;
 
@@ -148,35 +150,48 @@ export function CockpitDashboard({ user, cohort, mission, dayIndex, buddies, ste
             <div className="lg:col-span-1 space-y-6">
                 
                 {/* Info Binôme */}
-                <Card className="bg-indigo-600 text-white border-none shadow-lg">
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2 text-lg">
-                            🤝 Binôme du Jour
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <div className="flex items-center gap-3 bg-indigo-700/50 p-3 rounded-lg">
-                             <Avatar>
-                                <AvatarImage src={currentBuddy.avatar_url} />
-                                <AvatarFallback>{currentBuddy.display_name?.substring(0, 2).toUpperCase()}</AvatarFallback>
-                            </Avatar>
-                            <div>
-                                <div className="font-bold">{currentBuddy.display_name}</div>
-                                <div className="text-xs text-indigo-200">{currentBuddy.trade}</div>
-                            </div>
+                <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-6">
+                    <h3 className="text-sm font-bold uppercase text-slate-400 mb-4 tracking-wider flex items-center gap-2">
+                        <Users className="h-4 w-4" /> Mon Binôme
+                    </h3>
+                    
+                    <div className="flex items-center gap-4">
+                        <div className="h-12 w-12 rounded-full bg-orange-100 flex items-center justify-center text-orange-600 font-bold text-lg border-2 border-white shadow-sm">
+                            {currentBuddy.first_name ? currentBuddy.first_name[0] : "?"}
                         </div>
-                        <p className="text-indigo-100 text-sm">
-                            Objectif : Appelle ton binôme et faites le point sur la mission.
-                        </p>
-                        <Button variant="secondary" className="w-full font-bold text-indigo-700">
-                            Lancer un appel
-                        </Button>
-                    </CardContent>
-                </Card>
+                        <div>
+                            <p className="font-bold text-slate-900">
+                                {currentBuddy.first_name} {currentBuddy.last_name}
+                            </p>
+                            <p className="text-sm text-slate-500">
+                                {currentBuddy.trade} ({currentBuddy.department_code})
+                            </p>
+                            {currentBuddy.social_network && (
+                                <p className="text-xs text-blue-500 mt-1 capitalize">
+                                    Sur {currentBuddy.social_network}
+                                </p>
+                            )}
+                        </div>
+                    </div>
+
+                    {!buddy && (
+                        <div className="mt-4 p-3 bg-slate-50 rounded-lg text-xs text-slate-500 italic text-center">
+                            Votre binôme vous sera assigné très bientôt.
+                        </div>
+                    )}
+
+                    {buddy && (
+                        <div className="mt-6 flex gap-2">
+                             <Button className="w-full bg-slate-900 text-white hover:bg-slate-800" size="sm">
+                                Contacter
+                             </Button>
+                        </div>
+                    )}
+                </div>
 
                 {/* Chat */}
                 <ChatBox 
-                    partnerName={currentBuddy.display_name || "Binôme"} 
+                    partnerName={buddyDisplayName} 
                     partnerId={currentBuddy.id} 
                     currentUserId={user.id}
                     initialMessages={[]} 

@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { CockpitDashboard } from "@/components/dashboard/cockpit";
+import { getMyBuddy } from "@/lib/data/buddy";
 import { AlertCircle, CalendarDays, Trophy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -124,30 +125,7 @@ export default async function TodayPage({
   }
 
   // Récupération du Binôme (Buddy)
-  // TODO: Utiliser la nouvelle table `cohort_pairs` quand elle sera peuplée
-  // Pour l'instant on garde la logique de groupe ou on simule
-  const buddyGroupRes = await supabase
-    .from("buddy_group_members")
-    .select("group_id")
-    .eq("user_id", user.id)
-    .maybeSingle();
-
-  let buddies: any[] = [];
-  if (buddyGroupRes.data) {
-    const { data: groupMembers } = await supabase
-      .from("buddy_group_members")
-      .select(`
-        profiles (
-          id, display_name, avatar_url, trade, instagram_handle
-        )
-      `)
-      .eq("group_id", buddyGroupRes.data.group_id)
-      .neq("user_id", user.id);
-    
-    if (groupMembers) {
-      buddies = groupMembers.map((m: any) => m.profiles);
-    }
-  }
+  const buddy = await getMyBuddy(cohortRes.data.id, user.id);
 
   return (
     <CockpitDashboard 
@@ -155,7 +133,7 @@ export default async function TodayPage({
         cohort={cohortRes.data} 
         mission={missionRes.data} 
         dayIndex={dayIndex} 
-        buddies={buddies} 
+        buddy={buddy} 
         steps={steps}
     />
   );
