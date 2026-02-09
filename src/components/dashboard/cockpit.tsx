@@ -1,13 +1,13 @@
 "use client";
 
-import { ChatBox } from "@/components/chat/chat-box";
-import { VictoryWall } from "@/components/dashboard/victory-wall";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import { PlayCircle, Users } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { PlayCircle, Users, Brain, Video, CheckCircle2 } from "lucide-react";
+import { VictoryWall } from "@/components/dashboard/victory-wall";
+import { ChatBox } from "@/components/chat/chat-box";
+import { Button } from "@/components/ui/button";
 
 interface CockpitProps {
     user: any;
@@ -30,6 +30,36 @@ export function CockpitDashboard({ user, cohort, mission, dayIndex, buddy, steps
   const buddyDisplayName = currentBuddy.first_name ? `${currentBuddy.first_name} ${currentBuddy.last_name || ''}` : "Binôme";
 
   const progress = (dayIndex / 14) * 100;
+
+  // Groupement des étapes par pilier (Trépied)
+  const intellectualSteps = steps?.filter((s: any) => s.category === 'intellectual' || !s.category) || [];
+  const creativeSteps = steps?.filter((s: any) => s.category === 'creative') || [];
+  const socialSteps = steps?.filter((s: any) => s.category === 'social') || [];
+
+  const renderStepGroup = (title: string, icon: any, groupSteps: any[], colorClass: string) => (
+    <div className={`border rounded-xl p-5 bg-white shadow-sm ${groupSteps.length === 0 ? 'opacity-60' : ''}`}>
+        <h4 className={`font-bold flex items-center gap-2 mb-4 text-xs uppercase tracking-widest ${colorClass}`}>
+            {icon} {title}
+        </h4>
+        {groupSteps.length === 0 ? (
+            <p className="text-sm text-slate-400 italic">Aucune tâche assignée.</p>
+        ) : (
+            <div className="space-y-3">
+                {groupSteps.map((step: any) => (
+                    <div key={step.id} className="flex items-start gap-3 group">
+                        <Checkbox id={`step-${step.id}`} className="mt-1 data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600" />
+                        <label
+                            htmlFor={`step-${step.id}`}
+                            className="text-sm font-medium leading-snug peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-slate-700 cursor-pointer group-hover:text-slate-900 transition-colors"
+                        >
+                            {step.content}
+                        </label>
+                    </div>
+                ))}
+            </div>
+        )}
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -92,51 +122,22 @@ export function CockpitDashboard({ user, cohort, mission, dayIndex, buddy, steps
                             <span className="absolute bottom-4 left-4 text-white font-bold text-lg">Briefing du Jour (En attente)</span>
                         </div>
                     )}
-                    <CardContent className="p-6 bg-white">
-                        <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
-                            <span className="bg-blue-100 text-blue-700 h-6 w-6 rounded-full flex items-center justify-center text-xs">!</span>
-                            Votre Mission
+                    <CardContent className="p-6 bg-slate-50">
+                        <h3 className="font-bold text-lg mb-6 flex items-center gap-2 text-slate-900">
+                            🎯 Vos 3 Missions du Jour
                         </h3>
                         
-                        {mission?.description && !steps?.length && (
-                             // Si pas d'étapes structurées, on affiche la description découpée (Legacy)
-                            <div className="space-y-4">
-                                {mission.description.split('\n').filter((l: string) => l.trim().length > 0).map((line: string, i: number) => (
-                                    <div key={i} className="flex items-start gap-3 p-3 rounded-lg bg-slate-50 border border-slate-100">
-                                        <Checkbox id={`task${i}`} className="mt-1" />
-                                        <label htmlFor={`task${i}`} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer w-full">
-                                            <span className="block text-slate-900 font-medium leading-relaxed">{line}</span>
-                                        </label>
-                                    </div>
-                                ))}
+                        {mission?.description && (
+                            <div className="mb-6 text-sm text-slate-600 bg-white p-4 rounded-lg border border-slate-100 italic">
+                                "{mission.description}"
                             </div>
                         )}
 
-                        {mission?.description && steps?.length > 0 && (
-                            <div className="mb-6 text-sm text-slate-600 whitespace-pre-wrap">
-                                {mission.description}
-                            </div>
-                        )}
-
-                        {steps && steps.length > 0 && (
-                            <div className="space-y-4">
-                                {steps.map((step: any, i: number) => (
-                                    <div key={step.id} className="flex items-start gap-3 p-3 rounded-lg bg-slate-50 border border-slate-100 shadow-sm">
-                                        <Checkbox id={`step-${step.id}`} className="mt-1" />
-                                        <label htmlFor={`step-${step.id}`} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer w-full">
-                                            <span className="block text-slate-900 font-bold mb-1">Étape {i + 1}</span>
-                                            <span className="block text-slate-600 leading-relaxed whitespace-pre-wrap">
-                                                {step.content}
-                                            </span>
-                                        </label>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-
-                        {!mission?.description && (!steps || steps.length === 0) && (
-                            <p className="text-slate-500 italic">Pas de description pour cette mission.</p>
-                        )}
+                        <div className="grid gap-4 md:grid-cols-1">
+                            {renderStepGroup("Intellectuel & Admin", <Brain className="h-4 w-4" />, intellectualSteps, "text-blue-600")}
+                            {renderStepGroup("Créatif & Contenu", <Video className="h-4 w-4" />, creativeSteps, "text-purple-600")}
+                            {renderStepGroup("Social & Live", <Users className="h-4 w-4" />, socialSteps, "text-orange-600")}
+                        </div>
 
                     </CardContent>
                 </Card>
