@@ -22,11 +22,11 @@ BEGIN
   VALUES (2, 'J2: AUDIT SANS CONCESSION', 'Objectif : Voir la réalité en face.', 'link')
   RETURNING id INTO m_id;
 
+  -- On regroupe les sous-tâches dans une seule étape par catégorie pour l'affichage
   INSERT INTO public.mission_step_templates (mission_template_id, content, position, category) VALUES
-  (m_id, 'Extraire mes relevés bancaires des 3 derniers mois', 1, 'intellectual'),
-  (m_id, 'Identifier mes 3 plus grosses fuites d''argent', 2, 'intellectual'),
-  (m_id, 'Calculer mon taux horaire réel (Revenu / Heures travaillées)', 3, 'intellectual'),
-  (m_id, 'Raconte ta plus grosse erreur business de l''année (Sans filtre)', 4, 'creative'); -- Défi Vidéo
+  (m_id, '1. Extraire mes relevés bancaires des 3 derniers mois.\n2. Identifier mes 3 plus grosses fuites d''argent.\n3. Calculer mon taux horaire réel (Revenu / Heures travaillées).', 1, 'intellectual'),
+  (m_id, 'Raconte ta plus grosse erreur business de l''année (Sans filtre).\n\n💡 Conseil : Sois authentique, ne cherche pas à être parfait.\n⏰ Heure recommandée : 18h00.', 2, 'creative'),
+  (m_id, 'Participer au Live de 18h (ou voir le replay).\nCommenter les posts de 3 autres Troupers.', 3, 'social');
 
 
   -- JOUR 3 : DISSECTION DE L''OFFRE (DUO)
@@ -35,10 +35,9 @@ BEGIN
   RETURNING id INTO m_id;
 
   INSERT INTO public.mission_step_templates (mission_template_id, content, position, category) VALUES
-  (m_id, 'Appel visio avec ton binôme (45min)', 1, 'social'),
-  (m_id, 'Il doit jouer l''avocat du diable sur ton offre actuelle', 2, 'social'),
-  (m_id, 'Note chaque objection. Ne te défends pas. Écoute.', 3, 'intellectual'),
-  (m_id, 'Pitch ton offre actuelle en 30s', 4, 'creative'); -- Défi Vidéo
+  (m_id, 'Appel visio avec ton binôme (45min).\nIl doit jouer l''avocat du diable sur ton offre actuelle.', 1, 'social'),
+  (m_id, 'Note chaque objection. Ne te défends pas. Écoute.', 2, 'intellectual'),
+  (m_id, 'Pitch ton offre actuelle en 30s. Si ton binôme ne comprend pas, c''est nul.', 3, 'creative');
 
 
   -- JOUR 4 à 14 (Placeholders)

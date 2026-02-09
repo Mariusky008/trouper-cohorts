@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -193,8 +194,8 @@ export default async function ProgramPage() {
                   )}
                   {isToday && (
                       <div className="mt-3">
-                          <Button size="sm" className="w-full font-bold">
-                              Voir la mission du jour
+                          <Button size="sm" className="w-full font-bold" asChild>
+                              <Link href="/app/today">Voir la mission du jour</Link>
                           </Button>
                       </div>
                   )}
