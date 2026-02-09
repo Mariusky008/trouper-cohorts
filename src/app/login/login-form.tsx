@@ -7,9 +7,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-export function LoginForm() {
+interface LoginFormProps {
+  defaultEmail?: string;
+}
+
+export function LoginForm({ defaultEmail = "" }: LoginFormProps) {
   const supabase = useMemo(() => createClient(), []);
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(defaultEmail);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   async function onSubmit(event: React.FormEvent) {
@@ -26,9 +30,10 @@ export function LoginForm() {
       toast.success("Email envoyé", {
         description: "Clique sur le lien reçu pour te connecter.",
       });
-    } catch (e) {
+    } catch (e: any) {
+      console.error(e);
       toast.error("Connexion impossible", {
-        description: "Vérifie l’email et réessaie.",
+        description: e.message || "Vérifie l’email et réessaie.",
       });
     } finally {
       setIsSubmitting(false);

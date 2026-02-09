@@ -37,7 +37,7 @@ export default async function LoginPage({
                 Erreur : {error}
               </div>
             )}
-            <LoginForm />
+            <LoginForm defaultEmail={typeof params?.email === "string" ? params.email : ""} />
           </CardContent>
         </Card>
       </div>
