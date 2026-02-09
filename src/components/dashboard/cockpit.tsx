@@ -1,0 +1,161 @@
+"use client";
+
+import { ChatBox } from "@/components/chat/chat-box";
+import { VictoryWall } from "@/components/dashboard/victory-wall";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { PlayCircle } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+
+interface CockpitProps {
+    user: any;
+    cohort: any;
+    mission: any;
+    dayIndex: number;
+    buddies: any[];
+}
+
+export function CockpitDashboard({ user, cohort, mission, dayIndex, buddies }: CockpitProps) {
+  // Mock binôme si pas de buddies (pour le dev)
+  const currentBuddy = buddies.length > 0 ? buddies[0] : {
+      id: "mock-buddy",
+      display_name: "Binôme en attente",
+      avatar_url: "",
+      trade: "Coach"
+  };
+
+  const progress = (dayIndex / 14) * 100;
+
+  return (
+    <div className="min-h-screen bg-slate-50">
+      {/* Top Bar */}
+      <header className="bg-white border-b h-16 flex items-center justify-between px-6 sticky top-0 z-30">
+        <div className="font-black text-xl italic uppercase text-slate-900">
+            Popey <span className="text-orange-500">Cockpit</span>
+        </div>
+        <div className="flex items-center gap-4">
+            <div className="text-right hidden sm:block">
+                <p className="text-xs text-slate-500 font-bold uppercase tracking-widest">Votre progression</p>
+                <div className="w-32 h-2 bg-slate-100 rounded-full mt-1 overflow-hidden">
+                    <div className="h-full bg-green-500 transition-all duration-1000" style={{ width: `${progress}%` }}></div>
+                </div>
+            </div>
+            <Avatar className="h-10 w-10 border-2 border-white shadow-sm">
+                <AvatarImage src={user.user_metadata?.avatar_url} />
+                <AvatarFallback>{user.email[0].toUpperCase()}</AvatarFallback>
+            </Avatar>
+        </div>
+      </header>
+
+      <main className="container mx-auto px-4 py-8 max-w-7xl">
+        
+        {/* En-tête de Mission */}
+        <div className="mb-8">
+            <div className="flex items-center gap-3 mb-2">
+                <Badge className="bg-orange-500 text-white hover:bg-orange-600 uppercase tracking-widest">Jour {dayIndex} / 14</Badge>
+                <span className="text-slate-400 font-medium text-sm">{new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}</span>
+            </div>
+            <h1 className="text-3xl md:text-4xl font-black text-slate-900 uppercase italic">
+                {mission?.title || "Repos"}
+            </h1>
+        </div>
+
+        <div className="grid lg:grid-cols-3 gap-8">
+            
+            {/* COLONNE GAUCHE (Mission + Victoires) */}
+            <div className="lg:col-span-2 space-y-8">
+                
+                {/* 1. Briefing Vidéo */}
+                <Card className="overflow-hidden border-2 border-slate-200 shadow-sm">
+                    <div className="aspect-video bg-slate-900 flex items-center justify-center relative group cursor-pointer">
+                        <div className="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-all"></div>
+                        <PlayCircle className="h-20 w-20 text-white opacity-80 group-hover:scale-110 transition-transform duration-300" />
+                        <span className="absolute bottom-4 left-4 text-white font-bold text-lg">Briefing du Jour</span>
+                    </div>
+                    <CardContent className="p-6 bg-white">
+                        <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
+                            <span className="bg-blue-100 text-blue-700 h-6 w-6 rounded-full flex items-center justify-center text-xs">!</span>
+                            Votre Mission
+                        </h3>
+                        
+                        {mission?.description ? (
+                            <div className="space-y-4">
+                                {/* On parse la description ligne par ligne pour en faire des items de checklist */}
+                                {mission.description.split('\n').filter((l: string) => l.trim().length > 0).map((line: string, i: number) => (
+                                    <div key={i} className="flex items-start gap-3 p-3 rounded-lg bg-slate-50 border border-slate-100">
+                                        <Checkbox id={`task${i}`} className="mt-1" />
+                                        <label htmlFor={`task${i}`} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer w-full">
+                                            <span className="block text-slate-900 font-medium leading-relaxed">{line}</span>
+                                        </label>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <p className="text-slate-500 italic">Pas de description pour cette mission.</p>
+                        )}
+
+                    </CardContent>
+                </Card>
+
+                {/* 3. Mur des Victoires */}
+                <VictoryWall />
+
+            </div>
+
+            {/* COLONNE DROITE (Binôme) */}
+            <div className="lg:col-span-1 space-y-6">
+                
+                {/* Info Binôme */}
+                <Card className="bg-indigo-600 text-white border-none shadow-lg">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2 text-lg">
+                            🤝 Binôme du Jour
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <div className="flex items-center gap-3 bg-indigo-700/50 p-3 rounded-lg">
+                             <Avatar>
+                                <AvatarImage src={currentBuddy.avatar_url} />
+                                <AvatarFallback>{currentBuddy.display_name?.substring(0, 2).toUpperCase()}</AvatarFallback>
+                            </Avatar>
+                            <div>
+                                <div className="font-bold">{currentBuddy.display_name}</div>
+                                <div className="text-xs text-indigo-200">{currentBuddy.trade}</div>
+                            </div>
+                        </div>
+                        <p className="text-indigo-100 text-sm">
+                            Objectif : Appelle ton binôme et faites le point sur la mission.
+                        </p>
+                        <Button variant="secondary" className="w-full font-bold text-indigo-700">
+                            Lancer un appel
+                        </Button>
+                    </CardContent>
+                </Card>
+
+                {/* Chat */}
+                <ChatBox 
+                    partnerName={currentBuddy.display_name || "Binôme"} 
+                    partnerId={currentBuddy.id} 
+                    currentUserId={user.id}
+                    initialMessages={[]} 
+                />
+
+                {/* Aide / Support */}
+                <Card>
+                    <CardHeader className="pb-3">
+                        <CardTitle className="text-sm text-slate-500 uppercase tracking-widest">Besoin d'aide ?</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <p className="text-sm text-slate-600 mb-4">Les coachs sont disponibles sur le Slack général.</p>
+                        <Button variant="outline" size="sm" className="w-full">Contacter le support</Button>
+                    </CardContent>
+                </Card>
+
+            </div>
+        </div>
+      </main>
+    </div>
+  );
+}
