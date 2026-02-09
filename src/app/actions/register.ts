@@ -17,6 +17,9 @@ export async function registerInterest(formData: FormData) {
   const departmentCode = String(formData.get("department_code") || "").trim();
   const socialNetwork = String(formData.get("social_network") || "").trim();
   const followersCount = String(formData.get("followers_count") || "").trim();
+  const firstName = String(formData.get("first_name") || "").trim();
+  const lastName = String(formData.get("last_name") || "").trim();
+  const selectedSession = String(formData.get("selected_session_date") || "").trim();
 
   if (!email) {
     return { error: "L'email est requis." };
@@ -41,6 +44,9 @@ export async function registerInterest(formData: FormData) {
     department_code: departmentCode || null,
     social_network: socialNetwork || null,
     followers_count: followersCount || null,
+    first_name: firstName || null,
+    last_name: lastName || null,
+    selected_session_date: selectedSession || null,
     status: "pending",
   });
 
