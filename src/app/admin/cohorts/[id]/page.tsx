@@ -7,22 +7,23 @@ import { ArrowLeft } from "lucide-react";
 
 export const dynamic = 'force-dynamic';
 
-export default async function AdminCohortDetailPage({ params }: { params: any }) {
+export default async function AdminCohortDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const supabase = await createClient();
   const today = new Date().toISOString().split('T')[0];
+  const { id } = await params;
 
   // 1. Infos Cohorte
   const { data: cohort, error } = await supabase
     .from("cohorts")
     .select("*")
-    .eq("id", params?.id)
+    .eq("id", id)
     .single();
 
   if (error || !cohort) {
       return (
         <div className="p-8 border border-red-200 bg-red-50 text-red-700 rounded-lg">
             <h2 className="font-bold text-lg mb-2">Erreur : Cohorte introuvable</h2>
-            <p>ID cherché : <code>{JSON.stringify(params)}</code></p>
+            <p>ID cherché : <code>{id}</code></p>
             <p>Erreur Supabase : {error?.message || "Aucune donnée retournée"}</p>
             <div className="mt-4">
                 <Button asChild variant="outline"><Link href="/admin/cohorts">Retour à la liste</Link></Button>
@@ -35,14 +36,14 @@ export default async function AdminCohortDetailPage({ params }: { params: any })
   const { data: members } = await supabase
     .from("cohort_members")
     .select("count")
-    .eq("cohort_id", params.id)
+    .eq("cohort_id", id)
     .single();
 
   // 3. Paires du jour
   const { data: rawPairs } = await supabase
     .from("cohort_pairs")
     .select("*")
-    .eq("cohort_id", params.id)
+    .eq("cohort_id", id)
     .eq("pair_date", today);
 
   // 4. Infos Utilisateurs pour les paires
