@@ -65,8 +65,16 @@ export function CockpitDashboard({ user, cohort, mission, dayIndex, buddy, steps
     <div className="min-h-screen bg-slate-50">
       {/* Top Bar */}
       <header className="bg-white border-b h-16 flex items-center justify-between px-6 sticky top-0 z-30">
-        <div className="font-black text-xl italic uppercase text-slate-900">
-            Popey <span className="text-orange-500">Cockpit</span>
+        <div className="flex items-center gap-4">
+            <div className="font-black text-xl italic uppercase text-slate-900">
+                Popey <span className="text-orange-500">Cockpit</span>
+            </div>
+            {cohort?.title && (
+                <div className="hidden md:flex items-center gap-2 px-3 py-1 bg-slate-100 text-slate-600 rounded-full border border-slate-200">
+                    <span className="text-xs">⚓️</span>
+                    <span className="text-xs font-bold uppercase tracking-wider">Équipage {cohort.title}</span>
+                </div>
+            )}
         </div>
         <div className="flex items-center gap-4">
             <div className="text-right hidden sm:block">
