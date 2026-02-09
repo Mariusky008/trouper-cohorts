@@ -47,12 +47,12 @@ export function CockpitDashboard({ user, cohort, mission, dayIndex, buddy, steps
             <div className="space-y-3">
                 {groupSteps.map((step: any) => (
                     <div key={step.id} className="flex items-start gap-3 group">
-                        <Checkbox id={`step-${step.id}`} className="mt-1 data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600" />
+                        <Checkbox id={`step-${step.id}`} className="mt-1 data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600 shrink-0" />
                         <label
                             htmlFor={`step-${step.id}`}
-                            className="text-sm font-medium leading-snug peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-slate-700 cursor-pointer group-hover:text-slate-900 transition-colors"
+                            className="text-sm font-medium leading-snug peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-slate-700 cursor-pointer group-hover:text-slate-900 transition-colors w-full"
                         >
-                            {step.content}
+                            <span className="block whitespace-pre-wrap leading-relaxed">{step.content}</span>
                         </label>
                     </div>
                 ))}
