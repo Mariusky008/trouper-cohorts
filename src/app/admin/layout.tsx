@@ -55,6 +55,9 @@ export default async function AdminLayout({
             <Link href="/admin/sessions" className="hover:underline">
               Sessions (Dates)
             </Link>
+            <Link href="/admin/program" className="hover:underline text-blue-600">
+              Programme
+            </Link>
             {/* Add more links later */}
           </nav>
         </div>

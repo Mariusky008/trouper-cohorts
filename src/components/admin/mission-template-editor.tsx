@@ -1,0 +1,135 @@
+"use client";
+
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Trash2, Plus, Save } from "lucide-react";
+import { updateMissionTemplate } from "@/app/actions/admin-program";
+import { toast } from "sonner";
+
+export function MissionTemplateEditor({ template, steps }: { template: any, steps: any[] }) {
+    const [title, setTitle] = useState(template.title);
+    const [description, setDescription] = useState(template.description || "");
+    const [videoUrl, setVideoUrl] = useState(template.video_url || "");
+    const [currentSteps, setCurrentSteps] = useState(steps || []);
+    const [isSaving, setIsSaving] = useState(false);
+
+    const handleStepChange = (index: number, field: string, value: string) => {
+        const newSteps = [...currentSteps];
+        newSteps[index] = { ...newSteps[index], [field]: value };
+        setCurrentSteps(newSteps);
+    };
+
+    const addStep = () => {
+        setCurrentSteps([...currentSteps, { content: "", category: "intellectual", position: currentSteps.length + 1 }]);
+    };
+
+    const removeStep = (index: number) => {
+        const newSteps = currentSteps.filter((_, i) => i !== index);
+        setCurrentSteps(newSteps);
+    };
+
+    const handleSave = async () => {
+        setIsSaving(true);
+        try {
+            const result = await updateMissionTemplate(template.id, {
+                title,
+                description,
+                video_url: videoUrl,
+                steps: currentSteps
+            });
+            if (result.success) {
+                toast.success("Programme mis à jour !");
+            } else {
+                toast.error("Erreur: " + result.error);
+            }
+        } catch (e) {
+            toast.error("Erreur inconnue");
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    return (
+        <div className="space-y-8 pb-20">
+            <Card>
+                <CardHeader><CardTitle>Informations Générales</CardTitle></CardHeader>
+                <CardContent className="space-y-4">
+                    <div>
+                        <Label>Titre de la Mission</Label>
+                        <Input value={title} onChange={(e) => setTitle(e.target.value)} />
+                    </div>
+                    <div>
+                        <Label>Description Courte</Label>
+                        <Textarea value={description} onChange={(e) => setDescription(e.target.value)} />
+                    </div>
+                    <div>
+                        <Label>URL Vidéo Briefing</Label>
+                        <Input value={videoUrl} onChange={(e) => setVideoUrl(e.target.value)} placeholder="https://youtube.com/..." />
+                    </div>
+                </CardContent>
+            </Card>
+
+            <Card>
+                <CardHeader className="flex flex-row items-center justify-between">
+                    <CardTitle>Étapes de la Mission</CardTitle>
+                    <Button onClick={addStep} size="sm" variant="outline"><Plus className="h-4 w-4 mr-2"/> Ajouter</Button>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                    {currentSteps.map((step, index) => (
+                        <div key={index} className="p-4 border rounded-lg bg-slate-50 space-y-3 relative group">
+                            <Button 
+                                variant="ghost" size="icon" 
+                                className="absolute top-2 right-2 text-red-400 hover:text-red-600 hover:bg-red-50"
+                                onClick={() => removeStep(index)}
+                            >
+                                <Trash2 className="h-4 w-4" />
+                            </Button>
+                            
+                            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                                <div className="md:col-span-1">
+                                    <Label>Catégorie</Label>
+                                    <Select 
+                                        value={step.category} 
+                                        onValueChange={(val) => handleStepChange(index, "category", val)}
+                                    >
+                                        <SelectTrigger><SelectValue /></SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="intellectual">🧠 Intellectuel</SelectItem>
+                                            <SelectItem value="creative">🎥 Créatif</SelectItem>
+                                            <SelectItem value="social">👥 Social</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="md:col-span-3">
+                                    <Label>Contenu (Markdown supporté)</Label>
+                                    <Textarea 
+                                        value={step.content} 
+                                        onChange={(e) => handleStepChange(index, "content", e.target.value)} 
+                                        className="min-h-[150px] font-mono text-sm leading-relaxed"
+                                    />
+                                    <p className="text-xs text-muted-foreground mt-1">
+                                        Utilisez Entrée pour faire des sauts de ligne.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                    {currentSteps.length === 0 && (
+                        <p className="text-center text-muted-foreground italic">Aucune étape définie.</p>
+                    )}
+                </CardContent>
+            </Card>
+
+            <div className="flex justify-end sticky bottom-6 z-10">
+                <Button size="lg" onClick={handleSave} disabled={isSaving} className="shadow-xl bg-slate-900 text-white hover:bg-slate-800">
+                    {isSaving ? "Sauvegarde..." : <><Save className="h-4 w-4 mr-2" /> Enregistrer les modifications</>}
+                </Button>
+            </div>
+        </div>
+    );
+}

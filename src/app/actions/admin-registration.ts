@@ -2,11 +2,15 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { Resend } from 'resend';
+import WelcomeEmail from '@/emails/welcome-email';
 
-export async function approveRegistration(registrationId: string) {
+const resend = new Resend(process.env.RESEND_API_KEY);
+
+export async function validateRegistration(registrationId: string) {
   const supabase = await createClient();
 
-  // 1. Récupérer l'inscription
+  // 1. Récupérer les infos de l'inscription
   const { data: registration, error: fetchError } = await supabase
     .from("pre_registrations")
     .select("*")
@@ -87,17 +91,38 @@ export async function approveRegistration(registrationId: string) {
       return { error: "Erreur lors de la validation." };
   }
   
-  // 5. AUTO-BINÔME (Le petit plus magique)
-  // Si c'est le 2ème membre (ou plus), on lance une génération de binômes pour aujourd'hui
-  // pour qu'ils ne soient pas seuls en attendant minuit.
+  // 5. AUTO-BINÔME
   const { count } = await supabase
     .from("cohort_members")
     .select("*", { count: 'exact', head: true })
     .eq("cohort_id", cohortId);
     
   if (count && count >= 2) {
-      // On déclenche la rotation juste pour cette cohorte, pour aujourd'hui
       await supabase.rpc("rotate_daily_pairs", { target_cohort_id: cohortId });
+  }
+
+  // 6. ENVOI EMAIL DE BIENVENUE (RESEND)
+  if (process.env.RESEND_API_KEY) {
+    try {
+        const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.popey.academy';
+        const loginUrl = `${baseUrl}/login?email=${encodeURIComponent(email)}`;
+
+        await resend.emails.send({
+            from: 'Popey Academy <contact@popey.academy>',
+            to: email,
+            subject: 'Bienvenue à bord ! ⚓️',
+            react: WelcomeEmail({
+                firstName: first_name,
+                loginUrl,
+                cohortName: cohortTitle
+            })
+        });
+        console.log("Email de bienvenue envoyé à", email);
+    } catch (emailError) {
+        console.error("Erreur envoi email Resend:", emailError);
+    }
+  } else {
+      console.warn("RESEND_API_KEY manquante. Email non envoyé.");
   }
   
   return { 
