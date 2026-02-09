@@ -1,77 +1,83 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { z } from "zod";
+import { Resend } from 'resend';
+import ConfirmationEmail from '@/emails/confirmation-email';
 
-export async function registerInterest(formData: FormData) {
-  // Honeypot check
-  const honeypot = String(formData.get("confirm_email") || "");
-  if (honeypot) {
-    return { success: true, message: "Inscription validée !" }; 
-  }
+const resend = new Resend(process.env.RESEND_API_KEY);
 
+const registrationSchema = z.object({
+  firstName: z.string().min(2, "Le prénom doit faire au moins 2 caractères"),
+  lastName: z.string().min(2, "Le nom doit faire au moins 2 caractères"),
+  email: z.string().email("Email invalide"),
+  phone: z.string().min(10, "Numéro de téléphone invalide"),
+  instagram: z.string().optional(),
+  trade: z.string().min(2, "Veuillez sélectionner votre métier"),
+  otherTrade: z.string().optional(),
+  sessionDate: z.string().min(1, "Veuillez choisir une session"),
+});
+
+export async function submitRegistration(formData: FormData) {
   const supabase = await createClient();
   
-  const email = String(formData.get("email") || "").trim().toLowerCase();
-  const phone = String(formData.get("phone") || "").trim();
-  const trade = String(formData.get("trade") || "").trim();
-  const departmentCode = String(formData.get("department_code") || "").trim();
-  const socialNetwork = String(formData.get("social_network") || "").trim();
-  const followersCount = String(formData.get("followers_count") || "").trim();
-  const firstName = String(formData.get("first_name") || "").trim();
-  const lastName = String(formData.get("last_name") || "").trim();
-  const selectedSession = String(formData.get("selected_session_date") || "").trim();
+  const rawData = {
+    firstName: formData.get("firstName"),
+    lastName: formData.get("lastName"),
+    email: formData.get("email"),
+    phone: formData.get("phone"),
+    instagram: formData.get("instagram"),
+    trade: formData.get("trade"),
+    otherTrade: formData.get("otherTrade"),
+    sessionDate: formData.get("sessionDate"),
+  };
 
-  if (!email) {
-    return { error: "L'email est requis." };
+  const validatedFields = registrationSchema.safeParse(rawData);
+
+  if (!validatedFields.success) {
+    return { error: validatedFields.error.flatten().fieldErrors };
   }
 
-  // Vérifier si déjà inscrit
-  const { data: existing } = await supabase
+  const data = validatedFields.data;
+  
+  // Si "Autre" est sélectionné, on prend la valeur de otherTrade
+  const finalTrade = data.trade === "autre" && data.otherTrade ? data.otherTrade : data.trade;
+
+  // Mapping des départements (Simplified logic for demo)
+  const departmentCode = "40"; // Par défaut pour la démo
+
+  const { error } = await supabase
     .from("pre_registrations")
-    .select("id")
-    .eq("email", email)
-    .maybeSingle();
-
-  if (existing) {
-    return { success: true, message: "Vous êtes déjà sur la liste d'attente !" };
-  }
-
-  // Tentative 1 : Avec tous les champs
-  const { error } = await supabase.from("pre_registrations").insert({
-    email,
-    phone: phone || null,
-    trade: trade || null,
-    department_code: departmentCode || null,
-    social_network: socialNetwork || null,
-    followers_count: followersCount || null,
-    first_name: firstName || null,
-    last_name: lastName || null,
-    selected_session_date: selectedSession || null,
-    status: "pending",
-  });
-
-  if (error) {
-    console.error("Registration error (attempt 1):", error);
-    return { error: `Erreur détaillée: ${error.message} (Code: ${error.code})` };
-
-    /* 
-    // Tentative 2 : Fallback minimal
-    console.log("Retrying minimal insert...");
-    const { error: retryError } = await supabase.from("pre_registrations").insert({
-        email,
-        trade: trade || null,
-        department_code: departmentCode || null,
-        status: "pending",
+    .insert({
+      first_name: data.firstName,
+      last_name: data.lastName,
+      email: data.email,
+      phone: data.phone,
+      instagram_handle: data.instagram,
+      trade: finalTrade,
+      department_code: departmentCode,
+      status: "pending",
+      selected_session_date: data.sessionDate,
     });
 
-    if (retryError) {
-            console.error("Registration error (attempt 2 - no phone):", retryError);
-            return { error: `Erreur technique: ${retryError.message}` };
-    }
-    */
-  } else {
-      console.log("Registration SUCCESS (Attempt 1).");
+  if (error) {
+    console.error("Erreur inscription:", error);
+    return { error: "Une erreur est survenue lors de l'inscription." };
   }
 
-  return { success: true, message: "Vous êtes inscrit sur la liste d'attente !" };
+  // Envoi de l'email de confirmation
+  if (process.env.RESEND_API_KEY) {
+      try {
+          await resend.emails.send({
+              from: 'Popey Academy <contact@popey.academy>',
+              to: data.email,
+              subject: 'Candidature reçue ! ⚓️',
+              react: ConfirmationEmail({ firstName: data.firstName })
+          });
+      } catch (e) {
+          console.error("Erreur envoi email confirmation:", e);
+      }
+  }
+
+  return { success: true };
 }
