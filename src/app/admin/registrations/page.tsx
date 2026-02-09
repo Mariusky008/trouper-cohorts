@@ -9,6 +9,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { ValidateRegistrationButton } from "@/components/admin/validate-registration-button";
 
 export const dynamic = 'force-dynamic';
 
@@ -101,9 +102,7 @@ export default async function AdminRegistrationsPage() {
                   {new Date(reg.created_at).toLocaleDateString()} {new Date(reg.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
                 </TableCell>
                 <TableCell>
-                  <Badge variant={reg.status === "pending" ? "secondary" : "default"} className="text-xs">
-                    {reg.status}
-                  </Badge>
+                  <ValidateRegistrationButton id={reg.id} status={reg.status} />
                 </TableCell>
               </TableRow>
             ))}
