@@ -238,3 +238,9 @@
   10% { clip-path: inset(5% 0 80% 0); transform: translate(-2px, 0); }
   100% { clip-path: inset(5% 0 80% 0); transform: translate(0, 0); }
 }
+
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}

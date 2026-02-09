@@ -9,6 +9,7 @@ import { VictoryWall } from "@/components/dashboard/victory-wall";
 import { ChatBox } from "@/components/chat/chat-box";
 import { Button } from "@/components/ui/button";
 import { InviteCard } from "@/components/app/invite-card";
+import { GoldenTicket } from "@/components/dashboard/golden-ticket";
 
 interface CockpitProps {
     user: any;
@@ -109,6 +110,9 @@ export function CockpitDashboard({ user, cohort, mission, dayIndex, buddy, steps
             {/* COLONNE GAUCHE (Mission + Victoires) */}
             <div className="lg:col-span-2 space-y-8">
                 
+                {/* 0. LA RELIQUE (GOLDEN TICKET) */}
+                <GoldenTicket dayIndex={dayIndex} totalDays={14} />
+
                 {/* 1. Briefing Vidéo */}
                 <Card className="overflow-hidden border-2 border-slate-200 shadow-sm">
                     {mission?.video_url ? (
