@@ -33,13 +33,15 @@ export default async function AdminCohortDetailPage({ params }: { params: Promis
       );
   }
 
-  // 2. Membres (Liste complète)
+  // 2. Membres ACTIFS (Déjà inscrits avec compte)
   const { data: membersData } = await supabase
     .from("cohort_members")
     .select("user_id, department_code, joined_at")
     .eq("cohort_id", id);
 
-  let membersWithDetails: any[] = [];
+  let allMembers: any[] = [];
+
+  // Récupérer les détails des membres actifs
   if (membersData && membersData.length > 0) {
       const userIds = membersData.map(m => m.user_id);
       const { data: userDetails } = await supabase
@@ -47,10 +49,36 @@ export default async function AdminCohortDetailPage({ params }: { params: Promis
           .select("user_id, first_name, last_name, email, trade")
           .in("user_id", userIds);
       
-      membersWithDetails = membersData.map(m => {
+      const activeMembers = membersData.map(m => {
           const details = userDetails?.find(u => u.user_id === m.user_id);
-          return { ...m, ...details };
+          return { ...m, ...details, status: 'active' };
       });
+      allMembers = [...activeMembers];
+  }
+
+  // 2b. Membres EN ATTENTE (Validés par l'admin mais n'ont pas encore créé leur compte Auth)
+  // On cherche ceux qui ont assigned_cohort_id = id ET qui ne sont PAS dans la liste des membres actifs
+  const { data: pendingData } = await supabase
+    .from("pre_registrations")
+    .select("*")
+    .eq("assigned_cohort_id", id);
+
+  if (pendingData) {
+      // Filtrer ceux qui sont déjà actifs (pour éviter les doublons si sync imparfaite)
+      const activeUserIds = membersData?.map(m => m.user_id) || [];
+      const reallyPending = pendingData.filter(p => !p.user_id || !activeUserIds.includes(p.user_id));
+      
+      const pendingMembers = reallyPending.map(p => ({
+          user_id: p.id, // On utilise l'ID de pré-inscription temporairement
+          first_name: p.first_name,
+          last_name: p.last_name,
+          email: p.email,
+          trade: p.trade,
+          department_code: p.department_code,
+          status: 'pending' // Nouveau statut pour l'affichage
+      }));
+      
+      allMembers = [...allMembers, ...pendingMembers];
   }
 
   // 3. Paires du jour
@@ -91,7 +119,7 @@ export default async function AdminCohortDetailPage({ params }: { params: Promis
                     <span className="text-red-500 text-xs">VERSION TEST BINOMES</span>
                 </h1>
                 <p className="text-muted-foreground text-sm">
-                    {membersData?.length || 0} membres • Début: {new Date(cohort.start_date).toLocaleDateString()}
+                    {allMembers.length || 0} membres • Début: {new Date(cohort.start_date).toLocaleDateString()}
                 </p>
             </div>
         </div>
@@ -103,7 +131,7 @@ export default async function AdminCohortDetailPage({ params }: { params: Promis
 
         {/* Liste des membres */}
         <section>
-            <CohortMembersList members={membersWithDetails} />
+            <CohortMembersList members={allMembers} />
         </section>
     </div>
   );

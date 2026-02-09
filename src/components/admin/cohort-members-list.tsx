@@ -34,9 +34,14 @@ export function CohortMembersList({ members }: CohortMembersListProps) {
                                     </p>
                                 </div>
                             </div>
-                            <div className="text-right">
+                            <div className="text-right flex flex-col items-end gap-1">
                                 <Badge variant="outline">{member.department_code}</Badge>
-                                <p className="text-xs text-muted-foreground mt-1 capitalize">{member.trade}</p>
+                                <p className="text-xs text-muted-foreground capitalize">{member.trade}</p>
+                                {member.status === 'pending' && (
+                                    <span className="px-2 py-0.5 bg-yellow-100 text-yellow-700 text-[10px] rounded-full uppercase font-bold tracking-wider">
+                                        En attente
+                                    </span>
+                                )}
                             </div>
                         </div>
                     ))}
