@@ -38,6 +38,7 @@ export function PreRegistrationForm() {
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-3 max-w-md mx-auto w-full">
+        {/* Champs d'identité (v2) */}
         <div className="grid grid-cols-2 gap-2">
             <Input 
                 name="first_name" 

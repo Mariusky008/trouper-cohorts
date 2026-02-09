@@ -52,7 +52,9 @@ export async function registerInterest(formData: FormData) {
 
   if (error) {
     console.error("Registration error (attempt 1):", error);
+    return { error: `Erreur détaillée: ${error.message} (Code: ${error.code})` };
 
+    /* 
     // Tentative 2 : Fallback minimal
     console.log("Retrying minimal insert...");
     const { error: retryError } = await supabase.from("pre_registrations").insert({
@@ -66,6 +68,9 @@ export async function registerInterest(formData: FormData) {
             console.error("Registration error (attempt 2 - no phone):", retryError);
             return { error: `Erreur technique: ${retryError.message}` };
     }
+    */
+  } else {
+      console.log("Registration SUCCESS (Attempt 1).");
   }
 
   return { success: true, message: "Vous êtes inscrit sur la liste d'attente !" };
