@@ -15,24 +15,16 @@ export const dynamic = 'force-dynamic';
 export default async function AdminRegistrationsPage() {
   const supabase = await createClient();
   
-  console.log("Fetching registrations...");
-  const { data: registrations, error } = await supabase
+  const { data: registrations } = await supabase
     .from("pre_registrations")
     .select("*")
     .order("created_at", { ascending: false });
-
-  if (error) {
-      console.error("Error fetching registrations:", error);
-      return <div className="text-red-500">Erreur chargement: {error.message}</div>;
-  }
-  
-  console.log(`Found ${registrations?.length} registrations`);
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Pré-inscriptions</h1>
-        <Badge variant="outline">{registrations?.length || 0} leads (Debug: {new Date().toLocaleTimeString()})</Badge>
+        <Badge variant="outline">{registrations?.length || 0} leads</Badge>
       </div>
 
       <div className="border rounded-lg">
