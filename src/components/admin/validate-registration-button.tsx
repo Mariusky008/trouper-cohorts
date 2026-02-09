@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Check, Loader2 } from "lucide-react";
-import { approveRegistration } from "@/app/actions/admin-registration";
+import { validateRegistration } from "@/app/actions/admin-registration";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
@@ -19,7 +19,7 @@ export function ValidateRegistrationButton({ id, status }: { id: string, status:
         if (!confirm("Valider cette inscription et assigner automatiquement à une cohorte ?")) return;
         
         setLoading(true);
-        const res = await approveRegistration(id);
+        const res = await validateRegistration(id);
         setLoading(false);
 
         if (res.error) {
