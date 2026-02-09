@@ -11,11 +11,24 @@ import { Trash2, Plus, Save } from "lucide-react";
 import { updateMissionTemplate } from "@/app/actions/admin-program";
 import { toast } from "sonner";
 
-export function MissionTemplateEditor({ template, steps }: { template: any, steps: any[] }) {
+interface Template {
+    id: string;
+    title: string;
+    description: string | null;
+    video_url: string | null;
+}
+
+interface Step {
+    content: string;
+    category: string;
+    position: number;
+}
+
+export function MissionTemplateEditor({ template, steps }: { template: Template, steps: Step[] }) {
     const [title, setTitle] = useState(template.title);
     const [description, setDescription] = useState(template.description || "");
     const [videoUrl, setVideoUrl] = useState(template.video_url || "");
-    const [currentSteps, setCurrentSteps] = useState(steps || []);
+    const [currentSteps, setCurrentSteps] = useState<Step[]>(steps || []);
     const [isSaving, setIsSaving] = useState(false);
 
     const handleStepChange = (index: number, field: string, value: string) => {
