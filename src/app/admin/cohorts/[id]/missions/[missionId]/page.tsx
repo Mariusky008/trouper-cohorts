@@ -37,6 +37,7 @@ export default async function EditMissionPage({
     const description = String(formData.get("description") || "");
     const proofType = String(formData.get("proof_type") || "url");
     const missionType = String(formData.get("mission_type") || "solo");
+    const videoUrl = String(formData.get("video_url") || "");
 
     await supabase
       .from("missions")
@@ -45,6 +46,7 @@ export default async function EditMissionPage({
         description,
         proof_type: proofType,
         mission_type: missionType,
+        video_url: videoUrl || null,
       })
       .eq("id", missionId);
 
@@ -86,6 +88,12 @@ export default async function EditMissionPage({
                 className="min-h-[200px] font-mono text-sm"
                 defaultValue={mission.description || ""}
               />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="video_url">URL de la vidéo (Briefing)</Label>
+              <Input id="video_url" name="video_url" defaultValue={mission.video_url || ""} placeholder="https://..." />
+              <p className="text-xs text-muted-foreground">Lien direct vers la vidéo (mp4) ou embed URL.</p>
             </div>
 
             <div className="grid grid-cols-2 gap-4">

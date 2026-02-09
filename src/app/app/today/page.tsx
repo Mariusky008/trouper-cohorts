@@ -107,7 +107,7 @@ export default async function TodayPage({
   // Récupération de la Mission
   const missionRes = await supabase
     .from("missions")
-    .select("id, title, description, proof_type")
+    .select("id, title, description, proof_type, video_url")
     .eq("cohort_id", cohortRes.data.id)
     .eq("day_index", dayIndex)
     .maybeSingle();

@@ -69,11 +69,26 @@ export function CockpitDashboard({ user, cohort, mission, dayIndex, buddies }: C
                 
                 {/* 1. Briefing Vidéo */}
                 <Card className="overflow-hidden border-2 border-slate-200 shadow-sm">
-                    <div className="aspect-video bg-slate-900 flex items-center justify-center relative group cursor-pointer">
-                        <div className="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-all"></div>
-                        <PlayCircle className="h-20 w-20 text-white opacity-80 group-hover:scale-110 transition-transform duration-300" />
-                        <span className="absolute bottom-4 left-4 text-white font-bold text-lg">Briefing du Jour</span>
-                    </div>
+                    {mission?.video_url ? (
+                        <div className="aspect-video bg-black flex items-center justify-center relative">
+                            {mission.video_url.includes('youtube') || mission.video_url.includes('vimeo') ? (
+                                <iframe 
+                                    src={mission.video_url.replace('watch?v=', 'embed/')} 
+                                    className="w-full h-full" 
+                                    allowFullScreen 
+                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                />
+                            ) : (
+                                <video controls className="w-full h-full" src={mission.video_url} />
+                            )}
+                        </div>
+                    ) : (
+                        <div className="aspect-video bg-slate-900 flex items-center justify-center relative group cursor-pointer">
+                            <div className="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-all"></div>
+                            <PlayCircle className="h-20 w-20 text-white opacity-80 group-hover:scale-110 transition-transform duration-300" />
+                            <span className="absolute bottom-4 left-4 text-white font-bold text-lg">Briefing du Jour (En attente)</span>
+                        </div>
+                    )}
                     <CardContent className="p-6 bg-white">
                         <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
                             <span className="bg-blue-100 text-blue-700 h-6 w-6 rounded-full flex items-center justify-center text-xs">!</span>
