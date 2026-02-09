@@ -112,6 +112,17 @@ export default async function TodayPage({
     .eq("day_index", dayIndex)
     .maybeSingle();
 
+  // Récupération des Étapes (Steps)
+  let steps: any[] = [];
+  if (missionRes.data) {
+      const stepsRes = await supabase
+        .from("mission_steps")
+        .select("*")
+        .eq("mission_id", missionRes.data.id)
+        .order("position", { ascending: true });
+      steps = stepsRes.data || [];
+  }
+
   // Récupération du Binôme (Buddy)
   // TODO: Utiliser la nouvelle table `cohort_pairs` quand elle sera peuplée
   // Pour l'instant on garde la logique de groupe ou on simule
@@ -145,6 +156,7 @@ export default async function TodayPage({
         mission={missionRes.data} 
         dayIndex={dayIndex} 
         buddies={buddies} 
+        steps={steps}
     />
   );
 }

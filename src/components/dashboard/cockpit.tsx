@@ -15,9 +15,10 @@ interface CockpitProps {
     mission: any;
     dayIndex: number;
     buddies: any[];
+    steps: any[];
 }
 
-export function CockpitDashboard({ user, cohort, mission, dayIndex, buddies }: CockpitProps) {
+export function CockpitDashboard({ user, cohort, mission, dayIndex, buddies, steps }: CockpitProps) {
   // Mock binôme si pas de buddies (pour le dev)
   const currentBuddy = buddies.length > 0 ? buddies[0] : {
       id: "mock-buddy",
@@ -95,9 +96,9 @@ export function CockpitDashboard({ user, cohort, mission, dayIndex, buddies }: C
                             Votre Mission
                         </h3>
                         
-                        {mission?.description ? (
+                        {mission?.description && !steps?.length && (
+                             // Si pas d'étapes structurées, on affiche la description découpée (Legacy)
                             <div className="space-y-4">
-                                {/* On parse la description ligne par ligne pour en faire des items de checklist */}
                                 {mission.description.split('\n').filter((l: string) => l.trim().length > 0).map((line: string, i: number) => (
                                     <div key={i} className="flex items-start gap-3 p-3 rounded-lg bg-slate-50 border border-slate-100">
                                         <Checkbox id={`task${i}`} className="mt-1" />
@@ -107,7 +108,31 @@ export function CockpitDashboard({ user, cohort, mission, dayIndex, buddies }: C
                                     </div>
                                 ))}
                             </div>
-                        ) : (
+                        )}
+
+                        {mission?.description && steps?.length > 0 && (
+                            <div className="mb-6 text-sm text-slate-600 whitespace-pre-wrap">
+                                {mission.description}
+                            </div>
+                        )}
+
+                        {steps && steps.length > 0 && (
+                            <div className="space-y-4">
+                                {steps.map((step: any, i: number) => (
+                                    <div key={step.id} className="flex items-start gap-3 p-3 rounded-lg bg-slate-50 border border-slate-100 shadow-sm">
+                                        <Checkbox id={`step-${step.id}`} className="mt-1" />
+                                        <label htmlFor={`step-${step.id}`} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer w-full">
+                                            <span className="block text-slate-900 font-bold mb-1">Étape {i + 1}</span>
+                                            <span className="block text-slate-600 leading-relaxed whitespace-pre-wrap">
+                                                {step.content}
+                                            </span>
+                                        </label>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
+                        {!mission?.description && (!steps || steps.length === 0) && (
                             <p className="text-slate-500 italic">Pas de description pour cette mission.</p>
                         )}
 
