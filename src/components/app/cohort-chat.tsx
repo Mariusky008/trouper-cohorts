@@ -159,17 +159,21 @@ export function CohortChat({ cohortId, currentUserId }: { cohortId: string, curr
 
                 {messages.map((msg) => {
                     const isMe = msg.user_id === currentUserId;
+                    // Détection simple du capitaine (à remplacer par un rôle DB plus tard)
+                    const isCaptain = (msg.user?.first_name === "Jean philippe" || msg.user?.first_name === "Jean-Philippe") && msg.user?.last_name === "Roth";
+
                     return (
                         <div key={msg.id} className={`flex gap-3 ${isMe ? "flex-row-reverse" : ""}`}>
-                            <Avatar className="h-8 w-8 mt-1 border-2 border-white shadow-sm">
-                                <AvatarFallback className={isMe ? "bg-blue-100 text-blue-700" : "bg-white text-slate-600"}>
+                            <Avatar className={`h-8 w-8 mt-1 border-2 shadow-sm ${isCaptain ? "border-yellow-400" : "border-white"}`}>
+                                <AvatarFallback className={isMe ? "bg-blue-100 text-blue-700" : isCaptain ? "bg-yellow-100 text-yellow-700" : "bg-white text-slate-600"}>
                                     {msg.user?.first_name?.[0] || "?"}
                                 </AvatarFallback>
                             </Avatar>
                             <div className={`max-w-[80%] space-y-1 ${isMe ? "items-end" : "items-start"}`}>
                                 <div className={`flex items-baseline gap-2 ${isMe ? "flex-row-reverse" : ""}`}>
-                                    <span className="text-xs font-bold text-slate-700">
+                                    <span className="text-xs font-bold text-slate-700 flex items-center gap-1">
                                         {isMe ? "Moi" : msg.user?.first_name}
+                                        {isCaptain && !isMe && <span className="text-[10px] bg-yellow-100 text-yellow-700 px-1 rounded border border-yellow-200">CAPITAINE</span>}
                                     </span>
                                     <span className="text-[10px] text-muted-foreground">
                                         {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -178,7 +182,9 @@ export function CohortChat({ cohortId, currentUserId }: { cohortId: string, curr
                                 <div className={`p-3 rounded-2xl text-sm shadow-sm ${
                                     isMe 
                                         ? "bg-blue-600 text-white rounded-tr-none" 
-                                        : "bg-white border text-slate-800 rounded-tl-none"
+                                        : isCaptain
+                                            ? "bg-yellow-50 border-2 border-yellow-200 text-slate-900 rounded-tl-none"
+                                            : "bg-white border text-slate-800 rounded-tl-none"
                                 }`}>
                                     {msg.content}
                                 </div>

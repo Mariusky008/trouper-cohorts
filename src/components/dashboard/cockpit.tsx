@@ -8,6 +8,7 @@ import { PlayCircle, Users, Brain, Video, CheckCircle2 } from "lucide-react";
 import { VictoryWall } from "@/components/dashboard/victory-wall";
 import { ChatBox } from "@/components/chat/chat-box";
 import { Button } from "@/components/ui/button";
+import { InviteCard } from "@/components/app/invite-card";
 
 interface CockpitProps {
     user: any;
@@ -158,6 +159,9 @@ export function CockpitDashboard({ user, cohort, mission, dayIndex, buddy, steps
             {/* COLONNE DROITE (Binôme) */}
             <div className="lg:col-span-1 space-y-6">
                 
+                {/* Viral Invitation */}
+                <InviteCard />
+
                 {/* Info Binôme */}
                 <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-6">
                     <h3 className="text-sm font-bold uppercase text-slate-400 mb-4 tracking-wider flex items-center gap-2">
