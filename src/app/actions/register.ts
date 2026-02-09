@@ -55,10 +55,10 @@ export async function registerInterest(formData: FormData) {
 
         if (retryError) {
              console.error("Registration error (attempt 2 - no phone):", retryError);
-             return { error: "Une erreur technique est survenue. Veuillez réessayer." };
+             return { error: `Erreur technique: ${retryError.message}` };
         }
     } else {
-        return { error: "Une erreur est survenue. Réessayez plus tard." };
+        return { error: `Erreur: ${error.message}` };
     }
   }
 
