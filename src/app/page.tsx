@@ -338,17 +338,12 @@ export default function Home() {
                     <div className="skew-x-3">
                          <div className="text-left mb-6">
                             <h3 className="font-black text-xl uppercase mb-1">Fiche d'Enrôlement</h3>
-                            <p className="text-sm text-slate-500">Session de Février 2026</p>
                          </div>
                         <div className="light">
                              <PreRegistrationForm />
                         </div>
                     </div>
                 </div>
-                
-                <p className="text-slate-500 mt-8 font-mono text-sm">
-                    /// ATTENTION : 1 SEULE PLACE PAR MÉTIER PAR SECTEUR.
-                </p>
              </div>
         </section>
       </main>

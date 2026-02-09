@@ -10,6 +10,8 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 
+export const dynamic = 'force-dynamic';
+
 export default async function AdminRegistrationsPage() {
   const supabase = await createClient();
   const { data: registrations } = await supabase
