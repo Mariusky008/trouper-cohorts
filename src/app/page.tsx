@@ -79,7 +79,7 @@ export default function Home() {
           <div className="absolute inset-0 bg-gradient-to-b from-blue-900 via-slate-900 to-slate-950 z-0" />
           
           {/* Particles */}
-          <div className="absolute inset-0 opacity-30">
+          <div className="absolute inset-0 opacity-30 pointer-events-none">
               {[...Array(20)].map((_, i) => (
                   <motion.div 
                     key={i}
@@ -153,7 +153,7 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="absolute bottom-0 w-full text-slate-950 z-20">
+          <div className="absolute bottom-0 w-full text-slate-950 z-20 pointer-events-none">
              <Wave />
           </div>
         </section>
@@ -316,7 +316,7 @@ export default function Home() {
 
         {/* 5. CTA : Recrutement */}
         <section id="join" className="py-32 bg-slate-900 relative overflow-hidden">
-             <div className="absolute top-0 w-full text-blue-950 rotate-180 z-10">
+             <div className="absolute top-0 w-full text-blue-950 rotate-180 z-10 pointer-events-none">
                 <Wave />
              </div>
              
