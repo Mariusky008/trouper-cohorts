@@ -7,7 +7,7 @@ import { ArrowLeft } from "lucide-react";
 
 export const dynamic = 'force-dynamic';
 
-export default async function AdminCohortDetailPage({ params }: { params: { id: string } }) {
+export default async function AdminCohortDetailPage({ params }: { params: any }) {
   const supabase = await createClient();
   const today = new Date().toISOString().split('T')[0];
 
@@ -15,14 +15,14 @@ export default async function AdminCohortDetailPage({ params }: { params: { id: 
   const { data: cohort, error } = await supabase
     .from("cohorts")
     .select("*")
-    .eq("id", params.id)
+    .eq("id", params?.id)
     .single();
 
   if (error || !cohort) {
       return (
         <div className="p-8 border border-red-200 bg-red-50 text-red-700 rounded-lg">
             <h2 className="font-bold text-lg mb-2">Erreur : Cohorte introuvable</h2>
-            <p>ID cherché : <code>{params.id}</code></p>
+            <p>ID cherché : <code>{JSON.stringify(params)}</code></p>
             <p>Erreur Supabase : {error?.message || "Aucune donnée retournée"}</p>
             <div className="mt-4">
                 <Button asChild variant="outline"><Link href="/admin/cohorts">Retour à la liste</Link></Button>
