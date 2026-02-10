@@ -14,9 +14,10 @@ interface MissionValidatorProps {
     status: 'pending' | 'submitted' | 'validated';
     isMyMission: boolean; // True si c'est MA mission
     buddyName?: string;
+    duoInstructions?: string;
 }
 
-export function MissionValidator({ missionId, validationType, status, isMyMission, buddyName }: MissionValidatorProps) {
+export function MissionValidator({ missionId, validationType, status, isMyMission, buddyName, duoInstructions }: MissionValidatorProps) {
     const supabase = createClient();
     const [proofUrl, setProofUrl] = useState("");
     const [loading, setLoading] = useState(false);
@@ -90,17 +91,24 @@ export function MissionValidator({ missionId, validationType, status, isMyMissio
                 </div>
                 <CardContent className="p-4 text-sm text-orange-900 space-y-3">
                     <p>Aujourd'hui, la règle change ! Tu ne peux pas t'auto-valider.</p>
-                    <ol className="list-decimal pl-5 space-y-2 marker:font-bold marker:text-orange-600">
-                        <li>Réalise ta mission du jour.</li>
-                        <li>
-                            Montre le résultat à <strong>{buddyName || "ton binôme"}</strong> :<br/>
-                            <span className="text-xs text-orange-700 block mt-1">
-                                📡 <strong>À distance :</strong> Envoie une preuve (photo/audio) sur le chat.<br/>
-                                🤝 <strong>Ensemble :</strong> Faites-le côte à côte si vous êtes proches !
-                            </span>
-                        </li>
-                        <li>C'est <strong>LUI</strong> qui doit valider ton travail depuis son compte pour te débloquer.</li>
-                    </ol>
+                    
+                    {duoInstructions ? (
+                        <div className="bg-white/80 p-3 rounded-lg border border-orange-200/50 shadow-sm italic text-orange-800 leading-relaxed">
+                            "{duoInstructions}"
+                        </div>
+                    ) : (
+                        <ol className="list-decimal pl-5 space-y-2 marker:font-bold marker:text-orange-600">
+                            <li>Réalise ta mission du jour.</li>
+                            <li>
+                                Montre le résultat à <strong>{buddyName || "ton binôme"}</strong> :<br/>
+                                <span className="text-xs text-orange-700 block mt-1">
+                                    📡 <strong>À distance :</strong> Envoie une preuve (photo/audio) sur le chat.<br/>
+                                    🤝 <strong>Ensemble :</strong> Faites-le côte à côte si vous êtes proches !
+                                </span>
+                            </li>
+                            <li>C'est <strong>LUI</strong> qui doit valider ton travail depuis son compte pour te débloquer.</li>
+                        </ol>
+                    )}
                 </CardContent>
             </Card>
         );

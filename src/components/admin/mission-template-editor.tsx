@@ -17,6 +17,7 @@ interface Template {
     description: string | null;
     video_url: string | null;
     validation_type?: string;
+    duo_instructions?: string | null;
 }
 
 interface Step {
@@ -30,6 +31,7 @@ export function MissionTemplateEditor({ template, steps }: { template: Template,
     const [description, setDescription] = useState(template.description || "");
     const [videoUrl, setVideoUrl] = useState(template.video_url || "");
     const [validationType, setValidationType] = useState(template.validation_type || "self");
+    const [duoInstructions, setDuoInstructions] = useState(template.duo_instructions || "");
     const [currentSteps, setCurrentSteps] = useState<Step[]>(steps || []);
     const [isSaving, setIsSaving] = useState(false);
 
@@ -56,6 +58,7 @@ export function MissionTemplateEditor({ template, steps }: { template: Template,
                 description,
                 video_url: videoUrl,
                 validation_type: validationType,
+                duo_instructions: duoInstructions,
                 steps: currentSteps
             });
             if (result.success) {
@@ -102,6 +105,21 @@ export function MissionTemplateEditor({ template, steps }: { template: Template,
                             Si "Duo", le membre ne pourra pas valider lui-même. Son binôme devra le faire.
                         </p>
                     </div>
+
+                    {validationType === 'buddy' && (
+                        <div className="bg-orange-50 p-3 rounded border border-orange-100">
+                            <Label className="text-orange-800">Instructions Spéciales Duo (Optionnel)</Label>
+                            <Textarea 
+                                value={duoInstructions} 
+                                onChange={(e) => setDuoInstructions(e.target.value)} 
+                                placeholder="Ex: Échangez vos rôles ! Tu dois vendre le produit de ton binôme..."
+                                className="mt-2 bg-white"
+                            />
+                            <p className="text-xs text-orange-600 mt-1">
+                                Ce texte remplacera les instructions génériques sur le Dashboard.
+                            </p>
+                        </div>
+                    )}
                 </CardContent>
             </Card>
 

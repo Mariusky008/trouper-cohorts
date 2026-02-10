@@ -108,7 +108,7 @@ export default async function TodayPage({
   // Récupération de la Mission
   const missionRes = await supabase
     .from("missions")
-    .select("id, title, description, proof_type, video_url")
+    .select("id, title, description, proof_type, video_url, duo_instructions")
     .eq("cohort_id", cohortRes.data.id)
     .eq("day_index", dayIndex)
     .maybeSingle();
@@ -143,7 +143,7 @@ export default async function TodayPage({
       // Récupération de la mission du binôme (pour validation croisée)
       const { data: bMission } = await supabase
         .from("missions")
-        .select("id, status, validation_type")
+        .select("id, status, validation_type, duo_instructions")
         .eq("user_id", buddy.id) // Utilisation de l'ID du profil binôme (qui est le user_id auth)
         .eq("day_index", dayIndex)
         .maybeSingle();

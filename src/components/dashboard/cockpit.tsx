@@ -163,6 +163,7 @@ export function CockpitDashboard({ user, cohort, mission, dayIndex, buddy, steps
                                 status={mission.status || 'pending'} 
                                 isMyMission={true}
                                 buddyName={currentBuddy.first_name}
+                                duoInstructions={mission.duo_instructions}
                             />
                         )}
 

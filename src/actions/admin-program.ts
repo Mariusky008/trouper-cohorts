@@ -8,6 +8,7 @@ export async function updateMissionTemplate(templateId: string, data: {
     description: string;
     video_url: string;
     validation_type?: string;
+    duo_instructions?: string;
     steps: any[];
 }) {
     const supabase = await createClient();
@@ -19,7 +20,8 @@ export async function updateMissionTemplate(templateId: string, data: {
             title: data.title,
             description: data.description,
             video_url: data.video_url,
-            validation_type: data.validation_type || 'self'
+            validation_type: data.validation_type || 'self',
+            duo_instructions: data.duo_instructions || null
         })
         .eq("id", templateId);
 
