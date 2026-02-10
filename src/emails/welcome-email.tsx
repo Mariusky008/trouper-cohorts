@@ -38,13 +38,14 @@ export const WelcomeEmail = ({
             </Text>
             <Text className="text-black text-[14px] leading-[24px]">
               Il est temps de créer ton compte et de découvrir ta première mission.
+              Pour ta sécurité, tu devras confirmer ton email lors de la première connexion.
             </Text>
             <Section className="text-center mt-[32px] mb-[32px]">
               <Button
                 className="bg-[#000000] rounded text-white text-[12px] font-semibold no-underline text-center px-5 py-3"
                 href={loginUrl}
               >
-                Embarquer maintenant
+                Récupérer mon Pass d'Accès
               </Button>
             </Section>
             <Text className="text-black text-[14px] leading-[24px]">
