@@ -33,7 +33,7 @@ export default async function CrewPage() {
     return (
       <div className="flex flex-col items-center justify-center h-[60vh] text-center space-y-4">
         <h2 className="text-xl font-bold">Pas d'équipage</h2>
-        <p className="text-muted-foreground">Rejoins une cohorte pour voir tes camarades.</p>
+        <p className="text-muted-foreground">Rejoins un équipage pour voir tes camarades.</p>
       </div>
     );
   }

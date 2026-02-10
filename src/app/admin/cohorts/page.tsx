@@ -52,13 +52,13 @@ export default async function AdminCohortsPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{activeMembersCount}</div>
-            <p className="text-xs text-muted-foreground">Dans {cohorts.length} cohortes</p>
+            <p className="text-xs text-muted-foreground">Dans {cohorts.length} équipages</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Cohortes en Live</CardTitle>
+            <CardTitle className="text-sm font-medium">Équipages en Mer</CardTitle>
             <Activity className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -82,9 +82,9 @@ export default async function AdminCohortsPage() {
       {/* Cohorts Table */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-            <h2 className="text-xl font-bold tracking-tight">Vos Cohortes</h2>
+            <h2 className="text-xl font-bold tracking-tight">Vos Équipages</h2>
             <Button asChild>
-            <Link href="/admin/cohorts/new">Créer une cohorte</Link>
+            <Link href="/admin/cohorts/new">Créer un équipage</Link>
             </Button>
         </div>
 
@@ -137,8 +137,8 @@ export default async function AdminCohortsPage() {
                     <TableCell colSpan={5} className="text-center h-32 text-muted-foreground">
                     <div className="flex flex-col items-center gap-2">
                         <Activity className="h-8 w-8 opacity-20" />
-                        <p>Aucune cohorte active.</p>
-                        <Button variant="link" asChild><Link href="/admin/cohorts/new">En créer une maintenant</Link></Button>
+                        <p>Aucun équipage actif.</p>
+                        <Button variant="link" asChild><Link href="/admin/cohorts/new">En créer un maintenant</Link></Button>
                     </div>
                     </TableCell>
                 </TableRow>
