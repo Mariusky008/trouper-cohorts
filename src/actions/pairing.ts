@@ -41,20 +41,13 @@ export async function generateDailyPairs(cohortId: string) {
             pair_date: today,
             user1_id: userIds[i],
             user2_id: userIds[i+1],
-            day_index: 0 // Idéalement calculer le vrai index jour
+            // day_index: 0 // Commenté temporairement pour éviter erreur cache schema
         });
     }
 
     // 5. Gérer le Trio (Impair)
     if (userIds.length % 2 !== 0) {
         const lastUser = userIds[userIds.length - 1];
-        // On le rattache au premier du groupe (userIds[0]) qui est déjà en couple avec userIds[1]
-        // Cela crée un trio : 0-1 et Last-0. (0 a deux binômes : 1 et Last).
-        
-        // Ou mieux : On le rattache à une paire existante de façon explicite ?
-        // Non, le modèle de données ne permet que des paires.
-        // Donc on crée une paire supplémentaire.
-        
         const existingUser = userIds[0];
         
         pairs.push({
@@ -62,7 +55,7 @@ export async function generateDailyPairs(cohortId: string) {
             pair_date: today,
             user1_id: lastUser,
             user2_id: existingUser,
-            day_index: 0
+            // day_index: 0
         });
     }
 
