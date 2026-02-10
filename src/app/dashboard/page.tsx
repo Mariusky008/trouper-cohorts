@@ -86,7 +86,7 @@ export default function DashboardPage() {
                 </Card>
 
                 {/* 3. Mur des Victoires */}
-                <VictoryWall />
+                <VictoryWall cohortId="demo" currentUserId="demo-user" />
 
             </div>
 
