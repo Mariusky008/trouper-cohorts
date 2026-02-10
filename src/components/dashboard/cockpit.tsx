@@ -18,9 +18,10 @@ interface CockpitProps {
     dayIndex: number;
     buddy: any;
     steps: any[];
+    initialMessages?: any[];
 }
 
-export function CockpitDashboard({ user, cohort, mission, dayIndex, buddy, steps }: CockpitProps) {
+export function CockpitDashboard({ user, cohort, mission, dayIndex, buddy, steps, initialMessages = [] }: CockpitProps) {
   // Mock binôme si pas de buddy (pour le dev)
   const currentBuddy = buddy || {
     first_name: "En attente...",
@@ -211,7 +212,7 @@ export function CockpitDashboard({ user, cohort, mission, dayIndex, buddy, steps
                     partnerName={buddyDisplayName} 
                     partnerId={currentBuddy.id} 
                     currentUserId={user.id}
-                    initialMessages={[]} 
+                    initialMessages={initialMessages} 
                 />
 
                 {/* Aide / Support */}

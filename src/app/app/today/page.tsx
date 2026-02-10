@@ -127,6 +127,18 @@ export default async function TodayPage({
   // Récupération du Binôme (Buddy)
   const buddy = await getMyBuddy(cohortRes.data.id, user.id);
 
+  // Récupération des Messages du Binôme
+  let initialMessages: any[] = [];
+  if (buddy) {
+      const { data: msgs } = await supabase
+        .from("messages")
+        .select("*")
+        .or(`and(sender_id.eq.${user.id},receiver_id.eq.${buddy.id}),and(sender_id.eq.${buddy.id},receiver_id.eq.${user.id})`)
+        .order("created_at", { ascending: true })
+        .limit(50);
+      initialMessages = msgs || [];
+  }
+
   return (
     <CockpitDashboard 
         user={user} 
@@ -135,6 +147,7 @@ export default async function TodayPage({
         dayIndex={dayIndex} 
         buddy={buddy} 
         steps={steps}
+        initialMessages={initialMessages}
     />
   );
 }
