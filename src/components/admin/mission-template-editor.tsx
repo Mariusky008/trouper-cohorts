@@ -16,6 +16,7 @@ interface Template {
     title: string;
     description: string | null;
     video_url: string | null;
+    validation_type?: string;
 }
 
 interface Step {
@@ -28,6 +29,7 @@ export function MissionTemplateEditor({ template, steps }: { template: Template,
     const [title, setTitle] = useState(template.title);
     const [description, setDescription] = useState(template.description || "");
     const [videoUrl, setVideoUrl] = useState(template.video_url || "");
+    const [validationType, setValidationType] = useState(template.validation_type || "self");
     const [currentSteps, setCurrentSteps] = useState<Step[]>(steps || []);
     const [isSaving, setIsSaving] = useState(false);
 
@@ -53,6 +55,7 @@ export function MissionTemplateEditor({ template, steps }: { template: Template,
                 title,
                 description,
                 video_url: videoUrl,
+                validation_type: validationType,
                 steps: currentSteps
             });
             if (result.success) {
@@ -83,6 +86,21 @@ export function MissionTemplateEditor({ template, steps }: { template: Template,
                     <div>
                         <Label>URL Vidéo Briefing</Label>
                         <Input value={videoUrl} onChange={(e) => setVideoUrl(e.target.value)} placeholder="https://youtube.com/..." />
+                    </div>
+                    <div>
+                        <Label>Type de Validation</Label>
+                        <Select value={validationType} onValueChange={setValidationType}>
+                            <SelectTrigger className="w-full bg-white">
+                                <SelectValue placeholder="Choisir le type de validation" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="self">👤 Solo (Preuve URL par le membre)</SelectItem>
+                                <SelectItem value="buddy">🤝 Duo (Validation par le Binôme)</SelectItem>
+                            </SelectContent>
+                        </Select>
+                        <p className="text-xs text-muted-foreground mt-1">
+                            Si "Duo", le membre ne pourra pas valider lui-même. Son binôme devra le faire.
+                        </p>
                     </div>
                 </CardContent>
             </Card>

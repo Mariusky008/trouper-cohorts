@@ -10,6 +10,7 @@ import { ChatBox } from "@/components/chat/chat-box";
 import { Button } from "@/components/ui/button";
 import { InviteCard } from "@/components/app/invite-card";
 import { GoldenTicket } from "@/components/dashboard/golden-ticket";
+import { MissionValidator } from "@/components/dashboard/mission-validator";
 
 interface CockpitProps {
     user: any;
@@ -19,9 +20,10 @@ interface CockpitProps {
     buddy: any;
     steps: any[];
     initialMessages?: any[];
+    buddyMission?: any;
 }
 
-export function CockpitDashboard({ user, cohort, mission, dayIndex, buddy, steps, initialMessages = [] }: CockpitProps) {
+export function CockpitDashboard({ user, cohort, mission, dayIndex, buddy, steps, initialMessages = [], buddyMission }: CockpitProps) {
   // Mock binôme si pas de buddy (pour le dev)
   const currentBuddy = buddy || {
     first_name: "En attente...",
@@ -153,6 +155,17 @@ export function CockpitDashboard({ user, cohort, mission, dayIndex, buddy, steps
                             {renderStepGroup("Social & Live", <Users className="h-4 w-4" />, socialSteps, "text-orange-600")}
                         </div>
 
+                        {/* VALIDATION DE MA MISSION */}
+                        {mission && (
+                            <MissionValidator 
+                                missionId={mission.id} 
+                                validationType={mission.validation_type || 'self'} 
+                                status={mission.status || 'pending'} 
+                                isMyMission={true}
+                                buddyName={currentBuddy.first_name}
+                            />
+                        )}
+
                     </CardContent>
                 </Card>
 
@@ -164,6 +177,17 @@ export function CockpitDashboard({ user, cohort, mission, dayIndex, buddy, steps
             {/* COLONNE DROITE (Binôme) */}
             <div className="lg:col-span-1 space-y-6">
                 
+                {/* VALIDATION MISSION BINÔME (Si requise) */}
+                {buddyMission && buddyMission.validation_type === 'buddy' && buddyMission.status !== 'validated' && (
+                    <MissionValidator 
+                        missionId={buddyMission.id} 
+                        validationType='buddy' 
+                        status={buddyMission.status} 
+                        isMyMission={false}
+                        buddyName={currentBuddy.first_name}
+                    />
+                )}
+
                 {/* Viral Invitation */}
                 <InviteCard />
 

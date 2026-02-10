@@ -129,6 +129,8 @@ export default async function TodayPage({
 
   // Récupération des Messages du Binôme
   let initialMessages: any[] = [];
+  let buddyMission: any = null;
+
   if (buddy) {
       const { data: msgs } = await supabase
         .from("messages")
@@ -137,6 +139,15 @@ export default async function TodayPage({
         .order("created_at", { ascending: true })
         .limit(50);
       initialMessages = msgs || [];
+
+      // Récupération de la mission du binôme (pour validation croisée)
+      const { data: bMission } = await supabase
+        .from("missions")
+        .select("id, status, validation_type")
+        .eq("user_id", buddy.id) // Utilisation de l'ID du profil binôme (qui est le user_id auth)
+        .eq("day_index", dayIndex)
+        .maybeSingle();
+      buddyMission = bMission;
   }
 
   return (
@@ -148,6 +159,7 @@ export default async function TodayPage({
         buddy={buddy} 
         steps={steps}
         initialMessages={initialMessages}
+        buddyMission={buddyMission}
     />
   );
 }
