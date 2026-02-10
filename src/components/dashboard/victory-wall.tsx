@@ -32,6 +32,7 @@ export function VictoryWall({ cohortId, currentUserId }: VictoryWallProps) {
     const supabase = createClient();
     const [posts, setPosts] = useState<VictoryPost[]>([]);
     const [newLink, setNewLink] = useState("");
+    const [newDescription, setNewDescription] = useState("");
     const [loading, setLoading] = useState(true);
 
     // Charger les posts + Realtime
@@ -100,7 +101,7 @@ export function VictoryWall({ cohortId, currentUserId }: VictoryWallProps) {
             user_id: currentUserId,
             cohort_id: cohortId,
             proof_url: newLink,
-            description: "Je partage ma réussite ! 🔥"
+            description: newDescription || "Victoire partagée ! 🔥"
         });
 
         if (error) {
@@ -109,6 +110,7 @@ export function VictoryWall({ cohortId, currentUserId }: VictoryWallProps) {
         } else {
             toast.success("Victoire partagée !");
             setNewLink("");
+            setNewDescription("");
         }
     };
 
@@ -142,20 +144,26 @@ export function VictoryWall({ cohortId, currentUserId }: VictoryWallProps) {
                 </div>
             </CardHeader>
             
-            <div className="p-4 border-b bg-white shrink-0">
+            <div className="p-4 border-b bg-white shrink-0 space-y-3">
+                <Input 
+                    placeholder="Titre de ta victoire (ex: Mon premier client !)" 
+                    value={newDescription}
+                    onChange={(e) => setNewDescription(e.target.value)}
+                    className="bg-slate-50 font-bold border-slate-200 focus:bg-white transition-colors"
+                />
                 <div className="flex gap-2">
                     <Input 
-                        placeholder="Colle le lien de ton post ici..." 
+                        placeholder="Lien (URL)..." 
                         value={newLink}
                         onChange={(e) => setNewLink(e.target.value)}
-                        className="bg-slate-50"
+                        className="bg-slate-50 border-slate-200 focus:bg-white transition-colors"
                     />
-                    <Button onClick={handlePost} className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold">
+                    <Button onClick={handlePost} disabled={!newLink} className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-6">
                         Poster
                     </Button>
                 </div>
-                <p className="text-xs text-slate-400 mt-2 ml-1">
-                    👇 Likez et commentez les posts des autres pour recevoir la pareille !
+                <p className="text-xs text-slate-400 mt-1 ml-1 flex items-center gap-1">
+                    <Flame className="h-3 w-3 text-orange-400" /> Likez les posts des autres pour recevoir la pareille !
                 </p>
             </div>
 
