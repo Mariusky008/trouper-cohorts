@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { CockpitDashboard } from "@/components/dashboard/cockpit";
 import { getMyBuddy } from "@/lib/data/buddy";
+import { getBuddyHistory } from "@/actions/buddy";
 import { AlertCircle, CalendarDays, Trophy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -150,6 +151,8 @@ export default async function TodayPage({
       buddyMission = bMission;
   }
 
+  const buddyHistory = await getBuddyHistory();
+
   return (
     <CockpitDashboard 
         user={user} 
@@ -157,9 +160,10 @@ export default async function TodayPage({
         mission={missionRes.data} 
         dayIndex={dayIndex} 
         buddy={buddy} 
-        steps={steps}
+        steps={steps} 
         initialMessages={initialMessages}
         buddyMission={buddyMission}
+        buddyHistory={buddyHistory}
     />
   );
 }

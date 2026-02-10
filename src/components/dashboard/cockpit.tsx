@@ -10,6 +10,7 @@ import { ChatBox } from "@/components/chat/chat-box";
 import { Button } from "@/components/ui/button";
 import { GoldenTicket } from "@/components/dashboard/golden-ticket";
 import { MissionValidator } from "@/components/dashboard/mission-validator";
+import { BuddyHistory } from "./buddy-history";
 
 interface CockpitProps {
     user: any;
@@ -20,9 +21,10 @@ interface CockpitProps {
     steps: any[];
     initialMessages?: any[];
     buddyMission?: any;
+    buddyHistory?: any[];
 }
 
-export function CockpitDashboard({ user, cohort, mission, dayIndex, buddy, steps, initialMessages = [], buddyMission }: CockpitProps) {
+export function CockpitDashboard({ user, cohort, mission, dayIndex, buddy, steps, initialMessages = [], buddyMission, buddyHistory = [] }: CockpitProps) {
   // Mock binôme si pas de buddy (pour le dev)
   const currentBuddy = buddy || {
     first_name: "En attente...",
@@ -241,6 +243,9 @@ export function CockpitDashboard({ user, cohort, mission, dayIndex, buddy, steps
                     currentUserId={user.id}
                     initialMessages={initialMessages} 
                 />
+
+                {/* Historique Binômes */}
+                <BuddyHistory history={buddyHistory} currentUserId={user.id} />
 
                 {/* Aide / Support */}
                 <Card>

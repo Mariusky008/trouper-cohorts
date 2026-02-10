@@ -9,7 +9,14 @@ export default async function LoginPage({
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const params = await searchParams;
-  const error = typeof params?.error === "string" ? params.error : null;
+  let error = typeof params?.error === "string" ? params.error : null;
+
+  // Traduction des erreurs techniques pour l'utilisateur
+  if (error?.includes("PKCE code verifier not found")) {
+      error = "Sécurité : Veuillez ouvrir le lien magique dans CE navigateur (ou copiez-collez le lien ici).";
+  } else if (error?.includes("Signups not allowed")) {
+      error = "Les inscriptions sont fermées pour le moment.";
+  }
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-4 bg-muted/30">
