@@ -1,28 +1,38 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Send, User } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { toast } from "sonner";
 
 interface Message {
   id: string;
-  senderId: string;
+  sender_id: string; // Changé pour matcher la DB
   content: string;
-  createdAt: Date;
+  created_at: string; // Changé pour matcher la DB
 }
 
 interface ChatBoxProps {
   partnerName: string;
   partnerId: string;
   currentUserId: string;
-  initialMessages?: Message[]; // Pour hydrater au chargement
+  initialMessages?: any[]; // On accepte any pour la compatibilité
 }
 
 export function ChatBox({ partnerName, partnerId, currentUserId, initialMessages = [] }: ChatBoxProps) {
-  const [messages, setMessages] = useState<Message[]>(initialMessages);
+  const supabase = createClient();
+  const [messages, setMessages] = useState<Message[]>(
+    initialMessages.map(m => ({
+        id: m.id,
+        sender_id: m.sender_id || m.senderId, // Compatibilité camelCase/snake_case
+        content: m.content,
+        created_at: m.created_at || m.createdAt
+    }))
+  );
   const [newMessage, setNewMessage] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -33,21 +43,58 @@ export function ChatBox({ partnerName, partnerId, currentUserId, initialMessages
     }
   }, [messages]);
 
+  // Realtime Subscription
+  useEffect(() => {
+    const channel = supabase
+        .channel(`chat_buddy_${currentUserId}_${partnerId}`)
+        .on(
+            'postgres_changes',
+            {
+                event: 'INSERT',
+                schema: 'public',
+                table: 'messages',
+                filter: `receiver_id=eq.${currentUserId}` // J'écoute les messages que JE reçois
+            },
+            (payload) => {
+                // Si le message vient de mon partenaire actuel
+                if (payload.new.sender_id === partnerId) {
+                    setMessages((prev) => [...prev, payload.new as Message]);
+                }
+            }
+        )
+        .subscribe();
+
+    return () => {
+        supabase.removeChannel(channel);
+    };
+  }, [currentUserId, partnerId, supabase]);
+
   const handleSendMessage = async () => {
     if (!newMessage.trim()) return;
+
+    const content = newMessage;
+    setNewMessage(""); // Optimistic clear
 
     // Optimistic update
     const tempMsg: Message = {
       id: Date.now().toString(),
-      senderId: currentUserId,
-      content: newMessage,
-      createdAt: new Date(),
+      sender_id: currentUserId,
+      content: content,
+      created_at: new Date().toISOString(),
     };
     setMessages((prev) => [...prev, tempMsg]);
-    setNewMessage("");
 
-    // TODO: Appeler l'API pour sauvegarder le message (Server Action)
-    // await sendMessage(partnerId, newMessage);
+    const { error } = await supabase.from('messages').insert({
+        sender_id: currentUserId,
+        receiver_id: partnerId,
+        content: content
+    });
+
+    if (error) {
+        console.error("Erreur envoi message:", error);
+        toast.error("Erreur lors de l'envoi");
+        // On pourrait retirer le message optimiste ici
+    }
   };
 
   return (
@@ -71,7 +118,7 @@ export function ChatBox({ partnerName, partnerId, currentUserId, initialMessages
       <ScrollArea className="flex-1 p-4 bg-slate-50/50">
         <div className="space-y-4">
           {messages.map((msg) => {
-            const isMe = msg.senderId === currentUserId;
+            const isMe = msg.sender_id === currentUserId;
             return (
               <div
                 key={msg.id}
