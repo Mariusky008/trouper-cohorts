@@ -40,6 +40,7 @@ export function VictoryWall({ cohortId, currentUserId }: VictoryWallProps) {
 
         const fetchPosts = async () => {
             // 1. Charger les preuves
+            console.log("Fetching posts for cohort:", cohortId);
             const { data: proofs, error } = await supabase
                 .from("proofs")
                 .select(`
@@ -50,6 +51,8 @@ export function VictoryWall({ cohortId, currentUserId }: VictoryWallProps) {
                 .eq("cohort_id", cohortId)
                 .order("created_at", { ascending: false })
                 .limit(20);
+
+            console.log("Proofs loaded:", proofs?.length, error);
 
             if (error) {
                 console.error("Error loading wall:", error);
