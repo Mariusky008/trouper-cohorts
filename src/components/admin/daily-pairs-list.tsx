@@ -3,31 +3,35 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { RefreshCw, Users } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { generateDailyPairs } from "@/actions/pairing";
 
 interface DailyPairsListProps {
     cohortId: string;
-    pairs: any[]; // On typerait mieux idéalement
+    pairs: any[];
 }
 
 export function DailyPairsList({ cohortId, pairs }: DailyPairsListProps) {
     const [loading, setLoading] = useState(false);
     const router = useRouter();
-    const supabase = createClient();
 
     const generatePairs = async () => {
         setLoading(true);
-        // Appel RPC pour générer les paires
-        const { error } = await supabase.rpc("rotate_daily_pairs", { target_cohort_id: cohortId });
-        setLoading(false);
-
-        if (error) {
-            toast.error("Erreur génération: " + error.message);
-        } else {
-            toast.success("Nouveaux binômes générés !");
-            router.refresh();
+        try {
+            const result = await generateDailyPairs(cohortId);
+            
+            if (result.error) {
+                toast.error("Erreur : " + result.error);
+            } else {
+                toast.success("Nouveaux binômes générés (Trio géré) !");
+                router.refresh();
+            }
+        } catch (e) {
+            toast.error("Erreur inattendue");
+            console.error(e);
+        } finally {
+            setLoading(false);
         }
     };
 

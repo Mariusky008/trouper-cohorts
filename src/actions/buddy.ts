@@ -8,35 +8,57 @@ export async function getBuddyHistory() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return [];
 
-    // On cherche toutes les paires où je suis impliqué
+    // 1. Récupérer les paires BRUTES (sans jointure complexe qui peut échouer)
     const { data: pairs, error } = await supabase
         .from("cohort_pairs")
-        .select(`
-            id,
-            day_index,
-            user1_id,
-            user2_id,
-            user1_memo,
-            user2_memo,
-            user1:user1_id (id, display_name, avatar_url),
-            user2:user2_id (id, display_name, avatar_url)
-        `)
+        .select("id, day_index, user1_id, user2_id, user1_memo, user2_memo")
         .or(`user1_id.eq.${user.id},user2_id.eq.${user.id}`)
         .order("day_index", { ascending: false });
 
-    if (error || !pairs) return [];
+    if (error || !pairs || pairs.length === 0) return [];
 
-    // On formate pour ne renvoyer que le binôme et MON mémo
+    // 2. Récupérer les IDs des binômes
+    const buddyIds = pairs.map(p => p.user1_id === user.id ? p.user2_id : p.user1_id);
+    const uniqueBuddyIds = Array.from(new Set(buddyIds));
+
+    // 3. Récupérer les profils de ces binômes
+    const { data: profiles } = await supabase
+        .from("profiles") // Ou pre_registrations selon ce qu'on utilise comme source de vérité
+        .select("id, display_name, avatar_url") // Assurez-vous que ces colonnes existent dans profiles
+        .in("id", uniqueBuddyIds);
+    
+    // Fallback sur pre_registrations si profiles est vide ou incomplet (car on utilise souvent pre_reg comme profil)
+    const { data: preRegs } = await supabase
+        .from("pre_registrations")
+        .select("user_id, first_name, last_name")
+        .in("user_id", uniqueBuddyIds);
+
+    // 4. Assembler
     return pairs.map(pair => {
         const isUser1 = pair.user1_id === user.id;
-        const buddy = isUser1 ? pair.user2 : pair.user1;
-        // Gérer le cas où le buddy a été supprimé (null)
-        const safeBuddy = buddy || { id: "deleted", display_name: "Utilisateur supprimé", avatar_url: null };
+        const buddyId = isUser1 ? pair.user2_id : pair.user1_id;
         
+        // Chercher dans profiles ou preRegs
+        const profile = profiles?.find(p => p.id === buddyId);
+        const preReg = preRegs?.find(p => p.user_id === buddyId);
+        
+        let buddyDisplay = {
+            id: buddyId,
+            display_name: "Utilisateur inconnu",
+            avatar_url: null as string | null
+        };
+
+        if (profile) {
+            buddyDisplay.display_name = profile.display_name || "Membre";
+            buddyDisplay.avatar_url = profile.avatar_url;
+        } else if (preReg) {
+            buddyDisplay.display_name = `${preReg.first_name} ${preReg.last_name}`.trim();
+        }
+
         return {
             pair_id: pair.id,
-            day_index: pair.day_index,
-            buddy: safeBuddy,
+            day_index: pair.day_index || 0, // Fallback si null
+            buddy: buddyDisplay,
             memo: isUser1 ? pair.user1_memo : pair.user2_memo
         };
     });

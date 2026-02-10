@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { CockpitDashboard } from "@/components/dashboard/cockpit";
-import { getMyBuddy } from "@/lib/data/buddy";
+import { getMyBuddies } from "@/lib/data/buddy";
 import { getBuddyHistory } from "@/actions/buddy";
 import { AlertCircle, CalendarDays, Trophy } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -125,18 +125,19 @@ export default async function TodayPage({
       steps = stepsRes.data || [];
   }
 
-  // Récupération du Binôme (Buddy)
-  const buddy = await getMyBuddy(cohortRes.data.id, user.id);
+  // Récupération du binôme (ou des binômes si Trio)
+  const buddies = await getMyBuddies(cohortRes.data.id, user.id);
+  const primaryBuddy = buddies.length > 0 ? buddies[0] : null;
 
   // Récupération des Messages du Binôme
   let initialMessages: any[] = [];
   let buddyMission: any = null;
 
-  if (buddy) {
+  if (primaryBuddy) {
       const { data: msgs } = await supabase
         .from("messages")
         .select("*")
-        .or(`and(sender_id.eq.${user.id},receiver_id.eq.${buddy.id}),and(sender_id.eq.${buddy.id},receiver_id.eq.${user.id})`)
+        .or(`and(sender_id.eq.${user.id},receiver_id.eq.${primaryBuddy.id}),and(sender_id.eq.${primaryBuddy.id},receiver_id.eq.${user.id})`)
         .order("created_at", { ascending: true })
         .limit(50);
       initialMessages = msgs || [];
@@ -145,7 +146,7 @@ export default async function TodayPage({
       const { data: bMission } = await supabase
         .from("missions")
         .select("id, status, validation_type, duo_instructions")
-        .eq("user_id", buddy.id) // Utilisation de l'ID du profil binôme (qui est le user_id auth)
+        .eq("user_id", primaryBuddy.id) // Utilisation de l'ID du profil binôme (qui est le user_id auth)
         .eq("day_index", dayIndex)
         .maybeSingle();
       buddyMission = bMission;
@@ -154,16 +155,19 @@ export default async function TodayPage({
   const buddyHistory = await getBuddyHistory();
 
   return (
-    <CockpitDashboard 
+    <div className="space-y-6">
+      <CockpitDashboard 
         user={user} 
         cohort={cohortRes.data} 
         mission={missionRes.data} 
         dayIndex={dayIndex} 
-        buddy={buddy} 
+        buddy={primaryBuddy} 
+        allBuddies={buddies}
         steps={steps} 
         initialMessages={initialMessages}
         buddyMission={buddyMission}
         buddyHistory={buddyHistory}
-    />
+      />
+    </div>
   );
 }

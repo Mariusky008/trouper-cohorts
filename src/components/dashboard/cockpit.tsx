@@ -18,13 +18,25 @@ interface CockpitProps {
     mission: any;
     dayIndex: number;
     buddy: any;
+    allBuddies?: any[];
     steps: any[];
     initialMessages?: any[];
     buddyMission?: any;
     buddyHistory?: any[];
 }
 
-export function CockpitDashboard({ user, cohort, mission, dayIndex, buddy, steps, initialMessages = [], buddyMission, buddyHistory = [] }: CockpitProps) {
+export function CockpitDashboard({ 
+    user, 
+    cohort, 
+    mission, 
+    dayIndex, 
+    buddy, 
+    allBuddies = [], 
+    steps, 
+    initialMessages = [], 
+    buddyMission, 
+    buddyHistory = [] 
+}: CockpitProps) {
   // Mock binôme si pas de buddy (pour le dev)
   const currentBuddy = buddy || {
     first_name: "En attente...",
@@ -185,6 +197,29 @@ export function CockpitDashboard({ user, cohort, mission, dayIndex, buddy, steps
             {/* COLONNE DROITE (Binôme) */}
             <div className="lg:col-span-1 space-y-6">
                 
+                {/* INFO TRIO */}
+                {allBuddies && allBuddies.length > 1 && (
+                    <Card className="bg-blue-50 border-blue-200 text-blue-900">
+                        <CardContent className="p-4 text-sm">
+                            <div className="font-bold flex items-center gap-2 mb-2">
+                                <Users className="h-4 w-4" />
+                                Trio du Jour !
+                            </div>
+                            <p className="mb-2">Vous avez {allBuddies.length} binômes aujourd'hui :</p>
+                            <ul className="list-disc pl-5 space-y-1 mb-2">
+                                {allBuddies.map((b: any) => (
+                                    <li key={b.id}>
+                                        <strong>{b.first_name} {b.last_name}</strong> <span className="text-xs opacity-70">({b.trade})</span>
+                                    </li>
+                                ))}
+                            </ul>
+                            <p className="text-xs text-blue-700 italic border-t border-blue-200 pt-2">
+                                Le chat ci-dessous est connecté avec <strong>{currentBuddy.first_name}</strong>.
+                            </p>
+                        </CardContent>
+                    </Card>
+                )}
+
                 {/* VALIDATION MISSION BINÔME (Si requise) */}
                 {buddyMission && buddyMission.validation_type === 'buddy' && buddyMission.status !== 'validated' && (
                     <MissionValidator 
