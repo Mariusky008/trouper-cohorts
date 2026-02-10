@@ -88,9 +88,13 @@ export function CockpitDashboard({ user, cohort, mission, dayIndex, buddy, steps
                     <div className="h-full bg-green-500 transition-all duration-1000" style={{ width: `${progress}%` }}></div>
                 </div>
             </div>
-            <Avatar className="h-10 w-10 border-2 border-white shadow-sm">
-                <AvatarImage src={user.user_metadata?.avatar_url} />
-                <AvatarFallback>{user.email[0].toUpperCase()}</AvatarFallback>
+            <Avatar className="h-10 w-10 border-2 border-white shadow-sm bg-indigo-600">
+                {user.user_metadata?.avatar_url ? (
+                    <AvatarImage src={user.user_metadata.avatar_url} />
+                ) : null}
+                <AvatarFallback className="bg-indigo-600 text-white font-bold">
+                    {user.email?.[0].toUpperCase() || "J"}
+                </AvatarFallback>
             </Avatar>
         </div>
       </header>
