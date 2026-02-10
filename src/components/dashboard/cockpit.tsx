@@ -8,7 +8,6 @@ import { PlayCircle, Users, Brain, Video, CheckCircle2 } from "lucide-react";
 import { VictoryWall } from "@/components/dashboard/victory-wall";
 import { ChatBox } from "@/components/chat/chat-box";
 import { Button } from "@/components/ui/button";
-import { InviteCard } from "@/components/app/invite-card";
 import { GoldenTicket } from "@/components/dashboard/golden-ticket";
 import { MissionValidator } from "@/components/dashboard/mission-validator";
 
@@ -194,9 +193,6 @@ export function CockpitDashboard({ user, cohort, mission, dayIndex, buddy, steps
                         buddyName={currentBuddy.first_name}
                     />
                 )}
-
-                {/* Viral Invitation */}
-                <InviteCard />
 
                 {/* Info Binôme */}
                 <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-6">
