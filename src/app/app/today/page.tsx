@@ -129,27 +129,38 @@ export default async function TodayPage({
   const buddies = await getMyBuddies(cohortRes.data.id, user.id);
   const primaryBuddy = buddies.length > 0 ? buddies[0] : null;
 
-  // Récupération des Messages du Binôme
+  // Récupération des Messages de TOUS les binômes (pour Trio)
   let initialMessages: any[] = [];
   let buddyMission: any = null;
 
-  if (primaryBuddy) {
+  if (buddies.length > 0) {
+      const buddyIds = buddies.map(b => b.id);
+      
+      // On récupère large (tous mes messages) et on filtre en JS pour simplifier la requête OR complexe
       const { data: msgs } = await supabase
         .from("messages")
         .select("*")
-        .or(`and(sender_id.eq.${user.id},receiver_id.eq.${primaryBuddy.id}),and(sender_id.eq.${primaryBuddy.id},receiver_id.eq.${user.id})`)
+        .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
         .order("created_at", { ascending: true })
-        .limit(50);
-      initialMessages = msgs || [];
+        .limit(100); // Limite raisonnable
 
-      // Récupération de la mission du binôme (pour validation croisée)
-      const { data: bMission } = await supabase
-        .from("missions")
-        .select("id, status, validation_type, duo_instructions")
-        .eq("user_id", primaryBuddy.id) // Utilisation de l'ID du profil binôme (qui est le user_id auth)
-        .eq("day_index", dayIndex)
-        .maybeSingle();
-      buddyMission = bMission;
+      // On ne garde que les messages échangés avec les binômes du jour
+      initialMessages = (msgs || []).filter(m => {
+          const otherId = m.sender_id === user.id ? m.receiver_id : m.sender_id;
+          return buddyIds.includes(otherId);
+      });
+
+      // Récupération de la mission du PREMIER binôme (pour validation croisée simplifiée)
+      // (Idéalement on gérerait la validation de tous, mais on reste simple pour l'instant)
+      if (primaryBuddy) {
+          const { data: bMission } = await supabase
+            .from("missions")
+            .select("id, status, validation_type, duo_instructions")
+            .eq("user_id", primaryBuddy.id)
+            .eq("day_index", dayIndex)
+            .maybeSingle();
+          buddyMission = bMission;
+      }
   }
 
   const buddyHistory = await getBuddyHistory();

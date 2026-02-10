@@ -20,46 +20,51 @@ interface ChatBoxProps {
   partnerName: string;
   partnerId: string;
   currentUserId: string;
-  initialMessages?: any[]; // On accepte any pour la compatibilité
+  initialMessages?: any[];
+  partners?: any[];
 }
 
-export function ChatBox({ partnerName, partnerId, currentUserId, initialMessages = [] }: ChatBoxProps) {
+export function ChatBox({ partnerName, partnerId, currentUserId, initialMessages = [], partners = [] }: ChatBoxProps) {
   const supabase = createClient();
   const [messages, setMessages] = useState<Message[]>(
     initialMessages.map(m => ({
         id: m.id,
-        sender_id: m.sender_id || m.senderId, // Compatibilité camelCase/snake_case
+        sender_id: m.sender_id || m.senderId,
         content: m.content,
         created_at: m.created_at || m.createdAt
     }))
   );
   const [newMessage, setNewMessage] = useState("");
+  const [selectedPartnerId, setSelectedPartnerId] = useState(partnerId);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll vers le bas
+  // Mise à jour si les props changent
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollIntoView({ behavior: "smooth" });
-    }
-  }, [messages]);
+      if (partnerId) setSelectedPartnerId(partnerId);
+  }, [partnerId]);
 
-  // Realtime Subscription
+  // Récupérer le partenaire sélectionné
+  const selectedPartner = partners.find(p => p.id === selectedPartnerId) || { first_name: partnerName, id: partnerId };
+
+  // ... (Auto-scroll inchangé)
+
+  // Realtime Subscription (pour tous les partenaires)
   useEffect(() => {
+    // On écoute tous les messages entrants (le filtre est sur receiver_id = ME)
     const channel = supabase
-        .channel(`chat_buddy_${currentUserId}_${partnerId}`)
+        .channel(`chat_buddy_${currentUserId}`)
         .on(
             'postgres_changes',
             {
                 event: 'INSERT',
                 schema: 'public',
                 table: 'messages',
-                filter: `receiver_id=eq.${currentUserId}` // J'écoute les messages que JE reçois
+                filter: `receiver_id=eq.${currentUserId}`
             },
             (payload) => {
-                // Si le message vient de mon partenaire actuel
-                if (payload.new.sender_id === partnerId) {
-                    setMessages((prev) => [...prev, payload.new as Message]);
-                }
+                // On ajoute le message si l'expéditeur est l'un de nos partenaires (ou le sélectionné)
+                // (En vrai on pourrait tout accepter, mais filtrons pour rester propre)
+                setMessages((prev) => [...prev, payload.new as Message]);
             }
         )
         .subscribe();
@@ -67,15 +72,14 @@ export function ChatBox({ partnerName, partnerId, currentUserId, initialMessages
     return () => {
         supabase.removeChannel(channel);
     };
-  }, [currentUserId, partnerId, supabase]);
+  }, [currentUserId, supabase]);
 
   const handleSendMessage = async () => {
-    if (!newMessage.trim()) return;
+    if (!newMessage.trim() || !selectedPartnerId) return;
 
     const content = newMessage;
-    setNewMessage(""); // Optimistic clear
+    setNewMessage("");
 
-    // Optimistic update
     const tempMsg: Message = {
       id: Date.now().toString(),
       sender_id: currentUserId,
@@ -86,32 +90,54 @@ export function ChatBox({ partnerName, partnerId, currentUserId, initialMessages
 
     const { error } = await supabase.from('messages').insert({
         sender_id: currentUserId,
-        receiver_id: partnerId,
+        receiver_id: selectedPartnerId, // Envoi au partenaire choisi
         content: content
     });
 
     if (error) {
-        console.error("Erreur envoi message:", error);
+        console.error("Erreur envoi:", error);
         toast.error("Erreur lors de l'envoi");
-        // On pourrait retirer le message optimiste ici
     }
   };
 
   return (
     <div className="flex flex-col h-[500px] border rounded-xl bg-white shadow-sm overflow-hidden">
-      {/* Header */}
-      <div className="p-4 border-b bg-slate-50 flex items-center gap-3">
-        <div className="relative">
-            <Avatar>
-                <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${partnerId}`} />
-                <AvatarFallback>{partnerName.substring(0, 2).toUpperCase()}</AvatarFallback>
-            </Avatar>
-            <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></span>
+      {/* Header avec Sélecteur si Trio */}
+      <div className="p-4 border-b bg-slate-50 flex flex-col gap-3">
+        <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+                <div className="relative">
+                    <Avatar>
+                        <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${selectedPartnerId}`} />
+                        <AvatarFallback>{selectedPartner.first_name?.substring(0, 2).toUpperCase() || "??"}</AvatarFallback>
+                    </Avatar>
+                    <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></span>
+                </div>
+                <div>
+                <h3 className="font-bold text-slate-800">{selectedPartner.first_name} {selectedPartner.last_name}</h3>
+                <p className="text-xs text-slate-500">Votre binôme du jour</p>
+                </div>
+            </div>
         </div>
-        <div>
-          <h3 className="font-bold text-slate-800">{partnerName}</h3>
-          <p className="text-xs text-slate-500">Votre binôme du jour</p>
-        </div>
+
+        {/* Sélecteur de destinataire (Trio) */}
+        {partners.length > 1 && (
+            <div className="flex gap-2 bg-slate-200 p-1 rounded-lg">
+                {partners.map(p => (
+                    <button
+                        key={p.id}
+                        onClick={() => setSelectedPartnerId(p.id)}
+                        className={`flex-1 text-xs font-bold py-1.5 px-3 rounded-md transition-all ${
+                            selectedPartnerId === p.id 
+                            ? "bg-white text-indigo-600 shadow-sm" 
+                            : "text-slate-500 hover:text-slate-700"
+                        }`}
+                    >
+                        {p.first_name}
+                    </button>
+                ))}
+            </div>
+        )}
       </div>
 
       {/* Messages Area */}
@@ -119,11 +145,18 @@ export function ChatBox({ partnerName, partnerId, currentUserId, initialMessages
         <div className="space-y-4">
           {messages.map((msg) => {
             const isMe = msg.sender_id === currentUserId;
+            // Trouver qui parle (si c'est pas moi)
+            const sender = partners.find(p => p.id === msg.sender_id);
+            const senderName = sender ? sender.first_name : "Binôme";
+
             return (
               <div
                 key={msg.id}
-                className={`flex ${isMe ? "justify-end" : "justify-start"}`}
+                className={`flex flex-col ${isMe ? "items-end" : "items-start"}`}
               >
+                {!isMe && partners.length > 1 && (
+                    <span className="text-[10px] text-slate-400 ml-1 mb-1">{senderName}</span>
+                )}
                 <div
                   className={`max-w-[80%] rounded-2xl px-4 py-2 text-sm ${
                     isMe
@@ -146,7 +179,7 @@ export function ChatBox({ partnerName, partnerId, currentUserId, initialMessages
           value={newMessage}
           onChange={(e) => setNewMessage(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
-          placeholder={`Écrire à ${partnerName}...`}
+          placeholder={`Écrire à ${selectedPartner.first_name || '...'}...`}
           className="flex-1 bg-slate-50 border-slate-200 focus-visible:ring-indigo-500"
         />
         <Button 

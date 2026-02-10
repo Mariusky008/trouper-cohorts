@@ -272,12 +272,13 @@ export function CockpitDashboard({
                 </div>
 
                 {/* Chat */}
-                <ChatBox 
-                    partnerName={buddyDisplayName} 
-                    partnerId={currentBuddy.id} 
-                    currentUserId={user.id}
-                    initialMessages={initialMessages} 
-                />
+                    <ChatBox 
+                        partnerName={buddyDisplayName} 
+                        partnerId={buddy?.id} 
+                        currentUserId={user.id}
+                        initialMessages={initialMessages}
+                        partners={allBuddies}
+                    />
 
                 {/* Historique Binômes */}
                 <BuddyHistory history={buddyHistory} currentUserId={user.id} />
