@@ -171,7 +171,9 @@ export function CockpitDashboard({ user, cohort, mission, dayIndex, buddy, steps
                 </Card>
 
                 {/* 3. Mur des Victoires */}
-                <VictoryWall />
+                <div className="h-[500px]">
+                    <VictoryWall cohortId={cohort?.id} currentUserId={user.id} />
+                </div>
 
             </div>
 

@@ -42,9 +42,9 @@ export function MissionValidator({ missionId, validationType, status, isMyMissio
             if (error) throw error;
             toast.success("Mission validée avec succès !");
             window.location.reload(); 
-        } catch (e) {
+        } catch (e: any) {
             console.error(e);
-            toast.error("Erreur lors de la validation.");
+            toast.error(`Erreur: ${e.message || "Inconnue"}`);
         } finally {
             setLoading(false);
         }

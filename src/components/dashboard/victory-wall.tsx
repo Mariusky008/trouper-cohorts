@@ -1,12 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ExternalLink, Flame, Trophy } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { toast } from "sonner";
+import { formatDistanceToNow } from "date-fns";
+import { fr } from "date-fns/locale";
 
 interface VictoryPost {
     id: string;
@@ -16,67 +20,114 @@ interface VictoryPost {
     description: string;
     likes: number;
     isLiked: boolean;
-    timeAgo: string;
+    created_at: string;
 }
 
-export function VictoryWall() {
-    // Mock Data pour la démo
-    const [posts, setPosts] = useState<VictoryPost[]>([
-        {
-            id: "1",
-            userName: "Sarah Connor",
-            linkUrl: "https://linkedin.com/post/123",
-            description: "Mon premier post sur l'IA, j'ai suivi le script à la lettre !",
-            likes: 12,
-            isLiked: false,
-            timeAgo: "Il y a 2h"
-        },
-        {
-            id: "2",
-            userName: "John Wick",
-            linkUrl: "https://tiktok.com/@john/video/456",
-            description: "Vidéo de présentation (un peu sombre mais efficace).",
-            likes: 24,
-            isLiked: true,
-            timeAgo: "Il y a 4h"
-        }
-    ]);
+interface VictoryWallProps {
+    cohortId?: string;
+    currentUserId: string;
+}
 
+export function VictoryWall({ cohortId, currentUserId }: VictoryWallProps) {
+    const supabase = createClient();
+    const [posts, setPosts] = useState<VictoryPost[]>([]);
     const [newLink, setNewLink] = useState("");
+    const [loading, setLoading] = useState(true);
 
-    const handlePost = () => {
-        if (!newLink) return;
-        
-        const newPost: VictoryPost = {
-            id: Date.now().toString(),
-            userName: "Moi", // À remplacer par le vrai user
-            linkUrl: newLink,
-            description: "Je viens de publier ça !",
-            likes: 0,
-            isLiked: false,
-            timeAgo: "À l'instant"
-        };
-        
-        setPosts([newPost, ...posts]);
-        setNewLink("");
-    };
+    // Charger les posts + Realtime
+    useEffect(() => {
+        if (!cohortId) return;
 
-    const toggleLike = (id: string) => {
-        setPosts(posts.map(p => {
-            if (p.id === id) {
-                return {
-                    ...p,
-                    likes: p.isLiked ? p.likes - 1 : p.likes + 1,
-                    isLiked: !p.isLiked
-                };
+        const fetchPosts = async () => {
+            // 1. Charger les preuves
+            const { data: proofs, error } = await supabase
+                .from("proofs")
+                .select(`
+                    *,
+                    profiles:user_id (display_name, avatar_url),
+                    likes:proof_likes (user_id)
+                `)
+                .eq("cohort_id", cohortId)
+                .order("created_at", { ascending: false })
+                .limit(20);
+
+            if (error) {
+                console.error("Error loading wall:", error);
+                return;
             }
-            return p;
-        }));
+
+            const formattedPosts = proofs.map((p: any) => ({
+                id: p.id,
+                userName: p.profiles?.display_name || "Membre",
+                userAvatar: p.profiles?.avatar_url,
+                linkUrl: p.proof_url,
+                description: p.description || "Nouvelle victoire !",
+                likes: p.likes?.length || 0,
+                isLiked: p.likes?.some((l: any) => l.user_id === currentUserId),
+                created_at: p.created_at
+            }));
+            
+            setPosts(formattedPosts);
+            setLoading(false);
+        };
+
+        fetchPosts();
+
+        // Realtime Subscription
+        const channel = supabase
+            .channel('victory_wall')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'proofs', filter: `cohort_id=eq.${cohortId}` }, () => {
+                fetchPosts(); // Reload simple pour l'instant
+            })
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'proof_likes' }, () => {
+                 fetchPosts(); // Reload pour les likes
+            })
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
+    }, [cohortId, currentUserId, supabase]);
+
+    const handlePost = async () => {
+        if (!newLink || !cohortId) return;
+
+        // Optimistic UI ? Non, on attend le serveur pour éviter les doublons complexes
+        const { error } = await supabase.from("proofs").insert({
+            user_id: currentUserId,
+            cohort_id: cohortId,
+            proof_url: newLink,
+            description: "Je partage ma réussite ! 🔥"
+        });
+
+        if (error) {
+            toast.error(`Erreur: ${error.message}`);
+            console.error("Supabase Error:", error);
+        } else {
+            toast.success("Victoire partagée !");
+            setNewLink("");
+        }
     };
+
+    const toggleLike = async (post: VictoryPost) => {
+        // Optimistic UI
+        const isLiked = post.isLiked;
+        setPosts(posts.map(p => p.id === post.id ? { ...p, isLiked: !isLiked, likes: isLiked ? p.likes - 1 : p.likes + 1 } : p));
+
+        if (isLiked) {
+            // Unlike
+            await supabase.from("proof_likes").delete().match({ proof_id: post.id, user_id: currentUserId });
+        } else {
+            // Like
+            await supabase.from("proof_likes").insert({ proof_id: post.id, user_id: currentUserId });
+        }
+    };
+
+    if (!cohortId) return <div className="h-full flex items-center justify-center text-slate-400">Chargement du mur...</div>;
 
     return (
-        <Card className="h-full border-2 border-slate-100 shadow-sm bg-white">
-            <CardHeader className="border-b bg-slate-50/50 pb-4">
+        <Card className="h-full border-2 border-slate-100 shadow-sm bg-white flex flex-col">
+            <CardHeader className="border-b bg-slate-50/50 pb-4 shrink-0">
                 <div className="flex items-center justify-between">
                     <CardTitle className="flex items-center gap-2 text-xl font-black uppercase italic text-slate-800">
                         <Trophy className="h-6 w-6 text-yellow-500" />
@@ -88,7 +139,7 @@ export function VictoryWall() {
                 </div>
             </CardHeader>
             
-            <div className="p-4 border-b bg-white">
+            <div className="p-4 border-b bg-white shrink-0">
                 <div className="flex gap-2">
                     <Input 
                         placeholder="Colle le lien de ton post ici..." 
@@ -105,19 +156,25 @@ export function VictoryWall() {
                 </p>
             </div>
 
-            <ScrollArea className="h-[400px]">
+            <ScrollArea className="flex-1">
                 <div className="p-4 space-y-4">
+                    {posts.length === 0 && !loading && (
+                        <p className="text-center text-muted-foreground italic py-10">Soyez le premier à poster une victoire !</p>
+                    )}
+                    
                     {posts.map(post => (
                         <div key={post.id} className="flex gap-3 p-3 rounded-lg border border-slate-100 hover:border-indigo-100 hover:bg-indigo-50/30 transition-all bg-white shadow-sm">
                              <Avatar className="h-10 w-10 border border-slate-200">
-                                <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${post.userName}`} />
+                                <AvatarImage src={post.userAvatar || undefined} />
                                 <AvatarFallback>{post.userName[0]}</AvatarFallback>
                             </Avatar>
                             
                             <div className="flex-1 space-y-1">
                                 <div className="flex justify-between items-start">
                                     <h4 className="font-bold text-sm text-slate-800">{post.userName}</h4>
-                                    <span className="text-xs text-slate-400">{post.timeAgo}</span>
+                                    <span className="text-xs text-slate-400">
+                                        {formatDistanceToNow(new Date(post.created_at), { addSuffix: true, locale: fr })}
+                                    </span>
                                 </div>
                                 
                                 <p className="text-sm text-slate-600">{post.description}</p>
@@ -132,7 +189,7 @@ export function VictoryWall() {
                                     variant="ghost" 
                                     size="icon" 
                                     className={`h-8 w-8 rounded-full ${post.isLiked ? 'text-orange-500 bg-orange-50' : 'text-slate-300 hover:text-orange-400'}`}
-                                    onClick={() => toggleLike(post.id)}
+                                    onClick={() => toggleLike(post)}
                                 >
                                     <Flame className={`h-5 w-5 ${post.isLiked ? 'fill-current' : ''}`} />
                                 </Button>
