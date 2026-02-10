@@ -22,14 +22,14 @@ export async function submitRegistration(formData: FormData) {
   const supabase = await createClient();
   
   const rawData = {
-    firstName: formData.get("firstName"),
-    lastName: formData.get("lastName"),
-    email: formData.get("email"),
-    phone: formData.get("phone"),
-    instagram: formData.get("instagram"),
-    trade: formData.get("trade"),
-    otherTrade: formData.get("otherTrade"),
-    sessionDate: formData.get("sessionDate"),
+    firstName: formData.get("firstName")?.toString() || "",
+    lastName: formData.get("lastName")?.toString() || "",
+    email: formData.get("email")?.toString() || "",
+    phone: formData.get("phone")?.toString() || "",
+    instagram: formData.get("instagram")?.toString() || undefined,
+    trade: formData.get("trade")?.toString() || "",
+    otherTrade: formData.get("otherTrade")?.toString() || undefined,
+    sessionDate: formData.get("sessionDate")?.toString() || "",
   };
 
   const validatedFields = registrationSchema.safeParse(rawData);
