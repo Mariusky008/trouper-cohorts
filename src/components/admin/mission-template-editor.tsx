@@ -125,7 +125,7 @@ export function MissionTemplateEditor({ template, steps }: { template: Template,
 
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between">
-                    <CardTitle>Étapes de la Mission</CardTitle>
+                    <CardTitle>Étapes de la Mission <span className="text-red-500 text-xs">(V2)</span></CardTitle>
                     <Button onClick={addStep} size="sm" variant="outline"><Plus className="h-4 w-4 mr-2"/> Ajouter</Button>
                 </CardHeader>
                 <CardContent className="space-y-6">

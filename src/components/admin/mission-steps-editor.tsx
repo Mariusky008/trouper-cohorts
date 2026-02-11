@@ -58,7 +58,7 @@ export function MissionStepsEditor({ missionId, initialSteps }: MissionStepsEdit
     return (
         <div className="space-y-6 border rounded-lg p-4 bg-slate-50">
             <div className="flex items-center justify-between">
-                <Label className="text-lg font-bold">Étapes de la mission (Checklist)</Label>
+                <Label className="text-lg font-bold">Étapes de la mission (Checklist) <span className="text-red-500">(V2)</span></Label>
                 <span className="text-xs text-slate-500">{steps.length} étape(s)</span>
             </div>
 
