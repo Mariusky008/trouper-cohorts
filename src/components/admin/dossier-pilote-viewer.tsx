@@ -37,12 +37,19 @@ export function DossierPiloteViewer() {
                     {/* 1. Synthèse du Dispositif */}
                     <section>
                         <h2 className="flex items-center gap-3 text-lg font-bold text-slate-900 mb-2 uppercase tracking-wide">
-                            <Target className="text-orange-500 h-5 w-5" /> Synthèse du Dispositif
+                            <Target className="text-orange-500 h-5 w-5" /> Synthèse & Philosophie
                         </h2>
-                        <p className="text-slate-700 text-sm leading-relaxed text-justify">
-                            <strong>Popey Academy</strong> est un programme intensif de <strong>15 jours</strong> conçu pour réactiver la dynamique professionnelle des indépendants et demandeurs d'emploi en phase de création ou de relance. 
-                            Contrairement aux formations théoriques classiques, ce dispositif mise sur <strong>l'action immédiate</strong>, la <strong>responsabilisation par binôme</strong> (Peer-to-Peer Accountability) et la <strong>gamification</strong> pour lever les freins psychologiques à la prospection et à la visibilité.
-                        </p>
+                        <div className="text-slate-700 text-sm leading-relaxed text-justify space-y-2">
+                            <p>
+                                <strong>Le Constat :</strong> 80% des porteurs de projet échouent non pas par manque de compétences techniques, mais par <strong>inhibition de l'action</strong> (peur de vendre, syndrome de l'imposteur, procrastination). L'isolement du créateur est le premier facteur d'abandon.
+                            </p>
+                            <p>
+                                <strong>La Réponse :</strong> Popey Academy est un dispositif expérimental de <strong>"Mise en Mouvement"</strong>. Ce n'est pas une formation théorique classique ("Savoir"), mais un entraînement comportemental intensif ("Faire").
+                            </p>
+                            <p>
+                                <strong>La Mécanique :</strong> Durant <strong>15 jours (105h)</strong>, les participants sont immergés dans une dynamique de groupe où l'action précède la réflexion. Chaque jour, ils doivent valider une mission concrète (prospection, visibilité, vente) sous peine d'exclusion symbolique. Cette <strong>gamification de l'effort</strong> permet de débloquer les freins psychologiques en un temps record.
+                            </p>
+                        </div>
                     </section>
 
                     {/* 2. Fiche d'Identité (Grille) */}
