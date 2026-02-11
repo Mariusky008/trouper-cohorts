@@ -107,12 +107,7 @@ export function CatalogueViewer({ templates }: { templates: any[] }) {
                             
                             {/* Header Page 2 */}
                             <div className="flex justify-between items-center mb-8 border-b border-slate-200 pb-4">
-                                <div>
-                                    <h3 className="text-2xl font-black text-slate-900 uppercase">Feuille de Route</h3>
-                                    <div className="print:hidden text-[10px] text-red-500 font-mono mt-1">
-                                        DEBUG CATS: {steps.map((s:any) => s.category || 'null').join(', ')}
-                                    </div>
-                                </div>
+                                <h3 className="text-2xl font-black text-slate-900 uppercase">Feuille de Route</h3>
                                 <div className="text-slate-400 font-bold">J{day.day_index} • {day.title}</div>
                             </div>
 
