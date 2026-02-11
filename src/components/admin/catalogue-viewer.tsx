@@ -103,7 +103,7 @@ export function CatalogueViewer({ templates }: { templates: any[] }) {
 
 
                         {/* --- PAGE 2 : L'ACTION (Les 4 Piliers - Flux Libre) --- */}
-                        <div className="w-[210mm] min-h-[297mm] bg-white p-12 mx-auto mb-10 shadow-lg relative flex flex-col print:mb-0 print:shadow-none print:w-full print:min-h-screen break-after-page page-break">
+                        <div className="w-[210mm] min-h-[297mm] bg-white p-12 mx-auto mb-10 shadow-lg relative flex flex-col print:mb-0 print:shadow-none print:w-full print:h-auto print:overflow-visible break-after-page page-break">
                             
                             {/* Header Page 2 */}
                             <div className="flex justify-between items-center mb-8 border-b border-slate-200 pb-4">
@@ -175,13 +175,13 @@ export function CatalogueViewer({ templates }: { templates: any[] }) {
                                 </div>
 
                                 {/* Bloc Événement */}
-                                {eventSteps.length > 0 && (
-                                    <div className="bg-red-50 p-8 rounded-2xl border border-red-100 flex flex-col break-inside-avoid">
-                                        <h4 className="font-black text-red-900 flex items-center gap-3 mb-4 uppercase text-sm tracking-widest border-b border-red-200 pb-4">
-                                            <div className="p-2 bg-red-100 rounded-lg"><CalendarDays className="h-5 w-5 text-red-600" /></div>
-                                            Événement / Action
-                                        </h4>
-                                        <div className="text-sm text-slate-700 leading-relaxed">
+                                <div className={`bg-red-50 p-8 rounded-2xl border border-red-100 flex flex-col break-inside-avoid ${eventSteps.length === 0 ? 'opacity-50 grayscale' : ''}`}>
+                                    <h4 className="font-black text-red-900 flex items-center gap-3 mb-4 uppercase text-sm tracking-widest border-b border-red-200 pb-4">
+                                        <div className="p-2 bg-red-100 rounded-lg"><CalendarDays className="h-5 w-5 text-red-600" /></div>
+                                        Événement / Action
+                                    </h4>
+                                    <div className="text-sm text-slate-700 leading-relaxed">
+                                        {eventSteps.length > 0 ? (
                                             <ul className="space-y-4">
                                                 {eventSteps.sort((a: any, b: any) => a.position - b.position).map((step: any) => (
                                                     <li key={step.id} className="flex gap-3">
@@ -190,9 +190,9 @@ export function CatalogueViewer({ templates }: { templates: any[] }) {
                                                     </li>
                                                 ))}
                                             </ul>
-                                        </div>
+                                        ) : <p className="text-slate-400 italic">Aucun événement majeur.</p>}
                                     </div>
-                                )}
+                                </div>
 
                             </div>
                         </div>
