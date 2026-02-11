@@ -37,7 +37,7 @@ export function ProgrammeDetailleViewer({ templates }: { templates: any[] }) {
                 <div className="mt-12 border border-slate-200 p-6 rounded-xl bg-slate-50 text-left max-w-md w-full">
                     <div className="flex justify-between border-b border-slate-200 pb-2 mb-2">
                         <span className="text-slate-500 uppercase text-xs font-bold">Durée</span>
-                        <span className="font-bold text-slate-900 text-sm">15 Jours (30h estimées)</span>
+                        <span className="font-bold text-slate-900 text-sm">15 Jours (105h estimées)</span>
                     </div>
                     <div className="flex justify-between border-b border-slate-200 pb-2 mb-2">
                         <span className="text-slate-500 uppercase text-xs font-bold">Public</span>
@@ -45,7 +45,7 @@ export function ProgrammeDetailleViewer({ templates }: { templates: any[] }) {
                     </div>
                     <div className="flex justify-between">
                         <span className="text-slate-500 uppercase text-xs font-bold">Modalité</span>
-                        <span className="font-bold text-slate-900 text-sm">Distanciel + Binôme</span>
+                        <span className="font-bold text-slate-900 text-sm">Distanciel + 1 Binôme différent / jour</span>
                     </div>
                 </div>
                 <footer className="absolute bottom-12 text-slate-400 text-[10px] uppercase tracking-widest">
