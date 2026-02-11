@@ -7,18 +7,12 @@ import React from "react";
 const highlightKeywords = (text: string) => {
     if (!text) return null;
     
-    // Liste des mots-clés à mettre en valeur (Gras + Block séparé)
-    // Utilisation de (?:...) pour les groupes non-capturants internes
-    const keywordsRegex = /(Structure :|⚠️ Règle d’or :|Debrief honnête :|Tu t’entraînes à :|Rappelle-toi :|Et ça change tout\.|Ta réponse doit :|Attention :|Conseil :|Pourquoi \?|Ce que tu dois faire(?: exactement)? :|💡 Astuce :|Objectif secondaire :)/gi;
-    
-    const parts = text.split(keywordsRegex);
+    // Support basique du markdown gras (**texte**)
+    const parts = text.split(/(\*\*.*?\*\*)/g);
     
     return parts.map((part, index) => {
-        if (!part) return null; // Sécurité anti-undefined
-        
-        if (part.match(keywordsRegex)) {
-            // Style "Titre de section" pour les mots-clés
-            return <strong key={index} className="block font-black text-slate-900 mt-4 mb-1 text-base uppercase tracking-wide">{part}</strong>;
+        if (part.startsWith('**') && part.endsWith('**')) {
+            return <strong key={index} className="font-black text-slate-900">{part.slice(2, -2)}</strong>;
         }
         return part;
     });
@@ -32,31 +26,31 @@ const formatText = (text: string) => {
         const cleanLine = line.trim();
         if (!cleanLine) return <div key={i} className="h-2" />; // Petit saut de ligne si vide
 
-        // 1. TITRES PRINCIPAUX (Objectif X / Étape X)
-        if (cleanLine.match(/^(🎯|💪|⚙️|✨|⚡️)?\s*(Objectif|Étape)\s+\d+/i)) {
+        // 1. TITRES AUTOMATIQUES (Court + Finit par : ou ?)
+        // Ex: "Structure :", "Pourquoi ?", "Règle d'or :"
+        if (cleanLine.length < 80 && (cleanLine.endsWith(':') || cleanLine.endsWith('?') || cleanLine.includes("Règle d'or"))) {
              return (
-                <h4 key={i} className="font-black text-lg text-slate-900 mt-6 mb-3 uppercase tracking-wide border-l-4 border-slate-900 pl-3 bg-slate-100 py-2 rounded-r-lg">
+                <h4 key={i} className="font-black text-base text-slate-900 mt-5 mb-2 uppercase tracking-wide border-l-4 border-slate-900 pl-3 bg-slate-100 py-1 rounded-r-lg break-after-avoid">
                     {cleanLine}
                 </h4>
             );
         }
 
         // 2. LISTES (1., 1️⃣, -, •)
-        if (cleanLine.match(/^([0-9]+[.)]|1️⃣|2️⃣|3️⃣|4️⃣|5️⃣|-|•)/)) {
-             // On garde le marqueur mais on le stylise un peu
+        if (cleanLine.match(/^([0-9]+[.)]|1️⃣|2️⃣|3️⃣|4️⃣|5️⃣|-|•|⚠️|👉|💡|🔥|🚀)/)) {
              return (
-                <div key={i} className="flex gap-3 mb-3 pl-2 items-start">
-                     <span className="font-bold text-slate-900 mt-0.5 text-lg leading-none">👉</span>
-                     <div className="text-slate-700 font-medium leading-relaxed">
-                        {highlightKeywords(cleanLine.replace(/^([-•]|[0-9]+[.)])\s*/, ''))}
+                <div key={i} className="flex gap-3 mb-2 pl-2 items-start">
+                     <span className="font-bold text-slate-900 mt-0.5 text-lg leading-none select-none">👉</span>
+                     <div className="text-slate-700 font-medium leading-relaxed w-full">
+                        {highlightKeywords(cleanLine.replace(/^([-•]|[0-9]+[.)]|1️⃣|2️⃣|3️⃣|4️⃣|5️⃣|⚠️|👉|💡|🔥|🚀)\s*/, ''))}
                      </div>
                 </div>
              );
         }
 
-        // 3. PARAGRAPHES NORMAUX (avec détection de mots-clés)
+        // 3. PARAGRAPHES NORMAUX
         return (
-            <div key={i} className="mb-3 text-slate-600 leading-relaxed">
+            <div key={i} className="mb-2 text-slate-600 leading-relaxed">
                 {highlightKeywords(cleanLine)}
             </div>
         );
