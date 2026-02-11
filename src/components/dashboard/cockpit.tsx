@@ -49,13 +49,14 @@ export function CockpitDashboard({
 
   const progress = (dayIndex / 15) * 100;
 
-  // Groupement des étapes par pilier (Trépied)
+  // Groupement des étapes par pilier (Trépied) + 4ème pilier Event
   const intellectualSteps = steps?.filter((s: any) => s.category === 'intellectual' || !s.category) || [];
   const creativeSteps = steps?.filter((s: any) => s.category === 'creative') || [];
   const socialSteps = steps?.filter((s: any) => s.category === 'social') || [];
+  const eventSteps = steps?.filter((s: any) => s.category === 'event') || [];
 
   const renderStepGroup = (title: string, icon: any, groupSteps: any[], colorClass: string) => (
-    <div className={`border rounded-xl p-5 bg-white shadow-sm ${groupSteps.length === 0 ? 'opacity-60' : ''}`}>
+    <div className={`border rounded-xl p-5 bg-white shadow-sm ${groupSteps.length === 0 ? 'opacity-60 hidden' : ''}`}> {/* Hidden si vide pour cleaner */}
         <h4 className={`font-bold flex items-center gap-2 mb-4 text-xs uppercase tracking-widest ${colorClass}`}>
             {icon} {title}
         </h4>
@@ -170,6 +171,7 @@ export function CockpitDashboard({
                             {renderStepGroup("Intellectuel & Admin", <Brain className="h-4 w-4" />, intellectualSteps, "text-blue-600")}
                             {renderStepGroup("Créatif & Contenu", <Video className="h-4 w-4" />, creativeSteps, "text-purple-600")}
                             {renderStepGroup("Social & Live", <Users className="h-4 w-4" />, socialSteps, "text-orange-600")}
+                            {renderStepGroup("Événement / Action Phare", <PlayCircle className="h-4 w-4" />, eventSteps, "text-red-600")}
                         </div>
 
                         {/* VALIDATION DE MA MISSION */}
