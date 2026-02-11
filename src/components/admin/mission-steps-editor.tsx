@@ -76,10 +76,10 @@ export function MissionStepsEditor({ missionId, initialSteps }: MissionStepsEdit
                             >
                                 <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
                                 <SelectContent>
+                                    <SelectItem value="event">📆 Événement (TEST FIRST)</SelectItem>
                                     <SelectItem value="intellectual">🧠 Intellectuel</SelectItem>
                                     <SelectItem value="creative">🎥 Créatif</SelectItem>
-                                    <SelectItem value="social">👥 Social</SelectItem>
-                                    <SelectItem value="event">📆 Événement (LIVE/ATELIER)</SelectItem>
+                                    <SelectItem value="social">� Social</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
@@ -111,10 +111,10 @@ export function MissionStepsEditor({ missionId, initialSteps }: MissionStepsEdit
                     >
                         <SelectTrigger><SelectValue /></SelectTrigger>
                         <SelectContent>
+                            <SelectItem value="event">📆 Événement (TEST FIRST)</SelectItem>
                             <SelectItem value="intellectual">🧠 Intellectuel</SelectItem>
                             <SelectItem value="creative">🎥 Créatif</SelectItem>
-                            <SelectItem value="social">👥 Social</SelectItem>
-                            <SelectItem value="event">📆 Événement</SelectItem>
+                            <SelectItem value="social">� Social</SelectItem>
                         </SelectContent>
                     </Select>
                 </div>

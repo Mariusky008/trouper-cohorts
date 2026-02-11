@@ -56,7 +56,7 @@ export function CockpitDashboard({
   const eventSteps = steps?.filter((s: any) => s.category === 'event') || [];
 
   const renderStepGroup = (title: string, icon: any, groupSteps: any[], colorClass: string) => (
-    <div className={`border rounded-xl p-5 bg-white shadow-sm ${groupSteps.length === 0 ? 'opacity-60 hidden' : ''}`}> {/* Hidden si vide pour cleaner */}
+    <div className={`border rounded-xl p-5 bg-white shadow-sm ${groupSteps.length === 0 ? 'opacity-60' : ''}`}>
         <h4 className={`font-bold flex items-center gap-2 mb-4 text-xs uppercase tracking-widest ${colorClass}`}>
             {icon} {title}
         </h4>

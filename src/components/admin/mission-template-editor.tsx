@@ -148,10 +148,10 @@ export function MissionTemplateEditor({ template, steps }: { template: Template,
                                     >
                                         <SelectTrigger><SelectValue /></SelectTrigger>
                                         <SelectContent>
+                                            <SelectItem value="event">📆 Événement (TEST FIRST)</SelectItem>
                                             <SelectItem value="intellectual">🧠 Intellectuel & Admin</SelectItem>
                                             <SelectItem value="creative">🎥 Créatif & Contenu</SelectItem>
-                                            <SelectItem value="social">👥 Social & Live</SelectItem>
-                                            <SelectItem value="event">📆 Événement (LIVE/ATELIER)</SelectItem>
+                                            <SelectItem value="social">� Social & Live</SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </div>
