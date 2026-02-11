@@ -79,7 +79,7 @@ export function MissionStepsEditor({ missionId, initialSteps }: MissionStepsEdit
                                     <SelectItem value="intellectual">🧠 Intellectuel</SelectItem>
                                     <SelectItem value="creative">🎥 Créatif</SelectItem>
                                     <SelectItem value="social">👥 Social</SelectItem>
-                                    <SelectItem value="event">📆 Événement</SelectItem>
+                                    <SelectItem value="event">📆 Événement (LIVE/ATELIER)</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>

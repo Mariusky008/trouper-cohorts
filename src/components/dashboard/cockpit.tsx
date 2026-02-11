@@ -171,7 +171,7 @@ export function CockpitDashboard({
                             {renderStepGroup("Intellectuel & Admin", <Brain className="h-4 w-4" />, intellectualSteps, "text-blue-600")}
                             {renderStepGroup("Créatif & Contenu", <Video className="h-4 w-4" />, creativeSteps, "text-purple-600")}
                             {renderStepGroup("Social & Live", <Users className="h-4 w-4" />, socialSteps, "text-orange-600")}
-                            {renderStepGroup("Événement / Action Phare", <PlayCircle className="h-4 w-4" />, eventSteps, "text-red-600")}
+                            {renderStepGroup("Événement (Live/Atelier)", <CheckCircle2 className="h-4 w-4" />, eventSteps, "text-red-600")}
                         </div>
 
                         {/* VALIDATION DE MA MISSION */}
