@@ -3,7 +3,6 @@
 import { Brain, Video, Users, CalendarDays, Target } from "lucide-react";
 
 export function CatalogueViewer({ templates }: { templates: any[] }) {
-    // Force update trigger v2
     return (
         <div className="min-h-screen bg-slate-100 py-10 print:bg-white print:py-0 font-sans">
             
