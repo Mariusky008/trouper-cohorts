@@ -5,6 +5,8 @@ import React from "react";
 
 // --- FORMATAGE AVANCÉ DU TEXTE ---
 const highlightKeywords = (text: string) => {
+    if (!text) return null;
+    
     // Liste des mots-clés à mettre en valeur (Gras + Block séparé)
     const keywordsRegex = /(Structure :|⚠️ Règle d’or :|Debrief honnête :|Tu t’entraînes à :|Rappelle-toi :|Et ça change tout\.|Ta réponse doit :|Attention :|Conseil :|Pourquoi \?|Ce que tu dois faire( exactement)? :|💡 Astuce :|Objectif secondaire :)/gi;
     
