@@ -151,6 +151,7 @@ export function FichePiloteViewer() {
                     body {
                         background: white;
                         -webkit-print-color-adjust: exact;
+                        zoom: 0.9;
                     }
                     .page-break {
                         page-break-after: always;
