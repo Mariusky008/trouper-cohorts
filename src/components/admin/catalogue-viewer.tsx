@@ -3,16 +3,58 @@
 import { Brain, Video, Users, CalendarDays, Target } from "lucide-react";
 import React from "react";
 
-// Helper pour formater le texte avec sauts de lignes et listes
+// --- FORMATAGE AVANCÉ DU TEXTE ---
+const highlightKeywords = (text: string) => {
+    // Liste des mots-clés à mettre en valeur (Gras + Block séparé)
+    const keywordsRegex = /(Structure :|⚠️ Règle d’or :|Debrief honnête :|Tu t’entraînes à :|Rappelle-toi :|Et ça change tout\.|Ta réponse doit :|Attention :|Conseil :|Pourquoi \?|Ce que tu dois faire( exactement)? :|💡 Astuce :|Objectif secondaire :)/gi;
+    
+    const parts = text.split(keywordsRegex);
+    
+    return parts.map((part, index) => {
+        if (part.match(keywordsRegex)) {
+            // Style "Titre de section" pour les mots-clés
+            return <strong key={index} className="block font-black text-slate-900 mt-4 mb-1 text-base uppercase tracking-wide">{part}</strong>;
+        }
+        return part;
+    });
+};
+
 const formatText = (text: string) => {
     if (!text) return null;
-    return text.split('\n').map((line, i) => {
-        // Détection simple des listes
-        if (line.trim().startsWith('-') || line.trim().startsWith('•')) {
-            return <li key={i} className="ml-4 list-disc pl-2 mb-1">{line.replace(/^[-•]\s*/, '')}</li>
+    const lines = text.split('\n');
+
+    return lines.map((line, i) => {
+        const cleanLine = line.trim();
+        if (!cleanLine) return <div key={i} className="h-2" />; // Petit saut de ligne si vide
+
+        // 1. TITRES PRINCIPAUX (Objectif X / Étape X)
+        if (cleanLine.match(/^(🎯|💪|⚙️|✨|⚡️)?\s*(Objectif|Étape)\s+\d+/i)) {
+             return (
+                <h4 key={i} className="font-black text-lg text-slate-900 mt-6 mb-3 uppercase tracking-wide border-l-4 border-slate-900 pl-3 bg-slate-100 py-2 rounded-r-lg">
+                    {cleanLine}
+                </h4>
+            );
         }
-        // Paragraphes normaux
-        return <p key={i} className="mb-2 last:mb-0">{line}</p>
+
+        // 2. LISTES (1., 1️⃣, -, •)
+        if (cleanLine.match(/^([0-9]+[.)]|1️⃣|2️⃣|3️⃣|4️⃣|5️⃣|-|•)/)) {
+             // On garde le marqueur mais on le stylise un peu
+             return (
+                <div key={i} className="flex gap-3 mb-3 pl-2 items-start">
+                     <span className="font-bold text-slate-900 mt-0.5 text-lg leading-none">👉</span>
+                     <div className="text-slate-700 font-medium leading-relaxed">
+                        {highlightKeywords(cleanLine.replace(/^([-•]|[0-9]+[.)])\s*/, ''))}
+                     </div>
+                </div>
+             );
+        }
+
+        // 3. PARAGRAPHES NORMAUX (avec détection de mots-clés)
+        return (
+            <div key={i} className="mb-3 text-slate-600 leading-relaxed">
+                {highlightKeywords(cleanLine)}
+            </div>
+        );
     });
 };
 
@@ -126,7 +168,7 @@ export function CatalogueViewer({ templates }: { templates: any[] }) {
                                                 {intellectualSteps.sort((a: any, b: any) => a.position - b.position).map((step: any) => (
                                                     <li key={step.id} className="flex gap-3">
                                                         <span className="text-blue-500 font-bold text-lg leading-none">•</span>
-                                                        <div>{formatText(step.content)}</div>
+                                                        <div className="w-full">{formatText(step.content)}</div>
                                                     </li>
                                                 ))}
                                             </ul>
@@ -146,7 +188,7 @@ export function CatalogueViewer({ templates }: { templates: any[] }) {
                                                 {creativeSteps.sort((a: any, b: any) => a.position - b.position).map((step: any) => (
                                                     <li key={step.id} className="flex gap-3">
                                                         <span className="text-purple-500 font-bold text-lg leading-none">•</span>
-                                                        <div>{formatText(step.content)}</div>
+                                                        <div className="w-full">{formatText(step.content)}</div>
                                                     </li>
                                                 ))}
                                             </ul>
@@ -166,7 +208,7 @@ export function CatalogueViewer({ templates }: { templates: any[] }) {
                                                 {socialSteps.sort((a: any, b: any) => a.position - b.position).map((step: any) => (
                                                     <li key={step.id} className="flex gap-3">
                                                         <span className="text-orange-500 font-bold text-lg leading-none">•</span>
-                                                        <div>{formatText(step.content)}</div>
+                                                        <div className="w-full">{formatText(step.content)}</div>
                                                     </li>
                                                 ))}
                                             </ul>
@@ -186,7 +228,7 @@ export function CatalogueViewer({ templates }: { templates: any[] }) {
                                                 {eventSteps.sort((a: any, b: any) => a.position - b.position).map((step: any) => (
                                                     <li key={step.id} className="flex gap-3">
                                                         <span className="text-red-500 font-bold text-lg leading-none">➜</span>
-                                                        <div className="font-medium text-slate-900">{formatText(step.content)}</div>
+                                                        <div className="w-full font-medium text-slate-900">{formatText(step.content)}</div>
                                                     </li>
                                                 ))}
                                             </ul>
