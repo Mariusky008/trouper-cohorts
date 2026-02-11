@@ -37,7 +37,7 @@ export function ProgrammeDetailleViewer({ templates }: { templates: any[] }) {
                 <div className="mt-12 border border-slate-200 p-6 rounded-xl bg-slate-50 text-left max-w-md w-full">
                     <div className="flex justify-between border-b border-slate-200 pb-2 mb-2">
                         <span className="text-slate-500 uppercase text-xs font-bold">Durée</span>
-                        <span className="font-bold text-slate-900 text-sm">15 Jours (105h estimées)</span>
+                        <span className="font-bold text-slate-900 text-sm">15 Jours (60h estimées)</span>
                     </div>
                     <div className="flex justify-between border-b border-slate-200 pb-2 mb-2">
                         <span className="text-slate-500 uppercase text-xs font-bold">Public</span>
@@ -82,7 +82,7 @@ export function ProgrammeDetailleViewer({ templates }: { templates: any[] }) {
                                             </div>
                                         </div>
                                         <div className="text-right text-[10px] text-slate-400 font-mono">
-                                            2h est.
+                                            4h est.
                                         </div>
                                     </div>
 

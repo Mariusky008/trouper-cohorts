@@ -47,7 +47,7 @@ export function DossierPiloteViewer() {
                                 <strong>La Réponse :</strong> Popey Academy est un dispositif expérimental de <strong>"Mise en Mouvement"</strong>. Ce n'est pas une formation théorique classique ("Savoir"), mais un entraînement comportemental intensif ("Faire").
                             </p>
                             <p>
-                                <strong>La Mécanique :</strong> Durant <strong>15 jours (105h)</strong>, les participants sont immergés dans une dynamique de groupe où l'action précède la réflexion. Chaque jour, ils doivent valider une mission concrète (prospection, visibilité, vente) sous peine d'exclusion symbolique. Cette <strong>gamification de l'effort</strong> permet de débloquer les freins psychologiques en un temps record.
+                                <strong>La Mécanique :</strong> Durant <strong>15 jours (60h)</strong>, les participants sont immergés dans une dynamique de groupe où l'action précède la réflexion. Chaque jour, ils doivent valider une mission concrète (prospection, visibilité, vente) sous peine d'exclusion symbolique. Cette <strong>gamification de l'effort</strong> permet de débloquer les freins psychologiques en un temps record.
                             </p>
                         </div>
                     </section>
@@ -67,7 +67,7 @@ export function DossierPiloteViewer() {
                         <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
                             <h3 className="text-xs font-bold text-slate-500 uppercase mb-1">Durée & Rythme</h3>
                             <div className="font-bold text-slate-900 text-base">15 Jours Consécutifs</div>
-                            <div className="text-xs text-slate-600 mt-1">Engagement quotidien (1h à 2h / jour).</div>
+                            <div className="text-xs text-slate-600 mt-1">4h00 / jour + échange binôme.</div>
                         </div>
                         <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
                             <h3 className="text-xs font-bold text-slate-500 uppercase mb-1">Modalité Pédagogique</h3>

@@ -40,12 +40,12 @@ export function BudgetViewer() {
                                 <Calculator className="text-slate-800 h-6 w-6" /> Coût Unitaire Cible
                             </h2>
                             <div className="text-right">
-                                <div className="text-3xl font-black text-slate-900">2 200 € <span className="text-base font-medium text-slate-500">HT</span></div>
+                                <div className="text-3xl font-black text-slate-900">900 € <span className="text-base font-medium text-slate-500">HT</span></div>
                                 <div className="text-[10px] text-slate-500 uppercase tracking-wide">Par participant / parcours complet</div>
                             </div>
                         </div>
                         <p className="text-slate-600 text-xs leading-relaxed text-justify border-t border-slate-200 pt-3">
-                            Ce tarif correspond à un parcours d'accompagnement intensif de <strong>105 heures</strong> (15 jours x 7h), incluant l'accès à la plateforme, 
+                            Ce tarif correspond à un parcours d'accompagnement intensif de <strong>60 heures</strong> (15 jours x 4h), incluant l'accès à la plateforme, 
                             l'animation de la cohorte, le support technique et le suivi pédagogique individualisé par le système de binôme supervisé.
                         </p>
                     </section>
@@ -91,13 +91,13 @@ export function BudgetViewer() {
                                 <tbody className="divide-y divide-slate-100">
                                     <tr>
                                         <td className="p-3 font-medium text-slate-900">Groupe Standard</td>
-                                        <td className="p-3 text-slate-600">18 Participants x 2 200 €</td>
-                                        <td className="p-3 text-right font-bold">39 600 €</td>
+                                        <td className="p-3 text-slate-600">18 Participants x 900 €</td>
+                                        <td className="p-3 text-right font-bold">16 200 €</td>
                                     </tr>
                                     <tr>
                                         <td className="p-3 font-medium text-slate-900">Groupe Étendu</td>
-                                        <td className="p-3 text-slate-600">24 Participants x 2 200 €</td>
-                                        <td className="p-3 text-right font-bold">52 800 €</td>
+                                        <td className="p-3 text-slate-600">24 Participants x 900 €</td>
+                                        <td className="p-3 text-right font-bold">21 600 €</td>
                                     </tr>
                                 </tbody>
                             </table>

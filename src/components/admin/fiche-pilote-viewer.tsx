@@ -55,11 +55,11 @@ export function FichePiloteViewer() {
                             <ul className="space-y-1 text-xs text-slate-600">
                                 <li className="flex justify-between border-b border-slate-100 pb-1">
                                     <span>Durée</span>
-                                    <strong>15 Jours (105h)</strong>
+                                    <strong>15 Jours (60h)</strong>
                                 </li>
                                 <li className="flex justify-between border-b border-slate-100 pb-1">
                                     <span>Rythme</span>
-                                    <strong>7h00 / jour</strong>
+                                    <strong>4h00 / jour + échange binôme</strong>
                                 </li>
                                 <li className="flex justify-between border-b border-slate-100 pb-1">
                                     <span>Lieu</span>
