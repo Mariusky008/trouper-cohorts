@@ -68,7 +68,7 @@ export default function FixJ9Page() {
                 title: "PROSPECTION TERRAIN",
                 description: "Aujourd’hui, on sort du digital pour aller rencontrer des prospects en face à face. L’objectif est de transformer tes compétences de communication en confiance réelle sur le terrain.",
                 proof_type: "url",
-                mission_type: "solo"
+                // mission_type: "solo" // Retiré car la colonne n'existe pas encore en DB
             }).select().single();
 
             if (error) throw error;
