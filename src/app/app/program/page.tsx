@@ -77,15 +77,15 @@ export default async function ProgramPage() {
 
   const completedMissionIds = new Set(submissions?.map((s) => s.mission_id));
 
-  // Générer une liste de 1 à 14 jours (même si pas de mission en DB)
-  const days = Array.from({ length: 14 }, (_, i) => i + 1);
+  // Générer une liste de 1 à 15 jours
+  const days = Array.from({ length: 15 }, (_, i) => i + 1);
 
   return (
     <div className="space-y-6 pb-20">
       <div className="space-y-2">
         <h1 className="text-2xl font-black tracking-tight">Programme</h1>
         <p className="text-muted-foreground">
-          14 jours intensifs. Prépare-toi à transpirer.
+          15 jours intensifs. Prépare-toi à transpirer.
         </p>
       </div>
 
