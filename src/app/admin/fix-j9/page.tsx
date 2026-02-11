@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -8,6 +8,21 @@ import { Loader2 } from "lucide-react";
 
 export default function FixJ9Page() {
     const [loading, setLoading] = useState(false);
+    const [debugInfo, setDebugInfo] = useState<any[]>([]);
+
+    const checkDb = async () => {
+        const supabase = createClient();
+        const { data } = await supabase
+            .from('mission_templates')
+            .select('id, day_index, title')
+            .gte('day_index', 7)
+            .lte('day_index', 12)
+            .order('day_index');
+        setDebugInfo(data || []);
+    };
+
+    // Au montage, on check
+    useEffect(() => { checkDb(); }, []);
 
     const handleFix = async () => {
         setLoading(true);
@@ -23,16 +38,28 @@ export default function FixJ9Page() {
 
             if (existingJ9 && existingJ9.title === 'PROSPECTION TERRAIN') {
                 toast.info("Le J9 est déjà correct !");
+                await checkDb();
                 setLoading(false);
                 return;
             }
 
             if (existingJ9 && existingJ9.title !== 'PROSPECTION TERRAIN') {
-                toast.warning(`Le J9 actuel est "${existingJ9.title}". Il faut le décaler manuellement ou relancer le setup global.`);
-                // Note: Ici on pourrait proposer de le décaler, mais restons simple pour l'instant.
-                // On va juste insérer le J9 si il n'y a RIEN à cet index (le "trou" dont tu parlais).
-                setLoading(false);
-                return;
+                // Si J9 existe mais n'est pas Prospection, on suppose qu'il faut le décaler aussi ?
+                // Mais pour l'instant, l'utilisateur a un TROU. Donc existingJ9 devrait être null.
+                toast.warning(`Attention: Il y a déjà un J9 "${existingJ9.title}".`);
+                // On continue quand même ? Non, risque de doublon.
+                // On propose de le décaler ?
+                // Pour simplifier : on insère J9BIS si J9 est occupé ? Non.
+                // Si J9 est occupé par "La Chasse", il faut le décaler à 10.
+                
+                if (existingJ9.title === 'LA CHASSE') {
+                    // C'est le cas problématique : le décalage n'a pas marché pour celui-là ?
+                    await supabase.from('mission_templates').update({ day_index: 10 }).eq('id', existingJ9.id);
+                    toast.info("J9 'La Chasse' décalé à J10.");
+                } else {
+                    setLoading(false);
+                    return;
+                }
             }
 
             // 2. Insérer le J9
@@ -63,6 +90,8 @@ export default function FixJ9Page() {
                 
                 toast.success("✅ J9 inséré avec succès !");
             }
+            
+            await checkDb();
 
         } catch (error: any) {
             console.error(error);
@@ -73,14 +102,24 @@ export default function FixJ9Page() {
     };
 
     return (
-        <div className="p-10 max-w-lg mx-auto">
-            <h1 className="text-2xl font-bold mb-4">Réparer J9 Manquant</h1>
-            <p className="mb-6 text-muted-foreground">
-                Utilise ce bouton si le J9 "Prospection Terrain" n'apparaît pas dans la liste du programme standard.
-            </p>
-            <Button onClick={handleFix} disabled={loading} size="lg" className="w-full">
-                {loading ? <Loader2 className="animate-spin mr-2" /> : "Insérer J9 (Prospection)"}
-            </Button>
+        <div className="p-10 max-w-lg mx-auto space-y-8">
+            <div>
+                <h1 className="text-2xl font-bold mb-4">Réparer J9 Manquant</h1>
+                <p className="mb-6 text-muted-foreground">
+                    Utilise ce bouton pour insérer le J9 "Prospection Terrain".
+                </p>
+                <Button onClick={handleFix} disabled={loading} size="lg" className="w-full">
+                    {loading ? <Loader2 className="animate-spin mr-2" /> : "Insérer J9 (Prospection)"}
+                </Button>
+            </div>
+
+            <div className="bg-slate-100 p-4 rounded-lg">
+                <h3 className="font-bold mb-2">État actuel de la DB (J7 à J12) :</h3>
+                <pre className="text-xs font-mono bg-white p-2 rounded border overflow-auto max-h-60">
+                    {JSON.stringify(debugInfo, null, 2)}
+                </pre>
+                <Button onClick={checkDb} variant="outline" size="sm" className="mt-2">Rafraîchir</Button>
+            </div>
         </div>
     );
 }
