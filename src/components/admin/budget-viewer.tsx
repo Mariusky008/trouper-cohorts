@@ -45,7 +45,7 @@ export function BudgetViewer() {
                             </div>
                         </div>
                         <p className="text-slate-600 text-xs leading-relaxed text-justify border-t border-slate-200 pt-3">
-                            Ce tarif correspond à un parcours d'accompagnement intensif de <strong>30 heures</strong> (15 jours x 2h), incluant l'accès à la plateforme, 
+                            Ce tarif correspond à un parcours d'accompagnement intensif de <strong>105 heures</strong> (15 jours x 7h), incluant l'accès à la plateforme, 
                             l'animation de la cohorte, le support technique et le suivi pédagogique individualisé par le système de binôme supervisé.
                         </p>
                     </section>
@@ -91,13 +91,13 @@ export function BudgetViewer() {
                                 <tbody className="divide-y divide-slate-100">
                                     <tr>
                                         <td className="p-3 font-medium text-slate-900">Groupe Standard</td>
-                                        <td className="p-3 text-slate-600">12 Participants x 2 200 €</td>
-                                        <td className="p-3 text-right font-bold">26 400 €</td>
+                                        <td className="p-3 text-slate-600">18 Participants x 2 200 €</td>
+                                        <td className="p-3 text-right font-bold">39 600 €</td>
                                     </tr>
                                     <tr>
                                         <td className="p-3 font-medium text-slate-900">Groupe Étendu</td>
-                                        <td className="p-3 text-slate-600">16 Participants x 2 200 €</td>
-                                        <td className="p-3 text-right font-bold">35 200 €</td>
+                                        <td className="p-3 text-slate-600">24 Participants x 2 200 €</td>
+                                        <td className="p-3 text-right font-bold">52 800 €</td>
                                     </tr>
                                 </tbody>
                             </table>

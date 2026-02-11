@@ -55,11 +55,11 @@ export function FichePiloteViewer() {
                             <ul className="space-y-2 text-xs text-slate-600">
                                 <li className="flex justify-between border-b border-slate-100 pb-1">
                                     <span>Durée</span>
-                                    <strong>15 Jours</strong>
+                                    <strong>15 Jours (105h)</strong>
                                 </li>
                                 <li className="flex justify-between border-b border-slate-100 pb-1">
                                     <span>Rythme</span>
-                                    <strong>1h30 / jour</strong>
+                                    <strong>7h00 / jour</strong>
                                 </li>
                                 <li className="flex justify-between border-b border-slate-100 pb-1">
                                     <span>Lieu</span>
@@ -74,7 +74,7 @@ export function FichePiloteViewer() {
                             <ul className="space-y-2 text-xs text-slate-600">
                                 <li className="flex justify-between border-b border-slate-100 pb-1">
                                     <span>Cohorte</span>
-                                    <strong>12 à 16 Personnes</strong>
+                                    <strong>18 à 24 Personnes</strong>
                                 </li>
                                 <li className="flex justify-between border-b border-slate-100 pb-1">
                                     <span>Profil</span>
