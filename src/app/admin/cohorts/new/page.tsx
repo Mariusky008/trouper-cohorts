@@ -18,11 +18,11 @@ export default async function NewCohortPage() {
     const startDate = String(formData.get("start_date") || "");
     const status = String(formData.get("status") || "draft");
 
-    // Calcul date de fin (J+13)
+    // Calcul date de fin (J+14)
     let endDate = null;
     if (startDate) {
       const d = new Date(startDate);
-      d.setDate(d.getDate() + 13); // 14 jours total
+      d.setDate(d.getDate() + 14); // 15 jours total
       endDate = d.toISOString().split("T")[0];
     }
 

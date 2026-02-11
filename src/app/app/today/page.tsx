@@ -102,7 +102,7 @@ export default async function TodayPage({
   if (dayIndex < 1) {
       return <div className="p-10 text-center">J-{Math.abs(dayIndex) + 1} avant le lancement !</div>;
   }
-  if (dayIndex > 14) {
+  if (dayIndex > 15) {
       return <div className="p-10 text-center">Félicitations, cohorte terminée !</div>;
   }
 

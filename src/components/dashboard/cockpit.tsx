@@ -47,7 +47,7 @@ export function CockpitDashboard({
   // Calcul du display name pour ChatBox et autres
   const buddyDisplayName = currentBuddy.first_name ? `${currentBuddy.first_name} ${currentBuddy.last_name || ''}` : "Binôme";
 
-  const progress = (dayIndex / 14) * 100;
+  const progress = (dayIndex / 15) * 100;
 
   // Groupement des étapes par pilier (Trépied)
   const intellectualSteps = steps?.filter((s: any) => s.category === 'intellectual' || !s.category) || [];
