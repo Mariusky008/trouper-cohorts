@@ -8,11 +8,14 @@ const highlightKeywords = (text: string) => {
     if (!text) return null;
     
     // Liste des mots-clés à mettre en valeur (Gras + Block séparé)
-    const keywordsRegex = /(Structure :|⚠️ Règle d’or :|Debrief honnête :|Tu t’entraînes à :|Rappelle-toi :|Et ça change tout\.|Ta réponse doit :|Attention :|Conseil :|Pourquoi \?|Ce que tu dois faire( exactement)? :|💡 Astuce :|Objectif secondaire :)/gi;
+    // Utilisation de (?:...) pour les groupes non-capturants internes
+    const keywordsRegex = /(Structure :|⚠️ Règle d’or :|Debrief honnête :|Tu t’entraînes à :|Rappelle-toi :|Et ça change tout\.|Ta réponse doit :|Attention :|Conseil :|Pourquoi \?|Ce que tu dois faire(?: exactement)? :|💡 Astuce :|Objectif secondaire :)/gi;
     
     const parts = text.split(keywordsRegex);
     
     return parts.map((part, index) => {
+        if (!part) return null; // Sécurité anti-undefined
+        
         if (part.match(keywordsRegex)) {
             // Style "Titre de section" pour les mots-clés
             return <strong key={index} className="block font-black text-slate-900 mt-4 mb-1 text-base uppercase tracking-wide">{part}</strong>;
