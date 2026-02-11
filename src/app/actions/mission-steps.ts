@@ -3,19 +3,23 @@
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 
-export async function addMissionStep(missionId: string, content: string, position: number) {
+export async function addMissionStep(missionId: string, content: string, position: number, category: string = 'intellectual') {
     const supabase = await createClient();
     await supabase.from("mission_steps").insert({
         mission_id: missionId,
         content,
-        position
+        position,
+        category
     });
-    revalidatePath(`/admin/cohorts/[id]/missions/${missionId}`);
+    revalidatePath(`/admin/cohorts/[id]/missions/${missionId}`); // Note: path pattern matching is tricky, better revalidate specific path in component or generic
 }
 
-export async function updateMissionStep(stepId: string, content: string, missionId: string) {
+export async function updateMissionStep(stepId: string, content: string, missionId: string, category?: string) {
     const supabase = await createClient();
-    await supabase.from("mission_steps").update({ content }).eq("id", stepId);
+    const payload: any = { content };
+    if (category) payload.category = category;
+    
+    await supabase.from("mission_steps").update(payload).eq("id", stepId);
     revalidatePath(`/admin/cohorts/[id]/missions/${missionId}`);
 }
 
