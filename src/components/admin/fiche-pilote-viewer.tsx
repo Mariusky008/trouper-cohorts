@@ -107,22 +107,42 @@ export function FichePiloteViewer() {
                         <h2 className="flex items-center gap-3 text-lg font-bold text-slate-900 mb-3">
                             <ClipboardCheck className="h-5 w-5 text-green-600" /> Ce que nous vous fournissons (Bilan)
                         </h2>
-                        <ul className="grid grid-cols-2 gap-3 text-xs text-slate-700">
-                            <li className="flex items-start gap-2 bg-slate-50 p-2 rounded-lg">
-                                <span className="text-green-600 font-bold">✓</span>
-                                Bilan individuel de fin de parcours.
+                        <ul className="grid grid-cols-1 gap-3 text-xs text-slate-700">
+                            <li className="flex items-start gap-3 bg-slate-50 p-3 rounded-lg border border-slate-100">
+                                <span className="text-green-600 font-bold mt-0.5 text-lg">✓</span>
+                                <div>
+                                    <strong className="text-slate-900 text-sm">Bilan individuel de fin de parcours</strong>
+                                    <p className="text-slate-600 mt-1 leading-relaxed">
+                                        Une fiche de synthèse détaillée par participant incluant l'assiduité, les Soft Skills activés durant les challenges, et la validation concrète des compétences entrepreneuriales mises en œuvre.
+                                    </p>
+                                </div>
                             </li>
-                            <li className="flex items-start gap-2 bg-slate-50 p-2 rounded-lg">
-                                <span className="text-green-600 font-bold">✓</span>
-                                Statistiques globales de la cohorte.
+                            <li className="flex items-start gap-3 bg-slate-50 p-3 rounded-lg border border-slate-100">
+                                <span className="text-green-600 font-bold mt-0.5 text-lg">✓</span>
+                                <div>
+                                    <strong className="text-slate-900 text-sm">Statistiques globales de la cohorte</strong>
+                                    <p className="text-slate-600 mt-1 leading-relaxed">
+                                        Un reporting quantitatif précis : taux de passage à l'action quotidien, volume de démarches effectuées, et indicateurs clés de performance (KPI) du groupe entier.
+                                    </p>
+                                </div>
                             </li>
-                            <li className="flex items-start gap-2 bg-slate-50 p-2 rounded-lg">
-                                <span className="text-green-600 font-bold">✓</span>
-                                Témoignages qualitatifs (verbatims).
+                            <li className="flex items-start gap-3 bg-slate-50 p-3 rounded-lg border border-slate-100">
+                                <span className="text-green-600 font-bold mt-0.5 text-lg">✓</span>
+                                <div>
+                                    <strong className="text-slate-900 text-sm">Témoignages qualitatifs (verbatims)</strong>
+                                    <p className="text-slate-600 mt-1 leading-relaxed">
+                                        Un recueil des retours d'expérience bruts et authentiques des participants pour alimenter vos rapports d'impact qualitatifs et votre communication interne.
+                                    </p>
+                                </div>
                             </li>
-                            <li className="flex items-start gap-2 bg-slate-50 p-2 rounded-lg">
-                                <span className="text-green-600 font-bold">✓</span>
-                                Mesure de l'impact sur la confiance.
+                            <li className="flex items-start gap-3 bg-slate-50 p-3 rounded-lg border border-slate-100">
+                                <span className="text-green-600 font-bold mt-0.5 text-lg">✓</span>
+                                <div>
+                                    <strong className="text-slate-900 text-sm">Mesure de l'impact sur la confiance</strong>
+                                    <p className="text-slate-600 mt-1 leading-relaxed">
+                                        Une évaluation comparative "Avant / Après" focalisée sur l'évolution de la posture professionnelle, le sentiment de légitimité et la levée des freins psychologiques.
+                                    </p>
+                                </div>
                             </li>
                         </ul>
                     </section>
