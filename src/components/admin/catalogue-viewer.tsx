@@ -8,7 +8,8 @@ export function CatalogueViewer({ templates }: { templates: any[] }) {
         <div className="min-h-screen bg-slate-100 py-10 print:bg-white print:py-0 font-sans">
             
             {/* Bouton d'impression (Masqué à l'impression) */}
-            <div className="fixed top-6 right-6 z-50 print:hidden">
+            <div className="fixed top-6 right-6 z-50 print:hidden flex flex-col gap-2 items-end">
+                <div className="bg-red-500 text-white text-xs font-bold px-2 py-1 rounded">DEBUG: {new Date().toLocaleTimeString()}</div>
                 <button 
                     onClick={() => window.print()} 
                     className="bg-slate-900 text-white px-6 py-3 rounded-full font-bold shadow-xl hover:scale-105 transition-transform flex items-center gap-2 text-sm uppercase tracking-wider"
@@ -18,7 +19,7 @@ export function CatalogueViewer({ templates }: { templates: any[] }) {
             </div>
 
             {/* PAGE DE COUVERTURE */}
-            <div className="w-[210mm] h-[297mm] bg-slate-900 text-white p-16 mx-auto mb-10 shadow-2xl relative flex flex-col justify-between print:mb-0 print:shadow-none print:w-full print:h-screen break-after-page page-break">
+            <div className="w-[210mm] h-[297mm] bg-red-900 text-white p-16 mx-auto mb-10 shadow-2xl relative flex flex-col justify-between print:mb-0 print:shadow-none print:w-full print:h-screen break-after-page page-break">
                 <div className="space-y-4">
                     <div className="text-orange-500 font-black text-6xl tracking-tighter">POPEY</div>
                     <div className="text-2xl font-light tracking-widest uppercase opacity-80">Academy</div>
