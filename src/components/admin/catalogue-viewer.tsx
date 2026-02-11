@@ -1,12 +1,26 @@
 "use client";
 
 import { Brain, Video, Users, CalendarDays, Target } from "lucide-react";
+import React from "react";
+
+// Helper pour formater le texte avec sauts de lignes et listes
+const formatText = (text: string) => {
+    if (!text) return null;
+    return text.split('\n').map((line, i) => {
+        // Détection simple des listes
+        if (line.trim().startsWith('-') || line.trim().startsWith('•')) {
+            return <li key={i} className="ml-4 list-disc pl-2 mb-1">{line.replace(/^[-•]\s*/, '')}</li>
+        }
+        // Paragraphes normaux
+        return <p key={i} className="mb-2 last:mb-0">{line}</p>
+    });
+};
 
 export function CatalogueViewer({ templates }: { templates: any[] }) {
     return (
         <div className="min-h-screen bg-slate-100 py-10 print:bg-white print:py-0 font-sans">
             
-            {/* Bouton d'impression (Masqué à l'impression) */}
+            {/* Bouton d'impression */}
             <div className="fixed top-6 right-6 z-50 print:hidden flex flex-col gap-2 items-end">
                 <button 
                     onClick={() => window.print()} 
@@ -16,13 +30,12 @@ export function CatalogueViewer({ templates }: { templates: any[] }) {
                 </button>
             </div>
 
-            {/* PAGE DE COUVERTURE */}
+            {/* PAGE DE COUVERTURE (Reste identique) */}
             <div className="w-[210mm] h-[297mm] bg-slate-900 text-white p-16 mx-auto mb-10 shadow-2xl relative flex flex-col justify-between print:mb-0 print:shadow-none print:w-full print:h-screen break-after-page page-break">
                 <div className="space-y-4">
                     <div className="text-orange-500 font-black text-6xl tracking-tighter">POPEY</div>
                     <div className="text-2xl font-light tracking-widest uppercase opacity-80">Academy</div>
                 </div>
-
                 <div className="space-y-8 relative z-10">
                     <h1 className="text-8xl font-black leading-[0.9]">
                         PROGRAMME<br/>
@@ -36,10 +49,7 @@ export function CatalogueViewer({ templates }: { templates: any[] }) {
                         Un parcours structuré pour les indépendants qui veulent sortir du lot.
                     </p>
                 </div>
-
-                {/* Motif de fond abstrait */}
                 <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-gradient-to-bl from-slate-800 to-transparent rounded-full blur-3xl opacity-20 -translate-y-1/2 translate-x-1/2"></div>
-
                 <div className="flex justify-between items-end border-t border-slate-800 pt-8 relative z-10">
                     <div>
                         <div className="text-sm text-slate-500 uppercase tracking-widest mb-1">Catalogue Officiel</div>
@@ -51,7 +61,7 @@ export function CatalogueViewer({ templates }: { templates: any[] }) {
                 </div>
             </div>
 
-            {/* PAGES JOUR PAR JOUR */}
+            {/* BOUCLE DES JOURS (2 PAGES PAR JOUR) */}
             {templates.map((day) => {
                 const steps = day.mission_step_templates || [];
                 const intellectualSteps = steps.filter((s: any) => s.category === 'intellectual');
@@ -60,114 +70,134 @@ export function CatalogueViewer({ templates }: { templates: any[] }) {
                 const eventSteps = steps.filter((s: any) => s.category === 'event');
 
                 return (
-                    <div key={day.id} className="w-[210mm] h-[297mm] bg-white p-12 mx-auto mb-10 shadow-lg relative flex flex-col print:mb-0 print:shadow-none print:w-full print:h-screen break-after-page page-break overflow-hidden">
+                    <React.Fragment key={day.id}>
                         
-                        {/* Header Jour */}
-                        <div className="flex justify-between items-start mb-8 border-b-4 border-slate-900 pb-6">
-                            <div className="relative z-10">
-                                <div className="flex items-center gap-4 mb-2">
-                                    <span className="bg-slate-900 text-white px-4 py-1 font-black text-xl rounded-sm">J{day.day_index}</span>
-                                    <span className="text-slate-400 font-bold uppercase tracking-widest text-sm">Programme Popey</span>
+                        {/* --- PAGE 1 : L'ESPRIT (Intention) --- */}
+                        <div className="w-[210mm] h-[297mm] bg-slate-900 text-white p-16 mx-auto mb-10 shadow-lg relative flex flex-col justify-center items-center text-center print:mb-0 print:shadow-none print:w-full print:h-screen break-after-page page-break overflow-hidden">
+                            
+                            {/* Numéro du jour en fond */}
+                            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[400px] font-black text-slate-800 opacity-20 pointer-events-none select-none">
+                                {day.day_index}
+                            </div>
+
+                            <div className="relative z-10 space-y-12 max-w-3xl">
+                                <div className="inline-block bg-orange-500 text-white px-6 py-2 font-bold uppercase tracking-widest rounded-full mb-4">
+                                    Jour {day.day_index}
                                 </div>
-                                <h2 className="text-5xl font-black text-slate-900 uppercase italic leading-none mt-4 max-w-2xl">
+                                
+                                <h2 className="text-6xl font-black uppercase leading-tight">
                                     {day.title}
                                 </h2>
+                                
+                                <div className="w-24 h-1 bg-white mx-auto opacity-50"></div>
+
+                                <blockquote className="text-3xl font-light italic leading-relaxed text-slate-300">
+                                    "{day.description}"
+                                </blockquote>
                             </div>
-                            <div className="text-right absolute top-12 right-12 opacity-10 pointer-events-none">
-                                <div className="text-[180px] font-black text-slate-900 leading-none">
-                                    {day.day_index < 10 ? `0${day.day_index}` : day.day_index}
-                                </div>
+
+                            <div className="absolute bottom-12 text-slate-500 text-sm uppercase tracking-widest">
+                                Popey Academy • Intention & Focus
                             </div>
                         </div>
 
-                        {/* Description / Intention */}
-                        <div className="mb-10 relative z-10">
-                            <h3 className="text-xs font-bold uppercase text-slate-400 mb-3 tracking-widest flex items-center gap-2">
-                                <Target className="h-4 w-4" /> Intention du jour
-                            </h3>
-                            <p className="text-xl text-slate-700 font-medium leading-relaxed italic border-l-4 border-orange-500 pl-6 py-2 bg-orange-50/50 rounded-r-lg">
-                                "{day.description}"
-                            </p>
-                        </div>
 
-                        {/* Les 4 Piliers - Grid Layout */}
-                        <div className="grid grid-cols-2 gap-6 flex-1 content-start relative z-10">
+                        {/* --- PAGE 2 : L'ACTION (Les 4 Piliers) --- */}
+                        <div className="w-[210mm] h-[297mm] bg-white p-12 mx-auto mb-10 shadow-lg relative flex flex-col print:mb-0 print:shadow-none print:w-full print:h-screen break-after-page page-break overflow-hidden">
                             
-                            {/* Bloc Intellectuel */}
-                            <div className={`bg-slate-50 p-6 rounded-xl border border-slate-100 ${intellectualSteps.length === 0 ? 'opacity-30 grayscale' : ''}`}>
-                                <h4 className="font-bold text-blue-900 flex items-center gap-2 mb-4 uppercase text-xs tracking-widest border-b border-blue-100 pb-2">
-                                    <Brain className="h-4 w-4 text-blue-500" /> Intellectuel & Admin
-                                </h4>
-                                {intellectualSteps.length > 0 ? (
-                                    <ul className="space-y-3">
-                                        {intellectualSteps.sort((a: any, b: any) => a.position - b.position).map((step: any) => (
-                                            <li key={step.id} className="text-sm text-slate-700 leading-snug flex gap-2">
-                                                <span className="text-blue-400 font-bold">•</span> {step.content}
-                                            </li>
-                                        ))}
-                                    </ul>
-                                ) : <p className="text-xs text-slate-400 italic">Aucune tâche assignée.</p>}
+                            {/* Header Page 2 */}
+                            <div className="flex justify-between items-center mb-8 border-b border-slate-200 pb-4">
+                                <h3 className="text-2xl font-black text-slate-900 uppercase">Feuille de Route</h3>
+                                <div className="text-slate-400 font-bold">J{day.day_index} • {day.title}</div>
                             </div>
 
-                            {/* Bloc Créatif */}
-                            <div className={`bg-slate-50 p-6 rounded-xl border border-slate-100 ${creativeSteps.length === 0 ? 'opacity-30 grayscale' : ''}`}>
-                                <h4 className="font-bold text-purple-900 flex items-center gap-2 mb-4 uppercase text-xs tracking-widest border-b border-purple-100 pb-2">
-                                    <Video className="h-4 w-4 text-purple-500" /> Créatif & Contenu
-                                </h4>
-                                {creativeSteps.length > 0 ? (
-                                    <ul className="space-y-3">
-                                        {creativeSteps.sort((a: any, b: any) => a.position - b.position).map((step: any) => (
-                                            <li key={step.id} className="text-sm text-slate-700 leading-snug flex gap-2">
-                                                <span className="text-purple-400 font-bold">•</span> {step.content}
-                                            </li>
-                                        ))}
-                                    </ul>
-                                ) : <p className="text-xs text-slate-400 italic">Aucune tâche assignée.</p>}
-                            </div>
-
-                            {/* Bloc Social */}
-                            <div className={`bg-slate-50 p-6 rounded-xl border border-slate-100 ${socialSteps.length === 0 ? 'opacity-30 grayscale' : ''}`}>
-                                <h4 className="font-bold text-orange-900 flex items-center gap-2 mb-4 uppercase text-xs tracking-widest border-b border-orange-100 pb-2">
-                                    <Users className="h-4 w-4 text-orange-500" /> Social & Live
-                                </h4>
-                                {socialSteps.length > 0 ? (
-                                    <ul className="space-y-3">
-                                        {socialSteps.sort((a: any, b: any) => a.position - b.position).map((step: any) => (
-                                            <li key={step.id} className="text-sm text-slate-700 leading-snug flex gap-2">
-                                                <span className="text-orange-400 font-bold">•</span> {step.content}
-                                            </li>
-                                        ))}
-                                    </ul>
-                                ) : <p className="text-xs text-slate-400 italic">Aucune tâche assignée.</p>}
-                            </div>
-
-                            {/* Bloc Événement (Prend 2 colonnes si présent) */}
-                            {eventSteps.length > 0 && (
-                                <div className="bg-red-50 p-6 rounded-xl border border-red-100 col-span-2 shadow-sm">
-                                    <h4 className="font-bold text-red-900 flex items-center gap-2 mb-4 uppercase text-xs tracking-widest border-b border-red-200 pb-2">
-                                        <CalendarDays className="h-4 w-4 text-red-600" /> Événement / Action Phare
+                            {/* Grille 2x2 Aérée */}
+                            <div className="grid grid-cols-2 grid-rows-2 gap-8 h-full pb-8">
+                                
+                                {/* Bloc Intellectuel */}
+                                <div className="bg-slate-50 p-8 rounded-2xl border border-slate-100 flex flex-col">
+                                    <h4 className="font-black text-blue-900 flex items-center gap-3 mb-6 uppercase text-sm tracking-widest border-b border-blue-200 pb-4">
+                                        <div className="p-2 bg-blue-100 rounded-lg"><Brain className="h-5 w-5 text-blue-600" /></div>
+                                        Intellectuel & Admin
                                     </h4>
-                                    <ul className="space-y-3">
-                                        {eventSteps.sort((a: any, b: any) => a.position - b.position).map((step: any) => (
-                                            <li key={step.id} className="text-sm text-slate-900 font-medium leading-snug flex gap-2 items-start">
-                                                <span className="text-red-500 font-bold mt-0.5">➜</span> 
-                                                <span>{step.content}</span>
-                                            </li>
-                                        ))}
-                                    </ul>
+                                    <div className="text-sm text-slate-700 leading-relaxed flex-1 overflow-y-auto">
+                                        {intellectualSteps.length > 0 ? (
+                                            <ul className="space-y-4">
+                                                {intellectualSteps.sort((a: any, b: any) => a.position - b.position).map((step: any) => (
+                                                    <li key={step.id} className="flex gap-3">
+                                                        <span className="text-blue-500 font-bold text-lg leading-none">•</span>
+                                                        <div>{formatText(step.content)}</div>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        ) : <p className="text-slate-400 italic">Rien à signaler.</p>}
+                                    </div>
                                 </div>
-                            )}
 
-                        </div>
+                                {/* Bloc Créatif */}
+                                <div className="bg-slate-50 p-8 rounded-2xl border border-slate-100 flex flex-col">
+                                    <h4 className="font-black text-purple-900 flex items-center gap-3 mb-6 uppercase text-sm tracking-widest border-b border-purple-200 pb-4">
+                                        <div className="p-2 bg-purple-100 rounded-lg"><Video className="h-5 w-5 text-purple-600" /></div>
+                                        Créatif & Contenu
+                                    </h4>
+                                    <div className="text-sm text-slate-700 leading-relaxed flex-1 overflow-y-auto">
+                                        {creativeSteps.length > 0 ? (
+                                            <ul className="space-y-4">
+                                                {creativeSteps.sort((a: any, b: any) => a.position - b.position).map((step: any) => (
+                                                    <li key={step.id} className="flex gap-3">
+                                                        <span className="text-purple-500 font-bold text-lg leading-none">•</span>
+                                                        <div>{formatText(step.content)}</div>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        ) : <p className="text-slate-400 italic">Rien à signaler.</p>}
+                                    </div>
+                                </div>
 
-                        {/* Footer Page */}
-                        <div className="mt-auto pt-8 border-t border-slate-100 flex justify-between items-center text-[10px] text-slate-400 uppercase tracking-widest">
-                            <div className="flex items-center gap-2">
-                                <span className="font-bold text-slate-900">POPEY</span> ACADEMY
+                                {/* Bloc Social */}
+                                <div className="bg-slate-50 p-8 rounded-2xl border border-slate-100 flex flex-col">
+                                    <h4 className="font-black text-orange-900 flex items-center gap-3 mb-6 uppercase text-sm tracking-widest border-b border-orange-200 pb-4">
+                                        <div className="p-2 bg-orange-100 rounded-lg"><Users className="h-5 w-5 text-orange-600" /></div>
+                                        Social & Live
+                                    </h4>
+                                    <div className="text-sm text-slate-700 leading-relaxed flex-1 overflow-y-auto">
+                                        {socialSteps.length > 0 ? (
+                                            <ul className="space-y-4">
+                                                {socialSteps.sort((a: any, b: any) => a.position - b.position).map((step: any) => (
+                                                    <li key={step.id} className="flex gap-3">
+                                                        <span className="text-orange-500 font-bold text-lg leading-none">•</span>
+                                                        <div>{formatText(step.content)}</div>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        ) : <p className="text-slate-400 italic">Rien à signaler.</p>}
+                                    </div>
+                                </div>
+
+                                {/* Bloc Événement */}
+                                <div className={`bg-red-50 p-8 rounded-2xl border border-red-100 flex flex-col ${eventSteps.length === 0 ? 'opacity-50 grayscale' : ''}`}>
+                                    <h4 className="font-black text-red-900 flex items-center gap-3 mb-6 uppercase text-sm tracking-widest border-b border-red-200 pb-4">
+                                        <div className="p-2 bg-red-100 rounded-lg"><CalendarDays className="h-5 w-5 text-red-600" /></div>
+                                        Événement / Action
+                                    </h4>
+                                    <div className="text-sm text-slate-700 leading-relaxed flex-1 overflow-y-auto">
+                                        {eventSteps.length > 0 ? (
+                                            <ul className="space-y-4">
+                                                {eventSteps.sort((a: any, b: any) => a.position - b.position).map((step: any) => (
+                                                    <li key={step.id} className="flex gap-3">
+                                                        <span className="text-red-500 font-bold text-lg leading-none">➜</span>
+                                                        <div className="font-medium text-slate-900">{formatText(step.content)}</div>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        ) : <p className="text-slate-400 italic">Aucun événement majeur.</p>}
+                                    </div>
+                                </div>
+
                             </div>
-                            <div>Jour {day.day_index} / 15</div>
                         </div>
-                    </div>
+
+                    </React.Fragment>
                 );
             })}
             
@@ -179,6 +209,7 @@ export function CatalogueViewer({ templates }: { templates: any[] }) {
                     }
                     body {
                         background: white;
+                        -webkit-print-color-adjust: exact;
                     }
                     .page-break {
                         page-break-after: always;
