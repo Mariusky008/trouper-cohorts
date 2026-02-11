@@ -17,28 +17,28 @@ export function FaqFinanceursViewer() {
             </div>
 
             {/* --- PAGE 1 : FONDAMENTAUX & PÉDAGOGIE --- */}
-            <div className="w-[210mm] h-[297mm] bg-white p-12 mx-auto mb-10 shadow-lg relative flex flex-col print:mb-0 print:shadow-none print:w-full print:h-screen break-after-page page-break">
+            <div className="w-[210mm] h-[297mm] bg-white p-8 mx-auto mb-10 shadow-lg relative flex flex-col print:mb-0 print:shadow-none print:w-full print:h-screen break-after-page page-break">
                 
                 {/* Header */}
-                <header className="flex justify-between items-end border-b-2 border-slate-900 pb-6 mb-8">
+                <header className="flex justify-between items-end border-b-2 border-slate-900 pb-4 mb-6">
                     <div>
                         <h1 className="text-3xl font-black text-slate-900 tracking-tight mb-1">FAQ FINANCEURS</h1>
-                        <p className="text-slate-500 font-medium uppercase tracking-widest text-sm">Arguments & Conformité Institutionnelle</p>
+                        <p className="text-slate-500 font-medium uppercase tracking-widest text-xs">Arguments & Conformité Institutionnelle</p>
                     </div>
                     <div className="text-right">
                         <div className="text-orange-600 font-black text-2xl tracking-tighter">POPEY</div>
                     </div>
                 </header>
 
-                <div className="flex-1 space-y-8">
+                <div className="flex-1 space-y-6">
                     
                     {/* Q1 : Distanciel */}
-                    <div className="bg-slate-50 p-6 rounded-xl border border-slate-200 break-inside-avoid">
-                        <h3 className="flex items-center gap-3 text-lg font-bold text-slate-900 mb-3">
-                            <Laptop className="text-blue-600 h-6 w-6" />
+                    <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 break-inside-avoid">
+                        <h3 className="flex items-center gap-3 text-base font-bold text-slate-900 mb-2">
+                            <Laptop className="text-blue-600 h-5 w-5" />
                             Pourquoi privilégier un format 100% Distanciel ?
                         </h3>
-                        <div className="text-slate-700 text-sm leading-relaxed text-justify space-y-2">
+                        <div className="text-slate-700 text-xs leading-relaxed text-justify space-y-2">
                             <p>
                                 Le choix du distanciel n'est pas une économie de moyens, mais une <strong>exigence pédagogique</strong>. 
                                 Aujourd'hui, 90% de l'activité d'un indépendant (prospection, vente, administration) se fait à distance.
@@ -51,12 +51,12 @@ export function FaqFinanceursViewer() {
                     </div>
 
                     {/* Q2 : Engagement */}
-                    <div className="bg-slate-50 p-6 rounded-xl border border-slate-200 break-inside-avoid">
-                        <h3 className="flex items-center gap-3 text-lg font-bold text-slate-900 mb-3">
-                            <Users className="text-purple-600 h-6 w-6" />
+                    <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 break-inside-avoid">
+                        <h3 className="flex items-center gap-3 text-base font-bold text-slate-900 mb-2">
+                            <Users className="text-purple-600 h-5 w-5" />
                             Comment garantissez-vous l'assiduité sans formateur présentiel ?
                         </h3>
-                        <div className="text-slate-700 text-sm leading-relaxed text-justify space-y-2">
+                        <div className="text-slate-700 text-xs leading-relaxed text-justify space-y-2">
                             <p>
                                 Nous avons remplacé la "surveillance descendante" par la <strong>responsabilisation horizontale</strong>. 
                                 Le système de "Binôme Aléatoire" (Buddy System) oblige chaque apprenant à valider sa journée auprès d'un pair.
@@ -69,12 +69,12 @@ export function FaqFinanceursViewer() {
                     </div>
 
                     {/* Q3 : Évaluation */}
-                    <div className="bg-slate-50 p-6 rounded-xl border border-slate-200 break-inside-avoid">
-                        <h3 className="flex items-center gap-3 text-lg font-bold text-slate-900 mb-3">
-                            <BarChart3 className="text-green-600 h-6 w-6" />
+                    <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 break-inside-avoid">
+                        <h3 className="flex items-center gap-3 text-base font-bold text-slate-900 mb-2">
+                            <BarChart3 className="text-green-600 h-5 w-5" />
                             Quelle est la méthode d'évaluation des acquis ?
                         </h3>
-                        <div className="text-slate-700 text-sm leading-relaxed text-justify space-y-2">
+                        <div className="text-slate-700 text-xs leading-relaxed text-justify space-y-2">
                             <p>
                                 Nous ne faisons pas de QCM théoriques. L'évaluation est basée sur la <strong>Preuve d'Action (Proof of Work)</strong>.
                             </p>
@@ -90,33 +90,33 @@ export function FaqFinanceursViewer() {
 
                 </div>
 
-                <footer className="mt-8 text-center text-xs text-slate-400 uppercase tracking-widest">
+                <footer className="mt-6 text-center text-[10px] text-slate-400 uppercase tracking-widest">
                     Page 1/2 • Argumentaire Financeurs • Popey Academy
                 </footer>
             </div>
 
             {/* --- PAGE 2 : ÉCONOMIE & CONFORMITÉ --- */}
-            <div className="w-[210mm] h-[297mm] bg-white p-12 mx-auto mb-10 shadow-lg relative flex flex-col print:mb-0 print:shadow-none print:w-full print:h-screen break-after-page page-break">
+            <div className="w-[210mm] h-[297mm] bg-white p-8 mx-auto mb-10 shadow-lg relative flex flex-col print:mb-0 print:shadow-none print:w-full print:h-screen break-after-page page-break">
                 
-                <header className="flex justify-between items-end border-b-2 border-slate-200 pb-6 mb-8">
+                <header className="flex justify-between items-end border-b-2 border-slate-200 pb-4 mb-6">
                     <div>
-                        <h2 className="text-3xl font-black text-slate-900 tracking-tight mb-1">ÉCONOMIE & CONFORMITÉ</h2>
-                        <p className="text-slate-500 font-medium uppercase tracking-widest text-sm">Modèle & Positionnement</p>
+                        <h2 className="text-2xl font-black text-slate-900 tracking-tight mb-1">ÉCONOMIE & CONFORMITÉ</h2>
+                        <p className="text-slate-500 font-medium uppercase tracking-widest text-xs">Modèle & Positionnement</p>
                     </div>
                     <div className="text-right opacity-50">
                         <div className="text-xs font-bold text-slate-400 uppercase">Page 2/2</div>
                     </div>
                 </header>
 
-                <div className="flex-1 space-y-8">
+                <div className="flex-1 space-y-6">
                     
                     {/* Q4 : Coût */}
-                    <div className="bg-slate-50 p-6 rounded-xl border border-slate-200 break-inside-avoid">
-                        <h3 className="flex items-center gap-3 text-lg font-bold text-slate-900 mb-3">
-                            <Euro className="text-orange-600 h-6 w-6" />
+                    <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 break-inside-avoid">
+                        <h3 className="flex items-center gap-3 text-base font-bold text-slate-900 mb-2">
+                            <Euro className="text-orange-600 h-5 w-5" />
                             Pourquoi ce modèle économique (Gratuit / Low-cost) ?
                         </h3>
-                        <div className="text-slate-700 text-sm leading-relaxed text-justify space-y-2">
+                        <div className="text-slate-700 text-xs leading-relaxed text-justify space-y-2">
                             <p>
                                 Dans le cadre du pilote, la gratuité vise à lever la barrière financière pour les publics les plus fragiles (bénéficiaires RSA, ASS).
                             </p>
@@ -128,12 +128,12 @@ export function FaqFinanceursViewer() {
                     </div>
 
                     {/* Q5 : Public Cible */}
-                    <div className="bg-slate-50 p-6 rounded-xl border border-slate-200 break-inside-avoid">
-                        <h3 className="flex items-center gap-3 text-lg font-bold text-slate-900 mb-3">
-                            <Target className="text-red-600 h-6 w-6" />
+                    <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 break-inside-avoid">
+                        <h3 className="flex items-center gap-3 text-base font-bold text-slate-900 mb-2">
+                            <Target className="text-red-600 h-5 w-5" />
                             Est-ce adapté aux publics éloignés de l'emploi ?
                         </h3>
-                        <div className="text-slate-700 text-sm leading-relaxed text-justify space-y-2">
+                        <div className="text-slate-700 text-xs leading-relaxed text-justify space-y-2">
                             <p>
                                 <strong>Oui, sous condition de motivation.</strong> Le dispositif est conçu pour être "Action-Oriented". Il ne demande pas de pré-requis académiques, 
                                 mais il demande du courage.
@@ -146,33 +146,33 @@ export function FaqFinanceursViewer() {
                     </div>
 
                     {/* Conformité Qualiopi */}
-                    <div className="mt-8 border-t border-slate-200 pt-8">
-                        <h3 className="flex items-center gap-3 text-lg font-bold text-slate-900 mb-4 uppercase tracking-wide">
-                            <ShieldQuestion className="text-slate-800 h-6 w-6" />
+                    <div className="mt-6 border-t border-slate-200 pt-6">
+                        <h3 className="flex items-center gap-3 text-base font-bold text-slate-900 mb-3 uppercase tracking-wide">
+                            <ShieldQuestion className="text-slate-800 h-5 w-5" />
                             Conformité & Engagements
                         </h3>
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="flex items-start gap-3">
-                                <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5" />
-                                <div className="text-sm text-slate-600">
+                        <div className="grid grid-cols-2 gap-3">
+                            <div className="flex items-start gap-2">
+                                <CheckCircle2 className="h-4 w-4 text-green-600 mt-0.5" />
+                                <div className="text-xs text-slate-600">
                                     <strong>Objectifs opérationnels définis</strong> et évaluables.
                                 </div>
                             </div>
-                            <div className="flex items-start gap-3">
-                                <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5" />
-                                <div className="text-sm text-slate-600">
+                            <div className="flex items-start gap-2">
+                                <CheckCircle2 className="h-4 w-4 text-green-600 mt-0.5" />
+                                <div className="text-xs text-slate-600">
                                     <strong>Adaptation aux publics</strong> via le rythme flexible.
                                 </div>
                             </div>
-                            <div className="flex items-start gap-3">
-                                <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5" />
-                                <div className="text-sm text-slate-600">
+                            <div className="flex items-start gap-2">
+                                <CheckCircle2 className="h-4 w-4 text-green-600 mt-0.5" />
+                                <div className="text-xs text-slate-600">
                                     <strong>Moyens pédagogiques</strong> techniques (Plateforme) et humains (Binôme).
                                 </div>
                             </div>
-                            <div className="flex items-start gap-3">
-                                <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5" />
-                                <div className="text-sm text-slate-600">
+                            <div className="flex items-start gap-2">
+                                <CheckCircle2 className="h-4 w-4 text-green-600 mt-0.5" />
+                                <div className="text-xs text-slate-600">
                                     <strong>Amélioration continue</strong> via feedback quotidien.
                                 </div>
                             </div>
@@ -181,7 +181,7 @@ export function FaqFinanceursViewer() {
 
                 </div>
 
-                <footer className="mt-12 text-center text-xs text-slate-400 uppercase tracking-widest border-t border-slate-100 pt-6">
+                <footer className="mt-6 text-center text-[10px] text-slate-400 uppercase tracking-widest border-t border-slate-100 pt-4">
                     Document Confidentiel • Popey Academy • {new Date().getFullYear()}
                 </footer>
             </div>
