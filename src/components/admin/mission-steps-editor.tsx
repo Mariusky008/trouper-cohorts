@@ -58,7 +58,7 @@ export function MissionStepsEditor({ missionId, initialSteps }: MissionStepsEdit
     return (
         <div className="space-y-6 border rounded-lg p-4 bg-slate-50">
             <div className="flex items-center justify-between">
-                <Label className="text-lg font-bold">Étapes de la mission (Checklist) <span className="text-red-500">(V2)</span></Label>
+                <Label className="text-lg font-bold">Étapes de la mission (Checklist)</Label>
                 <span className="text-xs text-slate-500">{steps.length} étape(s)</span>
             </div>
 
@@ -76,10 +76,10 @@ export function MissionStepsEditor({ missionId, initialSteps }: MissionStepsEdit
                             >
                                 <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="event">📆 Événement (TEST FIRST)</SelectItem>
                                     <SelectItem value="intellectual">🧠 Intellectuel</SelectItem>
                                     <SelectItem value="creative">🎥 Créatif</SelectItem>
-                                    <SelectItem value="social">� Social</SelectItem>
+                                    <SelectItem value="social">👥 Social</SelectItem>
+                                    <SelectItem value="event">📆 Événement (LIVE/ATELIER)</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
@@ -111,10 +111,10 @@ export function MissionStepsEditor({ missionId, initialSteps }: MissionStepsEdit
                     >
                         <SelectTrigger><SelectValue /></SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="event">📆 Événement (TEST FIRST)</SelectItem>
                             <SelectItem value="intellectual">🧠 Intellectuel</SelectItem>
                             <SelectItem value="creative">🎥 Créatif</SelectItem>
-                            <SelectItem value="social">� Social</SelectItem>
+                            <SelectItem value="social">👥 Social</SelectItem>
+                            <SelectItem value="event">📆 Événement (LIVE/ATELIER)</SelectItem>
                         </SelectContent>
                     </Select>
                 </div>

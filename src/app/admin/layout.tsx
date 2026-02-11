@@ -39,11 +39,11 @@ export default async function AdminLayout({
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-yellow-100 border-4 border-red-500">
-      <header className="border-b px-6 py-3 flex items-center justify-between bg-white">
+    <div className="min-h-screen flex flex-col">
+      <header className="border-b px-6 py-3 flex items-center justify-between bg-muted/20">
         <div className="flex items-center gap-6">
           <Link href="/admin/cohorts" className="font-bold text-lg">
-            Trouper Admin <span className="text-red-600 text-xs ml-2">DEBUG BUILD {new Date().toLocaleTimeString()}</span>
+            Trouper Admin
           </Link>
           <nav className="flex gap-4 text-sm font-medium">
             <Link href="/admin/cohorts" className="hover:underline">
