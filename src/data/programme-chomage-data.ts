@@ -80,27 +80,27 @@ export const programmeChomageData = [
     {
         day_index: 7,
         title: "LA VISIBILITÉ",
-        description: "Je dois exister publiquement.",
+        description: "J'existe publiquement",
         mission_step_templates: [
-            { category: "act1", title: "LA TENSION", content: "Qu’est-ce qui est plus risqué ? Publier imparfaitement ou rester invisible ?" },
-            { category: "act2", title: "EXPLORATION", content: "Pourquoi ai-je peur ? Jugement des proches ? Syndrome imposteur ? Manque de confiance ? On verbalise." },
-            { category: "act3", title: "OUTIL : PAGE FACEBOOK PRO", content: "Étapes : Nom clair, Photo simple, Description structurée, Ajouter le visuel Canva.\nOn apprend la cohérence." },
-            { category: "act4", title: "BINÔME", content: "Le binôme regarde la page : “Est-ce que je comprends ce que tu fais ?”" },
-            { category: "act5", title: "ACTION", content: "Publier un premier post simple : “Je lance…” Même imparfait." },
-            { category: "act6", title: "ANCRAGE", content: "“J’ai osé publier.”" }
+            { category: "act1", title: "LA TENSION : Le Risque du Silence (1h)", content: "Le but : Réaliser que l'anonymat est votre plus grand ennemi financier.\n\n0-20 min : Le Poids du Regard. Écris le nom des 3 personnes dont tu redoutes le plus le jugement (un ex-collègue, un cousin, un voisin).\n\n20-40 min : La Balance des Risques. Si tu ne publies pas, ton projet meurt demain. Si tu publies et que quelqu'un se moque, ton projet est toujours vivant. Qu'est-ce qui fait le plus mal ?\n\n40-60 min : La Sortie de l'Honte. Répète cette phrase : \"Mon travail n'est pas ma personne. Je ne propose pas qui je suis, je propose ce que je fais.\"" },
+            { category: "act2", title: "EXPLORATION : Le Mur de Peur (1h)", content: "Le but : Mettre des mots sur le syndrome de l'imposteur.\n\n0-30 min : La Liste des \"Pour qui je me prends ?\". Note toutes les pensées qui te freinent. Ex : \"Je n'ai pas de diplôme récent\", \"Il y a déjà des gens qui font ça mieux\".\n\n30-60 min : Le Contre-Argument. Pour chaque peur, écris une vérité. Ex : \"Je n'ai pas de diplôme, mais j'ai 10 ans d'expérience vécue et je suis disponible immédiatement.\"" },
+            { category: "act3", title: "OUTIL : Création de la Page Facebook (1h)", content: "Le but : Créer une \"vitrine\" qui sépare ta vie privée de ton activité pro.\n\n0-15 min : Configuration. Créer la page. Nom : [Ton Prénom] + [Ton Service]. Pas de nom d'entreprise compliqué.\n\n15-45 min : Habillage. Télécharge ta photo (souriante, fond neutre) et ton visuel Canva du Jour 6 en couverture.\n\n45-60 min : À Propos. Rédige ta \"Proposition de Valeur\" (Jour 4) dans la description. Ajoute une zone géographique.\nComment faire : Ne cherche pas la perfection. Une page avec une info claire vaut mieux qu'une page magnifique et vide." },
+            { category: "act4", title: "BINÔME : Le Contrôle Technique (1h)", content: "Le but : S'assurer que la vitrine est \"lisible\" pour un inconnu.\n\n0-30 min : Audit (A vers B). Le binôme va sur ta page. Il a 30 secondes pour te dire : 1. Qu'est-ce que tu vends ? 2. Comment on te contacte ? 3. Est-ce que ça donne confiance ?\n\n30-60 min : Correction. Modifie les boutons ou les textes selon ses retours." },
+            { category: "act5", title: "ACTION : Le Premier Cri (1h)", content: "Le but : Faire le premier pas irréversible.\n\n0-30 min : Rédaction du Post. \"Bonjour à tous, après une période de réflexion, je lance officiellement mon activité de [Service]. J'aide [Cible] à [Résultat]. Voici mon premier visuel !\"\n\n30-60 min : Publication. Appuie sur \"Publier\". Ne regarde pas les commentaires tout de suite. Pose ton téléphone et va boire un verre d'eau. Tu l'as fait." },
+            { category: "act6", title: "ANCRAGE : La Vidéo du Bâtisseur (1h)", content: "Le but : Célébrer ton passage du statut de \"seul\" à \"chef de projet\".\n\n0-30 min : Script. \"Aujourd'hui, j'ai franchi deux étapes : j'ai une page publique et j'ai mon propre espace de travail communautaire. Je ne subis plus mon isolement, je construis mon réseau.\"\n\n30-60 min : Tournage et Post. Partage ta vidéo sur le groupe de formation." }
         ]
     },
     {
         day_index: 8,
         title: "LA COMMUNAUTÉ",
-        description: "Je ne veux plus être seul.",
+        description: "Je ne suis plus seul",
         mission_step_templates: [
-            { category: "act1", title: "LA TENSION", content: "Un entrepreneur isolé abandonne plus vite. Qui pourrait m’aider ? Qui pourrais-je aider ?" },
-            { category: "act2", title: "EXPLORATION", content: "Définir : À quoi servira ma communauté ? Clients ? Support ? Échanges ?" },
-            { category: "act3", title: "OUTIL : DISCORD", content: "Créer : #présentation, #questions, #offres, #témoignages.\nRédiger message d’accueil. Apprentissage : Relation client moderne." },
-            { category: "act4", title: "BINÔME", content: "Créer le serveur ensemble. Se connecter. Tester les salons." },
-            { category: "act5", title: "ACTION", content: "Inviter au moins 1 personne." },
-            { category: "act6", title: "ANCRAGE", content: "“Voici mon espace professionnel.”" }
+            { category: "act1", title: "LA TENSION : L'Isolement Tue (1h)", content: "Le but : Comprendre que le réseau est le moteur de la motivation.\n\n0-30 min : La Carte du Réseau. Liste 5 personnes (même lointaines) qui travaillent dans ton domaine ou qui pourraient te conseiller.\n\n30-60 min : Le Don. Demande-toi : \"Qu'est-ce que moi, je peux apporter aux autres aujourd'hui ?\" (Une info, un encouragement, un contact)." },
+            { category: "act2", title: "EXPLORATION : L'Architecture du Support (1h)", content: "Le but : Définir à quoi va servir ton espace Discord.\n\n0-30 min : Les Besoins. Mon espace sert-il à : Recueillir des avis clients ? Discuter avec des partenaires ? Partager mes réussites ?\n\n30-60 min : Les Règles. Écris 3 règles simples pour ton groupe (Ex : \"Bienveillance obligatoire\", \"On parle de solutions, pas de problèmes\")." },
+            { category: "act3", title: "OUTIL : Création du Serveur Discord (1h)", content: "Le but : Organiser ton bureau digital.\n\n0-20 min : Création. Ouvre Discord, crée un serveur.\n\n20-50 min : Les Salons (#). Crée les catégories : #présentation, #actualités, #vos-questions, #témoignages.\n\n50-60 min : Message de Bienvenue. Rédige un message qui explique pourquoi cet espace existe et ce qu'on y gagne." },
+            { category: "act4", title: "BINÔME : Le Test de Connexion (1h)", content: "Le but : Apprendre à gérer son propre espace.\n\n0-30 min : Invitation. Invite ton binôme sur ton serveur. Guide-le : \"Va dans le salon #présentation et dis-moi si c'est clair\".\n\n30-60 min : Interaction. Testez les rôles, postez une image. Apprends à modérer (effacer, épingler un message)." },
+            { category: "act5", title: "ACTION : L'Invitation Réelle (1h)", content: "Le but : Faire entrer le premier \"vrai\" membre.\n\n0-30 min : Sélection. Choisis une personne ressource (un ami bienveillant ou un ancien collègue).\n\n30-60 min : Le Message. \"Salut ! Je crée un espace privé sur Discord pour centraliser mon nouveau projet. J'aimerais que tu sois le premier membre pour me donner ton avis. Voici le lien.\"" },
+            { category: "act6", title: "ANCRAGE : La Vidéo du Bâtisseur (1h)", content: "Le but : Célébrer ton passage du statut de \"seul\" à \"chef de projet\".\n\n0-30 min : Script. \"Aujourd'hui, j'ai franchi deux étapes : j'ai une page publique et j'ai mon propre espace de travail communautaire. Je ne subis plus mon isolement, je construis mon réseau.\"\n\n30-60 min : Tournage et Post. Partage ta vidéo sur le groupe de formation." }
         ]
     },
     {
