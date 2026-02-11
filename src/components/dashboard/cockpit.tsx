@@ -131,7 +131,7 @@ export function CockpitDashboard({
             <div className="lg:col-span-2 space-y-8">
                 
                 {/* 0. LA RELIQUE (GOLDEN TICKET) */}
-                <GoldenTicket dayIndex={dayIndex} totalDays={14} />
+                <GoldenTicket dayIndex={dayIndex} totalDays={15} />
 
                 {/* 1. Briefing Vidéo */}
                 <Card className="overflow-hidden border-2 border-slate-200 shadow-sm">

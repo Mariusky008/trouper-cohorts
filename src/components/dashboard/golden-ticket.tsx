@@ -13,7 +13,7 @@ interface GoldenTicketProps {
     userName?: string;
 }
 
-export function GoldenTicket({ dayIndex, totalDays = 14, userName }: GoldenTicketProps) {
+export function GoldenTicket({ dayIndex, totalDays = 15, userName }: GoldenTicketProps) {
     const [copied, setCopied] = useState(false);
     
     // Calcul de la progression (max 100%)
