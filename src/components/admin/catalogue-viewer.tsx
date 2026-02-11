@@ -102,8 +102,8 @@ export function CatalogueViewer({ templates }: { templates: any[] }) {
                         </div>
 
 
-                        {/* --- PAGE 2 : L'ACTION (Les 4 Piliers) --- */}
-                        <div className="w-[210mm] h-[297mm] bg-white p-12 mx-auto mb-10 shadow-lg relative flex flex-col print:mb-0 print:shadow-none print:w-full print:h-screen break-after-page page-break overflow-hidden">
+                        {/* --- PAGE 2 : L'ACTION (Les 4 Piliers - Flux Libre) --- */}
+                        <div className="w-[210mm] min-h-[297mm] bg-white p-12 mx-auto mb-10 shadow-lg relative flex flex-col print:mb-0 print:shadow-none print:w-full print:min-h-screen break-after-page page-break">
                             
                             {/* Header Page 2 */}
                             <div className="flex justify-between items-center mb-8 border-b border-slate-200 pb-4">
@@ -111,16 +111,16 @@ export function CatalogueViewer({ templates }: { templates: any[] }) {
                                 <div className="text-slate-400 font-bold">J{day.day_index} • {day.title}</div>
                             </div>
 
-                            {/* Grille 2x2 Aérée */}
-                            <div className="grid grid-cols-2 grid-rows-2 gap-8 h-full pb-8">
+                            {/* Liste Verticale (Full Width) */}
+                            <div className="flex flex-col gap-8 pb-8">
                                 
                                 {/* Bloc Intellectuel */}
-                                <div className="bg-slate-50 p-8 rounded-2xl border border-slate-100 flex flex-col">
-                                    <h4 className="font-black text-blue-900 flex items-center gap-3 mb-6 uppercase text-sm tracking-widest border-b border-blue-200 pb-4">
+                                <div className="bg-slate-50 p-8 rounded-2xl border border-slate-100 flex flex-col break-inside-avoid">
+                                    <h4 className="font-black text-blue-900 flex items-center gap-3 mb-4 uppercase text-sm tracking-widest border-b border-blue-200 pb-4">
                                         <div className="p-2 bg-blue-100 rounded-lg"><Brain className="h-5 w-5 text-blue-600" /></div>
                                         Intellectuel & Admin
                                     </h4>
-                                    <div className="text-sm text-slate-700 leading-relaxed flex-1 overflow-y-auto">
+                                    <div className="text-sm text-slate-700 leading-relaxed">
                                         {intellectualSteps.length > 0 ? (
                                             <ul className="space-y-4">
                                                 {intellectualSteps.sort((a: any, b: any) => a.position - b.position).map((step: any) => (
@@ -135,12 +135,12 @@ export function CatalogueViewer({ templates }: { templates: any[] }) {
                                 </div>
 
                                 {/* Bloc Créatif */}
-                                <div className="bg-slate-50 p-8 rounded-2xl border border-slate-100 flex flex-col">
-                                    <h4 className="font-black text-purple-900 flex items-center gap-3 mb-6 uppercase text-sm tracking-widest border-b border-purple-200 pb-4">
+                                <div className="bg-slate-50 p-8 rounded-2xl border border-slate-100 flex flex-col break-inside-avoid">
+                                    <h4 className="font-black text-purple-900 flex items-center gap-3 mb-4 uppercase text-sm tracking-widest border-b border-purple-200 pb-4">
                                         <div className="p-2 bg-purple-100 rounded-lg"><Video className="h-5 w-5 text-purple-600" /></div>
                                         Créatif & Contenu
                                     </h4>
-                                    <div className="text-sm text-slate-700 leading-relaxed flex-1 overflow-y-auto">
+                                    <div className="text-sm text-slate-700 leading-relaxed">
                                         {creativeSteps.length > 0 ? (
                                             <ul className="space-y-4">
                                                 {creativeSteps.sort((a: any, b: any) => a.position - b.position).map((step: any) => (
@@ -155,12 +155,12 @@ export function CatalogueViewer({ templates }: { templates: any[] }) {
                                 </div>
 
                                 {/* Bloc Social */}
-                                <div className="bg-slate-50 p-8 rounded-2xl border border-slate-100 flex flex-col">
-                                    <h4 className="font-black text-orange-900 flex items-center gap-3 mb-6 uppercase text-sm tracking-widest border-b border-orange-200 pb-4">
+                                <div className="bg-slate-50 p-8 rounded-2xl border border-slate-100 flex flex-col break-inside-avoid">
+                                    <h4 className="font-black text-orange-900 flex items-center gap-3 mb-4 uppercase text-sm tracking-widest border-b border-orange-200 pb-4">
                                         <div className="p-2 bg-orange-100 rounded-lg"><Users className="h-5 w-5 text-orange-600" /></div>
                                         Social & Live
                                     </h4>
-                                    <div className="text-sm text-slate-700 leading-relaxed flex-1 overflow-y-auto">
+                                    <div className="text-sm text-slate-700 leading-relaxed">
                                         {socialSteps.length > 0 ? (
                                             <ul className="space-y-4">
                                                 {socialSteps.sort((a: any, b: any) => a.position - b.position).map((step: any) => (
@@ -175,13 +175,13 @@ export function CatalogueViewer({ templates }: { templates: any[] }) {
                                 </div>
 
                                 {/* Bloc Événement */}
-                                <div className={`bg-red-50 p-8 rounded-2xl border border-red-100 flex flex-col ${eventSteps.length === 0 ? 'opacity-50 grayscale' : ''}`}>
-                                    <h4 className="font-black text-red-900 flex items-center gap-3 mb-6 uppercase text-sm tracking-widest border-b border-red-200 pb-4">
-                                        <div className="p-2 bg-red-100 rounded-lg"><CalendarDays className="h-5 w-5 text-red-600" /></div>
-                                        Événement / Action
-                                    </h4>
-                                    <div className="text-sm text-slate-700 leading-relaxed flex-1 overflow-y-auto">
-                                        {eventSteps.length > 0 ? (
+                                {eventSteps.length > 0 && (
+                                    <div className="bg-red-50 p-8 rounded-2xl border border-red-100 flex flex-col break-inside-avoid">
+                                        <h4 className="font-black text-red-900 flex items-center gap-3 mb-4 uppercase text-sm tracking-widest border-b border-red-200 pb-4">
+                                            <div className="p-2 bg-red-100 rounded-lg"><CalendarDays className="h-5 w-5 text-red-600" /></div>
+                                            Événement / Action
+                                        </h4>
+                                        <div className="text-sm text-slate-700 leading-relaxed">
                                             <ul className="space-y-4">
                                                 {eventSteps.sort((a: any, b: any) => a.position - b.position).map((step: any) => (
                                                     <li key={step.id} className="flex gap-3">
@@ -190,9 +190,9 @@ export function CatalogueViewer({ templates }: { templates: any[] }) {
                                                     </li>
                                                 ))}
                                             </ul>
-                                        ) : <p className="text-slate-400 italic">Aucun événement majeur.</p>}
+                                        </div>
                                     </div>
-                                </div>
+                                )}
 
                             </div>
                         </div>
