@@ -17,10 +17,10 @@ export function FichePiloteViewer() {
             </div>
 
             {/* --- PAGE UNIQUE : FICHE PILOTE --- */}
-            <div className="w-[210mm] h-[297mm] bg-white p-12 mx-auto mb-10 shadow-lg relative flex flex-col print:mb-0 print:shadow-none print:w-full print:h-screen break-after-page page-break border-t-8 border-orange-500">
+            <div className="w-[210mm] h-[297mm] bg-white p-10 mx-auto mb-10 shadow-lg relative flex flex-col print:mb-0 print:shadow-none print:w-full print:h-screen break-after-page page-break border-t-8 border-orange-500">
                 
                 {/* Header */}
-                <header className="flex justify-between items-start mb-10">
+                <header className="flex justify-between items-start mb-6">
                     <div>
                         <div className="bg-orange-100 text-orange-800 font-bold px-3 py-1 rounded-full text-xs uppercase tracking-widest inline-block mb-3">
                             Appel à Participation

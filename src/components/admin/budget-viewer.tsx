@@ -17,10 +17,10 @@ export function BudgetViewer() {
             </div>
 
             {/* --- PAGE UNIQUE : BUDGET --- */}
-            <div className="w-[210mm] h-[297mm] bg-white p-16 mx-auto mb-10 shadow-lg relative flex flex-col print:mb-0 print:shadow-none print:w-full print:h-screen break-after-page page-break">
+            <div className="w-[210mm] h-[297mm] bg-white p-12 mx-auto mb-10 shadow-lg relative flex flex-col print:mb-0 print:shadow-none print:w-full print:h-screen break-after-page page-break">
                 
                 {/* Header */}
-                <header className="flex justify-between items-end border-b-2 border-slate-900 pb-6 mb-12">
+                <header className="flex justify-between items-end border-b-2 border-slate-900 pb-6 mb-8">
                     <div>
                         <h1 className="text-3xl font-black text-slate-900 tracking-tight mb-1">PROPOSITION FINANCIÈRE</h1>
                         <p className="text-slate-500 font-medium uppercase tracking-widest text-sm">Modèle Économique & Coûts Pédagogiques</p>
