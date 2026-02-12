@@ -206,7 +206,7 @@ export function CCIRecapViewer() {
                             </ul>
                         </div>
 
-                        <div className="bg-blue-50/50 p-6 rounded-2xl border border-blue-100 flex flex-col h-full relative overflow-hidden">
+                        <div className="bg-blue-50/50 p-6 rounded-2xl border border-blue-100 flex flex-col relative overflow-hidden">
                             {/* Background Elements */}
                             <div className="absolute top-0 right-0 w-32 h-32 bg-blue-100 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
                             
@@ -214,14 +214,14 @@ export function CCIRecapViewer() {
                                 <Brain className="h-5 w-5 text-purple-600"/> Une Journée Type (J3)
                             </h3>
 
-                            <div className="flex-1 flex flex-col justify-between relative z-10">
+                            <div className="flex flex-col gap-6 relative z-10">
                                 {/* MATIN */}
                                 <div className="flex gap-4 items-start group">
-                                    <div className="flex flex-col items-center gap-1">
-                                        <div className="h-2 w-2 rounded-full bg-slate-300"></div>
-                                        <div className="w-0.5 h-full bg-slate-200 group-hover:bg-blue-200 transition-colors"></div>
+                                    <div className="flex flex-col items-center gap-1 h-full">
+                                        <div className="h-2 w-2 rounded-full bg-slate-300 shrink-0 mt-1.5"></div>
+                                        <div className="w-0.5 flex-1 bg-slate-200 group-hover:bg-blue-200 transition-colors min-h-[40px]"></div>
                                     </div>
-                                    <div className="pb-6">
+                                    <div>
                                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">09h00 • L'État Initial</p>
                                         <p className="text-sm font-medium text-slate-600 italic">"Je suis perdu, je ne sais pas ce que je vaux sur le marché actuel."</p>
                                         <div className="inline-flex items-center gap-1 mt-2 px-2 py-1 bg-red-50 text-red-600 text-[10px] font-bold rounded uppercase">
@@ -232,21 +232,25 @@ export function CCIRecapViewer() {
 
                                 {/* ACTION */}
                                 <div className="flex gap-4 items-start group">
-                                    <div className="flex flex-col items-center gap-1">
-                                        <div className="h-2 w-2 rounded-full bg-blue-500"></div>
-                                        <div className="w-0.5 h-full bg-slate-200 group-hover:bg-blue-200 transition-colors"></div>
+                                    <div className="flex flex-col items-center gap-1 h-full">
+                                        <div className="h-2 w-2 rounded-full bg-blue-500 shrink-0 mt-1.5"></div>
+                                        <div className="w-0.5 flex-1 bg-slate-200 group-hover:bg-blue-200 transition-colors min-h-[40px]"></div>
                                     </div>
-                                    <div className="pb-6">
-                                        <p className="text-[10px] font-bold text-blue-500 uppercase tracking-wider mb-1">10h00 • La Mission</p>
-                                        <p className="text-sm font-bold text-slate-900">L'Exercice du Miroir</p>
-                                        <p className="text-xs text-slate-600 mt-1">Lister 3 compétences naturelles et les faire valider par l'IA Coach Popey puis par son binôme.</p>
+                                    <div>
+                                        <p className="text-[10px] font-bold text-blue-500 uppercase tracking-wider mb-1">10h00 • Ta Mission</p>
+                                        <p className="text-sm font-bold text-slate-900">Reprendre le contrôle sur ta valeur</p>
+                                        <div className="text-xs text-slate-600 mt-2 space-y-2 leading-snug">
+                                            <p><strong className="text-slate-900">1️⃣ Tu identifies 3 forces naturelles :</strong> Ce que je fais facilement ? Ce qui est évident pour moi ?</p>
+                                            <p><strong className="text-slate-900">2️⃣ Ton binôme t’observe en direct :</strong> Il ne juge pas ton passé. Il analyse ta clarté, ton énergie et ta posture à l'instant T.</p>
+                                            <p><strong className="text-slate-900">3️⃣ L’IA croise les regards :</strong> Elle compare ce que tu déclares et ce que ton binôme observe pour révéler tes vrais atouts.</p>
+                                        </div>
                                     </div>
                                 </div>
 
                                 {/* SOIR */}
                                 <div className="flex gap-4 items-start">
                                     <div className="flex flex-col items-center gap-1">
-                                        <div className="h-3 w-3 rounded-full border-2 border-green-500 bg-white"></div>
+                                        <div className="h-3 w-3 rounded-full border-2 border-green-500 bg-white shrink-0 mt-1"></div>
                                     </div>
                                     <div>
                                         <p className="text-[10px] font-bold text-green-600 uppercase tracking-wider mb-1">17h00 • Ce qui est acquis</p>
@@ -335,7 +339,7 @@ export function CCIRecapViewer() {
                                 </ul>
                             </div>
                         </div>
-                        <div className="bg-orange-50/50 p-6 rounded-2xl border border-orange-100 flex flex-col h-full relative overflow-hidden">
+                        <div className="bg-orange-50/50 p-6 rounded-2xl border border-orange-100 flex flex-col relative overflow-hidden">
                             {/* Background Elements */}
                             <div className="absolute top-0 right-0 w-32 h-32 bg-orange-100 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
 
@@ -343,14 +347,14 @@ export function CCIRecapViewer() {
                                 <Trophy className="h-5 w-5 text-yellow-600"/> Une Journée Type (J9)
                             </h3>
 
-                            <div className="flex-1 flex flex-col justify-between relative z-10">
+                            <div className="flex flex-col gap-6 relative z-10">
                                 {/* MATIN */}
                                 <div className="flex gap-4 items-start group">
-                                    <div className="flex flex-col items-center gap-1">
-                                        <div className="h-2 w-2 rounded-full bg-slate-300"></div>
-                                        <div className="w-0.5 h-full bg-slate-200 group-hover:bg-orange-200 transition-colors"></div>
+                                    <div className="flex flex-col items-center gap-1 h-full">
+                                        <div className="h-2 w-2 rounded-full bg-slate-300 shrink-0 mt-1.5"></div>
+                                        <div className="w-0.5 flex-1 bg-slate-200 group-hover:bg-orange-200 transition-colors min-h-[40px]"></div>
                                     </div>
-                                    <div className="pb-6">
+                                    <div>
                                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">09h00 • L'État Initial</p>
                                         <p className="text-sm font-medium text-slate-600 italic">"Je n'ose pas contacter des inconnus, j'ai peur de passer pour un vendeur de tapis."</p>
                                         <div className="inline-flex items-center gap-1 mt-2 px-2 py-1 bg-red-50 text-red-600 text-[10px] font-bold rounded uppercase">
@@ -361,21 +365,23 @@ export function CCIRecapViewer() {
 
                                 {/* ACTION */}
                                 <div className="flex gap-4 items-start group">
-                                    <div className="flex flex-col items-center gap-1">
-                                        <div className="h-2 w-2 rounded-full bg-orange-500"></div>
-                                        <div className="w-0.5 h-full bg-slate-200 group-hover:bg-orange-200 transition-colors"></div>
+                                    <div className="flex flex-col items-center gap-1 h-full">
+                                        <div className="h-2 w-2 rounded-full bg-orange-500 shrink-0 mt-1.5"></div>
+                                        <div className="w-0.5 flex-1 bg-slate-200 group-hover:bg-orange-200 transition-colors min-h-[40px]"></div>
                                     </div>
-                                    <div className="pb-6">
+                                    <div>
                                         <p className="text-[10px] font-bold text-orange-500 uppercase tracking-wider mb-1">10h00 • La Mission</p>
                                         <p className="text-sm font-bold text-slate-900">Le Sprint de Chasse</p>
-                                        <p className="text-xs text-slate-600 mt-1">Envoyer 10 messages de prospection directe puis faire un Roleplay "Traitement des objections" avec son binôme.</p>
+                                        <p className="text-xs text-slate-600 mt-1 leading-snug">
+                                            Faites une vidéo d'une minute 30 avec votre binôme sur la thématique de la peur du rejet en y intégrant votre produit/service, postez-le sur votre réseau social, envoyer 10 messages avec le lien de votre vidéo puis faire un Roleplay "Traitement des objections" avec son binôme.
+                                        </p>
                                     </div>
                                 </div>
 
                                 {/* SOIR */}
                                 <div className="flex gap-4 items-start">
                                     <div className="flex flex-col items-center gap-1">
-                                        <div className="h-3 w-3 rounded-full border-2 border-orange-500 bg-white"></div>
+                                        <div className="h-3 w-3 rounded-full border-2 border-orange-500 bg-white shrink-0 mt-1"></div>
                                     </div>
                                     <div>
                                         <p className="text-[10px] font-bold text-orange-600 uppercase tracking-wider mb-1">17h00 • Ce qui est acquis</p>
