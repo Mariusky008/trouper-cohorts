@@ -33,6 +33,9 @@ export function AICoachWidget({ dayContext }: AICoachWidgetProps) {
     }
   }) as any;
 
+  // Secure input to prevent undefined trim error
+  const safeInput = input || "";
+
   // Auto-scroll to bottom
   useEffect(() => {
     if (scrollRef.current) {
@@ -114,12 +117,12 @@ export function AICoachWidget({ dayContext }: AICoachWidgetProps) {
         <div className="p-3 bg-slate-900 border-t border-slate-800">
             <form onSubmit={handleSubmit} className="flex gap-2">
                 <Input 
-                    value={input} 
+                    value={safeInput} 
                     onChange={handleInputChange} 
                     placeholder="Pose ta question ou colle ton texte..." 
                     className="bg-slate-950 border-slate-800 text-slate-200 focus-visible:ring-orange-500"
                 />
-                <Button type="submit" size="icon" className="bg-orange-600 hover:bg-orange-500 text-white shrink-0" disabled={isLoading || !input.trim()}>
+                <Button type="submit" size="icon" className="bg-orange-600 hover:bg-orange-500 text-white shrink-0" disabled={isLoading || !safeInput.trim()}>
                     <Send className="h-4 w-4" />
                 </Button>
             </form>
