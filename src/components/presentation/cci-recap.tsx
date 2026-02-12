@@ -1,6 +1,6 @@
 "use client";
 
-import { Brain, Rocket, Users, Target, CheckCircle2, Zap, Trophy, ArrowRight, Laptop, Sparkles } from "lucide-react";
+import { Brain, Rocket, Users, Target, CheckCircle2, Zap, Trophy, ArrowRight, Laptop, Sparkles, Layers } from "lucide-react";
 import { SalesCoachWidget } from "./sales-coach-widget";
 
 export function CCIRecapViewer() {
@@ -465,6 +465,14 @@ export function CCIRecapViewer() {
                         <h3 className="text-xl font-bold uppercase mb-2">Pédagogie Inversée</h3>
                         <p className="text-slate-400 text-sm leading-relaxed">
                             Pas de cours magistraux interminables. Une vidéo courte (5min) le matin, et 90% du temps consacré à l'action et à la production.
+                        </p>
+                    </div>
+
+                    <div className="bg-slate-800 p-8 rounded-2xl border border-slate-700">
+                        <Layers className="h-10 w-10 text-cyan-400 mb-6" />
+                        <h3 className="text-xl font-bold uppercase mb-2">Ressources & Templates</h3>
+                        <p className="text-slate-400 text-sm leading-relaxed">
+                            Ne partez jamais d'une page blanche. Accès à notre bibliothèque de scripts de vente, modèles de posts et contrats types prêts à l'emploi.
                         </p>
                     </div>
                 </div>
