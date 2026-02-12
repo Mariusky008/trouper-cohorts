@@ -163,6 +163,20 @@ export async function seedJobSeekerProgram() {
         ];
       }
 
+      // OVERRIDE J9 with V2 Content
+      if (i === 8) { // Calendar Day 11
+        missionData.title = "LE COURAGE DE PROPOSER";
+        missionData.description = "Offrir n’est pas mendier.";
+        missionData.steps = [
+            { category: "act1", title: "CONSCIENCE : La peur de demander (30 min)", content: "Le but : Identifier les blocages internes.\n\nQuestions IA :\n- Ai-je peur du refus ?\n- Est-ce que je confonds proposition et mendicité ?\n- Si je reçois un \"non\", qu’est-ce que cela signifie ?\n\nQuestion clé : Est-ce que je demande un emploi… ou est-ce que j’offre une solution ?", position: 1 },
+            { category: "act2", title: "STRUCTURE : Proposition Claire (45 min)", content: "Le but : Transformer son offre en proposition concrète.\n\nStructure :\nContexte / Problème identifié / Solution / Résultat / Proposition d'échange.\nEx : \"Je me positionne en tant que [poste]... Seriez-vous disponible pour un échange ?\"\n\nL’IA reformule pour : Clarté, Simplicité, Ton pro.", position: 2 },
+            { category: "act3", title: "BINÔME : Test de Puissance (35 min)", content: "Le but : Renforcer l'assurance.\n\nLe binôme répond :\n- Est-ce que ça sonne comme une valeur ou une demande désespérée ?\n- Est-ce que tu accepterais un RDV ?\n\nLivrable : Feedback \"Puissance & Clarté\".", position: 3 },
+            { category: "act4", title: "OUTIL : Miroir IA Renforcement (20 min)", content: "Le but : Optimisation commerciale.\n\nPrompt :\n\"Voici ma proposition. Rends-la plus directe et orientée résultat. Supprime toute trace de supplication.\"\n\nL’IA génère : Version concise + Version détaillée.", position: 4 },
+            { category: "act5", title: "ACTION : Envoi Réel (1h10)", content: "Le but : Faire un envoi réel avant la fin de la session.\n\nMission : Envoyer la proposition à une entreprise OU Demander un RDV OU Répondre à une offre.\nObjectif : Pas de brouillon. Action réelle.\n\nLivrable : Preuve d'envoi.", position: 5 },
+            { category: "act6", title: "INTÉGRATION : Assumer la Posture (30 min)", content: "Questions IA :\n- Qu’ai-je ressenti au moment d’envoyer ?\n- Est-ce que je me sens plus acteur ?\n\nPhrase : Aujourd’hui, j’ai osé…\n\nLivrables :\n- Proposition envoyée\n- Demande de RDV formulée\n- Preuve d’action réelle", position: 6 }
+        ];
+      }
+
       newMissions.push(missionData);
     }
 
