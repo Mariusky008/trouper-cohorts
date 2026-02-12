@@ -87,21 +87,25 @@ export function LandingEmploi() {
                     </Badge>
                 </FloatingIcon>
                 
-                <h1 className="text-5xl md:text-7xl font-black uppercase italic tracking-tighter leading-[0.9] text-slate-900">
-                  Perdu dans le brouillard ?<br />
+                <h1 className="text-4xl md:text-6xl font-black uppercase italic tracking-tighter leading-[0.9] text-slate-900">
+                  15 Jours pour transformer<br />
                   <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">
-                    Passez à l'action.
+                    votre vécu en 1ère Offre.
                   </span>
                 </h1>
                 
                 <div className="text-xl md:text-2xl text-slate-500 max-w-3xl mx-auto font-medium leading-relaxed space-y-6">
                     <p>
-                        Vous ne savez plus par où commencer ? Vous tournez en rond ?
+                        Arrêtez de chercher un emploi. Créez votre activité.<br/>
+                        <span className="text-slate-900 font-bold">Sans diplôme, sans capital, 100% Action.</span>
                     </p>
-                    <p className="text-slate-900 font-bold border-l-4 border-blue-500 pl-4 md:pl-0 md:border-0">
-                        15 jours pour structurer votre projet, retrouver confiance et définir un cap clair.
-                        <br/>Sans théorie inutile. Juste du concret.
-                    </p>
+                    
+                    {/* Barre d'Objectifs J15 */}
+                    <div className="flex flex-col md:flex-row justify-center gap-4 text-sm md:text-base font-bold text-slate-700 mt-6 bg-slate-50 p-4 rounded-xl border border-slate-100 inline-flex mx-auto">
+                        <span className="flex items-center gap-2"><CheckCircle2 className="text-green-500 h-5 w-5" /> 1 Offre Validée</span>
+                        <span className="flex items-center gap-2"><CheckCircle2 className="text-green-500 h-5 w-5" /> 1 Page Pro Active</span>
+                        <span className="flex items-center gap-2"><CheckCircle2 className="text-green-500 h-5 w-5" /> 1er Contact Client</span>
+                    </div>
                 </div>
 
                 <div className="pt-8 flex flex-col md:flex-row items-center justify-center gap-6">
@@ -137,21 +141,68 @@ export function LandingEmploi() {
           </div>
         </section>
 
-        {/* 2. LA MÉTHODE : LES 6 ACTES */}
+        {/* 2. LA MÉTHODE POPEY : 3 PILIERS + 6 ACTES */}
         <section className="py-24 bg-slate-50 relative z-20">
-            <div className="container mx-auto px-4 max-w-5xl space-y-16">
-                <div className="text-center space-y-4">
-                    <FadeIn>
-                        <h2 className="text-4xl font-black uppercase italic text-slate-900">Une Méthode Unique</h2>
-                    </FadeIn>
-                    <FadeIn delay={0.1}>
-                        <p className="text-xl text-slate-500 max-w-2xl mx-auto">
-                            Chaque jour est construit comme un rituel en 6 actes pour débloquer l'action.
-                        </p>
-                    </FadeIn>
+            <div className="container mx-auto px-4 max-w-5xl space-y-20">
+                
+                {/* 3 Piliers - Branding Méthode Popey */}
+                <div className="space-y-12">
+                     <div className="text-center">
+                        <FadeIn>
+                            <h2 className="text-4xl font-black uppercase italic text-slate-900 mb-4">La Méthode Popey™</h2>
+                        </FadeIn>
+                        <FadeIn delay={0.1}>
+                            <p className="text-xl text-slate-500 max-w-2xl mx-auto">
+                                Pourquoi ça marche là où le reste échoue.
+                            </p>
+                        </FadeIn>
+                     </div>
+
+                     <div className="grid md:grid-cols-3 gap-8">
+                        {/* Pilier 1 */}
+                        <FadeIn delay={0}>
+                            <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-100 text-center h-full">
+                                <div className="h-12 w-12 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4 font-black text-xl">1</div>
+                                <h3 className="font-black text-xl text-slate-900 mb-2 uppercase">L'Identité d'abord</h3>
+                                <p className="text-slate-600 leading-relaxed">On ne construit pas sur du sable. On part de qui vous êtes vraiment pour créer une offre qui vous ressemble.</p>
+                            </div>
+                        </FadeIn>
+                        
+                        {/* Pilier 2 */}
+                        <FadeIn delay={0.1}>
+                            <div className="bg-white p-8 rounded-2xl shadow-xl border-2 border-blue-500 relative transform md:-translate-y-4 text-center h-full">
+                                 <div className="absolute top-0 right-0 bg-blue-500 text-white text-xs font-bold px-3 py-1 rounded-bl-lg uppercase tracking-widest">Moteur</div>
+                                <div className="h-12 w-12 bg-blue-600 text-white rounded-full flex items-center justify-center mx-auto mb-4 font-black text-xl">2</div>
+                                <h3 className="font-black text-xl text-slate-900 mb-2 uppercase">L'Action Immédiate</h3>
+                                <p className="text-slate-600 leading-relaxed">On apprend en faisant, pas en regardant des vidéos. Zéro théorie inutile, 100% pratique.</p>
+                            </div>
+                        </FadeIn>
+                        
+                        {/* Pilier 3 */}
+                        <FadeIn delay={0.2}>
+                            <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-100 text-center h-full">
+                                <div className="h-12 w-12 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4 font-black text-xl">3</div>
+                                <h3 className="font-black text-xl text-slate-900 mb-2 uppercase">Le Collectif</h3>
+                                <p className="text-slate-600 leading-relaxed">On ne réussit pas seul devant son écran. La force du groupe vous porte et vous challenge.</p>
+                            </div>
+                        </FadeIn>
+                     </div>
                 </div>
 
-                <div className="grid md:grid-cols-3 gap-6">
+                {/* 6 Actes - Le Rituel */}
+                <div className="space-y-8 pt-12 border-t border-slate-200">
+                    <div className="text-center space-y-4">
+                        <FadeIn>
+                            <h3 className="text-2xl font-black uppercase italic text-slate-900">Le Rituel Quotidien</h3>
+                        </FadeIn>
+                        <FadeIn delay={0.1}>
+                            <p className="text-lg text-slate-500 max-w-2xl mx-auto">
+                                Chaque jour est construit en 6 actes pour débloquer l'action.
+                            </p>
+                        </FadeIn>
+                    </div>
+
+                    <div className="grid md:grid-cols-3 gap-6">
                     {[
                         { id: 1, title: "La Tension", desc: "On rend l'inaction inconfortable. On pose la question qui fâche.", color: "text-red-600", bg: "bg-red-50", border: "border-red-100" },
                         { id: 2, title: "L'Exploration", desc: "On creuse profondément. Pourquoi ce blocage ? Quel est le vrai besoin ?", color: "text-indigo-600", bg: "bg-indigo-50", border: "border-indigo-100" },
