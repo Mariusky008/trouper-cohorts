@@ -19,7 +19,7 @@ export function AICoachWidget({ dayContext }: AICoachWidgetProps) {
   const [isOpen, setIsOpen] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   
-  const { messages, input, handleInputChange, handleSubmit, isLoading, error, setInput } = useChat({
+  const { messages, input, handleInputChange, handleSubmit, isLoading, error, setInput, append } = useChat({
     // @ts-ignore
     api: "/api/ai/coach",
     body: {
@@ -33,18 +33,23 @@ export function AICoachWidget({ dayContext }: AICoachWidgetProps) {
     }
   }) as any;
 
-  // Secure input to prevent undefined trim error
-  const safeInput = input || "";
+  // Use local state for input to bypass SDK binding issues
+  const [localInput, setLocalInput] = useState("");
 
-  // Manuel input handler to fix binding issues
-  const handleLocalInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // Si setInput existe (nouvelle version SDK), on l'utilise
-    if (typeof setInput === 'function') {
-        setInput(e.target.value);
-    } 
-    // Sinon on fallback sur le handler standard
-    else if (typeof handleInputChange === 'function') {
-        handleInputChange(e);
+  const handleManualSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!localInput.trim() || isLoading) return;
+
+    const userMessage = localInput;
+    setLocalInput(""); // Clear immediately
+    
+    try {
+        await append({
+            role: 'user',
+            content: userMessage
+        });
+    } catch (err) {
+        console.error("Failed to send message:", err);
     }
   };
 
@@ -135,14 +140,14 @@ export function AICoachWidget({ dayContext }: AICoachWidgetProps) {
 
         {/* Input Area */}
         <div className="p-3 bg-slate-900 border-t border-slate-800">
-            <form onSubmit={handleSubmit} className="flex gap-2">
+            <form onSubmit={handleManualSubmit} className="flex gap-2">
                 <Input 
-                    value={safeInput} 
-                    onChange={handleLocalInputChange} 
+                    value={localInput} 
+                    onChange={(e) => setLocalInput(e.target.value)} 
                     placeholder="Pose ta question ou colle ton texte..." 
                     className="bg-slate-950 border-slate-800 text-slate-200 focus-visible:ring-orange-500"
                 />
-                <Button type="submit" size="icon" className="bg-orange-600 hover:bg-orange-500 text-white shrink-0" disabled={isLoading || !safeInput.trim()}>
+                <Button type="submit" size="icon" className="bg-orange-600 hover:bg-orange-500 text-white shrink-0" disabled={isLoading || !localInput.trim()}>
                     <Send className="h-4 w-4" />
                 </Button>
             </form>
