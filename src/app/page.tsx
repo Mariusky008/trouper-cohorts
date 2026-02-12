@@ -202,11 +202,12 @@ export default function Home() {
                 {/* Victoires Types */}
                 <div className="text-center space-y-12 pt-12 border-t border-slate-900">
                     <h3 className="text-2xl font-black text-white uppercase italic">Ce qui se débloque en 15 jours</h3>
-                    <div className="grid md:grid-cols-3 gap-6">
+                    <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
                         {[
                             { day: "J3", title: "Offre Validée", desc: "Fini de douter. Vous savez quoi vendre et à qui." },
                             { day: "J7", title: "Visibilité Publique", desc: "Vous avez osé publier et l'Armada a liké." },
-                            { day: "J12", title: "Système Automatisé", desc: "Vos clients prennent RDV pendant que vous dormez." }
+                            { day: "J12", title: "Système Automatisé", desc: "Vos clients prennent RDV pendant que vous dormez." },
+                            { day: "J15", title: "Réseau & Ventes", desc: "23 ambassadeurs pour votre bouche-à-oreille. Vos premières ventes accélérées." }
                         ].map((win, i) => (
                             <FadeIn key={i} delay={i * 0.1}>
                                 <div className="bg-slate-900 p-6 rounded-xl border border-slate-800 hover:border-orange-500 transition-colors">
