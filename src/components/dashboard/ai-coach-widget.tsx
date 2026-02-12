@@ -12,6 +12,7 @@ interface AICoachWidgetProps {
   dayContext: {
     day: string;
     mission: string;
+    programType?: string;
   };
 }
 

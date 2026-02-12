@@ -17,12 +17,15 @@ export default async function NewCohortPage() {
     const trade = String(formData.get("trade") || "");
     const startDate = String(formData.get("start_date") || "");
     const status = String(formData.get("status") || "draft");
+    const programType = String(formData.get("program_type") || "entrepreneur");
 
-    // Calcul date de fin (J+14)
+    // Calcul date de fin
     let endDate = null;
     if (startDate) {
       const d = new Date(startDate);
-      d.setDate(d.getDate() + 14); // 15 jours total
+      // Entrepreneur = 14 jours, Job Seeker = 21 jours (3 semaines)
+      const duration = programType === 'job_seeker' ? 21 : 14;
+      d.setDate(d.getDate() + duration);
       endDate = d.toISOString().split("T")[0];
     }
 
@@ -33,6 +36,7 @@ export default async function NewCohortPage() {
       start_date: startDate || null,
       end_date: endDate,
       status,
+      program_type: programType,
     });
 
     if (error) {
@@ -66,10 +70,23 @@ export default async function NewCohortPage() {
                 <Input id="title" name="title" placeholder="Ex: Cohorte Hiver 2024" required />
               </div>
               <div className="space-y-2">
+                <Label htmlFor="program_type">Type de Programme</Label>
+                <Select name="program_type" defaultValue="entrepreneur">
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="entrepreneur">Entrepreneur (14 jours)</SelectItem>
+                    <SelectItem value="job_seeker">Emploi (3 semaines)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="space-y-2">
                 <Label htmlFor="slug">Slug (URL)</Label>
                 <Input id="slug" name="slug" placeholder="ex: hiver-2024" required />
                 <p className="text-xs text-muted-foreground">Identifiant unique pour l'URL.</p>
-              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">

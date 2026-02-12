@@ -87,7 +87,7 @@ export default async function TodayPage({
 
   const cohortRes = await supabase
     .from("cohorts")
-    .select("id, title, trade, start_date, end_date, status")
+    .select("id, title, trade, start_date, end_date, status, program_type")
     .eq("id", membershipRes.data.cohort_id)
     .maybeSingle();
 

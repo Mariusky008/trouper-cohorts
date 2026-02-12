@@ -285,7 +285,8 @@ export function CockpitDashboard({
                 <AICoachWidget 
                     dayContext={{
                         day: `Jour ${dayIndex}`,
-                        mission: mission?.title || "Repos"
+                        mission: mission?.title || "Repos",
+                        programType: cohort?.program_type || "entrepreneur"
                     }} 
                 />
 

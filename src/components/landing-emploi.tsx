@@ -551,7 +551,7 @@ export function LandingEmploi() {
                             <p className="text-sm text-slate-500">Sélection sur motivation uniquement.</p>
                          </div>
                         <div className="light">
-                             <PreRegistrationForm />
+                             <PreRegistrationForm programType="job_seeker" />
                         </div>
                     </div>
                 </div>

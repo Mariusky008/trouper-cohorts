@@ -10,7 +10,7 @@ import { createClient } from "@/lib/supabase/client";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 
-export function PreRegistrationForm() {
+export function PreRegistrationForm({ programType = "entrepreneur" }: { programType?: string }) {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [sessions, setSessions] = useState<{id: string, label: string}[]>([]);
@@ -69,6 +69,7 @@ export function PreRegistrationForm() {
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4 max-w-md mx-auto w-full bg-white/80 backdrop-blur-md p-6 rounded-xl shadow-lg border border-white/20">
+        <input type="hidden" name="programType" value={programType} />
         
         <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1">
