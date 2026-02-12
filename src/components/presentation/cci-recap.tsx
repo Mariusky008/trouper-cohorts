@@ -172,7 +172,8 @@ export function CCIRecapViewer() {
                 <h2 className="text-4xl font-black text-blue-900 mb-4 uppercase italic">Le Réveil</h2>
                 <p className="text-lg text-slate-500 font-light mb-8 border-l-4 border-blue-500 pl-4 leading-tight">
                     "On ne trouve pas sa voie en réfléchissant, mais en agissant."<br/>
-                    Le programme pour redonner confiance et structure.
+                    Le programme pour redonner confiance et structure.<br/>
+                    <strong className="text-blue-600">Notre formation est plus puissante que 95 % des formations "retour à l'emploi" classiques.</strong>
                 </p>
 
                 <div className="flex-1 flex flex-col justify-between min-h-0">
