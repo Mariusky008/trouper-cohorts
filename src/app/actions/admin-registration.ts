@@ -70,12 +70,12 @@ export async function validateRegistration(registrationId: string) {
             
             const parts = selected_session_date.toLowerCase().split(' ');
             // On cherche le premier chiffre (jour)
-            const day = parseInt(parts.find(p => !isNaN(parseInt(p))) || "1");
+            const day = parseInt(parts.find((p: string) => !isNaN(parseInt(p))) || "1");
             // On cherche le mois
-            const monthStr = parts.find(p => months[p] !== undefined);
+            const monthStr = parts.find((p: string) => months[p] !== undefined);
             const month = monthStr ? months[monthStr] : startDate.getMonth() + 1; // +1 mois par défaut si échec
             // On cherche l'année (4 chiffres)
-            const yearStr = parts.find(p => /^\d{4}$/.test(p));
+            const yearStr = parts.find((p: string) => /^\d{4}$/.test(p));
             const year = yearStr ? parseInt(yearStr) : new Date().getFullYear();
 
             // Si on a trouvé un mois explicite, on utilise cette date
