@@ -171,44 +171,83 @@ export function CCIRecapViewer() {
                     Le programme pour redonner confiance et structure.
                 </p>
 
-                <div className="grid grid-cols-2 gap-12 mb-12">
-                    <div>
-                        <h3 className="font-bold text-slate-900 uppercase mb-4 flex items-center gap-2">
-                            <Target className="h-5 w-5 text-blue-600"/> Objectifs Pédagogiques
-                        </h3>
-                        <ul className="space-y-4">
-                            <li className="flex gap-3">
-                                <div className="h-6 w-6 rounded-full bg-blue-50 flex items-center justify-center shrink-0 text-xs font-bold text-blue-600">1</div>
-                                <p className="text-sm text-slate-600"><strong>Retrouver une posture active</strong> : Sortir de l'isolement du chercheur d'emploi.</p>
-                            </li>
-                            <li className="flex gap-3">
-                                <div className="h-6 w-6 rounded-full bg-blue-50 flex items-center justify-center shrink-0 text-xs font-bold text-blue-600">2</div>
-                                <p className="text-sm text-slate-600"><strong>Identifier sa "Zone de Génie"</strong> : Ce que je sais faire vs ce que le marché attend.</p>
-                            </li>
-                            <li className="flex gap-3">
-                                <div className="h-6 w-6 rounded-full bg-blue-50 flex items-center justify-center shrink-0 text-xs font-bold text-blue-600">3</div>
-                                <p className="text-sm text-slate-600"><strong>Valider un projet pro</strong> : Salariat ou Entrepreneuriat ? La réponse à la fin.</p>
-                            </li>
-                        </ul>
-                    </div>
-                    <div className="bg-slate-50 p-6 rounded-xl">
-                        <h3 className="font-bold text-slate-900 uppercase mb-4 flex items-center gap-2">
-                            <Brain className="h-5 w-5 text-purple-600"/> Le Programme
-                        </h3>
-                        <div className="space-y-3">
-                            <div className="flex justify-between text-sm border-b border-slate-200 pb-2">
-                                <span className="text-slate-600 w-24 shrink-0 font-bold">Semaine 1</span>
-                                <span className="text-slate-900 text-right">Introspection, Bilan Flash & Mindset de Croissance</span>
-                            </div>
-                            <div className="flex justify-between text-sm border-b border-slate-200 pb-2">
-                                <span className="text-slate-600 w-24 shrink-0 font-bold">Semaine 2</span>
-                                <span className="text-slate-900 text-right">Exploration Marché, Enquêtes Métiers & Réseau</span>
-                            </div>
-                            <div className="flex justify-between text-sm pb-2">
-                                <span className="text-slate-600 w-24 shrink-0 font-bold">Semaine 3</span>
-                                <span className="text-slate-900 text-right">Validation du Projet & Pitch Final devant Jury</span>
+                <div className="flex-1 flex flex-col justify-between">
+                    <div className="grid grid-cols-2 gap-8 mb-8">
+                        <div>
+                            <h3 className="font-bold text-slate-900 uppercase mb-4 flex items-center gap-2 text-lg">
+                                <Target className="h-6 w-6 text-blue-600"/> Objectifs Pédagogiques
+                            </h3>
+                            <ul className="space-y-6">
+                                <li className="flex gap-4">
+                                    <div className="h-8 w-8 rounded-full bg-blue-50 flex items-center justify-center shrink-0 text-sm font-bold text-blue-600">1</div>
+                                    <div>
+                                        <p className="font-bold text-slate-900">Retrouver une posture active</p>
+                                        <p className="text-sm text-slate-600">Sortir de l'isolement et reprendre le contrôle de son emploi du temps.</p>
+                                    </div>
+                                </li>
+                                <li className="flex gap-4">
+                                    <div className="h-8 w-8 rounded-full bg-blue-50 flex items-center justify-center shrink-0 text-sm font-bold text-blue-600">2</div>
+                                    <div>
+                                        <p className="font-bold text-slate-900">Identifier sa "Zone de Génie"</p>
+                                        <p className="text-sm text-slate-600">Transformer ses talents naturels et compétences en une offre de service.</p>
+                                    </div>
+                                </li>
+                                <li className="flex gap-4">
+                                    <div className="h-8 w-8 rounded-full bg-blue-50 flex items-center justify-center shrink-0 text-sm font-bold text-blue-600">3</div>
+                                    <div>
+                                        <p className="font-bold text-slate-900">Valider un projet pro</p>
+                                        <p className="text-sm text-slate-600">Choisir entre Salariat et Entrepreneuriat avec un plan d'action validé par le marché.</p>
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+                        <div className="bg-blue-50/50 p-6 rounded-2xl border border-blue-100">
+                            <h3 className="font-bold text-slate-900 uppercase mb-4 flex items-center gap-2 text-lg">
+                                <Brain className="h-6 w-6 text-purple-600"/> Le Programme Jour par Jour
+                            </h3>
+                            <div className="space-y-6">
+                                <div>
+                                    <div className="flex items-center justify-between mb-2">
+                                        <span className="text-xs font-bold uppercase text-blue-500 tracking-wider">Semaine 1</span>
+                                        <span className="text-sm font-black text-slate-900">Introspection & Mindset</span>
+                                    </div>
+                                    <ul className="text-sm text-slate-600 space-y-1 list-disc pl-4">
+                                        <li><strong>J1-J2</strong> : Bilan de compétences flash & Ikigai.</li>
+                                        <li><strong>J3-J4</strong> : Identifier ses freins et peurs (Syndrome de l'imposteur).</li>
+                                        <li><strong>J5</strong> : Définir sa vision à 3 ans.</li>
+                                    </ul>
+                                </div>
+                                <div>
+                                    <div className="flex items-center justify-between mb-2">
+                                        <span className="text-xs font-bold uppercase text-blue-500 tracking-wider">Semaine 2</span>
+                                        <span className="text-sm font-black text-slate-900">Exploration & Enquête</span>
+                                    </div>
+                                    <ul className="text-sm text-slate-600 space-y-1 list-disc pl-4">
+                                        <li><strong>J6-J7</strong> : Analyser le marché caché de l'emploi.</li>
+                                        <li><strong>J8-J9</strong> : Mener 5 enquêtes métiers (interviews pro).</li>
+                                        <li><strong>J10</strong> : Synthèse des opportunités détectées.</li>
+                                    </ul>
+                                </div>
+                                <div>
+                                    <div className="flex items-center justify-between mb-2">
+                                        <span className="text-xs font-bold uppercase text-blue-500 tracking-wider">Semaine 3</span>
+                                        <span className="text-sm font-black text-slate-900">Décision & Action</span>
+                                    </div>
+                                    <ul className="text-sm text-slate-600 space-y-1 list-disc pl-4">
+                                        <li><strong>J11-J12</strong> : Construire son plan d'action (CV ou Offre).</li>
+                                        <li><strong>J13-J14</strong> : Préparer son Pitch de présentation.</li>
+                                        <li><strong>J15</strong> : Grand Oral devant le jury de la cohorte.</li>
+                                    </ul>
+                                </div>
                             </div>
                         </div>
+                    </div>
+
+                    <div className="bg-slate-50 border-l-4 border-green-500 p-6 rounded-r-xl">
+                        <p className="font-bold text-green-700 uppercase text-xs mb-1">La Passerelle Entrepreneur</p>
+                        <p className="text-slate-700 text-sm">
+                            Si à la fin de ces 15 jours, l'apprenant valide un projet de création d'entreprise, il est <strong>automatiquement éligible</strong> pour rejoindre la phase "L'Attaque" et obtenir ses premiers clients en 15 jours supplémentaires.
+                        </p>
                     </div>
                 </div>
 
@@ -237,42 +276,74 @@ export function CCIRecapViewer() {
                     Le programme radical pour lancer son activité et générer du cash.
                 </p>
 
-                <div className="grid grid-cols-2 gap-12 mb-12">
-                    <div>
-                        <h3 className="font-bold text-slate-900 uppercase mb-4 flex items-center gap-2">
-                            <Rocket className="h-5 w-5 text-orange-600"/> Compétences Acquises
-                        </h3>
-                        <ul className="space-y-4">
-                            <li className="flex gap-3">
-                                <div className="h-6 w-6 rounded-full bg-orange-50 flex items-center justify-center shrink-0 text-xs font-bold text-orange-600">1</div>
-                                <p className="text-sm text-slate-600"><strong>Marketing Digital & Réseaux</strong> : Devenir visible et attractif (LinkedIn, Instagram, etc.).</p>
-                            </li>
-                            <li className="flex gap-3">
-                                <div className="h-6 w-6 rounded-full bg-orange-50 flex items-center justify-center shrink-0 text-xs font-bold text-orange-600">2</div>
-                                <p className="text-sm text-slate-600"><strong>Prospection Omni-canal</strong> : Inbound (attirer) et Outbound (chasser) pour avoir des leads.</p>
-                            </li>
-                            <li className="flex gap-3">
-                                <div className="h-6 w-6 rounded-full bg-orange-50 flex items-center justify-center shrink-0 text-xs font-bold text-orange-600">3</div>
-                                <p className="text-sm text-slate-600"><strong>Vente & Closing</strong> : Convaincre en visio ou téléphone et encaisser l'acompte.</p>
-                            </li>
-                        </ul>
-                    </div>
-                    <div className="bg-slate-50 p-6 rounded-xl">
-                        <h3 className="font-bold text-slate-900 uppercase mb-4 flex items-center gap-2">
-                            <Trophy className="h-5 w-5 text-yellow-600"/> Le Programme
-                        </h3>
-                        <div className="space-y-3">
-                            <div className="flex justify-between text-sm border-b border-slate-200 pb-2">
-                                <span className="text-slate-600 w-24 shrink-0 font-bold">Semaine 1</span>
-                                <span className="text-slate-900 text-right">Offre Irrésistible, Pricing & Branding Personnel</span>
-                            </div>
-                            <div className="flex justify-between text-sm border-b border-slate-200 pb-2">
-                                <span className="text-slate-600 w-24 shrink-0 font-bold">Semaine 2</span>
-                                <span className="text-slate-900 text-right">Acquisition, LinkedIn, Cold Email & Contenu</span>
-                            </div>
-                            <div className="flex justify-between text-sm pb-2">
-                                <span className="text-slate-600 w-24 shrink-0 font-bold">Semaine 3</span>
-                                <span className="text-slate-900 text-right">Vente, Négociation, Closing & Facturation</span>
+                <div className="flex-1 flex flex-col justify-between">
+                    <div className="grid grid-cols-2 gap-8 mb-8">
+                        <div>
+                            <h3 className="font-bold text-slate-900 uppercase mb-4 flex items-center gap-2 text-lg">
+                                <Rocket className="h-6 w-6 text-orange-600"/> Compétences Acquises
+                            </h3>
+                            <ul className="space-y-6">
+                                <li className="flex gap-4">
+                                    <div className="h-8 w-8 rounded-full bg-orange-50 flex items-center justify-center shrink-0 text-sm font-bold text-orange-600">1</div>
+                                    <div>
+                                        <p className="font-bold text-slate-900">Marketing Digital & Réseaux</p>
+                                        <p className="text-sm text-slate-600">Devenir visible et attractif (LinkedIn, Instagram, etc.) pour attirer les opportunités.</p>
+                                    </div>
+                                </li>
+                                <li className="flex gap-4">
+                                    <div className="h-8 w-8 rounded-full bg-orange-50 flex items-center justify-center shrink-0 text-sm font-bold text-orange-600">2</div>
+                                    <div>
+                                        <p className="font-bold text-slate-900">Prospection Omni-canal</p>
+                                        <p className="text-sm text-slate-600">Maîtriser l'Inbound (attirer) et l'Outbound (chasser) pour générer des leads qualifiés.</p>
+                                    </div>
+                                </li>
+                                <li className="flex gap-4">
+                                    <div className="h-8 w-8 rounded-full bg-orange-50 flex items-center justify-center shrink-0 text-sm font-bold text-orange-600">3</div>
+                                    <div>
+                                        <p className="font-bold text-slate-900">Vente & Closing</p>
+                                        <p className="text-sm text-slate-600">Mener un entretien de vente, traiter les objections et encaisser l'acompte.</p>
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+                        <div className="bg-orange-50/50 p-6 rounded-2xl border border-orange-100">
+                            <h3 className="font-bold text-slate-900 uppercase mb-4 flex items-center gap-2 text-lg">
+                                <Trophy className="h-6 w-6 text-yellow-600"/> Le Programme Jour par Jour
+                            </h3>
+                            <div className="space-y-6">
+                                <div>
+                                    <div className="flex items-center justify-between mb-2">
+                                        <span className="text-xs font-bold uppercase text-orange-500 tracking-wider">Semaine 1</span>
+                                        <span className="text-sm font-black text-slate-900">Offre & Branding</span>
+                                    </div>
+                                    <ul className="text-sm text-slate-600 space-y-1 list-disc pl-4">
+                                        <li><strong>J1-J2</strong> : Créer une Offre Irrésistible (Packagée).</li>
+                                        <li><strong>J3-J4</strong> : Optimiser son profil LinkedIn / Landing Page.</li>
+                                        <li><strong>J5</strong> : Définir sa stratégie de pricing.</li>
+                                    </ul>
+                                </div>
+                                <div>
+                                    <div className="flex items-center justify-between mb-2">
+                                        <span className="text-xs font-bold uppercase text-orange-500 tracking-wider">Semaine 2</span>
+                                        <span className="text-sm font-black text-slate-900">Acquisition & Leads</span>
+                                    </div>
+                                    <ul className="text-sm text-slate-600 space-y-1 list-disc pl-4">
+                                        <li><strong>J6-J8</strong> : Campagne de Cold Outreach (Email/DM).</li>
+                                        <li><strong>J9</strong> : Stratégie de contenu (Copywriting).</li>
+                                        <li><strong>J10</strong> : Lancer son premier webinaire ou lead magnet.</li>
+                                    </ul>
+                                </div>
+                                <div>
+                                    <div className="flex items-center justify-between mb-2">
+                                        <span className="text-xs font-bold uppercase text-orange-500 tracking-wider">Semaine 3</span>
+                                        <span className="text-sm font-black text-slate-900">Vente & Cash</span>
+                                    </div>
+                                    <ul className="text-sm text-slate-600 space-y-1 list-disc pl-4">
+                                        <li><strong>J11-J12</strong> : Scripts de vente & Traitement des objections.</li>
+                                        <li><strong>J13-J14</strong> : Négociation & Contrats.</li>
+                                        <li><strong>J15</strong> : Facturation & Onboarding client.</li>
+                                    </ul>
+                                </div>
                             </div>
                         </div>
                     </div>
