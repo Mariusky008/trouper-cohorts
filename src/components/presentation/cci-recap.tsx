@@ -1,11 +1,15 @@
 "use client";
 
 import { Brain, Rocket, Users, Target, CheckCircle2, Zap, Trophy, ArrowRight, Laptop, Sparkles } from "lucide-react";
+import { SalesCoachWidget } from "./sales-coach-widget";
 
 export function CCIRecapViewer() {
     return (
         <div className="min-h-screen bg-slate-100 py-10 print:bg-white print:py-0 font-sans text-slate-900">
             
+            {/* Sales Coach Widget */}
+            <SalesCoachWidget />
+
             {/* Bouton d'impression */}
             <div className="fixed top-6 right-6 z-50 print:hidden">
                 <button 
