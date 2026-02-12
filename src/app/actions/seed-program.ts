@@ -168,25 +168,51 @@ export async function seedJobSeekerProgram() {
 
     // 3. Insert new missions one by one (to get IDs for steps)
     for (const mission of newMissions) {
-        const { data: insertedMission, error: missionError } = await supabase
+        // First, check if mission exists
+        const { data: existingMission } = await supabase
             .from("mission_templates")
-            .insert({
-                day_index: mission.day_index,
-                title: mission.title,
-                description: mission.description,
-                program_type: mission.program_type
-            })
-            .select()
+            .select("id")
+            .eq("day_index", mission.day_index)
+            .eq("program_type", mission.program_type)
             .single();
 
-        if (missionError) {
-            console.error("Error inserting mission:", missionError);
-            continue;
+        let missionId = existingMission?.id;
+
+        if (existingMission) {
+            // Update existing mission
+            await supabase
+                .from("mission_templates")
+                .update({
+                    title: mission.title,
+                    description: mission.description
+                })
+                .eq("id", existingMission.id);
+            
+            // Delete existing steps to replace them
+            await supabase.from("mission_step_templates").delete().eq("mission_template_id", existingMission.id);
+        } else {
+            // Insert new mission
+            const { data: insertedMission, error: missionError } = await supabase
+                .from("mission_templates")
+                .insert({
+                    day_index: mission.day_index,
+                    title: mission.title,
+                    description: mission.description,
+                    program_type: mission.program_type
+                })
+                .select()
+                .single();
+            
+            if (missionError) {
+                console.error("Error inserting mission:", missionError);
+                continue;
+            }
+            missionId = insertedMission.id;
         }
 
-        if (insertedMission && mission.steps) {
+        if (missionId && mission.steps) {
             const stepsToInsert = mission.steps.map((step: any, index: number) => ({
-                mission_template_id: insertedMission.id,
+                mission_template_id: missionId,
                 category: step.category,
                 title: step.title,
                 content: step.content,
