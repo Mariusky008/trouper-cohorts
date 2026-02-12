@@ -78,70 +78,70 @@ export function CCIRecapViewer() {
 
                 <div className="flex-1 flex flex-col justify-center relative">
                     {/* The Bridge Visualization */}
-                    <div className="flex items-center justify-between relative z-10 h-[500px]">
+                    <div className="grid grid-cols-[1fr_auto_1fr] gap-4 relative z-10 h-[500px] items-stretch">
                         {/* Phase 1 */}
-                        <div className="w-[45%] bg-slate-50 border border-slate-200 rounded-2xl p-8 relative group hover:border-blue-300 transition-colors h-full flex flex-col">
-                            <div className="absolute -top-4 left-8 bg-blue-100 text-blue-800 px-3 py-1 text-xs font-bold uppercase rounded-full">Phase 1 • 15 Jours</div>
-                            <h3 className="text-2xl font-black text-slate-900 mb-2 uppercase italic">Le Réveil</h3>
-                            <p className="text-sm font-bold text-blue-600 mb-4 uppercase tracking-wider">Reconversion & Clarté</p>
+                        <div className="bg-slate-50 border border-slate-200 rounded-2xl p-6 relative group hover:border-blue-300 transition-colors flex flex-col">
+                            <div className="absolute -top-4 left-6 bg-blue-100 text-blue-800 px-3 py-1 text-xs font-bold uppercase rounded-full">Phase 1 • 15 Jours</div>
+                            <h3 className="text-2xl font-black text-slate-900 mb-1 uppercase italic">Le Réveil</h3>
+                            <p className="text-xs font-bold text-blue-600 mb-4 uppercase tracking-wider">Reconversion & Clarté</p>
                             
-                            <div className="flex-1 space-y-4">
-                                <div className="bg-white p-4 rounded-lg border border-slate-100 shadow-sm">
-                                    <p className="text-xs font-bold text-slate-400 uppercase mb-1">Pour qui ?</p>
-                                    <p className="text-sm text-slate-700 font-medium">Demandeurs d'emploi en quête de sens.</p>
+                            <div className="flex-1 space-y-3">
+                                <div className="bg-white p-3 rounded-lg border border-slate-100 shadow-sm">
+                                    <p className="text-[10px] font-bold text-slate-400 uppercase mb-0.5">Pour qui ?</p>
+                                    <p className="text-sm text-slate-700 font-medium leading-tight">Demandeurs d'emploi perdus.</p>
                                 </div>
                                 
                                 <div>
-                                    <p className="text-xs font-bold text-slate-400 uppercase mb-1">Le Problème</p>
-                                    <p className="text-sm text-slate-600 leading-snug">80% des chercheurs d'emploi sont perdus après une rupture pro. Le bilan de compétences classique est trop lent.</p>
+                                    <p className="text-[10px] font-bold text-slate-400 uppercase mb-0.5">Le Problème</p>
+                                    <p className="text-sm text-slate-600 leading-snug">80% des chômeurs ne savent pas quoi faire. Le bilan de compétences est trop lent et passif.</p>
                                 </div>
 
                                 <div>
-                                    <p className="text-xs font-bold text-slate-400 uppercase mb-1">La Solution</p>
-                                    <p className="text-sm text-slate-600 leading-snug">Un électrochoc bienveillant pour construire un projet de vie aligné avec ses talents naturels.</p>
+                                    <p className="text-[10px] font-bold text-slate-400 uppercase mb-0.5">La Solution</p>
+                                    <p className="text-sm text-slate-600 leading-snug">Un électrochoc bienveillant. Identifier ses "Super-Pouvoirs" (Soft Skills) et construire un projet aligné.</p>
                                 </div>
                             </div>
 
-                            <div className="bg-blue-50 p-4 rounded-xl border border-blue-100 mt-6">
-                                <p className="text-xs font-bold text-blue-800 uppercase mb-1">Résultat J+15</p>
-                                <p className="text-sm font-bold text-slate-900">Un dossier "Projet Pro" validé et pitché.</p>
+                            <div className="bg-blue-50 p-3 rounded-xl border border-blue-100 mt-4">
+                                <p className="text-[10px] font-bold text-blue-800 uppercase mb-0.5">Résultat J+15</p>
+                                <p className="text-sm font-bold text-slate-900 leading-tight">Dossier "Projet Pro" validé et pitché devant jury.</p>
                             </div>
                         </div>
 
                         {/* Arrow */}
-                        <div className="flex-1 flex flex-col items-center justify-center px-4 relative z-20">
-                            <div className="bg-white border border-slate-200 text-slate-500 text-[10px] font-bold px-3 py-1.5 rounded-full mb-2 uppercase shadow-sm tracking-wider">Optionnel</div>
-                            <ArrowRight className="h-8 w-8 text-slate-300" />
+                        <div className="flex flex-col items-center justify-center relative z-20 px-2">
+                            <div className="bg-white border border-slate-200 text-slate-500 text-[10px] font-bold px-2 py-1 rounded-full mb-2 uppercase shadow-sm tracking-wider">Optionnel</div>
+                            <ArrowRight className="h-6 w-6 text-slate-300" />
                         </div>
 
                         {/* Phase 2 */}
-                        <div className="w-[45%] bg-slate-900 text-white rounded-2xl p-8 relative group shadow-2xl h-full flex flex-col border-2 border-orange-500/30">
-                            <div className="absolute -top-4 left-8 bg-orange-500 text-white px-3 py-1 text-xs font-bold uppercase rounded-full">Phase 2 • 15 Jours</div>
-                            <div className="absolute -top-5 -right-2 bg-green-500 text-white px-3 py-1 text-xs font-bold uppercase rounded-full animate-pulse shadow-lg transform rotate-2">Accès Direct Possible</div>
+                        <div className="bg-slate-900 text-white rounded-2xl p-6 relative group shadow-2xl flex flex-col border-2 border-orange-500/30">
+                            <div className="absolute -top-4 left-6 bg-orange-500 text-white px-3 py-1 text-xs font-bold uppercase rounded-full">Phase 2 • 15 Jours</div>
+                            <div className="absolute -top-4 right-4 bg-green-500 text-white px-2 py-1 text-[10px] font-bold uppercase rounded-full animate-pulse shadow-lg transform rotate-2">Accès Direct</div>
                             
-                            <h3 className="text-2xl font-black text-white mb-2 uppercase italic">L'Attaque</h3>
-                            <p className="text-sm font-bold text-orange-400 mb-4 uppercase tracking-wider">Entrepreneuriat & Vente</p>
+                            <h3 className="text-2xl font-black text-white mb-1 uppercase italic">L'Attaque</h3>
+                            <p className="text-xs font-bold text-orange-400 mb-4 uppercase tracking-wider">Entrepreneuriat & Vente</p>
                             
-                            <div className="flex-1 space-y-4">
-                                <div className="bg-slate-800 p-4 rounded-lg border border-slate-700">
-                                    <p className="text-xs font-bold text-slate-400 uppercase mb-1">Pour qui ?</p>
-                                    <p className="text-sm text-slate-200 font-medium">Porteurs de projet & Entrepreneurs.</p>
+                            <div className="flex-1 space-y-3">
+                                <div className="bg-slate-800 p-3 rounded-lg border border-slate-700">
+                                    <p className="text-[10px] font-bold text-slate-400 uppercase mb-0.5">Pour qui ?</p>
+                                    <p className="text-sm text-slate-200 font-medium leading-tight">Futurs Entrepreneurs.</p>
                                 </div>
                                 
                                 <div>
-                                    <p className="text-xs font-bold text-slate-400 uppercase mb-1">Le Problème</p>
-                                    <p className="text-sm text-slate-300 leading-snug">Trop de théorie, pas assez de vente. Le Business Plan ne fait pas manger.</p>
+                                    <p className="text-[10px] font-bold text-slate-400 uppercase mb-0.5">Le Problème</p>
+                                    <p className="text-sm text-slate-300 leading-snug">Trop de théorie (Business Plan), pas assez de vente. Risque d'épuisement sans CA.</p>
                                 </div>
 
                                 <div>
-                                    <p className="text-xs font-bold text-slate-400 uppercase mb-1">La Solution</p>
-                                    <p className="text-sm text-slate-300 leading-snug">Action massive. Marketing digital, Réseaux sociaux, Inbound/Outbound pour générer des leads.</p>
+                                    <p className="text-[10px] font-bold text-slate-400 uppercase mb-0.5">La Solution</p>
+                                    <p className="text-sm text-slate-300 leading-snug">Action massive. Marketing Digital, Réseaux Sociaux, Inbound/Outbound pour générer des leads.</p>
                                 </div>
                             </div>
 
-                            <div className="bg-orange-500/20 p-4 rounded-xl border border-orange-500/50 mt-6">
-                                <p className="text-xs font-bold text-orange-300 uppercase mb-1">Résultat J+30</p>
-                                <p className="text-sm font-bold text-white">Première facture envoyée ou devis signé.</p>
+                            <div className="bg-orange-500/20 p-3 rounded-xl border border-orange-500/50 mt-4">
+                                <p className="text-[10px] font-bold text-orange-300 uppercase mb-0.5">Résultat J+30</p>
+                                <p className="text-sm font-bold text-white leading-tight">Première facture envoyée ou devis signé.</p>
                             </div>
                         </div>
                     </div>
@@ -197,16 +197,16 @@ export function CCIRecapViewer() {
                         </h3>
                         <div className="space-y-3">
                             <div className="flex justify-between text-sm border-b border-slate-200 pb-2">
-                                <span className="text-slate-600">Semaine 1</span>
-                                <span className="font-bold text-slate-900">Introspection & Mindset</span>
+                                <span className="text-slate-600 w-24 shrink-0 font-bold">Semaine 1</span>
+                                <span className="text-slate-900 text-right">Introspection, Bilan Flash & Mindset de Croissance</span>
                             </div>
                             <div className="flex justify-between text-sm border-b border-slate-200 pb-2">
-                                <span className="text-slate-600">Semaine 2</span>
-                                <span className="font-bold text-slate-900">Enquête Métier & Validation</span>
+                                <span className="text-slate-600 w-24 shrink-0 font-bold">Semaine 2</span>
+                                <span className="text-slate-900 text-right">Exploration Marché, Enquêtes Métiers & Réseau</span>
                             </div>
                             <div className="flex justify-between text-sm pb-2">
-                                <span className="text-slate-600">Semaine 3</span>
-                                <span className="font-bold text-slate-900">Pitch & Plan d'Action</span>
+                                <span className="text-slate-600 w-24 shrink-0 font-bold">Semaine 3</span>
+                                <span className="text-slate-900 text-right">Validation du Projet & Pitch Final devant Jury</span>
                             </div>
                         </div>
                     </div>
@@ -263,16 +263,16 @@ export function CCIRecapViewer() {
                         </h3>
                         <div className="space-y-3">
                             <div className="flex justify-between text-sm border-b border-slate-200 pb-2">
-                                <span className="text-slate-600">Semaine 1</span>
-                                <span className="font-bold text-slate-900">Offre Irrésistible & Branding</span>
+                                <span className="text-slate-600 w-24 shrink-0 font-bold">Semaine 1</span>
+                                <span className="text-slate-900 text-right">Offre Irrésistible, Pricing & Branding Personnel</span>
                             </div>
                             <div className="flex justify-between text-sm border-b border-slate-200 pb-2">
-                                <span className="text-slate-600">Semaine 2</span>
-                                <span className="font-bold text-slate-900">Acquisition & Marketing Digital</span>
+                                <span className="text-slate-600 w-24 shrink-0 font-bold">Semaine 2</span>
+                                <span className="text-slate-900 text-right">Acquisition, LinkedIn, Cold Email & Contenu</span>
                             </div>
                             <div className="flex justify-between text-sm pb-2">
-                                <span className="text-slate-600">Semaine 3</span>
-                                <span className="font-bold text-slate-900">Vente, Négociation & Facturation</span>
+                                <span className="text-slate-600 w-24 shrink-0 font-bold">Semaine 3</span>
+                                <span className="text-slate-900 text-right">Vente, Négociation, Closing & Facturation</span>
                             </div>
                         </div>
                     </div>
