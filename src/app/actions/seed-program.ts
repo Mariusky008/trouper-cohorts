@@ -233,8 +233,39 @@ export async function seedJobSeekerProgram() {
         ];
       }
 
+      // OVERRIDE J14 with V2 Content
+      if (i === 13) { // Calendar Day 18
+        missionData.title = "LA PROJECTION";
+        missionData.description = "Garder le cap après la tempête.";
+        missionData.steps = [
+            { category: "act1", title: "CONSCIENCE : Le Risque de Rechute (30 min)", content: "Le but : Anticiper la baisse d’énergie.\n\nQuestions IA :\n- Que va-t-il se passer si je reçois 3 refus ?\n- Où ai-je tendance à abandonner ?\n\nQuestion clé : Si je ne prépare pas les obstacles, vont-ils me surprendre ?", position: 1 },
+            { category: "act2", title: "STRUCTURE : Plan 90 Jours (45 min)", content: "Le but : Planning précis.\n\nPhase 1 (J1-30) : Intensification (Volume).\nPhase 2 (J31-60) : Ajustement (Analyse).\nPhase 3 (J61-90) : Consolidation.\n\nLivrable : Objectif chiffré par mois + Volume hebdo.", position: 2 },
+            { category: "act3", title: "MIROIR HUMAIN : Réalisme (35 min)", content: "Le but : Équilibrer ambition et stabilité.\n\nLe binôme analyse :\n- Est-il réaliste ?\n- Où risques-tu de te surcharger ?\n- Si tu devais simplifier ?\n\nLivrable : Plan ajusté validé.", position: 3 },
+            { category: "act4", title: "OUTIL : Miroir IA Anticipation (20 min)", content: "Le but : Stratégie défensive.\n\nPrompt :\n\"Voici mon plan 90 jours. Identifie les failles. Liste les obstacles probables. Propose un plan B.\"\n\nL’IA génère : Obstacles, Solutions, Indicateurs, Plan B.", position: 4 },
+            { category: "act5", title: "ACTION : Engagement Public (1h10)", content: "Le but : Stabilité.\n\nMission :\n1. Résumer le plan en 5 phrases.\n2. Partager au groupe.\n3. Fixer une date de point de contrôle (30 jours).\n\nLivrable : Feuille de route signée.", position: 5 },
+            { category: "act6", title: "INTÉGRATION : Stabilité Mentale (30 min)", content: "Questions IA :\n- Est-ce que j’ai prévu les imprévus ?\n- Est-ce que je sais quoi faire même sans motivation ?\n\nPhrase : Même en cas de refus, je continuerai parce que…\n\nLivrables :\n- Plan 90 jours\n- Plan B\n- Engagement formalisé", position: 6 }
+        ];
+      }
+
       newMissions.push(missionData);
     }
+
+    // Manual Insert for J15 (Friday Week 3)
+    const j15Mission = {
+        day_index: 19, // Calendar Day 19
+        title: "CERTITUDE",
+        description: "Ce n’est plus une intention. C’est une trajectoire.",
+        program_type: "job_seeker",
+        steps: [
+            { category: "act1", title: "CONSCIENCE : Regarder le chemin (30 min)", content: "Le but : Prendre conscience de la transformation.\n\nQuestions IA :\n- Comment étais-je le Jour 1 ?\n- Qu’est-ce qui est clair aujourd’hui ?\n- Quelle peur ai-je dépassée ?\n\nLivrable : Auto-évaluation comparative J1 vs J15.", position: 1 },
+            { category: "act2", title: "STRUCTURE : Plan 12 Mois (45 min)", content: "Le but : Vision long terme.\n\nStructure : 3 mois (Stabilisation) -> 6 mois (Consolidation) -> 12 mois (Projection).\nÉcrire : Objectif principal, Position visée, Revenu cible.\n\nLivrable : Plan 12 mois structuré.", position: 2 },
+            { category: "act3", title: "PRÉPARATION : Présentation Finale (35 min)", content: "Le but : Structurer le discours.\n\nStructure : Qui j’étais / Ce que j’ai clarifié / Ce que je propose / Mon plan 12 mois.\nDurée : 5 min max.\n\nLivrable : Script de présentation.", position: 3 },
+            { category: "act4", title: "PRÉSENTATION GROUPE (1h)", content: "Le but : Défendre son plan.\n\nChaque participant présente et répond à 2 questions.\nLe groupe évalue : Clarté, Cohérence, Réalisme, Assurance.\n\nLivrable : Évaluation collective.", position: 4 },
+            { category: "act5", title: "VALIDATION DES ACQUIS (30 min)", content: "Le but : Preuves concrètes.\n\nDémontrer : Offre, Cible, Plan 90j, Plan 12 mois, Preuve envoi, Réseau activé, Système de suivi.\n\nLivrable : Dossier final personnel.", position: 5 },
+            { category: "act6", title: "INTÉGRATION : Certitude (30 min)", content: "Questions IA :\n- Est-ce que je me sens responsable de ma trajectoire ?\n- Est-ce que je sais quoi faire en cas de refus ?\n\nPhrase : Je ne cherche plus. Je construis.\n\nLivrables : Tous les acquis validés.", position: 6 }
+        ]
+    };
+    newMissions.push(j15Mission);
 
     // 3. Insert new missions one by one (to get IDs for steps)
     for (const mission of newMissions) {
