@@ -173,42 +173,33 @@ export function CCIRecapViewer() {
 
                 <div className="flex-1 flex flex-col justify-between min-h-0">
                     <div className="grid grid-cols-2 gap-8 h-full">
-                        <div className="flex flex-col justify-between">
-                            <div>
-                                <h3 className="font-bold text-slate-900 uppercase mb-4 flex items-center gap-2 text-base">
-                                    <Target className="h-5 w-5 text-blue-600"/> Objectifs Pédagogiques
-                                </h3>
-                                <ul className="space-y-4">
-                                    <li className="flex gap-3">
-                                        <div className="h-6 w-6 rounded-full bg-blue-50 flex items-center justify-center shrink-0 text-xs font-bold text-blue-600">1</div>
-                                        <div>
-                                            <p className="font-bold text-slate-900 text-sm">Retrouver une posture active</p>
-                                            <p className="text-xs text-slate-600 leading-snug">Sortir de l'isolement et reprendre le contrôle de son emploi du temps.</p>
-                                        </div>
-                                    </li>
-                                    <li className="flex gap-3">
-                                        <div className="h-6 w-6 rounded-full bg-blue-50 flex items-center justify-center shrink-0 text-xs font-bold text-blue-600">2</div>
-                                        <div>
-                                            <p className="font-bold text-slate-900 text-sm">Identifier sa "Zone de Génie"</p>
-                                            <p className="text-xs text-slate-600 leading-snug">Transformer ses talents naturels et compétences en une offre de service.</p>
-                                        </div>
-                                    </li>
-                                    <li className="flex gap-3">
-                                        <div className="h-6 w-6 rounded-full bg-blue-50 flex items-center justify-center shrink-0 text-xs font-bold text-blue-600">3</div>
-                                        <div>
-                                            <p className="font-bold text-slate-900 text-sm">Valider un projet pro</p>
-                                            <p className="text-xs text-slate-600 leading-snug">Choisir entre Salariat et Entrepreneuriat avec un plan d'action validé par le marché.</p>
-                                        </div>
-                                    </li>
-                                </ul>
-                            </div>
-                            
-                            <div className="bg-slate-50 border-l-4 border-green-500 p-4 rounded-r-xl mt-4">
-                                <p className="font-bold text-green-700 uppercase text-[10px] mb-1">La Passerelle Entrepreneur</p>
-                                <p className="text-slate-700 text-xs leading-snug">
-                                    Si à la fin de ces 15 jours, l'apprenant valide un projet de création d'entreprise, il est <strong>automatiquement éligible</strong> pour rejoindre la phase "L'Attaque" et obtenir ses premiers clients en 15 jours supplémentaires.
-                                </p>
-                            </div>
+                        <div className="flex flex-col justify-start">
+                            <h3 className="font-bold text-slate-900 uppercase mb-4 flex items-center gap-2 text-base">
+                                <Target className="h-5 w-5 text-blue-600"/> Objectifs Pédagogiques
+                            </h3>
+                            <ul className="space-y-4">
+                                <li className="flex gap-3">
+                                    <div className="h-6 w-6 rounded-full bg-blue-50 flex items-center justify-center shrink-0 text-xs font-bold text-blue-600">1</div>
+                                    <div>
+                                        <p className="font-bold text-slate-900 text-sm">Retrouver une posture active</p>
+                                        <p className="text-xs text-slate-600 leading-snug">Sortir de l'isolement et reprendre le contrôle de son emploi du temps.</p>
+                                    </div>
+                                </li>
+                                <li className="flex gap-3">
+                                    <div className="h-6 w-6 rounded-full bg-blue-50 flex items-center justify-center shrink-0 text-xs font-bold text-blue-600">2</div>
+                                    <div>
+                                        <p className="font-bold text-slate-900 text-sm">Identifier sa "Zone de Génie"</p>
+                                        <p className="text-xs text-slate-600 leading-snug">Transformer ses talents naturels et compétences en une offre de service.</p>
+                                    </div>
+                                </li>
+                                <li className="flex gap-3">
+                                    <div className="h-6 w-6 rounded-full bg-blue-50 flex items-center justify-center shrink-0 text-xs font-bold text-blue-600">3</div>
+                                    <div>
+                                        <p className="font-bold text-slate-900 text-sm">Valider un projet pro</p>
+                                        <p className="text-xs text-slate-600 leading-snug">Choisir entre Salariat et Entrepreneuriat avec un plan d'action validé par le marché.</p>
+                                    </div>
+                                </li>
+                            </ul>
                         </div>
 
                         <div className="bg-blue-50/50 p-5 rounded-2xl border border-blue-100 flex flex-col h-full">
@@ -254,7 +245,14 @@ export function CCIRecapViewer() {
                     </div>
                 </div>
 
-                <div className="mt-6 bg-blue-900 text-white p-5 rounded-xl flex items-center justify-between shrink-0">
+                <div className="bg-slate-50 border-l-4 border-green-500 p-4 rounded-r-xl mt-6 shrink-0">
+                    <p className="font-bold text-green-700 uppercase text-xs mb-1">La Passerelle Entrepreneur</p>
+                    <p className="text-slate-700 text-sm leading-snug">
+                        Si à la fin de ces 15 jours, l'apprenant valide un projet de création d'entreprise, il est <strong>automatiquement éligible</strong> pour rejoindre la phase "L'Attaque" et obtenir ses premiers clients en 15 jours supplémentaires.
+                    </p>
+                </div>
+
+                <div className="mt-4 bg-blue-900 text-white p-5 rounded-xl flex items-center justify-between shrink-0">
                     <div>
                         <p className="text-blue-300 text-[10px] uppercase font-bold mb-0.5">Résultat garanti</p>
                         <p className="text-lg font-bold">Un dossier "Projet Professionnel" complet et pitché.</p>
