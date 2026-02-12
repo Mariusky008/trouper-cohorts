@@ -239,6 +239,172 @@ export function LandingEmploi() {
             </div>
         </section>
 
+        {/* 3b. NIVEAUX D'INTENSITÉ (FLEXIBILITÉ) */}
+        <section className="py-24 bg-slate-50 relative z-20">
+            <div className="container mx-auto px-4 max-w-5xl space-y-16">
+                <div className="text-center space-y-4">
+                     <FadeIn>
+                        <h2 className="text-3xl md:text-4xl font-black uppercase italic text-slate-900">
+                            Votre Rythme, Votre Choix
+                        </h2>
+                    </FadeIn>
+                    <FadeIn delay={0.1}>
+                        <p className="text-xl text-slate-500 max-w-2xl mx-auto">
+                            Adaptez l'intensité du programme à votre énergie actuelle.
+                        </p>
+                    </FadeIn>
+                </div>
+
+                <div className="grid md:grid-cols-3 gap-8">
+                    {/* Level 1 */}
+                    <FadeIn delay={0}>
+                         <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm relative overflow-hidden">
+                            <div className="absolute top-0 left-0 w-1 h-full bg-slate-300"></div>
+                            <h3 className="text-xl font-black uppercase text-slate-700 mb-2">Minimum Vital</h3>
+                            <div className="text-3xl font-black text-slate-900 mb-4">1h <span className="text-sm font-medium text-slate-500">/ jour</span></div>
+                            <p className="text-sm text-slate-600 mb-4">Pour ceux qui sont épuisés mais veulent garder un pied dans l'action.</p>
+                            <ul className="space-y-2 text-xs text-slate-500">
+                                <li className="flex gap-2 items-center"><CheckCircle2 className="h-3 w-3 text-slate-400" /> Lecture des missions</li>
+                                <li className="flex gap-2 items-center"><CheckCircle2 className="h-3 w-3 text-slate-400" /> 1 Action simple / jour</li>
+                                <li className="flex gap-2 items-center"><CheckCircle2 className="h-3 w-3 text-slate-400" /> Pas de binôme obligatoire</li>
+                            </ul>
+                         </div>
+                    </FadeIn>
+
+                    {/* Level 2 */}
+                    <FadeIn delay={0.1}>
+                         <div className="bg-white p-6 rounded-xl border-2 border-blue-500 shadow-xl shadow-blue-100 relative overflow-hidden transform md:-translate-y-4">
+                            <div className="absolute top-0 right-0 bg-blue-500 text-white text-[10px] font-bold px-2 py-1 uppercase tracking-widest rounded-bl-lg">Recommandé</div>
+                            <div className="absolute top-0 left-0 w-1 h-full bg-blue-500"></div>
+                            <h3 className="text-xl font-black uppercase text-blue-600 mb-2">Standard</h3>
+                            <div className="text-3xl font-black text-slate-900 mb-4">4h <span className="text-sm font-medium text-slate-500">/ jour</span></div>
+                            <p className="text-sm text-slate-600 mb-4">L'équilibre parfait pour avancer concrètement sans s'épuiser.</p>
+                            <ul className="space-y-2 text-xs text-slate-500">
+                                <li className="flex gap-2 items-center"><CheckCircle2 className="h-3 w-3 text-blue-500" /> Programme complet</li>
+                                <li className="flex gap-2 items-center"><CheckCircle2 className="h-3 w-3 text-blue-500" /> Binôme quotidien</li>
+                                <li className="flex gap-2 items-center"><CheckCircle2 className="h-3 w-3 text-blue-500" /> Création de livrables</li>
+                            </ul>
+                         </div>
+                    </FadeIn>
+
+                    {/* Level 3 */}
+                    <FadeIn delay={0.2}>
+                         <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm relative overflow-hidden">
+                            <div className="absolute top-0 left-0 w-1 h-full bg-orange-400"></div>
+                            <h3 className="text-xl font-black uppercase text-orange-500 mb-2">Intensif</h3>
+                            <div className="text-3xl font-black text-slate-900 mb-4">Full <span className="text-sm font-medium text-slate-500">Time</span></div>
+                            <p className="text-sm text-slate-600 mb-4">Immersion totale pour une transformation radicale et rapide.</p>
+                             <ul className="space-y-2 text-xs text-slate-500">
+                                <li className="flex gap-2 items-center"><CheckCircle2 className="h-3 w-3 text-orange-400" /> Programme Standard +</li>
+                                <li className="flex gap-2 items-center"><CheckCircle2 className="h-3 w-3 text-orange-400" /> Sessions Deep Work</li>
+                                <li className="flex gap-2 items-center"><CheckCircle2 className="h-3 w-3 text-orange-400" /> Mentorat ponctuel</li>
+                            </ul>
+                         </div>
+                    </FadeIn>
+                </div>
+            </div>
+        </section>
+
+        {/* 3c. SUCCESS DASHBOARD (CONCRET) */}
+        <section className="py-24 bg-white border-y border-slate-100">
+            <div className="container mx-auto px-4 max-w-4xl">
+                 <div className="text-center mb-16">
+                    <FadeIn>
+                        <h2 className="text-3xl md:text-4xl font-black uppercase italic text-slate-900 mb-4">
+                            Tableau de Bord de Succès
+                        </h2>
+                        <p className="text-slate-500">Ce que vous aurez <span className="font-bold text-slate-900">vraiment</span> dans les mains.</p>
+                    </FadeIn>
+                </div>
+
+                <div className="space-y-8">
+                    {/* Milestone 1 */}
+                    <FadeIn>
+                        <div className="flex flex-col md:flex-row gap-6 items-center">
+                            <div className="w-full md:w-32 text-center md:text-right shrink-0">
+                                <span className="text-4xl font-black text-slate-200">J+7</span>
+                            </div>
+                            <div className="flex-1 bg-slate-50 p-6 rounded-xl border border-slate-100 flex items-start gap-4 w-full">
+                                <div className="bg-blue-100 p-3 rounded-full text-blue-600 shrink-0">
+                                    <LayoutList className="h-6 w-6" />
+                                </div>
+                                <div>
+                                    <h4 className="font-bold text-slate-900 text-lg mb-1">Votre Offre Clarifiée</h4>
+                                    <p className="text-sm text-slate-600">Vous saurez expliquer ce que vous faites en une phrase simple. Vous aurez un visuel pro (bannière/logo) créé par vous-même.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </FadeIn>
+
+                     {/* Milestone 2 */}
+                    <FadeIn delay={0.1}>
+                        <div className="flex flex-col md:flex-row gap-6 items-center">
+                            <div className="w-full md:w-32 text-center md:text-right shrink-0">
+                                <span className="text-4xl font-black text-slate-200">J+14</span>
+                            </div>
+                            <div className="flex-1 bg-slate-50 p-6 rounded-xl border border-slate-100 flex items-start gap-4 w-full">
+                                <div className="bg-green-100 p-3 rounded-full text-green-600 shrink-0">
+                                    <Ship className="h-6 w-6" />
+                                </div>
+                                <div>
+                                    <h4 className="font-bold text-slate-900 text-lg mb-1">Votre Cap Défini</h4>
+                                    <p className="text-sm text-slate-600">Un plan d'action pour les 3 prochains mois. Des premiers contacts établis. La peur de l'administratif domptée.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </FadeIn>
+                </div>
+            </div>
+        </section>
+
+        {/* 3d. FILET DE SÉCURITÉ (RÉASSURANCE) */}
+        <section className="py-24 bg-blue-50/50">
+             <div className="container mx-auto px-4 max-w-4xl">
+                <div className="grid md:grid-cols-2 gap-12 items-center">
+                    <FadeIn>
+                        <h2 className="text-3xl font-black uppercase italic text-slate-900 mb-6">
+                            Zone de Sécurité Émotionnelle
+                        </h2>
+                        <div className="space-y-6">
+                             <div className="flex gap-4">
+                                <LifeBuoy className="h-8 w-8 text-blue-500 shrink-0" />
+                                <div>
+                                    <h4 className="font-bold text-slate-900">Pas de caméra obligatoire</h4>
+                                    <p className="text-sm text-slate-600">Vous ne voulez pas vous montrer ? Participez en audio ou par chat. C'est OK.</p>
+                                </div>
+                             </div>
+                             <div className="flex gap-4">
+                                <ShieldCheck className="h-8 w-8 text-blue-500 shrink-0" />
+                                <div>
+                                    <h4 className="font-bold text-slate-900">Bienveillance Radicale</h4>
+                                    <p className="text-sm text-slate-600">Ici, pas de jugement. Tout le monde est dans le même bateau. On s'entraide, on ne se juge pas.</p>
+                                </div>
+                             </div>
+                             <div className="flex gap-4">
+                                <Users className="h-8 w-8 text-blue-500 shrink-0" />
+                                <div>
+                                    <h4 className="font-bold text-slate-900">Binômes Rotatifs</h4>
+                                    <p className="text-sm text-slate-600">Si le courant ne passe pas un jour, pas de souci : ça change le lendemain.</p>
+                                </div>
+                             </div>
+                        </div>
+                    </FadeIn>
+                    <FadeIn delay={0.2}>
+                        <div className="bg-white p-8 rounded-2xl shadow-lg border border-blue-100 rotate-1">
+                            <p className="text-xl italic font-serif text-slate-600 mb-4">"J'avais peur d'être jugé sur ma situation. J'ai trouvé des gens qui me comprenaient mieux que ma propre famille."</p>
+                            <div className="flex items-center gap-3">
+                                <div className="h-10 w-10 bg-slate-200 rounded-full flex items-center justify-center font-bold text-slate-500">M</div>
+                                <div className="text-sm">
+                                    <div className="font-bold text-slate-900">Marc D.</div>
+                                    <div className="text-slate-400">Participant Cohorte Bêta</div>
+                                </div>
+                            </div>
+                        </div>
+                    </FadeIn>
+                </div>
+             </div>
+        </section>
+
         {/* 4. CTA : CANDIDATURE */}
         <section id="join" className="py-32 bg-slate-900 relative overflow-hidden">
              <div className="absolute top-0 w-full text-white rotate-180 z-10 pointer-events-none">
@@ -257,6 +423,10 @@ export function LandingEmploi() {
                 <div className="text-center mb-8">
                     <span className="text-6xl font-black text-blue-400">Gratuit</span>
                     <p className="text-slate-400 mt-2 uppercase tracking-widest text-xs">Financé par le dispositif Pilote (Places Limitées)</p>
+                    <div className="mt-4 flex items-center justify-center gap-2 text-emerald-400 text-sm font-bold uppercase tracking-wide">
+                        <ShieldCheck className="h-4 w-4" />
+                        <span>100% Compatible France Travail • Sans risque administratif</span>
+                    </div>
                 </div>
                 
                 <div className="bg-white text-slate-900 p-8 -skew-x-3 border-4 border-blue-500 shadow-[10px_10px_0px_0px_rgba(59,130,246,1)]">
