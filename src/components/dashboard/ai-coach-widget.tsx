@@ -25,6 +25,9 @@ export function AICoachWidget({ dayContext }: AICoachWidgetProps) {
     body: {
       context: dayContext,
     },
+    onFinish: () => {
+        // Optional: Do something when message is finished
+    },
     onError: (err) => {
         console.error("AI Coach Error:", err);
     }
