@@ -46,10 +46,10 @@ export function LandingEmploi() {
   });
 
   return (
-    <div ref={targetRef} className="min-h-screen bg-amber-50/50 text-slate-900 font-sans selection:bg-orange-500 selection:text-white overflow-x-hidden">
+    <div ref={targetRef} className="min-h-screen bg-[#FDF8F3] text-slate-900 font-sans selection:bg-orange-500 selection:text-white overflow-x-hidden">
       
       {/* Header - Fixed Navigation */}
-      <header className="fixed top-0 w-full z-50 border-b border-orange-100 bg-white/90 backdrop-blur-md shadow-sm">
+      <header className="fixed top-0 w-full z-50 border-b border-orange-100 bg-[#FDF8F3]/90 backdrop-blur-md shadow-sm">
         <div className="container mx-auto px-4 h-20 flex items-center justify-between">
           <div className="flex items-center gap-3">
              <div className="h-10 w-10 text-orange-600">
@@ -81,14 +81,14 @@ export function LandingEmploi() {
         {/* 1. HERO : LE BROUILLARD VERS LA CLARTÉ */}
         <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-32 md:pt-40 pb-32">
           {/* Background Warmth */}
-          <div className="absolute inset-0 bg-gradient-to-b from-orange-50/50 via-white to-amber-50/30 z-0" />
-          <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-orange-200/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
-          <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-blue-200/10 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2"></div>
+          <div className="absolute inset-0 bg-gradient-to-b from-orange-100/40 via-[#FDF8F3] to-orange-50 z-0" />
+          <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-orange-300/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
+          <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-amber-200/20 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2"></div>
           
           <div className="container mx-auto px-4 relative z-10 text-center space-y-10">
             <div className="space-y-8">
                 <FloatingIcon>
-                    <Badge className="bg-white text-orange-600 border border-orange-100 px-4 py-1.5 text-sm uppercase tracking-widest font-black mb-4 shadow-sm">
+                    <Badge className="bg-white text-orange-600 border-2 border-orange-100 px-4 py-1.5 text-sm uppercase tracking-widest font-black mb-4 shadow-sm">
                         🧭 Programme Pilote • 15 Jours
                     </Badge>
                 </FloatingIcon>
@@ -108,7 +108,7 @@ export function LandingEmploi() {
                     </p>
                     
                     {/* Barre d'Objectifs J15 */}
-                    <div className="flex flex-col md:flex-row justify-center gap-3 md:gap-8 text-sm md:text-base font-bold text-slate-700 mt-8 bg-white p-6 rounded-2xl shadow-xl shadow-orange-100/50 border border-orange-50 inline-flex mx-auto w-full md:w-auto max-w-2xl">
+                    <div className="flex flex-col md:flex-row justify-center gap-3 md:gap-8 text-sm md:text-base font-bold text-slate-700 mt-8 bg-white p-6 rounded-2xl shadow-xl shadow-orange-100/50 border-2 border-orange-50 inline-flex mx-auto w-full md:w-auto max-w-2xl relative z-20">
                         <span className="flex items-center gap-2 justify-center"><div className="bg-green-100 p-1 rounded-full"><CheckCircle2 className="text-green-600 h-4 w-4" /></div> 1 Offre Validée</span>
                         <span className="hidden md:block text-slate-200">|</span>
                         <span className="flex items-center gap-2 justify-center"><div className="bg-green-100 p-1 rounded-full"><CheckCircle2 className="text-green-600 h-4 w-4" /></div> 1 Page Pro Active</span>
@@ -136,7 +136,7 @@ export function LandingEmploi() {
                         { icon: Zap, label: "Action Immédiate", sub: "Stop procrastination" },
                         { icon: Target, label: "Projet Concret", sub: "Offre & Cible" }
                     ].map((item, i) => (
-                        <div key={i} className="flex flex-col items-center gap-3 p-6 rounded-2xl bg-white/80 backdrop-blur border border-white shadow-lg shadow-orange-100/20 hover:shadow-xl hover:-translate-y-1 transition-all">
+                        <div key={i} className="flex flex-col items-center gap-3 p-6 rounded-2xl bg-white border-2 border-orange-50 shadow-lg shadow-orange-100/20 hover:border-orange-200 hover:shadow-xl hover:-translate-y-1 transition-all">
                             <div className="bg-orange-50 p-3 rounded-full text-orange-600">
                                 <item.icon className="h-6 w-6" />
                             </div>
@@ -156,7 +156,7 @@ export function LandingEmploi() {
         </section>
 
         {/* 2. LA MÉTHODE POPEY */}
-        <section className="py-32 bg-white relative z-20">
+        <section className="py-32 bg-white relative z-20 border-y border-orange-100 shadow-sm">
             <div className="container mx-auto px-4 max-w-5xl space-y-24">
                 
                 {/* 3 Piliers */}
@@ -240,8 +240,8 @@ export function LandingEmploi() {
         </section>
 
         {/* 3. LE PROGRAMME 15 JOURS */}
-        <section className="py-32 bg-slate-50 relative overflow-hidden">
-            <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent"></div>
+        <section className="py-32 bg-orange-50/50 relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-orange-200 to-transparent"></div>
             <div className="container mx-auto px-4 max-w-6xl relative z-10">
                 <div className="text-center mb-20 space-y-4">
                     <FadeIn>
@@ -257,20 +257,20 @@ export function LandingEmploi() {
                 <div className="grid lg:grid-cols-3 gap-8 items-start">
                     {/* PHASE 1 */}
                     <FadeIn delay={0}>
-                        <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 hover:border-orange-200 transition-colors">
+                        <div className="bg-white p-8 rounded-3xl shadow-lg shadow-orange-100/20 border-2 border-orange-100 hover:border-orange-300 transition-colors">
                             <div className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-6 bg-slate-50 inline-block px-3 py-1 rounded-full">Jours 1 à 4</div>
                             <h3 className="text-2xl font-black text-slate-900 uppercase mb-6">Le Brouillard</h3>
                             <ul className="space-y-4 text-slate-600 text-sm font-medium">
-                                <li className="flex gap-3"><div className="bg-slate-100 p-1 rounded-full"><CheckCircle2 className="h-3 w-3 text-slate-500" /></div> Sortir du "Je ne sais pas"</li>
-                                <li className="flex gap-3"><div className="bg-slate-100 p-1 rounded-full"><CheckCircle2 className="h-3 w-3 text-slate-500" /></div> Identifier ses vraies forces</li>
-                                <li className="flex gap-3"><div className="bg-slate-100 p-1 rounded-full"><CheckCircle2 className="h-3 w-3 text-slate-500" /></div> Tester une première idée</li>
+                                <li className="flex gap-3"><div className="bg-orange-50 p-1 rounded-full"><CheckCircle2 className="h-3 w-3 text-orange-500" /></div> Sortir du "Je ne sais pas"</li>
+                                <li className="flex gap-3"><div className="bg-orange-50 p-1 rounded-full"><CheckCircle2 className="h-3 w-3 text-orange-500" /></div> Identifier ses vraies forces</li>
+                                <li className="flex gap-3"><div className="bg-orange-50 p-1 rounded-full"><CheckCircle2 className="h-3 w-3 text-orange-500" /></div> Tester une première idée</li>
                             </ul>
                         </div>
                     </FadeIn>
 
                     {/* PHASE 2 */}
                     <FadeIn delay={0.2}>
-                        <div className="bg-slate-900 p-8 rounded-3xl shadow-2xl shadow-orange-200/50 text-white transform lg:-translate-y-8 relative border border-slate-800">
+                        <div className="bg-slate-900 p-8 rounded-3xl shadow-2xl shadow-orange-200/50 text-white transform lg:-translate-y-8 relative border-2 border-slate-800">
                             <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-gradient-to-r from-orange-500 to-red-500 text-white text-[10px] font-bold px-4 py-1.5 rounded-full uppercase tracking-widest shadow-lg">Crucial</div>
                             <div className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-6 bg-slate-800 inline-block px-3 py-1 rounded-full">Jours 5 à 9</div>
                             <h3 className="text-2xl font-black text-white uppercase mb-6">L'Offre Visible</h3>
@@ -284,13 +284,13 @@ export function LandingEmploi() {
 
                     {/* PHASE 3 */}
                     <FadeIn delay={0.4}>
-                        <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 hover:border-orange-200 transition-colors">
+                        <div className="bg-white p-8 rounded-3xl shadow-lg shadow-orange-100/20 border-2 border-orange-100 hover:border-orange-300 transition-colors">
                             <div className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-6 bg-slate-50 inline-block px-3 py-1 rounded-full">Jours 10 à 15</div>
                             <h3 className="text-2xl font-black text-slate-900 uppercase mb-6">La Réalité</h3>
                             <ul className="space-y-4 text-slate-600 text-sm font-medium">
-                                <li className="flex gap-3"><div className="bg-slate-100 p-1 rounded-full"><CheckCircle2 className="h-3 w-3 text-slate-500" /></div> Fixer ses prix & objectifs</li>
-                                <li className="flex gap-3"><div className="bg-slate-100 p-1 rounded-full"><CheckCircle2 className="h-3 w-3 text-slate-500" /></div> Automatiser ses contacts</li>
-                                <li className="flex gap-3"><div className="bg-slate-100 p-1 rounded-full"><CheckCircle2 className="h-3 w-3 text-slate-500" /></div> S'engager officiellement</li>
+                                <li className="flex gap-3"><div className="bg-orange-50 p-1 rounded-full"><CheckCircle2 className="h-3 w-3 text-orange-500" /></div> Fixer ses prix & objectifs</li>
+                                <li className="flex gap-3"><div className="bg-orange-50 p-1 rounded-full"><CheckCircle2 className="h-3 w-3 text-orange-500" /></div> Automatiser ses contacts</li>
+                                <li className="flex gap-3"><div className="bg-orange-50 p-1 rounded-full"><CheckCircle2 className="h-3 w-3 text-orange-500" /></div> S'engager officiellement</li>
                             </ul>
                         </div>
                     </FadeIn>
@@ -305,7 +305,7 @@ export function LandingEmploi() {
         </section>
 
         {/* 3b. NIVEAUX D'INTENSITÉ */}
-        <section className="py-24 bg-white relative z-20">
+        <section className="py-24 bg-white relative z-20 border-y border-orange-100 shadow-sm">
             <div className="container mx-auto px-4 max-w-5xl space-y-16">
                 <div className="text-center space-y-4">
                      <FadeIn>
@@ -323,7 +323,7 @@ export function LandingEmploi() {
                 <div className="grid md:grid-cols-3 gap-6">
                     {/* Level 1 */}
                     <FadeIn delay={0}>
-                         <div className="bg-slate-50 p-8 rounded-3xl border border-slate-100 hover:border-slate-300 transition-all h-full flex flex-col">
+                         <div className="bg-slate-50 p-8 rounded-3xl border-2 border-slate-100 hover:border-slate-300 transition-all h-full flex flex-col">
                             <h3 className="text-lg font-black uppercase text-slate-400 mb-2">Minimum Vital</h3>
                             <div className="text-4xl font-black text-slate-900 mb-4">1h <span className="text-sm font-medium text-slate-400">/ jour</span></div>
                             <p className="text-sm text-slate-500 mb-8 flex-1">Pour ceux qui sont épuisés mais veulent garder un pied dans l'action.</p>
@@ -348,7 +348,7 @@ export function LandingEmploi() {
 
                     {/* Level 3 */}
                     <FadeIn delay={0.2}>
-                         <div className="bg-slate-900 p-8 rounded-3xl border border-slate-800 h-full flex flex-col text-white">
+                         <div className="bg-slate-900 p-8 rounded-3xl border-2 border-slate-800 h-full flex flex-col text-white">
                             <h3 className="text-lg font-black uppercase text-slate-400 mb-2">Intensif</h3>
                             <div className="text-4xl font-black text-white mb-4">Full <span className="text-sm font-medium text-slate-500">Time</span></div>
                             <p className="text-sm text-slate-400 mb-8 flex-1">Immersion totale pour une transformation radicale et rapide.</p>
@@ -362,7 +362,7 @@ export function LandingEmploi() {
         </section>
 
         {/* 3d. RÉASSURANCE */}
-        <section className="py-24 bg-orange-50/50 border-y border-orange-100/50">
+        <section className="py-24 bg-[#FDF8F3] border-y border-orange-100/50">
              <div className="container mx-auto px-4 max-w-5xl">
                 <div className="grid md:grid-cols-2 gap-16 items-center">
                     <FadeIn>
@@ -387,7 +387,7 @@ export function LandingEmploi() {
                         </div>
                     </FadeIn>
                     <FadeIn delay={0.2}>
-                        <div className="bg-white p-10 rounded-3xl shadow-xl shadow-orange-100/50 border border-white rotate-2">
+                        <div className="bg-white p-10 rounded-3xl shadow-xl shadow-orange-100/50 border-2 border-orange-100 rotate-2">
                             <div className="text-4xl text-orange-200 mb-4 font-serif">"</div>
                             <p className="text-lg font-medium text-slate-700 mb-6 relative z-10">J'avais peur d'être jugé sur ma situation. J'ai trouvé des gens qui me comprenaient mieux que ma propre famille.</p>
                             <div className="flex items-center gap-4">
@@ -493,7 +493,7 @@ export function LandingEmploi() {
         </section>
       </main>
         
-        <footer className="bg-white py-12 text-center border-t border-slate-100 text-slate-900">
+        <footer className="bg-[#FDF8F3] py-12 text-center border-t border-orange-100 text-slate-900">
             <div className="flex justify-center items-center gap-2 mb-4 opacity-50">
                 <Anchor className="h-6 w-6" />
                 <span className="font-black uppercase tracking-widest">Popey Emploi</span>
