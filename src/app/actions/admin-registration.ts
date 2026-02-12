@@ -57,9 +57,41 @@ export async function validateRegistration(registrationId: string) {
     const programLabel = programSlug === 'job_seeker' ? 'Emploi' : 'Entrepreneur';
     cohortTitle = `Cohorte ${programLabel} ${department_code} - ${selected_session_date || 'Date indéfinie'}`;
     
-    // Date de début approximative (on essaie de parser ou on met aujourd'hui + 1 mois)
-    const startDate = new Date();
-    startDate.setMonth(startDate.getMonth() + 1);
+    // TENTATIVE DE PARSING DE LA DATE
+    // Format attendu: "10 au 23 Février 2026" ou "12 Mars 2026"
+    let startDate = new Date();
+    
+    try {
+        if (selected_session_date) {
+            const months: {[key: string]: number} = {
+                'janvier': 0, 'fevrier': 1, 'février': 1, 'mars': 2, 'avril': 3, 'mai': 4, 'juin': 5,
+                'juillet': 6, 'aout': 7, 'août': 7, 'septembre': 8, 'octobre': 9, 'novembre': 10, 'decembre': 11, 'décembre': 11
+            };
+            
+            const parts = selected_session_date.toLowerCase().split(' ');
+            // On cherche le premier chiffre (jour)
+            const day = parseInt(parts.find(p => !isNaN(parseInt(p))) || "1");
+            // On cherche le mois
+            const monthStr = parts.find(p => months[p] !== undefined);
+            const month = monthStr ? months[monthStr] : startDate.getMonth() + 1; // +1 mois par défaut si échec
+            // On cherche l'année (4 chiffres)
+            const yearStr = parts.find(p => /^\d{4}$/.test(p));
+            const year = yearStr ? parseInt(yearStr) : new Date().getFullYear();
+
+            // Si on a trouvé un mois explicite, on utilise cette date
+            if (monthStr) {
+                startDate = new Date(year, month, day);
+            } else {
+                // Fallback: Dans 1 mois
+                startDate.setMonth(startDate.getMonth() + 1);
+            }
+        } else {
+             startDate.setMonth(startDate.getMonth() + 1);
+        }
+    } catch (e) {
+        console.warn("Erreur parsing date, fallback +1 mois", e);
+        startDate.setMonth(startDate.getMonth() + 1);
+    }
 
     const { data: newCohort, error: createError } = await supabase
       .from("cohorts")
