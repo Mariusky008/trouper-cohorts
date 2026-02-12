@@ -19,37 +19,64 @@ export function AICoachWidget({ dayContext }: AICoachWidgetProps) {
   const [isOpen, setIsOpen] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   
-  const { messages, input, handleInputChange, handleSubmit, isLoading, error, setInput, append } = useChat({
-    // @ts-ignore
-    api: "/api/ai/coach",
-    body: {
-      context: dayContext,
-    },
-    onFinish: () => {
-        // Optional: Do something when message is finished
-    },
-    onError: (err) => {
-        console.error("AI Coach Error:", err);
-    }
-  }) as any;
+  // No-SDK Implementation to fix compatibility issues
+  const [messages, setMessages] = useState<any[]>([]);
+  const [input, setInput] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
 
-  // Use local state for input to bypass SDK binding issues
-  const [localInput, setLocalInput] = useState("");
-
-  const handleManualSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!localInput.trim() || isLoading) return;
+    if (!input.trim() || isLoading) return;
 
-    const userMessage = localInput;
-    setLocalInput(""); // Clear immediately
-    
+    const userMessage = { id: Date.now().toString(), role: 'user', content: input };
+    setMessages(prev => [...prev, userMessage]);
+    setInput("");
+    setIsLoading(true);
+    setError(null);
+
     try {
-        await append({
-            role: 'user',
-            content: userMessage
+        const response = await fetch('/api/ai/coach', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                messages: [...messages, userMessage],
+                context: dayContext
+            })
         });
-    } catch (err) {
-        console.error("Failed to send message:", err);
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.details || errorData.error || `Error ${response.status}`);
+        }
+
+        if (!response.body) throw new Error("No response body");
+
+        // Create a new assistant message
+        const assistantId = (Date.now() + 1).toString();
+        setMessages(prev => [...prev, { id: assistantId, role: 'assistant', content: '' }]);
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let done = false;
+
+        while (!done) {
+            const { value, done: doneReading } = await reader.read();
+            done = doneReading;
+            const chunkValue = decoder.decode(value, { stream: true });
+            
+            setMessages(prev => prev.map(msg => 
+                msg.id === assistantId 
+                ? { ...msg, content: msg.content + chunkValue }
+                : msg
+            ));
+        }
+
+    } catch (err: any) {
+        console.error("Chat Error:", err);
+        setError(err);
+    } finally {
+        setIsLoading(false);
     }
   };
 
@@ -140,14 +167,14 @@ export function AICoachWidget({ dayContext }: AICoachWidgetProps) {
 
         {/* Input Area */}
         <div className="p-3 bg-slate-900 border-t border-slate-800">
-            <form onSubmit={handleManualSubmit} className="flex gap-2">
+            <form onSubmit={handleSubmit} className="flex gap-2">
                 <Input 
-                    value={localInput} 
-                    onChange={(e) => setLocalInput(e.target.value)} 
+                    value={input} 
+                    onChange={(e) => setInput(e.target.value)} 
                     placeholder="Pose ta question ou colle ton texte..." 
                     className="bg-slate-950 border-slate-800 text-slate-200 focus-visible:ring-orange-500"
                 />
-                <Button type="submit" size="icon" className="bg-orange-600 hover:bg-orange-500 text-white shrink-0" disabled={isLoading || !localInput.trim()}>
+                <Button type="submit" size="icon" className="bg-orange-600 hover:bg-orange-500 text-white shrink-0" disabled={isLoading || !input.trim()}>
                     <Send className="h-4 w-4" />
                 </Button>
             </form>
