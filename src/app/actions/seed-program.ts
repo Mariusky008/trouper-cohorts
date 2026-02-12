@@ -87,6 +87,82 @@ export async function seedJobSeekerProgram() {
         ];
       }
 
+      // OVERRIDE J5 with V2 Content
+      if (i === 4) {
+        missionData.title = "LA CIBLE RÉELLE";
+        missionData.description = "Je ne peux pas aider tout le monde.";
+        missionData.steps = [
+            { category: "act1", title: "CONSCIENCE : Pourquoi je reste flou ? (30 min)", content: "Le but : Identifier la peur derrière le manque de précision.\n\nQuestions IA :\n- Pourquoi ai-je tendance à rester généraliste ?\n- Ai-je peur d’exclure des opportunités ?\n- Si je devais choisir un seul type d’entreprise, lequel me ressemble le plus ?\n\nQuestion clé : Être vague me protège de quoi ?", position: 1 },
+            { category: "act2", title: "STRUCTURE : Profil Cible (45 min)", content: "Le but : Définir une cible professionnelle précise.\n\nCanevas obligatoire :\nType d’entreprise | Taille | Secteur | Problème principal | Compétences recherchées | Culture\n\nL’IA demande : Si tu devais décrire cette cible comme une personne, comment serait-elle ?", position: 2 },
+            { category: "act3", title: "BINÔME : Cohérence (35 min)", content: "Le but : Feedback sur la précision.\n\nLe participant présente sa cible.\nLe binôme répond :\n- Est-ce cohérent avec ton énergie ?\n- Est-ce crédible ?\n- Est-ce trop large ?\n- Si tu devais réduire encore, que garderais-tu ?", position: 3 },
+            { category: "act4", title: "OUTIL : Miroir IA Positionnement (25 min)", content: "Le but : Valider la stratégie.\n\nPrompt :\n\"Voici mes forces, ma cible définie et le feedback du binôme. Reformule mon positionnement en 3 phrases claires. Identifie si ma cible est trop large.\"\n\nL’IA produit : Positionnement clair + Ajustement si besoin.", position: 4 },
+            { category: "act5", title: "ACTION : Test Terrain (1h05)", content: "Le but : Tester la cible et le message.\n\n1. Adapter son pitch spécifiquement à la cible (Ex: \"J'aide les PME à structurer...\").\n2. Envoyer ce message à une entreprise ciblée ou un contact.\n3. Question clé : \"Ce message vous semble-t-il pertinent pour votre secteur ?\"", position: 5 },
+            { category: "act6", title: "INTÉGRATION : Assumer la Précision (30 min)", content: "Questions IA :\n- Ma cible est-elle plus claire qu’hier ?\n- Est-ce que la précision me rassure ou m’inquiète ?\n\nPhrase à compléter : Je m’adresse désormais à…\n\nLivrables :\n- Cible définie précisément\n- Positionnement clair\n- Message adapté\n- 1 test terrain effectué", position: 6 }
+        ];
+      }
+
+      // OVERRIDE J6 with V2 Content
+      if (i === 5) { // J8 in data array index 5 (because weekend skipped) -> actually J6 in new numbering? 
+        // Wait, index mapping is: 0->J1, 1->J2, 2->J3, 3->J4, 4->J5.
+        // Original data has 14 items.
+        // Index 5 corresponds to Day 8 in original data (weekend skipped).
+        // BUT the user input says "JOUR 6".
+        // Let's stick to the mapping: The user provides content for J6, J7, J8.
+        // We need to map them correctly.
+        // My previous mapping was: [1, 2, 3, 4, 5, 8, 9, 10, 11, 12, 15, 16, 17, 18]
+        // This mapping skips weekends (6,7 and 13,14).
+        // So:
+        // Index 5 -> Day 8 (Monday W2) -> User calls it "JOUR 6" ?
+        // Wait, if the user wants J6, J7, J8... does he mean continuous days?
+        // Or does he mean "Content Day 6" which happens on Calendar Day 8?
+        // Let's look at the titles.
+        // User J6 Title: "L’OFFRE VISUELLE" -> Matches Original J8 "L’OFFRE VISUELLE"
+        // User J7 Title: "LA VISIBILITÉ" -> Matches Original J9 "LA VISIBILITÉ"
+        // User J8 Title: "LA COMMUNAUTÉ" -> Matches Original J10 "LA COMMUNAUTÉ"
+        
+        // So the user is renaming the "Content Days" to be continuous (1 to 14) but they will be placed on Calendar Days (skipping weekends).
+        // Content J6 will go to Calendar Day 8.
+        
+        missionData.title = "L’OFFRE VISUELLE";
+        missionData.description = "Je rends mon projet réel.";
+        missionData.steps = [
+            { category: "act1", title: "CONSCIENCE : Qu'est-ce qu'une offre ? (30 min)", content: "Le but : Comprendre qu’une offre = solution à un problème précis.\n\nQuestions IA :\n- Quel problème concret ma cible rencontre-t-elle ?\n- Quelle conséquence si ce problème n’est pas réglé ?\n- Si je devais simplifier au maximum, j’aide qui à faire quoi ?\n\nQuestion clé : Est-ce que je parle de moi… ou du problème de ma cible ?", position: 1 },
+            { category: "act2", title: "STRUCTURE : L'Offre en 5 lignes (45 min)", content: "Le but : Rendre l’offre simple et lisible.\n\nStructure obligatoire :\nJ’aide [cible] À résoudre [problème] Grâce à [compétence] Pour obtenir [résultat] Dans un cadre [contexte].\n\nL’IA reformule jusqu’à ce que ce soit simple, clair, sans jargon.", position: 2 },
+            { category: "act3", title: "BINÔME : Test de Clarté (35 min)", content: "Le but : Feedback immédiat.\n\nLe participant lit son offre.\nLe binôme répond :\n- As-tu compris immédiatement ?\n- Est-ce spécifique ?\n- Est-ce crédible ?\n\nInterdiction de dire \"c’est bien\". Feedback factuel.", position: 3 },
+            { category: "act4", title: "OUTIL : Miroir IA Simplification (25 min)", content: "Le but : Impact maximal.\n\nPrompt :\n\"Voici mon offre en 5 lignes et le feedback. Simplifie, supprime le vague, renforce la crédibilité.\"\n\nL’IA produit : Version optimisée + Version ultra courte (1 phrase).", position: 4 },
+            { category: "act5", title: "ACTION : Test Extérieur (1h05)", content: "Le but : Confronter l’offre au réel.\n\nEnvoyer l’offre courte à un contact pro / entreprise / ex-collègue.\nQuestion clé : \"Si vous lisiez cette proposition, seriez-vous intéressé pour en savoir plus ?\"\n\nPreuve d'envoi obligatoire.", position: 5 },
+            { category: "act6", title: "INTÉGRATION : Rendre le projet tangible (30 min)", content: "Questions IA :\n- Mon offre est-elle plus claire qu’hier ?\n- Quelle version est la plus impactante ?\n\nPhrase à compléter : Mon projet devient réel parce que…\n\nLivrables :\n- Offre claire en 5 lignes\n- Version ultra courte\n- 1 feedback externe réel", position: 6 }
+        ];
+      }
+
+      // OVERRIDE J7 with V2 Content
+      if (i === 6) { // Calendar Day 9
+        missionData.title = "LA VISIBILITÉ";
+        missionData.description = "J’existe publiquement.";
+        missionData.steps = [
+            { category: "act1", title: "CONSCIENCE : La peur d'être vu (30 min)", content: "Le but : Identifier les freins psychologiques.\n\nQuestions IA :\n- Qu’est-ce qui m’empêche de me montrer ?\n- Ai-je peur du jugement ?\n- Est-ce que je confonds visibilité et exposition personnelle ?\n\nQuestion clé : L’invisibilité me protège de quoi ?", position: 1 },
+            { category: "act2", title: "STRUCTURE : Profil Optimisé (45 min)", content: "Le but : Rendre son positionnement visible.\n\nChoisir 1 plateforme (LinkedIn, CV, Facebook Pro).\nStructure : Photo pro, Titre clair, Offre en 1 phrase, Compétences clés, Appel à contact.\n\nL’IA reformule pour : Clarté, Simplicité, Impact.", position: 2 },
+            { category: "act3", title: "BINÔME : Test de Lisibilité (35 min)", content: "Le but : Vérifier l'impact.\n\nLe binôme analyse le profil :\n- Comprends-tu immédiatement ce que je propose ?\n- Est-ce crédible ?\n- Est-ce que tu aurais envie de me parler ?\n\nFeedback factuel.", position: 3 },
+            { category: "act4", title: "OUTIL : Miroir IA Optimisation (20 min)", content: "Le but : Stratégie.\n\nPrompt :\n\"Voici mon profil. Optimise le titre, rends l’offre plus percutante, simplifie la description.\"\n\nL’IA génère : Version optimisée + Version ultra courte + 3 améliorations.", position: 4 },
+            { category: "act5", title: "ACTION : Visibilité Réelle (1h10)", content: "Le but : Créer une trace publique.\n\nMission : Poster une présentation OU Envoyer un message à 3 contacts.\nMessage type : \"Je développe mon positionnement [offre]. Si vous connaissez des entreprises...\"\n\nObjectif : Pas de demande d'emploi, mais exploration.", position: 5 },
+            { category: "act6", title: "INTÉGRATION : Passage à l'existence (30 min)", content: "Questions IA :\n- Est-ce que je me sens plus légitime ?\n- Est-ce que le fait d’être visible change mon énergie ?\n\nPhrase : Aujourd’hui, j’existe parce que…\n\nLivrables :\n- Profil optimisé\n- 1 publication ou 3 messages\n- Positionnement assumé", position: 6 }
+        ];
+      }
+
+      // OVERRIDE J8 with V2 Content
+      if (i === 7) { // Calendar Day 10
+        missionData.title = "LA COMMUNAUTÉ";
+        missionData.description = "Je ne suis plus seul.";
+        missionData.steps = [
+            { category: "act1", title: "CONSCIENCE : L'illusion de solitude (30 min)", content: "Le but : Comprendre que l’isolement est souvent une posture.\n\nQuestions IA :\n- Pourquoi je cherche seul ?\n- Est-ce que je demande de l'aide ?\n- Qui pourrait m’aider si j’osais demander ?\n\nQuestion clé : Est-ce que mon isolement est un fait… ou une posture ?", position: 1 },
+            { category: "act2", title: "STRUCTURE : Carte Réseau (45 min)", content: "Le but : Rendre visible le réseau existant.\n\nCréer une carte en 4 cercles : Proches, Anciens collègues, Connaissances, À créer.\nObjectif : Identifier min. 10 personnes ressources.\nL'IA aide à trouver des idées (Fournisseurs, Clients, Asso...).", position: 2 },
+            { category: "act3", title: "BINÔME : Qualité du Réseau (35 min)", content: "Le but : Prioriser.\n\nLe binôme regarde la carte :\n- Qui semble stratégique ?\n- Qui est sous-estimé ?\n- Qui choisirais-tu en priorité ?\n\nLivrable : Top 5 contacts prioritaires.", position: 3 },
+            { category: "act4", title: "OUTIL : Miroir IA Stratégie (20 min)", content: "Le but : L'approche juste.\n\nPrompt :\n\"Voici mes 5 contacts. Propose une stratégie d’approche et un message simple pour chacun.\"\n\nL’IA génère : 3 messages prêts à envoyer.", position: 4 },
+            { category: "act5", title: "ACTION : Activation (1h10)", content: "Le but : Enclencher la dynamique.\n\nMission : Contacter 3 personnes + Participer à 1 échange réel.\nObjectif : Demander Conseil / Retour / Info (pas un job).\n\nLivrable : Preuve des 3 contacts.", position: 5 },
+            { category: "act6", title: "INTÉGRATION : Du Solo au Réseau (30 min)", content: "Questions IA :\n- Est-ce que je me sens encore isolé ?\n- Qui m’a surpris positivement ?\n\nPhrase : Je ne suis plus seul parce que…\n\nLivrables :\n- Carte réseau (10 noms)\n- Top 5 priorisés\n- 3 contacts activés", position: 6 }
+        ];
+      }
+
       newMissions.push(missionData);
     }
 
