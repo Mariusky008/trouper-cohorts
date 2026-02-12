@@ -12,16 +12,16 @@ BEGIN
 
     -- J1
     INSERT INTO public.mission_templates (day_index, title, description, program_type)
-    VALUES (1, 'LE BROUILLARD', 'Je suis perdu.', 'job_seeker')
+    VALUES (1, 'LE BROUILLARD', 'Transformer la confusion en 3 pistes claires.', 'job_seeker')
     RETURNING id INTO v_mission_id;
 
     INSERT INTO public.mission_step_templates (mission_template_id, category, title, content, position) VALUES
-    (v_mission_id, 'act1', 'LA TENSION : L''Audit de l''Inertie (1h)', 'Matériel : Une feuille, un stylo, ou un document vide.\n\nLe but : Regarder la réalité en face...', 1),
-    (v_mission_id, 'act2', 'EXPLORATION : La Purge des 20 "Je ne veux plus" (1h)', 'On va chercher la matière brute pour construire ton futur...', 2),
-    (v_mission_id, 'act3', 'OUTIL : Comment structurer avec l''IA (1h)', 'C''est ici qu''on transforme tes notes en stratégie...', 3),
-    (v_mission_id, 'act4', 'BINÔME : Procédure étape par étape (1h)', 'Tu ne peux pas réussir seul. Le binôme est ton témoin...', 4),
-    (v_mission_id, 'act5', 'MOUVEMENT : La Marche de Rupture (1h)', 'Matériel : Des chaussures confortables, un chronomètre...', 5),
-    (v_mission_id, 'act6', 'VIDÉO : Le Sceau de l''Engagement (1h)', 'Matériel : Ton smartphone, un endroit éclairé et calme...', 6);
+    (v_mission_id, 'act1', 'CONSCIENCE : L''état réel (40 min)', 'Le but : Sortir du blocage mental et identifier les pensées limitantes.\n\nExercice 1 : Écriture individuelle (10 min). Questions lentes :\n- Depuis combien de temps je me dis "je suis perdu" ?\n- Est-ce que je suis réellement perdu… ou est-ce que j’ai peur de choisir ?\n- Qu’est-ce qui me fatigue le plus dans ma situation actuelle ?\n- Si rien ne change dans 1 an, à quoi ressemble ma vie ?\n\nExercice 2 : Débloquer l''imagination (5 min). "Si je savais que je ne pouvais pas échouer, qu’est-ce que j’oserais explorer ?"', 1),
+    (v_mission_id, 'act2', 'STRUCTURE : Carte des Forces (40 min)', 'Le but : Transformer les idées floues en éléments structurés.\n\nRemplir le tableau : Ce que je fais facilement | Exemple concret | Ce que ça montre.\nExemple : J’explique bien → J’aidais mes collègues → Pédagogie.\n\nEnsuite, classer les forces en 3 catégories : Relationnelles, Organisationnelles, Techniques.\n\nObjectif : Identifier 3 forces dominantes. Pas 10. Pas 7. Seulement 3.', 2),
+    (v_mission_id, 'act3', 'BINÔME : Miroir Humain (45 min)', 'Le but : Comparer perception interne et externe.\n\nChaque participant présente ses 3 forces et 2 idées métiers (3 min).\n\nLe binôme note :\n- Quand la personne est la plus énergique ?\n- Quand elle est la plus floue ?\n- Quelle compétence semble évidente ?\n- Quel métier semble cohérent avec son énergie ?\n\nFeedback obligatoire avec exemples précis.', 3),
+    (v_mission_id, 'act4', 'OUTIL : Miroir IA (20 min)', 'Le but : Croiser logique + perception + cohérence.\n\nPrompt à utiliser :\n"Analyse les 3 forces déclarées ci-dessous ainsi que le feedback du binôme. Identifie les convergences. Reformule 3 compétences professionnelles exploitables. Propose 3 pistes métiers réalistes adaptées au marché actuel."\n\nL’IA reformule en langage professionnel.', 4),
+    (v_mission_id, 'act5', 'ACTION : Le Mini Pitch (55 min)', 'Le but : Passer du mental au réel.\n\n1. Préparer un mini pitch de 1 minute : "Je découvre que je suis fort en… Je pense pouvoir apporter de la valeur dans…"\n2. Tester ce pitch (autre groupe, message vocal, appel).\n3. Demander une question clé : "Tu me verrais dans quoi, toi ?"', 5),
+    (v_mission_id, 'act6', 'INTÉGRATION : Équation Finale (30 min)', 'Brouillard + Imagination + Structure + Miroir + IA + Action réelle = Direction possible.\n\nLivrables finaux :\n- 3 forces naturelles validées\n- 3 pistes métiers plausibles\n- 1 contact réel effectué\n- 1 mini pitch testé\n\nCe n’est plus "je suis perdu". C’est "j’ai 3 pistes à explorer".', 6);
 
     -- J2
     INSERT INTO public.mission_templates (day_index, title, description, program_type)
