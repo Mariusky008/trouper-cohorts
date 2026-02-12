@@ -145,7 +145,8 @@ export function LandingEmploi() {
         <section className="py-24 bg-slate-50 relative z-20">
             <div className="container mx-auto px-4 max-w-5xl space-y-20">
                 
-                {/* 3 Piliers - Branding Méthode Popey */}
+                {/* 3 Piliers - Branding Méthode Popey */
+                /* V2 : Radicalisation de la promesse */}
                 <div className="space-y-12">
                      <div className="text-center">
                         <FadeIn>
