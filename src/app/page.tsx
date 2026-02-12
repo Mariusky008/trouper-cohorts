@@ -105,21 +105,22 @@ export default function Home() {
                 </FloatingIcon>
                 
                 <h1 className="text-5xl md:text-8xl font-black uppercase italic tracking-tighter leading-[0.9]">
-                  14 jours pour devenir la Référence<br />
+                  14 Jours pour signer<br />
                   <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-red-500">
-                    de votre ville.
+                    vos prochains clients.
                   </span>
                 </h1>
                 
                 <div className="text-xl md:text-2xl text-blue-200 max-w-3xl mx-auto font-medium leading-relaxed space-y-6">
                     <p>
-                        Au programme : créations (vidéos, lives, ateliers) pour rendre votre communication impossible à ignorer.
+                        Arrêtez de poster dans le vide. Rejoignez l'Armada qui démultiplie votre visibilité.
                     </p>
-                    <p>
-                        Vous faites partie d'un groupe de 24 pros qui s’entraident et se mettent en avant ensemble sur les réseaux sociaux.
-                    </p>
+                    <div className="flex justify-center gap-4 text-sm md:text-base font-bold text-white">
+                        <span className="flex items-center gap-2"><CheckCircle2 className="text-orange-500" /> 1 Offre Validée</span>
+                        <span className="flex items-center gap-2"><CheckCircle2 className="text-orange-500" /> 1er RDV Qualifié</span>
+                    </div>
                     <p className="text-white font-bold border-l-4 border-orange-500 pl-4 md:pl-0 md:border-0">
-                        14 jours pour obtenir plus de clients et de rendez-vous qu’en un an d’efforts isolés.
+                        Pas de théorie. Pas de "personal branding" flou. Juste des résultats.
                     </p>
                 </div>
 
@@ -158,27 +159,66 @@ export default function Home() {
           </div>
         </section>
 
-        {/* 2. LE PROBLÈME (Contenu V6 / Design V7) */}
+        {/* 2. COMPARAISON & DIFFÉRENCIATION */}
         <section className="py-24 bg-slate-950 relative z-20">
-            <div className="container mx-auto px-4 max-w-4xl text-center space-y-12">
-                <FadeIn>
-                    <h2 className="text-4xl font-black uppercase italic text-white">Pourquoi vous n'êtes pas assez visible ?</h2>
-                </FadeIn>
-                <FadeIn delay={0.1}>
-                    <div className="bg-slate-900/80 backdrop-blur-md border border-slate-800 p-8 md:p-12 text-lg text-slate-400 leading-relaxed rounded-2xl relative overflow-hidden">
-                        <div className="absolute top-0 left-0 w-2 h-full bg-orange-500" />
-                        <p>
-                            La plupart des indépendantes savent qu'elles doivent communiquer. 
-                            Mais elles le font <strong>seules</strong>, sans structure, quand elles ont le temps.
-                        </p>
-                        <div className="my-8 h-px bg-slate-800 w-full" />
-                        <p>
-                            Résultat : des efforts dispersés, peu d'écho, et une visibilité qui ne décolle pas.
-                            <br/>
-                            Le problème n'est pas votre compétence, c'est l'absence de <span className="text-orange-400 font-bold uppercase">cadre collectif</span>.
-                        </p>
+            <div className="container mx-auto px-4 max-w-5xl space-y-20">
+                
+                {/* Comparatif */}
+                <div className="grid md:grid-cols-2 gap-8 items-center">
+                    <div className="space-y-6">
+                        <FadeIn>
+                            <h2 className="text-4xl font-black uppercase italic text-white">Pourquoi vous échouez ailleurs ?</h2>
+                        </FadeIn>
+                        <FadeIn delay={0.1}>
+                            <p className="text-slate-400 text-lg">
+                                Les formations classiques vous vendent de l'information. Nous vous vendons de la transformation par l'action.
+                            </p>
+                        </FadeIn>
                     </div>
-                </FadeIn>
+                    
+                    <FadeIn delay={0.2}>
+                        <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden">
+                            <div className="grid grid-cols-2 text-center text-sm font-bold uppercase tracking-widest border-b border-slate-800">
+                                <div className="p-4 text-slate-500 bg-slate-950">Formation Classique</div>
+                                <div className="p-4 text-white bg-orange-600">Bootcamp Popey</div>
+                            </div>
+                            <div className="divide-y divide-slate-800">
+                                {[
+                                    { classic: "30h de vidéos théoriques", popey: "1h d'action / jour" },
+                                    { classic: "Apprendre des outils", popey: "Gagner des clients" },
+                                    { classic: "Solitude devant l'écran", popey: "Binôme quotidien" },
+                                    { classic: "Diplôme PDF", popey: "Chiffre d'affaires" }
+                                ].map((row, i) => (
+                                    <div key={i} className="grid grid-cols-2 text-center p-4 text-sm">
+                                        <div className="text-slate-500">{row.classic}</div>
+                                        <div className="text-white font-bold">{row.popey}</div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </FadeIn>
+                </div>
+
+                {/* Victoires Types */}
+                <div className="text-center space-y-12 pt-12 border-t border-slate-900">
+                    <h3 className="text-2xl font-black text-white uppercase italic">Ce qui se débloque en 15 jours</h3>
+                    <div className="grid md:grid-cols-3 gap-6">
+                        {[
+                            { day: "J3", title: "Offre Validée", desc: "Fini de douter. Vous savez quoi vendre et à qui." },
+                            { day: "J7", title: "Visibilité Publique", desc: "Vous avez osé publier et l'Armada a liké." },
+                            { day: "J12", title: "Système Automatisé", desc: "Vos clients prennent RDV pendant que vous dormez." }
+                        ].map((win, i) => (
+                            <FadeIn key={i} delay={i * 0.1}>
+                                <div className="bg-slate-900 p-6 rounded-xl border border-slate-800 hover:border-orange-500 transition-colors">
+                                    <div className="text-orange-500 font-black text-xl mb-2">{win.day}</div>
+                                    <h4 className="text-white font-bold mb-2">{win.title}</h4>
+                                    <p className="text-slate-400 text-sm">{win.desc}</p>
+                                </div>
+                            </FadeIn>
+                        ))}
+                    </div>
+                </div>
+
             </div>
         </section>
 
@@ -198,10 +238,10 @@ export default function Home() {
                         </h2>
                     </FadeIn>
                     <FadeIn delay={0.2}>
-                        <p className="text-slate-400 max-w-2xl mx-auto text-lg">
-                            Fini de naviguer à vue. Tout est guidé. 
-                            Prévoyez 2 à 3 heures par jour dédiées à 100% à votre visibilité.
-                        </p>
+                        <div className="bg-slate-800/50 backdrop-blur border border-orange-500/20 p-4 rounded-full inline-flex items-center gap-3 text-orange-200 text-sm font-bold mt-6">
+                            <span className="bg-orange-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs">✓</span>
+                            Charge Mentale Zéro : On vous dit quoi faire, vous le faites, ça marche.
+                        </div>
                     </FadeIn>
                 </div>
 
