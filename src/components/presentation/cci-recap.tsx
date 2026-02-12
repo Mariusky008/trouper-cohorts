@@ -479,7 +479,98 @@ export function CCIRecapViewer() {
                 </div>
             </div>
 
-            {/* PAGE 6 : CONTACT (BACK COVER) */}
+            {/* PAGE 6 : LE MANIFESTE REVOLUTIONNAIRE (NOUVELLE PAGE) */}
+            <div className="w-[210mm] h-[297mm] bg-white mx-auto mb-10 shadow-lg relative flex flex-col p-16 print:mb-0 print:shadow-none print:w-full print:h-screen break-after-page page-break overflow-hidden">
+                <div className="flex items-center justify-between mb-8">
+                    <span className="text-xs font-bold uppercase tracking-widest text-slate-500">05. Le Manifeste</span>
+                    <span className="bg-red-100 text-red-800 px-3 py-1 rounded-full text-xs font-bold uppercase">Dispositif d'Activation</span>
+                </div>
+
+                <h2 className="text-4xl font-black text-slate-900 mb-2 uppercase">Ce qui rend ce dispositif <span className="text-red-600">Révolutionnaire</span></h2>
+                <p className="text-lg text-slate-500 font-medium mb-8">
+                    Ce n'est pas le contenu. C'est la mécanique comportementale.
+                </p>
+
+                <div className="grid grid-cols-2 gap-8 flex-1">
+                    
+                    {/* COLONNE GAUCHE : LES 5 PILIERS */}
+                    <div className="col-span-2 space-y-6">
+                        <div className="flex items-start gap-4">
+                            <div className="h-10 w-10 rounded-xl bg-slate-900 text-white flex items-center justify-center font-bold text-lg shrink-0">1</div>
+                            <div>
+                                <h3 className="font-bold text-slate-900 text-lg uppercase">Système de Score Évolutionnel</h3>
+                                <p className="text-sm text-slate-600 leading-relaxed">
+                                    Chaque jour = points (Clarté, Courage, Discipline). Le participant voit sa transformation chiffrée. <br/>
+                                    <span className="text-slate-900 font-bold italic">"Je ne me sens pas juste mieux. Je suis passé de 32/100 à 81/100."</span>
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="flex items-start gap-4">
+                            <div className="h-10 w-10 rounded-xl bg-slate-900 text-white flex items-center justify-center font-bold text-lg shrink-0">2</div>
+                            <div>
+                                <h3 className="font-bold text-slate-900 text-lg uppercase">Obligation de Preuve</h3>
+                                <p className="text-sm text-slate-600 leading-relaxed">
+                                    Pas de "j'ai travaillé dessus". Mais : Capture écran, Message envoyé, RDV pris.<br/>
+                                    <span className="text-red-600 font-bold">👉 Pas de preuve = Pas validé.</span>
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="flex items-start gap-4">
+                            <div className="h-10 w-10 rounded-xl bg-slate-900 text-white flex items-center justify-center font-bold text-lg shrink-0">3</div>
+                            <div>
+                                <h3 className="font-bold text-slate-900 text-lg uppercase">Indicateur de Momentum</h3>
+                                <p className="text-sm text-slate-600 leading-relaxed">
+                                    Tableau collectif anonymisé : "Le groupe a envoyé 74 candidatures cette semaine."<br/>
+                                    L'effet d'entraînement est massif et irréversible.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="flex items-start gap-4">
+                            <div className="h-10 w-10 rounded-xl bg-slate-900 text-white flex items-center justify-center font-bold text-lg shrink-0">4</div>
+                            <div>
+                                <h3 className="font-bold text-slate-900 text-lg uppercase">Règle des 72 Heures</h3>
+                                <p className="text-sm text-slate-600 leading-relaxed">
+                                    Chaque décision doit être suivie d’une action sous 72h. Sinon elle est annulée.<br/>
+                                    Cela coupe radicalement la procrastination structurelle.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="flex items-start gap-4">
+                            <div className="h-10 w-10 rounded-xl bg-slate-900 text-white flex items-center justify-center font-bold text-lg shrink-0">5</div>
+                            <div>
+                                <h3 className="font-bold text-slate-900 text-lg uppercase">Checkpoint 30 Jours</h3>
+                                <p className="text-sm text-slate-600 leading-relaxed">
+                                    Un rendez-vous collectif obligatoire post-formation.<br/>
+                                    C’est la différence entre une formation motivante et un dispositif transformationnel.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* BAS DE PAGE : VISION */}
+                    <div className="col-span-2 bg-slate-50 border-t-4 border-red-600 p-6 mt-4">
+                        <div className="flex justify-between items-end">
+                            <div>
+                                <h4 className="font-bold text-slate-900 uppercase mb-2">Vérité Importante</h4>
+                                <p className="text-slate-600 text-sm max-w-lg">
+                                    Ce dispositif n'est pas adapté à tout le monde. Il est <strong>exigeant, direct et confrontant</strong>.<br/>
+                                    Mais ceux qui le terminent auront réellement changé.
+                                </p>
+                            </div>
+                            <div className="text-right">
+                                <span className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Le Résultat</span>
+                                <span className="text-xl font-black text-slate-900">Un Protocole de Transformation.</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* PAGE 7 : CONTACT (BACK COVER) */}
             <div className="w-[210mm] h-[297mm] bg-blue-900 mx-auto mb-10 shadow-lg relative flex flex-col justify-center items-center text-center text-white print:mb-0 print:shadow-none print:w-full print:h-screen">
                 <div className="mb-8 h-24 w-24 bg-white rounded-full flex items-center justify-center">
                     <span className="text-blue-900 font-black text-4xl italic">P</span>
