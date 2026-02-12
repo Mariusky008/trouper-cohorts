@@ -80,6 +80,8 @@ export function AICoachWidget({ dayContext }: AICoachWidgetProps) {
     }
   };
 
+  const [isExpanded, setIsExpanded] = useState(false);
+
   // Auto-scroll to bottom
   useEffect(() => {
     if (scrollRef.current) {
@@ -87,8 +89,17 @@ export function AICoachWidget({ dayContext }: AICoachWidgetProps) {
     }
   }, [messages]);
 
+  const containerClass = isExpanded 
+    ? "fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 md:p-8"
+    : "relative h-full";
+
+  const cardClass = isExpanded
+    ? "bg-slate-900 border border-slate-800 rounded-xl overflow-hidden flex flex-col w-full max-w-4xl h-full shadow-2xl relative animate-in fade-in zoom-in-95 duration-200"
+    : "bg-slate-900 border border-slate-800 rounded-xl overflow-hidden flex flex-col h-[500px] shadow-2xl relative";
+
   return (
-    <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden flex flex-col h-[500px] shadow-2xl relative">
+    <div className={containerClass}>
+        <div className={cardClass}>
         {/* Header */}
         <div className="bg-gradient-to-r from-orange-600 to-red-600 p-4 flex items-center justify-between shrink-0">
             <div className="flex items-center gap-3">
@@ -100,6 +111,14 @@ export function AICoachWidget({ dayContext }: AICoachWidgetProps) {
                     <p className="text-[10px] text-orange-100 font-medium">En ligne • {dayContext.day}</p>
                 </div>
             </div>
+            <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={() => setIsExpanded(!isExpanded)}
+                className="text-white hover:bg-white/20 h-8 w-8"
+            >
+                {isExpanded ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+            </Button>
         </div>
 
         {/* Chat Area */}
@@ -181,6 +200,7 @@ export function AICoachWidget({ dayContext }: AICoachWidgetProps) {
             <p className="text-[10px] text-slate-600 text-center mt-2">
                 L'IA peut faire des erreurs. Vérifiez toujours avant de publier.
             </p>
+        </div>
         </div>
     </div>
   );
