@@ -321,34 +321,36 @@ export function CCIRecapViewer() {
                                 <div>
                                     <div className="flex items-center justify-between mb-1">
                                         <span className="text-[10px] font-bold uppercase text-orange-500 tracking-wider">Semaine 1</span>
-                                        <span className="text-xs font-black text-slate-900">Le Produit (Offre & Branding)</span>
+                                        <span className="text-xs font-black text-slate-900">Fondations & Offre</span>
                                     </div>
                                     <ul className="text-xs text-slate-600 space-y-1 list-disc pl-4">
-                                        <li><strong>J1-J2</strong> : Créer une Offre Irrésistible (Packagée).</li>
-                                        <li><strong>J3-J4</strong> : Optimiser son profil LinkedIn / Landing Page.</li>
-                                        <li><strong>J5</strong> : Définir sa stratégie de pricing.</li>
+                                        <li><strong>J1-J3</strong> : Audit Business & Business Model Canvas.</li>
+                                        <li><strong>J4</strong> : Définir son Avatar Client (Douleurs/Désirs).</li>
+                                        <li><strong>J5</strong> : Créer son "Offre Irrésistible" & Pitch.</li>
                                     </ul>
                                 </div>
                                 <div>
                                     <div className="flex items-center justify-between mb-1">
                                         <span className="text-[10px] font-bold uppercase text-orange-500 tracking-wider">Semaine 2</span>
-                                        <span className="text-xs font-black text-slate-900">Les Prospects (Acquisition)</span>
+                                        <span className="text-xs font-black text-slate-900">Visibilité & Acquisition</span>
                                     </div>
                                     <ul className="text-xs text-slate-600 space-y-1 list-disc pl-4">
-                                        <li><strong>J6-J8</strong> : Campagne de Cold Outreach (Email/DM).</li>
-                                        <li><strong>J9</strong> : Stratégie de contenu (Copywriting).</li>
-                                        <li><strong>J10</strong> : Lancer son premier webinaire ou lead magnet.</li>
+                                        <li><strong>J6</strong> : Storytelling & Personal Branding.</li>
+                                        <li><strong>J8</strong> : Choisir son canal d'acquisition.</li>
+                                        <li><strong>J9</strong> : Lancer la "Chasse" (Prospection directe).</li>
+                                        <li><strong>J10</strong> : Closing & Traitement des objections.</li>
                                     </ul>
                                 </div>
                                 <div>
                                     <div className="flex items-center justify-between mb-1">
                                         <span className="text-[10px] font-bold uppercase text-orange-500 tracking-wider">Semaine 3</span>
-                                        <span className="text-xs font-black text-slate-900">Le Cash (Vente & Closing)</span>
+                                        <span className="text-xs font-black text-slate-900">Systèmes & Croissance</span>
                                     </div>
                                     <ul className="text-xs text-slate-600 space-y-1 list-disc pl-4">
-                                        <li><strong>J11-J12</strong> : Scripts de vente & Traitement des objections.</li>
-                                        <li><strong>J13-J14</strong> : Négociation & Contrats.</li>
-                                        <li><strong>J15</strong> : Facturation & Onboarding client.</li>
+                                        <li><strong>J11</strong> : Onboarding & "Effet Wow" client.</li>
+                                        <li><strong>J12</strong> : Stratégie d'Ambassadeurs (Témoignages).</li>
+                                        <li><strong>J13</strong> : Automatisation & Délégation.</li>
+                                        <li><strong>J14</strong> : Plan d'action à 90 jours.</li>
                                     </ul>
                                 </div>
                             </div>
