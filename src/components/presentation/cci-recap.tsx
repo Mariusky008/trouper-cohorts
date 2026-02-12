@@ -487,8 +487,17 @@ export function CCIRecapViewer() {
                         <p className="text-xl font-bold">contact@popey.academy</p>
                     </div>
                     <div>
-                        <p className="text-xs text-blue-300 uppercase font-bold tracking-widest mb-1">Site Web</p>
-                        <p className="text-xl font-bold">www.popey.academy</p>
+                        <p className="text-xs text-blue-300 uppercase font-bold tracking-widest mb-3">Sites Web & Accès</p>
+                        <div className="space-y-4">
+                            <div className="bg-white/10 p-4 rounded-xl border border-white/20">
+                                <p className="text-[10px] text-blue-200 uppercase font-bold mb-1">Portail Entrepreneurs</p>
+                                <p className="text-lg font-bold font-mono">www.popey.academy/entrepreneurs</p>
+                            </div>
+                            <div className="bg-white/10 p-4 rounded-xl border border-white/20">
+                                <p className="text-[10px] text-blue-200 uppercase font-bold mb-1">Portail Demandeurs d'Emploi</p>
+                                <p className="text-lg font-bold font-mono">www.popey.academy/emploi</p>
+                            </div>
+                        </div>
                     </div>
                     <div>
                         <p className="text-xs text-blue-300 uppercase font-bold tracking-widest mb-1">Téléphone</p>
