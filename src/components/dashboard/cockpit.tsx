@@ -12,6 +12,8 @@ import { GoldenTicket } from "@/components/dashboard/golden-ticket";
 import { MissionValidator } from "@/components/dashboard/mission-validator";
 import { BuddyHistory } from "./buddy-history";
 
+import { AICoachWidget } from "@/components/dashboard/ai-coach-widget";
+
 interface CockpitProps {
     user: any;
     cohort: any;
@@ -284,6 +286,14 @@ export function CockpitDashboard({
 
                 {/* Historique Binômes */}
                 <BuddyHistory history={buddyHistory} currentUserId={user.id} />
+                
+                {/* COACH IA POPEY */}
+                <AICoachWidget 
+                    dayContext={{
+                        day: `Jour ${dayIndex}`,
+                        mission: mission?.title || "Repos"
+                    }} 
+                />
 
                 {/* Aide / Support */}
                 <Card>
