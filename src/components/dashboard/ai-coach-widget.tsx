@@ -19,7 +19,7 @@ export function AICoachWidget({ dayContext }: AICoachWidgetProps) {
   const [isOpen, setIsOpen] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   
-  const { messages, input, handleInputChange, handleSubmit, isLoading, error } = useChat({
+  const { messages, input, handleInputChange, handleSubmit, isLoading, error, setInput } = useChat({
     // @ts-ignore
     api: "/api/ai/coach",
     body: {
@@ -35,6 +35,18 @@ export function AICoachWidget({ dayContext }: AICoachWidgetProps) {
 
   // Secure input to prevent undefined trim error
   const safeInput = input || "";
+
+  // Manuel input handler to fix binding issues
+  const handleLocalInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // Si setInput existe (nouvelle version SDK), on l'utilise
+    if (typeof setInput === 'function') {
+        setInput(e.target.value);
+    } 
+    // Sinon on fallback sur le handler standard
+    else if (typeof handleInputChange === 'function') {
+        handleInputChange(e);
+    }
+  };
 
   // Auto-scroll to bottom
   useEffect(() => {
@@ -126,7 +138,7 @@ export function AICoachWidget({ dayContext }: AICoachWidgetProps) {
             <form onSubmit={handleSubmit} className="flex gap-2">
                 <Input 
                     value={safeInput} 
-                    onChange={handleInputChange} 
+                    onChange={handleLocalInputChange} 
                     placeholder="Pose ta question ou colle ton texte..." 
                     className="bg-slate-950 border-slate-800 text-slate-200 focus-visible:ring-orange-500"
                 />
