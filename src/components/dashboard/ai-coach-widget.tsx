@@ -25,6 +25,9 @@ export function AICoachWidget({ dayContext }: AICoachWidgetProps) {
     body: {
       context: dayContext,
     },
+    onError: (err) => {
+        console.error("AI Coach Error:", err);
+    }
   }) as any;
 
   // Auto-scroll to bottom
