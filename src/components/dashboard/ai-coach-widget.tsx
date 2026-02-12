@@ -19,7 +19,7 @@ export function AICoachWidget({ dayContext }: AICoachWidgetProps) {
   const [isOpen, setIsOpen] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   
-  const { messages, input, handleInputChange, handleSubmit, isLoading } = useChat({
+  const { messages, input, handleInputChange, handleSubmit, isLoading, error } = useChat({
     // @ts-ignore
     api: "/api/ai/coach",
     body: {
@@ -95,6 +95,14 @@ export function AICoachWidget({ dayContext }: AICoachWidgetProps) {
                         </div>
                     </div>
                 ))}
+                
+                {/* Error Message */}
+                {error && (
+                    <div className="bg-red-900/50 border border-red-500/50 p-3 rounded-lg text-xs text-red-200">
+                        <p className="font-bold mb-1">Erreur de connexion :</p>
+                        <p>{error.message || "Une erreur inconnue est survenue."}</p>
+                    </div>
+                )}
                 
                 {isLoading && (
                     <div className="flex gap-3">
