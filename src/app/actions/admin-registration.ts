@@ -21,22 +21,23 @@ export async function validateRegistration(registrationId: string) {
     return { error: "Inscription introuvable." };
   }
 
-  const { email, trade, department_code, first_name, last_name, selected_session_date } = registration;
+  const { email, trade, department_code, first_name, last_name, selected_session_date, program_type } = registration;
 
   if (!department_code) {
     return { error: "Département manquant pour l'assignation." };
   }
 
   // 2. LOGIQUE D'ASSIGNATION INTELLIGENTE
-  // On groupe par : Session (Date) + Département
-  // Ex: "session-mars-2026-40"
+  // On groupe par : Session (Date) + Département + Type de Programme
+  // Ex: "session-mars-2026-40-job_seeker"
   
   // Nettoyage de la date pour le slug (ex: "10 au 24 Mars" -> "10-au-24-mars")
   const sessionSlugPart = selected_session_date 
     ? selected_session_date.toLowerCase().replace(/[^a-z0-9]+/g, '-') 
     : 'sans-date';
     
-  const slug = `session-${sessionSlugPart}-${department_code}`;
+  const programSlug = program_type || 'entrepreneur';
+  const slug = `session-${sessionSlugPart}-${department_code}-${programSlug}`;
   
   let cohortId = null;
 
@@ -53,7 +54,8 @@ export async function validateRegistration(registrationId: string) {
     cohortTitle = existingCohort.title;
   } else {
     // 3. Créer la cohorte si elle n'existe pas
-    cohortTitle = `Cohorte ${department_code} - ${selected_session_date || 'Date indéfinie'}`;
+    const programLabel = programSlug === 'job_seeker' ? 'Emploi' : 'Entrepreneur';
+    cohortTitle = `Cohorte ${programLabel} ${department_code} - ${selected_session_date || 'Date indéfinie'}`;
     
     // Date de début approximative (on essaie de parser ou on met aujourd'hui + 1 mois)
     const startDate = new Date();
@@ -65,6 +67,7 @@ export async function validateRegistration(registrationId: string) {
         slug,
         title: cohortTitle,
         trade: "Mixte", // Cohorte multi-métiers
+        program_type: programSlug, // Important : on définit le type de programme
         status: "forming",
         start_date: startDate.toISOString().split('T')[0],
       })

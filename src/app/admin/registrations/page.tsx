@@ -68,6 +68,7 @@ export default async function AdminRegistrationsPage() {
           <TableHeader>
             <TableRow>
               <TableHead>Identité</TableHead>
+              <TableHead>Programme</TableHead>
               <TableHead>Email</TableHead>
               <TableHead>Téléphone</TableHead>
               <TableHead>Session</TableHead>
@@ -82,6 +83,11 @@ export default async function AdminRegistrationsPage() {
               <TableRow key={reg.id}>
                 <TableCell className="font-bold">
                     {reg.first_name} {reg.last_name}
+                </TableCell>
+                <TableCell>
+                    <Badge className={reg.program_type === 'job_seeker' ? 'bg-orange-100 text-orange-800 hover:bg-orange-200 border-orange-200' : 'bg-blue-100 text-blue-800 hover:bg-blue-200 border-blue-200'}>
+                        {reg.program_type === 'job_seeker' ? 'Emploi' : 'Entrepreneur'}
+                    </Badge>
                 </TableCell>
                 <TableCell className="font-medium text-xs">{reg.email}</TableCell>
                 <TableCell className="whitespace-nowrap">{reg.phone || "—"}</TableCell>
