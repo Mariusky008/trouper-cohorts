@@ -317,7 +317,7 @@ export function CCIRecapViewer() {
                                 <div>
                                     <div className="flex items-center justify-between mb-1">
                                         <span className="text-[10px] font-bold uppercase text-orange-500 tracking-wider">Semaine 1</span>
-                                        <span className="text-xs font-black text-slate-900">Offre & Branding</span>
+                                        <span className="text-xs font-black text-slate-900">Le Produit (Offre & Branding)</span>
                                     </div>
                                     <ul className="text-xs text-slate-600 space-y-1 list-disc pl-4">
                                         <li><strong>J1-J2</strong> : Créer une Offre Irrésistible (Packagée).</li>
@@ -328,7 +328,7 @@ export function CCIRecapViewer() {
                                 <div>
                                     <div className="flex items-center justify-between mb-1">
                                         <span className="text-[10px] font-bold uppercase text-orange-500 tracking-wider">Semaine 2</span>
-                                        <span className="text-xs font-black text-slate-900">Acquisition & Leads</span>
+                                        <span className="text-xs font-black text-slate-900">Les Prospects (Acquisition)</span>
                                     </div>
                                     <ul className="text-xs text-slate-600 space-y-1 list-disc pl-4">
                                         <li><strong>J6-J8</strong> : Campagne de Cold Outreach (Email/DM).</li>
@@ -339,7 +339,7 @@ export function CCIRecapViewer() {
                                 <div>
                                     <div className="flex items-center justify-between mb-1">
                                         <span className="text-[10px] font-bold uppercase text-orange-500 tracking-wider">Semaine 3</span>
-                                        <span className="text-xs font-black text-slate-900">Vente & Cash</span>
+                                        <span className="text-xs font-black text-slate-900">Le Cash (Vente & Closing)</span>
                                     </div>
                                     <ul className="text-xs text-slate-600 space-y-1 list-disc pl-4">
                                         <li><strong>J11-J12</strong> : Scripts de vente & Traitement des objections.</li>
