@@ -59,6 +59,34 @@ export async function seedJobSeekerProgram() {
         ];
       }
 
+      // OVERRIDE J3 with V2 Content
+      if (i === 2) {
+        missionData.title = "LES POSSIBLES";
+        missionData.description = "Transformer mes forces en opportunités.";
+        missionData.steps = [
+            { category: "act1", title: "CONSCIENCE : Du Talent à l'Utilité (30 min)", content: "Le but : Comprendre que la valeur = utilité perçue.\n\nL’IA pose les questions :\n- Mes 3 forces identifiées sont :\n- Qui pourrait avoir besoin de ces forces ?\n- Quel problème concret ces forces peuvent-elles résoudre ?\n- Dans quel environnement ces forces seraient-elles utiles ?\n\nQuestion clé : Est-ce que je parle de moi… ou d’un besoin réel ?", position: 1 },
+            { category: "act2", title: "STRUCTURE : Matching Force / Besoin (40 min)", content: "Le but : Structurer le lien entre compétence et marché.\n\nRemplir le tableau obligatoire :\nForce | Problème résolu | Type d’entreprise | Poste possible\nEx : Organisation → Désorganisation interne → PME locale → Assistant administratif\n\nL’IA demande : Laquelle de ces correspondances est la plus réaliste dans ta ville ?", position: 2 },
+            { category: "act3", title: "RECHERCHE : Marché Réel (50 min)", content: "Le but : Confronter l’idée au réel.\n\nMission obligatoire :\n1. Trouver 5 offres d’emploi réelles correspondant à au moins 1 correspondance.\n2. Copier les compétences demandées.\n3. Identifier : Compétences communes / Compétences manquantes / Niveau d’expérience.\n\nL’IA aide à analyser : Quels mots reviennent le plus souvent ?", position: 3 },
+            { category: "act4", title: "OUTIL : Miroir IA Réalisme (20 min)", content: "Le but : Objectiver la faisabilité.\n\nPrompt :\n\"Voici mes forces, mes correspondances marché et l’analyse des 5 offres. Classe les opportunités en : Immédiatement accessibles / Accessibles avec adaptation courte / Nécessitant formation longue. Justifie objectivement.\"\n\nL’IA génère : Classement clair + 3 pistes réalistes.", position: 4 },
+            { category: "act5", title: "ACTION : Contact Réel (1h)", content: "Le but : Vérifier un besoin réel.\n\nContacter 1 entreprise locale (Appel, Email, LinkedIn).\nScript simple :\n\"Bonjour, je m’intéresse à [métier]. J’aimerais comprendre quelles compétences sont réellement importantes aujourd’hui dans votre secteur. Auriez-vous 3 minutes ?\"\n\nObjectif : Ne pas demander un emploi. Demander une information.", position: 5 },
+            { category: "act6", title: "INTÉGRATION : Réalité vs Imagination (30 min)", content: "Questions IA :\n- Quelle piste est confirmée par le marché ?\n- Quelle piste était une illusion ?\n- Quelle compétence dois-je renforcer ?\n- Quelle est ma piste prioritaire ?\n\nLivrables :\n- 5 offres analysées\n- 3 pistes réalistes classées\n- 1 contact entreprise effectué\n- 1 priorité définie", position: 6 }
+        ];
+      }
+
+      // OVERRIDE J4 with V2 Content
+      if (i === 3) {
+        missionData.title = "LE CHOIX";
+        missionData.description = "De l’hésitation à l’engagement.";
+        missionData.steps = [
+            { category: "act1", title: "CONSCIENCE : Freins au Choix (30 min)", content: "Le but : Identifier les freins invisibles.\n\nQuestions IA :\n- Qu’est-ce qui me retient de choisir ?\n- Ai-je peur de me tromper ?\n- Est-ce que je cherche la certitude parfaite ?\n\nQuestion clé : Si je devais choisir aujourd’hui sans garantie, laquelle me ferait le moins regretter ?", position: 1 },
+            { category: "act2", title: "STRUCTURE : Matrice Décision (45 min)", content: "Le but : Rendre le choix rationnel et visible.\n\nMatrice à 3 critères (Noter sur 10) :\nPiste | Attractivité (plaisir) | Faisabilité court terme | Potentiel revenus | Total\n\nRègle : Notation honnête basée sur les données du J3.\nL’IA demande : Si tu regardes uniquement les chiffres, quelle piste arrive en tête ?", position: 2 },
+            { category: "act3", title: "BINÔME : Cohérence Énergétique (35 min)", content: "Le but : Feedback sur l'émotion.\n\nChaque participant explique ses notes.\nLe binôme observe :\n- Sur quelle piste as-tu le plus d’énergie ?\n- Où sembles-tu hésiter ?\n- Quelle piste paraît la plus alignée avec ta personnalité ?\n\nLe binôme doit choisir une piste pour la personne et justifier.", position: 3 },
+            { category: "act4", title: "OUTIL : Miroir IA Objectivation (20 min)", content: "Le but : Trancher.\n\nPrompt :\n\"Voici ma matrice décision et le retour du binôme. Identifie la piste rationnellement prioritaire, la piste émotionnellement alignée, le risque principal et l’action la plus simple pour tester la piste n°1 sous 7 jours.\"\n\nL’IA génère : Classement clair + Argumentation logique.", position: 4 },
+            { category: "act5", title: "ACTION : Engagement Immédiat (1h10)", content: "Le but : Engager le mouvement.\n\nMission obligatoire :\n1. Choisir 2 pistes prioritaires maximum.\n2. Définir pour chacune : 1 action sous 72h / 1 action sous 7 jours (Ex: Envoyer 3 candidatures, Contacter un pro).\n3. Écrire publiquement dans le groupe : \"Je m’engage à…\"", position: 5 },
+            { category: "act6", title: "INTÉGRATION : Assumer la Direction (30 min)", content: "Questions IA finales :\n- Si je ne change rien, que se passe-t-il ?\n- Est-ce que j’accepte que choisir = avancer ?\n\nPhrase à compléter : Je choisis cette direction parce que…\n\nLivrables :\n- Matrice décision complète\n- 2 axes prioritaires validés\n- Plan d’action 7 jours\n- Engagement écrit", position: 6 }
+        ];
+      }
+
       newMissions.push(missionData);
     }
 
