@@ -37,7 +37,7 @@ export function CCIRecapViewer() {
                         <h1 className="text-6xl font-black text-slate-900 mb-6 leading-[1.1] uppercase tracking-tight">
                             Le Dispositif<br/>
                             <span className="text-blue-600">Accélération</span><br/>
-                            30 Jours
+                            15 ou 30 Jours
                         </h1>
 
                         <p className="text-2xl text-slate-500 font-light max-w-lg leading-relaxed">
@@ -78,53 +78,71 @@ export function CCIRecapViewer() {
 
                 <div className="flex-1 flex flex-col justify-center relative">
                     {/* The Bridge Visualization */}
-                    <div className="flex items-center justify-between relative z-10">
+                    <div className="flex items-center justify-between relative z-10 h-[500px]">
                         {/* Phase 1 */}
-                        <div className="w-[45%] bg-slate-50 border border-slate-200 rounded-2xl p-8 relative group hover:border-blue-300 transition-colors h-[420px] flex flex-col">
+                        <div className="w-[45%] bg-slate-50 border border-slate-200 rounded-2xl p-8 relative group hover:border-blue-300 transition-colors h-full flex flex-col">
                             <div className="absolute -top-4 left-8 bg-blue-100 text-blue-800 px-3 py-1 text-xs font-bold uppercase rounded-full">Phase 1 • 15 Jours</div>
                             <h3 className="text-2xl font-black text-slate-900 mb-2 uppercase italic">Le Réveil</h3>
                             <p className="text-sm font-bold text-blue-600 mb-4 uppercase tracking-wider">Reconversion & Clarté</p>
-                            <p className="text-slate-600 text-sm leading-relaxed mb-6 flex-1">
-                                <strong>Pour qui ?</strong> Chômeurs en quête de sens.<br/>
-                                <strong>Le problème :</strong> 80% des chercheurs d'emploi sont perdus après une rupture.<br/>
-                                <strong>La solution :</strong> Un électrochoc bienveillant. On ne cherche pas un "job", on construit un projet de vie aligné avec ses talents naturels.
-                            </p>
-                            <div className="bg-blue-50 p-4 rounded-xl border border-blue-100 mb-4">
+                            
+                            <div className="flex-1 space-y-4">
+                                <div className="bg-white p-4 rounded-lg border border-slate-100 shadow-sm">
+                                    <p className="text-xs font-bold text-slate-400 uppercase mb-1">Pour qui ?</p>
+                                    <p className="text-sm text-slate-700 font-medium">Demandeurs d'emploi en quête de sens.</p>
+                                </div>
+                                
+                                <div>
+                                    <p className="text-xs font-bold text-slate-400 uppercase mb-1">Le Problème</p>
+                                    <p className="text-sm text-slate-600 leading-snug">80% des chercheurs d'emploi sont perdus après une rupture pro. Le bilan de compétences classique est trop lent.</p>
+                                </div>
+
+                                <div>
+                                    <p className="text-xs font-bold text-slate-400 uppercase mb-1">La Solution</p>
+                                    <p className="text-sm text-slate-600 leading-snug">Un électrochoc bienveillant pour construire un projet de vie aligné avec ses talents naturels.</p>
+                                </div>
+                            </div>
+
+                            <div className="bg-blue-50 p-4 rounded-xl border border-blue-100 mt-6">
                                 <p className="text-xs font-bold text-blue-800 uppercase mb-1">Résultat J+15</p>
                                 <p className="text-sm font-bold text-slate-900">Un dossier "Projet Pro" validé et pitché.</p>
                             </div>
-                            <ul className="space-y-2">
-                                <li className="flex items-center gap-2 text-sm text-slate-700"><CheckCircle2 className="h-4 w-4 text-blue-500"/> Confiance retrouvée</li>
-                                <li className="flex items-center gap-2 text-sm text-slate-700"><CheckCircle2 className="h-4 w-4 text-blue-500"/> Soft Skills identifiés</li>
-                            </ul>
                         </div>
 
                         {/* Arrow */}
                         <div className="flex-1 flex flex-col items-center justify-center px-4 relative z-20">
-                            <div className="bg-white border border-slate-200 text-slate-500 text-[10px] font-bold px-2 py-1 rounded mb-2 uppercase shadow-sm">Optionnel</div>
+                            <div className="bg-white border border-slate-200 text-slate-500 text-[10px] font-bold px-3 py-1.5 rounded-full mb-2 uppercase shadow-sm tracking-wider">Optionnel</div>
                             <ArrowRight className="h-8 w-8 text-slate-300" />
                         </div>
 
                         {/* Phase 2 */}
-                        <div className="w-[45%] bg-slate-900 text-white rounded-2xl p-8 relative group shadow-2xl h-[420px] flex flex-col border-2 border-orange-500/30">
+                        <div className="w-[45%] bg-slate-900 text-white rounded-2xl p-8 relative group shadow-2xl h-full flex flex-col border-2 border-orange-500/30">
                             <div className="absolute -top-4 left-8 bg-orange-500 text-white px-3 py-1 text-xs font-bold uppercase rounded-full">Phase 2 • 15 Jours</div>
-                            <div className="absolute -top-4 right-8 bg-green-500 text-white px-3 py-1 text-xs font-bold uppercase rounded-full animate-pulse">Accès Direct Possible</div>
+                            <div className="absolute -top-5 -right-2 bg-green-500 text-white px-3 py-1 text-xs font-bold uppercase rounded-full animate-pulse shadow-lg transform rotate-2">Accès Direct Possible</div>
                             
                             <h3 className="text-2xl font-black text-white mb-2 uppercase italic">L'Attaque</h3>
                             <p className="text-sm font-bold text-orange-400 mb-4 uppercase tracking-wider">Entrepreneuriat & Vente</p>
-                            <p className="text-slate-300 text-sm leading-relaxed mb-6 flex-1">
-                                <strong>Pour qui ?</strong> Entrepreneurs prêts à décoller.<br/>
-                                <strong>Le problème :</strong> Trop de théorie, pas assez de vente.<br/>
-                                <strong>La solution :</strong> Action massive. Marketing digital, Réseaux sociaux, Inbound/Outbound pour générer des leads en 15 jours.
-                            </p>
-                            <div className="bg-orange-500/20 p-4 rounded-xl border border-orange-500/50 mb-4">
+                            
+                            <div className="flex-1 space-y-4">
+                                <div className="bg-slate-800 p-4 rounded-lg border border-slate-700">
+                                    <p className="text-xs font-bold text-slate-400 uppercase mb-1">Pour qui ?</p>
+                                    <p className="text-sm text-slate-200 font-medium">Porteurs de projet & Entrepreneurs.</p>
+                                </div>
+                                
+                                <div>
+                                    <p className="text-xs font-bold text-slate-400 uppercase mb-1">Le Problème</p>
+                                    <p className="text-sm text-slate-300 leading-snug">Trop de théorie, pas assez de vente. Le Business Plan ne fait pas manger.</p>
+                                </div>
+
+                                <div>
+                                    <p className="text-xs font-bold text-slate-400 uppercase mb-1">La Solution</p>
+                                    <p className="text-sm text-slate-300 leading-snug">Action massive. Marketing digital, Réseaux sociaux, Inbound/Outbound pour générer des leads.</p>
+                                </div>
+                            </div>
+
+                            <div className="bg-orange-500/20 p-4 rounded-xl border border-orange-500/50 mt-6">
                                 <p className="text-xs font-bold text-orange-300 uppercase mb-1">Résultat J+30</p>
                                 <p className="text-sm font-bold text-white">Première facture envoyée ou devis signé.</p>
                             </div>
-                            <ul className="space-y-2">
-                                <li className="flex items-center gap-2 text-sm text-slate-300"><CheckCircle2 className="h-4 w-4 text-orange-500"/> Offre & Marketing</li>
-                                <li className="flex items-center gap-2 text-sm text-slate-300"><CheckCircle2 className="h-4 w-4 text-orange-500"/> Clients & Facturation</li>
-                            </ul>
                         </div>
                     </div>
 
@@ -135,7 +153,7 @@ export function CCIRecapViewer() {
                 <div className="bg-orange-50 border-l-4 border-orange-500 p-6 mt-12">
                     <h4 className="font-bold text-orange-900 uppercase mb-2">La Promesse Unifiée</h4>
                     <p className="text-slate-700">
-                        Un apprenant peut commencer de <strong className="text-orange-600">zéro</strong> (sans idée, sans confiance) et finir <strong className="text-orange-600">30 jours plus tard</strong> avec une entreprise immatriculée et ses premiers clients. C'est le pont le plus rapide vers l'autonomie financière.
+                        Un apprenant peut commencer de <strong className="text-orange-600">zéro</strong> et finir <strong className="text-orange-600">30 jours plus tard</strong> avec une entreprise. Ou rejoindre directement la Phase 2 pour accélérer.
                     </p>
                 </div>
             </div>
