@@ -458,6 +458,68 @@ export function LandingEmploi() {
              </div>
         </section>
 
+                {/* 3e. LE COACH IA (NOUVEAU) */}
+        <section className="py-24 bg-slate-900 text-white relative overflow-hidden">
+             <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-blue-900/40 via-slate-900 to-slate-900 z-0" />
+             
+             <div className="container mx-auto px-4 max-w-5xl relative z-10">
+                <div className="grid md:grid-cols-2 gap-12 items-center">
+                    <div className="space-y-8">
+                        <FadeIn>
+                            <Badge className="bg-blue-600 text-white border-0 mb-4 uppercase tracking-widest">Nouveau</Badge>
+                            <h2 className="text-4xl font-black uppercase italic mb-6">
+                                L'IA Comme Boussole Intelligente
+                            </h2>
+                            <p className="text-blue-200 text-lg leading-relaxed">
+                                Les chercheurs d'emploi sont souvent dans le brouillard. <br/>
+                                Notre Coach IA (basé sur GPT-4) agit comme un <strong>Psychologue Stratège</strong>.
+                            </p>
+                        </FadeIn>
+                        
+                        <div className="space-y-6">
+                            <FadeIn delay={0.1}>
+                                <div className="flex gap-4">
+                                    <div className="h-10 w-10 rounded-full bg-blue-900/50 border border-blue-500 flex items-center justify-center shrink-0">
+                                        <Sparkles className="h-5 w-5 text-blue-400" />
+                                    </div>
+                                    <div>
+                                        <h4 className="font-bold text-white text-lg">Elle connecte les points</h4>
+                                        <p className="text-sm text-slate-400">"Tu aimes l'écriture (J1) et tu es rigoureux (J3) ? As-tu pensé au Copywriting Technique ?"</p>
+                                    </div>
+                                </div>
+                            </FadeIn>
+                            <FadeIn delay={0.2}>
+                                <div className="flex gap-4">
+                                    <div className="h-10 w-10 rounded-full bg-blue-900/50 border border-blue-500 flex items-center justify-center shrink-0">
+                                        <Target className="h-5 w-5 text-blue-400" />
+                                    </div>
+                                    <div>
+                                        <h4 className="font-bold text-white text-lg">Accoucheur de Projet</h4>
+                                        <p className="text-sm text-slate-400">Un pré-qualificatif énorme pour définir votre cap avant de vous lancer.</p>
+                                    </div>
+                                </div>
+                            </FadeIn>
+                        </div>
+                    </div>
+                    
+                    <FadeIn delay={0.3}>
+                        <div className="bg-slate-800 border border-slate-700 rounded-2xl p-6 shadow-2xl relative">
+                            <div className="absolute -top-3 -right-3 bg-green-500 text-slate-900 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-widest">En ligne</div>
+                            <div className="space-y-4 font-mono text-sm">
+                                <div className="bg-slate-900/50 p-3 rounded-lg rounded-tl-none border border-slate-700 text-slate-300">
+                                    J'ai peur de me lancer car je n'ai pas de diplôme.
+                                </div>
+                                <div className="bg-blue-600/20 p-3 rounded-lg rounded-tr-none border border-blue-500/30 text-blue-100 ml-8">
+                                    <span className="text-blue-400 font-bold block mb-1 text-xs uppercase">Coach Popey</span>
+                                    On s'en fiche du diplôme. Regarde tes exercices du Jours 2 : tu as géré une asso pendant 3 ans. C'est ça ta preuve de compétence. Transformons ça en offre.
+                                </div>
+                            </div>
+                        </div>
+                    </FadeIn>
+                </div>
+             </div>
+        </section>
+
         {/* 4. CTA : CANDIDATURE */}
         <section id="join" className="py-32 bg-slate-900 relative overflow-hidden">
              <div className="absolute top-0 w-full text-white rotate-180 z-10 pointer-events-none">

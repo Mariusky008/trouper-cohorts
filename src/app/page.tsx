@@ -305,6 +305,70 @@ export default function Home() {
             </div>
         </section>
 
+                {/* 3b. LE COACH IA (NOUVEAU) */}
+        <section className="py-24 bg-slate-900 text-white relative overflow-hidden border-t border-slate-800">
+             <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,_var(--tw-gradient-stops))] from-orange-900/20 via-slate-900 to-slate-900 z-0" />
+             
+             <div className="container mx-auto px-4 max-w-5xl relative z-10">
+                <div className="grid md:grid-cols-2 gap-12 items-center">
+                    <div className="space-y-8 order-2 md:order-1">
+                        <FadeIn>
+                             <div className="bg-slate-800 border border-slate-700 rounded-2xl p-6 shadow-2xl relative">
+                                <div className="absolute -top-3 -right-3 bg-orange-500 text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-widest">En ligne</div>
+                                <div className="space-y-4 font-mono text-sm">
+                                    <div className="bg-slate-900/50 p-3 rounded-lg rounded-tl-none border border-slate-700 text-slate-300">
+                                        Je ne sais pas comment tourner mon post LinkedIn...
+                                    </div>
+                                    <div className="bg-orange-600/20 p-3 rounded-lg rounded-tr-none border border-orange-500/30 text-orange-100 ml-8">
+                                        <span className="text-orange-400 font-bold block mb-1 text-xs uppercase">Coach Popey</span>
+                                        Ton accroche est trop molle. Utilise la méthode AIDA. <br/>Voici 3 propositions plus percutantes :<br/>1. "J'ai failli tout arrêter..."<br/>2. "Pourquoi vos clients vous fuient..."
+                                    </div>
+                                </div>
+                            </div>
+                        </FadeIn>
+                    </div>
+
+                    <div className="space-y-8 order-1 md:order-2">
+                        <FadeIn>
+                            <Badge className="bg-orange-600 text-white border-0 mb-4 uppercase tracking-widest">Nouveau</Badge>
+                            <h2 className="text-4xl font-black uppercase italic mb-6">
+                                L'IA Comme Second de Bord
+                            </h2>
+                            <p className="text-slate-300 text-lg leading-relaxed">
+                                Vous savez ce que vous vendez. Le problème, c'est la forme et l'impact. <br/>
+                                Notre Coach IA agit comme un <strong>Directeur Artistique & Sales Coach</strong>.
+                            </p>
+                        </FadeIn>
+                        
+                        <div className="space-y-6">
+                            <FadeIn delay={0.1}>
+                                <div className="flex gap-4">
+                                    <div className="h-10 w-10 rounded-full bg-orange-900/20 border border-orange-500 flex items-center justify-center shrink-0">
+                                        <Sparkles className="h-5 w-5 text-orange-400" />
+                                    </div>
+                                    <div>
+                                        <h4 className="font-bold text-white text-lg">Correcteur Impitoyable</h4>
+                                        <p className="text-sm text-slate-400">Soumettez votre "Preuve du jour" avant de publier. L'IA augmente la qualité de vos livrables instantanément.</p>
+                                    </div>
+                                </div>
+                            </FadeIn>
+                            <FadeIn delay={0.2}>
+                                <div className="flex gap-4">
+                                    <div className="h-10 w-10 rounded-full bg-orange-900/20 border border-orange-500 flex items-center justify-center shrink-0">
+                                        <Target className="h-5 w-5 text-orange-400" />
+                                    </div>
+                                    <div>
+                                        <h4 className="font-bold text-white text-lg">Exécution & Optimisation</h4>
+                                        <p className="text-sm text-slate-400">Arrêtez de douter. L'IA valide la forme, le Groupe valide le fond.</p>
+                                    </div>
+                                </div>
+                            </FadeIn>
+                        </div>
+                    </div>
+                </div>
+             </div>
+        </section>
+
         {/* 4. LE GROUPE & GARANTIE (Contenu V6 / Design V7) */}
         <section className="py-24 bg-blue-950 text-white relative">
             <div className="container mx-auto px-4 max-w-5xl space-y-20">
