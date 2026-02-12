@@ -191,6 +191,20 @@ export async function seedJobSeekerProgram() {
         ];
       }
 
+      // OVERRIDE J11 with V2 Content
+      if (i === 10) { // Calendar Day 15 (Start of Week 3)
+        missionData.title = "L’IDENTITÉ ASSUMÉE";
+        missionData.description = "Je suis la bonne personne.";
+        missionData.steps = [
+            { category: "act1", title: "CONSCIENCE : Doute vs Légitimité (30 min)", content: "Le but : Identifier les doutes restants.\n\nQuestions IA :\n- Est-ce que je me sens légitime ?\n- Ai-je peur d’être \"démasqué\" ?\n- Si je devais me noter en assurance sur 10 ?\n\nQuestion clé : Est-ce que je confonds compétence et perfection ?", position: 1 },
+            { category: "act2", title: "STRUCTURE : Pitch Assumé (45 min)", content: "Le but : Construire une présentation stable.\n\nStructure :\nQui je suis aujourd’hui / Ma valeur / Ma cible / Mon offre / Mon objectif.\n\nL’IA reformule pour : Fluidité, Cohérence, Simplicité. On élimine les excuses.", position: 2 },
+            { category: "act3", title: "SIMULATION : Entretien #1 (35 min)", content: "Le but : Test à froid.\n\nLe binôme joue le recruteur (5 questions classiques : Parlez-moi de vous, Pourquoi vous, Faiblesses...).\nLe participant répond sans lecture.\n\nLivrable : Grille d’évaluation (Fluidité, Assurance, Cohérence).", position: 3 },
+            { category: "act4", title: "OUTIL : Miroir IA Analyse (20 min)", content: "Le but : Ajustement précis.\n\nPrompt :\n\"Voici mes réponses et le feedback. Identifie les points forts et les incohérences. Reformule mes réponses de manière plus pro.\"\n\nL’IA génère : Réponses optimisées + 3 axes d’amélioration.", position: 4 },
+            { category: "act5", title: "SIMULATION : Entretien #2 (1h10)", content: "Le but : Comparer la progression.\n\nLe participant refait une simulation complète.\nGrille comparative : Passage 1 vs Passage 2 sur Clarté/Assurance/Impact.\n\nLivrable : Comparatif progression.", position: 5 },
+            { category: "act6", title: "INTÉGRATION : Posture Stabilisée (30 min)", content: "Questions IA :\n- Est-ce que je me sens plus stable ?\n- Si un entretien avait lieu demain, serais-je prêt ?\n\nPhrase : Je suis la bonne personne parce que…\n\nLivrables :\n- Pitch final assumé\n- Réponses entretien maîtrisées\n- Confiance mesurée", position: 6 }
+        ];
+      }
+
       newMissions.push(missionData);
     }
 
