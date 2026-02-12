@@ -491,7 +491,7 @@ export function CCIRecapViewer() {
                         <div className="space-y-4">
                             <div className="bg-white/10 p-4 rounded-xl border border-white/20">
                                 <p className="text-[10px] text-blue-200 uppercase font-bold mb-1">Portail Entrepreneurs</p>
-                                <p className="text-lg font-bold font-mono">www.popey.academy/entrepreneurs</p>
+                                <p className="text-lg font-bold font-mono">www.popey.academy</p>
                             </div>
                             <div className="bg-white/10 p-4 rounded-xl border border-white/20">
                                 <p className="text-[10px] text-blue-200 uppercase font-bold mb-1">Portail Demandeurs d'Emploi</p>
