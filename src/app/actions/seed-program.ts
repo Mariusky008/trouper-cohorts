@@ -205,6 +205,20 @@ export async function seedJobSeekerProgram() {
         ];
       }
 
+      // OVERRIDE J12 with V2 Content
+      if (i === 11) { // Calendar Day 16
+        missionData.title = "LA STRUCTURATION DIGITALE";
+        missionData.description = "La machine travaille pour moi.";
+        missionData.steps = [
+            { category: "act1", title: "CONSCIENCE : Le Chaos Invisible (30 min)", content: "Le but : Identifier le désordre.\n\nQuestions IA :\n- Où je perds du temps ?\n- Est-ce que je relance systématiquement ?\n- Est-ce que je travaille par impulsion ou système ?\n\nQuestion clé : Est-ce que je compte sur ma mémoire ou sur une organisation ?", position: 1 },
+            { category: "act2", title: "STRUCTURE : Outil Central (45 min)", content: "Le but : Créer un tableau de suivi.\n\nOutil : Excel/Sheets/Notion.\nColonnes : Date / Entreprise / Poste / Contact / Statut / Relance / Résultat.\nRègle : Chaque action doit être traçable.\n\nLivrable : Tableau créé.", position: 2 },
+            { category: "act3", title: "STRUCTURE : CV & Profil (35 min)", content: "Le but : Aligner les outils.\n\nExercice :\n1. Adapter le titre au positionnement J6.\n2. Supprimer les éléments non alignés.\n3. Mettre en avant les compétences clés.\n\nL’IA reformule pour : Résultat, Quantification, Clarté.", position: 3 },
+            { category: "act4", title: "AUTOMATISATION (20 min)", content: "Le but : Système minimal.\n\nActions : Alertes emploi, Rappels relance, Modèles messages.\nL'IA aide à créer : Modèle candidature, Modèle relance, Modèle demande RDV.\n\nLivrable : 3 modèles prêts.", position: 4 },
+            { category: "act5", title: "ACTION : Activer le Système (1h10)", content: "Le but : Action réelle.\n\nMission :\n1. Entrer 3 candidatures dans le tableau.\n2. Programmer 1 relance.\n3. Envoyer 1 candidature via le système.\n\nLivrable : Tableau actif + Preuve envoi.", position: 5 },
+            { category: "act6", title: "INTÉGRATION : Mode Professionnel (30 min)", content: "Questions IA :\n- Est-ce que je me sens plus structuré ?\n- Est-ce que je comprends que régularité > motivation ?\n\nPhrase : Ma recherche fonctionne maintenant comme un système parce que…\n\nLivrables :\n- Tableau actif\n- CV optimisé\n- 3 modèles messages\n- 1 candidature envoyée", position: 6 }
+        ];
+      }
+
       newMissions.push(missionData);
     }
 
