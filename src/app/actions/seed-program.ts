@@ -45,6 +45,20 @@ export async function seedJobSeekerProgram() {
         ];
       }
 
+      // OVERRIDE J2 with V2 Content (100% IA)
+      if (i === 1) {
+        missionData.title = "LE MIROIR";
+        missionData.description = "Retrouver sa valeur (Version 100% IA).";
+        missionData.steps = [
+            { category: "act1", title: "CONSCIENCE : Image Interne (30 min)", content: "Le but : Clarifier comment je me perçois professionnellement.\n\nRépondre dans un document :\n- Je me décris en 5 adjectifs professionnels.\n- Ma compétence principale est…\n- Mon principal point faible est…\n- Ce que j’ai peur que l’on remarque chez moi…\n- Ce que j’aimerais que l’on voie en priorité…\n\nL'IA pose une relance : Parmi ces éléments, lesquels sont factuels ? Lesquels sont des jugements ?", position: 1 },
+            { category: "act2", title: "STRUCTURE : Message (30 min)", content: "Le but : Construire un pitch structuré sans justification émotionnelle.\n\nStructure imposée par l’IA :\n1. Qui je suis (factuel, sans émotion)\n2. Ce que je fais bien (preuves concrètes)\n3. Ce que je peux apporter à une entreprise\n4. Ce que je recherche précisément\n\nL’IA bloque si c'est flou, trop long ou s'il y a des excuses. Elle reformule jusqu’à clarté.", position: 2 },
+            { category: "act3", title: "BINÔME : Miroir Humain (45 min)", content: "Le but : Feedback structuré.\n\nChaque participant présente son pitch (3 min).\nLe binôme répond précisément :\n- À quel moment étais-tu convaincant ?\n- À quel moment étais-tu flou ?\n- Quelle compétence semblait solide ?\n- Où as-tu senti un manque d’assurance ?\n\nInterdiction de dire \"C’était bien\". Obligation d’exemples.", position: 3 },
+            { category: "act4", title: "OUTIL : Miroir IA (30 min)", content: "Le but : Analyse croisée.\n\nEntrer le pitch écrit + le feedback du binôme.\nPrompt :\n\"Analyse les différences entre l’image interne et le feedback externe. Identifie les compétences réellement perçues, les incohérences, les points sous-estimés et surévalués. Reformule une version plus crédible.\"\n\nL’IA génère : Version optimisée + Écart perception/réalité + 3 axes d’amélioration.", position: 4 },
+            { category: "act5", title: "ACTION : Ajustement & Test (1h)", content: "Le but : Validation terrain.\n\n1. Modifier son pitch selon recommandations.\n2. Refaire un passage devant binôme (Comparaison V1 vs V2 sur Clarté/Impact/Assurance).\n3. Envoyer le pitch en message vocal à un contact (proche, ex-collègue) avec la question : \"Est-ce que ça te semble crédible ?\"", position: 5 },
+            { category: "act6", title: "INTÉGRATION : Auto-évaluation (30 min)", content: "Auto-évaluation guidée par IA :\n- Ce que je croyais être…\n- Ce que je dégage réellement…\n- Ce que j’ai amélioré aujourd’hui…\n\nLivrables :\n- Pitch professionnel validé\n- Compétences reformulées clairement\n- Écart perception/réalité identifié\n- 1 test réel effectué", position: 6 }
+        ];
+      }
+
       newMissions.push(missionData);
     }
 
