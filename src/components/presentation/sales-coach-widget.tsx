@@ -14,6 +14,13 @@ export function SalesCoachWidget() {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
+  const SUGGESTED_QUESTIONS = [
+      "Quelle est la différence entre les 2 parcours ?",
+      "Comment se passe le financement ?",
+      "Est-ce que je suis sûr d'avoir des résultats ?",
+      "C'est quoi la garantie '1 client ou on continue' ?"
+  ];
+
   // Auto-scroll
   useEffect(() => {
     if (scrollRef.current) {
@@ -21,11 +28,10 @@ export function SalesCoachWidget() {
     }
   }, [messages, isOpen]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!input.trim() || isLoading) return;
+  const sendMessage = async (text: string) => {
+    if (!text.trim() || isLoading) return;
 
-    const userMessage = { id: Date.now().toString(), role: 'user', content: input };
+    const userMessage = { id: Date.now().toString(), role: 'user', content: text };
     setMessages(prev => [...prev, userMessage]);
     setInput("");
     setIsLoading(true);
@@ -69,6 +75,11 @@ export function SalesCoachWidget() {
     }
   };
 
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    sendMessage(input);
+  };
+
   return (
     <>
         {/* Floating Button */}
@@ -79,13 +90,16 @@ export function SalesCoachWidget() {
                     animate={{ scale: 1, opacity: 1 }}
                     exit={{ scale: 0, opacity: 0 }}
                     onClick={() => setIsOpen(true)}
-                    className="fixed bottom-8 right-8 z-50 bg-blue-600 hover:bg-blue-700 text-white rounded-full p-4 shadow-2xl flex items-center gap-3 pr-6 group transition-all print:hidden"
+                    className="fixed bottom-10 right-10 z-50 bg-blue-600 hover:bg-blue-700 text-white rounded-full px-8 py-6 shadow-[0_20px_50px_rgba(0,0,0,0.3)] flex items-center gap-4 group transition-all print:hidden hover:scale-105"
                 >
                     <div className="relative">
-                        <div className="absolute inset-0 bg-white/20 rounded-full animate-ping"></div>
-                        <MessageCircle className="h-6 w-6 relative z-10" />
+                        <div className="absolute inset-0 bg-white/30 rounded-full animate-ping"></div>
+                        <MessageCircle className="h-8 w-8 relative z-10" />
                     </div>
-                    <span className="font-bold text-sm">Une question ? Demandez à Popey</span>
+                    <div className="text-left">
+                        <p className="font-black text-lg leading-none mb-1">Une question ?</p>
+                        <p className="text-sm text-blue-100 font-medium">Demandez à notre IA 24/7</p>
+                    </div>
                 </motion.button>
             )}
         </AnimatePresence>
@@ -97,45 +111,76 @@ export function SalesCoachWidget() {
                     initial={{ opacity: 0, y: 100, scale: 0.9 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 100, scale: 0.9 }}
-                    className="fixed bottom-8 right-8 z-50 w-[400px] h-[600px] bg-white rounded-2xl shadow-2xl border border-slate-200 flex flex-col overflow-hidden print:hidden"
+                    className="fixed bottom-8 right-8 z-50 w-[450px] h-[650px] bg-white rounded-2xl shadow-2xl border border-slate-200 flex flex-col overflow-hidden print:hidden"
                 >
                     {/* Header */}
-                    <div className="bg-blue-900 p-4 flex items-center justify-between text-white shrink-0">
-                        <div className="flex items-center gap-3">
-                            <div className="h-10 w-10 bg-white/10 rounded-full flex items-center justify-center backdrop-blur-sm">
-                                <Bot className="h-6 w-6" />
+                    <div className="bg-blue-900 p-5 flex items-center justify-between text-white shrink-0">
+                        <div className="flex items-center gap-4">
+                            <div className="h-12 w-12 bg-white/10 rounded-full flex items-center justify-center backdrop-blur-sm border border-white/20">
+                                <Bot className="h-7 w-7" />
                             </div>
                             <div>
-                                <h3 className="font-bold">Popey Assistant</h3>
-                                <p className="text-xs text-blue-200">Directeur Pédagogique IA</p>
+                                <h3 className="font-black text-lg">Popey Assistant</h3>
+                                <p className="text-xs text-blue-200 uppercase tracking-wider font-bold">Directeur Pédagogique</p>
                             </div>
                         </div>
-                        <Button variant="ghost" size="icon" onClick={() => setIsOpen(false)} className="text-white hover:bg-white/20 rounded-full">
-                            <X className="h-5 w-5" />
+                        <Button variant="ghost" size="icon" onClick={() => setIsOpen(false)} className="text-white hover:bg-white/20 rounded-full h-10 w-10">
+                            <X className="h-6 w-6" />
                         </Button>
                     </div>
 
                     {/* Messages */}
-                    <ScrollArea className="flex-1 p-4 bg-slate-50" ref={scrollRef}>
-                        <div className="space-y-4">
+                    <ScrollArea className="flex-1 bg-slate-50" ref={scrollRef}>
+                        <div className="p-4 space-y-4 min-h-full">
                             {messages.length === 0 && (
-                                <div className="bg-blue-50 p-4 rounded-xl border border-blue-100 text-sm text-slate-700">
-                                    <p className="font-bold text-blue-800 mb-1">Bonjour ! 👋</p>
-                                    <p>Je connais le dispositif Popey par cœur. Vous avez un doute sur le programme, le financement ou les résultats ? Posez-moi votre question, je vous réponds en toute transparence.</p>
+                                <div className="flex flex-col h-full justify-center items-center py-10 px-4 text-center space-y-8 animate-in fade-in duration-500">
+                                    <div className="relative">
+                                        <div className="absolute inset-0 bg-blue-200 rounded-full animate-ping opacity-20"></div>
+                                        <div className="h-24 w-24 bg-gradient-to-br from-blue-600 to-blue-800 rounded-full flex items-center justify-center shadow-xl relative z-10">
+                                            <Bot className="h-10 w-10 text-white" />
+                                        </div>
+                                        <div className="absolute -bottom-2 -right-2 bg-green-500 h-6 w-6 rounded-full border-4 border-slate-50"></div>
+                                    </div>
+                                    
+                                    <div>
+                                        <h3 className="font-black text-slate-900 text-2xl mb-3">Bonjour ! 👋</h3>
+                                        <p className="text-slate-500 text-sm max-w-[280px] mx-auto leading-relaxed font-medium">
+                                            Je suis l'assistant pédagogique Popey. Je peux répondre à toutes vos questions sur le programme, le financement et les débouchés.
+                                        </p>
+                                    </div>
+
+                                    <div className="w-full space-y-3">
+                                        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Questions suggérées</p>
+                                        <div className="grid gap-2">
+                                            {SUGGESTED_QUESTIONS.map((q, i) => (
+                                                <button 
+                                                    key={i}
+                                                    onClick={() => sendMessage(q)}
+                                                    className="w-full text-left p-4 rounded-xl bg-white border border-slate-200 hover:border-blue-500 hover:shadow-lg hover:-translate-y-0.5 transition-all text-sm font-medium text-slate-700 flex items-center gap-4 group"
+                                                >
+                                                    <span className="bg-blue-50 text-blue-600 h-8 w-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                                                        {i+1}
+                                                    </span>
+                                                    <span className="group-hover:text-blue-700 transition-colors">{q}</span>
+                                                    <Send className="h-4 w-4 text-slate-300 ml-auto opacity-0 group-hover:opacity-100 transition-opacity text-blue-500" />
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
                                 </div>
                             )}
-                            
+
                             {messages.map((m) => (
-                                <div key={m.id} className={`flex gap-3 ${m.role === 'user' ? 'flex-row-reverse' : ''}`}>
-                                    <div className={`h-8 w-8 rounded-full flex items-center justify-center shrink-0 ${
-                                        m.role === 'user' ? 'bg-slate-200' : 'bg-blue-100 text-blue-700'
+                                <div key={m.id} className={`flex gap-3 ${m.role === 'user' ? 'flex-row-reverse' : ''} animate-in slide-in-from-bottom-2 duration-300`}>
+                                    <div className={`h-8 w-8 rounded-full flex items-center justify-center shrink-0 shadow-sm ${
+                                        m.role === 'user' ? 'bg-slate-800 text-white' : 'bg-blue-600 text-white'
                                     }`}>
                                         {m.role === 'user' ? <User className="h-4 w-4" /> : <Bot className="h-4 w-4" />}
                                     </div>
-                                    <div className={`p-3 rounded-2xl text-sm max-w-[85%] ${
+                                    <div className={`p-4 rounded-2xl text-sm max-w-[85%] shadow-sm leading-relaxed ${
                                         m.role === 'user' 
                                         ? 'bg-slate-800 text-white rounded-tr-none' 
-                                        : 'bg-white border border-slate-200 text-slate-700 rounded-tl-none shadow-sm'
+                                        : 'bg-white border border-slate-200 text-slate-700 rounded-tl-none'
                                     }`}>
                                         <p className="whitespace-pre-wrap">{m.content}</p>
                                     </div>
@@ -143,10 +188,15 @@ export function SalesCoachWidget() {
                             ))}
                             
                             {isLoading && (
-                                <div className="flex gap-2 items-center text-slate-400 text-xs ml-11">
-                                    <span className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce"></span>
-                                    <span className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce [animation-delay:0.1s]"></span>
-                                    <span className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce [animation-delay:0.2s]"></span>
+                                <div className="flex gap-3 items-center ml-1">
+                                    <div className="h-8 w-8 rounded-full bg-blue-600 flex items-center justify-center shrink-0 shadow-sm">
+                                        <Bot className="h-4 w-4 text-white" />
+                                    </div>
+                                    <div className="bg-white border border-slate-200 px-4 py-3 rounded-2xl rounded-tl-none shadow-sm flex gap-1.5 items-center">
+                                        <span className="w-2 h-2 bg-blue-400 rounded-full animate-bounce"></span>
+                                        <span className="w-2 h-2 bg-blue-400 rounded-full animate-bounce [animation-delay:0.1s]"></span>
+                                        <span className="w-2 h-2 bg-blue-400 rounded-full animate-bounce [animation-delay:0.2s]"></span>
+                                    </div>
                                 </div>
                             )}
                         </div>
