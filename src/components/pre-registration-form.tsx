@@ -99,25 +99,38 @@ export function PreRegistrationForm({ programType = "entrepreneur" }: { programT
         </div>
 
         <div className="space-y-1">
-            <Label htmlFor="trade" className="text-xs uppercase font-bold text-slate-500">Métier</Label>
+            <Label htmlFor="trade" className="text-xs uppercase font-bold text-slate-500">
+                {programType === 'job_seeker' ? 'Situation Actuelle' : 'Métier'}
+            </Label>
             <Select name="trade" onValueChange={(val) => setIsOtherTrade(val === "autre")} required>
                 <SelectTrigger className="bg-white/50">
-                    <SelectValue placeholder="Sélectionnez votre métier" />
+                    <SelectValue placeholder={programType === 'job_seeker' ? "Quelle est votre situation ?" : "Sélectionnez votre métier"} />
                 </SelectTrigger>
                 <SelectContent>
-                    <SelectItem value="coach_sportif">Coach Sportif</SelectItem>
-                    <SelectItem value="therapeute">Thérapeute / Bien-être</SelectItem>
-                    <SelectItem value="consultant">Consultant / Freelance</SelectItem>
-                    <SelectItem value="artiste">Artiste / Créatif</SelectItem>
-                    <SelectItem value="autre">Autre...</SelectItem>
+                    {programType === 'job_seeker' ? (
+                        <>
+                            <SelectItem value="sans_emploi">Sans Emploi</SelectItem>
+                            <SelectItem value="avec_emploi">En poste (Salarié)</SelectItem>
+                            <SelectItem value="etudiant">Étudiant</SelectItem>
+                            <SelectItem value="autre">Autre...</SelectItem>
+                        </>
+                    ) : (
+                        <>
+                            <SelectItem value="coach_sportif">Coach Sportif</SelectItem>
+                            <SelectItem value="therapeute">Thérapeute / Bien-être</SelectItem>
+                            <SelectItem value="consultant">Consultant / Freelance</SelectItem>
+                            <SelectItem value="artiste">Artiste / Créatif</SelectItem>
+                            <SelectItem value="autre">Autre...</SelectItem>
+                        </>
+                    )}
                 </SelectContent>
             </Select>
         </div>
 
         {isOtherTrade && (
             <div className="space-y-1 animate-in fade-in slide-in-from-top-2">
-                <Label htmlFor="otherTrade" className="text-xs uppercase font-bold text-slate-500">Précisez votre métier</Label>
-                <Input name="otherTrade" id="otherTrade" placeholder="Ex: Boulanger, Architecte..." className="bg-white/50" required />
+                <Label htmlFor="otherTrade" className="text-xs uppercase font-bold text-slate-500">Précisez</Label>
+                <Input name="otherTrade" id="otherTrade" placeholder="Précisez votre situation..." className="bg-white/50" required />
             </div>
         )}
 
