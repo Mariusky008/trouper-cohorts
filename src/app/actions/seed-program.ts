@@ -219,6 +219,20 @@ export async function seedJobSeekerProgram() {
         ];
       }
 
+      // OVERRIDE J13 with V2 Content
+      if (i === 12) { // Calendar Day 17
+        missionData.title = "L’ENGAGEMENT OFFICIEL";
+        missionData.description = "Je passe à l’acte.";
+        missionData.steps = [
+            { category: "act1", title: "CONSCIENCE : La dernière résistance (30 min)", content: "Le but : Identifier le dernier frein.\n\nQuestions IA :\n- Qu’est-ce qui m’empêche encore d’envoyer massivement ?\n- Est-ce que j’attends une validation ?\n- Si je n’agis pas aujourd’hui, que se passe-t-il dans 30 jours ?\n\nQuestion clé : Est-ce que je veux réussir… ou rester en préparation ?", position: 1 },
+            { category: "act2", title: "STRUCTURE : Plan d'Envoi (45 min)", content: "Le but : Éviter l’envoi non stratégique.\n\nOption A : 5 candidatures précises (Entreprise/Poste/Contact).\nOption B : Démarche administrative (Création statut/RDV expert).\n\nL’IA vérifie : Cohérence, Personnalisation, Qualité.", position: 2 },
+            { category: "act3", title: "MIROIR HUMAIN : Cohérence & Courage (35 min)", content: "Le but : Éviter la fuite.\n\nLe binôme vérifie :\n- Est-ce vraiment aligné avec ta cible ?\n- Est-ce que tu te caches derrière des candidatures faciles ?\n- Si tu devais en envoyer une seule ?\n\nLivrable : Validation stratégique.", position: 3 },
+            { category: "act4", title: "OUTIL : Miroir IA Optimisation (20 min)", content: "Le but : Optimisation finale.\n\nPrompt :\n\"Voici mes 5 candidatures. Vérifie leur cohérence stratégique. Optimise les messages. Supprime les phrases faibles.\"\n\nL’IA ajuste : Ton, Clarté, Valeur.", position: 4 },
+            { category: "act5", title: "ACTION : Envoi Réel (1h10)", content: "Le but : Action immédiate.\n\nMission :\nEnvoyer 5 candidatures ciblées OU Lancer officiellement la démarche.\nPas à préparer. À faire.\nCapture écran + Heure d'envoi.\n\nLivrable : Preuve engagement réel.", position: 5 },
+            { category: "act6", title: "INTÉGRATION : Assumer la Décision (30 min)", content: "Questions IA :\n- Qu’ai-je ressenti ?\n- Est-ce que je me sens plus engagé ?\n\nPhrase : Aujourd’hui, j’ai franchi un cap parce que…\n\nLivrables :\n- 5 candidatures envoyées\n- Preuves numériques\n- Passage psychologique à l’acte", position: 6 }
+        ];
+      }
+
       newMissions.push(missionData);
     }
 
