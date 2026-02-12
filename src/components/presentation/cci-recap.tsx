@@ -372,9 +372,11 @@ export function CCIRecapViewer() {
                                     <div>
                                         <p className="text-[10px] font-bold text-orange-500 uppercase tracking-wider mb-1">10h00 • La Mission</p>
                                         <p className="text-sm font-bold text-slate-900">Le Sprint de Chasse</p>
-                                        <p className="text-xs text-slate-600 mt-1 leading-snug">
-                                            Faites une vidéo d'une minute 30 avec votre binôme sur la thématique de la peur du rejet en y intégrant votre produit/service, postez-le sur votre réseau social, envoyer 10 messages avec le lien de votre vidéo puis faire un Roleplay "Traitement des objections" avec son binôme.
-                                        </p>
+                                        <div className="text-xs text-slate-600 mt-2 space-y-2 leading-snug">
+                                            <p><strong className="text-slate-900">1️⃣ Vidéo Défi (1min30) :</strong> Avec ton binôme, filme et poste une vidéo sur la "Peur du Rejet" en y intégrant ton offre.</p>
+                                            <p><strong className="text-slate-900">2️⃣ Action & Roleplay :</strong> Envoie 10 messages avec ta vidéo, puis simule le traitement des objections.</p>
+                                            <p><strong className="text-slate-900">3️⃣ Le Joker Réseau :</strong> Pas de RDV ? Ton binôme DOIT t'introduire à 1 contact de son réseau personnel pour pitcher.</p>
+                                        </div>
                                     </div>
                                 </div>
 
@@ -388,7 +390,7 @@ export function CCIRecapViewer() {
                                         <div className="bg-white p-3 rounded-xl border border-orange-100 shadow-sm space-y-2">
                                             <div className="flex items-center gap-2">
                                                 <CheckCircle2 className="h-4 w-4 text-green-500" />
-                                                <span className="text-xs font-bold text-slate-700">2 RDV qualifiés obtenus</span>
+                                                <span className="text-xs font-bold text-slate-700">1 RDV qualifié obtenu</span>
                                             </div>
                                             <div className="flex items-center gap-2">
                                                 <Rocket className="h-4 w-4 text-orange-500" />
