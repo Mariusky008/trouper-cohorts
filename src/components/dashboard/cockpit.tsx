@@ -136,9 +136,9 @@ export function CockpitDashboard({
                 {/* 0. LA RELIQUE (GOLDEN TICKET) */}
                 <GoldenTicket dayIndex={dayIndex} totalDays={15} />
 
-                {/* 1. Briefing Vidéo */}
+                {/* 1. Briefing Vidéo (Optionnel) */}
                 <Card className="overflow-hidden border-2 border-slate-200 shadow-sm">
-                    {mission?.video_url ? (
+                    {mission?.video_url && (
                         <div className="aspect-video bg-black flex items-center justify-center relative">
                             {mission.video_url.includes('youtube') || mission.video_url.includes('vimeo') ? (
                                 <iframe 
@@ -150,12 +150,6 @@ export function CockpitDashboard({
                             ) : (
                                 <video controls className="w-full h-full" src={mission.video_url} />
                             )}
-                        </div>
-                    ) : (
-                        <div className="aspect-video bg-slate-900 flex items-center justify-center relative group cursor-pointer">
-                            <div className="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-all"></div>
-                            <PlayCircle className="h-20 w-20 text-white opacity-80 group-hover:scale-110 transition-transform duration-300" />
-                            <span className="absolute bottom-4 left-4 text-white font-bold text-lg">Briefing du Jour (En attente)</span>
                         </div>
                     )}
                     <CardContent className="p-6 bg-slate-50">
