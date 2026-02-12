@@ -531,9 +531,9 @@ export function CCIRecapViewer() {
                         <div className="flex items-start gap-4">
                             <div className="h-10 w-10 rounded-xl bg-slate-900 text-white flex items-center justify-center font-bold text-lg shrink-0">4</div>
                             <div>
-                                <h3 className="font-bold text-slate-900 text-lg uppercase">Règle des 72 Heures</h3>
+                                <h3 className="font-bold text-slate-900 text-lg uppercase">Règle des 12 Heures</h3>
                                 <p className="text-sm text-slate-600 leading-relaxed">
-                                    Chaque décision doit être suivie d’une action sous 72h. Sinon elle est annulée.<br/>
+                                    Chaque décision doit être suivie d’une action sous 12h. Sinon elle est annulée.<br/>
                                     Cela coupe radicalement la procrastination structurelle.
                                 </p>
                             </div>
