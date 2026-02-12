@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { useChat } from "ai/react";
+import { useChat } from "@ai-sdk/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -20,11 +20,12 @@ export function AICoachWidget({ dayContext }: AICoachWidgetProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   
   const { messages, input, handleInputChange, handleSubmit, isLoading } = useChat({
+    // @ts-ignore
     api: "/api/ai/coach",
     body: {
       context: dayContext,
     },
-  });
+  }) as any;
 
   // Auto-scroll to bottom
   useEffect(() => {
@@ -65,7 +66,7 @@ export function AICoachWidget({ dayContext }: AICoachWidgetProps) {
                     </div>
                 )}
 
-                {messages.map((m) => (
+                {messages.map((m: any) => (
                     <div key={m.id} className={`flex gap-3 ${m.role === 'user' ? 'flex-row-reverse' : ''}`}>
                         <div className={`h-8 w-8 rounded-full flex items-center justify-center shrink-0 border ${
                             m.role === 'user' 

@@ -1,8 +1,9 @@
 import { OpenAI } from 'openai';
-import { OpenAIStream, StreamingTextResponse } from 'ai';
+import { streamText } from 'ai';
+import { createOpenAI } from '@ai-sdk/openai';
 
-// Create an OpenAI API client (that's edge friendly!)
-const openai = new OpenAI({
+// Create an OpenAI API client
+const openai = createOpenAI({
   apiKey: process.env.OPENAI_API_KEY || '',
 });
 
@@ -33,19 +34,12 @@ export async function POST(req: Request) {
     3. Ne fais jamais le travail à sa place sans qu'il ait essayé d'abord.
   `;
 
-  // Ask OpenAI for a streaming chat completion given the prompt
-  const response = await openai.chat.completions.create({
-    model: 'gpt-4o',
-    stream: true,
-    messages: [
-        { role: 'system', content: systemPrompt },
-        ...messages
-    ],
+  const result = await streamText({
+    model: openai('gpt-4o'),
+    system: systemPrompt,
+    messages,
     temperature: 0.7,
   });
 
-  // Convert the response into a friendly text-stream
-  const stream = OpenAIStream(response);
-  // Respond with the stream
-  return new StreamingTextResponse(stream);
+  return result.toTextStreamResponse();
 }
