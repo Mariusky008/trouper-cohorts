@@ -206,43 +206,65 @@ export function CCIRecapViewer() {
                             </ul>
                         </div>
 
-                        <div className="bg-blue-50/50 p-5 rounded-2xl border border-blue-100 flex flex-col h-full">
-                            <h3 className="font-bold text-slate-900 uppercase mb-4 flex items-center gap-2 text-base">
-                                <Brain className="h-5 w-5 text-purple-600"/> Le Programme Jour par Jour
+                        <div className="bg-blue-50/50 p-6 rounded-2xl border border-blue-100 flex flex-col h-full relative overflow-hidden">
+                            {/* Background Elements */}
+                            <div className="absolute top-0 right-0 w-32 h-32 bg-blue-100 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
+                            
+                            <h3 className="font-bold text-slate-900 uppercase mb-6 flex items-center gap-2 text-base relative z-10">
+                                <Brain className="h-5 w-5 text-purple-600"/> Une Journée Type (J3)
                             </h3>
-                            <div className="space-y-4 flex-1 overflow-hidden">
-                                <div>
-                                    <div className="flex items-center justify-between mb-1">
-                                        <span className="text-[10px] font-bold uppercase text-blue-500 tracking-wider">Semaine 1</span>
-                                        <span className="text-xs font-black text-slate-900">Introspection & Mindset</span>
+
+                            <div className="flex-1 flex flex-col justify-between relative z-10">
+                                {/* MATIN */}
+                                <div className="flex gap-4 items-start group">
+                                    <div className="flex flex-col items-center gap-1">
+                                        <div className="h-2 w-2 rounded-full bg-slate-300"></div>
+                                        <div className="w-0.5 h-full bg-slate-200 group-hover:bg-blue-200 transition-colors"></div>
                                     </div>
-                                    <ul className="text-xs text-slate-600 space-y-1 list-disc pl-4">
-                                        <li><strong>J1-J2</strong> : Bilan de compétences flash & Ikigai.</li>
-                                        <li><strong>J3-J4</strong> : Identifier ses freins et peurs (Syndrome de l'imposteur).</li>
-                                        <li><strong>J5</strong> : Définir sa vision à 3 ans.</li>
-                                    </ul>
+                                    <div className="pb-6">
+                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">09h00 • L'État Initial</p>
+                                        <p className="text-sm font-medium text-slate-600 italic">"Je suis perdu, je ne sais pas ce que je vaux sur le marché actuel."</p>
+                                        <div className="inline-flex items-center gap-1 mt-2 px-2 py-1 bg-red-50 text-red-600 text-[10px] font-bold rounded uppercase">
+                                            <Zap className="h-3 w-3" /> Doute & Brouillard
+                                        </div>
+                                    </div>
                                 </div>
-                                <div>
-                                    <div className="flex items-center justify-between mb-1">
-                                        <span className="text-[10px] font-bold uppercase text-blue-500 tracking-wider">Semaine 2</span>
-                                        <span className="text-xs font-black text-slate-900">Exploration & Enquête</span>
+
+                                {/* ACTION */}
+                                <div className="flex gap-4 items-start group">
+                                    <div className="flex flex-col items-center gap-1">
+                                        <div className="h-2 w-2 rounded-full bg-blue-500"></div>
+                                        <div className="w-0.5 h-full bg-slate-200 group-hover:bg-blue-200 transition-colors"></div>
                                     </div>
-                                    <ul className="text-xs text-slate-600 space-y-1 list-disc pl-4">
-                                        <li><strong>J6-J7</strong> : Analyser le marché caché de l'emploi.</li>
-                                        <li><strong>J8-J9</strong> : Mener 5 enquêtes métiers (interviews pro).</li>
-                                        <li><strong>J10</strong> : Synthèse des opportunités détectées.</li>
-                                    </ul>
+                                    <div className="pb-6">
+                                        <p className="text-[10px] font-bold text-blue-500 uppercase tracking-wider mb-1">10h00 • La Mission</p>
+                                        <p className="text-sm font-bold text-slate-900">L'Exercice du Miroir</p>
+                                        <p className="text-xs text-slate-600 mt-1">Lister 3 compétences naturelles et les faire valider par l'IA Coach Popey puis par son binôme.</p>
+                                    </div>
                                 </div>
-                                <div>
-                                    <div className="flex items-center justify-between mb-1">
-                                        <span className="text-[10px] font-bold uppercase text-blue-500 tracking-wider">Semaine 3</span>
-                                        <span className="text-xs font-black text-slate-900">Décision & Action</span>
+
+                                {/* SOIR */}
+                                <div className="flex gap-4 items-start">
+                                    <div className="flex flex-col items-center gap-1">
+                                        <div className="h-3 w-3 rounded-full border-2 border-green-500 bg-white"></div>
                                     </div>
-                                    <ul className="text-xs text-slate-600 space-y-1 list-disc pl-4">
-                                        <li><strong>J11-J12</strong> : Construire son plan d'action (CV ou Offre).</li>
-                                        <li><strong>J13-J14</strong> : Préparer son Pitch de présentation.</li>
-                                        <li><strong>J15</strong> : Grand Oral devant le jury de la cohorte.</li>
-                                    </ul>
+                                    <div>
+                                        <p className="text-[10px] font-bold text-green-600 uppercase tracking-wider mb-1">17h00 • Ce qui est acquis</p>
+                                        <div className="bg-white p-3 rounded-xl border border-blue-100 shadow-sm space-y-2">
+                                            <div className="flex items-center gap-2">
+                                                <CheckCircle2 className="h-4 w-4 text-green-500" />
+                                                <span className="text-xs font-bold text-slate-700">3 Métiers cibles identifiés</span>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <Users className="h-4 w-4 text-blue-500" />
+                                                <span className="text-xs font-bold text-slate-700">+1 Allié (Réseau)</span>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <Sparkles className="h-4 w-4 text-yellow-500" />
+                                                <span className="text-xs font-bold text-slate-700">Confiance restaurée</span>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -313,45 +335,65 @@ export function CCIRecapViewer() {
                                 </ul>
                             </div>
                         </div>
-                        <div className="bg-orange-50/50 p-5 rounded-2xl border border-orange-100 flex flex-col h-full">
-                            <h3 className="font-bold text-slate-900 uppercase mb-4 flex items-center gap-2 text-base">
-                                <Trophy className="h-5 w-5 text-yellow-600"/> Le Programme Jour par Jour
+                        <div className="bg-orange-50/50 p-6 rounded-2xl border border-orange-100 flex flex-col h-full relative overflow-hidden">
+                            {/* Background Elements */}
+                            <div className="absolute top-0 right-0 w-32 h-32 bg-orange-100 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
+
+                            <h3 className="font-bold text-slate-900 uppercase mb-6 flex items-center gap-2 text-base relative z-10">
+                                <Trophy className="h-5 w-5 text-yellow-600"/> Une Journée Type (J9)
                             </h3>
-                            <div className="space-y-4 flex-1 overflow-hidden">
-                                <div>
-                                    <div className="flex items-center justify-between mb-1">
-                                        <span className="text-[10px] font-bold uppercase text-orange-500 tracking-wider">Semaine 1</span>
-                                        <span className="text-xs font-black text-slate-900">Fondations & Offre</span>
+
+                            <div className="flex-1 flex flex-col justify-between relative z-10">
+                                {/* MATIN */}
+                                <div className="flex gap-4 items-start group">
+                                    <div className="flex flex-col items-center gap-1">
+                                        <div className="h-2 w-2 rounded-full bg-slate-300"></div>
+                                        <div className="w-0.5 h-full bg-slate-200 group-hover:bg-orange-200 transition-colors"></div>
                                     </div>
-                                    <ul className="text-xs text-slate-600 space-y-1 list-disc pl-4">
-                                        <li><strong>J1-J3</strong> : Audit Business & Business Model Canvas.</li>
-                                        <li><strong>J4</strong> : Définir son Avatar Client (Douleurs/Désirs).</li>
-                                        <li><strong>J5</strong> : Créer son "Offre Irrésistible" & Pitch.</li>
-                                    </ul>
+                                    <div className="pb-6">
+                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">09h00 • L'État Initial</p>
+                                        <p className="text-sm font-medium text-slate-600 italic">"Je n'ose pas contacter des inconnus, j'ai peur de passer pour un vendeur de tapis."</p>
+                                        <div className="inline-flex items-center gap-1 mt-2 px-2 py-1 bg-red-50 text-red-600 text-[10px] font-bold rounded uppercase">
+                                            <Zap className="h-3 w-3" /> Peur du rejet
+                                        </div>
+                                    </div>
                                 </div>
-                                <div>
-                                    <div className="flex items-center justify-between mb-1">
-                                        <span className="text-[10px] font-bold uppercase text-orange-500 tracking-wider">Semaine 2</span>
-                                        <span className="text-xs font-black text-slate-900">Visibilité & Acquisition</span>
+
+                                {/* ACTION */}
+                                <div className="flex gap-4 items-start group">
+                                    <div className="flex flex-col items-center gap-1">
+                                        <div className="h-2 w-2 rounded-full bg-orange-500"></div>
+                                        <div className="w-0.5 h-full bg-slate-200 group-hover:bg-orange-200 transition-colors"></div>
                                     </div>
-                                    <ul className="text-xs text-slate-600 space-y-1 list-disc pl-4">
-                                        <li><strong>J6</strong> : Storytelling & Personal Branding.</li>
-                                        <li><strong>J8</strong> : Choisir son canal d'acquisition.</li>
-                                        <li><strong>J9</strong> : Lancer la "Chasse" (Prospection directe).</li>
-                                        <li><strong>J10</strong> : Closing & Traitement des objections.</li>
-                                    </ul>
+                                    <div className="pb-6">
+                                        <p className="text-[10px] font-bold text-orange-500 uppercase tracking-wider mb-1">10h00 • La Mission</p>
+                                        <p className="text-sm font-bold text-slate-900">Le Sprint de Chasse</p>
+                                        <p className="text-xs text-slate-600 mt-1">Envoyer 10 messages de prospection directe puis faire un Roleplay "Traitement des objections" avec son binôme.</p>
+                                    </div>
                                 </div>
-                                <div>
-                                    <div className="flex items-center justify-between mb-1">
-                                        <span className="text-[10px] font-bold uppercase text-orange-500 tracking-wider">Semaine 3</span>
-                                        <span className="text-xs font-black text-slate-900">Systèmes & Croissance</span>
+
+                                {/* SOIR */}
+                                <div className="flex gap-4 items-start">
+                                    <div className="flex flex-col items-center gap-1">
+                                        <div className="h-3 w-3 rounded-full border-2 border-orange-500 bg-white"></div>
                                     </div>
-                                    <ul className="text-xs text-slate-600 space-y-1 list-disc pl-4">
-                                        <li><strong>J11</strong> : Onboarding & "Effet Wow" client.</li>
-                                        <li><strong>J12</strong> : Stratégie d'Ambassadeurs (Témoignages).</li>
-                                        <li><strong>J13</strong> : Automatisation & Délégation.</li>
-                                        <li><strong>J14</strong> : Plan d'action à 90 jours.</li>
-                                    </ul>
+                                    <div>
+                                        <p className="text-[10px] font-bold text-orange-600 uppercase tracking-wider mb-1">17h00 • Ce qui est acquis</p>
+                                        <div className="bg-white p-3 rounded-xl border border-orange-100 shadow-sm space-y-2">
+                                            <div className="flex items-center gap-2">
+                                                <CheckCircle2 className="h-4 w-4 text-green-500" />
+                                                <span className="text-xs font-bold text-slate-700">2 RDV qualifiés obtenus</span>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <Rocket className="h-4 w-4 text-orange-500" />
+                                                <span className="text-xs font-bold text-slate-700">Peur du "Non" disparue</span>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <Users className="h-4 w-4 text-blue-500" />
+                                                <span className="text-xs font-bold text-slate-700">Pipeline commercial initié</span>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
