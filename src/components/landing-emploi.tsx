@@ -219,6 +219,7 @@ export function LandingEmploi() {
                             </div>
                         </FadeIn>
                     ))}
+                    </div>
                 </div>
             </div>
         </section>
