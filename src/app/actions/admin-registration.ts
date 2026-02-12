@@ -76,7 +76,7 @@ export async function validateRegistration(registrationId: string) {
 
     if (createError) {
       console.error("Erreur création cohorte:", createError);
-      return { error: "Impossible de créer la cohorte automatique." };
+      return { error: `Impossible de créer la cohorte automatique: ${createError.message}` };
     }
     cohortId = newCohort.id;
   }
