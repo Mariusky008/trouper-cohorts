@@ -177,6 +177,20 @@ export async function seedJobSeekerProgram() {
         ];
       }
 
+      // OVERRIDE J10 with V2 Content
+      if (i === 9) { // Calendar Day 12
+        missionData.title = "LES CHIFFRES";
+        missionData.description = "Dominer la machine à calculer.";
+        missionData.steps = [
+            { category: "act1", title: "CONSCIENCE : La peur des chiffres (30 min)", content: "Le but : Identifier la relation émotionnelle à l’argent.\n\nQuestions IA :\n- Est-ce que parler d’argent me met mal à l’aise ?\n- Ai-je déjà calculé précisément ce dont j’ai besoin ?\n\nQuestion clé : Si je ne maîtrise pas mes chiffres, qui les maîtrisera pour moi ?", position: 1 },
+            { category: "act2", title: "STRUCTURE : Objectif Réel (45 min)", content: "Le but : Calculer un objectif réaliste.\n\nExercice obligatoire :\n1. Besoin mensuel net (charges incluses).\n2. Marge sécurité 15–20 %.\n3. Objectif brut à atteindre.\n\nL’IA aide à vérifier la cohérence et adapter selon le statut.", position: 2 },
+            { category: "act3", title: "VOLUME D'ACTIONS (35 min)", content: "Le but : Comprendre que le revenu est mécanique.\n\nSimulation :\nSi 1 RDV sur 5 contacts -> 1 proposition sur 2 RDV -> 1 contrat sur 2 propositions.\nCombien de contacts pour atteindre l'objectif ?\n\nL’IA aide à simuler les scénarios.", position: 3 },
+            { category: "act4", title: "MIROIR HUMAIN : Réalisme (20 min)", content: "Le but : Ajuster.\n\nLe binôme répond :\n- Est-ce que ton objectif est réaliste ?\n- Est-ce que ton volume d’actions est atteignable ?\n- Où es-tu optimiste / trop prudent ?\n\nLivrable : Ajustement chiffré validé.", position: 4 },
+            { category: "act5", title: "ACTION : Plan 30 Jours (1h10)", content: "Le but : Transformer les chiffres en planning.\n\nMission : Définir le volume par semaine (Contacts / RDV / Heures).\nÉcrire : \"Chaque semaine je dois faire X contacts...\"\n\nLivrable : Plan 30 jours structuré.", position: 5 },
+            { category: "act6", title: "INTÉGRATION : Du Flou au Contrôle (30 min)", content: "Questions IA :\n- Est-ce que les chiffres me rassurent ?\n- Est-ce que mon objectif est cohérent avec mes efforts ?\n\nPhrase : Je sais maintenant que pour atteindre X, je dois faire Y.\n\nLivrables :\n- Objectif mensuel/6 mois\n- Volume d’actions\n- Plan 30 jours", position: 6 }
+        ];
+      }
+
       newMissions.push(missionData);
     }
 
