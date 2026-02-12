@@ -80,38 +80,46 @@ export function CCIRecapViewer() {
                     {/* The Bridge Visualization */}
                     <div className="flex items-center justify-between relative z-10">
                         {/* Phase 1 */}
-                        <div className="w-[45%] bg-slate-50 border border-slate-200 rounded-2xl p-8 relative group hover:border-blue-300 transition-colors">
+                        <div className="w-[45%] bg-slate-50 border border-slate-200 rounded-2xl p-8 relative group hover:border-blue-300 transition-colors h-[400px] flex flex-col">
                             <div className="absolute -top-4 left-8 bg-blue-100 text-blue-800 px-3 py-1 text-xs font-bold uppercase rounded-full">Phase 1 • 15 Jours</div>
                             <h3 className="text-2xl font-black text-slate-900 mb-2 uppercase italic">Le Réveil</h3>
                             <p className="text-sm font-bold text-blue-600 mb-4 uppercase tracking-wider">Reconversion & Clarté</p>
-                            <p className="text-slate-600 text-sm leading-relaxed mb-6">
-                                Pour ceux qui cherchent leur voie. On déconstruit les peurs, on identifie les forces (Soft Skills) et on définit un projet professionnel solide.
+                            <p className="text-slate-600 text-sm leading-relaxed mb-6 flex-1">
+                                <strong>Le problème :</strong> 80% des chômeurs ne savent pas quoi faire après une rupture.<br/>
+                                <strong>La solution :</strong> Un électrochoc bienveillant. On ne cherche pas un "job", on construit un projet de vie aligné avec ses talents naturels.
                             </p>
+                            <div className="bg-blue-50 p-4 rounded-xl border border-blue-100 mb-4">
+                                <p className="text-xs font-bold text-blue-800 uppercase mb-1">Résultat J+15</p>
+                                <p className="text-sm font-bold text-slate-900">Un dossier "Projet Pro" validé et pitché devant un jury.</p>
+                            </div>
                             <ul className="space-y-2">
-                                <li className="flex items-center gap-2 text-sm text-slate-700"><CheckCircle2 className="h-4 w-4 text-blue-500"/> Bilan de compétences flash</li>
-                                <li className="flex items-center gap-2 text-sm text-slate-700"><CheckCircle2 className="h-4 w-4 text-blue-500"/> Levée des freins mentaux</li>
-                                <li className="flex items-center gap-2 text-sm text-slate-700"><CheckCircle2 className="h-4 w-4 text-blue-500"/> Définition de l'offre de service</li>
+                                <li className="flex items-center gap-2 text-sm text-slate-700"><CheckCircle2 className="h-4 w-4 text-blue-500"/> Confiance retrouvée</li>
+                                <li className="flex items-center gap-2 text-sm text-slate-700"><CheckCircle2 className="h-4 w-4 text-blue-500"/> Soft Skills identifiés</li>
                             </ul>
                         </div>
 
                         {/* Arrow */}
                         <div className="flex-1 flex flex-col items-center justify-center px-4">
+                            <div className="bg-slate-900 text-white text-[10px] font-bold px-2 py-1 rounded mb-2 uppercase">Passerelle</div>
                             <ArrowRight className="h-8 w-8 text-slate-300" />
-                            <span className="text-[10px] font-bold uppercase text-slate-400 mt-2 text-center">Transition<br/>Fluide</span>
                         </div>
 
                         {/* Phase 2 */}
-                        <div className="w-[45%] bg-slate-900 text-white rounded-2xl p-8 relative group shadow-2xl">
+                        <div className="w-[45%] bg-slate-900 text-white rounded-2xl p-8 relative group shadow-2xl h-[400px] flex flex-col border-2 border-orange-500/30">
                             <div className="absolute -top-4 left-8 bg-orange-500 text-white px-3 py-1 text-xs font-bold uppercase rounded-full">Phase 2 • 15 Jours</div>
                             <h3 className="text-2xl font-black text-white mb-2 uppercase italic">L'Attaque</h3>
                             <p className="text-sm font-bold text-orange-400 mb-4 uppercase tracking-wider">Entrepreneuriat & Vente</p>
-                            <p className="text-slate-300 text-sm leading-relaxed mb-6">
-                                Pour ceux qui sont prêts à se lancer. On construit l'offre irrésistible, on prospecte et on signe les premiers clients.
+                            <p className="text-slate-300 text-sm leading-relaxed mb-6 flex-1">
+                                <strong>Le problème :</strong> Les créateurs passent 6 mois à faire un Business Plan et 0 jour à vendre.<br/>
+                                <strong>La solution :</strong> L'action massive. On apprend à vendre avant même d'avoir un produit fini.
                             </p>
+                            <div className="bg-orange-500/20 p-4 rounded-xl border border-orange-500/50 mb-4">
+                                <p className="text-xs font-bold text-orange-300 uppercase mb-1">Résultat J+30</p>
+                                <p className="text-sm font-bold text-white">Première facture envoyée ou premier devis signé.</p>
+                            </div>
                             <ul className="space-y-2">
-                                <li className="flex items-center gap-2 text-sm text-slate-300"><CheckCircle2 className="h-4 w-4 text-orange-500"/> Création de l'Offre</li>
-                                <li className="flex items-center gap-2 text-sm text-slate-300"><CheckCircle2 className="h-4 w-4 text-orange-500"/> Stratégie Commerciale</li>
-                                <li className="flex items-center gap-2 text-sm text-slate-300"><CheckCircle2 className="h-4 w-4 text-orange-500"/> Premiers Encaissements</li>
+                                <li className="flex items-center gap-2 text-sm text-slate-300"><CheckCircle2 className="h-4 w-4 text-orange-500"/> Offre packagée</li>
+                                <li className="flex items-center gap-2 text-sm text-slate-300"><CheckCircle2 className="h-4 w-4 text-orange-500"/> Clients contactés</li>
                             </ul>
                         </div>
                     </div>
@@ -318,7 +326,7 @@ export function CCIRecapViewer() {
                 <div className="bg-white/10 backdrop-blur-md p-8 rounded-2xl border border-white/20 w-full max-w-md text-left space-y-6">
                     <div>
                         <p className="text-xs text-blue-300 uppercase font-bold tracking-widest mb-1">Email Direction</p>
-                        <p className="text-xl font-bold">partenariats@popey.academy</p>
+                        <p className="text-xl font-bold">contact@popey.academy</p>
                     </div>
                     <div>
                         <p className="text-xs text-blue-300 uppercase font-bold tracking-widest mb-1">Site Web</p>
@@ -326,7 +334,7 @@ export function CCIRecapViewer() {
                     </div>
                     <div>
                         <p className="text-xs text-blue-300 uppercase font-bold tracking-widest mb-1">Téléphone</p>
-                        <p className="text-xl font-bold">01 02 03 04 05</p>
+                        <p className="text-xl font-bold">07 68 23 33 47</p>
                     </div>
                 </div>
 
