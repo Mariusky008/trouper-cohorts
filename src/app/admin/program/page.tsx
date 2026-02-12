@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
 import { ArrowRight, Edit, Briefcase, UserCheck } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { SeedButton } from "@/components/admin/seed-button";
 
 export const dynamic = 'force-dynamic';
 
@@ -61,6 +62,7 @@ export default async function AdminProgramPage() {
                 Gérez ici le contenu modèle qui sera dupliqué pour chaque nouvelle cohorte.
             </p>
         </div>
+        <SeedButton />
       </div>
 
       <Tabs defaultValue="entrepreneur" className="w-full">
