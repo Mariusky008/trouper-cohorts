@@ -241,6 +241,18 @@ export function LandingEmploi() {
                         <h2 className="text-4xl md:text-5xl font-black uppercase italic mb-6">
                             Ensuite, 15 jours commandos<br/>avec <span className="text-orange-500">23 alliés.</span>
                         </h2>
+                        <div className="bg-white/10 p-6 rounded-2xl border border-white/10 backdrop-blur-sm max-w-3xl mx-auto mb-10 text-left">
+                             <div className="grid md:grid-cols-2 gap-6 items-center">
+                                 <div>
+                                     <h4 className="font-bold text-orange-400 uppercase tracking-widest text-sm mb-2">L'Objectif</h4>
+                                     <p className="text-white font-medium">Transformer votre offre en clients réels.</p>
+                                 </div>
+                                 <div className="text-sm text-slate-300 space-y-2 border-l border-white/10 pl-6">
+                                     <p>• 3 semaines précédentes = Fondation & Clarté</p>
+                                     <p>• 2 semaines actuelles = Action & Vente</p>
+                                 </div>
+                             </div>
+                        </div>
                         <p className="text-xl text-slate-300 max-w-2xl mx-auto mb-12">
                             Une seule obsession : terminer cette quinzaine avec plus de clients ou d'opportunités qu'au départ.
                         </p>
