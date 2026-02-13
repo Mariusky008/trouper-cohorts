@@ -1,5 +1,3 @@
-import { MissionTemplate } from "@/types/program";
-
 // Note: day_index here corresponds to the "Content Day" (1 to 15), 
 // not necessarily the calendar day. The seeder maps these to calendar days.
 
