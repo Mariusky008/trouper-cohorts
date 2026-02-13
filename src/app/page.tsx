@@ -518,12 +518,56 @@ export default function Home() {
 
       </main>
       
-      <footer className="bg-slate-950 py-12 text-center border-t border-slate-800">
-        <div className="flex justify-center items-center gap-2 mb-4 opacity-50">
-            <Anchor className="h-6 w-6 text-white" />
-            <span className="font-black uppercase text-white">Popey Academy</span>
+      <footer className="bg-slate-950 py-12 border-t border-slate-800 text-white">
+        <div className="container mx-auto px-4">
+            <div className="grid md:grid-cols-4 gap-8 mb-12">
+                <div className="space-y-4">
+                    <div className="flex items-center gap-2">
+                        <Anchor className="h-6 w-6 text-orange-500" />
+                        <span className="font-black uppercase tracking-widest">Popey Academy</span>
+                    </div>
+                    <p className="text-sm text-slate-400">
+                        La première école qui transforme l'indécision en action.
+                        <br/>Force & Honneur.
+                    </p>
+                </div>
+                <div>
+                    <h4 className="font-bold text-white uppercase mb-4 text-sm">Programmes</h4>
+                    <ul className="space-y-2 text-sm text-slate-400">
+                        <li><Link href="/emploi" className="hover:text-orange-500">Trouver sa voie</Link></li>
+                        <li><Link href="/entrepreneurs" className="hover:text-orange-500">Lancer son activité</Link></li>
+                        <li><Link href="/admin/catalogue-chomeur" className="hover:text-orange-500">Catalogue PDF</Link></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 className="font-bold text-white uppercase mb-4 text-sm">Légal</h4>
+                    <ul className="space-y-2 text-sm text-slate-400">
+                        <li><Link href="/legal/mentions" className="hover:text-orange-500">Mentions Légales</Link></li>
+                        <li><Link href="/legal/terms" className="hover:text-orange-500">CGV / CGU</Link></li>
+                        <li><Link href="/legal/privacy" className="hover:text-orange-500">Politique de Confidentialité</Link></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 className="font-bold text-white uppercase mb-4 text-sm">Contact</h4>
+                    <ul className="space-y-2 text-sm text-slate-400">
+                        <li>hello@popey.academy</li>
+                        <li>Paris, France</li>
+                        <li className="flex gap-4 mt-4">
+                            {/* Social Icons Placeholder */}
+                            <div className="h-8 w-8 bg-slate-800 rounded-full flex items-center justify-center text-slate-400 hover:bg-orange-500 hover:text-white transition-colors cursor-pointer">
+                                <span className="font-black text-xs">IN</span>
+                            </div>
+                            <div className="h-8 w-8 bg-slate-800 rounded-full flex items-center justify-center text-slate-400 hover:bg-orange-500 hover:text-white transition-colors cursor-pointer">
+                                <span className="font-black text-xs">IG</span>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <div className="pt-8 border-t border-slate-800 text-center">
+                <p className="text-slate-500 text-xs">© 2026 Popey Academy. Tous droits réservés.</p>
+            </div>
         </div>
-        <p className="text-slate-600 text-sm">© 2026. Force & Honneur.</p>
       </footer>
     </div>
   );
