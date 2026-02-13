@@ -452,9 +452,9 @@ export function LandingEmploi() {
                 <div>
                     <h4 className="font-bold text-slate-900 uppercase mb-4 text-sm">Légal</h4>
                     <ul className="space-y-2 text-sm text-slate-500">
-                        <li><Link href="#" className="hover:text-orange-600">Mentions Légales</Link></li>
-                        <li><Link href="#" className="hover:text-orange-600">CGV / CGU</Link></li>
-                        <li><Link href="#" className="hover:text-orange-600">Politique de Confidentialité</Link></li>
+                        <li><Link href="/legal/mentions" className="hover:text-orange-600">Mentions Légales</Link></li>
+                        <li><Link href="/legal/terms" className="hover:text-orange-600">CGV / CGU</Link></li>
+                        <li><Link href="/legal/privacy" className="hover:text-orange-600">Politique de Confidentialité</Link></li>
                     </ul>
                 </div>
                 <div>
