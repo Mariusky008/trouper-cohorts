@@ -120,19 +120,19 @@ export default function Home() {
         </section>
 
         {/* 2. STORYTELLING & BÉNÉFICES */}
-        <section className="py-24 bg-white relative z-20">
+        <section className="py-24 bg-slate-900 text-white relative z-20">
             <div className="container mx-auto px-4 max-w-5xl">
                 
                 <div className="grid md:grid-cols-2 gap-16 items-center mb-24">
                     <div className="space-y-8">
                         <FadeIn>
-                            <h2 className="text-4xl font-black uppercase italic text-slate-900 leading-tight">
+                            <h2 className="text-4xl font-black uppercase italic text-white leading-tight">
                                 Pas de théorie inutile.<br/>
-                                <span className="text-slate-400">Pas d'excuses.</span>
+                                <span className="text-slate-500">Pas d'excuses.</span>
                             </h2>
                         </FadeIn>
                         <FadeIn delay={0.1}>
-                            <p className="text-lg text-slate-600 leading-relaxed">
+                            <p className="text-lg text-slate-300 leading-relaxed">
                                 L'entrepreneuriat solitaire est un piège. Vous avez les compétences, mais personne ne vous voit.
                                 Ici, nous créons un <strong>cadre intensif</strong> avec des actions concrètes.
                             </p>
@@ -143,8 +143,8 @@ export default function Home() {
                                     "Feedback immédiat sur vos offres",
                                     "Pression positive du groupe"
                                 ].map((item, i) => (
-                                    <li key={i} className="flex items-center gap-3 text-slate-900 font-bold">
-                                        <div className="bg-orange-100 p-1 rounded-full"><CheckCircle2 className="text-orange-600 h-4 w-4" /></div>
+                                    <li key={i} className="flex items-center gap-3 text-white font-bold">
+                                        <div className="bg-orange-500/20 p-1 rounded-full"><CheckCircle2 className="text-orange-500 h-4 w-4" /></div>
                                         {item}
                                     </li>
                                 ))}
@@ -154,23 +154,23 @@ export default function Home() {
 
                     <div className="relative">
                         <div className="absolute inset-0 bg-orange-500/10 blur-3xl rounded-full" />
-                        <div className="relative bg-slate-50 border border-slate-200 p-8 rounded-2xl space-y-6 shadow-xl">
-                            <h3 className="text-2xl font-black uppercase text-slate-900 mb-6 text-center">L'Effet Levier x24</h3>
+                        <div className="relative bg-slate-800 border border-slate-700 p-8 rounded-2xl space-y-6 shadow-xl">
+                            <h3 className="text-2xl font-black uppercase text-white mb-6 text-center">L'Effet Levier x24</h3>
                             <div className="grid grid-cols-2 gap-4">
-                                <div className="bg-white p-4 rounded-xl text-center border border-slate-100 shadow-sm">
-                                    <div className="text-3xl font-black text-orange-600 mb-1">24</div>
+                                <div className="bg-slate-900 p-4 rounded-xl text-center border border-slate-700 shadow-sm">
+                                    <div className="text-3xl font-black text-orange-500 mb-1">24</div>
                                     <div className="text-xs uppercase text-slate-400 font-bold">Réseaux Activés</div>
                                 </div>
-                                <div className="bg-white p-4 rounded-xl text-center border border-slate-100 shadow-sm">
-                                    <div className="text-3xl font-black text-blue-600 mb-1">24</div>
+                                <div className="bg-slate-900 p-4 rounded-xl text-center border border-slate-700 shadow-sm">
+                                    <div className="text-3xl font-black text-blue-500 mb-1">24</div>
                                     <div className="text-xs uppercase text-slate-400 font-bold">Offres Présentées</div>
                                 </div>
-                                <div className="bg-white p-4 rounded-xl text-center border border-slate-100 shadow-sm">
-                                    <div className="text-3xl font-black text-green-600 mb-1">24</div>
+                                <div className="bg-slate-900 p-4 rounded-xl text-center border border-slate-700 shadow-sm">
+                                    <div className="text-3xl font-black text-green-500 mb-1">24</div>
                                     <div className="text-xs uppercase text-slate-400 font-bold">Cercles de Reco.</div>
                                 </div>
-                                <div className="bg-white p-4 rounded-xl text-center border border-slate-100 shadow-sm">
-                                    <div className="text-3xl font-black text-purple-600 mb-1">∞</div>
+                                <div className="bg-slate-900 p-4 rounded-xl text-center border border-slate-700 shadow-sm">
+                                    <div className="text-3xl font-black text-purple-500 mb-1">∞</div>
                                     <div className="text-xs uppercase text-slate-400 font-bold">Visibilité Croisée</div>
                                 </div>
                             </div>
@@ -179,7 +179,7 @@ export default function Home() {
                 </div>
 
                 {/* Transformation Promise */}
-                <div className="bg-slate-900 rounded-3xl p-8 md:p-12 shadow-2xl relative overflow-hidden">
+                <div className="bg-slate-800 rounded-3xl p-8 md:p-12 shadow-2xl relative overflow-hidden border border-slate-700">
                     <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600/20 rounded-full blur-3xl"></div>
                     <div className="relative z-10">
                         <div className="text-center mb-10">
@@ -196,7 +196,7 @@ export default function Home() {
                                 { icon: Users, label: "Clients en approche" }
                             ].map((item, i) => (
                                 <div key={i} className="flex flex-col items-center gap-3 text-center">
-                                    <div className="h-12 w-12 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-orange-400">
+                                    <div className="h-12 w-12 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-orange-400">
                                         <item.icon className="h-6 w-6" />
                                     </div>
                                     <span className="text-white font-bold text-sm uppercase leading-tight">{item.label}</span>
