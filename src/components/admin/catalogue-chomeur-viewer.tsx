@@ -169,10 +169,10 @@ export function CatalogueChomeurViewer() {
                                     </div>
                                 </div>
 
-                                {/* ACTE 3 : OUTIL (Bleu) */}
-                                <div className="bg-blue-50 p-5 rounded-xl border border-blue-100 flex flex-col break-inside-avoid">
-                                    <h4 className="font-black text-blue-900 flex items-center gap-2 mb-2 uppercase text-xs tracking-widest border-b border-blue-200 pb-2">
-                                        <div className="p-1 bg-blue-100 rounded"><PenTool className="h-4 w-4 text-blue-600" /></div>
+                                {/* ACTE 3 : BINÔME (Violet) - Était Outil */}
+                                <div className="bg-purple-50 p-5 rounded-xl border border-purple-100 flex flex-col break-inside-avoid">
+                                    <h4 className="font-black text-purple-900 flex items-center gap-2 mb-2 uppercase text-xs tracking-widest border-b border-purple-200 pb-2">
+                                        <div className="p-1 bg-purple-100 rounded"><Users className="h-4 w-4 text-purple-600" /></div>
                                         Acte 3 : {acts[2]?.title}
                                     </h4>
                                     <div className="text-xs text-slate-700 leading-relaxed">
@@ -180,10 +180,10 @@ export function CatalogueChomeurViewer() {
                                     </div>
                                 </div>
 
-                                {/* ACTE 4 : BINÔME (Violet) */}
-                                <div className="bg-purple-50 p-5 rounded-xl border border-purple-100 flex flex-col break-inside-avoid">
-                                    <h4 className="font-black text-purple-900 flex items-center gap-2 mb-2 uppercase text-xs tracking-widest border-b border-purple-200 pb-2">
-                                        <div className="p-1 bg-purple-100 rounded"><Users className="h-4 w-4 text-purple-600" /></div>
+                                {/* ACTE 4 : OUTIL (Bleu) - Était Binôme */}
+                                <div className="bg-blue-50 p-5 rounded-xl border border-blue-100 flex flex-col break-inside-avoid">
+                                    <h4 className="font-black text-blue-900 flex items-center gap-2 mb-2 uppercase text-xs tracking-widest border-b border-blue-200 pb-2">
+                                        <div className="p-1 bg-blue-100 rounded"><PenTool className="h-4 w-4 text-blue-600" /></div>
                                         Acte 4 : {acts[3]?.title}
                                     </h4>
                                     <div className="text-xs text-slate-700 leading-relaxed">

@@ -1,14 +1,17 @@
 "use client";
 
 import { CheckCircle2, BookOpen, Users, Clock, Target, Zap, Search, PenTool, MessageCircle, Video, Brain } from "lucide-react";
-import { programmeChomageData } from "@/data/programme-chomage-data";
 
-export function ProgrammeChomageViewer() {
+interface ProgrammeChomageViewerProps {
+    data: any[];
+}
+
+export function ProgrammeChomageViewer({ data }: ProgrammeChomageViewerProps) {
     // Grouper les jours par phases (similaire au programme détaillé)
     const phases = [
-        { name: "Phase 1 : De l'Inaction à la Clarté (J1-J4)", days: programmeChomageData.filter(t => t.day_index <= 4) },
-        { name: "Phase 2 : De l'Idée à l'Offre (J5-J9)", days: programmeChomageData.filter(t => t.day_index > 4 && t.day_index <= 9) },
-        { name: "Phase 3 : De l'Offre à la Réalité (J10-J14)", days: programmeChomageData.filter(t => t.day_index > 9) },
+        { name: "Phase 1 : De l'Inaction à la Clarté (J1-J4)", days: data.filter(t => t.day_index <= 4) },
+        { name: "Phase 2 : De l'Idée à l'Offre (J5-J9)", days: data.filter(t => t.day_index > 4 && t.day_index <= 9) },
+        { name: "Phase 3 : De l'Offre à la Réalité (J10-J14)", days: data.filter(t => t.day_index > 9) },
     ];
 
     return (
@@ -96,7 +99,7 @@ export function ProgrammeChomageViewer() {
                                                 <Brain className="h-3 w-3" /> Introspection & Outils
                                             </h4>
                                             <ul className="text-[10px] text-slate-700 space-y-2">
-                                                {col1.map((s, i) => (
+                                                {col1.map((s: any, i: number) => (
                                                     <li key={i} className="bg-white p-1.5 rounded border border-slate-100 shadow-sm">
                                                         <strong className="block text-blue-700 text-[9px] uppercase mb-0.5">{s.title}</strong>
                                                         <div className="line-clamp-3">{s.content.split('\n')[0]}</div>
@@ -110,7 +113,7 @@ export function ProgrammeChomageViewer() {
                                                 <Zap className="h-3 w-3" /> Action & Validation
                                             </h4>
                                             <ul className="text-[10px] text-slate-700 space-y-2">
-                                                {col2.map((s, i) => (
+                                                {col2.map((s: any, i: number) => (
                                                     <li key={i} className="bg-white p-1.5 rounded border border-slate-100 shadow-sm">
                                                         <strong className="block text-orange-700 text-[9px] uppercase mb-0.5">{s.title}</strong>
                                                         <div className="line-clamp-3">{s.content.split('\n')[0]}</div>
