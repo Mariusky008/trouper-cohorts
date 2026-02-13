@@ -207,6 +207,15 @@ export function LandingEmploi() {
                                     Plan d'action prêt à lancer
                                 </li>
                             </ul>
+                            
+                            <div className="mt-8 p-6 bg-blue-50 rounded-2xl border border-blue-100">
+                                <h4 className="font-black text-blue-700 uppercase text-sm mb-3 flex items-center gap-2">
+                                    <Users className="h-4 w-4" /> La Mécanique Humaine
+                                </h4>
+                                <p className="text-sm text-slate-600 leading-relaxed">
+                                    Chaque jour, un <strong>nouveau binôme</strong>. 15 partenaires en 15 jours pour vous challenger, vous aider à voir vos forces et vous dépasser. C'est le miroir dont vous avez besoin pour comprendre qui vous êtes vraiment.
+                                </p>
+                            </div>
                         </FadeIn>
                     </div>
                     <div className="bg-slate-50 border border-slate-200 p-8 rounded-3xl relative overflow-hidden shadow-lg">
@@ -218,7 +227,7 @@ export function LandingEmploi() {
                             <div className="absolute left-3 top-2 bottom-2 w-0.5 bg-slate-200"></div>
                             {[
                                 { title: "Semaine 1 : Clarté", desc: "Exploration, introspection, carte des forces." },
-                                { title: "Semaine 2 : Validation", desc: "Confrontation au marché, définition de la cible." },
+                                { title: "Semaine 2 : Validation", desc: "Confrontation au marché, définition de la cible et validation de tes choix, on se lance." },
                                 { title: "Semaine 3 : Lancement", desc: "Plan d'action, outils, préparation au sprint." }
                             ].map((step, i) => (
                                 <div key={i} className="relative flex gap-6">
