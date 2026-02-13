@@ -284,6 +284,16 @@ export function LandingEmploi() {
                         ))}
                     </div>
 
+                    <div className="bg-white/5 p-8 rounded-3xl border border-white/10 backdrop-blur-sm max-w-3xl mx-auto mb-12 text-left relative overflow-hidden">
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-orange-500/10 rounded-full blur-2xl"></div>
+                        <h4 className="text-orange-400 font-black uppercase tracking-widest text-sm mb-4 flex items-center gap-2">
+                            <Users className="h-4 w-4" /> Le Secret du Pod
+                        </h4>
+                        <p className="text-slate-300 text-lg leading-relaxed">
+                            Vous n'êtes plus seul. Vous avancez avec <strong className="text-white">23 autres entrepreneurs</strong> qui deviennent votre socle. Chaque jour, vous pitchez à une nouvelle personne qui activera son propre réseau pour vous trouver des clients.
+                        </p>
+                    </div>
+
                     <div className="inline-block bg-orange-600/20 border border-orange-500/30 rounded-2xl p-6">
                         <h4 className="font-bold text-orange-400 uppercase mb-2 text-sm tracking-widest">Résultat en sortie</h4>
                         <p className="text-white font-medium">
