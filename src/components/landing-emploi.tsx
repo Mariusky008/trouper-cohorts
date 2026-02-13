@@ -95,7 +95,7 @@ export function LandingEmploi() {
                   Et si dans 5 semaines<br />
                   tu passais de<br />
                   <span className="text-slate-400">“je ne sais pas quoi faire”</span><br/>
-                  à <span className="text-orange-600">entrepreneur avec tes<br/>premiers clients ?</span>
+                  à <span className="text-orange-600">“j’ai trouvé ma vocation…<br/>et mes premiers clients” ?</span>
                 </h1>
                 
                 <div className="text-xl md:text-2xl text-slate-600 max-w-4xl mx-auto font-medium leading-relaxed space-y-6">
