@@ -6,7 +6,7 @@ export default function TermsPage() {
       
       <h2>1. Préambule</h2>
       <p>
-        Les présentes Conditions Générales d'Utilisation et de Vente (ci-après « CGU/CGV ») régissent l'utilisation du site web <strong>www.popey.academy</strong> (le « Site ») ainsi que l'inscription et la participation aux formations et cohortes proposées par <strong>Popey Academy</strong> (« Nous »).
+        Les présentes Conditions Générales d'Utilisation et de Vente (ci-après « CGU/CGV ») régissent l'utilisation du site web <strong>www.popey.academy</strong> (le « Site ») ainsi que l'inscription et la participation aux formations et cohortes proposées par <strong>Ibrelisle</strong> (« Nous »), opérant sous la marque Popey Academy.
       </p>
       <p>
         En accédant au Site et en s'inscrivant à nos services, l'utilisateur (« Vous », le « Membre ») accepte sans réserve les présentes CGU/CGV.
@@ -14,7 +14,7 @@ export default function TermsPage() {
 
       <h2>2. Description des Services</h2>
       <p>
-        Popey Academy propose des programmes de formation et d'accompagnement en ligne à destination des entrepreneurs et des personnes en recherche d'emploi ou en reconversion professionnelle. Les services incluent :
+        Ibrelisle propose des programmes de formation et d'accompagnement en ligne à destination des entrepreneurs et des personnes en recherche d'emploi ou en reconversion professionnelle. Les services incluent :
       </p>
       <ul>
         <li>L'accès à une plateforme de formation en ligne.</li>

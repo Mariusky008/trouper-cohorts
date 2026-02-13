@@ -11,7 +11,7 @@ export default function PrivacyPage() {
 
       <h2>1. Responsable du Traitement</h2>
       <p>
-        Le responsable du traitement des données est <strong>Popey Academy</strong>, domicilié à Paris, France.<br/>
+        Le responsable du traitement des données est <strong>Ibrelisle</strong>, domicilié au 23 rue paul lahragou, 40100 Dax.<br/>
         Email de contact : <a href="mailto:contact@popey.academy">contact@popey.academy</a>.
       </p>
 

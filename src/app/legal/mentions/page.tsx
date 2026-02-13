@@ -8,14 +8,15 @@ export default function MentionsPage() {
         Le présent site, accessible à l’URL <strong>www.popey.academy</strong> (ci-après le « Site »), est édité par :
       </p>
       <p>
-        <strong>Popey Academy</strong><br/>
-        Siège social : Paris, France<br/>
+        <strong>Ibrelisle</strong><br/>
+        Siège social : 23 rue paul lahragou, 40100 Dax<br/>
+        SIRET : 840 800 106<br/>
         Email : <a href="mailto:contact@popey.academy">contact@popey.academy</a>
       </p>
 
       <h2>2. Directeur de la publication</h2>
       <p>
-        Le Directeur de la publication est le représentant légal de Popey Academy.
+        Directeur de la publication : <strong>Yann Ibrelisle</strong>
       </p>
 
       <h2>3. Hébergement</h2>
@@ -27,7 +28,13 @@ export default function MentionsPage() {
         Site web : <a href="https://vercel.com" target="_blank" rel="noopener noreferrer">https://vercel.com</a>
       </p>
 
-      <h2>4. Propriété Intellectuelle</h2>
+      <h2>4. Nous contacter</h2>
+      <p>
+        Par email : <a href="mailto:contact@popey.academy">contact@popey.academy</a><br/>
+        Par courrier : 23 rue paul lahragou, 40100 Dax
+      </p>
+
+      <h2>5. Propriété Intellectuelle</h2>
       <p>
         L'ensemble de ce Site (structure, design, textes, images, animations, logo) relève de la législation française et internationale sur le droit d'auteur et la propriété intellectuelle. 
         Tous les droits de reproduction sont réservés, y compris pour les documents téléchargeables et les représentations iconographiques et photographiques.
@@ -37,7 +44,7 @@ export default function MentionsPage() {
         Toute exploitation non autorisée du site ou de l’un quelconque des éléments qu’il contient sera considérée comme constitutive d’une contrefaçon et poursuivie conformément aux dispositions des articles L.335-2 et suivants du Code de Propriété Intellectuelle.
       </p>
 
-      <h2>5. Données Personnelles</h2>
+      <h2>6. Données Personnelles</h2>
       <p>
         Le traitement de vos données à caractère personnel est régi par notre <a href="/legal/privacy">Politique de Confidentialité</a>, conformément au Règlement Général sur la Protection des Données (RGPD) du 27 avril 2016.
       </p>
@@ -45,7 +52,7 @@ export default function MentionsPage() {
         Pour toute question concernant vos données personnelles ou pour exercer vos droits, vous pouvez nous contacter à l'adresse : <a href="mailto:contact@popey.academy">contact@popey.academy</a>.
       </p>
 
-      <h2>6. Cookies</h2>
+      <h2>7. Cookies</h2>
       <p>
         Le Site peut collecter automatiquement des informations standards telles que tous types d'informations personnalisées qui permettent au site d'identifier ses visiteurs. Toutes les informations collectées indirectement ne seront utilisées que pour suivre le volume, le type et la configuration du trafic utilisant ce Site, pour en développer la conception et l'agencement et à d'autres fins administratives et de planification et plus généralement pour améliorer le service que nous vous offrons.
       </p>
