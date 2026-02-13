@@ -134,7 +134,7 @@ export function PreRegistrationForm({ programType = "entrepreneur" }: { programT
             </div>
         )}
 
-        <div className="space-y-1 pt-2">
+        <div className="space-y-1">
             <Label htmlFor="sessionDate" className="text-xs uppercase font-bold text-blue-600">Session Souhaitée</Label>
             <Select name="sessionDate" required>
                 <SelectTrigger className="bg-blue-50/50 border-blue-200 text-blue-900 font-medium h-12">
@@ -147,6 +147,37 @@ export function PreRegistrationForm({ programType = "entrepreneur" }: { programT
                 </SelectContent>
             </Select>
         </div>
+
+        {programType === 'job_seeker' && (
+             <div className="space-y-1 pt-2">
+                <Label htmlFor="trainingChoice" className="text-xs uppercase font-bold text-orange-600">Votre Choix de Formation</Label>
+                <Select name="trainingChoice" required>
+                    <SelectTrigger className="bg-orange-50/50 border-orange-200 text-orange-900 font-medium h-auto py-3">
+                        <SelectValue placeholder="🚀 Quelle formule choisissez-vous ?" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="formation_1">
+                            <div className="flex flex-col text-left">
+                                <span className="font-bold">Formation 1 (3 Semaines)</span>
+                                <span className="text-xs text-slate-500">Trouver sa voie • 199€</span>
+                            </div>
+                        </SelectItem>
+                        <SelectItem value="formation_2">
+                             <div className="flex flex-col text-left">
+                                <span className="font-bold">Formation 2 (2 Semaines)</span>
+                                <span className="text-xs text-slate-500">Trouver ses clients • 199€</span>
+                            </div>
+                        </SelectItem>
+                        <SelectItem value="formation_1_2">
+                             <div className="flex flex-col text-left">
+                                <span className="font-bold">Pack Complet (5 Semaines)</span>
+                                <span className="text-xs text-green-600 font-bold">Best Seller • 369€ (au lieu de 398€)</span>
+                            </div>
+                        </SelectItem>
+                    </SelectContent>
+                </Select>
+            </div>
+        )}
 
         <Button type="submit" size="lg" className="w-full mt-4 bg-blue-900 hover:bg-blue-800 text-white font-bold h-12 text-lg shadow-xl transition-all hover:scale-[1.02]" disabled={loading}>
           {loading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : "POSTULER MAINTENANT"}
