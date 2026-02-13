@@ -183,9 +183,9 @@ export function LandingEmploi() {
                 <div className="grid md:grid-cols-2 gap-16 items-center">
                     <div className="space-y-8">
                         <FadeIn>
-                            <Badge className="bg-blue-100 text-blue-700 border-0 mb-4 uppercase tracking-widest px-4 py-2">Phase 1 • 3 Semaines</Badge>
+                            <Badge className="bg-blue-100 text-blue-700 border-0 mb-4 uppercase tracking-widest px-4 py-2">Partie 1 • La Fondation</Badge>
                             <h2 className="text-4xl font-black uppercase italic text-slate-900 leading-tight">
-                                De l'Errance à la <span className="text-blue-600">Vocation</span>
+                                3 Semaines pour<br/>trouver <span className="text-blue-600">ta voie</span>
                             </h2>
                         </FadeIn>
                         <FadeIn delay={0.1}>
@@ -210,6 +210,7 @@ export function LandingEmploi() {
                         </FadeIn>
                     </div>
                     <div className="bg-slate-50 border border-slate-200 p-8 rounded-3xl relative overflow-hidden shadow-lg">
+                        <div className="absolute top-0 right-0 bg-blue-100 text-blue-700 text-xs font-bold px-4 py-1.5 rounded-bl-2xl uppercase tracking-widest">Formation 1</div>
                         <h3 className="text-xl font-black text-slate-900 uppercase mb-8 flex items-center gap-2">
                             <Map className="text-blue-600" /> Le Parcours
                         </h3>
@@ -232,14 +233,25 @@ export function LandingEmploi() {
                     </div>
                 </div>
 
+                {/* TRANSITION VISUELLE */}
+                <div className="relative h-24 flex items-center justify-center">
+                    <div className="absolute inset-0 flex items-center justify-center">
+                         <div className="h-full w-0.5 bg-gradient-to-b from-blue-200 to-orange-200"></div>
+                    </div>
+                    <div className="bg-white border-2 border-slate-100 p-3 rounded-full relative z-10 shadow-sm">
+                        <div className="text-xs font-bold uppercase tracking-widest text-slate-400">Ensuite</div>
+                    </div>
+                </div>
+
                 {/* PHASE 2 */}
                 <div className="bg-slate-900 rounded-[2.5rem] p-8 md:p-16 text-center text-white relative overflow-hidden shadow-2xl shadow-orange-200">
                     <div className="absolute top-0 right-0 w-64 h-64 bg-orange-500/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
-                    
+                    <div className="absolute top-0 left-0 bg-orange-600 text-white text-xs font-bold px-6 py-2 rounded-br-2xl uppercase tracking-widest shadow-lg z-10">Formation 2</div>
+
                     <FadeIn>
-                        <Badge className="bg-orange-600 text-white border-0 mb-8 uppercase tracking-widest px-4 py-2">Phase 2 • Le Sprint</Badge>
+                        <Badge className="bg-white/10 text-orange-400 border-0 mb-8 uppercase tracking-widest px-4 py-2 backdrop-blur-md">Partie 2 • L'Accélération</Badge>
                         <h2 className="text-4xl md:text-5xl font-black uppercase italic mb-6">
-                            Ensuite, 15 jours commandos<br/>avec <span className="text-orange-500">23 alliés.</span>
+                            2 Semaines pour<br/>trouver <span className="text-orange-500">tes clients</span>
                         </h2>
                         <div className="bg-white/10 p-6 rounded-2xl border border-white/10 backdrop-blur-sm max-w-3xl mx-auto mb-10 text-left">
                              <div className="grid md:grid-cols-2 gap-6 items-center">
