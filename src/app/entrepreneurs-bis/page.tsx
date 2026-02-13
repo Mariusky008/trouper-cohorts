@@ -213,6 +213,56 @@ export default function EntrepreneursBisPage() {
             </div>
         </section>
 
+        {/* LA PUISSANCE DE L'ARMADA */}
+        <section className="py-24 bg-slate-900 border-t border-slate-800">
+            <div className="container mx-auto px-4 max-w-5xl">
+                <div className="text-center mb-16">
+                    <Badge className="bg-orange-600 text-white border-0 mb-4 uppercase tracking-widest">Le Collectif</Badge>
+                    <h2 className="text-4xl font-black uppercase italic text-white mb-6">La puissance de l'Armada (x24)</h2>
+                    <p className="text-xl text-slate-300 max-w-3xl mx-auto">
+                        Vous n'êtes plus seule. Vous faites partie d'une équipe de 24 pros qui avancent au même rythme. 
+                        Chaque membre devient un relais de votre visibilité.
+                    </p>
+                </div>
+
+                <div className="grid md:grid-cols-3 gap-8 mb-16">
+                    <div className="bg-slate-800 p-8 rounded-2xl border border-slate-700 hover:border-orange-500 transition-colors">
+                        <LifeBuoy className="h-10 w-10 text-orange-500 mb-6" />
+                        <h3 className="text-xl font-black text-white uppercase mb-4">Soutien Quotidien</h3>
+                        <p className="text-slate-400">On partage ses victoires, on débloque ses peurs. L'énergie du groupe vous porte quand la motivation baisse.</p>
+                    </div>
+                    <div className="bg-slate-800 p-8 rounded-2xl border border-slate-700 hover:border-orange-500 transition-colors">
+                        <Megaphone className="h-10 w-10 text-blue-500 mb-6" />
+                        <h3 className="text-xl font-black text-white uppercase mb-4">Visibilité Croisée</h3>
+                        <p className="text-slate-400">Intervenez dans les lives des autres. Faites-vous connaître de leur audience. Multipliez votre portée.</p>
+                    </div>
+                    <div className="bg-slate-800 p-8 rounded-2xl border border-slate-700 hover:border-orange-500 transition-colors">
+                        <Users className="h-10 w-10 text-green-500 mb-6" />
+                        <h3 className="text-xl font-black text-white uppercase mb-4">Recommandations</h3>
+                        <p className="text-slate-400">Vos coéquipières vous connaissent et vous recommandent naturellement à leur propre réseau.</p>
+                    </div>
+                </div>
+
+                <div className="bg-gradient-to-br from-orange-900/40 to-slate-900 p-8 md:p-12 rounded-3xl border border-orange-500/30 text-center relative overflow-hidden">
+                    <div className="relative z-10">
+                        <h3 className="text-2xl md:text-3xl font-black uppercase italic text-white mb-4">Garantie Totale : Résultat ou Nouveau Départ</h3>
+                        <p className="text-lg text-orange-100 max-w-2xl mx-auto mb-8">
+                            Si à la fin des 15 jours, vous n'avez pas obtenu au moins 1 client ou plusieurs RDV qualifiés, 
+                            nous vous replaçons gratuitement dans la prochaine expédition.
+                        </p>
+                        <div className="inline-block bg-orange-600/20 text-orange-400 px-6 py-2 rounded-full font-bold uppercase tracking-widest text-sm border border-orange-500/50">
+                            Zéro risque. Que de l'action.
+                        </div>
+                        <div className="mt-8">
+                            <Button className="bg-orange-600 hover:bg-orange-500 text-white font-black uppercase tracking-widest px-8 h-12" asChild>
+                                <Link href="#join">Réserver ma place dans l'Armada</Link>
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
         {/* 3. CONCRÈTEMENT : COMMENT ÇA MARCHE */}
         <section className="py-24 bg-slate-900">
             <div className="container mx-auto px-4 max-w-4xl">
@@ -264,6 +314,83 @@ export default function EntrepreneursBisPage() {
                         <div className="mt-6 pt-6 border-t border-slate-700">
                             <h4 className="text-sm font-bold text-slate-500 uppercase mb-2">Ce qui n'est PAS inclus</h4>
                             <p className="text-slate-400 text-sm">Des excuses. De la théorie académique. Des diplômes en papier.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        {/* RYTHME & STRUCTURE */}
+        <section className="py-24 bg-slate-950">
+            <div className="container mx-auto px-4 max-w-5xl">
+                <div className="grid md:grid-cols-2 gap-16 items-start">
+                    <div className="space-y-12">
+                        <div>
+                            <Badge variant="outline" className="border-blue-500 text-blue-400 uppercase mb-4">Méthode</Badge>
+                            <h2 className="text-4xl font-black uppercase italic text-white mb-6">Rythme & Structure</h2>
+                            <h3 className="text-2xl font-bold text-white mb-4">Chaque jour, un Cap Précis.</h3>
+                            <div className="flex items-center gap-3 text-green-400 font-bold bg-green-900/20 p-4 rounded-lg border border-green-900/50">
+                                <CheckCircle2 className="h-6 w-6" />
+                                <span>Charge Mentale Zéro : On vous dit quoi faire, vous le faites, ça marche.</span>
+                            </div>
+                        </div>
+
+                        <div className="space-y-8">
+                            <div className="flex gap-6">
+                                <div className="h-12 w-12 bg-slate-800 rounded-full flex items-center justify-center font-black text-xl text-white border border-slate-700 shrink-0">1</div>
+                                <div>
+                                    <h4 className="text-xl font-bold text-white uppercase mb-2">Programme Clair</h4>
+                                    <p className="text-slate-400">Chaque matin, découvrez vos actions du jour : vidéo courte, post structuré, interaction locale.</p>
+                                </div>
+                            </div>
+                            <div className="flex gap-6">
+                                <div className="h-12 w-12 bg-slate-800 rounded-full flex items-center justify-center font-black text-xl text-white border border-slate-700 shrink-0">2</div>
+                                <div>
+                                    <h4 className="text-xl font-bold text-white uppercase mb-2">Interventions Croisées</h4>
+                                    <p className="text-slate-400">Réalisez des Lives et des vidéos en duo/trio avec les autres membres. Multipliez votre audience par 2 ou 3.</p>
+                                </div>
+                            </div>
+                            <div className="flex gap-6">
+                                <div className="h-12 w-12 bg-slate-800 rounded-full flex items-center justify-center font-black text-xl text-white border border-slate-700 shrink-0">3</div>
+                                <div>
+                                    <h4 className="text-xl font-bold text-white uppercase mb-2">Actions Concrètes</h4>
+                                    <p className="text-slate-400">Pas de théorie. Vous contactez, vous publiez, vous invitez. Tout est fait pour générer des RDV.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="bg-slate-900 border border-slate-800 rounded-2xl p-8 relative">
+                        <div className="absolute top-0 right-0 bg-blue-600 text-white text-xs font-bold px-4 py-2 rounded-bl-xl uppercase tracking-widest">Exemple J4</div>
+                        <h3 className="text-2xl font-black uppercase italic text-white mb-8">Votre Journée Type</h3>
+                        
+                        <div className="space-y-0 relative">
+                            {/* Vertical Line */}
+                            <div className="absolute left-[27px] top-4 bottom-4 w-0.5 bg-slate-800"></div>
+
+                            {[
+                                { time: "09h00", title: "Briefing & Mission du jour", icon: Target },
+                                { time: "10h30", title: "Tournage Vidéo Duo (30min)", icon: Video },
+                                { time: "14h00", title: "10 interactions locales ciblées", icon: Users },
+                                { time: "18h00", title: "Atelier Live de perfectionnement", icon: Zap }
+                            ].map((slot, i) => (
+                                <div key={i} className="flex gap-6 relative py-4">
+                                    <div className="h-14 w-14 bg-slate-950 border border-slate-800 rounded-xl flex flex-col items-center justify-center shrink-0 z-10 text-xs font-bold text-slate-400">
+                                        <slot.icon className="h-4 w-4 mb-1 text-blue-500" />
+                                        {slot.time.split('h')[0]}h
+                                    </div>
+                                    <div className="pt-2">
+                                        <div className="text-sm font-bold text-blue-400 mb-1">{slot.time}</div>
+                                        <div className="font-bold text-white text-lg">{slot.title}</div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+
+                        <div className="mt-8 pt-8 border-t border-slate-800 text-center">
+                             <Button variant="ghost" className="text-slate-400 hover:text-white hover:bg-slate-800 uppercase tracking-widest text-xs font-bold" asChild>
+                                <Link href="#join">Voir mon futur quotidien <ArrowRight className="ml-2 h-4 w-4" /></Link>
+                             </Button>
                         </div>
                     </div>
                 </div>
