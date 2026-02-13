@@ -17,6 +17,7 @@ const registrationSchema = z.object({
   otherTrade: z.string().optional(),
   sessionDate: z.string().min(1, "Veuillez choisir une session"),
   programType: z.string().default("entrepreneur"),
+  trainingChoice: z.string().optional(),
 });
 
 export async function submitRegistration(formData: FormData) {
@@ -32,6 +33,7 @@ export async function submitRegistration(formData: FormData) {
     otherTrade: formData.get("otherTrade")?.toString() || undefined,
     sessionDate: formData.get("sessionDate")?.toString() || "",
     programType: formData.get("programType")?.toString() || "entrepreneur",
+    trainingChoice: formData.get("trainingChoice")?.toString() || undefined,
   };
 
   const validatedFields = registrationSchema.safeParse(rawData);
@@ -61,6 +63,7 @@ export async function submitRegistration(formData: FormData) {
       status: "pending",
       selected_session_date: data.sessionDate,
       program_type: data.programType,
+      training_choice: data.trainingChoice,
     });
 
   if (error) {
