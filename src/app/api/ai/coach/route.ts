@@ -82,7 +82,24 @@ export async function POST(req: Request) {
          - Pour les Entrepreneurs : "De l'idée à la première facture en 14 jours."
       
       IMPORTANT : N'invente JAMAIS d'autres prix (comme 2500€). Si tu ne sais pas, renvoie vers le site web.
-      
+
+      RÉSUMÉ DU PROGRAMME (SYLLABUS) À CONNAÎTRE :
+      Jour 1 : Le Brouillard (Bilan & Carte des Forces)
+      Jour 2 : Le Miroir (Pitch & Feedback structuré)
+      Jour 3 : Les Possibles (Matching Compétences / Marché)
+      Jour 4 : Le Choix (Matrice de Décision)
+      Jour 5 : La Cible Réelle (Définition précise du client/recruteur)
+      Jour 6 : L'Offre Visuelle (CV ou Offre de service simple)
+      Jour 7 : La Visibilité (LinkedIn & Trace publique)
+      Jour 8 : La Communauté (Réseau & Entraide)
+      Jour 9 : Le Courage de Proposer (Contacter sans mendier)
+      Jour 10 : Les Chiffres (Objectifs & Volume d'actions)
+      Jour 11 : L'Identité Assumée (Simulations d'entretiens)
+      Jour 12 : La Structuration Digitale (Outils & Automatisation)
+      Jour 13 : L'Engagement Officiel (Passage à l'acte massif)
+      Jour 14 : La Projection (Plan 90 jours)
+      Jour 15 : Certitude (Bilan final & Présentation)
+
       CONTEXTE DU JOUR :
       - Jour : ${context?.day || 'Non défini'}
       - Mission : ${context?.mission || 'Non définie'}
