@@ -5,42 +5,49 @@ export default function MentionsPage() {
       
       <h2>1. Éditeur du Site</h2>
       <p>
-        Le présent site, accessible à l’URL www.popey.academy (le « Site »), est édité par :
+        Le présent site, accessible à l’URL <strong>www.popey.academy</strong> (ci-après le « Site »), est édité par :
       </p>
       <p>
-        <strong>Ibrelisle</strong><br/>
-        Siège social : 23 rue Paul Lahragou, 40100 Dax<br/>
-        SIRET : 840 800 106<br/>
-        Email : <a href="mailto:contact@votrelegende.fr">contact@votrelegende.fr</a>
+        <strong>Popey Academy</strong><br/>
+        Siège social : Paris, France<br/>
+        Email : <a href="mailto:contact@popey.academy">contact@popey.academy</a>
       </p>
 
       <h2>2. Directeur de la publication</h2>
       <p>
-        Directeur de la publication : <strong>Yann Ibrelisle</strong>
+        Le Directeur de la publication est le représentant légal de Popey Academy.
       </p>
 
       <h2>3. Hébergement</h2>
       <p>
-        Le site est hébergé par :<br/>
-        <strong>Vercel Inc.</strong><br/>
+        Le Site est hébergé par la société <strong>Vercel Inc.</strong>, dont le siège social est situé au :<br/>
         340 S Lemon Ave #4133<br/>
         Walnut, CA 91789<br/>
         États-Unis<br/>
-        <a href="https://vercel.com" target="_blank" rel="noopener noreferrer">https://vercel.com</a>
+        Site web : <a href="https://vercel.com" target="_blank" rel="noopener noreferrer">https://vercel.com</a>
       </p>
 
-      <h2>4. Contact</h2>
+      <h2>4. Propriété Intellectuelle</h2>
       <p>
-        Pour toute question ou demande d'information, vous pouvez nous contacter :
+        L'ensemble de ce Site (structure, design, textes, images, animations, logo) relève de la législation française et internationale sur le droit d'auteur et la propriété intellectuelle. 
+        Tous les droits de reproduction sont réservés, y compris pour les documents téléchargeables et les représentations iconographiques et photographiques.
       </p>
-      <ul>
-        <li>Par email : contact@votrelegende.fr</li>
-        <li>Par courrier : Ibrelisle Yann, 23 rue Paul Lahragou, 40100 Dax</li>
-      </ul>
-      
-      <h2>5. Propriété intellectuelle</h2>
       <p>
-        L'ensemble de ce site relève de la législation française et internationale sur le droit d'auteur et la propriété intellectuelle. Tous les droits de reproduction sont réservés, y compris pour les documents téléchargeables et les représentations iconographiques et photographiques. La reproduction de tout ou partie de ce site sur un support électronique quel qu'il soit est formellement interdite sauf autorisation expresse du directeur de la publication.
+        Toute reproduction, représentation, modification, publication, adaptation de tout ou partie des éléments du Site, quel que soit le moyen ou le procédé utilisé, est interdite, sauf autorisation écrite préalable de Popey Academy.
+        Toute exploitation non autorisée du site ou de l’un quelconque des éléments qu’il contient sera considérée comme constitutive d’une contrefaçon et poursuivie conformément aux dispositions des articles L.335-2 et suivants du Code de Propriété Intellectuelle.
+      </p>
+
+      <h2>5. Données Personnelles</h2>
+      <p>
+        Le traitement de vos données à caractère personnel est régi par notre <a href="/legal/privacy">Politique de Confidentialité</a>, conformément au Règlement Général sur la Protection des Données (RGPD) du 27 avril 2016.
+      </p>
+      <p>
+        Pour toute question concernant vos données personnelles ou pour exercer vos droits, vous pouvez nous contacter à l'adresse : <a href="mailto:contact@popey.academy">contact@popey.academy</a>.
+      </p>
+
+      <h2>6. Cookies</h2>
+      <p>
+        Le Site peut collecter automatiquement des informations standards telles que tous types d'informations personnalisées qui permettent au site d'identifier ses visiteurs. Toutes les informations collectées indirectement ne seront utilisées que pour suivre le volume, le type et la configuration du trafic utilisant ce Site, pour en développer la conception et l'agencement et à d'autres fins administratives et de planification et plus généralement pour améliorer le service que nous vous offrons.
       </p>
     </article>
   );
