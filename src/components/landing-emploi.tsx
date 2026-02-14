@@ -183,7 +183,9 @@ export function LandingEmploi() {
                 <div className="grid md:grid-cols-2 gap-16 items-center">
                     <div className="space-y-8">
                         <FadeIn>
-                            <Badge className="bg-blue-100 text-blue-700 border-0 mb-4 uppercase tracking-widest px-4 py-2">Partie 1 • La Fondation</Badge>
+                            <div className="inline-block bg-blue-100 text-blue-700 font-black border-2 border-blue-200 mb-6 uppercase tracking-widest px-6 py-3 rounded-full text-sm shadow-sm">
+                                Partie 1 • La Fondation
+                            </div>
                             <h2 className="text-4xl font-black uppercase italic text-slate-900 leading-tight">
                                 3 Semaines pour<br/>trouver <span className="text-blue-600">ta voie</span>
                             </h2>
@@ -295,7 +297,7 @@ export function LandingEmploi() {
 
                             <div className="pt-4">
                                 <Badge className="bg-orange-600 text-white border-0 px-6 py-2 text-sm md:text-base font-bold uppercase tracking-widest hover:bg-orange-500">
-                                    Tu ne restes pas le même. Parce que 15 miroirs ne mentent pas.
+                                    Tu ne restes pas le même. Parce que 30 miroirs ne mentent pas.
                                 </Badge>
                             </div>
                         </div>
@@ -329,7 +331,9 @@ export function LandingEmploi() {
 
                     <div className="space-y-8 order-1 md:order-2">
                         <FadeIn>
-                            <Badge className="bg-orange-100 text-orange-700 border-0 mb-4 uppercase tracking-widest px-4 py-2">Partie 2 • L'Accélération</Badge>
+                            <div className="inline-block bg-orange-100 text-orange-700 font-black border-2 border-orange-200 mb-6 uppercase tracking-widest px-6 py-3 rounded-full text-sm shadow-sm">
+                                Partie 2 • L'Accélération
+                            </div>
                             <h2 className="text-4xl font-black uppercase italic text-slate-900 leading-tight">
                                 2 Semaines pour<br/>trouver <span className="text-orange-600">tes clients</span>
                             </h2>
