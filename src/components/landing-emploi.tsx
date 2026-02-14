@@ -303,61 +303,62 @@ export function LandingEmploi() {
                 </div>
 
                 {/* PHASE 2 */}
-                <div className="bg-slate-900 rounded-[2.5rem] p-8 md:p-16 text-center text-white relative overflow-hidden shadow-2xl shadow-orange-200">
-                    <div className="absolute top-0 right-0 w-64 h-64 bg-orange-500/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
-                    <div className="absolute top-0 left-0 bg-orange-600 text-white text-xs font-bold px-6 py-2 rounded-br-2xl uppercase tracking-widest shadow-lg z-10">Formation 2</div>
-
-                    <FadeIn>
-                        <Badge className="bg-white/10 text-orange-400 border-0 mb-8 uppercase tracking-widest px-4 py-2 backdrop-blur-md">Partie 2 • L'Accélération</Badge>
-                        <h2 className="text-4xl md:text-5xl font-black uppercase italic mb-6">
-                            2 Semaines pour<br/>trouver <span className="text-orange-500">tes clients</span>
-                        </h2>
-                        <div className="bg-white/10 p-6 rounded-2xl border border-white/10 backdrop-blur-sm max-w-3xl mx-auto mb-10 text-left">
-                             <div className="grid md:grid-cols-2 gap-6 items-center">
-                                 <div>
-                                     <h4 className="font-bold text-orange-400 uppercase tracking-widest text-sm mb-2">L'Objectif</h4>
-                                     <p className="text-white font-medium">Transformer votre offre en clients réels.</p>
-                                 </div>
-                                 <div className="text-sm text-slate-300 space-y-2 border-l border-white/10 pl-6">
-                                     <p>• 3 semaines précédentes = Fondation & Clarté</p>
-                                     <p>• 2 semaines actuelles = Action & Vente</p>
-                                 </div>
-                             </div>
+                <div className="grid md:grid-cols-2 gap-16 items-center">
+                    <div className="bg-slate-50 border border-slate-200 p-8 rounded-3xl relative overflow-hidden shadow-lg order-2 md:order-1">
+                        <div className="absolute top-0 right-0 bg-orange-100 text-orange-700 text-xs font-bold px-4 py-1.5 rounded-bl-2xl uppercase tracking-widest">Formation 2</div>
+                        <h3 className="text-xl font-black text-slate-900 uppercase mb-8 flex items-center gap-2">
+                            <Rocket className="text-orange-600" /> Le Parcours
+                        </h3>
+                        <div className="space-y-8 relative">
+                            <div className="absolute left-3 top-2 bottom-2 w-0.5 bg-slate-200"></div>
+                            {[
+                                { title: "Semaine 4 : L'Offre", desc: "Créer une offre irrésistible qui répond à un besoin réel." },
+                                { title: "Semaine 5 : La Vente", desc: "Trouver ses premiers clients, pitcher, vendre sans forcer." },
+                                { title: "Le Sprint", desc: "15 jours d'action intensive avec l'Armada pour décoller." }
+                            ].map((step, i) => (
+                                <div key={i} className="relative flex gap-6">
+                                    <div className="h-6 w-6 rounded-full bg-white border-4 border-orange-600 z-10 shrink-0 shadow-sm"></div>
+                                    <div>
+                                        <h4 className="font-black text-slate-900 text-lg uppercase mb-1">{step.title}</h4>
+                                        <p className="text-slate-500 text-sm font-medium">{step.desc}</p>
+                                    </div>
+                                </div>
+                            ))}
                         </div>
-                        <p className="text-xl text-slate-300 max-w-2xl mx-auto mb-12">
-                            Une seule obsession : terminer cette quinzaine avec plus de clients ou d'opportunités qu'au départ.
-                        </p>
-                    </FadeIn>
+                    </div>
 
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-4xl mx-auto mb-12">
-                        {[
-                            { val: "24", label: "Réseaux Activés" },
-                            { val: "24", label: "Offres Présentées" },
-                            { val: "24", label: "Cercles de Reco." },
-                            { val: "∞", label: "Visibilité Croisée" }
-                        ].map((stat, i) => (
-                            <div key={i} className="bg-white/5 p-6 rounded-2xl border border-white/10 backdrop-blur-sm">
-                                <div className="text-4xl font-black text-orange-500 mb-2">{stat.val}</div>
-                                <div className="text-xs font-bold text-slate-400 uppercase tracking-widest">{stat.label}</div>
+                    <div className="space-y-8 order-1 md:order-2">
+                        <FadeIn>
+                            <Badge className="bg-orange-100 text-orange-700 border-0 mb-4 uppercase tracking-widest px-4 py-2">Partie 2 • L'Accélération</Badge>
+                            <h2 className="text-4xl font-black uppercase italic text-slate-900 leading-tight">
+                                2 Semaines pour<br/>trouver <span className="text-orange-600">tes clients</span>
+                            </h2>
+                        </FadeIn>
+                        <FadeIn delay={0.1}>
+                            <p className="text-lg text-slate-500 leading-relaxed">
+                                Une seule obsession : terminer cette quinzaine avec plus de clients ou d'opportunités qu'au départ.
+                            </p>
+                            
+                            <div className="grid grid-cols-2 gap-4 mt-6">
+                                <div className="bg-white p-4 rounded-xl text-center border border-slate-100 shadow-sm">
+                                    <div className="text-3xl font-black text-orange-600 mb-1">24</div>
+                                    <div className="text-xs uppercase text-slate-400 font-bold">Réseaux</div>
+                                </div>
+                                <div className="bg-white p-4 rounded-xl text-center border border-slate-100 shadow-sm">
+                                    <div className="text-3xl font-black text-blue-600 mb-1">∞</div>
+                                    <div className="text-xs uppercase text-slate-400 font-bold">Visibilité</div>
+                                </div>
                             </div>
-                        ))}
-                    </div>
-
-                    <div className="bg-white/5 p-8 rounded-3xl border border-white/10 backdrop-blur-sm max-w-3xl mx-auto mb-12 text-left relative overflow-hidden">
-                        <div className="absolute top-0 right-0 w-32 h-32 bg-orange-500/10 rounded-full blur-2xl"></div>
-                        <h4 className="text-orange-400 font-black uppercase tracking-widest text-sm mb-4 flex items-center gap-2">
-                            <Users className="h-4 w-4" /> Le Secret du Pod
-                        </h4>
-                        <p className="text-slate-300 text-lg leading-relaxed">
-                            Vous n'êtes plus seul. Vous avancez avec <strong className="text-white">23 autres entrepreneurs</strong> qui deviennent votre socle. Chaque jour, vous pitchez à une nouvelle personne qui activera son propre réseau pour vous trouver des clients.
-                        </p>
-                    </div>
-
-                    <div className="inline-block bg-orange-600/20 border border-orange-500/30 rounded-2xl p-6">
-                        <h4 className="font-bold text-orange-400 uppercase mb-2 text-sm tracking-widest">Résultat en sortie</h4>
-                        <p className="text-white font-medium">
-                            Contenu publié • Prospection réalisée • RDV obtenus • Peur du rejet dépassée.
-                        </p>
+                            
+                            <div className="mt-8 p-6 bg-orange-50 rounded-2xl border border-orange-100">
+                                <h4 className="font-black text-orange-700 uppercase text-sm mb-3 flex items-center gap-2">
+                                    <Users className="h-4 w-4" /> Le Secret du Pod
+                                </h4>
+                                <p className="text-sm text-slate-600 leading-relaxed">
+                                    Vous n'êtes plus seul. Vous avancez avec <strong>23 autres entrepreneurs</strong> qui deviennent votre socle. Chaque jour, vous pitchez à une nouvelle personne.
+                                </p>
+                            </div>
+                        </FadeIn>
                     </div>
                 </div>
             </div>
