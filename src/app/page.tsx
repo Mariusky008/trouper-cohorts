@@ -94,7 +94,7 @@ export default function Home() {
 
             <FadeIn delay={0.2}>
                 <div className="text-xl md:text-3xl text-slate-600 font-black uppercase tracking-tight space-y-2">
-                    <p>15 jours intensifs.</p>
+                    <p>15 jours intensifs pour développer sa communication sur les réseaux (humains et sociaux)</p>
                     <p>23 partenaires qui activent leur réseau pour vous.</p>
                     <p className="text-orange-600">Une seule obsession : terminer la quinzaine avec plus de clients qu’au départ.</p>
                 </div>
