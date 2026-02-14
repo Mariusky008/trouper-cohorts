@@ -393,16 +393,16 @@ export default function Home() {
                         </h3>
                         <ul className="space-y-4 text-slate-600">
                             <li className="flex items-start gap-3">
-                                <span className="bg-slate-100 rounded px-2 py-0.5 text-xs font-bold text-slate-700 mt-1">QUOTIDIEN</span>
-                                <div>1h d'action intensive par jour (Sprint).</div>
+                                <span className="bg-slate-100 rounded px-2 py-0.5 text-xs font-bold text-slate-700 mt-1">ACTION</span>
+                                <div>1 mission par jour, directement dans ton Cockpit.</div>
                             </li>
                             <li className="flex items-start gap-3">
-                                <span className="bg-slate-100 rounded px-2 py-0.5 text-xs font-bold text-slate-700 mt-1">VISIO</span>
-                                <div>Briefing le matin, Débriefing le soir.</div>
+                                <span className="bg-slate-100 rounded px-2 py-0.5 text-xs font-bold text-slate-700 mt-1">HUMAIN</span>
+                                <div>1 nouveau binôme chaque matin à 6h00.</div>
                             </li>
                             <li className="flex items-start gap-3">
                                 <span className="bg-slate-100 rounded px-2 py-0.5 text-xs font-bold text-slate-700 mt-1">OUTILS</span>
-                                <div>WhatsApp (Réactivité) + Notion (Ressources) + LinkedIn (Terrain).</div>
+                                <div>Zéro dispersion. Tout se passe sur Popey.Academy (Chat, Visio, Feed).</div>
                             </li>
                         </ul>
                     </div>
@@ -413,16 +413,16 @@ export default function Home() {
                         </h3>
                         <ul className="space-y-3 text-slate-600">
                             <li className="flex items-center gap-2">
-                                <CheckCircle2 className="h-4 w-4 text-green-600" /> Accès au groupe privé (Le Pod)
+                                <CheckCircle2 className="h-4 w-4 text-green-600" /> Ton Équipage (24 entrepreneurs)
                             </li>
                             <li className="flex items-center gap-2">
-                                <CheckCircle2 className="h-4 w-4 text-green-600" /> Scripts de vente & Templates
+                                <CheckCircle2 className="h-4 w-4 text-green-600" /> Ton Coach IA personnel (Cerveau du programme)
                             </li>
                             <li className="flex items-center gap-2">
-                                <CheckCircle2 className="h-4 w-4 text-green-600" /> Binôme rotatif (Networking)
+                                <CheckCircle2 className="h-4 w-4 text-green-600" /> Tes Missions scriptées (Pas de page blanche)
                             </li>
                             <li className="flex items-center gap-2">
-                                <CheckCircle2 className="h-4 w-4 text-green-600" /> Coaching IA 24/7
+                                <CheckCircle2 className="h-4 w-4 text-green-600" /> Le Victory Wall (Pour célébrer tes victoires)
                             </li>
                         </ul>
                         <div className="mt-6 pt-6 border-t border-slate-100">
