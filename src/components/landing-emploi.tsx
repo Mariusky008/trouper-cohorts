@@ -314,8 +314,8 @@ export function LandingEmploi() {
                         <div className="space-y-8 relative">
                             <div className="absolute left-3 top-2 bottom-2 w-0.5 bg-slate-200"></div>
                             {[
-                                { title: "Semaine 4 : L'Offre", desc: "Créer une offre irrésistible qui répond à un besoin réel." },
-                                { title: "Semaine 5 : La Vente", desc: "Trouver ses premiers clients, pitcher, vendre sans forcer." },
+                                { title: "Semaine 4 : L'Offre", desc: "Revoir, améliorer ou même créer une offre irrésistible qui répond à un besoin réel." },
+                                { title: "Semaine 5 : La Vente", desc: "Trouver des clients, pitcher, poster, développer les réseaux (sociaux et humains) vendre sans forcer en utilisant la force du groupe." },
                                 { title: "Le Sprint", desc: "15 jours d'action intensive avec l'Armada pour décoller." }
                             ].map((step, i) => (
                                 <div key={i} className="relative flex gap-6">

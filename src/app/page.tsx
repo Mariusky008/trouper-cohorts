@@ -322,19 +322,20 @@ export default function Home() {
                             <div className="absolute left-[27px] top-4 bottom-4 w-0.5 bg-slate-200"></div>
 
                             {[
-                                { time: "09h00", title: "Briefing & Mission du jour", icon: Target },
-                                { time: "10h30", title: "Tournage Vidéo Duo (30min)", icon: Video },
-                                { time: "14h00", title: "10 interactions locales ciblées", icon: Users },
-                                { time: "18h00", title: "Atelier Live de perfectionnement", icon: Zap }
+                                { time: "09h00", title: "La Munition (Offre)", desc: "On rédige ton message d'approche. Court. Tranchant. Impossible à ignorer.", icon: Target },
+                                { time: "10h30", title: "Le Crash-Test (Validation)", desc: "Ton binôme et l'IA testent ton message. On élimine chaque mot faible.", icon: ShieldCheck },
+                                { time: "14h00", title: "Le Feu (Action Réelle)", desc: "Passage à l'acte immédiat (10 prospects contactés) + utilisation du réseau du binôme.", icon: Zap },
+                                { time: "18h00", title: "Le Tableau de Chasse", desc: "Tu ne fermes pas ton ordi sans une victoire : un RDV, une réponse, une piste.", icon: Megaphone }
                             ].map((slot, i) => (
                                 <div key={i} className="flex gap-6 relative py-4">
                                     <div className="h-14 w-14 bg-white border border-slate-200 rounded-xl flex flex-col items-center justify-center shrink-0 z-10 text-xs font-bold text-slate-500 shadow-sm">
                                         <slot.icon className="h-4 w-4 mb-1 text-blue-600" />
                                         {slot.time.split('h')[0]}h
                                     </div>
-                                    <div className="pt-2">
-                                        <div className="text-sm font-bold text-blue-600 mb-1">{slot.time}</div>
-                                        <div className="font-bold text-slate-900 text-lg">{slot.title}</div>
+                                    <div className="pt-1">
+                                        <div className="text-xs font-bold text-blue-600 uppercase tracking-wider mb-0.5">{slot.time}</div>
+                                        <div className="font-black text-slate-900 text-lg leading-tight mb-1">{slot.title}</div>
+                                        <div className="text-sm text-slate-500 leading-snug">{slot.desc}</div>
                                     </div>
                                 </div>
                             ))}
