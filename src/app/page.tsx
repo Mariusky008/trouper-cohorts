@@ -186,32 +186,75 @@ export default function Home() {
                     <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600/20 rounded-full blur-3xl"></div>
                     <div className="relative z-10">
                         <div className="text-center mb-10">
-                            <h3 className="text-3xl font-black uppercase italic text-white mb-4">Au bout de 15 jours vous avez :</h3>
-                            <p className="text-blue-200">Des résultats, pas des promesses.</p>
+                            <h3 className="text-3xl font-black uppercase italic text-white mb-4">Ce que 24 entrepreneurs produisent pour vous</h3>
+                            <p className="text-blue-200 text-lg max-w-2xl mx-auto">
+                                Vous n’êtes plus seul à chercher des clients. Pendant 2 semaines, 23 autres personnes activent leur réseau pour vous. <span className="text-orange-500 font-bold">C’est un multiplicateur humain.</span>
+                            </p>
                         </div>
                         
-                        <div className="grid md:grid-cols-3 gap-6">
-                            {[
-                                { label: "Publié du contenu", icon: Megaphone },
-                                { label: "Prospecté activement", icon: Target },
-                                { label: "Pitché votre offre", icon: MessageCircle },
-                                { label: "Obtenu des rendez-vous", icon: CalendarClock },
-                                { label: "Activé un pipeline commercial", icon: Zap },
-                                { label: "Dépassé la peur du “non”", icon: ShieldCheck }
-                            ].map((item, i) => (
-                                <div key={i} className="flex items-center gap-4 bg-slate-900/50 p-4 rounded-xl border border-slate-700">
-                                    <div className="h-10 w-10 rounded-full bg-orange-500/20 flex items-center justify-center text-orange-400 shrink-0">
-                                        <item.icon className="h-5 w-5" />
-                                    </div>
-                                    <span className="text-white font-bold text-sm uppercase leading-tight text-left">{item.label}</span>
-                                </div>
-                            ))}
+                        {/* Projection Chiffrée */}
+                        <div className="grid md:grid-cols-4 gap-6 mb-12">
+                            <div className="bg-slate-900/50 p-6 rounded-2xl border border-slate-700 text-center hover:border-orange-500/50 transition-all">
+                                <div className="text-4xl font-black text-orange-500 mb-2">24</div>
+                                <div className="text-sm font-bold text-white uppercase mb-2">Recommandations</div>
+                                <p className="text-xs text-slate-400">Chaque participant pense à vous.</p>
+                            </div>
+                            <div className="bg-slate-900/50 p-6 rounded-2xl border border-slate-700 text-center hover:border-blue-500/50 transition-all">
+                                <div className="text-4xl font-black text-blue-500 mb-2">30</div>
+                                <div className="text-sm font-bold text-white uppercase mb-2">Conversations</div>
+                                <p className="text-xs text-slate-400">Messages, intros, opportunités.</p>
+                            </div>
+                            <div className="bg-slate-900/50 p-6 rounded-2xl border border-slate-700 text-center hover:border-green-500/50 transition-all">
+                                <div className="text-4xl font-black text-green-500 mb-2">10</div>
+                                <div className="text-sm font-bold text-white uppercase mb-2">Rendez-vous</div>
+                                <p className="text-xs text-slate-400">Grâce aux mises en relation.</p>
+                            </div>
+                            <div className="bg-slate-900/50 p-6 rounded-2xl border border-slate-700 text-center hover:border-purple-500/50 transition-all">
+                                <div className="text-4xl font-black text-purple-500 mb-2">x24</div>
+                                <div className="text-sm font-bold text-white uppercase mb-2">Visibilité</div>
+                                <p className="text-xs text-slate-400">Réseaux sociaux cumulés.</p>
+                            </div>
                         </div>
 
-                        <div className="mt-10 text-center">
-                            <Button className="bg-white text-slate-900 hover:bg-slate-100 font-black uppercase tracking-widest px-8" asChild>
-                                <Link href="#join">Je veux ces résultats</Link>
+                        {/* Bloc Pédagogique & Mental */}
+                        <div className="grid md:grid-cols-2 gap-8 mb-10">
+                            <div className="bg-white/5 p-8 rounded-2xl border border-white/10">
+                                <h4 className="font-black text-white uppercase text-lg mb-4 flex items-center gap-2">
+                                    <Zap className="text-yellow-500" /> Imaginez dans 15 jours...
+                                </h4>
+                                <ul className="space-y-3 text-slate-300 text-sm">
+                                    <li className="flex gap-3"><CheckCircle2 className="h-5 w-5 text-green-500 shrink-0" /> Des personnes parlent de vous sans vous connaître.</li>
+                                    <li className="flex gap-3"><CheckCircle2 className="h-5 w-5 text-green-500 shrink-0" /> Des opportunités arrivent sans démarchage agressif.</li>
+                                    <li className="flex gap-3"><CheckCircle2 className="h-5 w-5 text-green-500 shrink-0" /> Votre téléphone sonne pour des rendez-vous.</li>
+                                    <li className="flex gap-3"><CheckCircle2 className="h-5 w-5 text-green-500 shrink-0" /> Vous existez enfin sur votre marché.</li>
+                                </ul>
+                            </div>
+
+                            <div className="bg-white/5 p-8 rounded-2xl border border-white/10">
+                                <h4 className="font-black text-white uppercase text-lg mb-4 flex items-center gap-2">
+                                    <ShieldCheck className="text-blue-500" /> Preuve Logique
+                                </h4>
+                                <p className="text-slate-300 text-sm mb-4">Même avec des hypothèses prudentes :</p>
+                                <ul className="space-y-2 text-slate-400 text-sm mb-4">
+                                    <li>• Si 10 personnes parlent de vous</li>
+                                    <li>• Si 3 recommandations aboutissent</li>
+                                    <li className="text-white font-bold">• Si 1 seul client signe</li>
+                                </ul>
+                                <p className="text-green-400 font-black uppercase text-sm">La formation est rentabilisée. Tout le reste est du bonus.</p>
+                            </div>
+                        </div>
+
+                        <div className="text-center">
+                             <p className="text-xl md:text-2xl font-black uppercase italic text-white mb-8">
+                                "Seul, vous cherchez des clients.<br/>
+                                <span className="text-orange-500">À 24, les clients commencent à vous trouver."</span>
+                            </p>
+                            <Button className="bg-white text-slate-900 hover:bg-slate-100 font-black uppercase tracking-widest px-8 h-14 text-lg" asChild>
+                                <Link href="#join">Rejoindre les 24 entrepreneurs</Link>
                             </Button>
+                            <p className="mt-4 text-slate-400 text-xs font-bold uppercase tracking-widest">
+                                Prochaine session limitée à 24 places
+                            </p>
                         </div>
                     </div>
                 </div>
