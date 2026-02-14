@@ -208,14 +208,7 @@ export function LandingEmploi() {
                                 </li>
                             </ul>
                             
-                            <div className="mt-8 p-6 bg-blue-50 rounded-2xl border border-blue-100">
-                                <h4 className="font-black text-blue-700 uppercase text-sm mb-3 flex items-center gap-2">
-                                    <Users className="h-4 w-4" /> La Mécanique Humaine
-                                </h4>
-                                <p className="text-sm text-slate-600 leading-relaxed">
-                                    Chaque jour, un <strong>nouveau binôme</strong>. 15 partenaires en 15 jours pour vous challenger, vous aider à voir vos forces et vous dépasser. C'est le miroir dont vous avez besoin pour comprendre qui vous êtes vraiment.
-                                </p>
-                            </div>
+
                         </FadeIn>
                     </div>
                     <div className="bg-slate-50 border border-slate-200 p-8 rounded-3xl relative overflow-hidden shadow-lg">
@@ -242,13 +235,70 @@ export function LandingEmploi() {
                     </div>
                 </div>
 
-                {/* TRANSITION VISUELLE */}
-                <div className="relative h-24 flex items-center justify-center">
-                    <div className="absolute inset-0 flex items-center justify-center">
-                         <div className="h-full w-0.5 bg-gradient-to-b from-blue-200 to-orange-200"></div>
-                    </div>
-                    <div className="bg-white border-2 border-slate-100 p-3 rounded-full relative z-10 shadow-sm">
-                        <div className="text-xs font-bold uppercase tracking-widest text-slate-400">Ensuite</div>
+                {/* LA MÉCANIQUE HUMAINE */}
+                <div className="py-12 md:py-24">
+                    <div className="bg-slate-900 text-white rounded-[2.5rem] p-8 md:p-16 relative overflow-hidden shadow-2xl">
+                        {/* Background Elements */}
+                        <div className="absolute top-0 right-0 w-96 h-96 bg-blue-600/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
+                        <div className="absolute bottom-0 left-0 w-96 h-96 bg-orange-500/10 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2"></div>
+                        
+                        <div className="relative z-10 max-w-4xl mx-auto text-center space-y-12">
+                            <div>
+                                <h2 className="text-3xl md:text-5xl font-black uppercase italic mb-6 leading-tight">
+                                    La Mécanique Humaine<br/><span className="text-orange-500">de Popey.Academy</span>
+                                </h2>
+                                <p className="text-xl md:text-2xl text-blue-200 font-medium max-w-2xl mx-auto">
+                                    Pendant 5 semaines, tu ne restes jamais seul.
+                                </p>
+                            </div>
+
+                            <div className="grid md:grid-cols-3 gap-6">
+                                <div className="bg-white/5 p-6 rounded-2xl border border-white/10 backdrop-blur-sm">
+                                    <div className="text-4xl font-black text-white mb-2">30</div>
+                                    <div className="text-sm font-bold text-slate-400 uppercase tracking-widest">Jours d'action</div>
+                                </div>
+                                <div className="bg-white/10 p-6 rounded-2xl border border-white/20 backdrop-blur-md transform scale-105 shadow-xl">
+                                    <div className="text-4xl font-black text-orange-500 mb-2">30</div>
+                                    <div className="text-sm font-bold text-white uppercase tracking-widest">Binômes différents</div>
+                                </div>
+                                <div className="bg-white/5 p-6 rounded-2xl border border-white/10 backdrop-blur-sm">
+                                    <div className="text-4xl font-black text-white mb-2">30</div>
+                                    <div className="text-sm font-bold text-slate-400 uppercase tracking-widest">Regards nouveaux</div>
+                                </div>
+                            </div>
+
+                            <div className="space-y-8 text-lg md:text-xl text-slate-300 font-medium leading-relaxed">
+                                <div className="space-y-2">
+                                    <p><span className="text-white font-bold">Chaque jour,</span> quelqu’un te challenge.</p>
+                                    <p><span className="text-white font-bold">Chaque jour,</span> quelqu’un révèle une force que tu ne vois pas.</p>
+                                    <p><span className="text-white font-bold">Chaque jour,</span> quelqu’un t’oblige à passer à l’action.</p>
+                                </div>
+
+                                <div className="py-8">
+                                    <p className="text-2xl md:text-4xl font-black uppercase italic text-white mb-2">
+                                        Ce n’est pas un groupe.
+                                    </p>
+                                    <p className="text-2xl md:text-4xl font-black uppercase italic text-blue-400">
+                                        C’est un accélérateur identitaire.
+                                    </p>
+                                </div>
+
+                                <div className="bg-white/5 p-8 rounded-3xl border border-white/10 inline-block">
+                                    <p className="mb-4 text-slate-400 text-sm uppercase tracking-widest font-bold">Le Constat</p>
+                                    <p className="italic text-white">
+                                        "Parce que parfois, ce qu’il manque pour avancer,<br/>
+                                        ce n’est pas une méthode.<br/>
+                                        <span className="text-orange-500 font-black not-italic text-2xl mt-2 block">C’est un environnement."</span>
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div className="pt-4">
+                                <Badge className="bg-orange-600 text-white border-0 px-6 py-2 text-sm md:text-base font-bold uppercase tracking-widest hover:bg-orange-500">
+                                    Tu ne restes pas le même. Parce que 15 miroirs ne mentent pas.
+                                </Badge>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
