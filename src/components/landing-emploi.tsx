@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Anchor, Brain, CheckCircle2, Compass, HelpCircle, LayoutList, LifeBuoy, Map, Rocket, ShieldCheck, Ship, Sparkles, Target, Users, Zap } from "lucide-react";
+import { Anchor, ArrowRight, Brain, CheckCircle2, Compass, HelpCircle, LayoutList, LifeBuoy, Map, Rocket, ShieldCheck, Ship, Sparkles, Target, Users, Zap } from "lucide-react";
 import { motion, useScroll } from "framer-motion";
 import { useRef } from "react";
 import { PreRegistrationForm } from "@/components/pre-registration-form";
@@ -92,21 +92,20 @@ export function LandingEmploi() {
                 </FloatingIcon>
                 
                 <h1 className="text-4xl md:text-6xl lg:text-7xl font-black uppercase tracking-tighter leading-[0.95] text-slate-900">
-                  Et si dans 5 semaines<br />
-                  tu passais de<br />
-                  <span className="text-slate-400">“je ne sais pas quoi faire”</span><br/>
-                  à <span className="text-orange-600">“j’ai trouvé ma vocation…<br/>et mes premiers clients” ?</span>
+                  5 semaines<br />
+                  pour trouver ta vocation<br />
+                  <span className="text-orange-600">et tes premiers clients</span>
                 </h1>
                 
                 <div className="text-xl md:text-2xl text-slate-600 max-w-4xl mx-auto font-medium leading-relaxed space-y-6">
                     <div className="grid md:grid-cols-2 gap-8 text-left bg-white p-6 rounded-2xl shadow-xl border border-slate-100 mt-8">
                         <div>
                             <span className="block text-xs font-bold text-blue-500 uppercase tracking-widest mb-1">Formation 1</span>
-                            <p className="text-slate-900 font-bold">3 semaines pour révéler le métier qui te correspond vraiment.</p>
+                            <p className="text-slate-900 font-bold">3 semaines pour découvrir le métier qui te correspond vraiment.</p>
                         </div>
                         <div>
                             <span className="block text-xs font-bold text-orange-500 uppercase tracking-widest mb-1">Formation 2</span>
-                            <p className="text-slate-900 font-bold">2 semaines pour le transformer en activité avec tes premiers clients.</p>
+                            <p className="text-slate-900 font-bold">2 semaines avec 23 autres personnes pour trouver tes premiers clients.</p>
                         </div>
                     </div>
 
@@ -120,7 +119,7 @@ export function LandingEmploi() {
                     <Button size="lg" className="h-16 px-10 bg-orange-600 hover:bg-orange-500 text-white font-black text-lg uppercase tracking-widest rounded-full shadow-xl shadow-orange-200 hover:shadow-2xl hover:-translate-y-1 transition-all w-full md:w-auto" asChild>
                         <Link href="#join">
                             <span className="flex items-center gap-3 text-center">
-                                <span>Je deviens Entrepreneur</span>
+                                <span>Je candidate au programme</span>
                                 <Rocket className="h-6 w-6" />
                             </span>
                         </Link>
@@ -136,42 +135,103 @@ export function LandingEmploi() {
 
         {/* 2. VISION IDENTITAIRE */}
         <section className="py-24 bg-slate-900 text-white relative z-20">
-            <div className="container mx-auto px-4 max-w-4xl text-center space-y-12">
-                <FadeIn>
-                    <h2 className="text-4xl font-black uppercase italic mb-8">Vision Identitaire</h2>
-                    <p className="text-2xl text-slate-300 leading-relaxed">
-                        Tu ne te présentes plus comme <span className="line-through text-slate-600">“en reconversion”</span>.<br/>
-                        <span className="text-white font-black bg-orange-600 px-2">Tu te présentes comme entrepreneur.</span>
-                    </p>
-                </FadeIn>
-                
-                <div className="grid md:grid-cols-3 gap-6 pt-8">
-                    <div className="bg-slate-800 p-6 rounded-2xl border border-slate-700">
-                        <CheckCircle2 className="h-8 w-8 text-green-500 mx-auto mb-4" />
-                        <h3 className="font-bold text-lg uppercase">Avec une offre.</h3>
-                    </div>
-                    <div className="bg-slate-800 p-6 rounded-2xl border border-slate-700">
-                        <Compass className="h-8 w-8 text-blue-500 mx-auto mb-4" />
-                        <h3 className="font-bold text-lg uppercase">Avec une direction.</h3>
-                    </div>
-                    <div className="bg-slate-800 p-6 rounded-2xl border border-slate-700">
-                        <Users className="h-8 w-8 text-orange-500 mx-auto mb-4" />
-                        <h3 className="font-bold text-lg uppercase">Avec des clients.</h3>
-                    </div>
-                </div>
+            <div className="container mx-auto px-4 max-w-5xl">
+                <div className="grid md:grid-cols-2 gap-16 items-center">
+                    <div className="space-y-8">
+                        <FadeIn>
+                            <h2 className="text-4xl font-black uppercase italic mb-8 leading-tight">
+                                La Transformation<br/><span className="text-orange-500">en 5 semaines</span>
+                            </h2>
+                        </FadeIn>
+                        
+                        <FadeIn delay={0.1}>
+                            <div className="space-y-6">
+                                <div className="bg-slate-800/50 p-6 rounded-2xl border border-slate-700">
+                                    <h3 className="text-slate-400 font-bold uppercase text-sm mb-4 flex items-center gap-2">
+                                        <HelpCircle className="h-4 w-4" /> Tu entres avec :
+                                    </h3>
+                                    <ul className="space-y-2">
+                                        <li className="flex items-center gap-3 text-slate-300">
+                                            <div className="h-1.5 w-1.5 rounded-full bg-slate-500"></div>
+                                            Du doute
+                                        </li>
+                                        <li className="flex items-center gap-3 text-slate-300">
+                                            <div className="h-1.5 w-1.5 rounded-full bg-slate-500"></div>
+                                            Des questions
+                                        </li>
+                                        <li className="flex items-center gap-3 text-slate-300">
+                                            <div className="h-1.5 w-1.5 rounded-full bg-slate-500"></div>
+                                            Aucune direction claire
+                                        </li>
+                                    </ul>
+                                </div>
 
-                <FadeIn delay={0.2}>
-                    <div className="mt-16 p-8 bg-slate-800/50 rounded-3xl border border-slate-700">
-                        <h3 className="text-3xl font-black uppercase italic text-white mb-4">On ne t’aide pas à réfléchir.<br/><span className="text-orange-500">On t’aide à devenir.</span></h3>
-                        <div className="flex justify-center items-center gap-8 mt-8 text-sm font-bold uppercase tracking-widest text-slate-400">
-                            <span>24 Personnes</span>
-                            <span>•</span>
-                            <span>24 Dynamiques</span>
-                            <span>•</span>
-                            <span>24 Réseaux Activés</span>
+                                <div className="bg-white/5 p-6 rounded-2xl border border-orange-500/30 relative overflow-hidden">
+                                    <div className="absolute top-0 right-0 w-32 h-32 bg-orange-500/10 rounded-full blur-2xl"></div>
+                                    <h3 className="text-orange-500 font-black uppercase text-sm mb-4 flex items-center gap-2">
+                                        <CheckCircle2 className="h-4 w-4" /> Tu ressors avec :
+                                    </h3>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <ul className="space-y-3">
+                                            <li className="flex items-center gap-2 text-white font-bold">
+                                                <CheckCircle2 className="h-4 w-4 text-orange-500" /> Ton métier identifié
+                                            </li>
+                                            <li className="flex items-center gap-2 text-white font-bold">
+                                                <CheckCircle2 className="h-4 w-4 text-orange-500" /> Une offre claire
+                                            </li>
+                                            <li className="flex items-center gap-2 text-white font-bold">
+                                                <CheckCircle2 className="h-4 w-4 text-orange-500" /> Un positionnement défini
+                                            </li>
+                                        </ul>
+                                        <ul className="space-y-3">
+                                            <li className="flex items-center gap-2 text-white font-bold">
+                                                <CheckCircle2 className="h-4 w-4 text-orange-500" /> Un plan d’action prêt
+                                            </li>
+                                            <li className="flex items-center gap-2 text-white font-bold">
+                                                <CheckCircle2 className="h-4 w-4 text-orange-500" /> Des contacts
+                                            </li>
+                                            <li className="flex items-center gap-2 text-white font-bold">
+                                                <CheckCircle2 className="h-4 w-4 text-orange-500" /> Des rendez-vous
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </FadeIn>
+                    </div>
+
+                    <div className="relative">
+                        <div className="absolute inset-0 bg-blue-600/10 blur-3xl rounded-full" />
+                        <div className="relative bg-slate-800 border border-slate-700 p-8 rounded-2xl text-center space-y-8 shadow-xl">
+                            <div className="space-y-4">
+                                <p className="text-2xl font-black uppercase italic text-slate-400 line-through decoration-2 decoration-slate-600">
+                                    Tu es sans emploi.
+                                </p>
+                                <ArrowRight className="h-8 w-8 text-orange-500 mx-auto rotate-90 md:rotate-0" />
+                                <p className="text-3xl md:text-4xl font-black uppercase italic text-white leading-tight">
+                                    Tu es entrepreneur<br/><span className="text-blue-500">en action.</span>
+                                </p>
+                            </div>
+
+                            <div className="pt-8 border-t border-slate-700">
+                                <div className="grid grid-cols-3 gap-4 text-center">
+                                    <div>
+                                        <div className="text-3xl font-black text-white mb-1">5</div>
+                                        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Semaines</div>
+                                    </div>
+                                    <div>
+                                        <div className="text-3xl font-black text-orange-500 mb-1">2</div>
+                                        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Formations</div>
+                                    </div>
+                                    <div>
+                                        <div className="text-3xl font-black text-blue-500 mb-1">1</div>
+                                        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Vocation</div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                </FadeIn>
+                </div>
             </div>
         </section>
 
