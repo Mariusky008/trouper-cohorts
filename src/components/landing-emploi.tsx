@@ -223,7 +223,7 @@ export function LandingEmploi() {
                             {[
                                 { title: "Semaine 1 : Clarté", desc: "Exploration, introspection, carte des forces." },
                                 { title: "Semaine 2 : Validation", desc: "Confrontation au marché, définition de la cible et validation de tes choix, on se lance." },
-                                { title: "Semaine 3 : Lancement", desc: "Plan d'action, outils, préparation au sprint." }
+                                { title: "Jour 15 : Le Bilan", desc: "Présentation de ton projet finalisé devant l'Armada. Tu sais enfin où tu vas." }
                             ].map((step, i) => (
                                 <div key={i} className="relative flex gap-6">
                                     <div className="h-6 w-6 rounded-full bg-white border-4 border-blue-600 z-10 shrink-0 shadow-sm"></div>
