@@ -119,197 +119,104 @@ export default function Home() {
           </div>
         </section>
 
-        {/* 2. STORYTELLING & BÉNÉFICES */}
+        {/* 2. LE COLLECTIF : 24 ENTREPRENEURS */}
         <section className="py-24 bg-slate-900 text-white relative z-20">
-            <div className="container mx-auto px-4 max-w-5xl">
+            <div className="container mx-auto px-4 max-w-6xl">
                 
-                <div className="grid md:grid-cols-2 gap-16 items-center mb-24">
-                    <div className="space-y-8">
-                        <FadeIn>
-                            <h2 className="text-4xl font-black uppercase italic text-white leading-tight">
-                                Pourquoi ça marche ?
-                            </h2>
-                        </FadeIn>
-                        <FadeIn delay={0.1}>
-                            <p className="text-lg text-slate-300 leading-relaxed">
-                                Le principe est mathématique :
-                            </p>
-                            <ul className="space-y-4 mt-6">
-                                {[
-                                    "24 réseaux personnels activés en même temps",
-                                    "24 offres présentées",
-                                    "24 cercles de recommandations qui se croisent",
-                                    "24 personnes qui parlent de vous… pendant que vous parlez d’elles"
-                                ].map((item, i) => (
-                                    <li key={i} className="flex items-center gap-3 text-white font-bold">
-                                        <div className="bg-orange-500/20 p-1 rounded-full"><CheckCircle2 className="text-orange-500 h-4 w-4" /></div>
-                                        {item}
-                                    </li>
-                                ))}
-                            </ul>
-                            
-                            <p className="text-2xl font-black uppercase italic text-white mt-8">
-                                Ce n’est plus du solo.<br/>
-                                <span className="text-orange-500">C’est un multiplicateur.</span>
-                            </p>
-                        </FadeIn>
-                    </div>
-
-                    <div className="relative">
-                        <div className="absolute inset-0 bg-orange-500/10 blur-3xl rounded-full" />
-                        <div className="relative bg-slate-800 border border-slate-700 p-8 rounded-2xl space-y-6 shadow-xl">
-                            <h3 className="text-2xl font-black uppercase text-white mb-6 text-center">L'Effet Levier x24</h3>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="bg-slate-900 p-4 rounded-xl text-center border border-slate-700 shadow-sm">
-                                    <div className="text-3xl font-black text-orange-500 mb-1">24</div>
-                                    <div className="text-xs uppercase text-slate-400 font-bold">Réseaux Activés</div>
-                                </div>
-                                <div className="bg-slate-900 p-4 rounded-xl text-center border border-slate-700 shadow-sm">
-                                    <div className="text-3xl font-black text-blue-500 mb-1">24</div>
-                                    <div className="text-xs uppercase text-slate-400 font-bold">Offres Présentées</div>
-                                </div>
-                                <div className="bg-slate-900 p-4 rounded-xl text-center border border-slate-700 shadow-sm">
-                                    <div className="text-3xl font-black text-green-500 mb-1">24</div>
-                                    <div className="text-xs uppercase text-slate-400 font-bold">Cercles de Reco.</div>
-                                </div>
-                                <div className="bg-slate-900 p-4 rounded-xl text-center border border-slate-700 shadow-sm">
-                                    <div className="text-3xl font-black text-purple-500 mb-1">∞</div>
-                                    <div className="text-xs uppercase text-slate-400 font-bold">Visibilité Croisée</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Transformation Promise */}
-                <div className="bg-slate-800 rounded-3xl p-8 md:p-12 shadow-2xl relative overflow-hidden border border-slate-700">
-                    <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600/20 rounded-full blur-3xl"></div>
-                    <div className="relative z-10">
-                        <div className="text-center mb-10">
-                            <h3 className="text-3xl font-black uppercase italic text-white mb-4">Ce que 24 entrepreneurs produisent pour vous</h3>
-                            <p className="text-blue-200 text-lg max-w-2xl mx-auto">
-                                Vous n’êtes plus seul à chercher des clients. Pendant 2 semaines, 23 autres personnes activent leur réseau pour vous. <span className="text-orange-500 font-bold">C’est un multiplicateur humain.</span>
-                            </p>
-                        </div>
-                        
-                        {/* Projection Chiffrée */}
-                        <div className="grid md:grid-cols-4 gap-6 mb-12">
-                            <div className="bg-slate-900/50 p-6 rounded-2xl border border-slate-700 text-center hover:border-orange-500/50 transition-all">
-                                <div className="text-4xl font-black text-orange-500 mb-2">24</div>
-                                <div className="text-sm font-bold text-white uppercase mb-2">Recommandations</div>
-                                <p className="text-xs text-slate-400">Chaque participant pense à vous.</p>
-                            </div>
-                            <div className="bg-slate-900/50 p-6 rounded-2xl border border-slate-700 text-center hover:border-blue-500/50 transition-all">
-                                <div className="text-4xl font-black text-blue-500 mb-2">30</div>
-                                <div className="text-sm font-bold text-white uppercase mb-2">Conversations</div>
-                                <p className="text-xs text-slate-400">Messages, intros, opportunités.</p>
-                            </div>
-                            <div className="bg-slate-900/50 p-6 rounded-2xl border border-slate-700 text-center hover:border-green-500/50 transition-all">
-                                <div className="text-4xl font-black text-green-500 mb-2">10</div>
-                                <div className="text-sm font-bold text-white uppercase mb-2">Rendez-vous</div>
-                                <p className="text-xs text-slate-400">Grâce aux mises en relation.</p>
-                            </div>
-                            <div className="bg-slate-900/50 p-6 rounded-2xl border border-slate-700 text-center hover:border-purple-500/50 transition-all">
-                                <div className="text-4xl font-black text-purple-500 mb-2">x24</div>
-                                <div className="text-sm font-bold text-white uppercase mb-2">Visibilité</div>
-                                <p className="text-xs text-slate-400">Réseaux sociaux cumulés.</p>
-                            </div>
-                        </div>
-
-                        {/* Bloc Pédagogique & Mental */}
-                        <div className="grid md:grid-cols-2 gap-8 mb-10">
-                            <div className="bg-white/5 p-8 rounded-2xl border border-white/10">
-                                <h4 className="font-black text-white uppercase text-lg mb-4 flex items-center gap-2">
-                                    <Zap className="text-yellow-500" /> Imaginez dans 15 jours...
-                                </h4>
-                                <ul className="space-y-3 text-slate-300 text-sm">
-                                    <li className="flex gap-3"><CheckCircle2 className="h-5 w-5 text-green-500 shrink-0" /> Des personnes parlent de vous sans vous connaître.</li>
-                                    <li className="flex gap-3"><CheckCircle2 className="h-5 w-5 text-green-500 shrink-0" /> Des opportunités arrivent sans démarchage agressif.</li>
-                                    <li className="flex gap-3"><CheckCircle2 className="h-5 w-5 text-green-500 shrink-0" /> Votre téléphone sonne pour des rendez-vous.</li>
-                                    <li className="flex gap-3"><CheckCircle2 className="h-5 w-5 text-green-500 shrink-0" /> Vous existez enfin sur votre marché.</li>
-                                </ul>
-                            </div>
-
-                            <div className="bg-white/5 p-8 rounded-2xl border border-white/10">
-                                <h4 className="font-black text-white uppercase text-lg mb-4 flex items-center gap-2">
-                                    <ShieldCheck className="text-blue-500" /> Preuve Logique
-                                </h4>
-                                <p className="text-slate-300 text-sm mb-4">Même avec des hypothèses prudentes :</p>
-                                <ul className="space-y-2 text-slate-400 text-sm mb-4">
-                                    <li>• Si 10 personnes parlent de vous</li>
-                                    <li>• Si 3 recommandations aboutissent</li>
-                                    <li className="text-white font-bold">• Si 1 seul client signe</li>
-                                </ul>
-                                <p className="text-green-400 font-black uppercase text-sm">La formation est rentabilisée. Tout le reste est du bonus.</p>
-                            </div>
-                        </div>
-
-                        <div className="text-center">
-                             <p className="text-xl md:text-2xl font-black uppercase italic text-white mb-8">
-                                "Seul, vous cherchez des clients.<br/>
-                                <span className="text-orange-500">À 24, les clients commencent à vous trouver."</span>
-                            </p>
-                            <Button className="bg-white text-slate-900 hover:bg-slate-100 font-black uppercase tracking-widest px-8 h-14 text-lg" asChild>
-                                <Link href="#join">Rejoindre les 24 entrepreneurs</Link>
-                            </Button>
-                            <p className="mt-4 text-slate-400 text-xs font-bold uppercase tracking-widest">
-                                Prochaine session limitée à 24 places
-                            </p>
-                        </div>
-                    </div>
-                </div>
-
-            </div>
-        </section>
-
-        {/* LA PUISSANCE DE L'ARMADA */}
-        <section className="py-24 bg-slate-50 border-t border-slate-200">
-            <div className="container mx-auto px-4 max-w-5xl">
-                <div className="text-center mb-16">
-                    <Badge className="bg-orange-100 text-orange-700 border-0 mb-4 uppercase tracking-widest px-3 py-1">Le Collectif</Badge>
-                    <h2 className="text-4xl font-black uppercase italic text-slate-900 mb-6">La puissance de l'Armada (x24)</h2>
-                    <p className="text-xl text-slate-600 max-w-3xl mx-auto">
-                        Vous n'êtes plus seule. Vous faites partie d'une équipe de 24 pros qui avancent au même rythme. 
-                        Chaque membre devient un relais de votre visibilité.
-                    </p>
-                </div>
-
-                <div className="grid md:grid-cols-3 gap-8 mb-16">
-                    <div className="bg-white p-8 rounded-2xl border border-slate-200 hover:border-orange-200 hover:shadow-lg transition-all">
-                        <LifeBuoy className="h-10 w-10 text-orange-600 mb-6" />
-                        <h3 className="text-xl font-black text-slate-900 uppercase mb-4">Soutien Quotidien</h3>
-                        <p className="text-slate-500">On partage ses victoires, on débloque ses peurs. L'énergie du groupe vous porte quand la motivation baisse.</p>
-                    </div>
-                    <div className="bg-white p-8 rounded-2xl border border-slate-200 hover:border-blue-200 hover:shadow-lg transition-all">
-                        <Megaphone className="h-10 w-10 text-blue-600 mb-6" />
-                        <h3 className="text-xl font-black text-slate-900 uppercase mb-4">Visibilité Croisée</h3>
-                        <p className="text-slate-500">Intervenez dans les lives des autres. Faites-vous connaître de leur audience. Multipliez votre portée.</p>
-                    </div>
-                    <div className="bg-white p-8 rounded-2xl border border-slate-200 hover:border-green-200 hover:shadow-lg transition-all">
-                        <Users className="h-10 w-10 text-green-600 mb-6" />
-                        <h3 className="text-xl font-black text-slate-900 uppercase mb-4">Recommandations</h3>
-                        <p className="text-slate-500">Vos coéquipières vous connaissent et vous recommandent naturellement à leur propre réseau.</p>
-                    </div>
-                </div>
-
-                <div className="bg-slate-900 p-8 md:p-12 rounded-3xl text-center relative overflow-hidden shadow-xl">
-                    <div className="absolute top-0 right-0 w-64 h-64 bg-orange-500/10 rounded-full blur-3xl"></div>
-                    <div className="relative z-10">
-                        <h3 className="text-2xl md:text-3xl font-black uppercase italic text-white mb-4">Garantie Totale : Résultat ou Nouveau Départ</h3>
-                        <p className="text-lg text-slate-300 max-w-2xl mx-auto mb-8">
-                            Si à la fin des 15 jours, vous n'avez pas obtenu au moins 1 client ou plusieurs RDV qualifiés, 
-                            nous vous replaçons gratuitement dans la prochaine expédition.
+                {/* Intro Fusionnée */}
+                <div className="text-center mb-20 max-w-4xl mx-auto space-y-6">
+                    <FadeIn>
+                         <Badge className="bg-orange-500 text-white border-0 mb-6 uppercase tracking-widest px-4 py-1.5 text-sm">Le Collectif</Badge>
+                        <h2 className="text-4xl md:text-5xl font-black uppercase italic text-white leading-tight">
+                            24 entrepreneurs, 15 jours,<br/><span className="text-orange-500">un effet multiplicateur.</span>
+                        </h2>
+                    </FadeIn>
+                    <FadeIn delay={0.1}>
+                        <p className="text-xl text-slate-300 leading-relaxed">
+                            Vous n’êtes plus seul. Chaque membre active son réseau pour vous pendant que vous activez le vôtre. 
+                            <br/><span className="text-white font-bold">Résultat :</span> des opportunités, des rendez-vous, des clients… et une visibilité exponentielle.
                         </p>
-                        <div className="inline-block bg-orange-600/20 text-orange-400 px-6 py-2 rounded-full font-bold uppercase tracking-widest text-sm border border-orange-500/50">
-                            Zéro risque. Que de l'action.
+                    </FadeIn>
+                </div>
+
+                {/* Projection Chiffrée Réaliste */}
+                <div className="grid md:grid-cols-4 gap-6 mb-24">
+                    {[
+                        { val: "24", label: "Réseaux Activés", sub: "Effet immédiat", color: "text-orange-500", border: "hover:border-orange-500/50" },
+                        { val: "24", label: "Offres Présentées", sub: "Pitch quotidien", color: "text-blue-500", border: "hover:border-blue-500/50" },
+                        { val: "30+", label: "Conversations", sub: "Business déclenché", color: "text-green-500", border: "hover:border-green-500/50" },
+                        { val: "x24", label: "Visibilité", sub: "Portée cumulée", color: "text-purple-500", border: "hover:border-purple-500/50" }
+                    ].map((stat, i) => (
+                        <div key={i} className={`bg-slate-800/50 p-8 rounded-2xl border border-slate-700 text-center transition-all ${stat.border} group`}>
+                            <div className={`text-5xl font-black ${stat.color} mb-3 group-hover:scale-110 transition-transform`}>{stat.val}</div>
+                            <div className="text-sm font-bold text-white uppercase tracking-wider mb-2">{stat.label}</div>
+                            <p className="text-xs text-slate-400 uppercase font-medium">{stat.sub}</p>
                         </div>
-                        <div className="mt-8">
-                            <Button className="bg-orange-600 hover:bg-orange-500 text-white font-black uppercase tracking-widest px-8 h-12" asChild>
+                    ))}
+                </div>
+
+                {/* Storytelling & Preuve */}
+                <div className="grid md:grid-cols-2 gap-12 items-center mb-20">
+                    
+                    {/* Colonne Gauche : Imaginez... */}
+                    <div className="bg-slate-800 p-10 rounded-3xl border border-slate-700 shadow-xl relative overflow-hidden">
+                        <div className="absolute top-0 right-0 w-40 h-40 bg-orange-500/10 rounded-full blur-3xl"></div>
+                        <h3 className="text-2xl font-black uppercase italic text-white mb-8 flex items-center gap-3">
+                            <Zap className="text-yellow-500 h-6 w-6" /> Imaginez dans 15 jours
+                        </h3>
+                        <ul className="space-y-6">
+                            {[
+                                "Des personnes parlent de vous alors que vous ne les connaissez pas",
+                                "Votre téléphone sonne pour des rendez-vous entrants",
+                                "Votre activité gagne en visibilité et crédibilité sur votre marché",
+                                "Vous avez de vrais clients et un pipeline solide"
+                            ].map((item, i) => (
+                                <li key={i} className="flex items-start gap-4">
+                                    <div className="bg-slate-700 p-1.5 rounded-full mt-1"><CheckCircle2 className="h-4 w-4 text-green-400" /></div>
+                                    <span className="text-slate-200 font-medium text-lg leading-snug">{item}</span>
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+
+                    {/* Colonne Droite : Le Soutien */}
+                    <div className="space-y-8">
+                        <div className="bg-slate-800/30 p-8 rounded-2xl border border-slate-700/50 hover:bg-slate-800/50 transition-colors">
+                            <h4 className="font-black text-white uppercase text-lg mb-2 flex items-center gap-3">
+                                <LifeBuoy className="text-blue-500 h-6 w-6" /> Soutien Quotidien
+                            </h4>
+                            <p className="text-slate-400">Énergie du groupe, partage des victoires et déblocage des peurs. Vous ne lâchez rien car les autres sont là.</p>
+                        </div>
+                         <div className="bg-slate-800/30 p-8 rounded-2xl border border-slate-700/50 hover:bg-slate-800/50 transition-colors">
+                            <h4 className="font-black text-white uppercase text-lg mb-2 flex items-center gap-3">
+                                <Megaphone className="text-purple-500 h-6 w-6" /> Visibilité Croisée
+                            </h4>
+                            <p className="text-slate-400">Interventions dans les lives des autres, mentions croisées. Vous multipliez votre portée par la force du nombre.</p>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Garantie & CTA */}
+                <div className="bg-gradient-to-br from-orange-600 to-orange-700 rounded-3xl p-10 md:p-16 text-center shadow-2xl relative overflow-hidden">
+                     <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10"></div>
+                     <div className="relative z-10">
+                        <h3 className="text-3xl md:text-4xl font-black uppercase italic text-white mb-6">Zéro Risque. Que de l'Action.</h3>
+                        <p className="text-orange-100 text-lg md:text-xl max-w-3xl mx-auto mb-10 font-medium leading-relaxed">
+                            Si à la fin des 15 jours, vous n'avez pas obtenu au moins <span className="text-white font-bold underline decoration-white/30 underline-offset-4">1 client ou plusieurs RDV qualifiés</span>, 
+                            nous vous replaçons gratuitement dans la prochaine session.
+                        </p>
+                        
+                        <div className="flex flex-col items-center gap-6">
+                            <Button size="lg" className="bg-white text-orange-600 hover:bg-orange-50 font-black uppercase tracking-widest px-10 h-16 text-xl shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-all rounded-full" asChild>
                                 <Link href="#join">Réserver ma place dans l'Armada</Link>
                             </Button>
+                            <p className="text-orange-200 text-sm font-bold uppercase tracking-widest">
+                                Prochaine session limitée à 24 participants
+                            </p>
                         </div>
-                    </div>
+                     </div>
                 </div>
+
             </div>
         </section>
 
