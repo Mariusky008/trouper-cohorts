@@ -87,16 +87,16 @@ export default function Home() {
                 <h1 className="text-4xl md:text-6xl lg:text-7xl font-black uppercase italic tracking-tighter leading-[0.95] mb-8 text-slate-900">
                   Et si on se mettait à<br />
                   <span className="text-orange-600">24 entrepreneurs</span><br />
-                  pour faire exploser<br />
+                  pour faire exploser chacun<br />
                   notre chiffre d’affaires ?
                 </h1>
             </FadeIn>
 
             <FadeIn delay={0.2}>
                 <div className="text-xl md:text-3xl text-slate-600 font-black uppercase tracking-tight space-y-2">
-                    <p>24 personnes.</p>
-                    <p>15 jours.</p>
-                    <p className="text-orange-600">Une seule obsession : terminer avec plus de clients qu’au départ.</p>
+                    <p>15 jours intensifs.</p>
+                    <p>23 partenaires qui activent leur réseau pour vous.</p>
+                    <p className="text-orange-600">Une seule obsession : terminer la quinzaine avec plus de clients qu’au départ.</p>
                 </div>
             </FadeIn>
 
@@ -104,7 +104,7 @@ export default function Home() {
                 <div className="pt-8">
                     <Button size="lg" className="h-16 px-10 bg-orange-600 hover:bg-orange-500 text-white font-black text-lg md:text-xl uppercase tracking-widest rounded-full shadow-xl shadow-orange-200 hover:shadow-2xl hover:-translate-y-1 transition-all" asChild>
                         <Link href="#join">
-                           Commence Aujourd'hui
+                           Je rejoins la prochaine cohorte
                         </Link>
                     </Button>
                     <p className="mt-4 text-slate-500 text-sm font-medium uppercase tracking-widest">
@@ -127,19 +127,19 @@ export default function Home() {
                     <div className="space-y-8">
                         <FadeIn>
                             <h2 className="text-4xl font-black uppercase italic text-white leading-tight">
-                                L’utilité d’avoir un binôme ?<br/>
-                                <span className="text-orange-500">Imagine maintenant en avoir 24.</span>
+                                Pourquoi ça marche ?
                             </h2>
                         </FadeIn>
                         <FadeIn delay={0.1}>
                             <p className="text-lg text-slate-300 leading-relaxed">
-                                Un binôme, c’est déjà quelqu’un qui :
+                                Le principe est mathématique :
                             </p>
-                            <ul className="space-y-2 mt-2 mb-6">
+                            <ul className="space-y-4 mt-6">
                                 {[
-                                    "te challenge",
-                                    "t’aide à clarifier ton message",
-                                    "te pousse à passer à l’action"
+                                    "24 réseaux personnels activés en même temps",
+                                    "24 offres présentées",
+                                    "24 cercles de recommandations qui se croisent",
+                                    "24 personnes qui parlent de vous… pendant que vous parlez d’elles"
                                 ].map((item, i) => (
                                     <li key={i} className="flex items-center gap-3 text-white font-bold">
                                         <div className="bg-orange-500/20 p-1 rounded-full"><CheckCircle2 className="text-orange-500 h-4 w-4" /></div>
@@ -148,56 +148,33 @@ export default function Home() {
                                 ))}
                             </ul>
                             
-                            <p className="text-xl font-black uppercase italic text-white mb-4">
-                                Mais 24 binômes… C’est autre chose.
-                            </p>
-                            
-                            <p className="text-lg text-slate-300 leading-relaxed mb-4">
-                                Ce sont 24 entrepreneurs qui :
-                            </p>
-                             <ul className="space-y-2 mt-2 mb-6">
-                                {[
-                                    "parlent de toi",
-                                    "cherchent des opportunités pour toi",
-                                    "t’introduisent dans leur réseau",
-                                    "te recommandent"
-                                ].map((item, i) => (
-                                    <li key={i} className="flex items-center gap-3 text-white font-bold">
-                                        <ArrowRight className="text-blue-500 h-4 w-4" />
-                                        {item}
-                                    </li>
-                                ))}
-                            </ul>
-                            
-                            <p className="text-slate-400 italic">
-                                Pendant que tu fais exactement la même chose pour eux.
+                            <p className="text-2xl font-black uppercase italic text-white mt-8">
+                                Ce n’est plus du solo.<br/>
+                                <span className="text-orange-500">C’est un multiplicateur.</span>
                             </p>
                         </FadeIn>
                     </div>
 
                     <div className="relative">
                         <div className="absolute inset-0 bg-orange-500/10 blur-3xl rounded-full" />
-                        <div className="relative bg-slate-800 border border-slate-700 p-8 rounded-2xl space-y-8 shadow-xl">
-                            <div className="text-center">
-                                <h3 className="text-2xl font-black uppercase text-white mb-2">La Mission Unique</h3>
-                                <p className="text-orange-500 font-bold uppercase tracking-widest text-sm">Pendant 15 jours</p>
-                            </div>
-                            
-                            <div className="bg-slate-900 p-6 rounded-xl border border-slate-700 text-center relative overflow-hidden">
-                                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-orange-500 via-purple-500 to-blue-500"></div>
-                                <p className="text-xl md:text-2xl font-black text-white leading-tight mb-4">
-                                    "Que les 23 autres avancent plus vite."
-                                </p>
-                                <p className="text-sm text-slate-400">
-                                    Ce n’est plus de la formation.<br/>
-                                    <span className="text-white font-bold">C’est un accélérateur humain.</span>
-                                </p>
-                            </div>
-
-                            <div className="text-center space-y-4">
-                                <p className="text-lg font-bold text-slate-300">Et l’objectif est simple :</p>
-                                <div className="bg-green-500/10 text-green-400 px-6 py-3 rounded-lg border border-green-500/20 font-black uppercase tracking-tight text-lg">
-                                    Terminer avec plus de clients qu’au départ.
+                        <div className="relative bg-slate-800 border border-slate-700 p-8 rounded-2xl space-y-6 shadow-xl">
+                            <h3 className="text-2xl font-black uppercase text-white mb-6 text-center">L'Effet Levier x24</h3>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="bg-slate-900 p-4 rounded-xl text-center border border-slate-700 shadow-sm">
+                                    <div className="text-3xl font-black text-orange-500 mb-1">24</div>
+                                    <div className="text-xs uppercase text-slate-400 font-bold">Réseaux Activés</div>
+                                </div>
+                                <div className="bg-slate-900 p-4 rounded-xl text-center border border-slate-700 shadow-sm">
+                                    <div className="text-3xl font-black text-blue-500 mb-1">24</div>
+                                    <div className="text-xs uppercase text-slate-400 font-bold">Offres Présentées</div>
+                                </div>
+                                <div className="bg-slate-900 p-4 rounded-xl text-center border border-slate-700 shadow-sm">
+                                    <div className="text-3xl font-black text-green-500 mb-1">24</div>
+                                    <div className="text-xs uppercase text-slate-400 font-bold">Cercles de Reco.</div>
+                                </div>
+                                <div className="bg-slate-900 p-4 rounded-xl text-center border border-slate-700 shadow-sm">
+                                    <div className="text-3xl font-black text-purple-500 mb-1">∞</div>
+                                    <div className="text-xs uppercase text-slate-400 font-bold">Visibilité Croisée</div>
                                 </div>
                             </div>
                         </div>
@@ -209,23 +186,24 @@ export default function Home() {
                     <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600/20 rounded-full blur-3xl"></div>
                     <div className="relative z-10">
                         <div className="text-center mb-10">
-                            <h3 className="text-3xl font-black uppercase italic text-white mb-4">La Transformation J15</h3>
-                            <p className="text-blue-200">Ce que vous aurez accompli dans 15 jours.</p>
+                            <h3 className="text-3xl font-black uppercase italic text-white mb-4">Au bout de 15 jours vous avez :</h3>
+                            <p className="text-blue-200">Des résultats, pas des promesses.</p>
                         </div>
                         
-                        <div className="grid md:grid-cols-5 gap-4">
+                        <div className="grid md:grid-cols-3 gap-6">
                             {[
-                                { icon: Megaphone, label: "Publications Actives" },
-                                { icon: Target, label: "Prospection Réalisée" },
-                                { icon: CalendarClock, label: "RDV Obtenus" },
-                                { icon: ShieldCheck, label: "Peur du NON dépassée" },
-                                { icon: Users, label: "Clients en approche" }
+                                { label: "Publié du contenu", icon: Megaphone },
+                                { label: "Prospecté activement", icon: Target },
+                                { label: "Pitché votre offre", icon: MessageCircle },
+                                { label: "Obtenu des rendez-vous", icon: CalendarClock },
+                                { label: "Activé un pipeline commercial", icon: Zap },
+                                { label: "Dépassé la peur du “non”", icon: ShieldCheck }
                             ].map((item, i) => (
-                                <div key={i} className="flex flex-col items-center gap-3 text-center">
-                                    <div className="h-12 w-12 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-orange-400">
-                                        <item.icon className="h-6 w-6" />
+                                <div key={i} className="flex items-center gap-4 bg-slate-900/50 p-4 rounded-xl border border-slate-700">
+                                    <div className="h-10 w-10 rounded-full bg-orange-500/20 flex items-center justify-center text-orange-400 shrink-0">
+                                        <item.icon className="h-5 w-5" />
                                     </div>
-                                    <span className="text-white font-bold text-sm uppercase leading-tight">{item.label}</span>
+                                    <span className="text-white font-bold text-sm uppercase leading-tight text-left">{item.label}</span>
                                 </div>
                             ))}
                         </div>
@@ -234,13 +212,6 @@ export default function Home() {
                             <Button className="bg-white text-slate-900 hover:bg-slate-100 font-black uppercase tracking-widest px-8" asChild>
                                 <Link href="#join">Je veux ces résultats</Link>
                             </Button>
-                            <div className="mt-4 flex flex-col md:flex-row justify-center gap-4 text-xs font-mono text-slate-400 uppercase">
-                                <span>Prochaine session : 10 Mars</span>
-                                <span className="hidden md:inline">•</span>
-                                <span>24 Places max</span>
-                                <span className="hidden md:inline">•</span>
-                                <span>Sur Sélection</span>
-                            </div>
                         </div>
                     </div>
                 </div>
