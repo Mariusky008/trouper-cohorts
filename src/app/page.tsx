@@ -202,7 +202,7 @@ export default function Home() {
                      <div className="relative z-10">
                         <h3 className="text-3xl md:text-4xl font-black uppercase italic text-white mb-6">Zéro Risque. Que de l'Action.</h3>
                         <p className="text-orange-100 text-lg md:text-xl max-w-3xl mx-auto mb-10 font-medium leading-relaxed">
-                            Si à la fin des 15 jours, vous n'avez pas obtenu au moins <span className="text-white font-bold underline decoration-white/30 underline-offset-4">1 client ou plusieurs RDV qualifiés</span>, 
+                            Si à la fin des 15 jours, vous n’êtes pas pleinement satisfait de vos résultats, 
                             nous vous replaçons gratuitement dans la prochaine session.
                         </p>
                         
