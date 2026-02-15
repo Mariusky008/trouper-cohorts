@@ -3,12 +3,31 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Trash2, UserPlus, Shield } from "lucide-react";
+import { Trash2, UserPlus, Shield, AlertTriangle } from "lucide-react";
 import { removeAdmin } from "@/actions/admin-management";
 import { AdminAddForm } from "./form";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 export default async function AdminSettingsPage() {
   const supabase = await createClient();
+
+  // Check for Service Role Key
+  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      return (
+          <div className="p-8">
+              <Alert variant="destructive">
+                  <AlertTriangle className="h-4 w-4" />
+                  <AlertTitle>Configuration manquante</AlertTitle>
+                  <AlertDescription>
+                      La clé <code>SUPABASE_SERVICE_ROLE_KEY</code> est manquante dans les variables d'environnement.
+                      <br />
+                      Veuillez l'ajouter dans les paramètres de votre projet Vercel (ou fichier .env local) pour gérer les administrateurs.
+                  </AlertDescription>
+              </Alert>
+          </div>
+      );
+  }
+
   const supabaseAdmin = createAdminClient();
 
   // 1. Récupérer la liste des admins
@@ -20,13 +39,30 @@ export default async function AdminSettingsPage() {
   const admins = [];
   if (adminIds) {
     for (const admin of adminIds) {
-      const { data: { user } } = await supabaseAdmin.auth.admin.getUserById(admin.user_id);
-      if (user) {
-        admins.push({
-          id: user.id,
-          email: user.email,
-          last_sign_in: user.last_sign_in_at
-        });
+      // Wrap in try-catch to avoid crashing if one user is not found or other error
+      try {
+        const { data: { user } } = await supabaseAdmin.auth.admin.getUserById(admin.user_id);
+        if (user) {
+            admins.push({
+            id: user.id,
+            email: user.email,
+            last_sign_in: user.last_sign_in_at
+            });
+        } else {
+             // User exists in admins table but not in Auth (deleted?)
+             admins.push({
+                id: admin.user_id,
+                email: "Utilisateur introuvable (Supprimé ?)",
+                last_sign_in: null
+             });
+        }
+      } catch (e) {
+          console.error(`Error fetching user ${admin.user_id}:`, e);
+          admins.push({
+            id: admin.user_id,
+            email: "Erreur récupération",
+            last_sign_in: null
+         });
       }
     }
   }
