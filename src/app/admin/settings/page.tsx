@@ -30,6 +30,9 @@ export default async function AdminSettingsPage() {
 
   const supabaseAdmin = createAdminClient();
 
+  // 3. Récupérer l'utilisateur courant pour éviter de se supprimer soi-même
+  const { data: { user: currentUser } } = await supabase.auth.getUser();
+
   // 1. Récupérer la liste des admins
   const { data: adminIds } = await supabase
     .from("admins")
@@ -39,9 +42,30 @@ export default async function AdminSettingsPage() {
   const admins = [];
   if (adminIds) {
     for (const admin of adminIds) {
+      // Si c'est l'utilisateur courant, on a déjà ses infos, pas besoin d'appel admin (qui peut échouer si la clé est mauvaise)
+      if (currentUser && admin.user_id === currentUser.id) {
+          admins.push({
+            id: currentUser.id,
+            email: currentUser.email,
+            last_sign_in: currentUser.last_sign_in_at
+          });
+          continue;
+      }
+
       // Wrap in try-catch to avoid crashing if one user is not found or other error
       try {
-        const { data: { user } } = await supabaseAdmin.auth.admin.getUserById(admin.user_id);
+        const { data: { user }, error } = await supabaseAdmin.auth.admin.getUserById(admin.user_id);
+        
+        if (error) {
+             console.error(`Error fetching user ${admin.user_id}:`, error);
+             admins.push({
+                id: admin.user_id,
+                email: `Erreur: ${error.message}`,
+                last_sign_in: null
+             });
+             continue;
+        }
+
         if (user) {
             admins.push({
             id: user.id,
@@ -66,9 +90,6 @@ export default async function AdminSettingsPage() {
       }
     }
   }
-
-  // 3. Récupérer l'utilisateur courant pour éviter de se supprimer soi-même
-  const { data: { user: currentUser } } = await supabase.auth.getUser();
 
   return (
     <div className="space-y-8">
