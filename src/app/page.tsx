@@ -465,7 +465,7 @@ export default function Home() {
                 
                 <div className="bg-slate-800 p-1 rounded-2xl border-2 border-orange-500/50 shadow-[0px_0px_50px_rgba(249,115,22,0.2)]">
                     <div className="bg-slate-950 p-6 rounded-xl">
-                        <PreRegistrationForm />
+                        <PreRegistrationForm programType="entrepreneur" />
                     </div>
                 </div>
                 
