@@ -1,14 +1,11 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Trash2, UserPlus, Shield } from "lucide-react";
-import { addAdminByEmail, removeAdmin } from "@/actions/admin-management";
-import { toast } from "sonner";
-import { AdminAddForm } from "./admin-add-form"; // Client component for the form
+import { removeAdmin } from "@/actions/admin-management";
+import { AdminAddForm } from "./form";
 
 export default async function AdminSettingsPage() {
   const supabase = await createClient();
@@ -23,7 +20,7 @@ export default async function AdminSettingsPage() {
   const admins = [];
   if (adminIds) {
     for (const admin of adminIds) {
-      const { data: { user }, error } = await supabaseAdmin.auth.admin.getUserById(admin.user_id);
+      const { data: { user } } = await supabaseAdmin.auth.admin.getUserById(admin.user_id);
       if (user) {
         admins.push({
           id: user.id,
