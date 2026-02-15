@@ -484,14 +484,53 @@ export default function SideProjectPage() {
       </main>
       
       <footer className="bg-white py-12 border-t border-slate-100 text-slate-900">
-        <div className="container mx-auto px-4 text-center">
-            <div className="flex items-center justify-center gap-2 mb-4">
-                <Anchor className="h-6 w-6 text-green-600" />
-                <span className="font-black uppercase tracking-widest">Popey Academy</span>
+        <div className="container mx-auto px-4">
+            <div className="grid md:grid-cols-4 gap-8 mb-12">
+                <div className="space-y-4">
+                    <div className="flex items-center gap-2">
+                        <Anchor className="h-6 w-6 text-green-600" />
+                        <span className="font-black uppercase tracking-widest">Popey Academy</span>
+                    </div>
+                    <p className="text-sm text-slate-500">
+                        La première école qui transforme l'indécision en action.
+                        <br/>Force & Honneur.
+                    </p>
+                </div>
+                <div>
+                    <h4 className="font-bold text-slate-900 uppercase mb-4 text-sm">Programmes</h4>
+                    <ul className="space-y-2 text-sm text-slate-500">
+                        <li><Link href="/emploi" className="hover:text-green-600">Trouver sa voie</Link></li>
+                        <li><Link href="/entrepreneurs" className="hover:text-green-600">Lancer son activité</Link></li>
+                        <li><Link href="/side-project" className="hover:text-green-600">Side Project</Link></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 className="font-bold text-slate-900 uppercase mb-4 text-sm">Légal</h4>
+                    <ul className="space-y-2 text-sm text-slate-500">
+                        <li><Link href="/legal/mentions" className="hover:text-green-600">Mentions Légales</Link></li>
+                        <li><Link href="/legal/terms" className="hover:text-green-600">CGV / CGU</Link></li>
+                        <li><Link href="/legal/privacy" className="hover:text-green-600">Politique de Confidentialité</Link></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 className="font-bold text-slate-900 uppercase mb-4 text-sm">Contact</h4>
+                    <ul className="space-y-2 text-sm text-slate-500">
+                        <li>hello@popey.academy</li>
+                        <li>Paris, France</li>
+                        <li className="flex gap-4 mt-4">
+                            <div className="h-8 w-8 bg-slate-100 rounded-full flex items-center justify-center text-slate-400 hover:bg-green-100 hover:text-green-600 transition-colors cursor-pointer">
+                                <span className="font-black text-xs">IN</span>
+                            </div>
+                            <div className="h-8 w-8 bg-slate-100 rounded-full flex items-center justify-center text-slate-400 hover:bg-green-100 hover:text-green-600 transition-colors cursor-pointer">
+                                <span className="font-black text-xs">IG</span>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
             </div>
-            <p className="text-sm text-slate-500">
-                Side Project Program • 2026
-            </p>
+            <div className="pt-8 border-t border-slate-100 text-center">
+                <p className="text-slate-400 text-xs">© 2026 Popey Academy. Tous droits réservés.</p>
+            </div>
         </div>
       </footer>
     </div>
