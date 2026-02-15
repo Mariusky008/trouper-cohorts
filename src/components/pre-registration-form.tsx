@@ -69,7 +69,7 @@ export function PreRegistrationForm({ programType = "entrepreneur" }: { programT
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4 max-w-md mx-auto w-full bg-white/80 backdrop-blur-md p-6 rounded-xl shadow-lg border border-white/20">
-        <input type="hidden" name="programType" value={programType} />
+        <input type="hidden" name="programType" value={programType || "entrepreneur"} />
         
         <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1">
@@ -100,11 +100,11 @@ export function PreRegistrationForm({ programType = "entrepreneur" }: { programT
 
         <div className="space-y-1">
             <Label htmlFor="trade" className="text-xs uppercase font-bold text-slate-500">
-                {['job_seeker', 'side_project'].includes(programType) ? 'Situation Actuelle' : 'Métier'}
+                {['job_seeker', 'side_project'].includes(programType || "") ? 'Situation Actuelle' : 'Métier'}
             </Label>
             <Select name="trade" onValueChange={(val) => setIsOtherTrade(val === "autre")} required>
                 <SelectTrigger className="bg-white/50">
-                    <SelectValue placeholder={['job_seeker', 'side_project'].includes(programType) ? "Quelle est votre situation ?" : "Sélectionnez votre métier"} />
+                    <SelectValue placeholder={['job_seeker', 'side_project'].includes(programType || "") ? "Quelle est votre situation ?" : "Sélectionnez votre métier"} />
                 </SelectTrigger>
                 <SelectContent>
                     {programType === 'job_seeker' ? (
