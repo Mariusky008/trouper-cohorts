@@ -93,10 +93,11 @@ export default function Home() {
             </FadeIn>
 
             <FadeIn delay={0.2}>
-                <div className="text-xl md:text-3xl text-slate-600 font-black uppercase tracking-tight space-y-2">
-                    <p>15 jours intensifs pour développer sa communication sur les réseaux (humains et sociaux)</p>
-                    <p>23 partenaires qui activent leur réseau pour vous.</p>
-                    <p className="text-orange-600">Une seule obsession : terminer la quinzaine avec plus de clients qu’au départ.</p>
+                <div className="text-xl md:text-3xl font-black uppercase tracking-tight space-y-4 max-w-4xl mx-auto">
+                    <p className="text-orange-600 leading-tight">15 jours intensifs pour développer sa communication sur les réseaux (humains et sociaux)</p>
+                    <div className="w-24 h-1 bg-slate-200 mx-auto rounded-full my-6"></div>
+                    <p className="text-slate-600">23 partenaires qui activent leur réseau pour vous.</p>
+                    <p className="text-slate-900">Une seule obsession : terminer la quinzaine avec plus de clients qu’au départ.</p>
                 </div>
             </FadeIn>
 
