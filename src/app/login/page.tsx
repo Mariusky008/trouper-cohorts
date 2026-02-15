@@ -47,6 +47,11 @@ export default async function LoginPage({
             <LoginForm defaultEmail={typeof params?.email === "string" ? params.email : ""} />
           </CardContent>
         </Card>
+
+        <p className="text-center text-sm text-muted-foreground px-4">
+          Vous rencontrez des difficultés avec le lien magique ou la connexion ?<br/>
+          N'hésitez pas à m'appeler au <span className="font-semibold text-foreground">07 68 23 33 47</span> pour tout souci.
+        </p>
       </div>
     </div>
   );
