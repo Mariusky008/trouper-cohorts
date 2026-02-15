@@ -31,7 +31,7 @@ export async function addAdminByEmail(email: string) {
     
     if (listError) {
         console.error("Erreur listUsers:", listError);
-        return { error: "Erreur technique lors de la recherche utilisateur." };
+        return { error: `Erreur technique lors de la recherche utilisateur: ${listError.message}` };
     }
     
     const targetUser = users.find(u => u.email?.toLowerCase() === email.toLowerCase().trim());
