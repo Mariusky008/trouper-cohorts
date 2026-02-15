@@ -100,11 +100,11 @@ export function PreRegistrationForm({ programType = "entrepreneur" }: { programT
 
         <div className="space-y-1">
             <Label htmlFor="trade" className="text-xs uppercase font-bold text-slate-500">
-                {programType === 'job_seeker' ? 'Situation Actuelle' : 'Métier'}
+                {['job_seeker', 'side_project'].includes(programType) ? 'Situation Actuelle' : 'Métier'}
             </Label>
             <Select name="trade" onValueChange={(val) => setIsOtherTrade(val === "autre")} required>
                 <SelectTrigger className="bg-white/50">
-                    <SelectValue placeholder={programType === 'job_seeker' ? "Quelle est votre situation ?" : "Sélectionnez votre métier"} />
+                    <SelectValue placeholder={['job_seeker', 'side_project'].includes(programType) ? "Quelle est votre situation ?" : "Sélectionnez votre métier"} />
                 </SelectTrigger>
                 <SelectContent>
                     {programType === 'job_seeker' ? (
@@ -112,6 +112,14 @@ export function PreRegistrationForm({ programType = "entrepreneur" }: { programT
                             <SelectItem value="sans_emploi">Sans Emploi</SelectItem>
                             <SelectItem value="avec_emploi">En poste (Salarié)</SelectItem>
                             <SelectItem value="etudiant">Étudiant</SelectItem>
+                            <SelectItem value="autre">Autre...</SelectItem>
+                        </>
+                    ) : programType === 'side_project' ? (
+                        <>
+                            <SelectItem value="salarie_cadre">Salarié (Cadre)</SelectItem>
+                            <SelectItem value="salarie_employe">Salarié (Employé)</SelectItem>
+                            <SelectItem value="fonctionnaire">Fonctionnaire</SelectItem>
+                            <SelectItem value="independant">Indépendant (Complément)</SelectItem>
                             <SelectItem value="autre">Autre...</SelectItem>
                         </>
                     ) : (
