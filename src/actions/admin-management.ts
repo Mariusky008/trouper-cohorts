@@ -31,12 +31,7 @@ export async function addAdminByEmail(email: string) {
     
     if (listError) {
         console.error("Erreur listUsers:", listError);
-        // Debug info for the user
-        const url = process.env.NEXT_PUBLIC_SUPABASE_URL || "undefined";
-        const key = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
-        const keyDebug = key ? `${key.substring(0, 5)}... (${key.length} chars)` : "undefined";
-        
-        return { error: `Erreur technique (${listError.message}). URL: ${url}, Key: ${keyDebug}` };
+        return { error: `Erreur technique lors de la recherche utilisateur: ${listError.message}` };
     }
     
     const targetUser = users.find(u => u.email?.toLowerCase() === email.toLowerCase().trim());
