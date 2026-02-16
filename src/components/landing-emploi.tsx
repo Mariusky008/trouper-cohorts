@@ -116,12 +116,12 @@ export function LandingEmploi() {
                     </p>
                 </div>
 
-                <div className="pt-10 flex flex-col md:flex-row items-center justify-center gap-6">
-                    <Button size="lg" className="h-16 px-10 bg-purple-600 hover:bg-purple-500 text-white font-black text-lg uppercase tracking-widest rounded-full shadow-xl shadow-purple-200 hover:shadow-2xl hover:-translate-y-1 transition-all w-full md:w-auto" asChild>
-                        <Link href="#join">
-                            <span className="flex items-center gap-3 text-center">
+                <div className="pt-10 flex flex-col md:flex-row items-center justify-center gap-6 px-4">
+                    <Button size="lg" className="h-auto min-h-[4rem] py-4 px-6 md:px-10 bg-purple-600 hover:bg-purple-500 text-white font-black text-base md:text-xl uppercase tracking-widest rounded-full shadow-xl shadow-purple-200 hover:shadow-2xl hover:-translate-y-1 transition-all w-full md:w-auto whitespace-normal leading-tight" asChild>
+                        <Link href="#join" className="flex items-center justify-center text-center">
+                            <span className="flex items-center gap-3 text-center justify-center">
                                 <span>Je candidate au programme</span>
-                                <Rocket className="h-6 w-6" />
+                                <Rocket className="h-6 w-6 shrink-0" />
                             </span>
                         </Link>
                     </Button>
@@ -357,7 +357,7 @@ export function LandingEmploi() {
                             </div>
 
                             <div className="pt-4">
-                                <Badge className="bg-purple-600 text-white border-0 px-6 py-2 text-sm md:text-base font-bold uppercase tracking-widest hover:bg-purple-500">
+                                <Badge className="bg-purple-600 text-white border-0 px-4 py-2 text-xs md:text-sm md:px-6 md:text-base font-bold uppercase tracking-widest hover:bg-purple-500 whitespace-normal text-center leading-relaxed h-auto">
                                     Tu ne restes pas le même. Parce que 30 miroirs ne mentent pas.
                                 </Badge>
                             </div>

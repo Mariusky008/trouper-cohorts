@@ -102,13 +102,13 @@ export default function Home() {
             </FadeIn>
 
             <FadeIn delay={0.4}>
-                <div className="pt-8">
-                    <Button size="lg" className="h-16 px-10 bg-orange-600 hover:bg-orange-500 text-white font-black text-lg md:text-xl uppercase tracking-widest rounded-full shadow-xl shadow-orange-200 hover:shadow-2xl hover:-translate-y-1 transition-all" asChild>
-                        <Link href="#join">
+                <div className="pt-8 px-4">
+                    <Button size="lg" className="h-auto min-h-[4rem] py-4 px-6 md:px-10 bg-orange-600 hover:bg-orange-500 text-white font-black text-base md:text-xl uppercase tracking-widest rounded-full shadow-xl shadow-orange-200 hover:shadow-2xl hover:-translate-y-1 transition-all w-full md:w-auto whitespace-normal leading-tight" asChild>
+                        <Link href="#join" className="flex items-center justify-center text-center">
                            Je rejoins la prochaine cohorte
                         </Link>
                     </Button>
-                    <p className="mt-4 text-slate-500 text-sm font-medium uppercase tracking-widest">
+                    <p className="mt-4 text-slate-500 text-xs font-medium uppercase tracking-widest px-4">
                         Tu ne seras plus jamais invisible dans ton marché.
                     </p>
                 </div>
@@ -207,11 +207,11 @@ export default function Home() {
                             nous vous replaçons gratuitement dans la prochaine session.
                         </p>
                         
-                        <div className="flex flex-col items-center gap-6">
-                            <Button size="lg" className="bg-white text-orange-600 hover:bg-orange-50 font-black uppercase tracking-widest px-10 h-16 text-xl shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-all rounded-full" asChild>
-                                <Link href="#join">Réserver ma place dans l'Armada</Link>
+                        <div className="flex flex-col items-center gap-6 px-4">
+                            <Button size="lg" className="bg-white text-orange-600 hover:bg-orange-50 font-black uppercase tracking-widest px-6 md:px-10 h-auto min-h-[4rem] py-4 text-base md:text-xl shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-all rounded-full w-full md:w-auto whitespace-normal leading-tight" asChild>
+                                <Link href="#join" className="flex items-center justify-center text-center">Réserver ma place dans l'Armada</Link>
                             </Button>
-                            <p className="text-orange-200 text-sm font-bold uppercase tracking-widest">
+                            <p className="text-orange-200 text-xs md:text-sm font-bold uppercase tracking-widest">
                                 Prochaine session limitée à 24 participants
                             </p>
                         </div>

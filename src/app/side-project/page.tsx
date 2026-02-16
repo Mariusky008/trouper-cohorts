@@ -124,9 +124,9 @@ export default function SideProjectPage() {
             </FadeIn>
 
             <FadeIn delay={0.4}>
-                <div className="pt-8 flex flex-col items-center gap-4">
-                    <Button size="lg" className="h-16 px-10 bg-green-600 hover:bg-green-500 text-white font-black text-lg md:text-xl uppercase tracking-widest rounded-full shadow-xl shadow-green-200 hover:shadow-2xl hover:-translate-y-1 transition-all" asChild>
-                        <Link href="#join">
+                <div className="pt-8 flex flex-col items-center gap-4 px-4">
+                    <Button size="lg" className="h-auto min-h-[4rem] py-4 px-6 md:px-10 bg-green-600 hover:bg-green-500 text-white font-black text-base md:text-xl uppercase tracking-widest rounded-full shadow-xl shadow-green-200 hover:shadow-2xl hover:-translate-y-1 transition-all w-full md:w-auto whitespace-normal leading-tight" asChild>
+                        <Link href="#join" className="flex items-center justify-center text-center">
                            Je réserve ma place
                         </Link>
                     </Button>
@@ -447,8 +447,8 @@ export default function SideProjectPage() {
                         </p>
                     </div>
 
-                    <Button size="lg" className="w-full h-16 bg-green-600 hover:bg-green-500 text-white font-black text-xl uppercase tracking-widest rounded-full shadow-xl shadow-green-900/50 transition-all" asChild>
-                        <Link href="#join">Je rejoins la prochaine session</Link>
+                    <Button size="lg" className="w-full h-auto min-h-[4rem] py-4 bg-green-600 hover:bg-green-500 text-white font-black text-lg md:text-xl uppercase tracking-widest rounded-full shadow-xl shadow-green-900/50 transition-all whitespace-normal leading-tight" asChild>
+                        <Link href="#join" className="flex items-center justify-center text-center">Je rejoins la prochaine session</Link>
                     </Button>
                     <p className="mt-4 text-slate-500 text-xs font-bold uppercase tracking-widest">
                         Places limitées à 24 participants.
