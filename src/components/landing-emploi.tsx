@@ -94,8 +94,8 @@ export function LandingEmploi() {
                 <h1 className="text-4xl md:text-6xl lg:text-7xl font-black uppercase tracking-tighter leading-[0.95] text-blue-950">
                   Et si dans 5 semaines<br />
                   tu passais de<br />
-                  <span className="text-slate-400">“je ne sais pas quoi faire de ma vie”</span><br/>
-                  à <span className="text-orange-600">entrepreneur avec tes premiers clients ?</span>
+                  <span className="text-purple-600">“je ne sais pas quoi faire de ma vie”</span><br/>
+                  à entrepreneur avec tes premiers clients ?
                 </h1>
                 
                 <div className="text-xl md:text-2xl text-slate-600 max-w-4xl mx-auto font-medium leading-relaxed space-y-6">
