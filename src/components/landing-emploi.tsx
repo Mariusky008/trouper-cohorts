@@ -46,25 +46,25 @@ export function LandingEmploi() {
   });
 
   return (
-    <div ref={targetRef} className="min-h-screen bg-slate-50 text-slate-900 font-sans selection:bg-orange-500 selection:text-white overflow-x-hidden">
+    <div ref={targetRef} className="min-h-screen bg-slate-50 text-slate-900 font-sans selection:bg-purple-500 selection:text-white overflow-x-hidden">
       
       {/* Header - Fixed Navigation */}
       <header className="fixed top-0 w-full z-50 border-b border-white/50 bg-white/80 backdrop-blur-md shadow-sm">
         <div className="container mx-auto px-4 h-20 flex items-center justify-between">
           <div className="flex items-center gap-3">
-             <div className="h-10 w-10 text-orange-600">
+             <div className="h-10 w-10 text-purple-600">
                 <Anchor className="h-full w-full" strokeWidth={2.5} />
              </div>
-            <span className="font-black text-2xl tracking-tighter uppercase italic text-slate-900">Popey <span className="text-orange-600">Academy</span></span>
+            <span className="font-black text-2xl tracking-tighter uppercase italic text-slate-900">Popey <span className="text-purple-600">Academy</span></span>
           </div>
           <div className="hidden md:flex items-center gap-4">
-             <span className="text-sm font-bold text-orange-600 uppercase tracking-widest animate-pulse flex items-center gap-2">
-                <span className="h-2 w-2 rounded-full bg-orange-600"></span>
+             <span className="text-sm font-bold text-purple-600 uppercase tracking-widest animate-pulse flex items-center gap-2">
+                <span className="h-2 w-2 rounded-full bg-purple-600"></span>
                 Inscriptions Ouvertes
              </span>
           </div>
           <div className="flex items-center gap-3">
-            <Button variant="ghost" className="text-slate-500 hover:text-orange-600 font-bold uppercase tracking-wider hidden sm:flex" asChild>
+            <Button variant="ghost" className="text-slate-500 hover:text-purple-600 font-bold uppercase tracking-wider hidden sm:flex" asChild>
                 <Link href="/login">Connexion</Link>
             </Button>
             <Link 
@@ -105,19 +105,19 @@ export function LandingEmploi() {
                             <p className="text-slate-900 font-bold">3 semaines pour découvrir le métier qui te correspond vraiment.</p>
                         </div>
                         <div>
-                            <span className="block text-xs font-bold text-orange-500 uppercase tracking-widest mb-1">Formation 2</span>
+                            <span className="block text-xs font-bold text-purple-500 uppercase tracking-widest mb-1">Formation 2</span>
                             <p className="text-slate-900 font-bold">2 semaines avec 23 autres personnes pour trouver tes premiers clients.</p>
                         </div>
                     </div>
 
                     <p className="text-center font-black text-slate-900 text-2xl pt-4">
                         Dans 5 semaines, tu ne cherches plus ta voie.<br/>
-                        <span className="text-orange-600 underline decoration-4 underline-offset-4">Tu es dans le mouvement.</span>
+                        <span className="text-purple-600 underline decoration-4 underline-offset-4">Tu es dans le mouvement.</span>
                     </p>
                 </div>
 
                 <div className="pt-10 flex flex-col md:flex-row items-center justify-center gap-6">
-                    <Button size="lg" className="h-16 px-10 bg-orange-600 hover:bg-orange-500 text-white font-black text-lg uppercase tracking-widest rounded-full shadow-xl shadow-orange-200 hover:shadow-2xl hover:-translate-y-1 transition-all w-full md:w-auto" asChild>
+                    <Button size="lg" className="h-16 px-10 bg-purple-600 hover:bg-purple-500 text-white font-black text-lg uppercase tracking-widest rounded-full shadow-xl shadow-purple-200 hover:shadow-2xl hover:-translate-y-1 transition-all w-full md:w-auto" asChild>
                         <Link href="#join">
                             <span className="flex items-center gap-3 text-center">
                                 <span>Je candidate au programme</span>
@@ -141,7 +141,7 @@ export function LandingEmploi() {
                     <div className="space-y-8">
                         <FadeIn>
                             <h2 className="text-4xl font-black uppercase italic mb-8 leading-tight">
-                                La Transformation<br/><span className="text-orange-500">en 5 semaines</span>
+                                La Transformation<br/><span className="text-purple-500">en 5 semaines</span>
                             </h2>
                         </FadeIn>
                         
@@ -167,32 +167,32 @@ export function LandingEmploi() {
                                     </ul>
                                 </div>
 
-                                <div className="bg-white/5 p-6 rounded-2xl border border-orange-500/30 relative overflow-hidden">
-                                    <div className="absolute top-0 right-0 w-32 h-32 bg-orange-500/10 rounded-full blur-2xl"></div>
-                                    <h3 className="text-orange-500 font-black uppercase text-sm mb-4 flex items-center gap-2">
+                                <div className="bg-white/5 p-6 rounded-2xl border border-purple-500/30 relative overflow-hidden">
+                                    <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/10 rounded-full blur-2xl"></div>
+                                    <h3 className="text-purple-500 font-black uppercase text-sm mb-4 flex items-center gap-2">
                                         <CheckCircle2 className="h-4 w-4" /> Tu ressors avec :
                                     </h3>
                                     <div className="grid grid-cols-2 gap-4">
                                         <ul className="space-y-3">
                                             <li className="flex items-center gap-2 text-white font-bold">
-                                                <CheckCircle2 className="h-4 w-4 text-orange-500" /> Ton métier identifié
+                                                <CheckCircle2 className="h-4 w-4 text-purple-500" /> Ton métier identifié
                                             </li>
                                             <li className="flex items-center gap-2 text-white font-bold">
-                                                <CheckCircle2 className="h-4 w-4 text-orange-500" /> Une offre claire
+                                                <CheckCircle2 className="h-4 w-4 text-purple-500" /> Une offre claire
                                             </li>
                                             <li className="flex items-center gap-2 text-white font-bold">
-                                                <CheckCircle2 className="h-4 w-4 text-orange-500" /> Un positionnement défini
+                                                <CheckCircle2 className="h-4 w-4 text-purple-500" /> Un positionnement défini
                                             </li>
                                         </ul>
                                         <ul className="space-y-3">
                                             <li className="flex items-center gap-2 text-white font-bold">
-                                                <CheckCircle2 className="h-4 w-4 text-orange-500" /> Un plan d’action prêt
+                                                <CheckCircle2 className="h-4 w-4 text-purple-500" /> Un plan d’action prêt
                                             </li>
                                             <li className="flex items-center gap-2 text-white font-bold">
-                                                <CheckCircle2 className="h-4 w-4 text-orange-500" /> Des contacts
+                                                <CheckCircle2 className="h-4 w-4 text-purple-500" /> Des contacts
                                             </li>
                                             <li className="flex items-center gap-2 text-white font-bold">
-                                                <CheckCircle2 className="h-4 w-4 text-orange-500" /> Des rendez-vous
+                                                <CheckCircle2 className="h-4 w-4 text-purple-500" /> Des rendez-vous
                                             </li>
                                         </ul>
                                     </div>
@@ -208,7 +208,7 @@ export function LandingEmploi() {
                                 <p className="text-2xl font-black uppercase italic text-slate-400 line-through decoration-2 decoration-slate-600">
                                     Tu es sans emploi.
                                 </p>
-                                <ArrowRight className="h-8 w-8 text-orange-500 mx-auto rotate-90 md:rotate-0" />
+                                <ArrowRight className="h-8 w-8 text-purple-500 mx-auto rotate-90 md:rotate-0" />
                                 <p className="text-3xl md:text-4xl font-black uppercase italic text-white leading-tight">
                                     Tu es entrepreneur<br/><span className="text-blue-500">en action.</span>
                                 </p>
@@ -221,7 +221,7 @@ export function LandingEmploi() {
                                         <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Semaines</div>
                                     </div>
                                     <div>
-                                        <div className="text-3xl font-black text-orange-500 mb-1">2</div>
+                                        <div className="text-3xl font-black text-purple-500 mb-1">2</div>
                                         <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Formations</div>
                                     </div>
                                     <div>
@@ -303,12 +303,12 @@ export function LandingEmploi() {
                     <div className="bg-slate-900 text-white rounded-[2.5rem] p-8 md:p-16 relative overflow-hidden shadow-2xl">
                         {/* Background Elements */}
                         <div className="absolute top-0 right-0 w-96 h-96 bg-blue-600/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
-                        <div className="absolute bottom-0 left-0 w-96 h-96 bg-orange-500/10 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2"></div>
+                        <div className="absolute bottom-0 left-0 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2"></div>
                         
                         <div className="relative z-10 max-w-4xl mx-auto text-center space-y-12">
                             <div>
                                 <h2 className="text-3xl md:text-5xl font-black uppercase italic mb-6 leading-tight">
-                                    La Mécanique Humaine<br/><span className="text-orange-500">de Popey.Academy</span>
+                                    La Mécanique Humaine<br/><span className="text-purple-500">de Popey.Academy</span>
                                 </h2>
                                 <p className="text-xl md:text-2xl text-blue-200 font-medium max-w-2xl mx-auto">
                                     Pendant 5 semaines, tu ne restes jamais seul.
@@ -321,7 +321,7 @@ export function LandingEmploi() {
                                     <div className="text-sm font-bold text-slate-400 uppercase tracking-widest">Jours d'action</div>
                                 </div>
                                 <div className="bg-white/10 p-6 rounded-2xl border border-white/20 backdrop-blur-md transform scale-105 shadow-xl">
-                                    <div className="text-4xl font-black text-orange-500 mb-2">30</div>
+                                    <div className="text-4xl font-black text-purple-500 mb-2">30</div>
                                     <div className="text-sm font-bold text-white uppercase tracking-widest">Binômes différents</div>
                                 </div>
                                 <div className="bg-white/5 p-6 rounded-2xl border border-white/10 backdrop-blur-sm">
@@ -351,13 +351,13 @@ export function LandingEmploi() {
                                     <p className="italic text-white">
                                         "Parce que parfois, ce qu’il manque pour avancer,<br/>
                                         ce n’est pas une méthode.<br/>
-                                        <span className="text-orange-500 font-black not-italic text-2xl mt-2 block">C’est un environnement."</span>
+                                        <span className="text-purple-500 font-black not-italic text-2xl mt-2 block">C’est un environnement."</span>
                                     </p>
                                 </div>
                             </div>
 
                             <div className="pt-4">
-                                <Badge className="bg-orange-600 text-white border-0 px-6 py-2 text-sm md:text-base font-bold uppercase tracking-widest hover:bg-orange-500">
+                                <Badge className="bg-purple-600 text-white border-0 px-6 py-2 text-sm md:text-base font-bold uppercase tracking-widest hover:bg-purple-500">
                                     Tu ne restes pas le même. Parce que 30 miroirs ne mentent pas.
                                 </Badge>
                             </div>
@@ -368,9 +368,9 @@ export function LandingEmploi() {
                 {/* PHASE 2 */}
                 <div className="grid md:grid-cols-2 gap-16 items-center">
                     <div className="bg-slate-50 border border-slate-200 p-8 rounded-3xl relative overflow-hidden shadow-lg order-2 md:order-1">
-                        <div className="absolute top-0 right-0 bg-orange-100 text-orange-700 text-xs font-bold px-4 py-1.5 rounded-bl-2xl uppercase tracking-widest">Formation 2</div>
+                        <div className="absolute top-0 right-0 bg-purple-100 text-purple-700 text-xs font-bold px-4 py-1.5 rounded-bl-2xl uppercase tracking-widest">Formation 2</div>
                         <h3 className="text-xl font-black text-slate-900 uppercase mb-8 flex items-center gap-2">
-                            <Rocket className="text-orange-600" /> Le Parcours
+                            <Rocket className="text-purple-600" /> Le Parcours
                         </h3>
                         <div className="space-y-8 relative">
                             <div className="absolute left-3 top-2 bottom-2 w-0.5 bg-slate-200"></div>
@@ -380,7 +380,7 @@ export function LandingEmploi() {
                                 { title: "Le Sprint", desc: "15 jours d'action intensive avec l'Armada pour décoller." }
                             ].map((step, i) => (
                                 <div key={i} className="relative flex gap-6">
-                                    <div className="h-6 w-6 rounded-full bg-white border-4 border-orange-600 z-10 shrink-0 shadow-sm"></div>
+                                    <div className="h-6 w-6 rounded-full bg-white border-4 border-purple-600 z-10 shrink-0 shadow-sm"></div>
                                     <div>
                                         <h4 className="font-black text-slate-900 text-lg uppercase mb-1">{step.title}</h4>
                                         <p className="text-slate-500 text-sm font-medium">{step.desc}</p>
@@ -392,11 +392,11 @@ export function LandingEmploi() {
 
                     <div className="space-y-8 order-1 md:order-2">
                         <FadeIn>
-                            <div className="inline-block bg-orange-100 text-orange-700 font-black border-2 border-orange-200 mb-6 uppercase tracking-widest px-6 py-3 rounded-full text-sm shadow-sm">
+                            <div className="inline-block bg-purple-100 text-purple-700 font-black border-2 border-purple-200 mb-6 uppercase tracking-widest px-6 py-3 rounded-full text-sm shadow-sm">
                                 Partie 2 • L'Accélération
                             </div>
                             <h2 className="text-4xl font-black uppercase italic text-slate-900 leading-tight">
-                                2 Semaines pour<br/>trouver <span className="text-orange-600">tes clients</span>
+                                2 Semaines pour<br/>trouver <span className="text-purple-600">tes clients</span>
                             </h2>
                         </FadeIn>
                         <FadeIn delay={0.1}>
@@ -406,7 +406,7 @@ export function LandingEmploi() {
                             
                             <div className="grid grid-cols-2 gap-4 mt-6">
                                 <div className="bg-white p-4 rounded-xl text-center border border-slate-100 shadow-sm">
-                                    <div className="text-3xl font-black text-orange-600 mb-1">24</div>
+                                    <div className="text-3xl font-black text-purple-600 mb-1">24</div>
                                     <div className="text-xs uppercase text-slate-400 font-bold">Réseaux</div>
                                 </div>
                                 <div className="bg-white p-4 rounded-xl text-center border border-slate-100 shadow-sm">
@@ -415,8 +415,8 @@ export function LandingEmploi() {
                                 </div>
                             </div>
                             
-                            <div className="mt-8 p-6 bg-orange-50 rounded-2xl border border-orange-100">
-                                <h4 className="font-black text-orange-700 uppercase text-sm mb-3 flex items-center gap-2">
+                            <div className="mt-8 p-6 bg-purple-50 rounded-2xl border border-purple-100">
+                                <h4 className="font-black text-purple-700 uppercase text-sm mb-3 flex items-center gap-2">
                                     <Users className="h-4 w-4" /> Le Secret du Pod
                                 </h4>
                                 <p className="text-sm text-slate-600 leading-relaxed">
@@ -444,9 +444,9 @@ export function LandingEmploi() {
                         { q: "Je ne sais pas vendre...", a: "On ne te demande pas de vendre, mais de proposer des solutions. On te donne les scripts." },
                         { q: "Je n’ai pas de réseau...", a: "Tu repars avec un réseau de 23 entrepreneurs actifs dès le premier jour." }
                     ].map((item, i) => (
-                        <div key={i} className="bg-white p-8 rounded-2xl shadow-sm border border-slate-100 hover:border-orange-200 hover:shadow-md transition-all">
+                        <div key={i} className="bg-white p-8 rounded-2xl shadow-sm border border-slate-100 hover:border-purple-200 hover:shadow-md transition-all">
                             <h4 className="font-black text-slate-900 text-lg mb-3 flex items-center gap-2">
-                                <HelpCircle className="h-5 w-5 text-orange-500" /> {item.q}
+                                <HelpCircle className="h-5 w-5 text-purple-500" /> {item.q}
                             </h4>
                             <p className="text-slate-600 leading-relaxed">{item.a}</p>
                         </div>
@@ -479,14 +479,14 @@ export function LandingEmploi() {
                     {/* Témoignage 2 */}
                     <div className="bg-slate-50 p-8 rounded-3xl border border-slate-100">
                         <div className="flex items-center gap-4 mb-6">
-                            <div className="h-12 w-12 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center font-black text-lg">T</div>
+                            <div className="h-12 w-12 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center font-black text-lg">T</div>
                             <div>
                                 <div className="font-bold text-slate-900">Thomas</div>
                                 <div className="text-xs font-bold text-slate-400 uppercase">Au chômage depuis 1 an</div>
                             </div>
                         </div>
                         <p className="text-slate-600 italic mb-6">"L'isolement me tuait. Retrouver un groupe de 24 personnes qui avancent, ça m'a redonné vie. J'ai lancé mon offre de coaching sportif."</p>
-                        <Badge className="bg-orange-100 text-orange-700 border-0 text-xs font-bold">Fin de l'isolement</Badge>
+                        <Badge className="bg-purple-100 text-purple-700 border-0 text-xs font-bold">Fin de l'isolement</Badge>
                     </div>
 
                     {/* Témoignage 3 */}
@@ -510,13 +510,13 @@ export function LandingEmploi() {
              <div className="container mx-auto px-4 max-w-xl text-center relative z-20">
                 <FloatingIcon duration={4}>
                     <div className="bg-white/10 p-6 rounded-full inline-block mb-8 backdrop-blur-sm border border-white/20">
-                        <Rocket className="h-16 w-16 text-orange-500" />
+                        <Rocket className="h-16 w-16 text-purple-500" />
                     </div>
                 </FloatingIcon>
                 
                 <h2 className="text-4xl md:text-5xl font-black uppercase italic mb-8 leading-tight">
                     Trouve ton métier.<br/>Lance-toi.<br/>
-                    <span className="text-orange-500">Obtiens tes premiers clients.</span>
+                    <span className="text-purple-500">Obtiens tes premiers clients.</span>
                 </h2>
 
                 <div className="text-center mb-12 space-y-4">
@@ -549,7 +549,7 @@ export function LandingEmploi() {
             <div className="grid md:grid-cols-4 gap-8 mb-12">
                 <div className="space-y-4">
                     <div className="flex items-center gap-2">
-                        <Anchor className="h-6 w-6 text-orange-600" />
+                        <Anchor className="h-6 w-6 text-purple-600" />
                         <span className="font-black uppercase tracking-widest">Popey Academy</span>
                     </div>
                     <p className="text-sm text-slate-500">
@@ -560,17 +560,17 @@ export function LandingEmploi() {
                 <div>
                     <h4 className="font-bold text-slate-900 uppercase mb-4 text-sm">Programmes</h4>
                     <ul className="space-y-2 text-sm text-slate-500">
-                        <li><Link href="/emploi" className="hover:text-orange-600">Trouver sa voie</Link></li>
-                        <li><Link href="/entrepreneurs" className="hover:text-orange-600">Lancer son activité</Link></li>
-                        <li><Link href="/admin/catalogue-chomeur" className="hover:text-orange-600">Catalogue PDF</Link></li>
+                        <li><Link href="/emploi" className="hover:text-purple-600">Trouver sa voie</Link></li>
+                        <li><Link href="/entrepreneurs" className="hover:text-purple-600">Lancer son activité</Link></li>
+                        <li><Link href="/admin/catalogue-chomeur" className="hover:text-purple-600">Catalogue PDF</Link></li>
                     </ul>
                 </div>
                 <div>
                     <h4 className="font-bold text-slate-900 uppercase mb-4 text-sm">Légal</h4>
                     <ul className="space-y-2 text-sm text-slate-500">
-                        <li><Link href="/legal/mentions" className="hover:text-orange-600">Mentions Légales</Link></li>
-                        <li><Link href="/legal/terms" className="hover:text-orange-600">CGV / CGU</Link></li>
-                        <li><Link href="/legal/privacy" className="hover:text-orange-600">Politique de Confidentialité</Link></li>
+                        <li><Link href="/legal/mentions" className="hover:text-purple-600">Mentions Légales</Link></li>
+                        <li><Link href="/legal/terms" className="hover:text-purple-600">CGV / CGU</Link></li>
+                        <li><Link href="/legal/privacy" className="hover:text-purple-600">Politique de Confidentialité</Link></li>
                     </ul>
                 </div>
                 <div>
@@ -580,10 +580,10 @@ export function LandingEmploi() {
                         <li>Paris, France</li>
                         <li className="flex gap-4 mt-4">
                             {/* Social Icons Placeholder */}
-                            <div className="h-8 w-8 bg-slate-100 rounded-full flex items-center justify-center text-slate-400 hover:bg-orange-100 hover:text-orange-600 transition-colors cursor-pointer">
+                            <div className="h-8 w-8 bg-slate-100 rounded-full flex items-center justify-center text-slate-400 hover:bg-purple-100 hover:text-purple-600 transition-colors cursor-pointer">
                                 <span className="font-black text-xs">IN</span>
                             </div>
-                            <div className="h-8 w-8 bg-slate-100 rounded-full flex items-center justify-center text-slate-400 hover:bg-orange-100 hover:text-orange-600 transition-colors cursor-pointer">
+                            <div className="h-8 w-8 bg-slate-100 rounded-full flex items-center justify-center text-slate-400 hover:bg-purple-100 hover:text-purple-600 transition-colors cursor-pointer">
                                 <span className="font-black text-xs">IG</span>
                             </div>
                         </li>
