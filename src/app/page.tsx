@@ -434,61 +434,91 @@ export default function Home() {
             </div>
         </section>
 
-        {/* SECTION 3 — EXEMPLES RÉELS */}
-        <section className="py-24 bg-white border-t border-slate-200">
-            <div className="container mx-auto px-4 max-w-5xl">
+        {/* SECTION 3 — L'HISTOIRE DE LUCAS */}
+        <section className="py-24 border-t border-slate-200">
+            <div className="container mx-auto px-4 max-w-6xl">
                 <div className="text-center mb-16">
-                    <h2 className="text-3xl font-black uppercase italic text-slate-900">Exemples de résultats obtenus</h2>
-                    <p className="text-slate-500 mt-4 text-lg">Pas de promesses en l'air, juste du terrain.</p>
+                    <Badge variant="outline" className="border-slate-300 text-slate-500 uppercase tracking-widest mb-4">Étude de cas réelle</Badge>
+                    <h2 className="text-3xl md:text-4xl font-black uppercase italic text-slate-900">
+                        L'histoire de <span className="text-orange-600">Lucas</span>
+                    </h2>
+                    <p className="text-slate-500 mt-4 text-lg max-w-2xl mx-auto">
+                        Comment il est passé de "revenus instables" à son meilleur mois historique en 15 jours.
+                    </p>
                 </div>
 
-                <div className="grid md:grid-cols-2 gap-8">
-                    <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all">
-                        <div className="flex items-center justify-between mb-6">
-                            <div>
-                                <h3 className="font-black text-xl text-slate-900">Marie</h3>
-                                <p className="text-slate-500 text-sm font-bold uppercase">Coach Sportif</p>
+                <div className="bg-white rounded-[2.5rem] shadow-xl border border-slate-100 overflow-hidden relative">
+                    {/* Decorative bg */}
+                    <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-orange-50 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 opacity-50"></div>
+                    
+                    <div className="grid md:grid-cols-2 gap-0">
+                        {/* Left: The Struggle */}
+                        <div className="p-8 md:p-16 border-b md:border-b-0 md:border-r border-slate-100 bg-slate-50/50">
+                            <div className="flex items-center gap-4 mb-8">
+                                <div className="h-16 w-16 rounded-full bg-slate-200 flex items-center justify-center font-black text-2xl text-slate-500">L</div>
+                                <div>
+                                    <div className="font-black text-slate-900 text-xl">Lucas M.</div>
+                                    <div className="text-sm font-bold text-slate-500 uppercase tracking-widest">29 ans • Freelance Marketing</div>
+                                </div>
                             </div>
-                            <div className="bg-green-100 text-green-700 font-bold px-3 py-1 rounded-full text-xs uppercase">Succès</div>
-                        </div>
-                        <ul className="space-y-4">
-                            <li className="flex items-center gap-3">
-                                <div className="h-2 w-2 rounded-full bg-green-500"></div>
-                                <span className="text-slate-700 font-medium">5 nouveaux clients signés</span>
-                            </li>
-                            <li className="flex items-center gap-3">
-                                <div className="h-2 w-2 rounded-full bg-green-500"></div>
-                                <span className="text-slate-700 font-medium">2 partenariats locaux activés</span>
-                            </li>
-                            <li className="flex items-center gap-3">
-                                <div className="h-2 w-2 rounded-full bg-green-500"></div>
-                                <span className="text-slate-700 font-medium">Offre restructurée et clarifiée</span>
-                            </li>
-                        </ul>
-                    </div>
 
-                    <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all">
-                        <div className="flex items-center justify-between mb-6">
-                            <div>
-                                <h3 className="font-black text-xl text-slate-900">Julien</h3>
-                                <p className="text-slate-500 text-sm font-bold uppercase">Artisan / Rénovation</p>
+                            <div className="space-y-8 relative">
+                                <div className="absolute left-3 top-2 bottom-2 w-0.5 bg-slate-200"></div>
+                                
+                                <div className="relative flex gap-6">
+                                    <div className="h-6 w-6 rounded-full bg-slate-300 border-4 border-white z-10 shrink-0 shadow-sm"></div>
+                                    <div>
+                                        <h4 className="font-bold text-slate-900 text-sm uppercase mb-1">Avant la cohorte</h4>
+                                        <p className="text-slate-600 italic">"Je vivais du bouche-à-oreille. Certains mois à 4k€, d'autres à 0. Je me sentais seul face à mon écran, sans stratégie claire pour aller chercher des clients."</p>
+                                    </div>
+                                </div>
+
+                                <div className="relative flex gap-6">
+                                    <div className="h-6 w-6 rounded-full bg-orange-200 border-4 border-white z-10 shrink-0 shadow-sm"></div>
+                                    <div>
+                                        <h4 className="font-bold text-orange-700 text-sm uppercase mb-1">Le Choc (Jour 3)</h4>
+                                        <p className="text-slate-600">"Le groupe m'a challengé sur mon offre. J'ai compris que je me vendais comme un exécutant, pas comme un expert. J'ai tout réécrit le soir même."</p>
+                                    </div>
+                                </div>
+
+                                <div className="relative flex gap-6">
+                                    <div className="h-6 w-6 rounded-full bg-orange-600 border-4 border-white z-10 shrink-0 shadow-sm"></div>
+                                    <div>
+                                        <h4 className="font-bold text-orange-700 text-sm uppercase mb-1">L'Explosion (Jour 12)</h4>
+                                        <p className="text-slate-600">"J'ai pitché mon offre à 24 entrepreneurs. 3 m'ont recommandé le jour même à leur réseau. J'ai signé 2 contrats dans la foulée."</p>
+                                    </div>
+                                </div>
                             </div>
-                            <div className="bg-blue-100 text-blue-700 font-bold px-3 py-1 rounded-full text-xs uppercase">Croissance</div>
                         </div>
-                        <ul className="space-y-4">
-                            <li className="flex items-center gap-3">
-                                <div className="h-2 w-2 rounded-full bg-blue-500"></div>
-                                <span className="text-slate-700 font-medium">3 devis signés en 15 jours</span>
-                            </li>
-                            <li className="flex items-center gap-3">
-                                <div className="h-2 w-2 rounded-full bg-blue-500"></div>
-                                <span className="text-slate-700 font-medium">1 collaboration long terme avec architecte</span>
-                            </li>
-                            <li className="flex items-center gap-3">
-                                <div className="h-2 w-2 rounded-full bg-blue-500"></div>
-                                <span className="text-slate-700 font-medium">Carnet de commandes rempli pour 2 mois</span>
-                            </li>
-                        </ul>
+
+                        {/* Right: The Result */}
+                        <div className="p-8 md:p-16 relative flex flex-col justify-center">
+                            <h3 className="text-2xl font-black uppercase italic text-slate-900 mb-8">
+                                Résultats après <span className="text-orange-600">15 jours</span>
+                            </h3>
+
+                            <div className="grid grid-cols-2 gap-6 mb-10">
+                                <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                                    <div className="text-4xl font-black text-orange-600 mb-1">x2</div>
+                                    <div className="text-xs font-bold text-slate-400 uppercase tracking-widest">Chiffre d'Affaires</div>
+                                </div>
+                                <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                                    <div className="text-4xl font-black text-green-600 mb-1">3</div>
+                                    <div className="text-xs font-bold text-slate-400 uppercase tracking-widest">Partenaires Clés</div>
+                                </div>
+                                <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 col-span-2">
+                                    <div className="text-4xl font-black text-blue-600 mb-1">Visibilité</div>
+                                    <div className="text-xs font-bold text-slate-400 uppercase tracking-widest">Audience multipliée par 10</div>
+                                </div>
+                            </div>
+
+                            <div className="bg-orange-600 text-white p-6 rounded-2xl relative shadow-lg transform rotate-1 hover:rotate-0 transition-transform">
+                                <div className="text-6xl absolute -top-6 -left-2 opacity-30 font-serif">"</div>
+                                <p className="font-medium italic relative z-10 text-lg leading-relaxed">
+                                    Je ne cours plus après les clients, ce sont eux qui viennent. L'effet de groupe est juste dingue. Je ne suis plus jamais seul.
+                                </p>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
