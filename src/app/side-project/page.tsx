@@ -184,10 +184,10 @@ export default function SideProjectPage() {
                 
                 <div className="grid md:grid-cols-4 gap-6">
                     {[
-                        { title: "Freelance / Indépendant", desc: "Vous avez une offre mais peu de clients réguliers." },
-                        { title: "Salarié Side-Project", desc: "Vous voulez tester une activité sans prendre de risque." },
-                        { title: "Entrepreneur Junior", desc: "Vous cherchez vos premières opportunités rapidement." },
-                        { title: "Expert / Consultant", desc: "Vous voulez plus de visibilité et de contacts qualifiés." }
+                        { title: "Salarié Ambitieux", desc: "Vous aimez votre job mais vous voulez un revenu complémentaire." },
+                        { title: "En quête de sécurité", desc: "Vous ne voulez pas démissionner avant d'avoir validé votre idée." },
+                        { title: "Futur Entrepreneur", desc: "Vous préparez votre départ en construisant votre clientèle." },
+                        { title: "Expert Passionné", desc: "Vous voulez monétiser une compétence sans tout risquer." }
                     ].map((item, i) => (
                         <div key={i} className="bg-slate-50 p-6 rounded-2xl border border-slate-200 hover:border-green-300 transition-all hover:-translate-y-1">
                             <div className="h-10 w-10 bg-white rounded-full flex items-center justify-center mb-4 shadow-sm border border-slate-100 text-green-600 font-bold">
