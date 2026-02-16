@@ -121,7 +121,7 @@ export default function Home() {
         </section>
 
         {/* SECTION 9 — LIVE WINS (TICKER) */}
-        <div className="bg-slate-900 border-y border-slate-800 py-3 overflow-hidden relative z-30">
+        <div className="bg-slate-900 border-y border-slate-800 py-3 overflow-hidden relative z-30" id="live-wins">
             <div className="container mx-auto px-4">
                 <div className="flex items-center justify-center gap-2 md:gap-8 text-xs font-medium text-slate-300 overflow-x-auto no-scrollbar whitespace-nowrap">
                     <span className="font-bold text-orange-500 uppercase tracking-widest shrink-0">En direct du Cockpit :</span>
@@ -135,7 +135,7 @@ export default function Home() {
         </div>
 
         {/* SECTION 1 — PREUVES CHIFFRÉES & TRANSPARENCE */}
-        <section className="py-16 bg-white relative z-30 -mt-10 mx-4">
+        <section className="py-16 bg-white relative z-30 -mt-10 mx-4" id="preuves">
             <div className="container mx-auto max-w-6xl">
                 {/* GLOBAL DASHBOARD */}
                 <div className="bg-white rounded-3xl shadow-xl p-8 md:p-12 border border-slate-100 mb-12">
@@ -198,7 +198,7 @@ export default function Home() {
                 
                 <div className="text-center mt-12">
                     <Button size="lg" className="bg-orange-600 hover:bg-orange-500 text-white font-black uppercase tracking-widest px-10 py-4 h-auto text-lg rounded-full shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all" asChild>
-                        <Link href="#join">Voir les preuves en direct</Link>
+                        <Link href="#temoignages" className="flex items-center justify-center">Voir les preuves en direct</Link>
                     </Button>
                 </div>
             </div>
@@ -409,7 +409,7 @@ export default function Home() {
 
                 <div className="text-center mt-12">
                     <Button size="lg" className="bg-slate-900 hover:bg-slate-800 text-white font-black uppercase tracking-widest px-10 py-4 h-auto text-lg rounded-full shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all" asChild>
-                        <Link href="#join">Voir mon futur quotidien</Link>
+                        <Link href="#join" className="flex items-center justify-center">Voir mon futur quotidien</Link>
                     </Button>
                 </div>
             </div>
@@ -527,7 +527,7 @@ export default function Home() {
 
                 <div className="text-center mt-12">
                     <Button size="lg" className="bg-white text-slate-900 border-2 border-slate-200 hover:border-slate-900 font-black uppercase tracking-widest px-10 py-4 h-auto text-lg rounded-full shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all" asChild>
-                        <Link href="#join">Vérifier si c'est pour moi</Link>
+                        <Link href="#join" className="flex items-center justify-center">Vérifier si c'est pour moi</Link>
                     </Button>
                 </div>
             </div>
@@ -678,14 +678,14 @@ export default function Home() {
 
                 <div className="text-center mt-12">
                     <Button size="lg" className="bg-orange-600 hover:bg-orange-500 text-white font-black uppercase tracking-widest px-10 py-4 h-auto text-lg rounded-full shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all" asChild>
-                        <Link href="#join">Obtenir les mêmes résultats</Link>
+                        <Link href="#join" className="flex items-center justify-center">Obtenir les mêmes résultats</Link>
                     </Button>
                 </div>
             </div>
         </section>
 
         {/* SECTION 5 & 6 — TÉMOIGNAGES & FONDATEUR */}
-        <section className="py-24 bg-white">
+        <section className="py-24 bg-white" id="temoignages">
             <div className="container mx-auto px-4 max-w-5xl">
                 <div className="text-center mb-16">
                     <h2 className="text-4xl font-black uppercase italic text-slate-900">Sans preuve = Méfiance</h2>
@@ -826,7 +826,7 @@ export default function Home() {
 
                 <div className="text-center mt-12">
                     <Button size="lg" className="bg-slate-900 hover:bg-slate-800 text-white font-black uppercase tracking-widest px-10 py-4 h-auto text-lg rounded-full shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all" asChild>
-                        <Link href="#join">Discuter avec Jean-Philippe</Link>
+                        <Link href="https://wa.me/33768233347" target="_blank">Discuter avec Jean-Philippe sur WhatsApp</Link>
                     </Button>
                 </div>
             </div>
@@ -857,7 +857,7 @@ export default function Home() {
 
                 <div className="text-center mt-12">
                     <Button size="lg" className="bg-white text-slate-900 border-2 border-slate-200 hover:border-orange-500 font-black uppercase tracking-widest px-10 py-4 h-auto text-lg rounded-full shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all" asChild>
-                        <Link href="#join">Je lève mes doutes maintenant</Link>
+                        <Link href="#join" className="flex items-center justify-center">Je lève mes doutes maintenant</Link>
                     </Button>
                 </div>
             </div>
@@ -928,7 +928,7 @@ export default function Home() {
 
                 <div className="text-center mt-12">
                     <Button size="lg" className="bg-orange-600 hover:bg-orange-500 text-white font-black uppercase tracking-widest px-10 py-4 h-auto text-lg rounded-full shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all" asChild>
-                        <Link href="#join">Je rejoins l'économie d'entraide</Link>
+                        <Link href="#join" className="flex items-center justify-center">Je rejoins l'économie d'entraide</Link>
                     </Button>
                 </div>
             </div>
