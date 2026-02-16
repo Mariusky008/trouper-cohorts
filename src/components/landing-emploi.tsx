@@ -552,8 +552,6 @@ export function LandingEmploi() {
                         </FadeIn>
                     </div>
                 </div>
-            </div>
-        </section>
 
         {/* SECTION 4 — TIMELINE 5 SEMAINES */}
                 <div className="py-20 border-t border-slate-200">
