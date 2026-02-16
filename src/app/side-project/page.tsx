@@ -304,64 +304,97 @@ export default function SideProjectPage() {
                         </div>
                     </div>
                 </div>
-                {/* SECTION 3 — RÉSULTATS RÉELS */}
+                {/* SECTION 3 — RÉSULTATS RÉELS : L'HISTOIRE DE NATHALIE */}
                 <div className="mt-20 pt-20 border-t border-slate-200">
                     <div className="text-center mb-16">
-                        <h2 className="text-3xl font-black uppercase italic text-slate-900 mb-6">Résultats obtenus pendant ou juste après</h2>
+                        <h2 className="text-3xl font-black uppercase italic text-slate-900 mb-6">L'exemple concret : L'histoire de Nathalie</h2>
+                        <p className="text-slate-500 max-w-2xl mx-auto">
+                            Oubliez la théorie. Voici comment une comptable sans idée est devenue libre grâce à son Side Project.
+                        </p>
                     </div>
 
-                    <div className="grid md:grid-cols-3 gap-8">
-                        {/* Carte 1 */}
-                        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                            <div className="bg-slate-100 p-4 border-b border-slate-200">
-                                <span className="font-bold text-slate-500 uppercase text-xs tracking-widest">Avant</span>
-                                <ul className="mt-3 space-y-2 text-sm text-slate-600">
-                                    <li className="flex items-center gap-2"><div className="h-1.5 w-1.5 rounded-full bg-slate-400"></div>Offre peu claire</li>
-                                    <li className="flex items-center gap-2"><div className="h-1.5 w-1.5 rounded-full bg-slate-400"></div>Aucun prospect actif</li>
-                                </ul>
-                            </div>
-                            <div className="bg-green-50 p-4">
-                                <span className="font-bold text-green-600 uppercase text-xs tracking-widest">Après</span>
-                                <ul className="mt-3 space-y-2 text-sm text-slate-900 font-medium">
-                                    <li className="flex items-center gap-2"><CheckCircle2 className="h-3 w-3 text-green-600" />5 rendez-vous obtenus</li>
-                                    <li className="flex items-center gap-2"><CheckCircle2 className="h-3 w-3 text-green-600" />2 clients signés</li>
-                                </ul>
-                            </div>
-                        </div>
+                    <div className="bg-white rounded-3xl shadow-xl border border-slate-200 overflow-hidden">
+                        <div className="grid md:grid-cols-2">
+                            {/* Colonne Gauche : L'Histoire */}
+                            <div className="p-8 md:p-12 space-y-8">
+                                <div className="flex items-center gap-4 mb-6">
+                                    <div className="h-16 w-16 bg-purple-100 rounded-full flex items-center justify-center text-purple-600 font-black text-2xl">N</div>
+                                    <div>
+                                        <h3 className="font-black text-2xl text-slate-900">Nathalie, 34 ans</h3>
+                                        <p className="text-slate-500 font-medium">De Comptable à Entrepreneuse Sociale</p>
+                                    </div>
+                                </div>
 
-                        {/* Carte 2 */}
-                        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                            <div className="bg-slate-100 p-4 border-b border-slate-200">
-                                <span className="font-bold text-slate-500 uppercase text-xs tracking-widest">Avant</span>
-                                <ul className="mt-3 space-y-2 text-sm text-slate-600">
-                                    <li className="flex items-center gap-2"><div className="h-1.5 w-1.5 rounded-full bg-slate-400"></div>Projet stade idée</li>
-                                    <li className="flex items-center gap-2"><div className="h-1.5 w-1.5 rounded-full bg-slate-400"></div>Aucune visibilité</li>
-                                </ul>
+                                <div className="space-y-8 relative pl-8 border-l-2 border-slate-100">
+                                    <div className="relative">
+                                        <div className="absolute -left-[39px] top-0 h-5 w-5 rounded-full bg-slate-200 border-4 border-white"></div>
+                                        <h4 className="font-bold text-slate-900 uppercase text-sm mb-2">Le Départ (J-0)</h4>
+                                        <p className="text-slate-600 italic">"Je suis comptable en cabinet. Je m'ennuie, je veux me sentir utile, mais je n'ai aucune idée de business. Je pense que je ne sais rien faire d'autre que des chiffres."</p>
+                                    </div>
+                                    <div className="relative">
+                                        <div className="absolute -left-[39px] top-0 h-5 w-5 rounded-full bg-blue-200 border-4 border-white"></div>
+                                        <h4 className="font-bold text-blue-600 uppercase text-sm mb-2">Le Déclic (Semaine 3)</h4>
+                                        <p className="text-slate-600">En creusant ses compétences avec le groupe, Nathalie réalise que sa rigueur administrative est un super-pouvoir pour les parents d'enfants handicapés, souvent noyés sous la paperasse (MDPH, Aides).</p>
+                                    </div>
+                                    <div className="relative">
+                                        <div className="absolute -left-[39px] top-0 h-5 w-5 rounded-full bg-green-200 border-4 border-white"></div>
+                                        <h4 className="font-bold text-green-600 uppercase text-sm mb-2">Le Side-Project (Mois 2)</h4>
+                                        <p className="text-slate-600">Elle lance son offre : "Je gère vos dossiers administratifs complexes". Elle travaille le soir et le samedi. Elle trouve ses 3 premiers clients dans son voisinage grâce à la méthode d'activation réseau.</p>
+                                    </div>
+                                    <div className="relative">
+                                        <div className="absolute -left-[39px] top-0 h-5 w-5 rounded-full bg-purple-200 border-4 border-white"></div>
+                                        <h4 className="font-bold text-purple-600 uppercase text-sm mb-2">Aujourd'hui</h4>
+                                        <p className="text-slate-600">Nathalie a quitté son cabinet. Son "petit service" est devenu une entreprise d'accompagnement. Elle a embauché une assistante.</p>
+                                    </div>
+                                </div>
                             </div>
-                            <div className="bg-blue-50 p-4">
-                                <span className="font-bold text-blue-600 uppercase text-xs tracking-widest">Après</span>
-                                <ul className="mt-3 space-y-2 text-sm text-slate-900 font-medium">
-                                    <li className="flex items-center gap-2"><CheckCircle2 className="h-3 w-3 text-blue-600" />Offre validée</li>
-                                    <li className="flex items-center gap-2"><CheckCircle2 className="h-3 w-3 text-blue-600" />3 opportunités commerciales</li>
-                                </ul>
-                            </div>
-                        </div>
 
-                        {/* Carte 3 */}
-                        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                            <div className="bg-slate-100 p-4 border-b border-slate-200">
-                                <span className="font-bold text-slate-500 uppercase text-xs tracking-widest">Avant</span>
-                                <ul className="mt-3 space-y-2 text-sm text-slate-600">
-                                    <li className="flex items-center gap-2"><div className="h-1.5 w-1.5 rounded-full bg-slate-400"></div>Activité bloquée</li>
-                                    <li className="flex items-center gap-2"><div className="h-1.5 w-1.5 rounded-full bg-slate-400"></div>Manque de confiance</li>
-                                </ul>
-                            </div>
-                            <div className="bg-purple-50 p-4">
-                                <span className="font-bold text-purple-600 uppercase text-xs tracking-widest">Après</span>
-                                <ul className="mt-3 space-y-2 text-sm text-slate-900 font-medium">
-                                    <li className="flex items-center gap-2"><CheckCircle2 className="h-3 w-3 text-purple-600" />Positionnement clair</li>
-                                    <li className="flex items-center gap-2"><CheckCircle2 className="h-3 w-3 text-purple-600" />Collab long terme</li>
-                                </ul>
+                            {/* Colonne Droite : Les Chiffres & Impact */}
+                            <div className="bg-slate-50 p-8 md:p-12 border-t md:border-t-0 md:border-l border-slate-200 flex flex-col justify-center">
+                                <h4 className="font-black text-slate-900 uppercase tracking-widest mb-8 text-center">Ce qui a changé concrètement</h4>
+                                
+                                <div className="grid grid-cols-2 gap-6 mb-8">
+                                    <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 text-center">
+                                        <p className="text-xs text-slate-400 font-bold uppercase mb-1">Revenu Mensuel</p>
+                                        <div className="flex items-end justify-center gap-2">
+                                            <span className="text-lg text-slate-400 line-through decoration-slate-400/50">2200€</span>
+                                            <ArrowRight className="h-5 w-5 text-slate-300 mb-1" />
+                                            <span className="text-2xl font-black text-green-600">4500€</span>
+                                        </div>
+                                    </div>
+                                    <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 text-center">
+                                        <p className="text-xs text-slate-400 font-bold uppercase mb-1">Temps de travail</p>
+                                        <div className="text-sm font-bold text-slate-700">Choisi & Flexible</div>
+                                        <p className="text-xs text-slate-400 mt-1">Plus de 9h-18h imposé</p>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-4">
+                                    <div className="flex gap-4 items-start">
+                                        <div className="bg-purple-100 p-2 rounded-full shrink-0">
+                                            <CheckCircle2 className="h-5 w-5 text-purple-600" />
+                                        </div>
+                                        <div>
+                                            <p className="font-bold text-slate-900 text-sm">Sens & Utilité</p>
+                                            <p className="text-sm text-slate-500">"Avant je remplissais des cases Excel. Aujourd'hui, je soulage des familles épuisées."</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex gap-4 items-start">
+                                        <div className="bg-blue-100 p-2 rounded-full shrink-0">
+                                            <CheckCircle2 className="h-5 w-5 text-blue-600" />
+                                        </div>
+                                        <div>
+                                            <p className="font-bold text-slate-900 text-sm">Sécurité</p>
+                                            <p className="text-sm text-slate-500">Elle a validé son business AVANT de démissionner. Zéro risque financier pris.</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="mt-10 pt-8 border-t border-slate-200 text-center">
+                                    <p className="text-slate-900 font-black italic text-lg">
+                                        "Je n'aurais jamais pensé que mon métier 'ennuyeux' pouvait devenir une aventure aussi passionnante."
+                                    </p>
+                                </div>
                             </div>
                         </div>
                     </div>
