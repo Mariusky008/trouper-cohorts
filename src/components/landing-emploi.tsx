@@ -355,73 +355,92 @@ export function LandingEmploi() {
                     </div>
                 </div>
 
-                {/* SECTION 3 — AVANT / APRÈS */}
-                <div className="py-20 border-t border-slate-200">
-                     <div className="text-center mb-12">
-                        <h2 className="text-3xl font-black uppercase italic text-slate-900">Avant / Après le programme</h2>
-                     </div>
-                     
-                     <div className="grid md:grid-cols-3 gap-8">
-                        {/* Carte 1 */}
-                        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                            <div className="bg-slate-100 p-4 border-b border-slate-200">
-                                <span className="font-bold text-slate-500 uppercase text-xs tracking-widest">Avant</span>
-                                <ul className="mt-3 space-y-2 text-sm text-slate-600">
-                                    <li className="flex items-center gap-2"><div className="h-1.5 w-1.5 rounded-full bg-slate-400"></div>Chômage depuis 8 mois</li>
-                                    <li className="flex items-center gap-2"><div className="h-1.5 w-1.5 rounded-full bg-slate-400"></div>Perte de confiance</li>
-                                    <li className="flex items-center gap-2"><div className="h-1.5 w-1.5 rounded-full bg-slate-400"></div>Aucune idée d'activité</li>
-                                </ul>
-                            </div>
-                            <div className="bg-green-50 p-4">
-                                <span className="font-bold text-green-600 uppercase text-xs tracking-widest">Après</span>
-                                <ul className="mt-3 space-y-2 text-sm text-slate-900 font-medium">
-                                    <li className="flex items-center gap-2"><CheckCircle2 className="h-3 w-3 text-green-600" />Lancement coaching sportif</li>
-                                    <li className="flex items-center gap-2"><CheckCircle2 className="h-3 w-3 text-green-600" />3 premiers clients en 1 mois</li>
-                                    <li className="flex items-center gap-2"><CheckCircle2 className="h-3 w-3 text-green-600" />Partenariat salle locale</li>
-                                </ul>
-                            </div>
-                        </div>
+                {/* SECTION 3 — L'HISTOIRE DE THOMAS */}
+                <div className="py-24 border-t border-slate-200">
+                    <div className="text-center mb-16">
+                        <Badge variant="outline" className="border-slate-300 text-slate-500 uppercase tracking-widest mb-4">Étude de cas réelle</Badge>
+                        <h2 className="text-3xl md:text-4xl font-black uppercase italic text-slate-900">
+                            L'histoire de <span className="text-purple-600">Thomas</span>
+                        </h2>
+                        <p className="text-slate-500 mt-4 text-lg max-w-2xl mx-auto">
+                            Comment il est passé de "6 mois de vide" à sa première facture en 5 semaines.
+                        </p>
+                    </div>
 
-                        {/* Carte 2 */}
-                        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                            <div className="bg-slate-100 p-4 border-b border-slate-200">
-                                <span className="font-bold text-slate-500 uppercase text-xs tracking-widest">Avant</span>
-                                <ul className="mt-3 space-y-2 text-sm text-slate-600">
-                                    <li className="flex items-center gap-2"><div className="h-1.5 w-1.5 rounded-full bg-slate-400"></div>Salariée en reconversion</li>
-                                    <li className="flex items-center gap-2"><div className="h-1.5 w-1.5 rounded-full bg-slate-400"></div>Peu de réseau</li>
-                                    <li className="flex items-center gap-2"><div className="h-1.5 w-1.5 rounded-full bg-slate-400"></div>Beaucoup de doutes</li>
-                                </ul>
-                            </div>
-                            <div className="bg-blue-50 p-4">
-                                <span className="font-bold text-blue-600 uppercase text-xs tracking-widest">Après</span>
-                                <ul className="mt-3 space-y-2 text-sm text-slate-900 font-medium">
-                                    <li className="flex items-center gap-2"><CheckCircle2 className="h-3 w-3 text-blue-600" />Activité assistante freelance</li>
-                                    <li className="flex items-center gap-2"><CheckCircle2 className="h-3 w-3 text-blue-600" />2 missions signées</li>
-                                    <li className="flex items-center gap-2"><CheckCircle2 className="h-3 w-3 text-blue-600" />Visibilité locale active</li>
-                                </ul>
-                            </div>
-                        </div>
+                    <div className="bg-white rounded-[2.5rem] shadow-xl border border-slate-100 overflow-hidden relative">
+                        {/* Decorative bg */}
+                        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-purple-50 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 opacity-50"></div>
+                        
+                        <div className="grid md:grid-cols-2 gap-0">
+                            {/* Left: The Struggle */}
+                            <div className="p-8 md:p-16 border-b md:border-b-0 md:border-r border-slate-100 bg-slate-50/50">
+                                <div className="flex items-center gap-4 mb-8">
+                                    <div className="h-16 w-16 rounded-full bg-slate-200 flex items-center justify-center font-black text-2xl text-slate-500">T</div>
+                                    <div>
+                                        <div className="font-black text-slate-900 text-xl">Thomas D.</div>
+                                        <div className="text-sm font-bold text-slate-500 uppercase tracking-widest">32 ans • En transition</div>
+                                    </div>
+                                </div>
 
-                        {/* Carte 3 */}
-                        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                            <div className="bg-slate-100 p-4 border-b border-slate-200">
-                                <span className="font-bold text-slate-500 uppercase text-xs tracking-widest">Avant</span>
-                                <ul className="mt-3 space-y-2 text-sm text-slate-600">
-                                    <li className="flex items-center gap-2"><div className="h-1.5 w-1.5 rounded-full bg-slate-400"></div>Artisan sans clients</li>
-                                    <li className="flex items-center gap-2"><div className="h-1.5 w-1.5 rounded-full bg-slate-400"></div>Isolement total</li>
-                                    <li className="flex items-center gap-2"><div className="h-1.5 w-1.5 rounded-full bg-slate-400"></div>Difficulté à se vendre</li>
-                                </ul>
+                                <div className="space-y-8 relative">
+                                    <div className="absolute left-3 top-2 bottom-2 w-0.5 bg-slate-200"></div>
+                                    
+                                    <div className="relative flex gap-6">
+                                        <div className="h-6 w-6 rounded-full bg-slate-300 border-4 border-white z-10 shrink-0 shadow-sm"></div>
+                                        <div>
+                                            <h4 className="font-bold text-slate-900 text-sm uppercase mb-1">Avant le programme</h4>
+                                            <p className="text-slate-600 italic">"Je tournais en rond depuis 6 mois. J'avais l'impression d'avoir tout essayé, mais je n'avais aucun résultat concret. Juste du vide."</p>
+                                        </div>
+                                    </div>
+
+                                    <div className="relative flex gap-6">
+                                        <div className="h-6 w-6 rounded-full bg-purple-200 border-4 border-white z-10 shrink-0 shadow-sm"></div>
+                                        <div>
+                                            <h4 className="font-bold text-purple-700 text-sm uppercase mb-1">Le Déclic (Semaine 2)</h4>
+                                            <p className="text-slate-600">"Le groupe m'a forcé à tester une idée que je gardais pour moi : aider les artisans avec leur administratif. J'ai arrêté de réfléchir, j'ai appelé."</p>
+                                        </div>
+                                    </div>
+
+                                    <div className="relative flex gap-6">
+                                        <div className="h-6 w-6 rounded-full bg-purple-600 border-4 border-white z-10 shrink-0 shadow-sm"></div>
+                                        <div>
+                                            <h4 className="font-bold text-purple-700 text-sm uppercase mb-1">L'Accélération (Semaine 4)</h4>
+                                            <p className="text-slate-600">"J'ai utilisé les scripts de vente du programme. J'ai eu 3 rendez-vous. J'ai signé mon premier client le jeudi."</p>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
-                            <div className="bg-purple-50 p-4">
-                                <span className="font-bold text-purple-600 uppercase text-xs tracking-widest">Après</span>
-                                <ul className="mt-3 space-y-2 text-sm text-slate-900 font-medium">
-                                    <li className="flex items-center gap-2"><CheckCircle2 className="h-3 w-3 text-purple-600" />Offre clarifiée</li>
-                                    <li className="flex items-center gap-2"><CheckCircle2 className="h-3 w-3 text-purple-600" />4 devis envoyés</li>
-                                    <li className="flex items-center gap-2"><CheckCircle2 className="h-3 w-3 text-purple-600" />Collab architecte long terme</li>
-                                </ul>
+
+                            {/* Right: The Result */}
+                            <div className="p-8 md:p-16 relative flex flex-col justify-center">
+                                <h3 className="text-2xl font-black uppercase italic text-slate-900 mb-8">
+                                    Résultats après <span className="text-purple-600">5 semaines</span>
+                                </h3>
+
+                                <div className="grid grid-cols-2 gap-6 mb-10">
+                                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                                        <div className="text-4xl font-black text-purple-600 mb-1">1</div>
+                                        <div className="text-xs font-bold text-slate-400 uppercase tracking-widest">Offre Validée</div>
+                                    </div>
+                                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                                        <div className="text-4xl font-black text-green-600 mb-1">1 200€</div>
+                                        <div className="text-xs font-bold text-slate-400 uppercase tracking-widest">Premier Contrat</div>
+                                    </div>
+                                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 col-span-2">
+                                        <div className="text-4xl font-black text-blue-600 mb-1">Confiance</div>
+                                        <div className="text-xs font-bold text-slate-400 uppercase tracking-widest">Retrouvée à 100%</div>
+                                    </div>
+                                </div>
+
+                                <div className="bg-purple-600 text-white p-6 rounded-2xl relative shadow-lg transform rotate-1 hover:rotate-0 transition-transform">
+                                    <div className="text-6xl absolute -top-6 -left-2 opacity-30 font-serif">"</div>
+                                    <p className="font-medium italic relative z-10 text-lg leading-relaxed">
+                                        Ce n'est pas juste une formation. C'est un coup de pied au cul bienveillant qui change tout. Je ne cherche plus d'emploi, je crée le mien.
+                                    </p>
+                                </div>
                             </div>
                         </div>
-                     </div>
+                    </div>
                 </div>
 
                 {/* LA MÉCANIQUE HUMAINE */}
