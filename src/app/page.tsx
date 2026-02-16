@@ -555,11 +555,11 @@ export default function Home() {
                     <div className="grid md:grid-cols-[1fr_2fr] gap-8 md:gap-12 items-center relative z-10">
                         <div className="relative">
                             <div className="aspect-square rounded-2xl bg-slate-800 border border-slate-700 overflow-hidden relative">
-                                {/* Placeholder pour la photo */}
-                                <div className="absolute inset-0 flex items-center justify-center text-slate-600 font-bold bg-slate-800">
-                                    <Users className="h-16 w-16 opacity-20" />
-                                </div>
-                                {/* <Image src="/path/to/photo.jpg" alt="Fondateur" fill className="object-cover" /> */}
+                                <img 
+                                    src="/jeanphilipperoth.jpg" 
+                                    alt="Jean-Philippe Roth" 
+                                    className="absolute inset-0 w-full h-full object-cover"
+                                />
                             </div>
                             <div className="absolute -bottom-4 -right-4 bg-white text-slate-900 p-4 rounded-xl shadow-lg border border-slate-100 max-w-[180px]">
                                 <p className="text-xs font-bold leading-tight">"L'action bat toujours la réflexion."</p>
