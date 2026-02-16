@@ -107,9 +107,9 @@ export function LandingEmploi() {
                 </div>
 
                 <div className="pt-10 flex flex-col md:flex-row items-center justify-center gap-6 px-4">
-                    <a href="#join" className={cn(buttonVariants({ size: "lg" }), "h-auto min-h-[4rem] py-4 px-6 md:px-10 bg-purple-600 hover:bg-purple-500 text-white font-black text-base md:text-xl uppercase tracking-widest rounded-full shadow-xl shadow-purple-200 hover:shadow-2xl hover:-translate-y-1 transition-all w-full md:w-auto whitespace-normal leading-tight flex items-center justify-center text-center")}>
+                    <a href="#join" className={cn(buttonVariants({ size: "lg" }), "h-auto min-h-[4rem] py-4 px-6 md:px-10 bg-purple-600 hover:bg-purple-500 text-white font-black text-base md:text-xl uppercase tracking-widest rounded-full shadow-xl shadow-purple-200 hover:shadow-2xl hover:-translate-y-1 transition-all w-auto whitespace-normal leading-tight flex items-center justify-center text-center mx-auto")}>
                         <span className="flex items-center gap-3 text-center justify-center">
-                            <span>Je candidate au programme</span>
+                            <span>Je candidate</span>
                             <Rocket className="h-6 w-6 shrink-0" />
                         </span>
                     </a>

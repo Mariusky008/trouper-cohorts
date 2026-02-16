@@ -126,7 +126,7 @@ export default function SideProjectPage() {
 
             <FadeIn delay={0.4}>
                 <div className="pt-8 flex flex-col items-center gap-4 px-4">
-                    <a href="#join" className={cn(buttonVariants({ size: "lg" }), "h-auto min-h-[4rem] py-4 px-6 md:px-10 bg-green-600 hover:bg-green-500 text-white font-black text-base md:text-xl uppercase tracking-widest rounded-full shadow-xl shadow-green-200 hover:shadow-2xl hover:-translate-y-1 transition-all w-full md:w-auto whitespace-normal leading-tight flex items-center justify-center text-center")}>
+                    <a href="#join" className={cn(buttonVariants({ size: "lg" }), "h-auto min-h-[4rem] py-4 px-6 md:px-10 bg-green-600 hover:bg-green-500 text-white font-black text-base md:text-xl uppercase tracking-widest rounded-full shadow-xl shadow-green-200 hover:shadow-2xl hover:-translate-y-1 transition-all w-auto whitespace-normal leading-tight flex items-center justify-center text-center mx-auto")}>
                        Je réserve
                     </a>
                     <p className="text-slate-500 text-sm font-bold uppercase tracking-widest">

@@ -104,7 +104,7 @@ export default function Home() {
 
             <FadeIn delay={0.4}>
                 <div className="pt-8 px-4">
-                    <a href="#join" className={cn(buttonVariants({ size: "lg" }), "h-auto min-h-[4rem] py-4 px-6 md:px-10 bg-orange-600 hover:bg-orange-500 text-white font-black text-base md:text-xl uppercase tracking-widest rounded-full shadow-xl shadow-orange-200 hover:shadow-2xl hover:-translate-y-1 transition-all w-full md:w-auto whitespace-normal leading-tight flex items-center justify-center text-center")}>
+                    <a href="#join" className={cn(buttonVariants({ size: "lg" }), "h-auto min-h-[4rem] py-4 px-6 md:px-10 bg-orange-600 hover:bg-orange-500 text-white font-black text-base md:text-xl uppercase tracking-widest rounded-full shadow-xl shadow-orange-200 hover:shadow-2xl hover:-translate-y-1 transition-all w-auto whitespace-normal leading-tight flex items-center justify-center text-center mx-auto")}>
                        Je rejoins
                     </a>
                     <p className="mt-4 text-slate-500 text-xs font-medium uppercase tracking-widest px-4">
@@ -320,7 +320,7 @@ export default function Home() {
                         </p>
                         
                         <div className="flex flex-col items-center gap-6 px-4">
-                            <a href="#join" className={cn(buttonVariants({ size: "lg" }), "bg-white text-orange-600 hover:bg-orange-50 font-black uppercase tracking-widest px-6 md:px-10 h-auto min-h-[4rem] py-4 text-base md:text-xl shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-all rounded-full w-full md:w-auto whitespace-normal leading-tight flex items-center justify-center text-center")}>
+                            <a href="#join" className={cn(buttonVariants({ size: "lg" }), "bg-white text-orange-600 hover:bg-orange-50 font-black uppercase tracking-widest px-6 md:px-10 h-auto min-h-[4rem] py-4 text-base md:text-xl shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-all rounded-full w-auto whitespace-normal leading-tight flex items-center justify-center text-center mx-auto")}>
                                 Je réserve
                             </a>
                         </div>
