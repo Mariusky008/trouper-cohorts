@@ -120,31 +120,79 @@ export default function Home() {
           </div>
         </section>
 
-        {/* SECTION 1 — PREUVES CHIFFRÉES */}
+        {/* SECTION 9 — LIVE WINS (TICKER) */}
+        <div className="bg-slate-900 border-y border-slate-800 py-3 overflow-hidden relative z-30">
+            <div className="container mx-auto px-4">
+                <div className="flex items-center justify-center gap-2 md:gap-8 text-xs font-medium text-slate-300 overflow-x-auto no-scrollbar whitespace-nowrap">
+                    <span className="font-bold text-orange-500 uppercase tracking-widest shrink-0">En direct du Cockpit :</span>
+                    <span className="flex items-center gap-2 shrink-0"><CheckCircle2 className="h-3 w-3 text-green-500" /> Lucas : "Devis signé à 1500€ !" (Il y a 2h)</span>
+                    <span className="hidden md:flex text-slate-700">•</span>
+                    <span className="flex items-center gap-2 shrink-0"><CheckCircle2 className="h-3 w-3 text-green-500" /> Sarah : "3 RDV qualifiés ce matin" (Il y a 4h)</span>
+                    <span className="hidden md:flex text-slate-700">•</span>
+                    <span className="flex items-center gap-2 shrink-0"><CheckCircle2 className="h-3 w-3 text-green-500" /> Marc : "Post viral 10k vues" (Il y a 6h)</span>
+                </div>
+            </div>
+        </div>
+
+        {/* SECTION 1 — PREUVES CHIFFRÉES & TRANSPARENCE */}
         <section className="py-16 bg-white relative z-30 -mt-10 mx-4">
-            <div className="container mx-auto max-w-5xl">
-                <div className="bg-white rounded-3xl shadow-xl p-8 md:p-12 border border-slate-100">
+            <div className="container mx-auto max-w-6xl">
+                {/* GLOBAL DASHBOARD */}
+                <div className="bg-white rounded-3xl shadow-xl p-8 md:p-12 border border-slate-100 mb-12">
                     <div className="text-center mb-10">
-                        <h2 className="text-2xl md:text-3xl font-black uppercase italic text-slate-900">Ils sont déjà passés à l’action</h2>
+                        <h2 className="text-2xl md:text-3xl font-black uppercase italic text-slate-900">Résultats moyens observés</h2>
+                        <p className="text-slate-500 mt-2">Données consolidées sur les 3 dernières cohortes.</p>
                     </div>
                     
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-                        <div className="space-y-2">
-                            <div className="text-4xl md:text-5xl font-black text-orange-600">450+</div>
-                            <p className="text-xs md:text-sm font-bold text-slate-500 uppercase tracking-wide">Entrepreneurs accompagnés</p>
+                    <div className="grid grid-cols-2 md:grid-cols-5 gap-8 text-center divide-x divide-slate-100">
+                        <div className="space-y-2 px-2">
+                            <div className="text-3xl md:text-4xl font-black text-orange-600">100%</div>
+                            <p className="text-[10px] md:text-xs font-bold text-slate-500 uppercase tracking-wide">Ont obtenu ≥ 1 RDV</p>
                         </div>
-                        <div className="space-y-2">
-                            <div className="text-4xl md:text-5xl font-black text-blue-600">1200+</div>
-                            <p className="text-xs md:text-sm font-bold text-slate-500 uppercase tracking-wide">Opportunités générées</p>
+                        <div className="space-y-2 px-2">
+                            <div className="text-3xl md:text-4xl font-black text-blue-600">68%</div>
+                            <p className="text-[10px] md:text-xs font-bold text-slate-500 uppercase tracking-wide">Ont signé 1 client (J+30)</p>
                         </div>
-                        <div className="space-y-2">
-                            <div className="text-4xl md:text-5xl font-black text-green-600">98%</div>
-                            <p className="text-xs md:text-sm font-bold text-slate-500 uppercase tracking-wide">De satisfaction</p>
+                        <div className="space-y-2 px-2">
+                            <div className="text-3xl md:text-4xl font-black text-green-600">~7</div>
+                            <p className="text-[10px] md:text-xs font-bold text-slate-500 uppercase tracking-wide">Opportunités / pers.</p>
                         </div>
-                        <div className="space-y-2">
-                            <div className="text-4xl md:text-5xl font-black text-purple-600">350+</div>
-                            <p className="text-xs md:text-sm font-bold text-slate-500 uppercase tracking-wide">Collaborations créées</p>
+                        <div className="space-y-2 px-2">
+                            <div className="text-3xl md:text-4xl font-black text-purple-600">x3</div>
+                            <p className="text-[10px] md:text-xs font-bold text-slate-500 uppercase tracking-wide">Visibilité LinkedIn</p>
                         </div>
+                         <div className="space-y-2 px-2">
+                            <div className="text-3xl md:text-4xl font-black text-slate-900">32</div>
+                            <p className="text-[10px] md:text-xs font-bold text-slate-500 uppercase tracking-wide">Conversations Business</p>
+                        </div>
+                    </div>
+                </div>
+
+                {/* TRANSPARENCE METRICS */}
+                <div className="grid md:grid-cols-3 gap-8 text-left text-sm text-slate-600 bg-slate-50 p-8 rounded-2xl border border-slate-200">
+                    <div>
+                        <h4 className="font-bold text-slate-900 uppercase mb-2 flex items-center gap-2">
+                            <Target className="h-4 w-4 text-orange-600" /> Calcul des Opportunités
+                        </h4>
+                        <p className="leading-relaxed text-xs">
+                            Une opportunité est validée si elle correspond à une demande de RDV, une mise en relation qualifiée, une réponse commerciale positive ou une recommandation active. Tout est vérifié dans le tableau de suivi.
+                        </p>
+                    </div>
+                    <div>
+                        <h4 className="font-bold text-slate-900 uppercase mb-2 flex items-center gap-2">
+                            <LifeBuoy className="h-4 w-4 text-green-600" /> Mesure de Satisfaction
+                        </h4>
+                        <p className="leading-relaxed text-xs">
+                            Sondage anonyme post-cohorte. Le taux (98%) correspond aux participants se déclarant "Satisfaits" ou "Très Satisfaits" de leur retour sur investissement immédiat.
+                        </p>
+                    </div>
+                    <div>
+                        <h4 className="font-bold text-slate-900 uppercase mb-2 flex items-center gap-2">
+                            <Users className="h-4 w-4 text-blue-600" /> Définition Collaboration
+                        </h4>
+                        <p className="leading-relaxed text-xs">
+                            Partenariat commercial, mission signée entre membres, ou recommandation ayant abouti à un contrat. Les simples échanges de courtoisie ne comptent pas.
+                        </p>
                     </div>
                 </div>
                 
@@ -152,6 +200,35 @@ export default function Home() {
                     <Button size="lg" className="bg-orange-600 hover:bg-orange-500 text-white font-black uppercase tracking-widest px-10 py-4 h-auto text-lg rounded-full shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all" asChild>
                         <Link href="#join">Voir les preuves en direct</Link>
                     </Button>
+                </div>
+            </div>
+        </section>
+
+        {/* SECTION 7 — INTENSITÉ ACCOMPAGNÉE */}
+        <section className="py-24 bg-white border-t border-slate-100">
+            <div className="container mx-auto px-4 max-w-4xl">
+                <div className="text-center mb-16">
+                    <Badge variant="outline" className="border-green-200 text-green-700 uppercase tracking-widest mb-4">Zéro Friction</Badge>
+                    <h2 className="text-3xl md:text-4xl font-black uppercase italic text-slate-900">Une intensité guidée,<br/><span className="text-green-600">Jamais subie.</span></h2>
+                    <p className="text-slate-500 mt-4 text-lg">On a supprimé tout ce qui vous fait perdre du temps.</p>
+                </div>
+
+                <div className="grid md:grid-cols-3 gap-8 text-center">
+                    <div className="p-6 bg-slate-50 rounded-2xl border border-slate-100">
+                        <div className="h-12 w-12 bg-white rounded-full flex items-center justify-center mx-auto mb-4 text-2xl shadow-sm">⏱️</div>
+                        <h3 className="font-bold text-slate-900 mb-2">1h / Jour</h3>
+                        <p className="text-sm text-slate-500">Suffisant pour obtenir des résultats. Tout est prémâché pour aller vite.</p>
+                    </div>
+                    <div className="p-6 bg-slate-50 rounded-2xl border border-slate-100">
+                        <div className="h-12 w-12 bg-white rounded-full flex items-center justify-center mx-auto mb-4 text-2xl shadow-sm">🧗</div>
+                        <h3 className="font-bold text-slate-900 mb-2">Progressif</h3>
+                        <p className="text-sm text-slate-500">On commence doucement (J1-J3) pour monter en puissance sans vous brusquer.</p>
+                    </div>
+                    <div className="p-6 bg-slate-50 rounded-2xl border border-slate-100">
+                        <div className="h-12 w-12 bg-white rounded-full flex items-center justify-center mx-auto mb-4 text-2xl shadow-sm">🤝</div>
+                        <h3 className="font-bold text-slate-900 mb-2">Jamais Seul</h3>
+                        <p className="text-sm text-slate-500">En cas de blocage, le groupe et le coach débloquent la situation en 10min.</p>
+                    </div>
                 </div>
             </div>
         </section>
@@ -338,6 +415,39 @@ export default function Home() {
             </div>
         </section>
 
+        {/* SECTION 4 — TIMELINE 15 JOURS */}
+        <section className="py-24 bg-slate-900 text-white border-t border-slate-800">
+             <div className="container mx-auto px-4 max-w-5xl">
+                <div className="text-center mb-16">
+                    <Badge className="bg-blue-600 text-white border-0 mb-4 uppercase tracking-widest px-4 py-1.5 text-sm">La Transformation</Badge>
+                    <h2 className="text-3xl md:text-4xl font-black uppercase italic text-white">Progression typique sur 15 jours</h2>
+                    <p className="text-slate-400 mt-4 text-lg">Votre pipeline commercial se construit jour après jour.</p>
+                </div>
+
+                <div className="relative space-y-8 before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-slate-600 before:to-transparent">
+                    {[
+                        { days: "Jours 1 à 3", title: "Clarification & Validation", desc: "On ne tire pas à blanc. On valide votre offre et votre cible avec le groupe pour s'assurer qu'elle est irrésistible.", color: "border-blue-500 text-blue-400" },
+                        { days: "Jours 4 à 7", title: "Visibilité & Premières Conversations", desc: "Vous commencez à exister. Les premières interactions qualifiées démarrent. Vous n'êtes plus invisible.", color: "border-orange-500 text-orange-400" },
+                        { days: "Jours 8 à 12", title: "Recommandations & Opportunités", desc: "L'effet de levier s'active. Les membres parlent de vous. Les leads entrants arrivent sans prospection froide.", color: "border-green-500 text-green-400" },
+                        { days: "Jours 13 à 15", title: "Closing & Consolidation", desc: "On transforme les conversations en rendez-vous et en signatures. On sécurise la suite.", color: "border-purple-500 text-purple-400" }
+                    ].map((item, i) => (
+                        <div key={i} className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
+                            
+                            <div className={`flex items-center justify-center w-10 h-10 rounded-full border-4 ${item.color} bg-slate-900 shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10`}>
+                                <div className="w-2.5 h-2.5 bg-white rounded-full"></div>
+                            </div>
+                            
+                            <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] p-6 rounded-2xl bg-slate-800 border border-slate-700 shadow-lg">
+                                <div className={`font-black uppercase tracking-widest text-xs mb-1 ${item.color.split(' ')[1]}`}>{item.days}</div>
+                                <h3 className="font-bold text-white text-lg mb-2">{item.title}</h3>
+                                <p className="text-slate-400 text-sm leading-relaxed">{item.desc}</p>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+             </div>
+        </section>
+
         {/* 3. CONCRÈTEMENT : COMMENT ÇA MARCHE */}
         <section className="py-24 bg-slate-50 border-t border-slate-200">
             <div className="container mx-auto px-4 max-w-5xl">
@@ -423,89 +533,144 @@ export default function Home() {
             </div>
         </section>
 
-        {/* SECTION 3 — L'HISTOIRE DE LUCAS */}
+        {/* SECTION 2 & 8 — ÉTUDES DE CAS & AVANT/APRÈS */}
         <section className="py-24 border-t border-slate-200">
             <div className="container mx-auto px-4 max-w-6xl">
                 <div className="text-center mb-16">
-                    <Badge variant="outline" className="border-slate-300 text-slate-500 uppercase tracking-widest mb-4">Étude de cas réelle</Badge>
+                    <Badge variant="outline" className="border-slate-300 text-slate-500 uppercase tracking-widest mb-4">Du concret</Badge>
                     <h2 className="text-3xl md:text-4xl font-black uppercase italic text-slate-900">
-                        L'histoire de <span className="text-orange-600">Lucas</span>
+                        Ils ne sont pas meilleurs que vous.<br/>
+                        <span className="text-orange-600">Ils sont juste mieux entourés.</span>
                     </h2>
-                    <p className="text-slate-500 mt-4 text-lg max-w-2xl mx-auto">
-                        Comment il est passé de "revenus instables" à son meilleur mois historique en 15 jours.
-                    </p>
                 </div>
 
-                <div className="bg-white rounded-[2.5rem] shadow-xl border border-slate-100 overflow-hidden relative">
-                    {/* Decorative bg */}
-                    <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-orange-50 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 opacity-50"></div>
-                    
-                    <div className="grid md:grid-cols-2 gap-0">
-                        {/* Left: The Struggle */}
-                        <div className="p-8 md:p-16 border-b md:border-b-0 md:border-r border-slate-100 bg-slate-50/50">
-                            <div className="flex items-center gap-4 mb-8">
-                                <div className="h-16 w-16 rounded-full bg-slate-200 flex items-center justify-center font-black text-2xl text-slate-500">L</div>
-                                <div>
-                                    <div className="font-black text-slate-900 text-xl">Lucas M.</div>
-                                    <div className="text-sm font-bold text-slate-500 uppercase tracking-widest">29 ans • Freelance Marketing</div>
+                <div className="space-y-12">
+                    {/* CAS 1: LUCAS */}
+                    <div className="bg-white rounded-3xl shadow-lg border border-slate-100 overflow-hidden">
+                        <div className="grid md:grid-cols-[1fr_2fr] gap-0">
+                            <div className="bg-slate-50 p-8 md:p-12 border-b md:border-b-0 md:border-r border-slate-100 flex flex-col justify-center">
+                                <div className="flex items-center gap-4 mb-6">
+                                    <div className="h-16 w-16 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center font-black text-2xl">L</div>
+                                    <div>
+                                        <div className="font-black text-slate-900 text-xl">Lucas M.</div>
+                                        <div className="text-sm font-bold text-slate-500 uppercase tracking-widest">Freelance Marketing</div>
+                                    </div>
+                                </div>
+                                <div className="space-y-4 text-sm">
+                                    <div>
+                                        <p className="font-bold text-slate-900 uppercase text-xs mb-1">Situation Initiale</p>
+                                        <p className="text-slate-600">Revenus en dents de scie (0€ à 4k€). Solitude totale. Pas de stratégie d'acquisition.</p>
+                                    </div>
+                                    <div>
+                                        <p className="font-bold text-slate-900 uppercase text-xs mb-1">Délai</p>
+                                        <p className="text-slate-600">Résultats en 12 jours.</p>
+                                    </div>
                                 </div>
                             </div>
-
-                            <div className="space-y-8 relative">
-                                <div className="absolute left-3 top-2 bottom-2 w-0.5 bg-slate-200"></div>
-                                
-                                <div className="relative flex gap-6">
-                                    <div className="h-6 w-6 rounded-full bg-slate-300 border-4 border-white z-10 shrink-0 shadow-sm"></div>
+                            <div className="p-8 md:p-12">
+                                <div className="grid md:grid-cols-2 gap-8 mb-8">
                                     <div>
-                                        <h4 className="font-bold text-slate-900 text-sm uppercase mb-1">Avant la cohorte</h4>
-                                        <p className="text-slate-600 italic">"Je vivais du bouche-à-oreille. Certains mois à 4k€, d'autres à 0. Je me sentais seul face à mon écran, sans stratégie claire pour aller chercher des clients."</p>
+                                        <h4 className="font-bold text-orange-600 uppercase text-sm mb-2 flex items-center gap-2"><Zap className="h-4 w-4" /> Actions Réalisées</h4>
+                                        <ul className="space-y-2 text-slate-600 text-sm">
+                                            <li>• Réécriture complète de l'offre avec le groupe (J3).</li>
+                                            <li>• 10 prises de contact par jour (J5-J10).</li>
+                                            <li>• Pitch devant 24 entrepreneurs (J12).</li>
+                                        </ul>
+                                    </div>
+                                    <div>
+                                        <h4 className="font-bold text-green-600 uppercase text-sm mb-2 flex items-center gap-2"><Target className="h-4 w-4" /> Résultats Mesurés</h4>
+                                        <ul className="space-y-2 text-slate-600 text-sm">
+                                            <li className="font-bold text-slate-900">• 2 contrats signés (Total 3500€).</li>
+                                            <li>• 3 partenaires actifs qui le recommandent.</li>
+                                            <li>• Pipeline plein pour le mois suivant.</li>
+                                        </ul>
                                     </div>
                                 </div>
-
-                                <div className="relative flex gap-6">
-                                    <div className="h-6 w-6 rounded-full bg-orange-200 border-4 border-white z-10 shrink-0 shadow-sm"></div>
-                                    <div>
-                                        <h4 className="font-bold text-orange-700 text-sm uppercase mb-1">Le Choc (Jour 3)</h4>
-                                        <p className="text-slate-600">"Le groupe m'a challengé sur mon offre. J'ai compris que je me vendais comme un exécutant, pas comme un expert. J'ai tout réécrit le soir même."</p>
-                                    </div>
-                                </div>
-
-                                <div className="relative flex gap-6">
-                                    <div className="h-6 w-6 rounded-full bg-orange-600 border-4 border-white z-10 shrink-0 shadow-sm"></div>
-                                    <div>
-                                        <h4 className="font-bold text-orange-700 text-sm uppercase mb-1">L'Explosion (Jour 12)</h4>
-                                        <p className="text-slate-600">"J'ai pitché mon offre à 24 entrepreneurs. 3 m'ont recommandé le jour même à leur réseau. J'ai signé 2 contrats dans la foulée."</p>
-                                    </div>
+                                <div className="bg-slate-900 text-slate-300 p-4 rounded-xl text-sm italic border-l-4 border-orange-500">
+                                    "Je ne cours plus après les clients, ce sont eux qui viennent. L'effet de groupe est juste dingue."
                                 </div>
                             </div>
                         </div>
+                    </div>
 
-                        {/* Right: The Result */}
-                        <div className="p-8 md:p-16 relative flex flex-col justify-center">
-                            <h3 className="text-2xl font-black uppercase italic text-slate-900 mb-8">
-                                Résultats après <span className="text-orange-600">15 jours</span>
-                            </h3>
-
-                            <div className="grid grid-cols-2 gap-6 mb-10">
-                                <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-                                    <div className="text-4xl font-black text-orange-600 mb-1">x2</div>
-                                    <div className="text-xs font-bold text-slate-400 uppercase tracking-widest">Chiffre d'Affaires</div>
+                    {/* CAS 2: JULIE */}
+                    <div className="bg-white rounded-3xl shadow-lg border border-slate-100 overflow-hidden">
+                        <div className="grid md:grid-cols-[1fr_2fr] gap-0">
+                            <div className="bg-slate-50 p-8 md:p-12 border-b md:border-b-0 md:border-r border-slate-100 flex flex-col justify-center">
+                                <div className="flex items-center gap-4 mb-6">
+                                    <div className="h-16 w-16 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-black text-2xl">J</div>
+                                    <div>
+                                        <div className="font-black text-slate-900 text-xl">Julie T.</div>
+                                        <div className="text-sm font-bold text-slate-500 uppercase tracking-widest">Consultante RH</div>
+                                    </div>
                                 </div>
-                                <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-                                    <div className="text-4xl font-black text-green-600 mb-1">3</div>
-                                    <div className="text-xs font-bold text-slate-400 uppercase tracking-widest">Partenaires Clés</div>
-                                </div>
-                                <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 col-span-2">
-                                    <div className="text-4xl font-black text-blue-600 mb-1">Visibilité</div>
-                                    <div className="text-xs font-bold text-slate-400 uppercase tracking-widest">Audience multipliée par 10</div>
+                                <div className="space-y-4 text-sm">
+                                    <div>
+                                        <p className="font-bold text-slate-900 uppercase text-xs mb-1">Situation Initiale</p>
+                                        <p className="text-slate-600">Experte reconnue mais invisible sur LinkedIn. Dépendante de 2 gros clients historiques.</p>
+                                    </div>
+                                    <div>
+                                        <p className="font-bold text-slate-900 uppercase text-xs mb-1">Délai</p>
+                                        <p className="text-slate-600">Résultats en 15 jours.</p>
+                                    </div>
                                 </div>
                             </div>
+                            <div className="p-8 md:p-12">
+                                <div className="grid md:grid-cols-2 gap-8 mb-8">
+                                    <div>
+                                        <h4 className="font-bold text-orange-600 uppercase text-sm mb-2 flex items-center gap-2"><Zap className="h-4 w-4" /> Actions Réalisées</h4>
+                                        <ul className="space-y-2 text-slate-600 text-sm">
+                                            <li>• 5 Posts LinkedIn validés par le coach IA.</li>
+                                            <li>• 3 Lives avec d'autres membres de la cohorte.</li>
+                                            <li>• Activation des commentaires du groupe (Pod).</li>
+                                        </ul>
+                                    </div>
+                                    <div>
+                                        <h4 className="font-bold text-green-600 uppercase text-sm mb-2 flex items-center gap-2"><Target className="h-4 w-4" /> Résultats Mesurés</h4>
+                                        <ul className="space-y-2 text-slate-600 text-sm">
+                                            <li className="font-bold text-slate-900">• +450% de visibilité sur ses posts.</li>
+                                            <li>• 5 demandes de RDV entrantes (Inbound).</li>
+                                            <li>• 1 mission de conseil signée à 5k€.</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                                <div className="bg-slate-900 text-slate-300 p-4 rounded-xl text-sm italic border-l-4 border-blue-500">
+                                    "Je pensais que LinkedIn ne marchait pas pour moi. En fait, je parlais dans le vide. Avec le groupe, on crie plus fort."
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
-                            <div className="bg-orange-600 text-white p-6 rounded-2xl relative shadow-lg transform rotate-1 hover:rotate-0 transition-transform">
-                                <div className="text-6xl absolute -top-6 -left-2 opacity-30 font-serif">"</div>
-                                <p className="font-medium italic relative z-10 text-lg leading-relaxed">
-                                    Je ne cours plus après les clients, ce sont eux qui viennent. L'effet de groupe est juste dingue. Je ne suis plus jamais seul.
-                                </p>
+                {/* TABLEAU AVANT / APRÈS */}
+                <div className="mt-20">
+                    <h3 className="text-2xl font-black uppercase italic text-slate-900 text-center mb-8">La Métamorphose</h3>
+                    <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-200">
+                        <div className="grid grid-cols-3 bg-slate-900 text-white font-bold uppercase tracking-widest text-sm py-4 px-6 text-center">
+                            <div className="text-slate-400">Indicateur</div>
+                            <div className="text-slate-400">Avant la Cohorte</div>
+                            <div className="text-orange-500">Après 15 Jours</div>
+                        </div>
+                        <div className="divide-y divide-slate-100 text-sm">
+                            <div className="grid grid-cols-3 py-4 px-6 text-center hover:bg-slate-50 transition-colors">
+                                <div className="font-bold text-slate-900 text-left md:text-center">Chiffre d'Affaires</div>
+                                <div className="text-slate-500">Instable / Imprévisible</div>
+                                <div className="font-bold text-green-600">Pipeline Signé ou Engagé</div>
+                            </div>
+                            <div className="grid grid-cols-3 py-4 px-6 text-center hover:bg-slate-50 transition-colors">
+                                <div className="font-bold text-slate-900 text-left md:text-center">Leads Qualifiés</div>
+                                <div className="text-slate-500">0 à 2 par mois (Hasard)</div>
+                                <div className="font-bold text-green-600">5 à 10 en 15 jours (Système)</div>
+                            </div>
+                            <div className="grid grid-cols-3 py-4 px-6 text-center hover:bg-slate-50 transition-colors">
+                                <div className="font-bold text-slate-900 text-left md:text-center">Audience</div>
+                                <div className="text-slate-500">Invisible / Stagnante</div>
+                                <div className="font-bold text-green-600">x10 (Effet Multiplicateur)</div>
+                            </div>
+                            <div className="grid grid-cols-3 py-4 px-6 text-center hover:bg-slate-50 transition-colors">
+                                <div className="font-bold text-slate-900 text-left md:text-center">Mental</div>
+                                <div className="text-slate-500">Doute / Isolement</div>
+                                <div className="font-bold text-green-600">Confiance / Soutien Massif</div>
                             </div>
                         </div>
                     </div>
@@ -519,7 +684,7 @@ export default function Home() {
             </div>
         </section>
 
-        {/* 4. PREUVE SOCIALE */}
+        {/* SECTION 5 & 6 — TÉMOIGNAGES & FONDATEUR */}
         <section className="py-24 bg-white">
             <div className="container mx-auto px-4 max-w-5xl">
                 <div className="text-center mb-16">
@@ -529,7 +694,7 @@ export default function Home() {
 
                 <div className="grid md:grid-cols-3 gap-8 mb-20">
                     {/* Témoignage 1 */}
-                    <div className="bg-slate-50 p-6 rounded-xl border border-slate-200">
+                    <div className="bg-slate-50 p-6 rounded-xl border border-slate-200 flex flex-col">
                         <div className="flex items-center gap-4 mb-4">
                             <div className="h-12 w-12 rounded-full bg-white border border-slate-200 flex items-center justify-center font-bold text-slate-400">JP</div>
                             <div>
@@ -537,14 +702,24 @@ export default function Home() {
                                 <div className="text-xs text-slate-500">Consultant RSE</div>
                             </div>
                         </div>
-                        <p className="text-slate-600 italic text-sm mb-4">"J'avais peur de poster. En J3, j'ai fait 2000 vues grâce au groupe. En J10, j'ai signé mon premier contrat à 3k€."</p>
-                        <div className="flex gap-2">
-                            <Badge className="bg-green-100 text-green-700 border-0 text-xs">+3000€ CA</Badge>
+                        <div className="space-y-3 flex-1">
+                            <div>
+                                <span className="text-[10px] font-bold text-red-500 uppercase">Difficulté</span>
+                                <p className="text-xs text-slate-500">"Peur de poster, syndrome de l'imposteur."</p>
+                            </div>
+                            <div>
+                                <span className="text-[10px] font-bold text-blue-500 uppercase">Déclic</span>
+                                <p className="text-xs text-slate-500">"Le groupe m'a forcé à publier en J3. 2000 vues."</p>
+                            </div>
+                            <div>
+                                <span className="text-[10px] font-bold text-green-600 uppercase">Résultat</span>
+                                <p className="text-sm font-medium text-slate-900">"1er contrat à 3k€ signé en J10."</p>
+                            </div>
                         </div>
                     </div>
 
                     {/* Témoignage 2 */}
-                    <div className="bg-slate-50 p-6 rounded-xl border border-slate-200">
+                    <div className="bg-slate-50 p-6 rounded-xl border border-slate-200 flex flex-col">
                         <div className="flex items-center gap-4 mb-4">
                             <div className="h-12 w-12 rounded-full bg-white border border-slate-200 flex items-center justify-center font-bold text-slate-400">S</div>
                             <div>
@@ -552,14 +727,24 @@ export default function Home() {
                                 <div className="text-xs text-slate-500">Graphiste</div>
                             </div>
                         </div>
-                        <p className="text-slate-600 italic text-sm mb-4">"Je pensais que je n'avais pas de réseau. Mon binôme du J5 m'a mis en relation avec son ancien boss. RDV pris le lendemain."</p>
-                        <div className="flex gap-2">
-                            <Badge className="bg-blue-100 text-blue-700 border-0 text-xs">3 RDV Qualifiés</Badge>
+                        <div className="space-y-3 flex-1">
+                            <div>
+                                <span className="text-[10px] font-bold text-red-500 uppercase">Difficulté</span>
+                                <p className="text-xs text-slate-500">"Je pensais ne pas avoir de réseau."</p>
+                            </div>
+                            <div>
+                                <span className="text-[10px] font-bold text-blue-500 uppercase">Déclic</span>
+                                <p className="text-xs text-slate-500">"Mon binôme m'a connecté à son ex-boss."</p>
+                            </div>
+                            <div>
+                                <span className="text-[10px] font-bold text-green-600 uppercase">Résultat</span>
+                                <p className="text-sm font-medium text-slate-900">"3 RDV qualifiés le lendemain."</p>
+                            </div>
                         </div>
                     </div>
 
                     {/* Témoignage 3 */}
-                    <div className="bg-slate-50 p-6 rounded-xl border border-slate-200">
+                    <div className="bg-slate-50 p-6 rounded-xl border border-slate-200 flex flex-col">
                         <div className="flex items-center gap-4 mb-4">
                             <div className="h-12 w-12 rounded-full bg-white border border-slate-200 flex items-center justify-center font-bold text-slate-400">M</div>
                             <div>
@@ -567,19 +752,29 @@ export default function Home() {
                                 <div className="text-xs text-slate-500">Coach Sportif</div>
                             </div>
                         </div>
-                        <p className="text-slate-600 italic text-sm mb-4">"L'intensité m'a forcé à bouger. J'ai arrêté de peaufiner mon site et j'ai commencé à appeler. Résultat immédiat."</p>
-                        <div className="flex gap-2">
-                            <Badge className="bg-orange-100 text-orange-700 border-0 text-xs">Action Massive</Badge>
+                        <div className="space-y-3 flex-1">
+                            <div>
+                                <span className="text-[10px] font-bold text-red-500 uppercase">Difficulté</span>
+                                <p className="text-xs text-slate-500">"Je procrastinais sur mon site web."</p>
+                            </div>
+                            <div>
+                                <span className="text-[10px] font-bold text-blue-500 uppercase">Déclic</span>
+                                <p className="text-xs text-slate-500">"L'intensité m'a obligé à appeler direct."</p>
+                            </div>
+                            <div>
+                                <span className="text-[10px] font-bold text-green-600 uppercase">Résultat</span>
+                                <p className="text-sm font-medium text-slate-900">"2 clients closés au téléphone."</p>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                {/* SECTION 4 - LEADER / CRÉDIBILITÉ */}
+                {/* SECTION 6 - AUTORITÉ FONDATEUR */}
                 <div className="bg-slate-900 rounded-3xl p-8 md:p-12 text-white relative overflow-hidden">
                     <div className="absolute top-0 right-0 w-64 h-64 bg-orange-600/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
                     <div className="grid md:grid-cols-[1fr_2fr] gap-8 md:gap-12 items-center relative z-10">
                         <div className="relative">
-                            <div className="aspect-square rounded-2xl bg-slate-800 border border-slate-700 overflow-hidden relative">
+                            <div className="aspect-square rounded-2xl bg-slate-800 border border-slate-700 overflow-hidden relative grayscale hover:grayscale-0 transition-all duration-500">
                                 <img 
                                     src="/jeanphilipperoth.jpg" 
                                     alt="Jean-Philippe Roth" 
@@ -590,26 +785,40 @@ export default function Home() {
                                 <p className="text-xs font-bold leading-tight">"L'action bat toujours la réflexion."</p>
                             </div>
                         </div>
-                        <div className="space-y-6">
+                        <div className="space-y-8">
                             <div>
                                 <Badge className="bg-orange-600 text-white border-0 mb-4 uppercase tracking-widest px-3 py-1 text-xs">Le Fondateur</Badge>
                                 <h3 className="text-3xl font-black uppercase italic mb-2">Qui est derrière Popey Academy ?</h3>
                                 <p className="text-slate-400 font-medium text-lg">Jean-Philippe, Entrepreneur & Mentor</p>
                             </div>
-                            <div className="space-y-4 text-slate-300 leading-relaxed">
-                                <p>
-                                    Après avoir accompagné plus de 450 entrepreneurs et lancé plusieurs projets à succès, j'ai fait un constat simple : 
-                                    <strong className="text-white"> ce n'est pas le talent qui manque, c'est l'environnement.</strong>
-                                </p>
-                                <p>
-                                    J'ai créé Popey Academy pour offrir ce que j'aurais rêvé avoir à mes débuts : un collectif puissant qui ne laisse personne sur le bord de la route.
-                                    Ici, on ne vend pas du rêve, on construit des réalités.
-                                </p>
+                            
+                            <div className="grid grid-cols-2 gap-6">
+                                <div>
+                                    <div className="text-3xl font-black text-white mb-1">10 ans</div>
+                                    <div className="text-xs font-bold text-slate-500 uppercase">d'Entrepreneuriat</div>
+                                </div>
+                                <div>
+                                    <div className="text-3xl font-black text-white mb-1">450+</div>
+                                    <div className="text-xs font-bold text-slate-500 uppercase">Menttorés</div>
+                                </div>
+                                <div>
+                                    <div className="text-3xl font-black text-white mb-1">3</div>
+                                    <div className="text-xs font-bold text-slate-500 uppercase">Entreprises Créées</div>
+                                </div>
+                                <div>
+                                    <div className="text-3xl font-black text-white mb-1">2</div>
+                                    <div className="text-xs font-bold text-slate-500 uppercase">Exits (Reventes)</div>
+                                </div>
                             </div>
-                            <div className="flex flex-wrap gap-3 pt-2">
-                                <Badge variant="outline" className="border-slate-700 text-slate-400">10 ans d'expérience</Badge>
-                                <Badge variant="outline" className="border-slate-700 text-slate-400">Serial Entrepreneur</Badge>
-                                <Badge variant="outline" className="border-slate-700 text-slate-400">Vision Terrain</Badge>
+
+                            <div className="space-y-4 text-slate-300 leading-relaxed text-sm border-t border-slate-800 pt-6">
+                                <p>
+                                    J'ai créé Popey Academy pour offrir ce que j'aurais rêvé avoir à mes débuts : 
+                                    <strong className="text-white"> un environnement qui rend l'échec impossible.</strong>
+                                </p>
+                                <p>
+                                    Ici, on ne vend pas de la formation vidéo que vous ne regarderez jamais. On vend du passage à l'acte.
+                                </p>
                             </div>
                         </div>
                     </div>
