@@ -1,12 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Anchor, CalendarClock, CheckCircle2, Clock, LayoutList, LifeBuoy, Megaphone, ShieldCheck, Ship, Users, Video, Target, ArrowRight, Zap, MessageCircle } from "lucide-react";
 import { PreRegistrationForm } from "@/components/pre-registration-form";
 import { motion, useScroll } from "framer-motion";
 import { useRef } from "react";
+import { cn } from "@/lib/utils";
 
 // Animation de vague CSS
 const Wave = ({ className }: { className?: string }) => (
@@ -62,12 +63,12 @@ export default function Home() {
             <Button variant="ghost" className="text-slate-500 hover:text-orange-600 font-bold uppercase tracking-wider hidden sm:flex" asChild>
                 <Link href="/login">Connexion</Link>
             </Button>
-            <Link 
+            <a 
                 href="#join" 
                 className="bg-slate-900 hover:bg-slate-800 text-white font-black uppercase tracking-wider h-10 px-6 inline-flex items-center justify-center rounded-full text-sm transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5"
             >
                 Rejoindre
-            </Link>
+            </a>
           </div>
         </div>
       </header>
@@ -103,11 +104,9 @@ export default function Home() {
 
             <FadeIn delay={0.4}>
                 <div className="pt-8 px-4">
-                    <Button size="lg" className="h-auto min-h-[4rem] py-4 px-6 md:px-10 bg-orange-600 hover:bg-orange-500 text-white font-black text-base md:text-xl uppercase tracking-widest rounded-full shadow-xl shadow-orange-200 hover:shadow-2xl hover:-translate-y-1 transition-all w-full md:w-auto whitespace-normal leading-tight" asChild>
-                        <Link href="#join" className="flex items-center justify-center text-center">
-                           Je rejoins la prochaine cohorte
-                        </Link>
-                    </Button>
+                    <a href="#join" className={cn(buttonVariants({ size: "lg" }), "h-auto min-h-[4rem] py-4 px-6 md:px-10 bg-orange-600 hover:bg-orange-500 text-white font-black text-base md:text-xl uppercase tracking-widest rounded-full shadow-xl shadow-orange-200 hover:shadow-2xl hover:-translate-y-1 transition-all w-full md:w-auto whitespace-normal leading-tight flex items-center justify-center text-center")}>
+                       Je rejoins la prochaine cohorte
+                    </a>
                     <p className="mt-4 text-slate-500 text-xs font-medium uppercase tracking-widest px-4">
                         Tu ne seras plus jamais invisible dans ton marché.
                     </p>
@@ -197,9 +196,9 @@ export default function Home() {
                 </div>
                 
                 <div className="text-center mt-12">
-                    <Button size="lg" className="bg-orange-600 hover:bg-orange-500 text-white font-black uppercase tracking-widest px-10 py-4 h-auto text-lg rounded-full shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all" asChild>
-                        <Link href="#temoignages" className="flex items-center justify-center">Voir les preuves en direct</Link>
-                    </Button>
+                    <a href="#temoignages" className={cn(buttonVariants({ size: "lg" }), "bg-orange-600 hover:bg-orange-500 text-white font-black uppercase tracking-widest px-10 py-4 h-auto text-lg rounded-full shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all flex items-center justify-center")}>
+                        Voir les preuves en direct
+                    </a>
                 </div>
             </div>
         </section>
@@ -321,9 +320,9 @@ export default function Home() {
                         </p>
                         
                         <div className="flex flex-col items-center gap-6 px-4">
-                            <Button size="lg" className="bg-white text-orange-600 hover:bg-orange-50 font-black uppercase tracking-widest px-6 md:px-10 h-auto min-h-[4rem] py-4 text-base md:text-xl shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-all rounded-full w-full md:w-auto whitespace-normal leading-tight" asChild>
-                                <Link href="#join" className="flex items-center justify-center text-center">Je sécurise ma place maintenant</Link>
-                            </Button>
+                            <a href="#join" className={cn(buttonVariants({ size: "lg" }), "bg-white text-orange-600 hover:bg-orange-50 font-black uppercase tracking-widest px-6 md:px-10 h-auto min-h-[4rem] py-4 text-base md:text-xl shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-all rounded-full w-full md:w-auto whitespace-normal leading-tight flex items-center justify-center text-center")}>
+                                Je sécurise ma place maintenant
+                            </a>
                         </div>
                      </div>
                 </div>
@@ -332,7 +331,7 @@ export default function Home() {
         </section>
 
         {/* RYTHME & STRUCTURE */}
-        <section className="py-24 bg-white">
+        <section className="py-24 bg-white" id="quotidien">
             <div className="container mx-auto px-4 max-w-5xl">
                 <div className="grid md:grid-cols-2 gap-16 items-start">
                     <div className="space-y-12">
@@ -400,17 +399,17 @@ export default function Home() {
                         </div>
 
                         <div className="mt-8 pt-8 border-t border-slate-200 text-center">
-                             <Button variant="ghost" className="text-slate-500 hover:text-slate-900 hover:bg-slate-100 uppercase tracking-widest text-xs font-bold" asChild>
-                                <Link href="#join">Voir mon futur quotidien <ArrowRight className="ml-2 h-4 w-4" /></Link>
-                             </Button>
+                             <a href="#quotidien" className={cn(buttonVariants({ variant: "ghost" }), "text-slate-500 hover:text-slate-900 hover:bg-slate-100 uppercase tracking-widest text-xs font-bold")}>
+                                Voir mon futur quotidien <ArrowRight className="ml-2 h-4 w-4" />
+                            </a>
                         </div>
                     </div>
                 </div>
 
                 <div className="text-center mt-12">
-                    <Button size="lg" className="bg-slate-900 hover:bg-slate-800 text-white font-black uppercase tracking-widest px-10 py-4 h-auto text-lg rounded-full shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all" asChild>
-                        <Link href="#join" className="flex items-center justify-center">Voir mon futur quotidien</Link>
-                    </Button>
+                    <a href="#quotidien" className={cn(buttonVariants({ size: "lg" }), "bg-slate-900 hover:bg-slate-800 text-white font-black uppercase tracking-widest px-10 py-4 h-auto text-lg rounded-full shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all flex items-center justify-center")}>
+                        Voir mon futur quotidien
+                    </a>
                 </div>
             </div>
         </section>
@@ -449,7 +448,7 @@ export default function Home() {
         </section>
 
         {/* 3. CONCRÈTEMENT : COMMENT ÇA MARCHE */}
-        <section className="py-24 bg-slate-50 border-t border-slate-200">
+        <section className="py-24 bg-slate-50 border-t border-slate-200" id="profil">
             <div className="container mx-auto px-4 max-w-5xl">
                 <div className="text-center mb-16">
                     <Badge variant="outline" className="border-slate-300 text-slate-500 uppercase mb-4">Mode d'Emploi</Badge>
@@ -526,9 +525,9 @@ export default function Home() {
                 </div>
 
                 <div className="text-center mt-12">
-                    <Button size="lg" className="bg-white text-slate-900 border-2 border-slate-200 hover:border-slate-900 font-black uppercase tracking-widest px-10 py-4 h-auto text-lg rounded-full shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all" asChild>
-                        <Link href="#join" className="flex items-center justify-center">Vérifier si c'est pour moi</Link>
-                    </Button>
+                    <a href="#join" className={cn(buttonVariants({ size: "lg" }), "bg-white text-slate-900 border-2 border-slate-200 hover:border-slate-900 font-black uppercase tracking-widest px-10 py-4 h-auto text-lg rounded-full shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all flex items-center justify-center")}>
+                        Vérifier si c'est pour moi
+                    </a>
                 </div>
             </div>
         </section>
@@ -677,9 +676,9 @@ export default function Home() {
                 </div>
 
                 <div className="text-center mt-12">
-                    <Button size="lg" className="bg-orange-600 hover:bg-orange-500 text-white font-black uppercase tracking-widest px-10 py-4 h-auto text-lg rounded-full shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all" asChild>
-                        <Link href="#join" className="flex items-center justify-center">Obtenir les mêmes résultats</Link>
-                    </Button>
+                    <a href="#join" className={cn(buttonVariants({ size: "lg" }), "bg-orange-600 hover:bg-orange-500 text-white font-black uppercase tracking-widest px-10 py-4 h-auto text-lg rounded-full shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all flex items-center justify-center")}>
+                        Obtenir les mêmes résultats
+                    </a>
                 </div>
             </div>
         </section>
@@ -775,6 +774,7 @@ export default function Home() {
                     <div className="grid md:grid-cols-[1fr_2fr] gap-8 md:gap-12 items-center relative z-10">
                         <div className="relative">
                             <div className="aspect-square rounded-2xl bg-slate-800 border border-slate-700 overflow-hidden relative grayscale hover:grayscale-0 transition-all duration-500">
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
                                 <img 
                                     src="/jeanphilipperoth.jpg" 
                                     alt="Jean-Philippe Roth" 
@@ -825,15 +825,15 @@ export default function Home() {
                 </div>
 
                 <div className="text-center mt-12">
-                    <Button size="lg" className="bg-slate-900 hover:bg-slate-800 text-white font-black uppercase tracking-widest px-10 py-4 h-auto text-lg rounded-full shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all" asChild>
-                        <Link href="https://wa.me/33768233347" target="_blank">Discuter avec Jean-Philippe sur WhatsApp</Link>
-                    </Button>
+                    <a href="https://wa.me/33768233347" target="_blank" rel="noopener noreferrer" className={cn(buttonVariants({ size: "lg" }), "bg-slate-900 hover:bg-slate-800 text-white font-black uppercase tracking-widest px-10 py-4 h-auto text-lg rounded-full shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all")}>
+                        Discuter avec Jean-Philippe sur WhatsApp
+                    </a>
                 </div>
             </div>
         </section>
 
         {/* 5. OBJECTIONS */}
-        <section className="py-24 bg-slate-50 border-t border-slate-200">
+        <section className="py-24 bg-slate-50 border-t border-slate-200" id="faq">
             <div className="container mx-auto px-4 max-w-3xl">
                 <div className="text-center mb-12">
                     <h2 className="text-3xl font-black uppercase italic text-slate-900">On neutralise vos blocages</h2>
@@ -856,15 +856,15 @@ export default function Home() {
                 </div>
 
                 <div className="text-center mt-12">
-                    <Button size="lg" className="bg-white text-slate-900 border-2 border-slate-200 hover:border-orange-500 font-black uppercase tracking-widest px-10 py-4 h-auto text-lg rounded-full shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all" asChild>
-                        <Link href="#join" className="flex items-center justify-center">Je lève mes doutes maintenant</Link>
-                    </Button>
+                    <a href="#faq" className={cn(buttonVariants({ size: "lg" }), "bg-white text-slate-900 border-2 border-slate-200 hover:border-orange-500 font-black uppercase tracking-widest px-10 py-4 h-auto text-lg rounded-full shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all flex items-center justify-center")}>
+                        Je lève mes doutes maintenant
+                    </a>
                 </div>
             </div>
         </section>
 
         {/* SECTION 6 — DETTE DE SERVICE */}
-        <section className="py-24 bg-slate-50 border-t border-slate-200">
+        <section className="py-24 bg-slate-50 border-t border-slate-200" id="dette">
             <div className="container mx-auto px-4 max-w-4xl">
                 <div className="text-center mb-16">
                     <Badge variant="outline" className="border-slate-300 text-slate-500 uppercase tracking-widest mb-4">La Règle d'Or</Badge>
@@ -927,9 +927,9 @@ export default function Home() {
                 </div>
 
                 <div className="text-center mt-12">
-                    <Button size="lg" className="bg-orange-600 hover:bg-orange-500 text-white font-black uppercase tracking-widest px-10 py-4 h-auto text-lg rounded-full shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all" asChild>
-                        <Link href="#join" className="flex items-center justify-center">Je rejoins l'économie d'entraide</Link>
-                    </Button>
+                    <a href="#join" className={cn(buttonVariants({ size: "lg" }), "bg-orange-600 hover:bg-orange-500 text-white font-black uppercase tracking-widest px-10 py-4 h-auto text-lg rounded-full shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all flex items-center justify-center")}>
+                        Je rejoins l'économie d'entraide
+                    </a>
                 </div>
             </div>
         </section>

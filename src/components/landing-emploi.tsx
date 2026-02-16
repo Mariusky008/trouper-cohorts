@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { 
     Anchor, ArrowRight, Brain, CheckCircle2, 
@@ -11,6 +11,7 @@ import {
 import { motion } from "framer-motion";
 import { useRef } from "react";
 import { PreRegistrationForm } from "@/components/pre-registration-form";
+import { cn } from "@/lib/utils";
 
 // --- ANIMATIONS ---
 
@@ -56,12 +57,12 @@ export function LandingEmploi() {
             <Button variant="ghost" className="text-slate-500 hover:text-purple-600 font-bold uppercase tracking-wider hidden sm:flex" asChild>
                 <Link href="/login">Connexion</Link>
             </Button>
-            <Link 
+            <a 
                 href="#join" 
                 className="bg-slate-900 hover:bg-slate-800 text-white font-black uppercase tracking-wider h-10 px-6 inline-flex items-center justify-center rounded-full text-sm transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5"
             >
                 Postuler
-            </Link>
+            </a>
           </div>
         </div>
       </header>
@@ -106,14 +107,12 @@ export function LandingEmploi() {
                 </div>
 
                 <div className="pt-10 flex flex-col md:flex-row items-center justify-center gap-6 px-4">
-                    <Button size="lg" className="h-auto min-h-[4rem] py-4 px-6 md:px-10 bg-purple-600 hover:bg-purple-500 text-white font-black text-base md:text-xl uppercase tracking-widest rounded-full shadow-xl shadow-purple-200 hover:shadow-2xl hover:-translate-y-1 transition-all w-full md:w-auto whitespace-normal leading-tight" asChild>
-                        <Link href="#join" className="flex items-center justify-center text-center">
-                            <span className="flex items-center gap-3 text-center justify-center">
-                                <span>Je candidate au programme</span>
-                                <Rocket className="h-6 w-6 shrink-0" />
-                            </span>
-                        </Link>
-                    </Button>
+                    <a href="#join" className={cn(buttonVariants({ size: "lg" }), "h-auto min-h-[4rem] py-4 px-6 md:px-10 bg-purple-600 hover:bg-purple-500 text-white font-black text-base md:text-xl uppercase tracking-widest rounded-full shadow-xl shadow-purple-200 hover:shadow-2xl hover:-translate-y-1 transition-all w-full md:w-auto whitespace-normal leading-tight flex items-center justify-center text-center")}>
+                        <span className="flex items-center gap-3 text-center justify-center">
+                            <span>Je candidate au programme</span>
+                            <Rocket className="h-6 w-6 shrink-0" />
+                        </span>
+                    </a>
                 </div>
             </div>
           </div>
@@ -355,9 +354,9 @@ export function LandingEmploi() {
                                 <span className="font-medium text-slate-900">Action massive et immédiate</span>
                             </li>
                         </ul>
-                        <Button className="bg-slate-900 text-white hover:bg-slate-800 rounded-full px-8 py-6 font-black uppercase tracking-widest text-sm shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all" asChild>
-                            <Link href="#join">Je veux mon histoire à moi</Link>
-                        </Button>
+                        <a href="#join" className={cn(buttonVariants(), "bg-slate-900 text-white hover:bg-slate-800 rounded-full px-8 py-6 font-black uppercase tracking-widest text-sm shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all")}>
+                            Je veux mon histoire à moi
+                        </a>
                     </div>
                 </div>
             </div>
@@ -429,9 +428,9 @@ export function LandingEmploi() {
                             </p>
                         </div>
                         <div className="pt-4">
-                            <Button variant="outline" className="border-slate-700 text-white hover:bg-slate-800 hover:text-white rounded-full px-8 py-6 uppercase tracking-widest font-bold" asChild>
-                                <a href="https://wa.me/33768223347" target="_blank" rel="noopener noreferrer">Discuter avec Jean-Philippe</a>
-                            </Button>
+                            <a href="https://wa.me/33768223347" target="_blank" rel="noopener noreferrer" className={cn(buttonVariants({ variant: "outline" }), "border-slate-700 text-white hover:bg-slate-800 hover:text-white rounded-full px-8 py-6 uppercase tracking-widest font-bold")}>
+                                Discuter avec Jean-Philippe
+                            </a>
                         </div>
                     </div>
                 </div>
@@ -481,13 +480,11 @@ export function LandingEmploi() {
                     Nos membres postent leurs résultats tous les jours sur LinkedIn. Ne nous croyez pas sur parole, allez voir.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-6 justify-center">
-                    <Button size="lg" className="bg-blue-600 hover:bg-blue-700 text-white font-black uppercase tracking-widest px-10 py-6 h-auto text-lg rounded-full shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all" asChild>
-                        <a href="https://www.linkedin.com/search/results/content/?keywords=%23popeyacademy" target="_blank" rel="noopener noreferrer">
-                            <span className="flex items-center gap-2">
-                                Voir le flux LinkedIn <ArrowRight className="h-5 w-5" />
-                            </span>
-                        </a>
-                    </Button>
+                    <a href="https://www.linkedin.com/search/results/content/?keywords=%23popeyacademy" target="_blank" rel="noopener noreferrer" className={cn(buttonVariants({ size: "lg" }), "bg-blue-600 hover:bg-blue-700 text-white font-black uppercase tracking-widest px-10 py-6 h-auto text-lg rounded-full shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all flex items-center justify-center")}>
+                        <span className="flex items-center gap-2">
+                            Voir le flux LinkedIn <ArrowRight className="h-5 w-5" />
+                        </span>
+                    </a>
                 </div>
             </div>
         </section>
