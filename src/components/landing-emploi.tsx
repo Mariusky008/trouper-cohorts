@@ -355,6 +355,68 @@ export function LandingEmploi() {
                     </div>
                 </div>
 
+                {/* PHASE 2 */}
+                <div className="grid md:grid-cols-2 gap-16 items-center">
+                    <div className="bg-slate-50 border border-slate-200 p-8 rounded-3xl relative overflow-hidden shadow-lg order-2 md:order-1">
+                        <div className="absolute top-0 right-0 bg-purple-100 text-purple-700 text-xs font-bold px-4 py-1.5 rounded-bl-2xl uppercase tracking-widest">Formation 2</div>
+                        <h3 className="text-xl font-black text-slate-900 uppercase mb-8 flex items-center gap-2">
+                            <Rocket className="text-purple-600" /> Le Parcours
+                        </h3>
+                        <div className="space-y-8 relative">
+                            <div className="absolute left-3 top-2 bottom-2 w-0.5 bg-slate-200"></div>
+                            {[
+                                { title: "Semaine 4 : L'Offre", desc: "Revoir, améliorer ou même créer une offre irrésistible qui répond à un besoin réel." },
+                                { title: "Semaine 5 : La Vente", desc: "Trouver des clients, pitcher, poster, développer les réseaux (sociaux et humains) vendre sans forcer en utilisant la force du groupe." },
+                                { title: "Le Sprint", desc: "15 jours d'action intensive avec l'Armada pour décoller." }
+                            ].map((step, i) => (
+                                <div key={i} className="relative flex gap-6">
+                                    <div className="h-6 w-6 rounded-full bg-white border-4 border-purple-600 z-10 shrink-0 shadow-sm"></div>
+                                    <div>
+                                        <h4 className="font-black text-slate-900 text-lg uppercase mb-1">{step.title}</h4>
+                                        <p className="text-slate-500 text-sm font-medium">{step.desc}</p>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div className="space-y-8 order-1 md:order-2">
+                        <FadeIn>
+                            <div className="inline-block bg-purple-100 text-purple-700 font-black border-2 border-purple-200 mb-6 uppercase tracking-widest px-6 py-3 rounded-full text-sm shadow-sm">
+                                Partie 2 • L'Accélération
+                            </div>
+                            <h2 className="text-4xl font-black uppercase italic text-slate-900 leading-tight">
+                                2 Semaines pour<br/>trouver <span className="text-purple-600">tes clients</span>
+                            </h2>
+                        </FadeIn>
+                        <FadeIn delay={0.1}>
+                            <p className="text-lg text-slate-500 leading-relaxed">
+                                Une seule obsession : terminer cette quinzaine avec plus de clients ou d'opportunités qu'au départ.
+                            </p>
+                            
+                            <div className="grid grid-cols-2 gap-4 mt-6">
+                                <div className="bg-white p-4 rounded-xl text-center border border-slate-100 shadow-sm">
+                                    <div className="text-3xl font-black text-purple-600 mb-1">24</div>
+                                    <div className="text-xs uppercase text-slate-400 font-bold">Réseaux</div>
+                                </div>
+                                <div className="bg-white p-4 rounded-xl text-center border border-slate-100 shadow-sm">
+                                    <div className="text-3xl font-black text-blue-600 mb-1">∞</div>
+                                    <div className="text-xs uppercase text-slate-400 font-bold">Visibilité</div>
+                                </div>
+                            </div>
+                            
+                            <div className="mt-8 p-6 bg-purple-50 rounded-2xl border border-purple-100">
+                                <h4 className="font-black text-purple-700 uppercase text-sm mb-3 flex items-center gap-2">
+                                    <Users className="h-4 w-4" /> Le Secret du Pod
+                                </h4>
+                                <p className="text-sm text-slate-600 leading-relaxed">
+                                    Vous n'êtes plus seul. Vous avancez avec <strong>23 autres entrepreneurs</strong> qui deviennent votre socle. Chaque jour, vous pitchez à une nouvelle personne.
+                                </p>
+                            </div>
+                        </FadeIn>
+                    </div>
+                </div>
+
                 {/* SECTION 3 — L'HISTOIRE DE THOMAS */}
                 <div className="py-24 border-t border-slate-200">
                     <div className="text-center mb-16">
@@ -440,135 +502,6 @@ export function LandingEmploi() {
                                 </div>
                             </div>
                         </div>
-                    </div>
-                </div>
-
-                {/* LA MÉCANIQUE HUMAINE */}
-                <div className="py-12 md:py-24">
-                    <div className="bg-slate-900 text-white rounded-[2.5rem] p-8 md:p-16 relative overflow-hidden shadow-2xl">
-                        {/* Background Elements */}
-                        <div className="absolute top-0 right-0 w-96 h-96 bg-blue-600/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
-                        <div className="absolute bottom-0 left-0 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2"></div>
-                        
-                        <div className="relative z-10 max-w-4xl mx-auto text-center space-y-12">
-                            <div>
-                                <h2 className="text-3xl md:text-5xl font-black uppercase italic mb-6 leading-tight">
-                                    La Mécanique Humaine<br/><span className="text-purple-500">de Popey.Academy</span>
-                                </h2>
-                                <p className="text-xl md:text-2xl text-blue-200 font-medium max-w-2xl mx-auto">
-                                    Pendant 5 semaines, tu ne restes jamais seul.
-                                </p>
-                            </div>
-
-                            <div className="grid md:grid-cols-3 gap-6">
-                                <div className="bg-white/5 p-6 rounded-2xl border border-white/10 backdrop-blur-sm">
-                                    <div className="text-4xl font-black text-white mb-2">30</div>
-                                    <div className="text-sm font-bold text-slate-400 uppercase tracking-widest">Jours d'action</div>
-                                </div>
-                                <div className="bg-white/10 p-6 rounded-2xl border border-white/20 backdrop-blur-md transform scale-105 shadow-xl">
-                                    <div className="text-4xl font-black text-purple-500 mb-2">30</div>
-                                    <div className="text-sm font-bold text-white uppercase tracking-widest">Binômes différents</div>
-                                </div>
-                                <div className="bg-white/5 p-6 rounded-2xl border border-white/10 backdrop-blur-sm">
-                                    <div className="text-4xl font-black text-white mb-2">30</div>
-                                    <div className="text-sm font-bold text-slate-400 uppercase tracking-widest">Regards nouveaux</div>
-                                </div>
-                            </div>
-
-                            <div className="space-y-8 text-lg md:text-xl text-slate-300 font-medium leading-relaxed">
-                                <div className="space-y-2">
-                                    <p><span className="text-white font-bold">Chaque jour,</span> quelqu’un te challenge.</p>
-                                    <p><span className="text-white font-bold">Chaque jour,</span> quelqu’un révèle une force que tu ne vois pas.</p>
-                                    <p><span className="text-white font-bold">Chaque jour,</span> quelqu’un t’oblige à passer à l’action.</p>
-                                </div>
-
-                                <div className="py-8">
-                                    <p className="text-2xl md:text-4xl font-black uppercase italic text-white mb-2">
-                                        Ce n’est pas un groupe.
-                                    </p>
-                                    <p className="text-2xl md:text-4xl font-black uppercase italic text-blue-400">
-                                        C’est un accélérateur identitaire.
-                                    </p>
-                                </div>
-
-                                <div className="bg-white/5 p-8 rounded-3xl border border-white/10 inline-block">
-                                    <p className="mb-4 text-slate-400 text-sm uppercase tracking-widest font-bold">Le Constat</p>
-                                    <p className="italic text-white">
-                                        "Parce que parfois, ce qu’il manque pour avancer,<br/>
-                                        ce n’est pas une méthode.<br/>
-                                        <span className="text-purple-500 font-black not-italic text-2xl mt-2 block">C’est un environnement."</span>
-                                    </p>
-                                </div>
-                            </div>
-
-                            <div className="pt-4">
-                                <Badge className="bg-purple-600 text-white border-0 px-4 py-2 text-xs md:text-sm md:px-6 md:text-base font-bold uppercase tracking-widest hover:bg-purple-500 whitespace-normal text-center leading-relaxed h-auto">
-                                    Tu ne restes pas le même. Parce que 30 miroirs ne mentent pas.
-                                </Badge>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {/* PHASE 2 */}
-                <div className="grid md:grid-cols-2 gap-16 items-center">
-                    <div className="bg-slate-50 border border-slate-200 p-8 rounded-3xl relative overflow-hidden shadow-lg order-2 md:order-1">
-                        <div className="absolute top-0 right-0 bg-purple-100 text-purple-700 text-xs font-bold px-4 py-1.5 rounded-bl-2xl uppercase tracking-widest">Formation 2</div>
-                        <h3 className="text-xl font-black text-slate-900 uppercase mb-8 flex items-center gap-2">
-                            <Rocket className="text-purple-600" /> Le Parcours
-                        </h3>
-                        <div className="space-y-8 relative">
-                            <div className="absolute left-3 top-2 bottom-2 w-0.5 bg-slate-200"></div>
-                            {[
-                                { title: "Semaine 4 : L'Offre", desc: "Revoir, améliorer ou même créer une offre irrésistible qui répond à un besoin réel." },
-                                { title: "Semaine 5 : La Vente", desc: "Trouver des clients, pitcher, poster, développer les réseaux (sociaux et humains) vendre sans forcer en utilisant la force du groupe." },
-                                { title: "Le Sprint", desc: "15 jours d'action intensive avec l'Armada pour décoller." }
-                            ].map((step, i) => (
-                                <div key={i} className="relative flex gap-6">
-                                    <div className="h-6 w-6 rounded-full bg-white border-4 border-purple-600 z-10 shrink-0 shadow-sm"></div>
-                                    <div>
-                                        <h4 className="font-black text-slate-900 text-lg uppercase mb-1">{step.title}</h4>
-                                        <p className="text-slate-500 text-sm font-medium">{step.desc}</p>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-
-                    <div className="space-y-8 order-1 md:order-2">
-                        <FadeIn>
-                            <div className="inline-block bg-purple-100 text-purple-700 font-black border-2 border-purple-200 mb-6 uppercase tracking-widest px-6 py-3 rounded-full text-sm shadow-sm">
-                                Partie 2 • L'Accélération
-                            </div>
-                            <h2 className="text-4xl font-black uppercase italic text-slate-900 leading-tight">
-                                2 Semaines pour<br/>trouver <span className="text-purple-600">tes clients</span>
-                            </h2>
-                        </FadeIn>
-                        <FadeIn delay={0.1}>
-                            <p className="text-lg text-slate-500 leading-relaxed">
-                                Une seule obsession : terminer cette quinzaine avec plus de clients ou d'opportunités qu'au départ.
-                            </p>
-                            
-                            <div className="grid grid-cols-2 gap-4 mt-6">
-                                <div className="bg-white p-4 rounded-xl text-center border border-slate-100 shadow-sm">
-                                    <div className="text-3xl font-black text-purple-600 mb-1">24</div>
-                                    <div className="text-xs uppercase text-slate-400 font-bold">Réseaux</div>
-                                </div>
-                                <div className="bg-white p-4 rounded-xl text-center border border-slate-100 shadow-sm">
-                                    <div className="text-3xl font-black text-blue-600 mb-1">∞</div>
-                                    <div className="text-xs uppercase text-slate-400 font-bold">Visibilité</div>
-                                </div>
-                            </div>
-                            
-                            <div className="mt-8 p-6 bg-purple-50 rounded-2xl border border-purple-100">
-                                <h4 className="font-black text-purple-700 uppercase text-sm mb-3 flex items-center gap-2">
-                                    <Users className="h-4 w-4" /> Le Secret du Pod
-                                </h4>
-                                <p className="text-sm text-slate-600 leading-relaxed">
-                                    Vous n'êtes plus seul. Vous avancez avec <strong>23 autres entrepreneurs</strong> qui deviennent votre socle. Chaque jour, vous pitchez à une nouvelle personne.
-                                </p>
-                            </div>
-                        </FadeIn>
                     </div>
                 </div>
 
