@@ -409,7 +409,7 @@ export default function SideProjectPage() {
                     </div>
                 </div>
                  <div className="mt-16 text-center">
-                    <Button size="lg" className="h-auto min-h-[3.5rem] px-8 bg-green-600 hover:bg-green-500 text-white font-black uppercase tracking-widest rounded-full shadow-lg shadow-green-200 hover:shadow-xl hover:-translate-y-1 transition-all" asChild>
+                    <Button size="lg" className="h-auto min-h-[3.5rem] px-8 bg-green-600 hover:bg-green-500 text-white font-black uppercase tracking-widest rounded-full shadow-lg shadow-green-200 hover:shadow-xl hover:-translate-y-1 transition-all w-auto inline-flex items-center justify-center" asChild>
                         <Link href="#join">Je suis prêt à m'investir</Link>
                     </Button>
                 </div>
@@ -670,7 +670,7 @@ export default function SideProjectPage() {
                     </div>
                 </div>
                 <div className="mt-12 text-center">
-                    <Button size="lg" className="h-auto min-h-[3.5rem] px-8 bg-green-600 hover:bg-green-500 text-white font-black uppercase tracking-widest rounded-full shadow-lg shadow-green-200 hover:shadow-xl hover:-translate-y-1 transition-all" asChild>
+                    <Button size="lg" className="h-auto min-h-[3.5rem] px-8 bg-green-600 hover:bg-green-500 text-white font-black uppercase tracking-widest rounded-full shadow-lg shadow-green-200 hover:shadow-xl hover:-translate-y-1 transition-all w-auto inline-flex items-center justify-center" asChild>
                         <Link href="#join">Vérifier si je suis éligible</Link>
                     </Button>
                 </div>

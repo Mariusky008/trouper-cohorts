@@ -428,7 +428,7 @@ export function LandingEmploi() {
                             </p>
                         </div>
                         <div className="pt-4">
-                            <a href="https://wa.me/33768223347" target="_blank" rel="noopener noreferrer" className={cn(buttonVariants({ variant: "outline" }), "border-slate-700 text-white hover:bg-slate-800 hover:text-white rounded-full px-8 py-6 uppercase tracking-widest font-bold")}>
+                            <a href="https://wa.me/33768223347" target="_blank" rel="noopener noreferrer" className={cn(buttonVariants({ variant: "outline" }), "border-slate-700 text-white hover:bg-slate-800 hover:text-white rounded-full px-8 py-6 uppercase tracking-widest font-bold w-auto inline-flex items-center justify-center")}>
                                 Discuter avec Jean-Philippe
                             </a>
                         </div>

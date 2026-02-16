@@ -407,7 +407,7 @@ export default function Home() {
                 </div>
 
                 <div className="text-center mt-12">
-                    <a href="#quotidien" className={cn(buttonVariants({ size: "lg" }), "bg-slate-900 hover:bg-slate-800 text-white font-black uppercase tracking-widest px-10 py-4 h-auto text-lg rounded-full shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all flex items-center justify-center")}>
+                    <a href="#quotidien" className={cn(buttonVariants({ size: "lg" }), "bg-slate-900 hover:bg-slate-800 text-white font-black uppercase tracking-widest px-10 py-4 h-auto text-lg rounded-full shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all w-auto inline-flex items-center justify-center")}>
                         Voir mon futur quotidien
                     </a>
                 </div>
@@ -525,7 +525,7 @@ export default function Home() {
                 </div>
 
                 <div className="text-center mt-12">
-                    <a href="#join" className={cn(buttonVariants({ size: "lg" }), "bg-white text-slate-900 border-2 border-slate-200 hover:border-slate-900 font-black uppercase tracking-widest px-10 py-4 h-auto text-lg rounded-full shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all flex items-center justify-center")}>
+                    <a href="#join" className={cn(buttonVariants({ size: "lg" }), "bg-white text-slate-900 border-2 border-slate-200 hover:border-slate-900 font-black uppercase tracking-widest px-10 py-4 h-auto text-lg rounded-full shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all w-auto inline-flex items-center justify-center")}>
                         Vérifier si c'est pour moi
                     </a>
                 </div>
@@ -825,7 +825,7 @@ export default function Home() {
                 </div>
 
                 <div className="text-center mt-12">
-                    <a href="https://wa.me/33768233347" target="_blank" rel="noopener noreferrer" className={cn(buttonVariants({ size: "lg" }), "bg-slate-900 hover:bg-slate-800 text-white font-black uppercase tracking-widest px-10 py-4 h-auto text-lg rounded-full shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all")}>
+                    <a href="https://wa.me/33768233347" target="_blank" rel="noopener noreferrer" className={cn(buttonVariants({ size: "lg" }), "bg-slate-900 hover:bg-slate-800 text-white font-black uppercase tracking-widest px-10 py-4 h-auto text-lg rounded-full shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all w-auto inline-flex items-center justify-center")}>
                         Discuter avec Jean-Philippe sur WhatsApp
                     </a>
                 </div>
@@ -856,7 +856,7 @@ export default function Home() {
                 </div>
 
                 <div className="text-center mt-12">
-                    <a href="#faq" className={cn(buttonVariants({ size: "lg" }), "bg-white text-slate-900 border-2 border-slate-200 hover:border-orange-500 font-black uppercase tracking-widest px-10 py-4 h-auto text-lg rounded-full shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all flex items-center justify-center")}>
+                    <a href="#faq" className={cn(buttonVariants({ size: "lg" }), "bg-white text-slate-900 border-2 border-slate-200 hover:border-orange-500 font-black uppercase tracking-widest px-10 py-4 h-auto text-lg rounded-full shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all w-auto inline-flex items-center justify-center")}>
                         Je lève mes doutes maintenant
                     </a>
                 </div>
