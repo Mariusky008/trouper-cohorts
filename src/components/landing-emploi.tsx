@@ -355,6 +355,73 @@ export function LandingEmploi() {
                     </div>
                 </div>
 
+                {/* LA MÉCANIQUE HUMAINE */}
+                <div className="py-12 md:py-24">
+                    <div className="bg-slate-900 text-white rounded-[2.5rem] p-8 md:p-16 relative overflow-hidden shadow-2xl">
+                        {/* Background Elements */}
+                        <div className="absolute top-0 right-0 w-96 h-96 bg-blue-600/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
+                        <div className="absolute bottom-0 left-0 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2"></div>
+                        
+                        <div className="relative z-10 max-w-4xl mx-auto text-center space-y-12">
+                            <div>
+                                <h2 className="text-3xl md:text-5xl font-black uppercase italic mb-6 leading-tight">
+                                    La Mécanique Humaine<br/><span className="text-purple-500">de Popey.Academy</span>
+                                </h2>
+                                <p className="text-xl md:text-2xl text-blue-200 font-medium max-w-2xl mx-auto">
+                                    Pendant 5 semaines, tu ne restes jamais seul.
+                                </p>
+                            </div>
+
+                            <div className="grid md:grid-cols-3 gap-6">
+                                <div className="bg-white/5 p-6 rounded-2xl border border-white/10 backdrop-blur-sm">
+                                    <div className="text-4xl font-black text-white mb-2">30</div>
+                                    <div className="text-sm font-bold text-slate-400 uppercase tracking-widest">Jours d'action</div>
+                                </div>
+                                <div className="bg-white/10 p-6 rounded-2xl border border-white/20 backdrop-blur-md transform scale-105 shadow-xl">
+                                    <div className="text-4xl font-black text-purple-500 mb-2">30</div>
+                                    <div className="text-sm font-bold text-white uppercase tracking-widest">Binômes différents</div>
+                                </div>
+                                <div className="bg-white/5 p-6 rounded-2xl border border-white/10 backdrop-blur-sm">
+                                    <div className="text-4xl font-black text-white mb-2">30</div>
+                                    <div className="text-sm font-bold text-slate-400 uppercase tracking-widest">Regards nouveaux</div>
+                                </div>
+                            </div>
+
+                            <div className="space-y-8 text-lg md:text-xl text-slate-300 font-medium leading-relaxed">
+                                <div className="space-y-2">
+                                    <p><span className="text-white font-bold">Chaque jour,</span> quelqu’un te challenge.</p>
+                                    <p><span className="text-white font-bold">Chaque jour,</span> quelqu’un révèle une force que tu ne vois pas.</p>
+                                    <p><span className="text-white font-bold">Chaque jour,</span> quelqu’un t’oblige à passer à l’action.</p>
+                                </div>
+
+                                <div className="py-8">
+                                    <p className="text-2xl md:text-4xl font-black uppercase italic text-white mb-2">
+                                        Ce n’est pas un groupe.
+                                    </p>
+                                    <p className="text-2xl md:text-4xl font-black uppercase italic text-blue-400">
+                                        C’est un accélérateur identitaire.
+                                    </p>
+                                </div>
+
+                                <div className="bg-white/5 p-8 rounded-3xl border border-white/10 inline-block">
+                                    <p className="mb-4 text-slate-400 text-sm uppercase tracking-widest font-bold">Le Constat</p>
+                                    <p className="italic text-white">
+                                        "Parce que parfois, ce qu’il manque pour avancer,<br/>
+                                        ce n’est pas une méthode.<br/>
+                                        <span className="text-purple-500 font-black not-italic text-2xl mt-2 block">C’est un environnement."</span>
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div className="pt-4">
+                                <Badge className="bg-purple-600 text-white border-0 px-4 py-2 text-xs md:text-sm md:px-6 md:text-base font-bold uppercase tracking-widest hover:bg-purple-500 whitespace-normal text-center leading-relaxed h-auto">
+                                    Tu ne restes pas le même. Parce que 30 miroirs ne mentent pas.
+                                </Badge>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 {/* PHASE 2 */}
                 <div className="grid md:grid-cols-2 gap-16 items-center">
                     <div className="bg-slate-50 border border-slate-200 p-8 rounded-3xl relative overflow-hidden shadow-lg order-2 md:order-1">
