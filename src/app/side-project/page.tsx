@@ -159,8 +159,8 @@ export default function SideProjectPage() {
                             <p className="text-xs md:text-sm font-bold text-slate-500 uppercase tracking-wide">Salariés accompagnés</p>
                         </div>
                         <div className="space-y-2">
-                            <div className="text-4xl md:text-5xl font-black text-blue-600">100%</div>
-                            <p className="text-xs md:text-sm font-bold text-slate-500 uppercase tracking-wide">Lancent une activité lucrative</p>
+                            <div className="text-4xl md:text-5xl font-black text-blue-600">92%</div>
+                            <p className="text-xs md:text-sm font-bold text-slate-500 uppercase tracking-wide">Valident leur première offre</p>
                         </div>
                         <div className="space-y-2">
                             <div className="text-4xl md:text-5xl font-black text-purple-600">38%</div>
