@@ -105,7 +105,7 @@ export default function Home() {
             <FadeIn delay={0.4}>
                 <div className="pt-8 px-4">
                     <a href="#join" className={cn(buttonVariants({ size: "lg" }), "h-auto min-h-[4rem] py-4 px-6 md:px-10 bg-orange-600 hover:bg-orange-500 text-white font-black text-base md:text-xl uppercase tracking-widest rounded-full shadow-xl shadow-orange-200 hover:shadow-2xl hover:-translate-y-1 transition-all w-full md:w-auto whitespace-normal leading-tight flex items-center justify-center text-center")}>
-                       Je rejoins la prochaine cohorte
+                       Je rejoins
                     </a>
                     <p className="mt-4 text-slate-500 text-xs font-medium uppercase tracking-widest px-4">
                         Tu ne seras plus jamais invisible dans ton marché.
@@ -321,7 +321,7 @@ export default function Home() {
                         
                         <div className="flex flex-col items-center gap-6 px-4">
                             <a href="#join" className={cn(buttonVariants({ size: "lg" }), "bg-white text-orange-600 hover:bg-orange-50 font-black uppercase tracking-widest px-6 md:px-10 h-auto min-h-[4rem] py-4 text-base md:text-xl shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-all rounded-full w-full md:w-auto whitespace-normal leading-tight flex items-center justify-center text-center")}>
-                                Je sécurise ma place maintenant
+                                Je réserve
                             </a>
                         </div>
                      </div>
@@ -526,7 +526,7 @@ export default function Home() {
 
                 <div className="text-center mt-12">
                     <a href="#join" className={cn(buttonVariants({ size: "lg" }), "bg-white text-slate-900 border-2 border-slate-200 hover:border-slate-900 font-black uppercase tracking-widest px-10 py-4 h-auto text-lg rounded-full shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all flex items-center justify-center")}>
-                        Vérifier si c'est pour moi
+                        Est-ce pour moi ?
                     </a>
                 </div>
             </div>
@@ -928,7 +928,7 @@ export default function Home() {
 
                 <div className="text-center mt-12">
                     <a href="#join" className={cn(buttonVariants({ size: "lg" }), "bg-orange-600 hover:bg-orange-500 text-white font-black uppercase tracking-widest px-10 py-4 h-auto text-lg rounded-full shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all flex items-center justify-center")}>
-                        Je rejoins l'économie d'entraide
+                        Rejoindre l'entraide
                     </a>
                 </div>
             </div>

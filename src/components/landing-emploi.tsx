@@ -355,7 +355,7 @@ export function LandingEmploi() {
                             </li>
                         </ul>
                         <a href="#join" className={cn(buttonVariants(), "bg-slate-900 text-white hover:bg-slate-800 rounded-full px-8 py-6 font-black uppercase tracking-widest text-sm shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all")}>
-                            Je veux mon histoire à moi
+                            Je veux ça
                         </a>
                     </div>
                 </div>
