@@ -738,6 +738,71 @@ export function LandingEmploi() {
             </div>
         </section>
 
+        {/* SECTION 6 — DETTE DE SERVICE */}
+        <section className="py-24 bg-slate-50 border-t border-slate-200">
+            <div className="container mx-auto px-4 max-w-4xl">
+                <div className="text-center mb-16">
+                    <Badge variant="outline" className="border-slate-300 text-slate-500 uppercase tracking-widest mb-4">La Règle d'Or</Badge>
+                    <h2 className="text-3xl md:text-4xl font-black uppercase italic text-slate-900">
+                        Le Secret : Un Équipage pour l'année.<br/>
+                        <span className="text-purple-600">L'entraide n'est pas une option.</span>
+                    </h2>
+                    <p className="text-slate-500 mt-4 text-lg">Et après la formation ? On ne vous laisse pas tomber.</p>
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-12 items-center">
+                    <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm space-y-6">
+                        <h3 className="font-bold text-slate-900 uppercase tracking-widest text-sm mb-4">Ailleurs...</h3>
+                        <ul className="space-y-4">
+                            <li className="flex items-start gap-3 text-slate-600">
+                                <span className="text-red-500 font-bold">✕</span> Les gens demandent mais ne donnent pas
+                            </li>
+                            <li className="flex items-start gap-3 text-slate-600">
+                                <span className="text-red-500 font-bold">✕</span> Les relations restent superficielles
+                            </li>
+                            <li className="flex items-start gap-3 text-slate-600">
+                                <span className="text-red-500 font-bold">✕</span> L’énergie retombe après 2 semaines
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div className="bg-slate-900 text-white p-8 rounded-2xl border border-slate-800 shadow-xl relative overflow-hidden">
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-purple-600/20 rounded-full blur-2xl"></div>
+                        <h3 className="font-bold text-purple-500 uppercase tracking-widest text-sm mb-6 flex items-center gap-2">
+                            <Anchor className="h-4 w-4" /> Chez Popey
+                        </h3>
+                        
+                        <div className="space-y-6 relative z-10">
+                            <div>
+                                <p className="font-black text-lg mb-1">La Dette de Service</p>
+                                <p className="text-slate-400 text-sm">
+                                    Chaque membre peut demander 1 service/mois.<br/>
+                                    Chaque membre DOIT en rendre 1/mois.
+                                </p>
+                            </div>
+                            
+                            <div className="pt-6 border-t border-white/10">
+                                <p className="text-xs font-bold text-slate-500 uppercase mb-3">Concrètement :</p>
+                                <div className="flex flex-wrap gap-2">
+                                    <Badge variant="outline" className="border-slate-700 text-slate-300">Recommandations</Badge>
+                                    <Badge variant="outline" className="border-slate-700 text-slate-300">Aide Technique</Badge>
+                                    <Badge variant="outline" className="border-slate-700 text-slate-300">Mise en relation</Badge>
+                                    <Badge variant="outline" className="border-slate-700 text-slate-300">Soutien</Badge>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="mt-16 text-center">
+                    <p className="text-xl font-medium text-slate-900">
+                        Ce n’est plus un simple réseau.<br/>
+                        <span className="font-black text-purple-600">C’est une économie d’entraide organisée.</span>
+                    </p>
+                </div>
+            </div>
+        </section>
+
         {/* 6. CTA FINAL */}
         <section id="join" className="py-32 bg-slate-900 relative overflow-hidden text-white">
              <div className="container mx-auto px-4 max-w-xl text-center relative z-20">
