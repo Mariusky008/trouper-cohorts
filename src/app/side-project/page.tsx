@@ -172,6 +172,16 @@ export default function SideProjectPage() {
                         </div>
                     </div>
                 </div>
+                <div className="mt-12 text-center">
+                    <Button size="lg" className="h-auto min-h-[3.5rem] px-8 bg-green-600 hover:bg-green-500 text-white font-black uppercase tracking-widest rounded-full shadow-lg shadow-green-200 hover:shadow-xl hover:-translate-y-1 transition-all" asChild>
+                        <Link href="#join">Voir plus de résultats</Link>
+                    </Button>
+                </div>
+                <div className="mt-12 text-center">
+                    <Button size="lg" className="h-auto min-h-[3.5rem] px-8 bg-green-600 hover:bg-green-500 text-white font-black uppercase tracking-widest rounded-full shadow-lg shadow-green-200 hover:shadow-xl hover:-translate-y-1 transition-all" asChild>
+                        <Link href="#join">Je veux arrêter de tourner en rond</Link>
+                    </Button>
+                </div>
             </div>
         </section>
 
@@ -399,6 +409,11 @@ export default function SideProjectPage() {
                         </div>
                     </div>
                 </div>
+                 <div className="mt-16 text-center">
+                    <Button size="lg" className="h-auto min-h-[3.5rem] px-8 bg-green-600 hover:bg-green-500 text-white font-black uppercase tracking-widest rounded-full shadow-lg shadow-green-200 hover:shadow-xl hover:-translate-y-1 transition-all" asChild>
+                        <Link href="#join">Je suis prêt à m'investir</Link>
+                    </Button>
+                </div>
             </div>
         </section>
 
@@ -460,6 +475,11 @@ export default function SideProjectPage() {
                             <p className="font-bold text-white">Un système compatible avec votre vie.</p>
                         </div>
                     </div>
+                </div>
+                <div className="mt-16 text-center">
+                    <Button size="lg" className="h-auto min-h-[3.5rem] px-8 bg-green-500 hover:bg-green-400 text-slate-900 font-black uppercase tracking-widest rounded-full shadow-lg shadow-green-500/20 hover:shadow-xl hover:-translate-y-1 transition-all" asChild>
+                        <Link href="#join">Voir le détail des semaines</Link>
+                    </Button>
                 </div>
                 {/* SECTION 4 — TIMELINE 14 JOURS */}
                 <div className="mt-20 pt-20 border-t border-slate-200">
@@ -650,6 +670,11 @@ export default function SideProjectPage() {
                         </div>
                     </div>
                 </div>
+                <div className="mt-12 text-center">
+                    <Button size="lg" className="h-auto min-h-[3.5rem] px-8 bg-green-600 hover:bg-green-500 text-white font-black uppercase tracking-widest rounded-full shadow-lg shadow-green-200 hover:shadow-xl hover:-translate-y-1 transition-all" asChild>
+                        <Link href="#join">Vérifier si je suis éligible</Link>
+                    </Button>
+                </div>
                 {/* SECTION 7 — QUI EST LE CAPITAINE */}
                 <div className="bg-slate-900 rounded-3xl p-8 md:p-12 text-white relative overflow-hidden mt-12">
                     <div className="absolute top-0 right-0 w-64 h-64 bg-green-600/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
@@ -688,6 +713,11 @@ export default function SideProjectPage() {
                             </div>
                         </div>
                     </div>
+                </div>
+                <div className="mt-12 text-center">
+                    <Button size="lg" className="h-auto min-h-[3.5rem] px-8 bg-slate-900 hover:bg-slate-800 text-white font-black uppercase tracking-widest rounded-full shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all border border-green-500/30" asChild>
+                        <Link href="#join">Embarquer avec Jean-Philippe</Link>
+                    </Button>
                 </div>
             </div>
         </section>
@@ -753,6 +783,11 @@ export default function SideProjectPage() {
                         Ce n’est plus un simple réseau.<br/>
                         <span className="font-black text-green-600">C’est une économie d’entraide organisée.</span>
                     </p>
+                </div>
+                 <div className="mt-12 text-center">
+                    <Button size="lg" className="h-auto min-h-[3.5rem] px-8 bg-green-600 hover:bg-green-500 text-white font-black uppercase tracking-widest rounded-full shadow-lg shadow-green-200 hover:shadow-xl hover:-translate-y-1 transition-all" asChild>
+                        <Link href="#join">J'adhère à l'esprit</Link>
+                    </Button>
                 </div>
             </div>
         </section>

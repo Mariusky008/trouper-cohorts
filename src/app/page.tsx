@@ -147,6 +147,12 @@ export default function Home() {
                         </div>
                     </div>
                 </div>
+                
+                <div className="text-center mt-12">
+                    <Button size="lg" className="bg-orange-600 hover:bg-orange-500 text-white font-black uppercase tracking-widest px-10 py-4 h-auto text-lg rounded-full shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all" asChild>
+                        <Link href="#join">Voir les preuves en direct</Link>
+                    </Button>
+                </div>
             </div>
         </section>
 
@@ -237,40 +243,11 @@ export default function Home() {
                             nous vous replaçons gratuitement dans la prochaine session.
                         </p>
                         
-                <div className="flex flex-col items-center gap-6 px-4">
-                    <div className="bg-slate-800/50 p-6 rounded-2xl border border-slate-700 max-w-2xl mx-auto mb-8 w-full">
-                        <h4 className="text-orange-500 font-bold uppercase tracking-widest text-sm mb-4">Ce que vous pouvez attendre en moyenne</h4>
-                        <div className="grid md:grid-cols-2 gap-4 text-left">
-                            <div className="flex items-start gap-3">
-                                <CheckCircle2 className="h-5 w-5 text-orange-500 shrink-0 mt-0.5" />
-                                <span className="text-slate-300 text-sm">Nouvelles opportunités commerciales</span>
-                            </div>
-                            <div className="flex items-start gap-3">
-                                <CheckCircle2 className="h-5 w-5 text-orange-500 shrink-0 mt-0.5" />
-                                <span className="text-slate-300 text-sm">Mises en relation qualifiées</span>
-                            </div>
-                            <div className="flex items-start gap-3">
-                                <CheckCircle2 className="h-5 w-5 text-orange-500 shrink-0 mt-0.5" />
-                                <span className="text-slate-300 text-sm">Visibilité accrue immédiate</span>
-                            </div>
-                            <div className="flex items-start gap-3">
-                                <CheckCircle2 className="h-5 w-5 text-orange-500 shrink-0 mt-0.5" />
-                                <span className="text-slate-300 text-sm">Collaborations long terme possibles</span>
-                            </div>
+                        <div className="flex flex-col items-center gap-6 px-4">
+                            <Button size="lg" className="bg-white text-orange-600 hover:bg-orange-50 font-black uppercase tracking-widest px-6 md:px-10 h-auto min-h-[4rem] py-4 text-base md:text-xl shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-all rounded-full w-full md:w-auto whitespace-normal leading-tight" asChild>
+                                <Link href="#join" className="flex items-center justify-center text-center">Je sécurise ma place maintenant</Link>
+                            </Button>
                         </div>
-                    </div>
-
-                    <Button size="lg" className="bg-white text-orange-600 hover:bg-orange-50 font-black uppercase tracking-widest px-6 md:px-10 h-auto min-h-[4rem] py-4 text-base md:text-xl shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-all rounded-full w-full md:w-auto whitespace-normal leading-tight" asChild>
-                        <Link href="#join" className="flex items-center justify-center text-center">Réserver ma place dans l'Armada</Link>
-                    </Button>
-                    
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-x-8 gap-y-2 text-slate-400 text-xs font-bold uppercase tracking-wide pt-4 border-t border-slate-800 mt-2 w-full max-w-3xl justify-center text-center">
-                        <span className="flex items-center justify-center gap-2"><CheckCircle2 className="h-3 w-3 text-orange-500" /> Places limitées (24)</span>
-                        <span className="flex items-center justify-center gap-2"><CheckCircle2 className="h-3 w-3 text-orange-500" /> Aucun niveau requis</span>
-                        <span className="flex items-center justify-center gap-2"><CheckCircle2 className="h-3 w-3 text-orange-500" /> Programme intensif</span>
-                        <span className="flex items-center justify-center gap-2"><CheckCircle2 className="h-3 w-3 text-orange-500" /> Garantie satisfait</span>
-                    </div>
-                </div>
                      </div>
                 </div>
 
@@ -352,6 +329,12 @@ export default function Home() {
                         </div>
                     </div>
                 </div>
+
+                <div className="text-center mt-12">
+                    <Button size="lg" className="bg-slate-900 hover:bg-slate-800 text-white font-black uppercase tracking-widest px-10 py-4 h-auto text-lg rounded-full shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all" asChild>
+                        <Link href="#join">Voir mon futur quotidien</Link>
+                    </Button>
+                </div>
             </div>
         </section>
 
@@ -430,6 +413,12 @@ export default function Home() {
                             <p className="text-slate-500 text-sm">Des excuses. De la théorie académique. Des diplômes en papier.</p>
                         </div>
                     </div>
+                </div>
+
+                <div className="text-center mt-12">
+                    <Button size="lg" className="bg-white text-slate-900 border-2 border-slate-200 hover:border-slate-900 font-black uppercase tracking-widest px-10 py-4 h-auto text-lg rounded-full shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all" asChild>
+                        <Link href="#join">Vérifier si c'est pour moi</Link>
+                    </Button>
                 </div>
             </div>
         </section>
@@ -520,6 +509,12 @@ export default function Home() {
                             </div>
                         </div>
                     </div>
+                </div>
+
+                <div className="text-center mt-12">
+                    <Button size="lg" className="bg-orange-600 hover:bg-orange-500 text-white font-black uppercase tracking-widest px-10 py-4 h-auto text-lg rounded-full shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all" asChild>
+                        <Link href="#join">Obtenir les mêmes résultats</Link>
+                    </Button>
                 </div>
             </div>
         </section>
@@ -619,6 +614,12 @@ export default function Home() {
                         </div>
                     </div>
                 </div>
+
+                <div className="text-center mt-12">
+                    <Button size="lg" className="bg-slate-900 hover:bg-slate-800 text-white font-black uppercase tracking-widest px-10 py-4 h-auto text-lg rounded-full shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all" asChild>
+                        <Link href="#join">Discuter avec Jean-Philippe</Link>
+                    </Button>
+                </div>
             </div>
         </section>
 
@@ -643,6 +644,12 @@ export default function Home() {
                             <p className="text-slate-600 pl-7">{faq.a}</p>
                         </div>
                     ))}
+                </div>
+
+                <div className="text-center mt-12">
+                    <Button size="lg" className="bg-white text-slate-900 border-2 border-slate-200 hover:border-orange-500 font-black uppercase tracking-widest px-10 py-4 h-auto text-lg rounded-full shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all" asChild>
+                        <Link href="#join">Je lève mes doutes maintenant</Link>
+                    </Button>
                 </div>
             </div>
         </section>
@@ -708,6 +715,12 @@ export default function Home() {
                         Ce n’est plus un simple réseau.<br/>
                         <span className="font-black text-orange-600">C’est une économie d’entraide organisée.</span>
                     </p>
+                </div>
+
+                <div className="text-center mt-12">
+                    <Button size="lg" className="bg-orange-600 hover:bg-orange-500 text-white font-black uppercase tracking-widest px-10 py-4 h-auto text-lg rounded-full shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all" asChild>
+                        <Link href="#join">Je rejoins l'économie d'entraide</Link>
+                    </Button>
                 </div>
             </div>
         </section>

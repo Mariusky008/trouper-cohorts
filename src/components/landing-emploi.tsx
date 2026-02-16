@@ -164,6 +164,12 @@ export function LandingEmploi() {
                         </div>
                     </div>
                 </div>
+                
+                <div className="text-center mt-12">
+                    <Button size="lg" className="bg-purple-600 hover:bg-purple-500 text-white font-black uppercase tracking-widest px-10 py-4 h-auto text-lg rounded-full shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all" asChild>
+                        <Link href="#join">Voir les témoignages vidéos</Link>
+                    </Button>
+                </div>
             </div>
         </section>
 
@@ -266,6 +272,12 @@ export function LandingEmploi() {
                         </div>
                     </div>
                 </div>
+                
+                <div className="text-center mt-16">
+                    <Button size="lg" className="bg-white text-purple-600 hover:bg-purple-50 font-black uppercase tracking-widest px-10 py-4 h-auto text-lg rounded-full shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all" asChild>
+                        <Link href="#join">Je veux vivre cette transformation</Link>
+                    </Button>
+                </div>
             </div>
         </section>
 
@@ -354,6 +366,12 @@ export function LandingEmploi() {
                         </div>
                     </div>
                 </div>
+                
+                <div className="text-center mt-12">
+                    <Button size="lg" className="bg-slate-900 hover:bg-slate-800 text-white font-black uppercase tracking-widest px-10 py-4 h-auto text-lg rounded-full shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all" asChild>
+                        <Link href="#join">Comprendre la méthode</Link>
+                    </Button>
+                </div>
 
                 {/* LA MÉCANIQUE HUMAINE */}
                 <div className="py-12 md:py-24">
@@ -420,6 +438,12 @@ export function LandingEmploi() {
                             </div>
                         </div>
                     </div>
+                    
+                    <div className="text-center mt-12">
+                        <Button size="lg" className="bg-purple-600 hover:bg-purple-500 text-white font-black uppercase tracking-widest px-10 py-4 h-auto text-lg rounded-full shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all" asChild>
+                            <Link href="#join">Rejoindre le collectif</Link>
+                        </Button>
+                    </div>
                 </div>
 
                 {/* PHASE 2 */}
@@ -482,6 +506,12 @@ export function LandingEmploi() {
                             </div>
                         </FadeIn>
                     </div>
+                </div>
+                
+                <div className="text-center mt-12">
+                    <Button size="lg" className="bg-slate-900 hover:bg-slate-800 text-white font-black uppercase tracking-widest px-10 py-4 h-auto text-lg rounded-full shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all" asChild>
+                        <Link href="#join">Passer à l'action</Link>
+                    </Button>
                 </div>
 
                 {/* SECTION 3 — L'HISTOIRE DE THOMAS */}
@@ -570,9 +600,15 @@ export function LandingEmploi() {
                             </div>
                         </div>
                     </div>
+                    
+                    <div className="text-center mt-12">
+                        <Button size="lg" className="bg-purple-600 hover:bg-purple-500 text-white font-black uppercase tracking-widest px-10 py-4 h-auto text-lg rounded-full shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all" asChild>
+                            <Link href="#join">Écrire ma propre histoire</Link>
+                        </Button>
+                    </div>
                 </div>
 
-        {/* SECTION 4 — TIMELINE 5 SEMAINES */}
+                {/* SECTION 4 — TIMELINE 5 SEMAINES */}
                 <div className="py-20 border-t border-slate-200">
                     <div className="text-center mb-16">
                         <h2 className="text-3xl font-black uppercase italic text-slate-900">Votre parcours semaine par semaine</h2>
@@ -612,9 +648,14 @@ export function LandingEmploi() {
                         </div>
                         
                         <div className="text-center mt-16">
-                            <p className="text-slate-900 font-bold text-lg bg-purple-50 inline-block px-6 py-3 rounded-full border border-purple-100">
+                            <p className="text-slate-900 font-bold text-lg bg-purple-50 inline-block px-6 py-3 rounded-full border border-purple-100 mb-8">
                                 Vous avancez chaque semaine avec un cadre clair et un groupe qui vous soutient.
                             </p>
+                            <div>
+                                <Button size="lg" className="bg-slate-900 hover:bg-slate-800 text-white font-black uppercase tracking-widest px-10 py-4 h-auto text-lg rounded-full shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all" asChild>
+                                    <Link href="#join">Voir le programme détaillé</Link>
+                                </Button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -658,6 +699,12 @@ export function LandingEmploi() {
                             </div>
                         </div>
                     </div>
+                    
+                    <div className="text-center mt-12">
+                        <Button size="lg" className="bg-purple-600 hover:bg-purple-500 text-white font-black uppercase tracking-widest px-10 py-4 h-auto text-lg rounded-full shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all" asChild>
+                            <Link href="#join">Discuter avec Jean-Philippe</Link>
+                        </Button>
+                    </div>
                 </div>
             </div>
         </section>
@@ -684,6 +731,12 @@ export function LandingEmploi() {
                             <p className="text-slate-600 leading-relaxed">{item.a}</p>
                         </div>
                     ))}
+                </div>
+                
+                <div className="text-center mt-12">
+                    <Button size="lg" className="bg-white text-slate-900 border-2 border-slate-200 hover:border-purple-600 font-black uppercase tracking-widest px-10 py-4 h-auto text-lg rounded-full shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all" asChild>
+                        <Link href="#join">Je lève mes peurs maintenant</Link>
+                    </Button>
                 </div>
             </div>
         </section>
@@ -734,6 +787,12 @@ export function LandingEmploi() {
                         <p className="text-slate-600 italic mb-6">"Le format 3 semaines + 15 jours est parfait. On prend le temps de trouver, puis on accélère fort. Je ne me suis jamais sentie perdue."</p>
                         <Badge className="bg-purple-100 text-purple-700 border-0 text-xs font-bold">Structure & Clarté</Badge>
                     </div>
+                </div>
+                
+                <div className="text-center mt-12">
+                    <Button size="lg" className="bg-purple-600 hover:bg-purple-500 text-white font-black uppercase tracking-widest px-10 py-4 h-auto text-lg rounded-full shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all" asChild>
+                        <Link href="#join">Obtenir les mêmes résultats</Link>
+                    </Button>
                 </div>
             </div>
         </section>
@@ -799,6 +858,12 @@ export function LandingEmploi() {
                         Ce n’est plus un simple réseau.<br/>
                         <span className="font-black text-purple-600">C’est une économie d’entraide organisée.</span>
                     </p>
+                </div>
+
+                <div className="text-center mt-12">
+                    <Button size="lg" className="bg-purple-600 hover:bg-purple-500 text-white font-black uppercase tracking-widest px-10 py-4 h-auto text-lg rounded-full shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all" asChild>
+                        <Link href="#join">Je rejoins l'économie d'entraide</Link>
+                    </Button>
                 </div>
             </div>
         </section>
