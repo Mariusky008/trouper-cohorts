@@ -134,6 +134,39 @@ export function LandingEmploi() {
           </div>
         </section>
 
+        {/* SECTION 1 — PREUVES CHIFFRÉES */}
+        <section className="py-16 bg-white relative z-30 -mt-10 mx-4">
+            <div className="container mx-auto max-w-5xl">
+                <div className="bg-white rounded-3xl shadow-xl p-8 md:p-12 border border-slate-100">
+                    <div className="text-center mb-10">
+                        <h2 className="text-2xl md:text-3xl font-black uppercase italic text-slate-900">Ils ont déjà fait le pas</h2>
+                        <p className="text-slate-500 mt-4 max-w-2xl mx-auto">
+                            Des personnes qui, comme vous, doutaient, hésitaient ou ne savaient pas par où commencer. Aujourd’hui, elles avancent.
+                        </p>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+                        <div className="space-y-2">
+                            <div className="text-4xl md:text-5xl font-black text-purple-600">+120</div>
+                            <p className="text-xs md:text-sm font-bold text-slate-500 uppercase tracking-wide">Participants accompagnés</p>
+                        </div>
+                        <div className="space-y-2">
+                            <div className="text-4xl md:text-5xl font-black text-blue-600">85%</div>
+                            <p className="text-xs md:text-sm font-bold text-slate-500 uppercase tracking-wide">Trouvent une voie claire</p>
+                        </div>
+                        <div className="space-y-2">
+                            <div className="text-4xl md:text-5xl font-black text-green-600">72%</div>
+                            <p className="text-xs md:text-sm font-bold text-slate-500 uppercase tracking-wide">Obtiennent des opportunités</p>
+                        </div>
+                        <div className="space-y-2">
+                            <div className="text-4xl md:text-5xl font-black text-orange-600">4,8/5</div>
+                            <p className="text-xs md:text-sm font-bold text-slate-500 uppercase tracking-wide">Satisfaction moyenne</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
         {/* 2. VISION IDENTITAIRE */}
         <section className="py-24 bg-slate-900 text-white relative z-20">
             <div className="container mx-auto px-4 max-w-5xl">
@@ -271,7 +304,31 @@ export function LandingEmploi() {
                                 </li>
                             </ul>
                             
-
+                            {/* SECTION 2 — COMMENT VOUS TROUVEZ CONCRÈTEMENT VOTRE VOIE */}
+                            <div className="mt-12 pt-12 border-t border-slate-100">
+                                <h3 className="text-2xl font-black uppercase italic text-slate-900 mb-6">Comment vous trouvez <span className="text-blue-600">concrètement</span> votre voie</h3>
+                                <p className="text-slate-500 mb-8 leading-relaxed">
+                                    Vous ne trouvez pas votre voie en réfléchissant seul pendant des mois. 
+                                    Vous la trouvez en explorant, en testant et en recevant des retours réels.
+                                </p>
+                                
+                                <div className="space-y-6">
+                                    {[
+                                        { title: "1. Exploration guidée", desc: "Vous identifiez vos compétences, vos expériences et vos forces naturelles grâce à des exercices structurés." },
+                                        { title: "2. Tests terrain rapides", desc: "Vous testez plusieurs pistes concrètement, sans pression ni engagement." },
+                                        { title: "3. Retours du groupe", desc: "Le regard extérieur permet souvent de voir ce que vous ne voyez pas vous-même." },
+                                        { title: "4. Validation", desc: "Vous repartez avec une direction claire, cohérente et activable." }
+                                    ].map((step, i) => (
+                                        <div key={i} className="flex gap-4">
+                                            <div className="h-8 w-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-black shrink-0 text-sm">{i+1}</div>
+                                            <div>
+                                                <h4 className="font-bold text-slate-900 text-sm uppercase">{step.title}</h4>
+                                                <p className="text-slate-500 text-sm mt-1">{step.desc}</p>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
                         </FadeIn>
                     </div>
                     <div className="bg-slate-50 border border-slate-200 p-8 rounded-3xl relative overflow-hidden shadow-lg">
@@ -296,6 +353,75 @@ export function LandingEmploi() {
                             ))}
                         </div>
                     </div>
+                </div>
+
+                {/* SECTION 3 — AVANT / APRÈS */}
+                <div className="py-20 border-t border-slate-200">
+                     <div className="text-center mb-12">
+                        <h2 className="text-3xl font-black uppercase italic text-slate-900">Avant / Après le programme</h2>
+                     </div>
+                     
+                     <div className="grid md:grid-cols-3 gap-8">
+                        {/* Carte 1 */}
+                        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                            <div className="bg-slate-100 p-4 border-b border-slate-200">
+                                <span className="font-bold text-slate-500 uppercase text-xs tracking-widest">Avant</span>
+                                <ul className="mt-3 space-y-2 text-sm text-slate-600">
+                                    <li className="flex items-center gap-2"><div className="h-1.5 w-1.5 rounded-full bg-slate-400"></div>Chômage depuis 8 mois</li>
+                                    <li className="flex items-center gap-2"><div className="h-1.5 w-1.5 rounded-full bg-slate-400"></div>Perte de confiance</li>
+                                    <li className="flex items-center gap-2"><div className="h-1.5 w-1.5 rounded-full bg-slate-400"></div>Aucune idée d'activité</li>
+                                </ul>
+                            </div>
+                            <div className="bg-green-50 p-4">
+                                <span className="font-bold text-green-600 uppercase text-xs tracking-widest">Après</span>
+                                <ul className="mt-3 space-y-2 text-sm text-slate-900 font-medium">
+                                    <li className="flex items-center gap-2"><CheckCircle2 className="h-3 w-3 text-green-600" />Lancement coaching sportif</li>
+                                    <li className="flex items-center gap-2"><CheckCircle2 className="h-3 w-3 text-green-600" />3 premiers clients en 1 mois</li>
+                                    <li className="flex items-center gap-2"><CheckCircle2 className="h-3 w-3 text-green-600" />Partenariat salle locale</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        {/* Carte 2 */}
+                        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                            <div className="bg-slate-100 p-4 border-b border-slate-200">
+                                <span className="font-bold text-slate-500 uppercase text-xs tracking-widest">Avant</span>
+                                <ul className="mt-3 space-y-2 text-sm text-slate-600">
+                                    <li className="flex items-center gap-2"><div className="h-1.5 w-1.5 rounded-full bg-slate-400"></div>Salariée en reconversion</li>
+                                    <li className="flex items-center gap-2"><div className="h-1.5 w-1.5 rounded-full bg-slate-400"></div>Peu de réseau</li>
+                                    <li className="flex items-center gap-2"><div className="h-1.5 w-1.5 rounded-full bg-slate-400"></div>Beaucoup de doutes</li>
+                                </ul>
+                            </div>
+                            <div className="bg-blue-50 p-4">
+                                <span className="font-bold text-blue-600 uppercase text-xs tracking-widest">Après</span>
+                                <ul className="mt-3 space-y-2 text-sm text-slate-900 font-medium">
+                                    <li className="flex items-center gap-2"><CheckCircle2 className="h-3 w-3 text-blue-600" />Activité assistante freelance</li>
+                                    <li className="flex items-center gap-2"><CheckCircle2 className="h-3 w-3 text-blue-600" />2 missions signées</li>
+                                    <li className="flex items-center gap-2"><CheckCircle2 className="h-3 w-3 text-blue-600" />Visibilité locale active</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        {/* Carte 3 */}
+                        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                            <div className="bg-slate-100 p-4 border-b border-slate-200">
+                                <span className="font-bold text-slate-500 uppercase text-xs tracking-widest">Avant</span>
+                                <ul className="mt-3 space-y-2 text-sm text-slate-600">
+                                    <li className="flex items-center gap-2"><div className="h-1.5 w-1.5 rounded-full bg-slate-400"></div>Artisan sans clients</li>
+                                    <li className="flex items-center gap-2"><div className="h-1.5 w-1.5 rounded-full bg-slate-400"></div>Isolement total</li>
+                                    <li className="flex items-center gap-2"><div className="h-1.5 w-1.5 rounded-full bg-slate-400"></div>Difficulté à se vendre</li>
+                                </ul>
+                            </div>
+                            <div className="bg-purple-50 p-4">
+                                <span className="font-bold text-purple-600 uppercase text-xs tracking-widest">Après</span>
+                                <ul className="mt-3 space-y-2 text-sm text-slate-900 font-medium">
+                                    <li className="flex items-center gap-2"><CheckCircle2 className="h-3 w-3 text-purple-600" />Offre clarifiée</li>
+                                    <li className="flex items-center gap-2"><CheckCircle2 className="h-3 w-3 text-purple-600" />4 devis envoyés</li>
+                                    <li className="flex items-center gap-2"><CheckCircle2 className="h-3 w-3 text-purple-600" />Collab architecte long terme</li>
+                                </ul>
+                            </div>
+                        </div>
+                     </div>
                 </div>
 
                 {/* LA MÉCANIQUE HUMAINE */}
@@ -429,6 +555,94 @@ export function LandingEmploi() {
             </div>
         </section>
 
+        {/* SECTION 4 — TIMELINE 5 SEMAINES */}
+                <div className="py-20 border-t border-slate-200">
+                    <div className="text-center mb-16">
+                        <h2 className="text-3xl font-black uppercase italic text-slate-900">Votre parcours semaine par semaine</h2>
+                    </div>
+
+                    <div className="max-w-4xl mx-auto relative">
+                        {/* Ligne verticale */}
+                        <div className="absolute left-4 md:left-1/2 top-0 bottom-0 w-0.5 bg-purple-100 md:-translate-x-1/2"></div>
+
+                        <div className="space-y-12">
+                            {[
+                                { week: "1", title: "Comprendre votre potentiel", desc: "Exploration des compétences, des envies et des possibilités.", icon: Brain },
+                                { week: "2", title: "Tester et valider", desc: "Expérimentations concrètes et retours du groupe.", icon: Sparkles },
+                                { week: "3", title: "Construire votre positionnement", desc: "Clarification de votre offre et de votre cible.", icon: Compass },
+                                { week: "4", title: "Créer votre activité", desc: "Structuration de l’offre et préparation terrain.", icon: LayoutList },
+                                { week: "5", title: "Trouver vos premiers clients", desc: "Activation du réseau collectif et opportunités.", icon: Rocket }
+                            ].map((item, i) => (
+                                <div key={i} className={`flex flex-col md:flex-row items-center gap-8 relative ${i % 2 === 0 ? 'md:flex-row-reverse' : ''}`}>
+                                    {/* Contenu */}
+                                    <div className={`flex-1 w-full md:w-auto pl-12 md:pl-0 ${i % 2 === 0 ? 'md:text-left' : 'md:text-right'}`}>
+                                        <div className={`bg-white p-6 rounded-2xl border border-slate-100 shadow-sm relative hover:border-purple-200 transition-colors ${i % 2 === 0 ? 'mr-auto' : 'ml-auto'}`}>
+                                            <span className="text-purple-600 font-bold text-xs uppercase tracking-widest mb-2 block">Semaine {item.week}</span>
+                                            <h3 className="font-black text-slate-900 text-lg mb-2">{item.title}</h3>
+                                            <p className="text-slate-500 text-sm leading-relaxed">{item.desc}</p>
+                                        </div>
+                                    </div>
+
+                                    {/* Point central */}
+                                    <div className="absolute left-4 md:left-1/2 w-8 h-8 rounded-full bg-white border-4 border-purple-600 z-10 md:-translate-x-1/2 flex items-center justify-center shadow-sm">
+                                        <div className="w-2 h-2 bg-purple-600 rounded-full"></div>
+                                    </div>
+
+                                    {/* Espace vide pour l'équilibre */}
+                                    <div className="flex-1 hidden md:block"></div>
+                                </div>
+                            ))}
+                        </div>
+                        
+                        <div className="text-center mt-16">
+                            <p className="text-slate-900 font-bold text-lg bg-purple-50 inline-block px-6 py-3 rounded-full border border-purple-100">
+                                Vous avancez chaque semaine avec un cadre clair et un groupe qui vous soutient.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                        {/* SECTION 5 — QUI VOUS ACCOMPAGNE */}
+                <div className="bg-slate-900 rounded-3xl p-8 md:p-12 text-white relative overflow-hidden mt-20">
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-purple-600/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
+                    <div className="grid md:grid-cols-[1fr_2fr] gap-8 md:gap-12 items-center relative z-10">
+                        <div className="relative">
+                            <div className="aspect-square rounded-2xl bg-slate-800 border border-slate-700 overflow-hidden relative">
+                                <div className="absolute inset-0 flex items-center justify-center text-slate-600 font-bold bg-slate-800">
+                                    <Users className="h-16 w-16 opacity-20" />
+                                </div>
+                            </div>
+                            <div className="absolute -bottom-4 -right-4 bg-white text-slate-900 p-4 rounded-xl shadow-lg border border-slate-100 max-w-[180px]">
+                                <p className="text-xs font-bold leading-tight">"Personne ne devrait rester bloqué seul."</p>
+                            </div>
+                        </div>
+                        <div className="space-y-6">
+                            <div>
+                                <Badge className="bg-purple-600 text-white border-0 mb-4 uppercase tracking-widest px-3 py-1 text-xs">Le Fondateur</Badge>
+                                <h3 className="text-3xl font-black uppercase italic mb-2">Qui vous accompagne ?</h3>
+                                <p className="text-slate-400 font-medium text-lg">Jean-Philippe</p>
+                            </div>
+                            <div className="space-y-4 text-slate-300 leading-relaxed">
+                                <p>
+                                    Ce programme est né d’un constat simple : beaucoup de personnes veulent changer de vie professionnelle, 
+                                    mais elles restent bloquées seules, sans cadre et sans réseau.
+                                </p>
+                                <p>
+                                    Notre mission est de créer un environnement où les déclics arrivent plus vite, 
+                                    où les opportunités circulent, et où chacun peut avancer concrètement.
+                                </p>
+                            </div>
+                            <div className="flex flex-wrap gap-3 pt-2">
+                                <Badge variant="outline" className="border-slate-700 text-slate-400">Mentor</Badge>
+                                <Badge variant="outline" className="border-slate-700 text-slate-400">Entrepreneur</Badge>
+                                <Badge variant="outline" className="border-slate-700 text-slate-400">Accélérateur</Badge>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
         {/* 4. ZONE DE SÉCURITÉ (FAQ) */}
         <section className="py-24 bg-slate-50 border-y border-slate-200">
             <div className="container mx-auto px-4 max-w-4xl">
@@ -519,13 +733,70 @@ export function LandingEmploi() {
                     <span className="text-purple-500">Obtiens tes premiers clients.</span>
                 </h2>
 
+                {/* SECTION 7 — FONCTIONNEMENT CANDIDATURE */}
+                <div className="bg-slate-800/50 p-8 rounded-2xl border border-slate-700 backdrop-blur-sm mb-12">
+                    <h3 className="text-xl font-bold uppercase tracking-widest mb-8 text-slate-300">Comment fonctionne la candidature</h3>
+                    <div className="space-y-6 text-left">
+                        <div className="flex gap-4">
+                            <div className="h-8 w-8 rounded-full bg-purple-600 text-white flex items-center justify-center font-black shrink-0">1</div>
+                            <div>
+                                <h4 className="font-bold text-white text-lg">Vous remplissez le formulaire</h4>
+                                <p className="text-slate-400 text-sm">Cela prend 2 minutes. Aucune pièce jointe requise.</p>
+                            </div>
+                        </div>
+                        <div className="flex gap-4">
+                            <div className="h-8 w-8 rounded-full bg-slate-700 text-slate-400 flex items-center justify-center font-black shrink-0">2</div>
+                            <div>
+                                <h4 className="font-bold text-white text-lg">Nous échangeons avec vous</h4>
+                                <p className="text-slate-400 text-sm">Un court appel pour vérifier que le programme est adapté à votre situation.</p>
+                            </div>
+                        </div>
+                        <div className="flex gap-4">
+                            <div className="h-8 w-8 rounded-full bg-slate-700 text-slate-400 flex items-center justify-center font-black shrink-0">3</div>
+                            <div>
+                                <h4 className="font-bold text-white text-lg">Vous rejoignez la promotion</h4>
+                                <p className="text-slate-400 text-sm">Si tout est validé, vous embarquez avec les 23 autres participants.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* SECTION 8 — CE QUE VOUS POUVEZ ATTENDRE */}
+                <div className="mb-12 text-center">
+                    <h4 className="text-purple-400 font-bold uppercase tracking-widest text-sm mb-6">Ce que vous pouvez attendre du programme</h4>
+                    <div className="grid md:grid-cols-2 gap-4 text-left max-w-lg mx-auto">
+                        <div className="flex items-center gap-3">
+                            <CheckCircle2 className="h-5 w-5 text-purple-500 shrink-0" />
+                            <span className="text-slate-300 font-medium">Une voie professionnelle clarifiée</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                            <CheckCircle2 className="h-5 w-5 text-purple-500 shrink-0" />
+                            <span className="text-slate-300 font-medium">Une activité structurée</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                            <CheckCircle2 className="h-5 w-5 text-purple-500 shrink-0" />
+                            <span className="text-slate-300 font-medium">Des retours terrain réels</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                            <CheckCircle2 className="h-5 w-5 text-purple-500 shrink-0" />
+                            <span className="text-slate-300 font-medium">Un réseau actif qui vous soutient</span>
+                        </div>
+                    </div>
+                    <p className="mt-8 text-xl font-black italic text-white">
+                        "Vous ne repartez pas avec des idées. <br/>
+                        <span className="text-purple-500">Vous repartez avec une direction."</span>
+                    </p>
+                </div>
+
                 <div className="text-center mb-12 space-y-4">
                     <div className="inline-block bg-white text-slate-900 px-6 py-2 font-black text-xl md:text-2xl -skew-x-12">
                         CHOISIS 1 FORMATION OU LES 2
                     </div>
-                    <div className="flex flex-col gap-2 text-slate-400 font-bold uppercase tracking-widest text-sm">
-                        <span>Session limitée à 24 personnes</span>
-                        <span>Entretien préalable obligatoire</span>
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-slate-400 font-bold uppercase tracking-widest text-xs md:text-sm max-w-md mx-auto">
+                        <span className="flex items-center justify-center gap-2"><CheckCircle2 className="h-3 w-3 text-purple-500" /> Aucun diplôme requis</span>
+                        <span className="flex items-center justify-center gap-2"><CheckCircle2 className="h-3 w-3 text-purple-500" /> Sans expérience</span>
+                        <span className="flex items-center justify-center gap-2"><CheckCircle2 className="h-3 w-3 text-purple-500" /> Places limitées</span>
+                        <span className="flex items-center justify-center gap-2"><CheckCircle2 className="h-3 w-3 text-purple-500" /> Accompagnement</span>
                     </div>
                 </div>
                 
