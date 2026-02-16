@@ -142,6 +142,72 @@ export default function SideProjectPage() {
           </div>
         </section>
 
+        {/* SECTION 1 — PREUVES CHIFFRÉES */}
+        <section className="py-16 bg-white relative z-30 -mt-10 mx-4">
+            <div className="container mx-auto max-w-5xl">
+                <div className="bg-white rounded-3xl shadow-xl p-8 md:p-12 border border-slate-100">
+                    <div className="text-center mb-10">
+                        <h2 className="text-2xl md:text-3xl font-black uppercase italic text-slate-900">Ils ont déjà embarqué</h2>
+                        <p className="text-slate-500 mt-4 max-w-2xl mx-auto">
+                            Des entrepreneurs, freelances et porteurs de projet qui avaient besoin de visibilité. En 14 jours, ils ont activé leur réseau et créé des opportunités concrètes.
+                        </p>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+                        <div className="space-y-2">
+                            <div className="text-4xl md:text-5xl font-black text-green-600">+250</div>
+                            <p className="text-xs md:text-sm font-bold text-slate-500 uppercase tracking-wide">Entrepreneurs accompagnés</p>
+                        </div>
+                        <div className="space-y-2">
+                            <div className="text-4xl md:text-5xl font-black text-blue-600">78%</div>
+                            <p className="text-xs md:text-sm font-bold text-slate-500 uppercase tracking-wide">Obtiennent des RDV</p>
+                        </div>
+                        <div className="space-y-2">
+                            <div className="text-4xl md:text-5xl font-black text-purple-600">63%</div>
+                            <p className="text-xs md:text-sm font-bold text-slate-500 uppercase tracking-wide">Signent dans les 30 jours</p>
+                        </div>
+                        <div className="space-y-2">
+                            <div className="text-4xl md:text-5xl font-black text-orange-600">4,9/5</div>
+                            <p className="text-xs md:text-sm font-bold text-slate-500 uppercase tracking-wide">Satisfaction moyenne</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        {/* SECTION 2 — POUR QUI EST CE PROGRAMME */}
+        <section className="py-24 bg-white relative z-20 border-b border-slate-100">
+             <div className="container mx-auto px-4 max-w-5xl">
+                <div className="text-center mb-16">
+                    <h2 className="text-3xl font-black uppercase italic text-slate-900 mb-6">Ce programme est fait pour vous si…</h2>
+                </div>
+                
+                <div className="grid md:grid-cols-4 gap-6">
+                    {[
+                        { title: "Freelance / Indépendant", desc: "Vous avez une offre mais peu de clients réguliers." },
+                        { title: "Salarié Side-Project", desc: "Vous voulez tester une activité sans prendre de risque." },
+                        { title: "Entrepreneur Junior", desc: "Vous cherchez vos premières opportunités rapidement." },
+                        { title: "Expert / Consultant", desc: "Vous voulez plus de visibilité et de contacts qualifiés." }
+                    ].map((item, i) => (
+                        <div key={i} className="bg-slate-50 p-6 rounded-2xl border border-slate-200 hover:border-green-300 transition-all hover:-translate-y-1">
+                            <div className="h-10 w-10 bg-white rounded-full flex items-center justify-center mb-4 shadow-sm border border-slate-100 text-green-600 font-bold">
+                                {i+1}
+                            </div>
+                            <h3 className="font-bold text-slate-900 mb-2 leading-tight">{item.title}</h3>
+                            <p className="text-sm text-slate-500 leading-relaxed">{item.desc}</p>
+                        </div>
+                    ))}
+                </div>
+
+                <div className="text-center mt-12">
+                    <p className="text-lg text-slate-600 font-medium">
+                        Vous n’avez pas besoin d’avoir une grosse audience.<br/>
+                        <span className="text-green-600 font-black">Vous avez simplement besoin d’un cadre et d’un groupe qui avance.</span>
+                    </p>
+                </div>
+             </div>
+        </section>
+
         {/* 2. PROBLÈME (IDENTIFICATION) */}
         <section className="py-24 bg-slate-50 relative z-20">
             <div className="container mx-auto px-4 max-w-4xl">
@@ -238,6 +304,68 @@ export default function SideProjectPage() {
                         </div>
                     </div>
                 </div>
+                {/* SECTION 3 — RÉSULTATS RÉELS */}
+                <div className="mt-20 pt-20 border-t border-slate-200">
+                    <div className="text-center mb-16">
+                        <h2 className="text-3xl font-black uppercase italic text-slate-900 mb-6">Résultats obtenus pendant ou juste après</h2>
+                    </div>
+
+                    <div className="grid md:grid-cols-3 gap-8">
+                        {/* Carte 1 */}
+                        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                            <div className="bg-slate-100 p-4 border-b border-slate-200">
+                                <span className="font-bold text-slate-500 uppercase text-xs tracking-widest">Avant</span>
+                                <ul className="mt-3 space-y-2 text-sm text-slate-600">
+                                    <li className="flex items-center gap-2"><div className="h-1.5 w-1.5 rounded-full bg-slate-400"></div>Offre peu claire</li>
+                                    <li className="flex items-center gap-2"><div className="h-1.5 w-1.5 rounded-full bg-slate-400"></div>Aucun prospect actif</li>
+                                </ul>
+                            </div>
+                            <div className="bg-green-50 p-4">
+                                <span className="font-bold text-green-600 uppercase text-xs tracking-widest">Après</span>
+                                <ul className="mt-3 space-y-2 text-sm text-slate-900 font-medium">
+                                    <li className="flex items-center gap-2"><CheckCircle2 className="h-3 w-3 text-green-600" />5 rendez-vous obtenus</li>
+                                    <li className="flex items-center gap-2"><CheckCircle2 className="h-3 w-3 text-green-600" />2 clients signés</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        {/* Carte 2 */}
+                        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                            <div className="bg-slate-100 p-4 border-b border-slate-200">
+                                <span className="font-bold text-slate-500 uppercase text-xs tracking-widest">Avant</span>
+                                <ul className="mt-3 space-y-2 text-sm text-slate-600">
+                                    <li className="flex items-center gap-2"><div className="h-1.5 w-1.5 rounded-full bg-slate-400"></div>Projet stade idée</li>
+                                    <li className="flex items-center gap-2"><div className="h-1.5 w-1.5 rounded-full bg-slate-400"></div>Aucune visibilité</li>
+                                </ul>
+                            </div>
+                            <div className="bg-blue-50 p-4">
+                                <span className="font-bold text-blue-600 uppercase text-xs tracking-widest">Après</span>
+                                <ul className="mt-3 space-y-2 text-sm text-slate-900 font-medium">
+                                    <li className="flex items-center gap-2"><CheckCircle2 className="h-3 w-3 text-blue-600" />Offre validée</li>
+                                    <li className="flex items-center gap-2"><CheckCircle2 className="h-3 w-3 text-blue-600" />3 opportunités commerciales</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        {/* Carte 3 */}
+                        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                            <div className="bg-slate-100 p-4 border-b border-slate-200">
+                                <span className="font-bold text-slate-500 uppercase text-xs tracking-widest">Avant</span>
+                                <ul className="mt-3 space-y-2 text-sm text-slate-600">
+                                    <li className="flex items-center gap-2"><div className="h-1.5 w-1.5 rounded-full bg-slate-400"></div>Activité bloquée</li>
+                                    <li className="flex items-center gap-2"><div className="h-1.5 w-1.5 rounded-full bg-slate-400"></div>Manque de confiance</li>
+                                </ul>
+                            </div>
+                            <div className="bg-purple-50 p-4">
+                                <span className="font-bold text-purple-600 uppercase text-xs tracking-widest">Après</span>
+                                <ul className="mt-3 space-y-2 text-sm text-slate-900 font-medium">
+                                    <li className="flex items-center gap-2"><CheckCircle2 className="h-3 w-3 text-purple-600" />Positionnement clair</li>
+                                    <li className="flex items-center gap-2"><CheckCircle2 className="h-3 w-3 text-purple-600" />Collab long terme</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </section>
 
@@ -300,6 +428,67 @@ export default function SideProjectPage() {
                         </div>
                     </div>
                 </div>
+                {/* SECTION 4 — TIMELINE 14 JOURS */}
+                <div className="mt-20 pt-20 border-t border-slate-200">
+                    <div className="text-center mb-16">
+                        <h2 className="text-3xl font-black uppercase italic text-slate-900">Votre progression pendant le bootcamp</h2>
+                    </div>
+
+                    <div className="grid md:grid-cols-2 gap-12 items-center">
+                        <div className="space-y-8">
+                            {[
+                                { days: "Jours 1 à 3", title: "Clarification et positionnement", desc: "Vous définissez une offre claire et compréhensible.", color: "bg-green-100 text-green-700" },
+                                { days: "Jours 4 à 7", title: "Activation de visibilité", desc: "Publications, messages, interactions guidées.", color: "bg-blue-100 text-blue-700" },
+                                { days: "Jours 8 à 10", title: "Opportunités et échanges", desc: "Le groupe active son réseau pour vous.", color: "bg-purple-100 text-purple-700" },
+                                { days: "Jours 11 à 14", title: "Rendez-vous et conversions", desc: "Vous transformez les contacts en opportunités concrètes.", color: "bg-orange-100 text-orange-700" }
+                            ].map((item, i) => (
+                                <div key={i} className="flex gap-6 relative">
+                                    <div className="flex flex-col items-center">
+                                        <div className="h-4 w-4 rounded-full bg-slate-300"></div>
+                                        {i < 3 && <div className="w-0.5 h-full bg-slate-200 my-1"></div>}
+                                    </div>
+                                    <div className="pb-8">
+                                        <span className={`inline-block px-3 py-1 rounded-full text-xs font-bold uppercase mb-2 ${item.color}`}>{item.days}</span>
+                                        <h3 className="text-xl font-bold text-slate-900 mb-1">{item.title}</h3>
+                                        <p className="text-slate-600 leading-relaxed">{item.desc}</p>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* SECTION 5 — JOURNÉE TYPE */}
+                        <div className="bg-slate-900 text-white p-8 rounded-3xl relative overflow-hidden">
+                            <div className="absolute top-0 right-0 w-64 h-64 bg-green-600/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
+                            <h3 className="text-2xl font-black uppercase italic mb-8 relative z-10">Une journée dans l’Armada</h3>
+                            
+                            <div className="space-y-6 relative z-10">
+                                {[
+                                    { time: "Matin", title: "Briefing & Objectifs", icon: Target },
+                                    { time: "Midi", title: "Action Terrain Guidée", icon: Rocket },
+                                    { time: "Aprem", title: "Interactions Réseau", icon: Users },
+                                    { time: "Soir", title: "Live & Retours", icon: Zap }
+                                ].map((item, i) => (
+                                    <div key={i} className="flex items-center gap-4 bg-white/5 p-4 rounded-xl border border-white/10">
+                                        <div className="h-10 w-10 bg-green-600 rounded-full flex items-center justify-center text-white shrink-0">
+                                            <item.icon className="h-5 w-5" />
+                                        </div>
+                                        <div>
+                                            <span className="text-xs text-green-400 font-bold uppercase tracking-widest">{item.time}</span>
+                                            <p className="font-bold text-white">{item.title}</p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                            
+                            <div className="mt-8 pt-6 border-t border-white/10 text-center">
+                                <p className="font-medium text-slate-300">
+                                    Le rythme est soutenu.<br/>
+                                    <span className="text-white font-bold">C’est justement ce qui crée les résultats.</span>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </section>
 
@@ -355,6 +544,20 @@ export default function SideProjectPage() {
                                 </div>
                             </div>
                         </div>
+                    </div>
+                </div>
+                {/* SECTION 6 — HUMAIN + IA */}
+                <div className="mt-20 pt-16 border-t border-slate-100 text-center">
+                    <h3 className="text-2xl font-black uppercase text-slate-900 mb-6">Un accompagnement humain renforcé par l’IA</h3>
+                    <p className="text-slate-600 max-w-2xl mx-auto mb-8">
+                        Vous êtes accompagné par des humains, un groupe et des outils intelligents.
+                        L’intelligence artificielle agit comme un copilote (idées, messages, optimisation), 
+                        mais les décisions et l’énergie restent <span className="font-bold text-green-600">humaines.</span>
+                    </p>
+                    <div className="flex justify-center gap-4">
+                        <Badge variant="outline" className="border-slate-200 text-slate-500">Pas de robotisation</Badge>
+                        <Badge variant="outline" className="border-slate-200 text-slate-500">Vrais échanges</Badge>
+                        <Badge variant="outline" className="border-slate-200 text-slate-500">Réseau réel</Badge>
                     </div>
                 </div>
             </div>
@@ -414,6 +617,43 @@ export default function SideProjectPage() {
                         </div>
                     </div>
                 </div>
+                {/* SECTION 7 — QUI EST LE CAPITAINE */}
+                <div className="bg-slate-900 rounded-3xl p-8 md:p-12 text-white relative overflow-hidden mt-12">
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-green-600/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
+                    <div className="grid md:grid-cols-[1fr_2fr] gap-8 md:gap-12 items-center relative z-10">
+                        <div className="relative">
+                            <div className="aspect-square rounded-2xl bg-slate-800 border border-slate-700 overflow-hidden relative">
+                                <div className="absolute inset-0 flex items-center justify-center text-slate-600 font-bold bg-slate-800">
+                                    <Users className="h-16 w-16 opacity-20" />
+                                </div>
+                            </div>
+                            <div className="absolute -bottom-4 -right-4 bg-white text-slate-900 p-4 rounded-xl shadow-lg border border-slate-100 max-w-[180px]">
+                                <p className="text-xs font-bold leading-tight">"Beaucoup ont du potentiel mais restent invisibles seuls."</p>
+                            </div>
+                        </div>
+                        <div className="space-y-6">
+                            <div>
+                                <Badge className="bg-green-600 text-white border-0 mb-4 uppercase tracking-widest px-3 py-1 text-xs">Le Capitaine</Badge>
+                                <h3 className="text-3xl font-black uppercase italic mb-2">Qui dirige l’Armada ?</h3>
+                                <p className="text-slate-400 font-medium text-lg">Jean-Philippe</p>
+                            </div>
+                            <div className="space-y-4 text-slate-300 leading-relaxed">
+                                <p>
+                                    Nous avons créé un environnement collectif où chacun peut activer son réseau, 
+                                    gagner en visibilité et générer des opportunités rapidement.
+                                </p>
+                                <p>
+                                    Notre mission est simple : <strong className="text-white">vous faire passer de l’intention à l’action.</strong>
+                                </p>
+                            </div>
+                            <div className="flex flex-wrap gap-3 pt-2">
+                                <Badge variant="outline" className="border-slate-700 text-slate-400">Action</Badge>
+                                <Badge variant="outline" className="border-slate-700 text-slate-400">Réseau</Badge>
+                                <Badge variant="outline" className="border-slate-700 text-slate-400">Résultats</Badge>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </section>
 
@@ -424,6 +664,41 @@ export default function SideProjectPage() {
                 <h2 className="text-4xl md:text-5xl font-black uppercase italic mb-8 leading-tight">
                     Investissement
                 </h2>
+
+                {/* SECTION 8 — CE QUE VOUS POUVEZ ATTENDRE */}
+                <div className="mb-12 text-center">
+                    <h4 className="text-green-400 font-bold uppercase tracking-widest text-sm mb-6">Ce que vous pouvez attendre en 14 jours</h4>
+                    <div className="grid md:grid-cols-2 gap-4 text-left max-w-lg mx-auto mb-8">
+                        <div className="flex items-center gap-3">
+                            <CheckCircle2 className="h-5 w-5 text-green-500 shrink-0" />
+                            <span className="text-slate-300 font-medium">Une offre clarifiée</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                            <CheckCircle2 className="h-5 w-5 text-green-500 shrink-0" />
+                            <span className="text-slate-300 font-medium">Plus de visibilité que seul</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                            <CheckCircle2 className="h-5 w-5 text-green-500 shrink-0" />
+                            <span className="text-slate-300 font-medium">Des retours terrain réels</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                            <CheckCircle2 className="h-5 w-5 text-green-500 shrink-0" />
+                            <span className="text-slate-300 font-medium">Des opportunités commerciales</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                            <CheckCircle2 className="h-5 w-5 text-green-500 shrink-0" />
+                            <span className="text-slate-300 font-medium">Un réseau actif</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                            <CheckCircle2 className="h-5 w-5 text-green-500 shrink-0" />
+                            <span className="text-slate-300 font-medium">Des rendez-vous potentiels</span>
+                        </div>
+                    </div>
+                    <p className="text-slate-400 text-sm max-w-md mx-auto">
+                        Certains participants signent des clients pendant le programme. D’autres dans les semaines suivantes. <br/>
+                        <span className="text-white font-bold">Dans tous les cas, vous avancez.</span>
+                    </p>
+                </div>
 
                 <div className="bg-white/5 p-8 rounded-3xl border border-white/10 mb-12">
                     <p className="text-slate-300 text-sm uppercase tracking-widest font-bold mb-4">Programme complet 8 semaines</p>
@@ -438,21 +713,32 @@ export default function SideProjectPage() {
                     </div>
 
                     <div className="bg-green-900/30 p-6 rounded-xl border border-green-500/30 mb-8">
-                        <h4 className="font-bold text-green-400 uppercase text-sm mb-2 flex items-center justify-center gap-2">
-                            <ShieldCheck className="h-4 w-4" /> Garantie Psychologique
+                        {/* SECTION 9 — GARANTIE RENFORCÉE */}
+                        <h4 className="font-bold text-green-400 uppercase text-sm mb-4 flex items-center justify-center gap-2">
+                            <ShieldCheck className="h-5 w-5" /> Vous ne prenez aucun risque
                         </h4>
-                        <p className="text-green-100 text-sm">
-                            Si vous suivez le programme sérieusement et que vous estimez ne pas avoir avancé, 
-                            nous vous réintégrons gratuitement dans une session suivante. <span className="font-bold text-white">Vous ne prenez pas de risque.</span>
-                        </p>
+                        <div className="text-green-100 text-sm space-y-2 leading-relaxed">
+                            <p>
+                                Si vous appliquez le programme sérieusement et que vous n’obtenez <span className="text-white font-bold">aucun rendez-vous ni opportunité</span>,
+                            </p>
+                            <p>
+                                nous vous réintégrons gratuitement dans une prochaine promotion.
+                            </p>
+                            <p className="font-bold text-white pt-2 uppercase text-xs tracking-widest">Votre progression est notre priorité.</p>
+                        </div>
                     </div>
 
                     <Button size="lg" className="w-full h-auto min-h-[4rem] py-4 bg-green-600 hover:bg-green-500 text-white font-black text-lg md:text-xl uppercase tracking-widest rounded-full shadow-xl shadow-green-900/50 transition-all whitespace-normal leading-tight" asChild>
                         <Link href="#join" className="flex items-center justify-center text-center">Je rejoins la prochaine session</Link>
                     </Button>
-                    <p className="mt-4 text-slate-500 text-xs font-bold uppercase tracking-widest">
-                        Places limitées à 24 participants.
-                    </p>
+                    
+                    {/* SECTION 10 — MICRO-RASSURANCES */}
+                    <div className="grid grid-cols-2 gap-y-2 gap-x-4 mt-6 text-slate-500 text-xs font-bold uppercase tracking-widest max-w-sm mx-auto">
+                        <span className="flex items-center justify-center gap-2"><CheckCircle2 className="h-3 w-3 text-green-500" /> Places limitées (24)</span>
+                        <span className="flex items-center justify-center gap-2"><CheckCircle2 className="h-3 w-3 text-green-500" /> Aucun niveau requis</span>
+                        <span className="flex items-center justify-center gap-2"><CheckCircle2 className="h-3 w-3 text-green-500" /> Sans audience</span>
+                        <span className="flex items-center justify-center gap-2"><CheckCircle2 className="h-3 w-3 text-green-500" /> Cadre structuré</span>
+                    </div>
                 </div>
 
                 <div className="space-y-6">
