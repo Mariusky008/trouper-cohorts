@@ -172,12 +172,12 @@ export default function SideProjectPage() {
                     </div>
                 </div>
                 <div className="mt-12 text-center">
-                    <Button size="lg" className="h-auto min-h-[3.5rem] px-8 bg-green-600 hover:bg-green-500 text-white font-black uppercase tracking-widest rounded-full shadow-lg shadow-green-200 hover:shadow-xl hover:-translate-y-1 transition-all" asChild>
+                    <Button size="lg" className="h-auto min-h-[3.5rem] px-8 bg-green-600 hover:bg-green-500 text-white font-black uppercase tracking-widest rounded-full shadow-lg shadow-green-200 hover:shadow-xl hover:-translate-y-1 transition-all w-auto inline-flex items-center justify-center" asChild>
                         <Link href="#join">Voir plus de résultats</Link>
                     </Button>
                 </div>
                 <div className="mt-12 text-center">
-                    <Button size="lg" className="h-auto min-h-[3.5rem] px-8 bg-green-600 hover:bg-green-500 text-white font-black uppercase tracking-widest rounded-full shadow-lg shadow-green-200 hover:shadow-xl hover:-translate-y-1 transition-all" asChild>
+                    <Button size="lg" className="h-auto min-h-[3.5rem] px-8 bg-green-600 hover:bg-green-500 text-white font-black uppercase tracking-widest rounded-full shadow-lg shadow-green-200 hover:shadow-xl hover:-translate-y-1 transition-all w-auto inline-flex items-center justify-center" asChild>
                         <Link href="#join">Je veux arrêter de tourner en rond</Link>
                     </Button>
                 </div>
@@ -476,7 +476,7 @@ export default function SideProjectPage() {
                     </div>
                 </div>
                 <div className="mt-16 text-center">
-                    <Button size="lg" className="h-auto min-h-[3.5rem] px-8 bg-green-500 hover:bg-green-400 text-slate-900 font-black uppercase tracking-widest rounded-full shadow-lg shadow-green-500/20 hover:shadow-xl hover:-translate-y-1 transition-all" asChild>
+                    <Button size="lg" className="h-auto min-h-[3.5rem] px-8 bg-green-500 hover:bg-green-400 text-slate-900 font-black uppercase tracking-widest rounded-full shadow-lg shadow-green-500/20 hover:shadow-xl hover:-translate-y-1 transition-all w-auto inline-flex items-center justify-center" asChild>
                         <Link href="#join">Voir le détail des semaines</Link>
                     </Button>
                 </div>
@@ -714,7 +714,7 @@ export default function SideProjectPage() {
                     </div>
                 </div>
                 <div className="mt-12 text-center">
-                    <Button size="lg" className="h-auto min-h-[3.5rem] px-8 bg-slate-900 hover:bg-slate-800 text-white font-black uppercase tracking-widest rounded-full shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all border border-green-500/30" asChild>
+                    <Button size="lg" className="h-auto min-h-[3.5rem] px-8 bg-slate-900 hover:bg-slate-800 text-white font-black uppercase tracking-widest rounded-full shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all border border-green-500/30 w-auto inline-flex items-center justify-center" asChild>
                         <Link href="#join">Embarquer avec Jean-Philippe</Link>
                     </Button>
                 </div>
@@ -784,7 +784,7 @@ export default function SideProjectPage() {
                     </p>
                 </div>
                  <div className="mt-12 text-center">
-                    <Button size="lg" className="h-auto min-h-[3.5rem] px-8 bg-green-600 hover:bg-green-500 text-white font-black uppercase tracking-widest rounded-full shadow-lg shadow-green-200 hover:shadow-xl hover:-translate-y-1 transition-all" asChild>
+                    <Button size="lg" className="h-auto min-h-[3.5rem] px-8 bg-green-600 hover:bg-green-500 text-white font-black uppercase tracking-widest rounded-full shadow-lg shadow-green-200 hover:shadow-xl hover:-translate-y-1 transition-all w-auto inline-flex items-center justify-center" asChild>
                         <Link href="#join">J'adhère à l'esprit</Link>
                     </Button>
                 </div>

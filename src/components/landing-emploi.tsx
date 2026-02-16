@@ -354,7 +354,7 @@ export function LandingEmploi() {
                                 <span className="font-medium text-slate-900">Action massive et immédiate</span>
                             </li>
                         </ul>
-                        <a href="#join" className={cn(buttonVariants(), "bg-slate-900 text-white hover:bg-slate-800 rounded-full px-8 py-6 font-black uppercase tracking-widest text-sm shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all")}>
+                        <a href="#join" className={cn(buttonVariants(), "bg-slate-900 text-white hover:bg-slate-800 rounded-full px-8 py-6 font-black uppercase tracking-widest text-sm shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all w-auto inline-flex items-center justify-center")}>
                             Je veux ça
                         </a>
                     </div>
@@ -480,7 +480,7 @@ export function LandingEmploi() {
                     Nos membres postent leurs résultats tous les jours sur LinkedIn. Ne nous croyez pas sur parole, allez voir.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-6 justify-center">
-                    <a href="https://www.linkedin.com/search/results/content/?keywords=%23popeyacademy" target="_blank" rel="noopener noreferrer" className={cn(buttonVariants({ size: "lg" }), "bg-blue-600 hover:bg-blue-700 text-white font-black uppercase tracking-widest px-10 py-6 h-auto text-lg rounded-full shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all flex items-center justify-center")}>
+                    <a href="https://www.linkedin.com/search/results/content/?keywords=%23popeyacademy" target="_blank" rel="noopener noreferrer" className={cn(buttonVariants({ size: "lg" }), "bg-blue-600 hover:bg-blue-700 text-white font-black uppercase tracking-widest px-10 py-6 h-auto text-lg rounded-full shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all w-auto inline-flex items-center justify-center")}>
                         <span className="flex items-center gap-2">
                             Voir le flux LinkedIn <ArrowRight className="h-5 w-5" />
                         </span>

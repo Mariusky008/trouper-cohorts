@@ -196,7 +196,7 @@ export default function Home() {
                 </div>
                 
                 <div className="text-center mt-12">
-                    <a href="#temoignages" className={cn(buttonVariants({ size: "lg" }), "bg-orange-600 hover:bg-orange-500 text-white font-black uppercase tracking-widest px-10 py-4 h-auto text-lg rounded-full shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all flex items-center justify-center")}>
+                    <a href="#temoignages" className={cn(buttonVariants({ size: "lg" }), "bg-orange-600 hover:bg-orange-500 text-white font-black uppercase tracking-widest px-10 py-4 h-auto text-lg rounded-full shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all w-auto inline-flex items-center justify-center")}>
                         Voir les preuves en direct
                     </a>
                 </div>
@@ -676,7 +676,7 @@ export default function Home() {
                 </div>
 
                 <div className="text-center mt-12">
-                    <a href="#join" className={cn(buttonVariants({ size: "lg" }), "bg-orange-600 hover:bg-orange-500 text-white font-black uppercase tracking-widest px-10 py-4 h-auto text-lg rounded-full shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all flex items-center justify-center")}>
+                    <a href="#join" className={cn(buttonVariants({ size: "lg" }), "bg-orange-600 hover:bg-orange-500 text-white font-black uppercase tracking-widest px-10 py-4 h-auto text-lg rounded-full shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all w-auto inline-flex items-center justify-center")}>
                         Obtenir les mêmes résultats
                     </a>
                 </div>
@@ -927,7 +927,7 @@ export default function Home() {
                 </div>
 
                 <div className="text-center mt-12">
-                    <a href="#join" className={cn(buttonVariants({ size: "lg" }), "bg-orange-600 hover:bg-orange-500 text-white font-black uppercase tracking-widest px-10 py-4 h-auto text-lg rounded-full shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all flex items-center justify-center")}>
+                    <a href="#join" className={cn(buttonVariants({ size: "lg" }), "bg-orange-600 hover:bg-orange-500 text-white font-black uppercase tracking-widest px-10 py-4 h-auto text-lg rounded-full shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all w-auto inline-flex items-center justify-center")}>
                         Je rejoins l'économie d'entraide
                     </a>
                 </div>
