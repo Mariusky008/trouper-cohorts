@@ -149,22 +149,22 @@ export default function SideProjectPage() {
                     <div className="text-center mb-10">
                         <h2 className="text-2xl md:text-3xl font-black uppercase italic text-slate-900">Ils ont déjà embarqué</h2>
                         <p className="text-slate-500 mt-4 max-w-2xl mx-auto">
-                            Des entrepreneurs, freelances et porteurs de projet qui avaient besoin de visibilité. En 14 jours, ils ont activé leur réseau et créé des opportunités concrètes.
+                            Des salariés, consultants et passionnés qui cherchaient une sécurité financière. Ils ont lancé leur activité en parallèle, et beaucoup ont fini par quitter leur emploi pour de bon.
                         </p>
                     </div>
                     
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
                         <div className="space-y-2">
                             <div className="text-4xl md:text-5xl font-black text-green-600">+250</div>
-                            <p className="text-xs md:text-sm font-bold text-slate-500 uppercase tracking-wide">Entrepreneurs accompagnés</p>
+                            <p className="text-xs md:text-sm font-bold text-slate-500 uppercase tracking-wide">Salariés accompagnés</p>
                         </div>
                         <div className="space-y-2">
-                            <div className="text-4xl md:text-5xl font-black text-blue-600">78%</div>
-                            <p className="text-xs md:text-sm font-bold text-slate-500 uppercase tracking-wide">Obtiennent des RDV</p>
+                            <div className="text-4xl md:text-5xl font-black text-blue-600">100%</div>
+                            <p className="text-xs md:text-sm font-bold text-slate-500 uppercase tracking-wide">Lancent une activité lucrative</p>
                         </div>
                         <div className="space-y-2">
-                            <div className="text-4xl md:text-5xl font-black text-purple-600">63%</div>
-                            <p className="text-xs md:text-sm font-bold text-slate-500 uppercase tracking-wide">Signent dans les 30 jours</p>
+                            <div className="text-4xl md:text-5xl font-black text-purple-600">38%</div>
+                            <p className="text-xs md:text-sm font-bold text-slate-500 uppercase tracking-wide">Ont quitté leur job (CDI)</p>
                         </div>
                         <div className="space-y-2">
                             <div className="text-4xl md:text-5xl font-black text-orange-600">4,9/5</div>
