@@ -95,7 +95,7 @@ export default function SideProjectPage() {
                     <span>Salariés / Complément de revenu</span>
                 </div>
                 
-                <h1 className="text-4xl md:text-6xl lg:text-7xl font-black uppercase italic tracking-tighter leading-[0.95] mb-8 text-slate-900">
+                <h1 className="text-4xl md:text-6xl lg:text-7xl font-black uppercase italic tracking-tighter leading-[0.95] mb-8 text-green-950">
                   Et si dans 8 semaines<br />
                   vous ajoutiez une<br />
                   <span className="text-green-600">nouvelle source de revenus</span><br />

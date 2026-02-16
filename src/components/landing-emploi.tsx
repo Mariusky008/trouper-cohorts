@@ -91,7 +91,7 @@ export function LandingEmploi() {
                     </Badge>
                 </FloatingIcon>
                 
-                <h1 className="text-4xl md:text-6xl lg:text-7xl font-black uppercase tracking-tighter leading-[0.95] text-slate-900">
+                <h1 className="text-4xl md:text-6xl lg:text-7xl font-black uppercase tracking-tighter leading-[0.95] text-blue-950">
                   Et si dans 5 semaines<br />
                   tu passais de<br />
                   <span className="text-slate-400">“je ne sais pas quoi faire de ma vie”</span><br/>
