@@ -120,6 +120,36 @@ export default function Home() {
           </div>
         </section>
 
+        {/* SECTION 1 — PREUVES CHIFFRÉES */}
+        <section className="py-16 bg-white relative z-30 -mt-10 mx-4">
+            <div className="container mx-auto max-w-5xl">
+                <div className="bg-white rounded-3xl shadow-xl p-8 md:p-12 border border-slate-100">
+                    <div className="text-center mb-10">
+                        <h2 className="text-2xl md:text-3xl font-black uppercase italic text-slate-900">Ils sont déjà passés à l’action</h2>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+                        <div className="space-y-2">
+                            <div className="text-4xl md:text-5xl font-black text-orange-600">450+</div>
+                            <p className="text-xs md:text-sm font-bold text-slate-500 uppercase tracking-wide">Entrepreneurs accompagnés</p>
+                        </div>
+                        <div className="space-y-2">
+                            <div className="text-4xl md:text-5xl font-black text-blue-600">1200+</div>
+                            <p className="text-xs md:text-sm font-bold text-slate-500 uppercase tracking-wide">Opportunités générées</p>
+                        </div>
+                        <div className="space-y-2">
+                            <div className="text-4xl md:text-5xl font-black text-green-600">98%</div>
+                            <p className="text-xs md:text-sm font-bold text-slate-500 uppercase tracking-wide">De satisfaction</p>
+                        </div>
+                        <div className="space-y-2">
+                            <div className="text-4xl md:text-5xl font-black text-purple-600">350+</div>
+                            <p className="text-xs md:text-sm font-bold text-slate-500 uppercase tracking-wide">Collaborations créées</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
         {/* 2. LE COLLECTIF : 24 ENTREPRENEURS */}
         <section className="py-24 bg-slate-900 text-white relative z-20">
             <div className="container mx-auto px-4 max-w-6xl">
@@ -207,14 +237,40 @@ export default function Home() {
                             nous vous replaçons gratuitement dans la prochaine session.
                         </p>
                         
-                        <div className="flex flex-col items-center gap-6 px-4">
-                            <Button size="lg" className="bg-white text-orange-600 hover:bg-orange-50 font-black uppercase tracking-widest px-6 md:px-10 h-auto min-h-[4rem] py-4 text-base md:text-xl shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-all rounded-full w-full md:w-auto whitespace-normal leading-tight" asChild>
-                                <Link href="#join" className="flex items-center justify-center text-center">Réserver ma place dans l'Armada</Link>
-                            </Button>
-                            <p className="text-orange-200 text-xs md:text-sm font-bold uppercase tracking-widest">
-                                Prochaine session limitée à 24 participants
-                            </p>
+                <div className="flex flex-col items-center gap-6 px-4">
+                    <div className="bg-slate-800/50 p-6 rounded-2xl border border-slate-700 max-w-2xl mx-auto mb-8 w-full">
+                        <h4 className="text-orange-500 font-bold uppercase tracking-widest text-sm mb-4">Ce que vous pouvez attendre en moyenne</h4>
+                        <div className="grid md:grid-cols-2 gap-4 text-left">
+                            <div className="flex items-start gap-3">
+                                <CheckCircle2 className="h-5 w-5 text-orange-500 shrink-0 mt-0.5" />
+                                <span className="text-slate-300 text-sm">Nouvelles opportunités commerciales</span>
+                            </div>
+                            <div className="flex items-start gap-3">
+                                <CheckCircle2 className="h-5 w-5 text-orange-500 shrink-0 mt-0.5" />
+                                <span className="text-slate-300 text-sm">Mises en relation qualifiées</span>
+                            </div>
+                            <div className="flex items-start gap-3">
+                                <CheckCircle2 className="h-5 w-5 text-orange-500 shrink-0 mt-0.5" />
+                                <span className="text-slate-300 text-sm">Visibilité accrue immédiate</span>
+                            </div>
+                            <div className="flex items-start gap-3">
+                                <CheckCircle2 className="h-5 w-5 text-orange-500 shrink-0 mt-0.5" />
+                                <span className="text-slate-300 text-sm">Collaborations long terme possibles</span>
+                            </div>
                         </div>
+                    </div>
+
+                    <Button size="lg" className="bg-white text-orange-600 hover:bg-orange-50 font-black uppercase tracking-widest px-6 md:px-10 h-auto min-h-[4rem] py-4 text-base md:text-xl shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-all rounded-full w-full md:w-auto whitespace-normal leading-tight" asChild>
+                        <Link href="#join" className="flex items-center justify-center text-center">Réserver ma place dans l'Armada</Link>
+                    </Button>
+                    
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-x-8 gap-y-2 text-slate-400 text-xs font-bold uppercase tracking-wide pt-4 border-t border-slate-800 mt-2 w-full max-w-3xl justify-center text-center">
+                        <span className="flex items-center justify-center gap-2"><CheckCircle2 className="h-3 w-3 text-orange-500" /> Places limitées (24)</span>
+                        <span className="flex items-center justify-center gap-2"><CheckCircle2 className="h-3 w-3 text-orange-500" /> Aucun niveau requis</span>
+                        <span className="flex items-center justify-center gap-2"><CheckCircle2 className="h-3 w-3 text-orange-500" /> Programme intensif</span>
+                        <span className="flex items-center justify-center gap-2"><CheckCircle2 className="h-3 w-3 text-orange-500" /> Garantie satisfait</span>
+                    </div>
+                </div>
                      </div>
                 </div>
 
@@ -301,11 +357,33 @@ export default function Home() {
 
         {/* 3. CONCRÈTEMENT : COMMENT ÇA MARCHE */}
         <section className="py-24 bg-slate-50 border-t border-slate-200">
-            <div className="container mx-auto px-4 max-w-4xl">
+            <div className="container mx-auto px-4 max-w-5xl">
                 <div className="text-center mb-16">
                     <Badge variant="outline" className="border-slate-300 text-slate-500 uppercase mb-4">Mode d'Emploi</Badge>
-                    <h2 className="text-4xl font-black uppercase italic text-slate-900">Concrètement, comment ça marche ?</h2>
+                    <h2 className="text-4xl font-black uppercase italic text-slate-900">Concrètement, pendant 15 jours</h2>
                     <p className="text-slate-500 mt-4 text-lg">Un entrepreneur établi veut du concret. Sinon il part.</p>
+                </div>
+
+                {/* STEPPER VISUEL */}
+                <div className="mb-20">
+                    <div className="grid md:grid-cols-4 gap-4">
+                        {[
+                            { step: "1", title: "Rencontre du groupe", icon: Users, color: "text-blue-600", bg: "bg-blue-50", border: "border-blue-100" },
+                            { step: "2", title: "Activation du réseau", icon: Zap, color: "text-orange-600", bg: "bg-orange-50", border: "border-orange-100" },
+                            { step: "3", title: "Missions quotidiennes", icon: Target, color: "text-green-600", bg: "bg-green-50", border: "border-green-100" },
+                            { step: "4", title: "Opportunités générées", icon: Megaphone, color: "text-purple-600", bg: "bg-purple-50", border: "border-purple-100" }
+                        ].map((item, i) => (
+                            <div key={i} className={`relative p-6 rounded-2xl border ${item.border} ${item.bg} text-center group hover:-translate-y-1 transition-transform`}>
+                                <div className={`absolute -top-4 left-1/2 -translate-x-1/2 h-8 w-8 rounded-full bg-white border-2 ${item.border} flex items-center justify-center font-black text-sm shadow-sm`}>
+                                    {item.step}
+                                </div>
+                                <div className={`h-12 w-12 mx-auto rounded-full bg-white flex items-center justify-center mb-4 shadow-sm ${item.color}`}>
+                                    <item.icon className="h-6 w-6" />
+                                </div>
+                                <h3 className="font-bold text-slate-900 leading-tight">{item.title}</h3>
+                            </div>
+                        ))}
+                    </div>
                 </div>
 
                 <div className="grid md:grid-cols-2 gap-8">
@@ -356,6 +434,66 @@ export default function Home() {
             </div>
         </section>
 
+        {/* SECTION 3 — EXEMPLES RÉELS */}
+        <section className="py-24 bg-white border-t border-slate-200">
+            <div className="container mx-auto px-4 max-w-5xl">
+                <div className="text-center mb-16">
+                    <h2 className="text-3xl font-black uppercase italic text-slate-900">Exemples de résultats obtenus</h2>
+                    <p className="text-slate-500 mt-4 text-lg">Pas de promesses en l'air, juste du terrain.</p>
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-8">
+                    <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all">
+                        <div className="flex items-center justify-between mb-6">
+                            <div>
+                                <h3 className="font-black text-xl text-slate-900">Marie</h3>
+                                <p className="text-slate-500 text-sm font-bold uppercase">Coach Sportif</p>
+                            </div>
+                            <div className="bg-green-100 text-green-700 font-bold px-3 py-1 rounded-full text-xs uppercase">Succès</div>
+                        </div>
+                        <ul className="space-y-4">
+                            <li className="flex items-center gap-3">
+                                <div className="h-2 w-2 rounded-full bg-green-500"></div>
+                                <span className="text-slate-700 font-medium">5 nouveaux clients signés</span>
+                            </li>
+                            <li className="flex items-center gap-3">
+                                <div className="h-2 w-2 rounded-full bg-green-500"></div>
+                                <span className="text-slate-700 font-medium">2 partenariats locaux activés</span>
+                            </li>
+                            <li className="flex items-center gap-3">
+                                <div className="h-2 w-2 rounded-full bg-green-500"></div>
+                                <span className="text-slate-700 font-medium">Offre restructurée et clarifiée</span>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all">
+                        <div className="flex items-center justify-between mb-6">
+                            <div>
+                                <h3 className="font-black text-xl text-slate-900">Julien</h3>
+                                <p className="text-slate-500 text-sm font-bold uppercase">Artisan / Rénovation</p>
+                            </div>
+                            <div className="bg-blue-100 text-blue-700 font-bold px-3 py-1 rounded-full text-xs uppercase">Croissance</div>
+                        </div>
+                        <ul className="space-y-4">
+                            <li className="flex items-center gap-3">
+                                <div className="h-2 w-2 rounded-full bg-blue-500"></div>
+                                <span className="text-slate-700 font-medium">3 devis signés en 15 jours</span>
+                            </li>
+                            <li className="flex items-center gap-3">
+                                <div className="h-2 w-2 rounded-full bg-blue-500"></div>
+                                <span className="text-slate-700 font-medium">1 collaboration long terme avec architecte</span>
+                            </li>
+                            <li className="flex items-center gap-3">
+                                <div className="h-2 w-2 rounded-full bg-blue-500"></div>
+                                <span className="text-slate-700 font-medium">Carnet de commandes rempli pour 2 mois</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
         {/* 4. PREUVE SOCIALE */}
         <section className="py-24 bg-white">
             <div className="container mx-auto px-4 max-w-5xl">
@@ -364,7 +502,7 @@ export default function Home() {
                     <p className="text-slate-500 mt-4">Voici ce qui arrive quand on joue le jeu.</p>
                 </div>
 
-                <div className="grid md:grid-cols-3 gap-8">
+                <div className="grid md:grid-cols-3 gap-8 mb-20">
                     {/* Témoignage 1 */}
                     <div className="bg-slate-50 p-6 rounded-xl border border-slate-200">
                         <div className="flex items-center gap-4 mb-4">
@@ -407,6 +545,47 @@ export default function Home() {
                         <p className="text-slate-600 italic text-sm mb-4">"L'intensité m'a forcé à bouger. J'ai arrêté de peaufiner mon site et j'ai commencé à appeler. Résultat immédiat."</p>
                         <div className="flex gap-2">
                             <Badge className="bg-orange-100 text-orange-700 border-0 text-xs">Action Massive</Badge>
+                        </div>
+                    </div>
+                </div>
+
+                {/* SECTION 4 - LEADER / CRÉDIBILITÉ */}
+                <div className="bg-slate-900 rounded-3xl p-8 md:p-12 text-white relative overflow-hidden">
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-orange-600/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
+                    <div className="grid md:grid-cols-[1fr_2fr] gap-8 md:gap-12 items-center relative z-10">
+                        <div className="relative">
+                            <div className="aspect-square rounded-2xl bg-slate-800 border border-slate-700 overflow-hidden relative">
+                                {/* Placeholder pour la photo */}
+                                <div className="absolute inset-0 flex items-center justify-center text-slate-600 font-bold bg-slate-800">
+                                    <Users className="h-16 w-16 opacity-20" />
+                                </div>
+                                {/* <Image src="/path/to/photo.jpg" alt="Fondateur" fill className="object-cover" /> */}
+                            </div>
+                            <div className="absolute -bottom-4 -right-4 bg-white text-slate-900 p-4 rounded-xl shadow-lg border border-slate-100 max-w-[180px]">
+                                <p className="text-xs font-bold leading-tight">"L'action bat toujours la réflexion."</p>
+                            </div>
+                        </div>
+                        <div className="space-y-6">
+                            <div>
+                                <Badge className="bg-orange-600 text-white border-0 mb-4 uppercase tracking-widest px-3 py-1 text-xs">Le Fondateur</Badge>
+                                <h3 className="text-3xl font-black uppercase italic mb-2">Qui est derrière Popey Academy ?</h3>
+                                <p className="text-slate-400 font-medium text-lg">Jean-Philippe, Entrepreneur & Mentor</p>
+                            </div>
+                            <div className="space-y-4 text-slate-300 leading-relaxed">
+                                <p>
+                                    Après avoir accompagné plus de 450 entrepreneurs et lancé plusieurs projets à succès, j'ai fait un constat simple : 
+                                    <strong className="text-white"> ce n'est pas le talent qui manque, c'est l'environnement.</strong>
+                                </p>
+                                <p>
+                                    J'ai créé Popey Academy pour offrir ce que j'aurais rêvé avoir à mes débuts : un collectif puissant qui ne laisse personne sur le bord de la route.
+                                    Ici, on ne vend pas du rêve, on construit des réalités.
+                                </p>
+                            </div>
+                            <div className="flex flex-wrap gap-3 pt-2">
+                                <Badge variant="outline" className="border-slate-700 text-slate-400">10 ans d'expérience</Badge>
+                                <Badge variant="outline" className="border-slate-700 text-slate-400">Serial Entrepreneur</Badge>
+                                <Badge variant="outline" className="border-slate-700 text-slate-400">Vision Terrain</Badge>
+                            </div>
                         </div>
                     </div>
                 </div>
