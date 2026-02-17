@@ -1,10 +1,11 @@
 "use client";
 
+import { useState } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { PlayCircle, Users, Brain, Video, CheckCircle2 } from "lucide-react";
+import { PlayCircle, Users, Brain, Video, CheckCircle2, ChevronDown, Check } from "lucide-react";
 import { VictoryWall } from "@/components/dashboard/victory-wall";
 import { ChatBox } from "@/components/chat/chat-box";
 import { Button } from "@/components/ui/button";
@@ -13,6 +14,7 @@ import { MissionValidator } from "@/components/dashboard/mission-validator";
 import { BuddyHistory } from "./buddy-history";
 
 import { AICoachWidget } from "@/components/dashboard/ai-coach-widget";
+import { cn } from "@/lib/utils";
 
 interface CockpitProps {
     user: any;
@@ -26,6 +28,71 @@ interface CockpitProps {
     buddyMission?: any;
     buddyHistory?: any[];
 }
+
+const StepAccordion = ({ title, icon, groupSteps, colorClass }: any) => {
+    const [isOpen, setIsOpen] = useState(false);
+    // In a real implementation, 'isCompleted' would likely be derived from step status
+    // For now, we keep local state for UI behavior, but ideally this should sync with backend
+    const [isCompleted, setIsCompleted] = useState(false);
+
+    if (groupSteps.length === 0) return null;
+
+    // We assume the groupSteps might contain multiple items, we display all of them in the accordion
+    return (
+        <div className={`border rounded-xl bg-white shadow-sm transition-all duration-300 overflow-hidden ${isCompleted ? 'border-green-200 bg-green-50' : 'border-slate-200'}`}>
+            <div 
+                className="p-5 flex items-center justify-between cursor-pointer hover:bg-slate-50 transition-colors"
+                onClick={() => setIsOpen(!isOpen)}
+            >
+                <div className="flex items-center gap-4">
+                    <div className={`h-10 w-10 rounded-full flex items-center justify-center shrink-0 ${isCompleted ? 'bg-green-100 text-green-600' : 'bg-slate-100 text-slate-500'}`}>
+                        {isCompleted ? <Check className="h-5 w-5" /> : icon}
+                    </div>
+                    <div>
+                        <h4 className={`font-black text-sm uppercase tracking-wider ${isCompleted ? 'text-green-800' : colorClass}`}>
+                            {title}
+                        </h4>
+                        <p className="text-xs text-slate-500 font-medium mt-0.5">
+                            {isCompleted ? "Mission accomplie" : (isOpen ? "Masquer les détails" : "Découvrir la mission")}
+                        </p>
+                    </div>
+                </div>
+                <div className={`transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}>
+                    <ChevronDown className="h-5 w-5 text-slate-400" />
+                </div>
+            </div>
+
+            {isOpen && (
+                <div className="px-5 pb-5 pt-0 border-t border-slate-100 animate-in slide-in-from-top-2 duration-200">
+                    <div className="mt-4 space-y-4">
+                        {groupSteps.map((step: any) => (
+                             <div key={step.id} className="prose prose-sm max-w-none text-slate-600 leading-relaxed whitespace-pre-wrap">
+                                {step.content}
+                             </div>
+                        ))}
+                    </div>
+                    <div className="mt-6 pt-4 border-t border-slate-100 flex justify-end">
+                        <Button 
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setIsCompleted(!isCompleted);
+                                setIsOpen(false); 
+                            }}
+                            className={cn(
+                                "font-bold transition-all",
+                                isCompleted 
+                                    ? "bg-white text-green-600 border border-green-200 hover:bg-green-50" 
+                                    : "bg-slate-900 text-white hover:bg-slate-800"
+                            )}
+                        >
+                            {isCompleted ? "Marquer comme non fait" : "Valider cette étape"}
+                        </Button>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+};
 
 export function CockpitDashboard({ 
     user, 
@@ -58,28 +125,7 @@ export function CockpitDashboard({
   const eventSteps = steps?.filter((s: any) => s.category === 'event') || [];
 
   const renderStepGroup = (title: string, icon: any, groupSteps: any[], colorClass: string) => (
-    <div className={`border rounded-xl p-5 bg-white shadow-sm ${groupSteps.length === 0 ? 'opacity-60' : ''}`}>
-        <h4 className={`font-bold flex items-center gap-2 mb-4 text-xs uppercase tracking-widest ${colorClass}`}>
-            {icon} {title}
-        </h4>
-        {groupSteps.length === 0 ? (
-            <p className="text-sm text-slate-400 italic">Aucune tâche assignée.</p>
-        ) : (
-            <div className="space-y-3">
-                {groupSteps.map((step: any) => (
-                    <div key={step.id} className="flex items-start gap-3 group">
-                        <Checkbox id={`step-${step.id}`} className="mt-1 data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600 shrink-0" />
-                        <label
-                            htmlFor={`step-${step.id}`}
-                            className="text-sm font-medium leading-snug peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-slate-700 cursor-pointer group-hover:text-slate-900 transition-colors w-full"
-                        >
-                            <span className="block whitespace-pre-wrap leading-relaxed">{step.content}</span>
-                        </label>
-                    </div>
-                ))}
-            </div>
-        )}
-    </div>
+      <StepAccordion title={title} icon={icon} groupSteps={groupSteps} colorClass={colorClass} />
   );
 
   return (

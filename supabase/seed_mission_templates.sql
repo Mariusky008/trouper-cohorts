@@ -16,7 +16,7 @@ BEGIN
   INSERT INTO public.mission_step_templates (mission_template_id, content, position, category) VALUES
   (m_id, 'Regarder la vidéo de bienvenue et lire le Manifeste.', 1, 'intellectual'),
   (m_id, 'Poster une photo de ton espace de travail sur le groupe.', 2, 'creative'),
-  (m_id, 'Se présenter en vidéo (1min) sur WhatsApp.', 3, 'social');
+  (m_id, 'Le Pacte de Sang (Vidéo 60s) : Qui tu es + Ton Business + Ton Objectif. Termine par "Je m''engage". Pas de montage. Brut.', 3, 'social');
 
   -- J2 : AUDIT SANS CONCESSION
   INSERT INTO public.mission_templates (day_index, title, description, proof_type)
