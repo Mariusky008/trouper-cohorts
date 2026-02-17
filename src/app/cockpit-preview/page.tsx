@@ -220,10 +220,22 @@ export default function CockpitPreviewPage() {
     const StepAccordion = ({ title, icon, groupSteps, colorClass }: any) => {
         const [isOpen, setIsOpen] = useState(false);
         const [isCompleted, setIsCompleted] = useState(false);
+        const [proofInput, setProofInput] = useState("");
 
         if (groupSteps.length === 0) return null;
 
         const step = groupSteps[0]; // Assuming 1 main step per block as per new content
+
+        // Determine if proof is required based on title/content keywords for this demo
+        const isPhotoRequired = title.includes("Créatif");
+        const isTextOrLinkRequired = title.includes("Social") || title.includes("Événement") || title.includes("Intellectuel");
+
+        // Validation logic for demo
+        const canSubmit = isCompleted || (
+            (!isPhotoRequired && !isTextOrLinkRequired) || // No proof needed
+            (isTextOrLinkRequired && proofInput.length > 5) || // Text/Link needs content
+            (isPhotoRequired && proofInput === "uploaded") // Photo needs simulated upload
+        );
 
         return (
             <div className={`border rounded-xl bg-white shadow-sm transition-all duration-300 overflow-hidden ${isCompleted ? 'border-green-200 bg-green-50' : 'border-slate-200'}`}>
@@ -259,21 +271,34 @@ export default function CockpitPreviewPage() {
                             {title.includes("Créatif") && (
                                 <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
                                     <label className="text-xs font-bold text-slate-500 uppercase mb-2 block">Preuve requise : Photo</label>
-                                    <div className="border-2 border-dashed border-slate-300 rounded-lg p-4 text-center text-slate-400 text-sm cursor-pointer hover:bg-slate-100 hover:border-slate-400 transition-colors">
-                                        Cliquez pour uploader votre photo
+                                    <div 
+                                        className={`border-2 border-dashed rounded-lg p-4 text-center text-sm cursor-pointer transition-colors ${proofInput === "uploaded" ? "border-green-500 bg-green-50 text-green-700" : "border-slate-300 text-slate-400 hover:bg-slate-100 hover:border-slate-400"}`}
+                                        onClick={() => setProofInput("uploaded")}
+                                    >
+                                        {proofInput === "uploaded" ? "✅ Photo sélectionnée (IMG_2024.jpg)" : "Cliquez pour uploader votre photo"}
                                     </div>
                                 </div>
                             )}
                             {title.includes("Social") && (
                                 <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
                                     <label className="text-xs font-bold text-slate-500 uppercase mb-2 block">Preuve requise : Lien ou Texte</label>
-                                    <Input placeholder="Collez votre phrase de combat ici..." className="bg-white" />
+                                    <Input 
+                                        placeholder="Collez votre phrase de combat ici..." 
+                                        className="bg-white" 
+                                        onChange={(e) => setProofInput(e.target.value)}
+                                        value={proofInput}
+                                    />
                                 </div>
                             )}
                              {title.includes("Événement") && (
                                 <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
                                     <label className="text-xs font-bold text-slate-500 uppercase mb-2 block">Preuve requise : Lien Vidéo</label>
-                                    <Input placeholder="https://linkedin.com/posts/..." className="bg-white" />
+                                    <Input 
+                                        placeholder="https://linkedin.com/posts/..." 
+                                        className="bg-white" 
+                                        onChange={(e) => setProofInput(e.target.value)}
+                                        value={proofInput}
+                                    />
                                 </div>
                             )}
 
@@ -282,16 +307,17 @@ export default function CockpitPreviewPage() {
                                     onClick={(e) => {
                                         e.stopPropagation();
                                         setIsCompleted(!isCompleted);
-                                        setIsOpen(false); // Auto-close on complete for better UX
+                                        setIsOpen(false); 
                                     }}
+                                    disabled={!canSubmit}
                                     className={cn(
                                         "font-bold transition-all",
                                         isCompleted 
-                                            ? "bg-white text-green-600 border border-green-200 hover:bg-green-50" 
+                                            ? "bg-white text-green-600 border border-green-200 hover:bg-green-50 hidden" 
                                             : "bg-slate-900 text-white hover:bg-slate-800"
                                     )}
                                 >
-                                    {isCompleted ? "Marquer comme non fait" : "Envoyer la preuve & Valider"}
+                                    Envoyer la preuve & Valider
                                 </Button>
                             </div>
                         </div>

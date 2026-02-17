@@ -152,7 +152,10 @@ const StepAccordion = ({ step, icon, colorClass }: any) => {
                                     }}
                                     disabled={isSubmitting || (proofType !== 'none' && !proofContent && proofType !== 'image')}
                                     className={cn(
-                                        "font-bold transition-all bg-slate-900 text-white hover:bg-slate-800"
+                                        "font-bold transition-all",
+                                        isCompleted 
+                                            ? "hidden" // Hide button if already completed
+                                            : "bg-slate-900 text-white hover:bg-slate-800"
                                     )}
                                 >
                                     {isSubmitting ? "Validation..." : "Envoyer la preuve & Valider"}
