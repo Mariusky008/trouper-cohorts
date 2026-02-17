@@ -396,43 +396,67 @@ export function LandingEmploi() {
         </section>
 
         {/* SECTION 7: AUTORITÉ (JEAN-PHILIPPE) */}
-        <section className="py-24 bg-slate-900 text-white relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-96 h-96 bg-purple-600/20 rounded-full blur-[100px]"></div>
-            
-            <div className="container mx-auto px-4 max-w-5xl relative z-10">
-                <div className="grid md:grid-cols-[1fr_2fr] gap-12 items-center">
-                    <div className="relative">
-                         <div className="aspect-[3/4] rounded-2xl bg-slate-800 border border-slate-700 overflow-hidden relative shadow-2xl rotate-2 hover:rotate-0 transition-transform duration-500">
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img 
-                                src="/jeanphilipperoth.jpg" 
-                                alt="Jean-Philippe Roth" 
-                                className="absolute inset-0 w-full h-full object-cover"
-                            />
+        <section className="py-24 bg-white relative z-30">
+            <div className="container mx-auto px-4 max-w-5xl">
+                <div className="bg-slate-900 rounded-3xl p-8 md:p-12 text-white relative overflow-hidden">
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-purple-600/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
+                    <div className="grid md:grid-cols-[1fr_2fr] gap-8 md:gap-12 items-center relative z-10">
+                        <div className="relative">
+                            <div className="aspect-square rounded-2xl bg-slate-800 border border-slate-700 overflow-hidden relative grayscale hover:grayscale-0 transition-all duration-500">
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img 
+                                    src="/jeanphilipperoth.jpg" 
+                                    alt="Jean-Philippe Roth" 
+                                    className="absolute inset-0 w-full h-full object-cover"
+                                />
+                            </div>
+                            <div className="absolute -bottom-4 -right-4 bg-white text-slate-900 p-4 rounded-xl shadow-lg border border-slate-100 max-w-[180px]">
+                                <p className="text-xs font-bold leading-tight">&quot;L&apos;action bat toujours la réflexion.&quot;</p>
+                            </div>
+                        </div>
+                        <div className="space-y-8">
+                            <div>
+                                <Badge className="bg-purple-600 text-white border-0 mb-4 uppercase tracking-widest px-3 py-1 text-xs">Le Capitaine</Badge>
+                                <h3 className="text-3xl font-black uppercase italic mb-2">Qui est derrière Popey Academy ?</h3>
+                                <p className="text-slate-400 font-medium text-lg">Jean-Philippe, Entrepreneur & Mentor</p>
+                            </div>
+                            
+                            <div className="grid grid-cols-2 gap-6">
+                                <div>
+                                    <div className="text-3xl font-black text-white mb-1">10 ans</div>
+                                    <div className="text-xs font-bold text-slate-500 uppercase">d&apos;Entrepreneuriat</div>
+                                </div>
+                                <div>
+                                    <div className="text-3xl font-black text-white mb-1">450+</div>
+                                    <div className="text-xs font-bold text-slate-500 uppercase">Menttorés</div>
+                                </div>
+                                <div>
+                                    <div className="text-3xl font-black text-white mb-1">3</div>
+                                    <div className="text-xs font-bold text-slate-500 uppercase">Entreprises Créées</div>
+                                </div>
+                                <div>
+                                    <div className="text-3xl font-black text-white mb-1">2</div>
+                                    <div className="text-xs font-bold text-slate-500 uppercase">Exits (Reventes)</div>
+                                </div>
+                            </div>
+
+                            <div className="space-y-4 text-slate-300 leading-relaxed text-sm border-t border-slate-800 pt-6">
+                                <p>
+                                    J&apos;ai créé Popey Academy pour offrir ce que j&apos;aurais rêvé avoir à mes débuts : 
+                                    <strong className="text-white"> un environnement qui rend l&apos;échec impossible.</strong>
+                                </p>
+                                <p>
+                                    Ici, on ne vend pas de la formation vidéo que vous ne regarderez jamais. On vend du passage à l&apos;acte.
+                                </p>
+                            </div>
                         </div>
                     </div>
-                    <div className="space-y-8">
-                        <div>
-                            <Badge className="bg-purple-600 text-white border-0 mb-4 uppercase tracking-widest px-3 py-1 text-xs">Le Capitaine</Badge>
-                            <h2 className="text-4xl font-black uppercase italic mb-4">Jean-Philippe Roth</h2>
-                            <p className="text-xl text-slate-300 font-medium">&quot;J&apos;ai créé l&apos;école que j&apos;aurais voulu avoir quand j&apos;étais perdu.&quot;</p>
-                        </div>
-                        <div className="space-y-4 text-slate-400 leading-relaxed">
-                            <p>
-                                Entrepreneur depuis 15 ans, j&apos;ai connu les hauts vertigineux et les bas solitaires. 
-                                J&apos;ai compris une chose : <strong>l&apos;isolement est le seul véritable ennemi.</strong>
-                            </p>
-                            <p>
-                                Avec Popey Academy, je ne vous promets pas la facilité. Je vous promets un cadre, une méthode et une tribu 
-                                pour que vous ne soyez plus jamais seul face à vos décisions.
-                            </p>
-                        </div>
-                        <div className="pt-4">
-                            <a href="https://wa.me/33768223347" target="_blank" rel="noopener noreferrer" className={cn(buttonVariants({ variant: "outline" }), "border-slate-700 text-white hover:bg-slate-800 hover:text-white rounded-full px-8 py-6 uppercase tracking-widest font-bold w-auto inline-flex items-center justify-center")}>
-                                Discuter avec Jean-Philippe
-                            </a>
-                        </div>
-                    </div>
+                </div>
+
+                <div className="text-center mt-12">
+                    <a href="https://wa.me/33768223347" target="_blank" rel="noopener noreferrer" className={cn(buttonVariants({ size: "lg" }), "bg-slate-900 hover:bg-slate-800 text-white font-black uppercase tracking-widest px-10 py-4 h-auto text-lg rounded-full shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all w-auto inline-flex items-center justify-center whitespace-normal text-center leading-tight")}>
+                        Discuter avec Jean-Philippe
+                    </a>
                 </div>
             </div>
         </section>
