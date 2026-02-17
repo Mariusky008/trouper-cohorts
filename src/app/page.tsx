@@ -399,16 +399,14 @@ export default function Home() {
                         </div>
 
                         <div className="mt-8 pt-8 border-t border-slate-200 text-center">
-                             <a href="#quotidien" className={cn(buttonVariants({ variant: "ghost" }), "text-slate-500 hover:text-slate-900 hover:bg-slate-100 uppercase tracking-widest text-xs font-bold")}>
-                                Voir mon futur quotidien <ArrowRight className="ml-2 h-4 w-4" />
-                            </a>
+                             {/* CTA Removed */}
                         </div>
                     </div>
                 </div>
 
                 <div className="text-center mt-12">
-                    <a href="#quotidien" className={cn(buttonVariants({ size: "lg" }), "bg-slate-900 hover:bg-slate-800 text-white font-black uppercase tracking-widest px-10 py-4 h-auto text-lg rounded-full shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all w-auto inline-flex items-center justify-center")}>
-                        Voir mon futur quotidien
+                    <a href="#join" className={cn(buttonVariants({ size: "lg" }), "bg-slate-900 hover:bg-slate-800 text-white font-black uppercase tracking-widest px-10 py-4 h-auto text-lg rounded-full shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all w-auto inline-flex items-center justify-center")}>
+                        Je réserve ma place
                     </a>
                 </div>
             </div>
@@ -825,7 +823,7 @@ export default function Home() {
                 </div>
 
                 <div className="text-center mt-12">
-                    <a href="https://wa.me/33768233347" target="_blank" rel="noopener noreferrer" className={cn(buttonVariants({ size: "lg" }), "bg-slate-900 hover:bg-slate-800 text-white font-black uppercase tracking-widest px-10 py-4 h-auto text-lg rounded-full shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all w-auto inline-flex items-center justify-center")}>
+                    <a href="https://wa.me/33768233347" target="_blank" rel="noopener noreferrer" className={cn(buttonVariants({ size: "lg" }), "bg-slate-900 hover:bg-slate-800 text-white font-black uppercase tracking-widest px-10 py-4 h-auto text-lg rounded-full shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all w-auto inline-flex items-center justify-center whitespace-normal text-center leading-tight")}>
                         Discuter avec Jean-Philippe sur WhatsApp
                     </a>
                 </div>
@@ -927,7 +925,7 @@ export default function Home() {
                 </div>
 
                 <div className="text-center mt-12">
-                    <a href="#join" className={cn(buttonVariants({ size: "lg" }), "bg-orange-600 hover:bg-orange-500 text-white font-black uppercase tracking-widest px-10 py-4 h-auto text-lg rounded-full shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all w-auto inline-flex items-center justify-center")}>
+                    <a href="#join" className={cn(buttonVariants({ size: "lg" }), "bg-orange-600 hover:bg-orange-500 text-white font-black uppercase tracking-widest px-10 py-4 h-auto text-lg rounded-full shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all w-auto inline-flex items-center justify-center whitespace-normal text-center leading-tight")}>
                         Je rejoins l'économie d'entraide
                     </a>
                 </div>
