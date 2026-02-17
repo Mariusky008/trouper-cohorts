@@ -24,6 +24,7 @@ interface Step {
     content: string;
     category: string;
     position: number;
+    proof_type?: string;
 }
 
 export function MissionTemplateEditor({ template, steps }: { template: Template, steps: Step[] }) {
@@ -42,7 +43,7 @@ export function MissionTemplateEditor({ template, steps }: { template: Template,
     };
 
     const addStep = () => {
-        setCurrentSteps([...currentSteps, { content: "", category: "intellectual", position: currentSteps.length + 1 }]);
+        setCurrentSteps([...currentSteps, { content: "", category: "intellectual", position: currentSteps.length + 1, proof_type: "none" }]);
     };
 
     const removeStep = (index: number) => {
@@ -155,7 +156,23 @@ export function MissionTemplateEditor({ template, steps }: { template: Template,
                                         </SelectContent>
                                     </Select>
                                 </div>
-                                <div className="md:col-span-3">
+                                <div className="md:col-span-1">
+                                    <Label>Type de Preuve</Label>
+                                    <Select 
+                                        value={step.proof_type || 'none'} 
+                                        onValueChange={(val) => handleStepChange(index, "proof_type", val)}
+                                    >
+                                        <SelectTrigger className="bg-white"><SelectValue placeholder="Aucune" /></SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="none">Aucune</SelectItem>
+                                            <SelectItem value="text">Texte / Réflexion</SelectItem>
+                                            <SelectItem value="link">Lien (URL)</SelectItem>
+                                            <SelectItem value="image">Photo / Image</SelectItem>
+                                            <SelectItem value="video_link">Lien Vidéo</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="md:col-span-2">
                                     <Label>Contenu (Markdown supporté)</Label>
                                     <Textarea 
                                         value={step.content} 

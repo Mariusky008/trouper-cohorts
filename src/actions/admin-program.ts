@@ -42,7 +42,8 @@ export async function updateMissionTemplate(templateId: string, data: {
             mission_template_id: templateId,
             content: s.content,
             category: s.category || 'intellectual',
-            position: i + 1 // On force la position séquentielle
+            position: i + 1, // On force la position séquentielle
+            proof_type: s.proof_type || 'none'
         }));
 
         const { error: sError } = await supabase.from("mission_step_templates").insert(stepsToInsert);
