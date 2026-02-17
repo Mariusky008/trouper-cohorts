@@ -36,6 +36,7 @@ const StepAccordion = ({ step, icon, colorClass }: any) => {
     const [isCompleted, setIsCompleted] = useState(step.status === 'validated' || step.status === 'submitted');
     const [proofContent, setProofContent] = useState(step.proof_content || "");
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [uploading, setUploading] = useState(false);
     const supabase = createClient();
 
     // Determine title based on category if not provided in step
@@ -51,6 +52,36 @@ const StepAccordion = ({ step, icon, colorClass }: any) => {
 
     const title = getCategoryTitle(step.category);
     const proofType = step.proof_type || 'none';
+
+    const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        try {
+            setUploading(true);
+            const file = event.target.files?.[0];
+            if (!file) return;
+
+            const fileExt = file.name.split('.').pop();
+            const fileName = `${step.id}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+            const filePath = `${(await supabase.auth.getUser()).data.user?.id}/${fileName}`;
+
+            const { error: uploadError } = await supabase.storage
+                .from('mission-proofs')
+                .upload(filePath, file);
+
+            if (uploadError) throw uploadError;
+
+            // Get public URL
+            const { data: { publicUrl } } = supabase.storage
+                .from('mission-proofs')
+                .getPublicUrl(filePath);
+
+            setProofContent(publicUrl);
+        } catch (error: any) {
+            console.error('Error uploading file:', error);
+            alert('Erreur lors de l\'upload : ' + error.message);
+        } finally {
+            setUploading(false);
+        }
+    };
 
     const handleValidate = async () => {
         setIsSubmitting(true);
@@ -138,9 +169,34 @@ const StepAccordion = ({ step, icon, colorClass }: any) => {
                             {proofType === 'image' && (
                                 <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
                                     <label className="text-xs font-bold text-slate-500 uppercase mb-2 block">Photo requise</label>
-                                    <div className="border-2 border-dashed border-slate-300 rounded-lg p-4 text-center text-slate-400 text-sm cursor-pointer hover:bg-slate-100 hover:border-slate-400 transition-colors">
-                                        Cliquez pour uploader (Simulation pour l'instant)
-                                    </div>
+                                    
+                                    {proofContent ? (
+                                        <div className="relative aspect-video w-full rounded-lg overflow-hidden border-2 border-slate-200 bg-slate-100 mb-2">
+                                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                                            <img src={proofContent} alt="Preuve" className="object-cover w-full h-full" />
+                                            <Button 
+                                                variant="destructive" 
+                                                size="sm" 
+                                                className="absolute top-2 right-2 h-8 w-8 p-0 rounded-full"
+                                                onClick={() => setProofContent("")}
+                                            >
+                                                <ChevronDown className="h-4 w-4 rotate-45" /> {/* Using Chevron as X cross mock */}
+                                            </Button>
+                                        </div>
+                                    ) : (
+                                        <div className="relative">
+                                            <input 
+                                                type="file" 
+                                                accept="image/*"
+                                                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                                                onChange={handleFileUpload}
+                                                disabled={uploading}
+                                            />
+                                            <div className="border-2 border-dashed border-slate-300 rounded-lg p-4 text-center text-slate-400 text-sm hover:bg-slate-100 hover:border-slate-400 transition-colors">
+                                                {uploading ? "Upload en cours..." : "Cliquez ou glissez une photo ici"}
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             )}
 
