@@ -13,10 +13,29 @@ BEGIN
   INSERT INTO public.mission_templates (day_index, title, description, proof_type, video_url)
   VALUES (1, 'J1 : LE GRAND SAUT', 'Bienvenue dans l''aventure. On pose les bases.', 'link', 'https://www.youtube.com/watch?v=dQw4w9WgXcQ')
   RETURNING id INTO m_id;
-  INSERT INTO public.mission_step_templates (mission_template_id, content, position, category) VALUES
-  (m_id, 'Regarder la vidéo de bienvenue et lire le Manifeste.', 1, 'intellectual'),
-  (m_id, 'Poster une photo de ton espace de travail sur le groupe.', 2, 'creative'),
-  (m_id, 'Le Pacte de Sang (Vidéo 60s) : Qui tu es + Ton Business + Ton Objectif. Termine par "Je m''engage". Pas de montage. Brut.', 3, 'social');
+  
+  -- J1 : LE GRAND SAUT (Intellectuel)
+  INSERT INTO public.mission_step_templates (mission_template_id, content, position, category, proof_type) VALUES
+  (m_id, 'Regarder la vidéo de bienvenue et lire le Manifeste.', 1, 'intellectual', 'none'),
+  (m_id, 'Contact (dans le chat) ton binôme et présentez-vous (qui vous êtes, ce que vous faites et votre objectif principale) et envoyez-vous la video que vous aurez faite (de l''objectif 3) dans le but de savoir ce qu''il en pense).', 2, 'intellectual', 'text'),
+  (m_id, 'Prends 30 secondes pour intégrer les règles fondamentales : Action > Réflexion, Bienveillance, Transparence.', 3, 'intellectual', 'none');
+
+  -- J1 : LE GRAND SAUT (Créatif)
+  INSERT INTO public.mission_step_templates (mission_template_id, content, position, category, proof_type) VALUES
+  (m_id, 'Choisis ton lieu de travail principal (Bureau, Cuisine, Café...)', 4, 'creative', 'none'),
+  (m_id, 'Prends UNE photo simple de ton QG (Sans mise en scène, authentique).', 5, 'creative', 'image'),
+  (m_id, 'Poste la photo dans le groupe Popey (canal “Cohorte / QG”) avec la trame texte fournie.', 6, 'creative', 'link');
+
+  -- J1 : LE GRAND SAUT (Social)
+  INSERT INTO public.mission_step_templates (mission_template_id, content, position, category, proof_type) VALUES
+  (m_id, 'Exercice : Ton "Ennemi" Public N°1. Trouve ta cible (La Bête Noire) et ton arme (L''Antidote).', 7, 'social', 'text'),
+  (m_id, 'L''Action Immédiate : Poste sur le groupe ta "Phrase de Combat".', 8, 'social', 'link');
+
+  -- J1 : LE GRAND SAUT (Event)
+  INSERT INTO public.mission_step_templates (mission_template_id, content, position, category, proof_type) VALUES
+  (m_id, 'Enregistre une vidéo brute (1min30 max) : Qui tu es + Ton métier + Ton Objectif N°1.', 9, 'event', 'video_link'),
+  (m_id, 'Poste sur ton réseau principal + LinkedIn (#Popey.Academy).', 10, 'event', 'link');
+
 
   -- J2 : AUDIT SANS CONCESSION
   INSERT INTO public.mission_templates (day_index, title, description, proof_type)

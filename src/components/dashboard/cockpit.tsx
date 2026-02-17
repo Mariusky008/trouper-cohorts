@@ -9,12 +9,14 @@ import { PlayCircle, Users, Brain, Video, CheckCircle2, ChevronDown, Check } fro
 import { VictoryWall } from "@/components/dashboard/victory-wall";
 import { ChatBox } from "@/components/chat/chat-box";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { GoldenTicket } from "@/components/dashboard/golden-ticket";
 import { MissionValidator } from "@/components/dashboard/mission-validator";
 import { BuddyHistory } from "./buddy-history";
-
 import { AICoachWidget } from "@/components/dashboard/ai-coach-widget";
 import { cn } from "@/lib/utils";
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+
 
 interface CockpitProps {
     user: any;
@@ -29,15 +31,52 @@ interface CockpitProps {
     buddyHistory?: any[];
 }
 
-const StepAccordion = ({ title, icon, groupSteps, colorClass }: any) => {
+const StepAccordion = ({ step, icon, colorClass }: any) => {
     const [isOpen, setIsOpen] = useState(false);
-    // In a real implementation, 'isCompleted' would likely be derived from step status
-    // For now, we keep local state for UI behavior, but ideally this should sync with backend
-    const [isCompleted, setIsCompleted] = useState(false);
+    const [isCompleted, setIsCompleted] = useState(step.status === 'validated' || step.status === 'submitted');
+    const [proofContent, setProofContent] = useState(step.proof_content || "");
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const supabase = createClientComponentClient();
 
-    if (groupSteps.length === 0) return null;
+    // Determine title based on category if not provided in step
+    const getCategoryTitle = (cat: string) => {
+        switch(cat) {
+            case 'intellectual': return "Intellectuel & Admin";
+            case 'creative': return "Créatif & Contenu";
+            case 'social': return "Social & Live";
+            case 'event': return "Événement (Live/Atelier)";
+            default: return "Mission";
+        }
+    };
 
-    // We assume the groupSteps might contain multiple items, we display all of them in the accordion
+    const title = getCategoryTitle(step.category);
+    const proofType = step.proof_type || 'none';
+
+    const handleValidate = async () => {
+        setIsSubmitting(true);
+        try {
+            // Update step status and proof
+            const { error } = await supabase
+                .from('mission_steps')
+                .update({ 
+                    status: 'validated',
+                    proof_content: proofContent,
+                    // If proof_type is 'none', we might not need content, but saving empty string is fine
+                })
+                .eq('id', step.id);
+
+            if (error) throw error;
+
+            setIsCompleted(true);
+            setIsOpen(false);
+        } catch (error) {
+            console.error("Error validating step:", error);
+            alert("Erreur lors de la validation. Réessayez.");
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
     return (
         <div className={`border rounded-xl bg-white shadow-sm transition-all duration-300 overflow-hidden ${isCompleted ? 'border-green-200 bg-green-50' : 'border-slate-200'}`}>
             <div 
@@ -64,30 +103,69 @@ const StepAccordion = ({ title, icon, groupSteps, colorClass }: any) => {
 
             {isOpen && (
                 <div className="px-5 pb-5 pt-0 border-t border-slate-100 animate-in slide-in-from-top-2 duration-200">
-                    <div className="mt-4 space-y-4">
-                        {groupSteps.map((step: any) => (
-                             <div key={step.id} className="prose prose-sm max-w-none text-slate-600 leading-relaxed whitespace-pre-wrap">
-                                {step.content}
-                             </div>
-                        ))}
+                    <div className="mt-4 prose prose-sm max-w-none text-slate-600 leading-relaxed whitespace-pre-wrap">
+                        {step.content}
                     </div>
-                    <div className="mt-6 pt-4 border-t border-slate-100 flex justify-end">
-                        <Button 
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                setIsCompleted(!isCompleted);
-                                setIsOpen(false); 
-                            }}
-                            className={cn(
-                                "font-bold transition-all",
-                                isCompleted 
-                                    ? "bg-white text-green-600 border border-green-200 hover:bg-green-50" 
-                                    : "bg-slate-900 text-white hover:bg-slate-800"
+                    
+                    {!isCompleted && (
+                        <div className="mt-6 pt-4 border-t border-slate-100 space-y-4">
+                            
+                            {/* CHAMPS DE PREUVE */}
+                            {proofType === 'text' && (
+                                <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
+                                    <label className="text-xs font-bold text-slate-500 uppercase mb-2 block">Votre Réponse / Réflexion</label>
+                                    <Input 
+                                        placeholder="Écrivez votre réponse ici..." 
+                                        className="bg-white"
+                                        value={proofContent}
+                                        onChange={(e) => setProofContent(e.target.value)}
+                                    />
+                                </div>
                             )}
-                        >
-                            {isCompleted ? "Marquer comme non fait" : "Valider cette étape"}
-                        </Button>
-                    </div>
+
+                            {(proofType === 'link' || proofType === 'video_link') && (
+                                <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
+                                    <label className="text-xs font-bold text-slate-500 uppercase mb-2 block">Lien de la preuve (Post, Vidéo...)</label>
+                                    <Input 
+                                        placeholder="https://..." 
+                                        className="bg-white"
+                                        value={proofContent}
+                                        onChange={(e) => setProofContent(e.target.value)}
+                                    />
+                                </div>
+                            )}
+
+                            {proofType === 'image' && (
+                                <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
+                                    <label className="text-xs font-bold text-slate-500 uppercase mb-2 block">Photo requise</label>
+                                    <div className="border-2 border-dashed border-slate-300 rounded-lg p-4 text-center text-slate-400 text-sm cursor-pointer hover:bg-slate-100 hover:border-slate-400 transition-colors">
+                                        Cliquez pour uploader (Simulation pour l'instant)
+                                    </div>
+                                </div>
+                            )}
+
+                            <div className="flex justify-end">
+                                <Button 
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleValidate();
+                                    }}
+                                    disabled={isSubmitting || (proofType !== 'none' && !proofContent && proofType !== 'image')}
+                                    className={cn(
+                                        "font-bold transition-all bg-slate-900 text-white hover:bg-slate-800"
+                                    )}
+                                >
+                                    {isSubmitting ? "Validation..." : "Envoyer la preuve & Valider"}
+                                </Button>
+                            </div>
+                        </div>
+                    )}
+
+                    {isCompleted && (
+                        <div className="mt-4 p-3 bg-green-50 text-green-800 text-xs font-bold rounded flex items-center gap-2">
+                            <Check className="h-4 w-4" /> Étape validée le {new Date().toLocaleDateString()}
+                        </div>
+                    )}
                 </div>
             )}
         </div>
@@ -118,15 +196,13 @@ export function CockpitDashboard({
 
   const progress = (dayIndex / 15) * 100;
 
-  // Groupement des étapes par pilier (Trépied) + 4ème pilier Event
+  // Flatten steps because StepAccordion now handles single step logic
+  // We filter to ensure we pass the right step to the right section
+  // Assuming 1 step per category for simplicity in this new design, or map all of them
   const intellectualSteps = steps?.filter((s: any) => s.category === 'intellectual' || !s.category) || [];
   const creativeSteps = steps?.filter((s: any) => s.category === 'creative') || [];
   const socialSteps = steps?.filter((s: any) => s.category === 'social') || [];
   const eventSteps = steps?.filter((s: any) => s.category === 'event') || [];
-
-  const renderStepGroup = (title: string, icon: any, groupSteps: any[], colorClass: string) => (
-      <StepAccordion title={title} icon={icon} groupSteps={groupSteps} colorClass={colorClass} />
-  );
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -210,23 +286,19 @@ export function CockpitDashboard({
                         )}
 
                         <div className="grid gap-4 md:grid-cols-1">
-                            {renderStepGroup("Intellectuel & Admin", <Brain className="h-4 w-4" />, intellectualSteps, "text-blue-600")}
-                            {renderStepGroup("Créatif & Contenu", <Video className="h-4 w-4" />, creativeSteps, "text-purple-600")}
-                            {renderStepGroup("Social & Live", <Users className="h-4 w-4" />, socialSteps, "text-orange-600")}
-                            {renderStepGroup("Événement (Live/Atelier)", <CheckCircle2 className="h-4 w-4" />, eventSteps, "text-red-600")}
+                            {intellectualSteps.map((step: any) => (
+                                <StepAccordion key={step.id} step={step} icon={<Brain className="h-4 w-4" />} colorClass="text-blue-600" />
+                            ))}
+                            {creativeSteps.map((step: any) => (
+                                <StepAccordion key={step.id} step={step} icon={<Video className="h-4 w-4" />} colorClass="text-purple-600" />
+                            ))}
+                            {socialSteps.map((step: any) => (
+                                <StepAccordion key={step.id} step={step} icon={<Users className="h-4 w-4" />} colorClass="text-orange-600" />
+                            ))}
+                            {eventSteps.map((step: any) => (
+                                <StepAccordion key={step.id} step={step} icon={<CheckCircle2 className="h-4 w-4" />} colorClass="text-red-600" />
+                            ))}
                         </div>
-
-                        {/* VALIDATION DE MA MISSION */}
-                        {mission && (
-                            <MissionValidator 
-                                missionId={mission.id} 
-                                validationType={mission.validation_type || 'self'} 
-                                status={mission.status || 'pending'} 
-                                isMyMission={true}
-                                buddyName={currentBuddy.first_name}
-                                duoInstructions={mission.duo_instructions}
-                            />
-                        )}
 
                     </CardContent>
                 </Card>

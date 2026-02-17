@@ -254,22 +254,46 @@ export default function CockpitPreviewPage() {
                         <div className="mt-4 prose prose-sm max-w-none text-slate-600 leading-relaxed whitespace-pre-wrap">
                             {step.content}
                         </div>
-                        <div className="mt-6 pt-4 border-t border-slate-100 flex justify-end">
-                            <Button 
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    setIsCompleted(!isCompleted);
-                                    setIsOpen(false); // Auto-close on complete for better UX
-                                }}
-                                className={cn(
-                                    "font-bold transition-all",
-                                    isCompleted 
-                                        ? "bg-white text-green-600 border border-green-200 hover:bg-green-50" 
-                                        : "bg-slate-900 text-white hover:bg-slate-800"
-                                )}
-                            >
-                                {isCompleted ? "Marquer comme non fait" : "Valider cette étape"}
-                            </Button>
+                        <div className="mt-6 pt-4 border-t border-slate-100 space-y-4">
+                            {/* PREUVE (SIMULATION) */}
+                            {title.includes("Créatif") && (
+                                <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
+                                    <label className="text-xs font-bold text-slate-500 uppercase mb-2 block">Preuve requise : Photo</label>
+                                    <div className="border-2 border-dashed border-slate-300 rounded-lg p-4 text-center text-slate-400 text-sm cursor-pointer hover:bg-slate-100 hover:border-slate-400 transition-colors">
+                                        Cliquez pour uploader votre photo
+                                    </div>
+                                </div>
+                            )}
+                            {title.includes("Social") && (
+                                <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
+                                    <label className="text-xs font-bold text-slate-500 uppercase mb-2 block">Preuve requise : Lien ou Texte</label>
+                                    <Input placeholder="Collez votre phrase de combat ici..." className="bg-white" />
+                                </div>
+                            )}
+                             {title.includes("Événement") && (
+                                <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
+                                    <label className="text-xs font-bold text-slate-500 uppercase mb-2 block">Preuve requise : Lien Vidéo</label>
+                                    <Input placeholder="https://linkedin.com/posts/..." className="bg-white" />
+                                </div>
+                            )}
+
+                            <div className="flex justify-end">
+                                <Button 
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setIsCompleted(!isCompleted);
+                                        setIsOpen(false); // Auto-close on complete for better UX
+                                    }}
+                                    className={cn(
+                                        "font-bold transition-all",
+                                        isCompleted 
+                                            ? "bg-white text-green-600 border border-green-200 hover:bg-green-50" 
+                                            : "bg-slate-900 text-white hover:bg-slate-800"
+                                    )}
+                                >
+                                    {isCompleted ? "Marquer comme non fait" : "Envoyer la preuve & Valider"}
+                                </Button>
+                            </div>
                         </div>
                     </div>
                 )}
