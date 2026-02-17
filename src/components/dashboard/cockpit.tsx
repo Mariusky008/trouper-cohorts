@@ -15,7 +15,7 @@ import { MissionValidator } from "@/components/dashboard/mission-validator";
 import { BuddyHistory } from "./buddy-history";
 import { AICoachWidget } from "@/components/dashboard/ai-coach-widget";
 import { cn } from "@/lib/utils";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { createClient } from "@/lib/supabase/client";
 
 
 interface CockpitProps {
@@ -36,7 +36,7 @@ const StepAccordion = ({ step, icon, colorClass }: any) => {
     const [isCompleted, setIsCompleted] = useState(step.status === 'validated' || step.status === 'submitted');
     const [proofContent, setProofContent] = useState(step.proof_content || "");
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const supabase = createClientComponentClient();
+    const supabase = createClient();
 
     // Determine title based on category if not provided in step
     const getCategoryTitle = (cat: string) => {
