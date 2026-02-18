@@ -175,24 +175,140 @@ export default function AlliancePage() {
                         </h2>
                     </FadeIn>
                     
-                    <div className="grid md:grid-cols-3 gap-8 text-left">
-                        {[
-                            { title: "Un problème administratif ?", desc: "Quelqu’un peut t’aider." },
-                            { title: "Un besoin professionnel ?", desc: "Quelqu’un connaît quelqu’un." },
-                            { title: "Un moment difficile ?", desc: "Quelqu’un est là." },
-                        ].map((item, i) => (
-                            <FadeIn key={i} delay={0.2 + (i * 0.1)} className="bg-[#0a0a0a] border border-white/10 p-8 rounded-3xl">
-                                <h3 className="text-xl font-bold text-white mb-2">{item.title}</h3>
-                                <p className="text-slate-400">{item.desc}</p>
-                            </FadeIn>
-                        ))}
-                    </div>
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {[
+                        { 
+                            title: "Problème logement", 
+                            icon: Users, 
+                            desc: "Marie cherche un appartement depuis 3 mois. Elle en parle à son Alliance. Deux jours plus tard, un membre connaît un propriétaire fiable. Visite organisée, bail signé.",
+                            dette: "Marie partage un contact déménagement."
+                        },
+                        { 
+                            title: "Lancement activité", 
+                            icon: Zap, 
+                            desc: "Thomas ne connaît personne. Son Alliance diffuse son projet. Résultat : 3 rendez-vous, 2 clients en un mois. Il n'aurait jamais eu ces contacts seul.",
+                            dette: "Thomas aide sur un site web."
+                        },
+                        { 
+                            title: "Soutien personnel", 
+                            icon: Heart, 
+                            desc: "Sophie traverse une rupture et se sent isolée. Son Alliance l’accompagne, l'écoute et lui change les idées. Elle ne reste pas seule.",
+                            dette: "Sophie conseille sur la gestion du stress."
+                        },
+                        { 
+                            title: "Blocage administratif", 
+                            icon: Shield, 
+                            desc: "Karim doit gérer un dossier compliqué. Un membre de l’Alliance travaille dans le domaine. Un appel de 30 minutes et la situation est débloquée.",
+                            dette: "Karim partage un modèle de document."
+                        },
+                        { 
+                            title: "Compétences croisées", 
+                            icon: Star, 
+                            desc: "Julie aide un membre pour son CV. En retour, quelqu’un l’aide pour ses finances. Tout le monde avance grâce aux forces des autres.",
+                            dette: "Julie aide sur la relecture."
+                        },
+                        { 
+                            title: "Besoin Service", 
+                            icon: CheckCircle2, 
+                            desc: "Antoine a besoin d’un coach sportif. Un membre le met en contact avec un coach de confiance testé et approuvé par le réseau.",
+                            dette: "Antoine aide sur un budget personnel."
+                        },
+                        { 
+                            title: "Apprentissage", 
+                            icon: Globe, 
+                            desc: "Laura veut apprendre à coder. Un membre développeur lui propose 2 sessions pratiques pour démarrer sur de bonnes bases.",
+                            dette: "Laura donne 1h de cours de langue."
+                        },
+                        { 
+                            title: "Motivation", 
+                            icon: Heart, 
+                            desc: "Marc traverse une période de découragement. Son Alliance le soutient, suit son progrès et ne le laisse pas lâcher.",
+                            dette: "Marc motive un projet entrepreneurial."
+                        },
+                        { 
+                            title: "Coup de main", 
+                            icon: Users, 
+                            desc: "Emma doit transporter des meubles lourds. Deux membres proches viennent l'aider le week-end. L'entraide est aussi physique.",
+                            dette: "Emma aide sur un événement."
+                        },
+                        { 
+                            title: "Partenariats", 
+                            icon: Zap, 
+                            desc: "Paul cherche des partenaires pour son projet. L’Alliance identifie 3 membres pertinents qui peuvent l’aider à avancer.",
+                            dette: "Paul conseille sur le commerce."
+                        }
+                    ].map((card, i) => (
+                        <FadeIn key={i} delay={i * 0.05} className="group bg-[#050505] border border-slate-800 p-8 rounded-2xl hover:border-slate-600 transition-all hover:-translate-y-1 flex flex-col">
+                            <div className="h-12 w-12 bg-slate-900 rounded-full flex items-center justify-center mb-6 border border-slate-800 group-hover:border-slate-600 transition-colors shrink-0">
+                                <card.icon className="h-6 w-6 text-slate-400 group-hover:text-white transition-colors" />
+                            </div>
+                            <h3 className="text-xl font-bold text-white mb-4">{card.title}</h3>
+                            <p className="text-slate-400 text-sm leading-relaxed mb-6 border-b border-slate-800 pb-6 flex-grow">
+                                {card.desc}
+                            </p>
+                            <div className="text-xs font-bold text-blue-400 uppercase tracking-wide flex items-start gap-2">
+                                <span className="shrink-0 text-slate-500">Dette :</span> {card.dette}
+                            </div>
+                        </FadeIn>
+                    ))}
+                </div>
 
-                    <FadeIn delay={0.5}>
-                        <p className="text-xl text-slate-300 font-light">
-                            Dans un monde incertain, le réseau humain reste la ressource la plus fiable.
+                {/* BLOC DETTE DE SERVICE */}
+                <FadeIn className="mt-24 max-w-4xl mx-auto bg-gradient-to-br from-slate-900 to-black border border-slate-800 p-8 md:p-12 rounded-3xl relative overflow-hidden">
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
+                    
+                    <div className="relative z-10 text-center space-y-8">
+                        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 font-bold uppercase tracking-widest text-xs mb-2">
+                            <Lock className="h-3 w-3" /> Règle d'Or
+                        </div>
+                        
+                        <h3 className="text-3xl md:text-4xl font-black text-white uppercase italic">
+                            Comment fonctionne l’entraide ?
+                        </h3>
+                        
+                        <div className="grid md:grid-cols-2 gap-8 text-left bg-black/20 p-6 rounded-2xl border border-white/5">
+                            <div>
+                                <h4 className="font-bold text-white mb-2 flex items-center gap-2">
+                                    <Zap className="h-4 w-4 text-orange-500" /> La Dette de Service
+                                </h4>
+                                <p className="text-slate-400 text-sm leading-relaxed">
+                                    Chaque membre s’engage à respecter cette règle simple : <br/>
+                                    <strong className="text-white">1 service reçu = 1 service rendu.</strong> <br/>
+                                    Cela garantit l'équilibre et la pérennité du groupe.
+                                </p>
+                            </div>
+                            <div>
+                                <h4 className="font-bold text-white mb-2 flex items-center gap-2">
+                                    <Heart className="h-4 w-4 text-red-500" /> Nature des services
+                                </h4>
+                                <p className="text-slate-400 text-sm leading-relaxed">
+                                    Tout compte : un conseil, un contact, un avis, un coup de main physique, une compétence partagée. <br/>
+                                    Chacun a quelque chose à offrir.
+                                </p>
+                            </div>
+                        </div>
+
+                        <p className="text-xl md:text-2xl font-black text-white italic max-w-2xl mx-auto pt-4">
+                            "Donner quand on peut, <br/>recevoir quand on en a besoin."
                         </p>
-                    </FadeIn>
+                    </div>
+                </FadeIn>
+
+                <FadeIn className="text-center mt-20 max-w-3xl mx-auto space-y-10">
+                    <h3 className="text-2xl md:text-4xl font-black text-white uppercase italic leading-tight">
+                        Chaque service que vous rendez génère un service en retour. <br/>
+                        <span className="text-blue-500">Multipliez cela par 24 personnes.</span>
+                    </h3>
+                    
+                    <div className="flex flex-col items-center gap-4">
+                        <Button className="h-16 px-10 rounded-full bg-white text-black hover:bg-slate-200 font-black text-xl uppercase tracking-wider shadow-[0_0_30px_rgba(255,255,255,0.2)] hover:shadow-[0_0_50px_rgba(255,255,255,0.4)] transition-all transform hover:scale-105">
+                            Rejoindre une Alliance
+                        </Button>
+                        <p className="text-slate-500 text-xs font-medium uppercase tracking-widest">
+                            Découvrez comment votre réseau peut transformer votre quotidien.
+                        </p>
+                    </div>
+                </FadeIn>
                 </div>
             </Section>
 
