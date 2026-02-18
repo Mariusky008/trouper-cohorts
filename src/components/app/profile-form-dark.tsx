@@ -105,12 +105,12 @@ export function ProfileFormDark({ initialData }: { initialData: ProfileData }) {
                     {initialData.display_name?.substring(0, 2).toUpperCase() || "??"}
                 </AvatarFallback>
             </Avatar>
-            <label 
-                htmlFor="avatar-upload" 
+            <div 
                 className="absolute bottom-1 right-1 p-2.5 bg-blue-600 text-white rounded-full cursor-pointer hover:bg-blue-500 transition-all shadow-lg hover:scale-110 border-4 border-[#0a0f1c]"
+                onClick={() => document.getElementById('avatar-upload')?.click()}
             >
                 {uploading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Camera className="h-5 w-5" />}
-            </label>
+            </div>
             <input 
                 id="avatar-upload" 
                 type="file" 

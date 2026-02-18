@@ -26,6 +26,7 @@ export async function updateProfile(formData: FormData) {
       website_url: website || null,
   };
 
+  // Only update avatar if explicitly provided (to avoid overwriting with empty string if not changed)
   if (typeof avatarUrl === "string" && avatarUrl.length > 0) {
       updates.avatar_url = avatarUrl;
   }
