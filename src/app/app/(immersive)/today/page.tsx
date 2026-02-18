@@ -20,6 +20,7 @@ export default async function TodayPage({
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const supabase = await createClient();
+  const sp = await searchParams;
   
   const {
     data: { user },
@@ -93,18 +94,44 @@ export default async function TodayPage({
 
   if (!cohortRes.data) return <div>Cohorte introuvable</div>;
 
-  const dayIndex = computeDayIndex(cohortRes.data.start_date);
+  const computedDay = computeDayIndex(cohortRes.data.start_date) || 0;
+  const requestedDay = sp?.day ? parseInt(Array.isArray(sp.day) ? sp.day[0] : sp.day) : null;
+
+  // On détermine le jour à afficher
+  let dayIndex = computedDay;
+
+  if (requestedDay && requestedDay > 0 && requestedDay <= 15) {
+      // On peut voir les jours passés. Pour les jours futurs, on bloque sauf si la cohorte est finie.
+      // (Ou si on est admin/debug, mais on reste strict pour l'instant)
+      if (requestedDay <= computedDay || computedDay > 15) {
+          dayIndex = requestedDay;
+      }
+  }
 
   // Cas particuliers (Avant / Après cohorte)
-  if (!dayIndex) {
-      return <div className="p-10 text-center">Date de démarrage non définie.</div>;
+  if (dayIndex === computedDay) {
+      if (computedDay < 1) {
+          return <div className="p-10 text-center">J-{Math.abs(computedDay) + 1} avant le lancement !</div>;
+      }
+      if (computedDay > 15 && !requestedDay) {
+          // Si c'est fini et qu'on n'a pas demandé un jour spécifique, on peut rediriger ou afficher un message
+          // Pour l'instant on affiche un message
+          return (
+            <div className="flex flex-col items-center justify-center h-[60vh] space-y-6 text-center">
+                <Trophy className="h-16 w-16 text-yellow-500" />
+                <h2 className="text-3xl font-black text-white">Cohorte Terminée !</h2>
+                <p className="text-slate-400">Bravo pour ce parcours. Vous pouvez revoir vos missions via le Programme.</p>
+                <Button asChild>
+                    <a href="/app/program">Voir le Programme</a>
+                </Button>
+            </div>
+          );
+      }
   }
-  if (dayIndex < 1) {
-      return <div className="p-10 text-center">J-{Math.abs(dayIndex) + 1} avant le lancement !</div>;
-  }
-  if (dayIndex > 15) {
-      return <div className="p-10 text-center">Félicitations, cohorte terminée !</div>;
-  }
+
+  // Clamp dayIndex
+  if (dayIndex < 1) dayIndex = 1;
+  if (dayIndex > 15) dayIndex = 15;
 
   // Récupération de la Mission
   const missionRes = await supabase
@@ -186,16 +213,15 @@ export default async function TodayPage({
           return buddyIds.includes(otherId);
       });
 
-      // Récupération de la mission du PREMIER binôme (pour validation croisée simplifiée)
-      // (Idéalement on gérerait la validation de tous, mais on reste simple pour l'instant)
-      if (primaryBuddy) {
-          const { data: bMission } = await supabase
-            .from("missions")
-            .select("id, status, validation_type, duo_instructions")
+      // Récupération de la soumission du PREMIER binôme
+      if (primaryBuddy && missionRes.data) {
+          const { data: bSubmission } = await supabase
+            .from("submissions")
+            .select("status")
             .eq("user_id", primaryBuddy.id)
-            .eq("day_index", dayIndex)
+            .eq("mission_id", missionRes.data.id)
             .maybeSingle();
-          buddyMission = bMission;
+          buddyMission = bSubmission;
       }
   }
 
