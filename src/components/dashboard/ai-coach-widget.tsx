@@ -96,7 +96,7 @@ export function AICoachWidget({ dayContext }: AICoachWidgetProps) {
 
   const cardClass = isExpanded
     ? "bg-slate-900 border border-slate-800 rounded-xl overflow-hidden flex flex-col w-full max-w-4xl h-full shadow-2xl relative animate-in fade-in zoom-in-95 duration-200"
-    : "bg-slate-900 border border-slate-800 rounded-xl overflow-hidden flex flex-col h-[500px] shadow-2xl relative";
+    : "bg-slate-900 border border-slate-800 rounded-xl overflow-hidden flex flex-col h-full shadow-2xl relative";
 
   return (
     <div className={containerClass}>

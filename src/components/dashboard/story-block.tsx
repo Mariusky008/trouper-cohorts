@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Check, ChevronDown, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
 interface StoryBlockProps {
     step: any;
@@ -23,6 +24,7 @@ export function StoryBlock({ step, icon: Icon, subtitle, colorClass }: StoryBloc
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [uploading, setUploading] = useState(false);
     const supabase = createClient();
+    const router = useRouter();
 
     const proofType = step.proof_type || 'none';
     const isPhotoRequired = proofType === 'image';
@@ -90,6 +92,7 @@ export function StoryBlock({ step, icon: Icon, subtitle, colorClass }: StoryBloc
             setIsCompleted(true);
             setIsOpen(false);
             toast.success("Étape validée !"); // Feedback user
+            router.refresh(); // Update parent state (Complete Mission button)
         } catch (error: any) {
             console.error("Error validating step:", error);
             toast.error("Erreur validation: " + error.message);
