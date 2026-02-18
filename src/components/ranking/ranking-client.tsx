@@ -57,7 +57,7 @@ export default function RankingPage({ ranking, myBuddy }: { ranking: any[], myBu
                         Championnat d'Activation
                     </Badge>
                     <h1 className="text-4xl md:text-6xl font-black text-white uppercase italic tracking-tighter">
-                        Le Panthéon <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-600">des Troupers</span>
+                        Le Panthéon <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-600">des Popey</span>
                     </h1>
                     <p className="text-slate-400 max-w-2xl mx-auto text-lg">
                         "On ne réussit pas seul. Ici, on mesure la force du collectif."
