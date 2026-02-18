@@ -152,82 +152,87 @@ export function CohortChatDark({ cohortId, currentUserId }: { cohortId: string, 
                 </span>
             </div>
 
-            {/* Zone Messages */}
-            <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6 scrollbar-thin scrollbar-thumb-slate-800 scrollbar-track-transparent">
-                {loading && (
-                    <div className="flex justify-center py-10">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-                    </div>
-                )}
-                
-                {messages.length === 0 && !loading && (
-                    <div className="text-center py-20 text-slate-500">
-                        <div className="bg-slate-900 h-20 w-20 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-800">
-                            <MessageSquare className="h-10 w-10 text-slate-600" />
-                        </div>
-                        <h4 className="font-bold text-slate-400 mb-1">C'est bien calme...</h4>
-                        <p className="text-sm">Soyez le premier à lancer la discussion ! 👋</p>
-                    </div>
-                )}
-
-                {messages.map((msg) => {
-                    const isMe = msg.user_id === currentUserId;
-                    // Détection simple du capitaine (à remplacer par un rôle DB plus tard)
-                    const isCaptain = (msg.user?.first_name === "Jean philippe" || msg.user?.first_name === "Jean-Philippe") && msg.user?.last_name === "Roth";
-
-                    return (
-                        <div key={msg.id} className={`flex gap-4 ${isMe ? "flex-row-reverse" : ""}`}>
-                            <Avatar className={`h-10 w-10 mt-1 border-2 shadow-lg ${isCaptain ? "border-yellow-500/50 ring-2 ring-yellow-500/20" : "border-slate-800"}`}>
-                                <AvatarFallback className={`text-sm font-bold ${isMe ? "bg-blue-600 text-white" : isCaptain ? "bg-yellow-900/50 text-yellow-500 border border-yellow-500/30" : "bg-slate-800 text-slate-400 border border-slate-700"}`}>
-                                    {msg.user?.first_name?.[0] || "?"}
-                                </AvatarFallback>
-                            </Avatar>
-                            <div className={`max-w-[85%] md:max-w-[70%] space-y-1.5 ${isMe ? "items-end" : "items-start"}`}>
-                                <div className={`flex items-baseline gap-2 ${isMe ? "flex-row-reverse" : ""}`}>
-                                    <span className={cn("text-sm font-bold flex items-center gap-1.5", isMe ? "text-blue-400" : "text-slate-300")}>
-                                        {isMe ? "Moi" : msg.user?.first_name}
-                                        {isCaptain && !isMe && <span className="text-[10px] bg-yellow-900/30 text-yellow-500 px-1.5 py-0.5 rounded-full border border-yellow-500/30 font-bold tracking-wide">CAPITAINE</span>}
-                                    </span>
-                                    <span className="text-[10px] text-slate-600 font-medium">
-                                        {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                    </span>
-                                </div>
-                                <div className={`p-4 rounded-2xl text-base shadow-lg leading-relaxed border ${
-                                    isMe 
-                                        ? "bg-blue-600 text-white border-blue-500 rounded-tr-none shadow-blue-900/20" 
-                                        : isCaptain
-                                            ? "bg-yellow-950/30 border-yellow-500/30 text-yellow-100 rounded-tl-none shadow-yellow-900/10"
-                                            : "bg-[#111827] border-slate-800 text-slate-300 rounded-tl-none"
-                                }`}>
-                                    {msg.content}
-                                </div>
+            {/* Zone Messages (Centrée et contenue) */}
+            <div className="flex-1 overflow-y-auto bg-[#0a0f1c]">
+                <div className="max-w-3xl mx-auto h-full flex flex-col">
+                    <div className="flex-1 p-4 md:p-6 space-y-6">
+                        {loading && (
+                            <div className="flex justify-center py-10">
+                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
                             </div>
-                        </div>
-                    );
-                })}
-                <div ref={scrollRef} />
+                        )}
+                        
+                        {messages.length === 0 && !loading && (
+                            <div className="text-center py-20 text-slate-500">
+                                <div className="bg-slate-900 h-20 w-20 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-800">
+                                    <MessageSquare className="h-10 w-10 text-slate-600" />
+                                </div>
+                                <h4 className="font-bold text-slate-400 mb-1">C'est bien calme...</h4>
+                                <p className="text-sm">Soyez le premier à lancer la discussion ! 👋</p>
+                            </div>
+                        )}
+
+                        {messages.map((msg) => {
+                            const isMe = msg.user_id === currentUserId;
+                            const isCaptain = (msg.user?.first_name === "Jean philippe" || msg.user?.first_name === "Jean-Philippe") && msg.user?.last_name === "Roth";
+
+                            return (
+                                <div key={msg.id} className={`flex gap-4 ${isMe ? "flex-row-reverse" : ""}`}>
+                                    <Avatar className={`h-10 w-10 mt-1 border-2 shadow-lg shrink-0 ${isCaptain ? "border-yellow-500/50 ring-2 ring-yellow-500/20" : "border-slate-800"}`}>
+                                        <AvatarFallback className={`text-sm font-bold ${isMe ? "bg-blue-600 text-white" : isCaptain ? "bg-yellow-900/50 text-yellow-500 border border-yellow-500/30" : "bg-slate-800 text-slate-400 border border-slate-700"}`}>
+                                            {msg.user?.first_name?.[0] || "?"}
+                                        </AvatarFallback>
+                                    </Avatar>
+                                    <div className={`max-w-[75%] space-y-1.5 ${isMe ? "items-end" : "items-start"}`}>
+                                        <div className={`flex items-baseline gap-2 ${isMe ? "flex-row-reverse" : ""}`}>
+                                            <span className={cn("text-sm font-bold flex items-center gap-1.5", isMe ? "text-blue-400" : "text-slate-300")}>
+                                                {isMe ? "Moi" : msg.user?.first_name}
+                                                {isCaptain && !isMe && <span className="text-[10px] bg-yellow-900/30 text-yellow-500 px-1.5 py-0.5 rounded-full border border-yellow-500/30 font-bold tracking-wide">CAPITAINE</span>}
+                                            </span>
+                                            <span className="text-[10px] text-slate-600 font-medium">
+                                                {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                            </span>
+                                        </div>
+                                        <div className={`p-3 md:p-4 rounded-2xl text-base shadow-lg leading-relaxed border break-words ${
+                                            isMe 
+                                                ? "bg-blue-600 text-white border-blue-500 rounded-tr-none shadow-blue-900/20" 
+                                                : isCaptain
+                                                    ? "bg-yellow-950/30 border-yellow-500/30 text-yellow-100 rounded-tl-none shadow-yellow-900/10"
+                                                    : "bg-[#111827] border-slate-800 text-slate-300 rounded-tl-none"
+                                        }`}>
+                                            {msg.content}
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                        <div ref={scrollRef} />
+                    </div>
+                </div>
             </div>
 
-            {/* Zone Saisie */}
+            {/* Zone Saisie (Centrée) */}
             <div className="p-4 md:p-6 bg-[#0a0f1c] border-t border-slate-800 sticky bottom-0 z-10">
-                <form onSubmit={handleSendMessage} className="flex gap-3 items-end">
-                    <div className="flex-1 relative">
-                        <Input 
-                            value={newMessage}
-                            onChange={(e) => setNewMessage(e.target.value)}
-                            placeholder="Écrivez un message à l'équipage..."
-                            className="w-full bg-[#111827] border-slate-800 text-slate-200 placeholder:text-slate-600 focus:bg-[#162032] focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500/50 transition-all py-6 text-base rounded-xl pl-4 pr-12"
-                        />
-                    </div>
-                    <Button 
-                        type="submit" 
-                        size="icon" 
-                        disabled={!newMessage.trim()} 
-                        className="h-12 w-12 rounded-xl bg-blue-600 hover:bg-blue-500 text-white shadow-lg hover:shadow-blue-500/20 transition-all shrink-0"
-                    >
-                        <Send className="h-5 w-5" />
-                    </Button>
-                </form>
+                <div className="max-w-3xl mx-auto w-full">
+                    <form onSubmit={handleSendMessage} className="flex gap-3 items-end">
+                        <div className="flex-1 relative">
+                            <Input 
+                                value={newMessage}
+                                onChange={(e) => setNewMessage(e.target.value)}
+                                placeholder="Écrivez un message à l'équipage..."
+                                className="w-full bg-[#111827] border-slate-800 text-slate-200 placeholder:text-slate-600 focus:bg-[#162032] focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500/50 transition-all py-6 text-base rounded-xl pl-4 pr-12"
+                            />
+                        </div>
+                        <Button 
+                            type="submit" 
+                            size="icon" 
+                            disabled={!newMessage.trim()} 
+                            className="h-12 w-12 rounded-xl bg-blue-600 hover:bg-blue-500 text-white shadow-lg hover:shadow-blue-500/20 transition-all shrink-0"
+                        >
+                            <Send className="h-5 w-5" />
+                        </Button>
+                    </form>
+                </div>
             </div>
         </div>
     );
