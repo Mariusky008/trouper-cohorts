@@ -95,7 +95,7 @@ export function CockpitDark({
                             { label: "Aujourd'hui", active: true, href: "/app/today" },
                             { label: "Programme", active: false, href: "/app/program" },
                             { label: "Équipage", active: false, href: "/app/crew" },
-                            { label: "Classement", active: false, href: "/ranking" },
+                            { label: "Classement", active: false, href: "/app/ranking" },
                             { label: "Profil", active: false, href: "/app/settings" },
                         ].map((item) => (
                             <Button
@@ -169,7 +169,7 @@ export function CockpitDark({
                     </div>
                     
                     <h1 className="text-6xl md:text-8xl font-black text-white uppercase italic tracking-tighter mb-4 drop-shadow-[0_0_30px_rgba(249,115,22,0.3)]">
-                        J{dayIndex} : <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-red-600">{mission?.title || "Repos"}</span>
+                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-red-600">{mission?.title || "Repos"}</span>
                     </h1>
                     
                     {mission?.description && (

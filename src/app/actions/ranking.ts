@@ -43,7 +43,7 @@ export async function submitBuddyReport(data: {
         return { success: false, error: error.message };
     }
 
-    revalidatePath('/ranking');
+    revalidatePath('/app/ranking');
     return { success: true };
 }
 
