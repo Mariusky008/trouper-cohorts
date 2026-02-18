@@ -50,31 +50,40 @@ export async function submitBuddyReport(data: {
 export async function getRanking() {
     const supabase = await createClient();
 
-    // Récupérer tous les rapports
-    // Dans un vrai cas, on filtrerait par cohorte et par semaine/mois
+    // Récupérer les rapports
     const { data: reports, error } = await supabase
         .from('buddy_reports')
         .select(`
             score,
-            target_user_id,
-            auth:target_user_id (
-                email,
-                raw_user_meta_data
-            )
+            target_user_id
         `);
 
-    if (error) return [];
+    if (error) {
+        console.error("Error fetching reports:", error);
+        return [];
+    }
 
-    // Agréger les scores par utilisateur (ou binôme si on avait la liaison binôme)
-    // Pour l'instant on fait un classement individuel qu'on présentera comme "Binôme de X"
+    if (!reports || reports.length === 0) return [];
+
+    // Récupérer les profils associés manuellement pour éviter les problèmes de jointure
+    const userIds = Array.from(new Set(reports.map((r: any) => r.target_user_id)));
+    
+    const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, display_name, email')
+        .in('id', userIds);
+
+    const profilesMap = new Map(profiles?.map((p: any) => [p.id, p]) || []);
+
     const leaderboard: Record<string, any> = {};
 
     reports.forEach((r: any) => {
         const uid = r.target_user_id;
         if (!leaderboard[uid]) {
+            const profile = profilesMap.get(uid);
             leaderboard[uid] = {
                 user_id: uid,
-                name: r.auth?.raw_user_meta_data?.full_name || r.auth?.email?.split('@')[0] || "Inconnu",
+                name: profile?.display_name || profile?.email?.split('@')[0] || "Membre",
                 total_score: 0,
                 reports_count: 0
             };
