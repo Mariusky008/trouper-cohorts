@@ -13,12 +13,14 @@ import { MembersTab } from "@/components/alliance/members-tab";
 import { EventsTab } from "@/components/alliance/events-tab";
 import { ProfileTab } from "@/components/alliance/profile-tab";
 import { AllianceChatWidget } from "@/components/alliance/alliance-chat-widget";
+import { StickyRecruitmentBanner } from "@/components/sticky-recruitment-banner";
 
 export default function AlliancePage() {
     const [activeTab, setActiveTab] = useState("dashboard");
 
     return (
         <div className="min-h-screen bg-[#050505] text-white pb-20 relative">
+            <StickyRecruitmentBanner forceVisible={true} />
             <AllianceChatWidget />
             {/* HEADER */}
             <header className="sticky top-0 z-50 bg-[#050505]/80 backdrop-blur-xl border-b border-slate-900">
