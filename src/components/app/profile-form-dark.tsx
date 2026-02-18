@@ -7,9 +7,10 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { updateProfile } from "@/app/actions/profile";
 import { toast } from "sonner";
-import { Loader2, Instagram, Linkedin, Globe, Camera, Save } from "lucide-react";
+import { Loader2, Instagram, Linkedin, Globe, Camera, Save, Facebook, Music } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface ProfileData {
   id?: string;
@@ -17,6 +18,8 @@ interface ProfileData {
   bio: string | null;
   instagram_handle: string | null;
   linkedin_url: string | null;
+  facebook_handle?: string | null;
+  tiktok_handle?: string | null;
   website_url: string | null;
   avatar_url?: string | null;
 }
@@ -25,6 +28,13 @@ export function ProfileFormDark({ initialData }: { initialData: ProfileData }) {
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(initialData.avatar_url || null);
+  
+  // State for checkbox "Je n'ai pas ce réseau"
+  const [noInstagram, setNoInstagram] = useState(!initialData.instagram_handle && initialData.id ? false : false);
+  const [noLinkedin, setNoLinkedin] = useState(!initialData.linkedin_url && initialData.id ? false : false);
+  const [noFacebook, setNoFacebook] = useState(!initialData.facebook_handle && initialData.id ? false : false);
+  const [noTiktok, setNoTiktok] = useState(!initialData.tiktok_handle && initialData.id ? false : false);
+
 
   async function handleSubmit(formData: FormData) {
     setLoading(true);
@@ -150,30 +160,87 @@ export function ProfileFormDark({ initialData }: { initialData: ProfileData }) {
       <div className="space-y-4 pt-6 border-t border-slate-800/50">
         <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4">Réseaux Sociaux</h3>
         
-        <div className="flex items-center gap-3 group">
-          <div className="h-10 w-10 rounded-lg bg-[#111827] flex items-center justify-center border border-slate-800 group-focus-within:border-pink-500/50 group-focus-within:bg-pink-950/10 transition-colors">
-             <Instagram className="h-5 w-5 text-slate-500 group-focus-within:text-pink-500 transition-colors" />
-          </div>
-          <Input 
-            name="instagram" 
-            defaultValue={initialData.instagram_handle || ""} 
-            placeholder="Pseudo Instagram (sans @)" 
-            className="bg-[#111827] border-slate-800 text-slate-200 focus:border-pink-500/50 focus:ring-pink-500/20"
-          />
+        {/* INSTAGRAM */}
+        <div className="space-y-2">
+            <div className={`flex items-center gap-3 group ${noInstagram ? "opacity-50 pointer-events-none" : ""}`}>
+            <div className="h-10 w-10 rounded-lg bg-[#111827] flex items-center justify-center border border-slate-800 group-focus-within:border-pink-500/50 group-focus-within:bg-pink-950/10 transition-colors">
+                <Instagram className="h-5 w-5 text-slate-500 group-focus-within:text-pink-500 transition-colors" />
+            </div>
+            <Input 
+                name="instagram" 
+                defaultValue={initialData.instagram_handle || ""} 
+                placeholder="Pseudo Instagram (sans @)" 
+                className="bg-[#111827] border-slate-800 text-slate-200 focus:border-pink-500/50 focus:ring-pink-500/20"
+                disabled={noInstagram}
+            />
+            </div>
+            <div className="flex items-center space-x-2 pl-14">
+                <Checkbox id="noInstagram" checked={noInstagram} onCheckedChange={(c) => setNoInstagram(c as boolean)} className="border-slate-700 data-[state=checked]:bg-slate-700" />
+                <label htmlFor="noInstagram" className="text-xs text-slate-500 cursor-pointer">Je n'ai pas Instagram</label>
+            </div>
         </div>
 
-        <div className="flex items-center gap-3 group">
-          <div className="h-10 w-10 rounded-lg bg-[#111827] flex items-center justify-center border border-slate-800 group-focus-within:border-blue-500/50 group-focus-within:bg-blue-950/10 transition-colors">
-            <Linkedin className="h-5 w-5 text-slate-500 group-focus-within:text-blue-500 transition-colors" />
-          </div>
-          <Input 
-            name="linkedin" 
-            defaultValue={initialData.linkedin_url || ""} 
-            placeholder="Lien LinkedIn complet" 
-            className="bg-[#111827] border-slate-800 text-slate-200 focus:border-blue-500/50 focus:ring-blue-500/20"
-          />
+        {/* LINKEDIN */}
+        <div className="space-y-2">
+            <div className={`flex items-center gap-3 group ${noLinkedin ? "opacity-50 pointer-events-none" : ""}`}>
+            <div className="h-10 w-10 rounded-lg bg-[#111827] flex items-center justify-center border border-slate-800 group-focus-within:border-blue-500/50 group-focus-within:bg-blue-950/10 transition-colors">
+                <Linkedin className="h-5 w-5 text-slate-500 group-focus-within:text-blue-500 transition-colors" />
+            </div>
+            <Input 
+                name="linkedin" 
+                defaultValue={initialData.linkedin_url || ""} 
+                placeholder="Lien LinkedIn complet" 
+                className="bg-[#111827] border-slate-800 text-slate-200 focus:border-blue-500/50 focus:ring-blue-500/20"
+                disabled={noLinkedin}
+            />
+            </div>
+            <div className="flex items-center space-x-2 pl-14">
+                <Checkbox id="noLinkedin" checked={noLinkedin} onCheckedChange={(c) => setNoLinkedin(c as boolean)} className="border-slate-700 data-[state=checked]:bg-slate-700" />
+                <label htmlFor="noLinkedin" className="text-xs text-slate-500 cursor-pointer">Je n'ai pas LinkedIn</label>
+            </div>
         </div>
 
+        {/* FACEBOOK */}
+        <div className="space-y-2">
+            <div className={`flex items-center gap-3 group ${noFacebook ? "opacity-50 pointer-events-none" : ""}`}>
+            <div className="h-10 w-10 rounded-lg bg-[#111827] flex items-center justify-center border border-slate-800 group-focus-within:border-blue-600/50 group-focus-within:bg-blue-950/10 transition-colors">
+                <Facebook className="h-5 w-5 text-slate-500 group-focus-within:text-blue-600 transition-colors" />
+            </div>
+            <Input 
+                name="facebook" 
+                defaultValue={initialData.facebook_handle || ""} 
+                placeholder="Lien Profil Facebook" 
+                className="bg-[#111827] border-slate-800 text-slate-200 focus:border-blue-600/50 focus:ring-blue-600/20"
+                disabled={noFacebook}
+            />
+            </div>
+            <div className="flex items-center space-x-2 pl-14">
+                <Checkbox id="noFacebook" checked={noFacebook} onCheckedChange={(c) => setNoFacebook(c as boolean)} className="border-slate-700 data-[state=checked]:bg-slate-700" />
+                <label htmlFor="noFacebook" className="text-xs text-slate-500 cursor-pointer">Je n'ai pas Facebook</label>
+            </div>
+        </div>
+
+        {/* TIKTOK */}
+        <div className="space-y-2">
+            <div className={`flex items-center gap-3 group ${noTiktok ? "opacity-50 pointer-events-none" : ""}`}>
+            <div className="h-10 w-10 rounded-lg bg-[#111827] flex items-center justify-center border border-slate-800 group-focus-within:border-pink-500/50 group-focus-within:bg-pink-950/10 transition-colors">
+                <Music className="h-5 w-5 text-slate-500 group-focus-within:text-pink-500 transition-colors" />
+            </div>
+            <Input 
+                name="tiktok" 
+                defaultValue={initialData.tiktok_handle || ""} 
+                placeholder="Pseudo TikTok (@pseudo)" 
+                className="bg-[#111827] border-slate-800 text-slate-200 focus:border-pink-500/50 focus:ring-pink-500/20"
+                disabled={noTiktok}
+            />
+            </div>
+            <div className="flex items-center space-x-2 pl-14">
+                <Checkbox id="noTiktok" checked={noTiktok} onCheckedChange={(c) => setNoTiktok(c as boolean)} className="border-slate-700 data-[state=checked]:bg-slate-700" />
+                <label htmlFor="noTiktok" className="text-xs text-slate-500 cursor-pointer">Je n'ai pas TikTok</label>
+            </div>
+        </div>
+
+        {/* WEBSITE */}
         <div className="flex items-center gap-3 group">
           <div className="h-10 w-10 rounded-lg bg-[#111827] flex items-center justify-center border border-slate-800 group-focus-within:border-emerald-500/50 group-focus-within:bg-emerald-950/10 transition-colors">
              <Globe className="h-5 w-5 text-slate-500 group-focus-within:text-emerald-500 transition-colors" />
@@ -181,7 +248,7 @@ export function ProfileFormDark({ initialData }: { initialData: ProfileData }) {
           <Input 
             name="website" 
             defaultValue={initialData.website_url || ""} 
-            placeholder="Site Web" 
+            placeholder="Site Web (Optionnel)" 
             className="bg-[#111827] border-slate-800 text-slate-200 focus:border-emerald-500/50 focus:ring-emerald-500/20"
           />
         </div>

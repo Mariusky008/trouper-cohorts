@@ -15,15 +15,23 @@ export async function updateProfile(formData: FormData) {
   const bio = String(formData.get("bio") || "").trim();
   const instagram = String(formData.get("instagram") || "").trim();
   const linkedin = String(formData.get("linkedin") || "").trim();
+  const facebook = String(formData.get("facebook") || "").trim();
+  const tiktok = String(formData.get("tiktok") || "").trim();
   const website = String(formData.get("website") || "").trim();
   const avatarUrl = formData.get("avatar_url");
+
+  // Check if profile is complete enough (Name + Bio required)
+  const isComplete = displayName.length > 0 && bio.length > 0;
 
   const updates: Record<string, any> = {
       display_name: displayName || null,
       bio: bio || null,
       instagram_handle: instagram || null,
       linkedin_url: linkedin || null,
+      facebook_handle: facebook || null,
+      tiktok_handle: tiktok || null,
       website_url: website || null,
+      onboarding_completed: isComplete
   };
 
   // Only update avatar if explicitly provided (to avoid overwriting with empty string if not changed)
