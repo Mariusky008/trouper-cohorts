@@ -1,14 +1,13 @@
-"use client";
-
 import { motion } from "framer-motion";
 import { 
     Activity, ArrowUpRight, CheckCircle2, Heart, MessageSquare, Plus, 
-    Star, Target, Trophy, Users, Zap 
+    Star, Target, Trophy, Users, Zap, Briefcase, Search, Hammer, Lightbulb, Monitor, Scissors
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 
 export function DashboardTab() {
     return (
@@ -32,6 +31,57 @@ export function DashboardTab() {
                     </Card>
                 ))}
             </div>
+
+            {/* MODULE DE RECRUTEMENT / PLACES RESTANTES */}
+            <Card className="bg-gradient-to-r from-slate-900 to-blue-950/30 border-slate-800 p-6 relative overflow-hidden group">
+                <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
+                
+                <div className="relative z-10 grid md:grid-cols-3 gap-8 items-center">
+                    <div className="md:col-span-1 space-y-4">
+                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 font-bold uppercase tracking-widest text-[10px] mb-2">
+                            <Briefcase className="h-3 w-3" /> Recrutement Actif
+                        </div>
+                        <h3 className="text-2xl font-black text-white leading-tight">
+                            Cette Alliance recherche activement ces profils
+                        </h3>
+                        <p className="text-slate-400 text-sm leading-relaxed">
+                            Il reste encore <span className="text-white font-bold">12 places</span> dans cette Alliance de 24 membres.
+                            Votre profil peut être exactement ce que le groupe attend pour fonctionner pleinement.
+                        </p>
+                        <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs uppercase tracking-wide">
+                            Rejoindre cette Alliance
+                        </Button>
+                    </div>
+
+                    <div className="md:col-span-2 grid grid-cols-2 sm:grid-cols-4 gap-4">
+                        {[
+                            { name: "Menuisier", icon: Hammer, slots: "1 place", color: "text-orange-400", bg: "bg-orange-500/10", border: "border-orange-500/20" },
+                            { name: "Électricien", icon: Lightbulb, slots: "1 place", color: "text-yellow-400", bg: "bg-yellow-500/10", border: "border-yellow-500/20" },
+                            { name: "Web Dev", icon: Monitor, slots: "1 place", color: "text-blue-400", bg: "bg-blue-500/10", border: "border-blue-500/20" },
+                            { name: "Couturier", icon: Scissors, slots: "1 place", color: "text-pink-400", bg: "bg-pink-500/10", border: "border-pink-500/20" },
+                        ].map((role, i) => (
+                            <motion.div 
+                                key={i}
+                                initial={{ opacity: 0, scale: 0.9 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                transition={{ delay: i * 0.1 }}
+                                className={`p-4 rounded-xl border ${role.border} ${role.bg} flex flex-col items-center text-center gap-2 hover:scale-105 transition-transform cursor-pointer relative overflow-hidden`}
+                            >
+                                <div className={`h-10 w-10 rounded-full bg-[#0a0f1c] flex items-center justify-center ${role.color} mb-1 shadow-lg`}>
+                                    <role.icon className="h-5 w-5" />
+                                </div>
+                                <span className="text-white font-bold text-sm">{role.name}</span>
+                                <span className="text-[10px] uppercase font-bold text-slate-400 bg-[#0a0f1c]/50 px-2 py-0.5 rounded-full">
+                                    {role.slots}
+                                </span>
+                                {i === 2 && ( // Simulation match profil utilisateur
+                                    <div className="absolute top-2 right-2 h-2 w-2 bg-green-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.8)]"></div>
+                                )}
+                            </motion.div>
+                        ))}
+                    </div>
+                </div>
+            </Card>
 
             {/* PROGRESSION PALIER */}
             <Card className="bg-gradient-to-r from-blue-900/20 to-purple-900/20 border-slate-800 p-6 relative overflow-hidden">
