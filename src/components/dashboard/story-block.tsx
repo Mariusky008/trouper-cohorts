@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Check, ChevronDown, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 interface StoryBlockProps {
     step: any;
@@ -68,21 +69,30 @@ export function StoryBlock({ step, icon: Icon, subtitle, colorClass }: StoryBloc
     const handleValidate = async () => {
         setIsSubmitting(true);
         try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) throw new Error("User not authenticated");
+
+            // Upsert into user_mission_steps instead of updating mission_steps
             const { error } = await supabase
-                .from('mission_steps')
-                .update({ 
+                .from('user_mission_steps')
+                .upsert({ 
+                    user_id: user.id,
+                    step_id: step.id,
                     status: 'validated',
                     proof_content: proofInput,
-                })
-                .eq('id', step.id);
+                    validated_at: new Date().toISOString()
+                }, {
+                    onConflict: 'user_id, step_id'
+                });
 
             if (error) throw error;
 
             setIsCompleted(true);
             setIsOpen(false);
-        } catch (error) {
+            toast.success("Étape validée !"); // Feedback user
+        } catch (error: any) {
             console.error("Error validating step:", error);
-            alert("Erreur lors de la validation. Réessayez.");
+            toast.error("Erreur validation: " + error.message);
         } finally {
             setIsSubmitting(false);
         }

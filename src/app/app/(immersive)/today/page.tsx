@@ -114,7 +114,7 @@ export default async function TodayPage({
     .eq("day_index", dayIndex)
     .maybeSingle();
 
-  // Récupération des Étapes (Steps)
+  // Récupération des Étapes (Steps) et du progrès utilisateur
   let steps: any[] = [];
   if (missionRes.data) {
       const stepsRes = await supabase
@@ -122,7 +122,25 @@ export default async function TodayPage({
         .select("*")
         .eq("mission_id", missionRes.data.id)
         .order("position", { ascending: true });
-      steps = stepsRes.data || [];
+      
+      const rawSteps = stepsRes.data || [];
+
+      // Récupérer le progrès spécifique à l'utilisateur
+      const { data: userProgress } = await supabase
+        .from("user_mission_steps")
+        .select("step_id, status, proof_content")
+        .eq("user_id", user.id)
+        .in("step_id", rawSteps.map(s => s.id));
+
+      // Fusionner les données
+      steps = rawSteps.map(step => {
+          const progress = userProgress?.find(p => p.step_id === step.id);
+          return {
+              ...step,
+              status: progress?.status || 'pending', // Overwrite status from user progress
+              proof_content: progress?.proof_content || null // Overwrite proof from user progress
+          };
+      });
   }
 
   // Récupération du binôme (ou des binômes si Trio)
