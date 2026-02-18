@@ -5,7 +5,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { AlertTriangle, Anchor, Brain, Check, CheckCircle2, ChevronDown, Clock, Flame, Lock, PlayCircle, Send, Ship, Sparkles, Trophy, Users, Video } from "lucide-react";
+import { PlayCircle, Users, Brain, Video, CheckCircle2, Trophy, Flame, ExternalLink, Send, Lock, ChevronDown, Check, Anchor, Ship, Clock, AlertTriangle, Sparkles, LogOut, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -397,29 +397,75 @@ export default function CockpitPreviewPage() {
     return (
         <div className={`min-h-screen ${THEME.bg} text-slate-200 font-sans selection:bg-orange-500/30`}>
             
-            {/* Top Bar */}
-            <header className="border-b border-slate-800 h-20 flex items-center justify-between px-8 sticky top-0 z-50 bg-[#0a0f1c]/90 backdrop-blur-md">
-                <div className="flex items-center gap-4">
-                    <div className="font-black text-2xl italic uppercase text-white tracking-tighter flex items-center gap-2">
-                        Popey <span className="text-orange-500">Cockpit</span>
+            {/* Top Navigation Bar */}
+            <header className="border-b border-slate-800 h-16 flex items-center justify-between px-6 sticky top-0 z-50 bg-[#0a0f1c]/90 backdrop-blur-md">
+                
+                {/* Logo Area */}
+                <div className="flex items-center gap-8">
+                    <div className="font-black text-xl italic uppercase text-white tracking-tighter flex items-center gap-1 cursor-pointer">
+                        <Anchor className="h-5 w-5 text-orange-500 mr-2" />
+                        Popey
                     </div>
-                    <div className="hidden lg:flex items-center gap-2 px-4 py-1.5 bg-slate-800/50 text-slate-300 rounded-full border border-slate-700">
-                        <Anchor className="h-4 w-4 text-orange-400" />
-                        <span className="text-xs font-bold uppercase tracking-wider">Équipage Cohorte 40 • 10 au 23 Fév 2026</span>
-                    </div>
+                    
+                    {/* Main Menu - Desktop */}
+                    <nav className="hidden md:flex items-center gap-1">
+                        {[
+                            { label: "Aujourd'hui", active: true },
+                            { label: "Programme", active: false },
+                            { label: "Équipage", active: false },
+                            { label: "Classement", active: false },
+                            { label: "Profil", active: false },
+                        ].map((item) => (
+                            <Button
+                                key={item.label}
+                                variant="ghost"
+                                className={`h-9 px-4 text-sm font-bold uppercase tracking-wider transition-all ${
+                                    item.active 
+                                    ? "bg-slate-800 text-white" 
+                                    : "text-slate-400 hover:text-white hover:bg-slate-800/50"
+                                }`}
+                            >
+                                {item.label}
+                            </Button>
+                        ))}
+                    </nav>
                 </div>
-                <div className="flex items-center gap-6">
-                    <div className="text-right hidden sm:block">
-                        <p className="text-[10px] text-slate-500 font-black uppercase tracking-[0.2em] mb-1">Votre Progression</p>
-                        <div className="w-40 h-1.5 bg-slate-800 rounded-full overflow-hidden">
-                            <div className="h-full bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.5)]" style={{ width: `60%` }}></div>
-                        </div>
+
+                {/* Right Area - User & Logout */}
+                <div className="flex items-center gap-4">
+                    <div className="hidden lg:flex items-center gap-3 px-3 py-1.5 bg-slate-800/50 rounded-full border border-slate-700/50">
+                        <Avatar className="h-6 w-6 border border-slate-600">
+                            <AvatarFallback className="bg-slate-900 text-[10px] text-white font-bold">JP</AvatarFallback>
+                        </Avatar>
+                        <span className="text-xs font-bold text-slate-300 pr-1">Jean-Philippe</span>
                     </div>
-                    <Avatar className="h-10 w-10 border-2 border-orange-500/50 shadow-lg shadow-orange-500/20 cursor-pointer hover:scale-105 transition-transform">
-                        <AvatarFallback className="bg-slate-800 text-white font-bold">JP</AvatarFallback>
-                    </Avatar>
+
+                    <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="text-slate-500 hover:text-red-400 hover:bg-red-900/10 gap-2 px-2"
+                    >
+                        <LogOut className="h-4 w-4" />
+                        <span className="hidden sm:inline text-xs font-bold uppercase">Se déconnecter</span>
+                    </Button>
                 </div>
             </header>
+
+            {/* Sub-Header (Cockpit Info) */}
+            <div className="border-b border-slate-800 bg-[#0d1220] py-2 px-6 flex justify-between items-center">
+                <div className="flex items-center gap-2">
+                    <span className="flex h-2 w-2 rounded-full bg-green-500 animate-pulse"></span>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                        Équipage Cohorte 40 • En direct
+                    </span>
+                </div>
+                <div className="flex items-center gap-3">
+                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Votre Progression</span>
+                    <div className="w-32 h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                        <div className="h-full bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.5)]" style={{ width: `60%` }}></div>
+                    </div>
+                </div>
+            </div>
 
             <main className="container mx-auto px-4 py-8 max-w-7xl">
                 
