@@ -294,6 +294,49 @@ export default function AlliancePage() {
                     </div>
                 </FadeIn>
 
+                {/* BLOC RITUEL TRIMESTRIEL */}
+                <FadeIn className="mt-12 max-w-4xl mx-auto bg-gradient-to-br from-[#111] to-[#0a0a0a] border border-slate-800 p-8 md:p-12 rounded-3xl relative overflow-hidden">
+                    <div className="absolute top-0 left-0 w-64 h-64 bg-orange-600/10 rounded-full blur-3xl -translate-y-1/2 -translate-x-1/2"></div>
+                    
+                    <div className="relative z-10 text-center space-y-8">
+                        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-orange-500/10 border border-orange-500/20 text-orange-400 font-bold uppercase tracking-widest text-xs mb-2">
+                            <Star className="h-3 w-3" /> Rituel Trimestriel
+                        </div>
+                        
+                        <h3 className="text-3xl md:text-4xl font-black text-white uppercase italic">
+                            Le repas trimestriel <br/>et le choix d’Alliance
+                        </h3>
+                        
+                        <p className="text-lg text-slate-400 max-w-2xl mx-auto">
+                            Après 3 mois, chaque Alliance se réunit pour un <strong className="text-white">repas collectif</strong>, financé par Popey Academy.
+                        </p>
+                        
+                        <div className="grid md:grid-cols-2 gap-8 text-left bg-black/20 p-6 rounded-2xl border border-white/5">
+                            <div>
+                                <h4 className="font-bold text-white mb-2 flex items-center gap-2">
+                                    <Trophy className="h-4 w-4 text-yellow-500" /> Objectifs
+                                </h4>
+                                <ul className="space-y-2 text-slate-400 text-sm leading-relaxed">
+                                    <li>• Renforcer le lien humain et la cohésion.</li>
+                                    <li>• Récompenser l’engagement de chacun.</li>
+                                    <li>• Permettre à chaque membre de <strong className="text-white">valider son choix</strong> :</li>
+                                    <li className="pl-4 italic text-slate-500">"Je reste" ou "Je souhaite être permuté".</li>
+                                </ul>
+                            </div>
+                            <div>
+                                <h4 className="font-bold text-white mb-2 flex items-center gap-2">
+                                    <Shield className="h-4 w-4 text-green-500" /> Avantages
+                                </h4>
+                                <ul className="space-y-2 text-slate-400 text-sm leading-relaxed">
+                                    <li>• Garantir la qualité et la motivation.</li>
+                                    <li>• Maintenir l’équilibre des Alliances.</li>
+                                    <li>• Créer un rituel fort psychologiquement.</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </FadeIn>
+
                 <FadeIn className="text-center mt-20 max-w-3xl mx-auto space-y-10">
                     <h3 className="text-2xl md:text-4xl font-black text-white uppercase italic leading-tight">
                         Chaque service que vous rendez génère un service en retour. <br/>
