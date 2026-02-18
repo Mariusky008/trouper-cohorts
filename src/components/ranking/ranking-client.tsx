@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Trophy, Send, Users, Star, TrendingUp, Medal } from 'lucide-react';
+import { Trophy, Send, Users, Star, Anchor, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -12,9 +12,13 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { submitBuddyReport } from '@/app/actions/ranking';
 import { useToast } from '@/hooks/use-toast';
+import { createClient } from "@/lib/supabase/client";
+import { useRouter } from "next/navigation";
 
 export default function RankingPage({ ranking, myBuddy }: { ranking: any[], myBuddy: any }) {
     const { toast } = useToast();
+    const router = useRouter();
+    const supabase = createClient();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [report, setReport] = useState({
         messages: 0,
@@ -22,6 +26,11 @@ export default function RankingPage({ ranking, myBuddy }: { ranking: any[], myBu
         appointments: 0,
         comment: ''
     });
+
+    const handleLogout = async () => {
+        await supabase.auth.signOut();
+        router.push("/login");
+    };
 
     const handleSubmit = async () => {
         if (!myBuddy) {
@@ -48,8 +57,51 @@ export default function RankingPage({ ranking, myBuddy }: { ranking: any[], myBu
     };
 
     return (
-        <div className="min-h-screen bg-slate-950 text-slate-200 p-6 md:p-12 font-sans">
-            <div className="max-w-5xl mx-auto space-y-12">
+        <div className="min-h-screen bg-[#0a0f1c] text-slate-200 font-sans">
+            {/* Top Navigation Bar (Copied from CockpitDark for consistency) */}
+            <header className="border-b border-slate-800 h-16 flex items-center justify-between px-6 sticky top-0 z-50 bg-[#0a0f1c]/90 backdrop-blur-md mb-8">
+                <div className="flex items-center gap-8">
+                    <div className="font-black text-xl italic uppercase text-white tracking-tighter flex items-center gap-1 cursor-pointer">
+                        <Anchor className="h-5 w-5 text-orange-500 mr-2" />
+                        Popey
+                    </div>
+                    <nav className="hidden md:flex items-center gap-1">
+                        {[
+                            { label: "Aujourd'hui", active: false, href: "/app/today" },
+                            { label: "Programme", active: false, href: "/app/program" },
+                            { label: "Équipage", active: false, href: "/app/crew" },
+                            { label: "Classement", active: true, href: "/app/ranking" },
+                            { label: "Profil", active: false, href: "/app/settings" },
+                        ].map((item) => (
+                            <Button
+                                key={item.label}
+                                variant="ghost"
+                                onClick={() => router.push(item.href)}
+                                className={`h-9 px-4 text-sm font-bold uppercase tracking-wider transition-all ${
+                                    item.active 
+                                    ? "bg-slate-800 text-white" 
+                                    : "text-slate-400 hover:text-white hover:bg-slate-800/50"
+                                }`}
+                            >
+                                {item.label}
+                            </Button>
+                        ))}
+                    </nav>
+                </div>
+                <div className="flex items-center gap-4">
+                    <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={handleLogout}
+                        className="text-slate-500 hover:text-red-400 hover:bg-red-900/10 gap-2 px-2"
+                    >
+                        <LogOut className="h-4 w-4" />
+                        <span className="hidden sm:inline text-xs font-bold uppercase">Se déconnecter</span>
+                    </Button>
+                </div>
+            </header>
+
+            <div className="max-w-5xl mx-auto space-y-12 px-6">
                 
                 {/* Header */}
                 <div className="text-center space-y-4">
