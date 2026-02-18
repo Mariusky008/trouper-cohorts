@@ -5,7 +5,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { PlayCircle, Users, Brain, Video, CheckCircle2, Trophy, Flame, ExternalLink, Send, Lock, ChevronDown, Check, Anchor, Ship, Clock, AlertTriangle, Sparkles, LogOut, User } from "lucide-react";
+import { PlayCircle, Users, Brain, Video, CheckCircle2, Trophy, Flame, ExternalLink, Send, Lock, ChevronDown, ChevronUp, Check, Anchor, Ship, Clock, AlertTriangle, Sparkles, LogOut, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -97,75 +97,87 @@ const MockVictoryWall = () => (
     </Card>
 );
 
-const MockBuddyChat = () => (
-    <Card className={`h-[500px] border border-slate-800 shadow-xl ${THEME.cardBg} flex flex-col overflow-hidden`}>
-        <div className="p-4 border-b border-slate-800 bg-[#0d1220] flex items-center justify-between shrink-0">
-            <div className="flex items-center gap-3">
-                <div className="relative">
-                    <Avatar className="h-12 w-12 border-2 border-green-500/50">
-                        <AvatarFallback className="bg-slate-800 text-white font-bold">MD</AvatarFallback>
-                    </Avatar>
-                    <div className="absolute bottom-0 right-0 h-3 w-3 bg-green-500 rounded-full border-2 border-[#0d1220]"></div>
-                </div>
-                <div>
-                    <h3 className="font-bold text-white text-lg">Marc D.</h3>
+const FloatingBuddyChat = () => {
+    const [isExpanded, setIsExpanded] = useState(false);
+
+    return (
+        <div className={`fixed bottom-0 right-8 z-50 transition-all duration-500 ease-in-out ${isExpanded ? 'w-[400px] h-[600px]' : 'w-[300px] h-14'}`}>
+            <Card className={`border border-slate-700 shadow-2xl bg-[#0d1220] flex flex-col h-full overflow-hidden ${isExpanded ? 'rounded-t-xl' : 'rounded-t-lg'}`}>
+                {/* Header Toggle */}
+                <div 
+                    className="p-3 bg-slate-800 border-b border-slate-700 flex items-center justify-between cursor-pointer hover:bg-slate-700/80 transition-colors"
+                    onClick={() => setIsExpanded(!isExpanded)}
+                >
+                    <div className="flex items-center gap-3">
+                        <div className="relative">
+                            <Avatar className="h-8 w-8 border border-green-500/50">
+                                <AvatarFallback className="bg-slate-900 text-white font-bold text-xs">MD</AvatarFallback>
+                            </Avatar>
+                            <div className="absolute bottom-0 right-0 h-2.5 w-2.5 bg-green-500 rounded-full border-2 border-slate-800"></div>
+                        </div>
+                        <div>
+                            <h3 className="font-bold text-white text-sm">Marc D.</h3>
+                            <p className="text-[10px] text-green-400 font-bold uppercase tracking-wider">Copilote • En ligne</p>
+                        </div>
+                    </div>
                     <div className="flex items-center gap-2">
-                        <span className="text-xs text-green-500 font-bold uppercase tracking-wider">En ligne</span>
-                        <span className="text-slate-600 text-[10px]">•</span>
-                        <span className="text-xs text-slate-500">Copilote</span>
+                        {!isExpanded && <span className="flex h-2 w-2 rounded-full bg-blue-500 animate-pulse"></span>}
+                        {isExpanded ? <ChevronDown className="h-5 w-5 text-slate-400" /> : <ChevronUp className="h-5 w-5 text-slate-400" />}
                     </div>
                 </div>
-            </div>
-            <Button variant="ghost" size="icon" className="text-slate-400 hover:text-white">
-                <Video className="h-5 w-5" />
-            </Button>
+
+                {/* Content (Only when expanded) */}
+                {isExpanded && (
+                    <>
+                        <ScrollArea className="flex-1 p-4 bg-[#0a0f1c]">
+                            <div className="space-y-4">
+                                <div className="flex justify-center">
+                                    <span className="text-[10px] font-bold text-slate-600 uppercase tracking-widest bg-slate-900 px-3 py-1 rounded-full border border-slate-800">Aujourd'hui</span>
+                                </div>
+                                
+                                <div className="flex gap-3">
+                                    <Avatar className="h-8 w-8 mt-1 border border-slate-700">
+                                        <AvatarFallback className="bg-slate-800 text-xs text-slate-400">MD</AvatarFallback>
+                                    </Avatar>
+                                    <div className="bg-slate-800 border border-slate-700 p-3 rounded-2xl rounded-tl-none text-sm text-slate-300 max-w-[85%]">
+                                        <p>Salut ! Tu as vu la mission du jour ? "L'Audit de l'Inertie", ça pique un peu 😅</p>
+                                    </div>
+                                </div>
+
+                                <div className="flex gap-3 flex-row-reverse">
+                                    <div className="bg-blue-600 p-3 rounded-2xl rounded-tr-none text-sm text-white max-w-[85%] shadow-lg shadow-blue-900/20">
+                                        <p>Grave. Je suis en train de l'écrire là. Et toi t'en es où ?</p>
+                                    </div>
+                                </div>
+
+                                <div className="flex gap-3">
+                                    <Avatar className="h-8 w-8 mt-1 border border-slate-700">
+                                        <AvatarFallback className="bg-slate-800 text-xs text-slate-400">MD</AvatarFallback>
+                                    </Avatar>
+                                    <div className="bg-slate-800 border border-slate-700 p-3 rounded-2xl rounded-tl-none text-sm text-slate-300 max-w-[85%]">
+                                        <p>Je viens de finir ma "Phrase de Combat". Je te l'envoie pour avoir ton avis ?</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </ScrollArea>
+
+                        <div className="p-3 bg-[#0d1220] border-t border-slate-800 shrink-0">
+                            <div className="relative">
+                                <Input 
+                                    placeholder="Écrire un message..." 
+                                    className="bg-[#0a0f1c] border-slate-700 text-slate-200 pr-10 rounded-full text-sm h-10"
+                                />
+                                <Button size="icon" className="absolute right-1 top-1 h-8 w-8 rounded-full bg-blue-600 hover:bg-blue-500 text-white">
+                                    <Send className="h-4 w-4" />
+                                </Button>
+                            </div>
+                        </div>
+                    </>
+                )}
+            </Card>
         </div>
-
-        <ScrollArea className="flex-1 p-4 bg-[#0a0f1c]">
-            <div className="space-y-4">
-                <div className="flex justify-center">
-                    <span className="text-[10px] font-bold text-slate-600 uppercase tracking-widest bg-slate-900 px-3 py-1 rounded-full border border-slate-800">Aujourd'hui</span>
-                </div>
-                
-                <div className="flex gap-3">
-                    <Avatar className="h-8 w-8 mt-1 border border-slate-700">
-                        <AvatarFallback className="bg-slate-800 text-xs text-slate-400">MD</AvatarFallback>
-                    </Avatar>
-                    <div className="bg-slate-800 border border-slate-700 p-3 rounded-2xl rounded-tl-none text-sm text-slate-300 max-w-[85%]">
-                        <p>Salut ! Tu as vu la mission du jour ? "L'Audit de l'Inertie", ça pique un peu 😅</p>
-                    </div>
-                </div>
-
-                <div className="flex gap-3 flex-row-reverse">
-                    <div className="bg-blue-600 p-3 rounded-2xl rounded-tr-none text-sm text-white max-w-[85%] shadow-lg shadow-blue-900/20">
-                        <p>Grave. Je suis en train de l'écrire là. Et toi t'en es où ?</p>
-                    </div>
-                </div>
-
-                <div className="flex gap-3">
-                    <Avatar className="h-8 w-8 mt-1 border border-slate-700">
-                        <AvatarFallback className="bg-slate-800 text-xs text-slate-400">MD</AvatarFallback>
-                    </Avatar>
-                    <div className="bg-slate-800 border border-slate-700 p-3 rounded-2xl rounded-tl-none text-sm text-slate-300 max-w-[85%]">
-                        <p>Je viens de finir ma "Phrase de Combat". Je te l'envoie pour avoir ton avis ?</p>
-                    </div>
-                </div>
-            </div>
-        </ScrollArea>
-
-        <div className="p-3 bg-[#0d1220] border-t border-slate-800 shrink-0">
-            <div className="relative">
-                <Input 
-                    placeholder="Écrire un message..." 
-                    className="bg-[#0a0f1c] border-slate-700 text-slate-200 pr-10 rounded-full"
-                />
-                <Button size="icon" className="absolute right-1 top-1 h-8 w-8 rounded-full bg-blue-600 hover:bg-blue-500 text-white">
-                    <Send className="h-4 w-4" />
-                </Button>
-            </div>
-        </div>
-    </Card>
-);
+    );
+};
 
 const MockAICoach = () => (
     <Card className={`border border-slate-800 shadow-2xl bg-slate-900 overflow-hidden flex flex-col h-full`}>
@@ -222,7 +234,7 @@ const MockAICoach = () => (
     </Card>
 );
 
-const StoryBlock = ({ title, subtitle, icon: Icon, imageBg, children, colorClass, proofType, isCompleted, onValidate }: any) => {
+const StoryBlock = ({ title, subtitle, icon: Icon, children, colorClass, proofType, isCompleted, onValidate }: any) => {
     const [isOpen, setIsOpen] = useState(false);
     const [proofInput, setProofInput] = useState("");
 
@@ -237,97 +249,93 @@ const StoryBlock = ({ title, subtitle, icon: Icon, imageBg, children, colorClass
     );
 
     return (
-        <div className={`relative group overflow-hidden rounded-xl border border-slate-800 transition-all duration-500 ${isOpen ? 'ring-2 ring-orange-500/50' : 'hover:border-slate-600'}`}>
-            {/* Background Image with Overlay */}
-            <div className="absolute inset-0 z-0">
-                <div 
-                    className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105"
-                    style={{ backgroundImage: `url(${imageBg})` }}
-                />
-                <div className={`absolute inset-0 bg-gradient-to-r ${isOpen ? 'from-black/90 to-black/80' : 'from-black/80 to-transparent'} transition-opacity duration-300`} />
-            </div>
-
+        <div className={`relative group overflow-hidden rounded-xl border transition-all duration-300 ${isOpen ? 'border-slate-600 bg-slate-900 ring-1 ring-slate-700' : 'border-slate-800 bg-[#111827] hover:border-slate-700'}`}>
+            
             {/* Content Header (Always Visible) */}
             <div 
-                className="relative z-10 p-6 cursor-pointer flex items-center justify-between min-h-[120px]"
+                className="relative z-10 p-6 cursor-pointer flex items-center justify-between min-h-[100px]"
                 onClick={() => setIsOpen(!isOpen)}
             >
                 <div className="flex items-center gap-6">
-                    <div className={`h-16 w-16 rounded-full flex items-center justify-center shrink-0 backdrop-blur-sm border border-white/10 ${isCompleted ? 'bg-green-500/20 text-green-400' : 'bg-white/5 text-white'}`}>
-                        {isCompleted ? <Check className="h-8 w-8" /> : <Icon className="h-8 w-8" />}
+                    <div className={`h-14 w-14 rounded-full flex items-center justify-center shrink-0 border ${isCompleted ? 'bg-green-500/10 border-green-500/30 text-green-500' : 'bg-slate-800 border-slate-700 text-slate-400 group-hover:text-white group-hover:border-slate-600'}`}>
+                        {isCompleted ? <Check className="h-7 w-7" /> : <Icon className="h-7 w-7" />}
                     </div>
                     <div>
-                        <div className="flex items-center gap-3 mb-1">
-                            <Badge variant="outline" className={`bg-black/50 border-white/20 text-xs tracking-widest uppercase ${colorClass} text-white`}>
+                        <div className="flex items-center gap-3 mb-1.5">
+                            <Badge variant="outline" className={`bg-transparent border-slate-700 text-[10px] tracking-widest uppercase text-slate-400 ${colorClass}`}>
                                 {subtitle}
                             </Badge>
-                            {isCompleted && <Badge className="bg-green-600 text-white border-0">Mission Accomplie</Badge>}
+                            {isCompleted && <Badge className="bg-green-500/10 text-green-500 border border-green-500/20 text-[10px] px-2 py-0.5">Validé</Badge>}
                         </div>
-                        <h3 className="text-2xl font-black text-white uppercase tracking-tight italic drop-shadow-lg">
+                        <h3 className={`text-xl font-bold uppercase tracking-tight transition-colors ${isCompleted ? 'text-slate-500 line-through decoration-slate-700' : 'text-white'}`}>
                             {title}
                         </h3>
                     </div>
                 </div>
-                <ChevronDown className={`h-8 w-8 text-white/50 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
+                <div className={`h-10 w-10 rounded-full flex items-center justify-center transition-all duration-300 ${isOpen ? 'bg-slate-800 rotate-180' : 'bg-transparent hover:bg-slate-800'}`}>
+                    <ChevronDown className={`h-6 w-6 text-slate-400`} />
+                </div>
             </div>
 
             {/* Expanded Content */}
             {isOpen && (
-                <div className="relative z-10 px-6 pb-8 pt-2 border-t border-white/10 bg-black/40 backdrop-blur-md animate-in slide-in-from-top-2">
-                    <div className="prose prose-invert prose-lg max-w-none text-slate-300 leading-relaxed mb-8">
-                        {children}
-                    </div>
-
-                    {!isCompleted && (
-                        <div className="bg-black/40 border border-white/10 rounded-xl p-6 backdrop-blur-sm">
-                            <h4 className="text-sm font-bold text-orange-400 uppercase tracking-widest mb-4 flex items-center gap-2">
-                                <AlertTriangle className="h-4 w-4" /> Preuve Requise
-                            </h4>
-                            
-                            {isPhotoRequired && (
-                                <div 
-                                    className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-all ${proofInput === "uploaded" ? "border-green-500/50 bg-green-500/10 text-green-400" : "border-slate-700 hover:border-slate-500 hover:bg-white/5 text-slate-400"}`}
-                                    onClick={() => setProofInput("uploaded")}
-                                >
-                                    {proofInput === "uploaded" ? (
-                                        <div className="flex flex-col items-center gap-2">
-                                            <CheckCircle2 className="h-8 w-8" />
-                                            <span>Photo chargée avec succès</span>
-                                        </div>
-                                    ) : (
-                                        "Clique ici pour déposer ta photo témoin"
-                                    )}
-                                </div>
-                            )}
-
-                            {isTextOrLinkRequired && (
-                                <Input 
-                                    placeholder="Écris ta réponse ou colle ton lien ici..." 
-                                    className="bg-black/50 border-slate-700 text-white h-12"
-                                    onChange={(e) => setProofInput(e.target.value)}
-                                    value={proofInput}
-                                />
-                            )}
-
-                            <div className="flex justify-end mt-6">
-                                <Button 
-                                    size="lg"
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        onValidate();
-                                        setIsOpen(false);
-                                    }}
-                                    disabled={!canSubmit}
-                                    className={cn(
-                                        "font-bold uppercase tracking-widest transition-all",
-                                        "bg-orange-600 hover:bg-orange-500 text-white shadow-lg shadow-orange-900/20"
-                                    )}
-                                >
-                                    Valider l'étape
-                                </Button>
-                            </div>
+                <div className="px-6 pb-8 pt-2 border-t border-slate-800/50 animate-in slide-in-from-top-2">
+                    <div className="pl-[80px]"> {/* Indent to align with text above */}
+                        <div className="prose prose-invert prose-sm max-w-none text-slate-300 leading-relaxed mb-8">
+                            {children}
                         </div>
-                    )}
+
+                        {!isCompleted && (
+                            <div className="bg-slate-950 border border-slate-800 rounded-lg p-6">
+                                <h4 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4 flex items-center gap-2">
+                                    <AlertTriangle className="h-3 w-3" /> Preuve Requise
+                                </h4>
+                                
+                                {isPhotoRequired && (
+                                    <div 
+                                        className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-all ${proofInput === "uploaded" ? "border-green-500/50 bg-green-500/10 text-green-400" : "border-slate-700 hover:border-slate-600 hover:bg-slate-900 text-slate-400"}`}
+                                        onClick={() => setProofInput("uploaded")}
+                                    >
+                                        {proofInput === "uploaded" ? (
+                                            <div className="flex flex-col items-center gap-2">
+                                                <CheckCircle2 className="h-8 w-8" />
+                                                <span>Photo chargée avec succès</span>
+                                            </div>
+                                        ) : (
+                                            "Clique ici pour déposer ta photo témoin"
+                                        )}
+                                    </div>
+                                )}
+
+                                {isTextOrLinkRequired && (
+                                    <Input 
+                                        placeholder="Écris ta réponse ou colle ton lien ici..." 
+                                        className="bg-black border-slate-800 text-white h-12 focus-visible:ring-slate-600"
+                                        onChange={(e) => setProofInput(e.target.value)}
+                                        value={proofInput}
+                                    />
+                                )}
+
+                                <div className="flex justify-end mt-6">
+                                    <Button 
+                                        size="lg"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            onValidate();
+                                            setIsOpen(false);
+                                        }}
+                                        disabled={!canSubmit}
+                                        className={cn(
+                                            "font-bold uppercase tracking-widest transition-all",
+                                            "bg-white text-black hover:bg-slate-200"
+                                        )}
+                                    >
+                                        Valider l'étape
+                                    </Button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
                 </div>
             )}
         </div>
@@ -335,45 +343,39 @@ const StoryBlock = ({ title, subtitle, icon: Icon, imageBg, children, colorClass
 };
 
 const MockGoldenTicket = () => (
-    <Card className="relative overflow-hidden border-2 border-yellow-500/30 bg-[#111827] shadow-xl group hover:border-yellow-500/50 transition-all duration-300">
-        <div className="absolute top-0 right-0 p-3 opacity-20">
-            <Lock className="h-24 w-24 text-yellow-500 rotate-12" />
+    <Card className="relative overflow-hidden border border-yellow-500/30 bg-[#111827] shadow-xl group hover:border-yellow-500/50 transition-all duration-300">
+        <div className="absolute top-0 right-0 p-3 opacity-10 pointer-events-none">
+            <Trophy className="h-32 w-32 text-yellow-500 rotate-12" />
         </div>
         
         <div className="p-6 flex flex-col md:flex-row items-center gap-6 relative z-10">
-            {/* Left: Icon/Badge */}
-            <div className="relative shrink-0">
-                <div className="h-20 w-20 rounded-full bg-yellow-900/20 border-2 border-yellow-500 flex items-center justify-center shadow-[0_0_20px_rgba(234,179,8,0.2)]">
-                    <Trophy className="h-10 w-10 text-yellow-500" />
+            {/* Left: Progress Circle */}
+            <div className="relative shrink-0 flex flex-col items-center">
+                <div className="h-20 w-20 rounded-full bg-[#0d1220] border-4 border-yellow-500/20 flex items-center justify-center relative">
+                    <div className="absolute inset-0 rounded-full border-4 border-yellow-500 border-t-transparent animate-spin-slow" style={{ animationDuration: '3s' }}></div>
+                    <span className="text-xl font-black text-yellow-500">60%</span>
                 </div>
-                <Badge className="absolute -bottom-2 -right-2 bg-yellow-500 text-black font-black border-2 border-[#111827]">
-                    60%
-                </Badge>
             </div>
 
             {/* Middle: Content */}
             <div className="flex-1 text-center md:text-left space-y-2">
                 <div className="flex items-center justify-center md:justify-start gap-2 mb-1">
-                    <span className="text-xs font-bold text-yellow-600 uppercase tracking-[0.2em]">Relique Scellée</span>
-                    <Lock className="h-3 w-3 text-yellow-600" />
+                    <Badge variant="outline" className="border-yellow-500/50 text-yellow-500 uppercase tracking-widest text-[10px]">Relique Scellée</Badge>
                 </div>
-                <h3 className="text-2xl font-black text-white uppercase italic tracking-tighter">
+                <h3 className="text-3xl font-black text-white uppercase italic tracking-tighter">
                     POPEY CARD
                 </h3>
-                <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
-                    <div className="bg-yellow-500 h-full w-[60%] shadow-[0_0_10px_rgba(234,179,8,0.5)]"></div>
-                </div>
-                <p className="text-xs text-slate-400 font-medium">
-                    Encore <span className="text-white font-bold">6 jours</span> pour briser la pierre.
+                <p className="text-sm text-slate-400 font-medium">
+                    Encore <span className="text-white font-bold text-yellow-400">6 jours</span> pour briser la pierre et débloquer ta récompense.
                 </p>
             </div>
 
             {/* Right: Action (Locked) */}
             <div className="hidden md:block">
-                 <Button disabled className="bg-slate-800 text-slate-500 border border-slate-700 font-bold opacity-50 cursor-not-allowed">
-                    <Lock className="h-4 w-4 mr-2" />
-                    Verrouillé
-                 </Button>
+                 <div className="bg-[#0d1220] px-4 py-2 rounded-lg border border-slate-800 flex items-center gap-3 opacity-70">
+                    <Lock className="h-5 w-5 text-slate-500" />
+                    <span className="text-slate-400 font-bold text-xs uppercase tracking-wider">Verrouillé</span>
+                 </div>
             </div>
         </div>
     </Card>
@@ -480,9 +482,30 @@ export default function CockpitPreviewPage() {
                         J9 : <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-red-600">La Chasse</span>
                     </h1>
                     
-                    <p className="text-2xl text-slate-400 max-w-3xl leading-relaxed italic font-light">
+                    <p className="text-2xl text-slate-400 max-w-3xl leading-relaxed italic font-light mb-8">
                         "Aujourd'hui, on ne prépare plus. On sort. On chasse. On ramène."
                     </p>
+
+                    {/* Popey Card (Intégrée) */}
+                    <div className="inline-flex items-center gap-6 bg-[#111827] border border-yellow-500/30 rounded-full px-6 py-3 shadow-[0_0_20px_rgba(234,179,8,0.1)] hover:border-yellow-500/60 transition-colors cursor-pointer group">
+                        <div className="relative">
+                            <div className="h-10 w-10 rounded-full bg-yellow-900/20 border-2 border-yellow-500 flex items-center justify-center">
+                                <Trophy className="h-5 w-5 text-yellow-500" />
+                            </div>
+                            <div className="absolute -top-1 -right-1 h-4 w-4 bg-yellow-500 rounded-full flex items-center justify-center text-[10px] font-black text-black border border-[#111827]">
+                                60%
+                            </div>
+                        </div>
+                        <div className="text-left">
+                            <div className="flex items-center gap-2">
+                                <h3 className="text-sm font-black text-white uppercase italic tracking-tighter group-hover:text-yellow-400 transition-colors">POPEY CARD</h3>
+                                <Lock className="h-3 w-3 text-slate-500" />
+                            </div>
+                            <p className="text-[10px] text-slate-400 font-medium uppercase tracking-wide">
+                                Encore <span className="text-white font-bold">6 jours</span> pour briser la pierre
+                            </p>
+                        </div>
+                    </div>
                 </div>
 
                 <div className="flex flex-col gap-12">
@@ -523,17 +546,13 @@ export default function CockpitPreviewPage() {
                             <h2 className="text-xl font-black text-slate-500 uppercase tracking-[0.3em]">Plan de Bataille</h2>
                             <div className="h-px bg-slate-800 flex-1"></div>
                          </div>
-
-                         {/* 0. GOLDEN TICKET (RELIQUE) */}
-                         <MockGoldenTicket />
                          
                          {/* 1. L'AUDIT DE L'INERTIE */}
                         <StoryBlock 
                             title="L'Audit de l'Inertie" 
                             subtitle="Intellectuel" 
                             icon={Clock} 
-                            colorClass="bg-blue-500"
-                            imageBg="https://images.unsplash.com/photo-1615818499660-30b5893f9c69?q=80&w=2070&auto=format&fit=crop" // Rusty chain / ship
+                            colorClass="text-blue-400"
                             proofType="text"
                             isCompleted={completedSteps.includes(1)}
                             onValidate={() => toggleStep(1)}
@@ -555,8 +574,7 @@ export default function CockpitPreviewPage() {
                             title="Le Sabotage" 
                             subtitle="Social" 
                             icon={AlertTriangle} 
-                            colorClass="bg-red-600"
-                            imageBg="https://images.unsplash.com/photo-1590274853023-535352378943?q=80&w=2000&auto=format&fit=crop" // Dark foggy ship bridge
+                            colorClass="text-red-400"
                             proofType="text"
                             isCompleted={completedSteps.includes(2)}
                             onValidate={() => toggleStep(2)}
@@ -575,8 +593,7 @@ export default function CockpitPreviewPage() {
                             title="La Réalité Mathématique" 
                             subtitle="Créatif" 
                             icon={Ship} 
-                            colorClass="bg-orange-500"
-                            imageBg="https://images.unsplash.com/photo-1551288049-bebda4e38f71?q=80&w=2070&auto=format&fit=crop" // Gauge / Engine room
+                            colorClass="text-orange-400"
                             proofType="image"
                             isCompleted={completedSteps.includes(3)}
                             onValidate={() => toggleStep(3)}
@@ -594,17 +611,8 @@ export default function CockpitPreviewPage() {
                     </section>
                 </div>
 
-                {/* Buddy Chat - Floating Fixed Bottom Right or Integrated ? Let's integrate it below missions for now to keep focus */}
-                <div className="max-w-4xl mx-auto mt-12 mb-16">
-                     <div className="flex items-center gap-4 mb-4">
-                        <div className="h-px bg-slate-800 flex-1"></div>
-                        <h2 className="text-xl font-black text-slate-500 uppercase tracking-[0.3em] flex items-center gap-2">
-                            <Users className="h-5 w-5" /> Communication Sécurisée
-                        </h2>
-                        <div className="h-px bg-slate-800 flex-1"></div>
-                     </div>
-                    <MockBuddyChat />
-                </div>
+                {/* Buddy Chat - Floating Fixed Bottom Right */}
+                <FloatingBuddyChat />
 
                 {/* Victory Wall - Full Width Bottom Section */}
                 <div className="hidden lg:block mt-16 max-w-6xl mx-auto">
