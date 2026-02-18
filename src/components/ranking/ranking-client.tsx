@@ -134,12 +134,12 @@ export default function RankingPage({ ranking, myBuddy }: { ranking: any[], myBu
                     <TabsContent value="ranking" className="space-y-6">
                         <div className="grid md:grid-cols-3 gap-6 mb-12 items-end">
                             {/* 2nd Place */}
-                            {ranking[1] && (
+                            {ranking[1] ? (
                                 <Card className="bg-slate-900/50 border-slate-800 border-t-4 border-t-slate-400 transform translate-y-4">
                                     <CardContent className="p-6 text-center space-y-4">
                                         <div className="mx-auto h-20 w-20 rounded-full border-4 border-slate-400 bg-slate-800 flex items-center justify-center text-3xl font-black text-slate-400">2</div>
                                         <div>
-                                            <h3 className="text-xl font-bold text-white">{ranking[1].name}</h3>
+                                            <h3 className="text-xl font-bold text-white truncate max-w-[150px] mx-auto">{ranking[1].name}</h3>
                                             <p className="text-slate-500 text-sm uppercase font-bold tracking-wider">Vice-Champion</p>
                                         </div>
                                         <Badge variant="secondary" className="bg-slate-800 text-slate-300 text-lg px-4 py-1">
@@ -147,10 +147,12 @@ export default function RankingPage({ ranking, myBuddy }: { ranking: any[], myBu
                                         </Badge>
                                     </CardContent>
                                 </Card>
+                            ) : (
+                                <div className="h-full"></div> // Placeholder
                             )}
 
                             {/* 1st Place */}
-                            {ranking[0] && (
+                            {ranking[0] ? (
                                 <Card className="bg-gradient-to-b from-yellow-900/20 to-slate-900 border-yellow-500/50 border-t-4 border-t-yellow-500 shadow-[0_0_30px_rgba(234,179,8,0.2)] z-10">
                                     <CardContent className="p-8 text-center space-y-6">
                                         <div className="mx-auto h-24 w-24 rounded-full border-4 border-yellow-500 bg-yellow-900/50 flex items-center justify-center relative">
@@ -160,7 +162,7 @@ export default function RankingPage({ ranking, myBuddy }: { ranking: any[], myBu
                                             </div>
                                         </div>
                                         <div>
-                                            <h3 className="text-2xl font-black text-white uppercase italic">{ranking[0].name}</h3>
+                                            <h3 className="text-2xl font-black text-white uppercase italic truncate max-w-[200px] mx-auto">{ranking[0].name}</h3>
                                             <p className="text-yellow-500 text-sm uppercase font-bold tracking-wider">Maître du Réseau</p>
                                         </div>
                                         <div className="text-5xl font-black text-white tracking-tighter">
@@ -169,15 +171,17 @@ export default function RankingPage({ ranking, myBuddy }: { ranking: any[], myBu
                                         </div>
                                     </CardContent>
                                 </Card>
+                            ) : (
+                                <div className="text-center text-slate-500">En attente de scores...</div>
                             )}
 
                             {/* 3rd Place */}
-                            {ranking[2] && (
+                            {ranking[2] ? (
                                 <Card className="bg-slate-900/50 border-slate-800 border-t-4 border-t-orange-700 transform translate-y-8">
                                     <CardContent className="p-6 text-center space-y-4">
                                         <div className="mx-auto h-20 w-20 rounded-full border-4 border-orange-700 bg-slate-800 flex items-center justify-center text-3xl font-black text-orange-700">3</div>
                                         <div>
-                                            <h3 className="text-xl font-bold text-white">{ranking[2].name}</h3>
+                                            <h3 className="text-xl font-bold text-white truncate max-w-[150px] mx-auto">{ranking[2].name}</h3>
                                             <p className="text-slate-500 text-sm uppercase font-bold tracking-wider">Challenger</p>
                                         </div>
                                         <Badge variant="secondary" className="bg-slate-800 text-slate-300 text-lg px-4 py-1">
@@ -185,6 +189,8 @@ export default function RankingPage({ ranking, myBuddy }: { ranking: any[], myBu
                                         </Badge>
                                     </CardContent>
                                 </Card>
+                            ) : (
+                                <div className="h-full"></div> // Placeholder
                             )}
                         </div>
 
@@ -198,27 +204,28 @@ export default function RankingPage({ ranking, myBuddy }: { ranking: any[], myBu
                             </CardHeader>
                             <CardContent>
                                 <div className="space-y-2">
-                                    {ranking.slice(3).map((user, index) => (
-                                        <div key={user.user_id} className="flex items-center justify-between p-4 bg-slate-950/50 rounded-lg border border-slate-800/50 hover:border-slate-700 transition-colors">
-                                            <div className="flex items-center gap-4">
-                                                <span className="font-mono text-slate-500 w-8 text-right font-bold">#{index + 4}</span>
-                                                <Avatar className="h-10 w-10 border border-slate-700">
-                                                    <AvatarFallback className="bg-slate-800 text-slate-400 font-bold">{user.name[0]}</AvatarFallback>
-                                                </Avatar>
-                                                <span className="font-bold text-slate-300">{user.name}</span>
-                                            </div>
-                                            <div className="flex items-center gap-4">
-                                                <div className="text-right hidden sm:block">
-                                                    <span className="text-xs text-slate-500 uppercase font-bold">Rapports</span>
-                                                    <p className="text-slate-300 font-mono">{user.reports_count}</p>
+                                    {ranking.length > 3 ? (
+                                        ranking.slice(3).map((user, index) => (
+                                            <div key={user.user_id} className="flex items-center justify-between p-4 bg-slate-950/50 rounded-lg border border-slate-800/50 hover:border-slate-700 transition-colors">
+                                                <div className="flex items-center gap-4">
+                                                    <span className="font-mono text-slate-500 w-8 text-right font-bold">#{index + 4}</span>
+                                                    <Avatar className="h-10 w-10 border border-slate-700">
+                                                        <AvatarFallback className="bg-slate-800 text-slate-400 font-bold">{user.name[0]}</AvatarFallback>
+                                                    </Avatar>
+                                                    <span className="font-bold text-slate-300">{user.name}</span>
                                                 </div>
-                                                <Badge variant="outline" className="bg-slate-900 text-white border-slate-700 h-8 px-3 text-sm font-bold">
-                                                    {user.total_score} PTS
-                                                </Badge>
+                                                <div className="flex items-center gap-4">
+                                                    <div className="text-right hidden sm:block">
+                                                        <span className="text-xs text-slate-500 uppercase font-bold">Rapports</span>
+                                                        <p className="text-slate-300 font-mono">{user.reports_count}</p>
+                                                    </div>
+                                                    <Badge variant="outline" className="bg-slate-900 text-white border-slate-700 h-8 px-3 text-sm font-bold">
+                                                        {user.total_score} PTS
+                                                    </Badge>
+                                                </div>
                                             </div>
-                                        </div>
-                                    ))}
-                                    {ranking.length <= 3 && (
+                                        ))
+                                    ) : (
                                         <div className="text-center py-8 text-slate-500 italic">
                                             Le reste du classement s'affichera ici dès que d'autres points seront marqués.
                                         </div>
