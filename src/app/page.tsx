@@ -9,6 +9,7 @@ import {
     Briefcase, Hammer, Lightbulb, Monitor, Scissors
 } from "lucide-react";
 import { PreRegistrationForm } from "@/components/pre-registration-form";
+import { StickyRecruitmentBanner } from "@/components/sticky-recruitment-banner";
 import { motion, useScroll } from "framer-motion";
 import { useRef } from "react";
 import { cn } from "@/lib/utils";
@@ -1083,6 +1084,7 @@ export default function Home() {
             </div>
         </div>
       </footer>
+      <StickyRecruitmentBanner />
     </div>
   );
 }
