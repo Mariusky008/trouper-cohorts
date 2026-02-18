@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Anchor, ArrowRight, CheckCircle2, Shield, Users, Heart, Zap, Lock, Globe, Star, ChevronDown, ChevronUp, Trophy } from "lucide-react";
 import { useState, useRef } from "react";
 import Link from "next/link";
+import { StickyRecruitmentBanner } from "@/components/sticky-recruitment-banner";
 
 // --- Components ---
 
@@ -736,6 +737,7 @@ export default function AlliancePage() {
                     </div>
                 </div>
             </footer>
+            <StickyRecruitmentBanner forceVisible={true} />
         </div>
     );
 }
