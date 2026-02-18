@@ -231,6 +231,145 @@ export default function AlliancePage() {
                 </div>
             </Section>
 
+            {/* SECTION TARIF & VALEUR */}
+            <Section className="bg-[#050505] relative">
+                <div className="max-w-5xl mx-auto space-y-24">
+                    
+                    {/* BLOC 1 — PRIX */}
+                    <FadeIn className="text-center">
+                        <h2 className="text-3xl md:text-5xl font-black text-white uppercase italic tracking-tighter mb-8">
+                            Combien coûte rejoindre une Alliance ?
+                        </h2>
+                        <div className="max-w-3xl mx-auto space-y-8">
+                            <p className="text-lg text-slate-400 leading-relaxed">
+                                Rejoindre une Alliance représente un engagement. <br/>
+                                Parce que nous ne créons pas simplement un groupe de discussion. <br/>
+                                <span className="text-white">Nous construisons un réseau humain réel, actif et structuré,</span> <br/>
+                                composé de 24 personnes qui s’entraident concrètement.
+                            </p>
+                            
+                            <div className="py-10">
+                                <div className="text-7xl md:text-9xl font-black text-transparent bg-clip-text bg-gradient-to-b from-white to-slate-500 tracking-tighter">
+                                    49 €<span className="text-2xl md:text-4xl text-slate-500 font-bold uppercase ml-2">/ mois</span>
+                                </div>
+                                <p className="text-slate-500 text-sm uppercase tracking-widest mt-4">
+                                    Engagement initial de 6 mois <br/>
+                                    <span className="text-slate-600 normal-case tracking-normal">Le temps nécessaire pour créer des liens de confiance solides.</span>
+                                </p>
+                            </div>
+                        </div>
+                    </FadeIn>
+
+                    {/* BLOC 2 — PÉDAGOGIE VALEUR */}
+                    <div className="grid md:grid-cols-2 gap-8 md:gap-16 items-center">
+                        <FadeIn>
+                            <h3 className="text-3xl font-black text-white uppercase italic mb-6">Pourquoi un tarif mensuel ?</h3>
+                            <p className="text-slate-400 text-lg mb-8 leading-relaxed">
+                                Cela peut paraître important si l’on pense rejoindre un simple groupe WhatsApp, des rencontres sociales ou du networking informel.
+                                <br/><br/>
+                                <span className="text-white font-bold">Mais une Alliance est différente.</span>
+                            </p>
+                        </FadeIn>
+                        
+                        <FadeIn delay={0.2} className="bg-[#0a0f1c] border border-slate-800 p-8 rounded-3xl relative overflow-hidden">
+                            <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full blur-3xl"></div>
+                            <h4 className="text-sm font-bold text-blue-500 uppercase tracking-widest mb-6">Vous rejoignez :</h4>
+                            <ul className="space-y-4">
+                                {[
+                                    "Un réseau actif de 24 personnes",
+                                    "De l’aide concrète quand vous en avez besoin",
+                                    "Des opportunités professionnelles et personnelles",
+                                    "Du soutien moral dans les moments difficiles",
+                                    "Des compétences accessibles autour de vous",
+                                    "Du temps gagné pour résoudre des problèmes"
+                                ].map((item, i) => (
+                                    <li key={i} className="flex items-start gap-3">
+                                        <CheckCircle2 className="h-5 w-5 text-blue-500 shrink-0 mt-0.5" />
+                                        <span className="text-slate-300 font-medium">{item}</span>
+                                    </li>
+                                ))}
+                            </ul>
+                            <div className="mt-8 pt-8 border-t border-slate-800 text-center">
+                                <p className="text-white font-bold text-lg">Ce n’est pas un loisir. <br/>C’est une ressource de vie.</p>
+                            </div>
+                        </FadeIn>
+                    </div>
+
+                    {/* BLOC 3 — COMPARAISON */}
+                    <FadeIn>
+                        <div className="text-center mb-12">
+                            <h3 className="text-2xl md:text-4xl font-black text-white uppercase italic">
+                                Un investissement comparable <br/>à des dépenses courantes
+                            </h3>
+                        </div>
+                        
+                        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                            {[
+                                { label: "Salle de sport", price: "30-80€", icon: Zap },
+                                { label: "Divertissement", price: "20-60€", icon: Heart },
+                                { label: "Mutuelle santé", price: "60-150€", icon: Shield },
+                                { label: "Thérapie (1h)", price: "60-120€", icon: Users },
+                                { label: "Sorties", price: "100€+", icon: Star },
+                            ].map((item, i) => (
+                                <div key={i} className="bg-[#0a0a0a] border border-white/5 p-4 rounded-2xl text-center hover:border-white/20 transition-colors">
+                                    <item.icon className="h-6 w-6 text-slate-600 mx-auto mb-3" />
+                                    <div className="font-bold text-slate-300 text-sm mb-1">{item.label}</div>
+                                    <div className="text-xs text-slate-500">{item.price} / mois</div>
+                                </div>
+                            ))}
+                        </div>
+                        
+                        <div className="mt-12 text-center max-w-2xl mx-auto">
+                            <p className="text-xl text-slate-300 font-light italic">
+                                "Une Alliance peut vous apporter du soutien, des solutions, un réseau et des opportunités concrètes. 
+                                <span className="text-white font-medium not-italic"> Pour beaucoup, la valeur dépasse largement le coût.</span>"
+                            </p>
+                        </div>
+                    </FadeIn>
+
+                    {/* BLOC 4 — ENGAGEMENT */}
+                    <FadeIn className="bg-white text-black rounded-3xl p-8 md:p-12 text-center relative overflow-hidden">
+                         <div className="relative z-10 max-w-3xl mx-auto">
+                            <h3 className="text-2xl md:text-4xl font-black uppercase italic mb-6">
+                                Un engagement qui protège la qualité du groupe
+                            </h3>
+                            <p className="text-lg text-slate-600 mb-8">
+                                Le tarif permet de garantir l’implication des membres, de maintenir des groupes sérieux, 
+                                de financer l’animation et d’assurer un environnement fiable.
+                            </p>
+                            <div className="inline-block border-2 border-black px-6 py-3 font-black uppercase tracking-widest text-sm">
+                                Notre priorité : Créer des Alliances utiles et durables
+                            </div>
+                         </div>
+                    </FadeIn>
+
+                    {/* CITATION & CTA */}
+                    <FadeIn className="text-center pt-12 space-y-12">
+                        <div className="space-y-4">
+                            <h3 className="text-3xl md:text-5xl font-black text-white uppercase italic leading-tight">
+                                Le vrai coût n’est pas le prix.
+                            </h3>
+                            <p className="text-2xl md:text-4xl font-black text-slate-500 uppercase italic">
+                                Le vrai coût, c’est de rester seul face aux difficultés.
+                            </p>
+                        </div>
+                        
+                        <div className="flex flex-col items-center gap-4">
+                            <Button className="h-16 px-10 rounded-full bg-white text-black hover:bg-slate-200 font-black text-xl uppercase tracking-wider shadow-[0_0_30px_rgba(255,255,255,0.2)] hover:shadow-[0_0_50px_rgba(255,255,255,0.4)] transition-all transform hover:scale-105">
+                                Rejoindre une Alliance
+                            </Button>
+                            <p className="text-slate-500 text-xs font-medium uppercase tracking-widest">
+                                Places limitées pour préserver la qualité des groupes.
+                            </p>
+                            <Button variant="link" className="text-slate-400 hover:text-white mt-2">
+                                Poser une question
+                            </Button>
+                        </div>
+                    </FadeIn>
+
+                </div>
+            </Section>
+
             {/* SECTION RÈGLES */}
             <Section className="bg-white text-black text-center">
                 <FadeIn>
