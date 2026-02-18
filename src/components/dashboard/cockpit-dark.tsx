@@ -4,13 +4,16 @@ import { useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { PlayCircle, Anchor, LogOut, Lock, Trophy, Brain, Video, Users, CheckCircle2, Ship, Clock, AlertTriangle } from "lucide-react";
+import { PlayCircle, Anchor, LogOut, Lock, Trophy, Brain, Video, Users, CheckCircle2, Ship, Clock, AlertTriangle, Rocket } from "lucide-react";
 import { AICoachWidget } from "@/components/dashboard/ai-coach-widget";
 import { VictoryWallGrid } from "@/components/dashboard/victory-wall-grid";
 import { FloatingChat } from "@/components/chat/floating-chat";
 import { StoryBlock } from "@/components/dashboard/story-block";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
+import { completeMission } from "@/app/actions/mission";
+import confetti from "canvas-confetti";
+import { toast } from "sonner";
 
 interface CockpitProps {
     user: any;
@@ -39,10 +42,41 @@ export function CockpitDark({
 }: CockpitProps) {
     const supabase = createClient();
     const router = useRouter();
+    const [completing, setCompleting] = useState(false);
+
+    // Vérifier si toutes les étapes sont validées
+    const allStepsValidated = steps.length > 0 && steps.every(s => s.status === 'validated');
 
     const handleLogout = async () => {
         await supabase.auth.signOut();
         router.push("/login");
+    };
+
+    const handleCompleteMission = async () => {
+        if (!mission?.id) return;
+        setCompleting(true);
+        
+        try {
+            const result = await completeMission(mission.id);
+            if (result.error) {
+                toast.error(result.error);
+            } else {
+                // VICTOIRE !
+                confetti({
+                    particleCount: 150,
+                    spread: 70,
+                    origin: { y: 0.6 },
+                    colors: ['#22c55e', '#3b82f6', '#f59e0b']
+                });
+                toast.success("Mission accomplie ! Félicitations soldat ! 🚀");
+                router.refresh();
+            }
+        } catch (error) {
+            console.error(error);
+            toast.error("Erreur lors de la validation");
+        } finally {
+            setCompleting(false);
+        }
     };
 
     // Calculate progress (approximate based on dayIndex)
@@ -268,6 +302,33 @@ export function CockpitDark({
                              </div>
                          )}
                     </section>
+
+                    {/* BOUTON DE VALIDATION FINALE */}
+                    <div className="flex justify-center pb-20">
+                        <Button 
+                            size="lg" 
+                            className={`
+                                h-16 px-12 rounded-full font-black text-lg uppercase tracking-widest transition-all duration-500
+                                ${allStepsValidated 
+                                    ? "bg-gradient-to-r from-green-500 to-emerald-600 hover:scale-105 hover:shadow-[0_0_40px_rgba(34,197,94,0.6)] animate-pulse" 
+                                    : "bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700"}
+                            `}
+                            disabled={!allStepsValidated || completing}
+                            onClick={handleCompleteMission}
+                        >
+                            {completing ? (
+                                <span className="flex items-center gap-3">Validation en cours...</span>
+                            ) : allStepsValidated ? (
+                                <span className="flex items-center gap-3">
+                                    <Rocket className="h-6 w-6" /> Terminer la mission
+                                </span>
+                            ) : (
+                                <span className="flex items-center gap-3">
+                                    <Lock className="h-5 w-5" /> Termine les étapes d'abord
+                                </span>
+                            )}
+                        </Button>
+                    </div>
                 </div>
 
                 {/* Floating Chat */}
