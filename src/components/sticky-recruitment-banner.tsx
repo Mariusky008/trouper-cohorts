@@ -5,13 +5,17 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Briefcase, ChevronRight, Users, X, Hammer, Lightbulb, Monitor, Scissors, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-export function StickyRecruitmentBanner() {
-    const [isVisible, setIsVisible] = useState(false);
+export function StickyRecruitmentBanner({ forceVisible = false }: { forceVisible?: boolean }) {
+    const [isVisible, setIsVisible] = useState(forceVisible);
     const [isExpanded, setIsExpanded] = useState(false);
 
     useEffect(() => {
+        if (forceVisible) {
+            setIsVisible(true);
+            return;
+        }
+
         const handleScroll = () => {
-            // Afficher après 300px de scroll
             if (window.scrollY > 300) {
                 setIsVisible(true);
             } else {
@@ -21,7 +25,7 @@ export function StickyRecruitmentBanner() {
 
         window.addEventListener("scroll", handleScroll);
         return () => window.removeEventListener("scroll", handleScroll);
-    }, []);
+    }, [forceVisible]);
 
     return (
         <AnimatePresence>
@@ -30,7 +34,7 @@ export function StickyRecruitmentBanner() {
                     initial={{ y: 100, opacity: 0 }}
                     animate={{ y: 0, opacity: 1 }}
                     exit={{ y: 100, opacity: 0 }}
-                    className="fixed bottom-4 left-4 right-4 md:left-auto md:right-8 md:bottom-8 z-50 flex flex-col items-end"
+                    className="fixed bottom-4 left-4 right-4 md:right-auto md:left-8 md:bottom-8 z-40 flex flex-col items-start"
                 >
                     {isExpanded ? (
                         <motion.div
