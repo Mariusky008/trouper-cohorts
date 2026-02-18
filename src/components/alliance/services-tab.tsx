@@ -4,15 +4,34 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { 
     Activity, ArrowUpRight, CheckCircle2, Heart, MessageSquare, Plus, 
-    Star, Target, Trophy, Users, Zap, Clock, Shield, Search, Timer, Hourglass
+    Star, Target, Trophy, Users, Zap, Clock, Shield, Search, Timer, Hourglass, 
+    Gauge, Info
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { Slider } from "@/components/ui/slider";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
 
 export function ServicesTab() {
     const [reservedServices, setReservedServices] = useState<number[]>([]);
+    const [isCreatingService, setIsCreatingService] = useState(false);
+    const [difficulty, setDifficulty] = useState(30);
+    
+    // Calcul des points basé sur la difficulté
+    const calculatedPoints = Math.max(10, Math.round(difficulty * 1.5));
+
+    const getDifficultyLabel = (val: number) => {
+        if (val <= 20) return { label: "Très Simple", color: "text-green-400" };
+        if (val <= 40) return { label: "Simple", color: "text-blue-400" };
+        if (val <= 60) return { label: "Moyen", color: "text-yellow-400" };
+        if (val <= 80) return { label: "Difficile", color: "text-orange-400" };
+        return { label: "Très Difficile", color: "text-red-400" };
+    };
 
     const toggleReservation = (id: number) => {
         if (reservedServices.includes(id)) {
@@ -31,9 +50,67 @@ export function ServicesTab() {
                     <Button variant="ghost" className="text-slate-400 hover:text-white">À Rendre (Disponibles)</Button>
                     <Button variant="ghost" className="text-slate-400 hover:text-white">Mes Échanges</Button>
                 </div>
-                <Button className="bg-blue-600 hover:bg-blue-700 text-white font-bold">
-                    <Plus className="h-4 w-4 mr-2" /> Demander un Service
-                </Button>
+                
+                <Dialog open={isCreatingService} onOpenChange={setIsCreatingService}>
+                    <DialogTrigger asChild>
+                        <Button className="bg-blue-600 hover:bg-blue-700 text-white font-bold">
+                            <Plus className="h-4 w-4 mr-2" /> Demander un Service
+                        </Button>
+                    </DialogTrigger>
+                    <DialogContent className="bg-[#0a0f1c] border-slate-800 text-white max-w-lg">
+                        <DialogHeader>
+                            <DialogTitle className="text-xl font-bold flex items-center gap-2">
+                                <Zap className="h-5 w-5 text-yellow-400" /> Créer une demande de service
+                            </DialogTitle>
+                        </DialogHeader>
+                        <div className="space-y-6 py-4">
+                            <div className="space-y-2">
+                                <Label className="text-slate-400">Titre de la demande</Label>
+                                <Input placeholder="Ex: Aide pour déménagement, Relecture..." className="bg-slate-900 border-slate-700 text-white" />
+                            </div>
+                            
+                            <div className="space-y-4 bg-slate-900/50 p-4 rounded-xl border border-slate-800">
+                                <div className="flex justify-between items-center">
+                                    <Label className="text-slate-200 font-bold flex items-center gap-2">
+                                        <Gauge className="h-4 w-4 text-blue-400" /> Difficulté & Points
+                                    </Label>
+                                    <span className={`font-black text-sm ${getDifficultyLabel(difficulty).color}`}>
+                                        {getDifficultyLabel(difficulty).label} ({difficulty}/100)
+                                    </span>
+                                </div>
+                                <Slider 
+                                    value={[difficulty]} 
+                                    onValueChange={(vals) => setDifficulty(vals[0])} 
+                                    max={100} 
+                                    step={5}
+                                    className="py-4"
+                                />
+                                <div className="flex justify-between items-center text-xs text-slate-500">
+                                    <span>Rapide (10pts)</span>
+                                    <span>Intensif (150pts)</span>
+                                </div>
+                                <div className="bg-slate-800 p-3 rounded-lg flex justify-between items-center border border-slate-700">
+                                    <span className="text-xs text-slate-400 max-w-[70%]">
+                                        Indiquez la difficulté pour que l'exécutant sache combien de points il gagnera.
+                                    </span>
+                                    <div className="text-right">
+                                        <span className="block text-2xl font-black text-yellow-400">{calculatedPoints}</span>
+                                        <span className="text-[10px] uppercase font-bold text-slate-500">Points à gagner</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label className="text-slate-400">Description détaillée</Label>
+                                <Textarea placeholder="Détails, contraintes, horaires..." className="bg-slate-900 border-slate-700 text-white min-h-[100px]" />
+                            </div>
+
+                            <Button className="w-full bg-blue-600 hover:bg-blue-700 font-bold" onClick={() => setIsCreatingService(false)}>
+                                Publier la demande (+{calculatedPoints} pts offerts)
+                            </Button>
+                        </div>
+                    </DialogContent>
+                </Dialog>
             </div>
 
             {/* OFFRES DISPONIBLES (MARKETPLACE) */}
@@ -41,14 +118,19 @@ export function ServicesTab() {
                 <h3 className="text-xl font-bold text-white flex items-center gap-2">
                     <Zap className="h-5 w-5 text-yellow-400" /> Opportunités à Saisir (Services à Rendre)
                 </h3>
+                <p className="text-slate-400 text-sm mb-4">
+                    Plus la mission est complexe, plus vous gagnez de points pour avancer vers le palier supérieur !
+                </p>
                 <div className="grid md:grid-cols-2 gap-6">
                     {[
-                        { id: 1, title: "Aide déménagement (Bras)", user: "Thomas D.", deadline: "Samedi 14h", duration: "3h", points: "+80 pts", urgent: true, timer: "48h" },
-                        { id: 2, title: "Review Code React/Next.js", user: "Sarah M.", deadline: "Avant demain soir", duration: "1h", points: "+50 pts", urgent: false, timer: "24h" },
-                        { id: 3, title: "Conseil Création Statuts", user: "Karim B.", deadline: "Flexible", duration: "30min", points: "+30 pts", urgent: false, timer: "72h" },
-                        { id: 4, title: "Prêt Matériel Vidéo", user: "Emma R.", deadline: "Mardi prochain", duration: "N/A", points: "+20 pts", urgent: false, timer: "72h" },
+                        { id: 1, title: "Aide déménagement (Bras)", user: "Thomas D.", deadline: "Samedi 14h", duration: "3h", points: 80, difficulty: 65, urgent: true, timer: "48h" },
+                        { id: 2, title: "Review Code React/Next.js", user: "Sarah M.", deadline: "Avant demain soir", duration: "1h", points: 50, difficulty: 40, urgent: false, timer: "24h" },
+                        { id: 3, title: "Conseil Création Statuts", user: "Karim B.", deadline: "Flexible", duration: "30min", points: 30, difficulty: 25, urgent: false, timer: "72h" },
+                        { id: 4, title: "Prêt Matériel Vidéo", user: "Emma R.", deadline: "Mardi prochain", duration: "N/A", points: 20, difficulty: 10, urgent: false, timer: "72h" },
                     ].map((offer, i) => {
                         const isReserved = reservedServices.includes(offer.id);
+                        const diffInfo = getDifficultyLabel(offer.difficulty);
+                        
                         return (
                             <motion.div 
                                 key={offer.id}
@@ -73,9 +155,25 @@ export function ServicesTab() {
                                                 <p className="text-slate-500 text-xs">Demandé par {offer.user}</p>
                                             </div>
                                         </div>
-                                        <Badge variant="outline" className="border-yellow-500/20 text-yellow-400 bg-yellow-500/10">
-                                            {offer.points}
-                                        </Badge>
+                                        <div className="text-right">
+                                            <Badge variant="outline" className="border-yellow-500/20 text-yellow-400 bg-yellow-500/10 mb-1">
+                                                +{offer.points} pts
+                                            </Badge>
+                                        </div>
+                                    </div>
+
+                                    {/* JAUGE DIFFICULTÉ */}
+                                    <div className="mb-6 space-y-1">
+                                        <div className="flex justify-between text-[10px] font-bold uppercase tracking-wider">
+                                            <span className="text-slate-500">Complexité</span>
+                                            <span className={diffInfo.color}>{diffInfo.label}</span>
+                                        </div>
+                                        <div className="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
+                                            <div 
+                                                className={`h-full rounded-full ${diffInfo.color.replace('text-', 'bg-')}`} 
+                                                style={{ width: `${offer.difficulty}%` }}
+                                            ></div>
+                                        </div>
                                     </div>
 
                                     <div className="grid grid-cols-2 gap-4 mb-6">
