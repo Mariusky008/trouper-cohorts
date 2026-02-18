@@ -48,7 +48,7 @@ export default function AlliancePage() {
             <nav className="fixed top-0 w-full z-50 px-6 py-6 flex justify-between items-center bg-gradient-to-b from-[#050505] to-transparent pointer-events-none">
                 <div className="pointer-events-auto flex items-center gap-2">
                     <Anchor className="h-6 w-6 text-white" />
-                    <span className="font-black text-xl tracking-tighter text-white uppercase italic">ALLIANCE</span>
+                    <span className="font-black text-xl tracking-tighter text-white uppercase italic">Popey Academy</span>
                 </div>
                 <div className="pointer-events-auto">
                     <Button variant="outline" className="rounded-full border-white/20 bg-white/5 text-white hover:bg-white hover:text-black transition-all backdrop-blur-md font-medium text-sm px-6">
