@@ -2,7 +2,7 @@
 
 import { motion, useScroll, useTransform } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Anchor, ArrowRight, CheckCircle2, Shield, Users, Heart, Zap, Lock, Globe, Star, ChevronDown, ChevronUp } from "lucide-react";
+import { Anchor, ArrowRight, CheckCircle2, Shield, Users, Heart, Zap, Lock, Globe, Star, ChevronDown, ChevronUp, Trophy } from "lucide-react";
 import { useState, useRef } from "react";
 import Link from "next/link";
 
