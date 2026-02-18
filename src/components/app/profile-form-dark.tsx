@@ -161,96 +161,108 @@ export function ProfileFormDark({ initialData }: { initialData: ProfileData }) {
         <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4">Réseaux Sociaux</h3>
         
         {/* INSTAGRAM */}
-        <div className="space-y-2">
+        <div className="space-y-3 pt-2">
+            <Label htmlFor="instagram" className="text-slate-400 font-bold uppercase text-xs tracking-wider">Instagram</Label>
             <div className={`flex items-center gap-3 group ${noInstagram ? "opacity-50 pointer-events-none" : ""}`}>
-            <div className="h-10 w-10 rounded-lg bg-[#111827] flex items-center justify-center border border-slate-800 group-focus-within:border-pink-500/50 group-focus-within:bg-pink-950/10 transition-colors">
-                <Instagram className="h-5 w-5 text-slate-500 group-focus-within:text-pink-500 transition-colors" />
+            <div className="h-12 w-12 shrink-0 rounded-lg bg-[#0f1623] flex items-center justify-center border border-slate-700 shadow-md group-focus-within:border-pink-500/50 group-focus-within:bg-pink-950/10 transition-colors">
+                <Instagram className="h-6 w-6 text-slate-500 group-focus-within:text-pink-500 transition-colors" />
             </div>
             <Input 
+                id="instagram"
                 name="instagram" 
                 defaultValue={initialData.instagram_handle || ""} 
-                placeholder="Pseudo Instagram (sans @)" 
-                className="bg-[#111827] border-slate-800 text-slate-200 focus:border-pink-500/50 focus:ring-pink-500/20"
+                placeholder="Ex: @monpseudo" 
+                className="bg-[#0f1623] border-slate-700 text-slate-200 placeholder:text-slate-600 focus:border-pink-500/50 focus:ring-pink-500/20 h-12 text-base font-medium"
                 disabled={noInstagram}
             />
             </div>
-            <div className="flex items-center space-x-2 pl-14">
-                <Checkbox id="noInstagram" checked={noInstagram} onCheckedChange={(c) => setNoInstagram(c as boolean)} className="border-slate-700 data-[state=checked]:bg-slate-700" />
-                <label htmlFor="noInstagram" className="text-xs text-slate-500 cursor-pointer">Je n'ai pas Instagram</label>
+            <div className="flex items-center space-x-3 pl-1 bg-slate-900/30 p-2 rounded-lg border border-slate-800/50 w-fit">
+                <Checkbox id="noInstagram" checked={noInstagram} onCheckedChange={(c) => setNoInstagram(c as boolean)} className="border-slate-600 data-[state=checked]:bg-slate-500 data-[state=checked]:border-slate-500" />
+                <label htmlFor="noInstagram" className="text-xs font-medium text-slate-400 cursor-pointer select-none">Je n'ai pas de compte Instagram</label>
             </div>
         </div>
 
         {/* LINKEDIN */}
-        <div className="space-y-2">
+        <div className="space-y-3 pt-2 border-t border-slate-800/30 mt-4">
+            <Label htmlFor="linkedin" className="text-slate-400 font-bold uppercase text-xs tracking-wider">LinkedIn</Label>
             <div className={`flex items-center gap-3 group ${noLinkedin ? "opacity-50 pointer-events-none" : ""}`}>
-            <div className="h-10 w-10 rounded-lg bg-[#111827] flex items-center justify-center border border-slate-800 group-focus-within:border-blue-500/50 group-focus-within:bg-blue-950/10 transition-colors">
-                <Linkedin className="h-5 w-5 text-slate-500 group-focus-within:text-blue-500 transition-colors" />
+            <div className="h-12 w-12 shrink-0 rounded-lg bg-[#0f1623] flex items-center justify-center border border-slate-700 shadow-md group-focus-within:border-blue-500/50 group-focus-within:bg-blue-950/10 transition-colors">
+                <Linkedin className="h-6 w-6 text-slate-500 group-focus-within:text-blue-500 transition-colors" />
             </div>
             <Input 
+                id="linkedin"
                 name="linkedin" 
                 defaultValue={initialData.linkedin_url || ""} 
-                placeholder="Lien LinkedIn complet" 
-                className="bg-[#111827] border-slate-800 text-slate-200 focus:border-blue-500/50 focus:ring-blue-500/20"
+                placeholder="Ex: https://linkedin.com/in/monprofil" 
+                className="bg-[#0f1623] border-slate-700 text-slate-200 placeholder:text-slate-600 focus:border-blue-500/50 focus:ring-blue-500/20 h-12 text-base font-medium"
                 disabled={noLinkedin}
             />
             </div>
-            <div className="flex items-center space-x-2 pl-14">
-                <Checkbox id="noLinkedin" checked={noLinkedin} onCheckedChange={(c) => setNoLinkedin(c as boolean)} className="border-slate-700 data-[state=checked]:bg-slate-700" />
-                <label htmlFor="noLinkedin" className="text-xs text-slate-500 cursor-pointer">Je n'ai pas LinkedIn</label>
+            <div className="flex items-center space-x-3 pl-1 bg-slate-900/30 p-2 rounded-lg border border-slate-800/50 w-fit">
+                <Checkbox id="noLinkedin" checked={noLinkedin} onCheckedChange={(c) => setNoLinkedin(c as boolean)} className="border-slate-600 data-[state=checked]:bg-slate-500 data-[state=checked]:border-slate-500" />
+                <label htmlFor="noLinkedin" className="text-xs font-medium text-slate-400 cursor-pointer select-none">Je n'ai pas de compte LinkedIn</label>
             </div>
         </div>
 
         {/* FACEBOOK */}
-        <div className="space-y-2">
+        <div className="space-y-3 pt-2 border-t border-slate-800/30 mt-4">
+            <Label htmlFor="facebook" className="text-slate-400 font-bold uppercase text-xs tracking-wider">Facebook</Label>
             <div className={`flex items-center gap-3 group ${noFacebook ? "opacity-50 pointer-events-none" : ""}`}>
-            <div className="h-10 w-10 rounded-lg bg-[#111827] flex items-center justify-center border border-slate-800 group-focus-within:border-blue-600/50 group-focus-within:bg-blue-950/10 transition-colors">
-                <Facebook className="h-5 w-5 text-slate-500 group-focus-within:text-blue-600 transition-colors" />
+            <div className="h-12 w-12 shrink-0 rounded-lg bg-[#0f1623] flex items-center justify-center border border-slate-700 shadow-md group-focus-within:border-blue-600/50 group-focus-within:bg-blue-950/10 transition-colors">
+                <Facebook className="h-6 w-6 text-slate-500 group-focus-within:text-blue-600 transition-colors" />
             </div>
             <Input 
+                id="facebook"
                 name="facebook" 
                 defaultValue={initialData.facebook_handle || ""} 
-                placeholder="Lien Profil Facebook" 
-                className="bg-[#111827] border-slate-800 text-slate-200 focus:border-blue-600/50 focus:ring-blue-600/20"
+                placeholder="Ex: https://facebook.com/monprofil" 
+                className="bg-[#0f1623] border-slate-700 text-slate-200 placeholder:text-slate-600 focus:border-blue-600/50 focus:ring-blue-600/20 h-12 text-base font-medium"
                 disabled={noFacebook}
             />
             </div>
-            <div className="flex items-center space-x-2 pl-14">
-                <Checkbox id="noFacebook" checked={noFacebook} onCheckedChange={(c) => setNoFacebook(c as boolean)} className="border-slate-700 data-[state=checked]:bg-slate-700" />
-                <label htmlFor="noFacebook" className="text-xs text-slate-500 cursor-pointer">Je n'ai pas Facebook</label>
+            <div className="flex items-center space-x-3 pl-1 bg-slate-900/30 p-2 rounded-lg border border-slate-800/50 w-fit">
+                <Checkbox id="noFacebook" checked={noFacebook} onCheckedChange={(c) => setNoFacebook(c as boolean)} className="border-slate-600 data-[state=checked]:bg-slate-500 data-[state=checked]:border-slate-500" />
+                <label htmlFor="noFacebook" className="text-xs font-medium text-slate-400 cursor-pointer select-none">Je n'ai pas de compte Facebook</label>
             </div>
         </div>
 
         {/* TIKTOK */}
-        <div className="space-y-2">
+        <div className="space-y-3 pt-2 border-t border-slate-800/30 mt-4">
+            <Label htmlFor="tiktok" className="text-slate-400 font-bold uppercase text-xs tracking-wider">TikTok</Label>
             <div className={`flex items-center gap-3 group ${noTiktok ? "opacity-50 pointer-events-none" : ""}`}>
-            <div className="h-10 w-10 rounded-lg bg-[#111827] flex items-center justify-center border border-slate-800 group-focus-within:border-pink-500/50 group-focus-within:bg-pink-950/10 transition-colors">
-                <Music className="h-5 w-5 text-slate-500 group-focus-within:text-pink-500 transition-colors" />
+            <div className="h-12 w-12 shrink-0 rounded-lg bg-[#0f1623] flex items-center justify-center border border-slate-700 shadow-md group-focus-within:border-pink-500/50 group-focus-within:bg-pink-950/10 transition-colors">
+                <Music className="h-6 w-6 text-slate-500 group-focus-within:text-pink-500 transition-colors" />
             </div>
             <Input 
+                id="tiktok"
                 name="tiktok" 
                 defaultValue={initialData.tiktok_handle || ""} 
-                placeholder="Pseudo TikTok (@pseudo)" 
-                className="bg-[#111827] border-slate-800 text-slate-200 focus:border-pink-500/50 focus:ring-pink-500/20"
+                placeholder="Ex: @monpseudo" 
+                className="bg-[#0f1623] border-slate-700 text-slate-200 placeholder:text-slate-600 focus:border-pink-500/50 focus:ring-pink-500/20 h-12 text-base font-medium"
                 disabled={noTiktok}
             />
             </div>
-            <div className="flex items-center space-x-2 pl-14">
-                <Checkbox id="noTiktok" checked={noTiktok} onCheckedChange={(c) => setNoTiktok(c as boolean)} className="border-slate-700 data-[state=checked]:bg-slate-700" />
-                <label htmlFor="noTiktok" className="text-xs text-slate-500 cursor-pointer">Je n'ai pas TikTok</label>
+            <div className="flex items-center space-x-3 pl-1 bg-slate-900/30 p-2 rounded-lg border border-slate-800/50 w-fit">
+                <Checkbox id="noTiktok" checked={noTiktok} onCheckedChange={(c) => setNoTiktok(c as boolean)} className="border-slate-600 data-[state=checked]:bg-slate-500 data-[state=checked]:border-slate-500" />
+                <label htmlFor="noTiktok" className="text-xs font-medium text-slate-400 cursor-pointer select-none">Je n'ai pas de compte TikTok</label>
             </div>
         </div>
 
         {/* WEBSITE */}
-        <div className="flex items-center gap-3 group">
-          <div className="h-10 w-10 rounded-lg bg-[#111827] flex items-center justify-center border border-slate-800 group-focus-within:border-emerald-500/50 group-focus-within:bg-emerald-950/10 transition-colors">
-             <Globe className="h-5 w-5 text-slate-500 group-focus-within:text-emerald-500 transition-colors" />
+        <div className="space-y-3 pt-2 border-t border-slate-800/30 mt-4">
+          <Label htmlFor="website" className="text-slate-400 font-bold uppercase text-xs tracking-wider">Site Web</Label>
+          <div className="flex items-center gap-3 group">
+            <div className="h-12 w-12 shrink-0 rounded-lg bg-[#0f1623] flex items-center justify-center border border-slate-700 shadow-md group-focus-within:border-emerald-500/50 group-focus-within:bg-emerald-950/10 transition-colors">
+               <Globe className="h-6 w-6 text-slate-500 group-focus-within:text-emerald-500 transition-colors" />
+            </div>
+            <Input 
+              id="website"
+              name="website" 
+              defaultValue={initialData.website_url || ""} 
+              placeholder="Ex: https://monsite.com (Optionnel)" 
+              className="bg-[#0f1623] border-slate-700 text-slate-200 placeholder:text-slate-600 focus:border-emerald-500/50 focus:ring-emerald-500/20 h-12 text-base font-medium"
+            />
           </div>
-          <Input 
-            name="website" 
-            defaultValue={initialData.website_url || ""} 
-            placeholder="Site Web (Optionnel)" 
-            className="bg-[#111827] border-slate-800 text-slate-200 focus:border-emerald-500/50 focus:ring-emerald-500/20"
-          />
         </div>
       </div>
 

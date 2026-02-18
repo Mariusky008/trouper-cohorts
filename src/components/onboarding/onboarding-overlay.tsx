@@ -10,12 +10,10 @@ interface OnboardingOverlayProps {
 }
 
 export function OnboardingOverlay({ profile }: OnboardingOverlayProps) {
-    // Si l'utilisateur n'a pas complété son onboarding, on affiche la modale
-    // On considère complété si : onboarding_completed = true (mis à jour par l'action)
-    // OU fallback: Nom + Bio remplis
-    const isCompleted = profile?.onboarding_completed === true || (profile?.display_name && profile?.bio);
+    // Check if onboarding is completed based on the flag in DB
+    const isCompleted = profile?.onboarding_completed === true;
     
-    // Si c'est complété, on n'affiche rien
+    // If it's completed, we don't show anything
     if (isCompleted) return null;
 
     return (

@@ -21,6 +21,9 @@ export async function updateProfile(formData: FormData) {
   const avatarUrl = formData.get("avatar_url");
 
   // Check if profile is complete enough (Name + Bio required)
+  // Note: Social links are optional or handled via checkboxes in UI, but we don't enforce them here strictly
+  // unless we want to force at least one. For now, name + bio is the minimum "identity".
+  // If you want to force social, you can check if at least one is present.
   const isComplete = displayName.length > 0 && bio.length > 0;
 
   const updates: Record<string, any> = {
