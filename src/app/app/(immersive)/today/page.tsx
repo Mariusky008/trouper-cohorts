@@ -114,6 +114,24 @@ export default async function TodayPage({
     .eq("day_index", dayIndex)
     .maybeSingle();
 
+  // Vérification de la soumission globale
+  let globalSubmission = null;
+  if (missionRes.data) {
+      const { data } = await supabase
+          .from("submissions")
+          .select("status")
+          .eq("mission_id", missionRes.data.id)
+          .eq("user_id", user.id)
+          .maybeSingle();
+      globalSubmission = data;
+  }
+  
+  // Injecter le statut utilisateur dans l'objet mission passé au composant
+  const missionWithStatus = missionRes.data ? {
+      ...missionRes.data,
+      user_status: globalSubmission?.status || 'pending'
+  } : null;
+
   // Récupération des Étapes (Steps) et du progrès utilisateur
   let steps: any[] = [];
   if (missionRes.data) {
@@ -188,7 +206,7 @@ export default async function TodayPage({
       <CockpitDark 
         user={user} 
         cohort={cohortRes.data} 
-        mission={missionRes.data} 
+        mission={missionWithStatus} 
         dayIndex={dayIndex} 
         buddy={primaryBuddy} 
         allBuddies={buddies}

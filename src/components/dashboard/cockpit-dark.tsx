@@ -46,6 +46,8 @@ export function CockpitDark({
 
     // Vérifier si toutes les étapes sont validées
     const allStepsValidated = steps.length > 0 && steps.every(s => s.status === 'validated');
+    const isMissionSubmitted = mission?.status === 'submitted' || mission?.user_status === 'submitted'; // Vérifier le statut global si disponible (à injecter)
+
 
     const handleLogout = async () => {
         await supabase.auth.signOut();
@@ -68,7 +70,10 @@ export function CockpitDark({
                     origin: { y: 0.6 },
                     colors: ['#22c55e', '#3b82f6', '#f59e0b']
                 });
-                toast.success("Mission accomplie ! Félicitations soldat ! 🚀");
+                toast.success("Mission accomplie ! Félicitations matelot ! 🚀", {
+                    position: 'top-center', // Mieux visible
+                    style: { background: '#22c55e', color: 'white', border: 'none', fontSize: '16px', fontWeight: 'bold' }
+                });
                 router.refresh();
             }
         } catch (error) {
@@ -309,15 +314,21 @@ export function CockpitDark({
                             size="lg" 
                             className={`
                                 h-16 px-12 rounded-full font-black text-lg uppercase tracking-widest transition-all duration-500
-                                ${allStepsValidated 
-                                    ? "bg-gradient-to-r from-green-500 to-emerald-600 hover:scale-105 hover:shadow-[0_0_40px_rgba(34,197,94,0.6)] animate-pulse" 
-                                    : "bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700"}
+                                ${isMissionSubmitted 
+                                    ? "bg-slate-800 text-green-500 border border-green-900 cursor-default" 
+                                    : allStepsValidated 
+                                        ? "bg-gradient-to-r from-green-500 to-emerald-600 hover:scale-105 hover:shadow-[0_0_40px_rgba(34,197,94,0.6)] animate-pulse" 
+                                        : "bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700"}
                             `}
-                            disabled={!allStepsValidated || completing}
+                            disabled={!allStepsValidated || completing || isMissionSubmitted}
                             onClick={handleCompleteMission}
                         >
                             {completing ? (
                                 <span className="flex items-center gap-3">Validation en cours...</span>
+                            ) : isMissionSubmitted ? (
+                                <span className="flex items-center gap-3">
+                                    <CheckCircle2 className="h-6 w-6" /> Mission Validée
+                                </span>
                             ) : allStepsValidated ? (
                                 <span className="flex items-center gap-3">
                                     <Rocket className="h-6 w-6" /> Terminer la mission
