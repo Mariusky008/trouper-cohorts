@@ -3,7 +3,11 @@
 import Link from "next/link";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Anchor, CalendarClock, CheckCircle2, Clock, LayoutList, LifeBuoy, Megaphone, ShieldCheck, Ship, Users, Video, Target, ArrowRight, Zap, MessageCircle } from "lucide-react";
+import { 
+    Anchor, CalendarClock, CheckCircle2, Clock, LayoutList, LifeBuoy, Megaphone, 
+    ShieldCheck, Ship, Users, Video, Target, ArrowRight, Zap, MessageCircle,
+    Briefcase, Hammer, Lightbulb, Monitor, Scissors
+} from "lucide-react";
 import { PreRegistrationForm } from "@/components/pre-registration-form";
 import { motion, useScroll } from "framer-motion";
 import { useRef } from "react";
@@ -117,6 +121,63 @@ export default function Home() {
           <div className="absolute bottom-0 w-full text-white z-20 pointer-events-none">
              <Wave />
           </div>
+        </section>
+
+        {/* SECTION RECRUTEMENT ALLIANCE (PLACES DISPONIBLES) */}
+        <section className="bg-slate-900 border-b border-slate-800 relative overflow-hidden">
+             <div className="container mx-auto px-4 max-w-6xl py-12 relative z-10">
+                 <div className="bg-gradient-to-r from-blue-900/40 to-slate-900 border border-blue-500/30 rounded-2xl p-6 md:p-8 flex flex-col md:flex-row items-center gap-8 shadow-2xl shadow-blue-900/20">
+                     
+                     <div className="flex-1 text-center md:text-left space-y-4">
+                         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/20 border border-blue-400/30 text-blue-300 font-bold uppercase tracking-widest text-xs animate-pulse">
+                             <Briefcase className="h-3 w-3" /> Recrutement Actif
+                         </div>
+                         <h2 className="text-2xl md:text-3xl font-black text-white italic uppercase leading-tight">
+                             Cette Alliance recherche <span className="text-blue-400">ces profils</span>
+                         </h2>
+                         <p className="text-slate-400 text-sm md:text-base leading-relaxed max-w-lg">
+                             Il reste encore <span className="text-white font-bold">12 places</span> pour compléter notre équipage de 24. 
+                             Votre compétence est peut-être la pièce manquante.
+                         </p>
+                         <div className="hidden md:block">
+                            <a href="#join" className="text-xs font-bold text-blue-400 hover:text-white uppercase tracking-widest border-b border-blue-400/50 pb-0.5 hover:border-white transition-colors">
+                                Voir si je corresponds →
+                            </a>
+                         </div>
+                     </div>
+
+                     <div className="flex-1 w-full">
+                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                            {[
+                                { name: "Menuisier", icon: Hammer, slots: "1 place", color: "text-orange-400", bg: "bg-orange-500/10", border: "border-orange-500/20" },
+                                { name: "Électricien", icon: Lightbulb, slots: "1 place", color: "text-yellow-400", bg: "bg-yellow-500/10", border: "border-yellow-500/20" },
+                                { name: "Web Dev", icon: Monitor, slots: "1 place", color: "text-blue-400", bg: "bg-blue-500/10", border: "border-blue-500/20" },
+                                { name: "Couturier", icon: Scissors, slots: "1 place", color: "text-pink-400", bg: "bg-pink-500/10", border: "border-pink-500/20" },
+                            ].map((role, i) => (
+                                <motion.div 
+                                    key={i}
+                                    whileHover={{ scale: 1.05 }}
+                                    className={`p-3 rounded-xl border ${role.border} ${role.bg} flex flex-col items-center text-center gap-2 cursor-pointer relative overflow-hidden group`}
+                                >
+                                    <div className={`h-8 w-8 rounded-full bg-[#0a0f1c] flex items-center justify-center ${role.color} mb-1 shadow-lg group-hover:bg-white group-hover:text-slate-900 transition-colors`}>
+                                        <role.icon className="h-4 w-4" />
+                                    </div>
+                                    <span className="text-white font-bold text-xs leading-tight">{role.name}</span>
+                                    <span className="text-[9px] uppercase font-bold text-slate-300 bg-[#0a0f1c]/50 px-2 py-0.5 rounded-full border border-white/5">
+                                        {role.slots}
+                                    </span>
+                                </motion.div>
+                            ))}
+                         </div>
+                         <div className="mt-6 text-center md:hidden">
+                            <a href="#join" className="text-xs font-bold text-blue-400 hover:text-white uppercase tracking-widest border-b border-blue-400/50 pb-0.5">
+                                Rejoindre l'équipage
+                            </a>
+                         </div>
+                     </div>
+
+                 </div>
+             </div>
         </section>
 
         {/* SECTION 9 — LIVE WINS (TICKER) */}
