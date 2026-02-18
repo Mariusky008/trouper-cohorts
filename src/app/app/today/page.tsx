@@ -1,9 +1,9 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { CockpitDashboard } from "@/components/dashboard/cockpit";
+import { CockpitDark } from "@/components/dashboard/cockpit-dark";
 import { getMyBuddies } from "@/lib/data/buddy";
 import { getBuddyHistory } from "@/actions/buddy";
-import { AlertCircle, CalendarDays, Trophy } from "lucide-react";
+import { AlertCircle, Trophy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 function computeDayIndex(startDate: string | null) {
@@ -166,8 +166,8 @@ export default async function TodayPage({
   const buddyHistory = await getBuddyHistory();
 
   return (
-    <div className="space-y-6">
-      <CockpitDashboard 
+    <div className="bg-[#0a0f1c]">
+      <CockpitDark 
         user={user} 
         cohort={cohortRes.data} 
         mission={missionRes.data} 
