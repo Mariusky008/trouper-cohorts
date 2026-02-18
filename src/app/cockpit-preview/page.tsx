@@ -5,81 +5,90 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { PlayCircle, Users, Brain, Video, CheckCircle2, Trophy, Flame, ExternalLink, Send, Lock, ChevronDown, ChevronUp, Check } from "lucide-react";
+import { AlertTriangle, Anchor, Brain, Check, CheckCircle2, ChevronDown, Clock, Flame, Lock, PlayCircle, Send, Ship, Sparkles, Trophy, Users, Video } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 
-// --- MOCK COMPONENTS ---
+// --- THEME CONSTANTS ---
+const THEME = {
+    bg: "bg-[#0a0f1c]", // Deep dark blue/black
+    cardBg: "bg-[#111827]", // Slightly lighter dark
+    textMain: "text-slate-200",
+    textMuted: "text-slate-400",
+    accent: "text-orange-500",
+    border: "border-slate-800",
+};
+
+// --- MOCK COMPONENTS (Dark Mode Adapted) ---
 
 const MockVictoryWall = () => (
-    <Card className="h-full border-2 border-slate-100 shadow-sm bg-white flex flex-col">
-        <CardHeader className="border-b bg-slate-50/50 pb-4 shrink-0">
-            <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center gap-2 text-xl font-black uppercase italic text-slate-800">
-                    <Trophy className="h-6 w-6 text-yellow-500" />
-                    Mur des Victoires
+    <Card className={`h-full border border-slate-800 shadow-xl ${THEME.cardBg} flex flex-col`}>
+        <CardHeader className="border-b border-slate-800 bg-[#0d1220] pb-6 shrink-0">
+            <div className="flex flex-col gap-4">
+                <CardTitle className={`flex items-center gap-3 text-2xl font-black uppercase italic ${THEME.textMain}`}>
+                    <Trophy className="h-8 w-8 text-yellow-500" />
+                    Journal de Bord
                 </CardTitle>
-                <span className="text-xs font-bold bg-yellow-100 text-yellow-700 px-2 py-1 rounded-full">
-                    Objectif : 24 🔥 / post
-                </span>
+                <div className="bg-yellow-900/10 border border-yellow-500/20 rounded-xl p-4 flex items-center justify-between">
+                    <div>
+                        <p className="text-xs font-bold text-yellow-600 uppercase tracking-widest mb-1">Objectif du jour</p>
+                        <p className="text-3xl font-black text-yellow-500">24 🔥 <span className="text-lg text-yellow-700">/ post</span></p>
+                    </div>
+                    <div className="h-12 w-12 rounded-full bg-yellow-500/10 flex items-center justify-center border border-yellow-500/20">
+                        <Flame className="h-6 w-6 text-yellow-500 fill-yellow-500 animate-pulse" />
+                    </div>
+                </div>
             </div>
         </CardHeader>
         
-        <div className="p-4 border-b bg-white shrink-0 space-y-3">
+        <div className={`p-6 border-b border-slate-800 ${THEME.cardBg} shrink-0 space-y-4`}>
             <Input 
                 placeholder="Titre de ta victoire (ex: Mon premier client !)" 
-                className="bg-slate-50 font-bold border-slate-200"
+                className="bg-[#0a0f1c] font-bold border-slate-700 text-slate-200 placeholder:text-slate-600 h-12 text-lg"
             />
             <div className="flex gap-2">
                 <Input 
                     placeholder="Lien (URL)..." 
-                    className="bg-slate-50 border-slate-200"
+                    className="bg-[#0a0f1c] border-slate-700 text-slate-200 placeholder:text-slate-600 h-10"
                 />
-                <Button className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-6">
+                <Button className="bg-orange-600 hover:bg-orange-700 text-white font-bold px-8 h-10 uppercase tracking-wider">
                     Poster
                 </Button>
             </div>
-            <p className="text-xs text-slate-400 mt-1 ml-1 flex items-center gap-1">
-                <Flame className="h-3 w-3 text-orange-400" /> Likez les posts des autres pour recevoir la pareille !
-            </p>
         </div>
 
-        <ScrollArea className="flex-1">
-            <div className="p-4 space-y-4">
+        <ScrollArea className="flex-1 h-[400px]">
+            <div className="p-6 space-y-6">
                 {[
                     { id: 1, user: "Sophie M.", time: "Il y a 2h", content: "J'ai enfin publié mon offre sur LinkedIn ! Déjà 3 demandes de RDV.", likes: 12, liked: true },
                     { id: 2, user: "Thomas R.", time: "Il y a 4h", content: "Premier client signé à 2000€. Merci pour le feedback sur mon pitch !", likes: 24, liked: false },
-                    { id: 3, user: "Julie L.", time: "Il y a 5h", content: "Vidéo de présentation tournée. C'était dur mais c'est fait.", likes: 8, liked: false },
+                    { id: 3, user: "Alexandre B.", time: "Il y a 5h", content: "Site web mis en ligne. C'est pas parfait mais c'est fait. Action > Réflexion.", likes: 8, liked: false },
                 ].map(post => (
-                    <div key={post.id} className="flex gap-3 p-3 rounded-lg border border-slate-100 bg-white shadow-sm">
-                        <Avatar className="h-10 w-10 border border-slate-200">
-                            <AvatarFallback>{post.user[0]}</AvatarFallback>
+                    <div key={post.id} className="flex gap-4 p-4 rounded-xl border border-slate-800 bg-[#0a0f1c] shadow-lg hover:border-slate-700 transition-colors">
+                        <Avatar className="h-12 w-12 border-2 border-slate-700">
+                            <AvatarFallback className="bg-slate-800 text-slate-400 font-bold">{post.user[0]}</AvatarFallback>
                         </Avatar>
                         
-                        <div className="flex-1 space-y-1">
+                        <div className="flex-1 space-y-2">
                             <div className="flex justify-between items-start">
-                                <h4 className="font-bold text-sm text-slate-800">{post.user}</h4>
-                                <span className="text-xs text-slate-400">{post.time}</span>
+                                <h4 className={`font-bold text-base ${THEME.textMain}`}>{post.user}</h4>
+                                <span className={`text-xs font-medium ${THEME.textMuted}`}>{post.time}</span>
                             </div>
                             
-                            <p className="text-sm text-slate-600">{post.content}</p>
-                            
-                            <div className="inline-flex items-center gap-1 text-xs font-medium text-indigo-600 mt-1">
-                                <ExternalLink className="h-3 w-3" /> Voir le post
-                            </div>
+                            <p className={`text-base leading-relaxed ${THEME.textMuted}`}>{post.content}</p>
                         </div>
 
-                        <div className="flex flex-col items-center justify-center gap-1 pl-2 border-l border-slate-100">
+                        <div className="flex flex-col items-center justify-center gap-1 pl-4 border-l border-slate-800 min-w-[60px]">
                             <Button 
                                 variant="ghost" 
                                 size="icon" 
-                                className={`h-8 w-8 rounded-full ${post.liked ? 'text-orange-500 bg-orange-50' : 'text-slate-300'}`}
+                                className={`h-10 w-10 rounded-full ${post.liked ? 'text-orange-500 bg-orange-900/20' : 'text-slate-600 hover:bg-slate-800 hover:text-slate-400'}`}
                             >
-                                <Flame className={`h-5 w-5 ${post.liked ? 'fill-current' : ''}`} />
+                                <Flame className={`h-6 w-6 ${post.liked ? 'fill-current' : ''}`} />
                             </Button>
-                            <span className="text-xs font-bold text-slate-600">{post.likes}</span>
+                            <span className={`text-sm font-black ${post.liked ? 'text-orange-500' : 'text-slate-500'}`}>{post.likes}</span>
                         </div>
                     </div>
                 ))}
@@ -88,402 +97,537 @@ const MockVictoryWall = () => (
     </Card>
 );
 
-const MockChatBox = () => (
-    <div className="flex flex-col h-[500px] border rounded-xl bg-white shadow-sm overflow-hidden">
-        <div className="p-4 border-b bg-slate-50 flex flex-col gap-3">
+const MockBuddyChat = () => (
+    <Card className={`h-[500px] border border-slate-800 shadow-xl ${THEME.cardBg} flex flex-col overflow-hidden`}>
+        <div className="p-4 border-b border-slate-800 bg-[#0d1220] flex items-center justify-between shrink-0">
             <div className="flex items-center gap-3">
                 <div className="relative">
-                    <Avatar className="h-10 w-10 border-2 border-white shadow-sm">
-                        <AvatarFallback className="bg-orange-100 text-orange-600 font-bold">M</AvatarFallback>
+                    <Avatar className="h-12 w-12 border-2 border-green-500/50">
+                        <AvatarFallback className="bg-slate-800 text-white font-bold">MD</AvatarFallback>
                     </Avatar>
-                    <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></span>
+                    <div className="absolute bottom-0 right-0 h-3 w-3 bg-green-500 rounded-full border-2 border-[#0d1220]"></div>
                 </div>
                 <div>
-                    <div className="font-bold text-slate-900 text-sm">Marc D.</div>
-                    <div className="text-xs text-slate-500">En ligne</div>
+                    <h3 className="font-bold text-white text-lg">Marc D.</h3>
+                    <div className="flex items-center gap-2">
+                        <span className="text-xs text-green-500 font-bold uppercase tracking-wider">En ligne</span>
+                        <span className="text-slate-600 text-[10px]">•</span>
+                        <span className="text-xs text-slate-500">Copilote</span>
+                    </div>
                 </div>
             </div>
+            <Button variant="ghost" size="icon" className="text-slate-400 hover:text-white">
+                <Video className="h-5 w-5" />
+            </Button>
         </div>
 
-        <ScrollArea className="flex-1 p-4 bg-slate-50/50">
+        <ScrollArea className="flex-1 p-4 bg-[#0a0f1c]">
             <div className="space-y-4">
-                <div className="flex flex-col items-start">
-                    <div className="max-w-[80%] rounded-2xl px-4 py-2 text-sm bg-white border text-slate-800 rounded-bl-none shadow-sm">
-                        Salut ! Prêt pour le J1 ? T'as vu la mission vidéo ? 😅
-                    </div>
-                    <span className="text-[10px] text-slate-400 mt-1 ml-1">09:01</span>
+                <div className="flex justify-center">
+                    <span className="text-[10px] font-bold text-slate-600 uppercase tracking-widest bg-slate-900 px-3 py-1 rounded-full border border-slate-800">Aujourd'hui</span>
                 </div>
-                <div className="flex flex-col items-end">
-                    <div className="max-w-[80%] rounded-2xl px-4 py-2 text-sm bg-indigo-600 text-white rounded-br-none shadow-sm">
-                        Carrément ! Je viens de la tourner. Je la poste dans 5 min. Et toi ?
+                
+                <div className="flex gap-3">
+                    <Avatar className="h-8 w-8 mt-1 border border-slate-700">
+                        <AvatarFallback className="bg-slate-800 text-xs text-slate-400">MD</AvatarFallback>
+                    </Avatar>
+                    <div className="bg-slate-800 border border-slate-700 p-3 rounded-2xl rounded-tl-none text-sm text-slate-300 max-w-[85%]">
+                        <p>Salut ! Tu as vu la mission du jour ? "L'Audit de l'Inertie", ça pique un peu 😅</p>
                     </div>
-                    <span className="text-[10px] text-slate-400 mt-1 mr-1">09:05</span>
                 </div>
-                 <div className="flex flex-col items-start">
-                    <div className="max-w-[80%] rounded-2xl px-4 py-2 text-sm bg-white border text-slate-800 rounded-bl-none shadow-sm">
-                        Je galère un peu à trouver le bon angle pour "l'ennemi public", mais ça vient.
+
+                <div className="flex gap-3 flex-row-reverse">
+                    <div className="bg-blue-600 p-3 rounded-2xl rounded-tr-none text-sm text-white max-w-[85%] shadow-lg shadow-blue-900/20">
+                        <p>Grave. Je suis en train de l'écrire là. Et toi t'en es où ?</p>
                     </div>
-                    <span className="text-[10px] text-slate-400 mt-1 ml-1">09:06</span>
+                </div>
+
+                <div className="flex gap-3">
+                    <Avatar className="h-8 w-8 mt-1 border border-slate-700">
+                        <AvatarFallback className="bg-slate-800 text-xs text-slate-400">MD</AvatarFallback>
+                    </Avatar>
+                    <div className="bg-slate-800 border border-slate-700 p-3 rounded-2xl rounded-tl-none text-sm text-slate-300 max-w-[85%]">
+                        <p>Je viens de finir ma "Phrase de Combat". Je te l'envoie pour avoir ton avis ?</p>
+                    </div>
                 </div>
             </div>
         </ScrollArea>
 
-        <div className="p-3 bg-white border-t">
-            <form className="flex gap-2" onSubmit={(e) => e.preventDefault()}>
+        <div className="p-3 bg-[#0d1220] border-t border-slate-800 shrink-0">
+            <div className="relative">
                 <Input 
-                    placeholder="Écrivez votre message..." 
-                    className="flex-1 bg-slate-50 border-0 focus-visible:ring-1 focus-visible:ring-indigo-200"
+                    placeholder="Écrire un message..." 
+                    className="bg-[#0a0f1c] border-slate-700 text-slate-200 pr-10 rounded-full"
                 />
-                <Button size="icon" className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-full h-10 w-10 shrink-0">
+                <Button size="icon" className="absolute right-1 top-1 h-8 w-8 rounded-full bg-blue-600 hover:bg-blue-500 text-white">
                     <Send className="h-4 w-4" />
                 </Button>
-            </form>
+            </div>
         </div>
-    </div>
-);
-
-const MockGoldenTicket = ({ dayIndex }: { dayIndex: number }) => (
-    <Card className="bg-gradient-to-r from-yellow-400 via-orange-500 to-red-500 text-white border-0 shadow-lg relative overflow-hidden">
-        <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-20"></div>
-        <CardContent className="p-6 relative z-10 flex items-center justify-between">
-            <div>
-                <h3 className="font-black text-xl italic uppercase mb-1 flex items-center gap-2">
-                    <Trophy className="h-6 w-6 text-yellow-200 animate-pulse" />
-                    La Relique
-                </h3>
-                <p className="text-white/90 text-sm font-medium">
-                    Jour {dayIndex}/15 validé ? Pas encore.
-                </p>
-            </div>
-            <div className="text-right">
-                <div className="text-3xl font-black">0/3</div>
-                <div className="text-[10px] uppercase font-bold tracking-widest opacity-80">Missions</div>
-            </div>
-        </CardContent>
-    </Card>
-);
-
-const MockMissionValidator = () => (
-    <Card className="border-green-200 bg-green-50">
-        <CardContent className="p-6 flex flex-col items-center text-center space-y-4">
-            <div className="h-12 w-12 rounded-full bg-white border-2 border-green-200 flex items-center justify-center text-green-600">
-                <CheckCircle2 className="h-6 w-6" />
-            </div>
-            <div>
-                <h3 className="font-bold text-green-800">Valider ma journée</h3>
-                <p className="text-sm text-green-600">J'ai terminé mes 3 missions.</p>
-            </div>
-            <Button className="w-full bg-green-600 hover:bg-green-700 text-white font-bold">
-                Je valide (J1 terminé)
-            </Button>
-        </CardContent>
     </Card>
 );
 
 const MockAICoach = () => (
-    <Card className="border-purple-200 bg-purple-50">
-        <CardHeader className="pb-2">
-             <CardTitle className="text-sm text-purple-700 uppercase tracking-widest flex items-center gap-2">
-                <Brain className="h-4 w-4" /> Coach IA
-            </CardTitle>
-        </CardHeader>
-        <CardContent>
-            <div className="bg-white p-3 rounded-lg border border-purple-100 text-sm text-slate-600 mb-3 shadow-sm">
-                "Salut ! Pour le J1, concentre-toi sur l'authenticité dans ta vidéo. Ne cherche pas à être parfait, cherche à être vrai. Les gens achètent ta conviction, pas ton montage."
+    <Card className={`border border-slate-800 shadow-2xl bg-slate-900 overflow-hidden flex flex-col h-full`}>
+        <div className="bg-gradient-to-r from-orange-600 to-red-600 p-4 flex items-center justify-between shrink-0">
+            <div className="flex items-center gap-3">
+                <div className="h-10 w-10 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm border border-white/30 shadow-inner">
+                    <Brain className="h-5 w-5 text-white" />
+                </div>
+                <div>
+                    <h3 className="font-black text-white text-base uppercase italic tracking-wider">Coach Popey AI</h3>
+                    <p className="text-xs text-orange-100 font-medium opacity-90">Ton stratège personnel • J9</p>
+                </div>
             </div>
-            <Button variant="outline" size="sm" className="w-full border-purple-200 text-purple-700 hover:bg-purple-100">
-                Poser une question
-            </Button>
-        </CardContent>
+        </div>
+        
+        <div className="p-4 bg-slate-950 flex-1 flex flex-col space-y-4 overflow-y-auto">
+             <div className="flex gap-3">
+                <div className="h-8 w-8 rounded-full bg-orange-900/50 border border-orange-500/30 flex items-center justify-center shrink-0">
+                    <Brain className="h-4 w-4 text-orange-400" />
+                </div>
+                <div className="bg-slate-900 border border-slate-800 p-4 rounded-2xl rounded-tl-none text-sm text-slate-300 shadow-sm">
+                    <p className="font-bold text-orange-400 mb-1 text-xs uppercase">Coach Popey</p>
+                    <p className="leading-relaxed">Salut ! Prêt pour la Chasse ?<br/>
+                    Aujourd'hui, l'objectif est simple : <strong>Ramener du gibier (clients/leads).</strong><br/>
+                    Si tu as besoin d'aide pour ton script d'appel ou ton message de prospection, colle-le ici. Je vais le rendre redoutable.</p>
+                </div>
+            </div>
+            
+            {/* Simulation d'un échange précédent pour montrer l'exemple */}
+             <div className="flex gap-3 flex-row-reverse opacity-60">
+                <div className="h-8 w-8 rounded-full bg-blue-900/50 border border-blue-500/30 flex items-center justify-center shrink-0">
+                    <div className="h-4 w-4 bg-blue-400 rounded-full"></div>
+                </div>
+                <div className="bg-blue-900/20 border border-blue-800 p-3 rounded-2xl rounded-tr-none text-sm text-slate-400">
+                    <p>Je ne sais pas comment relancer ce prospect qui m'a ghosté...</p>
+                </div>
+            </div>
+        </div>
+
+        <div className="p-4 bg-slate-900 border-t border-slate-800">
+             <div className="relative">
+                <Input 
+                    placeholder="Pose ta question ou colle ton texte..." 
+                    className="bg-slate-950 border-slate-800 text-slate-200 pr-12 h-12"
+                />
+                <Button size="icon" className="absolute right-1 top-1 h-10 w-10 bg-orange-600 hover:bg-orange-500 text-white shadow-lg shadow-orange-900/20">
+                    <Send className="h-5 w-5" />
+                </Button>
+            </div>
+            <p className="text-[10px] text-slate-600 text-center mt-2 flex items-center justify-center gap-1">
+                <Sparkles className="h-3 w-3" /> IA entraînée sur la méthode Popey
+            </p>
+        </div>
+    </Card>
+);
+
+const StoryBlock = ({ title, subtitle, icon: Icon, imageBg, children, colorClass, proofType, isCompleted, onValidate }: any) => {
+    const [isOpen, setIsOpen] = useState(false);
+    const [proofInput, setProofInput] = useState("");
+
+    // Validation logic for demo
+    const isPhotoRequired = proofType === 'image';
+    const isTextOrLinkRequired = proofType === 'text' || proofType === 'link';
+
+    const canSubmit = isCompleted || (
+        (!isPhotoRequired && !isTextOrLinkRequired) || 
+        (isTextOrLinkRequired && proofInput.length > 5) || 
+        (isPhotoRequired && proofInput === "uploaded")
+    );
+
+    return (
+        <div className={`relative group overflow-hidden rounded-xl border border-slate-800 transition-all duration-500 ${isOpen ? 'ring-2 ring-orange-500/50' : 'hover:border-slate-600'}`}>
+            {/* Background Image with Overlay */}
+            <div className="absolute inset-0 z-0">
+                <div 
+                    className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105"
+                    style={{ backgroundImage: `url(${imageBg})` }}
+                />
+                <div className={`absolute inset-0 bg-gradient-to-r ${isOpen ? 'from-black/90 to-black/80' : 'from-black/80 to-transparent'} transition-opacity duration-300`} />
+            </div>
+
+            {/* Content Header (Always Visible) */}
+            <div 
+                className="relative z-10 p-6 cursor-pointer flex items-center justify-between min-h-[120px]"
+                onClick={() => setIsOpen(!isOpen)}
+            >
+                <div className="flex items-center gap-6">
+                    <div className={`h-16 w-16 rounded-full flex items-center justify-center shrink-0 backdrop-blur-sm border border-white/10 ${isCompleted ? 'bg-green-500/20 text-green-400' : 'bg-white/5 text-white'}`}>
+                        {isCompleted ? <Check className="h-8 w-8" /> : <Icon className="h-8 w-8" />}
+                    </div>
+                    <div>
+                        <div className="flex items-center gap-3 mb-1">
+                            <Badge variant="outline" className={`bg-black/50 border-white/20 text-xs tracking-widest uppercase ${colorClass} text-white`}>
+                                {subtitle}
+                            </Badge>
+                            {isCompleted && <Badge className="bg-green-600 text-white border-0">Mission Accomplie</Badge>}
+                        </div>
+                        <h3 className="text-2xl font-black text-white uppercase tracking-tight italic drop-shadow-lg">
+                            {title}
+                        </h3>
+                    </div>
+                </div>
+                <ChevronDown className={`h-8 w-8 text-white/50 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
+            </div>
+
+            {/* Expanded Content */}
+            {isOpen && (
+                <div className="relative z-10 px-6 pb-8 pt-2 border-t border-white/10 bg-black/40 backdrop-blur-md animate-in slide-in-from-top-2">
+                    <div className="prose prose-invert prose-lg max-w-none text-slate-300 leading-relaxed mb-8">
+                        {children}
+                    </div>
+
+                    {!isCompleted && (
+                        <div className="bg-black/40 border border-white/10 rounded-xl p-6 backdrop-blur-sm">
+                            <h4 className="text-sm font-bold text-orange-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                                <AlertTriangle className="h-4 w-4" /> Preuve Requise
+                            </h4>
+                            
+                            {isPhotoRequired && (
+                                <div 
+                                    className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-all ${proofInput === "uploaded" ? "border-green-500/50 bg-green-500/10 text-green-400" : "border-slate-700 hover:border-slate-500 hover:bg-white/5 text-slate-400"}`}
+                                    onClick={() => setProofInput("uploaded")}
+                                >
+                                    {proofInput === "uploaded" ? (
+                                        <div className="flex flex-col items-center gap-2">
+                                            <CheckCircle2 className="h-8 w-8" />
+                                            <span>Photo chargée avec succès</span>
+                                        </div>
+                                    ) : (
+                                        "Clique ici pour déposer ta photo témoin"
+                                    )}
+                                </div>
+                            )}
+
+                            {isTextOrLinkRequired && (
+                                <Input 
+                                    placeholder="Écris ta réponse ou colle ton lien ici..." 
+                                    className="bg-black/50 border-slate-700 text-white h-12"
+                                    onChange={(e) => setProofInput(e.target.value)}
+                                    value={proofInput}
+                                />
+                            )}
+
+                            <div className="flex justify-end mt-6">
+                                <Button 
+                                    size="lg"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        onValidate();
+                                        setIsOpen(false);
+                                    }}
+                                    disabled={!canSubmit}
+                                    className={cn(
+                                        "font-bold uppercase tracking-widest transition-all",
+                                        "bg-orange-600 hover:bg-orange-500 text-white shadow-lg shadow-orange-900/20"
+                                    )}
+                                >
+                                    Valider l'étape
+                                </Button>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            )}
+        </div>
+    );
+};
+
+const MockGoldenTicket = () => (
+    <Card className="relative overflow-hidden border-2 border-yellow-500/30 bg-[#111827] shadow-xl group hover:border-yellow-500/50 transition-all duration-300">
+        <div className="absolute top-0 right-0 p-3 opacity-20">
+            <Lock className="h-24 w-24 text-yellow-500 rotate-12" />
+        </div>
+        
+        <div className="p-6 flex flex-col md:flex-row items-center gap-6 relative z-10">
+            {/* Left: Icon/Badge */}
+            <div className="relative shrink-0">
+                <div className="h-20 w-20 rounded-full bg-yellow-900/20 border-2 border-yellow-500 flex items-center justify-center shadow-[0_0_20px_rgba(234,179,8,0.2)]">
+                    <Trophy className="h-10 w-10 text-yellow-500" />
+                </div>
+                <Badge className="absolute -bottom-2 -right-2 bg-yellow-500 text-black font-black border-2 border-[#111827]">
+                    60%
+                </Badge>
+            </div>
+
+            {/* Middle: Content */}
+            <div className="flex-1 text-center md:text-left space-y-2">
+                <div className="flex items-center justify-center md:justify-start gap-2 mb-1">
+                    <span className="text-xs font-bold text-yellow-600 uppercase tracking-[0.2em]">Relique Scellée</span>
+                    <Lock className="h-3 w-3 text-yellow-600" />
+                </div>
+                <h3 className="text-2xl font-black text-white uppercase italic tracking-tighter">
+                    POPEY CARD
+                </h3>
+                <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+                    <div className="bg-yellow-500 h-full w-[60%] shadow-[0_0_10px_rgba(234,179,8,0.5)]"></div>
+                </div>
+                <p className="text-xs text-slate-400 font-medium">
+                    Encore <span className="text-white font-bold">6 jours</span> pour briser la pierre.
+                </p>
+            </div>
+
+            {/* Right: Action (Locked) */}
+            <div className="hidden md:block">
+                 <Button disabled className="bg-slate-800 text-slate-500 border border-slate-700 font-bold opacity-50 cursor-not-allowed">
+                    <Lock className="h-4 w-4 mr-2" />
+                    Verrouillé
+                 </Button>
+            </div>
+        </div>
     </Card>
 );
 
 // --- MAIN PREVIEW PAGE ---
 
 export default function CockpitPreviewPage() {
-    const dayIndex = 1;
-    const progress = (dayIndex / 15) * 100;
+    const dayIndex = 9; // Changed to match user request (J9)
+    const progress = (dayIndex / 14) * 100;
+    const [completedSteps, setCompletedSteps] = useState<number[]>([]);
 
-    const intellectualSteps = [
-        { id: 1, content: "🎯 Objectif 1 — S’engager\n\n- Regarde la vidéo de bienvenue (jusqu’au bout).\n\n- Contact (dans le chat) ton binôme et présentez-vous (qui vous êtes, ce que vous faites et votre objectif principale) et envoyez-vous la video que vous aurez faite (de l'objectif 3) dans le but de savoir ce qu'il en pense).\n\n- Prends 30 secondes pour intégrer les règles fondamentales :\n\n=> Action : ici, on fait avant de réfléchir trop longtemps.\n\nBienveillance : zéro jugement, zéro cynisme.\n\nTransparence : on dit les choses telles qu’elles sont, pas telles qu’on aimerait qu’elles soient.\n\n👉 Tu ne consommes pas ce programme.\n👉 Tu t’y engages activement, jour après jour.", category: 'intellectual' }
-    ];
-    const creativeSteps = [
-        { id: 2, content: "🧭 Objectif 2 — Poser ton QG (Très précis)\n\nPourquoi ?\nParce que ce programme se vit dans le réel, pas dans la tête.\nTon QG est ton point d’ancrage pour les 15 prochains jours.\n\nCe que tu dois faire exactement :\n\nChoisis ton lieu de travail principal\n- Bureau\n- Table de cuisine\n- Coin du salon\n- Café\n\n👉 Peu importe le niveau. Ce qui compte, c’est que ce soit là où tu vas vraiment bosser.\n\nPrends UNE photo simple - Avec ton téléphone - Sans mise en scène - À hauteur d’yeux ou légèrement au-dessus\n\nMontre :\n- ton espace\n- ton ordi / carnet / téléphone\n- l’ambiance réelle (rangée ou en bazar, c’est OK)\n\n❌ Pas de photo Pinterest\n❌ Pas de retouche\n✅ Authentique uniquement\n\nPoste la photo dans le groupe Popey (canal “Cohorte / QG”)\n\nAjoute exactement cette trame de texte (à compléter) :\n\nMon QG pour les 15 prochains jours :\n📍 Lieu : [bureau / maison / café / autre]\n🧠 État d’esprit aujourd’hui : [mot ou phrase honnête]\n🎯 Ce que j’attends de ces 14 jours : [1 phrase max]\n\n📌 Exemple (important pour lever la peur) :\n\n“Mon QG pour les 15 prochains jours :\n📍 Table de cuisine\n🧠 Un peu stressé mais motivé\n🎯 Retrouver de la clarté et oser vendre”\n\n👉 Cette étape valide ton entrée officielle dans l’aventure.", category: 'creative' }
-    ];
-    const socialSteps = [
-        { id: 3, content: "Exercice : Ton \"Ennemi\" Public N°1.\n\nPour te démarquer, tu dois savoir contre quoi tu te bats.\nUn bon positionnement n'est pas \"je fais du marketing\". C'est \"je déteste le marketing jargonnesque\".\n\n1. Trouve ta cible (La Bête Noire) : Pense à ce qui te rend fou dans ton secteur. Qu'est-ce que tes concurrents font tout le temps et qui dessert les clients ?\n- Est-ce qu'ils sont lents ?\n- Est-ce qu'ils utilisent des mots compliqués ?\n- Est-ce qu'ils vendent du rêve sans résultat ?\n- Est-ce qu'ils sont froids et distants ?\n\n2. Trouve ton arme (L'Antidote) : Quelle est l'exacte opposée que TU apportes ?\n- Lent -> Rapide\n- Compliqué -> Simple\n- Flou -> Garantie\n- Froid -> Humain\n\n3. L'Action Immédiate : Poste sur le groupe ta \"Phrase de Combat\" en complétant simplement ce modèle : \"Le problème de mon marché, c'est [Leur Défaut Majeur]. Moi, je suis l'antidote car je propose [Ta Solution Radicale].\"\n\nC'est tout. Choisis ton camp maintenant.", category: 'social' }
-    ];
-    const eventSteps = [
-        { id: 4, content: "🎥 J1\n\nFormat : vidéo 1 min 30 max ou si tu préfères tu peux aussi faire live de 3-5 min avec ton binôme\n\nObjectif :\n1 : créer votre première présence authentique en ligne et commencer à vous mettre en avant sans filtre\n2 : Présentez-vous : qui vous êtes, votre métier, votre objectif principal pour les 14 jours\n3 : Partagez votre état d’esprit actuel et votre engagement pour le programme.\n\nPourquoi ?\nParce qu’on ne crée pas de dynamique collective avec des du silence.\n\nOk rentrons dans le vif du sujet : Ce que tu dois faire exactement :\n\nEnregistre une vidéo brute (smartphone, face caméra)\nDurée maximale : 1 minute 30\n\nÀ poster sur :\n1 : Ton réseau social principal (instagram/FB/TikTok..)\nImportant : Poste cette première vidéo aussi sur ton compte linkedin.com en mettant dans ton descriptif un #Popey.Academy\n=> si tu n'as pas de compte linkedin tu peux en créer un en quelques minutes et informer ton binôme de s'abonner à ton compte comme premier abonné).\nNB : N'oubli pas que ton assistant IA est là pour t'aider si tu as un probleme quelconque et ton binome est aussi là pour t'aider.\n\nTrame OBLIGATOIRE (dans cet ordre) :\nQui tu es\nPrénom\nVille (optionnel)\nContexte pro actuel\n\nCe que tu fais\nTon métier / activité\nMême si ce n’est “pas encore clair”\n\nTon objectif n°1 sur les 15 jours\nUn seul\nMesurable ou concret\n\nExemple :\n“Trouver mes 2 premiers clients”\n“Clarifier mon offre”\n“Oser prospecter sans blocage”\n\n🎯 Règles non négociables :\nPas de montage\nPas de script lu\nPas de perfection\nJuste toi, tel que tu es aujourd’hui\n\nC'est parti et si tu as du mal à commencer appelle ton binôme !", category: 'event' }
-    ];
-
-    const StepAccordion = ({ title, icon, groupSteps, colorClass }: any) => {
-        const [isOpen, setIsOpen] = useState(false);
-        const [isCompleted, setIsCompleted] = useState(false);
-        const [proofInput, setProofInput] = useState("");
-
-        if (groupSteps.length === 0) return null;
-
-        const step = groupSteps[0]; // Assuming 1 main step per block as per new content
-
-        // Determine if proof is required based on title/content keywords for this demo
-        const isPhotoRequired = title.includes("Créatif");
-        const isTextOrLinkRequired = title.includes("Social") || title.includes("Événement") || title.includes("Intellectuel");
-
-        // Validation logic for demo
-        const canSubmit = isCompleted || (
-            (!isPhotoRequired && !isTextOrLinkRequired) || // No proof needed
-            (isTextOrLinkRequired && proofInput.length > 5) || // Text/Link needs content
-            (isPhotoRequired && proofInput === "uploaded") // Photo needs simulated upload
-        );
-
-        return (
-            <div className={`border rounded-xl bg-white shadow-sm transition-all duration-300 overflow-hidden ${isCompleted ? 'border-green-200 bg-green-50' : 'border-slate-200'}`}>
-                <div 
-                    className="p-5 flex items-center justify-between cursor-pointer hover:bg-slate-50 transition-colors"
-                    onClick={() => setIsOpen(!isOpen)}
-                >
-                    <div className="flex items-center gap-4">
-                        <div className={`h-10 w-10 rounded-full flex items-center justify-center shrink-0 ${isCompleted ? 'bg-green-100 text-green-600' : 'bg-slate-100 text-slate-500'}`}>
-                            {isCompleted ? <Check className="h-5 w-5" /> : icon}
-                        </div>
-                        <div>
-                            <h4 className={`font-black text-sm uppercase tracking-wider ${isCompleted ? 'text-green-800' : colorClass}`}>
-                                {title}
-                            </h4>
-                            <p className="text-xs text-slate-500 font-medium mt-0.5">
-                                {isCompleted ? "Mission accomplie" : (isOpen ? "Masquer les détails" : "Découvrir la mission")}
-                            </p>
-                        </div>
-                    </div>
-                    <div className={`transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}>
-                        <ChevronDown className="h-5 w-5 text-slate-400" />
-                    </div>
-                </div>
-
-                {isOpen && (
-                    <div className="px-5 pb-5 pt-0 border-t border-slate-100 animate-in slide-in-from-top-2 duration-200">
-                        <div className="mt-4 prose prose-sm max-w-none text-slate-600 leading-relaxed whitespace-pre-wrap">
-                            {step.content}
-                        </div>
-                        <div className="mt-6 pt-4 border-t border-slate-100 space-y-4">
-                            {/* PREUVE (SIMULATION) */}
-                            {title.includes("Créatif") && (
-                                <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
-                                    <label className="text-xs font-bold text-slate-500 uppercase mb-2 block">Preuve requise : Photo</label>
-                                    <div 
-                                        className={`border-2 border-dashed rounded-lg p-4 text-center text-sm cursor-pointer transition-colors ${proofInput === "uploaded" ? "border-green-500 bg-green-50 text-green-700" : "border-slate-300 text-slate-400 hover:bg-slate-100 hover:border-slate-400"}`}
-                                        onClick={() => setProofInput("uploaded")}
-                                    >
-                                        {proofInput === "uploaded" ? "✅ Photo sélectionnée (IMG_2024.jpg)" : "Cliquez pour uploader votre photo"}
-                                    </div>
-                                </div>
-                            )}
-                            {title.includes("Social") && (
-                                <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
-                                    <label className="text-xs font-bold text-slate-500 uppercase mb-2 block">Preuve requise : Lien ou Texte</label>
-                                    <Input 
-                                        placeholder="Collez votre phrase de combat ici..." 
-                                        className="bg-white" 
-                                        onChange={(e) => setProofInput(e.target.value)}
-                                        value={proofInput}
-                                    />
-                                </div>
-                            )}
-                             {title.includes("Événement") && (
-                                <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
-                                    <label className="text-xs font-bold text-slate-500 uppercase mb-2 block">Preuve requise : Lien Vidéo</label>
-                                    <Input 
-                                        placeholder="https://linkedin.com/posts/..." 
-                                        className="bg-white" 
-                                        onChange={(e) => setProofInput(e.target.value)}
-                                        value={proofInput}
-                                    />
-                                </div>
-                            )}
-
-                            <div className="flex justify-end">
-                                <Button 
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        setIsCompleted(!isCompleted);
-                                        setIsOpen(false); 
-                                    }}
-                                    disabled={!canSubmit}
-                                    className={cn(
-                                        "font-bold transition-all",
-                                        isCompleted 
-                                            ? "bg-white text-green-600 border border-green-200 hover:bg-green-50 hidden" 
-                                            : "bg-slate-900 text-white hover:bg-slate-800"
-                                    )}
-                                >
-                                    Envoyer la preuve & Valider
-                                </Button>
-                            </div>
-                        </div>
-                    </div>
-                )}
-            </div>
-        );
+    const toggleStep = (id: number) => {
+        if (completedSteps.includes(id)) {
+            setCompletedSteps(completedSteps.filter(s => s !== id));
+        } else {
+            setCompletedSteps([...completedSteps, id]);
+        }
     };
 
-    const renderStepGroup = (title: string, icon: any, groupSteps: any[], colorClass: string) => (
-        <StepAccordion title={title} icon={icon} groupSteps={groupSteps} colorClass={colorClass} />
-    );
-
     return (
-        <div className="min-h-screen bg-slate-50 font-sans">
-            {/* Banner Preview Mode */}
-            <div className="bg-yellow-400 text-yellow-900 text-center py-2 text-xs font-bold uppercase tracking-widest sticky top-0 z-50">
-                🚧 Mode Prévisualisation (Données Fictives) 🚧
-            </div>
-
+        <div className={`min-h-screen ${THEME.bg} text-slate-200 font-sans selection:bg-orange-500/30`}>
+            
             {/* Top Bar */}
-            <header className="bg-white border-b h-16 flex items-center justify-between px-6 sticky top-8 z-40">
+            <header className="border-b border-slate-800 h-20 flex items-center justify-between px-8 sticky top-0 z-50 bg-[#0a0f1c]/90 backdrop-blur-md">
                 <div className="flex items-center gap-4">
-                    <div className="font-black text-xl italic uppercase text-slate-900">
+                    <div className="font-black text-2xl italic uppercase text-white tracking-tighter flex items-center gap-2">
                         Popey <span className="text-orange-500">Cockpit</span>
                     </div>
-                    <div className="hidden md:flex items-center gap-2 px-3 py-1 bg-slate-100 text-slate-600 rounded-full border border-slate-200">
-                        <span className="text-xs">⚓️</span>
-                        <span className="text-xs font-bold uppercase tracking-wider">Équipage Alpha</span>
+                    <div className="hidden lg:flex items-center gap-2 px-4 py-1.5 bg-slate-800/50 text-slate-300 rounded-full border border-slate-700">
+                        <Anchor className="h-4 w-4 text-orange-400" />
+                        <span className="text-xs font-bold uppercase tracking-wider">Équipage Cohorte 40 • 10 au 23 Fév 2026</span>
                     </div>
                 </div>
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-6">
                     <div className="text-right hidden sm:block">
-                        <p className="text-xs text-slate-500 font-bold uppercase tracking-widest">Votre progression</p>
-                        <div className="w-32 h-2 bg-slate-100 rounded-full mt-1 overflow-hidden">
-                            <div className="h-full bg-green-500 transition-all duration-1000" style={{ width: `${progress}%` }}></div>
+                        <p className="text-[10px] text-slate-500 font-black uppercase tracking-[0.2em] mb-1">Votre Progression</p>
+                        <div className="w-40 h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                            <div className="h-full bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.5)]" style={{ width: `60%` }}></div>
                         </div>
                     </div>
-                    <Avatar className="h-10 w-10 border-2 border-white shadow-sm bg-indigo-600">
-                        <AvatarFallback className="bg-indigo-600 text-white font-bold">U</AvatarFallback>
+                    <Avatar className="h-10 w-10 border-2 border-orange-500/50 shadow-lg shadow-orange-500/20 cursor-pointer hover:scale-105 transition-transform">
+                        <AvatarFallback className="bg-slate-800 text-white font-bold">JP</AvatarFallback>
                     </Avatar>
                 </div>
             </header>
 
             <main className="container mx-auto px-4 py-8 max-w-7xl">
                 
-                {/* En-tête de Mission */}
-                <div className="mb-8">
-                    <div className="flex items-center gap-3 mb-2">
-                        <Badge className="bg-orange-500 text-white hover:bg-orange-600 uppercase tracking-widest">Jour 1 / 15</Badge>
-                        <span className="text-slate-400 font-medium text-sm">Mardi 18 Février</span>
+                {/* En-tête de Mission - CENTRÉE ET MASSIVE */}
+                <div className="mb-16 flex flex-col items-center text-center">
+                    <div className="inline-flex items-center gap-2 mb-4 px-4 py-2 bg-slate-800/50 rounded-full border border-slate-700">
+                        <span className="h-2 w-2 rounded-full bg-green-500 animate-pulse"></span>
+                        <span className="text-slate-300 text-xs font-bold uppercase tracking-widest">Mardi 17 Février • Jour 9 / 14</span>
                     </div>
-                    <h1 className="text-3xl md:text-4xl font-black text-slate-900 uppercase italic">
-                        J1 : LE GRAND SAUT
+                    
+                    <h1 className="text-6xl md:text-8xl font-black text-white uppercase italic tracking-tighter mb-4 drop-shadow-[0_0_30px_rgba(249,115,22,0.3)]">
+                        J9 : <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-red-600">La Chasse</span>
                     </h1>
+                    
+                    <p className="text-2xl text-slate-400 max-w-3xl leading-relaxed italic font-light">
+                        "Aujourd'hui, on ne prépare plus. On sort. On chasse. On ramène."
+                    </p>
                 </div>
 
-                <div className="grid lg:grid-cols-3 gap-8">
-                    
-                    {/* COLONNE GAUCHE (Mission + Victoires) */}
-                    <div className="lg:col-span-2 space-y-8">
-                        
-                        {/* 0. LA RELIQUE (GOLDEN TICKET) */}
-                        <MockGoldenTicket dayIndex={1} />
+                <div className="flex flex-col gap-12">
 
-                        {/* 1. Briefing Vidéo */}
-                        <Card className="overflow-hidden border-2 border-slate-200 shadow-sm">
-                            <div className="aspect-video bg-slate-900 flex items-center justify-center relative group cursor-pointer">
-                                <PlayCircle className="h-20 w-20 text-white opacity-80 group-hover:opacity-100 transition-opacity" />
-                                <div className="absolute bottom-4 left-4 text-white font-bold text-sm bg-black/50 px-3 py-1 rounded-full">
-                                    Vidéo de Briefing (2:30)
+                    {/* BLOC 1 : BRIEFING & COACH (L'APPEL À L'ACTION) */}
+                    <section className="grid lg:grid-cols-12 gap-8">
+                         {/* Vidéo de Briefing - Largeur 7 */}
+                         <div className="lg:col-span-7">
+                            <div className="relative group cursor-pointer overflow-hidden rounded-xl border border-slate-700 shadow-2xl h-full min-h-[400px]">
+                                <div className="absolute inset-0 bg-black">
+                                    <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1497910091122-9f8a7746eb33?q=80&w=2070&auto=format&fit=crop')] bg-cover bg-center opacity-80 group-hover:opacity-60 transition-opacity duration-500"></div>
+                                    <div className="absolute inset-0 flex items-center justify-center">
+                                        <div className="relative">
+                                            <div className="absolute inset-0 bg-orange-500 blur-xl opacity-20 group-hover:opacity-40 transition-opacity"></div>
+                                            <PlayCircle className="relative h-24 w-24 text-white opacity-90 group-hover:scale-110 transition-transform duration-300 drop-shadow-2xl" />
+                                        </div>
+                                    </div>
+                                    <div className="absolute bottom-0 left-0 right-0 p-8 bg-gradient-to-t from-black via-black/80 to-transparent">
+                                        <Badge className="bg-orange-600 text-white border-0 mb-3 px-3 py-1 text-xs font-bold uppercase tracking-wider">Briefing J9</Badge>
+                                        <h3 className="text-3xl font-black text-white uppercase italic tracking-tight mb-1">L'Art de la Relance</h3>
+                                        <p className="text-slate-300 text-sm font-medium">Durée : 04:30 • Par Jean-Philippe</p>
+                                    </div>
                                 </div>
                             </div>
-                            <CardContent className="p-6 bg-slate-50">
-                                <h3 className="font-bold text-lg mb-6 flex items-center gap-2 text-slate-900">
-                                    🎯 Vos 3 Missions du Jour
-                                </h3>
-                                
-                                <div className="mb-6 text-sm text-slate-600 bg-white p-4 rounded-lg border border-slate-100 italic">
-                                    "Bienvenue dans l'aventure. On pose les bases. Aujourd'hui, on ne réfléchit pas, on agit."
-                                </div>
+                         </div>
 
-                                <div className="grid gap-4 md:grid-cols-1">
-                                    {renderStepGroup("Intellectuel & Admin", <Brain className="h-4 w-4" />, intellectualSteps, "text-blue-600")}
-                                    {renderStepGroup("Créatif & Contenu", <Video className="h-4 w-4" />, creativeSteps, "text-purple-600")}
-                                    {renderStepGroup("Social & Live", <Users className="h-4 w-4" />, socialSteps, "text-orange-600")}
-                                    {renderStepGroup("Événement (Live/Atelier)", <CheckCircle2 className="h-4 w-4" />, eventSteps, "text-red-600")}
-                                </div>
+                        {/* Coach AI - Largeur 5 - À Côté de la Vidéo */}
+                         <div className="lg:col-span-5 h-[400px]">
+                            <MockAICoach />
+                         </div>
+                    </section>
 
-                                {/* VALIDATION DE MA MISSION */}
-                                <div className="mt-8">
-                                    <MockMissionValidator />
-                                </div>
 
-                            </CardContent>
-                        </Card>
+                    {/* BLOC 2 : LES MISSIONS (L'ACTION) */}
+                    <section className="max-w-4xl mx-auto w-full space-y-8">
+                         <div className="flex items-center gap-4 mb-4">
+                            <div className="h-px bg-slate-800 flex-1"></div>
+                            <h2 className="text-xl font-black text-slate-500 uppercase tracking-[0.3em]">Plan de Bataille</h2>
+                            <div className="h-px bg-slate-800 flex-1"></div>
+                         </div>
 
-                        {/* 3. Mur des Victoires */}
-                        <div className="h-[500px]">
-                            <MockVictoryWall />
+                         {/* 0. GOLDEN TICKET (RELIQUE) */}
+                         <MockGoldenTicket />
+                         
+                         {/* 1. L'AUDIT DE L'INERTIE */}
+                        <StoryBlock 
+                            title="L'Audit de l'Inertie" 
+                            subtitle="Intellectuel" 
+                            icon={Clock} 
+                            colorClass="bg-blue-500"
+                            imageBg="https://images.unsplash.com/photo-1615818499660-30b5893f9c69?q=80&w=2070&auto=format&fit=crop" // Rusty chain / ship
+                            proofType="text"
+                            isCompleted={completedSteps.includes(1)}
+                            onValidate={() => toggleStep(1)}
+                        >
+                            <p className="text-lg font-bold text-white mb-4">Le Temps Perdu.</p>
+                            <p>Depuis combien de mois (ou d'années) est-ce que je me dis "il faut que je change quelque chose" sans le faire ?</p>
+                            <p className="mt-4 italic text-slate-400 border-l-4 border-orange-500 pl-4 py-2 bg-white/5">
+                                Matériel requis : Une feuille, un stylo. 5 minutes pour répondre.
+                            </p>
+                            <ul className="mt-6 space-y-3">
+                                <li className="flex gap-3"><span className="text-orange-500 font-bold">1.</span> Regarde la vidéo de bienvenue.</li>
+                                <li className="flex gap-3"><span className="text-orange-500 font-bold">2.</span> Contacte ton binôme : "Je monte à bord."</li>
+                                <li className="flex gap-3"><span className="text-orange-500 font-bold">3.</span> Écris ta réponse à la question ci-dessus.</li>
+                            </ul>
+                        </StoryBlock>
+
+                        {/* 2. LE SABOTAGE */}
+                        <StoryBlock 
+                            title="Le Sabotage" 
+                            subtitle="Social" 
+                            icon={AlertTriangle} 
+                            colorClass="bg-red-600"
+                            imageBg="https://images.unsplash.com/photo-1590274853023-535352378943?q=80&w=2000&auto=format&fit=crop" // Dark foggy ship bridge
+                            proofType="text"
+                            isCompleted={completedSteps.includes(2)}
+                            onValidate={() => toggleStep(2)}
+                        >
+                            <p className="text-lg font-bold text-white mb-4">Quelle est la phrase d'excuse que je me sers le plus souvent pour ne pas agir aujourd'hui ?</p>
+                            <p>"Je n'ai pas le temps" ? "Je ne suis pas prêt" ? "C'est trop risqué" ?</p>
+                            <div className="mt-6 bg-white/5 p-6 rounded-lg border border-white/10">
+                                <h5 className="font-bold text-white mb-2">Ton Ennemi Public N°1</h5>
+                                <p className="text-sm">Identifie ce qui te rend fou dans ton marché. C'est contre ça que tu vas te battre.</p>
+                                <p className="text-sm mt-2">Poste ta "Phrase de Combat" sur le groupe.</p>
+                            </div>
+                        </StoryBlock>
+
+                        {/* 3. LA REALITE MATHEMATIQUE */}
+                        <StoryBlock 
+                            title="La Réalité Mathématique" 
+                            subtitle="Créatif" 
+                            icon={Ship} 
+                            colorClass="bg-orange-500"
+                            imageBg="https://images.unsplash.com/photo-1551288049-bebda4e38f71?q=80&w=2070&auto=format&fit=crop" // Gauge / Engine room
+                            proofType="image"
+                            isCompleted={completedSteps.includes(3)}
+                            onValidate={() => toggleStep(3)}
+                        >
+                            <p className="text-lg font-bold text-white mb-4">Si je ne change rien, à quoi ressemblera mon compte en banque dans 12 mois ?</p>
+                            <p className="text-red-400 font-black text-2xl uppercase tracking-widest mb-6">EMPTY ?</p>
+                            
+                            <p>Il est temps de poser ton QG. Ton poste de pilotage.</p>
+                            <ul className="mt-4 space-y-2 text-sm">
+                                <li>📍 Choisis ton lieu (Bureau, Cuisine, Café).</li>
+                                <li>📸 Prends UNE photo brute. Pas de mise en scène.</li>
+                                <li>🚀 Poste-la pour valider ton entrée dans l'aventure.</li>
+                            </ul>
+                        </StoryBlock>
+                    </section>
+                </div>
+
+                {/* Buddy Chat - Floating Fixed Bottom Right or Integrated ? Let's integrate it below missions for now to keep focus */}
+                <div className="max-w-4xl mx-auto mt-12 mb-16">
+                     <div className="flex items-center gap-4 mb-4">
+                        <div className="h-px bg-slate-800 flex-1"></div>
+                        <h2 className="text-xl font-black text-slate-500 uppercase tracking-[0.3em] flex items-center gap-2">
+                            <Users className="h-5 w-5" /> Communication Sécurisée
+                        </h2>
+                        <div className="h-px bg-slate-800 flex-1"></div>
+                     </div>
+                    <MockBuddyChat />
+                </div>
+
+                {/* Victory Wall - Full Width Bottom Section */}
+                <div className="hidden lg:block mt-16 max-w-6xl mx-auto">
+                    <div className="flex items-center justify-between mb-8">
+                        <h3 className="text-3xl font-black text-white uppercase italic tracking-tighter flex items-center gap-3">
+                            <Trophy className="h-8 w-8 text-yellow-500" />
+                            Journal de Bord • <span className="text-orange-500">Victoires de l'Équipage</span>
+                        </h3>
+                        <div className="flex items-center gap-2 px-4 py-2 bg-yellow-900/10 border border-yellow-500/20 rounded-full">
+                            <Flame className="h-5 w-5 text-yellow-500 animate-pulse" />
+                            <span className="text-yellow-500 font-black text-lg">24 🔥 / post</span>
                         </div>
-
                     </div>
 
-                    {/* COLONNE DROITE (Binôme) */}
-                    <div className="lg:col-span-1 space-y-6">
-                        
-                        {/* Info Binôme */}
-                        <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-6">
-                            <h3 className="text-sm font-bold uppercase text-slate-400 mb-4 tracking-wider flex items-center gap-2">
-                                <Users className="h-4 w-4" /> Mon Binôme
-                            </h3>
-                            
-                            <div className="flex items-center gap-4">
-                                <div className="h-12 w-12 rounded-full bg-orange-100 flex items-center justify-center text-orange-600 font-bold text-lg border-2 border-white shadow-sm">
-                                    M
-                                </div>
-                                <div>
-                                    <p className="font-bold text-slate-900">
-                                        Marc Dupont
-                                    </p>
-                                    <p className="text-sm text-slate-500">
-                                        Freelance Marketing (75)
-                                    </p>
-                                    <p className="text-xs text-blue-500 mt-1 capitalize">
-                                        Sur LinkedIn
-                                    </p>
-                                </div>
-                            </div>
-
-                            <div className="mt-6 flex gap-2">
-                                    <Button className="w-full bg-slate-900 text-white hover:bg-slate-800" size="sm">
-                                    Contacter
+                    {/* Zone de Saisie Rapide */}
+                    <div className="bg-[#111827] border border-slate-800 rounded-2xl p-6 mb-10 shadow-xl">
+                        <div className="flex gap-4">
+                            <Avatar className="h-12 w-12 border-2 border-slate-700">
+                                <AvatarFallback className="bg-slate-800 text-white font-bold">JP</AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1 space-y-4">
+                                <Input 
+                                    placeholder="Quelle victoire as-tu décrochée aujourd'hui ?" 
+                                    className="bg-slate-900 border-slate-700 text-lg font-medium text-white h-14 px-6 rounded-xl focus-visible:ring-orange-500"
+                                />
+                                <div className="flex justify-end">
+                                    <Button size="lg" className="bg-orange-600 hover:bg-orange-500 text-white font-bold px-8 rounded-xl shadow-lg shadow-orange-900/20">
+                                        Poster ma Victoire 🚀
                                     </Button>
+                                </div>
                             </div>
                         </div>
+                    </div>
 
-                        {/* Chat */}
-                        <MockChatBox />
-                        
-                        {/* COACH IA POPEY */}
-                        <MockAICoach />
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                         {[
+                            { id: 1, user: "Sophie M.", time: "Il y a 2h", content: "J'ai enfin publié mon offre sur LinkedIn ! Déjà 3 demandes de RDV.", likes: 12, liked: true },
+                            { id: 2, user: "Thomas R.", time: "Il y a 4h", content: "Premier client signé à 2000€. Merci pour le feedback sur mon pitch !", likes: 24, liked: false },
+                            { id: 3, user: "Alexandre B.", time: "Il y a 5h", content: "Site web mis en ligne. C'est pas parfait mais c'est fait. Action > Réflexion.", likes: 8, liked: false },
+                            { id: 4, user: "Julie D.", time: "Il y a 6h", content: "J'ai osé appeler mon ancien patron pour lui vendre ma presta. Il a dit OUI !", likes: 42, liked: true },
+                            { id: 5, user: "Karim L.", time: "Il y a 8h", content: "Vidéo tournée en une prise. Je ne me reconnais pas, l'énergie est folle.", likes: 15, liked: false },
+                            { id: 6, user: "Marie P.", time: "Il y a 10h", content: "J'ai viré mon client toxique. Libération totale.", likes: 33, liked: true },
+                        ].map(post => (
+                            <div key={post.id} className="flex gap-4 p-5 rounded-xl border border-slate-800 bg-[#111827] shadow-lg hover:border-slate-600 transition-all hover:-translate-y-1">
+                                <Avatar className="h-12 w-12 border-2 border-slate-700 shrink-0">
+                                    <AvatarFallback className="bg-slate-800 text-slate-400 font-bold">{post.user[0]}</AvatarFallback>
+                                </Avatar>
+                                
+                                <div className="flex-1 space-y-2">
+                                    <div className="flex justify-between items-start">
+                                        <h4 className={`font-bold text-base ${THEME.textMain}`}>{post.user}</h4>
+                                        <span className={`text-xs font-medium ${THEME.textMuted}`}>{post.time}</span>
+                                    </div>
+                                    
+                                    <p className={`text-sm leading-relaxed ${THEME.textMuted}`}>{post.content}</p>
 
-                        {/* Aide / Support */}
-                        <Card>
-                            <CardHeader className="pb-3">
-                                <CardTitle className="text-sm text-slate-500 uppercase tracking-widest">Besoin d'aide ?</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <p className="text-sm text-slate-600 mb-4">Les coachs sont disponibles sur le Slack général.</p>
-                                <Button variant="outline" size="sm" className="w-full">Contacter le support</Button>
-                            </CardContent>
-                        </Card>
-
-                        {/* Historique rapide (Mock) */}
-                        <Card className="opacity-50">
-                            <CardHeader className="pb-3">
-                                <CardTitle className="text-sm text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                                    <Lock className="h-3 w-3" /> Historique
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <p className="text-xs text-slate-400 italic">Disponible à partir de J2</p>
-                            </CardContent>
-                        </Card>
-
+                                    <div className="pt-2 flex items-center justify-end">
+                                         <Button 
+                                            variant="ghost" 
+                                            size="sm" 
+                                            className={`h-8 px-2 rounded-full gap-2 ${post.liked ? 'text-orange-500 bg-orange-900/10' : 'text-slate-600 hover:bg-slate-800 hover:text-slate-400'}`}
+                                        >
+                                            <Flame className={`h-4 w-4 ${post.liked ? 'fill-current' : ''}`} />
+                                            <span className="font-black text-xs">{post.likes}</span>
+                                        </Button>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
                     </div>
                 </div>
             </main>
