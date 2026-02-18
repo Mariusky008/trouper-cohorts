@@ -388,12 +388,55 @@ export default function AlliancePage() {
             </Section>
 
             {/* FOOTER */}
-            <footer className="py-12 border-t border-slate-900 text-center text-slate-600 text-sm uppercase tracking-widest bg-[#050505]">
-                <div className="flex items-center justify-center gap-2 mb-4">
-                    <Anchor className="h-4 w-4" />
-                    <span className="font-black italic text-slate-400">ALLIANCE</span>
+            <footer className="bg-[#050505] py-12 border-t border-slate-900 text-slate-300">
+                <div className="container mx-auto px-4">
+                    <div className="grid md:grid-cols-4 gap-8 mb-12 text-left">
+                        <div className="space-y-4">
+                            <div className="flex items-center gap-2">
+                                <Anchor className="h-6 w-6 text-white" />
+                                <span className="font-black uppercase tracking-widest text-white">Popey Academy</span>
+                            </div>
+                            <p className="text-sm text-slate-500">
+                                La première école qui transforme l'indécision en action.
+                                <br/>Force & Honneur.
+                            </p>
+                        </div>
+                        <div>
+                            <h4 className="font-bold text-white uppercase mb-4 text-sm">Programmes</h4>
+                            <ul className="space-y-2 text-sm text-slate-500">
+                                <li><Link href="/emploi" className="hover:text-white transition-colors">Trouver sa voie</Link></li>
+                                <li><Link href="/" className="hover:text-white transition-colors">Lancer son activité</Link></li>
+                                <li><Link href="/admin/catalogue-chomeur" className="hover:text-white transition-colors">Catalogue PDF</Link></li>
+                            </ul>
+                        </div>
+                        <div>
+                            <h4 className="font-bold text-white uppercase mb-4 text-sm">Légal</h4>
+                            <ul className="space-y-2 text-sm text-slate-500">
+                                <li><Link href="/legal/mentions" className="hover:text-white transition-colors">Mentions Légales</Link></li>
+                                <li><Link href="/legal/terms" className="hover:text-white transition-colors">CGV / CGU</Link></li>
+                                <li><Link href="/legal/privacy" className="hover:text-white transition-colors">Politique de Confidentialité</Link></li>
+                            </ul>
+                        </div>
+                        <div>
+                            <h4 className="font-bold text-white uppercase mb-4 text-sm">Contact</h4>
+                            <ul className="space-y-2 text-sm text-slate-500">
+                                <li>hello@popey.academy</li>
+                                <li>Paris, France</li>
+                                <li className="flex gap-4 mt-4">
+                                    <div className="h-8 w-8 bg-slate-800 rounded-full flex items-center justify-center text-slate-400 hover:bg-white hover:text-black transition-colors cursor-pointer">
+                                        <span className="font-black text-xs">IN</span>
+                                    </div>
+                                    <div className="h-8 w-8 bg-slate-800 rounded-full flex items-center justify-center text-slate-400 hover:bg-white hover:text-black transition-colors cursor-pointer">
+                                        <span className="font-black text-xs">IG</span>
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div className="pt-8 border-t border-slate-900 text-center">
+                        <p className="text-slate-500 text-xs">© 2026 Popey Academy. Tous droits réservés.</p>
+                    </div>
                 </div>
-                <p>&copy; {new Date().getFullYear()} Trouper Cohorts. Tous droits réservés.</p>
             </footer>
         </div>
     );
