@@ -34,7 +34,7 @@ export function StickyRecruitmentBanner({ forceVisible = false }: { forceVisible
                     initial={{ y: 100, opacity: 0 }}
                     animate={{ y: 0, opacity: 1 }}
                     exit={{ y: 100, opacity: 0 }}
-                    className="fixed bottom-4 left-4 right-4 md:right-auto md:left-8 md:bottom-8 z-40 flex flex-col items-start"
+                    className="fixed bottom-4 left-4 right-4 md:right-auto md:left-8 md:bottom-8 z-50 flex flex-col items-start"
                 >
                     {isExpanded ? (
                         <motion.div

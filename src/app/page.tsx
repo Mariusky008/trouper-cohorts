@@ -1084,7 +1084,7 @@ export default function Home() {
             </div>
         </div>
       </footer>
-      <StickyRecruitmentBanner />
+      <StickyRecruitmentBanner forceVisible={true} />
     </div>
   );
 }
