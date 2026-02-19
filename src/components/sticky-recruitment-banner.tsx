@@ -145,7 +145,7 @@ export function StickyRecruitmentBanner({ forceVisible = true }: { forceVisible?
                             scale: 1
                         }}
                         transition={{ type: "spring", damping: 25, stiffness: 300 }}
-                        className={`fixed z-[9999] flex flex-col ${isExpanded ? 'w-[95vw] max-w-6xl' : 'items-start pointer-events-auto'}`}
+                        className={`fixed z-[9999] flex flex-col ${isExpanded ? 'w-[95vw] max-w-6xl pointer-events-auto' : 'items-start pointer-events-auto'}`}
                     >
                         {isExpanded ? (
                             <motion.div

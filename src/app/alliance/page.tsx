@@ -86,14 +86,30 @@ export default function AlliancePage() {
                     </h1>
                     
                     {/* Sous-titre Problème */}
-                    <div className="max-w-3xl mx-auto space-y-6">
-                        <p className="text-lg md:text-xl text-slate-400 font-medium uppercase tracking-wide">
-                            Problème administratif. Coup dur. Projet bloqué. Moment difficile.
-                        </p>
-                        <p className="text-2xl md:text-3xl text-white font-light leading-relaxed">
-                            Certaines situations deviennent beaucoup plus simples <br/>
-                            <strong className="font-black text-blue-400">quand on n’est pas seul.</strong>
-                        </p>
+                    <div className="max-w-3xl mx-auto space-y-8">
+                        <div className="space-y-4">
+                            <p className="text-2xl md:text-4xl text-white font-light leading-tight">
+                                Seul, tu peux mettre <span className="text-slate-500 line-through decoration-red-500/50 decoration-2">3 mois</span>. <br/>
+                                Avec l’Alliance, <strong className="font-black text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded-lg border border-blue-500/20">3 jours.</strong>
+                            </p>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-12 gap-y-4 text-left max-w-2xl mx-auto pt-2 bg-white/5 rounded-2xl p-6 border border-white/10 backdrop-blur-sm">
+                            {[
+                                "Logement trouvé plus vite",
+                                "Client signé plus vite",
+                                "Info administrative obtenue",
+                                "Problème débloqué plus vite",
+                                "Décision prise plus vite"
+                            ].map((item, i) => (
+                                <div key={i} className="flex items-center gap-3 text-slate-300">
+                                    <div className="h-5 w-5 rounded-full bg-green-500/20 flex items-center justify-center shrink-0 border border-green-500/30">
+                                        <CheckCircle2 className="h-3 w-3 text-green-400" />
+                                    </div>
+                                    <span className="text-base font-medium">{item}</span>
+                                </div>
+                            ))}
+                        </div>
                     </div>
 
                     {/* Bloc Solution */}
