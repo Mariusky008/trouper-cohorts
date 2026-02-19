@@ -26,11 +26,11 @@ export function ServicesTab() {
     const calculatedPoints = Math.max(10, Math.round(difficulty * 1.5));
 
     const getDifficultyLabel = (val: number) => {
-        if (val <= 20) return { label: "Très Simple", color: "text-green-400" };
-        if (val <= 40) return { label: "Simple", color: "text-blue-400" };
-        if (val <= 60) return { label: "Moyen", color: "text-yellow-400" };
-        if (val <= 80) return { label: "Difficile", color: "text-orange-400" };
-        return { label: "Très Difficile", color: "text-red-400" };
+        if (val <= 20) return { label: "Facile", color: "text-green-400", bg: "bg-green-500", border: "border-green-500/30" };
+        if (val <= 40) return { label: "Moyen", color: "text-blue-400", bg: "bg-blue-500", border: "border-blue-500/30" };
+        if (val <= 60) return { label: "Sérieux", color: "text-yellow-400", bg: "bg-yellow-500", border: "border-yellow-500/30" };
+        if (val <= 80) return { label: "Difficile", color: "text-orange-400", bg: "bg-orange-500", border: "border-orange-500/30" };
+        return { label: "Héroïque", color: "text-red-400", bg: "bg-red-500", border: "border-red-500/30" };
     };
 
     const toggleReservation = (id: number) => {
@@ -42,248 +42,244 @@ export function ServicesTab() {
     };
 
     return (
-        <div className="space-y-8">
-            {/* EN-TÊTE ET FILTRES */}
-            <div className="flex justify-between items-center">
-                <div className="flex gap-4">
-                    <Button variant="outline" className="border-slate-800 text-white bg-slate-900/50 hover:bg-slate-800">Tout</Button>
-                    <Button variant="ghost" className="text-slate-400 hover:text-white">À Rendre (Disponibles)</Button>
-                    <Button variant="ghost" className="text-slate-400 hover:text-white">Mes Échanges</Button>
-                </div>
+        <div className="space-y-12 max-w-5xl mx-auto pb-20">
+            {/* HERO SECTION GAMIFIÉE */}
+            <div className="relative rounded-3xl overflow-hidden border border-slate-800 bg-[#0a0f1c] p-8 md:p-12 text-center group">
+                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500"></div>
+                <div className="absolute -top-24 -left-24 w-64 h-64 bg-blue-600/20 blur-[100px] rounded-full group-hover:bg-blue-600/30 transition-all duration-1000"></div>
+                <div className="absolute -bottom-24 -right-24 w-64 h-64 bg-purple-600/20 blur-[100px] rounded-full group-hover:bg-purple-600/30 transition-all duration-1000"></div>
                 
-                <Dialog open={isCreatingService} onOpenChange={setIsCreatingService}>
-                    <DialogTrigger asChild>
-                        <Button className="bg-blue-600 hover:bg-blue-700 text-white font-bold">
-                            <Plus className="h-4 w-4 mr-2" /> Demander un Service
-                        </Button>
-                    </DialogTrigger>
-                    <DialogContent className="bg-[#0a0f1c] border-slate-800 text-white max-w-lg">
-                        <DialogHeader>
-                            <DialogTitle className="text-xl font-bold flex items-center gap-2">
-                                <Zap className="h-5 w-5 text-yellow-400" /> Créer une demande de service
-                            </DialogTitle>
-                        </DialogHeader>
-                        <div className="space-y-6 py-4">
-                            <div className="space-y-2">
-                                <Label className="text-slate-400">Titre de la demande</Label>
-                                <Input placeholder="Ex: Aide pour déménagement, Relecture..." className="bg-slate-900 border-slate-700 text-white" />
-                            </div>
-                            
-                            <div className="space-y-4 bg-slate-900/50 p-4 rounded-xl border border-slate-800">
-                                <div className="flex justify-between items-center">
-                                    <Label className="text-slate-200 font-bold flex items-center gap-2">
-                                        <Gauge className="h-4 w-4 text-blue-400" /> Difficulté & Points
-                                    </Label>
-                                    <span className={`font-black text-sm ${getDifficultyLabel(difficulty).color}`}>
-                                        {getDifficultyLabel(difficulty).label} ({difficulty}/100)
-                                    </span>
-                                </div>
-                                <Slider 
-                                    value={[difficulty]} 
-                                    onValueChange={(vals) => setDifficulty(vals[0])} 
-                                    max={100} 
-                                    step={5}
-                                    className="py-4"
-                                />
-                                <div className="flex justify-between items-center text-xs text-slate-500">
-                                    <span>Rapide (10pts)</span>
-                                    <span>Intensif (150pts)</span>
-                                </div>
-                                <div className="bg-slate-800 p-3 rounded-lg flex justify-between items-center border border-slate-700">
-                                    <span className="text-xs text-slate-400 max-w-[70%]">
-                                        Indiquez la difficulté pour que l'exécutant sache combien de points il gagnera.
-                                    </span>
-                                    <div className="text-right">
-                                        <span className="block text-2xl font-black text-yellow-400">{calculatedPoints}</span>
-                                        <span className="text-[10px] uppercase font-bold text-slate-500">Points à gagner</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label className="text-slate-400">Description détaillée</Label>
-                                <Textarea placeholder="Détails, contraintes, horaires..." className="bg-slate-900 border-slate-700 text-white min-h-[100px]" />
-                            </div>
-
-                            <Button className="w-full bg-blue-600 hover:bg-blue-700 font-bold" onClick={() => setIsCreatingService(false)}>
-                                Publier la demande (+{calculatedPoints} pts offerts)
-                            </Button>
-                        </div>
-                    </DialogContent>
-                </Dialog>
-            </div>
-
-            {/* OFFRES DISPONIBLES (MARKETPLACE) */}
-            <div className="space-y-4">
-                <h3 className="text-xl font-bold text-white flex items-center gap-2">
-                    <Zap className="h-5 w-5 text-yellow-400" /> Opportunités à Saisir (Services à Rendre)
-                </h3>
-                <p className="text-slate-400 text-sm mb-4">
-                    Plus la mission est complexe, plus vous gagnez de points pour avancer vers le palier supérieur !
-                </p>
-                <div className="grid md:grid-cols-2 gap-6">
-                    {[
-                        { id: 1, title: "Aide déménagement (Bras)", user: "Thomas D.", deadline: "Samedi 14h", duration: "3h", points: 80, difficulty: 65, urgent: true, timer: "48h" },
-                        { id: 2, title: "Review Code React/Next.js", user: "Sarah M.", deadline: "Avant demain soir", duration: "1h", points: 50, difficulty: 40, urgent: false, timer: "24h" },
-                        { id: 3, title: "Conseil Création Statuts", user: "Karim B.", deadline: "Flexible", duration: "30min", points: 30, difficulty: 25, urgent: false, timer: "72h" },
-                        { id: 4, title: "Prêt Matériel Vidéo", user: "Emma R.", deadline: "Mardi prochain", duration: "N/A", points: 20, difficulty: 10, urgent: false, timer: "72h" },
-                    ].map((offer, i) => {
-                        const isReserved = reservedServices.includes(offer.id);
-                        const diffInfo = getDifficultyLabel(offer.difficulty);
-                        
-                        return (
-                            <motion.div 
-                                key={offer.id}
-                                initial={{ opacity: 0, scale: 0.95 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                transition={{ delay: i * 0.1 }}
-                            >
-                                <Card className={`bg-[#0a0f1c] border p-6 relative overflow-hidden transition-all ${isReserved ? 'border-green-500/50 bg-green-900/5' : 'border-slate-800 hover:border-slate-600'}`}>
-                                    {offer.urgent && !isReserved && (
-                                        <div className="absolute top-0 right-0 bg-red-500 text-white text-[10px] font-bold px-2 py-1 uppercase tracking-widest rounded-bl-lg">
-                                            Urgent
-                                        </div>
-                                    )}
-                                    
-                                    <div className="flex justify-between items-start mb-4">
-                                        <div className="flex items-center gap-3">
-                                            <Avatar className="h-10 w-10 border border-slate-700">
-                                                <AvatarFallback className="bg-slate-800 text-slate-300">{offer.user[0]}</AvatarFallback>
-                                            </Avatar>
-                                            <div>
-                                                <h4 className="font-bold text-white text-lg leading-tight">{offer.title}</h4>
-                                                <p className="text-slate-500 text-xs">Demandé par {offer.user}</p>
-                                            </div>
-                                        </div>
-                                        <div className="text-right">
-                                            <Badge variant="outline" className="border-yellow-500/20 text-yellow-400 bg-yellow-500/10 mb-1">
-                                                +{offer.points} pts
-                                            </Badge>
-                                        </div>
-                                    </div>
-
-                                    {/* JAUGE DIFFICULTÉ */}
-                                    <div className="mb-6 space-y-1">
-                                        <div className="flex justify-between text-[10px] font-bold uppercase tracking-wider">
-                                            <span className="text-slate-500">Complexité</span>
-                                            <span className={diffInfo.color}>{diffInfo.label}</span>
-                                        </div>
-                                        <div className="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
-                                            <div 
-                                                className={`h-full rounded-full ${diffInfo.color.replace('text-', 'bg-')}`} 
-                                                style={{ width: `${offer.difficulty}%` }}
-                                            ></div>
-                                        </div>
-                                    </div>
-
-                                    <div className="grid grid-cols-2 gap-4 mb-6">
-                                        <div className="bg-slate-900/50 p-2 rounded-lg border border-slate-800/50 flex items-center gap-2">
-                                            <Clock className="h-4 w-4 text-slate-400" />
-                                            <div>
-                                                <span className="block text-[10px] text-slate-500 uppercase font-bold">Durée est.</span>
-                                                <span className="text-sm text-slate-300 font-medium">{offer.duration}</span>
-                                            </div>
-                                        </div>
-                                        <div className="bg-slate-900/50 p-2 rounded-lg border border-slate-800/50 flex items-center gap-2">
-                                            <Timer className="h-4 w-4 text-slate-400" />
-                                            <div>
-                                                <span className="block text-[10px] text-slate-500 uppercase font-bold">Deadline</span>
-                                                <span className="text-sm text-slate-300 font-medium">{offer.deadline}</span>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {isReserved ? (
-                                        <div className="space-y-3">
-                                            <div className="flex items-center justify-between text-green-400 text-sm font-bold bg-green-500/10 p-3 rounded-lg border border-green-500/20">
-                                                <span className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4" /> Réservé par toi</span>
-                                                <span className="flex items-center gap-1 text-xs uppercase tracking-wide"><Hourglass className="h-3 w-3 animate-pulse" /> Expire dans {offer.timer}</span>
-                                            </div>
-                                            <div className="flex gap-2">
-                                                <Button size="sm" className="flex-1 bg-white text-black hover:bg-slate-200 font-bold">
-                                                    Contacter {offer.user.split(' ')[0]}
-                                                </Button>
-                                                <Button size="sm" variant="outline" className="border-red-900/30 text-red-400 hover:bg-red-900/10 hover:text-red-300" onClick={() => toggleReservation(offer.id)}>
-                                                    Annuler
-                                                </Button>
-                                            </div>
-                                        </div>
-                                    ) : (
-                                        <Button 
-                                            className="w-full bg-slate-100 text-black hover:bg-white font-bold group"
-                                            onClick={() => toggleReservation(offer.id)}
-                                        >
-                                            <span className="group-hover:hidden">Réserver ce service</span>
-                                            <span className="hidden group-hover:inline-flex items-center gap-2">
-                                                <Clock className="h-4 w-4" /> S'engager (Chrono {offer.timer})
-                                            </span>
-                                        </Button>
-                                    )}
-                                </Card>
-                            </motion.div>
-                        );
-                    })}
-                </div>
-            </div>
-
-            {/* DETTE OBLIGATOIRE */}
-            <Card className="bg-gradient-to-r from-red-900/10 to-orange-900/10 border-slate-800 p-6 flex justify-between items-center relative overflow-hidden mt-8">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-orange-500/10 blur-3xl rounded-full"></div>
-                <div className="relative z-10">
-                    <h3 className="text-white font-bold text-lg flex items-center gap-2 mb-2">
-                        <Shield className="h-5 w-5 text-orange-500" /> Dette de Service
-                    </h3>
-                    <p className="text-slate-400 text-sm max-w-lg">
-                        Rappel : Pour chaque service reçu, tu t'engages à en rendre un. <br/>
-                        <span className="text-orange-400 font-bold">Actuellement : +4 Services Rendus (Excellent !)</span>
+                <div className="relative z-10 space-y-6">
+                    <Badge variant="outline" className="border-yellow-500/30 bg-yellow-500/10 text-yellow-400 px-4 py-1 text-xs font-bold uppercase tracking-widest mb-4 animate-pulse">
+                        <Zap className="h-3 w-3 mr-2" /> Zone d'Action Immédiate
+                    </Badge>
+                    
+                    <h2 className="text-4xl md:text-6xl font-black text-white tracking-tighter leading-none">
+                        Chasse aux <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">Points</span>
+                    </h2>
+                    <p className="text-lg text-slate-400 max-w-2xl mx-auto font-medium">
+                        Récupère des missions, gagne des points et débloque le statut <span className="text-white font-bold">Légende</span>. 
+                        Plus tu aides, plus tu montes.
                     </p>
-                </div>
-                <div className="text-right">
-                    <span className="block text-3xl font-black text-white">+4</span>
-                    <span className="text-xs text-slate-500 uppercase font-bold">Solde positif</span>
-                </div>
-            </Card>
 
-            {/* LISTE HISTORIQUE */}
-            <div className="space-y-4">
-                <h3 className="text-xl font-bold text-white flex items-center gap-2 mt-8">
-                    <Activity className="h-5 w-5 text-blue-400" /> Historique Récent
-                </h3>
-                {[
-                    { type: "rendu", title: "Relecture Landing Page", user: "Marc P.", date: "Il y a 2 jours", status: "Terminé", points: "+50" },
-                    { type: "reçu", title: "Intro Investisseur", user: "Sophie L.", date: "Il y a 5 jours", status: "Terminé", points: "-50" },
-                    { type: "rendu", title: "Conseil Juridique", user: "Karim B.", date: "Il y a 1 semaine", status: "Terminé", points: "+50" },
-                    { type: "rendu", title: "Aide Déménagement", user: "Julie T.", date: "Il y a 2 semaines", status: "Terminé", points: "+50" },
-                ].map((service, i) => (
-                    <motion.div 
+                    <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
+                        <Button 
+                            onClick={() => setIsCreatingService(true)}
+                            size="lg" 
+                            className="h-14 px-8 rounded-full bg-white text-black hover:bg-slate-200 font-black text-lg shadow-[0_0_30px_rgba(255,255,255,0.15)] hover:shadow-[0_0_50px_rgba(255,255,255,0.3)] transition-all hover:scale-105"
+                        >
+                            <Plus className="h-5 w-5 mr-2" /> Demander de l'Aide
+                        </Button>
+                        <div className="flex items-center gap-2 text-slate-500 font-medium text-sm px-4">
+                            ou
+                        </div>
+                        <Button 
+                            variant="outline" 
+                            size="lg" 
+                            className="h-14 px-8 rounded-full border-slate-700 text-slate-300 hover:text-white hover:bg-slate-800 hover:border-slate-500 font-bold text-lg transition-all"
+                        >
+                            Voir mes missions en cours
+                        </Button>
+                    </div>
+                </div>
+            </div>
+
+            {/* FILTRES ÉPURÉS */}
+            <div className="flex items-center justify-center gap-2 overflow-x-auto py-2 no-scrollbar">
+                {["Toutes les missions", "Rapides (<1h)", "Experts", "Urgent 🔥"].map((filter, i) => (
+                    <button 
                         key={i}
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: i * 0.1 }}
-                        className="bg-[#0a0f1c] border border-slate-800 p-6 rounded-xl flex items-center justify-between hover:bg-slate-900/50 transition-colors cursor-pointer group"
+                        className={`px-6 py-2 rounded-full text-sm font-bold whitespace-nowrap transition-all ${
+                            i === 0 
+                            ? "bg-blue-600 text-white shadow-lg shadow-blue-900/20" 
+                            : "bg-[#0a0f1c] text-slate-400 border border-slate-800 hover:border-slate-600 hover:text-white"
+                        }`}
                     >
-                        <div className="flex items-center gap-6">
-                            <div className={`h-12 w-12 rounded-full flex items-center justify-center ${service.type === 'rendu' ? 'bg-blue-500/10 text-blue-400' : 'bg-red-500/10 text-red-400'}`}>
-                                {service.type === 'rendu' ? <Zap className="h-6 w-6" /> : <Heart className="h-6 w-6" />}
-                            </div>
-                            <div>
-                                <h4 className="font-bold text-white text-lg group-hover:text-blue-400 transition-colors">{service.title}</h4>
-                                <p className="text-slate-500 text-sm flex items-center gap-2">
-                                    {service.type === 'rendu' ? 'Pour' : 'De'} <span className="text-slate-300 font-medium">{service.user}</span> • {service.date}
-                                </p>
-                            </div>
-                        </div>
-                        <div className="flex items-center gap-8">
-                            <span className="px-3 py-1 rounded-full bg-green-500/10 text-green-400 text-xs font-bold uppercase tracking-wide border border-green-500/20">
-                                {service.status}
-                            </span>
-                            <span className={`font-black text-lg ${service.type === 'rendu' ? 'text-blue-400' : 'text-slate-500'}`}>
-                                {service.points} pts
-                            </span>
-                        </div>
-                    </motion.div>
+                        {filter}
+                    </button>
                 ))}
             </div>
+
+            {/* GRID DES MISSIONS (DESIGN CARTE DE JEU) */}
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {[
+                    { id: 1, title: "Bras pour Déménagement", user: "Thomas D.", avatar: "TD", time: "Samedi 14h", duration: "3h", points: 150, difficulty: 65, type: "Physique", urgent: true },
+                    { id: 2, title: "Code Review React", user: "Sarah M.", avatar: "SM", time: "Demain soir", duration: "1h", points: 80, difficulty: 40, type: "Tech", urgent: false },
+                    { id: 3, title: "Conseil Juridique", user: "Karim B.", avatar: "KB", time: "Flexible", duration: "30min", points: 50, difficulty: 25, type: "Intellect", urgent: false },
+                    { id: 4, title: "Prêt Caméra Sony", user: "Emma R.", avatar: "ER", time: "Mardi", duration: "N/A", points: 30, difficulty: 10, type: "Matériel", urgent: false },
+                    { id: 5, title: "Feedback Design", user: "Lucas P.", avatar: "LP", time: "Ce soir", duration: "20min", points: 40, difficulty: 20, type: "Créatif", urgent: true },
+                    { id: 6, title: "Intro Investisseur", user: "Julie A.", avatar: "JA", time: "Semaine pro", duration: "1h", points: 200, difficulty: 85, type: "Réseau", urgent: false },
+                ].map((mission, i) => {
+                    const isReserved = reservedServices.includes(mission.id);
+                    const diffInfo = getDifficultyLabel(mission.difficulty);
+                    
+                    return (
+                        <motion.div 
+                            key={mission.id}
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: i * 0.1 }}
+                            className="group relative"
+                        >
+                            <div className={`
+                                absolute inset-0 bg-gradient-to-b from-slate-800 to-slate-900 rounded-3xl transform transition-transform duration-300 
+                                ${isReserved ? 'scale-[1.02] ring-2 ring-green-500 shadow-[0_0_30px_rgba(34,197,94,0.2)]' : 'group-hover:scale-[1.02] group-hover:shadow-2xl group-hover:shadow-blue-900/20'}
+                            `}></div>
+                            
+                            <div className="relative h-full bg-[#0a0f1c] border border-slate-800 rounded-3xl p-6 flex flex-col justify-between overflow-hidden">
+                                {/* Badge Type */}
+                                <div className="absolute top-4 right-4">
+                                    <Badge variant="secondary" className="bg-slate-900 text-slate-400 border-slate-800 font-bold text-[10px] uppercase tracking-wider">
+                                        {mission.type}
+                                    </Badge>
+                                </div>
+
+                                {/* Header */}
+                                <div className="mb-6">
+                                    {mission.urgent && (
+                                        <div className="inline-flex items-center gap-1 text-red-500 font-black text-[10px] uppercase tracking-widest mb-3 animate-pulse">
+                                            <Shield className="h-3 w-3" /> Urgent
+                                        </div>
+                                    )}
+                                    <h3 className="text-xl font-bold text-white leading-tight mb-2 group-hover:text-blue-400 transition-colors">
+                                        {mission.title}
+                                    </h3>
+                                    <div className="flex items-center gap-2">
+                                        <Avatar className="h-6 w-6 border border-slate-700">
+                                            <AvatarFallback className="bg-slate-800 text-[10px] text-slate-300 font-bold">{mission.avatar}</AvatarFallback>
+                                        </Avatar>
+                                        <span className="text-sm text-slate-500 font-medium">par {mission.user}</span>
+                                    </div>
+                                </div>
+
+                                {/* Stats Grid */}
+                                <div className="grid grid-cols-2 gap-3 mb-6">
+                                    <div className="bg-slate-900/50 rounded-xl p-3 border border-slate-800/50">
+                                        <div className="text-[10px] text-slate-500 uppercase font-bold mb-1">Gain</div>
+                                        <div className="text-2xl font-black text-yellow-400 flex items-center gap-1">
+                                            {mission.points} <span className="text-[10px] text-yellow-500/50">PTS</span>
+                                        </div>
+                                    </div>
+                                    <div className="bg-slate-900/50 rounded-xl p-3 border border-slate-800/50">
+                                        <div className="text-[10px] text-slate-500 uppercase font-bold mb-1">Durée</div>
+                                        <div className="text-lg font-bold text-white">{mission.duration}</div>
+                                    </div>
+                                </div>
+
+                                {/* Footer / Action */}
+                                <div className="mt-auto space-y-3">
+                                    <div className="flex items-center justify-between text-xs font-bold text-slate-500 uppercase tracking-wider">
+                                        <span>Difficulté</span>
+                                        <span className={diffInfo.color}>{diffInfo.label}</span>
+                                    </div>
+                                    <div className="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
+                                        <div 
+                                            className={`h-full rounded-full transition-all duration-1000 ${diffInfo.bg}`} 
+                                            style={{ width: `${mission.difficulty}%` }}
+                                        ></div>
+                                    </div>
+
+                                    <Button 
+                                        className={`w-full h-12 rounded-xl font-bold text-sm transition-all mt-4 ${
+                                            isReserved 
+                                            ? 'bg-green-500 hover:bg-green-600 text-black' 
+                                            : 'bg-white text-black hover:bg-blue-500 hover:text-white'
+                                        }`}
+                                        onClick={() => toggleReservation(mission.id)}
+                                    >
+                                        {isReserved ? (
+                                            <span className="flex items-center gap-2">
+                                                <CheckCircle2 className="h-4 w-4" /> Mission Acceptée
+                                            </span>
+                                        ) : (
+                                            "Accepter le défi"
+                                        )}
+                                    </Button>
+                                </div>
+                            </div>
+                        </motion.div>
+                    );
+                })}
+            </div>
+
+            {/* CLASSEMENT RAPIDE EN BAS DE PAGE */}
+            <div className="mt-12 pt-12 border-t border-slate-800">
+                <div className="flex items-center justify-between mb-8">
+                    <h3 className="text-2xl font-bold text-white">Top Contributeurs de la Semaine</h3>
+                    <Button variant="link" className="text-blue-400">Voir le classement complet</Button>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    {[
+                        { name: "Sarah M.", points: 1250, rank: 1, avatar: "SM" },
+                        { name: "Karim B.", points: 980, rank: 2, avatar: "KB" },
+                        { name: "Julie L.", points: 850, rank: 3, avatar: "JL" },
+                    ].map((user, i) => (
+                        <div key={i} className="flex items-center gap-4 bg-[#0a0f1c] border border-slate-800 p-4 rounded-2xl">
+                            <div className="flex items-center justify-center w-8 h-8 rounded-full bg-slate-800 text-white font-black text-sm border border-slate-700">
+                                {user.rank}
+                            </div>
+                            <Avatar className="h-10 w-10 border border-slate-700">
+                                <AvatarFallback className="bg-blue-600 text-white font-bold">{user.avatar}</AvatarFallback>
+                            </Avatar>
+                            <div>
+                                <div className="font-bold text-white">{user.name}</div>
+                                <div className="text-xs text-yellow-400 font-bold">{user.points} PTS</div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+
+            {/* MODALE DE CRÉATION DE SERVICE (Inchangé mais intégré) */}
+            <Dialog open={isCreatingService} onOpenChange={setIsCreatingService}>
+                <DialogContent className="bg-[#0a0f1c] border-slate-800 text-white max-w-lg">
+                    <DialogHeader>
+                        <DialogTitle className="text-xl font-bold flex items-center gap-2">
+                            <Zap className="h-5 w-5 text-yellow-400" /> Créer une demande de service
+                        </DialogTitle>
+                    </DialogHeader>
+                    {/* ... (Contenu du formulaire identique à avant) ... */}
+                    <div className="space-y-6 py-4">
+                        <div className="space-y-2">
+                            <Label className="text-slate-400">Titre de la demande</Label>
+                            <Input placeholder="Ex: Aide pour déménagement, Relecture..." className="bg-slate-900 border-slate-700 text-white" />
+                        </div>
+                        <div className="space-y-4 bg-slate-900/50 p-4 rounded-xl border border-slate-800">
+                            <div className="flex justify-between items-center">
+                                <Label className="text-slate-200 font-bold flex items-center gap-2">
+                                    <Gauge className="h-4 w-4 text-blue-400" /> Difficulté & Points
+                                </Label>
+                                <span className={`font-black text-sm ${getDifficultyLabel(difficulty).color}`}>
+                                    {getDifficultyLabel(difficulty).label} ({difficulty}/100)
+                                </span>
+                            </div>
+                            <Slider 
+                                value={[difficulty]} 
+                                onValueChange={(vals) => setDifficulty(vals[0])} 
+                                max={100} 
+                                step={5}
+                                className="py-4"
+                            />
+                            <div className="bg-slate-800 p-3 rounded-lg flex justify-between items-center border border-slate-700">
+                                <span className="text-xs text-slate-400 max-w-[70%]">
+                                    Indiquez la difficulté pour que l'exécutant sache combien de points il gagnera.
+                                </span>
+                                <div className="text-right">
+                                    <span className="block text-2xl font-black text-yellow-400">{calculatedPoints}</span>
+                                    <span className="text-[10px] uppercase font-bold text-slate-500">Points à gagner</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="space-y-2">
+                            <Label className="text-slate-400">Description détaillée</Label>
+                            <Textarea placeholder="Détails, contraintes, horaires..." className="bg-slate-900 border-slate-700 text-white min-h-[100px]" />
+                        </div>
+                        <Button className="w-full bg-blue-600 hover:bg-blue-700 font-bold" onClick={() => setIsCreatingService(false)}>
+                            Publier la demande (+{calculatedPoints} pts offerts)
+                        </Button>
+                    </div>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }
