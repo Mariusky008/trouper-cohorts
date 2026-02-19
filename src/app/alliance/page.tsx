@@ -59,52 +59,81 @@ export default function AlliancePage() {
             </nav>
 
             {/* HERO SECTION */}
-            <section className="relative h-screen flex flex-col justify-center items-center text-center px-6 overflow-hidden">
+            <section className="relative min-h-screen flex flex-col justify-center items-center text-center px-6 overflow-hidden pt-20">
                 <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-blue-900/20 via-[#050505] to-[#050505] z-0" />
                 
-                <motion.div style={{ opacity, scale }} className="relative z-10 max-w-5xl mx-auto space-y-8">
+                <motion.div style={{ opacity, scale }} className="relative z-10 max-w-5xl mx-auto space-y-12">
+                    
+                    {/* Badge Impact */}
                     <motion.div 
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ duration: 1, ease: "easeOut" }}
-                        className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 backdrop-blur-sm mb-4"
+                        initial={{ opacity: 0, y: -20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.8 }}
+                        className="inline-flex items-center gap-3 px-6 py-2 rounded-full bg-blue-500/10 border border-blue-500/20 backdrop-blur-sm"
                     >
-                        <span className="relative flex h-2 w-2">
-                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                          <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                        <span className="relative flex h-3 w-3">
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                          <span className="relative inline-flex rounded-full h-3 w-3 bg-blue-500"></span>
                         </span>
-                        <span className="text-xs font-medium tracking-widest uppercase text-slate-300">Réseau Humain Premium</span>
+                        <span className="text-sm font-bold tracking-widest uppercase text-blue-200">Réseau Humain Premium</span>
                     </motion.div>
 
-                    <h1 className="text-5xl md:text-7xl lg:text-8xl font-black text-white tracking-tighter leading-[0.95] uppercase italic">
-                        Et si tu n’étais <br/>
-                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-white via-slate-300 to-slate-500">plus jamais seul</span> ?
+                    {/* Titre Principal */}
+                    <h1 className="text-5xl md:text-7xl lg:text-8xl font-black text-white tracking-tighter leading-[0.9] uppercase italic">
+                        Et si vous aviez <br/>
+                        toujours quelqu’un <br/>
+                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-400 to-white">vers qui vous tourner ?</span>
                     </h1>
                     
-                    <p className="text-xl md:text-2xl text-slate-400 max-w-2xl mx-auto font-light leading-relaxed">
-                        Alliance réunit <span className="text-white font-medium">24 personnes engagées</span> pour s’entraider, 
-                        partager leurs compétences et avancer ensemble.
-                    </p>
+                    {/* Sous-titre Problème */}
+                    <div className="max-w-3xl mx-auto space-y-6">
+                        <p className="text-lg md:text-xl text-slate-400 font-medium uppercase tracking-wide">
+                            Problème administratif. Coup dur. Projet bloqué. Moment difficile.
+                        </p>
+                        <p className="text-2xl md:text-3xl text-white font-light leading-relaxed">
+                            Certaines situations deviennent beaucoup plus simples <br/>
+                            <strong className="font-black text-blue-400">quand on n’est pas seul.</strong>
+                        </p>
+                    </div>
 
-                    <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-8">
-                        <Button size="lg" className="h-14 px-8 rounded-full bg-white text-black hover:bg-slate-200 font-bold text-lg transition-all hover:scale-105 w-full sm:w-auto">
+                    {/* Bloc Solution */}
+                    <div className="max-w-4xl mx-auto bg-white/5 border border-white/10 rounded-3xl p-8 md:p-10 backdrop-blur-sm">
+                        <p className="text-xl text-slate-200 leading-relaxed mb-6">
+                            Une Alliance réunit <strong className="text-white">24 personnes engagées</strong> pour s’entraider concrètement, quand c’est vraiment utile.
+                        </p>
+                        <div className="bg-blue-600/20 border border-blue-500/30 rounded-xl p-6">
+                            <p className="text-lg md:text-xl font-bold text-blue-100 italic">
+                                "Même si vous n’en avez besoin qu’une fois dans l’année… <br/>
+                                <span className="text-white">vous serez heureux que votre Alliance existe.</span>"
+                            </p>
+                        </div>
+                    </div>
+
+                    {/* Visualisation Rapide */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center max-w-4xl mx-auto py-8">
+                        {[
+                            { val: "24", label: "Personnes" },
+                            { val: "24", label: "Compétences" },
+                            { val: "24", label: "Réseaux" },
+                            { val: "VOUS", label: "Au centre", highlight: true }
+                        ].map((stat, i) => (
+                            <div key={i} className={`p-4 rounded-2xl border ${stat.highlight ? 'bg-white text-black border-white' : 'bg-white/5 border-white/10 text-white'}`}>
+                                <div className="text-3xl font-black mb-1">{stat.val}</div>
+                                <div className={`text-xs font-bold uppercase tracking-widest ${stat.highlight ? 'text-slate-600' : 'text-slate-500'}`}>{stat.label}</div>
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* Boutons Actions */}
+                    <div className="flex flex-col sm:flex-row items-center justify-center gap-6 pt-4 pb-20">
+                        <Button size="lg" className="h-16 px-10 rounded-full bg-blue-600 text-white hover:bg-blue-500 font-black text-xl uppercase tracking-wide shadow-[0_0_40px_rgba(37,99,235,0.3)] hover:shadow-[0_0_60px_rgba(37,99,235,0.5)] transition-all hover:scale-105 w-full sm:w-auto">
                             Rejoindre une Alliance
                         </Button>
-                        <Button size="lg" variant="ghost" className="h-14 px-8 rounded-full text-slate-300 hover:text-white hover:bg-white/10 font-medium text-lg w-full sm:w-auto gap-2">
-                            Découvrir le fonctionnement <ArrowRight className="h-5 w-5" />
+                        <Button size="lg" variant="outline" className="h-16 px-10 rounded-full border-white/20 bg-transparent text-white hover:bg-white hover:text-black font-bold text-lg uppercase tracking-wide w-full sm:w-auto transition-all">
+                            Découvrir comment ça fonctionne
                         </Button>
                     </div>
-                </motion.div>
 
-                {/* Scroll Indicator */}
-                <motion.div 
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: 1.5, duration: 1 }}
-                    className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-slate-500 text-xs uppercase tracking-widest"
-                >
-                    <span>Découvrir</span>
-                    <div className="w-[1px] h-12 bg-gradient-to-b from-slate-500 to-transparent" />
                 </motion.div>
             </section>
 
