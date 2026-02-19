@@ -37,6 +37,7 @@ export default function AlliancePage() {
     const scale = useTransform(scrollYProgress, [0, 0.2], [1, 0.95]);
 
     const [openFaq, setOpenFaq] = useState<number | null>(null);
+    const [isRecruitmentOpen, setIsRecruitmentOpen] = useState(false);
 
     const toggleFaq = (index: number) => {
         setOpenFaq(openFaq === index ? null : index);
@@ -142,7 +143,7 @@ export default function AlliancePage() {
 
                     {/* Boutons Actions */}
                     <div className="flex flex-col sm:flex-row items-center justify-center gap-6 pt-4 pb-20">
-                        <Button size="lg" className="h-16 px-10 rounded-full bg-blue-600 text-white hover:bg-blue-500 font-black text-xl uppercase tracking-wide shadow-[0_0_40px_rgba(37,99,235,0.3)] hover:shadow-[0_0_60px_rgba(37,99,235,0.5)] transition-all hover:scale-105 w-full sm:w-auto">
+                        <Button onClick={() => setIsRecruitmentOpen(true)} size="lg" className="h-16 px-10 rounded-full bg-blue-600 text-white hover:bg-blue-500 font-black text-xl uppercase tracking-wide shadow-[0_0_40px_rgba(37,99,235,0.3)] hover:shadow-[0_0_60px_rgba(37,99,235,0.5)] transition-all hover:scale-105 w-full sm:w-auto">
                             Rejoindre une Alliance
                         </Button>
                         <Button size="lg" variant="outline" className="h-16 px-10 rounded-full border-white/20 bg-transparent text-white hover:bg-white hover:text-black font-bold text-lg uppercase tracking-wide w-full sm:w-auto transition-all">
@@ -174,6 +175,108 @@ export default function AlliancePage() {
                             "Et souvent, il suffirait de connaître la bonne personne pour débloquer une situation."
                         </div>
                     </FadeIn>
+                </div>
+            </Section>
+
+            {/* SECTION COMPARATIF GALÈRE VS ALLIANCE */}
+            <Section className="bg-[#050505] border-t border-white/5">
+                <div className="max-w-6xl mx-auto">
+                    
+                    {/* Intro Texte */}
+                    <FadeIn className="text-center mb-16 max-w-4xl mx-auto space-y-6">
+                        <h2 className="text-3xl md:text-5xl font-black text-white uppercase italic tracking-tighter leading-tight">
+                            Dans la vie, il y a ceux qui s'épuisent à chercher seuls... <br/>
+                            <span className="text-blue-500">et ceux qui activent leur Alliance.</span>
+                        </h2>
+                        <p className="text-xl text-slate-400 font-medium">
+                            Les premiers attendent une réponse, les seconds ont déjà un résultat.
+                        </p>
+                    </FadeIn>
+
+                    {/* Tableau Comparatif */}
+                    <div className="hidden md:block bg-[#0a0f1c] border border-slate-800 rounded-3xl overflow-hidden">
+                        <div className="grid grid-cols-[1.5fr_2fr_2fr] bg-slate-900/50 border-b border-slate-800">
+                            <div className="p-6 text-sm font-bold text-slate-500 uppercase tracking-widest">Votre besoin vital</div>
+                            <div className="p-6 text-sm font-bold text-red-400 uppercase tracking-widest bg-red-900/10">La galère en solo (S'épuiser)</div>
+                            <div className="p-6 text-sm font-bold text-green-400 uppercase tracking-widest bg-green-900/10">Le réflexe Alliance (Gagner)</div>
+                        </div>
+                        <div className="divide-y divide-slate-800">
+                            {[
+                                { need: "Trouver un Job / Client", solo: "Envoyer 50 CV ou messages à froid. Attendre. Espérer.", alliance: "Le raccourci. Un membre connaît le décideur. Votre dossier arrive sur le dessus de la pile avec une recommandation." },
+                                { need: "Déménager / Logement", solo: "Scroller les annonces 4h/jour. Dossier refusé. Agences injoignables.", alliance: "Le réseau s'active. Un membre libère son appart ou connaît un propriétaire. Visite privée en 48h." },
+                                { need: "Urgence Administrative", solo: "Perdu dans les formulaires. Personne au bout du fil. Dossier bloqué.", alliance: "L'expertise directe. Un membre a déjà réglé ce problème. 15 min d'appel, dossier débloqué." },
+                                { need: "Lancer un Projet / Associé", solo: "Peur de se tromper. Solitude du décideur. Pas de contacts fiables.", alliance: "Le crash-test. 23 regards critiques pour valider votre idée et vous présenter l'associé ou le prestataire qu'il vous faut." },
+                                { need: "Coup de mou / Vie Perso", solo: "Garder ses problèmes pour soi. S'isoler. Perdre sa motivation.", alliance: "Le bouclier. Un groupe qui ne vous juge pas, qui vous écoute et qui vous remet en selle moralement." },
+                                { need: "Info Stratégique (Le \"Off\")", solo: "Se fier aux rumeurs ou à Google. Prendre un risque à l'aveugle.", alliance: "L'initié. Un membre est déjà dans la place. Vous connaissez la vérité (embauches, marchés, risques) avant tout le monde." },
+                                { need: "Compétence Express", solo: "Passer 10h sur des tutos YouTube pour un réglage technique ou un logiciel.", alliance: "Le partage d'écran. Un membre expert vous montre la manipulation en 10 minutes. Temps gagné : une journée de travail." },
+                                { need: "Négociation Critique", solo: "Seul face à un banquier ou un acheteur. Peur de se faire avoir.", alliance: "Le conseil de guerre. Vous préparez votre argumentaire avec ceux qui ont déjà gagné cette bataille. Vous arrivez blindé." },
+                                { need: "Solidarité Physique", solo: "Galérer seul pour un transport, un montage de meuble ou un imprévu.", alliance: "Le coup de main. Deux membres proches viennent prêter leurs bras ou leur véhicule. L'entraide sort enfin du virtuel." },
+                                { need: "Visibilité / Influence", solo: "Crier dans le désert sur les réseaux. 0 interaction, 0 portée.", alliance: "L'effet de levier. 23 personnes soutiennent et partagent votre annonce simultanément. Vous devenez viral par solidarité." }
+                            ].map((row, i) => (
+                                <div key={i} className="grid grid-cols-[1.5fr_2fr_2fr] group hover:bg-white/5 transition-colors">
+                                    <div className="p-6 flex items-center font-bold text-white border-r border-slate-800/50">{row.need}</div>
+                                    <div className="p-6 flex items-center text-slate-400 border-r border-slate-800/50 relative overflow-hidden">
+                                        <div className="absolute left-0 top-0 bottom-0 w-1 bg-red-500/20 group-hover:bg-red-500 transition-colors"></div>
+                                        {row.solo}
+                                    </div>
+                                    <div className="p-6 flex items-center text-slate-200 font-medium relative overflow-hidden bg-green-900/5">
+                                        <div className="absolute left-0 top-0 bottom-0 w-1 bg-green-500/20 group-hover:bg-green-500 transition-colors"></div>
+                                        {row.alliance}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Version Mobile (Cartes) */}
+                    <div className="md:hidden space-y-6">
+                         {[
+                                { need: "Trouver un Job / Client", solo: "Envoyer 50 CV ou messages à froid. Attendre. Espérer.", alliance: "Le raccourci. Un membre connaît le décideur. Votre dossier arrive sur le dessus de la pile avec une recommandation." },
+                                { need: "Déménager / Logement", solo: "Scroller les annonces 4h/jour. Dossier refusé. Agences injoignables.", alliance: "Le réseau s'active. Un membre libère son appart ou connaît un propriétaire. Visite privée en 48h." },
+                                { need: "Urgence Administrative", solo: "Perdu dans les formulaires. Personne au bout du fil. Dossier bloqué.", alliance: "L'expertise directe. Un membre a déjà réglé ce problème. 15 min d'appel, dossier débloqué." },
+                                { need: "Lancer un Projet / Associé", solo: "Peur de se tromper. Solitude du décideur. Pas de contacts fiables.", alliance: "Le crash-test. 23 regards critiques pour valider votre idée et vous présenter l'associé ou le prestataire qu'il vous faut." },
+                                { need: "Coup de mou / Vie Perso", solo: "Garder ses problèmes pour soi. S'isoler. Perdre sa motivation.", alliance: "Le bouclier. Un groupe qui ne vous juge pas, qui vous écoute et qui vous remet en selle moralement." },
+                                { need: "Info Stratégique (Le \"Off\")", solo: "Se fier aux rumeurs ou à Google. Prendre un risque à l'aveugle.", alliance: "L'initié. Un membre est déjà dans la place. Vous connaissez la vérité (embauches, marchés, risques) avant tout le monde." },
+                                { need: "Compétence Express", solo: "Passer 10h sur des tutos YouTube pour un réglage technique ou un logiciel.", alliance: "Le partage d'écran. Un membre expert vous montre la manipulation en 10 minutes. Temps gagné : une journée de travail." },
+                                { need: "Négociation Critique", solo: "Seul face à un banquier ou un acheteur. Peur de se faire avoir.", alliance: "Le conseil de guerre. Vous préparez votre argumentaire avec ceux qui ont déjà gagné cette bataille. Vous arrivez blindé." },
+                                { need: "Solidarité Physique", solo: "Galérer seul pour un transport, un montage de meuble ou un imprévu.", alliance: "Le coup de main. Deux membres proches viennent prêter leurs bras ou leur véhicule. L'entraide sort enfin du virtuel." },
+                                { need: "Visibilité / Influence", solo: "Crier dans le désert sur les réseaux. 0 interaction, 0 portée.", alliance: "L'effet de levier. 23 personnes soutiennent et partagent votre annonce simultanément. Vous devenez viral par solidarité." }
+                            ].map((row, i) => (
+                            <div key={i} className="bg-[#0a0f1c] border border-slate-800 rounded-2xl overflow-hidden">
+                                <div className="p-4 bg-slate-900/50 border-b border-slate-800 font-bold text-white">{row.need}</div>
+                                <div className="p-4 border-b border-slate-800/50 relative pl-6">
+                                    <div className="absolute left-0 top-0 bottom-0 w-1 bg-red-500/50"></div>
+                                    <div className="text-xs font-bold text-red-500 uppercase mb-1">La galère solo</div>
+                                    <p className="text-slate-400 text-sm">{row.solo}</p>
+                                </div>
+                                <div className="p-4 relative pl-6 bg-green-900/5">
+                                    <div className="absolute left-0 top-0 bottom-0 w-1 bg-green-500"></div>
+                                    <div className="text-xs font-bold text-green-500 uppercase mb-1">Le réflexe Alliance</div>
+                                    <p className="text-slate-200 text-sm font-medium">{row.alliance}</p>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* Résumé Impact */}
+                    <FadeIn className="mt-16 bg-gradient-to-r from-slate-900 to-black border border-slate-800 rounded-3xl p-8 md:p-12 text-center relative overflow-hidden">
+                        <div className="grid md:grid-cols-2 gap-8 relative z-10">
+                            <div className="space-y-4">
+                                <h3 className="text-xl font-bold text-red-500 uppercase tracking-widest mb-2">Sans Alliance</h3>
+                                <p className="text-2xl md:text-3xl font-black text-slate-500 italic">
+                                    Google, l'attente, les refus, la solitude, le stress administratif.
+                                </p>
+                            </div>
+                            <div className="hidden md:block w-px bg-slate-800 absolute left-1/2 top-0 bottom-0 -translate-x-1/2"></div>
+                             <div className="space-y-4">
+                                <h3 className="text-xl font-bold text-green-500 uppercase tracking-widest mb-2">Avec Alliance</h3>
+                                <p className="text-2xl md:text-3xl font-black text-white italic">
+                                    Le bon contact, la réponse en 24h, l'entraide physique, le réseau d'influence.
+                                </p>
+                            </div>
+                        </div>
+                    </FadeIn>
+
                 </div>
             </Section>
 
@@ -390,7 +493,7 @@ export default function AlliancePage() {
                     </h3>
                     
                     <div className="flex flex-col items-center gap-4">
-                        <Button className="h-16 px-10 rounded-full bg-white text-black hover:bg-slate-200 font-black text-xl uppercase tracking-wider shadow-[0_0_30px_rgba(255,255,255,0.2)] hover:shadow-[0_0_50px_rgba(255,255,255,0.4)] transition-all transform hover:scale-105">
+                        <Button onClick={() => setIsRecruitmentOpen(true)} className="h-16 px-10 rounded-full bg-white text-black hover:bg-slate-200 font-black text-xl uppercase tracking-wider shadow-[0_0_30px_rgba(255,255,255,0.2)] hover:shadow-[0_0_50px_rgba(255,255,255,0.4)] transition-all transform hover:scale-105">
                             Rejoindre une Alliance
                         </Button>
                         <p className="text-slate-500 text-xs font-medium uppercase tracking-widest">
@@ -560,7 +663,7 @@ export default function AlliancePage() {
                         </div>
                         
                         <div className="flex flex-col items-center gap-4">
-                            <Button className="h-16 px-10 rounded-full bg-white text-black hover:bg-slate-200 font-black text-xl uppercase tracking-wider shadow-[0_0_30px_rgba(255,255,255,0.2)] hover:shadow-[0_0_50px_rgba(255,255,255,0.4)] transition-all transform hover:scale-105">
+                            <Button onClick={() => setIsRecruitmentOpen(true)} className="h-16 px-10 rounded-full bg-white text-black hover:bg-slate-200 font-black text-xl uppercase tracking-wider shadow-[0_0_30px_rgba(255,255,255,0.2)] hover:shadow-[0_0_50px_rgba(255,255,255,0.4)] transition-all transform hover:scale-105">
                                 Rejoindre une Alliance
                             </Button>
                             <p className="text-slate-500 text-xs font-medium uppercase tracking-widest">
@@ -669,7 +772,7 @@ export default function AlliancePage() {
                     </h2>
                     
                     <div className="pt-8 pb-4">
-                        <Button className="h-20 px-12 rounded-full bg-white text-black hover:bg-slate-200 font-black text-2xl uppercase tracking-wider shadow-[0_0_50px_rgba(255,255,255,0.3)] hover:shadow-[0_0_80px_rgba(255,255,255,0.5)] transition-all transform hover:scale-105">
+                        <Button onClick={() => setIsRecruitmentOpen(true)} className="h-20 px-12 rounded-full bg-white text-black hover:bg-slate-200 font-black text-2xl uppercase tracking-wider shadow-[0_0_50px_rgba(255,255,255,0.3)] hover:shadow-[0_0_80px_rgba(255,255,255,0.5)] transition-all transform hover:scale-105">
                             Candidater pour rejoindre
                         </Button>
                     </div>
@@ -782,7 +885,7 @@ export default function AlliancePage() {
                     </div>
                 </div>
             </footer>
-            <StickyRecruitmentBanner forceVisible={true} />
+            <StickyRecruitmentBanner forceVisible={true} isOpen={isRecruitmentOpen} onOpenChange={setIsRecruitmentOpen} />
         </div>
     );
 }

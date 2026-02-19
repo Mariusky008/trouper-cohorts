@@ -11,9 +11,20 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 
-export function StickyRecruitmentBanner({ forceVisible = true }: { forceVisible?: boolean }) {
+export function StickyRecruitmentBanner({ forceVisible = true, isOpen, onOpenChange }: { forceVisible?: boolean, isOpen?: boolean, onOpenChange?: (open: boolean) => void }) {
     const [isVisible, setIsVisible] = useState(forceVisible);
-    const [isExpanded, setIsExpanded] = useState(false);
+    const [internalOpen, setInternalOpen] = useState(false);
+
+    const isControlled = isOpen !== undefined;
+    const isExpanded = isControlled ? isOpen : internalOpen;
+
+    const setIsExpanded = (value: boolean) => {
+        if (isControlled) {
+            onOpenChange?.(value);
+        } else {
+            setInternalOpen(value);
+        }
+    };
 
     useEffect(() => {
         setIsVisible(true);
