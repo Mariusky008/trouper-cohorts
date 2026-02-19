@@ -410,6 +410,8 @@ export default function BlindDatePage() {
             </div>
         </section>
 
+      </main>
+
         {/* FOOTER */}
         <footer className="bg-slate-950 py-12 border-t border-slate-900 text-slate-500 text-sm">
             <div className="container mx-auto px-4 text-center">
