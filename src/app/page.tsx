@@ -140,10 +140,11 @@ export default function Home() {
         </div>
 
         {/* SECTION 1 — PREUVES CHIFFRÉES & TRANSPARENCE */}
-        <section className="py-16 bg-white relative z-30 -mt-10 mx-4" id="preuves">
-            <div className="container mx-auto max-w-6xl">
+        <section className="py-16 bg-white relative z-30 -mt-10" id="preuves">
+            <div className="container mx-auto max-w-6xl px-4">
                 {/* GLOBAL DASHBOARD */}
-                <div className="bg-white rounded-3xl shadow-xl p-8 md:p-12 border border-slate-100 mb-12">
+                <div className="bg-slate-50 rounded-3xl shadow-xl p-8 md:p-12 border border-slate-200 mb-12 relative overflow-hidden">
+                    <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-orange-500 via-blue-500 to-green-500"></div>
                     <div className="text-center mb-10">
                         <h2 className="text-2xl md:text-3xl font-black uppercase italic text-slate-900">Résultats moyens observés</h2>
                         <p className="text-slate-500 mt-2">Données consolidées sur les 3 dernières cohortes.</p>
