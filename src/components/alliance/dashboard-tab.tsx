@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 
 export function DashboardTab() {
     return (
-        <div className="space-y-12 max-w-5xl mx-auto pb-20">
+        <div className="space-y-12 w-full pb-20">
             {/* HERO STATS */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 {[

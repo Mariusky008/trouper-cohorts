@@ -40,8 +40,8 @@ export default function AlliancePage() {
                 </div>
             </header>
 
-            <main className="container mx-auto px-4 py-8">
-                <Tabs defaultValue="dashboard" value={activeTab} onValueChange={setActiveTab} className="space-y-8">
+            <main className="w-full px-4 py-8">
+                <Tabs defaultValue="dashboard" value={activeTab} onValueChange={setActiveTab} className="space-y-8 w-full">
                     
                     {/* NAVIGATION */}
                     <div className="flex justify-center">
@@ -66,32 +66,32 @@ export default function AlliancePage() {
                     </div>
 
                     {/* CONTENU */}
-                    <div className="min-h-[60vh]">
-                        <TabsContent value="dashboard" className="focus:outline-none">
+                    <div className="min-h-[60vh] w-full max-w-[1600px] mx-auto">
+                        <TabsContent value="dashboard" className="focus:outline-none w-full">
                             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
                                 <DashboardTab />
                             </motion.div>
                         </TabsContent>
                         
-                        <TabsContent value="services" className="focus:outline-none">
+                        <TabsContent value="services" className="focus:outline-none w-full">
                             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
                                 <ServicesTab />
                             </motion.div>
                         </TabsContent>
                         
-                        <TabsContent value="members" className="focus:outline-none">
+                        <TabsContent value="members" className="focus:outline-none w-full">
                             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
                                 <MembersTab />
                             </motion.div>
                         </TabsContent>
                         
-                        <TabsContent value="events" className="focus:outline-none">
+                        <TabsContent value="events" className="focus:outline-none w-full">
                             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
                                 <EventsTab />
                             </motion.div>
                         </TabsContent>
                         
-                        <TabsContent value="profile" className="focus:outline-none">
+                        <TabsContent value="profile" className="focus:outline-none w-full">
                             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
                                 <ProfileTab />
                             </motion.div>

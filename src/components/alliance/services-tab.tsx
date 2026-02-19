@@ -42,7 +42,7 @@ export function ServicesTab() {
     };
 
     return (
-        <div className="space-y-12 max-w-5xl mx-auto pb-20">
+        <div className="space-y-12 w-full pb-20">
             {/* HERO SECTION GAMIFIÉE */}
             <div className="relative rounded-3xl overflow-hidden border border-slate-800 bg-[#0a0f1c] p-8 md:p-12 text-center group">
                 <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500"></div>

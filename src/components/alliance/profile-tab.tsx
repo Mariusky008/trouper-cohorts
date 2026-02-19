@@ -12,7 +12,7 @@ import { Progress } from "@/components/ui/progress";
 
 export function ProfileTab() {
     return (
-        <div className="max-w-5xl mx-auto pb-20 space-y-8">
+        <div className="w-full pb-20 space-y-8">
             {/* HERO PROFILE HEADER */}
             <div className="relative rounded-3xl overflow-hidden bg-[#0a0f1c] border border-slate-800 p-8 md:p-12 group">
                 <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-r from-blue-900/50 via-purple-900/50 to-pink-900/50"></div>

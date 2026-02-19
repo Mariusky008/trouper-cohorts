@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 
 export function MembersTab() {
     return (
-        <div className="space-y-12 max-w-6xl mx-auto pb-20">
+        <div className="space-y-12 w-full pb-20">
             {/* HERO & SEARCH */}
             <div className="flex flex-col md:flex-row justify-between items-end gap-6">
                 <div>

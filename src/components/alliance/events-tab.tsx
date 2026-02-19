@@ -27,7 +27,7 @@ export function EventsTab() {
     };
 
     return (
-        <div className="max-w-5xl mx-auto pb-20 space-y-12">
+        <div className="w-full pb-20 space-y-12">
             {/* HERO EVENT (RITUEL MAJEUR) */}
             <div className="relative rounded-3xl overflow-hidden bg-[#0a0f1c] border border-orange-500/30 p-8 md:p-12 group">
                 <div className="absolute inset-0 bg-gradient-to-r from-orange-900/40 via-red-900/40 to-purple-900/40 group-hover:opacity-80 transition-opacity"></div>
