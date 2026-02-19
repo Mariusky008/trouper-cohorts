@@ -4,10 +4,13 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   Heart, Lock, Users, Clock, Star, ArrowRight, CheckCircle2, 
-  HelpCircle, MapPin, Calendar, Menu, X, Play, ShieldCheck
+  HelpCircle, MapPin, Calendar, Menu, X, Play, ShieldCheck,
+  Upload, UserCircle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 
 // Components for the sections
@@ -32,10 +35,111 @@ const Section = ({ children, className, id }: { children: React.ReactNode, class
 
 export default function BlindDatePage() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [selectedSession, setSelectedSession] = useState<string | null>(null);
+
+  const sessions = [
+    { city: "Dax", date: "Prochaine Session", status: "Ouvert", color: "text-green-500", active: true },
+    { city: "Mont de Marsan", date: "Prochaine Session", status: "Complet", color: "text-red-500", active: false },
+    { city: "Bayonne", date: "Prochaine Session", status: "Ouvert", color: "text-green-500", active: true },
+    { city: "Pau", date: "Prochaine Session", status: "Complet", color: "text-red-500", active: false }
+  ];
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 font-sans selection:bg-pink-500 selection:text-white overflow-x-hidden">
       
+      {/* PRE-REGISTRATION MODAL */}
+      <AnimatePresence>
+        {selectedSession && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md"
+            onClick={() => setSelectedSession(null)}
+          >
+            <motion.div 
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-slate-900 border border-slate-800 rounded-3xl p-6 md:p-8 w-full max-w-lg shadow-2xl relative overflow-hidden"
+            >
+                <button 
+                    onClick={() => setSelectedSession(null)}
+                    className="absolute top-4 right-4 text-slate-500 hover:text-white transition-colors"
+                >
+                    <X />
+                </button>
+
+                <div className="text-center mb-8">
+                    <Badge className="bg-pink-500/10 text-pink-500 border-0 mb-4 uppercase tracking-widest">Pré-inscription</Badge>
+                    <h3 className="text-2xl font-black uppercase italic text-white mb-2">Session {selectedSession}</h3>
+                    <p className="text-slate-400 text-sm">Remplissez ce formulaire pour valider votre intérêt.</p>
+                </div>
+
+                <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); alert("Pré-inscription validée !"); setSelectedSession(null); }}>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="firstname" className="text-xs uppercase font-bold text-slate-500">Prénom</Label>
+                            <Input id="firstname" placeholder="Ex: Thomas" className="bg-slate-950 border-slate-800 text-white focus:ring-pink-500" required />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="age" className="text-xs uppercase font-bold text-slate-500">Age</Label>
+                            <Input id="age" type="number" placeholder="28" className="bg-slate-950 border-slate-800 text-white focus:ring-pink-500" required />
+                        </div>
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label className="text-xs uppercase font-bold text-slate-500">Sexe</Label>
+                        <div className="grid grid-cols-2 gap-4">
+                            <label className="flex items-center justify-center gap-2 p-3 rounded-xl bg-slate-950 border border-slate-800 cursor-pointer hover:border-pink-500/50 transition-colors [&:has(input:checked)]:border-pink-500 [&:has(input:checked)]:bg-pink-500/10">
+                                <input type="radio" name="gender" value="homme" className="hidden" required />
+                                <span className="font-bold text-sm">Homme</span>
+                            </label>
+                            <label className="flex items-center justify-center gap-2 p-3 rounded-xl bg-slate-950 border border-slate-800 cursor-pointer hover:border-pink-500/50 transition-colors [&:has(input:checked)]:border-pink-500 [&:has(input:checked)]:bg-pink-500/10">
+                                <input type="radio" name="gender" value="femme" className="hidden" required />
+                                <span className="font-bold text-sm">Femme</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div className="space-y-2">
+                         <Label className="text-xs uppercase font-bold text-slate-500">Je souhaite rencontrer</Label>
+                         <div className="grid grid-cols-2 gap-4">
+                            <label className="flex items-center justify-center gap-2 p-3 rounded-xl bg-slate-950 border border-slate-800 cursor-pointer hover:border-pink-500/50 transition-colors [&:has(input:checked)]:border-pink-500 [&:has(input:checked)]:bg-pink-500/10">
+                                <input type="radio" name="preference" value="homme" className="hidden" required />
+                                <span className="font-bold text-sm">Des Hommes</span>
+                            </label>
+                            <label className="flex items-center justify-center gap-2 p-3 rounded-xl bg-slate-950 border border-slate-800 cursor-pointer hover:border-pink-500/50 transition-colors [&:has(input:checked)]:border-pink-500 [&:has(input:checked)]:bg-pink-500/10">
+                                <input type="radio" name="preference" value="femme" className="hidden" required />
+                                <span className="font-bold text-sm">Des Femmes</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label htmlFor="phone" className="text-xs uppercase font-bold text-slate-500">Téléphone</Label>
+                        <Input id="phone" type="tel" placeholder="06 12 34 56 78" className="bg-slate-950 border-slate-800 text-white focus:ring-pink-500" required />
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label className="text-xs uppercase font-bold text-slate-500">Photo (Visible uniquement par l'équipe)</Label>
+                        <div className="border-2 border-dashed border-slate-800 rounded-xl p-6 flex flex-col items-center justify-center text-slate-500 hover:border-slate-600 hover:text-slate-400 transition-colors cursor-pointer bg-slate-950">
+                            <Upload className="h-8 w-8 mb-2" />
+                            <span className="text-xs font-bold uppercase">Cliquez pour ajouter une photo</span>
+                            <input type="file" className="hidden" accept="image/*" />
+                        </div>
+                    </div>
+
+                    <Button type="submit" size="lg" className="w-full bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 text-white font-black uppercase tracking-widest h-14 rounded-xl mt-4">
+                        Valider ma pré-inscription
+                    </Button>
+                </form>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* BACKGROUND GRADIENTS */}
       <div className="fixed inset-0 z-0 pointer-events-none">
         <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-purple-900/20 rounded-full blur-[120px]" />
@@ -311,13 +415,21 @@ export default function BlindDatePage() {
                     </p>
 
                     <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
-                        {[
-                            { city: "Paris", date: "Ven. 15 Mars", status: "Complet", color: "text-red-500" },
-                            { city: "Lyon", date: "Sam. 16 Mars", status: "3 places", color: "text-orange-500" },
-                            { city: "Bordeaux", date: "Ven. 22 Mars", status: "Ouvert", color: "text-green-500" }
-                        ].map((session, i) => (
-                            <div key={i} className="bg-slate-950 p-6 rounded-2xl border border-slate-800 flex flex-col items-center hover:border-white/20 transition-colors cursor-pointer group">
-                                <MapPin className="h-6 w-6 text-slate-500 mb-3 group-hover:text-white transition-colors" />
+                        {sessions.map((session, i) => (
+                            <div 
+                                key={i} 
+                                onClick={() => session.active && setSelectedSession(session.city)}
+                                className={cn(
+                                    "bg-slate-950 p-6 rounded-2xl border border-slate-800 flex flex-col items-center transition-colors group relative overflow-hidden",
+                                    session.active ? "cursor-pointer hover:border-pink-500/50 hover:bg-slate-900" : "opacity-75 cursor-not-allowed border-slate-900"
+                                )}
+                            >
+                                {session.active && (
+                                    <div className="absolute top-0 right-0 p-2">
+                                        <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
+                                    </div>
+                                )}
+                                <MapPin className={cn("h-6 w-6 mb-3 transition-colors", session.active ? "text-slate-500 group-hover:text-pink-500" : "text-slate-700")} />
                                 <div className="text-xl font-black uppercase mb-1">{session.city}</div>
                                 <div className="text-sm text-slate-400 mb-4">{session.date}</div>
                                 <div className={`text-xs font-bold uppercase tracking-widest ${session.color}`}>
