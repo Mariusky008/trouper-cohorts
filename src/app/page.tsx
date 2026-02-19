@@ -955,8 +955,12 @@ export default function Home() {
                 </h2>
 
                 <div className="text-center mb-8">
-                    <div className="inline-block bg-white text-slate-900 px-6 py-2 font-black text-3xl md:text-5xl -skew-x-12 mb-4">
-                        199€ TTC
+                    <div className="inline-block bg-white text-slate-900 px-6 py-2 font-black text-3xl md:text-5xl -skew-x-12 mb-4 relative">
+                        <span className="line-through decoration-red-600 decoration-4">199€ TTC</span>
+                    </div>
+                    <div className="text-orange-500 font-black text-xl md:text-2xl uppercase italic mb-6 animate-pulse">
+                        GRATUIT pour les 24 premiers entrepreneurs Dacquois<br/>
+                        <span className="text-sm md:text-base text-slate-400 not-italic font-medium">(Preuve de concept)</span>
                     </div>
                     <div className="flex flex-col gap-2 text-slate-400 font-bold uppercase tracking-widest text-sm">
                         <span>Prochaine Session : 10 Mars</span>
