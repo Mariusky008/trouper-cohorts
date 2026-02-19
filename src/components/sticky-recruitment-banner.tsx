@@ -85,6 +85,26 @@ export function StickyRecruitmentBanner({ forceVisible = true }: { forceVisible?
                 }
             ],
             avatars: ["X", "Y", "Z"]
+        },
+        {
+            name: "Alliance Ouverte",
+            members: 9,
+            max: 24,
+            badge: "✨ Diversité",
+            badgeColor: "bg-purple-600",
+            special: true,
+            description: "Cette Alliance se construit sur la diversité des parcours et des personnalités. Chaque membre apporte quelque chose d’unique, souvent inattendu.",
+            sections: [
+                {
+                    title: "Aucun profil spécifique",
+                    items: [
+                        "🌱 Ouvert à tous les profils",
+                        "🤝 Motivation à aider et être aidé",
+                        "✨ Curiosité et esprit collectif"
+                    ]
+                }
+            ],
+            avatars: ["O", "P", "Q", "R"]
         }
     ];
 
@@ -136,7 +156,7 @@ export function StickyRecruitmentBanner({ forceVisible = true }: { forceVisible?
                                     <div className="space-y-4">
                                         <Badge className="bg-blue-600 hover:bg-blue-700 uppercase tracking-widest">Alliances en cours de formation</Badge>
                                         <h2 className="text-3xl md:text-5xl font-black text-white uppercase italic tracking-tight leading-none">
-                                            3 groupes recherchent encore <br/>
+                                            4 groupes recherchent encore <br/>
                                             <span className="text-blue-400">leurs derniers membres</span>
                                         </h2>
                                         <p className="text-slate-400 text-lg max-w-2xl">
@@ -160,26 +180,37 @@ export function StickyRecruitmentBanner({ forceVisible = true }: { forceVisible?
                                 </div>
 
                                 {/* GRID ALLIANCES */}
-                                <div className="p-6 md:p-8 grid md:grid-cols-3 gap-6 bg-[#050505]">
+                                <div className="p-6 md:p-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 bg-[#050505]">
                                     {alliances.map((alliance, i) => (
                                         <motion.div 
                                             key={i}
                                             initial={{ opacity: 0, y: 20 }}
                                             animate={{ opacity: 1, y: 0 }}
                                             transition={{ delay: i * 0.1 }}
-                                            className="bg-slate-900/50 border border-slate-800 rounded-2xl flex flex-col hover:border-blue-500/50 transition-all group relative overflow-hidden h-full"
+                                            className={`rounded-2xl flex flex-col transition-all group relative overflow-hidden h-full ${
+                                                // @ts-ignore
+                                                alliance.special 
+                                                ? "bg-gradient-to-b from-purple-900/20 to-[#0a0f1c] border border-purple-500/40 hover:border-purple-400" 
+                                                : "bg-slate-900/50 border border-slate-800 hover:border-blue-500/50"
+                                            }`}
                                         >
                                             {/* Badge Status */}
                                             <div className={`absolute top-0 right-0 ${alliance.badgeColor} text-white text-[10px] font-bold px-3 py-1 uppercase tracking-widest rounded-bl-xl z-20`}>
                                                 {alliance.badge}
                                             </div>
 
-                                            <div className="p-6 pb-0 relative z-10">
+                                            <div className="p-6 pb-0 relative z-10 flex-1">
                                                 <div className="flex justify-between items-center mb-4">
-                                                    <h3 className="text-2xl font-black text-white italic uppercase">{alliance.name}</h3>
+                                                    <h3 className={`text-2xl font-black italic uppercase ${
+                                                        // @ts-ignore
+                                                        alliance.special ? "text-purple-300" : "text-white"
+                                                    }`}>{alliance.name}</h3>
                                                 </div>
                                                 
-                                                <div className="flex items-center gap-3 mb-6 bg-slate-950/50 p-3 rounded-lg border border-slate-800/50">
+                                                <div className={`flex items-center gap-3 mb-6 p-3 rounded-lg border ${
+                                                    // @ts-ignore
+                                                    alliance.special ? "bg-purple-900/20 border-purple-500/20" : "bg-slate-950/50 border-slate-800/50"
+                                                }`}>
                                                     <div className="flex -space-x-2">
                                                         {alliance.avatars.slice(0, 4).map((av, j) => (
                                                             <div key={j} className="h-6 w-6 rounded-full bg-slate-700 border border-slate-900 flex items-center justify-center text-[8px] font-bold text-slate-300">
@@ -192,14 +223,28 @@ export function StickyRecruitmentBanner({ forceVisible = true }: { forceVisible?
                                                     </div>
                                                 </div>
 
+                                                {/* @ts-ignore */}
+                                                {alliance.description && (
+                                                    <div className="mb-6 text-sm text-slate-300 italic leading-relaxed">
+                                                        {/* @ts-ignore */}
+                                                        {alliance.description}
+                                                    </div>
+                                                )}
+
                                                 <div className="space-y-5">
                                                     {alliance.sections.map((section, k) => (
                                                         <div key={k}>
-                                                            <h4 className="text-xs font-bold text-blue-400 uppercase tracking-wider mb-2">{section.title}</h4>
+                                                            <h4 className={`text-xs font-bold uppercase tracking-wider mb-2 ${
+                                                                // @ts-ignore
+                                                                alliance.special ? "text-purple-400" : "text-blue-400"
+                                                            }`}>{section.title}</h4>
                                                             <ul className="space-y-1.5">
                                                                 {section.items.map((item, l) => (
                                                                     <li key={l} className="text-sm text-slate-300 flex items-start gap-2">
-                                                                        <span className="text-slate-600 mt-1">•</span> {item}
+                                                                        <span className={`mt-1 ${
+                                                                            // @ts-ignore
+                                                                            alliance.special ? "text-purple-500" : "text-slate-600"
+                                                                        }`}>•</span> {item}
                                                                     </li>
                                                                 ))}
                                                             </ul>
@@ -209,8 +254,13 @@ export function StickyRecruitmentBanner({ forceVisible = true }: { forceVisible?
                                             </div>
 
                                             <div className="p-6 mt-auto relative z-10">
-                                                <Button className="w-full bg-white text-black hover:bg-blue-600 hover:text-white font-black uppercase tracking-wide h-12 transition-all">
-                                                    Rejoindre {alliance.name}
+                                                <Button className={`w-full font-black uppercase tracking-wide h-12 transition-all ${
+                                                    // @ts-ignore
+                                                    alliance.special 
+                                                    ? "bg-purple-600 text-white hover:bg-purple-500 shadow-lg shadow-purple-900/20" 
+                                                    : "bg-white text-black hover:bg-blue-600 hover:text-white"
+                                                }`}>
+                                                    Rejoindre
                                                 </Button>
                                             </div>
                                         </motion.div>
@@ -230,7 +280,7 @@ export function StickyRecruitmentBanner({ forceVisible = true }: { forceVisible?
                                 </div>
                                 <div className="text-left flex flex-col">
                                     <span className="text-xs font-bold text-blue-100 uppercase tracking-wider leading-none mb-1 opacity-80">Recrutement en cours</span>
-                                    <span className="text-lg font-black text-white leading-none">3 Alliances incomplètes</span>
+                                    <span className="text-lg font-black text-white leading-none">4 Alliances incomplètes</span>
                                 </div>
                                 <ChevronRight className="h-6 w-6 text-blue-200 group-hover:text-white transition-colors ml-2" />
                             </motion.button>
