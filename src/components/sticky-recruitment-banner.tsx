@@ -277,18 +277,18 @@ export function StickyRecruitmentBanner({ forceVisible = true }: { forceVisible?
                                 whileHover={{ scale: 1.02 }}
                                 whileTap={{ scale: 0.98 }}
                                 transition={{ type: "spring", stiffness: 400, damping: 20 }}
-                                className="bg-white/10 backdrop-blur-md text-white p-2 pr-6 rounded-full shadow-2xl border border-white/20 flex items-center gap-4 group overflow-hidden transition-all hover:bg-white/15 hover:border-white/30"
+                                className="bg-white/10 backdrop-blur-md text-white p-3 pr-8 rounded-full shadow-2xl border border-white/20 flex items-center gap-5 group overflow-hidden transition-all hover:bg-white/15 hover:border-white/30"
                             >
-                                <div className="bg-gradient-to-br from-blue-500 to-blue-700 h-12 w-12 rounded-full flex items-center justify-center shrink-0 relative text-white shadow-lg border border-white/10">
-                                    <Briefcase className="h-5 w-5" />
-                                    <span className="absolute top-0 right-0 h-3 w-3 bg-red-500 border-2 border-[#0a0f1c] rounded-full animate-pulse"></span>
+                                <div className="bg-gradient-to-br from-blue-500 to-blue-700 h-14 w-14 rounded-full flex items-center justify-center shrink-0 relative text-white shadow-lg border border-white/10">
+                                    <Briefcase className="h-6 w-6" />
+                                    <span className="absolute top-0 right-0 h-3.5 w-3.5 bg-red-500 border-2 border-[#0a0f1c] rounded-full animate-pulse"></span>
                                 </div>
                                 <div className="text-left flex flex-col">
-                                    <span className="text-[10px] font-bold text-blue-300 uppercase tracking-wider leading-none mb-1">Recrutement en cours</span>
-                                    <span className="text-sm font-black text-white leading-none">4 Alliances incomplètes</span>
+                                    <span className="text-xs font-bold text-blue-300 uppercase tracking-wider leading-none mb-1.5">Recrutement en cours</span>
+                                    <span className="text-base font-black text-white leading-none">4 Alliances incomplètes</span>
                                 </div>
-                                <div className="h-8 w-8 rounded-full bg-white/5 flex items-center justify-center ml-2 group-hover:bg-white/10 transition-colors">
-                                    <ChevronRight className="h-4 w-4 text-white/70 group-hover:text-white transition-colors" />
+                                <div className="h-10 w-10 rounded-full bg-white/5 flex items-center justify-center ml-2 group-hover:bg-white/10 transition-colors">
+                                    <ChevronRight className="h-5 w-5 text-white/70 group-hover:text-white transition-colors" />
                                 </div>
                             </motion.button>
                         )}
