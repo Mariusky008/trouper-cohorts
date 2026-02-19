@@ -446,7 +446,12 @@ export default function BlindDatePage() {
         <Section className="bg-slate-950">
             <div className="container mx-auto px-4 text-center">
                 <h2 className="text-4xl font-black uppercase italic mb-4">L'Expérience Complète</h2>
-                <p className="text-slate-400 mb-12">Une heure. Quatre rencontres. Une vraie possibilité.</p>
+                <p className="text-slate-400 mb-8">Une heure. Quatre rencontres. Une vraie possibilité.</p>
+                <div className="bg-pink-900/30 border border-pink-500/30 p-4 rounded-xl inline-block mb-12 max-w-2xl mx-auto">
+                    <p className="text-pink-200 font-bold text-lg md:text-xl uppercase">
+                        Vous ne payez que si vous êtes sélectionné après la pré-inscription.
+                    </p>
+                </div>
 
                 <div className="bg-white text-slate-950 max-w-md mx-auto rounded-3xl p-10 relative shadow-[0_0_50px_rgba(255,255,255,0.1)]">
                     <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-slate-900 text-white px-6 py-2 rounded-full text-xs font-bold uppercase tracking-widest border border-slate-700">
