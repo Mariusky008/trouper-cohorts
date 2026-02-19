@@ -154,30 +154,6 @@ export default function AlliancePage() {
                 </motion.div>
             </section>
 
-            {/* SECTION PROBLÈME */}
-            <Section className="bg-[#080808]">
-                <div className="grid md:grid-cols-2 gap-16 items-center">
-                    <FadeIn>
-                        <h2 className="text-4xl md:text-6xl font-black text-white tracking-tighter leading-none mb-6">
-                            Aujourd’hui, <br/>
-                            beaucoup de gens <br/>
-                            <span className="text-slate-600">avancent seuls.</span>
-                        </h2>
-                    </FadeIn>
-                    <FadeIn delay={0.2} className="space-y-6 text-lg text-slate-400 leading-relaxed">
-                        <p>
-                            Trouver de l’aide devient compliqué. Manque de réseau. Manque de solutions. Manque de soutien.
-                        </p>
-                        <p>
-                            Nous vivons dans un monde connecté… <strong className="text-white">mais de plus en plus isolé.</strong>
-                        </p>
-                        <div className="pl-6 border-l-2 border-orange-500 italic text-white text-xl">
-                            "Et souvent, il suffirait de connaître la bonne personne pour débloquer une situation."
-                        </div>
-                    </FadeIn>
-                </div>
-            </Section>
-
             {/* SECTION COMPARATIF GALÈRE VS ALLIANCE */}
             <Section className="bg-[#050505] border-t border-white/5">
                 <div className="max-w-6xl mx-auto">

@@ -119,11 +119,11 @@ export default function RankingPage({ ranking, myBuddy }: { ranking: any[], myBu
                 <Tabs defaultValue="ranking" className="space-y-8">
                     <div className="flex justify-center">
                         <TabsList className="bg-slate-900 border border-slate-800 p-1 rounded-full">
-                            <TabsTrigger value="ranking" className="rounded-full px-8 py-2 data-[state=active]:bg-yellow-500 data-[state=active]:text-black font-bold uppercase tracking-wide">
+                            <TabsTrigger value="ranking" className="rounded-full px-8 py-2 text-slate-400 data-[state=active]:bg-yellow-500 data-[state=active]:text-black font-bold uppercase tracking-wide">
                                 <Trophy className="h-4 w-4 mr-2" />
                                 Classement
                             </TabsTrigger>
-                            <TabsTrigger value="report" className="rounded-full px-8 py-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white font-bold uppercase tracking-wide">
+                            <TabsTrigger value="report" className="rounded-full px-8 py-2 text-slate-400 data-[state=active]:bg-blue-600 data-[state=active]:text-white font-bold uppercase tracking-wide">
                                 <Send className="h-4 w-4 mr-2" />
                                 Déclarer pour mon Binôme
                             </TabsTrigger>

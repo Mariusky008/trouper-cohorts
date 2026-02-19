@@ -56,7 +56,7 @@ export default function AlliancePage() {
                                 <TabsTrigger 
                                     key={tab.id} 
                                     value={tab.id}
-                                    className="rounded-full px-4 py-2 text-xs md:text-sm font-bold data-[state=active]:bg-white data-[state=active]:text-black transition-all flex items-center gap-2"
+                                    className="rounded-full px-4 py-2 text-xs md:text-sm font-bold text-slate-400 data-[state=active]:bg-white data-[state=active]:text-black transition-all flex items-center gap-2"
                                 >
                                     <tab.icon className="h-4 w-4" />
                                     <span className="hidden md:inline">{tab.label}</span>
