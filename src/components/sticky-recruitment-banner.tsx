@@ -149,6 +149,7 @@ export function StickyRecruitmentBanner({ forceVisible = true }: { forceVisible?
                             <motion.div
                                 initial={{ opacity: 0, scale: 0.95 }}
                                 animate={{ opacity: 1, scale: 1 }}
+                                onClick={(e) => e.stopPropagation()}
                                 className="bg-[#0a0f1c] border border-slate-700 shadow-2xl rounded-3xl overflow-hidden w-full max-h-[90vh] overflow-y-auto"
                             >
                                 {/* HEADER POPUP */}
