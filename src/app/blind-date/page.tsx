@@ -38,10 +38,12 @@ export default function BlindDatePage() {
   const [selectedSession, setSelectedSession] = useState<string | null>(null);
 
   const sessions = [
-    { city: "Dax", date: "Prochaine Session", status: "Ouvert", color: "text-green-500", active: true },
-    { city: "Mont de Marsan", date: "Prochaine Session", status: "Complet", color: "text-red-500", active: false },
-    { city: "Bayonne", date: "Prochaine Session", status: "Ouvert", color: "text-green-500", active: true },
-    { city: "Pau", date: "Prochaine Session", status: "Complet", color: "text-red-500", active: false }
+    { city: "Dax", date: "Ven. 21 Mars", status: "Ouvert", color: "text-green-500", active: true },
+    { city: "Dax", date: "Ven. 28 Mars", status: "Ouvert", color: "text-green-500", active: true },
+    { city: "Bayonne", date: "Ven. 21 Mars", status: "Ouvert", color: "text-green-500", active: true },
+    { city: "Bayonne", date: "Ven. 28 Mars", status: "Ouvert", color: "text-green-500", active: true },
+    { city: "Mont de Marsan", date: "Bientôt", status: "Complet", color: "text-red-500", active: false },
+    { city: "Pau", date: "Bientôt", status: "Complet", color: "text-red-500", active: false }
   ];
 
   return (
