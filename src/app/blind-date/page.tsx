@@ -201,8 +201,8 @@ export default function BlindDatePage() {
                          <div className="aspect-square rounded-3xl overflow-hidden relative">
                             <div className="absolute inset-0 bg-gradient-to-br from-pink-500/20 to-purple-500/20 mix-blend-overlay z-10" />
                             <img 
-                                src="https://images.unsplash.com/photo-1516585427167-9f4af9627e6c?q=80&w=2080&auto=format&fit=crop" 
-                                alt="Authentic Connection" 
+                                src="https://images.unsplash.com/photo-1517841905240-472988babdf9?q=80&w=2459&auto=format&fit=crop" 
+                                alt="Happy Couple Authentic Connection" 
                                 className="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-700"
                             />
                             <div className="absolute bottom-0 left-0 right-0 p-8 bg-gradient-to-t from-slate-950 to-transparent z-20">
