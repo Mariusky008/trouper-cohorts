@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
     Briefcase, ChevronRight, Users, X, Hammer, Lightbulb, Monitor, Scissors, 
-    ArrowRight, Star, Heart, Zap, Globe, Shield, Trophy
+    ArrowRight, Star, Heart, Zap, Globe, Shield, Trophy, Target, MessageCircle, Handshake
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -24,11 +24,21 @@ export function StickyRecruitmentBanner({ forceVisible = true }: { forceVisible?
             name: "Alliance Alpha",
             members: 12,
             max: 24,
-            missing: [
-                { role: "Retraité(e)", icon: Star, color: "text-yellow-400" },
-                { role: "Étudiant(e)", icon: Zap, color: "text-blue-400" },
-                { role: "Prof de Yoga", icon: Heart, color: "text-pink-400" },
-                { role: "Sans Emploi", icon: Users, color: "text-slate-400", count: 2 }
+            badge: "🔥 Dernières places",
+            badgeColor: "bg-orange-500",
+            sections: [
+                {
+                    title: "🧠 Expériences de vie",
+                    items: ["Retraité(e) actif", "Étudiant(e) motivé(e)", "En transition/reconversion"]
+                },
+                {
+                    title: "🛠 Compétences utiles",
+                    items: ["Bien-être / Sport / Santé", "Organisation / Admin", "Réseau local"]
+                },
+                {
+                    title: "💬 Qualités humaines",
+                    items: ["Fiable", "Bienveillant", "Motivé pour aider"]
+                }
             ],
             avatars: ["JP", "S", "M", "L", "K", "T"]
         },
@@ -36,10 +46,21 @@ export function StickyRecruitmentBanner({ forceVisible = true }: { forceVisible?
             name: "Alliance Beta",
             members: 18,
             max: 24,
-            missing: [
-                { role: "Nutritionniste", icon: Heart, color: "text-green-400" },
-                { role: "Avocat(e)", icon: Shield, color: "text-purple-400" },
-                { role: "Menuisier", icon: Hammer, color: "text-orange-400" }
+            badge: "⚡ Bientôt complet",
+            badgeColor: "bg-yellow-500",
+            sections: [
+                {
+                    title: "🛠 Compétences",
+                    items: ["Droit ou Administratif", "Bricolage / Manuel", "Santé ou Nutrition"]
+                },
+                {
+                    title: "🌍 Profils intéressants",
+                    items: ["Entrepreneur", "Parent actif", "Réseau local fort"]
+                },
+                {
+                    title: "🤝 Attitude",
+                    items: ["Esprit d’entraide", "Dynamique", "Engagé"]
+                }
             ],
             avatars: ["A", "B", "C", "D", "E"]
         },
@@ -47,10 +68,21 @@ export function StickyRecruitmentBanner({ forceVisible = true }: { forceVisible?
             name: "Alliance Gamma",
             members: 7,
             max: 24,
-            missing: [
-                { role: "Web Dev", icon: Monitor, color: "text-blue-500" },
-                { role: "Couturier", icon: Scissors, color: "text-pink-500" },
-                { role: "Comptable", icon: Briefcase, color: "text-slate-300" }
+            badge: "🆕 Nouvelle Alliance",
+            badgeColor: "bg-blue-500",
+            sections: [
+                {
+                    title: "🛠 Compétences utiles",
+                    items: ["Numérique / Web", "Gestion financière", "Créatif / Manuel"]
+                },
+                {
+                    title: "🌱 Parcours recherchés",
+                    items: ["Début de carrière", "Projet en lancement", "Développement réseau"]
+                },
+                {
+                    title: "❤️ Qualités",
+                    items: ["Curieux", "Fiable", "Ouvert aux autres"]
+                }
             ],
             avatars: ["X", "Y", "Z"]
         }
@@ -91,7 +123,7 @@ export function StickyRecruitmentBanner({ forceVisible = true }: { forceVisible?
                             scale: 1
                         }}
                         transition={{ type: "spring", damping: 25, stiffness: 300 }}
-                        className={`fixed z-[9999] flex flex-col ${isExpanded ? 'w-[95vw] max-w-5xl' : 'items-start'}`}
+                        className={`fixed z-[9999] flex flex-col ${isExpanded ? 'w-[95vw] max-w-6xl' : 'items-start'}`}
                     >
                         {isExpanded ? (
                             <motion.div
@@ -101,13 +133,14 @@ export function StickyRecruitmentBanner({ forceVisible = true }: { forceVisible?
                             >
                                 {/* HEADER POPUP */}
                                 <div className="p-8 border-b border-slate-800 flex justify-between items-start bg-gradient-to-r from-slate-900 to-slate-800">
-                                    <div>
-                                        <Badge className="bg-blue-600 mb-4 hover:bg-blue-700">Recrutement Actif</Badge>
-                                        <h2 className="text-3xl md:text-4xl font-black text-white uppercase italic tracking-tight mb-2">
-                                            3 Alliances recherchent <span className="text-blue-400">votre profil</span>
+                                    <div className="space-y-4">
+                                        <Badge className="bg-blue-600 hover:bg-blue-700 uppercase tracking-widest">Alliances en cours de formation</Badge>
+                                        <h2 className="text-3xl md:text-5xl font-black text-white uppercase italic tracking-tight leading-none">
+                                            3 groupes recherchent encore <br/>
+                                            <span className="text-blue-400">leurs derniers membres</span>
                                         </h2>
-                                        <p className="text-slate-400 text-lg">
-                                            Rejoignez un équipage incomplet et devenez la pièce manquante.
+                                        <p className="text-slate-400 text-lg max-w-2xl">
+                                            Rejoignez une Alliance incomplète et devenez une ressource précieuse pour les autres.
                                         </p>
                                     </div>
                                     <button 
@@ -118,62 +151,68 @@ export function StickyRecruitmentBanner({ forceVisible = true }: { forceVisible?
                                     </button>
                                 </div>
 
+                                {/* ACTION TRIGGER PHRASE */}
+                                <div className="bg-blue-900/20 border-b border-blue-500/10 p-4 text-center">
+                                    <p className="text-blue-200 font-medium flex items-center justify-center gap-2">
+                                        <Target className="h-4 w-4" />
+                                        Une Alliance fonctionne mieux quand les profils sont variés. <span className="text-white font-bold">Votre place existe peut-être déjà dans l'un de ces groupes.</span>
+                                    </p>
+                                </div>
+
                                 {/* GRID ALLIANCES */}
-                                <div className="p-8 grid md:grid-cols-3 gap-8 bg-[#050505]">
+                                <div className="p-6 md:p-8 grid md:grid-cols-3 gap-6 bg-[#050505]">
                                     {alliances.map((alliance, i) => (
                                         <motion.div 
                                             key={i}
                                             initial={{ opacity: 0, y: 20 }}
                                             animate={{ opacity: 1, y: 0 }}
                                             transition={{ delay: i * 0.1 }}
-                                            className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6 flex flex-col hover:border-blue-500/50 transition-all group relative overflow-hidden"
+                                            className="bg-slate-900/50 border border-slate-800 rounded-2xl flex flex-col hover:border-blue-500/50 transition-all group relative overflow-hidden h-full"
                                         >
-                                            <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2 group-hover:bg-blue-500/10 transition-colors"></div>
-                                            
-                                            {/* Header Card */}
-                                            <div className="flex justify-between items-start mb-6 relative z-10">
-                                                <div>
-                                                    <h3 className="text-xl font-bold text-white mb-1">{alliance.name}</h3>
-                                                    <div className="flex items-center gap-2 text-xs font-medium text-slate-400">
-                                                        <Users className="h-3 w-3" />
-                                                        <span>{alliance.members} / {alliance.max} membres</span>
+                                            {/* Badge Status */}
+                                            <div className={`absolute top-0 right-0 ${alliance.badgeColor} text-white text-[10px] font-bold px-3 py-1 uppercase tracking-widest rounded-bl-xl z-20`}>
+                                                {alliance.badge}
+                                            </div>
+
+                                            <div className="p-6 pb-0 relative z-10">
+                                                <div className="flex justify-between items-center mb-4">
+                                                    <h3 className="text-2xl font-black text-white italic uppercase">{alliance.name}</h3>
+                                                </div>
+                                                
+                                                <div className="flex items-center gap-3 mb-6 bg-slate-950/50 p-3 rounded-lg border border-slate-800/50">
+                                                    <div className="flex -space-x-2">
+                                                        {alliance.avatars.slice(0, 4).map((av, j) => (
+                                                            <div key={j} className="h-6 w-6 rounded-full bg-slate-700 border border-slate-900 flex items-center justify-center text-[8px] font-bold text-slate-300">
+                                                                {av}
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                    <div className="text-xs font-bold text-slate-400">
+                                                        <span className="text-white">{alliance.members}</span> / {alliance.max} membres
                                                     </div>
                                                 </div>
-                                                <div className="h-10 w-10 rounded-full bg-slate-800 flex items-center justify-center font-black text-slate-500 border border-slate-700">
-                                                    {alliance.name[9]}
+
+                                                <div className="space-y-5">
+                                                    {alliance.sections.map((section, k) => (
+                                                        <div key={k}>
+                                                            <h4 className="text-xs font-bold text-blue-400 uppercase tracking-wider mb-2">{section.title}</h4>
+                                                            <ul className="space-y-1.5">
+                                                                {section.items.map((item, l) => (
+                                                                    <li key={l} className="text-sm text-slate-300 flex items-start gap-2">
+                                                                        <span className="text-slate-600 mt-1">•</span> {item}
+                                                                    </li>
+                                                                ))}
+                                                            </ul>
+                                                        </div>
+                                                    ))}
                                                 </div>
                                             </div>
 
-                                            {/* Members Avatars */}
-                                            <div className="flex -space-x-3 mb-8 relative z-10 pl-2">
-                                                {alliance.avatars.map((av, j) => (
-                                                    <div key={j} className="h-8 w-8 rounded-full bg-slate-800 border-2 border-[#0a0f1c] flex items-center justify-center text-[10px] font-bold text-slate-400">
-                                                        {av}
-                                                    </div>
-                                                ))}
-                                                <div className="h-8 w-8 rounded-full bg-slate-800 border-2 border-[#0a0f1c] flex items-center justify-center text-[10px] font-bold text-slate-500">
-                                                    +{alliance.members - alliance.avatars.length}
-                                                </div>
+                                            <div className="p-6 mt-auto relative z-10">
+                                                <Button className="w-full bg-white text-black hover:bg-blue-600 hover:text-white font-black uppercase tracking-wide h-12 transition-all">
+                                                    Rejoindre {alliance.name}
+                                                </Button>
                                             </div>
-
-                                            {/* Missing Profiles */}
-                                            <div className="space-y-3 mb-8 flex-1 relative z-10">
-                                                <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Profils Recherchés :</p>
-                                                {alliance.missing.map((role, k) => (
-                                                    <div key={k} className="flex items-center gap-3 bg-slate-950/50 p-2 rounded-lg border border-slate-800/50">
-                                                        <role.icon className={`h-4 w-4 ${role.color}`} />
-                                                        <span className="text-sm text-slate-300 font-medium">{role.role}</span>
-                                                        {role.count && (
-                                                            <span className="ml-auto text-[10px] font-bold bg-slate-800 text-white px-1.5 py-0.5 rounded">x{role.count}</span>
-                                                        )}
-                                                    </div>
-                                                ))}
-                                            </div>
-
-                                            {/* CTA */}
-                                            <Button className="w-full bg-white text-black hover:bg-slate-200 font-bold uppercase tracking-wide relative z-10">
-                                                Rejoindre {alliance.name}
-                                            </Button>
                                         </motion.div>
                                     ))}
                                 </div>
