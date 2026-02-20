@@ -95,7 +95,7 @@ const InteractiveMockup = () => {
   return (
     <div className="relative w-full max-w-md mx-auto aspect-[4/5] perspective-1000">
       <motion.div
-        initial={{ rotateY: 10, rotateX: 5 }}
+        initial={{ rotateY: 0, rotateX: 0 }}
         whileHover={{ rotateY: 0, rotateX: 0 }}
         transition={{ type: "spring", stiffness: 100, damping: 20 }}
         className="w-full h-full bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden relative flex flex-col"
@@ -111,70 +111,64 @@ const InteractiveMockup = () => {
         </div>
 
         {/* Mockup Content */}
-        <div className="flex-1 p-6 flex flex-col gap-6 relative">
+        <div className="flex-1 p-6 flex flex-col gap-6 relative bg-slate-50/50">
            {/* Date */}
            <div className="flex justify-between items-end">
              <div>
                <div className="text-3xl font-black text-slate-900">Mardi 24</div>
                <div className="text-slate-500 font-medium">Octobre 2024</div>
              </div>
-             <div className="bg-blue-50 text-blue-600 p-2 rounded-xl">
+             <div className="bg-blue-100 text-blue-600 p-2 rounded-xl">
                <Calendar className="h-6 w-6" />
              </div>
            </div>
 
-           {/* The Card */}
+           {/* The Value Card */}
            <motion.div 
              whileHover={{ scale: 1.02 }}
-             className="bg-white rounded-2xl p-4 shadow-xl shadow-blue-100/50 border border-blue-50 relative group cursor-pointer"
+             className="bg-white rounded-2xl p-5 shadow-xl shadow-blue-100/50 border border-blue-100 relative group cursor-pointer"
            >
-             <div className="absolute top-3 right-3">
-               <span className="relative flex h-3 w-3">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
-                </span>
+             <div className="absolute top-0 right-0 bg-orange-500 text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl rounded-tr-xl uppercase tracking-wider">
+               Opportunité Chaude
              </div>
              
-             <div className="flex items-center gap-4 mb-4">
-               <Avatar className="h-14 w-14 border-2 border-white shadow-sm">
+             <div className="flex items-start gap-4 mb-5 mt-2">
+               <Avatar className="h-16 w-16 border-2 border-white shadow-md">
                  <AvatarImage src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=2000&auto=format&fit=crop" />
                  <AvatarFallback>JM</AvatarFallback>
                </Avatar>
                <div>
-                 <div className="text-xs font-bold text-blue-600 uppercase mb-0.5">Appel à 14:00</div>
-                 <div className="font-bold text-slate-900 text-lg leading-tight">Julien Martin</div>
-                 <div className="text-xs text-slate-500">Architecte • Bordeaux</div>
+                 <div className="font-black text-slate-900 text-xl leading-tight mb-1">Julien Martin</div>
+                 <div className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">Architecte • Bordeaux</div>
+                 <div className="inline-flex items-center gap-1 bg-green-50 text-green-700 px-2 py-0.5 rounded text-[10px] font-bold border border-green-100">
+                    <CheckCircle2 className="h-3 w-3" /> Vérifié fiable
+                 </div>
                </div>
              </div>
 
-             <Button className="w-full bg-slate-900 text-white hover:bg-slate-800 font-bold gap-2 group-hover:bg-blue-600 transition-colors">
-               <Phone className="h-4 w-4" /> Rejoindre l'appel
+             <div className="bg-slate-50 rounded-xl p-3 border border-slate-100 mb-5">
+                <div className="text-xs font-bold text-slate-400 uppercase mb-2">Pourquoi ce match ?</div>
+                <p className="text-sm text-slate-700 leading-snug font-medium">
+                  "Julien vient de signer 3 chantiers de rénovation et <strong className="text-slate-900 bg-yellow-100 px-1">cherche un partenaire</strong> pour refaire le branding de ses clients."
+                </p>
+             </div>
+
+             <Button className="w-full bg-blue-600 text-white hover:bg-blue-700 font-bold h-12 rounded-xl shadow-lg shadow-blue-200 group-hover:scale-[1.02] transition-all">
+               <Phone className="mr-2 h-4 w-4" /> Débloquer l'opportunité (14:00)
              </Button>
            </motion.div>
 
-           {/* Stats / Trust */}
-           <div className="bg-slate-50 rounded-xl p-4 border border-slate-100 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <ShieldCheck className="h-5 w-5 text-orange-500" />
-                <span className="text-xs font-bold text-slate-600">Confiance</span>
+           {/* Quick Stats */}
+           <div className="grid grid-cols-2 gap-4">
+              <div className="bg-white rounded-xl p-3 border border-slate-100 shadow-sm">
+                 <div className="text-xs text-slate-400 font-bold uppercase mb-1">Potentiel</div>
+                 <div className="font-black text-slate-900 text-lg">~1500€</div>
               </div>
-              <div className="font-black text-slate-900">4.8/5</div>
+              <div className="bg-white rounded-xl p-3 border border-slate-100 shadow-sm">
+                 <div className="text-xs text-slate-400 font-bold uppercase mb-1">Réciprocité</div>
+                 <div className="font-black text-green-600 text-lg">Élevée</div>
+              </div>
            </div>
-
-           {/* Incoming Opportunity Animation */}
-           <motion.div 
-             initial={{ x: 100, opacity: 0 }}
-             animate={{ x: 0, opacity: 1 }}
-             transition={{ delay: 2, duration: 0.5 }}
-             className="absolute bottom-6 right-6 left-6 bg-white p-3 rounded-xl shadow-lg border border-slate-100 flex items-center gap-3"
-           >
-             <div className="bg-green-100 p-2 rounded-full text-green-600">
-               <Zap className="h-4 w-4" />
-             </div>
-             <div className="text-xs">
-               <span className="font-bold text-slate-900">Sarah</span> vous a recommandé !
-             </div>
-           </motion.div>
         </div>
       </motion.div>
     </div>
@@ -246,28 +240,9 @@ export default function MonReseauLocalPage() {
               initial={{ opacity: 0, x: 30 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.8, delay: 0.2 }}
-              className="relative hidden lg:block"
+              className="relative mt-12 lg:mt-0"
             >
                <InteractiveMockup />
-               
-               {/* Decorative floating avatars */}
-               <motion.div 
-                 animate={{ y: [0, -10, 0] }}
-                 transition={{ repeat: Infinity, duration: 4, ease: "easeInOut" }}
-                 className="absolute top-20 -left-12 bg-white p-2 rounded-2xl shadow-lg border border-slate-100 flex items-center gap-2"
-               >
-                 <Avatar className="h-8 w-8"><AvatarImage src="https://github.com/shadcn.png" /></Avatar>
-                 <div className="text-xs font-bold pr-2">Nouveau match !</div>
-               </motion.div>
-
-               <motion.div 
-                 animate={{ y: [0, 10, 0] }}
-                 transition={{ repeat: Infinity, duration: 5, ease: "easeInOut", delay: 1 }}
-                 className="absolute bottom-40 -right-8 bg-white p-2 rounded-2xl shadow-lg border border-slate-100 flex items-center gap-2"
-               >
-                 <div className="bg-green-100 p-1.5 rounded-full"><CheckCircle2 className="h-4 w-4 text-green-600" /></div>
-                 <div className="text-xs font-bold pr-2">Opportunité validée</div>
-               </motion.div>
             </motion.div>
 
           </div>
