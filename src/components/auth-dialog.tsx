@@ -10,6 +10,7 @@ import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
 import Link from "next/link";
+import { registerNetworkUser } from "@/actions/network-registration";
 
 interface AuthDialogProps {
   mode?: "login" | "signup";
@@ -65,10 +66,6 @@ export function AuthDialog({ mode = "signup", trigger, defaultOpen = false }: Au
       setIsLoading(false);
     }
   };
-
-import { registerNetworkUser } from "@/actions/network-registration";
-
-// ... existing code ...
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
