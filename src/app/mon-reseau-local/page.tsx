@@ -2,11 +2,12 @@
 
 import { useState, useEffect, useRef } from "react";
 import { motion, useScroll, useTransform, AnimatePresence, useInView } from "framer-motion";
+import Link from "next/link";
 import { 
   Users, Calendar, Phone, CheckCircle2, 
   ArrowRight, ShieldCheck, Zap, Briefcase, 
   Target, TrendingUp, Star, Play, Lock,
-  MessageCircle, Clock, Bell, ChevronRight
+  MessageCircle, Clock, Bell, ChevronRight, Anchor
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -587,16 +588,56 @@ export default function MonReseauLocalPage() {
       </section>
 
       {/* FOOTER */}
-      <footer className="bg-white py-12 border-t border-slate-100">
-         <div className="container mx-auto px-4 text-center">
-            <div className="flex items-center justify-center gap-2 mb-8 opacity-50">
-               <div className="bg-slate-200 text-slate-500 p-1 rounded">
-                  <Users className="h-4 w-4" />
-               </div>
-               <span className="font-black text-slate-900 uppercase tracking-widest">Mon Réseau Local</span>
+      <footer className="bg-white py-12 border-t border-slate-100 text-slate-900">
+        <div className="container mx-auto px-4">
+            <div className="grid md:grid-cols-4 gap-8 mb-12">
+                <div className="space-y-4">
+                    <div className="flex items-center gap-2">
+                        <Anchor className="h-6 w-6 text-blue-600" />
+                        <span className="font-black uppercase tracking-widest">Popey Academy</span>
+                    </div>
+                    <p className="text-sm text-slate-500">
+                        La première école qui transforme l'indécision en action.
+                        <br/>Force & Honneur.
+                    </p>
+                </div>
+                <div>
+                    <h4 className="font-bold text-slate-900 uppercase mb-4 text-sm">Programmes</h4>
+                    <ul className="space-y-2 text-sm text-slate-500">
+                        <li><Link href="/emploi" className="hover:text-blue-600">Trouver sa voie</Link></li>
+                        <li><Link href="/" className="hover:text-blue-600">Lancer son activité</Link></li>
+                        <li><Link href="/mon-reseau-local" className="hover:text-blue-600">Réseau Local</Link></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 className="font-bold text-slate-900 uppercase mb-4 text-sm">Légal</h4>
+                    <ul className="space-y-2 text-sm text-slate-500">
+                        <li><Link href="/legal/mentions" className="hover:text-blue-600">Mentions Légales</Link></li>
+                        <li><Link href="/legal/terms" className="hover:text-blue-600">CGV / CGU</Link></li>
+                        <li><Link href="/legal/privacy" className="hover:text-blue-600">Politique de Confidentialité</Link></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 className="font-bold text-slate-900 uppercase mb-4 text-sm">Contact</h4>
+                    <ul className="space-y-2 text-sm text-slate-500">
+                        <li>hello@popey.academy</li>
+                        <li>Paris, France</li>
+                        <li className="flex gap-4 mt-4">
+                            {/* Social Icons Placeholder */}
+                            <div className="h-8 w-8 bg-slate-100 rounded-full flex items-center justify-center text-slate-400 hover:bg-blue-100 hover:text-blue-600 transition-colors cursor-pointer">
+                                <span className="font-black text-xs">IN</span>
+                            </div>
+                            <div className="h-8 w-8 bg-slate-100 rounded-full flex items-center justify-center text-slate-400 hover:bg-blue-100 hover:text-blue-600 transition-colors cursor-pointer">
+                                <span className="font-black text-xs">IG</span>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
             </div>
-            <p className="text-slate-400 text-sm">© 2024 Popey Academy. Tous droits réservés.</p>
-         </div>
+            <div className="pt-8 border-t border-slate-100 text-center">
+                <p className="text-slate-400 text-xs">© 2026 Popey Academy. Tous droits réservés.</p>
+            </div>
+        </div>
       </footer>
 
     </div>
