@@ -114,7 +114,7 @@ export async function getUserProfile(userId?: string) {
   };
 }
 
-export async function updateUserProfile(data: { bio?: string; trade?: string; city?: string }) {
+export async function updateUserProfile(data: { bio?: string; trade?: string; city?: string; phone?: string }) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 

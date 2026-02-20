@@ -14,8 +14,8 @@ export async function getDailyMatch() {
     .from("network_matches")
     .select(`
       *,
-      user1:user1_id(id, display_name, avatar_url, trade),
-      user2:user2_id(id, display_name, avatar_url, trade)
+      user1:user1_id(id, display_name, avatar_url, trade, phone),
+      user2:user2_id(id, display_name, avatar_url, trade, phone)
     `)
     .eq("date", today)
     .or(`user1_id.eq.${user.id},user2_id.eq.${user.id}`)
@@ -45,6 +45,7 @@ export async function getDailyMatch() {
     score: trustScore?.score || 5.0,
     time: "14:00", // Default or stored
     type,
+    phone: partner.phone,
     avatar: partner.avatar_url,
     tags: ["Entrepreneur"],
     status: match.status

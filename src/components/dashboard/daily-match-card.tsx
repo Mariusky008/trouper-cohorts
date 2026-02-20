@@ -77,10 +77,20 @@ export function DailyMatchCard({ match }: DailyMatchCardProps) {
           </div>
 
           <div className="mt-8 flex flex-wrap gap-3">
-            <Button size="lg" className="bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg shadow-blue-200 px-8 h-12">
-              <Phone className="mr-2 h-5 w-5" /> 
-              {match.type === 'call_out' ? `Appeler ${match.name.split(' ')[0]}` : `Attendre l'appel`}
-            </Button>
+            {match.type === 'call_out' ? (
+               <a href={`tel:${match.phone}`}>
+                 <Button size="lg" className="bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg shadow-blue-200 px-8 h-12">
+                   <Phone className="mr-2 h-5 w-5" /> 
+                   Appeler {match.name.split(' ')[0]} ({match.phone || "N/A"})
+                 </Button>
+               </a>
+            ) : (
+               <Button size="lg" disabled className="bg-slate-100 text-slate-400 font-bold rounded-xl px-8 h-12">
+                 <Phone className="mr-2 h-5 w-5" /> 
+                 Attendre l'appel ({match.phone || "N/A"})
+               </Button>
+            )}
+
             <Link href={`/mon-reseau-local/dashboard/profile/${match.partnerId}`}>
               <Button variant="outline" size="lg" className="border-slate-200 hover:bg-slate-50 text-slate-700 font-bold rounded-xl h-12 w-full md:w-auto">
                 Voir le profil complet
@@ -96,11 +106,26 @@ export function DailyMatchCard({ match }: DailyMatchCardProps) {
            <div className="h-16 w-16 bg-white rounded-full flex items-center justify-center shadow-md mb-4 animate-bounce">
               <Phone className="h-8 w-8 text-green-500" />
            </div>
-           <h3 className="font-black text-slate-900 text-lg mb-2">C'est à vous !</h3>
-           <p className="text-slate-500 text-sm mb-6">
-             C'est vous qui devez appeler {match.name.split(' ')[0]} à <span className="font-bold text-slate-900">{match.time}</span>.
-             Préparez vos questions !
-           </p>
+           
+           {match.type === 'call_out' ? (
+             <>
+               <h3 className="font-black text-slate-900 text-lg mb-2">C'est à vous !</h3>
+               <p className="text-slate-500 text-sm mb-6">
+                 Appelez {match.name.split(' ')[0]} au <br/>
+                 <span className="font-bold text-slate-900 text-lg block mt-1">{match.phone || "Numéro masqué"}</span>
+                 à <span className="font-bold text-slate-900">{match.time}</span>.
+               </p>
+             </>
+           ) : (
+             <>
+               <h3 className="font-black text-slate-900 text-lg mb-2">Attendez l'appel</h3>
+               <p className="text-slate-500 text-sm mb-6">
+                 {match.name.split(' ')[0]} vous appellera au <br/>
+                 <span className="font-bold text-slate-900 text-lg block mt-1">{match.phone || "Numéro masqué"}</span>
+                 à <span className="font-bold text-slate-900">{match.time}</span>.
+               </p>
+             </>
+           )}
            
            <div className="w-full bg-white rounded-xl p-3 border border-slate-200 shadow-sm">
               <div className="text-xs font-bold text-slate-400 uppercase mb-2">Après l'appel</div>

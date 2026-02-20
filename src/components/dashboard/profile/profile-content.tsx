@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { 
-  Briefcase, ShieldCheck, Award, Pencil, Save, X 
-} from "lucide-react";
+    Briefcase, ShieldCheck, Award, Pencil, Save, X, Phone 
+  } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -19,7 +19,8 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
   const [formData, setFormData] = useState({
     trade: user.trade || "",
     bio: user.bio || "",
-    city: user.city || ""
+    city: user.city || "",
+    phone: user.phone || ""
   });
   const [loading, setLoading] = useState(false);
 
@@ -61,6 +62,19 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
             ) : (
               <p className="text-lg text-slate-500 font-medium flex items-center gap-2">
                 <Briefcase className="h-4 w-4" /> {user.trade || "Métier non renseigné"}
+              </p>
+            )}
+
+            {isEditing ? (
+              <Input 
+                value={formData.phone} 
+                onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                placeholder="Votre téléphone (pour les matchs)"
+                className="max-w-xs h-8 mt-2"
+              />
+            ) : (
+              <p className="text-sm text-slate-400 font-medium flex items-center gap-2 mt-1">
+                <Phone className="h-3 w-3" /> {user.phone || "Téléphone non renseigné"}
               </p>
             )}
           </div>
