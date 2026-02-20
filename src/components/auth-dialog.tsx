@@ -118,6 +118,15 @@ export function AuthDialog({ mode = "signup", trigger, defaultOpen = false }: Au
                user_id: authData.user.id
             }, { onConflict: 'email' });
 
+        // 4. Initialize Network Settings (CRITICAL for Admin Network visibility)
+        const { error: networkError } = await supabase
+            .from('network_settings')
+            .upsert({
+               user_id: authData.user.id,
+               status: 'active',
+               frequency_per_week: 5
+            }, { onConflict: 'user_id' });
+
         // Note: If trigger exists, this might fail on duplicate key, which is fine (ignored).
       }
 
