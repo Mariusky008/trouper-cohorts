@@ -175,6 +175,35 @@ const InteractiveMockup = () => {
   );
 };
 
+const OpportunityTicker = () => {
+  const opportunities = [
+    { label: "Trouver des clients", points: 10, icon: Target, color: "text-red-500" },
+    { label: "Faire un Live ensemble", points: 9, icon: Play, color: "text-purple-500" },
+    { label: "Mise en relation", points: 8, icon: Users, color: "text-blue-500" },
+    { label: "Partage de réseau", points: 6, icon: Briefcase, color: "text-orange-500" },
+    { label: "Recommandation", points: 5, icon: Star, color: "text-yellow-500" },
+    { label: "Échange de services", points: 5, icon: Zap, color: "text-green-500" },
+    { label: "Synergies", points: 3, icon: TrendingUp, color: "text-indigo-500" },
+    { label: "Engagement Social", points: 2, icon: MessageCircle, color: "text-pink-500" },
+  ];
+
+  return (
+    <div className="bg-slate-50 border-y border-slate-200 py-3 overflow-hidden">
+      <div className="flex animate-marquee whitespace-nowrap">
+        {[...opportunities, ...opportunities].map((opp, i) => (
+          <div key={i} className="flex items-center gap-2 mx-6 text-sm font-bold text-slate-600">
+            <opp.icon className={cn("h-4 w-4", opp.color)} />
+            <span>{opp.label}</span>
+            <Badge variant="secondary" className="bg-white border-slate-200 text-slate-500 text-[10px] px-1.5 h-5">
+              +{opp.points} pts
+            </Badge>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 // --- MAIN PAGE COMPONENT ---
 
 export default function MonReseauLocalPage() {
@@ -186,7 +215,7 @@ export default function MonReseauLocalPage() {
       <StickyCTA />
 
       {/* --- 1. HERO SECTION --- */}
-      <section className="relative pt-20 pb-20 md:pt-32 md:pb-32 overflow-hidden">
+      <section className="relative pt-20 pb-0 md:pt-32 md:pb-0 overflow-hidden">
         {/* Dynamic Background */}
         <div className="absolute inset-0 bg-slate-50">
           <div className="absolute top-[-20%] right-[-10%] w-[600px] h-[600px] bg-blue-100/50 rounded-full blur-3xl opacity-60 animate-pulse" style={{ animationDuration: '8s' }} />
@@ -248,6 +277,30 @@ export default function MonReseauLocalPage() {
           </div>
         </div>
       </section>
+      
+      {/* TICKER */}
+      <div className="w-full bg-slate-50 border-y border-slate-200 overflow-hidden py-3">
+         <div className="flex animate-infinite-scroll whitespace-nowrap gap-8">
+            {[
+                { label: "Trouver des clients", points: 10, icon: Target, color: "text-red-500" },
+                { label: "Faire un Live ensemble", points: 9, icon: Play, color: "text-purple-500" },
+                { label: "Mise en relation", points: 8, icon: Users, color: "text-blue-500" },
+                { label: "Partage de réseau", points: 6, icon: Briefcase, color: "text-orange-500" },
+                { label: "Recommandation", points: 5, icon: Star, color: "text-yellow-500" },
+                { label: "Échange de services", points: 5, icon: Zap, color: "text-green-500" },
+                { label: "Synergies", points: 3, icon: TrendingUp, color: "text-indigo-500" },
+                { label: "Engagement Social", points: 2, icon: MessageCircle, color: "text-pink-500" },
+                { label: "Trouver des clients", points: 10, icon: Target, color: "text-red-500" },
+                { label: "Faire un Live ensemble", points: 9, icon: Play, color: "text-purple-500" },
+            ].map((opp, i) => (
+                <div key={i} className="flex items-center gap-2 text-sm font-bold text-slate-700 bg-white px-3 py-1.5 rounded-full border border-slate-100 shadow-sm shrink-0">
+                    <opp.icon className={cn("h-4 w-4", opp.color)} />
+                    <span>{opp.label}</span>
+                    <span className="bg-slate-100 text-slate-500 text-[10px] px-1.5 py-0.5 rounded ml-1">+{opp.points} pts</span>
+                </div>
+            ))}
+         </div>
+      </div>
 
       {/* --- 2. SCROLLYTELLING SECTION --- */}
       <section className="py-24 bg-slate-900 text-white overflow-hidden">
