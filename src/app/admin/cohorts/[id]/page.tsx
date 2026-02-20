@@ -8,6 +8,17 @@ import { ArrowLeft } from "lucide-react";
 
 export const dynamic = 'force-dynamic';
 
+interface Member {
+  user_id: string;
+  first_name?: string;
+  last_name?: string;
+  email?: string;
+  trade?: string;
+  department_code?: string;
+  joined_at?: string;
+  status: string;
+}
+
 export default async function AdminCohortDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const supabase = await createClient();
   const today = new Date().toISOString().split('T')[0];
@@ -39,7 +50,7 @@ export default async function AdminCohortDetailPage({ params }: { params: Promis
     .select("user_id, department_code, joined_at")
     .eq("cohort_id", id);
 
-  let allMembers: any[] = [];
+  let allMembers: Member[] = [];
 
   // Récupérer les détails des membres actifs
   if (membersData && membersData.length > 0) {

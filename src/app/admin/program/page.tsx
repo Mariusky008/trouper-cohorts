@@ -1,13 +1,20 @@
 import { createClient } from "@/lib/supabase/server";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import Link from "next/link";
-import { ArrowRight, Edit, Briefcase, UserCheck } from "lucide-react";
+import { Edit, Briefcase, UserCheck } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SeedButton } from "@/components/admin/seed-button";
 
 export const dynamic = 'force-dynamic';
+
+interface MissionTemplate {
+  id: string;
+  day_index: number;
+  title: string;
+  description: string | null;
+  program_type: string | null;
+}
 
 export default async function AdminProgramPage() {
   const supabase = await createClient();
@@ -18,10 +25,10 @@ export default async function AdminProgramPage() {
     .select("*")
     .order("day_index", { ascending: true });
 
-  const entrepreneurTemplates = templates?.filter(t => t.program_type === 'entrepreneur' || !t.program_type) || [];
-  const jobSeekerTemplates = templates?.filter(t => t.program_type === 'job_seeker') || [];
+  const entrepreneurTemplates = (templates as MissionTemplate[])?.filter(t => t.program_type === 'entrepreneur' || !t.program_type) || [];
+  const jobSeekerTemplates = (templates as MissionTemplate[])?.filter(t => t.program_type === 'job_seeker') || [];
 
-  const renderTemplateList = (list: any[]) => (
+  const renderTemplateList = (list: MissionTemplate[]) => (
     <div className="grid gap-4">
         {list.map((template) => (
             <Card key={template.id} className="hover:shadow-md transition-shadow">

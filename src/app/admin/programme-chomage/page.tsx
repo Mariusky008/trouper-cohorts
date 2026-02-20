@@ -17,7 +17,7 @@ export default async function ProgrammeChomagePage() {
     // Sort steps by position for each mission
     const formattedMissions = missions?.map(mission => ({
         ...mission,
-        mission_step_templates: mission.mission_step_templates.sort((a: any, b: any) => a.position - b.position)
+        mission_step_templates: mission.mission_step_templates.sort((a: { position: number }, b: { position: number }) => a.position - b.position)
     })) || [];
 
     return <ProgrammeChomageViewer data={formattedMissions} />;

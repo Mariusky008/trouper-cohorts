@@ -16,7 +16,7 @@ export async function addMissionStep(missionId: string, content: string, positio
 
 export async function updateMissionStep(stepId: string, content: string, missionId: string, category?: string) {
     const supabase = await createClient();
-    const payload: any = { content };
+    const payload: { content: string; category?: string } = { content };
     if (category) payload.category = category;
     
     await supabase.from("mission_steps").update(payload).eq("id", stepId);

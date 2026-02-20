@@ -42,7 +42,7 @@ export async function getBuddyHistory() {
         const profile = profiles?.find(p => p.id === buddyId);
         const preReg = preRegs?.find(p => p.user_id === buddyId);
         
-        let buddyDisplay = {
+        const buddyDisplay = {
             id: buddyId,
             display_name: "Utilisateur inconnu",
             avatar_url: null as string | null

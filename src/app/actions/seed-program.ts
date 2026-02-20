@@ -27,7 +27,7 @@ export async function seedJobSeekerProgram() {
       // Safety check for day mapping
       const calendarDay = i < dayMapping.length ? dayMapping[i] : dayMapping[dayMapping.length - 1] + (i - dayMapping.length + 1);
       
-      let missionData = {
+      const missionData = {
         day_index: calendarDay,
         title: original.title,
         description: original.description,
@@ -59,7 +59,7 @@ export async function seedJobSeekerProgram() {
       const missionId = insertedMission.id;
 
       if (missionId && missionData.steps) {
-          const stepsToInsert = missionData.steps.map((step: any, index: number) => ({
+          const stepsToInsert = missionData.steps.map((step: { category: string; title: string; content: string; position?: number }, index: number) => ({
               mission_template_id: missionId,
               category: step.category,
               title: step.title,

@@ -26,13 +26,13 @@ export default async function AdminLayout({
     return (
       <div className="flex flex-col items-center justify-center min-h-screen gap-4 p-4 text-center">
         <h1 className="text-2xl font-bold">Accès refusé</h1>
-        <p>Tu n'as pas les droits administrateur.</p>
+        <p>Tu n&apos;as pas les droits administrateur.</p>
         <p className="text-sm text-muted-foreground bg-muted p-2 rounded">
           Exécute ce SQL dans Supabase pour devenir admin :<br />
-          <code>insert into public.admins (user_id) values ('{user.id}');</code>
+          <code>insert into public.admins (user_id) values (&apos;{user.id}&apos;);</code>
         </p>
         <Button asChild>
-          <Link href="/app/today">Retour à l'app</Link>
+          <Link href="/app/today">Retour à l&apos;app</Link>
         </Button>
       </div>
     );

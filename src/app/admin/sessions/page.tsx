@@ -10,9 +10,9 @@ export default async function AdminSessionsPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Gestion des Sessions (Page d'accueil)</h1>
+      <h1 className="text-2xl font-bold">Gestion des Sessions (Page d&apos;accueil)</h1>
       <p className="text-muted-foreground">
-        Définissez ici les dates qui apparaîtront dans le formulaire d'inscription.
+        Définissez ici les dates qui apparaîtront dans le formulaire d&apos;inscription.
       </p>
       
       <SessionsManager initialSessions={sessions || []} />

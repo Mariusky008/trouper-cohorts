@@ -19,9 +19,9 @@ export default async function AdminSettingsPage() {
                   <AlertTriangle className="h-4 w-4" />
                   <AlertTitle>Configuration manquante</AlertTitle>
                   <AlertDescription>
-                      La clé <code>SUPABASE_SERVICE_ROLE_KEY</code> est manquante dans les variables d'environnement.
+                      La clé <code>SUPABASE_SERVICE_ROLE_KEY</code> est manquante dans les variables d&apos;environnement.
                       <br />
-                      Veuillez l'ajouter dans les paramètres de votre projet Vercel (ou fichier .env local) pour gérer les administrateurs.
+                      Veuillez l&apos;ajouter dans les paramètres de votre projet Vercel (ou fichier .env local) pour gérer les administrateurs.
                   </AlertDescription>
               </Alert>
           </div>
@@ -153,7 +153,7 @@ export default async function AdminSettingsPage() {
                 Ajouter un administrateur
             </CardTitle>
             <CardDescription>
-              La personne doit déjà avoir créé un compte sur l'application (via Login ou Inscription).
+              La personne doit déjà avoir créé un compte sur l&apos;application (via Login ou Inscription).
             </CardDescription>
           </CardHeader>
           <CardContent>

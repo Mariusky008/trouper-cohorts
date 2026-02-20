@@ -66,18 +66,18 @@ export async function getRanking() {
     if (!reports || reports.length === 0) return [];
 
     // Récupérer les profils associés manuellement pour éviter les problèmes de jointure
-    const userIds = Array.from(new Set(reports.map((r: any) => r.target_user_id)));
+    const userIds = Array.from(new Set(reports.map((r: { target_user_id: string }) => r.target_user_id)));
     
     const { data: profiles } = await supabase
         .from('profiles')
         .select('id, display_name, email')
         .in('id', userIds);
 
-    const profilesMap = new Map(profiles?.map((p: any) => [p.id, p]) || []);
+    const profilesMap = new Map(profiles?.map((p: { id: string; display_name: string; email: string }) => [p.id, p]) || []);
 
-    const leaderboard: Record<string, any> = {};
+    const leaderboard: Record<string, { user_id: string; name: string; total_score: number; reports_count: number }> = {};
 
-    reports.forEach((r: any) => {
+    reports.forEach((r: { target_user_id: string; score: number }) => {
         const uid = r.target_user_id;
         if (!leaderboard[uid]) {
             const profile = profilesMap.get(uid);

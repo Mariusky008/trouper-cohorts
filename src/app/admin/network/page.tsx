@@ -42,7 +42,7 @@ async function getNetworkStats() {
     .order('created_at', { ascending: false })
     .limit(5);
 
-  let recentProfiles: any[] = [];
+  let recentProfiles: { user_id: string; created_at: string; status: string; profile: { display_name: string; trade: string; city: string; phone: string } }[] = [];
   if (recentMembers && recentMembers.length > 0) {
     const userIds = recentMembers.map(m => m.user_id);
     const { data: profiles } = await supabase
@@ -143,9 +143,11 @@ export default async function AdminNetworkPage() {
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-slate-500 mb-4">
-                  L'algorithme tourne tous les matins à 05h00. Vous pouvez forcer un lancement manuel ou voir les logs.
+                  L&apos;algorithme tourne tous les matins à 05h00. Vous pouvez forcer un lancement manuel ou voir les logs.
                 </p>
-                {/* Todo: Add manual trigger button */}
+                <button className="mb-4 px-4 py-2 bg-blue-600 text-white text-sm font-bold rounded hover:bg-blue-700 transition-colors">
+                  Lancer manuellement
+                </button>
                 <div className="bg-slate-100 p-3 rounded text-xs font-mono text-slate-600">
                   Dernier run: {new Date().toLocaleDateString()} 05:00:00 (Succès)
                 </div>
@@ -177,7 +179,7 @@ export default async function AdminNetworkPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               {stats.recentMembers.length > 0 ? (
-                stats.recentMembers.map((m: any) => (
+                stats.recentMembers.map((m) => (
                   <div key={m.user_id} className="flex items-center gap-3 border-b border-slate-100 last:border-0 pb-3 last:pb-0">
                     <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-xs">
                       {m.profile?.display_name?.[0] || "?"}

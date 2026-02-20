@@ -21,7 +21,7 @@ export async function validateRegistration(registrationId: string) {
     return { error: "Inscription introuvable." };
   }
 
-  const { email, trade, department_code, first_name, last_name, selected_session_date, program_type } = registration;
+  const { email, department_code, first_name, selected_session_date, program_type } = registration;
 
   if (!department_code) {
     return { error: "Département manquant pour l'assignation." };
@@ -126,6 +126,8 @@ export async function validateRegistration(registrationId: string) {
       return { error: "Erreur lors de la validation." };
   }
   
+  revalidatePath("/admin/registrations"); // Force refresh of the table
+
   // 5. AUTO-BINÔME
   const { count } = await supabase
     .from("cohort_members")

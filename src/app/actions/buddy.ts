@@ -9,7 +9,7 @@ export async function createBuddyGroup(formData: FormData) {
   const name = String(formData.get("name") || "Nouveau Groupe");
 
   // Create group
-  const { data: group, error } = await supabase
+  const { error } = await supabase
     .from("buddy_groups")
     .insert({
       cohort_id: cohortId,

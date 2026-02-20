@@ -70,7 +70,7 @@ export default async function AdminMembersPage() {
                 <TableCell>
                     {member.cohorts ? (
                         <Badge variant="secondary" className="text-xs font-normal">
-                            {(member.cohorts as any).title}
+                            {(member.cohorts as { title: string }).title}
                         </Badge>
                     ) : (
                         <span className="text-muted-foreground text-xs">—</span>

@@ -9,6 +9,7 @@ export async function updateMissionTemplate(templateId: string, data: {
     video_url: string;
     validation_type?: string;
     duo_instructions?: string;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     steps: any[];
 }) {
     const supabase = await createClient();

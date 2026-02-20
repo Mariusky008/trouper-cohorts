@@ -86,7 +86,7 @@ export default async function NewCohortPage() {
             <div className="space-y-2">
                 <Label htmlFor="slug">Slug (URL)</Label>
                 <Input id="slug" name="slug" placeholder="ex: hiver-2024" required />
-                <p className="text-xs text-muted-foreground">Identifiant unique pour l'URL.</p>
+                <p className="text-xs text-muted-foreground">Identifiant unique pour l&apos;URL.</p>
             </div>
 
             <div className="grid grid-cols-2 gap-4">

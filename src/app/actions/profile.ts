@@ -26,7 +26,7 @@ export async function updateProfile(formData: FormData) {
   // If you want to force social, you can check if at least one is present.
   const isComplete = displayName.length > 0 && bio.length > 0;
 
-  const updates: Record<string, any> = {
+  const updates: Record<string, string | null | boolean> = {
       display_name: displayName || null,
       bio: bio || null,
       instagram_handle: instagram || null,

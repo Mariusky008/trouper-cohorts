@@ -131,13 +131,13 @@ export default async function EditParticipantPage({
                     defaultValue={member.department_code || ""} 
                 />
                 <p className="text-xs text-muted-foreground">
-                    C'est ce code qui compte pour l'unicité du département.
+                    C&apos;est ce code qui compte pour l&apos;unicité du département.
                 </p>
               </div>
             </div>
 
             <div className="pt-4">
-              <Button type="submit">Enregistrer l'assignation</Button>
+              <Button type="submit">Enregistrer l&apos;assignation</Button>
             </div>
           </form>
         </CardContent>
@@ -146,7 +146,7 @@ export default async function EditParticipantPage({
       <Card>
           <CardHeader>
               <CardTitle>Infos Profil</CardTitle>
-              <CardDescription>Données saisies par l'utilisateur.</CardDescription>
+              <CardDescription>Données saisies par l&apos;utilisateur.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-2 text-sm">
               <div className="grid grid-cols-3 gap-2">

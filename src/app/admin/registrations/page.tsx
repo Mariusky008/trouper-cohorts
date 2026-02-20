@@ -1,5 +1,4 @@
 import { createClient } from "@/lib/supabase/server";
-import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -41,18 +40,18 @@ export default async function AdminRegistrationsPage() {
             <li>
                 <strong>Reconnu Admin DB ? :</strong> 
                 {adminEntry ? (
-                    <span className="text-green-600 font-bold ml-2">✅ OUI (Présent dans table 'admins')</span>
+                    <span className="text-green-600 font-bold ml-2">✅ OUI (Présent dans table &apos;admins&apos;)</span>
                 ) : (
-                    <span className="text-red-600 font-bold ml-2">❌ NON (Absent de la table 'admins')</span>
+                    <span className="text-red-600 font-bold ml-2">❌ NON (Absent de la table &apos;admins&apos;)</span>
                 )}
             </li>
             <li><strong>Nombre inscriptions visibles :</strong> {registrations?.length || 0}</li>
         </ul>
         {!adminEntry && (
             <div className="mt-4 p-2 bg-white border border-red-200 text-red-600">
-                <strong>Action requise :</strong> Copie l'ID ci-dessus et exécute ce SQL dans Supabase :<br/>
+                <strong>Action requise :</strong> Copie l&apos;ID ci-dessus et exécute ce SQL dans Supabase :<br/>
                 <code className="select-all block mt-1 bg-slate-100 p-1 text-slate-900">
-                    INSERT INTO public.admins (user_id) VALUES ('{user?.id}');
+                    INSERT INTO public.admins (user_id) VALUES (&apos;{user?.id}&apos;);
                 </code>
             </div>
         )}
