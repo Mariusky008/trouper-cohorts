@@ -1,5 +1,3 @@
-"use client";
-
 import { getDailyMatch } from "@/lib/actions/network-match";
 import { DailyMatchCard } from "@/components/dashboard/daily-match-card";
 import { AvailabilitySelector } from "@/components/dashboard/availability-selector";
