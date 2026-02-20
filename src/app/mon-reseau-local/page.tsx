@@ -278,29 +278,44 @@ export default function MonReseauLocalPage() {
         </div>
       </section>
       
-      {/* TICKER */}
-      <div className="w-full bg-slate-50 border-y border-slate-200 overflow-hidden py-3">
-         <div className="flex animate-infinite-scroll whitespace-nowrap gap-8">
-            {[
-                { label: "Trouver des clients", points: 10, icon: Target, color: "text-red-500" },
-                { label: "Faire un Live ensemble", points: 9, icon: Play, color: "text-purple-500" },
-                { label: "Mise en relation", points: 8, icon: Users, color: "text-blue-500" },
-                { label: "Partage de réseau", points: 6, icon: Briefcase, color: "text-orange-500" },
-                { label: "Recommandation", points: 5, icon: Star, color: "text-yellow-500" },
-                { label: "Échange de services", points: 5, icon: Zap, color: "text-green-500" },
-                { label: "Synergies", points: 3, icon: TrendingUp, color: "text-indigo-500" },
-                { label: "Engagement Social", points: 2, icon: MessageCircle, color: "text-pink-500" },
-                { label: "Trouver des clients", points: 10, icon: Target, color: "text-red-500" },
-                { label: "Faire un Live ensemble", points: 9, icon: Play, color: "text-purple-500" },
-            ].map((opp, i) => (
-                <div key={i} className="flex items-center gap-2 text-sm font-bold text-slate-700 bg-white px-3 py-1.5 rounded-full border border-slate-100 shadow-sm shrink-0">
-                    <opp.icon className={cn("h-4 w-4", opp.color)} />
-                    <span>{opp.label}</span>
-                    <span className="bg-slate-100 text-slate-500 text-[10px] px-1.5 py-0.5 rounded ml-1">+{opp.points} pts</span>
-                </div>
-            ))}
-         </div>
-      </div>
+      {/* --- 1.5 VALUE EXCHANGE GRID (NEW) --- */}
+      <section className="py-16 bg-slate-50 border-y border-slate-200">
+        <div className="container mx-auto px-4">
+           <div className="text-center mb-10">
+              <h2 className="text-2xl md:text-3xl font-black text-slate-900 mb-2">Tout ce que vous pouvez obtenir (et donner)</h2>
+              <p className="text-slate-500">Chaque action nourrit votre Score de Confiance.</p>
+           </div>
+           
+           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-4 gap-4 max-w-5xl mx-auto">
+              {[
+                { label: "Trouver des clients", points: 10, icon: Target, color: "text-red-600", bg: "bg-red-50", border: "border-red-100" },
+                { label: "Faire un Live ensemble", points: 9, icon: Play, color: "text-purple-600", bg: "bg-purple-50", border: "border-purple-100" },
+                { label: "Mise en relation", points: 8, icon: Users, color: "text-blue-600", bg: "bg-blue-50", border: "border-blue-100" },
+                { label: "Partage de réseau", points: 6, icon: Briefcase, color: "text-orange-600", bg: "bg-orange-50", border: "border-orange-100" },
+                { label: "Recommandation", points: 5, icon: Star, color: "text-yellow-600", bg: "bg-yellow-50", border: "border-yellow-100" },
+                { label: "Échange de services", points: 5, icon: Zap, color: "text-green-600", bg: "bg-green-50", border: "border-green-100" },
+                { label: "Synergies", points: 3, icon: TrendingUp, color: "text-indigo-600", bg: "bg-indigo-50", border: "border-indigo-100" },
+                { label: "Engagement Social", points: 2, icon: MessageCircle, color: "text-pink-600", bg: "bg-pink-50", border: "border-pink-100" },
+              ].map((opp, i) => (
+                <motion.div 
+                  key={i}
+                  initial={{ opacity: 0, y: 10 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.05 }}
+                  className={`flex flex-col items-center justify-center p-4 rounded-2xl border ${opp.border} ${opp.bg} hover:shadow-md transition-all cursor-default group`}
+                >
+                   <div className={`h-10 w-10 rounded-full bg-white flex items-center justify-center mb-2 shadow-sm ${opp.color} group-hover:scale-110 transition-transform`}>
+                      <opp.icon className="h-5 w-5" />
+                   </div>
+                   <span className="text-sm font-bold text-slate-700 text-center leading-tight mb-2">{opp.label}</span>
+                   <Badge className="bg-white hover:bg-white text-slate-900 border border-slate-200 text-[10px] font-black px-2 py-0.5 shadow-sm">
+                      +{opp.points} pts
+                   </Badge>
+                </motion.div>
+              ))}
+           </div>
+        </div>
+      </section>
 
       {/* --- 2. SCROLLYTELLING SECTION --- */}
       <section className="py-24 bg-slate-900 text-white overflow-hidden">
