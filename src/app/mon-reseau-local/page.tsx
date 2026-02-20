@@ -214,12 +214,11 @@ export default function MonReseauLocalPage() {
               </Badge>
               
               <h1 className="text-5xl md:text-6xl lg:text-7xl font-black text-slate-900 leading-[1.05] tracking-tight">
-                Ne restez plus <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">seul</span> face à votre business.
+                Popey Academy : Le système qui transforme <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">15 minutes</span> chaque jour en une opportunité réelle.
               </h1>
               
               <p className="text-xl text-slate-600 leading-relaxed max-w-2xl mx-auto lg:mx-0 font-medium">
-                1 jour. 1 rencontre. 1 opportunité.<br/>
-                Le premier réseau qui garantit des échanges réels entre entrepreneurs.
+                Arrêtez de prospecter dans le vide. Un échange de 15 minutes chaque jour avec un entrepreneur différent pour trouver vos futurs contrats dans son réseau.
               </p>
               
               <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start pt-2">
@@ -440,7 +439,65 @@ export default function MonReseauLocalPage() {
          </div>
       </section>
 
-      {/* --- 4. TESTIMONIALS / SOCIAL PROOF --- */}
+      {/* --- 4. RESULTS SECTION (NEW) --- */}
+      <section className="py-24 bg-blue-900 text-white relative overflow-hidden">
+        {/* Background Pattern */}
+        <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/graphy.png')]"></div>
+        
+        <div className="container mx-auto px-4 relative z-10">
+           <div className="text-center mb-16 max-w-3xl mx-auto">
+              <Badge className="bg-blue-800 text-blue-200 border-0 mb-6 uppercase tracking-widest px-3 py-1">Impact Réel</Badge>
+              <h2 className="text-3xl md:text-5xl font-black mb-6">Après 3 mois chez Popey Academy...</h2>
+              <p className="text-blue-200 text-xl">Voici ce qui se passe quand vous activez la puissance du réseau local.</p>
+           </div>
+
+           <div className="grid md:grid-cols-3 gap-8">
+              {[
+                { 
+                  icon: Users, 
+                  title: "Un Réseau Solide", 
+                  value: "+60", 
+                  desc: "Entrepreneurs locaux rencontrés personnellement.",
+                  sub: "Fini l'isolement" 
+                },
+                { 
+                  icon: Zap, 
+                  title: "Opportunités Qualifiées", 
+                  value: "12", 
+                  desc: "Mises en relation ciblées reçues en moyenne.",
+                  sub: "C'est 4/mois" 
+                },
+                { 
+                  icon: Briefcase, 
+                  title: "Chiffre d'Affaires", 
+                  value: "+20%", 
+                  desc: "D'augmentation moyenne constatée par nos membres.",
+                  sub: "ROI immédiat" 
+                }
+              ].map((item, i) => (
+                <motion.div 
+                  key={i}
+                  initial={{ opacity: 0, y: 30 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.1 }}
+                  className="bg-blue-800/50 backdrop-blur-sm p-8 rounded-3xl border border-blue-700/50 hover:bg-blue-800 transition-colors group"
+                >
+                   <div className="h-14 w-14 bg-blue-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                      <item.icon className="h-7 w-7 text-white" />
+                   </div>
+                   <div className="text-5xl font-black mb-2 text-transparent bg-clip-text bg-gradient-to-r from-white to-blue-200">{item.value}</div>
+                   <h3 className="text-xl font-bold mb-2 text-white">{item.title}</h3>
+                   <p className="text-blue-200 mb-4">{item.desc}</p>
+                   <div className="inline-block bg-blue-900/50 px-3 py-1 rounded-lg text-xs font-bold text-blue-300 uppercase tracking-wide border border-blue-800">
+                      {item.sub}
+                   </div>
+                </motion.div>
+              ))}
+           </div>
+        </div>
+      </section>
+
+      {/* --- 5. TESTIMONIALS / SOCIAL PROOF --- */}
       <section className="py-24 bg-slate-50 border-t border-slate-200">
          <div className="container mx-auto px-4">
             <div className="text-center mb-16">
@@ -494,7 +551,7 @@ export default function MonReseauLocalPage() {
          </div>
       </section>
 
-      {/* --- 5. PRICING & FINAL CTA --- */}
+      {/* --- 6. PRICING & FINAL CTA --- */}
       <section className="py-24 bg-white relative overflow-hidden">
          <div className="container mx-auto px-4 relative z-10">
             <div className="max-w-4xl mx-auto bg-slate-900 rounded-[3rem] p-8 md:p-16 text-center text-white shadow-2xl relative overflow-hidden">
