@@ -15,6 +15,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 
+import { AuthDialog } from "@/components/auth-dialog";
+
 // --- ANIMATED COMPONENTS ---
 
 const AnimatedCounter = ({ value, label, suffix = "" }: { value: number, label: string, suffix?: string }) => {
@@ -64,29 +66,42 @@ const StickyCTA = () => {
 
   return (
     <AnimatePresence>
-      {isVisible && (
-        <motion.div
-          initial={{ y: -100, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          exit={{ y: -100, opacity: 0 }}
-          className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-md border-b border-slate-200 shadow-sm py-3 px-4"
-        >
-          <div className="container mx-auto flex items-center justify-between max-w-5xl">
-            <div className="flex items-center gap-2 font-black text-slate-900 text-sm md:text-base">
-              <div className="bg-blue-600 text-white p-1 rounded-md">
-                <Users className="h-4 w-4" />
-              </div>
-              <span className="hidden md:inline">Mon Réseau Local</span>
-            </div>
-            <div className="flex items-center gap-4">
-              <span className="text-sm font-bold text-slate-500 hidden md:inline">1€ les 3 premiers jours</span>
-              <Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-full px-6 shadow-lg shadow-blue-200/50">
-                Commencer maintenant
-              </Button>
-            </div>
+      <motion.div
+        className="fixed top-0 left-0 right-0 z-50 pointer-events-none"
+      >
+        <div className="container mx-auto max-w-7xl px-4 pointer-events-auto">
+          <div className="bg-white/90 backdrop-blur-md border border-slate-200 shadow-sm py-3 px-6 rounded-full mt-4 flex justify-between items-center max-w-5xl mx-auto">
+             <div className="flex items-center gap-2 font-black text-slate-900 text-sm md:text-base">
+                <div className="bg-blue-600 text-white p-1 rounded-md">
+                  <Users className="h-4 w-4" />
+                </div>
+                <span className="hidden md:inline">Mon Réseau Local</span>
+             </div>
+             <div className="flex items-center gap-4">
+                 <AuthDialog 
+                   mode="login" 
+                   trigger={
+                     <Button variant="ghost" className="text-slate-600 font-bold hover:text-blue-600 h-9">
+                       Connexion
+                     </Button>
+                   } 
+                 />
+                 
+                 <div className={cn("flex items-center gap-4")}>
+                    {isVisible && <span className="text-xs font-bold text-slate-500 hidden lg:inline">1€ les 3 premiers jours</span>}
+                    <AuthDialog 
+                      mode="signup"
+                      trigger={
+                        <Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-full px-6 shadow-lg shadow-blue-200/50">
+                          Commencer
+                        </Button>
+                      }
+                    />
+                 </div>
+             </div>
           </div>
-        </motion.div>
-      )}
+        </div>
+      </motion.div>
     </AnimatePresence>
   );
 };
@@ -246,10 +261,15 @@ export default function MonReseauLocalPage() {
               </p>
               
               <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start pt-2">
-                <Button size="lg" className="h-16 px-10 bg-blue-600 hover:bg-blue-500 text-white font-black text-lg rounded-full shadow-2xl shadow-blue-300 hover:scale-105 transition-all duration-300 ring-4 ring-blue-50">
-                  Commencer maintenant
-                  <ArrowRight className="ml-2 h-5 w-5" />
-                </Button>
+                <AuthDialog 
+                  mode="signup"
+                  trigger={
+                    <Button size="lg" className="h-16 px-10 bg-blue-600 hover:bg-blue-500 text-white font-black text-lg rounded-full shadow-2xl shadow-blue-300 hover:scale-105 transition-all duration-300 ring-4 ring-blue-50">
+                      Commencer maintenant
+                      <ArrowRight className="ml-2 h-5 w-5" />
+                    </Button>
+                  }
+                />
                 <div className="flex items-center justify-center gap-2 text-sm font-bold text-slate-500 h-16 px-4">
                   <span className="flex h-2 w-2 rounded-full bg-green-500 animate-pulse"></span>
                   342 entrepreneurs en ligne
@@ -673,9 +693,14 @@ export default function MonReseauLocalPage() {
                      <li className="flex items-center gap-2 text-sm"><CheckCircle2 className="h-4 w-4 text-green-400" /> Accès Dashboard Complet</li>
                      <li className="flex items-center gap-2 text-sm"><CheckCircle2 className="h-4 w-4 text-green-400" /> Score de Confiance</li>
                   </ul>
-                  <Button className="w-full h-12 bg-white text-slate-900 hover:bg-slate-100 font-black rounded-xl">
-                     Je profite de l'offre
-                  </Button>
+                  <AuthDialog 
+                    mode="signup"
+                    trigger={
+                      <Button className="w-full h-12 bg-white text-slate-900 hover:bg-slate-100 font-black rounded-xl">
+                        Je profite de l'offre
+                      </Button>
+                    }
+                  />
                </div>
 
                <p className="text-slate-500 text-sm">Garantie satisfait ou remboursé sous 14 jours.</p>
