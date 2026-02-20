@@ -28,6 +28,42 @@ export async function getTrustScore() {
   return scoreData;
 }
 
+export async function getCredits() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return [];
+
+  // Opportunities I GAVE that are VALIDATED
+  const { data } = await supabase
+    .from("network_opportunities")
+    .select("*")
+    .eq("giver_id", user.id)
+    .eq("status", "validated")
+    .order("created_at", { ascending: true });
+
+  if (!data || data.length === 0) return [];
+
+  // Fetch profiles
+  const userIds = data.map((d: any) => d.receiver_id);
+  const { data: profiles } = await supabase
+    .from("profiles")
+    .select("id, display_name, avatar_url")
+    .in("id", userIds);
+    
+  const profileMap = new Map(profiles?.map((p: any) => [p.id, p]));
+
+  return data.map((opp: any) => {
+    const partner = profileMap.get(opp.receiver_id);
+    return {
+      id: opp.id,
+      partner: partner?.display_name || "Membre",
+      avatar: partner?.avatar_url,
+      reason: opp.type,
+      date: new Date(opp.created_at).toLocaleDateString('fr-FR')
+    };
+  });
+}
+
 export async function getDebts() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -36,21 +72,27 @@ export async function getDebts() {
 
   // Debts = Opportunities received > 30 days ago AND NOT (returned in some way)
   // For MVP: We just list opportunities received that are validated
-  // In a real system, we'd need to link "Opportunity A (Received)" -> "Opportunity B (Given back)"
   
   const { data } = await supabase
     .from("network_opportunities")
-    .select(`
-      *,
-      giver:giver_id(display_name, avatar_url)
-    `)
+    .select("*")
     .eq("receiver_id", user.id)
     .eq("status", "validated")
     .order("created_at", { ascending: true }); // Oldest first
 
-  if (!data) return [];
+  if (!data || data.length === 0) return [];
+
+  // Fetch profiles manually
+  const userIds = data.map((d: any) => d.giver_id);
+  const { data: profiles } = await supabase
+    .from("profiles")
+    .select("id, display_name, avatar_url")
+    .in("id", userIds);
+    
+  const profileMap = new Map(profiles?.map((p: any) => [p.id, p]));
 
   return data.map((opp: any) => {
+    const partner = profileMap.get(opp.giver_id);
     const created = new Date(opp.created_at);
     const deadline = new Date(created);
     deadline.setDate(deadline.getDate() + 30);
@@ -60,8 +102,8 @@ export async function getDebts() {
 
     return {
       id: opp.id,
-      partner: opp.giver?.display_name || "Membre",
-      avatar: opp.giver?.avatar_url,
+      partner: partner?.display_name || "Membre",
+      avatar: partner?.avatar_url,
       reason: opp.type,
       daysLeft,
       urgent: daysLeft < 5

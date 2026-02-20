@@ -78,12 +78,12 @@ export function DailyMatchCard({ match }: DailyMatchCardProps) {
 
           <div className="mt-8 flex flex-wrap gap-3">
             {match.type === 'call_out' ? (
-               <a href={`tel:${match.phone}`}>
-                 <Button size="lg" className="bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg shadow-blue-200 px-8 h-12">
+               <Button size="lg" className="bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg shadow-blue-200 px-8 h-12" asChild>
+                 <a href={`tel:${match.phone}`}>
                    <Phone className="mr-2 h-5 w-5" /> 
                    Appeler {match.name.split(' ')[0]} ({match.phone || "N/A"})
-                 </Button>
-               </a>
+                 </a>
+               </Button>
             ) : (
                <Button size="lg" disabled className="bg-slate-100 text-slate-400 font-bold rounded-xl px-8 h-12">
                  <Phone className="mr-2 h-5 w-5" /> 

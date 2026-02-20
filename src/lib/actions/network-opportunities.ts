@@ -72,11 +72,7 @@ export async function getOpportunities(filter: 'all' | 'received' | 'given' = 'a
 
   let query = supabase
     .from("network_opportunities")
-    .select(`
-      *,
-      giver:giver_id(id, display_name, avatar_url, trade),
-      receiver:receiver_id(id, display_name, avatar_url, trade)
-    `)
+    .select("*")
     .order("created_at", { ascending: false });
 
   if (filter === 'received') {
@@ -88,23 +84,44 @@ export async function getOpportunities(filter: 'all' | 'received' | 'given' = 'a
     query = query.or(`giver_id.eq.${user.id},receiver_id.eq.${user.id}`);
   }
 
-  const { data, error } = await query;
+  const { data: opportunities, error } = await query;
 
-  if (error) {
+  if (error || !opportunities) {
     console.error("Error fetching opportunities:", error);
     return [];
   }
 
-  return data.map((opp: any) => ({
-    id: opp.id,
-    type: opp.type,
-    points: opp.points,
-    description: opp.details, // Mapping details to description for UI
-    partner: opp.giver_id === user.id ? opp.receiver : opp.giver,
-    date: new Date(opp.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' }),
-    status: opp.status,
-    direction: opp.giver_id === user.id ? 'given' : 'received'
-  }));
+  // 2. Collect User IDs to fetch profiles manually (avoid join issues)
+  const userIds = new Set<string>();
+  opportunities.forEach((opp: any) => {
+    userIds.add(opp.giver_id);
+    userIds.add(opp.receiver_id);
+  });
+
+  // 3. Fetch Profiles
+  const { data: profiles } = await supabase
+    .from("profiles")
+    .select("id, display_name, avatar_url, trade")
+    .in("id", Array.from(userIds));
+
+  const profileMap = new Map(profiles?.map((p: any) => [p.id, p]));
+
+  return opportunities.map((opp: any) => {
+    const isGiver = opp.giver_id === user.id;
+    const partnerId = isGiver ? opp.receiver_id : opp.giver_id;
+    const partner = profileMap.get(partnerId) || { display_name: "Membre Inconnu", trade: "N/A" };
+
+    return {
+      id: opp.id,
+      type: opp.type,
+      points: opp.points,
+      description: opp.details, 
+      partner: partner,
+      date: new Date(opp.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' }),
+      status: opp.status,
+      direction: isGiver ? 'given' : 'received'
+    };
+  });
 }
 
 export async function updateOpportunityStatus(id: string, status: 'validated' | 'rejected') {

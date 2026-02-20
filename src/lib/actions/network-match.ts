@@ -24,30 +24,36 @@ export async function getDailyMatch() {
   if (!match) return null;
 
   const isUser1 = match.user1_id === user.id;
-  const partner = isUser1 ? match.user2 : match.user1;
+  const partnerId = isUser1 ? match.user2_id : match.user1_id;
 
-  // Determine who calls (arbitrary logic: user1 calls user2)
-  const type = isUser1 ? 'call_out' : 'call_in';
-
-  // Fetch partner's trust score
+  // 2. Fetch Partner Profile Manually (Avoid join issues with auth.users)
+  const { data: partnerProfile } = await supabase
+    .from("profiles")
+    .select("id, display_name, avatar_url, trade, city, bio, phone")
+    .eq("id", partnerId)
+    .single();
+    
+  // 3. Fetch Partner Trust Score
   const { data: trustScore } = await supabase
     .from("trust_scores")
     .select("score")
-    .eq("user_id", partner.id)
+    .eq("user_id", partnerId)
     .single();
+
+  const partner = partnerProfile || { display_name: "Membre Inconnu", trade: "N/A", avatar_url: undefined, phone: undefined, city: "En ligne" };
 
   return {
     id: match.id,
-    partnerId: partner.id,
+    partnerId: partnerId,
     name: partner.display_name,
     job: partner.trade || "Membre",
-    city: "En ligne", // Or fetch from profile
+    city: partner.city || "En ligne",
     score: trustScore?.score || 5.0,
-    time: "14:00", // Default or stored
-    type,
+    time: match.time || "14:00",
+    type: isUser1 ? 'call_out' : 'call_in',
     phone: partner.phone,
     avatar: partner.avatar_url,
-    tags: ["Entrepreneur"],
+    tags: [partner.trade || "Entrepreneur"],
     status: match.status
   };
 }
@@ -81,29 +87,13 @@ export async function rateMatch(matchId: string, rating: number, feedback: strin
 
   const partnerId = match.user1_id === user.id ? match.user2_id : match.user1_id;
 
-  // 3. Update Trust Score (Simple logic: +0.1 per interaction)
-  // In a real app, we would average the ratings.
+  // 3. Update Trust Score using RPC
   const { error: scoreError } = await supabase.rpc('increment_trust_score', { 
     target_user_id: partnerId,
     amount: 0.1 
   });
 
-  // If RPC doesn't exist, we can do a manual update (less safe for concurrency)
-  if (scoreError) {
-    console.warn("RPC increment_trust_score missing, trying manual update");
-    const { data: currentScore } = await supabase
-      .from("trust_scores")
-      .select("score")
-      .eq("user_id", partnerId)
-      .single();
-      
-    if (currentScore) {
-       await supabase
-        .from("trust_scores")
-        .update({ score: Math.min(5.0, currentScore.score + 0.1) })
-        .eq("user_id", partnerId);
-    }
-  }
+  if (scoreError) console.error("Score update failed:", scoreError);
 
   return { success: true };
 }
