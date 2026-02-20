@@ -51,10 +51,13 @@ async function getNetworkStats() {
       .in('id', userIds);
     
     const profileMap = new Map(profiles?.map(p => [p.id, p]));
-    recentProfiles = recentMembers.map(m => ({
-      ...m,
-      profile: profileMap.get(m.user_id)
-    }));
+    recentProfiles = recentMembers.map(m => {
+      const profile = profileMap.get(m.user_id);
+      return {
+        ...m,
+        profile: profile || { display_name: "Inconnu", trade: "Profil manquant", city: "", phone: "" }
+      };
+    });
   }
 
   return {
