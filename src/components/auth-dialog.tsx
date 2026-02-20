@@ -88,26 +88,38 @@ export function AuthDialog({ mode = "signup", trigger, defaultOpen = false }: Au
       if (authError) throw authError;
 
       if (authData.user) {
-         // Optional: Upsert pre-registration if needed for admin dashboard visibility of "leads"
-         // But the main user flow is now handled by DB triggers.
-         /* 
-         await supabase
-            .from('pre_registrations')
+        // 2. Create/Update Profile (Manual JS fallback because triggers can be tricky)
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .upsert({
+             id: authData.user.id,
+             display_name: signupData.fullName,
+             email: signupData.email,
+             city: signupData.city, 
+             trade: signupData.trade,
+             phone: signupData.phone,
+             role: 'member'
+          })
+          .select()
+          .single();
+
+        // 3. Initialize Network Settings
+        await supabase
+            .from('network_settings')
             .upsert({
-               email: signupData.email,
-               first_name: signupData.fullName.split(' ')[0],
-               last_name: signupData.fullName.split(' ').slice(1).join(' '),
-               city: signupData.city,
-               phone: signupData.phone,
-               current_job: signupData.trade,
-               program_type: 'job_seeker', 
-               status: 'approved',
-               user_id: authData.user.id
-            }, { onConflict: 'email' })
-            .then(({ error }) => {
-                if (error) console.error("Pre-reg sync error (non-blocking):", error);
-            });
-         */
+               user_id: authData.user.id,
+               status: 'active',
+               frequency_per_week: 5
+            }, { onConflict: 'user_id' });
+            
+        // 4. Initialize Trust Score
+        const { error: trustError } = await supabase
+            .from('trust_scores')
+            .upsert({
+               user_id: authData.user.id,
+               score: 5.0
+            }, { onConflict: 'user_id' });
+        // Ignore RLS error on trust_scores if any
       }
 
       toast({ title: "Compte créé !", description: "Bienvenue sur Mon Réseau Local." });
