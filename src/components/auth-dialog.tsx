@@ -90,6 +90,7 @@ export function AuthDialog({ mode = "signup", trigger, defaultOpen = false }: Au
       if (authData.user) {
          // Optional: Upsert pre-registration if needed for admin dashboard visibility of "leads"
          // But the main user flow is now handled by DB triggers.
+         /* 
          await supabase
             .from('pre_registrations')
             .upsert({
@@ -106,6 +107,7 @@ export function AuthDialog({ mode = "signup", trigger, defaultOpen = false }: Au
             .then(({ error }) => {
                 if (error) console.error("Pre-reg sync error (non-blocking):", error);
             });
+         */
       }
 
       toast({ title: "Compte créé !", description: "Bienvenue sur Mon Réseau Local." });
