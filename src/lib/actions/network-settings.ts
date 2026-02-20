@@ -19,14 +19,25 @@ export async function getNetworkSettings() {
     // Default settings if not found
     return {
       notifications: true,
-      visibility: "public"
+      visibility: "public",
+      frequency_per_week: 5,
+      preferred_days: ['mon', 'tue', 'wed', 'thu', 'fri'],
+      preferred_slots: ['09-11', '14-16'],
+      status: 'active'
     };
   }
 
   return settings;
 }
 
-export async function updateNetworkSettings(data: { notifications?: boolean; visibility?: string }) {
+export async function updateNetworkSettings(data: { 
+  notifications?: boolean; 
+  visibility?: string;
+  frequency_per_week?: number;
+  preferred_days?: string[];
+  preferred_slots?: string[];
+  status?: string;
+}) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 

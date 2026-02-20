@@ -1,18 +1,25 @@
 import { getDailyMatch } from "@/lib/actions/network-match";
 import { getTrustScore } from "@/lib/actions/network-trust";
+import { getNetworkSettings } from "@/lib/actions/network-settings";
+import { getPotentialOpportunitiesCount } from "@/lib/actions/network-opportunities";
 import { DailyMatchCard } from "@/components/dashboard/daily-match-card";
 import { AvailabilitySelector } from "@/components/dashboard/availability-selector";
 import { TrustScoreCard } from "@/components/dashboard/trust-score-card";
+import { FrequencyControl } from "@/components/dashboard/frequency-control";
 
 export const dynamic = 'force-dynamic';
 
 export default async function DashboardHome() {
   let match = null;
   let trustScore = null;
+  let settings = null;
+  let potentialCount = 0;
 
   try {
     match = await getDailyMatch();
     trustScore = await getTrustScore();
+    settings = await getNetworkSettings();
+    potentialCount = await getPotentialOpportunitiesCount();
   } catch (e) {
     console.error(e);
   }
@@ -34,11 +41,16 @@ export default async function DashboardHome() {
       {/* 2. DAILY MATCH CARD (HERO) */}
       <DailyMatchCard match={match} />
 
-      {/* 3. AVAILABILITY & TRUST */}
+      {/* 3. CONTROL & AVAILABILITY & TRUST */}
       <div className="grid md:grid-cols-2 gap-8">
-        <AvailabilitySelector />
+        <FrequencyControl settings={settings} potentialCount={potentialCount} />
         <TrustScoreCard scoreData={trustScore} />
       </div>
+
+      {/* 4. AVAILABILITY (If not paused) */}
+      {settings?.status !== 'pause' && (
+        <AvailabilitySelector />
+      )}
     </div>
   );
 }

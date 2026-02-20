@@ -37,6 +37,33 @@ export async function createOpportunity(data: {
   return { success: true };
 }
 
+export async function getPotentialOpportunitiesCount() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  
+  if (!user) return 0;
+
+  // Simple logic: Days since registration * 1
+  // We need registration date. For now we use created_at from auth.users or profiles.
+  
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("created_at")
+    .eq("id", user.id)
+    .single();
+
+  if (!profile) return 0;
+
+  const created = new Date(profile.created_at);
+  const now = new Date();
+  
+  // Diff in days
+  const diffTime = Math.abs(now.getTime() - created.getTime());
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+  
+  return diffDays; 
+}
+
 export async function getOpportunities(filter: 'all' | 'received' | 'given' = 'all') {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
