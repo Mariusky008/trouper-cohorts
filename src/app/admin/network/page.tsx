@@ -80,7 +80,7 @@ export default async function AdminNetworkPage() {
            <p className="text-slate-500">Supervision des interactions et de la santé du réseau.</p>
         </div>
         <Badge variant="outline" className="px-3 py-1 bg-white border-purple-200 text-purple-700 font-bold">
-          v1.0.0
+          v1.1.0
         </Badge>
       </div>
 
