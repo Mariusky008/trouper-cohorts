@@ -47,7 +47,7 @@ async function getNetworkStats() {
     const userIds = recentMembers.map(m => m.user_id);
     const { data: profiles } = await supabase
       .from('profiles')
-      .select('id, display_name, email, trade, city')
+      .select('id, display_name, email, trade, city, phone')
       .in('id', userIds);
     
     const profileMap = new Map(profiles?.map(p => [p.id, p]));
@@ -181,7 +181,12 @@ export default async function AdminNetworkPage() {
                     </div>
                     <div className="overflow-hidden">
                       <div className="text-sm font-bold text-slate-900 truncate">{m.profile?.display_name || "Utilisateur"}</div>
-                      <div className="text-xs text-slate-500 truncate">{m.profile?.trade || "Non renseigné"} • {m.profile?.city || "Non renseigné"}</div>
+                      <div className="text-xs text-slate-500 truncate">
+                        {m.profile?.trade || "Non renseigné"} • {m.profile?.city || "Non renseigné"}
+                      </div>
+                      <div className="text-xs text-blue-600 font-mono">
+                        {m.profile?.phone || "Sans tél"}
+                      </div>
                     </div>
                   </div>
                 ))
