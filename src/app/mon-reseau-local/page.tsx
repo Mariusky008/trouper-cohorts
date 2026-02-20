@@ -209,11 +209,11 @@ export default function MonReseauLocalPage() {
               </Badge>
               
               <h1 className="text-5xl md:text-6xl lg:text-7xl font-black text-slate-900 leading-[1.05] tracking-tight">
-                Popey Academy : Le système qui transforme <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">15 minutes</span> chaque jour en une opportunité réelle.
+                L'appel quotidien de <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">15 minutes</span> pour créer une opportunité réelle.
               </h1>
               
               <p className="text-xl text-slate-600 leading-relaxed max-w-2xl mx-auto lg:mx-0 font-medium">
-                Arrêtez de prospecter dans le vide. Un échange de 15 minutes chaque jour avec un entrepreneur différent pour trouver vos futurs contrats dans son réseau.
+                Popey Academy : Arrêtez de prospecter dans le vide. Matchez chaque jour avec un entrepreneur local différent et accédez à son réseau pour vos futurs contrats.
               </p>
               
               <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start pt-2">
