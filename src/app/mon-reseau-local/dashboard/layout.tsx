@@ -21,7 +21,12 @@ const NAV_ITEMS = [
   { label: "Paramètres", href: "/mon-reseau-local/dashboard/settings", icon: Settings },
 ];
 
+import { createClient } from "@/lib/supabase/client";
+import { useRouter } from "next/navigation";
+
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+  const router = useRouter();
+  const supabase = createClient();
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -29,6 +34,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   useEffect(() => {
     setIsMobileMenuOpen(false);
   }, [pathname]);
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    router.push("/login");
+  };
 
   return (
     <div className="min-h-screen bg-slate-50 flex font-sans text-slate-900 selection:bg-blue-100 selection:text-blue-900">
@@ -84,7 +94,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 <ShieldCheck className="h-3 w-3 text-orange-500" /> 4.8/5
               </div>
             </div>
-            <LogOut className="h-4 w-4 text-slate-400 hover:text-red-500 transition-colors" />
+            <LogOut 
+              className="h-4 w-4 text-slate-400 hover:text-red-500 transition-colors" 
+              onClick={handleSignOut}
+            />
           </div>
         </div>
       </aside>
@@ -146,7 +159,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     <div className="text-slate-500">Architecte • Paris</div>
                   </div>
                 </div>
-                <Button variant="destructive" className="w-full mt-4 h-12 rounded-xl font-bold">
+                <Button 
+                  variant="destructive" 
+                  className="w-full mt-4 h-12 rounded-xl font-bold"
+                  onClick={handleSignOut}
+                >
                   <LogOut className="mr-2 h-4 w-4" /> Se déconnecter
                 </Button>
             </div>
