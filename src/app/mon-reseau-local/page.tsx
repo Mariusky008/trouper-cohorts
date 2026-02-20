@@ -449,8 +449,8 @@ export default function MonReseauLocalPage() {
                 <p>© 2024 Mon Réseau Local. Tous droits réservés.</p>
             </div>
         </footer>
-      </main>
 
+      </main>
     </div>
   );
 }
