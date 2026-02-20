@@ -238,11 +238,11 @@ export default function MonReseauLocalPage() {
               </Badge>
               
               <h1 className="text-5xl md:text-6xl lg:text-7xl font-black text-slate-900 leading-[1.05] tracking-tight">
-                L'appel quotidien de <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">15 minutes</span> pour créer une opportunité réelle.
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">5 à 10 minutes</span> par jour pour trouver vos prochains clients et booster votre visibilité.
               </h1>
               
               <p className="text-xl text-slate-600 leading-relaxed max-w-2xl mx-auto lg:mx-0 font-medium">
-                Popey Academy : Arrêtez de prospecter dans le vide. Matchez chaque jour avec un entrepreneur local différent et accédez à son réseau pour vos futurs contrats, trouver des synergies, des recommandations, partager vos réseaux sociaux, etc.
+                Arrêtez de prospecter dans le vide. Chaque jour, rencontrez un entrepreneur local différent et transformez son réseau en opportunités pour vous : clients, recommandations, synergies concrètes.
               </p>
               
               <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start pt-2">
@@ -275,6 +275,59 @@ export default function MonReseauLocalPage() {
             </motion.div>
 
           </div>
+        </div>
+      </section>
+
+      {/* --- 1.2 REASSURANCE BLOCK (ANTI-FATIGUE) --- */}
+      <section className="py-12 bg-white border-b border-slate-100">
+        <div className="container mx-auto px-4 max-w-5xl">
+           <div className="bg-slate-50 rounded-3xl p-8 md:p-12 border border-slate-200 relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-green-100 rounded-full blur-3xl opacity-50"></div>
+              
+              <div className="relative z-10 grid md:grid-cols-2 gap-12 items-center">
+                 <div>
+                    <Badge className="bg-green-100 text-green-700 border-green-200 mb-4 px-3 py-1 font-bold uppercase tracking-wider">0 Stress</Badge>
+                    <h2 className="text-3xl font-black text-slate-900 mb-4">Vous gardez le contrôle total.</h2>
+                    <ul className="space-y-3 mb-6">
+                       <li className="flex items-center gap-3 font-medium text-slate-700">
+                          <CheckCircle2 className="h-5 w-5 text-green-600" /> Choisissez vos horaires et jours préférés
+                       </li>
+                       <li className="flex items-center gap-3 font-medium text-slate-700">
+                          <CheckCircle2 className="h-5 w-5 text-green-600" /> Reportez quand vous voulez
+                       </li>
+                       <li className="flex items-center gap-3 font-medium text-slate-700">
+                          <CheckCircle2 className="h-5 w-5 text-green-600" /> Pause possible à tout moment
+                       </li>
+                    </ul>
+                    <p className="text-slate-500 text-sm italic">"L'objectif est de supprimer la peur de la contrainte. C'est votre réseau, c'est votre rythme."</p>
+                 </div>
+
+                 <div className="bg-white rounded-2xl p-6 shadow-lg border border-slate-100">
+                    <div className="text-xs font-bold text-slate-400 uppercase mb-4 text-center">Choisissez votre rythme</div>
+                    <div className="space-y-3">
+                       <div className="flex items-center justify-between p-3 rounded-xl border border-slate-100 bg-slate-50 opacity-60">
+                          <span className="font-bold text-slate-600">Mode Léger</span>
+                          <span className="text-xs font-bold bg-white px-2 py-1 rounded border border-slate-200">3 échanges / sem</span>
+                       </div>
+                       <div className="flex items-center justify-between p-3 rounded-xl border-2 border-blue-100 bg-blue-50/50 relative">
+                          <div className="flex items-center gap-2">
+                             <div className="h-3 w-3 rounded-full bg-blue-600 shadow-sm"></div>
+                             <span className="font-bold text-blue-900">Mode Standard</span>
+                          </div>
+                          <span className="text-xs font-bold bg-white text-blue-700 px-2 py-1 rounded border border-blue-100">4 échanges / sem</span>
+                          <div className="absolute -right-2 -top-2 bg-blue-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm">Recommandé</div>
+                       </div>
+                       <div className="flex items-center justify-between p-3 rounded-xl border border-slate-100 bg-slate-50 opacity-60">
+                          <span className="font-bold text-slate-600">Mode Intensif</span>
+                          <span className="text-xs font-bold bg-white px-2 py-1 rounded border border-slate-200">5 échanges / sem</span>
+                       </div>
+                    </div>
+                    <div className="mt-6 text-center">
+                       <span className="text-xs font-bold text-slate-400 uppercase tracking-wide">Modifier à tout moment</span>
+                    </div>
+                 </div>
+              </div>
+           </div>
         </div>
       </section>
       
