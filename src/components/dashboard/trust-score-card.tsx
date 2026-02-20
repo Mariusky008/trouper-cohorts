@@ -5,15 +5,32 @@ import { ShieldCheck, Star, TrendingUp, ThumbsUp, Clock } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 
-// Mock stats for now, will connect to backend later
-const STATS = [
-  { label: "Score de Confiance", value: "4.6/5", icon: Star, color: "text-orange-500", bg: "bg-orange-50", border: "border-orange-100" },
-  { label: "Opportunités Reçues", value: "12", icon: TrendingUp, color: "text-green-500", bg: "bg-green-50", border: "border-green-100" },
-  { label: "Opportunités Rendues", value: "10", icon: ThumbsUp, color: "text-blue-500", bg: "bg-blue-50", border: "border-blue-100" },
-  { label: "Dettes en cours", value: "2", icon: Clock, color: "text-red-500", bg: "bg-red-50", border: "border-red-100" },
-];
+interface TrustScoreProps {
+  scoreData?: {
+    score: number;
+    opportunities_given: number;
+    opportunities_received: number;
+    debt_level: number;
+  } | null;
+}
 
-export function TrustScoreCard() {
+export function TrustScoreCard({ scoreData }: TrustScoreProps) {
+  // Use real data or defaults
+  const score = scoreData?.score ?? 5.0;
+  const received = scoreData?.opportunities_received ?? 0;
+  const given = scoreData?.opportunities_given ?? 0;
+  const debts = scoreData?.debt_level ?? 0;
+
+  // Calculate progression (arbitrary logic for MVP: 10 given opps = Level Up)
+  const progress = Math.min(100, (given / 10) * 100);
+
+  const stats = [
+    { label: "Score de Confiance", value: `${score.toFixed(1)}/5`, icon: Star, color: "text-orange-500", bg: "bg-orange-50", border: "border-orange-100" },
+    { label: "Opportunités Reçues", value: received.toString(), icon: TrendingUp, color: "text-green-500", bg: "bg-green-50", border: "border-green-100" },
+    { label: "Opportunités Rendues", value: given.toString(), icon: ThumbsUp, color: "text-blue-500", bg: "bg-blue-50", border: "border-blue-100" },
+    { label: "Dettes en cours", value: debts.toString(), icon: Clock, color: "text-red-500", bg: "bg-red-50", border: "border-red-100" },
+  ];
+
   return (
     <motion.div 
       initial={{ opacity: 0, y: 20 }}
@@ -32,7 +49,7 @@ export function TrustScoreCard() {
       </div>
 
       <div className="grid grid-cols-2 gap-4 flex-1">
-        {STATS.map((stat, i) => (
+        {stats.map((stat, i) => (
           <div key={i} className={cn("p-4 rounded-2xl border flex flex-col justify-center", stat.bg, stat.border)}>
             <stat.icon className={cn("h-6 w-6 mb-3", stat.color)} />
             <div className="text-2xl font-black text-slate-900">{stat.value}</div>
@@ -44,9 +61,9 @@ export function TrustScoreCard() {
       <div className="mt-6 pt-6 border-t border-slate-100">
         <div className="flex items-center justify-between text-sm mb-2">
            <span className="font-bold text-slate-700">Progression vers le niveau "Connecteur"</span>
-           <span className="font-bold text-blue-600">85%</span>
+           <span className="font-bold text-blue-600">{Math.round(progress)}%</span>
         </div>
-        <Progress value={85} className="h-2" />
+        <Progress value={progress} className="h-2" />
       </div>
     </motion.div>
   );

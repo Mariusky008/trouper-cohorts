@@ -1,4 +1,5 @@
 import { getDailyMatch } from "@/lib/actions/network-match";
+import { getTrustScore } from "@/lib/actions/network-trust";
 import { DailyMatchCard } from "@/components/dashboard/daily-match-card";
 import { AvailabilitySelector } from "@/components/dashboard/availability-selector";
 import { TrustScoreCard } from "@/components/dashboard/trust-score-card";
@@ -7,8 +8,11 @@ export const dynamic = 'force-dynamic';
 
 export default async function DashboardHome() {
   let match = null;
+  let trustScore = null;
+
   try {
     match = await getDailyMatch();
+    trustScore = await getTrustScore();
   } catch (e) {
     console.error(e);
   }
@@ -33,7 +37,7 @@ export default async function DashboardHome() {
       {/* 3. AVAILABILITY & TRUST */}
       <div className="grid md:grid-cols-2 gap-8">
         <AvailabilitySelector />
-        <TrustScoreCard />
+        <TrustScoreCard scoreData={trustScore} />
       </div>
     </div>
   );
