@@ -93,12 +93,12 @@ const StickyCTA = () => {
 
 const InteractiveMockup = () => {
   return (
-    <div className="relative w-full max-w-md mx-auto aspect-[4/5] perspective-1000">
+    <div className="relative w-full max-w-md mx-auto perspective-1000">
       <motion.div
         initial={{ rotateY: 0, rotateX: 0 }}
         whileHover={{ rotateY: 0, rotateX: 0 }}
         transition={{ type: "spring", stiffness: 100, damping: 20 }}
-        className="w-full h-full bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden relative flex flex-col"
+        className="w-full bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden relative flex flex-col"
       >
         {/* Mockup Header */}
         <div className="bg-slate-50 p-4 border-b border-slate-100 flex items-center justify-between">
