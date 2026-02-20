@@ -160,17 +160,22 @@ export default function MonReseauLocalPage() {
 
                 <div className="grid md:grid-cols-3 gap-6 mb-12">
                     {[
-                        { title: "Isolement", desc: "Personne avec qui partager les doutes et les victoires.", icon: Users },
-                        { title: "Manque de réseau", desc: "Cercle professionnel limité, peu de nouvelles rencontres.", icon: Target },
-                        { title: "Peu d'opportunités", desc: "Le bouche-à-oreille stagne, les affaires ralentissent.", icon: TrendingUp }
+                        { title: "Isolement", desc: "Personne avec qui partager les doutes et les victoires.", icon: Users, img: "https://images.unsplash.com/photo-1513151233558-d860c5398176?q=80&w=2070&auto=format&fit=crop" },
+                        { title: "Manque de réseau", desc: "Cercle professionnel limité, peu de nouvelles rencontres.", icon: Target, img: "https://images.unsplash.com/photo-1522071820081-009f0129c71c?q=80&w=2070&auto=format&fit=crop" },
+                        { title: "Peu d'opportunités", desc: "Le bouche-à-oreille stagne, les affaires ralentissent.", icon: TrendingUp, img: "https://images.unsplash.com/photo-1556761175-5973dc0f32e7?q=80&w=2664&auto=format&fit=crop" }
                     ].map((item, i) => (
                         <FadeIn key={i} delay={i * 0.1}>
-                            <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100 h-full">
-                                <div className="h-12 w-12 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm text-red-500">
-                                    <item.icon className="h-6 w-6" />
+                            <div className="bg-slate-50 rounded-2xl border border-slate-100 h-full overflow-hidden hover:shadow-lg transition-shadow">
+                                <div className="h-48 overflow-hidden">
+                                    <img src={item.img} alt={item.title} className="w-full h-full object-cover hover:scale-105 transition-transform duration-500" />
                                 </div>
-                                <h3 className="font-bold text-slate-900 mb-2">{item.title}</h3>
-                                <p className="text-sm text-slate-500">{item.desc}</p>
+                                <div className="p-6">
+                                    <div className="h-12 w-12 bg-white rounded-full flex items-center justify-center -mt-12 mb-4 shadow-md text-red-500 relative z-10 border-4 border-slate-50">
+                                        <item.icon className="h-6 w-6" />
+                                    </div>
+                                    <h3 className="font-bold text-slate-900 mb-2">{item.title}</h3>
+                                    <p className="text-sm text-slate-500">{item.desc}</p>
+                                </div>
                             </div>
                         </FadeIn>
                     ))}
@@ -231,17 +236,22 @@ export default function MonReseauLocalPage() {
 
                 <div className="grid md:grid-cols-4 gap-8">
                     {[
-                        { step: "1", title: "Inscription", desc: "Vous rejoignez le réseau en 2 minutes." },
-                        { step: "2", title: "Organisation", desc: "Nous planifions vos RDV quotidiens." },
-                        { step: "3", title: "Échange", desc: "Vous discutez 15 à 30 minutes en visio." },
-                        { step: "4", title: "Opportunités", desc: "Le réseau s'active, les contacts circulent." }
+                        { step: "1", title: "Inscription", desc: "Vous rejoignez le réseau en 2 minutes.", img: "https://images.unsplash.com/photo-1531545514256-b1400bc00f31?q=80&w=2574&auto=format&fit=crop" },
+                        { step: "2", title: "Organisation", desc: "Nous planifions vos RDV quotidiens.", img: "https://images.unsplash.com/photo-1506784983877-45594efa4cbe?q=80&w=2668&auto=format&fit=crop" },
+                        { step: "3", title: "Échange", desc: "Vous discutez 15 à 30 minutes en visio.", img: "https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?q=80&w=2574&auto=format&fit=crop" },
+                        { step: "4", title: "Opportunités", desc: "Le réseau s'active, les contacts circulent.", img: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=2671&auto=format&fit=crop" }
                     ].map((item, i) => (
                         <FadeIn key={i} delay={i * 0.1}>
-                            <div className="relative">
-                                <div className="text-6xl font-black text-slate-200 absolute -top-4 -left-2 z-0">{item.step}</div>
-                                <div className="relative z-10 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm h-full">
-                                    <h3 className="font-bold text-slate-900 text-lg mb-2">{item.title}</h3>
-                                    <p className="text-sm text-slate-500">{item.desc}</p>
+                            <div className="relative group">
+                                <div className="text-6xl font-black text-slate-100 absolute -top-4 -left-2 z-0">{item.step}</div>
+                                <div className="relative z-10 bg-white rounded-2xl border border-slate-200 shadow-sm h-full overflow-hidden hover:shadow-xl transition-all hover:-translate-y-1">
+                                    <div className="h-32 overflow-hidden">
+                                        <img src={item.img} alt={item.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                                    </div>
+                                    <div className="p-6">
+                                        <h3 className="font-bold text-slate-900 text-lg mb-2">{item.title}</h3>
+                                        <p className="text-sm text-slate-500">{item.desc}</p>
+                                    </div>
                                 </div>
                             </div>
                         </FadeIn>
