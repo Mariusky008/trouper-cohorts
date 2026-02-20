@@ -66,77 +66,41 @@ export function AuthDialog({ mode = "signup", trigger, defaultOpen = false }: Au
     }
   };
 
+import { registerNetworkUser } from "@/actions/network-registration";
+
+// ... existing code ...
+
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
     try {
-      // 1. Sign Up (Triggers will handle Profile, Network Settings, Trust Score)
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: signupData.email,
-        password: signupData.password,
-        options: {
-          data: {
-            full_name: signupData.fullName,
-            city: signupData.city,
-            trade: signupData.trade,
-            phone: signupData.phone
-          }
-        }
-      });
+      const formData = new FormData();
+      formData.append("email", signupData.email);
+      formData.append("password", signupData.password);
+      formData.append("fullName", signupData.fullName);
+      formData.append("city", signupData.city);
+      formData.append("trade", signupData.trade);
+      formData.append("phone", signupData.phone);
 
-      if (authError) throw authError;
+      const result = await registerNetworkUser(formData);
 
-      if (authData.user) {
-        // 2. Create/Update Profile
-        try {
-          await supabase
-            .from('profiles')
-            .upsert({
-               id: authData.user.id,
-               display_name: signupData.fullName,
-               email: signupData.email,
-               city: signupData.city, 
-               trade: signupData.trade,
-               phone: signupData.phone,
-               role: 'member'
-            })
-            .select()
-            .single();
-        } catch (e) {
-          console.warn("Profile creation warning:", e);
-        }
-
-        // 3. Initialize Network Settings
-        try {
-          await supabase
-            .from('network_settings')
-            .upsert({
-               user_id: authData.user.id,
-               status: 'active',
-               frequency_per_week: 5
-            }, { onConflict: 'user_id' });
-        } catch (e) {
-          console.warn("Network settings warning:", e);
-        }
-            
-        // 4. Initialize Trust Score
-        try {
-          await supabase
-            .from('trust_scores')
-            .upsert({
-               user_id: authData.user.id,
-               score: 5.0
-            }, { onConflict: 'user_id' });
-        } catch (e) {
-          console.warn("Trust score warning:", e);
-        }
-      }
+      if (result.error) throw new Error(result.error);
 
       toast({ title: "Compte créé !", description: "Bienvenue sur Mon Réseau Local." });
       setIsOpen(false);
-      router.push("/mon-reseau-local/dashboard");
-      router.refresh();
+      
+      // Auto login after registration (optional, but good UX)
+      // Since server action created the user, we just need to sign in client-side to get the session
+      const { error: loginError } = await supabase.auth.signInWithPassword({
+        email: signupData.email,
+        password: signupData.password,
+      });
+
+      if (!loginError) {
+        router.push("/mon-reseau-local/dashboard");
+        router.refresh();
+      }
 
     } catch (error: any) {
       toast({ 
