@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { NetworkMatch } from "@/types/network";
+import { RateMatchDialog } from "./rate-match-dialog";
 
 interface DailyMatchCardProps {
   match: any; // Using any for now to match the action return type
@@ -99,9 +100,7 @@ export function DailyMatchCard({ match }: DailyMatchCardProps) {
            
            <div className="w-full bg-white rounded-xl p-3 border border-slate-200 shadow-sm">
               <div className="text-xs font-bold text-slate-400 uppercase mb-2">Après l'appel</div>
-              <Button variant="ghost" className="w-full text-slate-600 hover:text-blue-600 hover:bg-blue-50 font-bold text-sm h-8">
-                Noter l'échange
-              </Button>
+              <RateMatchDialog matchId={match.id} partnerName={match.name} />
            </div>
         </div>
 
