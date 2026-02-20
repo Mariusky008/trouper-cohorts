@@ -35,7 +35,8 @@ export function AuthDialog({ mode = "signup", trigger, defaultOpen = false }: Au
     password: "",
     fullName: "",
     city: "",
-    trade: ""
+    trade: "",
+    phone: ""
   });
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -93,6 +94,7 @@ export function AuthDialog({ mode = "signup", trigger, defaultOpen = false }: Au
              email: signupData.email,
              city: signupData.city,
              trade: signupData.trade,
+             phone: signupData.phone,
              role: 'member'
           })
           .select()
@@ -122,7 +124,7 @@ export function AuthDialog({ mode = "signup", trigger, defaultOpen = false }: Au
       <DialogTrigger asChild>
         {trigger || <Button>Connexion</Button>}
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px] p-0 overflow-hidden bg-white border-slate-200">
+      <DialogContent className="sm:max-w-lg p-0 overflow-hidden bg-white border-slate-200">
         <div className="p-6">
           <DialogHeader className="mb-4">
              <DialogTitle className="text-2xl font-black text-slate-900 text-center">
@@ -185,14 +187,26 @@ export function AuthDialog({ mode = "signup", trigger, defaultOpen = false }: Au
                     />
                   </div>
                </div>
-               <div className="space-y-2">
-                 <Label>Votre Activité</Label>
-                 <Input 
-                   placeholder="Ex: Architecte, Coach, Dév..." 
-                   value={signupData.trade}
-                   onChange={(e) => setSignupData({...signupData, trade: e.target.value})}
-                   required
-                 />
+               <div className="grid grid-cols-2 gap-4">
+                 <div className="space-y-2">
+                   <Label>Votre Activité</Label>
+                   <Input 
+                     placeholder="Ex: Architecte..." 
+                     value={signupData.trade}
+                     onChange={(e) => setSignupData({...signupData, trade: e.target.value})}
+                     required
+                   />
+                 </div>
+                 <div className="space-y-2">
+                   <Label>Téléphone</Label>
+                   <Input 
+                     type="tel"
+                     placeholder="06 12 34 56 78" 
+                     value={signupData.phone}
+                     onChange={(e) => setSignupData({...signupData, phone: e.target.value})}
+                     required
+                   />
+                 </div>
                </div>
                <div className="space-y-2">
                  <Label>Email</Label>
