@@ -88,38 +88,49 @@ export function AuthDialog({ mode = "signup", trigger, defaultOpen = false }: Au
       if (authError) throw authError;
 
       if (authData.user) {
-        // 2. Create/Update Profile (Manual JS fallback because triggers can be tricky)
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .upsert({
-             id: authData.user.id,
-             display_name: signupData.fullName,
-             email: signupData.email,
-             city: signupData.city, 
-             trade: signupData.trade,
-             phone: signupData.phone,
-             role: 'member'
-          })
-          .select()
-          .single();
+        // 2. Create/Update Profile
+        try {
+          await supabase
+            .from('profiles')
+            .upsert({
+               id: authData.user.id,
+               display_name: signupData.fullName,
+               email: signupData.email,
+               city: signupData.city, 
+               trade: signupData.trade,
+               phone: signupData.phone,
+               role: 'member'
+            })
+            .select()
+            .single();
+        } catch (e) {
+          console.warn("Profile creation warning:", e);
+        }
 
         // 3. Initialize Network Settings
-        await supabase
+        try {
+          await supabase
             .from('network_settings')
             .upsert({
                user_id: authData.user.id,
                status: 'active',
                frequency_per_week: 5
             }, { onConflict: 'user_id' });
+        } catch (e) {
+          console.warn("Network settings warning:", e);
+        }
             
         // 4. Initialize Trust Score
-        const { error: trustError } = await supabase
+        try {
+          await supabase
             .from('trust_scores')
             .upsert({
                user_id: authData.user.id,
                score: 5.0
             }, { onConflict: 'user_id' });
-        // Ignore RLS error on trust_scores if any
+        } catch (e) {
+          console.warn("Trust score warning:", e);
+        }
       }
 
       toast({ title: "Compte créé !", description: "Bienvenue sur Mon Réseau Local." });
