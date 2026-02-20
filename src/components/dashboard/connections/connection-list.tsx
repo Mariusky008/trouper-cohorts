@@ -80,9 +80,11 @@ export function ConnectionList({ initialConnections }: { initialConnections: Con
               </div>
 
               <div className="flex gap-2">
-                <Button className="flex-1 bg-slate-900 text-white hover:bg-slate-800 font-bold rounded-lg h-10">
-                  <MessageCircle className="mr-2 h-4 w-4" /> Message
-                </Button>
+                <a href={`mailto:?subject=Message via Mon Réseau Local&body=Bonjour ${user.name.split(' ')[0]},`} className="flex-1">
+                  <Button className="w-full bg-slate-900 text-white hover:bg-slate-800 font-bold rounded-lg h-10">
+                    <MessageCircle className="mr-2 h-4 w-4" /> Message
+                  </Button>
+                </a>
                 <Link href={`/mon-reseau-local/dashboard/profile/${user.id}`} className="flex-1">
                   <Button variant="outline" className="w-full border-slate-200 hover:bg-slate-50 font-bold rounded-lg h-10">
                     Profil

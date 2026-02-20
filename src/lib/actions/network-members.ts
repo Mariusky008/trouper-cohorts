@@ -103,12 +103,24 @@ export async function getUserProfile(userId?: string) {
     .eq("user_id", targetId)
     .single();
 
+  const given = trustScore?.opportunities_given || 0;
+  const received = trustScore?.opportunities_received || 0;
+  
+  // Reciprocity Calculation: (Given / Received) * 100
+  // If received is 0, we assume 100% if given > 0 (generous), else 100% (neutral start)
+  let reciprocity = 100;
+  if (received > 0) {
+    reciprocity = Math.min(100, Math.round((given / received) * 100));
+  } else if (given > 0) {
+    reciprocity = 100; // Giving without receiving is 100% (or could be >100% but let's cap it)
+  }
+
   return {
     ...profile,
     score: trustScore?.score || 5.0,
     stats: {
-      opportunities: (trustScore?.opportunities_given || 0) + (trustScore?.opportunities_received || 0),
-      reciprocity: "100%", // Todo: calculate real reciprocity
+      opportunities: given + received,
+      reciprocity: `${reciprocity}%`,
       seniority: new Date(profile.created_at || Date.now()).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })
     }
   };
