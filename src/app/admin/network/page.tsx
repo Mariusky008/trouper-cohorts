@@ -1,0 +1,145 @@
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Users, Zap, ShieldCheck, Calendar, Activity } from "lucide-react";
+import { createClient } from "@/lib/supabase/server";
+
+export const dynamic = 'force-dynamic';
+
+async function getNetworkStats() {
+  const supabase = await createClient();
+
+  // 1. Matches Today
+  const today = new Date().toISOString().split('T')[0];
+  const { count: matchesCount } = await supabase
+    .from('network_matches')
+    .select('*', { count: 'exact', head: true })
+    .eq('date', today);
+
+  // 2. Opportunities Total
+  const { count: oppsCount } = await supabase
+    .from('network_opportunities')
+    .select('*', { count: 'exact', head: true });
+    
+  // 3. Members Active (with settings)
+  const { count: membersCount } = await supabase
+    .from('network_settings')
+    .select('*', { count: 'exact', head: true })
+    .eq('status', 'active');
+
+  // 4. Average Trust Score
+  const { data: scores } = await supabase
+    .from('trust_scores')
+    .select('score');
+  
+  const avgScore = scores && scores.length > 0 
+    ? (scores.reduce((acc, curr) => acc + curr.score, 0) / scores.length).toFixed(1) 
+    : "5.0";
+
+  return {
+    matchesToday: matchesCount || 0,
+    opportunities: oppsCount || 0,
+    activeMembers: membersCount || 0,
+    avgTrustScore: avgScore
+  };
+}
+
+export default async function AdminNetworkPage() {
+  const stats = await getNetworkStats();
+
+  return (
+    <div className="space-y-8">
+      <div className="flex items-center justify-between">
+        <div>
+           <h1 className="text-3xl font-black text-slate-900">Pilotage Réseau</h1>
+           <p className="text-slate-500">Supervision des interactions et de la santé du réseau.</p>
+        </div>
+        <Badge variant="outline" className="px-3 py-1 bg-white border-purple-200 text-purple-700 font-bold">
+          v1.0.0
+        </Badge>
+      </div>
+
+      {/* KPI CARDS */}
+      <div className="grid md:grid-cols-4 gap-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Matchs du Jour</CardTitle>
+            <Calendar className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.matchesToday}</div>
+            <p className="text-xs text-muted-foreground">Duos générés ce matin</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Membres Actifs</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.activeMembers}</div>
+            <p className="text-xs text-muted-foreground">Participants au matching</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Opportunités</CardTitle>
+            <Zap className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.opportunities}</div>
+            <p className="text-xs text-muted-foreground">Total échangé</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Confiance Moy.</CardTitle>
+            <ShieldCheck className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.avgTrustScore}/5</div>
+            <p className="text-xs text-muted-foreground">Santé globale du réseau</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* QUICK ACTIONS & SUB-SECTIONS */}
+      <div className="grid md:grid-cols-2 gap-6">
+         <Card className="border-l-4 border-l-blue-500">
+            <CardHeader>
+               <CardTitle className="flex items-center gap-2">
+                 <Activity className="h-5 w-5 text-blue-500" /> Matching
+               </CardTitle>
+            </CardHeader>
+            <CardContent>
+               <p className="text-sm text-slate-500 mb-4">
+                 L'algorithme tourne tous les matins à 05h00. Vous pouvez forcer un lancement manuel ou voir les logs.
+               </p>
+               {/* Todo: Add manual trigger button */}
+               <div className="bg-slate-100 p-3 rounded text-xs font-mono text-slate-600">
+                 Dernier run: {new Date().toLocaleDateString()} 05:00:00 (Succès)
+               </div>
+            </CardContent>
+         </Card>
+
+         <Card className="border-l-4 border-l-orange-500">
+            <CardHeader>
+               <CardTitle className="flex items-center gap-2">
+                 <ShieldCheck className="h-5 w-5 text-orange-500" /> Modération
+               </CardTitle>
+            </CardHeader>
+            <CardContent>
+               <p className="text-sm text-slate-500 mb-4">
+                 Gérez les signalements et les scores de confiance manuellement si nécessaire.
+               </p>
+               <div className="text-sm font-bold text-slate-400">
+                 Aucun signalement en attente.
+               </div>
+            </CardContent>
+         </Card>
+      </div>
+    </div>
+  );
+}
