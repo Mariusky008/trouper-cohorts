@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { 
   Home, Users, Zap, ShieldCheck, User, Settings, 
-  Menu, Bell, LogOut, ChevronRight 
+  Menu, Bell, LogOut, ChevronRight, BookOpen 
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -17,6 +17,7 @@ const NAV_ITEMS = [
   { label: "Mes Mises en Relation", href: "/mon-reseau-local/dashboard/connections", icon: Users },
   { label: "Opportunités", href: "/mon-reseau-local/dashboard/opportunities", icon: Zap },
   { label: "Confiance & Dettes", href: "/mon-reseau-local/dashboard/trust", icon: ShieldCheck },
+  { label: "Guides & Scripts", href: "/mon-reseau-local/dashboard/guide", icon: BookOpen },
   { label: "Profil", href: "/mon-reseau-local/dashboard/profile", icon: User },
   { label: "Paramètres", href: "/mon-reseau-local/dashboard/settings", icon: Settings },
 ];
