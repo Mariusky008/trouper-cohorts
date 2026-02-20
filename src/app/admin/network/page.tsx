@@ -35,11 +35,34 @@ async function getNetworkStats() {
     ? (scores.reduce((acc, curr) => acc + curr.score, 0) / scores.length).toFixed(1) 
     : "5.0";
 
+  // 5. Recent Members (Who activated the network feature)
+  const { data: recentMembers } = await supabase
+    .from('network_settings')
+    .select('user_id, created_at, status')
+    .order('created_at', { ascending: false })
+    .limit(5);
+
+  let recentProfiles: any[] = [];
+  if (recentMembers && recentMembers.length > 0) {
+    const userIds = recentMembers.map(m => m.user_id);
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('id, display_name, email, trade, city')
+      .in('id', userIds);
+    
+    const profileMap = new Map(profiles?.map(p => [p.id, p]));
+    recentProfiles = recentMembers.map(m => ({
+      ...m,
+      profile: profileMap.get(m.user_id)
+    }));
+  }
+
   return {
     matchesToday: matchesCount || 0,
     opportunities: oppsCount || 0,
     activeMembers: membersCount || 0,
-    avgTrustScore: avgScore
+    avgTrustScore: avgScore,
+    recentMembers: recentProfiles
   };
 }
 
@@ -105,40 +128,70 @@ export default async function AdminNetworkPage() {
         </Card>
       </div>
 
-      {/* QUICK ACTIONS & SUB-SECTIONS */}
-      <div className="grid md:grid-cols-2 gap-6">
-         <Card className="border-l-4 border-l-blue-500">
-            <CardHeader>
-               <CardTitle className="flex items-center gap-2">
-                 <Activity className="h-5 w-5 text-blue-500" /> Matching
-               </CardTitle>
-            </CardHeader>
-            <CardContent>
-               <p className="text-sm text-slate-500 mb-4">
-                 L'algorithme tourne tous les matins à 05h00. Vous pouvez forcer un lancement manuel ou voir les logs.
-               </p>
-               {/* Todo: Add manual trigger button */}
-               <div className="bg-slate-100 p-3 rounded text-xs font-mono text-slate-600">
-                 Dernier run: {new Date().toLocaleDateString()} 05:00:00 (Succès)
-               </div>
-            </CardContent>
-         </Card>
+      <div className="grid lg:grid-cols-3 gap-8">
+        
+        {/* LEFT COLUMN: ACTIONS & LOGS */}
+        <div className="lg:col-span-2 space-y-6">
+          <Card className="border-l-4 border-l-blue-500">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Activity className="h-5 w-5 text-blue-500" /> Matching
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-slate-500 mb-4">
+                  L'algorithme tourne tous les matins à 05h00. Vous pouvez forcer un lancement manuel ou voir les logs.
+                </p>
+                {/* Todo: Add manual trigger button */}
+                <div className="bg-slate-100 p-3 rounded text-xs font-mono text-slate-600">
+                  Dernier run: {new Date().toLocaleDateString()} 05:00:00 (Succès)
+                </div>
+              </CardContent>
+          </Card>
 
-         <Card className="border-l-4 border-l-orange-500">
+          <Card className="border-l-4 border-l-orange-500">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <ShieldCheck className="h-5 w-5 text-orange-500" /> Modération
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-slate-500 mb-4">
+                  Gérez les signalements et les scores de confiance manuellement si nécessaire.
+                </p>
+                <div className="text-sm font-bold text-slate-400">
+                  Aucun signalement en attente.
+                </div>
+              </CardContent>
+          </Card>
+        </div>
+
+        {/* RIGHT COLUMN: RECENT MEMBERS */}
+        <div>
+          <Card>
             <CardHeader>
-               <CardTitle className="flex items-center gap-2">
-                 <ShieldCheck className="h-5 w-5 text-orange-500" /> Modération
-               </CardTitle>
+              <CardTitle className="text-sm font-bold uppercase tracking-widest text-slate-500">Derniers Inscrits Réseau</CardTitle>
             </CardHeader>
-            <CardContent>
-               <p className="text-sm text-slate-500 mb-4">
-                 Gérez les signalements et les scores de confiance manuellement si nécessaire.
-               </p>
-               <div className="text-sm font-bold text-slate-400">
-                 Aucun signalement en attente.
-               </div>
+            <CardContent className="space-y-4">
+              {stats.recentMembers.length > 0 ? (
+                stats.recentMembers.map((m: any) => (
+                  <div key={m.user_id} className="flex items-center gap-3 border-b border-slate-100 last:border-0 pb-3 last:pb-0">
+                    <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-xs">
+                      {m.profile?.display_name?.[0] || "?"}
+                    </div>
+                    <div className="overflow-hidden">
+                      <div className="text-sm font-bold text-slate-900 truncate">{m.profile?.display_name || "Utilisateur"}</div>
+                      <div className="text-xs text-slate-500 truncate">{m.profile?.trade || "Non renseigné"} • {m.profile?.city || "Non renseigné"}</div>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="text-sm text-slate-400 italic">Aucun membre récent.</div>
+              )}
             </CardContent>
-         </Card>
+          </Card>
+        </div>
+
       </div>
     </div>
   );
