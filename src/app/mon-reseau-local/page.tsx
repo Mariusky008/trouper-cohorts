@@ -242,7 +242,7 @@ export default function MonReseauLocalPage() {
               </h1>
               
               <p className="text-xl text-slate-600 leading-relaxed max-w-2xl mx-auto lg:mx-0 font-medium">
-                Popey Academy : Arrêtez de prospecter dans le vide. Matchez chaque jour avec un entrepreneur local différent et accédez à son réseau pour vos futurs contrats.
+                Popey Academy : Arrêtez de prospecter dans le vide. Matchez chaque jour avec un entrepreneur local différent et accédez à son réseau pour vos futurs contrats, trouver des synergies, des recommandations, partager vos réseaux sociaux, etc.
               </p>
               
               <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start pt-2">
