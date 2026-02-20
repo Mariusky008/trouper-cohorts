@@ -15,8 +15,12 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
+import { searchMembers } from "@/lib/actions/network-members";
+import { createOpportunity } from "@/lib/actions/network-opportunities";
+import { OpportunityType } from "@/types/network";
+import { useToast } from "@/hooks/use-toast";
 
-const OPPORTUNITY_TYPES = [
+const OPPORTUNITY_TYPES: { id: OpportunityType; label: string; points: number; icon: any; color: string; bg: string; border: string }[] = [
   { id: "clients", label: "Trouver des clients", points: 10, icon: Target, color: "text-red-600", bg: "bg-red-50", border: "border-red-100" },
   { id: "live", label: "Faire un Live ensemble", points: 9, icon: Play, color: "text-purple-600", bg: "bg-purple-50", border: "border-purple-100" },
   { id: "intro", label: "Mise en relation", points: 8, icon: Users, color: "text-blue-600", bg: "bg-blue-50", border: "border-blue-100" },
@@ -27,16 +31,16 @@ const OPPORTUNITY_TYPES = [
   { id: "social", label: "Engagement Social", points: 2, icon: MessageCircle, color: "text-pink-600", bg: "bg-pink-50", border: "border-pink-100" },
 ];
 
-const MOCK_MEMBERS = [
-  { id: 1, name: "Julien Martin", job: "Architecte", avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=2000&auto=format&fit=crop" },
-  { id: 2, name: "Sophie Dupont", job: "Marketing Digital", avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=2000&auto=format&fit=crop" },
-  { id: 3, name: "Marc Bernard", job: "Avocat", avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=2000&auto=format&fit=crop" },
-];
-
 export function AddOpportunityDialog({ children }: { children: React.ReactNode }) {
+  const { toast } = useToast();
   const [step, setStep] = useState<"type" | "member" | "details">("type");
   const [selectedType, setSelectedType] = useState<typeof OPPORTUNITY_TYPES[0] | null>(null);
-  const [selectedMember, setSelectedMember] = useState<typeof MOCK_MEMBERS[0] | null>(null);
+  
+  // Search state
+  const [searchQuery, setSearchQuery] = useState("");
+  const [members, setMembers] = useState<{ id: string; name: string; job: string; avatar?: string }[]>([]);
+  const [selectedMember, setSelectedMember] = useState<typeof members[0] | null>(null);
+  
   const [details, setDetails] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
@@ -46,18 +50,50 @@ export function AddOpportunityDialog({ children }: { children: React.ReactNode }
     setSelectedType(null);
     setSelectedMember(null);
     setDetails("");
+    setSearchQuery("");
+    setMembers([]);
     setIsSubmitting(false);
   };
 
-  const handleSubmit = () => {
+  const handleSearch = async (query: string) => {
+    setSearchQuery(query);
+    if (query.length > 2) {
+      const results = await searchMembers(query);
+      setMembers(results);
+    } else {
+      setMembers([]);
+    }
+  };
+
+  const handleSubmit = async () => {
+    if (!selectedType || !selectedMember) return;
+    
     setIsSubmitting(true);
-    // Simulate API call
-    setTimeout(() => {
-      setIsSubmitting(false);
+    try {
+      await createOpportunity({
+        receiverId: selectedMember.id,
+        type: selectedType.id,
+        points: selectedType.points,
+        details: details
+      });
+      
+      toast({
+        title: "Opportunité envoyée !",
+        description: `Vous avez offert ${selectedType.points} points à ${selectedMember.name}.`,
+        variant: "default",
+      });
+      
       setIsOpen(false);
       reset();
-      // Show success toast here
-    }, 1500);
+    } catch (error) {
+      toast({
+        title: "Erreur",
+        description: "Une erreur est survenue lors de l'envoi.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -120,10 +156,19 @@ export function AddOpportunityDialog({ children }: { children: React.ReactNode }
               >
                 <div className="relative">
                   <Search className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
-                  <Input placeholder="Rechercher un membre..." className="pl-10 h-12 rounded-xl bg-slate-50 border-slate-200" />
+                  <Input 
+                    placeholder="Rechercher un membre (min 3 lettres)..." 
+                    className="pl-10 h-12 rounded-xl bg-slate-50 border-slate-200" 
+                    value={searchQuery}
+                    onChange={(e) => handleSearch(e.target.value)}
+                    autoFocus
+                  />
                 </div>
-                <div className="space-y-2">
-                  {MOCK_MEMBERS.map((member) => (
+                <div className="space-y-2 max-h-[300px] overflow-y-auto">
+                  {members.length === 0 && searchQuery.length > 2 && (
+                    <div className="text-center text-slate-400 py-4">Aucun membre trouvé.</div>
+                  )}
+                  {members.map((member) => (
                     <div 
                       key={member.id}
                       onClick={() => { setSelectedMember(member); setStep("details"); }}

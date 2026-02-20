@@ -55,17 +55,21 @@ const MOCK_OPPORTUNITIES = [
 ];
 
 import { AddOpportunityDialog } from "@/components/dashboard/opportunities/add-opportunity-dialog";
+import { getOpportunities } from "@/lib/actions/network-opportunities"; // Assurez-vous que cette fonction existe
+import { OpportunityList } from "@/components/dashboard/opportunities/opportunity-list";
 
-export default function OpportunitiesPage() {
-  const [activeTab, setActiveTab] = useState("all");
+export const dynamic = 'force-dynamic';
 
-  const filteredOpportunities = activeTab === "all" 
-    ? MOCK_OPPORTUNITIES 
-    : MOCK_OPPORTUNITIES.filter(o => o.direction === activeTab);
+export default async function OpportunitiesPage() {
+  let opportunities: any[] = [];
+  try {
+    opportunities = await getOpportunities('all');
+  } catch (e) {
+    console.error(e);
+  }
 
   return (
     <div className="space-y-8 pb-24">
-      
       {/* HEADER */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
@@ -79,102 +83,8 @@ export default function OpportunitiesPage() {
         </AddOpportunityDialog>
       </div>
 
-      {/* SUMMARY CARDS */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
-          <div className="text-xs font-bold text-slate-400 uppercase mb-1">Total Points</div>
-          <div className="text-3xl font-black text-slate-900">42</div>
-        </div>
-        <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
-          <div className="text-xs font-bold text-slate-400 uppercase mb-1">Reçues</div>
-          <div className="text-3xl font-black text-green-600">12</div>
-        </div>
-        <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
-          <div className="text-xs font-bold text-slate-400 uppercase mb-1">Données</div>
-          <div className="text-3xl font-black text-blue-600">10</div>
-        </div>
-        <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
-          <div className="text-xs font-bold text-slate-400 uppercase mb-1">En attente</div>
-          <div className="text-3xl font-black text-orange-500">3</div>
-        </div>
-      </div>
-
-      {/* TABS & LIST */}
-      <Tabs defaultValue="all" className="w-full" onValueChange={setActiveTab}>
-        <TabsList className="bg-slate-100 p-1 rounded-xl mb-6">
-          <TabsTrigger value="all" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm font-bold">Tout voir</TabsTrigger>
-          <TabsTrigger value="received" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm font-bold">Reçues</TabsTrigger>
-          <TabsTrigger value="given" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm font-bold">Données</TabsTrigger>
-        </TabsList>
-
-        <div className="space-y-4">
-          {filteredOpportunities.map((opp, i) => (
-            <motion.div
-              key={opp.id}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.1 }}
-              className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm hover:shadow-md transition-shadow flex flex-col md:flex-row gap-6 items-start md:items-center"
-            >
-              {/* Icon / Direction */}
-              <div className={cn(
-                "h-12 w-12 rounded-full flex items-center justify-center shrink-0",
-                opp.direction === 'received' ? "bg-green-100 text-green-600" : "bg-blue-100 text-blue-600"
-              )}>
-                {opp.direction === 'received' ? <ArrowDownLeft className="h-6 w-6" /> : <ArrowUpRight className="h-6 w-6" />}
-              </div>
-
-              {/* Content */}
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-1">
-                  <Badge variant="outline" className={cn(
-                    "border-0 font-bold",
-                    OPPORTUNITY_TYPES.find(t => t.label === opp.type)?.color || "bg-slate-100"
-                  )}>
-                    {opp.type} (+{opp.points} pts)
-                  </Badge>
-                  <span className="text-xs text-slate-400 font-medium">• {opp.date}</span>
-                </div>
-                <h3 className="font-bold text-slate-900 text-lg mb-1">{opp.description}</h3>
-                <div className="flex items-center gap-2 text-sm text-slate-500">
-                  {opp.direction === 'received' ? "De la part de" : "Pour"} 
-                  <span className="font-bold text-slate-700 flex items-center gap-1">
-                    <Avatar className="h-5 w-5">
-                      <AvatarImage src={opp.partner.avatar} />
-                      <AvatarFallback>{opp.partner.name[0]}</AvatarFallback>
-                    </Avatar>
-                    {opp.partner.name}
-                  </span>
-                </div>
-              </div>
-
-              {/* Status / Action */}
-              <div className="shrink-0 flex items-center gap-4">
-                {opp.status === 'pending' ? (
-                   opp.direction === 'received' ? (
-                     <div className="flex gap-2">
-                        <Button size="sm" variant="outline" className="border-slate-200 text-slate-500 hover:text-red-500 hover:bg-red-50">Refuser</Button>
-                        <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white font-bold">
-                          <CheckCircle2 className="mr-1 h-4 w-4" /> Valider
-                        </Button>
-                     </div>
-                   ) : (
-                     <Badge variant="outline" className="bg-orange-50 text-orange-600 border-orange-100 font-bold px-3 py-1">
-                       <Clock className="mr-1 h-3 w-3" /> En attente
-                     </Badge>
-                   )
-                ) : (
-                  <Badge variant="outline" className="bg-slate-50 text-slate-500 border-slate-100 font-bold px-3 py-1">
-                    <CheckCircle2 className="mr-1 h-3 w-3 text-green-500" /> Validé
-                  </Badge>
-                )}
-              </div>
-
-            </motion.div>
-          ))}
-        </div>
-      </Tabs>
-
+      {/* LIST */}
+      <OpportunityList initialData={opportunities} />
     </div>
   );
 }
