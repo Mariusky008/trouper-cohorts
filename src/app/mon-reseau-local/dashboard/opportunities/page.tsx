@@ -54,6 +54,8 @@ const MOCK_OPPORTUNITIES = [
   }
 ];
 
+import { AddOpportunityDialog } from "@/components/dashboard/opportunities/add-opportunity-dialog";
+
 export default function OpportunitiesPage() {
   const [activeTab, setActiveTab] = useState("all");
 
@@ -70,9 +72,11 @@ export default function OpportunitiesPage() {
           <h1 className="text-3xl font-black text-slate-900 tracking-tight">Opportunités</h1>
           <p className="text-slate-500 font-medium">Transformez vos conversations en valeur réelle.</p>
         </div>
-        <Button className="bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg shadow-blue-200 h-12 px-6">
-          <Plus className="mr-2 h-5 w-5" /> Ajouter une opportunité
-        </Button>
+        <AddOpportunityDialog>
+          <Button className="bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg shadow-blue-200 h-12 px-6">
+            <Plus className="mr-2 h-5 w-5" /> Ajouter une opportunité
+          </Button>
+        </AddOpportunityDialog>
       </div>
 
       {/* SUMMARY CARDS */}
