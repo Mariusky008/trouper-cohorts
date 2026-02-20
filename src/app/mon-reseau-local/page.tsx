@@ -5,7 +5,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { 
   Users, Calendar, MessageCircle, CheckCircle2, 
   ArrowRight, ShieldCheck, Zap, Briefcase, 
-  Target, TrendingUp, HelpCircle, Phone, Video
+  Target, TrendingUp, HelpCircle, Phone, Video,
+  Star, X
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -230,22 +231,20 @@ export default function MonReseauLocalPage() {
         <Section className="bg-slate-50">
             <div className="container mx-auto px-4 max-w-5xl">
                 <div className="text-center mb-16">
-                    <h2 className="text-3xl font-black text-slate-900 mb-4">Simple. Structuré. Efficace.</h2>
+                    <h2 className="text-3xl font-black text-slate-900 mb-4">Un système simple qui crée des opportunités en continu</h2>
                     <p className="text-slate-500">Aucune prospection compliquée. Juste de l'humain.</p>
                 </div>
 
-                <div className="grid md:grid-cols-4 gap-8">
+                <div className="grid md:grid-cols-3 gap-8">
                     {[
-                        { step: "1", title: "Inscription", desc: "Vous rejoignez le réseau en 2 minutes.", img: "https://images.unsplash.com/photo-1531545514256-b1400bc00f31?q=80&w=2574&auto=format&fit=crop" },
-                        { step: "2", title: "Organisation", desc: "Nous planifions vos RDV quotidiens.", img: "https://images.unsplash.com/photo-1506784983877-45594efa4cbe?q=80&w=2668&auto=format&fit=crop" },
-                        { step: "3", title: "Échange", desc: "Vous discutez 15 à 30 minutes en visio.", img: "https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?q=80&w=2574&auto=format&fit=crop" },
-                        { step: "4", title: "Opportunités", desc: "Le réseau s'active, les contacts circulent.", img: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=2671&auto=format&fit=crop" }
+                        { title: "Un rendez-vous chaque jour", desc: "Vous échangez 10 minutes avec un entrepreneur différent.", img: "https://images.unsplash.com/photo-1531545514256-b1400bc00f31?q=80&w=2574&auto=format&fit=crop" },
+                        { title: "Des opportunités circulent", desc: "Recommandations, contacts, conseils, clients potentiels.", img: "https://images.unsplash.com/photo-1506784983877-45594efa4cbe?q=80&w=2668&auto=format&fit=crop" },
+                        { title: "La réciprocité est garantie", desc: "Si quelqu’un vous aide, vous lui devez une opportunité équivalente.", img: "https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?q=80&w=2574&auto=format&fit=crop" }
                     ].map((item, i) => (
                         <FadeIn key={i} delay={i * 0.1}>
                             <div className="relative group">
-                                <div className="text-6xl font-black text-slate-100 absolute -top-4 -left-2 z-0">{item.step}</div>
                                 <div className="relative z-10 bg-white rounded-2xl border border-slate-200 shadow-sm h-full overflow-hidden hover:shadow-xl transition-all hover:-translate-y-1">
-                                    <div className="h-32 overflow-hidden">
+                                    <div className="h-40 overflow-hidden">
                                         <img src={item.img} alt={item.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                                     </div>
                                     <div className="p-6">
@@ -260,97 +259,227 @@ export default function MonReseauLocalPage() {
             </div>
         </Section>
 
-        {/* 5. PROJECTION */}
+        {/* 5. SCORE DE CONFIANCE (NEW) */}
         <Section className="bg-white border-y border-slate-100">
-            <div className="container mx-auto px-4 text-center max-w-3xl">
-                <FadeIn>
-                    <h2 className="text-3xl md:text-4xl font-black text-slate-900 mb-8">Imaginez dans 60 jours...</h2>
-                    
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-6 mb-12">
-                        {[
-                            "40 entrepreneurs vous connaissent",
-                            "Des recommandations naturelles",
-                            "Des opportunités professionnelles",
-                            "Moins d'isolement",
-                            "Plus de motivation",
-                            "Un vrai réseau humain"
-                        ].map((item, i) => (
-                            <div key={i} className="flex items-center gap-2 text-left bg-slate-50 p-3 rounded-lg">
-                                <CheckCircle2 className="h-5 w-5 text-green-500 shrink-0" />
-                                <span className="text-sm font-bold text-slate-700">{item}</span>
-                            </div>
-                        ))}
-                    </div>
+            <div className="container mx-auto px-4 max-w-5xl">
+                <div className="grid md:grid-cols-2 gap-16 items-center">
+                    <FadeIn>
+                        <Badge className="bg-green-100 text-green-700 border-green-200 px-3 py-1 text-xs font-bold uppercase tracking-wider mb-6">Innovation</Badge>
+                        <h2 className="text-3xl md:text-4xl font-black text-slate-900 mb-6">Votre fiabilité devient visible</h2>
+                        <p className="text-slate-600 text-lg mb-6 leading-relaxed">
+                            Chaque membre possède un score de confiance basé sur les opportunités reçues et rendues. 
+                            Cela crée un réseau sérieux, engagé et actif.
+                        </p>
+                        <p className="text-sm text-slate-500 bg-slate-50 p-4 rounded-xl border border-slate-100">
+                            <span className="font-bold text-slate-900">Règle d'Or :</span> Si vous recevez une opportunité, vous disposez de 30 jours pour rendre la pareille. Sinon, votre score diminue.
+                        </p>
+                    </FadeIn>
 
-                    <p className="text-xl font-medium text-slate-900">
-                        Votre situation peut évoluer très vite.
-                    </p>
+                    <FadeIn delay={0.2} className="relative">
+                        <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 p-8 max-w-sm mx-auto">
+                            <div className="flex items-center gap-4 mb-8">
+                                <div className="h-16 w-16 bg-slate-100 rounded-full overflow-hidden">
+                                    <img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?q=80&w=2070&auto=format&fit=crop" alt="Profile" className="w-full h-full object-cover" />
+                                </div>
+                                <div>
+                                    <div className="font-black text-slate-900 text-xl">Alexandre P.</div>
+                                    <div className="flex items-center gap-1 text-orange-500 font-bold text-sm">
+                                        <Star className="h-4 w-4 fill-current" /> 4.8/5
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div className="space-y-4">
+                                <div className="flex justify-between items-center p-3 bg-green-50 rounded-xl border border-green-100">
+                                    <span className="text-sm font-medium text-slate-600">Opportunités reçues</span>
+                                    <span className="font-black text-green-600">12</span>
+                                </div>
+                                <div className="flex justify-between items-center p-3 bg-blue-50 rounded-xl border border-blue-100">
+                                    <span className="text-sm font-medium text-slate-600">Opportunités rendues</span>
+                                    <span className="font-black text-blue-600">11</span>
+                                </div>
+                                <div className="flex justify-between items-center p-3 bg-orange-50 rounded-xl border border-orange-100">
+                                    <span className="text-sm font-medium text-slate-600">Dettes en cours</span>
+                                    <span className="font-black text-orange-600">1</span>
+                                </div>
+                            </div>
+                        </div>
+                    </FadeIn>
+                </div>
+            </div>
+        </Section>
+
+        {/* 6. PUISSANCE DU RÉSEAU (NEW) */}
+        <Section className="bg-slate-900 text-white">
+            <div className="container mx-auto px-4 text-center max-w-4xl">
+                <FadeIn>
+                    <h2 className="text-3xl md:text-4xl font-black mb-8">Multipliez vos chances sans prospecter seul</h2>
+                    <p className="text-slate-300 text-xl mb-12">Chaque conversation ouvre l’accès à un nouveau réseau professionnel et personnel.</p>
+                    
+                    {/* Visual representation of network effect */}
+                    <div className="relative h-64 md:h-80 w-full bg-slate-800 rounded-3xl border border-slate-700 overflow-hidden flex items-center justify-center">
+                        <div className="absolute inset-0 opacity-20 bg-[url('https://www.transparenttextures.com/patterns/connected.png')]"></div>
+                        <div className="relative z-10 flex items-center justify-center gap-8">
+                            <div className="bg-blue-600 h-16 w-16 rounded-full flex items-center justify-center shadow-[0_0_30px_rgba(37,99,235,0.5)] border-4 border-slate-900 z-20">
+                                <span className="font-black text-xl">Vous</span>
+                            </div>
+                            <ArrowRight className="h-8 w-8 text-slate-500 animate-pulse" />
+                            <div className="bg-white text-slate-900 h-12 w-12 rounded-full flex items-center justify-center font-bold text-sm shadow-lg">Ent.</div>
+                            <ArrowRight className="h-8 w-8 text-slate-500 animate-pulse delay-100" />
+                            <div className="flex -space-x-4">
+                                {[1,2,3].map(i => (
+                                    <div key={i} className="h-10 w-10 rounded-full bg-slate-700 border-2 border-slate-800 flex items-center justify-center text-xs font-bold">Client</div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
                 </FadeIn>
             </div>
         </Section>
 
-        {/* 6. POUR QUI */}
+        {/* 7. DASHBOARD APERÇU (NEW) */}
         <Section className="bg-slate-50">
-            <div className="container mx-auto px-4 max-w-4xl">
-                <div className="bg-slate-900 rounded-3xl p-8 md:p-12 text-white text-center">
-                    <h2 className="text-3xl font-black mb-8">Pour qui est fait ce réseau ?</h2>
-                    <div className="flex flex-wrap justify-center gap-3">
-                        {["Entrepreneurs", "Indépendants", "Freelances", "Salariés en transition", "Porteurs de projet", "Créateurs d'activité"].map((tag, i) => (
-                            <Badge key={i} className="bg-white/10 hover:bg-white/20 text-white px-4 py-2 text-sm font-bold border-0">
-                                {tag}
-                            </Badge>
-                        ))}
-                    </div>
-                    <p className="mt-8 text-slate-400">Débutant ou expérimenté, c'est l'envie d'avancer qui compte.</p>
+            <div className="container mx-auto px-4 max-w-5xl">
+                <div className="text-center mb-16">
+                    <h2 className="text-3xl font-black text-slate-900 mb-4">Votre futur tableau de bord</h2>
+                    <p className="text-slate-500">Tout est clair. Vous savez qui voir et qui aider.</p>
                 </div>
+
+                <FadeIn>
+                    <div className="bg-white rounded-3xl shadow-xl border border-slate-200 overflow-hidden max-w-4xl mx-auto">
+                        <div className="grid md:grid-cols-[250px_1fr]">
+                            {/* Sidebar Fake */}
+                            <div className="bg-slate-50 p-6 border-r border-slate-100 hidden md:block">
+                                <div className="space-y-4">
+                                    <div className="h-2 w-20 bg-slate-200 rounded mb-8"></div>
+                                    <div className="h-8 w-full bg-blue-100 text-blue-700 rounded-lg flex items-center px-3 text-xs font-bold">Tableau de bord</div>
+                                    <div className="h-8 w-full text-slate-400 rounded-lg flex items-center px-3 text-xs font-bold">Mes Dettes</div>
+                                    <div className="h-8 w-full text-slate-400 rounded-lg flex items-center px-3 text-xs font-bold">Historique</div>
+                                </div>
+                            </div>
+
+                            {/* Content */}
+                            <div className="p-8">
+                                <div className="mb-8">
+                                    <h4 className="font-bold text-slate-900 uppercase text-xs tracking-wider mb-4">Aujourd'hui</h4>
+                                    <div className="bg-white border border-blue-100 rounded-xl p-4 flex items-center justify-between shadow-sm hover:shadow-md transition-shadow cursor-pointer group">
+                                        <div className="flex items-center gap-4">
+                                            <div className="h-10 w-10 bg-blue-600 rounded-full flex items-center justify-center text-white">
+                                                <Phone className="h-5 w-5" />
+                                            </div>
+                                            <div>
+                                                <div className="font-bold text-slate-900">Appel avec Julien</div>
+                                                <div className="text-xs text-slate-500">Prévu à 14h00</div>
+                                            </div>
+                                        </div>
+                                        <Badge className="bg-blue-50 text-blue-600 border-0 group-hover:bg-blue-600 group-hover:text-white transition-colors">Rejoindre</Badge>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <h4 className="font-bold text-slate-900 uppercase text-xs tracking-wider mb-4">Vos Dettes de Confiance</h4>
+                                    <div className="space-y-3">
+                                        <div className="flex items-center justify-between p-3 bg-orange-50 border border-orange-100 rounded-lg">
+                                            <div className="flex items-center gap-3">
+                                                <div className="h-2 w-2 bg-orange-500 rounded-full animate-pulse"></div>
+                                                <span className="text-sm font-medium text-slate-700">Tu dois une opportunité à Sophie</span>
+                                            </div>
+                                            <span className="text-xs font-bold text-orange-600">Reste 12 jours</span>
+                                        </div>
+                                        <div className="flex items-center justify-between p-3 bg-green-50 border border-green-100 rounded-lg">
+                                            <div className="flex items-center gap-3">
+                                                <CheckCircle2 className="h-4 w-4 text-green-500" />
+                                                <span className="text-sm font-medium text-slate-700">Marc te doit une opportunité</span>
+                                            </div>
+                                            <span className="text-xs font-bold text-green-600">En attente (18j)</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </FadeIn>
             </div>
         </Section>
 
-        {/* 7. PREUVE */}
+        {/* 8. RÉSULTATS / PREUVES SOCIALES (UPDATED) */}
         <Section className="bg-white">
             <div className="container mx-auto px-4">
-                <div className="grid md:grid-cols-3 gap-8 text-center divide-x divide-slate-100">
+                <div className="grid md:grid-cols-3 gap-8 text-center divide-x divide-slate-100 mb-16">
                     <FadeIn>
                         <div className="text-4xl md:text-5xl font-black text-blue-600 mb-2">300+</div>
-                        <div className="text-sm font-bold text-slate-500 uppercase tracking-widest">Entrepreneurs inscrits</div>
+                        <div className="text-sm font-bold text-slate-500 uppercase tracking-widest">Entrepreneurs actifs</div>
                     </FadeIn>
                     <FadeIn delay={0.1}>
-                        <div className="text-4xl md:text-5xl font-black text-blue-600 mb-2">92%</div>
-                        <div className="text-sm font-bold text-slate-500 uppercase tracking-widest">Trouvent l'expérience utile</div>
+                        <div className="text-4xl md:text-5xl font-black text-blue-600 mb-2">450+</div>
+                        <div className="text-sm font-bold text-slate-500 uppercase tracking-widest">Opportunités générées</div>
                     </FadeIn>
                     <FadeIn delay={0.2}>
-                        <div className="text-4xl md:text-5xl font-black text-blue-600 mb-2">Des dizaines</div>
-                        <div className="text-sm font-bold text-slate-500 uppercase tracking-widest">De mises en relation réussies</div>
+                        <div className="text-4xl md:text-5xl font-black text-blue-600 mb-2">98%</div>
+                        <div className="text-sm font-bold text-slate-500 uppercase tracking-widest">Taux de satisfaction</div>
+                    </FadeIn>
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+                    <FadeIn delay={0.3}>
+                        <div className="bg-slate-50 p-8 rounded-2xl border border-slate-100 relative">
+                            <div className="flex items-center gap-4 mb-4">
+                                <div className="h-12 w-12 bg-slate-200 rounded-full overflow-hidden">
+                                    <img src="https://images.unsplash.com/photo-1580489944761-15a19d654956?q=80&w=2000&auto=format&fit=crop" alt="User" className="w-full h-full object-cover" />
+                                </div>
+                                <div>
+                                    <div className="font-bold text-slate-900">Sarah L.</div>
+                                    <div className="text-xs text-slate-500">Consultante Marketing</div>
+                                </div>
+                            </div>
+                            <p className="text-slate-600 italic">"J’ai trouvé 3 clients en 2 mois grâce aux recommandations. C'est bien plus efficace que la prospection à froid."</p>
+                        </div>
+                    </FadeIn>
+                    <FadeIn delay={0.4}>
+                        <div className="bg-slate-50 p-8 rounded-2xl border border-slate-100 relative">
+                            <div className="flex items-center gap-4 mb-4">
+                                <div className="h-12 w-12 bg-slate-200 rounded-full overflow-hidden">
+                                    <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=2000&auto=format&fit=crop" alt="User" className="w-full h-full object-cover" />
+                                </div>
+                                <div>
+                                    <div className="font-bold text-slate-900">David M.</div>
+                                    <div className="text-xs text-slate-500">Développeur Web</div>
+                                </div>
+                            </div>
+                            <p className="text-slate-600 italic">"Le système de confiance motive vraiment les gens à aider. On ne se sent plus seul face à son business."</p>
+                        </div>
                     </FadeIn>
                 </div>
             </div>
         </Section>
 
-        {/* 8. POURQUOI ÇA MARCHE */}
+        {/* 9. DIFFÉRENCIATION (NEW) */}
         <Section className="bg-slate-50">
-            <div className="container mx-auto px-4 max-w-4xl">
-                <div className="grid md:grid-cols-2 gap-12 items-center">
-                    <div className="space-y-6">
-                        <h2 className="text-3xl font-black text-slate-900">Pourquoi ça marche ?</h2>
-                        <ul className="space-y-4">
-                            {[
-                                "Le réseau crée des opportunités",
-                                "La régularité change les résultats",
-                                "L'humain crée la confiance",
-                                "L'entraide accélère tout"
-                            ].map((item, i) => (
-                                <li key={i} className="flex items-center gap-3">
-                                    <div className="h-2 w-2 bg-blue-600 rounded-full" />
-                                    <span className="text-slate-700 font-medium">{item}</span>
-                                </li>
-                            ))}
-                        </ul>
+            <div className="container mx-auto px-4 max-w-4xl text-center">
+                <FadeIn>
+                    <h2 className="text-3xl font-black text-slate-900 mb-12">Ce n’est pas du networking.<br/>C’est un système d’entraide.</h2>
+                    
+                    <div className="grid md:grid-cols-2 gap-8">
+                        <div className="bg-white p-8 rounded-2xl border border-slate-200 opacity-70 grayscale-[0.5]">
+                            <h3 className="font-bold text-slate-500 uppercase tracking-widest mb-6">Networking Classique</h3>
+                            <ul className="space-y-4 text-left">
+                                <li className="flex items-center gap-3 text-slate-500"><X className="h-5 w-5 text-red-400" /> Cartes de visite perdues</li>
+                                <li className="flex items-center gap-3 text-slate-500"><X className="h-5 w-5 text-red-400" /> Promesses sans suite</li>
+                                <li className="flex items-center gap-3 text-slate-500"><X className="h-5 w-5 text-red-400" /> Relations faibles et superficielles</li>
+                            </ul>
+                        </div>
+                        
+                        <div className="bg-white p-8 rounded-2xl border-2 border-blue-600 shadow-xl relative overflow-hidden">
+                            <div className="absolute top-0 right-0 bg-blue-600 text-white text-xs font-bold px-3 py-1 rounded-bl-lg">LE FUTUR</div>
+                            <h3 className="font-bold text-blue-600 uppercase tracking-widest mb-6">Avec Popey</h3>
+                            <ul className="space-y-4 text-left">
+                                <li className="flex items-center gap-3 text-slate-900 font-medium"><CheckCircle2 className="h-5 w-5 text-green-500" /> Appels quotidiens ciblés</li>
+                                <li className="flex items-center gap-3 text-slate-900 font-medium"><CheckCircle2 className="h-5 w-5 text-green-500" /> Réciprocité mesurée & garantie</li>
+                                <li className="flex items-center gap-3 text-slate-900 font-medium"><CheckCircle2 className="h-5 w-5 text-green-500" /> Opportunités concrètes</li>
+                            </ul>
+                        </div>
                     </div>
-                    <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-lg text-center">
-                        <p className="text-2xl font-black text-slate-900 italic mb-2">"Seul on va vite.<br/>En réseau on va loin."</p>
-                        <div className="w-16 h-1 bg-blue-600 mx-auto mt-4 rounded-full"></div>
-                    </div>
-                </div>
+                </FadeIn>
             </div>
         </Section>
 
