@@ -71,7 +71,7 @@ export function AuthDialog({ mode = "signup", trigger, defaultOpen = false }: Au
     setIsLoading(true);
 
     try {
-      // 1. Sign Up
+      // 1. Sign Up (Triggers will handle Profile, Network Settings, Trust Score)
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: signupData.email,
         password: signupData.password,
@@ -88,23 +88,9 @@ export function AuthDialog({ mode = "signup", trigger, defaultOpen = false }: Au
       if (authError) throw authError;
 
       if (authData.user) {
-        // 2. Create/Update Profile (Ideally handled by trigger, but we do it manually for safety)
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .upsert({
-             id: authData.user.id,
-             display_name: signupData.fullName,
-             email: signupData.email,
-             // city: signupData.city, // Commented out to prevent errors if column is missing
-             trade: signupData.trade,
-             phone: signupData.phone,
-             role: 'member'
-          })
-          .select()
-          .single();
-
-        // 3. Create/Update Pre-Registration (for Admin Dashboard visibility)
-        const { error: preRegError } = await supabase
+         // Optional: Upsert pre-registration if needed for admin dashboard visibility of "leads"
+         // But the main user flow is now handled by DB triggers.
+         await supabase
             .from('pre_registrations')
             .upsert({
                email: signupData.email,
@@ -113,21 +99,13 @@ export function AuthDialog({ mode = "signup", trigger, defaultOpen = false }: Au
                city: signupData.city,
                phone: signupData.phone,
                current_job: signupData.trade,
-               program_type: 'job_seeker', // Defaulting to job seeker for network users
+               program_type: 'job_seeker', 
                status: 'approved',
                user_id: authData.user.id
-            }, { onConflict: 'email' });
-
-        // 4. Initialize Network Settings (CRITICAL for Admin Network visibility)
-        const { error: networkError } = await supabase
-            .from('network_settings')
-            .upsert({
-               user_id: authData.user.id,
-               status: 'active',
-               frequency_per_week: 5
-            }, { onConflict: 'user_id' });
-
-        // Note: If trigger exists, this might fail on duplicate key, which is fine (ignored).
+            }, { onConflict: 'email' })
+            .then(({ error }) => {
+                if (error) console.error("Pre-reg sync error (non-blocking):", error);
+            });
       }
 
       toast({ title: "Compte créé !", description: "Bienvenue sur Mon Réseau Local." });
