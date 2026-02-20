@@ -13,7 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { updateUserProfile } from "@/lib/actions/network-members";
 import { useToast } from "@/hooks/use-toast";
 
-export function ProfileContent({ user }: { user: any }) {
+export function ProfileContent({ user, isReadOnly = false }: { user: any; isReadOnly?: boolean }) {
   const { toast } = useToast();
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
@@ -66,19 +66,21 @@ export function ProfileContent({ user }: { user: any }) {
           </div>
           
           <div className="flex gap-3 mb-2">
-             {isEditing ? (
-               <>
-                 <Button variant="outline" onClick={() => setIsEditing(false)} disabled={loading} className="rounded-xl font-bold h-10">
-                   <X className="mr-2 h-4 w-4" /> Annuler
+             {!isReadOnly && (
+               isEditing ? (
+                 <>
+                   <Button variant="outline" onClick={() => setIsEditing(false)} disabled={loading} className="rounded-xl font-bold h-10">
+                     <X className="mr-2 h-4 w-4" /> Annuler
+                   </Button>
+                   <Button onClick={handleSave} disabled={loading} className="rounded-xl font-bold h-10 bg-green-600 hover:bg-green-700 text-white">
+                     {loading ? "..." : <><Save className="mr-2 h-4 w-4" /> Enregistrer</>}
+                   </Button>
+                 </>
+               ) : (
+                 <Button variant="outline" onClick={() => setIsEditing(true)} className="rounded-xl font-bold h-10 border-slate-200 hover:bg-slate-50">
+                   <Pencil className="mr-2 h-4 w-4" /> Modifier
                  </Button>
-                 <Button onClick={handleSave} disabled={loading} className="rounded-xl font-bold h-10 bg-green-600 hover:bg-green-700 text-white">
-                   {loading ? "..." : <><Save className="mr-2 h-4 w-4" /> Enregistrer</>}
-                 </Button>
-               </>
-             ) : (
-               <Button variant="outline" onClick={() => setIsEditing(true)} className="rounded-xl font-bold h-10 border-slate-200 hover:bg-slate-50">
-                 <Pencil className="mr-2 h-4 w-4" /> Modifier
-               </Button>
+               )
              )}
           </div>
         </div>

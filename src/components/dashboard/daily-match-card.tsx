@@ -8,6 +8,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { NetworkMatch } from "@/types/network";
 import { RateMatchDialog } from "./rate-match-dialog";
 
+import Link from "next/link";
+
 interface DailyMatchCardProps {
   match: any; // Using any for now to match the action return type
 }
@@ -79,9 +81,11 @@ export function DailyMatchCard({ match }: DailyMatchCardProps) {
               <Phone className="mr-2 h-5 w-5" /> 
               {match.type === 'call_out' ? `Appeler ${match.name.split(' ')[0]}` : `Attendre l'appel`}
             </Button>
-            <Button variant="outline" size="lg" className="border-slate-200 hover:bg-slate-50 text-slate-700 font-bold rounded-xl h-12">
-              Voir le profil complet
-            </Button>
+            <Link href={`/mon-reseau-local/dashboard/profile/${match.partnerId}`}>
+              <Button variant="outline" size="lg" className="border-slate-200 hover:bg-slate-50 text-slate-700 font-bold rounded-xl h-12 w-full md:w-auto">
+                Voir le profil complet
+              </Button>
+            </Link>
           </div>
         </div>
 

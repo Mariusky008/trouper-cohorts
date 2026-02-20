@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
+import Link from "next/link";
+
 interface Connection {
   id: string;
   name: string;
@@ -81,9 +83,11 @@ export function ConnectionList({ initialConnections }: { initialConnections: Con
                 <Button className="flex-1 bg-slate-900 text-white hover:bg-slate-800 font-bold rounded-lg h-10">
                   <MessageCircle className="mr-2 h-4 w-4" /> Message
                 </Button>
-                <Button variant="outline" className="flex-1 border-slate-200 hover:bg-slate-50 font-bold rounded-lg h-10">
-                  Profil
-                </Button>
+                <Link href={`/mon-reseau-local/dashboard/profile/${user.id}`} className="flex-1">
+                  <Button variant="outline" className="w-full border-slate-200 hover:bg-slate-50 font-bold rounded-lg h-10">
+                    Profil
+                  </Button>
+                </Link>
               </div>
             </motion.div>
           ))}
