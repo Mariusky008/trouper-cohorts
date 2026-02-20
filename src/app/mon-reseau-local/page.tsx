@@ -123,7 +123,7 @@ export default function MonReseauLocalPage() {
                                 </div>
                                 <div className="flex gap-2">
                                     <Button size="sm" className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold gap-2">
-                                        <Video className="h-4 w-4" /> Rejoindre la visio
+                                        <Phone className="h-4 w-4" /> Rejoindre l'appel
                                     </Button>
                                 </div>
                             </div>
@@ -199,7 +199,7 @@ export default function MonReseauLocalPage() {
                         </p>
                         <div className="bg-white/10 rounded-xl p-6 border border-white/20 backdrop-blur-sm">
                             <p className="text-2xl font-black text-white text-center">
-                                30 jours = 30 entrepreneurs rencontrés.
+                                20 jours = 20 entrepreneurs rencontrés/mois.
                             </p>
                         </div>
                     </FadeIn>
@@ -258,7 +258,7 @@ export default function MonReseauLocalPage() {
                     
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-6 mb-12">
                         {[
-                            "60 entrepreneurs vous connaissent",
+                            "40 entrepreneurs vous connaissent",
                             "Des recommandations naturelles",
                             "Des opportunités professionnelles",
                             "Moins d'isolement",
@@ -374,7 +374,7 @@ export default function MonReseauLocalPage() {
                             <Zap className="h-6 w-6 text-orange-600 fill-orange-600" />
                             <div className="text-left">
                                 <div className="font-black text-orange-800 uppercase text-xs tracking-wider">Offre Lancement</div>
-                                <div className="font-bold text-orange-900">15 jours d'essai pour 1€ seulement</div>
+                                <div className="font-bold text-orange-900">3 jours d'essai pour 1€ seulement</div>
                             </div>
                         </div>
                     </div>
