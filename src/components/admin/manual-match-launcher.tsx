@@ -33,9 +33,13 @@ export function ManualMatchLauncher() {
       const result = errorData; // response.json() already parsed
       
       setLastRun(new Date().toLocaleString());
+      
+      const count = result.matches_created !== undefined ? result.matches_created : '?';
+      const date = result.date || 'demain';
+      
       toast({
         title: "Matching lancé avec succès",
-        description: `Résultat: ${result.message || 'OK'}`,
+        description: `Résultat : ${count} match(s) généré(s) pour le ${date}.`,
       });
 
     } catch (error: any) {
