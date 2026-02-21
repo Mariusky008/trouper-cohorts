@@ -7,7 +7,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 export const dynamic = 'force-dynamic';
 
 async function getNetworkStats() {
-  const supabase = await createClient();
+  const supabase = await createClient(); // Keep for auth check if needed, but mainly use admin
   const supabaseAdmin = createAdminClient();
 
   // 1. Matches Today & Upcoming
@@ -16,18 +16,18 @@ async function getNetworkStats() {
   tomorrow.setDate(tomorrow.getDate() + 1);
   const tomorrowStr = tomorrow.toISOString().split('T')[0];
 
-  const { count: matchesCount } = await supabase
+  const { count: matchesCount } = await supabaseAdmin
     .from('network_matches')
     .select('*', { count: 'exact', head: true })
     .eq('date', today);
 
-  const { count: matchesUpcomingCount } = await supabase
+  const { count: matchesUpcomingCount } = await supabaseAdmin
     .from('network_matches')
     .select('*', { count: 'exact', head: true })
     .gte('date', tomorrowStr);
 
   // Get details of upcoming matches
-  const { data: upcomingMatches } = await supabase
+  const { data: upcomingMatches } = await supabaseAdmin
     .from('network_matches')
     .select('id, date, time, user1_id, user2_id')
     .gte('date', tomorrowStr)
@@ -55,24 +55,24 @@ async function getNetworkStats() {
   }
 
   // 1b. Availabilities for Tomorrow
-  const { count: availabilitiesCount } = await supabase
+  const { count: availabilitiesCount } = await supabaseAdmin
     .from('network_availabilities')
     .select('*', { count: 'exact', head: true })
     .eq('date', tomorrowStr);
 
   // 2. Opportunities Total
-  const { count: oppsCount } = await supabase
+  const { count: oppsCount } = await supabaseAdmin
     .from('network_opportunities')
     .select('*', { count: 'exact', head: true });
     
   // 3. Members Active (with settings)
-  const { count: membersCount } = await supabase
+  const { count: membersCount } = await supabaseAdmin
     .from('network_settings')
     .select('*', { count: 'exact', head: true })
     .eq('status', 'active');
 
   // 4. Average Trust Score
-  const { data: scores } = await supabase
+  const { data: scores } = await supabaseAdmin
     .from('trust_scores')
     .select('score');
   
@@ -81,7 +81,7 @@ async function getNetworkStats() {
     : "5.0";
 
   // 5. Recent Members (Who activated the network feature)
-  const { data: recentMembers } = await supabase
+  const { data: recentMembers } = await supabaseAdmin
     .from('network_settings')
     .select('user_id, created_at, status')
     .order('created_at', { ascending: false })
