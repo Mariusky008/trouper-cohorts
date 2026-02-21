@@ -13,13 +13,17 @@ export async function POST(request: Request) {
 }
 
 async function handleMatching(request: Request) {
-  // 1. Init Admin Client (bypasses RLS to read all availabilities and insert matches)
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
-
   try {
+    // 1. Init Admin Client
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      throw new Error('Missing Supabase environment variables');
+    }
+    
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+      process.env.SUPABASE_SERVICE_ROLE_KEY
+    );
+
     // 2. Determine target date (Tomorrow)
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
@@ -31,14 +35,16 @@ async function handleMatching(request: Request) {
       .select('user_id, slots')
       .eq('date', dateStr);
 
-    if (availError) throw availError;
+    if (availError) {
+        console.error("Supabase Error fetching availabilities:", availError);
+        throw new Error(`Database error: ${availError.message}`);
+    }
 
     if (!availabilities || availabilities.length < 2) {
       return NextResponse.json({ message: 'Not enough participants for ' + dateStr, count: 0 });
     }
 
     // 4. Simple Matching Logic (Random Pairing for MVP)
-    // In a real version, we would match based on overlapping slots and trust scores.
     const shuffled = availabilities.sort(() => 0.5 - Math.random());
     const matches = [];
     
@@ -47,16 +53,18 @@ async function handleMatching(request: Request) {
       const user2 = shuffled.pop()!;
 
       // Find common slot (MVP: just take the first common one, or default to first slot of user1)
-      // Real logic: intersect user1.slots and user2.slots
-      const commonSlot = user1.slots.find((s: string) => user2.slots.includes(s)) || user1.slots[0];
+      const u1Slots = Array.isArray(user1.slots) ? user1.slots : [];
+      const u2Slots = Array.isArray(user2.slots) ? user2.slots : [];
+      
+      const commonSlot = u1Slots.find((s: string) => u2Slots.includes(s)) || u1Slots[0];
 
       matches.push({
         user1_id: user1.user_id,
         user2_id: user2.user_id,
         date: dateStr,
-        time: commonSlot || "09h – 11h", // Default if no overlap found (should handle this better)
+        time: commonSlot || "09h – 11h", 
         status: 'pending',
-        meeting_url: `https://meet.google.com/new`, // Or generate a real Jitsi/Zoom link
+        meeting_url: `https://meet.google.com/new`,
         topic: "Échange réseau : Présentez vos activités respectives."
       });
     }
@@ -67,7 +75,10 @@ async function handleMatching(request: Request) {
         .from('network_matches')
         .insert(matches);
       
-      if (insertError) throw insertError;
+      if (insertError) {
+          console.error("Supabase Error inserting matches:", insertError);
+          throw new Error(`Insert error: ${insertError.message}`);
+      }
     }
 
     return NextResponse.json({ 
@@ -78,7 +89,11 @@ async function handleMatching(request: Request) {
     });
 
   } catch (error: any) {
-    console.error('Matching Error:', error);
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    console.error('Matching Error Detailed:', error);
+    return NextResponse.json({ 
+        success: false, 
+        error: error.message || "Unknown error",
+        stack: error.stack 
+    }, { status: 500 });
   }
 }
