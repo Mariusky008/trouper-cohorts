@@ -3,7 +3,8 @@
 import { useState, useRef } from "react";
 import { 
     Briefcase, ShieldCheck, Award, Pencil, Save, X, Phone, 
-    Linkedin, Instagram, Facebook, Globe, Upload, Loader2
+    Linkedin, Instagram, Facebook, Globe, Upload, Loader2,
+    MapPin, Camera
   } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -15,18 +16,10 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { createClient } from "@/lib/supabase/client";
 import { updateProfile } from "@/app/actions/profile";
-
-// Helper for social icons
-const SocialIcon = ({ type, className }: { type: string, className?: string }) => {
-    switch (type) {
-        case 'linkedin': return <Linkedin className={className} />;
-        case 'instagram': return <Instagram className={className} />;
-        case 'facebook': return <Facebook className={className} />;
-        case 'tiktok': return <span className={`font-bold text-xs ${className}`}>Tk</span>;
-        case 'website': return <Globe className={className} />;
-        default: return <Globe className={className} />;
-    }
-};
+import {
+    Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter
+} from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export function ProfileContent({ user, isReadOnly = false }: { user: any; isReadOnly?: boolean }) {
   const { toast } = useToast();
@@ -64,9 +57,7 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
         .from('avatars')
         .upload(filePath, file);
 
-      if (uploadError) {
-        throw uploadError;
-      }
+      if (uploadError) throw uploadError;
 
       const { data: { publicUrl } } = supabase.storage
         .from('avatars')
@@ -91,35 +82,23 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
       const data = new FormData();
       data.append("display_name", formData.display_name);
       data.append("bio", formData.bio);
+      data.append("trade", formData.trade);
+      data.append("city", formData.city);
+      data.append("phone", formData.phone);
       data.append("linkedin", formData.linkedin);
       data.append("instagram", formData.instagram);
       data.append("facebook", formData.facebook);
       data.append("website", formData.website);
       data.append("avatar_url", formData.avatar_url);
       
-      // Note: trade, city, phone are not in updateProfile action yet, let's fix that action too or create a combined one.
-      // But wait, the updateProfile action I read earlier handles display_name, bio, socials.
-      // It DOES NOT seem to handle 'trade', 'city', 'phone' in the file I read!
-      // I need to update the server action to include these fields or use the one from '@/lib/actions/network-members' which handled them.
-      // Let's use a hybrid approach: call the updateProfile for socials and another call/update to the action for the rest.
-      // Actually, I will rewrite the action in the next step to handle everything. 
-      // For now, I'll send everything assuming the action will be updated.
-      
-      // We need to call the server action. 
-      // Let's update the server action first? No I can't in this tool call.
-      // I will assume I will update the action immediately after.
-      
-      // Adding extra fields that need to be handled by the updated action
-      data.append("trade", formData.trade);
-      data.append("city", formData.city);
-      data.append("phone", formData.phone);
-
       const result = await updateProfile(data);
       
       if (result.error) throw new Error(result.error);
       
       setIsEditing(false);
       toast({ title: "Profil mis à jour avec succès !" });
+      // Reload page to reflect changes cleanly or just update state (state is already updated)
+      window.location.reload(); 
     } catch (e: any) {
       toast({ title: "Erreur", description: e.message || "Impossible de mettre à jour le profil.", variant: "destructive" });
     } finally {
@@ -136,173 +115,98 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
         
         <div className="relative -mt-16 flex flex-col md:flex-row items-end gap-6 pb-4">
           <div className="relative group">
-            <Avatar className="h-32 w-32 border-4 border-white shadow-xl rounded-2xl bg-white">
+            <Avatar className="h-36 w-36 border-4 border-white shadow-xl rounded-2xl bg-white">
               <AvatarImage src={formData.avatar_url} className="object-cover" />
               <AvatarFallback className="text-4xl font-black text-slate-300 bg-slate-100">
                 {formData.display_name?.[0]?.toUpperCase() || "?"}
               </AvatarFallback>
             </Avatar>
             
-            {isEditing && (
-                <div className="absolute inset-0 bg-black/40 rounded-2xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer" onClick={() => fileInputRef.current?.click()}>
-                    {uploading ? <Loader2 className="h-8 w-8 text-white animate-spin" /> : <Upload className="h-8 w-8 text-white" />}
-                    <input 
-                        type="file" 
-                        ref={fileInputRef} 
-                        className="hidden" 
-                        accept="image/*"
-                        onChange={handleAvatarUpload}
-                        disabled={uploading}
-                    />
+            {/* Quick Upload Button on Hover */}
+            {!isReadOnly && (
+                <div className="absolute -bottom-2 -right-2 bg-white rounded-full p-2 shadow-md border border-slate-100 cursor-pointer hover:bg-slate-50 transition-colors" onClick={() => setIsEditing(true)}>
+                   <Pencil className="h-4 w-4 text-slate-600" />
                 </div>
             )}
           </div>
           
           <div className="flex-1 mb-2">
-            {isEditing ? (
-                 <div className="space-y-2">
-                    <Input 
-                        value={formData.display_name} 
-                        onChange={(e) => setFormData({...formData, display_name: e.target.value})}
-                        className="text-2xl font-black h-10 w-full md:w-1/2"
-                        placeholder="Prénom Nom"
-                    />
-                    <div className="flex gap-2">
-                        <Input 
-                            value={formData.trade} 
-                            onChange={(e) => setFormData({...formData, trade: e.target.value})}
-                            placeholder="Métier"
-                            className="max-w-[200px] h-8"
-                        />
-                        <Input 
-                            value={formData.city} 
-                            onChange={(e) => setFormData({...formData, city: e.target.value})}
-                            placeholder="Ville"
-                            className="max-w-[150px] h-8"
-                        />
-                    </div>
-                 </div>
-            ) : (
-                <>
-                    <h1 className="text-3xl font-black text-slate-900 mb-1">{formData.display_name}</h1>
-                    <p className="text-lg text-slate-500 font-medium flex items-center gap-2">
-                        <Briefcase className="h-4 w-4" /> {formData.trade || "Métier non renseigné"} • {formData.city || "Ville non renseignée"}
-                    </p>
-                </>
-            )}
-
-            {isEditing ? (
-              <Input 
-                value={formData.phone} 
-                onChange={(e) => setFormData({...formData, phone: e.target.value})}
-                placeholder="Votre téléphone"
-                className="max-w-xs h-8 mt-2"
-              />
-            ) : (
-              <p className="text-sm text-slate-400 font-medium flex items-center gap-2 mt-1">
-                <Phone className="h-3 w-3" /> {formData.phone || "Téléphone non renseigné"}
-              </p>
-            )}
+             <h1 className="text-4xl font-black text-white drop-shadow-md mb-2">{formData.display_name}</h1>
+             <div className="flex flex-wrap gap-3 text-slate-600 font-medium">
+                <span className="flex items-center gap-1 bg-slate-100 px-2 py-1 rounded-md text-sm border border-slate-200">
+                    <Briefcase className="h-3.5 w-3.5" /> {formData.trade || "Métier non renseigné"}
+                </span>
+                <span className="flex items-center gap-1 bg-slate-100 px-2 py-1 rounded-md text-sm border border-slate-200">
+                    <MapPin className="h-3.5 w-3.5" /> {formData.city || "Ville non renseignée"}
+                </span>
+                <span className="flex items-center gap-1 bg-slate-100 px-2 py-1 rounded-md text-sm border border-slate-200">
+                    <Phone className="h-3.5 w-3.5" /> {formData.phone || "Non renseigné"}
+                </span>
+             </div>
           </div>
           
           <div className="flex gap-3 mb-2">
              {!isReadOnly && (
-               isEditing ? (
-                 <>
-                   <Button variant="outline" onClick={() => setIsEditing(false)} disabled={loading} className="rounded-xl font-bold h-10">
-                     <X className="mr-2 h-4 w-4" /> Annuler
-                   </Button>
-                   <Button onClick={handleSave} disabled={loading} className="rounded-xl font-bold h-10 bg-green-600 hover:bg-green-700 text-white shadow-lg shadow-green-200">
-                     {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />} Enregistrer
-                   </Button>
-                 </>
-               ) : (
-                 <Button variant="outline" onClick={() => setIsEditing(true)} className="rounded-xl font-bold h-10 border-slate-200 hover:bg-slate-50 shadow-sm">
+                 <Button onClick={() => setIsEditing(true)} className="rounded-xl font-bold h-12 px-6 shadow-md bg-white text-slate-900 hover:bg-slate-50 border border-slate-200">
                    <Pencil className="mr-2 h-4 w-4" /> Modifier mon profil
                  </Button>
-               )
              )}
           </div>
         </div>
 
         {/* SOCIAL LINKS ROW */}
-        <div className="mt-6 pt-6 border-t border-slate-100 flex flex-wrap gap-4 items-center">
-            <span className="text-xs font-bold uppercase text-slate-400 tracking-wider mr-2">Réseaux :</span>
+        <div className="mt-6 pt-6 border-t border-slate-100">
+            <div className="flex items-center gap-2 mb-3">
+                <span className="text-xs font-bold uppercase text-slate-400 tracking-wider">Mes Réseaux</span>
+                <div className="h-px bg-slate-100 flex-1" />
+            </div>
             
-            {isEditing ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full bg-slate-50 p-4 rounded-xl">
-                    <div className="flex items-center gap-2">
-                        <Linkedin className="h-4 w-4 text-blue-700" />
-                        <Input placeholder="Lien LinkedIn" value={formData.linkedin} onChange={e => setFormData({...formData, linkedin: e.target.value})} className="h-8 bg-white" />
+            <div className="flex gap-3 flex-wrap">
+                {formData.linkedin && (
+                    <a href={formData.linkedin} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-xl hover:bg-blue-100 transition-colors font-bold text-sm">
+                        <Linkedin className="h-5 w-5" /> LinkedIn
+                    </a>
+                )}
+                {formData.instagram && (
+                    <a href={`https://instagram.com/${formData.instagram.replace('@', '')}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-4 py-2 bg-pink-50 text-pink-600 rounded-xl hover:bg-pink-100 transition-colors font-bold text-sm">
+                        <Instagram className="h-5 w-5" /> Instagram
+                    </a>
+                )}
+                {formData.facebook && (
+                    <a href={formData.facebook} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-100 transition-colors font-bold text-sm">
+                        <Facebook className="h-5 w-5" /> Facebook
+                    </a>
+                )}
+                {formData.website && (
+                    <a href={formData.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-4 py-2 bg-slate-50 text-slate-600 rounded-xl hover:bg-slate-100 transition-colors font-bold text-sm">
+                        <Globe className="h-5 w-5" /> Site Web
+                    </a>
+                )}
+                {!formData.linkedin && !formData.instagram && !formData.facebook && !formData.website && (
+                    <div className="flex items-center gap-2 text-slate-400 bg-slate-50 px-4 py-2 rounded-xl border border-dashed border-slate-200 w-full">
+                        <span className="text-sm italic">Vous n'avez pas encore ajouté de réseaux sociaux.</span>
+                        {!isReadOnly && (
+                            <Button variant="link" onClick={() => setIsEditing(true)} className="h-auto p-0 text-blue-600 font-bold">
+                                Ajouter maintenant
+                            </Button>
+                        )}
                     </div>
-                    <div className="flex items-center gap-2">
-                        <Instagram className="h-4 w-4 text-pink-600" />
-                        <Input placeholder="Handle Instagram (@...)" value={formData.instagram} onChange={e => setFormData({...formData, instagram: e.target.value})} className="h-8 bg-white" />
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <Facebook className="h-4 w-4 text-blue-600" />
-                        <Input placeholder="Lien Facebook" value={formData.facebook} onChange={e => setFormData({...formData, facebook: e.target.value})} className="h-8 bg-white" />
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <Globe className="h-4 w-4 text-slate-600" />
-                        <Input placeholder="Site Web" value={formData.website} onChange={e => setFormData({...formData, website: e.target.value})} className="h-8 bg-white" />
-                    </div>
-                </div>
-            ) : (
-                <div className="flex gap-3">
-                    {formData.linkedin && (
-                        <a href={formData.linkedin} target="_blank" rel="noopener noreferrer" className="p-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors">
-                            <Linkedin className="h-5 w-5" />
-                        </a>
-                    )}
-                    {formData.instagram && (
-                        <a href={`https://instagram.com/${formData.instagram.replace('@', '')}`} target="_blank" rel="noopener noreferrer" className="p-2 bg-pink-50 text-pink-600 rounded-lg hover:bg-pink-100 transition-colors">
-                            <Instagram className="h-5 w-5" />
-                        </a>
-                    )}
-                    {formData.facebook && (
-                        <a href={formData.facebook} target="_blank" rel="noopener noreferrer" className="p-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors">
-                            <Facebook className="h-5 w-5" />
-                        </a>
-                    )}
-                    {formData.website && (
-                        <a href={formData.website} target="_blank" rel="noopener noreferrer" className="p-2 bg-slate-50 text-slate-600 rounded-lg hover:bg-slate-100 transition-colors">
-                            <Globe className="h-5 w-5" />
-                        </a>
-                    )}
-                    {!formData.linkedin && !formData.instagram && !formData.facebook && !formData.website && (
-                        <span className="text-sm text-slate-400 italic">Aucun réseau social connecté.</span>
-                    )}
-                </div>
-            )}
+                )}
+            </div>
         </div>
       </div>
 
       <div className="grid md:grid-cols-[2fr_1fr] gap-8">
            <div className="space-y-6">
-             <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
-               <h3 className="font-bold text-slate-900 text-lg mb-4 flex items-center gap-2">
-                    <span className="bg-yellow-100 text-yellow-700 p-1 rounded-md">👋</span> À propos
+             <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm min-h-[300px]">
+               <h3 className="font-bold text-slate-900 text-xl mb-6 flex items-center gap-2">
+                    <span className="bg-yellow-100 text-yellow-700 p-1.5 rounded-lg text-lg">👋</span> À propos
                </h3>
-               {isEditing ? (
-                 <Textarea 
-                   value={formData.bio} 
-                   onChange={(e) => setFormData({...formData, bio: e.target.value})}
-                   placeholder="Racontez votre parcours, votre expertise et ce que vous cherchez..."
-                   className="min-h-[150px] text-base"
-                 />
-               ) : (
-                 <p className="text-slate-600 leading-relaxed whitespace-pre-wrap text-lg">{formData.bio || "Aucune description pour le moment."}</p>
-               )}
-             </div>
-             
-             {/* Mock badges */}
-             <div className="flex flex-wrap gap-2">
-               {["Expert", "Membre Actif"].map(tag => (
-                 <Badge key={tag} variant="secondary" className="bg-white border border-slate-200 text-slate-600 px-3 py-1 text-sm font-medium shadow-sm">
-                   {tag}
-                 </Badge>
-               ))}
+               <div className="prose prose-slate max-w-none">
+                 <p className="text-slate-600 leading-relaxed whitespace-pre-wrap text-lg">
+                    {formData.bio || "Aucune description pour le moment. Dites-en plus sur vous !"}
+                 </p>
+               </div>
              </div>
            </div>
 
@@ -312,19 +216,19 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
                   <span className="font-bold text-slate-900 flex items-center gap-2">
                     <ShieldCheck className="h-5 w-5 text-orange-500" /> Score de Confiance
                   </span>
-                  <span className="font-black text-2xl text-slate-900">{user.score}/5</span>
+                  <span className="font-black text-3xl text-slate-900">{user.score}/5</span>
                 </div>
-                <Progress value={(user.score / 5) * 100} className="h-2 bg-slate-100" indicatorClassName="bg-orange-500" />
+                <Progress value={(user.score / 5) * 100} className="h-3 bg-slate-100" indicatorClassName="bg-gradient-to-r from-orange-400 to-orange-600" />
               </div>
               
-              <div className="space-y-3 pt-4 border-t border-slate-100">
+              <div className="space-y-4 pt-4 border-t border-slate-100">
                  <div className="flex items-center justify-between text-sm">
                    <span className="text-slate-500 font-medium">Opportunités générées</span>
-                   <span className="font-bold text-slate-900 bg-slate-50 px-2 py-1 rounded">{user.stats?.opportunities || 0}</span>
+                   <span className="font-bold text-slate-900 bg-slate-50 px-3 py-1 rounded-lg border border-slate-100">{user.stats?.opportunities || 0}</span>
                  </div>
                  <div className="flex items-center justify-between text-sm">
                    <span className="text-slate-500 font-medium">Taux de réciprocité</span>
-                   <span className="font-bold text-green-600 bg-green-50 px-2 py-1 rounded">{user.stats?.reciprocity || "100%"}</span>
+                   <span className="font-bold text-green-600 bg-green-50 px-3 py-1 rounded-lg border border-green-100">{user.stats?.reciprocity || "100%"}</span>
                  </div>
                  <div className="flex items-center justify-between text-sm">
                    <span className="text-slate-500 font-medium">Membre depuis</span>
@@ -333,12 +237,117 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
               </div>
 
               <div className="flex gap-2 flex-wrap pt-2">
-                <Badge className="bg-blue-50 text-blue-700 hover:bg-blue-100 border-none">
+                <Badge className="bg-blue-50 text-blue-700 hover:bg-blue-100 border-none px-3 py-1.5 text-xs uppercase tracking-wide">
                   <Award className="h-3 w-3 mr-1" /> Membre Vérifié
                 </Badge>
               </div>
            </div>
         </div>
+
+      {/* --- EDIT MODAL --- */}
+      <Dialog open={isEditing} onOpenChange={setIsEditing}>
+        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-black">Modifier mon profil</DialogTitle>
+            <DialogDescription>
+              Mettez à jour vos informations pour être plus visible sur le réseau.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <Tabs defaultValue="infos" className="w-full py-4">
+             <TabsList className="grid w-full grid-cols-2 mb-6">
+                <TabsTrigger value="infos">Infos Personnelles</TabsTrigger>
+                <TabsTrigger value="socials">Réseaux Sociaux</TabsTrigger>
+             </TabsList>
+
+             <TabsContent value="infos" className="space-y-6">
+                {/* Avatar Upload in Edit Mode */}
+                <div className="flex flex-col items-center gap-4 mb-6">
+                    <div className="relative group cursor-pointer" onClick={() => fileInputRef.current?.click()}>
+                        <Avatar className="h-24 w-24 border-4 border-slate-100">
+                            <AvatarImage src={formData.avatar_url} className="object-cover" />
+                            <AvatarFallback>{formData.display_name?.[0]}</AvatarFallback>
+                        </Avatar>
+                        <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                            <Camera className="h-8 w-8 text-white" />
+                        </div>
+                        <input 
+                            type="file" 
+                            ref={fileInputRef} 
+                            className="hidden" 
+                            accept="image/*"
+                            onChange={handleAvatarUpload}
+                            disabled={uploading}
+                        />
+                    </div>
+                    <p className="text-xs text-slate-500 font-medium">{uploading ? "Téléchargement..." : "Cliquez pour changer la photo"}</p>
+                </div>
+
+                <div className="space-y-4">
+                    <div className="space-y-2">
+                        <Label>Nom d'affichage</Label>
+                        <Input value={formData.display_name} onChange={e => setFormData({...formData, display_name: e.target.value})} className="h-12 text-lg" />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label>Métier / Activité</Label>
+                            <Input value={formData.trade} onChange={e => setFormData({...formData, trade: e.target.value})} className="h-12" placeholder="Ex: Architecte" />
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Ville</Label>
+                            <Input value={formData.city} onChange={e => setFormData({...formData, city: e.target.value})} className="h-12" placeholder="Ex: Bordeaux" />
+                        </div>
+                    </div>
+                    <div className="space-y-2">
+                        <Label>Téléphone</Label>
+                        <Input value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} className="h-12" placeholder="06..." />
+                    </div>
+                    <div className="space-y-2">
+                        <Label>À propos (Bio)</Label>
+                        <Textarea 
+                            value={formData.bio} 
+                            onChange={e => setFormData({...formData, bio: e.target.value})} 
+                            className="min-h-[120px] text-base"
+                            placeholder="Décrivez votre activité et ce que vous recherchez..." 
+                        />
+                    </div>
+                </div>
+             </TabsContent>
+
+             <TabsContent value="socials" className="space-y-6">
+                <div className="space-y-4">
+                    <div className="space-y-2">
+                        <Label className="flex items-center gap-2"><Linkedin className="h-4 w-4 text-blue-700" /> LinkedIn URL</Label>
+                        <Input value={formData.linkedin} onChange={e => setFormData({...formData, linkedin: e.target.value})} placeholder="https://linkedin.com/in/..." className="h-12" />
+                    </div>
+                    <div className="space-y-2">
+                        <Label className="flex items-center gap-2"><Instagram className="h-4 w-4 text-pink-600" /> Instagram Handle</Label>
+                        <div className="relative">
+                            <span className="absolute left-3 top-3 text-slate-400 font-bold">@</span>
+                            <Input value={formData.instagram} onChange={e => setFormData({...formData, instagram: e.target.value})} placeholder="mon_compte" className="h-12 pl-8" />
+                        </div>
+                    </div>
+                    <div className="space-y-2">
+                        <Label className="flex items-center gap-2"><Facebook className="h-4 w-4 text-blue-600" /> Facebook URL</Label>
+                        <Input value={formData.facebook} onChange={e => setFormData({...formData, facebook: e.target.value})} placeholder="https://facebook.com/..." className="h-12" />
+                    </div>
+                    <div className="space-y-2">
+                        <Label className="flex items-center gap-2"><Globe className="h-4 w-4 text-slate-600" /> Site Web</Label>
+                        <Input value={formData.website} onChange={e => setFormData({...formData, website: e.target.value})} placeholder="https://monsite.com" className="h-12" />
+                    </div>
+                </div>
+             </TabsContent>
+          </Tabs>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsEditing(false)} disabled={loading}>Annuler</Button>
+            <Button onClick={handleSave} disabled={loading} className="bg-slate-900 text-white hover:bg-slate-800 font-bold px-8">
+                {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                Enregistrer les modifications
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       
     </div>
   );
