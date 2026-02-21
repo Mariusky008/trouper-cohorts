@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { ShieldCheck, Star, TrendingUp, ThumbsUp, Clock } from "lucide-react";
+import { ShieldCheck, Star, TrendingUp, ThumbsUp, AlertCircle } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 
@@ -25,10 +25,10 @@ export function TrustScoreCard({ scoreData }: TrustScoreProps) {
   const progress = Math.min(100, (given / 10) * 100);
 
   const stats = [
-    { label: "Score de Confiance", value: `${score.toFixed(1)}/5`, icon: Star, color: "text-orange-500", bg: "bg-orange-50", border: "border-orange-100" },
-    { label: "Opportunités Reçues", value: received.toString(), icon: TrendingUp, color: "text-green-500", bg: "bg-green-50", border: "border-green-100" },
-    { label: "Opportunités Rendues", value: given.toString(), icon: ThumbsUp, color: "text-blue-500", bg: "bg-blue-50", border: "border-blue-100" },
-    { label: "Dettes en cours", value: debts.toString(), icon: Clock, color: "text-red-500", bg: "bg-red-50", border: "border-red-100" },
+    { label: "Score", value: `${score.toFixed(1)}`, icon: Star, color: "text-orange-500", bg: "bg-orange-50", border: "border-orange-100" },
+    { label: "Dettes", value: debts.toString(), icon: AlertCircle, color: "text-red-500", bg: "bg-red-50", border: "border-red-100" },
+    { label: "Reçues", value: received.toString(), icon: TrendingUp, color: "text-green-500", bg: "bg-green-50", border: "border-green-100" },
+    { label: "Données", value: given.toString(), icon: ThumbsUp, color: "text-blue-500", bg: "bg-blue-50", border: "border-blue-100" },
   ];
 
   return (
@@ -36,7 +36,7 @@ export function TrustScoreCard({ scoreData }: TrustScoreProps) {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: 0.2 }}
-      className="bg-white rounded-3xl p-6 md:p-8 border border-slate-200 shadow-sm flex flex-col"
+      className="bg-white rounded-3xl p-6 md:p-8 border border-slate-200 shadow-sm flex flex-col h-full"
     >
        <div className="flex items-center justify-between mb-6">
         <div>
@@ -50,20 +50,24 @@ export function TrustScoreCard({ scoreData }: TrustScoreProps) {
 
       <div className="grid grid-cols-2 gap-4 flex-1">
         {stats.map((stat, i) => (
-          <div key={i} className={cn("p-4 rounded-2xl border flex flex-col justify-center", stat.bg, stat.border)}>
-            <stat.icon className={cn("h-6 w-6 mb-3", stat.color)} />
-            <div className="text-2xl font-black text-slate-900">{stat.value}</div>
-            <div className="text-xs font-bold text-slate-500 uppercase tracking-wide">{stat.label}</div>
+          <div key={i} className={cn("p-4 rounded-2xl border flex flex-col justify-between hover:shadow-md transition-shadow", stat.bg, stat.border)}>
+            <div className="flex justify-between items-start mb-2">
+                <stat.icon className={cn("h-5 w-5", stat.color)} />
+            </div>
+            <div>
+                <div className="text-3xl font-black text-slate-900 tracking-tight">{stat.value}</div>
+                <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wide mt-1">{stat.label}</div>
+            </div>
           </div>
         ))}
       </div>
       
       <div className="mt-6 pt-6 border-t border-slate-100">
         <div className="flex items-center justify-between text-sm mb-2">
-           <span className="font-bold text-slate-700">Progression vers le niveau "Connecteur"</span>
-           <span className="font-bold text-blue-600">{Math.round(progress)}%</span>
+           <span className="font-bold text-slate-700">Niveau "Connecteur"</span>
+           <span className="font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md">{Math.round(progress)}%</span>
         </div>
-        <Progress value={progress} className="h-2" />
+        <Progress value={progress} className="h-3 bg-slate-100" indicatorClassName="bg-gradient-to-r from-blue-500 to-purple-500" />
       </div>
     </motion.div>
   );

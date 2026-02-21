@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { 
-  Settings, PauseCircle, PlayCircle, Sun, Calendar, Clock 
+  Settings, PauseCircle, PlayCircle, Sun, Calendar, Clock, BarChart3 
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -96,55 +96,57 @@ export function FrequencyControl({ settings, potentialCount }: FrequencyControlP
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: 0.3 }}
-      className="bg-white rounded-3xl p-6 md:p-8 border border-slate-200 shadow-sm"
+      className="bg-white rounded-3xl p-6 md:p-8 border border-slate-200 shadow-sm flex flex-col h-full"
     >
       <div className="flex items-center justify-between mb-6">
         <div>
           <h3 className="font-black text-xl text-slate-900 flex items-center gap-2">
-            <Settings className="h-5 w-5 text-slate-400" /> Votre Rythme
+            Votre Rythme
           </h3>
           <p className="text-slate-500 text-sm">Gérez votre pression.</p>
         </div>
         
         <div className="flex items-center gap-2">
            <div className="bg-purple-50 px-3 py-1 rounded-full border border-purple-100 flex items-center gap-2">
-             <span className="text-xs font-bold text-purple-600 uppercase tracking-wide">Potentiel</span>
-             <span className="font-black text-purple-700">{potentialCount} opp.</span>
+             <BarChart3 className="h-4 w-4 text-purple-600" />
+             <span className="font-black text-purple-700 text-sm">{potentialCount} opp.</span>
            </div>
         </div>
       </div>
 
-      <div className="space-y-8">
+      <div className="space-y-8 flex-1 flex flex-col justify-center">
         {/* FREQUENCY SLIDER */}
-        <div className="space-y-4">
+        <div className="space-y-6">
           <div className="flex justify-between items-end">
             <label className="text-sm font-bold text-slate-700">Fréquence Hebdomadaire</label>
-            <span className="text-2xl font-black text-blue-600">{frequency}j / sem</span>
+            <span className="text-3xl font-black text-blue-600">{frequency} <span className="text-sm text-slate-400 font-medium">jours/sem</span></span>
           </div>
-          <Slider 
-            value={[frequency]} 
-            min={1} 
-            max={7} 
-            step={1} 
-            onValueChange={(vals) => setFrequency(vals[0])}
-            onValueCommit={(vals) => handleUpdate({ frequency_per_week: vals[0] })}
-            className="py-4"
-          />
-          <div className="flex justify-between text-xs text-slate-400 font-medium px-1">
+          <div className="px-2">
+            <Slider 
+                value={[frequency]} 
+                min={1} 
+                max={7} 
+                step={1} 
+                onValueChange={(vals) => setFrequency(vals[0])}
+                onValueCommit={(vals) => handleUpdate({ frequency_per_week: vals[0] })}
+                className="py-4 cursor-pointer"
+            />
+          </div>
+          <div className="flex justify-between text-xs text-slate-400 font-bold uppercase tracking-wider px-1">
              <span>Cool (1j)</span>
              <span>Intense (7j)</span>
           </div>
         </div>
 
         {/* CONTROLS */}
-        <div className="flex gap-3">
+        <div className="flex gap-3 pt-4">
           <Button 
             variant={status === 'active' ? "outline" : "default"}
             className={cn(
-              "flex-1 h-12 rounded-xl font-bold border-2 transition-all",
+              "flex-1 h-14 rounded-2xl font-bold border-2 transition-all text-base",
               status === 'active' 
-                ? "border-slate-200 hover:border-red-200 hover:bg-red-50 hover:text-red-600" 
-                : "bg-green-600 hover:bg-green-700 border-green-600 text-white"
+                ? "border-slate-200 hover:border-red-200 hover:bg-red-50 hover:text-red-600 text-slate-700" 
+                : "bg-green-600 hover:bg-green-700 border-green-600 text-white shadow-lg shadow-green-200"
             )}
             onClick={togglePause}
             disabled={loading}
@@ -158,8 +160,8 @@ export function FrequencyControl({ settings, potentialCount }: FrequencyControlP
 
           <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
             <DialogTrigger asChild>
-              <Button variant="secondary" className="h-12 w-12 rounded-xl bg-slate-100 hover:bg-slate-200">
-                <Calendar className="h-5 w-5 text-slate-600" />
+              <Button variant="secondary" className="h-14 w-14 rounded-2xl bg-slate-100 hover:bg-slate-200 border border-slate-200">
+                <Settings className="h-6 w-6 text-slate-600" />
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[425px]">
@@ -179,7 +181,7 @@ export function FrequencyControl({ settings, potentialCount }: FrequencyControlP
                          className={cn(
                            "h-10 w-10 rounded-full flex items-center justify-center font-bold text-sm transition-colors",
                            selectedDays.includes(day.id) 
-                             ? "bg-blue-600 text-white" 
+                             ? "bg-blue-600 text-white shadow-md shadow-blue-200" 
                              : "bg-slate-100 text-slate-400 hover:bg-slate-200"
                          )}
                        >
@@ -219,8 +221,9 @@ export function FrequencyControl({ settings, potentialCount }: FrequencyControlP
         </div>
         
         {status === 'pause' && (
-           <div className="bg-orange-50 text-orange-800 p-3 rounded-xl text-sm font-medium flex items-center gap-2">
-             <Sun className="h-4 w-4" /> Mode Vacances activé. Vous ne recevrez pas de matchs.
+           <div className="bg-orange-50 text-orange-800 p-4 rounded-2xl text-sm font-medium flex items-start gap-3 border border-orange-100">
+             <Sun className="h-5 w-5 shrink-0 mt-0.5" /> 
+             <span>Mode Vacances activé. Profitez de votre temps libre !</span>
            </div>
         )}
       </div>
