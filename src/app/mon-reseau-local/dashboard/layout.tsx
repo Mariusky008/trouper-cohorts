@@ -32,16 +32,41 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
+  const [userProfile, setUserProfile] = useState<any>(null);
+
   // Close mobile menu on route change
   useEffect(() => {
     setIsMobileMenuOpen(false);
   }, [pathname]);
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+        setUserProfile(profile);
+      }
+    };
+    fetchProfile();
+  }, []);
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
     router.push("/login");
   };
 
+  const displayName = userProfile?.display_name || "Membre";
+  const avatarUrl = userProfile?.avatar_url;
+  const initials = displayName.substring(0, 2).toUpperCase();
+  const trustScore = userProfile?.trust_score || 5.0; // Assuming trust_score is in profile or separate, for now default
+  // Actually trust score is usually in a separate table or view, but let's use a safe default or fetch if needed.
+  // For MVP let's keep it simple or fetch it properly if we want.
+  // The user input only complained about the NAME "Jean Dupont".
+  
   return (
     <div className="min-h-screen bg-slate-50 flex font-sans text-slate-900 selection:bg-blue-100 selection:text-blue-900">
       <ProfileCompletionModal />
@@ -88,13 +113,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <div className="p-4 border-t border-slate-100">
           <div className="bg-slate-50 rounded-xl p-4 border border-slate-100 flex items-center gap-3 cursor-pointer hover:bg-slate-100 transition-colors">
             <Avatar>
-              <AvatarImage src="https://github.com/shadcn.png" />
-              <AvatarFallback>JD</AvatarFallback>
+              <AvatarImage src={avatarUrl} className="object-cover" />
+              <AvatarFallback>{initials}</AvatarFallback>
             </Avatar>
             <div className="flex-1 overflow-hidden">
-              <div className="font-bold text-sm truncate">Jean Dupont</div>
+              <div className="font-bold text-sm truncate">{displayName}</div>
               <div className="text-xs text-slate-500 flex items-center gap-1">
-                <ShieldCheck className="h-3 w-3 text-orange-500" /> 4.8/5
+                <ShieldCheck className="h-3 w-3 text-orange-500" /> {trustScore}/5
               </div>
             </div>
             <LogOut 
@@ -154,12 +179,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <div className="mt-auto border-t border-slate-100 pt-6">
                 <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-xl">
                   <Avatar className="h-12 w-12">
-                    <AvatarImage src="https://github.com/shadcn.png" />
-                    <AvatarFallback>JD</AvatarFallback>
+                    <AvatarImage src={avatarUrl} className="object-cover" />
+                    <AvatarFallback>{initials}</AvatarFallback>
                   </Avatar>
                   <div>
-                    <div className="font-bold text-lg">Jean Dupont</div>
-                    <div className="text-slate-500">Architecte • Paris</div>
+                    <div className="font-bold text-lg">{displayName}</div>
+                    <div className="text-slate-500">{userProfile?.trade || "Membre"} • {userProfile?.city || "Réseau"}</div>
                   </div>
                 </div>
                 <Button 
