@@ -2,11 +2,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Users, Zap, ShieldCheck, Calendar, Activity } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export const dynamic = 'force-dynamic';
 
 async function getNetworkStats() {
   const supabase = await createClient();
+  const supabaseAdmin = createAdminClient();
 
   // 1. Matches Today
   const today = new Date().toISOString().split('T')[0];
@@ -45,7 +47,9 @@ async function getNetworkStats() {
   let recentProfiles: { user_id: string; created_at: string; status: string; profile: { display_name: string; trade: string; city: string; phone: string } }[] = [];
   if (recentMembers && recentMembers.length > 0) {
     const userIds = recentMembers.map(m => m.user_id);
-    const { data: profiles } = await supabase
+    
+    // Use supabaseAdmin instead of supabase to bypass RLS policies and see all profiles
+    const { data: profiles } = await supabaseAdmin
       .from('profiles')
       .select('id, display_name, email, trade, city, phone')
       .in('id', userIds);
