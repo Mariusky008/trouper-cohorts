@@ -129,6 +129,8 @@ async function getNetworkStats() {
   };
 }
 
+import { ManualMatchLauncher } from "@/components/admin/manual-match-launcher";
+
 export default async function AdminNetworkPage() {
   const stats = await getNetworkStats();
 
@@ -205,12 +207,7 @@ export default async function AdminNetworkPage() {
                 <p className="text-sm text-slate-500 mb-4">
                   L&apos;algorithme tourne tous les matins à 05h00. Vous pouvez forcer un lancement manuel ou voir les logs.
                 </p>
-                <button className="mb-4 px-4 py-2 bg-blue-600 text-white text-sm font-bold rounded hover:bg-blue-700 transition-colors">
-                  Lancer manuellement
-                </button>
-                <div className="bg-slate-100 p-3 rounded text-xs font-mono text-slate-600">
-                  Dernier run: {new Date().toLocaleDateString()} 05:00:00 (Succès)
-                </div>
+                <ManualMatchLauncher />
               </CardContent>
           </Card>
 

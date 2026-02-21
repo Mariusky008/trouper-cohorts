@@ -5,6 +5,14 @@ import { NextResponse } from 'next/server';
 // to prevent unauthorized triggering.
 
 export async function GET(request: Request) {
+  return handleMatching(request);
+}
+
+export async function POST(request: Request) {
+  return handleMatching(request);
+}
+
+async function handleMatching(request: Request) {
   // 1. Init Admin Client (bypasses RLS to read all availabilities and insert matches)
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
