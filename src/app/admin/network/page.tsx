@@ -49,14 +49,46 @@ async function getNetworkStats() {
     const userIds = recentMembers.map(m => m.user_id);
     
     // Use supabaseAdmin instead of supabase to bypass RLS policies and see all profiles
-    const { data: profiles } = await supabaseAdmin
+    const { data: profiles, error: profileError } = await supabaseAdmin
       .from('profiles')
       .select('id, display_name, email, trade, city, phone')
       .in('id', userIds);
     
+    // If profiles query fails (e.g. missing column) or returns null, we try to fallback to Auth users
+    const authUsersMap = new Map();
+    
+    // Only fetch auth users if we have missing profiles
+    const foundProfileIds = new Set(profiles?.map(p => p.id) || []);
+    const missingIds = userIds.filter(id => !foundProfileIds.has(id));
+
+    if (missingIds.length > 0) {
+       for (const uid of missingIds) {
+          try {
+             const { data, error } = await supabaseAdmin.auth.admin.getUserById(uid);
+             if (data?.user) {
+                authUsersMap.set(uid, {
+                   display_name: data.user.user_metadata?.full_name || data.user.email?.split('@')[0] || "Inconnu",
+                   email: data.user.email,
+                   trade: "Non renseigné",
+                   city: "Non renseigné",
+                   phone: data.user.phone || ""
+                });
+             }
+          } catch (e) {
+             console.error("Error fetching auth user fallback:", e);
+          }
+       }
+    }
+
     const profileMap = new Map(profiles?.map(p => [p.id, p]));
     recentProfiles = recentMembers.map(m => {
-      const profile = profileMap.get(m.user_id);
+      let profile = profileMap.get(m.user_id);
+      
+      // Fallback if profile is missing in public table
+      if (!profile) {
+         profile = authUsersMap.get(m.user_id);
+      }
+
       return {
         ...m,
         profile: profile || { display_name: "Inconnu", trade: "Profil manquant", city: "", phone: "" }

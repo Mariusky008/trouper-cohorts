@@ -28,7 +28,7 @@ export async function registerNetworkUser(formData: FormData) {
   const userId = authData.user.id;
 
   // 2. Créer le Profil
-  await supabaseAdmin.from('profiles').upsert({
+  const { error: profileError } = await supabaseAdmin.from('profiles').upsert({
     id: userId,
     display_name: fullName,
     email,
@@ -37,6 +37,14 @@ export async function registerNetworkUser(formData: FormData) {
     phone,
     role: 'member'
   });
+
+  if (profileError) {
+    console.error("Error creating profile:", profileError);
+    // On pourrait retourner une erreur, mais le compte Auth est déjà créé.
+    // L'idéal serait de supprimer le compte Auth en cas d'échec ici (rollback manuel).
+    await supabaseAdmin.auth.admin.deleteUser(userId);
+    return { error: `Erreur création profil: ${profileError.message}` };
+  }
 
   // 3. Initialiser Settings
   await supabaseAdmin.from('network_settings').upsert({
