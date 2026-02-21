@@ -24,6 +24,7 @@ const NAV_ITEMS = [
 
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
+import { ProfileCompletionModal } from "@/components/dashboard/profile-completion-modal";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -43,6 +44,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="min-h-screen bg-slate-50 flex font-sans text-slate-900 selection:bg-blue-100 selection:text-blue-900">
+      <ProfileCompletionModal />
       
       {/* --- DESKTOP SIDEBAR --- */}
       <aside className="hidden lg:flex flex-col w-72 border-r border-slate-200 bg-white fixed h-full z-20">
