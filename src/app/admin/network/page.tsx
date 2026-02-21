@@ -10,12 +10,55 @@ async function getNetworkStats() {
   const supabase = await createClient();
   const supabaseAdmin = createAdminClient();
 
-  // 1. Matches Today
+  // 1. Matches Today & Upcoming
   const today = new Date().toISOString().split('T')[0];
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const tomorrowStr = tomorrow.toISOString().split('T')[0];
+
   const { count: matchesCount } = await supabase
     .from('network_matches')
     .select('*', { count: 'exact', head: true })
     .eq('date', today);
+
+  const { count: matchesUpcomingCount } = await supabase
+    .from('network_matches')
+    .select('*', { count: 'exact', head: true })
+    .gte('date', tomorrowStr);
+
+  // Get details of upcoming matches
+  const { data: upcomingMatches } = await supabase
+    .from('network_matches')
+    .select('id, date, time, user1_id, user2_id')
+    .gte('date', tomorrowStr)
+    .order('date', { ascending: true })
+    .limit(10);
+  
+  // Enrich upcoming matches with profiles
+  let enrichedUpcomingMatches: any[] = [];
+  if (upcomingMatches && upcomingMatches.length > 0) {
+     const uIds = new Set<string>();
+     upcomingMatches.forEach(m => { uIds.add(m.user1_id); uIds.add(m.user2_id); });
+     
+     const { data: matchProfiles } = await supabaseAdmin
+        .from('profiles')
+        .select('id, display_name')
+        .in('id', Array.from(uIds));
+     
+     const matchProfileMap = new Map(matchProfiles?.map(p => [p.id, p]));
+     
+     enrichedUpcomingMatches = upcomingMatches.map(m => ({
+        ...m,
+        user1: matchProfileMap.get(m.user1_id) || { display_name: 'Inconnu' },
+        user2: matchProfileMap.get(m.user2_id) || { display_name: 'Inconnu' }
+     }));
+  }
+
+  // 1b. Availabilities for Tomorrow
+  const { count: availabilitiesCount } = await supabase
+    .from('network_availabilities')
+    .select('*', { count: 'exact', head: true })
+    .eq('date', tomorrowStr);
 
   // 2. Opportunities Total
   const { count: oppsCount } = await supabase
@@ -122,6 +165,9 @@ async function getNetworkStats() {
 
   return {
     matchesToday: matchesCount || 0,
+    matchesUpcoming: matchesUpcomingCount || 0,
+    availabilitiesNext: availabilitiesCount || 0,
+    upcomingMatchesList: enrichedUpcomingMatches || [],
     opportunities: oppsCount || 0,
     activeMembers: membersCount || 0,
     avgTrustScore: avgScore,
@@ -130,6 +176,8 @@ async function getNetworkStats() {
 }
 
 import { ManualMatchLauncher } from "@/components/admin/manual-match-launcher";
+import { format } from "date-fns";
+import { fr } from "date-fns/locale";
 
 export default async function AdminNetworkPage() {
   const stats = await getNetworkStats();
@@ -142,7 +190,7 @@ export default async function AdminNetworkPage() {
            <p className="text-slate-500">Supervision des interactions et de la santé du réseau.</p>
         </div>
         <Badge variant="outline" className="px-3 py-1 bg-white border-purple-200 text-purple-700 font-bold">
-          v1.1.0
+          v1.2.0
         </Badge>
       </div>
 
@@ -150,12 +198,23 @@ export default async function AdminNetworkPage() {
       <div className="grid md:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Matchs du Jour</CardTitle>
+            <CardTitle className="text-sm font-medium">Matchs Prévus</CardTitle>
             <Calendar className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.matchesToday}</div>
-            <p className="text-xs text-muted-foreground">Duos générés ce matin</p>
+            <div className="text-2xl font-bold">{stats.matchesUpcoming}</div>
+            <p className="text-xs text-muted-foreground">Duos pour demain</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Disponibilités</CardTitle>
+            <Activity className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.availabilitiesNext}</div>
+            <p className="text-xs text-muted-foreground">Membres prêts pour demain</p>
           </CardContent>
         </Card>
 
@@ -180,17 +239,6 @@ export default async function AdminNetworkPage() {
             <p className="text-xs text-muted-foreground">Total échangé</p>
           </CardContent>
         </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Confiance Moy.</CardTitle>
-            <ShieldCheck className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.avgTrustScore}/5</div>
-            <p className="text-xs text-muted-foreground">Santé globale du réseau</p>
-          </CardContent>
-        </Card>
       </div>
 
       <div className="grid lg:grid-cols-3 gap-8">
@@ -205,25 +253,40 @@ export default async function AdminNetworkPage() {
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-slate-500 mb-4">
-                  L&apos;algorithme tourne tous les matins à 05h00. Vous pouvez forcer un lancement manuel ou voir les logs.
+                  L&apos;algorithme tourne tous les matins à 05h00. Vous pouvez forcer un lancement manuel.
                 </p>
                 <ManualMatchLauncher />
               </CardContent>
           </Card>
 
-          <Card className="border-l-4 border-l-orange-500">
+          <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <ShieldCheck className="h-5 w-5 text-orange-500" /> Modération
+                  <Calendar className="h-5 w-5 text-purple-500" /> Prochains Duos
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-slate-500 mb-4">
-                  Gérez les signalements et les scores de confiance manuellement si nécessaire.
-                </p>
-                <div className="text-sm font-bold text-slate-400">
-                  Aucun signalement en attente.
-                </div>
+                {stats.upcomingMatchesList.length > 0 ? (
+                  <div className="space-y-3">
+                    {stats.upcomingMatchesList.map((match: any) => (
+                      <div key={match.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-100">
+                         <div className="flex items-center gap-2 text-sm font-medium text-slate-700">
+                            <span className="text-blue-600">{match.user1?.display_name || 'Inconnu'}</span>
+                            <span className="text-slate-400">vs</span>
+                            <span className="text-blue-600">{match.user2?.display_name || 'Inconnu'}</span>
+                         </div>
+                         <div className="text-xs text-slate-500 font-mono bg-white px-2 py-1 rounded border">
+                            {format(new Date(match.date), 'dd MMM', { locale: fr })} • {match.time || '09h-11h'}
+                         </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-sm text-slate-400 italic py-4 text-center border-2 border-dashed rounded-lg">
+                    Aucun duo planifié pour le moment.
+                    <br/>Lancez le matching manuellement pour voir apparaître les duos ici.
+                  </div>
+                )}
               </CardContent>
           </Card>
         </div>
