@@ -45,6 +45,9 @@ export function AuthDialog({ mode = "signup", trigger, defaultOpen = false }: Au
     setIsLoading(true);
     
     try {
+      // Force sign out first to ensure clean state
+      await supabase.auth.signOut();
+
       const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -87,6 +90,9 @@ export function AuthDialog({ mode = "signup", trigger, defaultOpen = false }: Au
       toast({ title: "Compte créé !", description: "Bienvenue sur Mon Réseau Local." });
       setIsOpen(false);
       
+      // Force sign out first to ensure clean state before logging in
+      await supabase.auth.signOut();
+
       // Auto login after registration (optional, but good UX)
       // Since server action created the user, we just need to sign in client-side to get the session
       const { error: loginError } = await supabase.auth.signInWithPassword({
