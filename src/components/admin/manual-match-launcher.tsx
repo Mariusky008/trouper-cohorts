@@ -19,11 +19,18 @@ export function ManualMatchLauncher() {
         }
       });
 
-      if (!response.ok) {
-        throw new Error(`Erreur HTTP: ${response.status}`);
+      let errorData;
+      try {
+        errorData = await response.json();
+      } catch (e) {
+        errorData = { error: 'Unknown server error (non-JSON)' };
       }
 
-      const result = await response.json();
+      if (!response.ok) {
+        throw new Error(errorData.error || `Erreur HTTP: ${response.status}`);
+      }
+
+      const result = errorData; // response.json() already parsed
       
       setLastRun(new Date().toLocaleString());
       toast({

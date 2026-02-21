@@ -4,6 +4,8 @@ import { NextResponse } from 'next/server';
 // Note: This route should be protected (e.g., via a secret key header) in production
 // to prevent unauthorized triggering.
 
+export const dynamic = 'force-dynamic'; // Ensure this runs dynamically
+
 export async function GET(request: Request) {
   return handleMatching(request);
 }
@@ -15,8 +17,13 @@ export async function POST(request: Request) {
 async function handleMatching(request: Request) {
   try {
     // 1. Init Admin Client
-    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
-      throw new Error('Missing Supabase environment variables');
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
+      throw new Error('Missing NEXT_PUBLIC_SUPABASE_URL');
+    }
+    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+       // On Vercel, this key might not be available in client bundles but should be in server functions.
+       // However, let's provide a specific error message if it's missing.
+       throw new Error('Missing SUPABASE_SERVICE_ROLE_KEY');
     }
     
     const supabase = createClient(
