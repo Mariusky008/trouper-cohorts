@@ -14,13 +14,12 @@ export async function registerNetworkUser(formData: FormData) {
   const trade = formData.get("trade") as string;
   const phone = formData.get("phone") as string;
 
-  // 1. Créer le compte Auth (Côté Serveur)
-  const { data: authData, error: authError } = await supabase.auth.signUp({
+  // 1. Créer le compte Auth (Côté Serveur - Admin)
+  const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
     email,
     password,
-    options: {
-      data: { full_name: fullName }
-    }
+    email_confirm: true,
+    user_metadata: { full_name: fullName }
   });
 
   if (authError) return { error: authError.message };
@@ -28,23 +27,16 @@ export async function registerNetworkUser(formData: FormData) {
 
   const userId = authData.user.id;
 
-  // 2. Créer le Profil (Avec droits Admin pour contourner RLS)
-  const { error: profileError } = await supabaseAdmin
-    .from('profiles')
-    .upsert({
-      id: userId,
-      display_name: fullName,
-      email,
-      city,
-      trade,
-      phone,
-      role: 'member'
-    });
-
-  if (profileError) {
-    console.error("Profile error:", profileError);
-    // On ne bloque pas, l'user est créé
-  }
+  // 2. Créer le Profil
+  await supabaseAdmin.from('profiles').upsert({
+    id: userId,
+    display_name: fullName,
+    email,
+    city,
+    trade,
+    phone,
+    role: 'member'
+  });
 
   // 3. Initialiser Settings
   await supabaseAdmin.from('network_settings').upsert({
