@@ -727,8 +727,8 @@ export default function HomePage() {
                     <h4 className="font-bold text-slate-900 uppercase mb-4 text-sm">Programmes</h4>
                     <ul className="space-y-2 text-sm text-slate-500">
                         <li><Link href="/emploi" className="hover:text-blue-600">Trouver sa voie</Link></li>
-                        <li><Link href="/" className="hover:text-blue-600">Lancer son activité</Link></li>
-                        <li><Link href="/mon-reseau-local" className="hover:text-blue-600">Réseau Local</Link></li>
+                        <li><Link href="/entrepreneur" className="hover:text-blue-600">Lancer son activité</Link></li>
+                        <li><Link href="/" className="hover:text-blue-600">Réseau Local</Link></li>
                     </ul>
                 </div>
                 <div>
