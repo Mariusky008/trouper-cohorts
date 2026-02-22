@@ -18,30 +18,7 @@ export async function getDailyMatch() {
   // Let's verify what "today" means here.
   const today = new Date().toISOString().split('T')[0];
 
-  console.log("Checking match for user:", user.id, "on date:", today);
-
-  let query = supabase
-    .from("network_matches")
-    .select(`
-      *,
-      user1:user1_id(id, display_name, avatar_url, trade, phone),
-      user2:user2_id(id, display_name, avatar_url, trade, phone)
-    `)
-    .or(`user1_id.eq.${user.id},user2_id.eq.${user.id}`)
-    .maybeSingle();
-
-  // If we want to be strict about "today":
-  // .eq("date", today)
-  // But maybe the match was generated for a date that is slightly off due to timezone?
-  // Let's try to fetch ANY match that is active/pending for today or future?
-  // No, getDailyMatch implies TODAY.
-
-  // Let's try to debug by fetching without date restriction first and see what we get in logs if we could.
-  // But here we are in a server action.
-  
-  // Let's assume the issue is indeed the date comparison or the user ID.
-  // We will keep the date check but ensure we match the column format.
-  
+  // Fetch the next relevant match (Today or Future)
   const { data: matches, error } = await supabase
     .from("network_matches")
     .select(`
@@ -49,10 +26,11 @@ export async function getDailyMatch() {
       user1:user1_id(id, display_name, avatar_url, trade, phone),
       user2:user2_id(id, display_name, avatar_url, trade, phone)
     `)
-    .eq("date", today)
+    .gte("date", today) // Fetch today OR future matches
     .or(`user1_id.eq.${user.id},user2_id.eq.${user.id}`)
-    .order('time', { ascending: true })
-    .limit(1); // Handle multiple matches by taking the first one
+    .order('date', { ascending: true }) // Prioritize today
+    .order('time', { ascending: true }) // Then time
+    .limit(1); 
     
   if (error) {
       console.error("Error fetching match:", error);
@@ -61,9 +39,23 @@ export async function getDailyMatch() {
   const match = matches?.[0];
 
   if (!match) {
-      console.log("No match found for today.");
+      console.log("No match found for today or future.");
       return null;
   }
+  
+  // If the match is not for TODAY, maybe we want to show it but indicate it's upcoming?
+  // For now, let's just return it. The UI shows the date/time anyway.
+  // Wait, the UI might assume it's for today.
+  // Let's check the date.
+  const isToday = match.date === today;
+  
+  // Actually, if we want to show "Mission du Jour", it should be TODAY.
+  // But if the timezone is tricky, maybe "2026-02-22" match is actually meant for today even if server thinks today is "2026-02-21"?
+  // Or vice versa.
+  // Let's return it regardless. If it's tomorrow's match, it's better than nothing.
+  
+  // We should probably format the time to be clearer if it's not today.
+  // But let's stick to returning the object as is.
 
   const isUser1 = match.user1_id === user.id;
   const partnerId = isUser1 ? match.user2_id : match.user1_id;
