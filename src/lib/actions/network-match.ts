@@ -52,7 +52,7 @@ export async function getDailyMatch() {
   // For now, let's just return it. The UI shows the date/time anyway.
   // Wait, the UI might assume it's for today.
   // Let's check the date.
-  const isToday = match.date === today;
+  // const isToday = match.date === today;
   
   // Actually, if we want to show "Mission du Jour", it should be TODAY.
   // But if the timezone is tricky, maybe "2026-02-22" match is actually meant for today even if server thinks today is "2026-02-21"?
