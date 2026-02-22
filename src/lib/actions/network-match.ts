@@ -97,6 +97,8 @@ export async function getDailyMatch() {
   };
 }
 
+import { revalidatePath } from "next/cache";
+
 export async function rateMatch(matchId: string, rating: number, feedback: string) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -134,5 +136,6 @@ export async function rateMatch(matchId: string, rating: number, feedback: strin
 
   if (scoreError) console.error("Score update failed:", scoreError);
 
+  revalidatePath('/mon-reseau-local/dashboard');
   return { success: true };
 }
