@@ -366,7 +366,7 @@ export default function HomePage() {
                   </div>
                   <h3 className="text-2xl font-black mb-4 text-slate-900">2. L'Appel</h3>
                   <p className="text-slate-600 leading-relaxed">
-                     5 à 10 minutes pour échanger. Présentez-vous, partagez vos défis, offrez de l'aide. <strong className="text-slate-900">Court, efficace, humain.</strong>
+                     5 à 10 minutes pour échanger. Présentez-vous, partagez vos défis, offrez de l'aide et obtenez la sienne. <strong className="text-slate-900">Court, efficace, humain.</strong>
                   </p>
                </motion.div>
 
@@ -381,9 +381,18 @@ export default function HomePage() {
                   <div className="h-16 w-16 bg-green-100 rounded-2xl flex items-center justify-center text-green-600 mb-6">
                      <TrendingUp className="h-8 w-8" />
                   </div>
-                  <h3 className="text-2xl font-black mb-4 text-slate-900">3. L'Opportunité</h3>
-                  <p className="text-slate-600 leading-relaxed">
-                     Une mise en relation ? Une recommandation ? Un client ? Un partage de Post sur vos réseaux sociaux ? Notez l'échange et <strong className="text-slate-900">augmentez votre score.</strong>
+                  <h3 className="text-2xl font-black mb-4 text-slate-900">3. L'Opportunité d'un appel de 5 minutes</h3>
+                  <p className="text-slate-600 leading-relaxed text-sm">
+                     Vous décidez ensemble à chaque appel ce que vous pouvez vous offrir :<br/><br/>
+                     <span className="block mb-1">• Gagner des clients (+10 pts)</span>
+                     <span className="block mb-1">• Mise en relation (+8 pts)</span>
+                     <span className="block mb-1">• Partage de réseau (+6 pts)</span>
+                     <span className="block mb-1">• Recommandation (+5 pts)</span>
+                     <span className="block mb-1">• Échange de services (+5 pts)</span>
+                     <span className="block mb-1">• Synergies (+3 pts)</span>
+                     <span className="block mb-1">• Engagement Social (+3 pts)</span>
+                     <span className="block mb-1">• Faire un Live ensemble (+7 pts)</span>
+                     <span className="block mb-1">• Partager un Post (+4 pts)</span>
                   </p>
                </motion.div>
             </div>
