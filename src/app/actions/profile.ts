@@ -23,11 +23,17 @@ export async function updateProfile(formData: FormData) {
   const trade = String(formData.get("trade") || "").trim();
   const city = String(formData.get("city") || "").trim();
   const phone = String(formData.get("phone") || "").trim();
+  
+  // Extract current goals array
+  // Assuming the frontend sends multiple "current_goals" fields or a single JSON string
+  // Let's assume JSON string for easier form handling, or handle array logic
+  // For standard FormData with multiple checkboxes, use getAll
+  const currentGoals = formData.getAll("current_goals").map(String);
 
   // Check if profile is complete enough (Name + Bio required)
   const isComplete = displayName.length > 0 && bio.length > 0;
 
-  const updates: Record<string, string | null | boolean> = {
+  const updates: Record<string, string | null | boolean | string[]> = {
       display_name: displayName || null,
       bio: bio || null,
       trade: trade || null,
@@ -38,6 +44,7 @@ export async function updateProfile(formData: FormData) {
       facebook_handle: facebook || null,
       tiktok_handle: tiktok || null,
       website_url: website || null,
+      current_goals: currentGoals,
       onboarding_completed: isComplete
   };
 
@@ -58,5 +65,6 @@ export async function updateProfile(formData: FormData) {
 
   revalidatePath("/app/settings");
   revalidatePath("/app/crew"); // Refresh crew list too
+  revalidatePath("/mon-reseau-local/dashboard/profile");
   return { success: true };
 }
