@@ -25,12 +25,14 @@ const NAV_ITEMS = [
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { ProfileCompletionModal } from "@/components/dashboard/profile-completion-modal";
+import { getPendingOpportunitiesCount } from "@/lib/actions/network-opportunities";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const supabase = createClient();
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [pendingCount, setPendingCount] = useState(0);
 
   const [userProfile, setUserProfile] = useState<any>(null);
 
@@ -39,20 +41,26 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     setIsMobileMenuOpen(false);
   }, [pathname]);
 
+  // Fetch data
   useEffect(() => {
-    const fetchProfile = async () => {
+    const fetchData = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
+        // 1. Profile
         const { data: profile } = await supabase
           .from('profiles')
           .select('*')
           .eq('id', user.id)
           .single();
         setUserProfile(profile);
+
+        // 2. Pending Opportunities
+        const count = await getPendingOpportunitiesCount();
+        setPendingCount(count);
       }
     };
-    fetchProfile();
-  }, []);
+    fetchData();
+  }, [pathname]); // Re-fetch on navigation (e.g. after validating an opp)
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
@@ -102,8 +110,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 )}
                 <item.icon className={cn("h-5 w-5 transition-colors", isActive ? "text-blue-600" : "text-slate-400 group-hover:text-slate-600")} />
                 <span>{item.label}</span>
-                {item.label === "Opportunités" && (
-                   <span className="ml-auto bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">2</span>
+                {item.label === "Opportunités" && pendingCount > 0 && (
+                   <span className="ml-auto bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">{pendingCount}</span>
                 )}
               </Link>
             );

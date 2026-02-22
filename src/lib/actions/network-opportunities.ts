@@ -69,6 +69,26 @@ export async function createOpportunity(data: {
   }
 }
 
+export async function getPendingOpportunitiesCount() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  
+  if (!user) return 0;
+
+  const { count, error } = await supabase
+    .from("network_opportunities")
+    .select("*", { count: 'exact', head: true })
+    .eq("receiver_id", user.id)
+    .eq("status", "pending");
+
+  if (error) {
+    console.error("Error fetching pending opportunities count:", error);
+    return 0;
+  }
+
+  return count || 0;
+}
+
 export async function getPotentialOpportunitiesCount() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
