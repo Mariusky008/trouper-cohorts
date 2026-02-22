@@ -91,7 +91,7 @@ export function OpportunityForm({ preSelectedUser, onSuccess }: OpportunityFormP
     } catch (error) {
       toast({
         title: "Erreur",
-        description: "Une erreur est survenue lors de l'envoi.",
+        description: (error instanceof Error ? error.message : "Une erreur est survenue lors de l'envoi."),
         variant: "destructive",
       });
     } finally {
