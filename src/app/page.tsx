@@ -169,7 +169,7 @@ const InteractiveMockup = () => {
              </div>
 
              <Button className="w-full bg-blue-600 text-white hover:bg-blue-700 font-bold h-12 rounded-xl shadow-lg shadow-blue-200 group-hover:scale-[1.02] transition-all">
-               <Phone className="mr-2 h-4 w-4" /> Débloquer l'opportunité (14:00)
+               <Phone className="mr-2 h-4 w-4" /> Il vous appelle entre 12h et 12H30
              </Button>
            </motion.div>
 
