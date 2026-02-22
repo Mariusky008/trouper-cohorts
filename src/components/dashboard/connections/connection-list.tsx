@@ -6,8 +6,9 @@ import { Search, Filter, MessageCircle, Calendar, UserX, Send } from "lucide-rea
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTrigger, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { OpportunityForm } from "@/components/dashboard/opportunities/opportunity-form";
+import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 
 import Link from "next/link";
 
@@ -107,6 +108,10 @@ export function ConnectionList({ initialConnections }: { initialConnections: Con
                         </Button>
                     </DialogTrigger>
                     <DialogContent className="sm:max-w-[600px] p-0 overflow-hidden bg-white border-none rounded-3xl">
+                        <VisuallyHidden>
+                          <DialogTitle>Envoyer une opportunité à {user.name}</DialogTitle>
+                          <DialogDescription>Formulaire pour envoyer une opportunité à un membre du réseau.</DialogDescription>
+                        </VisuallyHidden>
                         {/* We reuse the existing OpportunityForm but pass the pre-selected user */}
                         <OpportunityForm preSelectedUser={user} />
                     </DialogContent>
