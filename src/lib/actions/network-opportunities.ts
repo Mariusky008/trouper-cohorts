@@ -157,26 +157,40 @@ export async function getOpportunities(filter: 'all' | 'received' | 'given' = 'a
 }
 
 export async function updateOpportunityStatus(id: string, status: 'validated' | 'rejected') {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
 
-  if (!user) throw new Error("Unauthorized");
+    if (!user) return { success: false, error: "Unauthorized" };
 
-  // Only receiver can validate/reject
-  const { error } = await supabase
-    .from("network_opportunities")
-    .update({ 
-      status,
-      validated_at: status === 'validated' ? new Date().toISOString() : null
-    })
-    .eq('id', id)
-    .eq('receiver_id', user.id);
+    // Only receiver can validate/reject
+    const { error } = await supabase
+      .from("network_opportunities")
+      .update({ 
+        status,
+        validated_at: status === 'validated' ? new Date().toISOString() : null
+      })
+      .eq('id', id)
+      .eq('receiver_id', user.id);
 
-  if (error) {
-    console.error("Error updating opportunity:", error);
-    throw new Error("Failed to update status");
+    if (error) {
+      console.error("Error updating opportunity:", error);
+      return { success: false, error: "Failed to update status" };
+    }
+
+    // Revalidate all relevant paths
+    try {
+      revalidatePath("/mon-reseau-local/dashboard/opportunities");
+      revalidatePath("/mon-reseau-local/dashboard/connections"); 
+      revalidatePath("/mon-reseau-local/dashboard");
+      revalidatePath("/mon-reseau-local/dashboard/profile"); // Trust score updates
+    } catch (e) {
+      console.error("Error revalidating paths:", e);
+    }
+
+    return { success: true };
+  } catch (err) {
+    console.error("Unexpected error in updateOpportunityStatus:", err);
+    return { success: false, error: "Une erreur inattendue est survenue." };
   }
-
-  revalidatePath("/mon-reseau-local/dashboard/opportunities");
-  return { success: true };
 }

@@ -44,7 +44,11 @@ export function OpportunityList({ initialData }: OpportunityListProps) {
   const handleStatusUpdate = async (id: string, status: 'validated' | 'rejected') => {
     setLoadingId(id);
     try {
-      await updateOpportunityStatus(id, status);
+      const result = await updateOpportunityStatus(id, status);
+      
+      if (!result.success) {
+        throw new Error(result.error || "Failed to update status");
+      }
       
       // Optimistic update
       setOpportunities(prev => prev.map(o => 
@@ -57,6 +61,7 @@ export function OpportunityList({ initialData }: OpportunityListProps) {
         variant: status === 'validated' ? "default" : "destructive",
       });
     } catch (error) {
+      console.error("Status update error:", error);
       toast({
         title: "Erreur",
         description: "Impossible de mettre à jour le statut.",
