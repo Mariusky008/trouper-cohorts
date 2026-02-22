@@ -73,32 +73,75 @@ export async function getCredits() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return [];
 
-  // Opportunities I GAVE that are VALIDATED
-  const { data } = await supabase
+  // 1. Get ALL validated opportunities involving the user (Received OR Given)
+  const { data: allOpps } = await supabase
     .from("network_opportunities")
     .select("*")
-    .eq("giver_id", user.id)
+    .or(`receiver_id.eq.${user.id},giver_id.eq.${user.id}`)
     .eq("status", "validated")
     .order("created_at", { ascending: true });
 
-  if (!data || data.length === 0) return [];
+  if (!allOpps || allOpps.length === 0) return [];
 
-  // Fetch profiles
-  const userIds = data.map((d: any) => d.receiver_id);
+  // 2. Group by Partner and Calculate Net Balance
+  const partnerBalances = new Map<string, { balance: number, givenOpps: any[] }>();
+
+  allOpps.forEach((opp: any) => {
+    const isReceived = opp.receiver_id === user.id;
+    const partnerId = isReceived ? opp.giver_id : opp.receiver_id;
+    
+    if (!partnerBalances.has(partnerId)) {
+      partnerBalances.set(partnerId, { balance: 0, givenOpps: [] });
+    }
+    
+    const entry = partnerBalances.get(partnerId)!;
+    
+    if (isReceived) {
+      entry.balance -= (opp.points || 0); // Debt increases (negative balance)
+    } else {
+      entry.balance += (opp.points || 0); // Credit increases (positive balance)
+      entry.givenOpps.push(opp);
+    }
+  });
+
+  // 3. Filter partners where I have a NET CREDIT (balance > 0)
+  const creditList: any[] = [];
+  const partnerIdsToFetch = new Set<string>();
+
+  for (const [partnerId, data] of partnerBalances.entries()) {
+    if (data.balance > 0) {
+      // They owe me points overall.
+      // We show the most recent "Given" opportunity as the context.
+      const lastGiven = data.givenOpps[data.givenOpps.length - 1];
+      if (lastGiven) {
+        creditList.push({
+          ...lastGiven,
+          net_credit_points: data.balance // Store the actual remaining credit amount
+        });
+        partnerIdsToFetch.add(partnerId);
+      }
+    }
+  }
+
+  if (creditList.length === 0) return [];
+
+  // 4. Fetch profiles
   const { data: profiles } = await supabase
     .from("profiles")
     .select("id, display_name, avatar_url")
-    .in("id", userIds);
+    .in("id", Array.from(partnerIdsToFetch));
     
   const profileMap = new Map(profiles?.map((p: any) => [p.id, p]));
 
-  return data.map((opp: any) => {
+  return creditList.map((opp: any) => {
     const partner = profileMap.get(opp.receiver_id);
     return {
       id: opp.id,
       partner: partner?.display_name || "Membre",
       avatar: partner?.avatar_url,
       reason: opp.type,
+      // Add context about remaining points
+      remainingPoints: opp.net_credit_points,
       date: new Date(opp.created_at).toLocaleDateString('fr-FR')
     };
   });
@@ -121,14 +164,14 @@ export async function getDebts() {
   if (!allOpps || allOpps.length === 0) return [];
 
   // 2. Group by Partner and Calculate Net Balance
-  const partnerBalances = new Map<string, { balance: number, receivedOpps: any[] }>();
+  const partnerBalances = new Map<string, { balance: number, receivedOpps: any[], givenOpps: any[] }>();
 
   allOpps.forEach((opp: any) => {
     const isReceived = opp.receiver_id === user.id;
     const partnerId = isReceived ? opp.giver_id : opp.receiver_id;
     
     if (!partnerBalances.has(partnerId)) {
-      partnerBalances.set(partnerId, { balance: 0, receivedOpps: [] });
+      partnerBalances.set(partnerId, { balance: 0, receivedOpps: [], givenOpps: [] });
     }
     
     const entry = partnerBalances.get(partnerId)!;
@@ -138,6 +181,7 @@ export async function getDebts() {
       entry.receivedOpps.push(opp);
     } else {
       entry.balance += (opp.points || 0); // Credit increases (positive balance)
+      entry.givenOpps.push(opp);
     }
   });
 
@@ -146,10 +190,12 @@ export async function getDebts() {
   const partnerIdsToFetch = new Set<string>();
 
   for (const [partnerId, data] of partnerBalances.entries()) {
-    if (data.balance < 0) {
+    // If balance is exactly 0, it's settled.
+    // If balance > 0, they owe me (Credit).
+    // If balance < 0, I owe them (Debt).
+    if (data.balance < 0) { 
       // I owe this person points overall.
       // We show the most recent "Received" opportunity as the context for this debt.
-      // Or we show the oldest one that contributed to the debt? Let's show the oldest one to encourage clearing old debts.
       const oldestOpp = data.receivedOpps[0];
       if (oldestOpp) {
         debtList.push({
