@@ -129,10 +129,13 @@ export function DailyMatchCard({ matches }: DailyMatchCardProps) {
             {/* ACTION AREA */}
             <div className="mt-8 pt-8 border-t border-slate-100 grid md:grid-cols-2 gap-4">
                 {match.type === 'call_out' ? (
-                    <Button size="lg" className="h-14 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold rounded-2xl shadow-lg shadow-blue-200 w-full text-base transition-all hover:scale-[1.02]" asChild>
-                        <a href={`tel:${match.phone}`}>
-                        <Phone className="mr-2 h-5 w-5" /> 
-                        Appeler ({match.phone || "N/A"}) - Il attend votre appel
+                    <Button size="lg" className="h-auto min-h-[3.5rem] py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold rounded-2xl shadow-lg shadow-blue-200 w-full text-base transition-all hover:scale-[1.02]" asChild>
+                        <a href={`tel:${match.phone}`} className="flex flex-col items-center justify-center gap-0.5 leading-tight">
+                            <div className="flex items-center gap-2">
+                                <Phone className="h-4 w-4" /> 
+                                <span>Appeler {match.phone || ""}</span>
+                            </div>
+                            <span className="text-[10px] font-normal opacity-80 uppercase tracking-wide">C'est à vous d'appeler !</span>
                         </a>
                     </Button>
                 ) : (
