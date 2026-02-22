@@ -8,24 +8,43 @@ export async function getTrustScore() {
 
   if (!user) return null;
 
-  // 1. Fetch score from DB
+  // 1. Fetch score from DB (for the score value itself)
   const { data: scoreData } = await supabase
     .from("trust_scores")
     .select("*")
     .eq("user_id", user.id)
     .single();
 
-  // 2. If no score, calculate it (or init)
-  if (!scoreData) {
-    return {
-      score: 5.0,
-      opportunities_given: 0,
-      opportunities_received: 0,
-      debt_level: 0
-    };
-  }
+  // 2. Fetch REAL counts from opportunities table to be sure
+  const { count: givenCount } = await supabase
+    .from("network_opportunities")
+    .select("*", { count: 'exact', head: true })
+    .eq("giver_id", user.id)
+    .eq("status", "validated");
 
-  return scoreData;
+  const { count: receivedCount } = await supabase
+    .from("network_opportunities")
+    .select("*", { count: 'exact', head: true })
+    .eq("receiver_id", user.id)
+    .eq("status", "validated");
+
+  // Calculate debt level (opportunities received > 30 days ago)
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  
+  const { count: debtCount } = await supabase
+    .from("network_opportunities")
+    .select("*", { count: 'exact', head: true })
+    .eq("receiver_id", user.id)
+    .eq("status", "validated")
+    .lt("created_at", thirtyDaysAgo.toISOString());
+
+  return {
+    score: scoreData?.score ?? 5.0,
+    opportunities_given: givenCount || 0,
+    opportunities_received: receivedCount || 0,
+    debt_level: debtCount || 0
+  };
 }
 
 export async function getCredits() {
@@ -103,6 +122,7 @@ export async function getDebts() {
     return {
       id: opp.id,
       partner: partner?.display_name || "Membre",
+      partnerId: opp.giver_id,
       avatar: partner?.avatar_url,
       reason: opp.type,
       daysLeft,

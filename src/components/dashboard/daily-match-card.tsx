@@ -13,6 +13,14 @@ interface DailyMatchCardProps {
   matches: any[]; // Changed to accept an array
 }
 
+const GOAL_LABELS: Record<string, string> = {
+    clients: "Trouver des clients",
+    partners: "Partenariats commerciaux",
+    social_media: "Développer mes réseaux sociaux",
+    local_network: "Développer mon réseau local",
+    mentorship: "Mentorat / Conseils"
+};
+
 export function DailyMatchCard({ matches }: DailyMatchCardProps) {
   if (!matches || matches.length === 0) {
     return (
@@ -104,7 +112,7 @@ export function DailyMatchCard({ matches }: DailyMatchCardProps) {
                     <Button size="lg" className="h-14 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold rounded-2xl shadow-lg shadow-blue-200 w-full text-base transition-all hover:scale-[1.02]" asChild>
                         <a href={`tel:${match.phone}`}>
                         <Phone className="mr-2 h-5 w-5" /> 
-                        Appeler ({match.phone || "N/A"})
+                        Appeler ({match.phone || "N/A"}) - Il attend votre appel
                         </a>
                     </Button>
                 ) : (
@@ -128,9 +136,23 @@ export function DailyMatchCard({ matches }: DailyMatchCardProps) {
                  </div>
                  <div className="text-sm">
                     <span className="font-bold text-slate-900 block mb-1">Sujet suggéré</span>
-                    <p className="text-slate-600 leading-relaxed">
-                        "Quels sont tes principaux défis actuels dans ton activité de <span className="font-medium text-slate-900">{match.job}</span> ?"
-                    </p>
+                    
+                    {match.current_goals && match.current_goals.length > 0 ? (
+                        <div className="text-slate-600 leading-relaxed">
+                            <span className="block mb-1">Actuellement, {match.name.split(' ')[0]} recherche :</span>
+                            <ul className="list-disc pl-4 space-y-1">
+                                {match.current_goals.map((goalId: string) => (
+                                    <li key={goalId} className="text-slate-800 font-medium">
+                                        {GOAL_LABELS[goalId] || goalId}
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    ) : (
+                        <p className="text-slate-600 leading-relaxed">
+                            "Quels sont tes principaux défis actuels dans ton activité de <span className="font-medium text-slate-900">{match.job}</span> ?"
+                        </p>
+                    )}
                  </div>
             </div>
 

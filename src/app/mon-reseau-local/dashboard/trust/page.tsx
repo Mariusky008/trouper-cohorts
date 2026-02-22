@@ -2,7 +2,7 @@ import { getTrustScore, getDebts, getCredits } from "@/lib/actions/network-trust
 import { TrustScoreCard } from "@/components/dashboard/trust-score-card";
 import { Clock, CheckCircle2, AlertCircle, HeartHandshake } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
+import { DebtsList } from "@/components/dashboard/trust/debts-list";
 
 export const dynamic = 'force-dynamic';
 
@@ -49,30 +49,7 @@ export default async function TrustPage() {
             <h3 className="font-black text-xl text-slate-900">Vos Dettes (À rendre)</h3>
           </div>
           
-          {debts.length > 0 ? (
-            debts.map((debt: any) => (
-              <div key={debt.id} className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex items-center gap-4">
-                <Avatar className="h-12 w-12">
-                  <AvatarImage src={debt.avatar} />
-                  <AvatarFallback>{debt.partner[0]}</AvatarFallback>
-                </Avatar>
-                <div className="flex-1">
-                  <div className="font-bold text-slate-900">De {debt.partner}</div>
-                  <div className="text-xs text-slate-500">{debt.reason}</div>
-                </div>
-                <div className="text-right">
-                  <div className={`font-bold ${debt.urgent ? 'text-red-500' : 'text-slate-400'}`}>
-                    J-{debt.daysLeft}
-                  </div>
-                  <Button size="sm" variant="outline" className="h-7 text-xs mt-1">Rendre</Button>
-                </div>
-              </div>
-            ))
-          ) : (
-            <div className="bg-slate-50 border border-slate-200 border-dashed rounded-2xl p-8 text-center text-slate-400">
-               <p>Aucune dette en cours. Bravo !</p>
-            </div>
-          )}
+          <DebtsList debts={debts} />
         </div>
 
         {/* 3. CREDITS (WHAT IS OWED TO ME) */}
