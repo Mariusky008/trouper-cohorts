@@ -290,7 +290,7 @@ export default function HomePage() {
 
                     <p>
                         Le vrai problème est simple : <br/>
-                        <span className="bg-yellow-100 px-2 font-bold text-slate-900">👉 Vous essayez de trouver des clients seul.</span>
+                        <span className="bg-yellow-100 px-2 font-bold text-slate-900">👉 Vous essayez de trouver des clients ou d'augmenter votre visibilité seul.</span>
                     </p>
                     <p className="font-medium">Alors que le business fonctionne toujours mieux en réseau.</p>
                 </div>
