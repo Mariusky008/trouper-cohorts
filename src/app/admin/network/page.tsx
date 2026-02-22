@@ -24,13 +24,13 @@ async function getNetworkStats() {
   const { count: matchesUpcomingCount } = await supabaseAdmin
     .from('network_matches')
     .select('*', { count: 'exact', head: true })
-    .gte('date', tomorrowStr);
+    .gte('date', today);
 
-  // Get details of upcoming matches
+  // Get details of upcoming matches (including today)
   const { data: upcomingMatches } = await supabaseAdmin
     .from('network_matches')
     .select('id, date, time, user1_id, user2_id')
-    .gte('date', tomorrowStr)
+    .gte('date', today)
     .order('date', { ascending: true })
     .limit(10);
   
