@@ -39,11 +39,32 @@ export async function getTrustScore() {
     .eq("status", "validated")
     .lt("created_at", thirtyDaysAgo.toISOString());
 
+  // Calculate REAL debt level: Total Points Received - Total Points Given
+  // This is a simplistic view, but gives a general idea of balance
+  const { data: givenOpps } = await supabase
+    .from("network_opportunities")
+    .select("points")
+    .eq("giver_id", user.id)
+    .eq("status", "validated");
+    
+  const { data: receivedOpps } = await supabase
+    .from("network_opportunities")
+    .select("points")
+    .eq("receiver_id", user.id)
+    .eq("status", "validated");
+
+  const totalGivenPoints = givenOpps?.reduce((acc, curr) => acc + (curr.points || 0), 0) || 0;
+  const totalReceivedPoints = receivedOpps?.reduce((acc, curr) => acc + (curr.points || 0), 0) || 0;
+  
+  // Debt is positive if I received more than I gave
+  const pointsBalance = totalReceivedPoints - totalGivenPoints;
+
   return {
     score: scoreData?.score ?? 5.0,
     opportunities_given: givenCount || 0,
     opportunities_received: receivedCount || 0,
-    debt_level: debtCount || 0
+    debt_level: Math.max(0, debtCount || 0), // Count of old unreturned favors
+    points_balance: pointsBalance // New field for detailed balance
   };
 }
 

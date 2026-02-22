@@ -11,6 +11,7 @@ interface TrustScoreProps {
     opportunities_given: number;
     opportunities_received: number;
     debt_level: number;
+    points_balance?: number;
   } | null;
 }
 
@@ -20,14 +21,15 @@ export function TrustScoreCard({ scoreData }: TrustScoreProps) {
   const received = scoreData?.opportunities_received ?? 0;
   const given = scoreData?.opportunities_given ?? 0;
   const debts = scoreData?.debt_level ?? 0;
+  const balance = scoreData?.points_balance ?? 0;
 
   // Calculate progression (arbitrary logic for MVP: 10 given opps = Level Up)
   const progress = Math.min(100, (given / 10) * 100);
 
   const stats = [
     { label: "Score", value: `${score.toFixed(1)}`, icon: Star, color: "text-orange-500", bg: "bg-orange-50", border: "border-orange-100" },
-    { label: "Dettes", value: debts.toString(), icon: AlertCircle, color: "text-red-500", bg: "bg-red-50", border: "border-red-100" },
-    { label: "Reçues", value: received.toString(), icon: TrendingUp, color: "text-green-500", bg: "bg-green-50", border: "border-green-100" },
+    { label: "Dettes (Jours)", value: debts.toString(), icon: AlertCircle, color: "text-red-500", bg: "bg-red-50", border: "border-red-100" },
+    { label: "Points Balance", value: (balance > 0 ? `-${balance}` : `+${Math.abs(balance)}`), icon: TrendingUp, color: balance > 0 ? "text-red-500" : "text-green-500", bg: balance > 0 ? "bg-red-50" : "bg-green-50", border: balance > 0 ? "border-red-100" : "border-green-100" },
     { label: "Données", value: given.toString(), icon: ThumbsUp, color: "text-blue-500", bg: "bg-blue-50", border: "border-blue-100" },
   ];
 
