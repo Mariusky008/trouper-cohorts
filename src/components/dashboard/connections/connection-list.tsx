@@ -2,10 +2,12 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Search, Filter, MessageCircle, Calendar, UserX } from "lucide-react";
+import { Search, Filter, MessageCircle, Calendar, UserX, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
+import { OpportunityForm } from "@/components/dashboard/opportunities/opportunity-form";
 
 import Link from "next/link";
 
@@ -19,6 +21,7 @@ interface Connection {
 
 export function ConnectionList({ initialConnections }: { initialConnections: Connection[] }) {
   const [query, setQuery] = useState("");
+  const [selectedUser, setSelectedUser] = useState<Connection | null>(null);
   
   const filtered = initialConnections.filter(c => 
     c.name.toLowerCase().includes(query.toLowerCase()) || 
@@ -62,7 +65,7 @@ export function ConnectionList({ initialConnections }: { initialConnections: Con
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.05 }}
-              className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-all group"
+              className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-all group flex flex-col h-full"
             >
               <div className="flex items-center gap-4 mb-4">
                 <Avatar className="h-14 w-14 border-2 border-white shadow-sm">
@@ -79,17 +82,35 @@ export function ConnectionList({ initialConnections }: { initialConnections: Con
                 <Calendar className="h-3 w-3" /> {new Date(user.lastInteraction).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })}
               </div>
 
-              <div className="flex gap-2">
-                <a href={`mailto:?subject=Message via Mon Réseau Local&body=Bonjour ${user.name.split(' ')[0]},`} className="flex-1">
-                  <Button className="w-full bg-slate-900 text-white hover:bg-slate-800 font-bold rounded-lg h-10">
-                    <MessageCircle className="mr-2 h-4 w-4" /> Message
-                  </Button>
-                </a>
-                <Link href={`/mon-reseau-local/dashboard/profile/${user.id}`} className="flex-1">
-                  <Button variant="outline" className="w-full border-slate-200 hover:bg-slate-50 font-bold rounded-lg h-10">
-                    Profil
-                  </Button>
-                </Link>
+              <div className="mt-auto space-y-3">
+                <div className="flex gap-2">
+                    <a href={`mailto:?subject=Message via Mon Réseau Local&body=Bonjour ${user.name.split(' ')[0]},`} className="flex-1">
+                    <Button className="w-full bg-slate-900 text-white hover:bg-slate-800 font-bold rounded-lg h-10">
+                        <MessageCircle className="mr-2 h-4 w-4" /> Message
+                    </Button>
+                    </a>
+                    <Link href={`/mon-reseau-local/dashboard/profile/${user.id}`} className="flex-1">
+                    <Button variant="outline" className="w-full border-slate-200 hover:bg-slate-50 font-bold rounded-lg h-10">
+                        Profil
+                    </Button>
+                    </Link>
+                </div>
+
+                <Dialog>
+                    <DialogTrigger asChild>
+                        <Button 
+                            variant="secondary" 
+                            className="w-full bg-blue-50 text-blue-700 hover:bg-blue-100 hover:text-blue-800 font-bold rounded-lg h-10 border border-blue-100"
+                            onClick={() => setSelectedUser(user)}
+                        >
+                            <Send className="mr-2 h-4 w-4" /> Envoyer une opportunité
+                        </Button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-[600px] p-0 overflow-hidden bg-white border-none rounded-3xl">
+                        {/* We reuse the existing OpportunityForm but pass the pre-selected user */}
+                        <OpportunityForm preSelectedUser={user} />
+                    </DialogContent>
+                </Dialog>
               </div>
             </motion.div>
           ))}
