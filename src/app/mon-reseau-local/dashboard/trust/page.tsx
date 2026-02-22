@@ -67,7 +67,14 @@ export default async function TrustPage() {
                   <AvatarFallback>{credit.partner[0]}</AvatarFallback>
                 </Avatar>
                 <div>
-                  <div className="font-bold text-slate-900">À {credit.partner}</div>
+                  <div className="flex items-center gap-2">
+                     <div className="font-bold text-slate-900">À {credit.partner}</div>
+                     {credit.remainingPoints && (
+                        <span className="text-xs font-bold text-green-600 bg-green-50 px-2 py-0.5 rounded-full border border-green-100">
+                            +{credit.remainingPoints} pts
+                        </span>
+                     )}
+                  </div>
                   <div className="text-xs text-slate-500">{credit.reason} • {credit.date}</div>
                 </div>
               </div>
