@@ -9,6 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogTrigger, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { OpportunityForm } from "@/components/dashboard/opportunities/opportunity-form";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
+import { ChatDialog } from "./chat-dialog";
 
 import Link from "next/link";
 
@@ -20,9 +21,10 @@ interface Connection {
   lastInteraction: string;
 }
 
-export function ConnectionList({ initialConnections }: { initialConnections: Connection[] }) {
+export function ConnectionList({ initialConnections, currentUserId }: { initialConnections: Connection[], currentUserId: string }) {
   const [query, setQuery] = useState("");
   const [selectedUser, setSelectedUser] = useState<Connection | null>(null);
+  const [chatPartner, setChatPartner] = useState<Connection | null>(null);
   
   const filtered = initialConnections.filter(c => 
     c.name.toLowerCase().includes(query.toLowerCase()) || 
@@ -31,6 +33,16 @@ export function ConnectionList({ initialConnections }: { initialConnections: Con
 
   return (
     <div className="space-y-8">
+      {/* CHAT DIALOG */}
+      {chatPartner && (
+        <ChatDialog 
+          partner={chatPartner} 
+          currentUserId={currentUserId} 
+          isOpen={!!chatPartner} 
+          onOpenChange={(open) => !open && setChatPartner(null)} 
+        />
+      )}
+
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-black text-slate-900 tracking-tight">Mes Mises en Relation</h1>
@@ -85,11 +97,12 @@ export function ConnectionList({ initialConnections }: { initialConnections: Con
 
               <div className="mt-auto space-y-3">
                 <div className="flex gap-2">
-                    <a href={`mailto:?subject=Message via Mon Réseau Local&body=Bonjour ${user.name.split(' ')[0]},`} className="flex-1">
-                    <Button className="w-full bg-slate-900 text-white hover:bg-slate-800 font-bold rounded-lg h-10">
+                    <Button 
+                        className="w-full bg-slate-900 text-white hover:bg-slate-800 font-bold rounded-lg h-10 flex-1"
+                        onClick={() => setChatPartner(user)}
+                    >
                         <MessageCircle className="mr-2 h-4 w-4" /> Message
                     </Button>
-                    </a>
                     <Link href={`/mon-reseau-local/dashboard/profile/${user.id}`} className="flex-1">
                     <Button variant="outline" className="w-full border-slate-200 hover:bg-slate-50 font-bold rounded-lg h-10">
                         Profil

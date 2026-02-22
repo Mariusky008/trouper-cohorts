@@ -97,9 +97,39 @@ export function ChatBox({ partnerName, partnerId, currentUserId, initialMessages
       setUnread(prev => ({ ...prev, [id]: false })); // Clear notification
   };
 
-  const handleSendMessage = async () => {
+  const handleSendMessage = async (e?: React.FormEvent) => {
+    e?.preventDefault();
     if (!newMessage.trim() || !selectedPartnerId) return;
-    // ... (Reste inchangé)
+
+    const msgContent = newMessage;
+    setNewMessage("");
+
+    // Optimistic UI update
+    const tempId = crypto.randomUUID();
+    const optimisticMsg: Message = {
+        id: tempId,
+        sender_id: currentUserId,
+        receiver_id: selectedPartnerId,
+        content: msgContent,
+        created_at: new Date().toISOString()
+    };
+    setMessages(prev => [...prev, optimisticMsg]);
+
+    const { error } = await supabase
+        .from("messages")
+        .insert({
+            sender_id: currentUserId,
+            receiver_id: selectedPartnerId,
+            content: msgContent
+        });
+
+    if (error) {
+        console.error("Error sending message:", error);
+        toast.error("Erreur lors de l'envoi du message");
+        // Rollback
+        setMessages(prev => prev.filter(m => m.id !== tempId));
+        setNewMessage(msgContent);
+    }
   };
 
   return (
@@ -150,13 +180,35 @@ export function ChatBox({ partnerName, partnerId, currentUserId, initialMessages
                 >
                   {msg.content}
                 </div>
+                <span className="text-[10px] text-slate-400 mt-1 px-1">
+                    {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                </span>
               </div>
             );
           })}
           <div ref={scrollRef} />
         </div>
       </ScrollArea>
-      {/* ... (Input inchangé) */}
+      
+      {/* Input Zone */}
+      <div className="p-3 bg-white border-t border-slate-100">
+        <form onSubmit={handleSendMessage} className="flex gap-2 items-center bg-slate-50 border border-slate-200 p-1.5 pl-3 rounded-full shadow-sm focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-500 transition-all">
+            <Input 
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
+                placeholder="Écrivez votre message..."
+                className="flex-1 bg-transparent border-none text-slate-900 placeholder:text-slate-400 focus-visible:ring-0 focus-visible:ring-offset-0 px-0 py-1 h-auto text-sm"
+            />
+            <Button 
+                type="submit" 
+                size="icon" 
+                disabled={!newMessage.trim()} 
+                className="h-8 w-8 rounded-full bg-blue-600 hover:bg-blue-700 text-white shadow-md transition-all shrink-0"
+            >
+                <Send className="h-3.5 w-3.5 ml-0.5" />
+            </Button>
+        </form>
+      </div>
     </div>
   );
 }
