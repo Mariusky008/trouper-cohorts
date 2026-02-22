@@ -49,7 +49,7 @@ export async function getDailyMatches() {
       // Fetch Partner Profile Manually
       const { data: partnerProfile } = await supabase
         .from("profiles")
-        .select("id, display_name, avatar_url, trade, city, bio, phone")
+        .select("id, display_name, avatar_url, trade, city, bio, phone, current_goals")
         .eq("id", partnerId)
         .single();
         
@@ -60,7 +60,7 @@ export async function getDailyMatches() {
         .eq("user_id", partnerId)
         .single();
 
-      const partner = partnerProfile || { display_name: "Membre Inconnu", trade: "N/A", avatar_url: undefined, phone: undefined, city: "En ligne" };
+      const partner = partnerProfile || { display_name: "Membre Inconnu", trade: "N/A", avatar_url: undefined, phone: undefined, city: "En ligne", current_goals: [] };
 
       return {
         id: match.id,
@@ -74,12 +74,38 @@ export async function getDailyMatches() {
         phone: partner.phone,
         avatar: partner.avatar_url,
         tags: [partner.trade || "Entrepreneur"],
+        current_goals: partner.current_goals || [],
         status: match.status,
         date: match.date
       };
   }));
 
-  return matchesWithDetails;
+  // Filter out matches where the slot time has passed (start time + 2h < now)
+  const now = new Date();
+  const activeMatches = matchesWithDetails.filter(match => {
+      // If date/time is missing, keep it safe
+      if (!match.date || !match.time) return true;
+      
+      // Construct full match date
+      // match.date is YYYY-MM-DD
+      // match.time is HH:MM or HH:MM:SS
+      // We create a Date object in local time context or UTC depending on how it's stored.
+      // Assuming ISO strings from DB are reliable.
+      const matchDateTimeString = `${match.date}T${match.time}`;
+      const matchDate = new Date(matchDateTimeString);
+      
+      // If invalid date, keep it
+      if (isNaN(matchDate.getTime())) return true;
+      
+      // Add 2 hours for slot end
+      // 2 hours * 60 min * 60 sec * 1000 ms
+      const slotEndTime = new Date(matchDate.getTime() + 2 * 60 * 60 * 1000);
+      
+      // Keep only if slot end time is in the future
+      return slotEndTime > now;
+  });
+
+  return activeMatches;
 }
 
 import { revalidatePath } from "next/cache";
