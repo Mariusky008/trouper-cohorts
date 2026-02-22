@@ -43,42 +43,50 @@ export async function getConnections() {
   if (!user) return [];
 
   // Fetch matches where current user is involved
+  // We use simpler relation syntax to avoid FK naming issues if possible
+  // and we select fields needed for ConnectionList + potential future needs
   const { data: matches, error } = await supabase
     .from("network_matches")
     .select(`
       user1_id,
       user2_id,
       date,
-      user1:profiles!network_matches_user1_id_fkey(id, display_name, trade, avatar_url, current_goals),
-      user2:profiles!network_matches_user2_id_fkey(id, display_name, trade, avatar_url, current_goals)
+      user1:user1_id(id, display_name, trade, avatar_url, current_goals),
+      user2:user2_id(id, display_name, trade, avatar_url, current_goals)
     `)
     .or(`user1_id.eq.${user.id},user2_id.eq.${user.id}`)
-    .order('date', { ascending: true }); // Oldest first
+    .order('date', { ascending: false }); // Newest first is usually better for "History"
 
   if (error) {
     console.error("Error fetching connections:", error);
+    // Return empty array instead of throwing to prevent page crash
     return [];
   }
 
   // Transform matches into a list of unique connections
   const connectionsMap = new Map();
 
-  matches?.forEach((match: any) => {
-    const isUser1 = match.user1_id === user.id;
-    const partner = isUser1 ? match.user2 : match.user1;
-    
-    // Only add if not already present (prefer most recent match due to order)
-    if (!connectionsMap.has(partner.id)) {
-      connectionsMap.set(partner.id, {
-        id: partner.id,
-        name: partner.display_name,
-        job: partner.trade || "Membre",
-        avatar: partner.avatar_url,
-        lastInteraction: match.date,
-        current_goals: partner.current_goals || []
-      });
+  if (matches) {
+    for (const match of matches) {
+      const isUser1 = match.user1_id === user.id;
+      // When using simple alias, Supabase returns a single object if 1:1 or 1:M where M=1, but let's cast to any to avoid TS issues for now as we know the structure
+      const user1 = match.user1 as any;
+      const user2 = match.user2 as any;
+      const partner = isUser1 ? user2 : user1;
+      
+      if (partner && !connectionsMap.has(partner.id)) {
+        connectionsMap.set(partner.id, {
+          id: partner.id,
+          name: partner.display_name || "Membre Inconnu",
+          job: partner.trade || "Membre",
+          avatar: partner.avatar_url,
+          lastInteraction: match.date,
+          // Ensure current_goals is an array
+          current_goals: Array.isArray(partner.current_goals) ? partner.current_goals : []
+        });
+      }
     }
-  });
+  }
 
   return Array.from(connectionsMap.values());
 }
