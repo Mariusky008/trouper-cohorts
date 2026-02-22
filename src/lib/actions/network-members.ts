@@ -51,8 +51,8 @@ export async function getConnections() {
       user1_id,
       user2_id,
       date,
-      user1:user1_id(id, display_name, trade, avatar_url, current_goals),
-      user2:user2_id(id, display_name, trade, avatar_url, current_goals)
+      user1:user1_id(id, display_name, trade, avatar_url),
+      user2:user2_id(id, display_name, trade, avatar_url)
     `)
     .or(`user1_id.eq.${user.id},user2_id.eq.${user.id}`)
     .order('date', { ascending: false }); // Newest first is usually better for "History"
@@ -80,9 +80,7 @@ export async function getConnections() {
           name: partner.display_name || "Membre Inconnu",
           job: partner.trade || "Membre",
           avatar: partner.avatar_url,
-          lastInteraction: match.date,
-          // Ensure current_goals is an array
-          current_goals: Array.isArray(partner.current_goals) ? partner.current_goals : []
+          lastInteraction: match.date
         });
       }
     }
