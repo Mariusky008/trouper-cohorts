@@ -13,15 +13,12 @@ export async function getDailyMatches() {
   pastDate.setDate(pastDate.getDate() - 1); // Yesterday
   const searchDate = pastDate.toISOString().split('T')[0];
 
-  console.log("getDailyMatches - User ID:", user.id);
-  console.log("getDailyMatches - Search Date:", searchDate);
-
   const { data: matches, error } = await supabase
     .from("network_matches")
     .select(`
       *,
-      user1:profiles!network_matches_user1_id_fkey(id, display_name, avatar_url, trade, phone),
-      user2:profiles!network_matches_user2_id_fkey(id, display_name, avatar_url, trade, phone)
+      user1:user1_id(id, display_name, avatar_url, trade, phone),
+      user2:user2_id(id, display_name, avatar_url, trade, phone)
     `)
     .gte("date", searchDate) // Fetch from yesterday onwards
     .or(`user1_id.eq.${user.id},user2_id.eq.${user.id}`)
@@ -31,8 +28,6 @@ export async function getDailyMatches() {
     .order('time', { ascending: true })
     .limit(5); // Allow multiple matches
     
-  console.log("getDailyMatches - Query Result:", matches);
-  
   if (error) {
       console.error("Error fetching matches:", error);
       return [];
@@ -44,14 +39,27 @@ export async function getDailyMatches() {
 
   const matchesWithDetails = await Promise.all(matches.map(async (match) => {
       const isUser1 = match.user1_id === user.id;
+      // Using 'as any' casting because the select query returns nested objects
+      // but TypeScript types for Supabase might not infer it automatically without generated types
+      const user1 = match.user1 as any;
+      const user2 = match.user2 as any;
+      
+      const partner = isUser1 ? user2 : user1;
       const partnerId = isUser1 ? match.user2_id : match.user1_id;
 
-      // Fetch Partner Profile Manually
-      const { data: partnerProfile } = await supabase
-        .from("profiles")
-        .select("id, display_name, avatar_url, trade, city, bio, phone, current_goals")
-        .eq("id", partnerId)
-        .single();
+      // Double check partner data if join failed
+      let partnerData = partner;
+      if (!partnerData) {
+          const { data: p } = await supabase
+            .from("profiles")
+            .select("id, display_name, avatar_url, trade, city, bio, phone, current_goals")
+            .eq("id", partnerId)
+            .single();
+          partnerData = p;
+      }
+      
+      // If still no partner, skip safely
+      if (!partnerData) return null;
         
       // Fetch Partner Trust Score
       const { data: trustScore } = await supabase
@@ -60,49 +68,54 @@ export async function getDailyMatches() {
         .eq("user_id", partnerId)
         .single();
 
-      const partner = partnerProfile || { display_name: "Membre Inconnu", trade: "N/A", avatar_url: undefined, phone: undefined, city: "En ligne", current_goals: [] };
-
       return {
         id: match.id,
         partnerId: partnerId,
-        name: partner.display_name,
-        job: partner.trade || "Membre",
-        city: partner.city || "En ligne",
+        name: partnerData.display_name || "Membre Inconnu",
+        job: partnerData.trade || "Membre",
+        city: partnerData.city || "En ligne",
         score: trustScore?.score || 5.0,
         time: match.time || "14:00",
         type: isUser1 ? 'call_out' : 'call_in',
-        phone: partner.phone,
-        avatar: partner.avatar_url,
-        tags: [partner.trade || "Entrepreneur"],
-        current_goals: partner.current_goals || [],
+        phone: partnerData.phone,
+        avatar: partnerData.avatar_url,
+        tags: [partnerData.trade || "Entrepreneur"],
+        current_goals: partnerData.current_goals || [],
         status: match.status,
         date: match.date
       };
   }));
 
+  // Filter out nulls
+  const validMatches = matchesWithDetails.filter(m => m !== null) as any[];
+
   // Filter out matches where the slot time has passed (start time + 2h < now)
+  // But ONLY if the match is for TODAY or BEFORE
   const now = new Date();
-  const activeMatches = matchesWithDetails.filter(match => {
-      // If date/time is missing, keep it safe
-      if (!match.date || !match.time) return true;
+  const todayStr = now.toISOString().split('T')[0];
+  
+  const activeMatches = validMatches.filter(match => {
+      // If date is in future, keep it
+      if (match.date > todayStr) return true;
       
-      // Construct full match date
-      // match.date is YYYY-MM-DD
-      // match.time is HH:MM or HH:MM:SS
-      // We create a Date object in local time context or UTC depending on how it's stored.
-      // Assuming ISO strings from DB are reliable.
-      const matchDateTimeString = `${match.date}T${match.time}`;
-      const matchDate = new Date(matchDateTimeString);
+      // If date is today, check time
+      if (match.date === todayStr) {
+          // If no time, assume all day
+          if (!match.time) return true;
+          
+          // Construct datetime for end of slot
+          const [hours, minutes] = match.time.split(':').map(Number);
+          const slotEndTime = new Date();
+          slotEndTime.setHours(hours + 2, minutes || 0, 0, 0);
+          
+          // If now > slot end time, hide it (expired)
+          if (now > slotEndTime) return false;
+      }
       
-      // If invalid date, keep it
-      if (isNaN(matchDate.getTime())) return true;
-      
-      // Add 2 hours for slot end
-      // 2 hours * 60 min * 60 sec * 1000 ms
-      const slotEndTime = new Date(matchDate.getTime() + 2 * 60 * 60 * 1000);
-      
-      // Keep only if slot end time is in the future
-      return slotEndTime > now;
+      // If date is past (yesterday), hide it
+      if (match.date < todayStr) return false;
+
+      return true;
   });
 
   return activeMatches;
