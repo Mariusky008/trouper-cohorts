@@ -37,7 +37,7 @@ async function handleMatching(request: Request) {
     const dateStr = tomorrow.toISOString().split('T')[0];
 
     // 3. Fetch all availabilities for that date
-    const { data: availabilities, error: availError } = await supabase
+    let { data: availabilities, error: availError } = await supabase
       .from('network_availabilities')
       .select('user_id, slots')
       .eq('date', dateStr);
@@ -45,6 +45,55 @@ async function handleMatching(request: Request) {
     if (availError) {
         console.error("Supabase Error fetching availabilities:", availError);
         throw new Error(`Database error: ${availError.message}`);
+    }
+
+    if (!availabilities) {
+        availabilities = [];
+    }
+
+    // 3b. AUTOMATED FALLBACK: Include users based on their network settings
+    // This allows users who forgot to declare availability to be matched if the day is in their preferences.
+    
+    // Get day name (mon, tue, wed...)
+    const days = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+    const tomorrowDay = days[tomorrow.getDay()]; // getDay() returns 0 for Sunday
+
+    // Fetch active network settings
+    const { data: allSettings, error: settingsError } = await supabase
+        .from('network_settings')
+        .select('user_id, preferred_days, preferred_slots')
+        .eq('status', 'active');
+    
+    if (!settingsError && allSettings) {
+        const declaredUserIds = new Set(availabilities.map((a: any) => a.user_id));
+        
+        // Slot mapping (Settings ID -> Display Label)
+        const slotMapping: Record<string, string> = {
+            '09-11': '09h – 11h',
+            '12-14': '12h – 14h',
+            '14-16': '14h – 16h',
+            '17-19': '17h – 19h'
+        };
+
+        for (const setting of allSettings) {
+            // If user already declared availability, skip
+            if (declaredUserIds.has(setting.user_id)) continue;
+
+            // Check if user prefers this day
+            if (setting.preferred_days && setting.preferred_days.includes(tomorrowDay)) {
+                // Map preferred slots to the format used in matching
+                const mappedSlots = (setting.preferred_slots || [])
+                    .map((s: string) => slotMapping[s])
+                    .filter(Boolean); // Remove undefined if mapping fails
+                
+                if (mappedSlots.length > 0) {
+                    availabilities.push({
+                        user_id: setting.user_id,
+                        slots: mappedSlots
+                    });
+                }
+            }
+        }
     }
 
     if (!availabilities || availabilities.length < 2) {
