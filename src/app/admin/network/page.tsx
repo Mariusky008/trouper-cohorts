@@ -52,6 +52,31 @@ async function getNetworkStats() {
         user1: matchProfileMap.get(m.user1_id) || { display_name: 'Inconnu' },
         user2: matchProfileMap.get(m.user2_id) || { display_name: 'Inconnu' }
      }));
+
+     // Filter out matches where the time slot has passed today
+     const now = new Date();
+     enrichedUpcomingMatches = enrichedUpcomingMatches.filter(match => {
+        // If match is in future date, keep it
+        if (match.date > today) return true;
+        
+        // If match is today, check time
+        if (match.date === today) {
+            if (!match.time) return true;
+            
+            // Robustly parse start hour (handles "09:00", "09h", "9h-11h", etc.)
+            const timeStr = match.time.toString();
+            const startHourMatch = timeStr.match(/^(\d{1,2})/);
+            const startHour = startHourMatch ? parseInt(startHourMatch[1], 10) : 0;
+            
+            const slotEndTime = new Date();
+            slotEndTime.setHours(startHour + 2, 0, 0, 0);
+            
+            // If now > slot end time, hide it
+            return now <= slotEndTime;
+        }
+        
+        return false;
+     });
   }
 
   // 1b. Availabilities for Tomorrow
