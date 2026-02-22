@@ -44,7 +44,23 @@ export function DailyMatchCard({ matches }: DailyMatchCardProps) {
 
   return (
     <div className="space-y-6">
-      {matches.map((match, index) => (
+      {matches.map((match, index) => {
+        // Double check expiration on client side as well for immediate feedback
+        const now = new Date();
+        const todayStr = now.toISOString().split('T')[0];
+        let isExpired = false;
+        
+        if (match.date < todayStr) isExpired = true;
+        else if (match.date === todayStr && match.time) {
+            const [hours, minutes] = match.time.split(':').map(Number);
+            const slotEndTime = new Date();
+            slotEndTime.setHours(hours + 2, minutes || 0, 0, 0);
+            if (now > slotEndTime) isExpired = true;
+        }
+
+        if (isExpired) return null;
+
+        return (
         <motion.div 
           key={match.id}
           initial={{ opacity: 0, y: 20 }}
@@ -53,8 +69,7 @@ export function DailyMatchCard({ matches }: DailyMatchCardProps) {
           className="relative bg-white rounded-3xl shadow-xl shadow-blue-900/5 border border-slate-100 overflow-hidden group"
         >
           <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600" />
-          
-          {/* BACKGROUND DECORATION */}
+          {/* ... rest of the card content ... */}
           <div className="absolute -right-20 -top-20 h-64 w-64 bg-blue-50 rounded-full blur-3xl opacity-50 group-hover:opacity-100 transition-opacity duration-700" />
           
           <div className="p-6 md:p-8 relative z-10">
@@ -158,7 +173,8 @@ export function DailyMatchCard({ matches }: DailyMatchCardProps) {
 
           </div>
         </motion.div>
-      ))}
+        );
+      })}
     </div>
   );
 }
