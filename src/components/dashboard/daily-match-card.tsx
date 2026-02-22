@@ -18,7 +18,38 @@ const GOAL_LABELS: Record<string, string> = {
     partners: "Partenariats commerciaux",
     social_media: "Développer mes réseaux sociaux",
     local_network: "Développer mon réseau local",
-    mentorship: "Mentorat / Conseils"
+    mentorship: "Mentorat / Conseils",
+    // New goals
+    recruitment: "Recruter des talents",
+    investors: "Trouver des investisseurs",
+    suppliers: "Trouver des fournisseurs",
+    visibility: "Gagner en visibilité",
+    training: "Se former / Apprendre"
+};
+
+// Suggestions based on goals
+const GOAL_SUGGESTIONS: Record<string, string[]> = {
+    clients: [
+        "Veux-tu qu'on se partage 3 potentiels clients de ton côté et du mien qui pourraient être intéressés par ton activité ?",
+        "Comment trouves-tu tes clients aujourd'hui ? Y a-t-il une synergie possible ?"
+    ],
+    social_media: [
+        "Veux-tu qu'on fasse un live ensemble sur une thématique qu'on a en commun ?",
+        "J'ai fait un post, peux-tu le partager sur ton réseau ? Je ferai de même pour toi.",
+        "On pourrait faire une vidéo courte ensemble pour croiser nos audiences."
+    ],
+    partners: [
+        "Connais-tu des entreprises avec qui tu aimerais travailler ? Je peux regarder dans mon réseau.",
+        "Y a-t-il une offre qu'on pourrait construire ensemble pour nos clients communs ?"
+    ],
+    local_network: [
+        "Quels sont les événements locaux où tu vas ? On pourrait y aller ensemble.",
+        "Je peux te présenter à 2 personnes de mon réseau local qui pourraient t'aider."
+    ],
+    mentorship: [
+        "Sur quel sujet précis bloques-tu ? Je peux peut-être te partager mon expérience.",
+        "As-tu besoin d'un regard extérieur sur ta stratégie actuelle ?"
+    ]
 };
 
 export function DailyMatchCard({ matches }: DailyMatchCardProps) {
@@ -158,18 +189,26 @@ export function DailyMatchCard({ matches }: DailyMatchCardProps) {
                     <MessageSquare className="h-4 w-4" />
                  </div>
                  <div className="text-sm">
-                    <span className="font-bold text-slate-900 block mb-1">Sujet suggéré</span>
+                    <span className="font-bold text-slate-900 block mb-1">Idées pour briser la glace</span>
                     
                     {match.current_goals && match.current_goals.length > 0 ? (
                         <div className="text-slate-600 leading-relaxed">
-                            <span className="block mb-1">Actuellement, {match.name.split(' ')[0]} recherche :</span>
-                            <ul className="list-disc pl-4 space-y-1">
-                                {match.current_goals.map((goalId: string) => (
-                                    <li key={goalId} className="text-slate-800 font-medium">
-                                        {GOAL_LABELS[goalId] || goalId}
-                                    </li>
-                                ))}
-                            </ul>
+                            <span className="block mb-2 font-medium text-blue-700">Puisque {match.name.split(' ')[0]} s'intéresse à :</span>
+                            <div className="space-y-3">
+                                {match.current_goals.slice(0, 2).map((goalId: string) => { // Limit to top 2 goals to avoid clutter
+                                    const suggestions = GOAL_SUGGESTIONS[goalId];
+                                    const randomSuggestion = suggestions ? suggestions[Math.floor(Math.random() * suggestions.length)] : null;
+                                    
+                                    return (
+                                    <div key={goalId} className="bg-white p-3 rounded-lg border border-slate-100 shadow-sm">
+                                        <div className="text-xs font-bold text-slate-400 uppercase mb-1">{GOAL_LABELS[goalId] || goalId}</div>
+                                        <p className="text-slate-800 italic">
+                                            "{randomSuggestion || `Quels sont tes défis actuels pour ${GOAL_LABELS[goalId]?.toLowerCase()} ?`}"
+                                        </p>
+                                    </div>
+                                    );
+                                })}
+                            </div>
                         </div>
                     ) : (
                         <p className="text-slate-600 leading-relaxed">

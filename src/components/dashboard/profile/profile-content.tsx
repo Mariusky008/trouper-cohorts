@@ -28,6 +28,11 @@ const GOAL_OPTIONS = [
     { id: "social_media", label: "Développer mes réseaux sociaux" },
     { id: "local_network", label: "Développer mon réseau local" },
     { id: "mentorship", label: "Mentorat / Conseils" },
+    { id: "recruitment", label: "Recruter des talents" },
+    { id: "investors", label: "Trouver des investisseurs" },
+    { id: "suppliers", label: "Trouver des fournisseurs" },
+    { id: "visibility", label: "Gagner en visibilité" },
+    { id: "training", label: "Se former / Apprendre" }
 ];
 
 export function ProfileContent({ user, isReadOnly = false }: { user: any; isReadOnly?: boolean }) {
