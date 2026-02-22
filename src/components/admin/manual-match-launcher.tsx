@@ -59,10 +59,10 @@ export function ManualMatchLauncher() {
         <button 
             onClick={handleLaunch}
             disabled={isLoading}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-bold rounded hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-bold rounded hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed w-full justify-center md:w-auto"
         >
             {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
-            {isLoading ? "Lancement en cours..." : "Lancer manuellement"}
+            {isLoading ? "Lancement en cours..." : "Générer les matchs pour Demain"}
         </button>
 
         {lastRun && (

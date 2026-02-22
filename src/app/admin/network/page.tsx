@@ -253,8 +253,16 @@ export default async function AdminNetworkPage() {
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-slate-500 mb-4">
-                  L&apos;algorithme tourne tous les matins à 05h00. Vous pouvez forcer un lancement manuel.
+                  L&apos;algorithme tourne tous les matins à 05h00 pour préparer la journée de demain.
                 </p>
+                
+                {stats.availabilitiesNext >= 2 && stats.matchesUpcoming === 0 && (
+                    <div className="bg-green-50 border border-green-200 text-green-800 p-3 rounded-lg text-sm font-medium mb-4 flex items-center gap-2">
+                        <div className="h-2 w-2 bg-green-500 rounded-full animate-pulse" />
+                        {stats.availabilitiesNext} participants sont prêts pour demain ! Vous pouvez lancer les matchs.
+                    </div>
+                )}
+
                 <ManualMatchLauncher />
               </CardContent>
           </Card>
