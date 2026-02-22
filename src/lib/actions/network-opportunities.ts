@@ -8,7 +8,7 @@ import { revalidatePath } from "next/cache";
 
 export async function createOpportunity(data: {
   receiverId: string;
-  type: OpportunityType;
+  type: string;
   points: number;
   details: string;
 }) {
@@ -16,21 +16,40 @@ export async function createOpportunity(data: {
   
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
-    throw new Error("Unauthorized");
+    throw new Error("Vous devez être connecté pour effectuer cette action.");
   }
 
-  const { error } = await supabase.from("network_opportunities").insert({
-    giver_id: user.id,
-    receiver_id: data.receiverId,
-    type: data.type,
-    points: data.points,
-    details: data.details,
-    status: "pending"
-  });
+  // Validation: Self-giving
+  if (user.id === data.receiverId) {
+    throw new Error("Vous ne pouvez pas vous donner une opportunité à vous-même.");
+  }
+
+  // Validation: Points
+  const points = Math.round(data.points);
+  if (points <= 0) {
+    throw new Error("Le nombre de points doit être positif.");
+  }
+
+  // Validation: Details length
+  if (!data.details || data.details.trim().length < 5) {
+      throw new Error("Veuillez fournir plus de détails sur l'opportunité.");
+  }
+
+  const { error } = await supabase
+    .from("network_opportunities")
+    .insert({
+      giver_id: user.id,
+      receiver_id: data.receiverId,
+      type: data.type,
+      points: points,
+      details: data.details,
+      status: "pending"
+    });
 
   if (error) {
     console.error("Error creating opportunity:", error);
-    throw new Error("Failed to create opportunity");
+    // Return precise error for easier debugging on client side
+    throw new Error(`Erreur lors de la création: ${error.message}`);
   }
 
   revalidatePath("/mon-reseau-local/dashboard/opportunities");

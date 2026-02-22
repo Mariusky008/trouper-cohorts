@@ -125,7 +125,7 @@ export function FrequencyControl({ settings, potentialCount }: FrequencyControlP
             <Slider 
                 value={[frequency]} 
                 min={1} 
-                max={7} 
+                max={5} 
                 step={1} 
                 onValueChange={(vals) => setFrequency(vals[0])}
                 onValueCommit={(vals) => handleUpdate({ frequency_per_week: vals[0] })}
@@ -134,7 +134,7 @@ export function FrequencyControl({ settings, potentialCount }: FrequencyControlP
           </div>
           <div className="flex justify-between text-xs text-slate-400 font-bold uppercase tracking-wider px-1">
              <span>Cool (1j)</span>
-             <span>Intense (7j)</span>
+             <span>Intense (5j)</span>
           </div>
         </div>
 

@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin"; // Import admin client
 import { revalidatePath } from "next/cache";
 
 export async function searchMembers(query: string) {
@@ -11,8 +12,12 @@ export async function searchMembers(query: string) {
     return [];
   }
 
+  // Use admin client to bypass RLS for global search
+  // Assuming 'profiles' table has RLS enabled that restricts viewing others unless matched
+  const adminSupabase = createAdminClient();
+
   // Simple ILIKE search on profiles
-  const { data, error } = await supabase
+  const { data, error } = await adminSupabase
     .from("profiles")
     .select("id, display_name, trade, avatar_url")
     .ilike("display_name", `%${query}%`)

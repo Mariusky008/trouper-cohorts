@@ -99,13 +99,17 @@ export function OpportunityForm({ preSelectedUser, onSuccess }: OpportunityFormP
     }
   };
 
-  // Logique de navigation entre les étapes
+  // Navigation logic
   const goNext = () => {
       if (step === "type") {
-          // Si on a déjà un membre (pré-sélectionné ou choisi avant), on va aux détails
-          // Sinon on va à la sélection de membre
-          if (selectedMember) setStep("details");
-          else setStep("member");
+          if (preSelectedUser) {
+              setSelectedMember(preSelectedUser);
+              setStep("details");
+          } else if (selectedMember) {
+              setStep("details");
+          } else {
+              setStep("member");
+          }
       } else if (step === "member") {
           setStep("details");
       }
@@ -145,8 +149,11 @@ export function OpportunityForm({ preSelectedUser, onSuccess }: OpportunityFormP
                     key={type.id}
                     onClick={() => { 
                         setSelectedType(type); 
-                        // Si on a déjà un membre (via props), on saute l'étape membre
-                        if (preSelectedUser || selectedMember) {
+                        // If user is pre-selected, force selection and skip member step
+                        if (preSelectedUser) {
+                            setSelectedMember(preSelectedUser);
+                            setStep("details");
+                        } else if (selectedMember) {
                             setStep("details");
                         } else {
                             setStep("member");
