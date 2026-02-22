@@ -5,7 +5,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DebtsList } from "@/components/dashboard/trust/debts-list";
 
 export const dynamic = 'force-dynamic';
-
+// Force re-deploy
 export default async function TrustPage() {
   const scoreData = await getTrustScore();
   const debts = await getDebts();
