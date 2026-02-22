@@ -13,7 +13,7 @@ import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { searchMembers } from "@/lib/actions/network-members";
 import { createOpportunity } from "@/lib/actions/network-opportunities";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { OPPORTUNITY_TYPES } from "@/constants/opportunities";
 import { useRouter } from "next/navigation";
 
@@ -28,7 +28,6 @@ interface OpportunityFormProps {
 }
 
 export function OpportunityForm({ preSelectedUser, onSuccess }: OpportunityFormProps) {
-  const { toast } = useToast();
   const router = useRouter();
   
   // Si un utilisateur est pré-sélectionné, on commence directement à l'étape "type"
@@ -72,10 +71,8 @@ export function OpportunityForm({ preSelectedUser, onSuccess }: OpportunityFormP
         details: details
       });
       
-      toast({
-        title: "Opportunité envoyée !",
+      toast.success("Opportunité envoyée !", {
         description: `Vous avez offert ${selectedType.points} points à ${selectedMember.name}.`,
-        variant: "default",
       });
       
       router.refresh();
@@ -89,10 +86,8 @@ export function OpportunityForm({ preSelectedUser, onSuccess }: OpportunityFormP
       }
 
     } catch (error) {
-      toast({
-        title: "Erreur",
+      toast.error("Erreur", {
         description: (error instanceof Error ? error.message : "Une erreur est survenue lors de l'envoi."),
-        variant: "destructive",
       });
     } finally {
       setIsSubmitting(false);
