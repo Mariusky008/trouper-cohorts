@@ -383,8 +383,8 @@ export default function HomePage() {
                   </div>
                   <h3 className="text-2xl font-black mb-4 text-slate-900">3. L'Opportunité d'un appel de 5 minutes</h3>
                   <p className="text-slate-600 leading-relaxed text-sm">
-                     Vous décidez ensemble à chaque appel ce que vous pouvez vous offrir et recevoir :<br/><br/>
-                     <span className="block mb-1">• Gagner des clients (+10 pts)</span>
+                     Vous décidez ensemble à chaque appel ce que vous pouvez vous offrir mutuellement :<br/><br/>
+                     <span className="block mb-1">• Des clients (+10 pts)</span>
                      <span className="block mb-1">• Mise en relation (+8 pts)</span>
                      <span className="block mb-1">• Partage de réseau (+6 pts)</span>
                      <span className="block mb-1">• Recommandation (+5 pts)</span>
@@ -393,6 +393,7 @@ export default function HomePage() {
                      <span className="block mb-1">• Engagement Social (+3 pts)</span>
                      <span className="block mb-1">• Faire un Live ensemble (+7 pts)</span>
                      <span className="block mb-1">• Partager un Post (+4 pts)</span>
+                     <span className="block mb-1 text-slate-400 italic">etc...</span>
                   </p>
                </motion.div>
             </div>
