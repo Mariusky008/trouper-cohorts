@@ -1,13 +1,13 @@
 'use client';
 
-import { useState, useRef } from "react";
 import { 
     Briefcase, ShieldCheck, Award, Pencil, Save, X, Phone, 
     Linkedin, Instagram, Facebook, Globe, Upload, Loader2,
-    MapPin, Camera
+    MapPin, Camera, CheckSquare
   } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox"; // Assuming Checkbox component exists
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
 import { Input } from "@/components/ui/input";
@@ -20,6 +20,14 @@ import {
     Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
+const GOAL_OPTIONS = [
+    { id: "clients", label: "Trouver des clients" },
+    { id: "partners", label: "Partenariats commerciaux" },
+    { id: "social_media", label: "Développer mes réseaux sociaux" },
+    { id: "local_network", label: "Développer mon réseau local" },
+    { id: "mentorship", label: "Mentorat / Conseils" },
+];
 
 export function ProfileContent({ user, isReadOnly = false }: { user: any; isReadOnly?: boolean }) {
   const { toast } = useToast();
@@ -38,7 +46,8 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
     instagram: user.instagram_handle || "",
     facebook: user.facebook_handle || "",
     website: user.website_url || "",
-    avatar_url: user.avatar_url || ""
+    avatar_url: user.avatar_url || "",
+    current_goals: user.current_goals || [] as string[]
   });
 
   const supabase = createClient();
@@ -91,6 +100,11 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
       data.append("website", formData.website);
       data.append("avatar_url", formData.avatar_url);
       
+      // Append each goal individually for getAll on server
+      formData.current_goals.forEach((goal: string) => {
+          data.append("current_goals", goal);
+      });
+      
       const result = await updateProfile(data);
       
       if (result.error) throw new Error(result.error);
@@ -104,6 +118,17 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
     } finally {
       setLoading(false);
     }
+  };
+  
+  const toggleGoal = (goalId: string) => {
+      setFormData(prev => {
+          const goals = prev.current_goals || [];
+          if (goals.includes(goalId)) {
+              return { ...prev, current_goals: goals.filter((g: string) => g !== goalId) };
+          } else {
+              return { ...prev, current_goals: [...goals, goalId] };
+          }
+      });
   };
 
   return (
@@ -202,11 +227,30 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
                <h3 className="font-bold text-slate-900 text-xl mb-6 flex items-center gap-2">
                     <span className="bg-yellow-100 text-yellow-700 p-1.5 rounded-lg text-lg">👋</span> À propos
                </h3>
-               <div className="prose prose-slate max-w-none">
+               <div className="prose prose-slate max-w-none mb-8">
                  <p className="text-slate-600 leading-relaxed whitespace-pre-wrap text-lg">
                     {formData.bio || "Aucune description pour le moment. Dites-en plus sur vous !"}
                  </p>
                </div>
+
+               {/* DISPLAY GOALS IF ANY */}
+               {formData.current_goals && formData.current_goals.length > 0 && (
+                   <div className="pt-6 border-t border-slate-100">
+                       <h4 className="font-bold text-slate-900 text-sm uppercase tracking-wide mb-4 flex items-center gap-2">
+                           <CheckSquare className="h-4 w-4 text-blue-500" /> Ce que je recherche
+                       </h4>
+                       <div className="flex flex-wrap gap-2">
+                           {formData.current_goals.map((goalId: string) => {
+                               const goal = GOAL_OPTIONS.find(g => g.id === goalId);
+                               return goal ? (
+                                   <Badge key={goalId} variant="secondary" className="bg-blue-50 text-blue-700 border-blue-100 px-3 py-1 text-sm">
+                                       {goal.label}
+                                   </Badge>
+                               ) : null;
+                           })}
+                       </div>
+                   </div>
+               )}
              </div>
            </div>
 
@@ -310,6 +354,28 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
                             className="min-h-[120px] text-base"
                             placeholder="Décrivez votre activité et ce que vous recherchez..." 
                         />
+                    </div>
+                    
+                    {/* CURRENT GOALS SECTION */}
+                    <div className="space-y-3 pt-4 border-t border-slate-100">
+                        <Label className="text-base font-bold">Ce que je recherche en ce moment</Label>
+                        <div className="grid grid-cols-1 gap-2">
+                            {GOAL_OPTIONS.map((goal) => (
+                                <div key={goal.id} className="flex items-center space-x-3 p-3 rounded-xl border border-slate-100 hover:bg-slate-50 transition-colors">
+                                    <Checkbox 
+                                        id={goal.id} 
+                                        checked={(formData.current_goals || []).includes(goal.id)}
+                                        onCheckedChange={() => toggleGoal(goal.id)}
+                                    />
+                                    <label
+                                        htmlFor={goal.id}
+                                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer flex-1"
+                                    >
+                                        {goal.label}
+                                    </label>
+                                </div>
+                            ))}
+                        </div>
                     </div>
                 </div>
              </TabsContent>
