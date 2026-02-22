@@ -175,7 +175,7 @@ export async function updateOpportunityStatus(id: string, status: 'validated' | 
 
     if (error) {
       console.error("Error updating opportunity:", error);
-      return { success: false, error: "Failed to update status" };
+      return { success: false, error: error.message || "Failed to update status" };
     }
 
     // Revalidate all relevant paths
