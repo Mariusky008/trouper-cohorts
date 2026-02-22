@@ -61,6 +61,8 @@ export async function createManualMatch(formData: FormData) {
         return { error: `Erreur base de données: ${error.message}` };
     }
 
+    // Revalidate BOTH admin path AND dashboard paths where users see their matches
     revalidatePath('/admin/network');
+    revalidatePath('/mon-reseau-local/dashboard'); 
     return { success: true };
 }
