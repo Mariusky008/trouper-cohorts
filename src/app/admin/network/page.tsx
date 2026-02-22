@@ -175,12 +175,15 @@ async function getNetworkStats() {
   };
 }
 
+import { getAllUsersForDropdown } from "@/lib/actions/network-admin";
+import { MatchBuilder } from "@/components/admin/match-builder";
 import { ManualMatchLauncher } from "@/components/admin/manual-match-launcher";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 
 export default async function AdminNetworkPage() {
   const stats = await getNetworkStats();
+  const usersForDropdown = await getAllUsersForDropdown();
 
   return (
     <div className="space-y-8">
@@ -190,7 +193,7 @@ export default async function AdminNetworkPage() {
            <p className="text-slate-500">Supervision des interactions et de la santé du réseau.</p>
         </div>
         <Badge variant="outline" className="px-3 py-1 bg-white border-purple-200 text-purple-700 font-bold">
-          v1.2.0
+          v1.3.0
         </Badge>
       </div>
 
@@ -245,27 +248,9 @@ export default async function AdminNetworkPage() {
         
         {/* LEFT COLUMN: ACTIONS & LOGS */}
         <div className="lg:col-span-2 space-y-6">
-          <Card className="border-l-4 border-l-blue-500">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Activity className="h-5 w-5 text-blue-500" /> Matching
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-slate-500 mb-4">
-                  L&apos;algorithme tourne tous les matins à 05h00 pour préparer la journée de demain.
-                </p>
-                
-                {stats.availabilitiesNext >= 2 && stats.matchesUpcoming === 0 && (
-                    <div className="bg-green-50 border border-green-200 text-green-800 p-3 rounded-lg text-sm font-medium mb-4 flex items-center gap-2">
-                        <div className="h-2 w-2 bg-green-500 rounded-full animate-pulse" />
-                        {stats.availabilitiesNext} participants sont prêts pour demain ! Vous pouvez lancer les matchs.
-                    </div>
-                )}
-
-                <ManualMatchLauncher />
-              </CardContent>
-          </Card>
+          
+          {/* MANUAL MATCH BUILDER */}
+          <MatchBuilder users={usersForDropdown} />
 
           <Card>
               <CardHeader>
@@ -292,9 +277,24 @@ export default async function AdminNetworkPage() {
                 ) : (
                   <div className="text-sm text-slate-400 italic py-4 text-center border-2 border-dashed rounded-lg">
                     Aucun duo planifié pour le moment.
-                    <br/>Lancez le matching manuellement pour voir apparaître les duos ici.
+                    <br/>Utilisez le créateur ci-dessus pour générer un match.
                   </div>
                 )}
+              </CardContent>
+          </Card>
+
+          {/* AUTOMATED SYSTEM STATUS */}
+          <Card className="border-l-4 border-l-slate-200 opacity-80 hover:opacity-100 transition-opacity">
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center gap-2 text-sm text-slate-500">
+                  <Activity className="h-4 w-4" /> Système Automatique (Cron)
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-xs text-slate-400 mb-2">
+                  L&apos;algorithme tourne tous les matins à 05h00.
+                </p>
+                <ManualMatchLauncher />
               </CardContent>
           </Card>
         </div>
