@@ -2,24 +2,13 @@
 
 import { createClient } from "@/lib/supabase/server";
 
-export async function getDailyMatch() {
+export async function getDailyMatches() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
-  if (!user) return null;
+  if (!user) return [];
 
-  // Use local date for France/Europe
-  // Or just use the date string from the database which is YYYY-MM-DD
-  // But new Date().toISOString() gives UTC date.
-  // If it is 1am in Paris (CET+1/2), it is 0am/11pm UTC.
-  // We want to show matches for the current user's day.
-  // Let's stick to YYYY-MM-DD UTC for consistency with how we generate matches (server side uses UTC usually).
-  // HOWEVER, if the match was generated for "2026-02-22" and today is "2026-02-22", it should work.
-  // Let's verify what "today" means here.
-  // We want to show the relevant match for the user.
-  // To avoid timezone issues where "today" (UTC) might be tomorrow/yesterday for the user,
-  // we will fetch the most recent upcoming match (or today's match).
-  // We use a safe past date to ensure we catch "today" even if server time is ahead.
+  // Use a safe past date to ensure we catch "today" even if server time is ahead.
   const pastDate = new Date();
   pastDate.setDate(pastDate.getDate() - 1); // Yesterday
   const searchDate = pastDate.toISOString().split('T')[0];
@@ -33,68 +22,59 @@ export async function getDailyMatch() {
     `)
     .gte("date", searchDate) // Fetch from yesterday onwards
     .or(`user1_id.eq.${user.id},user2_id.eq.${user.id}`)
+    .neq('status', 'met') // Exclude completed matches
+    .neq('status', 'canceled')
     .order('date', { ascending: true }) // Earliest date first
     .order('time', { ascending: true })
-    .limit(1); 
+    .limit(5); // Allow multiple matches
     
   if (error) {
-      console.error("Error fetching match:", error);
+      console.error("Error fetching matches:", error);
+      return [];
   }
 
-  const match = matches?.[0];
-
-  if (!match) {
-      console.log("No match found for today or future.");
-      return null;
+  if (!matches || matches.length === 0) {
+      return [];
   }
-  
-  // If the match is not for TODAY, maybe we want to show it but indicate it's upcoming?
-  // For now, let's just return it. The UI shows the date/time anyway.
-  // Wait, the UI might assume it's for today.
-  // Let's check the date.
-  // const isToday = match.date === today;
-  
-  // Actually, if we want to show "Mission du Jour", it should be TODAY.
-  // But if the timezone is tricky, maybe "2026-02-22" match is actually meant for today even if server thinks today is "2026-02-21"?
-  // Or vice versa.
-  // Let's return it regardless. If it's tomorrow's match, it's better than nothing.
-  
-  // We should probably format the time to be clearer if it's not today.
-  // But let's stick to returning the object as is.
 
-  const isUser1 = match.user1_id === user.id;
-  const partnerId = isUser1 ? match.user2_id : match.user1_id;
+  const matchesWithDetails = await Promise.all(matches.map(async (match) => {
+      const isUser1 = match.user1_id === user.id;
+      const partnerId = isUser1 ? match.user2_id : match.user1_id;
 
-  // 2. Fetch Partner Profile Manually (Avoid join issues with auth.users)
-  const { data: partnerProfile } = await supabase
-    .from("profiles")
-    .select("id, display_name, avatar_url, trade, city, bio, phone")
-    .eq("id", partnerId)
-    .single();
-    
-  // 3. Fetch Partner Trust Score
-  const { data: trustScore } = await supabase
-    .from("trust_scores")
-    .select("score")
-    .eq("user_id", partnerId)
-    .single();
+      // Fetch Partner Profile Manually
+      const { data: partnerProfile } = await supabase
+        .from("profiles")
+        .select("id, display_name, avatar_url, trade, city, bio, phone")
+        .eq("id", partnerId)
+        .single();
+        
+      // Fetch Partner Trust Score
+      const { data: trustScore } = await supabase
+        .from("trust_scores")
+        .select("score")
+        .eq("user_id", partnerId)
+        .single();
 
-  const partner = partnerProfile || { display_name: "Membre Inconnu", trade: "N/A", avatar_url: undefined, phone: undefined, city: "En ligne" };
+      const partner = partnerProfile || { display_name: "Membre Inconnu", trade: "N/A", avatar_url: undefined, phone: undefined, city: "En ligne" };
 
-  return {
-    id: match.id,
-    partnerId: partnerId,
-    name: partner.display_name,
-    job: partner.trade || "Membre",
-    city: partner.city || "En ligne",
-    score: trustScore?.score || 5.0,
-    time: match.time || "14:00",
-    type: isUser1 ? 'call_out' : 'call_in',
-    phone: partner.phone,
-    avatar: partner.avatar_url,
-    tags: [partner.trade || "Entrepreneur"],
-    status: match.status
-  };
+      return {
+        id: match.id,
+        partnerId: partnerId,
+        name: partner.display_name,
+        job: partner.trade || "Membre",
+        city: partner.city || "En ligne",
+        score: trustScore?.score || 5.0,
+        time: match.time || "14:00",
+        type: isUser1 ? 'call_out' : 'call_in',
+        phone: partner.phone,
+        avatar: partner.avatar_url,
+        tags: [partner.trade || "Entrepreneur"],
+        status: match.status,
+        date: match.date
+      };
+  }));
+
+  return matchesWithDetails;
 }
 
 import { revalidatePath } from "next/cache";

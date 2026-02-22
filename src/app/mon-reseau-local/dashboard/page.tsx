@@ -1,4 +1,4 @@
-import { getDailyMatch } from "@/lib/actions/network-match";
+import { getDailyMatches } from "@/lib/actions/network-match";
 import { getTrustScore } from "@/lib/actions/network-trust";
 import { getNetworkSettings } from "@/lib/actions/network-settings";
 import { getPotentialOpportunitiesCount } from "@/lib/actions/network-opportunities";
@@ -13,13 +13,13 @@ import Link from "next/link";
 export const dynamic = 'force-dynamic';
 
 export default async function DashboardHome() {
-  let match = null;
+  let matches: any[] = [];
   let trustScore = null;
   let settings = null;
   let potentialCount = 0;
 
   try {
-    match = await getDailyMatch();
+    matches = await getDailyMatches();
     trustScore = await getTrustScore();
     settings = await getNetworkSettings();
     potentialCount = await getPotentialOpportunitiesCount();
@@ -59,10 +59,10 @@ export default async function DashboardHome() {
           <div className="space-y-6">
              <div className="flex items-center justify-between">
                 <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
-                  <Sparkles className="h-5 w-5 text-yellow-500" /> Votre Mission du Jour
+                  <Sparkles className="h-5 w-5 text-yellow-500" /> Vos Missions
                 </h2>
              </div>
-             <DailyMatchCard match={match} />
+             <DailyMatchCard matches={matches} />
           </div>
 
           <div className="space-y-6">
