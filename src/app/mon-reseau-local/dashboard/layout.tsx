@@ -26,6 +26,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { ProfileCompletionModal } from "@/components/dashboard/profile-completion-modal";
 import { getPendingOpportunitiesCount } from "@/lib/actions/network-opportunities";
+import { GlobalChatWidget } from "@/components/dashboard/chat/global-chat-widget";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -35,6 +36,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [pendingCount, setPendingCount] = useState(0);
 
   const [userProfile, setUserProfile] = useState<any>(null);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   // Close mobile menu on route change
   useEffect(() => {
@@ -46,6 +48,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     const fetchData = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
+        setCurrentUserId(user.id);
+        
         // 1. Profile
         const { data: profile } = await supabase
           .from('profiles')
@@ -217,6 +221,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           {children}
         </div>
       </main>
+
+      {/* GLOBAL CHAT WIDGET */}
+      {currentUserId && <GlobalChatWidget currentUserId={currentUserId} />}
 
     </div>
   );
