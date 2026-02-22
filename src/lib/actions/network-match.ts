@@ -20,8 +20,8 @@ export async function getDailyMatches() {
     .from("network_matches")
     .select(`
       *,
-      user1:user1_id(id, display_name, avatar_url, trade, phone),
-      user2:user2_id(id, display_name, avatar_url, trade, phone)
+      user1:profiles!network_matches_user1_id_fkey(id, display_name, avatar_url, trade, phone),
+      user2:profiles!network_matches_user2_id_fkey(id, display_name, avatar_url, trade, phone)
     `)
     .gte("date", searchDate) // Fetch from yesterday onwards
     .or(`user1_id.eq.${user.id},user2_id.eq.${user.id}`)
