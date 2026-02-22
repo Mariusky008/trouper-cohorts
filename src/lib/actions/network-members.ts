@@ -48,7 +48,7 @@ export async function getConnections() {
       user2:user2_id(id, display_name, trade, avatar_url)
     `)
     .or(`user1_id.eq.${user.id},user2_id.eq.${user.id}`)
-    .order('date', { ascending: false });
+    .order('date', { ascending: true }); // Oldest first
 
   if (error) {
     console.error("Error fetching connections:", error);
