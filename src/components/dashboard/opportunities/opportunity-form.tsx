@@ -64,12 +64,16 @@ export function OpportunityForm({ preSelectedUser, onSuccess }: OpportunityFormP
     
     setIsSubmitting(true);
     try {
-      await createOpportunity({
+      const result = await createOpportunity({
         receiverId: selectedMember.id,
         type: selectedType.id,
         points: selectedType.points,
         details: details
       });
+
+      if (!result.success) {
+        throw new Error(result.error || "Une erreur est survenue lors de l'envoi.");
+      }
       
       toast.success("Opportunité envoyée !", {
         description: `Vous avez offert ${selectedType.points} points à ${selectedMember.name}.`,

@@ -12,52 +12,61 @@ export async function createOpportunity(data: {
   points: number;
   details: string;
 }) {
-  const supabase = await createClient();
-  
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) {
-    throw new Error("Vous devez être connecté pour effectuer cette action.");
+  try {
+    const supabase = await createClient();
+    
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      return { success: false, error: "Vous devez être connecté pour effectuer cette action." };
+    }
+
+    // Validation: Self-giving
+    if (user.id === data.receiverId) {
+      return { success: false, error: "Vous ne pouvez pas vous donner une opportunité à vous-même." };
+    }
+
+    // Validation: Points
+    const points = Math.round(data.points);
+    if (points <= 0) {
+      return { success: false, error: "Le nombre de points doit être positif." };
+    }
+
+    // Validation: Details length
+    if (!data.details || data.details.trim().length < 5) {
+      return { success: false, error: "Veuillez fournir plus de détails sur l'opportunité." };
+    }
+
+    const { error } = await supabase
+      .from("network_opportunities")
+      .insert({
+        giver_id: user.id,
+        receiver_id: data.receiverId,
+        type: data.type,
+        points: points,
+        details: data.details,
+        status: "pending"
+      });
+
+    if (error) {
+      console.error("Error creating opportunity:", error);
+      return { success: false, error: `Erreur lors de la création: ${error.message}` };
+    }
+
+    // Revalidate ALL dashboard paths to ensure consistency
+    try {
+      revalidatePath("/mon-reseau-local/dashboard/opportunities");
+      revalidatePath("/mon-reseau-local/dashboard/connections"); 
+      revalidatePath("/mon-reseau-local/dashboard");
+    } catch (e) {
+      console.error("Error revalidating paths:", e);
+      // We continue even if revalidation fails, as the action was successful
+    }
+    
+    return { success: true };
+  } catch (err) {
+    console.error("Unexpected error in createOpportunity:", err);
+    return { success: false, error: "Une erreur inattendue est survenue." };
   }
-
-  // Validation: Self-giving
-  if (user.id === data.receiverId) {
-    throw new Error("Vous ne pouvez pas vous donner une opportunité à vous-même.");
-  }
-
-  // Validation: Points
-  const points = Math.round(data.points);
-  if (points <= 0) {
-    throw new Error("Le nombre de points doit être positif.");
-  }
-
-  // Validation: Details length
-  if (!data.details || data.details.trim().length < 5) {
-      throw new Error("Veuillez fournir plus de détails sur l'opportunité.");
-  }
-
-  const { error } = await supabase
-    .from("network_opportunities")
-    .insert({
-      giver_id: user.id,
-      receiver_id: data.receiverId,
-      type: data.type,
-      points: points,
-      details: data.details,
-      status: "pending"
-    });
-
-  if (error) {
-    console.error("Error creating opportunity:", error);
-    // Return precise error for easier debugging on client side
-    throw new Error(`Erreur lors de la création: ${error.message}`);
-  }
-
-  // Revalidate ALL dashboard paths to ensure consistency
-  revalidatePath("/mon-reseau-local/dashboard/opportunities");
-  revalidatePath("/mon-reseau-local/dashboard/connections"); 
-  revalidatePath("/mon-reseau-local/dashboard");
-  
-  return { success: true };
 }
 
 export async function getPotentialOpportunitiesCount() {
