@@ -7,13 +7,19 @@ import {
   Users, Calendar, Phone, CheckCircle2, 
   ArrowRight, ShieldCheck, Zap, Briefcase, 
   Target, TrendingUp, Star, Play, Lock,
-  MessageCircle, Clock, Bell, ChevronRight, Anchor
+  MessageCircle, Clock, Bell, ChevronRight, Anchor, Heart, Coffee, HelpCircle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 
 import { AuthDialog } from "@/components/auth-dialog";
 
@@ -190,47 +196,16 @@ const InteractiveMockup = () => {
   );
 };
 
-const OpportunityTicker = () => {
-  const opportunities = [
-    { label: "Trouver des clients", points: 10, icon: Target, color: "text-red-500" },
-    { label: "Faire un Live ensemble", points: 9, icon: Play, color: "text-purple-500" },
-    { label: "Mise en relation", points: 8, icon: Users, color: "text-blue-500" },
-    { label: "Partage de réseau", points: 6, icon: Briefcase, color: "text-orange-500" },
-    { label: "Recommandation", points: 5, icon: Star, color: "text-yellow-500" },
-    { label: "Échange de services", points: 5, icon: Zap, color: "text-green-500" },
-    { label: "Synergies", points: 3, icon: TrendingUp, color: "text-indigo-500" },
-    { label: "Engagement Social", points: 2, icon: MessageCircle, color: "text-pink-500" },
-  ];
-
-  return (
-    <div className="bg-slate-50 border-y border-slate-200 py-3 overflow-hidden">
-      <div className="flex animate-marquee whitespace-nowrap">
-        {[...opportunities, ...opportunities].map((opp, i) => (
-          <div key={i} className="flex items-center gap-2 mx-6 text-sm font-bold text-slate-600">
-            <opp.icon className={cn("h-4 w-4", opp.color)} />
-            <span>{opp.label}</span>
-            <Badge variant="secondary" className="bg-white border-slate-200 text-slate-500 text-[10px] px-1.5 h-5">
-              +{opp.points} pts
-            </Badge>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-};
-
 // --- MAIN PAGE COMPONENT ---
 
 export default function HomePage() {
-  const [activeTab, setActiveTab] = useState(0);
-
   return (
     <div className="min-h-screen bg-white text-slate-900 font-sans selection:bg-blue-100 selection:text-blue-900 overflow-x-hidden">
       
       <StickyCTA />
 
       {/* --- 1. HERO SECTION --- */}
-      <section className="relative pt-20 pb-0 md:pt-32 md:pb-0 overflow-hidden">
+      <section className="relative pt-20 pb-20 md:pt-32 md:pb-32 overflow-hidden">
         {/* Dynamic Background */}
         <div className="absolute inset-0 bg-slate-50">
           <div className="absolute top-[-20%] right-[-10%] w-[600px] h-[600px] bg-blue-100/50 rounded-full blur-3xl opacity-60 animate-pulse" style={{ animationDuration: '8s' }} />
@@ -238,29 +213,30 @@ export default function HomePage() {
           <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-[0.03]" />
         </div>
 
-        <div className="container mx-auto px-4 relative z-10">
-          <div className="grid lg:grid-cols-2 gap-16 items-center">
+        <div className="container mx-auto px-4 relative z-10 text-center max-w-4xl">
             
-            {/* Left Content */}
             <motion.div 
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8 }}
-              className="space-y-8 text-center lg:text-left"
+              className="space-y-8"
             >
-              <Badge className="bg-blue-50 text-blue-700 hover:bg-blue-100 border-blue-200 px-4 py-1.5 text-xs font-bold uppercase tracking-widest mb-2 transition-transform hover:scale-105 cursor-default">
-                Nouveau : Système de réciprocité garanti
-              </Badge>
+              <div className="inline-block">
+                <Badge className="bg-blue-50 text-blue-700 hover:bg-blue-100 border-blue-200 px-4 py-1.5 text-xs font-bold uppercase tracking-widest mb-2 transition-transform hover:scale-105 cursor-default">
+                    Nouveau : Système de réciprocité garanti
+                </Badge>
+                <div className="text-sm font-bold text-slate-500 mt-2">Ne restez plus seul face à votre business.</div>
+              </div>
               
               <h1 className="text-5xl md:text-6xl lg:text-7xl font-black text-slate-900 leading-[1.05] tracking-tight">
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">5 à 10 minutes</span> par jour pour trouver vos prochains clients et booster votre visibilité.
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">5 à 10 minutes</span> par jour pour trouver vos prochains clients.
               </h1>
               
-              <p className="text-xl text-slate-600 leading-relaxed max-w-2xl mx-auto lg:mx-0 font-medium">
-                Arrêtez de prospecter dans le vide. Chaque jour, rencontrez un entrepreneur local différent et transformez son réseau en opportunités pour vous : clients, recommandations, synergies concrètes.
+              <p className="text-xl text-slate-600 leading-relaxed max-w-2xl mx-auto font-medium">
+                Arrêtez de prospecter dans le vide. Chaque jour, rencontrez un entrepreneur local différent et transformez son réseau en opportunités pour vous.
               </p>
               
-                <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start pt-2">
+              <div className="flex flex-col sm:flex-row gap-4 justify-center pt-2">
                 <AuthDialog 
                   mode="signup"
                   trigger={
@@ -278,209 +254,157 @@ export default function HomePage() {
               </div>
 
               {/* Stats Counters */}
-              <div className="grid grid-cols-3 gap-8 pt-8 border-t border-slate-200/60">
-                <AnimatedCounter value={450} label="Opportunités" suffix="+" />
+              <div className="grid grid-cols-3 gap-8 pt-8 border-t border-slate-200/60 max-w-2xl mx-auto">
+                <AnimatedCounter value={1200} label="Mises en relation" suffix="+" />
                 <AnimatedCounter value={98} label="Satisfaction" suffix="%" />
                 <AnimatedCounter value={300} label="Membres Actifs" suffix="+" />
               </div>
             </motion.div>
-
-            {/* Right Visual */}
-            <motion.div 
-              initial={{ opacity: 0, x: 30 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.8, delay: 0.2 }}
-              className="relative mt-12 lg:mt-0"
-            >
-               <InteractiveMockup />
-            </motion.div>
-
-          </div>
         </div>
       </section>
 
-      {/* --- 1.2 REASSURANCE BLOCK (ANTI-FATIGUE) --- */}
-      <section className="py-12 bg-white border-b border-slate-100">
-        <div className="container mx-auto px-4 max-w-5xl">
-           <div className="bg-slate-50 rounded-3xl p-8 md:p-12 border border-slate-200 relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-green-100 rounded-full blur-3xl opacity-50"></div>
-              
-              <div className="relative z-10 grid md:grid-cols-2 gap-12 items-center">
-                 <div>
-                    <Badge className="bg-green-100 text-green-700 border-green-200 mb-4 px-3 py-1 font-bold uppercase tracking-wider">0 Stress</Badge>
-                    <h2 className="text-3xl font-black text-slate-900 mb-4">Vous gardez le contrôle total.</h2>
-                    <ul className="space-y-3 mb-6">
-                       <li className="flex items-center gap-3 font-medium text-slate-700">
-                          <CheckCircle2 className="h-5 w-5 text-green-600" /> Choisissez vos horaires et jours préférés
-                       </li>
-                       <li className="flex items-center gap-3 font-medium text-slate-700">
-                          <CheckCircle2 className="h-5 w-5 text-green-600" /> Reportez quand vous voulez
-                       </li>
-                       <li className="flex items-center gap-3 font-medium text-slate-700">
-                          <CheckCircle2 className="h-5 w-5 text-green-600" /> Pause possible à tout moment
-                       </li>
-                    </ul>
-                    <p className="text-slate-500 text-sm italic">"L'objectif est de supprimer la peur de la contrainte. C'est votre réseau, c'est votre rythme."</p>
-                 </div>
-
-                 <div className="bg-white rounded-2xl p-6 shadow-lg border border-slate-100">
-                    <div className="text-xs font-bold text-slate-400 uppercase mb-4 text-center">Choisissez votre rythme</div>
-                    <div className="space-y-3">
-                       <div className="flex items-center justify-between p-3 rounded-xl border border-slate-100 bg-slate-50 opacity-60">
-                          <span className="font-bold text-slate-600">Mode Léger</span>
-                          <span className="text-xs font-bold bg-white px-2 py-1 rounded border border-slate-200">3 échanges / sem</span>
-                       </div>
-                       <div className="flex items-center justify-between p-3 rounded-xl border-2 border-blue-100 bg-blue-50/50 relative">
-                          <div className="flex items-center gap-2">
-                             <div className="h-3 w-3 rounded-full bg-blue-600 shadow-sm"></div>
-                             <span className="font-bold text-blue-900">Mode Standard</span>
-                          </div>
-                          <span className="text-xs font-bold bg-white text-blue-700 px-2 py-1 rounded border border-blue-100">4 échanges / sem</span>
-                          <div className="absolute -right-2 -top-2 bg-blue-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm">Recommandé</div>
-                       </div>
-                       <div className="flex items-center justify-between p-3 rounded-xl border border-slate-100 bg-slate-50 opacity-60">
-                          <span className="font-bold text-slate-600">Mode Intensif</span>
-                          <span className="text-xs font-bold bg-white px-2 py-1 rounded border border-slate-200">5 échanges / sem</span>
-                       </div>
+      {/* --- 2. PROBLEM SECTION (NEW) --- */}
+      <section className="py-20 bg-white border-y border-slate-100">
+        <div className="container mx-auto px-4 max-w-4xl">
+            <div className="text-center space-y-8">
+                <div className="inline-flex items-center justify-center p-3 bg-red-100 text-red-600 rounded-full mb-4">
+                    <Heart className="h-6 w-6" />
+                </div>
+                <h2 className="text-3xl md:text-4xl font-black text-slate-900">Pourquoi trouver des clients est devenu si difficile aujourd’hui</h2>
+                
+                <div className="text-lg text-slate-600 leading-relaxed space-y-6">
+                    <p>
+                        La plupart des entrepreneurs ne manquent pas de compétences. <br/>
+                        <strong className="text-slate-900">Ils manquent de visibilité et de réseau.</strong>
+                    </p>
+                    
+                    <div className="bg-slate-50 p-6 rounded-2xl border border-slate-200 text-left mx-auto max-w-lg">
+                        <p className="font-bold text-slate-900 mb-4">Vous avez peut-être déjà essayé :</p>
+                        <ul className="space-y-3">
+                            <li className="flex items-start gap-3 text-slate-600">
+                                <span className="text-red-400 font-bold">×</span> Publier sur LinkedIn sans résultats
+                            </li>
+                            <li className="flex items-start gap-3 text-slate-600">
+                                <span className="text-red-400 font-bold">×</span> Envoyer des messages qui restent sans réponse
+                            </li>
+                            <li className="flex items-start gap-3 text-slate-600">
+                                <span className="text-red-400 font-bold">×</span> Aller à des événements networking inutiles
+                            </li>
+                        </ul>
                     </div>
-                    <div className="mt-6 text-center">
-                       <span className="text-xs font-bold text-slate-400 uppercase tracking-wide">Modifier à tout moment</span>
-                    </div>
-                 </div>
-              </div>
-           </div>
-        </div>
-      </section>
-      
-      {/* --- 1.5 VALUE EXCHANGE GRID (NEW) --- */}
-      <section className="py-16 bg-slate-50 border-y border-slate-200">
-        <div className="container mx-auto px-4">
-           <div className="text-center mb-10">
-              <h2 className="text-2xl md:text-3xl font-black text-slate-900 mb-2">Tout ce que vous pouvez obtenir (et donner)</h2>
-              <p className="text-slate-500">Chaque action nourrit votre Score de Confiance.</p>
-           </div>
-           
-           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-4 gap-4 max-w-5xl mx-auto">
-              {[
-                { label: "Trouver des clients", points: 10, icon: Target, color: "text-red-600", bg: "bg-red-50", border: "border-red-100" },
-                { label: "Faire un Live ensemble", points: 9, icon: Play, color: "text-purple-600", bg: "bg-purple-50", border: "border-purple-100" },
-                { label: "Mise en relation", points: 8, icon: Users, color: "text-blue-600", bg: "bg-blue-50", border: "border-blue-100" },
-                { label: "Partage de réseau", points: 6, icon: Briefcase, color: "text-orange-600", bg: "bg-orange-50", border: "border-orange-100" },
-                { label: "Recommandation", points: 5, icon: Star, color: "text-yellow-600", bg: "bg-yellow-50", border: "border-yellow-100" },
-                { label: "Échange de services", points: 5, icon: Zap, color: "text-green-600", bg: "bg-green-50", border: "border-green-100" },
-                { label: "Synergies", points: 3, icon: TrendingUp, color: "text-indigo-600", bg: "bg-indigo-50", border: "border-indigo-100" },
-                { label: "Engagement Social", points: 2, icon: MessageCircle, color: "text-pink-600", bg: "bg-pink-50", border: "border-pink-100" },
-              ].map((opp, i) => (
-                <motion.div 
-                  key={i}
-                  initial={{ opacity: 0, y: 10 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.05 }}
-                  className={`flex flex-col items-center justify-center p-4 rounded-2xl border ${opp.border} ${opp.bg} hover:shadow-md transition-all cursor-default group`}
-                >
-                   <div className={`h-10 w-10 rounded-full bg-white flex items-center justify-center mb-2 shadow-sm ${opp.color} group-hover:scale-110 transition-transform`}>
-                      <opp.icon className="h-5 w-5" />
-                   </div>
-                   <span className="text-sm font-bold text-slate-700 text-center leading-tight mb-2">{opp.label}</span>
-                   <Badge className="bg-white hover:bg-white text-slate-900 border border-slate-200 text-[10px] font-black px-2 py-0.5 shadow-sm">
-                      +{opp.points} pts
-                   </Badge>
-                </motion.div>
-              ))}
-           </div>
+
+                    <p>
+                        Le vrai problème est simple : <br/>
+                        <span className="bg-yellow-100 px-2 font-bold text-slate-900">👉 Vous essayez de trouver des clients seul.</span>
+                    </p>
+                    <p className="font-medium">Alors que le business fonctionne toujours mieux en réseau.</p>
+                </div>
+            </div>
         </div>
       </section>
 
-      {/* --- 2. SCROLLYTELLING SECTION --- */}
-      <section className="py-24 bg-slate-900 text-white overflow-hidden">
-         <div className="container mx-auto px-4">
-            <div className="max-w-4xl mx-auto text-center mb-20">
-               <h2 className="text-3xl md:text-5xl font-black mb-6">Comment ça marche ?</h2>
-               <p className="text-slate-400 text-xl">L'antidote à la solitude de l'entrepreneur en 3 étapes.</p>
+      {/* --- 3. METAPHOR SECTION (NEW) --- */}
+      <section className="py-20 bg-slate-900 text-white">
+        <div className="container mx-auto px-4 max-w-5xl text-center">
+            <h2 className="text-3xl md:text-4xl font-black mb-8">Imaginez si chaque entrepreneur que vous rencontrez devenait une opportunité</h2>
+            
+            <p className="text-xl text-slate-300 mb-12">
+                Popey fonctionne comme une application de rencontre... <strong className="text-white">Mais pour le business.</strong>
+            </p>
+
+            <div className="grid md:grid-cols-4 gap-6 text-left">
+                {[
+                    { icon: Users, text: "Vous rencontrez un entrepreneur local" },
+                    { icon: Coffee, text: "Vous échangez pendant 15 minutes" },
+                    { icon: Zap, text: "Vous découvrez son réseau" },
+                    { icon: Star, text: "Il découvre le vôtre" }
+                ].map((item, i) => (
+                    <div key={i} className="bg-slate-800 p-6 rounded-2xl border border-slate-700">
+                        <item.icon className="h-8 w-8 text-blue-400 mb-4" />
+                        <p className="font-bold">{item.text}</p>
+                    </div>
+                ))}
             </div>
 
-            <div className="grid md:grid-cols-3 gap-12 relative">
+            <div className="mt-12 inline-block bg-blue-600/20 border border-blue-500/50 rounded-xl px-6 py-3 text-blue-300 font-bold">
+                Et ensemble vous créez des opportunités.
+            </div>
+        </div>
+      </section>
+
+      {/* --- 4. HOW IT WORKS --- */}
+      <section className="py-24 bg-slate-50">
+         <div className="container mx-auto px-4">
+            <div className="max-w-4xl mx-auto text-center mb-16">
+               <span className="text-blue-600 font-bold tracking-widest uppercase text-sm mb-2 block">Fonctionnement</span>
+               <h2 className="text-3xl md:text-5xl font-black mb-6 text-slate-900">Voici concrètement ce qui se passe quand vous rejoignez Popey</h2>
+            </div>
+
+            <div className="grid md:grid-cols-3 gap-8 relative max-w-6xl mx-auto">
                {/* Step 1 */}
                <motion.div 
-                 initial={{ opacity: 0, y: 50 }}
+                 initial={{ opacity: 0, y: 30 }}
                  whileInView={{ opacity: 1, y: 0 }}
-                 viewport={{ once: true, margin: "-100px" }}
+                 viewport={{ once: true }}
                  transition={{ duration: 0.5 }}
-                 className="relative group"
+                 className="bg-white rounded-3xl p-8 border border-slate-200 shadow-sm hover:shadow-xl transition-all"
                >
-                 <div className="bg-slate-800 rounded-3xl p-8 border border-slate-700 h-full hover:bg-slate-750 transition-colors">
-                    <div className="h-16 w-16 bg-blue-600 rounded-2xl flex items-center justify-center text-white mb-6 shadow-lg shadow-blue-500/20 group-hover:scale-110 transition-transform duration-300">
-                       <Calendar className="h-8 w-8" />
-                    </div>
-                    <h3 className="text-2xl font-black mb-4">1. Le Match</h3>
-                    <p className="text-slate-400 leading-relaxed">
-                       Chaque matin, notre algorithme vous trouve <strong className="text-white">le meilleur partenaire</strong> pour échanger. Pas de recherche, pas de friction.
-                    </p>
-                    <div className="mt-8 bg-slate-900 rounded-xl p-4 border border-slate-800 opacity-80">
-                       <div className="flex items-center gap-3">
-                          <div className="h-2 w-2 bg-green-500 rounded-full animate-pulse"/>
-                          <span className="text-xs font-mono text-blue-400">MATCH_FOUND: "Thomas D."</span>
-                       </div>
-                    </div>
-                 </div>
+                  <div className="h-16 w-16 bg-blue-100 rounded-2xl flex items-center justify-center text-blue-600 mb-6">
+                     <Calendar className="h-8 w-8" />
+                  </div>
+                  <h3 className="text-2xl font-black mb-4 text-slate-900">1. Le Match</h3>
+                  <p className="text-slate-600 leading-relaxed">
+                     Chaque matin, notre algorithme vous trouve <strong className="text-slate-900">le meilleur partenaire</strong> pour échanger. Pas de recherche, pas de friction.
+                  </p>
                </motion.div>
 
                {/* Step 2 */}
                <motion.div 
-                 initial={{ opacity: 0, y: 50 }}
+                 initial={{ opacity: 0, y: 30 }}
                  whileInView={{ opacity: 1, y: 0 }}
-                 viewport={{ once: true, margin: "-100px" }}
-                 transition={{ duration: 0.5, delay: 0.2 }}
-                 className="relative group"
+                 viewport={{ once: true }}
+                 transition={{ duration: 0.5, delay: 0.1 }}
+                 className="bg-white rounded-3xl p-8 border border-slate-200 shadow-sm hover:shadow-xl transition-all"
                >
-                 <div className="bg-slate-800 rounded-3xl p-8 border border-slate-700 h-full hover:bg-slate-750 transition-colors">
-                    <div className="h-16 w-16 bg-purple-600 rounded-2xl flex items-center justify-center text-white mb-6 shadow-lg shadow-purple-500/20 group-hover:scale-110 transition-transform duration-300">
-                       <Phone className="h-8 w-8" />
-                    </div>
-                    <h3 className="text-2xl font-black mb-4">2. L'Appel</h3>
-                    <p className="text-slate-400 leading-relaxed">
-                       15 minutes pour échanger. Présentez-vous, partagez vos défis, offrez de l'aide. <strong className="text-white">Court, efficace, humain.</strong>
-                    </p>
-                    <div className="mt-8 flex justify-center">
-                       <div className="flex -space-x-4">
-                          <Avatar className="h-12 w-12 border-4 border-slate-800"><AvatarImage src="https://github.com/shadcn.png" /></Avatar>
-                          <Avatar className="h-12 w-12 border-4 border-slate-800"><AvatarImage src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=2000&auto=format&fit=crop" /></Avatar>
-                       </div>
-                    </div>
-                 </div>
+                  <div className="h-16 w-16 bg-purple-100 rounded-2xl flex items-center justify-center text-purple-600 mb-6">
+                     <Phone className="h-8 w-8" />
+                  </div>
+                  <h3 className="text-2xl font-black mb-4 text-slate-900">2. L'Appel</h3>
+                  <p className="text-slate-600 leading-relaxed">
+                     15 minutes pour échanger. Présentez-vous, partagez vos défis, offrez de l'aide. <strong className="text-slate-900">Court, efficace, humain.</strong>
+                  </p>
                </motion.div>
 
                {/* Step 3 */}
                <motion.div 
-                 initial={{ opacity: 0, y: 50 }}
+                 initial={{ opacity: 0, y: 30 }}
                  whileInView={{ opacity: 1, y: 0 }}
-                 viewport={{ once: true, margin: "-100px" }}
-                 transition={{ duration: 0.5, delay: 0.4 }}
-                 className="relative group"
+                 viewport={{ once: true }}
+                 transition={{ duration: 0.5, delay: 0.2 }}
+                 className="bg-white rounded-3xl p-8 border border-slate-200 shadow-sm hover:shadow-xl transition-all"
                >
-                 <div className="bg-slate-800 rounded-3xl p-8 border border-slate-700 h-full hover:bg-slate-750 transition-colors">
-                    <div className="h-16 w-16 bg-green-600 rounded-2xl flex items-center justify-center text-white mb-6 shadow-lg shadow-green-500/20 group-hover:scale-110 transition-transform duration-300">
-                       <TrendingUp className="h-8 w-8" />
-                    </div>
-                    <h3 className="text-2xl font-black mb-4">3. L'Opportunité</h3>
-                    <p className="text-slate-400 leading-relaxed">
-                       Une mise en relation ? Un conseil ? Un client ? Notez l'échange et <strong className="text-white">augmentez votre score de confiance.</strong>
-                    </p>
-                    <div className="mt-8">
-                       <div className="flex items-center justify-between text-xs font-bold uppercase tracking-widest text-slate-500 mb-2">
-                          <span>Confiance</span>
-                          <span className="text-green-400">+12 pts</span>
-                       </div>
-                       <Progress value={75} className="h-2 bg-slate-700" />
-                    </div>
-                 </div>
+                  <div className="h-16 w-16 bg-green-100 rounded-2xl flex items-center justify-center text-green-600 mb-6">
+                     <TrendingUp className="h-8 w-8" />
+                  </div>
+                  <h3 className="text-2xl font-black mb-4 text-slate-900">3. L'Opportunité</h3>
+                  <p className="text-slate-600 leading-relaxed">
+                     Une mise en relation ? Un conseil ? Un client ? Notez l'échange et <strong className="text-slate-900">augmentez votre score.</strong>
+                  </p>
                </motion.div>
             </div>
          </div>
       </section>
 
-      {/* --- 3. TRUST SCORE EXPLANATION --- */}
-      <section className="py-24 bg-white">
+      {/* --- 5. DASHBOARD / MOCKUP SECTION --- */}
+      <section className="py-20 bg-white overflow-hidden">
+        <div className="container mx-auto px-4 text-center">
+            <h2 className="text-3xl font-black text-slate-900 mb-12">Votre tableau de bord quotidien</h2>
+            <InteractiveMockup />
+        </div>
+      </section>
+
+      {/* --- 6. TRUST SCORE & RECIPROCITY --- */}
+      <section className="py-24 bg-slate-50">
          <div className="container mx-auto px-4 max-w-6xl">
             <div className="grid lg:grid-cols-2 gap-16 items-center">
                <motion.div
@@ -493,7 +417,7 @@ export default function HomePage() {
                      {/* Big Animated Circle */}
                      <div className="relative h-80 w-80 mx-auto lg:mx-0">
                         <svg className="h-full w-full rotate-[-90deg]" viewBox="0 0 100 100">
-                           <circle className="text-slate-100 stroke-current" strokeWidth="8" cx="50" cy="50" r="40" fill="transparent"></circle>
+                           <circle className="text-slate-200 stroke-current" strokeWidth="8" cx="50" cy="50" r="40" fill="transparent"></circle>
                            <motion.circle 
                              initial={{ pathLength: 0 }}
                              whileInView={{ pathLength: 0.92 }}
@@ -557,66 +481,45 @@ export default function HomePage() {
          </div>
       </section>
 
-      {/* --- 4. RESULTS SECTION (NEW) --- */}
+      {/* --- 7. PROMISE & IMPACT SECTION (MERGED) --- */}
       <section className="py-24 bg-blue-900 text-white relative overflow-hidden">
-        {/* Background Pattern */}
         <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/graphy.png')]"></div>
         
         <div className="container mx-auto px-4 relative z-10">
            <div className="text-center mb-16 max-w-3xl mx-auto">
               <Badge className="bg-blue-800 text-blue-200 border-0 mb-6 uppercase tracking-widest px-3 py-1">Impact Réel</Badge>
-              <h2 className="text-3xl md:text-5xl font-black mb-6">Après 3 mois chez Popey Academy...</h2>
-              <p className="text-blue-200 text-xl">Voici ce qui se passe quand vous activez la puissance du réseau local.</p>
+              <h2 className="text-3xl md:text-5xl font-black mb-6">Ce que vous pouvez réellement obtenir</h2>
+              <p className="text-blue-200 text-xl">Après 30 jours d'utilisation, la majorité des membres obtiennent :</p>
            </div>
 
-           <div className="grid md:grid-cols-3 gap-8">
-              {[
-                { 
-                  icon: Users, 
-                  title: "Un Réseau Solide", 
-                  value: "+60", 
-                  desc: "Entrepreneurs locaux rencontrés personnellement.",
-                  sub: "Fini l'isolement" 
-                },
-                { 
-                  icon: Zap, 
-                  title: "Opportunités Qualifiées", 
-                  value: "12", 
-                  desc: "Mises en relation ciblées reçues en moyenne.",
-                  sub: "C'est 4/mois" 
-                },
-                { 
-                  icon: Briefcase, 
-                  title: "Chiffre d'Affaires", 
-                  value: "+20%", 
-                  desc: "D'augmentation moyenne constatée par nos membres.",
-                  sub: "ROI immédiat" 
-                }
-              ].map((item, i) => (
-                <motion.div 
-                  key={i}
-                  initial={{ opacity: 0, y: 30 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.1 }}
-                  className="bg-blue-800/50 backdrop-blur-sm p-8 rounded-3xl border border-blue-700/50 hover:bg-blue-800 transition-colors group"
-                >
-                   <div className="h-14 w-14 bg-blue-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                      <item.icon className="h-7 w-7 text-white" />
-                   </div>
-                   <div className="text-5xl font-black mb-2 text-transparent bg-clip-text bg-gradient-to-r from-white to-blue-200">{item.value}</div>
-                   <h3 className="text-xl font-bold mb-2 text-white">{item.title}</h3>
-                   <p className="text-blue-200 mb-4">{item.desc}</p>
-                   <div className="inline-block bg-blue-900/50 px-3 py-1 rounded-lg text-xs font-bold text-blue-300 uppercase tracking-wide border border-blue-800">
-                      {item.sub}
-                   </div>
-                </motion.div>
-              ))}
+           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
+                {[
+                    { val: "20-40", txt: "Nouveaux contacts qualifiés" },
+                    { val: "3+", txt: "Recommandations ciblées" },
+                    { val: "1", txt: "Opportunité business concrète" },
+                    { val: "100%", txt: "Visibilité locale" }
+                ].map((stat, i) => (
+                    <div key={i} className="bg-blue-800/30 border border-blue-700 rounded-2xl p-6 text-center">
+                        <div className="text-4xl font-black text-white mb-2">{stat.val}</div>
+                        <div className="text-blue-200 font-medium">{stat.txt}</div>
+                    </div>
+                ))}
+           </div>
+
+           <div className="bg-blue-800/50 rounded-3xl p-8 md:p-12 border border-blue-700/50 max-w-4xl mx-auto text-center">
+              <h3 className="text-2xl font-bold mb-4">Après 3 mois ?</h3>
+              <p className="text-lg text-blue-100 mb-8">
+                 Jusqu’à 60 entrepreneurs rencontrés, un flux régulier d’opportunités et une augmentation moyenne du chiffre d’affaires.
+              </p>
+              <div className="inline-block bg-white text-blue-900 font-bold px-6 py-3 rounded-full shadow-lg">
+                 Votre réseau devient votre principal moteur de croissance.
+              </div>
            </div>
         </div>
       </section>
 
-      {/* --- 5. TESTIMONIALS / SOCIAL PROOF --- */}
-      <section className="py-24 bg-slate-50 border-t border-slate-200">
+      {/* --- 8. TESTIMONIALS --- */}
+      <section className="py-24 bg-white">
          <div className="container mx-auto px-4">
             <div className="text-center mb-16">
                <h2 className="text-3xl md:text-4xl font-black text-slate-900 mb-4">Ils ont arrêté de prospecter dans le vide</h2>
@@ -649,7 +552,7 @@ export default function HomePage() {
                     initial={{ opacity: 0, y: 20 }}
                     whileInView={{ opacity: 1, y: 0 }}
                     transition={{ delay: i * 0.1 }}
-                    className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl transition-shadow relative"
+                    className="bg-slate-50 p-8 rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl transition-shadow relative"
                   >
                      <div className="absolute top-8 right-8 text-blue-100"><MessageCircle className="h-8 w-8" /></div>
                      <div className="flex items-center gap-4 mb-6">
@@ -669,8 +572,104 @@ export default function HomePage() {
          </div>
       </section>
 
-      {/* --- 6. PRICING & FINAL CTA --- */}
-      <section className="py-24 bg-white relative overflow-hidden">
+      {/* --- 9. FOUNDER STORY (NEW) --- */}
+      <section className="py-20 bg-slate-50 border-y border-slate-200">
+        <div className="container mx-auto px-4 max-w-3xl text-center">
+            <h2 className="text-3xl font-black text-slate-900 mb-8">Pourquoi Popey a été créé</h2>
+            <div className="prose prose-lg mx-auto text-slate-600 leading-relaxed">
+                <p>Pendant des années, nous avons observé la même chose : Des entrepreneurs compétents... <strong>Mais isolés.</strong></p>
+                <p>Certains avaient du talent mais pas de clients. D’autres avaient des clients mais pas de réseau. Beaucoup se sentaient seuls face à leur activité.</p>
+                <p>La réalité est simple : <strong>Le succès ne dépend pas seulement de ce que vous savez faire. Il dépend surtout de qui vous connaissez.</strong></p>
+                <p>Nous avons donc créé un système pour rendre l’entraide : simple, quotidienne, naturelle et mesurable.</p>
+                <p className="font-bold text-slate-900 text-xl mt-6">C’est devenu Popey.</p>
+            </div>
+        </div>
+      </section>
+
+      {/* --- 10. FAQ / OBJECTIONS (NEW) --- */}
+      <section className="py-20 bg-white">
+        <div className="container mx-auto px-4 max-w-3xl">
+            <h2 className="text-3xl font-black text-slate-900 text-center mb-12">Questions fréquentes</h2>
+            
+            <Accordion type="single" collapsible className="w-full">
+                <AccordionItem value="item-1">
+                    <AccordionTrigger className="text-lg font-bold text-slate-900">Je n’ai pas le temps</AccordionTrigger>
+                    <AccordionContent className="text-slate-600 text-base">
+                        Les échanges durent seulement 15 minutes. Beaucoup de membres les font entre deux rendez-vous ou à la pause café. C'est conçu pour être ultra-efficace.
+                    </AccordionContent>
+                </AccordionItem>
+                <AccordionItem value="item-2">
+                    <AccordionTrigger className="text-lg font-bold text-slate-900">Et si les membres ne sont pas sérieux ?</AccordionTrigger>
+                    <AccordionContent className="text-slate-600 text-base">
+                        Le score de confiance rend chaque interaction transparente. Les membres fiables reçoivent plus d’opportunités, les autres sont naturellement filtrés.
+                    </AccordionContent>
+                </AccordionItem>
+                <AccordionItem value="item-3">
+                    <AccordionTrigger className="text-lg font-bold text-slate-900">Mon activité est spécifique</AccordionTrigger>
+                    <AccordionContent className="text-slate-600 text-base">
+                        Justement. Plus votre activité est spécifique, plus un réseau humain est efficace pour vous recommander aux bonnes personnes.
+                    </AccordionContent>
+                </AccordionItem>
+                <AccordionItem value="item-4">
+                    <AccordionTrigger className="text-lg font-bold text-slate-900">Et si je ne reçois rien ?</AccordionTrigger>
+                    <AccordionContent className="text-slate-600 text-base">
+                        Le système repose sur la réciprocité : plus vous aidez, plus vous recevez. Nous vous garantissons des rencontres, c'est à vous de créer le lien.
+                    </AccordionContent>
+                </AccordionItem>
+            </Accordion>
+        </div>
+      </section>
+
+      {/* --- 11. ZERO CONSTRAINT (MOVED) --- */}
+      <section className="py-16 bg-green-50/50 border-t border-green-100">
+        <div className="container mx-auto px-4 max-w-4xl text-center">
+            <Badge className="bg-green-100 text-green-700 border-green-200 mb-4 px-3 py-1 font-bold uppercase tracking-wider">Liberté Totale</Badge>
+            <h2 className="text-3xl font-black text-slate-900 mb-6">Zéro pression. Zéro contrainte.</h2>
+            <div className="grid md:grid-cols-2 gap-8 items-center text-left">
+                <div>
+                    <p className="text-lg text-slate-700 mb-4 font-medium">Vous gardez toujours le contrôle :</p>
+                    <ul className="space-y-3">
+                       <li className="flex items-center gap-3 font-medium text-slate-700">
+                          <CheckCircle2 className="h-5 w-5 text-green-600" /> Choisissez votre rythme
+                       </li>
+                       <li className="flex items-center gap-3 font-medium text-slate-700">
+                          <CheckCircle2 className="h-5 w-5 text-green-600" /> Reportez quand vous voulez
+                       </li>
+                       <li className="flex items-center gap-3 font-medium text-slate-700">
+                          <CheckCircle2 className="h-5 w-5 text-green-600" /> Faites une pause à tout moment
+                       </li>
+                       <li className="flex items-center gap-3 font-medium text-slate-700">
+                          <CheckCircle2 className="h-5 w-5 text-green-600" /> Aucun engagement
+                       </li>
+                    </ul>
+                </div>
+                <div className="bg-white p-6 rounded-2xl border border-green-100 shadow-sm">
+                    <p className="text-slate-600 italic">"Votre réseau doit rester un plaisir, pas une obligation. C'est pour ça que vous pouvez annuler ou pauser votre abonnement en 1 clic."</p>
+                </div>
+            </div>
+        </div>
+      </section>
+
+      {/* --- 12. VISION (NEW) --- */}
+      <section className="py-20 bg-white">
+        <div className="container mx-auto px-4 max-w-3xl text-center">
+            <h2 className="text-3xl font-black text-slate-900 mb-6">Imaginez votre activité dans 6 mois</h2>
+            <div className="space-y-4 text-xl text-slate-600">
+                <p>Un téléphone qui sonne.</p>
+                <p>Des recommandations régulières.</p>
+                <p>Des partenaires qui pensent à vous.</p>
+            </div>
+            <div className="flex justify-center gap-4 mt-8 font-bold text-slate-900">
+                <span className="flex items-center gap-2"><CheckCircle2 className="text-blue-600 h-5 w-5"/> Moins de stress</span>
+                <span className="flex items-center gap-2"><CheckCircle2 className="text-blue-600 h-5 w-5"/> Plus de stabilité</span>
+                <span className="flex items-center gap-2"><CheckCircle2 className="text-blue-600 h-5 w-5"/> Plus de plaisir</span>
+            </div>
+            <p className="mt-8 text-2xl font-black text-blue-600">C’est la puissance d’un réseau actif.</p>
+        </div>
+      </section>
+
+      {/* --- 13. PRICING & FINAL CTA --- */}
+      <section className="py-24 bg-white relative overflow-hidden border-t border-slate-100">
          <div className="container mx-auto px-4 relative z-10">
             <div className="max-w-4xl mx-auto bg-slate-900 rounded-[3rem] p-8 md:p-16 text-center text-white shadow-2xl relative overflow-hidden">
                {/* Background Effects */}
@@ -680,12 +679,8 @@ export default function HomePage() {
                <h2 className="text-4xl md:text-5xl font-black mb-6 relative z-10">
                   Votre réseau commence <span className="text-blue-400">aujourd'hui.</span>
                </h2>
-               <p className="text-slate-300 text-xl mb-12 max-w-2xl mx-auto relative z-10">
-                  Rejoignez les 300+ entrepreneurs qui s'entraident déjà au quotidien.
-                  Sans engagement. Annulable en 1 clic.
-               </p>
-
-               <div className="bg-white/10 backdrop-blur-md rounded-2xl p-8 max-w-sm mx-auto mb-12 border border-white/10">
+               
+               <div className="bg-white/10 backdrop-blur-md rounded-2xl p-8 max-w-sm mx-auto mb-8 border border-white/10 mt-12">
                   <div className="text-sm font-bold text-blue-300 uppercase tracking-widest mb-2">Offre de Lancement</div>
                   <div className="text-5xl font-black mb-2">49€<span className="text-lg text-slate-400 font-medium">/mois</span></div>
                   <div className="text-xs text-slate-400 mb-6">ou essayez 3 jours pour 1€</div>
@@ -698,10 +693,11 @@ export default function HomePage() {
                     mode="signup"
                     trigger={
                       <Button className="w-full h-12 bg-white text-slate-900 hover:bg-slate-100 font-black rounded-xl">
-                        Je profite de l'offre
+                        Commencer mon réseau maintenant
                       </Button>
                     }
                   />
+                  <div className="text-[10px] text-slate-400 mt-3">Sans engagement - Résiliation en 1 clic</div>
                </div>
 
                <p className="text-slate-500 text-sm">Garantie satisfait ou remboursé sous 14 jours.</p>
@@ -744,15 +740,6 @@ export default function HomePage() {
                     <ul className="space-y-2 text-sm text-slate-500">
                         <li>hello@popey.academy</li>
                         <li>Paris, France</li>
-                        <li className="flex gap-4 mt-4">
-                            {/* Social Icons Placeholder */}
-                            <div className="h-8 w-8 bg-slate-100 rounded-full flex items-center justify-center text-slate-400 hover:bg-blue-100 hover:text-blue-600 transition-colors cursor-pointer">
-                                <span className="font-black text-xs">IN</span>
-                            </div>
-                            <div className="h-8 w-8 bg-slate-100 rounded-full flex items-center justify-center text-slate-400 hover:bg-blue-100 hover:text-blue-600 transition-colors cursor-pointer">
-                                <span className="font-black text-xs">IG</span>
-                            </div>
-                        </li>
                     </ul>
                 </div>
             </div>
