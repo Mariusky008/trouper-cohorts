@@ -8,9 +8,41 @@ export async function getDailyMatch() {
 
   if (!user) return null;
 
+  // Use local date for France/Europe
+  // Or just use the date string from the database which is YYYY-MM-DD
+  // But new Date().toISOString() gives UTC date.
+  // If it is 1am in Paris (CET+1/2), it is 0am/11pm UTC.
+  // We want to show matches for the current user's day.
+  // Let's stick to YYYY-MM-DD UTC for consistency with how we generate matches (server side uses UTC usually).
+  // HOWEVER, if the match was generated for "2026-02-22" and today is "2026-02-22", it should work.
+  // Let's verify what "today" means here.
   const today = new Date().toISOString().split('T')[0];
 
-  const { data: match } = await supabase
+  console.log("Checking match for user:", user.id, "on date:", today);
+
+  let query = supabase
+    .from("network_matches")
+    .select(`
+      *,
+      user1:user1_id(id, display_name, avatar_url, trade, phone),
+      user2:user2_id(id, display_name, avatar_url, trade, phone)
+    `)
+    .or(`user1_id.eq.${user.id},user2_id.eq.${user.id}`)
+    .maybeSingle();
+
+  // If we want to be strict about "today":
+  // .eq("date", today)
+  // But maybe the match was generated for a date that is slightly off due to timezone?
+  // Let's try to fetch ANY match that is active/pending for today or future?
+  // No, getDailyMatch implies TODAY.
+
+  // Let's try to debug by fetching without date restriction first and see what we get in logs if we could.
+  // But here we are in a server action.
+  
+  // Let's assume the issue is indeed the date comparison or the user ID.
+  // We will keep the date check but ensure we match the column format.
+  
+  const { data: matches, error } = await supabase
     .from("network_matches")
     .select(`
       *,
@@ -19,9 +51,19 @@ export async function getDailyMatch() {
     `)
     .eq("date", today)
     .or(`user1_id.eq.${user.id},user2_id.eq.${user.id}`)
-    .maybeSingle();
+    .order('time', { ascending: true })
+    .limit(1); // Handle multiple matches by taking the first one
+    
+  if (error) {
+      console.error("Error fetching match:", error);
+  }
 
-  if (!match) return null;
+  const match = matches?.[0];
+
+  if (!match) {
+      console.log("No match found for today.");
+      return null;
+  }
 
   const isUser1 = match.user1_id === user.id;
   const partnerId = isUser1 ? match.user2_id : match.user1_id;
