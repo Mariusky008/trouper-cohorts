@@ -16,9 +16,14 @@ export async function getDailyMatch() {
   // Let's stick to YYYY-MM-DD UTC for consistency with how we generate matches (server side uses UTC usually).
   // HOWEVER, if the match was generated for "2026-02-22" and today is "2026-02-22", it should work.
   // Let's verify what "today" means here.
-  const today = new Date().toISOString().split('T')[0];
+  // We want to show the relevant match for the user.
+  // To avoid timezone issues where "today" (UTC) might be tomorrow/yesterday for the user,
+  // we will fetch the most recent upcoming match (or today's match).
+  // We use a safe past date to ensure we catch "today" even if server time is ahead.
+  const pastDate = new Date();
+  pastDate.setDate(pastDate.getDate() - 1); // Yesterday
+  const searchDate = pastDate.toISOString().split('T')[0];
 
-  // Fetch the next relevant match (Today or Future)
   const { data: matches, error } = await supabase
     .from("network_matches")
     .select(`
@@ -26,10 +31,10 @@ export async function getDailyMatch() {
       user1:user1_id(id, display_name, avatar_url, trade, phone),
       user2:user2_id(id, display_name, avatar_url, trade, phone)
     `)
-    .gte("date", today) // Fetch today OR future matches
+    .gte("date", searchDate) // Fetch from yesterday onwards
     .or(`user1_id.eq.${user.id},user2_id.eq.${user.id}`)
-    .order('date', { ascending: true }) // Prioritize today
-    .order('time', { ascending: true }) // Then time
+    .order('date', { ascending: true }) // Earliest date first
+    .order('time', { ascending: true })
     .limit(1); 
     
   if (error) {
