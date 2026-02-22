@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useRef } from "react";
 import { 
     Briefcase, ShieldCheck, Award, Pencil, Save, X, Phone, 
     Linkedin, Instagram, Facebook, Globe, Upload, Loader2,
