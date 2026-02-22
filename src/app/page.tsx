@@ -79,9 +79,9 @@ const StickyCTA = () => {
           <div className="bg-white/90 backdrop-blur-md border border-slate-200 shadow-sm py-3 px-6 rounded-full mt-4 flex justify-between items-center max-w-5xl mx-auto">
              <div className="flex items-center gap-2 font-black text-slate-900 text-sm md:text-base">
                 <div className="bg-blue-600 text-white p-1 rounded-md">
-                  <Users className="h-4 w-4" />
+                  <Anchor className="h-4 w-4" />
                 </div>
-                <span className="hidden md:inline">Mon Réseau Local</span>
+                <span className="hidden md:inline">Popey Academy</span>
              </div>
              <div className="flex items-center gap-4">
                  <AuthDialog 
@@ -233,7 +233,7 @@ export default function HomePage() {
               </h1>
               
               <p className="text-xl text-slate-600 leading-relaxed max-w-2xl mx-auto font-medium">
-                Arrêtez de prospecter dans le vide. Chaque jour, rencontrez un entrepreneur local différent et transformez son réseau en opportunités pour vous.
+                Arrêtez de prospecter dans le vide. Chaque jour, rencontrez un entrepreneur local différent (5 mn de télèphone) et transformez son réseau en opportunités pour vous.
               </p>
               
               <div className="flex flex-col sm:flex-row gap-4 justify-center pt-2">
@@ -246,11 +246,6 @@ export default function HomePage() {
                     </Button>
                   }
                 />
-                <Button size="lg" variant="outline" className="h-16 px-6 font-bold text-slate-600 hover:text-blue-600 rounded-full border-2 hover:bg-slate-50" asChild>
-                  <Link href="/entrepreneur">
-                    Programme Entrepreneur
-                  </Link>
-                </Button>
               </div>
 
               {/* Stats Counters */}
@@ -282,7 +277,7 @@ export default function HomePage() {
                         <p className="font-bold text-slate-900 mb-4">Vous avez peut-être déjà essayé :</p>
                         <ul className="space-y-3">
                             <li className="flex items-start gap-3 text-slate-600">
-                                <span className="text-red-400 font-bold">×</span> Publier sur LinkedIn sans résultats
+                                <span className="text-red-400 font-bold">×</span> Publier sur LinkedIn , instagram ... sans résultats
                             </li>
                             <li className="flex items-start gap-3 text-slate-600">
                                 <span className="text-red-400 font-bold">×</span> Envoyer des messages qui restent sans réponse
@@ -315,7 +310,7 @@ export default function HomePage() {
             <div className="grid md:grid-cols-4 gap-6 text-left">
                 {[
                     { icon: Users, text: "Vous rencontrez un entrepreneur local" },
-                    { icon: Coffee, text: "Vous échangez pendant 15 minutes" },
+                    { icon: Coffee, text: "Vous échangez pendant 5 à 10 minutes" },
                     { icon: Zap, text: "Vous découvrez son réseau" },
                     { icon: Star, text: "Il découvre le vôtre" }
                 ].map((item, i) => (
@@ -371,7 +366,7 @@ export default function HomePage() {
                   </div>
                   <h3 className="text-2xl font-black mb-4 text-slate-900">2. L'Appel</h3>
                   <p className="text-slate-600 leading-relaxed">
-                     15 minutes pour échanger. Présentez-vous, partagez vos défis, offrez de l'aide. <strong className="text-slate-900">Court, efficace, humain.</strong>
+                     5 à 10 minutes pour échanger. Présentez-vous, partagez vos défis, offrez de l'aide. <strong className="text-slate-900">Court, efficace, humain.</strong>
                   </p>
                </motion.div>
 
@@ -388,7 +383,7 @@ export default function HomePage() {
                   </div>
                   <h3 className="text-2xl font-black mb-4 text-slate-900">3. L'Opportunité</h3>
                   <p className="text-slate-600 leading-relaxed">
-                     Une mise en relation ? Un conseil ? Un client ? Notez l'échange et <strong className="text-slate-900">augmentez votre score.</strong>
+                     Une mise en relation ? Une recommandation ? Un client ? Un partage de Post sur vos réseaux sociaux ? Notez l'échange et <strong className="text-slate-900">augmentez votre score.</strong>
                   </p>
                </motion.div>
             </div>
@@ -592,10 +587,16 @@ export default function HomePage() {
             <h2 className="text-3xl font-black text-slate-900 text-center mb-12">Questions fréquentes</h2>
             
             <Accordion type="single" collapsible className="w-full">
+                <AccordionItem value="item-0">
+                    <AccordionTrigger className="text-lg font-bold text-slate-900">À qui ce service s'adresse ?</AccordionTrigger>
+                    <AccordionContent className="text-slate-600 text-base">
+                        Entrepreneurs, freelances, auto-entrepreneurs, coachs... toutes personnes qui cherchent à développer leurs réseaux humains et/ou sociaux, qui cherchent de nouveaux clients, opportunités.
+                    </AccordionContent>
+                </AccordionItem>
                 <AccordionItem value="item-1">
                     <AccordionTrigger className="text-lg font-bold text-slate-900">Je n’ai pas le temps</AccordionTrigger>
                     <AccordionContent className="text-slate-600 text-base">
-                        Les échanges durent seulement 15 minutes. Beaucoup de membres les font entre deux rendez-vous ou à la pause café. C'est conçu pour être ultra-efficace.
+                        Les échanges durent seulement 5 à 10 minutes. Beaucoup de membres les font entre deux rendez-vous ou à la pause café. C'est conçu pour être ultra-efficace.
                     </AccordionContent>
                 </AccordionItem>
                 <AccordionItem value="item-2">
