@@ -13,6 +13,9 @@ export async function getDailyMatches() {
   pastDate.setDate(pastDate.getDate() - 1); // Yesterday
   const searchDate = pastDate.toISOString().split('T')[0];
 
+  console.log("getDailyMatches - User ID:", user.id);
+  console.log("getDailyMatches - Search Date:", searchDate);
+
   const { data: matches, error } = await supabase
     .from("network_matches")
     .select(`
@@ -28,6 +31,8 @@ export async function getDailyMatches() {
     .order('time', { ascending: true })
     .limit(5); // Allow multiple matches
     
+  console.log("getDailyMatches - Query Result:", matches);
+  
   if (error) {
       console.error("Error fetching matches:", error);
       return [];
