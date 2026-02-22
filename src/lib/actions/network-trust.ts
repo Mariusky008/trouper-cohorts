@@ -110,28 +110,68 @@ export async function getDebts() {
 
   if (!user) return [];
 
-  // Debts = Opportunities received > 30 days ago AND NOT (returned in some way)
-  // For MVP: We just list opportunities received that are validated
-  
-  const { data } = await supabase
+  // 1. Get ALL validated opportunities involving the user (Received OR Given)
+  const { data: allOpps } = await supabase
     .from("network_opportunities")
     .select("*")
-    .eq("receiver_id", user.id)
+    .or(`receiver_id.eq.${user.id},giver_id.eq.${user.id}`)
     .eq("status", "validated")
     .order("created_at", { ascending: true }); // Oldest first
 
-  if (!data || data.length === 0) return [];
+  if (!allOpps || allOpps.length === 0) return [];
 
-  // Fetch profiles manually
-  const userIds = data.map((d: any) => d.giver_id);
+  // 2. Group by Partner and Calculate Net Balance
+  const partnerBalances = new Map<string, { balance: number, receivedOpps: any[] }>();
+
+  allOpps.forEach((opp: any) => {
+    const isReceived = opp.receiver_id === user.id;
+    const partnerId = isReceived ? opp.giver_id : opp.receiver_id;
+    
+    if (!partnerBalances.has(partnerId)) {
+      partnerBalances.set(partnerId, { balance: 0, receivedOpps: [] });
+    }
+    
+    const entry = partnerBalances.get(partnerId)!;
+    
+    if (isReceived) {
+      entry.balance -= (opp.points || 0); // Debt increases (negative balance)
+      entry.receivedOpps.push(opp);
+    } else {
+      entry.balance += (opp.points || 0); // Credit increases (positive balance)
+    }
+  });
+
+  // 3. Filter partners where I have a NET DEBT (balance < 0)
+  const debtList: any[] = [];
+  const partnerIdsToFetch = new Set<string>();
+
+  for (const [partnerId, data] of partnerBalances.entries()) {
+    if (data.balance < 0) {
+      // I owe this person points overall.
+      // We show the most recent "Received" opportunity as the context for this debt.
+      // Or we show the oldest one that contributed to the debt? Let's show the oldest one to encourage clearing old debts.
+      const oldestOpp = data.receivedOpps[0];
+      if (oldestOpp) {
+        debtList.push({
+          ...oldestOpp,
+          net_debt_points: Math.abs(data.balance) // Store the actual remaining debt amount
+        });
+        partnerIdsToFetch.add(partnerId);
+      }
+    }
+  }
+
+  if (debtList.length === 0) return [];
+
+  // 4. Fetch profiles for the filtered list
   const { data: profiles } = await supabase
     .from("profiles")
     .select("id, display_name, avatar_url")
-    .in("id", userIds);
+    .in("id", Array.from(partnerIdsToFetch));
     
   const profileMap = new Map(profiles?.map((p: any) => [p.id, p]));
 
-  return data.map((opp: any) => {
+  return debtList.map((opp: any) => {
     const partner = profileMap.get(opp.giver_id);
     const created = new Date(opp.created_at);
     const deadline = new Date(created);
@@ -146,6 +186,8 @@ export async function getDebts() {
       partnerId: opp.giver_id,
       avatar: partner?.avatar_url,
       reason: opp.type,
+      // Add context about remaining points if needed in UI later
+      remainingPoints: opp.net_debt_points, 
       daysLeft,
       urgent: daysLeft < 5
     };
