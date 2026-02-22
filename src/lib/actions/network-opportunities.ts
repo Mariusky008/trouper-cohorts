@@ -52,7 +52,11 @@ export async function createOpportunity(data: {
     throw new Error(`Erreur lors de la création: ${error.message}`);
   }
 
+  // Revalidate ALL dashboard paths to ensure consistency
   revalidatePath("/mon-reseau-local/dashboard/opportunities");
+  revalidatePath("/mon-reseau-local/dashboard/connections"); 
+  revalidatePath("/mon-reseau-local/dashboard");
+  
   return { success: true };
 }
 
