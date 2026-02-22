@@ -49,8 +49,8 @@ export async function getConnections() {
       user1_id,
       user2_id,
       date,
-      user1:user1_id(id, display_name, trade, avatar_url),
-      user2:user2_id(id, display_name, trade, avatar_url)
+      user1:profiles!network_matches_user1_id_fkey(id, display_name, trade, avatar_url, current_goals),
+      user2:profiles!network_matches_user2_id_fkey(id, display_name, trade, avatar_url, current_goals)
     `)
     .or(`user1_id.eq.${user.id},user2_id.eq.${user.id}`)
     .order('date', { ascending: true }); // Oldest first
@@ -74,7 +74,8 @@ export async function getConnections() {
         name: partner.display_name,
         job: partner.trade || "Membre",
         avatar: partner.avatar_url,
-        lastInteraction: match.date
+        lastInteraction: match.date,
+        current_goals: partner.current_goals || []
       });
     }
   });
