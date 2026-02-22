@@ -103,10 +103,13 @@ export async function getDailyMatches() {
           // If no time, assume all day
           if (!match.time) return true;
           
-          // Construct datetime for end of slot
-          const [hours, minutes] = match.time.split(':').map(Number);
+          // Construct datetime for end of slot (robust parsing)
+          const timeStr = match.time.toString();
+          const startHourMatch = timeStr.match(/^(\d{1,2})/);
+          const startHour = startHourMatch ? parseInt(startHourMatch[1], 10) : 0;
+          
           const slotEndTime = new Date();
-          slotEndTime.setHours(hours + 2, minutes || 0, 0, 0);
+          slotEndTime.setHours(startHour + 2, 0, 0, 0);
           
           // If now > slot end time, hide it (expired)
           if (now > slotEndTime) return false;

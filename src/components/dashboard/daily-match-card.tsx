@@ -51,12 +51,17 @@ export function DailyMatchCard({ matches }: DailyMatchCardProps) {
         let isExpired = false;
         
         if (match.date < todayStr) isExpired = true;
-        else if (match.date === todayStr && match.time) {
-            const [hours, minutes] = match.time.split(':').map(Number);
-            const slotEndTime = new Date();
-            slotEndTime.setHours(hours + 2, minutes || 0, 0, 0);
-            if (now > slotEndTime) isExpired = true;
-        }
+         else if (match.date === todayStr && match.time) {
+             // Robustly parse start hour (handles "09:00", "09h", "9h-11h", etc.)
+             const timeStr = match.time.toString();
+             const startHourMatch = timeStr.match(/^(\d{1,2})/);
+             const startHour = startHourMatch ? parseInt(startHourMatch[1], 10) : 0;
+             
+             const slotEndTime = new Date();
+             slotEndTime.setHours(startHour + 2, 0, 0, 0);
+             
+             if (now > slotEndTime) isExpired = true;
+         }
 
         if (isExpired) return null;
 
