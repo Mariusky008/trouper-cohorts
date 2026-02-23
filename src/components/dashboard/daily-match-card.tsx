@@ -305,7 +305,7 @@ export function DailyMatchCard({ matches }: DailyMatchCardProps) {
                                 <Phone className="h-6 w-6 text-white animate-bounce" />
                             </div>
                             <h4 className="text-xl font-black text-white mb-1">C'est parti !</h4>
-                            <p className="text-slate-300 text-sm mb-4">Appelez {match.name.split(' ')[0]} maintenant :</p>
+                            <p className="text-slate-300 text-sm mb-4">Appelez {match.name.split(' ')[0]} sur le créneau prévu : <span className="text-white font-bold">{match.time}</span></p>
                             
                             <a href={`tel:${match.phone}`} className="block bg-[#0f172a] hover:bg-slate-900 text-emerald-400 font-black text-2xl py-4 rounded-xl border border-white/10 transition-colors mb-4 tracking-wider">
                                 {match.phone}
