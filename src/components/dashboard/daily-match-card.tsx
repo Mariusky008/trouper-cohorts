@@ -116,7 +116,37 @@ export function DailyMatchCard({ matches }: DailyMatchCardProps) {
 
   if (!matches || matches.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-16 px-4 text-center space-y-8 bg-[#1e293b]/50 backdrop-blur-xl rounded-[2.5rem] border border-white/5 shadow-2xl shadow-black/20 relative overflow-hidden">
+      <div className="relative max-w-md mx-auto w-full">
+         {/* MYSTERY OVERLAY FOR FIRST TIME USERS */}
+         {!revealed && (
+            <motion.div 
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 1.1, filter: "blur(10px)" }}
+                className="absolute inset-0 z-20 bg-[#0f172a] rounded-[2.5rem] border-2 border-dashed border-white/20 flex flex-col items-center justify-center p-8 text-center cursor-pointer hover:border-blue-500/50 transition-colors shadow-2xl"
+                onClick={handleReveal}
+            >
+                <div className="h-24 w-24 bg-blue-500/10 rounded-full flex items-center justify-center mb-6 animate-pulse">
+                    <Zap className="h-12 w-12 text-blue-400" />
+                </div>
+                <h3 className="text-3xl font-black text-white uppercase italic mb-2">Lancement du Protocole</h3>
+                <p className="text-slate-400 font-medium mb-8 max-w-xs leading-relaxed text-lg">
+                    Votre profil est prêt.
+                    <br />
+                    <span className="text-white font-bold">Cliquez pour lancer la recherche de votre premier partenaire.</span>
+                </p>
+                
+                <Button className="bg-white text-slate-900 hover:bg-slate-200 font-black px-8 py-6 rounded-xl text-lg shadow-lg shadow-white/10 w-full animate-bounce-subtle">
+                    LANCER L'ALGORITHME 🚀
+                </Button>
+            </motion.div>
+        )}
+
+      <motion.div 
+         initial={{ opacity: 0 }}
+         animate={{ opacity: revealed ? 1 : 0, filter: revealed ? "blur(0px)" : "blur(10px)" }}
+         className="flex flex-col items-center justify-center py-16 px-4 text-center space-y-8 bg-[#1e293b]/50 backdrop-blur-xl rounded-[2.5rem] border border-white/5 shadow-2xl shadow-black/20 relative overflow-hidden"
+      >
         {/* Background Decor */}
         <div className="absolute top-0 right-0 -mt-10 -mr-10 h-40 w-40 bg-blue-500/20 rounded-full blur-3xl pointer-events-none"></div>
         <div className="absolute bottom-0 left-0 -mb-10 -ml-10 h-40 w-40 bg-purple-500/20 rounded-full blur-3xl pointer-events-none"></div>
@@ -127,7 +157,7 @@ export function DailyMatchCard({ matches }: DailyMatchCardProps) {
             </div>
             
             <h3 className="text-3xl font-black text-white leading-tight mb-4">
-                Votre premier match arrive demain ! 🚀
+                Recherche lancée ! <br/> Résultat demain. 🚀
             </h3>
             
             <p className="text-lg text-slate-400 font-medium leading-relaxed mb-8">
@@ -156,6 +186,7 @@ export function DailyMatchCard({ matches }: DailyMatchCardProps) {
                 Astuce : Mettez une alarme pour ne pas oublier !
             </div>
         </div>
+      </motion.div>
       </div>
     );
   }
