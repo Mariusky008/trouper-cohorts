@@ -6,6 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogTrigger, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import { OpportunityForm } from "@/components/dashboard/opportunities/opportunity-form";
+import { CheckCircle2 } from "lucide-react";
 
 interface Debt {
   id: string;
