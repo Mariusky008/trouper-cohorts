@@ -14,10 +14,10 @@ import { motion, AnimatePresence } from "framer-motion";
 
 const NAV_ITEMS = [
   { label: "Accueil", href: "/mon-reseau-local/dashboard", icon: Home },
-  { label: "Mes Mises en Relation", href: "/mon-reseau-local/dashboard/connections", icon: Users },
+  { label: "Relations", href: "/mon-reseau-local/dashboard/connections", icon: Users },
   { label: "Opportunités", href: "/mon-reseau-local/dashboard/opportunities", icon: Zap },
-  { label: "Confiance & Dettes", href: "/mon-reseau-local/dashboard/trust", icon: ShieldCheck },
-  { label: "Guides & Scripts", href: "/mon-reseau-local/dashboard/guide", icon: BookOpen },
+  { label: "Engagements", href: "/mon-reseau-local/dashboard/trust", icon: ShieldCheck },
+  { label: "Guides", href: "/mon-reseau-local/dashboard/guide", icon: BookOpen },
   { label: "Profil", href: "/mon-reseau-local/dashboard/profile", icon: User },
   { label: "Paramètres", href: "/mon-reseau-local/dashboard/settings", icon: Settings },
 ];
@@ -176,7 +176,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <div className="h-8 w-8 bg-blue-600 rounded-lg flex items-center justify-center text-white shadow-lg shadow-blue-900/20">
                 <Anchor className="h-5 w-5" />
               </div>
-              <span className="font-black text-lg lg:text-xl text-white tracking-tight">Popey Academy</span>
             </Link>
          </div>
 
