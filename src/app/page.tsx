@@ -65,9 +65,12 @@ const StickyCTA = () => {
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
-    return scrollY.on("change", (latest) => {
-      setIsVisible(latest > 600);
-    });
+    // Only set visibility if window exists (client-side)
+    if (typeof window !== "undefined") {
+      return scrollY.on("change", (latest) => {
+        setIsVisible(latest > 600);
+      });
+    }
   }, [scrollY]);
 
   return (
