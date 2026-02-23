@@ -165,16 +165,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   // The user input only complained about the NAME "Jean Dupont".
   
   return (
-    <div className="min-h-screen bg-slate-50 flex font-sans text-slate-900 selection:bg-blue-100 selection:text-blue-900">
+    <div className="min-h-screen bg-[#0a0f1c] flex font-sans text-slate-200 selection:bg-blue-500/30 selection:text-blue-200">
       <ProfileCompletionModal />
       
       {/* --- DESKTOP SIDEBAR --- */}
-      <aside className="hidden lg:flex flex-col w-72 border-r border-slate-200 bg-white fixed h-full z-20">
+      <aside className="hidden lg:flex flex-col w-72 border-r border-white/5 bg-[#0a0f1c] fixed h-full z-20">
         <div className="p-6 flex items-center gap-3">
-          <div className="h-10 w-10 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-200">
+          <div className="h-10 w-10 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-900/20">
             <Anchor className="h-6 w-6" />
           </div>
-          <span className="font-black text-xl tracking-tight text-slate-900">Popey Academy</span>
+          <span className="font-black text-xl tracking-tight text-white">Popey Academy</span>
         </div>
 
         <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
@@ -187,40 +187,40 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 className={cn(
                   "flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group relative overflow-hidden",
                   isActive 
-                    ? "bg-blue-50 text-blue-700 font-bold shadow-sm" 
-                    : "text-slate-500 hover:bg-slate-50 hover:text-slate-900 font-medium"
+                    ? "bg-blue-600/10 text-blue-400 font-bold shadow-sm border border-blue-500/10" 
+                    : "text-slate-400 hover:bg-white/5 hover:text-white font-medium"
                 )}
               >
                 {isActive && (
                   <motion.div
                     layoutId="activeTab"
-                    className="absolute left-0 top-0 bottom-0 w-1 bg-blue-600 rounded-r-full"
+                    className="absolute left-0 top-0 bottom-0 w-1 bg-blue-500 rounded-r-full"
                   />
                 )}
-                <item.icon className={cn("h-5 w-5 transition-colors", isActive ? "text-blue-600" : "text-slate-400 group-hover:text-slate-600")} />
+                <item.icon className={cn("h-5 w-5 transition-colors", isActive ? "text-blue-400" : "text-slate-500 group-hover:text-slate-300")} />
                 <span>{item.label}</span>
                 {item.label === "Opportunités" && pendingCount > 0 && (
-                   <span className="ml-auto bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">{pendingCount}</span>
+                  <span className="ml-auto bg-blue-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full shadow-lg shadow-blue-900/50">{pendingCount}</span>
                 )}
               </Link>
             );
           })}
         </nav>
 
-        <div className="p-4 border-t border-slate-100">
-          <div className="bg-slate-50 rounded-xl p-4 border border-slate-100 flex items-center gap-3 cursor-pointer hover:bg-slate-100 transition-colors">
-            <Avatar>
+        <div className="p-4 border-t border-white/5">
+          <div className="bg-white/5 rounded-xl p-4 border border-white/5 flex items-center gap-3 cursor-pointer hover:bg-white/10 transition-colors">
+            <Avatar className="border-2 border-white/10">
               <AvatarImage src={avatarUrl} className="object-cover" />
-              <AvatarFallback>{initials}</AvatarFallback>
+              <AvatarFallback className="bg-slate-800 text-slate-400">{initials}</AvatarFallback>
             </Avatar>
             <div className="flex-1 overflow-hidden">
-              <div className="font-bold text-sm truncate">{displayName}</div>
+              <div className="font-bold text-sm truncate text-white">{displayName}</div>
               <div className="text-xs text-slate-500 flex items-center gap-1">
-                <ShieldCheck className="h-3 w-3 text-orange-500" /> {trustScore}/5
+                <ShieldCheck className="h-3 w-3 text-emerald-500" /> <span className="text-emerald-500 font-bold">{trustScore}/5</span>
               </div>
             </div>
             <LogOut 
-              className="h-4 w-4 text-slate-400 hover:text-red-500 transition-colors" 
+              className="h-4 w-4 text-slate-500 hover:text-red-400 transition-colors" 
               onClick={handleSignOut}
             />
           </div>
@@ -228,20 +228,20 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       </aside>
 
       {/* --- MOBILE TOP BAR --- */}
-      <header className="lg:hidden fixed top-0 w-full bg-white/80 backdrop-blur-md border-b border-slate-200 z-30 h-16 px-4 flex items-center justify-between">
+      <header className="lg:hidden fixed top-0 w-full bg-[#0a0f1c]/80 backdrop-blur-md border-b border-white/5 z-30 h-16 px-4 flex items-center justify-between">
          <div className="flex items-center gap-2">
             <div className="h-8 w-8 bg-blue-600 rounded-lg flex items-center justify-center text-white">
               <Anchor className="h-5 w-5" />
             </div>
-            <span className="font-black text-lg text-slate-900">Popey Academy</span>
+            <span className="font-black text-lg text-white">Popey Academy</span>
          </div>
          <div className="flex items-center gap-4">
-            <Button size="icon" variant="ghost" className="relative">
-              <Bell className="h-5 w-5 text-slate-600" />
-              <span className="absolute top-2 right-2 h-2 w-2 bg-red-500 rounded-full border border-white"></span>
+            <Button size="icon" variant="ghost" className="relative hover:bg-white/5">
+              <Bell className="h-5 w-5 text-slate-400" />
+              <span className="absolute top-2 right-2 h-2 w-2 bg-red-500 rounded-full border border-[#0a0f1c]"></span>
             </Button>
-            <Button size="icon" variant="ghost" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
-              <Menu className="h-6 w-6 text-slate-900" />
+            <Button size="icon" variant="ghost" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="hover:bg-white/5">
+              <Menu className="h-6 w-6 text-white" />
             </Button>
          </div>
       </header>
