@@ -56,7 +56,7 @@ export default async function DashboardHome() {
       </div>
 
       {/* 3. GRID LAYOUT "MODERNE" */}
-      <div className="grid lg:grid-cols-12 gap-8 items-start">
+      <div className="grid lg:grid-cols-12 gap-8 items-start mt-12">
          
          {/* Colonne Gauche : Préparation (Plus large) */}
          <div className="lg:col-span-7 space-y-6">
