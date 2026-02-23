@@ -126,22 +126,22 @@ export function DailyMatchCard({ matches }: DailyMatchCardProps) {
              {/* PROFILE INFO */}
              <div className="flex flex-col items-center text-center mb-10 transform scale-110">
                <div className="relative mb-5">
-                 <Avatar className="h-32 w-32 border-4 border-[#1e293b] shadow-xl">
+                 <Avatar className="h-44 w-44 border-4 border-[#1e293b] shadow-xl">
                     <AvatarImage src={match.avatar} className="object-cover" />
                     <AvatarFallback className="text-4xl font-black bg-slate-800 text-slate-500">{match.name[0]}</AvatarFallback>
                  </Avatar>
-                 <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-[#0f172a] text-emerald-400 border border-emerald-500/30 px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap flex items-center gap-1 shadow-md">
-                    <CheckCircle2 className="h-3.5 w-3.5" /> Vérifié fiable
+                 <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-[#0f172a] text-emerald-400 border border-emerald-500/30 px-4 py-1.5 rounded-full text-sm font-bold whitespace-nowrap flex items-center gap-1 shadow-md">
+                    <CheckCircle2 className="h-4 w-4" /> Vérifié fiable
                  </div>
                </div>
                
-               <h3 className="text-3xl font-black text-white mb-2 mt-2">{match.name}</h3>
-               <div className="text-sm font-bold text-slate-400 uppercase tracking-wide mb-2">
+               <h3 className="text-4xl md:text-5xl font-black text-white mb-2 mt-4">{match.name}</h3>
+               <div className="text-base md:text-lg font-bold text-slate-400 uppercase tracking-wide mb-3">
                   {match.job} • {match.city}
                </div>
-               <div className="flex gap-1">
+               <div className="flex gap-1.5">
                   {[1,2,3,4,5].map(i => (
-                    <Star key={i} className={cn("h-4 w-4", i <= Math.round(match.score) ? "text-yellow-400 fill-yellow-400" : "text-slate-700")} />
+                    <Star key={i} className={cn("h-5 w-5", i <= Math.round(match.score) ? "text-yellow-400 fill-yellow-400" : "text-slate-700")} />
                   ))}
                </div>
              </div>
