@@ -51,7 +51,7 @@ export async function checkProfileCompletion() {
   
     const { data: profile } = await supabase
       .from("profiles")
-      .select("display_name, trade, city, phone, bio, onboarding_completed")
+      .select("display_name, trade, city, phone, bio, onboarding_completed, linkedin_url, instagram_handle, facebook_handle, website_url")
       .eq("id", user.id)
       .single();
     
@@ -63,7 +63,10 @@ export async function checkProfileCompletion() {
         !!profile.trade && 
         !!profile.city && 
         !!profile.phone && 
-        !!profile.bio;
+        !!profile.bio &&
+        // Check at least one social media link or website is present
+        // (Assuming these columns exist in the profile fetched above - need to select them)
+        (!!profile.linkedin_url || !!profile.instagram_handle || !!profile.facebook_handle || !!profile.website_url);
 
     return { 
         complete: isComplete, 
