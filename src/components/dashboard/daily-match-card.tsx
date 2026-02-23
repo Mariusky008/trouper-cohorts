@@ -36,19 +36,46 @@ export function DailyMatchCard({ matches }: DailyMatchCardProps) {
 
   if (!matches || matches.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-12 text-center space-y-4 bg-slate-50/50 rounded-3xl border border-dashed border-slate-200">
-        <div className="h-16 w-16 bg-slate-100 rounded-full flex items-center justify-center mb-2">
-           <Calendar className="h-8 w-8 text-slate-400" />
-        </div>
-        <div>
-            <h3 className="text-xl font-bold text-slate-900">Pas de match pour le moment</h3>
-            <p className="text-slate-500 max-w-xs mx-auto mt-2">
-            Revenez demain ou mettez à jour vos disponibilités pour recevoir de nouvelles opportunités.
+      <div className="flex flex-col items-center justify-center py-16 px-4 text-center space-y-8 bg-white rounded-[2.5rem] border border-slate-100 shadow-xl shadow-slate-200/40 relative overflow-hidden">
+        {/* Background Decor */}
+        <div className="absolute top-0 right-0 -mt-10 -mr-10 h-40 w-40 bg-blue-100/50 rounded-full blur-3xl pointer-events-none"></div>
+        <div className="absolute bottom-0 left-0 -mb-10 -ml-10 h-40 w-40 bg-purple-100/50 rounded-full blur-3xl pointer-events-none"></div>
+
+        <div className="relative z-10 max-w-md mx-auto">
+            <div className="h-24 w-24 bg-blue-50 rounded-3xl flex items-center justify-center mb-6 mx-auto transform rotate-3 shadow-lg shadow-blue-100 border border-blue-100">
+               <Clock className="h-10 w-10 text-blue-600 animate-pulse" />
+            </div>
+            
+            <h3 className="text-3xl font-black text-slate-900 leading-tight mb-4">
+                Votre premier match arrive demain ! 🚀
+            </h3>
+            
+            <p className="text-lg text-slate-600 font-medium leading-relaxed mb-8">
+                L'algorithme analyse actuellement votre profil pour vous trouver <span className="text-slate-900 font-bold bg-yellow-100 px-1">la meilleure opportunité</span> locale.
             </p>
+
+            <div className="bg-slate-50 p-6 rounded-2xl border border-slate-200 text-left mb-8">
+                <div className="flex items-start gap-4 mb-4">
+                    <div className="h-8 w-8 bg-white rounded-full flex items-center justify-center border border-slate-200 shrink-0 font-bold text-slate-900 shadow-sm">1</div>
+                    <div>
+                        <p className="font-bold text-slate-900">Définissez vos disponibilités</p>
+                        <p className="text-sm text-slate-500">Juste en dessous, dites-nous quand vous êtes libre demain.</p>
+                    </div>
+                </div>
+                <div className="flex items-start gap-4">
+                    <div className="h-8 w-8 bg-white rounded-full flex items-center justify-center border border-slate-200 shrink-0 font-bold text-slate-900 shadow-sm">2</div>
+                    <div>
+                        <p className="font-bold text-slate-900">Revenez demain</p>
+                        <p className="text-sm text-slate-500">Votre match apparaîtra ici même à 08h00.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div className="inline-flex items-center gap-2 bg-orange-50 text-orange-700 px-4 py-2 rounded-xl text-xs font-bold border border-orange-100">
+                <div className="h-2 w-2 rounded-full bg-orange-500 animate-pulse"></div>
+                Astuce : Mettez une alarme pour ne pas oublier !
+            </div>
         </div>
-        <Button variant="outline" asChild>
-            <Link href="/mon-reseau-local/dashboard/profile">Mettre à jour mon profil</Link>
-        </Button>
       </div>
     );
   }
