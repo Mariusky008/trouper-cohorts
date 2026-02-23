@@ -254,12 +254,22 @@ export function DailyMatchCard({ matches }: DailyMatchCardProps) {
                     </div>
                 </div>
              ) : (
-                <div className="w-full h-14 bg-[#0f172a]/50 border-2 border-dashed border-slate-700 rounded-2xl flex flex-col items-center justify-center gap-0.5 text-slate-400 font-bold mb-6">
-                    <div className="flex items-center gap-2">
-                        <div className="h-2 w-2 bg-emerald-500 rounded-full animate-pulse" />
-                        <span>En attente de son appel</span>
+                <div className="space-y-3 mb-6">
+                    <div className="w-full h-14 bg-[#0f172a]/50 border-2 border-dashed border-slate-700 rounded-2xl flex flex-col items-center justify-center gap-0.5 text-slate-400 font-bold">
+                        <div className="flex items-center gap-2">
+                            <div className="h-2 w-2 bg-emerald-500 rounded-full animate-pulse" />
+                            <span>En attente de son appel</span>
+                        </div>
+                        <span className="text-xs font-medium text-slate-500">Prévu entre {match.time}</span>
                     </div>
-                    <span className="text-xs font-medium text-slate-500">Prévu entre {match.time}</span>
+                    {/* Secondary Action: Call Anyway Button */}
+                    <div className="text-center">
+                        <Button variant="link" className="text-xs text-slate-500 hover:text-white" asChild>
+                            <a href={`tel:${match.phone}`}>
+                                En cas d'oubli : Appeler {match.name.split(' ')[0]} ({match.phone})
+                            </a>
+                        </Button>
+                    </div>
                 </div>
              )}
 
