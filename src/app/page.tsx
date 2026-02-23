@@ -752,30 +752,52 @@ export default function HomePage() {
                <div className="absolute bottom-0 left-0 w-64 h-64 bg-purple-600 rounded-full blur-[100px] opacity-30"></div>
                
                <h2 className="text-4xl md:text-5xl font-black mb-6 relative z-10">
-                  Votre réseau commence <span className="text-blue-400">aujourd'hui.</span>
+                  Votre réseau commence <span className="text-blue-400">aujourd’hui.</span>
                </h2>
                
-               <div className="bg-white/10 backdrop-blur-md rounded-2xl p-8 max-w-sm mx-auto mb-8 border border-white/10 mt-12">
-                  <div className="text-sm font-bold text-blue-300 uppercase tracking-widest mb-2">Offre de Lancement</div>
-                  <div className="text-5xl font-black mb-2">49€<span className="text-lg text-slate-400 font-medium">/mois</span></div>
-                  <div className="text-xs text-slate-400 mb-6">ou essayez 3 jours pour 1€</div>
-                  <ul className="text-left space-y-3 mb-8">
-                     <li className="flex items-center gap-2 text-sm"><CheckCircle2 className="h-4 w-4 text-green-400" /> 1 Match Garanti / Jour</li>
-                     <li className="flex items-center gap-2 text-sm"><CheckCircle2 className="h-4 w-4 text-green-400" /> Accès Dashboard Complet</li>
-                     <li className="flex items-center gap-2 text-sm"><CheckCircle2 className="h-4 w-4 text-green-400" /> Score de Confiance</li>
+               <div className="bg-white/10 backdrop-blur-md rounded-3xl p-8 max-w-lg mx-auto mb-8 border border-white/10 mt-12 text-left">
+                  <div className="text-center mb-8">
+                      <div className="inline-block bg-blue-500/20 text-blue-300 border border-blue-500/30 px-4 py-1.5 rounded-full text-sm font-bold uppercase tracking-widest mb-4">
+                          Essai gratuit
+                      </div>
+                      <div className="text-2xl md:text-3xl font-black mb-2 leading-tight">1 jour = 1 opportunité concrète</div>
+                      <p className="text-slate-400 text-sm md:text-base mt-4">
+                          Découvre immédiatement une opportunité réelle pour ton business et teste Popey Academy sans aucun risque.
+                      </p>
+                  </div>
+
+                  <ul className="space-y-4 mb-8">
+                     <li className="flex items-start gap-3 text-sm md:text-base">
+                        <CheckCircle2 className="h-6 w-6 text-green-400 shrink-0" /> 
+                        <span className="font-bold">1 opportunité garantie dès aujourd’hui</span>
+                     </li>
+                     <li className="flex items-start gap-3 text-sm md:text-base">
+                        <CheckCircle2 className="h-6 w-6 text-green-400 shrink-0" /> 
+                        <span>Accès complet au dashboard et à tous les outils</span>
+                     </li>
+                     <li className="flex items-start gap-3 text-sm md:text-base">
+                        <CheckCircle2 className="h-6 w-6 text-green-400 shrink-0" /> 
+                        <span>Score de confiance pour chaque profil, pour des mises en relation fiables</span>
+                     </li>
+                     <li className="flex items-start gap-3 text-sm md:text-base">
+                        <CheckCircle2 className="h-6 w-6 text-green-400 shrink-0" /> 
+                        <span>Autonomie et contrôle total sur ton réseau</span>
+                     </li>
                   </ul>
+                  
                   <AuthDialog 
                     mode="signup"
                     trigger={
-                      <Button className="w-full h-12 bg-white text-slate-900 hover:bg-slate-100 font-black rounded-xl">
-                        Commencer mon réseau maintenant
+                      <Button className="w-full h-14 bg-white text-slate-900 hover:bg-slate-100 font-black rounded-xl text-lg shadow-xl shadow-white/10">
+                        Commencer mon essai gratuit
                       </Button>
                     }
                   />
-                  <div className="text-[10px] text-slate-400 mt-3">Sans engagement - Résiliation en 1 clic</div>
+                  
+                  <div className="text-xs text-slate-400 mt-6 text-center leading-relaxed">
+                      Après ce test, l’accès complet devient <span className="text-white font-bold">49 €/mois</span> pour profiter de toutes les opportunités et booster réellement ton réseau.
+                  </div>
                </div>
-
-               <p className="text-slate-500 text-sm">Garantie satisfait ou remboursé sous 14 jours.</p>
             </div>
          </div>
       </section>
