@@ -45,29 +45,29 @@ export function ConnectionList({ initialConnections, currentUserId }: { initialC
 
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-black text-slate-900 tracking-tight">Mes Mises en Relation</h1>
-          <p className="text-slate-500 font-medium">Historique de vos échanges ({filtered.length}).</p>
+          <h1 className="text-3xl font-black text-white tracking-tight">Mes Mises en Relation</h1>
+          <p className="text-slate-400 font-medium">Historique de vos échanges ({filtered.length}).</p>
         </div>
         <div className="flex gap-2">
            <div className="relative">
-             <Search className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+             <Search className="absolute left-3 top-3 h-4 w-4 text-slate-500" />
              <Input 
                placeholder="Rechercher..." 
-               className="pl-10 h-10 w-64 rounded-xl border-slate-200 bg-white" 
+               className="pl-10 h-10 w-64 rounded-xl border-white/10 bg-[#1e293b]/50 text-slate-200 placeholder:text-slate-500 focus:border-blue-500/50 focus:ring-blue-500/20" 
                value={query}
                onChange={(e) => setQuery(e.target.value)}
              />
            </div>
-           <Button variant="outline" size="icon" className="h-10 w-10 rounded-xl border-slate-200">
-             <Filter className="h-4 w-4 text-slate-500" />
+           <Button variant="outline" size="icon" className="h-10 w-10 rounded-xl border-white/10 bg-[#1e293b]/50 hover:bg-white/10 text-slate-400 hover:text-white">
+             <Filter className="h-4 w-4" />
            </Button>
         </div>
       </div>
 
       {filtered.length === 0 ? (
-        <div className="text-center py-12 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
-          <UserX className="h-12 w-12 mx-auto text-slate-300 mb-3" />
-          <h3 className="text-lg font-bold text-slate-900">Aucune connexion trouvée</h3>
+        <div className="text-center py-12 bg-[#1e293b]/50 backdrop-blur-md rounded-[2rem] border border-white/5 border-dashed">
+          <UserX className="h-12 w-12 mx-auto text-slate-600 mb-3" />
+          <h3 className="text-lg font-bold text-slate-300">Aucune connexion trouvée</h3>
           <p className="text-slate-500">Essayez une autre recherche ou attendez vos prochains matchs !</p>
         </div>
       ) : (
@@ -78,33 +78,36 @@ export function ConnectionList({ initialConnections, currentUserId }: { initialC
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.05 }}
-              className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-all group flex flex-col h-full"
+              className="bg-[#1e293b]/50 backdrop-blur-md p-6 rounded-[2rem] border border-white/5 shadow-lg shadow-black/20 hover:bg-[#1e293b]/80 transition-all group flex flex-col h-full relative overflow-hidden"
             >
-              <div className="flex items-center gap-4 mb-4">
-                <Avatar className="h-14 w-14 border-2 border-white shadow-sm">
-                  <AvatarImage src={user.avatar} />
-                  <AvatarFallback>{user.name[0]}</AvatarFallback>
+              {/* Background Glow */}
+              <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/5 rounded-bl-full -z-0 pointer-events-none group-hover:bg-blue-500/10 transition-colors" />
+
+              <div className="flex items-center gap-4 mb-4 relative z-10">
+                <Avatar className="h-14 w-14 border-2 border-[#0a0f1c] shadow-lg">
+                  <AvatarImage src={user.avatar} className="object-cover" />
+                  <AvatarFallback className="bg-slate-800 text-slate-400 font-bold">{user.name[0]}</AvatarFallback>
                 </Avatar>
                 <div>
-                  <h3 className="font-bold text-slate-900 text-lg group-hover:text-blue-600 transition-colors">{user.name}</h3>
-                  <p className="text-sm text-slate-500 line-clamp-1">{user.job}</p>
+                  <h3 className="font-bold text-white text-lg group-hover:text-blue-400 transition-colors">{user.name}</h3>
+                  <p className="text-sm text-slate-400 line-clamp-1">{user.job}</p>
                 </div>
               </div>
               
-              <div className="flex items-center gap-2 text-xs font-bold text-slate-400 mb-6 uppercase tracking-wide">
+              <div className="flex items-center gap-2 text-xs font-bold text-slate-500 mb-6 uppercase tracking-wide relative z-10">
                 <Calendar className="h-3 w-3" /> {new Date(user.lastInteraction).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })}
               </div>
 
-              <div className="mt-auto space-y-3">
+              <div className="mt-auto space-y-3 relative z-10">
                 <div className="flex gap-2">
                     <Button 
-                        className="w-full bg-slate-900 text-white hover:bg-slate-800 font-bold rounded-lg h-10 flex-1"
+                        className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl h-10 flex-1 border border-white/10 shadow-lg shadow-blue-900/20"
                         onClick={() => setChatPartner(user)}
                     >
                         <MessageCircle className="mr-2 h-4 w-4" /> Message
                     </Button>
                     <Link href={`/mon-reseau-local/dashboard/profile/${user.id}`} className="flex-1">
-                    <Button variant="outline" className="w-full border-slate-200 hover:bg-slate-50 font-bold rounded-lg h-10">
+                    <Button variant="outline" className="w-full border-white/10 bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white font-bold rounded-xl h-10">
                         Profil
                     </Button>
                     </Link>
@@ -114,13 +117,13 @@ export function ConnectionList({ initialConnections, currentUserId }: { initialC
                     <DialogTrigger asChild>
                         <Button 
                             variant="secondary" 
-                            className="w-full bg-blue-50 text-blue-700 hover:bg-blue-100 hover:text-blue-800 font-bold rounded-lg h-10 border border-blue-100"
+                            className="w-full bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 hover:text-emerald-300 font-bold rounded-xl h-10 border border-emerald-500/20"
                             onClick={() => setSelectedUser(user)}
                         >
                             <Send className="mr-2 h-4 w-4" /> Envoyer une opportunité
                         </Button>
                     </DialogTrigger>
-                    <DialogContent className="sm:max-w-[600px] p-0 overflow-hidden bg-white border-none rounded-3xl">
+                    <DialogContent className="sm:max-w-[600px] p-0 overflow-hidden bg-[#0a0f1c] border border-white/10 rounded-[2rem]">
                         <VisuallyHidden>
                           <DialogTitle>Envoyer une opportunité à {user.name}</DialogTitle>
                           <DialogDescription>Formulaire pour envoyer une opportunité à un membre du réseau.</DialogDescription>
