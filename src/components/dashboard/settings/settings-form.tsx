@@ -76,23 +76,23 @@ export function SettingsForm({ initialSettings }: { initialSettings: any }) {
   };
 
   return (
-    <div className="space-y-8 max-w-3xl">
+    <div className="space-y-8 max-w-3xl animate-in fade-in duration-500">
       
       {/* 1. FREQUENCY & RHYTHM (New Section) */}
-      <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-8">
+      <div className="bg-[#1e293b]/50 backdrop-blur-md p-6 rounded-[2rem] border border-white/5 shadow-sm space-y-8">
         <div className="flex items-center justify-between">
-          <h3 className="font-bold text-lg text-slate-900 flex items-center gap-2">
-            <Clock className="h-5 w-5 text-slate-500" /> Rythme & Disponibilités
+          <h3 className="font-bold text-lg text-white flex items-center gap-2">
+            <Clock className="h-5 w-5 text-blue-400" /> Rythme & Disponibilités
           </h3>
           <Button 
             variant={status === 'active' ? "outline" : "default"}
             size="sm"
             onClick={toggleStatus}
             className={cn(
-              "font-bold transition-colors",
+              "font-bold transition-colors border rounded-xl h-9",
               status === 'active' 
-                ? "text-slate-500 border-slate-200 hover:text-red-600 hover:bg-red-50 hover:border-red-200" 
-                : "bg-green-600 hover:bg-green-700 text-white"
+                ? "text-slate-400 border-white/10 bg-white/5 hover:text-red-400 hover:bg-red-500/10 hover:border-red-500/20" 
+                : "bg-emerald-600 hover:bg-emerald-700 text-white border-transparent"
             )}
           >
             {status === 'active' ? (
@@ -104,10 +104,10 @@ export function SettingsForm({ initialSettings }: { initialSettings: any }) {
         </div>
 
         {/* Frequency Slider */}
-        <div className="space-y-4 bg-slate-50 p-4 rounded-xl border border-slate-100">
+        <div className="space-y-4 bg-[#0a0f1c]/50 p-5 rounded-2xl border border-white/5">
            <div className="flex justify-between items-end mb-2">
-             <Label className="text-base font-bold text-slate-700">Fréquence Hebdomadaire</Label>
-             <span className="text-xl font-black text-blue-600 bg-white px-3 py-1 rounded-lg border border-blue-100 shadow-sm">
+             <Label className="text-base font-bold text-slate-300">Fréquence Hebdomadaire</Label>
+             <span className="text-lg font-black text-blue-400 bg-blue-500/10 px-3 py-1 rounded-lg border border-blue-500/20 shadow-sm">
                {frequency} matchs / sem
              </span>
            </div>
@@ -119,7 +119,7 @@ export function SettingsForm({ initialSettings }: { initialSettings: any }) {
              onValueChange={(vals) => setFrequency(vals[0])}
              className="py-2"
            />
-           <div className="flex justify-between text-xs text-slate-400 font-medium px-1">
+           <div className="flex justify-between text-[10px] text-slate-500 font-bold uppercase tracking-wider px-1">
               <span>Mode Léger (1j)</span>
               <span>Mode Intensif (7j)</span>
            </div>
@@ -127,17 +127,17 @@ export function SettingsForm({ initialSettings }: { initialSettings: any }) {
 
         {/* Days Selection */}
         <div className="space-y-3">
-          <Label className="text-sm font-bold text-slate-600 uppercase tracking-wide">Jours de disponibilité</Label>
+          <Label className="text-xs font-bold text-slate-400 uppercase tracking-widest">Jours de disponibilité</Label>
           <div className="flex flex-wrap gap-2">
             {DAYS.map(day => (
               <button
                 key={day.id}
                 onClick={() => toggleDay(day.id)}
                 className={cn(
-                  "h-10 w-10 rounded-full flex items-center justify-center font-bold text-sm transition-all border-2",
+                  "h-10 w-10 rounded-xl flex items-center justify-center font-bold text-sm transition-all border",
                   selectedDays.includes(day.id) 
-                    ? "bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-200" 
-                    : "bg-white text-slate-400 border-slate-100 hover:border-slate-300"
+                    ? "bg-blue-600 text-white border-blue-500 shadow-lg shadow-blue-900/40" 
+                    : "bg-white/5 text-slate-400 border-white/5 hover:bg-white/10 hover:text-white"
                 )}
               >
                 {day.label}
@@ -148,17 +148,17 @@ export function SettingsForm({ initialSettings }: { initialSettings: any }) {
 
         {/* Slots Selection */}
         <div className="space-y-3">
-          <Label className="text-sm font-bold text-slate-600 uppercase tracking-wide">Créneaux horaires préférés</Label>
+          <Label className="text-xs font-bold text-slate-400 uppercase tracking-widest">Créneaux horaires préférés</Label>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {SLOTS.map(slot => (
               <div 
                 key={slot.id}
                 onClick={() => toggleSlot(slot.id)}
                 className={cn(
-                  "p-3 rounded-xl border-2 cursor-pointer font-bold text-center text-sm transition-all",
+                  "p-3 rounded-xl border cursor-pointer font-bold text-center text-sm transition-all",
                   selectedSlots.includes(slot.id)
-                    ? "border-blue-600 bg-blue-50 text-blue-700 shadow-sm"
-                    : "border-slate-100 bg-white text-slate-500 hover:border-slate-200"
+                    ? "border-blue-500/50 bg-blue-500/10 text-blue-300 shadow-sm"
+                    : "border-white/5 bg-white/5 text-slate-400 hover:bg-white/10 hover:text-white"
                 )}
               >
                 {slot.label}
@@ -169,31 +169,31 @@ export function SettingsForm({ initialSettings }: { initialSettings: any }) {
       </div>
 
       {/* 2. NOTIFICATIONS */}
-      <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-         <h3 className="font-bold text-lg text-slate-900 mb-4 flex items-center gap-2">
-           <Bell className="h-5 w-5 text-slate-500" /> Notifications
+      <div className="bg-[#1e293b]/50 backdrop-blur-md p-6 rounded-[2rem] border border-white/5 shadow-sm">
+         <h3 className="font-bold text-lg text-white mb-6 flex items-center gap-2">
+           <Bell className="h-5 w-5 text-orange-400" /> Notifications
          </h3>
-         <div className="flex items-center justify-between">
+         <div className="flex items-center justify-between bg-[#0a0f1c]/50 p-4 rounded-2xl border border-white/5">
            <div className="space-y-0.5">
-             <Label htmlFor="notifications" className="text-base font-medium">Activer les notifications</Label>
+             <Label htmlFor="notifications" className="text-base font-bold text-slate-200">Activer les notifications</Label>
              <p className="text-sm text-slate-500">Recevez des alertes pour les matchs et opportunités.</p>
            </div>
            <Checkbox 
              id="notifications" 
              checked={notifications} 
              onCheckedChange={(checked) => setNotifications(checked === true)}
-             className="h-6 w-6"
+             className="h-6 w-6 border-white/20 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
            />
          </div>
       </div>
 
       {/* VISIBILITY */}
-      <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-         <h3 className="font-bold text-lg text-slate-900 mb-4 flex items-center gap-2">
-           <Shield className="h-5 w-5 text-slate-500" /> Confidentialité du Profil
+      <div className="bg-[#1e293b]/50 backdrop-blur-md p-6 rounded-[2rem] border border-white/5 shadow-sm">
+         <h3 className="font-bold text-lg text-white mb-6 flex items-center gap-2">
+           <Shield className="h-5 w-5 text-emerald-400" /> Confidentialité du Profil
          </h3>
          
-         <div className="flex flex-col gap-2">
+         <div className="flex flex-col gap-3">
            {[
              { value: 'public', label: 'Public (Visible par tous)' },
              { value: 'network_only', label: 'Réseau uniquement (Membres connectés)' },
@@ -203,18 +203,18 @@ export function SettingsForm({ initialSettings }: { initialSettings: any }) {
                key={option.value}
                onClick={() => setVisibility(option.value)}
                className={cn(
-                 "flex items-center justify-between p-4 rounded-xl border-2 transition-all text-left",
+                 "flex items-center justify-between p-4 rounded-2xl border transition-all text-left",
                  visibility === option.value 
-                   ? "border-blue-600 bg-blue-50/50" 
-                   : "border-slate-100 bg-white hover:border-slate-200"
+                   ? "border-blue-500/50 bg-blue-500/10" 
+                   : "border-white/5 bg-[#0a0f1c]/30 hover:bg-[#0a0f1c]/50 hover:border-white/10"
                )}
              >
-               <span className={cn("font-medium", visibility === option.value ? "text-blue-900 font-bold" : "text-slate-600")}>
+               <span className={cn("font-medium", visibility === option.value ? "text-blue-300 font-bold" : "text-slate-400")}>
                  {option.label}
                </span>
                <div className={cn(
                  "h-5 w-5 rounded-full border-2 flex items-center justify-center",
-                 visibility === option.value ? "border-blue-600 bg-blue-600" : "border-slate-300"
+                 visibility === option.value ? "border-blue-500 bg-blue-500" : "border-slate-600 bg-transparent"
                )}>
                  {visibility === option.value && <div className="h-2 w-2 rounded-full bg-white" />}
                </div>
@@ -223,11 +223,11 @@ export function SettingsForm({ initialSettings }: { initialSettings: any }) {
          </div>
       </div>
 
-      <div className="flex justify-end">
+      <div className="flex justify-end pt-4">
          <Button 
            onClick={handleSave} 
            disabled={loading}
-           className="bg-slate-900 text-white font-bold h-12 px-8 rounded-xl hover:bg-slate-800"
+           className="bg-blue-600 hover:bg-blue-500 text-white font-bold h-12 px-8 rounded-xl shadow-lg shadow-blue-900/20 border border-white/10"
          >
            {loading ? "Enregistrement..." : "Enregistrer les modifications"}
          </Button>
