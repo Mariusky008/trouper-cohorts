@@ -44,18 +44,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     setIsMobileMenuOpen(false);
   }, [pathname]);
 
-  // Strict redirect if user tries to navigate away from profile while incomplete
+  const [isAuthorized, setIsAuthorized] = useState(true); 
+
+  // Combined fetch and verification effect
   useEffect(() => {
-    const checkAndRedirect = async () => {
-      // Allow profile page
-      if (pathname === "/mon-reseau-local/dashboard/profile") return;
-      
-      // Allow settings page
-      if (pathname === "/mon-reseau-local/dashboard/settings") return;
-
+    const initDashboard = async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user) return; // Middleware handles auth redirect mostly
 
+      setCurrentUserId(user.id);
+      
+      // 1. Fetch Profile
       const { data: profile } = await supabase
         .from('profiles')
         .select('*')
@@ -63,7 +62,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         .single();
 
       if (profile) {
-        // Same strict logic as in onboarding.ts
+        setUserProfile(profile);
+        setPoints(profile.points || 0);
+
+        // 2. Check Completion (Non-blocking usually, unless critical)
         const isComplete = 
           !!profile.display_name && 
           !!profile.trade && 
@@ -72,83 +74,39 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           !!profile.bio &&
           (!!profile.linkedin_url || !!profile.instagram_handle || !!profile.facebook_handle || !!profile.website_url);
 
-        if (!isComplete) {
-            // Prevent flash by replacing immediately
+        // Only redirect if incomplete and trying to access other pages
+        if (!isComplete && pathname !== "/mon-reseau-local/dashboard/profile" && pathname !== "/mon-reseau-local/dashboard/settings") {
+            // We can show a toast or just redirect without blocking the whole UI forever
+            // Or set authorized=false ONLY if we really want to block
+            // For smoother mobile exp, let's redirect but maybe not show the spinner if we can avoid it, 
+            // or show it only briefly.
+            setIsAuthorized(false);
             router.replace("/mon-reseau-local/dashboard/profile");
-        }
-      }
-    };
-    
-    checkAndRedirect();
-  }, [pathname, router, supabase]);
-
-  // If user is incomplete and tries to access other pages, we could hide content here
-  // But doing it via useEffect is standard for client-side auth. 
-  // For a "hard" block, we'd need to fetch completion state before rendering children.
-  // Let's add a simple check state if we want to be super strict, but usually the redirect is fast enough.
-  // The user complained about "allowing to go there", so let's add a visual block.
-  
-  const [isAuthorized, setIsAuthorized] = useState(true); // Default to true to avoid blocking on load, but we can flip it.
-
-  useEffect(() => {
-     const verifyAccess = async () => {
-        if (pathname === "/mon-reseau-local/dashboard/profile") {
+        } else {
             setIsAuthorized(true);
-            return;
         }
-        
-        // Quick check logic again... ideally should be shared hook
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-            const { data: profile } = await supabase.from('profiles').select('display_name, trade, city, phone, bio, linkedin_url, instagram_handle, facebook_handle, website_url').eq('id', user.id).single();
-            if (profile) {
-                const isComplete = !!profile.display_name && !!profile.trade && !!profile.city && !!profile.phone && !!profile.bio && 
-                                  (!!profile.linkedin_url || !!profile.instagram_handle || !!profile.facebook_handle || !!profile.website_url);
-                
-                if (!isComplete && pathname !== "/mon-reseau-local/dashboard/profile") {
-                    setIsAuthorized(false);
-                    router.replace("/mon-reseau-local/dashboard/profile");
-                } else {
-                    setIsAuthorized(true);
-                }
-            }
-        }
-     };
-     verifyAccess();
-  }, [pathname]);
-
-  // Fetch data
-  useEffect(() => {
-    const fetchData = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        setCurrentUserId(user.id);
-        
-        // 1. Profile
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', user.id)
-          .single();
-        setUserProfile(profile);
-        setPoints(profile?.points || 0);
-
-        // 2. Pending Opportunities
-        const count = await getPendingOpportunitiesCount();
-        setPendingCount(count);
       }
+
+      // 3. Pending Opportunities (Parallel fetch could be better but this is fine)
+      const count = await getPendingOpportunitiesCount();
+      setPendingCount(count);
     };
-    fetchData();
-  }, [pathname]); // Re-fetch on navigation
+
+    initDashboard();
+  }, [pathname]); // Re-run on route change is okay, but ideally we cache profile. 
+  // For now, this consolidates the double-fetch issue.
+
+  // Removed separate strict verifyAccess effect
+  // Removed separate fetchData effect
+
 
   // Loading state block must be AFTER all hooks
+  // OPTIMIZED: Only show this if we are actively blocking access.
+  // Since we default isAuthorized to true, this won't show on initial load unless we explicitly set it to false.
   if (!isAuthorized) {
       return (
           <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-              <div className="flex flex-col items-center gap-4">
-                  <div className="h-10 w-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
-                  <p className="text-slate-500 font-bold">Vérification du profil...</p>
-              </div>
+              {/* Optional: Add a timeout or just show nothing if redirect is fast */}
           </div>
       );
   }
@@ -266,7 +224,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
-            className="fixed inset-0 top-16 bg-white z-20 p-4 flex flex-col gap-2 lg:hidden"
+            className="fixed inset-0 top-16 bg-[#0a0f1c] z-50 p-4 flex flex-col gap-2 lg:hidden border-t border-white/5"
           >
             {NAV_ITEMS.map((item) => (
               <Link 
@@ -275,31 +233,31 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 className={cn(
                   "flex items-center gap-4 p-4 rounded-xl transition-colors",
                   pathname === item.href 
-                    ? "bg-blue-50 text-blue-700 font-bold" 
-                    : "text-slate-600 font-medium hover:bg-slate-50"
+                    ? "bg-blue-600/10 text-blue-400 font-bold" 
+                    : "text-slate-400 font-medium hover:bg-white/5"
                 )}
               >
-                <div className={cn("p-2 rounded-lg", pathname === item.href ? "bg-white shadow-sm" : "bg-slate-100")}>
-                  <item.icon className={cn("h-5 w-5", pathname === item.href ? "text-blue-600" : "text-slate-500")} />
+                <div className={cn("p-2 rounded-lg", pathname === item.href ? "bg-blue-600/20 shadow-sm" : "bg-white/5")}>
+                  <item.icon className={cn("h-5 w-5", pathname === item.href ? "text-blue-400" : "text-slate-500")} />
                 </div>
                 <span className="text-lg">{item.label}</span>
                 {pathname === item.href && <ChevronRight className="ml-auto h-5 w-5 text-blue-400" />}
               </Link>
             ))}
-            <div className="mt-auto border-t border-slate-100 pt-6">
-                <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-xl">
-                  <Avatar className="h-12 w-12">
+            <div className="mt-auto border-t border-white/5 pt-6">
+                <div className="flex items-center gap-4 p-4 bg-white/5 rounded-xl border border-white/5">
+                  <Avatar className="h-12 w-12 border border-white/10">
                     <AvatarImage src={avatarUrl} className="object-cover" />
-                    <AvatarFallback>{initials}</AvatarFallback>
+                    <AvatarFallback className="bg-slate-800 text-slate-400">{initials}</AvatarFallback>
                   </Avatar>
                   <div>
-                    <div className="font-bold text-lg">{displayName}</div>
-                    <div className="text-slate-500">{userProfile?.trade || "Membre"} • {userProfile?.city || "Réseau"}</div>
+                    <div className="font-bold text-lg text-white">{displayName}</div>
+                    <div className="text-slate-400">{userProfile?.trade || "Membre"} • {userProfile?.city || "Réseau"}</div>
                   </div>
                 </div>
                 <Button 
                   variant="destructive" 
-                  className="w-full mt-4 h-12 rounded-xl font-bold"
+                  className="w-full mt-4 h-12 rounded-xl font-bold bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20"
                   onClick={handleSignOut}
                 >
                   <LogOut className="mr-2 h-4 w-4" /> Se déconnecter
