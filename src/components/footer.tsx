@@ -17,12 +17,12 @@ export function Footer() {
             </p>
           </div>
 
-          {/* Column 2: Links */}
+          {/* Column 2: Programmes (Renamed from Plateforme) */}
           <div className="space-y-4">
-            <h4 className="text-white font-bold text-sm uppercase tracking-wider">Plateforme</h4>
+            <h4 className="text-white font-bold text-sm uppercase tracking-wider">Programmes</h4>
             <ul className="space-y-2 text-sm">
-              <li><Link href="/entrepreneur" className="hover:text-blue-400 transition-colors">Entrepreneurs</Link></li>
-              <li><Link href="/emploi" className="hover:text-blue-400 transition-colors">Emploi</Link></li>
+              <li><Link href="/emploi" className="hover:text-blue-400 transition-colors">Créer un réseau amical</Link></li>
+              <li><Link href="/entrepreneur" className="hover:text-blue-400 transition-colors">Lancer son activité</Link></li>
               <li><Link href="/login" className="hover:text-blue-400 transition-colors">Se connecter</Link></li>
             </ul>
           </div>
