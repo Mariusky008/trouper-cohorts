@@ -37,6 +37,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   const [userProfile, setUserProfile] = useState<any>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [points, setPoints] = useState(0); // Initialize with 0
 
   // Close mobile menu on route change
   useEffect(() => {
@@ -130,6 +131,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           .eq('id', user.id)
           .single();
         setUserProfile(profile);
+        setPoints(profile?.points || 0);
 
         // 2. Pending Opportunities
         const count = await getPendingOpportunitiesCount();
@@ -219,7 +221,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     <Trophy className="h-4 w-4 text-yellow-400" />
                     <div className="flex flex-col items-end leading-none">
                         <span className="text-[9px] font-bold text-slate-500 uppercase">Points</span>
-                        <span className="text-sm font-black text-white">1,240</span>
+                        <span className="text-sm font-black text-white">{points.toLocaleString()}</span>
                     </div>
                 </div>
 
@@ -243,7 +245,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 {/* Mobile Points Badge */}
                 <div className="bg-[#1e293b] border border-white/10 px-2 py-1 rounded-lg flex items-center gap-1.5 shadow-sm mr-1">
                     <Trophy className="h-3.5 w-3.5 text-yellow-400" />
-                    <span className="text-xs font-black text-white">1,240</span>
+                    <span className="text-xs font-black text-white">{points.toLocaleString()}</span>
                 </div>
                 
                 <Button size="icon" variant="ghost" className="relative hover:bg-white/5">

@@ -11,6 +11,8 @@ import { useState, useEffect } from "react";
 import confetti from "canvas-confetti";
 import { toast } from "sonner";
 
+import { incrementUserPoints } from "@/lib/actions/gamification";
+
 interface DailyMatchCardProps {
   matches: any[];
 }
@@ -78,7 +80,7 @@ export function DailyMatchCard({ matches }: DailyMatchCardProps) {
       });
   };
 
-  const handleCallClick = () => {
+  const handleCallClick = async () => {
       if (callMade) return;
       
       setCallMade(true);
@@ -102,7 +104,14 @@ export function DailyMatchCard({ matches }: DailyMatchCardProps) {
         confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } });
       }, 250);
 
-      // No more toast here, UI updates directly
+      // 2. Increment Points in Database
+      try {
+          await incrementUserPoints(20);
+          toast.success("Points ajoutés ! 🏆");
+      } catch (error) {
+          console.error("Failed to add points", error);
+          toast.error("Erreur lors de l'ajout des points");
+      }
   };
 
   if (!matches || matches.length === 0) {
