@@ -1,18 +1,22 @@
 export default function MentionsPage() {
   return (
-    <article className="prose prose-slate dark:prose-invert max-w-none">
-      <h1>Mentions Légales</h1>
+    <article className="prose prose-slate prose-lg max-w-none prose-headings:font-black prose-headings:tracking-tight prose-headings:text-slate-900 prose-p:text-slate-600 prose-a:text-blue-600 prose-a:no-underline hover:prose-a:underline prose-strong:text-slate-900 prose-li:text-slate-600">
+      <div className="mb-8 border-b border-slate-100 pb-8">
+        <h1 className="mb-2 text-3xl md:text-4xl">Mentions Légales</h1>
+      </div>
       
       <h2>1. Éditeur du Site</h2>
       <p>
         Le présent site, accessible à l’URL <strong>www.popey.academy</strong> (ci-après le « Site »), est édité par :
       </p>
-      <p>
-        <strong>Ibrelisle</strong><br/>
-        Siège social : 23 rue paul lahragou, 40100 Dax<br/>
-        SIRET : 840 800 106<br/>
-        Email : <a href="mailto:contact@popey.academy">contact@popey.academy</a>
-      </p>
+      <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100 not-prose">
+        <h3 className="font-bold text-slate-900 mb-2">Ibrelisle</h3>
+        <ul className="space-y-1 text-slate-600 text-sm">
+          <li><strong>Siège social :</strong> 23 rue paul lahragou, 40100 Dax</li>
+          <li><strong>SIRET :</strong> 840 800 106</li>
+          <li><strong>Email :</strong> <a href="mailto:contact@popey.academy" className="text-blue-600 hover:underline">contact@popey.academy</a></li>
+        </ul>
+      </div>
 
       <h2>2. Directeur de la publication</h2>
       <p>

@@ -1,8 +1,10 @@
 export default function TermsPage() {
   return (
-    <article className="prose prose-slate dark:prose-invert max-w-none">
-      <h1>Conditions Générales d'Utilisation et de Vente (CGU/CGV)</h1>
-      <p className="text-sm text-muted-foreground">Dernière mise à jour : 13 Février 2026</p>
+    <article className="prose prose-slate prose-lg max-w-none prose-headings:font-black prose-headings:tracking-tight prose-headings:text-slate-900 prose-p:text-slate-600 prose-a:text-blue-600 prose-a:no-underline hover:prose-a:underline prose-strong:text-slate-900 prose-li:text-slate-600">
+      <div className="mb-8 border-b border-slate-100 pb-8">
+        <h1 className="mb-2 text-3xl md:text-4xl">Conditions Générales d'Utilisation et de Vente (CGU/CGV)</h1>
+        <p className="text-sm font-medium text-slate-400 m-0">Dernière mise à jour : 13 Février 2026</p>
+      </div>
       
       <h2>1. Préambule</h2>
       <p>
