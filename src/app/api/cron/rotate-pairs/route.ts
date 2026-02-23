@@ -1,14 +1,23 @@
-import { createClient } from "@/lib/supabase/server";
+import { createClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 
 export async function GET(request: Request) {
-  const supabase = await createClient();
+  // Use Service Role Key for Cron Jobs to bypass RLS
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
 
   // 1. Récupérer toutes les cohortes actives
-  const { data: cohorts } = await supabase
+  const { data: cohorts, error: cohortError } = await supabase
     .from("cohorts")
     .select("id")
     .neq("status", "archived");
+
+  if (cohortError) {
+    console.error("Erreur récupération cohortes:", cohortError);
+    return NextResponse.json({ success: false, error: cohortError.message }, { status: 500 });
+  }
 
   if (!cohorts || cohorts.length === 0) {
     return NextResponse.json({ message: "Aucune cohorte active." });
