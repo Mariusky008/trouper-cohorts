@@ -75,7 +75,7 @@ export function DailyMatchCard({ matches }: DailyMatchCardProps) {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: index * 0.1 }}
-          className="max-w-md mx-auto w-full bg-white rounded-[2rem] p-6 md:p-8 shadow-xl shadow-slate-200/50 border border-slate-100 relative overflow-visible group hover:scale-[1.01] transition-transform duration-300"
+          className="max-w-2xl mx-auto w-full bg-white rounded-[2rem] p-8 md:p-10 shadow-xl shadow-slate-200/50 border border-slate-100 relative overflow-visible group hover:scale-[1.01] transition-transform duration-300"
         >
           {/* DATE HEADER (Now Inside) */}
           <div className="flex justify-between items-end mb-8 pb-6 border-b border-slate-50">
