@@ -105,20 +105,13 @@ export function FrequencyControl({ settings, potentialCount }: FrequencyControlP
           </h3>
           <p className="text-slate-500 text-sm">Gérez votre pression.</p>
         </div>
-        
-        <div className="flex items-center gap-2">
-           <div className="bg-purple-50 px-3 py-1 rounded-full border border-purple-100 flex items-center gap-2">
-             <BarChart3 className="h-4 w-4 text-purple-600" />
-             <span className="font-black text-purple-700 text-sm">{potentialCount} opp.</span>
-           </div>
-        </div>
       </div>
 
       <div className="space-y-8 flex-1 flex flex-col justify-center">
         {/* FREQUENCY SLIDER */}
         <div className="space-y-6">
           <div className="flex justify-between items-end">
-            <label className="text-sm font-bold text-slate-700">Fréquence Hebdomadaire</label>
+            <label className="text-sm font-bold text-slate-700">Intensité Hebdomadaire</label>
             <span className="text-3xl font-black text-blue-600">{frequency} <span className="text-sm text-slate-400 font-medium">jours/sem</span></span>
           </div>
           <div className="px-2">
