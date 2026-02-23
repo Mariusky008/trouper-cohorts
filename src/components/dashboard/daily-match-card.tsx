@@ -102,11 +102,7 @@ export function DailyMatchCard({ matches }: DailyMatchCardProps) {
         confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } });
       }, 250);
 
-      // 2. Reward Toast
-      toast.success("Défi accepté ! +20 pts de confiance ⭐️", {
-          description: "N'oubliez pas de noter l'échange après l'appel.",
-          duration: 5000,
-      });
+      // No more toast here, UI updates directly
   };
 
   if (!matches || matches.length === 0) {
@@ -288,32 +284,39 @@ export function DailyMatchCard({ matches }: DailyMatchCardProps) {
                 )}
              </div>
 
-             {/* CALL BUTTON */}
+             {/* CALL BUTTON / ACTION AREA */}
              {isCallOut ? (
-                <div className="space-y-2 mb-4">
-                    <Button 
-                        onClick={handleCallClick}
-                        className={cn(
-                            "w-full font-bold h-14 rounded-xl shadow-lg text-base transition-all border border-white/10",
-                            callMade 
-                                ? "bg-emerald-600 hover:bg-emerald-700 text-white"
-                                : "bg-blue-600 hover:bg-blue-500 text-white animate-shimmer bg-[linear-gradient(110deg,#2563eb,45%,#3b82f6,55%,#2563eb)] bg-[length:200%_100%]"
-                        )}
-                        asChild={!callMade}
-                    >
-                       {callMade ? (
-                           <div className="flex items-center gap-2">
-                               <CheckCircle2 className="h-5 w-5" /> Appel lancé !
-                           </div>
-                       ) : (
-                           <a href={`tel:${match.phone}`}>
-                             <Phone className="mr-2 h-5 w-5" /> Appeler {match.name.split(' ')[0]} ({match.phone})
-                           </a>
-                       )}
-                    </Button>
-                    <div className="text-center text-[10px] font-bold text-blue-400/80 uppercase tracking-wide">
-                        {callMade ? "Bravo ! Vous avez gagné des points de confiance." : `C'est à vous d'appeler entre ${match.time}`}
-                    </div>
+                <div className="space-y-4 mb-6">
+                    {!callMade ? (
+                        <Button 
+                            onClick={handleCallClick}
+                            className="w-full font-black h-16 rounded-2xl shadow-lg shadow-blue-600/30 text-lg transition-all border border-white/10 bg-blue-600 hover:bg-blue-500 text-white animate-shimmer bg-[linear-gradient(110deg,#2563eb,45%,#3b82f6,55%,#2563eb)] bg-[length:200%_100%]"
+                        >
+                            <div className="flex flex-col items-center leading-none gap-1">
+                                <span className="flex items-center gap-2">
+                                    <Trophy className="h-5 w-5 text-yellow-300" /> DÉFI ACCEPTÉ
+                                </span>
+                                <span className="text-[10px] text-blue-200 font-bold uppercase tracking-widest">+20 PTS DE CONFIANCE</span>
+                            </div>
+                        </Button>
+                    ) : (
+                        <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-2xl p-6 text-center animate-in fade-in zoom-in duration-300">
+                            <div className="h-12 w-12 bg-emerald-500 rounded-full flex items-center justify-center mx-auto mb-3 shadow-lg shadow-emerald-500/30">
+                                <Phone className="h-6 w-6 text-white animate-bounce" />
+                            </div>
+                            <h4 className="text-xl font-black text-white mb-1">C'est parti !</h4>
+                            <p className="text-slate-300 text-sm mb-4">Appelez {match.name.split(' ')[0]} maintenant :</p>
+                            
+                            <a href={`tel:${match.phone}`} className="block bg-[#0f172a] hover:bg-slate-900 text-emerald-400 font-black text-2xl py-4 rounded-xl border border-white/10 transition-colors mb-4 tracking-wider">
+                                {match.phone}
+                            </a>
+
+                            <div className="flex items-center justify-center gap-2 text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+                                <CheckCircle2 className="h-3 w-3 text-emerald-500" />
+                                +20 pts ajoutés à votre score
+                            </div>
+                        </div>
+                    )}
                 </div>
              ) : (
                 <div className="space-y-2 mb-4">
