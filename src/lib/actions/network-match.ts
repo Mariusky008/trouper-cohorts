@@ -90,33 +90,59 @@ export async function getDailyMatches() {
   const validMatches = matchesWithDetails.filter(m => m !== null) as any[];
 
   // Filter out matches where the slot time has passed (start time + 2h < now)
-  // But ONLY if the match is for TODAY or BEFORE
+  // We must use Paris time because matches are scheduled in Paris time.
   const now = new Date();
-  const todayStr = now.toISOString().split('T')[0];
   
+  // Get Today's Date in Paris (YYYY-MM-DD)
+  const parisDateFormatter = new Intl.DateTimeFormat('fr-CA', {
+    timeZone: 'Europe/Paris',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  });
+  const todayParisStr = parisDateFormatter.format(now);
+
+  // Get Current Time in Paris
+  const parisTimeFormatter = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Europe/Paris',
+    hour: 'numeric',
+    minute: 'numeric',
+    second: 'numeric',
+    hour12: false
+  });
+  
+  // Helper to parse Paris time
+  const getParisHours = () => {
+    const parts = parisTimeFormatter.formatToParts(now);
+    const h = parts.find(p => p.type === 'hour')?.value;
+    return h ? parseInt(h, 10) : 0;
+  };
+  const currentParisHour = getParisHours();
+
   const activeMatches = validMatches.filter(match => {
       // If date is in future, keep it
-      if (match.date > todayStr) return true;
+      if (match.date > todayParisStr) return true;
+      
+      // If date is past, hide it
+      if (match.date < todayParisStr) return false;
       
       // If date is today, check time
-      if (match.date === todayStr) {
+      if (match.date === todayParisStr) {
           // If no time, assume all day
           if (!match.time) return true;
           
-          // Construct datetime for end of slot (robust parsing)
+          // Parse start hour from "09h - 11h" or "09:00"
           const timeStr = match.time.toString();
           const startHourMatch = timeStr.match(/^(\d{1,2})/);
           const startHour = startHourMatch ? parseInt(startHourMatch[1], 10) : 0;
           
-          const slotEndTime = new Date();
-          slotEndTime.setHours(startHour + 2, 0, 0, 0);
+          // Slot ends at start + 2 hours
+          const endHour = startHour + 2;
           
-          // If now > slot end time, hide it (expired)
-          if (now > slotEndTime) return false;
+          // If current Paris hour is greater or equal to end hour, it's expired.
+          // Example: Slot 12h-14h. End is 14. If current is 14:00+, it is expired.
+          if (currentParisHour >= endHour) return false;
       }
-      
-      // If date is past (yesterday), hide it
-      if (match.date < todayStr) return false;
 
       return true;
   });
