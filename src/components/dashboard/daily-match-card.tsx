@@ -97,24 +97,24 @@ export function DailyMatchCard({ matches }: DailyMatchCardProps) {
              </div>
 
              {/* PROFILE INFO */}
-             <div className="flex flex-col items-center text-center mb-8">
-               <div className="relative mb-4">
-                 <Avatar className="h-24 w-24 border-4 border-slate-50 shadow-md">
+             <div className="flex flex-col items-center text-center mb-10 transform scale-110">
+               <div className="relative mb-5">
+                 <Avatar className="h-32 w-32 border-4 border-slate-50 shadow-xl">
                     <AvatarImage src={match.avatar} className="object-cover" />
-                    <AvatarFallback className="text-2xl font-black bg-slate-100 text-slate-300">{match.name[0]}</AvatarFallback>
+                    <AvatarFallback className="text-4xl font-black bg-slate-100 text-slate-300">{match.name[0]}</AvatarFallback>
                  </Avatar>
-                 <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-green-50 text-green-700 border border-green-100 px-3 py-0.5 rounded-full text-[10px] font-bold whitespace-nowrap flex items-center gap-1 shadow-sm">
-                    <CheckCircle2 className="h-3 w-3" /> Vérifié fiable
+                 <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-green-50 text-green-700 border border-green-100 px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap flex items-center gap-1 shadow-md">
+                    <CheckCircle2 className="h-3.5 w-3.5" /> Vérifié fiable
                  </div>
                </div>
                
-               <h3 className="text-2xl font-black text-slate-900 mb-1">{match.name}</h3>
-               <div className="text-xs font-bold text-slate-400 uppercase tracking-wide mb-1">
+               <h3 className="text-3xl font-black text-slate-900 mb-2 mt-2">{match.name}</h3>
+               <div className="text-sm font-bold text-slate-500 uppercase tracking-wide mb-2">
                   {match.job} • {match.city}
                </div>
                <div className="flex gap-1">
                   {[1,2,3,4,5].map(i => (
-                    <Star key={i} className={cn("h-3 w-3", i <= Math.round(match.score) ? "text-yellow-400 fill-yellow-400" : "text-slate-200")} />
+                    <Star key={i} className={cn("h-4 w-4", i <= Math.round(match.score) ? "text-yellow-400 fill-yellow-400" : "text-slate-200")} />
                   ))}
                </div>
              </div>
