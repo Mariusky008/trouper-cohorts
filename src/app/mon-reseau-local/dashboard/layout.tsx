@@ -165,84 +165,81 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   // The user input only complained about the NAME "Jean Dupont".
   
   return (
-    <div className="min-h-screen bg-[#0a0f1c] flex font-sans text-slate-200 selection:bg-blue-500/30 selection:text-blue-200">
+    <div className="min-h-screen bg-[#0a0f1c] flex flex-col font-sans text-slate-200 selection:bg-blue-500/30 selection:text-blue-200">
       <ProfileCompletionModal />
       
-      {/* --- DESKTOP SIDEBAR --- */}
-      <aside className="hidden lg:flex flex-col w-72 border-r border-white/5 bg-[#0a0f1c] fixed h-full z-20">
-        <div className="p-6 flex items-center gap-3">
-          <div className="h-10 w-10 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-900/20">
-            <Anchor className="h-6 w-6" />
-          </div>
-          <span className="font-black text-xl tracking-tight text-white">Popey Academy</span>
-        </div>
-
-        <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
-          {NAV_ITEMS.map((item) => {
-            const isActive = pathname === item.href;
-            return (
-              <Link 
-                key={item.href} 
-                href={item.href}
-                className={cn(
-                  "flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group relative overflow-hidden",
-                  isActive 
-                    ? "bg-blue-600/10 text-blue-400 font-bold shadow-sm border border-blue-500/10" 
-                    : "text-slate-400 hover:bg-white/5 hover:text-white font-medium"
-                )}
-              >
-                {isActive && (
-                  <motion.div
-                    layoutId="activeTab"
-                    className="absolute left-0 top-0 bottom-0 w-1 bg-blue-500 rounded-r-full"
-                  />
-                )}
-                <item.icon className={cn("h-5 w-5 transition-colors", isActive ? "text-blue-400" : "text-slate-500 group-hover:text-slate-300")} />
-                <span>{item.label}</span>
-                {item.label === "Opportunités" && pendingCount > 0 && (
-                  <span className="ml-auto bg-blue-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full shadow-lg shadow-blue-900/50">{pendingCount}</span>
-                )}
-              </Link>
-            );
-          })}
-        </nav>
-
-        <div className="p-4 border-t border-white/5">
-          <div className="bg-white/5 rounded-xl p-4 border border-white/5 flex items-center gap-3 cursor-pointer hover:bg-white/10 transition-colors">
-            <Avatar className="border-2 border-white/10">
-              <AvatarImage src={avatarUrl} className="object-cover" />
-              <AvatarFallback className="bg-slate-800 text-slate-400">{initials}</AvatarFallback>
-            </Avatar>
-            <div className="flex-1 overflow-hidden">
-              <div className="font-bold text-sm truncate text-white">{displayName}</div>
-              <div className="text-xs text-slate-500 flex items-center gap-1">
-                <ShieldCheck className="h-3 w-3 text-emerald-500" /> <span className="text-emerald-500 font-bold">{trustScore}/5</span>
+      {/* --- TOP NAVIGATION BAR (DESKTOP & MOBILE) --- */}
+      <header className="fixed top-0 w-full bg-[#0a0f1c]/80 backdrop-blur-md border-b border-white/5 z-30 h-16 px-4 lg:px-8 flex items-center justify-between">
+         {/* LEFT: LOGO */}
+         <div className="flex items-center gap-3">
+            <Link href="/mon-reseau-local/dashboard" className="flex items-center gap-2">
+              <div className="h-8 w-8 bg-blue-600 rounded-lg flex items-center justify-center text-white shadow-lg shadow-blue-900/20">
+                <Anchor className="h-5 w-5" />
               </div>
-            </div>
-            <LogOut 
-              className="h-4 w-4 text-slate-500 hover:text-red-400 transition-colors" 
-              onClick={handleSignOut}
-            />
-          </div>
-        </div>
-      </aside>
-
-      {/* --- MOBILE TOP BAR --- */}
-      <header className="lg:hidden fixed top-0 w-full bg-[#0a0f1c]/80 backdrop-blur-md border-b border-white/5 z-30 h-16 px-4 flex items-center justify-between">
-         <div className="flex items-center gap-2">
-            <div className="h-8 w-8 bg-blue-600 rounded-lg flex items-center justify-center text-white">
-              <Anchor className="h-5 w-5" />
-            </div>
-            <span className="font-black text-lg text-white">Popey Academy</span>
+              <span className="font-black text-lg lg:text-xl text-white tracking-tight">Popey Academy</span>
+            </Link>
          </div>
+
+         {/* CENTER: DESKTOP NAVIGATION */}
+         <nav className="hidden lg:flex items-center gap-1 absolute left-1/2 -translate-x-1/2">
+            {NAV_ITEMS.map((item) => {
+              const isActive = pathname === item.href;
+              return (
+                <Link 
+                  key={item.href} 
+                  href={item.href}
+                  className={cn(
+                    "flex items-center gap-2 px-3 py-2 rounded-lg transition-all duration-200 relative group",
+                    isActive 
+                      ? "text-blue-400 bg-blue-500/10" 
+                      : "text-slate-400 hover:text-white hover:bg-white/5"
+                  )}
+                >
+                  <item.icon className={cn("h-4 w-4", isActive ? "text-blue-400" : "text-slate-500 group-hover:text-slate-300")} />
+                  <span className="text-sm font-bold">{item.label}</span>
+                  {item.label === "Opportunités" && pendingCount > 0 && (
+                    <span className="bg-blue-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full shadow-lg shadow-blue-900/50">{pendingCount}</span>
+                  )}
+                  {isActive && (
+                    <motion.div
+                      layoutId="activeTabBottom"
+                      className="absolute bottom-0 left-2 right-2 h-0.5 bg-blue-500 rounded-full"
+                    />
+                  )}
+                </Link>
+              );
+            })}
+         </nav>
+
+         {/* RIGHT: ACTIONS & PROFILE */}
          <div className="flex items-center gap-4">
-            <Button size="icon" variant="ghost" className="relative hover:bg-white/5">
-              <Bell className="h-5 w-5 text-slate-400" />
-              <span className="absolute top-2 right-2 h-2 w-2 bg-red-500 rounded-full border border-[#0a0f1c]"></span>
-            </Button>
-            <Button size="icon" variant="ghost" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="hover:bg-white/5">
-              <Menu className="h-6 w-6 text-white" />
-            </Button>
+            {/* Desktop Profile */}
+            <div className="hidden lg:flex items-center gap-3 pl-4 border-l border-white/5">
+                <div className="text-right hidden xl:block">
+                    <div className="text-xs font-bold text-white">{displayName}</div>
+                    <div className="text-[10px] text-slate-500 flex items-center justify-end gap-1">
+                        <ShieldCheck className="h-3 w-3 text-emerald-500" /> <span className="text-emerald-500 font-bold">{trustScore}/5</span>
+                    </div>
+                </div>
+                <Avatar className="h-9 w-9 border border-white/10 cursor-pointer hover:border-blue-500/50 transition-colors">
+                  <AvatarImage src={avatarUrl} className="object-cover" />
+                  <AvatarFallback className="bg-slate-800 text-slate-400 text-xs">{initials}</AvatarFallback>
+                </Avatar>
+                <Button size="icon" variant="ghost" className="h-8 w-8 text-slate-500 hover:text-red-400 hover:bg-white/5 rounded-full" onClick={handleSignOut}>
+                    <LogOut className="h-4 w-4" />
+                </Button>
+            </div>
+
+            {/* Mobile Actions */}
+            <div className="lg:hidden flex items-center gap-2">
+                <Button size="icon" variant="ghost" className="relative hover:bg-white/5">
+                  <Bell className="h-5 w-5 text-slate-400" />
+                  <span className="absolute top-2 right-2 h-2 w-2 bg-red-500 rounded-full border border-[#0a0f1c]"></span>
+                </Button>
+                <Button size="icon" variant="ghost" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="hover:bg-white/5">
+                  <Menu className="h-6 w-6 text-white" />
+                </Button>
+            </div>
          </div>
       </header>
 
@@ -299,10 +296,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {/* --- MAIN CONTENT --- */}
       <main className={cn(
         "flex-1 min-h-screen transition-all duration-300 ease-in-out",
-        "lg:pl-72", // Space for sidebar
-        "pt-16 lg:pt-0" // Space for mobile header
+        "pt-20" // Space for fixed header
       )}>
-        <div className="container mx-auto p-4 md:p-8 max-w-6xl">
+        <div className="container mx-auto p-4 md:p-8 max-w-7xl">
           {children}
         </div>
       </main>
