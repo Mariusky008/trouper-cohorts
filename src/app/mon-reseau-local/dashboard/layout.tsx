@@ -49,7 +49,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       // Allow profile page
       if (pathname === "/mon-reseau-local/dashboard/profile") return;
       
-      // Allow settings page (in case they need to delete account or similar)
+      // Allow settings page
       if (pathname === "/mon-reseau-local/dashboard/settings") return;
 
       const { data: { user } } = await supabase.auth.getUser();
@@ -72,6 +72,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           (!!profile.linkedin_url || !!profile.instagram_handle || !!profile.facebook_handle || !!profile.website_url);
 
         if (!isComplete) {
+            // Prevent flash by replacing immediately
             router.replace("/mon-reseau-local/dashboard/profile");
         }
       }
@@ -79,6 +80,52 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     
     checkAndRedirect();
   }, [pathname, router, supabase]);
+
+  // If user is incomplete and tries to access other pages, we could hide content here
+  // But doing it via useEffect is standard for client-side auth. 
+  // For a "hard" block, we'd need to fetch completion state before rendering children.
+  // Let's add a simple check state if we want to be super strict, but usually the redirect is fast enough.
+  // The user complained about "allowing to go there", so let's add a visual block.
+  
+  const [isAuthorized, setIsAuthorized] = useState(true); // Default to true to avoid blocking on load, but we can flip it.
+
+  useEffect(() => {
+     const verifyAccess = async () => {
+        if (pathname === "/mon-reseau-local/dashboard/profile") {
+            setIsAuthorized(true);
+            return;
+        }
+        
+        // Quick check logic again... ideally should be shared hook
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+            const { data: profile } = await supabase.from('profiles').select('display_name, trade, city, phone, bio, linkedin_url, instagram_handle, facebook_handle, website_url').eq('id', user.id).single();
+            if (profile) {
+                const isComplete = !!profile.display_name && !!profile.trade && !!profile.city && !!profile.phone && !!profile.bio && 
+                                  (!!profile.linkedin_url || !!profile.instagram_handle || !!profile.facebook_handle || !!profile.website_url);
+                
+                if (!isComplete && pathname !== "/mon-reseau-local/dashboard/profile") {
+                    setIsAuthorized(false);
+                    router.replace("/mon-reseau-local/dashboard/profile");
+                } else {
+                    setIsAuthorized(true);
+                }
+            }
+        }
+     };
+     verifyAccess();
+  }, [pathname]);
+
+  if (!isAuthorized) {
+      return (
+          <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+              <div className="flex flex-col items-center gap-4">
+                  <div className="h-10 w-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                  <p className="text-slate-500 font-bold">Vérification du profil...</p>
+              </div>
+          </div>
+      );
+  }
 
   // Fetch data
   useEffect(() => {

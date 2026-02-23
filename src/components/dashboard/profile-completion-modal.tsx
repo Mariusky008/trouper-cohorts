@@ -17,11 +17,8 @@ export function ProfileCompletionModal() {
     const check = async () => {
       try {
         const result = await checkProfileCompletion();
-        // If not complete, show modal to redirect
-        // BUT allow access to the profile page itself so they can fix it
-        const isProfilePage = pathname === "/mon-reseau-local/dashboard/profile";
-        
-        if (!result.complete && !isProfilePage) {
+        // Show modal if not complete, even on profile page (as a reminder/guide)
+        if (!result.complete) {
           setIsOpen(true);
         } else {
           setIsOpen(false);
@@ -36,12 +33,20 @@ export function ProfileCompletionModal() {
     check();
   }, [pathname]); // Re-run check on navigation
 
-  const handleRedirect = () => {
-    setIsOpen(false);
-    router.push("/mon-reseau-local/dashboard/profile");
+  const handleAction = () => {
+    // If we are already on profile page, just close modal to let user edit
+    if (pathname === "/mon-reseau-local/dashboard/profile") {
+        setIsOpen(false);
+    } else {
+        // If elsewhere, redirect
+        setIsOpen(false);
+        router.push("/mon-reseau-local/dashboard/profile");
+    }
   };
 
   if (isLoading || !isOpen) return null;
+
+  const isProfilePage = pathname === "/mon-reseau-local/dashboard/profile";
 
   return (
     <Dialog open={isOpen} onOpenChange={() => {}}>
@@ -57,9 +62,14 @@ export function ProfileCompletionModal() {
             </div>
             
             <div className="space-y-2">
-                <DialogTitle className="text-2xl font-black text-slate-900">Finalisez votre inscription</DialogTitle>
+                <DialogTitle className="text-2xl font-black text-slate-900">
+                    {isProfilePage ? "Complétez votre profil 🚀" : "Finalisez votre inscription"}
+                </DialogTitle>
                 <DialogDescription className="text-base text-slate-600 max-w-sm mx-auto">
-                    Pour accéder au réseau et recevoir vos premiers matchs, vous devez compléter intégralement votre profil.
+                    {isProfilePage 
+                        ? "Il vous manque encore quelques informations pour activer votre compte. Remplissez les champs manquants ci-dessous."
+                        : "Pour accéder au réseau et recevoir vos premiers matchs, vous devez compléter intégralement votre profil."
+                    }
                 </DialogDescription>
             </div>
 
@@ -73,8 +83,8 @@ export function ProfileCompletionModal() {
                 </ul>
             </div>
 
-            <Button onClick={handleRedirect} className="w-full h-12 text-lg font-bold bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-200 rounded-xl">
-                Aller sur mon profil <ArrowRight className="ml-2 h-5 w-5" />
+            <Button onClick={handleAction} className="w-full h-12 text-lg font-bold bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-200 rounded-xl">
+                {isProfilePage ? "OK, je complète" : "Aller sur mon profil"} <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
         </div>
       </DialogContent>

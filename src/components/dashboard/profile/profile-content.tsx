@@ -48,13 +48,15 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
     bio: user.bio || "",
     city: user.city || "",
     phone: user.phone || "",
-    linkedin: user.linkedin_url || "",
+    linkedin: user.linkedin_url === "https://none" ? "" : (user.linkedin_url || ""),
     instagram: user.instagram_handle || "",
     facebook: user.facebook_handle || "",
     website: user.website_url || "",
     avatar_url: user.avatar_url || "",
     current_goals: user.current_goals || [] as string[]
   });
+
+  const [noSocials, setNoSocials] = useState(user.linkedin_url === "https://none");
 
   const supabase = createClient();
 
@@ -100,10 +102,21 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
       data.append("trade", formData.trade);
       data.append("city", formData.city);
       data.append("phone", formData.phone);
-      data.append("linkedin", formData.linkedin);
-      data.append("instagram", formData.instagram);
-      data.append("facebook", formData.facebook);
-      data.append("website", formData.website);
+      
+      // Socials logic
+      if (noSocials) {
+          // If user declared no socials, we save a marker in one field to pass validation
+          data.append("linkedin", "https://none");
+          data.append("instagram", "");
+          data.append("facebook", "");
+          data.append("website", "");
+      } else {
+          data.append("linkedin", formData.linkedin);
+          data.append("instagram", formData.instagram);
+          data.append("facebook", formData.facebook);
+          data.append("website", formData.website);
+      }
+
       data.append("avatar_url", formData.avatar_url);
       
       // Append each goal individually for getAll on server
@@ -193,7 +206,7 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
             </div>
             
             <div className="flex gap-3 flex-wrap">
-                {formData.linkedin && (
+                {formData.linkedin && formData.linkedin !== "https://none" && (
                     <a href={formData.linkedin} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-xl hover:bg-blue-100 transition-colors font-bold text-sm">
                         <Linkedin className="h-5 w-5" /> LinkedIn
                     </a>
@@ -213,6 +226,15 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
                         <Globe className="h-5 w-5" /> Site Web
                     </a>
                 )}
+                
+                {/* Case: No socials declared explicitly */}
+                {formData.linkedin === "https://none" && (
+                    <div className="flex items-center gap-2 text-slate-400 bg-slate-50 px-4 py-2 rounded-xl border border-slate-200">
+                        <span className="text-sm font-medium">Aucun réseau social public.</span>
+                    </div>
+                )}
+
+                {/* Case: Empty and NOT opted out */}
                 {!formData.linkedin && !formData.instagram && !formData.facebook && !formData.website && (
                     <div className="flex items-center gap-2 text-slate-400 bg-slate-50 px-4 py-2 rounded-xl border border-dashed border-slate-200 w-full">
                         <span className="text-sm italic">Vous n'avez pas encore ajouté de réseaux sociaux.</span>
@@ -388,24 +410,39 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
 
              <TabsContent value="socials" className="space-y-6">
                 <div className="space-y-4">
-                    <div className="space-y-2">
-                        <Label className="flex items-center gap-2"><Linkedin className="h-4 w-4 text-blue-700" /> LinkedIn URL</Label>
-                        <Input value={formData.linkedin} onChange={e => setFormData({...formData, linkedin: e.target.value})} placeholder="https://linkedin.com/in/..." className="h-12" />
+                    <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 mb-6 flex items-center gap-3">
+                        <Checkbox 
+                            id="no-socials" 
+                            checked={noSocials} 
+                            onCheckedChange={(c) => setNoSocials(c === true)} 
+                        />
+                        <Label htmlFor="no-socials" className="cursor-pointer font-bold text-slate-700">
+                            Je ne suis pas présent sur les réseaux sociaux
+                        </Label>
                     </div>
-                    <div className="space-y-2">
-                        <Label className="flex items-center gap-2"><Instagram className="h-4 w-4 text-pink-600" /> Instagram Handle</Label>
-                        <div className="relative">
-                            <span className="absolute left-3 top-3 text-slate-400 font-bold">@</span>
-                            <Input value={formData.instagram} onChange={e => setFormData({...formData, instagram: e.target.value})} placeholder="mon_compte" className="h-12 pl-8" />
+
+                    <div className={noSocials ? "opacity-40 pointer-events-none transition-opacity" : "transition-opacity"}>
+                        <div className="space-y-4">
+                            <div className="space-y-2">
+                                <Label className="flex items-center gap-2"><Linkedin className="h-4 w-4 text-blue-700" /> LinkedIn URL</Label>
+                                <Input value={formData.linkedin} onChange={e => setFormData({...formData, linkedin: e.target.value})} placeholder="https://linkedin.com/in/..." className="h-12" />
+                            </div>
+                            <div className="space-y-2">
+                                <Label className="flex items-center gap-2"><Instagram className="h-4 w-4 text-pink-600" /> Instagram Handle</Label>
+                                <div className="relative">
+                                    <span className="absolute left-3 top-3 text-slate-400 font-bold">@</span>
+                                    <Input value={formData.instagram} onChange={e => setFormData({...formData, instagram: e.target.value})} placeholder="mon_compte" className="h-12 pl-8" />
+                                </div>
+                            </div>
+                            <div className="space-y-2">
+                                <Label className="flex items-center gap-2"><Facebook className="h-4 w-4 text-blue-600" /> Facebook URL</Label>
+                                <Input value={formData.facebook} onChange={e => setFormData({...formData, facebook: e.target.value})} placeholder="https://facebook.com/..." className="h-12" />
+                            </div>
+                            <div className="space-y-2">
+                                <Label className="flex items-center gap-2"><Globe className="h-4 w-4 text-slate-600" /> Site Web</Label>
+                                <Input value={formData.website} onChange={e => setFormData({...formData, website: e.target.value})} placeholder="https://monsite.com" className="h-12" />
+                            </div>
                         </div>
-                    </div>
-                    <div className="space-y-2">
-                        <Label className="flex items-center gap-2"><Facebook className="h-4 w-4 text-blue-600" /> Facebook URL</Label>
-                        <Input value={formData.facebook} onChange={e => setFormData({...formData, facebook: e.target.value})} placeholder="https://facebook.com/..." className="h-12" />
-                    </div>
-                    <div className="space-y-2">
-                        <Label className="flex items-center gap-2"><Globe className="h-4 w-4 text-slate-600" /> Site Web</Label>
-                        <Input value={formData.website} onChange={e => setFormData({...formData, website: e.target.value})} placeholder="https://monsite.com" className="h-12" />
                     </div>
                 </div>
              </TabsContent>
