@@ -164,75 +164,75 @@ export function DailyMatchCard({ matches }: DailyMatchCardProps) {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: index * 0.1 }}
-          className="max-w-2xl mx-auto w-full bg-[#1e293b]/80 backdrop-blur-xl rounded-[2rem] p-8 md:p-10 shadow-2xl shadow-black/40 border border-white/10 relative overflow-visible group hover:scale-[1.01] transition-transform duration-300"
+          className="max-w-md mx-auto w-full bg-[#1e293b]/80 backdrop-blur-xl rounded-[2rem] p-6 md:p-8 shadow-2xl shadow-black/40 border border-white/10 relative overflow-visible group hover:scale-[1.01] transition-transform duration-300"
         >
           {/* DATE HEADER (Now Inside) */}
-          <div className="flex justify-between items-end mb-8 pb-6 border-b border-white/5">
+          <div className="flex justify-between items-end mb-6 pb-4 border-b border-white/5">
              <div>
-               <div className="text-4xl font-black text-white leading-none mb-1">
+               <div className="text-3xl font-black text-white leading-none mb-1">
                  {capitalize(dayName)} {dayNumber}
                </div>
-               <div className="text-slate-400 font-bold text-lg capitalize">{monthYear}</div>
+               <div className="text-slate-400 font-bold text-base capitalize">{monthYear}</div>
              </div>
              
              {/* TIMER & STREAK BADGES */}
-             <div className="flex items-center gap-3">
-                 <div className="hidden md:flex items-center gap-2 bg-blue-500/10 border border-blue-500/20 px-3 py-1.5 rounded-full">
-                    <Zap className="h-4 w-4 text-blue-400 fill-blue-400" />
-                    <span className="text-blue-200 text-xs font-bold">3 jours consécutifs</span>
+             <div className="flex items-center gap-2">
+                 <div className="hidden md:flex items-center gap-1.5 bg-blue-500/10 border border-blue-500/20 px-2 py-1 rounded-full">
+                    <Zap className="h-3 w-3 text-blue-400 fill-blue-400" />
+                    <span className="text-blue-200 text-[10px] font-bold">3 jours</span>
                  </div>
-                 <div className="bg-white/5 text-blue-400 p-3 rounded-2xl border border-white/5 flex flex-col items-center justify-center min-w-[80px]">
-                   <span className="text-[10px] font-bold text-slate-500 uppercase">Appel dans</span>
-                   <span className="font-black text-white text-sm">{timeLeft || "--:--"}</span>
+                 <div className="bg-white/5 text-blue-400 p-2 rounded-xl border border-white/5 flex flex-col items-center justify-center min-w-[70px]">
+                   <span className="text-[9px] font-bold text-slate-500 uppercase">Appel dans</span>
+                   <span className="font-black text-white text-xs">{timeLeft || "--:--"}</span>
                  </div>
              </div>
            </div>
 
              {/* ORANGE BADGE */}
-             <div className="absolute -top-4 right-8 bg-orange-500 text-white text-[10px] font-bold px-4 py-1.5 rounded-full uppercase tracking-widest shadow-lg shadow-orange-900/50 z-10 animate-pulse">
+             <div className="absolute -top-3 right-6 bg-orange-500 text-white text-[9px] font-bold px-3 py-1 rounded-full uppercase tracking-widest shadow-lg shadow-orange-900/50 z-10 animate-pulse">
                Opportunité Chaude
              </div>
 
              {/* PROFILE INFO */}
-             <div className="flex flex-col items-center text-center mb-10 transform scale-110">
-               <div className="relative mb-5">
-                 <Avatar className="h-44 w-44 border-4 border-[#1e293b] shadow-xl">
+             <div className="flex flex-col items-center text-center mb-8 transform scale-100">
+               <div className="relative mb-4">
+                 <Avatar className="h-36 w-36 border-4 border-[#1e293b] shadow-xl">
                     <AvatarImage src={match.avatar} className="object-cover" />
-                    <AvatarFallback className="text-4xl font-black bg-slate-800 text-slate-500">{match.name[0]}</AvatarFallback>
+                    <AvatarFallback className="text-3xl font-black bg-slate-800 text-slate-500">{match.name[0]}</AvatarFallback>
                  </Avatar>
-                 <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-[#0f172a] text-emerald-400 border border-emerald-500/30 px-4 py-1.5 rounded-full text-sm font-bold whitespace-nowrap flex items-center gap-1 shadow-md">
-                    <CheckCircle2 className="h-4 w-4" /> Vérifié fiable
+                 <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-[#0f172a] text-emerald-400 border border-emerald-500/30 px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap flex items-center gap-1 shadow-md">
+                    <CheckCircle2 className="h-3.5 w-3.5" /> Vérifié fiable
                  </div>
                </div>
                
-               <h3 className="text-4xl md:text-5xl font-black text-white mb-2 mt-4">{match.name}</h3>
-               <div className="text-base md:text-lg font-bold text-slate-400 uppercase tracking-wide mb-3">
+               <h3 className="text-3xl md:text-4xl font-black text-white mb-1.5 mt-3">{match.name}</h3>
+               <div className="text-sm md:text-base font-bold text-slate-400 uppercase tracking-wide mb-2">
                   {match.job} • {match.city}
                </div>
-               <div className="flex gap-1.5">
+               <div className="flex gap-1">
                   {[1,2,3,4,5].map(i => (
-                    <Star key={i} className={cn("h-5 w-5", i <= Math.round(match.score) ? "text-yellow-400 fill-yellow-400" : "text-slate-700")} />
+                    <Star key={i} className={cn("h-4 w-4", i <= Math.round(match.score) ? "text-yellow-400 fill-yellow-400" : "text-slate-700")} />
                   ))}
                </div>
              </div>
 
              {/* WHY THIS MATCH BOX */}
-             <div className="bg-[#0f172a]/50 rounded-2xl p-5 border border-white/5 mb-8 relative">
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#1e293b] px-3 py-1 rounded-full border border-white/10 text-[10px] font-bold text-slate-400 uppercase tracking-widest shadow-sm">
+             <div className="bg-[#0f172a]/50 rounded-xl p-4 border border-white/5 mb-6 relative">
+                <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-[#1e293b] px-2 py-0.5 rounded-full border border-white/10 text-[9px] font-bold text-slate-400 uppercase tracking-widest shadow-sm">
                     Pourquoi ce match ?
                 </div>
-                <p className="text-sm text-slate-300 font-medium leading-relaxed text-center italic mt-2">
+                <p className="text-xs text-slate-300 font-medium leading-relaxed text-center italic mt-1.5">
                   {whyText}
                 </p>
              </div>
 
              {/* CALL BUTTON */}
              {isCallOut ? (
-                <div className="space-y-3 mb-6">
+                <div className="space-y-2 mb-4">
                     <Button 
                         onClick={handleCallClick}
                         className={cn(
-                            "w-full font-bold h-16 rounded-2xl shadow-lg text-lg transition-all border border-white/10",
+                            "w-full font-bold h-14 rounded-xl shadow-lg text-base transition-all border border-white/10",
                             callMade 
                                 ? "bg-emerald-600 hover:bg-emerald-700 text-white"
                                 : "bg-blue-600 hover:bg-blue-500 text-white animate-shimmer bg-[linear-gradient(110deg,#2563eb,45%,#3b82f6,55%,#2563eb)] bg-[length:200%_100%]"
@@ -241,30 +241,30 @@ export function DailyMatchCard({ matches }: DailyMatchCardProps) {
                     >
                        {callMade ? (
                            <div className="flex items-center gap-2">
-                               <CheckCircle2 className="h-6 w-6" /> Appel lancé !
+                               <CheckCircle2 className="h-5 w-5" /> Appel lancé !
                            </div>
                        ) : (
                            <a href={`tel:${match.phone}`}>
-                             <Phone className="mr-2 h-6 w-6" /> Appeler {match.name.split(' ')[0]} ({match.phone})
+                             <Phone className="mr-2 h-5 w-5" /> Appeler {match.name.split(' ')[0]} ({match.phone})
                            </a>
                        )}
                     </Button>
-                    <div className="text-center text-xs font-bold text-blue-400/80 uppercase tracking-wide">
+                    <div className="text-center text-[10px] font-bold text-blue-400/80 uppercase tracking-wide">
                         {callMade ? "Bravo ! Vous avez gagné des points de confiance." : `C'est à vous d'appeler entre ${match.time}`}
                     </div>
                 </div>
              ) : (
-                <div className="space-y-3 mb-6">
-                    <div className="w-full h-14 bg-[#0f172a]/50 border-2 border-dashed border-slate-700 rounded-2xl flex flex-col items-center justify-center gap-0.5 text-slate-400 font-bold">
+                <div className="space-y-2 mb-4">
+                    <div className="w-full h-12 bg-[#0f172a]/50 border-2 border-dashed border-slate-700 rounded-xl flex flex-col items-center justify-center gap-0.5 text-slate-400 font-bold">
                         <div className="flex items-center gap-2">
-                            <div className="h-2 w-2 bg-emerald-500 rounded-full animate-pulse" />
-                            <span>En attente de son appel</span>
+                            <div className="h-1.5 w-1.5 bg-emerald-500 rounded-full animate-pulse" />
+                            <span className="text-sm">En attente de son appel</span>
                         </div>
-                        <span className="text-xs font-medium text-slate-500">Prévu entre {match.time}</span>
+                        <span className="text-[10px] font-medium text-slate-500">Prévu entre {match.time}</span>
                     </div>
                     {/* Secondary Action: Call Anyway Button */}
                     <div className="text-center">
-                        <Button variant="link" className="text-xs text-slate-500 hover:text-white" asChild>
+                        <Button variant="link" className="text-[10px] text-slate-500 hover:text-white h-auto p-0" asChild>
                             <a href={`tel:${match.phone}`}>
                                 En cas d'oubli : Appeler {match.name.split(' ')[0]} ({match.phone})
                             </a>
@@ -274,22 +274,22 @@ export function DailyMatchCard({ matches }: DailyMatchCardProps) {
              )}
 
              {/* STATS FOOTER (DYNAMIC) */}
-             <div className="grid grid-cols-2 gap-4">
-                <div className="bg-[#0f172a]/50 rounded-xl p-3 border border-white/5 shadow-sm text-center">
-                   <div className="text-[10px] text-slate-500 font-bold uppercase mb-1">Objectif Principal</div>
-                   <div className="font-black text-white text-sm leading-tight line-clamp-2">
+             <div className="grid grid-cols-2 gap-3">
+                <div className="bg-[#0f172a]/50 rounded-lg p-2.5 border border-white/5 shadow-sm text-center">
+                   <div className="text-[9px] text-slate-500 font-bold uppercase mb-0.5">Objectif Principal</div>
+                   <div className="font-black text-white text-xs leading-tight line-clamp-1">
                       {goalLabel ? capitalize(goalLabel) : "Développement"}
                    </div>
                 </div>
-                <div className="bg-[#0f172a]/50 rounded-xl p-3 border border-white/5 shadow-sm text-center">
-                   <div className="text-[10px] text-slate-500 font-bold uppercase mb-1">Score de Confiance</div>
-                   <div className="font-black text-emerald-400 text-lg">{match.score.toFixed(1)}/5</div>
+                <div className="bg-[#0f172a]/50 rounded-lg p-2.5 border border-white/5 shadow-sm text-center">
+                   <div className="text-[9px] text-slate-500 font-bold uppercase mb-0.5">Score de Confiance</div>
+                   <div className="font-black text-emerald-400 text-base">{match.score.toFixed(1)}/5</div>
                 </div>
              </div>
 
              {/* SEE PROFILE LINK (IMPROVED) */}
-             <div className="mt-6">
-                <Button variant="secondary" className="w-full h-10 rounded-xl font-bold text-slate-400 hover:text-white bg-white/5 hover:bg-white/10 border border-white/5 hover:border-white/10 transition-all" asChild>
+             <div className="mt-4">
+                <Button variant="secondary" className="w-full h-9 rounded-lg font-bold text-xs text-slate-400 hover:text-white bg-white/5 hover:bg-white/10 border border-white/5 hover:border-white/10 transition-all" asChild>
                     <Link href={`/mon-reseau-local/dashboard/profile/${match.partnerId}`}>
                         Voir le profil complet
                     </Link>
