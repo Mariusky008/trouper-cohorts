@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { 
   Home, Users, Zap, ShieldCheck, User, Settings, 
-  Menu, Bell, LogOut, ChevronRight, BookOpen, Anchor 
+  Menu, Bell, LogOut, ChevronRight, BookOpen, Anchor, Trophy 
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
