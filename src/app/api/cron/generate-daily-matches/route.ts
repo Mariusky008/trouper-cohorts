@@ -58,10 +58,10 @@ async function handleMatching(request: Request) {
     const days = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
     const tomorrowDay = days[tomorrow.getDay()]; // getDay() returns 0 for Sunday
 
-    // Fetch active network settings
+    // Fetch active network settings with frequency
     const { data: allSettings, error: settingsError } = await supabase
         .from('network_settings')
-        .select('user_id, preferred_days, preferred_slots')
+        .select('user_id, preferred_days, preferred_slots, frequency_per_week')
         .eq('status', 'active');
     
     if (!settingsError && allSettings) {
@@ -75,9 +75,42 @@ async function handleMatching(request: Request) {
             '17-19': '17h – 19h'
         };
 
+        // NEW: Fetch match counts for this week for all active users to respect frequency limits
+        // Calculate start of week (Monday) and end of week (Sunday)
+        const now = new Date();
+        const dayOfWeek = now.getDay(); // 0 (Sun) to 6 (Sat)
+        const diffToMon = now.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1); // Adjust when day is Sunday
+        const monday = new Date(now.setDate(diffToMon));
+        monday.setHours(0, 0, 0, 0);
+        const startOfWeekStr = monday.toISOString().split('T')[0];
+        
+        // Get all matches for this week
+        const { data: weeklyMatches } = await supabase
+            .from('network_matches')
+            .select('user1_id, user2_id')
+            .gte('date', startOfWeekStr);
+            
+        // Count matches per user
+        const userMatchCounts: Record<string, number> = {};
+        if (weeklyMatches) {
+            weeklyMatches.forEach((m: any) => {
+                userMatchCounts[m.user1_id] = (userMatchCounts[m.user1_id] || 0) + 1;
+                userMatchCounts[m.user2_id] = (userMatchCounts[m.user2_id] || 0) + 1;
+            });
+        }
+
         for (const setting of allSettings) {
             // If user already declared availability, skip
             if (declaredUserIds.has(setting.user_id)) continue;
+
+            // NEW: Check frequency limit
+            const currentMatches = userMatchCounts[setting.user_id] || 0;
+            const maxFrequency = setting.frequency_per_week || 5; // Default to 5 if not set
+            
+            if (currentMatches >= maxFrequency) {
+                // User has reached their weekly limit, skip matching
+                continue;
+            }
 
             // Check if user prefers this day
             if (setting.preferred_days && setting.preferred_days.includes(tomorrowDay)) {
