@@ -577,16 +577,77 @@ export default function HomePage() {
          </div>
       </section>
 
-      {/* --- 9. FOUNDER STORY (NEW) --- */}
-      <section className="py-20 bg-slate-50 border-y border-slate-200">
-        <div className="container mx-auto px-4 max-w-3xl text-center">
-            <h2 className="text-3xl font-black text-slate-900 mb-8">Pourquoi Popey a été créé</h2>
-            <div className="prose prose-lg mx-auto text-slate-600 leading-relaxed">
-                <p>Pendant des années, nous avons observé la même chose : Des entrepreneurs compétents... <strong>Mais isolés.</strong></p>
-                <p>Certains avaient du talent mais pas de clients. D’autres avaient des clients mais pas de réseau. Beaucoup se sentaient seuls face à leur activité.</p>
-                <p>La réalité est simple : <strong>Le succès ne dépend pas seulement de ce que vous savez faire. Il dépend surtout de qui vous connaissez.</strong></p>
-                <p>Nous avons donc créé un système pour rendre l’entraide : simple, quotidienne, naturelle et mesurable.</p>
-                <p className="font-bold text-slate-900 text-xl mt-6">C’est devenu Popey.</p>
+      {/* --- 9. FOUNDER STORY (REDESIGNED) --- */}
+      <section className="py-24 bg-white border-y border-slate-100 relative overflow-hidden">
+        <div className="container mx-auto px-4">
+            <div className="max-w-4xl mx-auto bg-slate-50 rounded-[3rem] p-8 md:p-12 lg:p-16 border border-slate-200 relative overflow-hidden shadow-xl shadow-slate-100/50">
+                {/* Background Decor */}
+                <div className="absolute top-0 right-0 -mt-20 -mr-20 h-80 w-80 bg-blue-100/40 rounded-full blur-3xl pointer-events-none"></div>
+                <div className="absolute bottom-0 left-0 -mb-20 -ml-20 h-80 w-80 bg-purple-100/40 rounded-full blur-3xl pointer-events-none"></div>
+                
+                <div className="relative z-10">
+                    <div className="flex flex-col items-center text-center mb-10">
+                        <div className="inline-flex items-center justify-center p-4 bg-white rounded-2xl shadow-sm mb-6 border border-slate-100">
+                            <Anchor className="h-8 w-8 text-blue-600" />
+                        </div>
+                        <h2 className="text-3xl md:text-5xl font-black text-slate-900 mb-6">Pourquoi Popey ?</h2>
+                        <div className="h-1 w-20 bg-blue-600 rounded-full"></div>
+                    </div>
+                    
+                    <div className="space-y-10 text-lg text-slate-600 leading-relaxed max-w-3xl mx-auto">
+                        <div className="text-center">
+                            <p className="mb-2">Pendant des années, nous avons observé la même chose :</p>
+                            <p className="text-2xl font-bold text-slate-900">Des entrepreneurs compétents... <span className="text-blue-600">Mais isolés.</span></p>
+                        </div>
+
+                        <div className="grid md:grid-cols-2 gap-4">
+                            <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex gap-4 items-center hover:shadow-md transition-shadow">
+                                <div className="h-10 w-10 bg-red-100 rounded-full flex items-center justify-center shrink-0">
+                                    <span className="text-red-500 font-bold text-xl">×</span>
+                                </div>
+                                <p className="font-medium text-slate-700">Certains avaient du talent mais <strong className="text-slate-900">pas de clients.</strong></p>
+                            </div>
+                            <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex gap-4 items-center hover:shadow-md transition-shadow">
+                                <div className="h-10 w-10 bg-red-100 rounded-full flex items-center justify-center shrink-0">
+                                    <span className="text-red-500 font-bold text-xl">×</span>
+                                </div>
+                                <p className="font-medium text-slate-700">D’autres avaient des clients mais <strong className="text-slate-900">pas de réseau.</strong></p>
+                            </div>
+                        </div>
+
+                        <div className="bg-slate-900 text-white p-8 md:p-10 rounded-3xl shadow-2xl shadow-slate-300 transform md:scale-105 transition-transform duration-300 relative overflow-hidden group">
+                            <div className="absolute inset-0 bg-blue-600/10 group-hover:bg-blue-600/20 transition-colors"></div>
+                            <div className="relative z-10 text-center">
+                                <p className="text-sm font-bold text-blue-300 uppercase tracking-widest mb-3">La Réalité</p>
+                                <p className="text-xl md:text-2xl font-serif italic leading-relaxed">
+                                    "Le succès ne dépend pas seulement de ce que vous savez faire.<br className="hidden md:block"/> Il dépend surtout de <span className="text-blue-400 font-bold not-italic">qui vous connaissez</span>."
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="text-center pt-4">
+                            <p className="font-bold text-slate-900 mb-6">Nous avons créé un système pour rendre l’entraide :</p>
+                            <div className="flex flex-wrap justify-center gap-3">
+                                {[
+                                    { text: "Simple", icon: CheckCircle2 },
+                                    { text: "Quotidienne", icon: Calendar },
+                                    { text: "Naturelle", icon: Heart },
+                                    { text: "Mesurable", icon: TrendingUp }
+                                ].map((item, i) => (
+                                    <Badge key={i} variant="secondary" className="pl-2 pr-4 py-2 text-sm bg-white border border-slate-200 text-slate-700 shadow-sm hover:bg-blue-50 transition-colors gap-2">
+                                        <item.icon className="h-4 w-4 text-blue-600" />
+                                        {item.text}
+                                    </Badge>
+                                ))}
+                            </div>
+                        </div>
+                        
+                        <div className="text-center pt-8">
+                             <p className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-2">Notre Solution</p>
+                             <p className="text-4xl font-black text-slate-900">C’est devenu Popey.</p>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
       </section>
