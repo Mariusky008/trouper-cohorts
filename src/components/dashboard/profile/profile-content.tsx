@@ -38,6 +38,27 @@ const GOAL_OPTIONS = [
 export function ProfileContent({ user, isReadOnly = false }: { user: any; isReadOnly?: boolean }) {
   const { toast } = useToast();
   const [isEditing, setIsEditing] = useState(false);
+  
+  // Auto-open edit modal if query param "edit=true" is present or event triggered
+  useEffect(() => {
+      const checkEditParam = () => {
+          const params = new URLSearchParams(window.location.search);
+          if (params.get("edit") === "true") {
+              setIsEditing(true);
+              // Clean up param
+              const url = new URL(window.location.href);
+              url.searchParams.delete("edit");
+              window.history.replaceState({}, "", url);
+          }
+      };
+
+      checkEditParam();
+
+      const handleCustomEvent = () => setIsEditing(true);
+      window.addEventListener("trigger-profile-edit", handleCustomEvent);
+      return () => window.removeEventListener("trigger-profile-edit", handleCustomEvent);
+  }, []);
+
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
