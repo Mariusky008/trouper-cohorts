@@ -156,7 +156,7 @@ export function DailyMatchCard({ matches }: DailyMatchCardProps) {
             ? GOAL_LABELS[match.current_goals[0]]?.toLowerCase() 
             : "développer son activité";
             
-        const whyText = `"${match.name.split(' ')[0]} cherche activement à ${goalLabel} et votre profil correspond parfaitement pour l'aider."`;
+        const whyText = `"${match.name.split(' ')[0]} cherche activement à ${goalLabel}. Vos profils sont complémentaires : vous allez pouvoir vous aider mutuellement."`;
 
         return (
         <motion.div 
