@@ -5,20 +5,26 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Button } from "@/components/ui/button";
 import { ArrowRight, UserCircle2 } from "lucide-react";
 import { checkProfileCompletion } from "@/actions/onboarding";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 
 export function ProfileCompletionModal() {
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
     const check = async () => {
       try {
         const result = await checkProfileCompletion();
         // If not complete, show modal to redirect
-        if (!result.complete) {
+        // BUT allow access to the profile page itself so they can fix it
+        const isProfilePage = pathname === "/mon-reseau-local/dashboard/profile";
+        
+        if (!result.complete && !isProfilePage) {
           setIsOpen(true);
+        } else {
+          setIsOpen(false);
         }
       } catch (error) {
         console.error("Failed to check profile completion", error);
@@ -28,7 +34,7 @@ export function ProfileCompletionModal() {
     };
 
     check();
-  }, []);
+  }, [pathname]); // Re-run check on navigation
 
   const handleRedirect = () => {
     setIsOpen(false);

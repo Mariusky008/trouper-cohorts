@@ -43,6 +43,43 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     setIsMobileMenuOpen(false);
   }, [pathname]);
 
+  // Strict redirect if user tries to navigate away from profile while incomplete
+  useEffect(() => {
+    const checkAndRedirect = async () => {
+      // Allow profile page
+      if (pathname === "/mon-reseau-local/dashboard/profile") return;
+      
+      // Allow settings page (in case they need to delete account or similar)
+      if (pathname === "/mon-reseau-local/dashboard/settings") return;
+
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+
+      if (profile) {
+        // Same strict logic as in onboarding.ts
+        const isComplete = 
+          !!profile.display_name && 
+          !!profile.trade && 
+          !!profile.city && 
+          !!profile.phone && 
+          !!profile.bio &&
+          (!!profile.linkedin_url || !!profile.instagram_handle || !!profile.facebook_handle || !!profile.website_url);
+
+        if (!isComplete) {
+            router.replace("/mon-reseau-local/dashboard/profile");
+        }
+      }
+    };
+    
+    checkAndRedirect();
+  }, [pathname, router, supabase]);
+
   // Fetch data
   useEffect(() => {
     const fetchData = async () => {
