@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { 
   Home, Users, Zap, ShieldCheck, User, Settings, 
-  Menu, Bell, LogOut, ChevronRight, BookOpen 
+  Menu, Bell, LogOut, ChevronRight, BookOpen, Anchor 
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -172,9 +172,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <aside className="hidden lg:flex flex-col w-72 border-r border-slate-200 bg-white fixed h-full z-20">
         <div className="p-6 flex items-center gap-3">
           <div className="h-10 w-10 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-200">
-            <Users className="h-6 w-6" />
+            <Anchor className="h-6 w-6" />
           </div>
-          <span className="font-black text-xl tracking-tight text-slate-900">Mon Réseau</span>
+          <span className="font-black text-xl tracking-tight text-slate-900">Popey Academy</span>
         </div>
 
         <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
@@ -231,9 +231,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <header className="lg:hidden fixed top-0 w-full bg-white/80 backdrop-blur-md border-b border-slate-200 z-30 h-16 px-4 flex items-center justify-between">
          <div className="flex items-center gap-2">
             <div className="h-8 w-8 bg-blue-600 rounded-lg flex items-center justify-center text-white">
-              <Users className="h-5 w-5" />
+              <Anchor className="h-5 w-5" />
             </div>
-            <span className="font-black text-lg text-slate-900">Mon Réseau</span>
+            <span className="font-black text-lg text-slate-900">Popey Academy</span>
          </div>
          <div className="flex items-center gap-4">
             <Button size="icon" variant="ghost" className="relative">
