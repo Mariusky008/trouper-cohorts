@@ -154,44 +154,44 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
     <div className="space-y-8 animate-in fade-in duration-500">
       
       {/* HERO HEADER */}
-      <div className="bg-white rounded-3xl p-8 border border-slate-200 shadow-sm relative overflow-visible mt-16">
-        <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-r from-slate-900 via-blue-900 to-slate-900 rounded-t-3xl" />
+      <div className="bg-[#1e293b]/50 backdrop-blur-md rounded-[2.5rem] p-8 border border-white/5 shadow-lg shadow-black/20 relative overflow-visible mt-16">
+        <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-r from-blue-900/50 via-purple-900/50 to-blue-900/50 rounded-t-[2.5rem] -z-10" />
         
         <div className="relative -mt-16 flex flex-col md:flex-row items-end gap-6 pb-4">
           <div className="relative group">
-            <Avatar className="h-36 w-36 border-4 border-white shadow-xl rounded-2xl bg-white">
+            <Avatar className="h-36 w-36 border-4 border-[#0a0f1c] shadow-xl rounded-3xl bg-[#0a0f1c]">
               <AvatarImage src={formData.avatar_url} className="object-cover" />
-              <AvatarFallback className="text-4xl font-black text-slate-300 bg-slate-100">
+              <AvatarFallback className="text-4xl font-black text-slate-500 bg-slate-800">
                 {formData.display_name?.[0]?.toUpperCase() || "?"}
               </AvatarFallback>
             </Avatar>
             
             {/* Quick Upload Button on Hover */}
             {!isReadOnly && (
-                <div className="absolute -bottom-2 -right-2 bg-white rounded-full p-2 shadow-md border border-slate-100 cursor-pointer hover:bg-slate-50 transition-colors" onClick={() => setIsEditing(true)}>
-                   <Pencil className="h-4 w-4 text-slate-600" />
+                <div className="absolute -bottom-2 -right-2 bg-blue-600 rounded-xl p-2.5 shadow-lg shadow-blue-900/50 border border-white/10 cursor-pointer hover:bg-blue-500 transition-colors group-hover:scale-110" onClick={() => setIsEditing(true)}>
+                   <Pencil className="h-4 w-4 text-white" />
                 </div>
             )}
           </div>
           
           <div className="flex-1 mb-2">
-             <h1 className="text-4xl font-black text-white drop-shadow-md mb-2">{formData.display_name}</h1>
-             <div className="flex flex-wrap gap-3 text-slate-600 font-medium">
-                <span className="flex items-center gap-1 bg-slate-100 px-2 py-1 rounded-md text-sm border border-slate-200">
-                    <Briefcase className="h-3.5 w-3.5" /> {formData.trade || "Métier non renseigné"}
+             <h1 className="text-4xl font-black text-white drop-shadow-lg mb-3">{formData.display_name}</h1>
+             <div className="flex flex-wrap gap-3 text-slate-300 font-bold">
+                <span className="flex items-center gap-1.5 bg-white/5 px-3 py-1.5 rounded-xl text-sm border border-white/5 hover:bg-white/10 transition-colors">
+                    <Briefcase className="h-3.5 w-3.5 text-blue-400" /> {formData.trade || "Métier non renseigné"}
                 </span>
-                <span className="flex items-center gap-1 bg-slate-100 px-2 py-1 rounded-md text-sm border border-slate-200">
-                    <MapPin className="h-3.5 w-3.5" /> {formData.city || "Ville non renseignée"}
+                <span className="flex items-center gap-1.5 bg-white/5 px-3 py-1.5 rounded-xl text-sm border border-white/5 hover:bg-white/10 transition-colors">
+                    <MapPin className="h-3.5 w-3.5 text-red-400" /> {formData.city || "Ville non renseignée"}
                 </span>
-                <span className="flex items-center gap-1 bg-slate-100 px-2 py-1 rounded-md text-sm border border-slate-200">
-                    <Phone className="h-3.5 w-3.5" /> {formData.phone || "Non renseigné"}
+                <span className="flex items-center gap-1.5 bg-white/5 px-3 py-1.5 rounded-xl text-sm border border-white/5 hover:bg-white/10 transition-colors">
+                    <Phone className="h-3.5 w-3.5 text-emerald-400" /> {formData.phone || "Non renseigné"}
                 </span>
              </div>
           </div>
           
           <div className="flex gap-3 mb-2">
              {!isReadOnly && (
-                 <Button onClick={() => setIsEditing(true)} className="rounded-xl font-bold h-12 px-6 shadow-md bg-white text-slate-900 hover:bg-slate-50 border border-slate-200">
+                 <Button onClick={() => setIsEditing(true)} className="rounded-xl font-bold h-12 px-6 shadow-lg shadow-blue-900/20 bg-blue-600 text-white hover:bg-blue-500 border border-white/10">
                    <Pencil className="mr-2 h-4 w-4" /> Modifier mon profil
                  </Button>
              )}
@@ -199,49 +199,49 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
         </div>
 
         {/* SOCIAL LINKS ROW */}
-        <div className="mt-6 pt-6 border-t border-slate-100">
-            <div className="flex items-center gap-2 mb-3">
-                <span className="text-xs font-bold uppercase text-slate-400 tracking-wider">Mes Réseaux</span>
-                <div className="h-px bg-slate-100 flex-1" />
+        <div className="mt-8 pt-6 border-t border-white/5">
+            <div className="flex items-center gap-3 mb-4">
+                <span className="text-xs font-bold uppercase text-slate-400 tracking-widest">Mes Réseaux</span>
+                <div className="h-px bg-white/5 flex-1" />
             </div>
             
             <div className="flex gap-3 flex-wrap">
                 {formData.linkedin && formData.linkedin !== "https://none" && (
-                    <a href={formData.linkedin} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-xl hover:bg-blue-100 transition-colors font-bold text-sm">
-                        <Linkedin className="h-5 w-5" /> LinkedIn
+                    <a href={formData.linkedin} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-4 py-2 bg-[#0077b5]/10 text-[#0077b5] border border-[#0077b5]/20 rounded-xl hover:bg-[#0077b5]/20 transition-colors font-bold text-sm">
+                        <Linkedin className="h-4 w-4" /> LinkedIn
                     </a>
                 )}
                 {formData.instagram && (
-                    <a href={`https://instagram.com/${formData.instagram.replace('@', '')}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-4 py-2 bg-pink-50 text-pink-600 rounded-xl hover:bg-pink-100 transition-colors font-bold text-sm">
-                        <Instagram className="h-5 w-5" /> Instagram
+                    <a href={`https://instagram.com/${formData.instagram.replace('@', '')}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-4 py-2 bg-[#E1306C]/10 text-[#E1306C] border border-[#E1306C]/20 rounded-xl hover:bg-[#E1306C]/20 transition-colors font-bold text-sm">
+                        <Instagram className="h-4 w-4" /> Instagram
                     </a>
                 )}
                 {formData.facebook && (
-                    <a href={formData.facebook} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-100 transition-colors font-bold text-sm">
-                        <Facebook className="h-5 w-5" /> Facebook
+                    <a href={formData.facebook} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-4 py-2 bg-[#1877F2]/10 text-[#1877F2] border border-[#1877F2]/20 rounded-xl hover:bg-[#1877F2]/20 transition-colors font-bold text-sm">
+                        <Facebook className="h-4 w-4" /> Facebook
                     </a>
                 )}
                 {formData.website && (
-                    <a href={formData.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-4 py-2 bg-slate-50 text-slate-600 rounded-xl hover:bg-slate-100 transition-colors font-bold text-sm">
-                        <Globe className="h-5 w-5" /> Site Web
+                    <a href={formData.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-4 py-2 bg-slate-500/10 text-slate-300 border border-slate-500/20 rounded-xl hover:bg-slate-500/20 transition-colors font-bold text-sm">
+                        <Globe className="h-4 w-4" /> Site Web
                     </a>
                 )}
                 
                 {/* Case: No socials declared explicitly */}
                 {formData.linkedin === "https://none" && (
-                    <div className="flex items-center gap-2 text-slate-400 bg-slate-50 px-4 py-2 rounded-xl border border-slate-200">
-                        <span className="text-sm font-medium">Aucun réseau social public.</span>
+                    <div className="flex items-center gap-2 text-slate-500 bg-white/5 px-4 py-2 rounded-xl border border-white/5">
+                        <span className="text-sm font-bold">Aucun réseau social public.</span>
                     </div>
                 )}
 
                 {/* Case: Empty and NOT opted out */}
                 {!formData.linkedin && !formData.instagram && !formData.facebook && !formData.website && (
-                    <div className="flex items-center gap-2 text-slate-400 bg-slate-50 px-4 py-2 rounded-xl border border-dashed border-slate-200 w-full">
-                        <span className="text-sm italic">Vous n'avez pas encore ajouté de réseaux sociaux.</span>
+                    <div className="flex items-center gap-2 text-slate-400 bg-white/5 px-4 py-2 rounded-xl border border-dashed border-white/10 w-full hover:bg-white/10 transition-colors cursor-pointer" onClick={() => setIsEditing(true)}>
+                        <span className="text-sm italic font-medium">Vous n'avez pas encore ajouté de réseaux sociaux.</span>
                         {!isReadOnly && (
-                            <Button variant="link" onClick={() => setIsEditing(true)} className="h-auto p-0 text-blue-600 font-bold">
+                            <span className="text-blue-400 font-bold text-sm underline decoration-blue-400/30 underline-offset-4 ml-2">
                                 Ajouter maintenant
-                            </Button>
+                            </span>
                         )}
                     </div>
                 )}
@@ -251,27 +251,27 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
 
       <div className="grid md:grid-cols-[2fr_1fr] gap-8">
            <div className="space-y-6">
-             <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm min-h-[300px]">
-               <h3 className="font-bold text-slate-900 text-xl mb-6 flex items-center gap-2">
-                    <span className="bg-yellow-100 text-yellow-700 p-1.5 rounded-lg text-lg">👋</span> À propos
+             <div className="bg-[#1e293b]/50 backdrop-blur-md p-8 rounded-[2.5rem] border border-white/5 shadow-sm min-h-[300px]">
+               <h3 className="font-bold text-white text-xl mb-6 flex items-center gap-3">
+                    <span className="bg-yellow-500/10 text-yellow-400 border border-yellow-500/20 p-2 rounded-xl text-lg shadow-sm">👋</span> À propos
                </h3>
-               <div className="prose prose-slate max-w-none mb-8">
-                 <p className="text-slate-600 leading-relaxed whitespace-pre-wrap text-lg">
+               <div className="prose prose-invert max-w-none mb-8">
+                 <p className="text-slate-300 leading-relaxed whitespace-pre-wrap text-lg font-medium">
                     {formData.bio || "Aucune description pour le moment. Dites-en plus sur vous !"}
                  </p>
                </div>
 
                {/* DISPLAY GOALS IF ANY */}
                {formData.current_goals && formData.current_goals.length > 0 && (
-                   <div className="pt-6 border-t border-slate-100">
-                       <h4 className="font-bold text-slate-900 text-sm uppercase tracking-wide mb-4 flex items-center gap-2">
-                           <CheckSquare className="h-4 w-4 text-blue-500" /> Ce que je recherche
+                   <div className="pt-6 border-t border-white/5">
+                       <h4 className="font-bold text-slate-400 text-xs uppercase tracking-widest mb-4 flex items-center gap-2">
+                           <CheckSquare className="h-4 w-4 text-blue-400" /> Ce que je recherche
                        </h4>
                        <div className="flex flex-wrap gap-2">
                            {formData.current_goals.map((goalId: string) => {
                                const goal = GOAL_OPTIONS.find(g => g.id === goalId);
                                return goal ? (
-                                   <Badge key={goalId} variant="secondary" className="bg-blue-50 text-blue-700 border-blue-100 px-3 py-1 text-sm">
+                                   <Badge key={goalId} variant="secondary" className="bg-blue-500/10 text-blue-300 border border-blue-500/20 px-3 py-1.5 text-sm font-bold hover:bg-blue-500/20">
                                        {goal.label}
                                    </Badge>
                                ) : null;
@@ -282,35 +282,35 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
              </div>
            </div>
 
-           <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm space-y-6 h-fit">
+           <div className="bg-[#1e293b]/50 backdrop-blur-md rounded-[2.5rem] p-6 border border-white/5 shadow-sm space-y-6 h-fit">
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <span className="font-bold text-slate-900 flex items-center gap-2">
-                    <ShieldCheck className="h-5 w-5 text-orange-500" /> Score de Confiance
+                  <span className="font-bold text-white flex items-center gap-2">
+                    <ShieldCheck className="h-5 w-5 text-orange-400" /> Score de Confiance
                   </span>
-                  <span className="font-black text-3xl text-slate-900">{user.score}/5</span>
+                  <span className="font-black text-3xl text-white">{user.score}/5</span>
                 </div>
-                <Progress value={(user.score / 5) * 100} className="h-3 bg-slate-100" indicatorClassName="bg-gradient-to-r from-orange-400 to-orange-600" />
+                <Progress value={(user.score / 5) * 100} className="h-3 bg-white/5" indicatorClassName="bg-gradient-to-r from-orange-400 to-red-500" />
               </div>
               
-              <div className="space-y-4 pt-4 border-t border-slate-100">
+              <div className="space-y-4 pt-4 border-t border-white/5">
                  <div className="flex items-center justify-between text-sm">
-                   <span className="text-slate-500 font-medium">Opportunités générées</span>
-                   <span className="font-bold text-slate-900 bg-slate-50 px-3 py-1 rounded-lg border border-slate-100">{user.stats?.opportunities || 0}</span>
+                   <span className="text-slate-400 font-bold">Opportunités générées</span>
+                   <span className="font-bold text-white bg-white/5 px-3 py-1 rounded-lg border border-white/5">{user.stats?.opportunities || 0}</span>
                  </div>
                  <div className="flex items-center justify-between text-sm">
-                   <span className="text-slate-500 font-medium">Taux de réciprocité</span>
-                   <span className="font-bold text-green-600 bg-green-50 px-3 py-1 rounded-lg border border-green-100">{user.stats?.reciprocity || "100%"}</span>
+                   <span className="text-slate-400 font-bold">Taux de réciprocité</span>
+                   <span className="font-bold text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-lg border border-emerald-500/20">{user.stats?.reciprocity || "100%"}</span>
                  </div>
                  <div className="flex items-center justify-between text-sm">
-                   <span className="text-slate-500 font-medium">Membre depuis</span>
-                   <span className="font-bold text-slate-900">{user.stats?.seniority || "Récemment"}</span>
+                   <span className="text-slate-400 font-bold">Membre depuis</span>
+                   <span className="font-bold text-white">{user.stats?.seniority || "Récemment"}</span>
                  </div>
               </div>
 
               <div className="flex gap-2 flex-wrap pt-2">
-                <Badge className="bg-blue-50 text-blue-700 hover:bg-blue-100 border-none px-3 py-1.5 text-xs uppercase tracking-wide">
-                  <Award className="h-3 w-3 mr-1" /> Membre Vérifié
+                <Badge className="bg-blue-500/10 text-blue-300 hover:bg-blue-500/20 border border-blue-500/20 px-3 py-1.5 text-xs font-bold uppercase tracking-wide w-full justify-center">
+                  <Award className="h-3 w-3 mr-1.5" /> Membre Vérifié
                 </Badge>
               </div>
            </div>
