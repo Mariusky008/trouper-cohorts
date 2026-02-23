@@ -294,9 +294,9 @@ export function DailyMatchCard({ matches }: DailyMatchCardProps) {
                         >
                             <div className="flex flex-col items-center leading-none gap-1">
                                 <span className="flex items-center gap-2">
-                                    <Trophy className="h-5 w-5 text-yellow-300" /> DÉFI ACCEPTÉ
+                                    <Trophy className="h-5 w-5 text-yellow-300" /> CLIQUE POUR TON DÉFI
                                 </span>
-                                <span className="text-[10px] text-blue-200 font-bold uppercase tracking-widest">+20 PTS DE CONFIANCE</span>
+                                <span className="text-[10px] text-blue-200 font-bold uppercase tracking-widest">(+20 PTS DE CONFIANCE)</span>
                             </div>
                         </Button>
                     ) : (
