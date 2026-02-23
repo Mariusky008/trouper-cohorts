@@ -213,7 +213,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
          {/* RIGHT: ACTIONS & PROFILE */}
          <div className="flex items-center gap-4">
             {/* Desktop Profile */}
-            <div className="hidden lg:flex items-center gap-3 pl-4 border-l border-white/5">
+            <div className="hidden lg:flex items-center gap-4 pl-4 border-l border-white/5">
+                {/* POINTS BADGE */}
+                <div className="bg-[#1e293b] border border-white/10 px-3 py-1.5 rounded-lg flex items-center gap-2 shadow-sm">
+                    <Trophy className="h-4 w-4 text-yellow-400" />
+                    <div className="flex flex-col items-end leading-none">
+                        <span className="text-[9px] font-bold text-slate-500 uppercase">Points</span>
+                        <span className="text-sm font-black text-white">1,240</span>
+                    </div>
+                </div>
+
                 <div className="text-right hidden xl:block">
                     <div className="text-xs font-bold text-white">{displayName}</div>
                     <div className="text-[10px] text-slate-500 flex items-center justify-end gap-1">
@@ -231,6 +240,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
             {/* Mobile Actions */}
             <div className="lg:hidden flex items-center gap-2">
+                {/* Mobile Points Badge */}
+                <div className="bg-[#1e293b] border border-white/10 px-2 py-1 rounded-lg flex items-center gap-1.5 shadow-sm mr-1">
+                    <Trophy className="h-3.5 w-3.5 text-yellow-400" />
+                    <span className="text-xs font-black text-white">1,240</span>
+                </div>
+                
                 <Button size="icon" variant="ghost" className="relative hover:bg-white/5">
                   <Bell className="h-5 w-5 text-slate-400" />
                   <span className="absolute top-2 right-2 h-2 w-2 bg-red-500 rounded-full border border-[#0a0f1c]"></span>
