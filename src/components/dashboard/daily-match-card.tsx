@@ -186,8 +186,10 @@ export function DailyMatchCard({ matches }: DailyMatchCardProps) {
                         <Zap className="h-10 w-10 text-blue-400" />
                     </div>
                     <h3 className="text-2xl font-black text-white uppercase italic mb-2">Mission Secrète</h3>
-                    <p className="text-slate-400 font-medium mb-8 max-w-xs">
-                        Quelqu'un a besoin de votre expertise aujourd'hui.
+                    <p className="text-slate-400 font-medium mb-8 max-w-xs leading-relaxed">
+                        Nouveau client ? Partage réseau ? Conseil précieux ?
+                        <br />
+                        <span className="text-white font-bold">Découvrez ce que vous allez vous apporter mutuellement !</span>
                     </p>
                     <div className="flex gap-3 mb-8">
                         <Badge variant="outline" className="border-white/10 text-slate-400 bg-white/5 px-3 py-1">
