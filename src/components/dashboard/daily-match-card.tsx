@@ -75,31 +75,29 @@ export function DailyMatchCard({ matches }: DailyMatchCardProps) {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: index * 0.1 }}
-          className="max-w-md mx-auto w-full"
+          className="max-w-md mx-auto w-full bg-white rounded-[2rem] p-6 md:p-8 shadow-xl shadow-slate-200/50 border border-slate-100 relative overflow-visible group hover:scale-[1.01] transition-transform duration-300"
         >
-          {/* DATE HEADER */}
-          <div className="flex justify-between items-end mb-6 px-2">
+          {/* DATE HEADER (Now Inside) */}
+          <div className="flex justify-between items-end mb-8 pb-6 border-b border-slate-50">
              <div>
                <div className="text-4xl font-black text-slate-900 leading-none mb-1">
                  {capitalize(dayName)} {dayNumber}
                </div>
                <div className="text-slate-500 font-bold text-lg capitalize">{monthYear}</div>
              </div>
-             <div className="bg-blue-100 text-blue-600 p-3 rounded-2xl shadow-sm">
+             {/* Decorative Calendar Icon */}
+             <div className="bg-blue-50 text-blue-500 p-3 rounded-2xl">
                <Calendar className="h-6 w-6" />
              </div>
            </div>
 
-          {/* MAIN CARD */}
-          <div className="bg-white rounded-[2rem] p-6 md:p-8 shadow-xl shadow-slate-200/50 border border-slate-100 relative overflow-visible group hover:scale-[1.01] transition-transform duration-300">
-             
              {/* ORANGE BADGE */}
              <div className="absolute -top-4 right-8 bg-orange-500 text-white text-[10px] font-bold px-4 py-1.5 rounded-full uppercase tracking-widest shadow-lg shadow-orange-200 z-10">
                Opportunité Chaude
              </div>
 
              {/* PROFILE INFO */}
-             <div className="flex flex-col items-center text-center mb-8 pt-2">
+             <div className="flex flex-col items-center text-center mb-8">
                <div className="relative mb-4">
                  <Avatar className="h-24 w-24 border-4 border-slate-50 shadow-md">
                     <AvatarImage src={match.avatar} className="object-cover" />
@@ -145,26 +143,29 @@ export function DailyMatchCard({ matches }: DailyMatchCardProps) {
                 </div>
              )}
 
-             {/* STATS FOOTER */}
+             {/* STATS FOOTER (DYNAMIC) */}
              <div className="grid grid-cols-2 gap-4">
                 <div className="bg-white rounded-xl p-3 border border-slate-100 shadow-sm text-center">
-                   <div className="text-[10px] text-slate-400 font-bold uppercase mb-1">Potentiel</div>
-                   <div className="font-black text-slate-900 text-lg">~1500€</div>
+                   <div className="text-[10px] text-slate-400 font-bold uppercase mb-1">Objectif Principal</div>
+                   <div className="font-black text-slate-900 text-sm leading-tight line-clamp-2">
+                      {goalLabel ? capitalize(goalLabel) : "Développement"}
+                   </div>
                 </div>
                 <div className="bg-white rounded-xl p-3 border border-slate-100 shadow-sm text-center">
-                   <div className="text-[10px] text-slate-400 font-bold uppercase mb-1">Réciprocité</div>
-                   <div className="font-black text-green-600 text-lg">Élevée</div>
+                   <div className="text-[10px] text-slate-400 font-bold uppercase mb-1">Score de Confiance</div>
+                   <div className="font-black text-green-600 text-lg">{match.score.toFixed(1)}/5</div>
                 </div>
              </div>
 
-             {/* SEE PROFILE LINK */}
-             <div className="text-center mt-6">
-                <Link href={`/mon-reseau-local/dashboard/profile/${match.partnerId}`} className="text-xs font-bold text-slate-400 hover:text-blue-600 hover:underline uppercase tracking-widest transition-colors">
-                    Voir le profil complet
-                </Link>
+             {/* SEE PROFILE LINK (IMPROVED) */}
+             <div className="mt-6">
+                <Button variant="secondary" className="w-full h-10 rounded-xl font-bold text-slate-500 hover:text-blue-600 bg-slate-50 hover:bg-blue-50 border border-slate-100 hover:border-blue-100 transition-all" asChild>
+                    <Link href={`/mon-reseau-local/dashboard/profile/${match.partnerId}`}>
+                        Voir le profil complet
+                    </Link>
+                </Button>
              </div>
 
-          </div>
         </motion.div>
         );
       })}
