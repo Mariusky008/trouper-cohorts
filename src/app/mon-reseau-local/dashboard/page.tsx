@@ -41,23 +41,8 @@ export default async function DashboardHome() {
       </div>
 
       {/* 2. FOCUS PRINCIPAL - MISSION DU JOUR */}
-      <div className="relative z-20 transform transition-all duration-500 hover:scale-[1.01]">
-         <div className="absolute -inset-1 bg-gradient-to-r from-blue-100 to-purple-100 rounded-[2.5rem] blur-xl opacity-50 -z-10 animate-pulse"></div>
-         <div className="bg-white rounded-[2rem] border border-slate-200 shadow-2xl shadow-slate-200/50 p-1 md:p-2">
-            <div className="bg-slate-50/50 rounded-[1.8rem] border border-slate-100/50 p-6 md:p-8">
-               <div className="flex items-center gap-3 mb-6">
-                  <div className="h-10 w-10 bg-yellow-100 rounded-xl flex items-center justify-center text-yellow-600 shadow-sm">
-                    <Sparkles className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <h2 className="text-2xl font-black text-slate-900 leading-none">Votre Mission du Jour</h2>
-                    <p className="text-slate-500 text-sm font-medium mt-1">L'action qui compte vraiment.</p>
-                  </div>
-               </div>
-               
-               <DailyMatchCard matches={matches} />
-            </div>
-         </div>
+      <div className="relative z-20">
+         <DailyMatchCard matches={matches} />
       </div>
 
       {/* 3. SECTION SECONDAIRE - PRÉPARATION & IMPACT */}
