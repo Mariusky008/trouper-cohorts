@@ -151,8 +151,8 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
       
       setIsEditing(false);
       toast({ title: "Profil mis à jour avec succès !" });
-      // Reload page to reflect changes cleanly or just update state (state is already updated)
-      window.location.reload(); 
+      // Redirect to dashboard on successful update
+      window.location.href = "/mon-reseau-local/dashboard";
     } catch (e: any) {
       toast({ title: "Erreur", description: e.message || "Impossible de mettre à jour le profil.", variant: "destructive" });
     } finally {

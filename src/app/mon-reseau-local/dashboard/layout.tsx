@@ -72,6 +72,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           !!profile.city && 
           !!profile.phone && 
           !!profile.bio &&
+          !!profile.avatar_url && // Strict check for avatar now
           (!!profile.linkedin_url || !!profile.instagram_handle || !!profile.facebook_handle || !!profile.website_url);
 
         // Only redirect if incomplete and trying to access other pages
