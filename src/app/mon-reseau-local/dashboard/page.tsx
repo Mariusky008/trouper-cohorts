@@ -5,10 +5,10 @@ import { getPotentialOpportunitiesCount } from "@/lib/actions/network-opportunit
 import { DailyMatchCard } from "@/components/dashboard/daily-match-card";
 import { AvailabilitySelector } from "@/components/dashboard/availability-selector";
 import { TrustScoreCard } from "@/components/dashboard/trust-score-card";
-import { FrequencyControl } from "@/components/dashboard/frequency-control";
-import { Sparkles, Users, ArrowRight } from "lucide-react";
+import { Sparkles, Users, Calendar, Target, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import { Badge } from "@/components/ui/badge";
 
 export const dynamic = 'force-dynamic';
 
@@ -28,61 +28,63 @@ export default async function DashboardHome() {
   }
 
   return (
-    <div className="space-y-10 pb-24 relative">
+    <div className="space-y-12 pb-24 relative max-w-5xl mx-auto">
       
-      {/* 1. HEADER WITH BACKGROUND ACCENT */}
-      <div className="relative z-10">
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
-          <div className="space-y-2">
-            <h1 className="text-4xl font-black text-slate-900 tracking-tight leading-tight">
-              Bonjour, <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">Champion !</span> 👋
-            </h1>
-            <p className="text-slate-500 font-medium text-lg max-w-md">
-              Prêt à débloquer de nouvelles opportunités aujourd'hui ?
-            </p>
-          </div>
-          
-          <div className="flex items-center gap-3 bg-white/80 backdrop-blur-sm px-5 py-3 rounded-2xl border border-slate-200 shadow-sm transition-all hover:shadow-md hover:border-blue-200 group cursor-default">
-            <div className="relative">
-              <div className="h-3 w-3 bg-green-500 rounded-full animate-ping absolute opacity-75" />
-              <div className="h-3 w-3 bg-green-500 rounded-full relative" />
-            </div>
-            <div className="flex flex-col">
-              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider group-hover:text-blue-500 transition-colors">Réseau en direct</span>
-              <span className="text-sm font-black text-slate-800">342 membres actifs</span>
-            </div>
-          </div>
-        </div>
-
-        {/* 2. HERO SECTION - MATCH & AVAILABILITY */}
-        <div className="grid xl:grid-cols-[1.4fr_1fr] gap-8 items-start">
-          <div className="space-y-6">
-             <div className="flex items-center justify-between">
-                <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
-                  <Sparkles className="h-5 w-5 text-yellow-500" /> Vos Missions
-                </h2>
-             </div>
-             <DailyMatchCard matches={matches} />
-          </div>
-
-          <div className="space-y-6">
-             <div className="flex items-center justify-between">
-                <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
-                  <Users className="h-5 w-5 text-blue-500" /> Préparer Demain
-                </h2>
-             </div>
-             <AvailabilitySelector settings={settings} potentialCount={potentialCount} />
-          </div>
-        </div>
+      {/* 1. HEADER SIMPLIFIÉ */}
+      <div className="text-center pt-8 pb-4 space-y-3">
+        <h1 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tight leading-tight">
+          Bonjour, <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">Champion !</span> 👋
+        </h1>
+        <p className="text-slate-500 font-medium text-lg max-w-lg mx-auto">
+          Prêt à débloquer de nouvelles opportunités aujourd'hui ?
+        </p>
       </div>
 
-      {/* 3. METRICS GRID */}
-      <div id="settings" className="grid md:grid-cols-2 gap-8 pt-4">
-        <div className="space-y-4">
-           <h2 className="text-xl font-bold text-slate-800">Votre Impact</h2>
-           <TrustScoreCard scoreData={trustScore} />
-        </div>
-        {/* FrequencyControl removed as it is now merged into AvailabilitySelector */}
+      {/* 2. FOCUS PRINCIPAL - MISSION DU JOUR */}
+      <div className="relative z-20 transform transition-all duration-500 hover:scale-[1.01]">
+         <div className="absolute -inset-1 bg-gradient-to-r from-blue-100 to-purple-100 rounded-[2.5rem] blur-xl opacity-50 -z-10 animate-pulse"></div>
+         <div className="bg-white rounded-[2rem] border border-slate-200 shadow-2xl shadow-slate-200/50 p-1 md:p-2">
+            <div className="bg-slate-50/50 rounded-[1.8rem] border border-slate-100/50 p-6 md:p-8">
+               <div className="flex items-center gap-3 mb-6">
+                  <div className="h-10 w-10 bg-yellow-100 rounded-xl flex items-center justify-center text-yellow-600 shadow-sm">
+                    <Sparkles className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-black text-slate-900 leading-none">Votre Mission du Jour</h2>
+                    <p className="text-slate-500 text-sm font-medium mt-1">L'action qui compte vraiment.</p>
+                  </div>
+               </div>
+               
+               <DailyMatchCard matches={matches} />
+            </div>
+         </div>
+      </div>
+
+      {/* 3. SECTION SECONDAIRE - PRÉPARATION & IMPACT */}
+      <div className="grid lg:grid-cols-2 gap-8 items-start">
+         
+         {/* Colonne Gauche : Préparation */}
+         <div className="space-y-4">
+             <div className="flex items-center gap-3 px-2">
+                <div className="h-8 w-8 bg-blue-100 rounded-lg flex items-center justify-center text-blue-600">
+                   <Calendar className="h-4 w-4" />
+                </div>
+                <h3 className="font-bold text-slate-900 text-lg">Préparez Demain</h3>
+             </div>
+             <AvailabilitySelector settings={settings} potentialCount={potentialCount} />
+         </div>
+
+         {/* Colonne Droite : Impact */}
+         <div className="space-y-4">
+             <div className="flex items-center gap-3 px-2">
+                <div className="h-8 w-8 bg-green-100 rounded-lg flex items-center justify-center text-green-600">
+                   <ShieldCheck className="h-4 w-4" />
+                </div>
+                <h3 className="font-bold text-slate-900 text-lg">Votre Réputation</h3>
+             </div>
+             <TrustScoreCard scoreData={trustScore} />
+         </div>
+
       </div>
 
     </div>
