@@ -206,7 +206,7 @@ export function DailyMatchCard({ matches }: DailyMatchCardProps) {
                </div>
                
                <h3 className="text-3xl md:text-4xl font-black text-white mb-1.5 mt-3">{match.name}</h3>
-               <div className="text-sm md:text-base font-bold text-slate-400 uppercase tracking-wide mb-2">
+               <div className="flex items-center justify-center gap-2 text-sm md:text-base font-bold text-slate-400 uppercase tracking-wide mb-2">
                   {match.job} • {match.city}
                </div>
                <div className="flex gap-1">
