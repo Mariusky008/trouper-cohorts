@@ -131,15 +131,23 @@ export function DailyMatchCard({ matches }: DailyMatchCardProps) {
 
              {/* CALL BUTTON */}
              {isCallOut ? (
-                <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold h-14 rounded-2xl shadow-lg shadow-blue-200 text-base mb-6 animate-shimmer bg-[linear-gradient(110deg,#2563eb,45%,#3b82f6,55%,#2563eb)] bg-[length:200%_100%] transition-colors" asChild>
-                   <a href={`tel:${match.phone}`}>
-                     <Phone className="mr-2 h-5 w-5" /> Appeler entre {match.time}
-                   </a>
-                </Button>
+                <div className="space-y-3 mb-6">
+                    <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold h-14 rounded-2xl shadow-lg shadow-blue-200 text-base animate-shimmer bg-[linear-gradient(110deg,#2563eb,45%,#3b82f6,55%,#2563eb)] bg-[length:200%_100%] transition-colors" asChild>
+                       <a href={`tel:${match.phone}`}>
+                         <Phone className="mr-2 h-5 w-5" /> Appeler {match.name.split(' ')[0]} ({match.phone})
+                       </a>
+                    </Button>
+                    <div className="text-center text-xs font-bold text-blue-600/80 uppercase tracking-wide">
+                        C'est à vous d'appeler entre {match.time}
+                    </div>
+                </div>
              ) : (
-                <div className="w-full h-14 bg-slate-50 border-2 border-slate-100 rounded-2xl flex items-center justify-center gap-2 text-slate-500 font-bold mb-6">
-                    <div className="h-2 w-2 bg-green-500 rounded-full animate-pulse" />
-                    En attente de son appel ({match.time})
+                <div className="w-full h-14 bg-slate-50 border-2 border-slate-100 rounded-2xl flex flex-col items-center justify-center gap-0.5 text-slate-500 font-bold mb-6">
+                    <div className="flex items-center gap-2">
+                        <div className="h-2 w-2 bg-green-500 rounded-full animate-pulse" />
+                        <span>En attente de son appel</span>
+                    </div>
+                    <span className="text-xs font-medium text-slate-400">Prévu entre {match.time}</span>
                 </div>
              )}
 
