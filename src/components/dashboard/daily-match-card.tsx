@@ -39,6 +39,7 @@ export function DailyMatchCard({ matches }: DailyMatchCardProps) {
 
   const [callMade, setCallMade] = useState(false);
   const [timeLeft, setTimeLeft] = useState("");
+  const [revealed, setRevealed] = useState(false); // State for the "Loot Box" reveal
 
   // Countdown Logic (Mocked based on slot)
   useEffect(() => {
@@ -65,6 +66,16 @@ export function DailyMatchCard({ matches }: DailyMatchCardProps) {
      return () => clearInterval(interval);
   }, [matches]);
 
+  const handleReveal = () => {
+      setRevealed(true);
+      // Small confetti burst for reveal
+      confetti({
+          particleCount: 100,
+          spread: 70,
+          origin: { y: 0.6 }
+      });
+  };
+
   const handleCallClick = () => {
       if (callMade) return;
       
@@ -90,7 +101,7 @@ export function DailyMatchCard({ matches }: DailyMatchCardProps) {
       }, 250);
 
       // 2. Reward Toast
-      toast.success("Appel lancé ! +10 pts de confiance ⭐️", {
+      toast.success("Défi accepté ! +20 pts de confiance ⭐️", {
           description: "N'oubliez pas de noter l'échange après l'appel.",
           duration: 5000,
       });
@@ -159,12 +170,43 @@ export function DailyMatchCard({ matches }: DailyMatchCardProps) {
         const whyText = `"${match.name.split(' ')[0]} cherche activement à ${goalLabel}. Vos profils sont complémentaires : vous allez pouvoir vous aider mutuellement."`;
 
         return (
+        <div className="relative max-w-md mx-auto w-full">
+            {/* LOOT BOX / MYSTERY CARD OVERLAY */}
+            {!revealed && (
+                <motion.div 
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 1.1, filter: "blur(10px)" }}
+                    className="absolute inset-0 z-20 bg-[#0f172a] rounded-[2rem] border-2 border-dashed border-white/20 flex flex-col items-center justify-center p-8 text-center cursor-pointer hover:border-blue-500/50 transition-colors shadow-2xl"
+                    onClick={handleReveal}
+                >
+                    <div className="h-20 w-20 bg-blue-500/10 rounded-full flex items-center justify-center mb-6 animate-pulse">
+                        <Zap className="h-10 w-10 text-blue-400" />
+                    </div>
+                    <h3 className="text-2xl font-black text-white uppercase italic mb-2">Mission Secrète</h3>
+                    <p className="text-slate-400 font-medium mb-8 max-w-xs">
+                        Quelqu'un a besoin de votre expertise aujourd'hui.
+                    </p>
+                    <div className="flex gap-3 mb-8">
+                        <Badge variant="outline" className="border-white/10 text-slate-400 bg-white/5 px-3 py-1">
+                            Secteur : {match.job.split(' ')[0]}...
+                        </Badge>
+                        <Badge variant="outline" className="border-red-500/20 text-red-400 bg-red-500/10 px-3 py-1 animate-pulse">
+                            Priorité : Haute
+                        </Badge>
+                    </div>
+                    <Button className="bg-white text-slate-900 hover:bg-slate-200 font-black px-8 py-6 rounded-xl text-lg shadow-lg shadow-white/10 w-full animate-bounce-subtle">
+                        DÉCOUVRIR LE MATCH
+                    </Button>
+                </motion.div>
+            )}
+
         <motion.div 
           key={match.id}
           initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: index * 0.1 }}
-          className="max-w-md mx-auto w-full bg-[#1e293b]/80 backdrop-blur-xl rounded-[2rem] p-6 md:p-8 shadow-2xl shadow-black/40 border border-white/10 relative overflow-visible group hover:scale-[1.01] transition-transform duration-300"
+          animate={{ opacity: revealed ? 1 : 0, y: 0, filter: revealed ? "blur(0px)" : "blur(20px)" }}
+          transition={{ duration: 0.5 }}
+          className="bg-[#1e293b]/80 backdrop-blur-xl rounded-[2rem] p-6 md:p-8 shadow-2xl shadow-black/40 border border-white/10 relative overflow-visible group hover:scale-[1.01] transition-transform duration-300"
         >
           {/* DATE HEADER (Now Inside) */}
           <div className="flex justify-between items-end mb-6 pb-4 border-b border-white/5">
@@ -297,6 +339,7 @@ export function DailyMatchCard({ matches }: DailyMatchCardProps) {
              </div>
 
         </motion.div>
+        </div>
         );
       })}
     </div>
