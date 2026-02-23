@@ -1,12 +1,15 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Clock, Star, MapPin, Phone, CheckCircle2, MessageSquare, ArrowRight, Calendar, User, Briefcase } from "lucide-react";
+import { Clock, Star, MapPin, Phone, CheckCircle2, MessageSquare, ArrowRight, Calendar, User, Briefcase, Zap, Trophy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { useState, useEffect } from "react";
+import confetti from "canvas-confetti";
+import { toast } from "sonner";
 
 interface DailyMatchCardProps {
   matches: any[];
@@ -33,6 +36,65 @@ export function DailyMatchCard({ matches }: DailyMatchCardProps) {
   const monthYear = new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'numeric' }).format(now);
   
   const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+
+  const [callMade, setCallMade] = useState(false);
+  const [timeLeft, setTimeLeft] = useState("");
+
+  // Countdown Logic (Mocked based on slot)
+  useEffect(() => {
+     if (!matches || matches.length === 0) return;
+     
+     const calculateTimeLeft = () => {
+         const matchTime = matches[0]?.time || "09h – 11h";
+         const startHour = parseInt(matchTime.split('h')[0]);
+         const now = new Date();
+         const currentHour = now.getHours();
+         
+         if (currentHour < startHour) {
+             const diff = startHour - currentHour;
+             setTimeLeft(`Ouvre dans ${diff}h`);
+         } else if (currentHour >= startHour && currentHour < startHour + 2) {
+             setTimeLeft("C'est l'heure ! 🔥");
+         } else {
+             setTimeLeft("Créneau passé");
+         }
+     };
+     
+     calculateTimeLeft();
+     const interval = setInterval(calculateTimeLeft, 60000);
+     return () => clearInterval(interval);
+  }, [matches]);
+
+  const handleCallClick = () => {
+      if (callMade) return;
+      
+      setCallMade(true);
+      
+      // 1. Confetti Explosion
+      const duration = 3 * 1000;
+      const animationEnd = Date.now() + duration;
+      const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
+
+      const randomInRange = (min: number, max: number) => Math.random() * (max - min) + min;
+
+      const interval: any = setInterval(function() {
+        const timeLeft = animationEnd - Date.now();
+
+        if (timeLeft <= 0) {
+          return clearInterval(interval);
+        }
+
+        const particleCount = 50 * (timeLeft / duration);
+        confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 } });
+        confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } });
+      }, 250);
+
+      // 2. Reward Toast
+      toast.success("Appel lancé ! +10 pts de confiance ⭐️", {
+          description: "N'oubliez pas de noter l'échange après l'appel.",
+          duration: 5000,
+      });
+  };
 
   if (!matches || matches.length === 0) {
     return (
@@ -112,14 +174,22 @@ export function DailyMatchCard({ matches }: DailyMatchCardProps) {
                </div>
                <div className="text-slate-400 font-bold text-lg capitalize">{monthYear}</div>
              </div>
-             {/* Decorative Calendar Icon */}
-             <div className="bg-white/5 text-blue-400 p-3 rounded-2xl border border-white/5">
-               <Calendar className="h-6 w-6" />
+             
+             {/* TIMER & STREAK BADGES */}
+             <div className="flex items-center gap-3">
+                 <div className="hidden md:flex items-center gap-2 bg-blue-500/10 border border-blue-500/20 px-3 py-1.5 rounded-full">
+                    <Zap className="h-4 w-4 text-blue-400 fill-blue-400" />
+                    <span className="text-blue-200 text-xs font-bold">3 jours consécutifs</span>
+                 </div>
+                 <div className="bg-white/5 text-blue-400 p-3 rounded-2xl border border-white/5 flex flex-col items-center justify-center min-w-[80px]">
+                   <span className="text-[10px] font-bold text-slate-500 uppercase">Appel dans</span>
+                   <span className="font-black text-white text-sm">{timeLeft || "--:--"}</span>
+                 </div>
              </div>
            </div>
 
              {/* ORANGE BADGE */}
-             <div className="absolute -top-4 right-8 bg-orange-500 text-white text-[10px] font-bold px-4 py-1.5 rounded-full uppercase tracking-widest shadow-lg shadow-orange-900/50 z-10">
+             <div className="absolute -top-4 right-8 bg-orange-500 text-white text-[10px] font-bold px-4 py-1.5 rounded-full uppercase tracking-widest shadow-lg shadow-orange-900/50 z-10 animate-pulse">
                Opportunité Chaude
              </div>
 
@@ -159,13 +229,28 @@ export function DailyMatchCard({ matches }: DailyMatchCardProps) {
              {/* CALL BUTTON */}
              {isCallOut ? (
                 <div className="space-y-3 mb-6">
-                    <Button className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold h-14 rounded-2xl shadow-lg shadow-blue-900/50 text-base animate-shimmer bg-[linear-gradient(110deg,#2563eb,45%,#3b82f6,55%,#2563eb)] bg-[length:200%_100%] transition-colors border border-white/10" asChild>
-                       <a href={`tel:${match.phone}`}>
-                         <Phone className="mr-2 h-5 w-5" /> Appeler {match.name.split(' ')[0]} ({match.phone})
-                       </a>
+                    <Button 
+                        onClick={handleCallClick}
+                        className={cn(
+                            "w-full font-bold h-16 rounded-2xl shadow-lg text-lg transition-all border border-white/10",
+                            callMade 
+                                ? "bg-emerald-600 hover:bg-emerald-700 text-white"
+                                : "bg-blue-600 hover:bg-blue-500 text-white animate-shimmer bg-[linear-gradient(110deg,#2563eb,45%,#3b82f6,55%,#2563eb)] bg-[length:200%_100%]"
+                        )}
+                        asChild={!callMade}
+                    >
+                       {callMade ? (
+                           <div className="flex items-center gap-2">
+                               <CheckCircle2 className="h-6 w-6" /> Appel lancé !
+                           </div>
+                       ) : (
+                           <a href={`tel:${match.phone}`}>
+                             <Phone className="mr-2 h-6 w-6" /> Appeler {match.name.split(' ')[0]} ({match.phone})
+                           </a>
+                       )}
                     </Button>
                     <div className="text-center text-xs font-bold text-blue-400/80 uppercase tracking-wide">
-                        C'est à vous d'appeler entre {match.time}
+                        {callMade ? "Bravo ! Vous avez gagné des points de confiance." : `C'est à vous d'appeler entre ${match.time}`}
                     </div>
                 </div>
              ) : (
