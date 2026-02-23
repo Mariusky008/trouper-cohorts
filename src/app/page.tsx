@@ -297,6 +297,16 @@ export default function HomePage() {
                     </p>
                     <p className="font-medium">Alors que le business fonctionne toujours mieux en réseau.</p>
                 </div>
+                
+                <div className="pt-8">
+                   <Button 
+                      size="lg" 
+                      className="bg-slate-900 text-white hover:bg-slate-800 font-bold rounded-full px-8 h-12"
+                      onClick={() => document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' })}
+                    >
+                      Découvrir la solution <ArrowRight className="ml-2 h-4 w-4" />
+                   </Button>
+                </div>
             </div>
         </div>
       </section>
@@ -324,8 +334,17 @@ export default function HomePage() {
                 ))}
             </div>
 
-            <div className="mt-12 inline-block bg-blue-600/20 border border-blue-500/50 rounded-xl px-6 py-3 text-blue-300 font-bold">
-                Et ensemble vous créez des opportunités.
+            <div className="mt-12 flex flex-col items-center gap-6">
+                <div className="inline-block bg-blue-600/20 border border-blue-500/50 rounded-xl px-6 py-3 text-blue-300 font-bold">
+                    Et ensemble vous créez des opportunités.
+                </div>
+                <Button 
+                  size="lg" 
+                  className="bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-full px-8 h-12 shadow-lg shadow-blue-900/50"
+                  onClick={() => document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' })}
+                >
+                  Je veux essayer <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
             </div>
         </div>
       </section>
@@ -338,7 +357,7 @@ export default function HomePage() {
                <h2 className="text-3xl md:text-5xl font-black mb-6 text-slate-900">Voici concrètement ce qui se passe quand vous rejoignez Popey</h2>
             </div>
 
-            <div className="grid md:grid-cols-3 gap-8 relative max-w-6xl mx-auto">
+            <div className="grid md:grid-cols-3 gap-8 relative max-w-6xl mx-auto mb-12">
                {/* Step 1 */}
                <motion.div 
                  initial={{ opacity: 0, y: 30 }}
@@ -400,6 +419,16 @@ export default function HomePage() {
                   </p>
                </motion.div>
             </div>
+            
+            <div className="flex justify-center">
+                <Button 
+                   size="lg" 
+                   className="bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-full px-8 h-12 shadow-lg shadow-blue-200"
+                   onClick={() => document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' })}
+                >
+                  Je veux mes 5 minutes <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+            </div>
          </div>
       </section>
 
@@ -408,6 +437,16 @@ export default function HomePage() {
         <div className="container mx-auto px-4 text-center">
             <h2 className="text-3xl font-black text-slate-900 mb-12">Votre tableau de bord quotidien</h2>
             <InteractiveMockup />
+            
+            <div className="mt-12">
+               <Button 
+                  size="lg" 
+                  className="bg-slate-900 text-white hover:bg-slate-800 font-bold rounded-full px-8 h-12"
+                  onClick={() => document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' })}
+               >
+                 Voir mon tableau de bord <ArrowRight className="ml-2 h-4 w-4" />
+               </Button>
+            </div>
         </div>
       </section>
 
@@ -484,6 +523,14 @@ export default function HomePage() {
                         </div>
                      </div>
                   </div>
+                  
+                  <Button 
+                    size="lg" 
+                    className="bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-full px-8 h-12 shadow-lg shadow-blue-200"
+                    onClick={() => document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' })}
+                  >
+                    Augmenter mon score <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
                </motion.div>
             </div>
          </div>
@@ -519,8 +566,17 @@ export default function HomePage() {
               <p className="text-lg text-blue-100 mb-8">
                  Jusqu’à 60 entrepreneurs rencontrés, un flux régulier d’opportunités et une augmentation moyenne du chiffre d’affaires.
               </p>
-              <div className="inline-block bg-white text-blue-900 font-bold px-6 py-3 rounded-full shadow-lg">
-                 Votre réseau devient votre principal moteur de croissance.
+              <div className="flex flex-col items-center gap-6">
+                  <div className="inline-block bg-white text-blue-900 font-bold px-6 py-3 rounded-full shadow-lg">
+                     Votre réseau devient votre principal moteur de croissance.
+                  </div>
+                  <Button 
+                    size="lg" 
+                    className="bg-blue-500 hover:bg-blue-400 text-white font-bold rounded-full px-8 h-12 shadow-lg shadow-blue-900/50"
+                    onClick={() => document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' })}
+                  >
+                    Je veux ces résultats <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
               </div>
            </div>
         </div>
@@ -534,7 +590,7 @@ export default function HomePage() {
                <p className="text-slate-500 text-lg">Des résultats concrets, pas juste des discussions.</p>
             </div>
 
-            <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+            <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto mb-16">
                {[
                  {
                    name: "Sarah L.",
@@ -576,6 +632,16 @@ export default function HomePage() {
                      <p className="text-slate-600 leading-relaxed italic">"{item.text}"</p>
                   </motion.div>
                ))}
+            </div>
+
+            <div className="flex justify-center">
+                <Button 
+                   size="lg" 
+                   className="bg-slate-900 text-white hover:bg-slate-800 font-bold rounded-full px-8 h-12"
+                   onClick={() => document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' })}
+                >
+                  Rejoindre la communauté <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
             </div>
          </div>
       </section>
@@ -647,7 +713,14 @@ export default function HomePage() {
                         
                         <div className="text-center pt-8">
                              <p className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-2">Notre Solution</p>
-                             <p className="text-4xl font-black text-slate-900">C’est devenu Popey.</p>
+                             <p className="text-4xl font-black text-slate-900 mb-8">C’est devenu Popey.</p>
+                             <Button 
+                                size="lg" 
+                                className="bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-full px-8 h-12 shadow-lg shadow-blue-200"
+                                onClick={() => document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' })}
+                             >
+                               Rejoindre Popey <ArrowRight className="ml-2 h-4 w-4" />
+                             </Button>
                         </div>
                     </div>
                 </div>
@@ -744,7 +817,7 @@ export default function HomePage() {
       </section>
 
       {/* --- 13. PRICING & FINAL CTA --- */}
-      <section className="py-24 bg-white relative overflow-hidden border-t border-slate-100">
+      <section id="pricing" className="py-24 bg-white relative overflow-hidden border-t border-slate-100">
          <div className="container mx-auto px-4 relative z-10">
             <div className="max-w-4xl mx-auto bg-slate-900 rounded-[3rem] p-8 md:p-16 text-center text-white shadow-2xl relative overflow-hidden">
                {/* Background Effects */}
@@ -757,29 +830,29 @@ export default function HomePage() {
                
                <div className="bg-white/10 backdrop-blur-md rounded-3xl p-8 max-w-lg mx-auto mb-8 border border-white/10 mt-12 text-left">
                   <div className="text-center mb-8">
-                      <div className="inline-block bg-blue-500/20 text-blue-300 border border-blue-500/30 px-4 py-1.5 rounded-full text-sm font-bold uppercase tracking-widest mb-4">
+                      <div className="inline-block bg-blue-500/20 text-blue-300 border border-blue-500/30 px-6 py-2 rounded-full text-base font-bold uppercase tracking-widest mb-4">
                           Essai gratuit
                       </div>
-                      <div className="text-2xl md:text-3xl font-black mb-2 leading-tight">1 jour = 1 opportunité concrète</div>
-                      <p className="text-slate-400 text-sm md:text-base mt-4">
+                      <div className="text-3xl md:text-4xl font-black mb-2 leading-tight">1 jour = 1 opportunité concrète</div>
+                      <p className="text-slate-300 text-base md:text-lg mt-4 font-medium">
                           Découvre immédiatement une opportunité réelle pour ton business et teste Popey Academy sans aucun risque.
                       </p>
                   </div>
 
                   <ul className="space-y-4 mb-8">
-                     <li className="flex items-start gap-3 text-sm md:text-base">
+                     <li className="flex items-start gap-3 text-base md:text-lg">
                         <CheckCircle2 className="h-6 w-6 text-green-400 shrink-0" /> 
                         <span className="font-bold">1 opportunité garantie dès aujourd’hui</span>
                      </li>
-                     <li className="flex items-start gap-3 text-sm md:text-base">
+                     <li className="flex items-start gap-3 text-base md:text-lg">
                         <CheckCircle2 className="h-6 w-6 text-green-400 shrink-0" /> 
                         <span>Accès complet au dashboard et à tous les outils</span>
                      </li>
-                     <li className="flex items-start gap-3 text-sm md:text-base">
+                     <li className="flex items-start gap-3 text-base md:text-lg">
                         <CheckCircle2 className="h-6 w-6 text-green-400 shrink-0" /> 
                         <span>Score de confiance pour chaque profil, pour des mises en relation fiables</span>
                      </li>
-                     <li className="flex items-start gap-3 text-sm md:text-base">
+                     <li className="flex items-start gap-3 text-base md:text-lg">
                         <CheckCircle2 className="h-6 w-6 text-green-400 shrink-0" /> 
                         <span>Autonomie et contrôle total sur ton réseau</span>
                      </li>
@@ -788,13 +861,13 @@ export default function HomePage() {
                   <AuthDialog 
                     mode="signup"
                     trigger={
-                      <Button className="w-full h-14 bg-white text-slate-900 hover:bg-slate-100 font-black rounded-xl text-lg shadow-xl shadow-white/10">
+                      <Button className="w-full h-16 bg-white text-slate-900 hover:bg-slate-100 font-black rounded-xl text-xl shadow-xl shadow-white/10 transition-transform hover:scale-[1.02]">
                         Commencer mon essai gratuit
                       </Button>
                     }
                   />
                   
-                  <div className="text-xs text-slate-400 mt-6 text-center leading-relaxed">
+                  <div className="text-sm text-slate-400 mt-6 text-center leading-relaxed">
                       Après ce test, l’accès complet devient <span className="text-white font-bold">49 €/mois</span> pour profiter de toutes les opportunités et booster réellement ton réseau.
                   </div>
                </div>
