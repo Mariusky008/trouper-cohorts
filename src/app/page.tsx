@@ -225,9 +225,6 @@ export default function HomePage() {
               className="space-y-8"
             >
               <div className="inline-block">
-                <Badge className="bg-blue-50 text-blue-700 hover:bg-blue-100 border-blue-200 px-4 py-1.5 text-xs font-bold uppercase tracking-widest mb-2 transition-transform hover:scale-105 cursor-default">
-                    Nouveau : Système de réciprocité garanti
-                </Badge>
                 <div className="text-sm font-bold text-slate-500 mt-2">Ne restez plus seul face à votre business.</div>
               </div>
               
