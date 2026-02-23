@@ -71,35 +71,18 @@ export default async function DashboardHome() {
                   <Users className="h-5 w-5 text-blue-500" /> Préparer Demain
                 </h2>
              </div>
-             {/* Only show availability selector if not paused, otherwise show status */}
-             {settings?.status !== 'pause' ? (
-                <AvailabilitySelector />
-             ) : (
-                <div className="bg-orange-50 border border-orange-100 rounded-3xl p-8 text-center space-y-4">
-                   <div className="h-16 w-16 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <Users className="h-8 w-8" />
-                   </div>
-                   <h3 className="text-xl font-bold text-orange-900">Mode Pause Activé</h3>
-                   <p className="text-orange-700">Vous ne recevrez pas de matchs tant que vous êtes en pause.</p>
-                   <Button variant="outline" className="bg-white border-orange-200 text-orange-800 hover:bg-orange-100" asChild>
-                      <Link href="#settings">Gérer mon statut</Link>
-                   </Button>
-                </div>
-             )}
+             <AvailabilitySelector settings={settings} potentialCount={potentialCount} />
           </div>
         </div>
       </div>
 
-      {/* 3. METRICS & SETTINGS GRID */}
+      {/* 3. METRICS GRID */}
       <div id="settings" className="grid md:grid-cols-2 gap-8 pt-4">
         <div className="space-y-4">
            <h2 className="text-xl font-bold text-slate-800">Votre Impact</h2>
            <TrustScoreCard scoreData={trustScore} />
         </div>
-        <div className="space-y-4">
-           <h2 className="text-xl font-bold text-slate-800">Votre Rythme</h2>
-           <FrequencyControl settings={settings} potentialCount={potentialCount} />
-        </div>
+        {/* FrequencyControl removed as it is now merged into AvailabilitySelector */}
       </div>
 
     </div>
