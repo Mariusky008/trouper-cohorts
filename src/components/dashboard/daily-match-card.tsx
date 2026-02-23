@@ -41,6 +41,8 @@ export function DailyMatchCard({ matches }: DailyMatchCardProps) {
   const [timeLeft, setTimeLeft] = useState("");
   const [revealed, setRevealed] = useState(false); // State for the "Loot Box" reveal
 
+  const [isWhyVisible, setIsWhyVisible] = useState(false);
+
   // Countdown Logic (Mocked based on slot)
   useEffect(() => {
      if (!matches || matches.length === 0) return;
@@ -258,14 +260,30 @@ export function DailyMatchCard({ matches }: DailyMatchCardProps) {
                </div>
              </div>
 
-             {/* WHY THIS MATCH BOX */}
-             <div className="bg-[#0f172a]/50 rounded-xl p-4 border border-white/5 mb-6 relative">
-                <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-[#1e293b] px-2 py-0.5 rounded-full border border-white/10 text-[9px] font-bold text-slate-400 uppercase tracking-widest shadow-sm">
-                    Pourquoi ce match ?
-                </div>
-                <p className="text-xs text-slate-300 font-medium leading-relaxed text-center italic mt-1.5">
-                  {whyText}
-                </p>
+             {/* WHY THIS MATCH BOX (TOGGLEABLE) */}
+             <div className="mb-6 relative flex justify-center">
+                {!isWhyVisible ? (
+                    <Button 
+                        onClick={() => setIsWhyVisible(true)}
+                        size="sm"
+                        className="bg-[#0f172a] hover:bg-[#1e293b] text-slate-400 hover:text-white border border-white/10 text-[10px] font-bold uppercase tracking-widest rounded-full px-4 h-8 shadow-sm transition-all"
+                    >
+                        Pourquoi ce match ?
+                    </Button>
+                ) : (
+                    <motion.div 
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        className="bg-[#0f172a]/50 rounded-xl p-4 border border-white/5 relative w-full"
+                    >
+                        <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-[#1e293b] px-2 py-0.5 rounded-full border border-white/10 text-[9px] font-bold text-slate-400 uppercase tracking-widest shadow-sm cursor-pointer" onClick={() => setIsWhyVisible(false)}>
+                            Pourquoi ce match ?
+                        </div>
+                        <p className="text-xs text-slate-300 font-medium leading-relaxed text-center italic mt-1.5">
+                        {whyText}
+                        </p>
+                    </motion.div>
+                )}
              </div>
 
              {/* CALL BUTTON */}
