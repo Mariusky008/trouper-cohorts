@@ -137,8 +137,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       }
     };
     fetchData();
-  }, [pathname]); // Re-fetch on navigation (e.g. after validating an opp)
+  }, [pathname]); // Re-fetch on navigation
 
+  // Loading state block must be AFTER all hooks
   if (!isAuthorized) {
       return (
           <div className="min-h-screen bg-slate-50 flex items-center justify-center">
