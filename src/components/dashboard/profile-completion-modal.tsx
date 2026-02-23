@@ -3,26 +3,21 @@
 import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { useToast } from "@/hooks/use-toast";
-import { Loader2 } from "lucide-react";
-import { checkProfileCompletion, completeOnboardingProfile } from "@/actions/onboarding";
+import { ArrowRight, UserCircle2 } from "lucide-react";
+import { checkProfileCompletion } from "@/actions/onboarding";
+import { useRouter } from "next/navigation";
 
 export function ProfileCompletionModal() {
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [profile, setProfile] = useState<any>(null);
-  const { toast } = useToast();
+  const router = useRouter();
 
   useEffect(() => {
     const check = async () => {
       try {
         const result = await checkProfileCompletion();
-        if (!result.complete && result.profile) {
-          setProfile(result.profile);
+        // If not complete, show modal to redirect
+        if (!result.complete) {
           setIsOpen(true);
         }
       } catch (error) {
@@ -35,29 +30,9 @@ export function ProfileCompletionModal() {
     check();
   }, []);
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-
-    const formData = new FormData(e.currentTarget);
-    const result = await completeOnboardingProfile(formData);
-
-    if (result.error) {
-      toast({
-        variant: "destructive",
-        title: "Erreur",
-        description: result.error,
-      });
-      setIsSubmitting(false);
-    } else {
-      toast({
-        title: "Profil mis à jour !",
-        description: "Merci d'avoir complété vos informations.",
-      });
-      setIsOpen(false);
-      // Optional: force refresh to update UI elsewhere if needed
-      window.location.reload(); 
-    }
+  const handleRedirect = () => {
+    setIsOpen(false);
+    router.push("/mon-reseau-local/dashboard/profile");
   };
 
   if (isLoading || !isOpen) return null;
@@ -70,83 +45,32 @@ export function ProfileCompletionModal() {
         onPointerDownOutside={(e) => e.preventDefault()}
         onEscapeKeyDown={(e) => e.preventDefault()}
       >
-        <DialogHeader>
-          <DialogTitle>Bienvenue ! Complétez votre profil 🚀</DialogTitle>
-          <DialogDescription>
-            Pour profiter pleinement du réseau et être mis en relation, nous avons besoin de quelques informations supplémentaires.
-          </DialogDescription>
-        </DialogHeader>
-
-        <form onSubmit={handleSubmit} className="space-y-4 py-4">
-          <div className="grid gap-2">
-            <Label htmlFor="display_name">Prénom Nom <span className="text-red-500">*</span></Label>
-            <Input 
-              id="display_name" 
-              name="display_name" 
-              defaultValue={profile?.display_name || ''} 
-              placeholder="Jean Dupont" 
-              required 
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="grid gap-2">
-              <Label htmlFor="city">Ville <span className="text-red-500">*</span></Label>
-              <Input 
-                id="city" 
-                name="city" 
-                defaultValue={profile?.city || ''} 
-                placeholder="Paris" 
-                required 
-              />
+        <div className="flex flex-col items-center text-center py-6 space-y-6">
+            <div className="h-20 w-20 bg-blue-50 rounded-full flex items-center justify-center animate-bounce">
+                <UserCircle2 className="h-10 w-10 text-blue-600" />
             </div>
-            <div className="grid gap-2">
-              <Label htmlFor="phone">Téléphone <span className="text-red-500">*</span></Label>
-              <Input 
-                id="phone" 
-                name="phone" 
-                defaultValue={profile?.phone || ''} 
-                placeholder="06 12 34 56 78" 
-                required 
-              />
+            
+            <div className="space-y-2">
+                <DialogTitle className="text-2xl font-black text-slate-900">Finalisez votre inscription</DialogTitle>
+                <DialogDescription className="text-base text-slate-600 max-w-sm mx-auto">
+                    Pour accéder au réseau et recevoir vos premiers matchs, vous devez compléter intégralement votre profil.
+                </DialogDescription>
             </div>
-          </div>
 
-          <div className="grid gap-2">
-            <Label htmlFor="trade">Activité / Métier <span className="text-red-500">*</span></Label>
-            <Input 
-              id="trade" 
-              name="trade" 
-              defaultValue={profile?.trade || ''} 
-              placeholder="Architecte, Développeur, ..." 
-              required 
-            />
-          </div>
+            <div className="bg-slate-50 p-4 rounded-xl text-left w-full border border-slate-100">
+                <h4 className="font-bold text-sm text-slate-900 mb-2 uppercase tracking-wide">Informations requises :</h4>
+                <ul className="space-y-2 text-sm text-slate-600">
+                    <li className="flex items-center gap-2">✅ Photo de profil</li>
+                    <li className="flex items-center gap-2">✅ Bio & Offre</li>
+                    <li className="flex items-center gap-2">✅ Réseaux sociaux (ou cocher "Je n'en ai pas")</li>
+                    <li className="flex items-center gap-2">✅ Objectifs actuels</li>
+                </ul>
+            </div>
 
-          <div className="grid gap-2">
-            <Label htmlFor="bio">À propos / Offre <span className="text-red-500">*</span></Label>
-            <Textarea 
-              id="bio" 
-              name="bio" 
-              defaultValue={profile?.bio || ''} 
-              placeholder="Décrivez brièvement votre activité et ce que vous proposez au réseau..." 
-              required 
-              rows={3}
-            />
-          </div>
-
-          <DialogFooter>
-            <Button type="submit" disabled={isSubmitting} className="w-full bg-blue-600 hover:bg-blue-700 font-bold">
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Enregistrement...
-                </>
-              ) : (
-                "Valider mon profil"
-              )}
+            <Button onClick={handleRedirect} className="w-full h-12 text-lg font-bold bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-200 rounded-xl">
+                Aller sur mon profil <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
-          </DialogFooter>
-        </form>
+        </div>
       </DialogContent>
     </Dialog>
   );
