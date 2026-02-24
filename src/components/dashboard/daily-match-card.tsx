@@ -114,6 +114,39 @@ export function DailyMatchCard({ matches }: DailyMatchCardProps) {
       }
   };
 
+  // Countdown Logic
+  const [countdown, setCountdown] = useState("00:00:00");
+
+  useEffect(() => {
+    // Only run if NO matches (waiting state)
+    if (matches && matches.length > 0) return;
+
+    const targetDate = new Date();
+    targetDate.setDate(targetDate.getDate() + 1);
+    targetDate.setHours(8, 0, 0, 0); // Tomorrow 08:00
+
+    const interval = setInterval(() => {
+        const now = new Date();
+        const diff = targetDate.getTime() - now.getTime();
+
+        if (diff <= 0) {
+            setCountdown("00:00:00");
+            // Optional: Reload page when timer hits zero
+            return;
+        }
+
+        const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+        const s = Math.floor((diff % (1000 * 60)) / 1000);
+
+        setCountdown(
+            `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`
+        );
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [matches]);
+
   if (!matches || matches.length === 0) {
     return (
       <div className="relative max-w-md mx-auto w-full">
@@ -123,20 +156,23 @@ export function DailyMatchCard({ matches }: DailyMatchCardProps) {
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 1.1, filter: "blur(10px)" }}
-                className="absolute inset-0 z-20 bg-[#0f172a] rounded-[2.5rem] border-2 border-dashed border-white/20 flex flex-col items-center justify-center p-8 text-center cursor-pointer hover:border-blue-500/50 transition-colors shadow-2xl"
+                className="absolute inset-0 z-20 bg-[#0f172a] rounded-[2.5rem] border-2 border-dashed border-white/20 flex flex-col items-center justify-center p-8 text-center cursor-pointer hover:border-blue-500/50 transition-colors shadow-2xl overflow-hidden"
                 onClick={handleReveal}
             >
-                <div className="h-24 w-24 bg-blue-500/10 rounded-full flex items-center justify-center mb-6 animate-pulse">
+                {/* Tech Background Effect */}
+                <div className="absolute inset-0 opacity-10 bg-[linear-gradient(0deg,transparent_24%,rgba(32,167,255,.3)_25%,rgba(32,167,255,.3)_26%,transparent_27%,transparent_74%,rgba(32,167,255,.3)_75%,rgba(32,167,255,.3)_76%,transparent_77%,transparent),linear-gradient(90deg,transparent_24%,rgba(32,167,255,.3)_25%,rgba(32,167,255,.3)_26%,transparent_27%,transparent_74%,rgba(32,167,255,.3)_75%,rgba(32,167,255,.3)_76%,transparent_77%,transparent)] bg-[length:30px_30px]" />
+                
+                <div className="h-24 w-24 bg-blue-500/10 rounded-full flex items-center justify-center mb-6 animate-pulse relative z-10">
                     <Zap className="h-12 w-12 text-blue-400" />
                 </div>
-                <h3 className="text-3xl font-black text-white uppercase italic mb-2">Lancement du Protocole</h3>
-                <p className="text-slate-400 font-medium mb-8 max-w-xs leading-relaxed text-lg">
+                <h3 className="text-3xl font-black text-white uppercase italic mb-2 relative z-10">Lancement du Protocole</h3>
+                <p className="text-slate-400 font-medium mb-8 max-w-xs leading-relaxed text-lg relative z-10">
                     Votre profil est prêt.
                     <br />
                     <span className="text-white font-bold">Cliquez pour lancer la recherche de votre premier partenaire.</span>
                 </p>
                 
-                <Button className="bg-white text-slate-900 hover:bg-slate-200 font-black px-8 py-6 rounded-xl text-lg shadow-lg shadow-white/10 w-full animate-bounce-subtle">
+                <Button className="bg-white text-slate-900 hover:bg-slate-200 font-black px-8 py-6 rounded-xl text-lg shadow-lg shadow-white/10 w-full animate-bounce-subtle relative z-10">
                     LANCER L'ALGORITHME 🚀
                 </Button>
             </motion.div>
@@ -150,14 +186,23 @@ export function DailyMatchCard({ matches }: DailyMatchCardProps) {
         {/* Background Decor */}
         <div className="absolute top-0 right-0 -mt-10 -mr-10 h-40 w-40 bg-blue-500/20 rounded-full blur-3xl pointer-events-none"></div>
         <div className="absolute bottom-0 left-0 -mb-10 -ml-10 h-40 w-40 bg-purple-500/20 rounded-full blur-3xl pointer-events-none"></div>
+        
+        {/* Radar Scan Effect */}
+        <div className="absolute inset-0 pointer-events-none opacity-20">
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] border border-blue-500/30 rounded-full animate-[spin_10s_linear_infinite]" />
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[350px] h-[350px] border border-blue-500/20 rounded-full animate-[spin_7s_linear_infinite_reverse]" />
+        </div>
 
         <div className="relative z-10 max-w-md mx-auto">
-            <div className="h-24 w-24 bg-white/5 rounded-3xl flex items-center justify-center mb-6 mx-auto transform rotate-3 shadow-lg shadow-black/20 border border-white/10">
-               <Clock className="h-10 w-10 text-blue-400 animate-pulse" />
+            <div className="flex flex-col items-center mb-8">
+                <div className="text-slate-400 font-bold uppercase tracking-widest text-xs mb-2">Prochaine Opportunité</div>
+                <div className="font-black text-6xl text-white tabular-nums tracking-tight drop-shadow-[0_0_15px_rgba(59,130,246,0.5)] animate-pulse">
+                    {countdown}
+                </div>
             </div>
             
-            <h3 className="text-3xl font-black text-white leading-tight mb-4">
-                Recherche lancée ! <br/> Résultat demain. 🚀
+            <h3 className="text-2xl font-black text-white leading-tight mb-4">
+                Recherche lancée ! 🚀
             </h3>
             
             <p className="text-lg text-slate-400 font-medium leading-relaxed mb-8">
