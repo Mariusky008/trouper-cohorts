@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { 
     Briefcase, ShieldCheck, Award, Pencil, Save, X, Phone, 
     Linkedin, Instagram, Facebook, Globe, Upload, Loader2,
-    MapPin, Camera, CheckSquare, Percent, Euro, Zap
+    MapPin, Camera, CheckSquare, Percent, Euro, Zap, Handshake, Gift, Target
   } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -537,38 +537,62 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
                         {formErrors.bio && <p className="text-xs text-red-500">{formErrors.bio}</p>}
                     </div>
 
-                    {/* GIVE & TAKE SECTION */}
-                    <div className="space-y-4 pt-4 border-t border-slate-100">
-                        <Label className="text-base font-bold flex items-center gap-2">
-                           <Zap className="h-4 w-4 text-yellow-500" /> Le "Donnant-Donnant" <span className="text-xs font-normal text-slate-500">(Pour matcher intelligemment)</span>
-                        </Label>
-                        
-                        <div className="space-y-2">
-                            <Label className={formErrors.superpower ? "text-red-500" : ""}>Votre Super-Pouvoir (Ce que vous offrez au réseau) {formErrors.superpower && "*"}</Label>
-                            <Input 
-                                value={formData.superpower} 
-                                onChange={e => {
-                                    setFormData({...formData, superpower: e.target.value});
-                                    if(e.target.value) setFormErrors({...formErrors, superpower: ""});
-                                }} 
-                                placeholder="Ex: Mises en relation architectes, Audit SEO gratuit, Camion de déménagement..." 
-                                className={`h-12 ${formErrors.superpower ? "border-red-500" : ""}`}
-                            />
-                            <p className="text-xs text-slate-500">Une ressource concrète que vous pouvez partager facilement.</p>
+                    {/* GIVE & TAKE SECTION (REDESIGNED) */}
+                    <div className="bg-slate-50/80 p-6 rounded-2xl border border-slate-200/60 mt-6 shadow-sm">
+                        <div className="flex items-center gap-3 mb-6">
+                            <div className="h-10 w-10 bg-blue-100 rounded-xl flex items-center justify-center border border-blue-200 shadow-sm">
+                                <Handshake className="h-5 w-5 text-blue-600" />
+                            </div>
+                            <div>
+                                <h3 className="font-bold text-slate-800 text-lg leading-tight">L'Entraide</h3>
+                                <p className="text-xs text-slate-500 font-medium">Pour que la magie du réseau opère, soyez précis et généreux.</p>
+                            </div>
                         </div>
 
-                        <div className="space-y-2">
-                            <Label className={formErrors.current_need ? "text-red-500" : ""}>Votre Besoin du Moment (Ce que vous cherchez) {formErrors.current_need && "*"}</Label>
-                            <Input 
-                                value={formData.current_need} 
-                                onChange={e => {
-                                    setFormData({...formData, current_need: e.target.value});
-                                    if(e.target.value) setFormErrors({...formErrors, current_need: ""});
-                                }} 
-                                placeholder="Ex: Fournisseur de bois local, Avis sur mon offre, Associé technique..." 
-                                className={`h-12 ${formErrors.current_need ? "border-red-500" : ""}`}
-                            />
-                             <p className="text-xs text-slate-500">Soyez précis pour qu'on puisse vous aider.</p>
+                        <div className="grid md:grid-cols-2 gap-6">
+                            {/* DONNER */}
+                            <div className="space-y-3">
+                                <Label className={`flex items-center gap-2 font-bold ${formErrors.superpower ? "text-red-600" : "text-emerald-700"}`}>
+                                    <div className="p-1 bg-emerald-100 rounded text-emerald-600"><Gift className="h-3.5 w-3.5" /></div>
+                                    Ce que je peux offrir {formErrors.superpower && "*"}
+                                </Label>
+                                <div className="relative group">
+                                    <Textarea 
+                                        value={formData.superpower} 
+                                        onChange={e => {
+                                            setFormData({...formData, superpower: e.target.value});
+                                            if(e.target.value) setFormErrors({...formErrors, superpower: ""});
+                                        }} 
+                                        placeholder="Ex: Une oreille attentive, des conseils en marketing, mon carnet d'adresses, une relecture de CV, un café..." 
+                                        className={`min-h-[100px] resize-none border-emerald-200/60 bg-white focus:border-emerald-500 focus:ring-emerald-500 placeholder:text-slate-400 text-sm leading-relaxed shadow-sm transition-all group-hover:border-emerald-300 ${formErrors.superpower ? "border-red-300 ring-red-200" : ""}`}
+                                    />
+                                    <p className="text-[10px] text-emerald-600/80 mt-1.5 font-medium flex items-center gap-1">
+                                        <CheckSquare className="h-3 w-3" /> Même un petit geste compte !
+                                    </p>
+                                </div>
+                            </div>
+
+                            {/* RECEVOIR */}
+                            <div className="space-y-3">
+                                <Label className={`flex items-center gap-2 font-bold ${formErrors.current_need ? "text-red-600" : "text-amber-700"}`}>
+                                    <div className="p-1 bg-amber-100 rounded text-amber-600"><Target className="h-3.5 w-3.5" /></div>
+                                    Ce dont j'ai besoin {formErrors.current_need && "*"}
+                                </Label>
+                                <div className="relative group">
+                                    <Textarea 
+                                        value={formData.current_need} 
+                                        onChange={e => {
+                                            setFormData({...formData, current_need: e.target.value});
+                                            if(e.target.value) setFormErrors({...formErrors, current_need: ""});
+                                        }} 
+                                        placeholder="Ex: Un avis sincère sur mon offre, trouver un bon comptable, de la motivation pour courir, un associé technique..." 
+                                        className={`min-h-[100px] resize-none border-amber-200/60 bg-white focus:border-amber-500 focus:ring-amber-500 placeholder:text-slate-400 text-sm leading-relaxed shadow-sm transition-all group-hover:border-amber-300 ${formErrors.current_need ? "border-red-300 ring-red-200" : ""}`}
+                                    />
+                                    <p className="text-[10px] text-amber-600/80 mt-1.5 font-medium flex items-center gap-1">
+                                        <CheckSquare className="h-3 w-3" /> Osez demander, le réseau est là pour ça.
+                                    </p>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     
