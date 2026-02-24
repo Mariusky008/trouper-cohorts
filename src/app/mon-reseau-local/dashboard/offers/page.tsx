@@ -18,11 +18,11 @@ export default async function OffersPage() {
                 
                 <div className="text-center space-y-6">
                     <Badge className="bg-amber-500/10 text-amber-500 border-amber-500/20 px-4 py-1.5 text-xs font-bold uppercase tracking-widest shadow-sm">
-                    <Percent className="h-3 w-3 mr-2" /> Le Marché Caché
+                    <Percent className="h-3 w-3 mr-2" /> Offres Privilèges
                     </Badge>
                     
                     <h1 className="text-4xl md:text-5xl font-black text-white tracking-tighter leading-none">
-                    Mes Offres <span className="text-amber-500">Privilèges.</span>
+                    Mes Offres <span className="text-amber-500">Exclusives.</span>
                     </h1>
                     
                     <p className="text-lg text-slate-400 font-medium max-w-2xl mx-auto leading-relaxed">

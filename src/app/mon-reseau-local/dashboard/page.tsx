@@ -111,8 +111,8 @@ export default async function DashboardHome() {
                             <Percent className="h-5 w-5" />
                         </div>
                         <div>
-                            <h3 className="font-black text-white text-lg">Le Marché Caché</h3>
-                            <p className="text-xs text-amber-500 font-bold uppercase tracking-wide">Offres Privilèges</p>
+                            <h3 className="font-black text-white text-lg">Offres Privilèges</h3>
+                            <p className="text-xs text-amber-500 font-bold uppercase tracking-wide">Exclusivités Membres</p>
                         </div>
                     </div>
                     
@@ -122,7 +122,7 @@ export default async function DashboardHome() {
 
                     <Button asChild className="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl h-11 shadow-lg shadow-amber-500/20">
                         <Link href="/mon-reseau-local/dashboard/offers">
-                            Voir mes offres débloquées <ArrowRight className="ml-2 h-4 w-4" />
+                            Voir les offres <ArrowRight className="ml-2 h-4 w-4" />
                         </Link>
                     </Button>
                 </div>

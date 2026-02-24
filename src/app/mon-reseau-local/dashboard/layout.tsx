@@ -17,7 +17,7 @@ const NAV_ITEMS = [
   { label: "Relations", href: "/mon-reseau-local/dashboard/connections", icon: Users },
   { label: "Opportunités", href: "/mon-reseau-local/dashboard/opportunities", icon: Zap },
   { label: "Engagements", href: "/mon-reseau-local/dashboard/trust", icon: ShieldCheck },
-  { label: "Marché Caché", href: "/mon-reseau-local/dashboard/offers", icon: Percent },
+  { label: "Offres", href: "/mon-reseau-local/dashboard/offers", icon: Percent },
   { label: "Guides", href: "/mon-reseau-local/dashboard/guide", icon: BookOpen },
 ];
 

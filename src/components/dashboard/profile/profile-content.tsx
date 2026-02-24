@@ -643,7 +643,7 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
                     <div className="flex items-start gap-3">
                         <Award className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
                         <div>
-                            <h4 className="font-bold text-amber-700 text-sm">Le principe du "Marché Caché"</h4>
+                            <h4 className="font-bold text-amber-700 text-sm">Le principe des Offres Privilèges</h4>
                             <p className="text-xs text-amber-700/80 mt-1 leading-relaxed">
                                 Votre offre ne sera visible <strong>que par les membres avec qui vous avez matché</strong>.
                                 C'est un privilège que vous accordez à votre réseau proche.
