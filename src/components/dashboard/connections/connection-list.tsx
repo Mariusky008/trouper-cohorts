@@ -19,6 +19,7 @@ interface Connection {
   job: string;
   avatar?: string;
   lastInteraction: string;
+  feedback?: { rating: number; tag: string };
 }
 
 export function ConnectionList({ initialConnections, currentUserId }: { initialConnections: Connection[], currentUserId: string }) {
@@ -82,6 +83,14 @@ export function ConnectionList({ initialConnections, currentUserId }: { initialC
             >
               {/* Background Glow */}
               <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/5 rounded-bl-full -z-0 pointer-events-none group-hover:bg-blue-500/10 transition-colors" />
+
+              {/* RATING BADGE */}
+              {user.feedback && (
+                <div className="absolute top-4 right-4 z-20 flex items-center gap-1.5 bg-emerald-500/10 text-emerald-400 px-2.5 py-1 rounded-full text-[10px] font-bold border border-emerald-500/20 uppercase tracking-wide shadow-sm animate-in fade-in zoom-in">
+                    <span className="text-sm filter drop-shadow-sm">{user.feedback.rating >= 5 ? "🔥" : user.feedback.rating >= 4 ? "👍" : "🤝"}</span>
+                    {user.feedback.tag}
+                </div>
+              )}
 
               <div className="flex items-center gap-4 mb-4 relative z-10">
                 <Avatar className="h-14 w-14 border-2 border-[#0a0f1c] shadow-lg">

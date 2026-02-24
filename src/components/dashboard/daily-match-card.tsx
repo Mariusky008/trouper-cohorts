@@ -15,6 +15,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { createOpportunity } from "@/lib/actions/network-opportunities";
+import { saveMatchFeedback } from "@/lib/actions/network-feedback";
 import { incrementUserPoints } from "@/lib/actions/gamification";
 
 interface DailyMatchCardProps {
@@ -58,7 +59,7 @@ export function DailyMatchCard({ matches, userStreak = 0, userId }: DailyMatchCa
   const [oppDetails, setOppDetails] = useState("");
   const [isSubmittingOpp, setIsSubmittingOpp] = useState(false);
 
-  const handleRate = (score: number, tag: string) => {
+  const handleRate = async (score: number, tag: string, partnerId: string) => {
       setIsRatingOpen(false);
       
       // Fun feedback based on score
@@ -69,7 +70,8 @@ export function DailyMatchCard({ matches, userStreak = 0, userId }: DailyMatchCa
           description: `Vous avez qualifié l'échange de "${tag}"`
       });
       
-      // TODO: Call server action to save to DB
+      // Save to DB
+      await saveMatchFeedback(partnerId, score, tag);
   };
 
   const handleCreateOpportunity = async (partnerId: string, partnerName: string) => {
@@ -582,7 +584,7 @@ export function DailyMatchCard({ matches, userStreak = 0, userId }: DailyMatchCa
                                         
                                         <div className="grid grid-cols-3 gap-3 py-6">
                                             <Button 
-                                                onClick={() => handleRate(5, "Top 🔥")} 
+                                                onClick={() => handleRate(5, "Top 🔥", match.partnerId)} 
                                                 className="flex flex-col items-center justify-center h-28 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 hover:border-emerald-500 text-emerald-400 hover:text-emerald-300 transition-all hover:scale-105 group rounded-xl"
                                             >
                                                 <span className="text-4xl mb-2 group-hover:animate-bounce filter drop-shadow-lg">🔥</span>
@@ -591,7 +593,7 @@ export function DailyMatchCard({ matches, userStreak = 0, userId }: DailyMatchCa
                                             </Button>
                                             
                                             <Button 
-                                                onClick={() => handleRate(4, "Sympa 👍")} 
+                                                onClick={() => handleRate(4, "Sympa 👍", match.partnerId)} 
                                                 className="flex flex-col items-center justify-center h-28 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/30 hover:border-blue-500 text-blue-400 hover:text-blue-300 transition-all hover:scale-105 group rounded-xl"
                                             >
                                                 <span className="text-4xl mb-2 group-hover:animate-pulse filter drop-shadow-lg">👍</span>
@@ -600,7 +602,7 @@ export function DailyMatchCard({ matches, userStreak = 0, userId }: DailyMatchCa
                                             </Button>
                                             
                                             <Button 
-                                                onClick={() => handleRate(2, "Moyen 😕")} 
+                                                onClick={() => handleRate(2, "Moyen 😕", match.partnerId)} 
                                                 className="flex flex-col items-center justify-center h-28 bg-slate-500/10 hover:bg-slate-500/20 border border-slate-500/30 hover:border-slate-500 text-slate-400 hover:text-slate-300 transition-all hover:scale-105 group rounded-xl"
                                             >
                                                 <span className="text-4xl mb-2 group-hover:rotate-12 filter drop-shadow-lg">😕</span>

@@ -63,6 +63,17 @@ export async function getConnections() {
     return [];
   }
 
+  // Fetch feedbacks given by current user to display badges
+  const { data: feedbacks } = await supabase
+    .from("match_feedback")
+    .select("receiver_id, rating, tag")
+    .eq("giver_id", user.id);
+
+  const feedbackMap = new Map();
+  if (feedbacks) {
+    feedbacks.forEach((f: any) => feedbackMap.set(f.receiver_id, { rating: f.rating, tag: f.tag }));
+  }
+
   // Transform matches into a list of unique connections
   const connectionsMap = new Map();
 
@@ -75,12 +86,15 @@ export async function getConnections() {
       const partner = isUser1 ? user2 : user1;
       
       if (partner && !connectionsMap.has(partner.id)) {
+        const feedback = feedbackMap.get(partner.id);
+        
         connectionsMap.set(partner.id, {
           id: partner.id,
           name: partner.display_name || "Membre Inconnu",
           job: partner.trade || "Membre",
           avatar: partner.avatar_url,
-          lastInteraction: match.date
+          lastInteraction: match.date,
+          feedback: feedback // { rating, tag }
         });
       }
     }
