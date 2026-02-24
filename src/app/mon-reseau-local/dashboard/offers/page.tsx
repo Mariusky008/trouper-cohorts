@@ -155,26 +155,35 @@ export default async function OffersPage() {
                     { title: "Coaching Vente B2B", price: "200€", original: "400€" },
                     { title: "Site Web Vitrine", price: "800€", original: "1600€" }
                 ].map((dummy, i) => (
-                    <div key={i} className="relative group bg-white rounded-3xl border border-slate-200 p-6 overflow-hidden">
-                        {/* Blur Overlay */}
-                        <div className="absolute inset-0 bg-white/60 backdrop-blur-[6px] z-10 flex flex-col items-center justify-center text-center p-6 transition-opacity group-hover:bg-white/50">
-                            <div className="h-16 w-16 bg-slate-900 rounded-2xl flex items-center justify-center mb-4 shadow-xl shadow-slate-900/20 transform group-hover:scale-110 transition-transform">
-                                <Lock className="h-7 w-7 text-white" />
+                    <div key={i} className="relative group bg-white rounded-3xl border border-slate-200 p-6 overflow-hidden hover:shadow-xl transition-all">
+                        {/* Semi-Transparent Overlay with Lock */}
+                        <div className="absolute inset-0 z-20 flex flex-col items-center justify-center text-center p-6 bg-slate-900/5 backdrop-blur-[2px] transition-all group-hover:bg-slate-900/0 group-hover:backdrop-blur-[1px]">
+                            
+                            <div className="bg-white/90 backdrop-blur-xl p-6 rounded-3xl shadow-2xl border border-white/50 transform group-hover:scale-105 transition-transform duration-300">
+                                <div className="h-14 w-14 bg-gradient-to-br from-amber-400 to-orange-500 rounded-2xl flex items-center justify-center mb-4 mx-auto shadow-lg shadow-amber-500/30">
+                                    <Lock className="h-7 w-7 text-white" />
+                                </div>
+                                <h4 className="font-black text-slate-900 text-lg mb-1">Opportunité Exclusive</h4>
+                                <p className="text-xs text-slate-600 font-medium leading-relaxed max-w-[180px] mx-auto mb-4">
+                                    Débloquez ce talent en trouvant le bon match.
+                                </p>
+                                <Button asChild size="sm" className="bg-slate-900 text-white hover:bg-slate-800 rounded-xl font-bold w-full text-xs h-9 shadow-lg shadow-slate-900/20">
+                                    <Link href="/mon-reseau-local/dashboard">
+                                        Trouver la clé 🔑
+                                    </Link>
+                                </Button>
                             </div>
-                            <h4 className="font-bold text-slate-900 mb-2 text-lg">Offre Verrouillée</h4>
-                            <p className="text-xs text-slate-500 font-medium leading-relaxed max-w-[200px]">
-                                Cette offre se débloquera dès que vous aurez matché avec cet entrepreneur.
-                            </p>
+
                         </div>
 
-                        {/* Blurred Content Background */}
-                        <div className="opacity-30 blur-sm pointer-events-none select-none grayscale">
-                            <div className="absolute top-4 right-4 bg-slate-400 text-white font-black text-xs px-3 py-1.5 rounded-full shadow-lg rotate-3">
+                        {/* Content (Visible but slightly obscured) */}
+                        <div className="opacity-60 pointer-events-none select-none filter grayscale-[0.5]">
+                            <div className="absolute top-4 right-4 bg-slate-900 text-white font-black text-xs px-3 py-1.5 rounded-full shadow-lg rotate-3 opacity-50">
                                 -50%
                             </div>
 
-                            <div className="flex items-center gap-4 mb-6">
-                                <div className="h-14 w-14 rounded-full bg-slate-200" />
+                            <div className="flex items-center gap-4 mb-6 opacity-50">
+                                <div className="h-14 w-14 rounded-full bg-slate-100 border-2 border-slate-50" />
                                 <div>
                                     <div className="h-4 w-24 bg-slate-200 rounded mb-2" />
                                     <div className="h-3 w-16 bg-slate-100 rounded" />
@@ -182,20 +191,18 @@ export default async function OffersPage() {
                             </div>
 
                             <div className="space-y-4 mb-6">
-                                <h4 className="font-black text-xl text-slate-800 leading-tight">{dummy.title}</h4>
-                                <div className="space-y-2">
+                                <h4 className="font-black text-xl text-slate-600 leading-tight">{dummy.title}</h4>
+                                <div className="space-y-2 opacity-50">
                                     <div className="h-3 w-full bg-slate-100 rounded" />
                                     <div className="h-3 w-5/6 bg-slate-100 rounded" />
-                                    <div className="h-3 w-4/6 bg-slate-100 rounded" />
                                 </div>
                             </div>
 
                             <div className="flex items-end justify-between pt-6 border-t border-slate-100">
                                 <div>
                                     <p className="text-xs text-slate-400 font-medium line-through mb-1">{dummy.original}</p>
-                                    <p className="text-2xl font-black text-slate-600">{dummy.price}</p>
+                                    <p className="text-2xl font-black text-slate-400 blur-[3px]">{dummy.price}</p>
                                 </div>
-                                <div className="h-9 w-24 bg-slate-900 rounded-xl" />
                             </div>
                         </div>
                     </div>
