@@ -24,6 +24,10 @@ export async function updateProfile(formData: FormData) {
   const city = String(formData.get("city") || "").trim();
   const phone = String(formData.get("phone") || "").trim();
 
+  // Give & Take
+  const superpower = String(formData.get("superpower") || "").trim();
+  const currentNeed = String(formData.get("current_need") || "").trim();
+
   // Offer Fields
   const offerTitle = String(formData.get("offer_title") || "").trim();
   const offerDescription = String(formData.get("offer_description") || "").trim();
@@ -43,10 +47,12 @@ export async function updateProfile(formData: FormData) {
   const updates: Record<string, string | null | boolean | string[] | number | null> = {
       display_name: displayName || null,
       bio: bio || null,
-      trade: trade || null,
-      city: city || null,
-      phone: phone || null,
-      instagram_handle: instagram || null,
+    trade: trade || null,
+    city: city || null,
+    phone: phone || null,
+    superpower: superpower || null,
+    current_need: currentNeed || null,
+    instagram_handle: instagram || null,
       linkedin_url: linkedin || null,
       facebook_handle: facebook || null,
       tiktok_handle: tiktok || null,
@@ -79,5 +85,6 @@ export async function updateProfile(formData: FormData) {
   revalidatePath("/app/settings");
   revalidatePath("/app/crew"); // Refresh crew list too
   revalidatePath("/mon-reseau-local/dashboard/profile");
+  revalidatePath("/mon-reseau-local/dashboard");
   return { success: true };
 }
