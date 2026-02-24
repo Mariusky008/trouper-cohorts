@@ -11,9 +11,14 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 
+import { createClient } from "@/lib/supabase/server";
+
 export const dynamic = 'force-dynamic';
 
 export default async function DashboardHome() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  
   let matches: any[] = [];
   let trustScore = null;
   let settings = null;
@@ -55,7 +60,7 @@ export default async function DashboardHome() {
 
       {/* 2. FOCUS PRINCIPAL - MISSION DU JOUR */}
       <div className="relative z-20 -mt-8">
-         <DailyMatchCard matches={matches} userStreak={userStreak} />
+         <DailyMatchCard matches={matches} userStreak={userStreak} userId={user?.id} />
       </div>
 
       {/* 3. GRID LAYOUT "MODERNE" */}

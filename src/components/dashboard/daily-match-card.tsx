@@ -16,6 +16,7 @@ import { incrementUserPoints } from "@/lib/actions/gamification";
 interface DailyMatchCardProps {
   matches: any[];
   userStreak?: number;
+  userId?: string;
 }
 
 const GOAL_LABELS: Record<string, string> = {
@@ -31,7 +32,7 @@ const GOAL_LABELS: Record<string, string> = {
     training: "Formation"
 };
 
-export function DailyMatchCard({ matches, userStreak = 0 }: DailyMatchCardProps) {
+export function DailyMatchCard({ matches, userStreak = 0, userId }: DailyMatchCardProps) {
   // Date Formatting
   const now = new Date();
   const dayName = new Intl.DateTimeFormat('fr-FR', { weekday: 'long' }).format(now);
@@ -45,6 +46,18 @@ export function DailyMatchCard({ matches, userStreak = 0 }: DailyMatchCardProps)
   const [revealed, setRevealed] = useState(false); // State for the "Loot Box" reveal
 
   const [isWhyVisible, setIsWhyVisible] = useState(false);
+
+  // Check LocalStorage for Reveal Status
+  useEffect(() => {
+      if (!userId) return;
+      const today = new Date().toISOString().split('T')[0];
+      const key = `daily_scan_revealed_${userId}_${today}`;
+      
+      const isRevealed = localStorage.getItem(key) === 'true';
+      if (isRevealed) {
+          setRevealed(true);
+      }
+  }, [userId]);
 
   // Countdown Logic (Mocked based on slot)
   useEffect(() => {
@@ -73,6 +86,13 @@ export function DailyMatchCard({ matches, userStreak = 0 }: DailyMatchCardProps)
 
   const handleReveal = () => {
       setRevealed(true);
+
+      if (userId) {
+          const today = new Date().toISOString().split('T')[0];
+          const key = `daily_scan_revealed_${userId}_${today}`;
+          localStorage.setItem(key, 'true');
+      }
+
       // Small confetti burst for reveal
       confetti({
           particleCount: 100,
