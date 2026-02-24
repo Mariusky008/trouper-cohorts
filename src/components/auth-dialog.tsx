@@ -220,7 +220,7 @@ export function AuthDialog({ mode = "signup", trigger, defaultOpen = false }: Au
                  {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Créer mon compte (Essai Gratuit)"}
                </Button>
                <p className="text-xs text-center text-slate-400">
-                 3 jours d'essai gratuit, puis 49€/mois.
+                 1 jour d'essai gratuit, puis 49€/mois.
                </p>
             </form>
           )}
