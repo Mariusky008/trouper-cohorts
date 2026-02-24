@@ -83,14 +83,26 @@ export function AuthDialog({ mode = "signup", trigger, defaultOpen = false }: Au
       formData.append("trade", signupData.trade);
       formData.append("phone", signupData.phone);
 
-      // 3. Login Immediately
-      const { error: loginError } = await supabase.auth.signInWithPassword({
-        email: signupData.email,
-        password: signupData.password,
-      });
+      // 3. Login Immediately with Retry
+      let finalError = null;
+      for (let i = 0; i < 3; i++) {
+        const { error } = await supabase.auth.signInWithPassword({
+            email: signupData.email,
+            password: signupData.password,
+        });
+        
+        if (!error) {
+            finalError = null;
+            break;
+        }
+        
+        finalError = error;
+        // Wait 1s before retry
+        await new Promise(r => setTimeout(r, 1000));
+      }
 
-      if (loginError) {
-          throw loginError;
+      if (finalError) {
+          throw finalError;
       }
 
       toast({ title: "Compte créé !", description: "Redirection..." });
