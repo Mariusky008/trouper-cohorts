@@ -1,7 +1,7 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { Clock, Star, MapPin, Phone, CheckCircle2, MessageSquare, ArrowRight, Calendar, User, Briefcase, Zap, Trophy } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Clock, Star, MapPin, Phone, CheckCircle2, MessageSquare, ArrowRight, Calendar, User, Briefcase, Zap, Trophy, Handshake, Gift, PhoneCall } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -10,7 +10,11 @@ import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
 import confetti from "canvas-confetti";
 import { toast } from "sonner";
-
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { createOpportunity } from "@/lib/actions/network-opportunities";
 import { incrementUserPoints } from "@/lib/actions/gamification";
 
 interface DailyMatchCardProps {
@@ -46,6 +50,42 @@ export function DailyMatchCard({ matches, userStreak = 0, userId }: DailyMatchCa
   const [revealed, setRevealed] = useState(false); // State for the "Loot Box" reveal
 
   const [isWhyVisible, setIsWhyVisible] = useState(false);
+
+  // Opportunity Modal State
+  const [isOpportunityOpen, setIsOpportunityOpen] = useState(false);
+  const [oppType, setOppType] = useState("business");
+  const [oppDetails, setOppDetails] = useState("");
+  const [isSubmittingOpp, setIsSubmittingOpp] = useState(false);
+
+  const handleCreateOpportunity = async (partnerId: string, partnerName: string) => {
+      if (!oppDetails.trim()) {
+          toast.error("Veuillez décrire l'opportunité");
+          return;
+      }
+
+      setIsSubmittingOpp(true);
+      try {
+          const result = await createOpportunity({
+              receiverId: partnerId,
+              type: oppType,
+              points: 20, // Default points reward
+              details: oppDetails
+          });
+
+          if (result.success) {
+              toast.success(`Opportunité envoyée à ${partnerName} ! 🎁`);
+              setOppDetails("");
+              setIsOpportunityOpen(false);
+              confetti({ particleCount: 150, spread: 60, origin: { y: 0.7 } });
+          } else {
+              toast.error(result.error || "Erreur lors de l'envoi");
+          }
+      } catch (e) {
+          toast.error("Erreur inattendue");
+      } finally {
+          setIsSubmittingOpp(false);
+      }
+  };
 
   // Check LocalStorage for Reveal Status
   useEffect(() => {
@@ -419,20 +459,104 @@ export function DailyMatchCard({ matches, userStreak = 0, userId }: DailyMatchCa
                             </div>
                         </Button>
                     ) : (
-                        <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-2xl p-6 text-center animate-in fade-in zoom-in duration-300">
-                            <div className="h-12 w-12 bg-emerald-500 rounded-full flex items-center justify-center mx-auto mb-3 shadow-lg shadow-emerald-500/30">
-                                <Phone className="h-6 w-6 text-white animate-bounce" />
+                        <div className="space-y-6 animate-in fade-in zoom-in duration-500">
+                            {/* CALL HEADER */}
+                            <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-2xl p-6 text-center relative overflow-hidden group">
+                                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-emerald-500 to-transparent animate-shimmer" />
+                                
+                                <div className="flex items-center justify-center gap-3 mb-2">
+                                    <div className="relative">
+                                        <div className="absolute inset-0 bg-emerald-500 rounded-full animate-ping opacity-75"></div>
+                                        <div className="h-3 w-3 bg-emerald-500 rounded-full relative z-10"></div>
+                                    </div>
+                                    <h4 className="text-lg font-black text-emerald-400 uppercase tracking-widest">Appel en cours</h4>
+                                </div>
+                                
+                                <a href={`tel:${match.phone}`} className="block text-white font-black text-3xl mb-1 tracking-wider hover:scale-105 transition-transform">
+                                    {match.phone}
+                                </a>
+                                <p className="text-slate-400 text-xs font-bold uppercase">Appelez {match.name.split(' ')[0]} maintenant</p>
                             </div>
-                            <h4 className="text-xl font-black text-white mb-1">C'est parti !</h4>
-                            <p className="text-slate-300 text-sm mb-4">Appelez {match.name.split(' ')[0]} sur le créneau prévu : <span className="text-white font-bold">{match.time}</span></p>
-                            
-                            <a href={`tel:${match.phone}`} className="block bg-[#0f172a] hover:bg-slate-900 text-emerald-400 font-black text-2xl py-4 rounded-xl border border-white/10 transition-colors mb-4 tracking-wider">
-                                {match.phone}
-                            </a>
 
-                            <div className="flex items-center justify-center gap-2 text-[10px] font-bold text-slate-500 uppercase tracking-widest">
-                                <CheckCircle2 className="h-3 w-3 text-emerald-500" />
-                                +20 pts ajoutés à votre score
+                            {/* WHY THIS MATCH (PULSING CTA) */}
+                            <div className="relative z-10">
+                                <div className="absolute inset-0 bg-blue-500/20 rounded-xl blur-lg animate-pulse"></div>
+                                <Button 
+                                    onClick={() => setIsWhyVisible(!isWhyVisible)}
+                                    className="relative w-full bg-blue-600 hover:bg-blue-500 text-white font-bold h-14 rounded-xl shadow-lg shadow-blue-500/30 border border-blue-400/50 animate-bounce-subtle text-base"
+                                >
+                                    <Zap className="mr-2 h-5 w-5 text-yellow-300 fill-yellow-300" />
+                                    POURQUOI CE MATCH ? (Le Script)
+                                </Button>
+                            </div>
+
+                            {/* ACTION BUTTONS (The "Cockpit") */}
+                            <div className="grid grid-cols-2 gap-3">
+                                {/* OFFER OPPORTUNITY BUTTON */}
+                                <Dialog open={isOpportunityOpen} onOpenChange={setIsOpportunityOpen}>
+                                    <DialogTrigger asChild>
+                                        <Button className="h-auto py-4 flex flex-col items-center gap-1 bg-purple-600 hover:bg-purple-500 text-white rounded-xl border border-purple-400/30 shadow-lg shadow-purple-500/20 hover:-translate-y-1 transition-transform">
+                                            <Gift className="h-7 w-7 mb-1" />
+                                            <span className="font-black text-sm">OFFRIR</span>
+                                            <span className="text-[9px] opacity-80 font-bold uppercase">Une opportunité</span>
+                                        </Button>
+                                    </DialogTrigger>
+                                    <DialogContent className="bg-[#0f172a] border-white/10 text-white sm:max-w-md w-[95vw] rounded-2xl">
+                                        <DialogHeader>
+                                            <DialogTitle className="flex items-center gap-2 text-xl font-black">
+                                                <Gift className="h-6 w-6 text-purple-400" />
+                                                Offrir une Opportunité
+                                            </DialogTitle>
+                                            <DialogDescription className="text-slate-400">
+                                                Envoyez un contact, une info ou un coup de pouce à {match.name}.
+                                            </DialogDescription>
+                                        </DialogHeader>
+                                        
+                                        <div className="space-y-4 py-4">
+                                            <div className="space-y-2">
+                                                <Label className="text-xs font-bold uppercase text-slate-500">Type d'opportunité</Label>
+                                                <Select value={oppType} onValueChange={setOppType}>
+                                                    <SelectTrigger className="bg-slate-900 border-white/10 text-white h-12 rounded-xl font-bold">
+                                                        <SelectValue />
+                                                    </SelectTrigger>
+                                                    <SelectContent className="bg-slate-900 border-white/10 text-white">
+                                                        <SelectItem value="business">💰 Apport d'Affaires / Client</SelectItem>
+                                                        <SelectItem value="intro">🤝 Mise en relation</SelectItem>
+                                                        <SelectItem value="info">💡 Information / Conseil</SelectItem>
+                                                        <SelectItem value="resource">🛠️ Prêt de matériel / Service</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+
+                                            <div className="space-y-2">
+                                                <Label className="text-xs font-bold uppercase text-slate-500">Détails (Privé)</Label>
+                                                <Textarea 
+                                                    value={oppDetails}
+                                                    onChange={(e) => setOppDetails(e.target.value)}
+                                                    placeholder="Ex: J'ai un contact pour toi, appelle Mr Martin au 06..." 
+                                                    className="bg-slate-900 border-white/10 text-white min-h-[120px] resize-none rounded-xl"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <DialogFooter>
+                                            <Button 
+                                                onClick={() => handleCreateOpportunity(match.partnerId, match.name)} 
+                                                disabled={isSubmittingOpp}
+                                                className="w-full bg-purple-600 hover:bg-purple-500 font-bold h-12 rounded-xl shadow-lg shadow-purple-500/20"
+                                            >
+                                                {isSubmittingOpp ? "Envoi..." : "Envoyer le cadeau 🎁"}
+                                            </Button>
+                                        </DialogFooter>
+                                    </DialogContent>
+                                </Dialog>
+
+                                {/* LOG INTERACTION BUTTON */}
+                                <Button className="h-auto py-4 flex flex-col items-center gap-1 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl border border-white/5 hover:-translate-y-1 transition-transform">
+                                    <Handshake className="h-7 w-7 mb-1" />
+                                    <span className="font-bold text-sm">NOTER</span>
+                                    <span className="text-[9px] opacity-80 font-bold uppercase">Un échange</span>
+                                </Button>
                             </div>
                         </div>
                     )}
