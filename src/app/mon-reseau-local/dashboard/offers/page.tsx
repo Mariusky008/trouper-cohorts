@@ -106,87 +106,112 @@ export default async function OffersPage() {
                 )}
             </div>
 
-            {/* UNLOCKED OFFERS */}
-            {unlockedOffers.length > 0 ? (
-                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 px-4">
-                    {unlockedOffers.map((offer) => (
-                        <div key={offer.user_id} className="group relative bg-white rounded-3xl border border-slate-200 p-6 hover:shadow-xl transition-all hover:-translate-y-1 overflow-hidden">
-                            {/* Discount Badge */}
-                            <div className="absolute top-4 right-4 bg-red-500 text-white font-black text-xs px-3 py-1.5 rounded-full shadow-lg rotate-3 group-hover:rotate-6 transition-transform">
-                                -{Math.round(((offer.offer_original_price - offer.offer_price) / offer.offer_original_price) * 100)}%
+            {/* OFFERS GRID (UNLOCKED + LOCKED TEASERS) */}
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 px-4">
+                {/* 1. UNLOCKED OFFERS */}
+                {unlockedOffers.map((offer) => (
+                    <div key={offer.user_id} className="group relative bg-white rounded-3xl border border-slate-200 p-6 hover:shadow-xl transition-all hover:-translate-y-1 overflow-hidden">
+                        {/* Discount Badge */}
+                        <div className="absolute top-4 right-4 bg-red-500 text-white font-black text-xs px-3 py-1.5 rounded-full shadow-lg rotate-3 group-hover:rotate-6 transition-transform">
+                            -{Math.round(((offer.offer_original_price - offer.offer_price) / offer.offer_original_price) * 100)}%
+                        </div>
+
+                        <div className="flex items-center gap-4 mb-6">
+                            <Avatar className="h-14 w-14 border-2 border-slate-100">
+                                <AvatarImage src={offer.avatar_url} />
+                                <AvatarFallback>{offer.display_name[0]}</AvatarFallback>
+                            </Avatar>
+                            <div>
+                                <h3 className="font-bold text-slate-900 leading-tight">{offer.display_name}</h3>
+                                <p className="text-xs text-slate-500 font-medium">{offer.trade} • {offer.city}</p>
+                            </div>
+                        </div>
+
+                        <div className="space-y-4 mb-6">
+                            <h4 className="font-black text-xl text-slate-800 leading-tight min-h-[3.5rem]">{offer.offer_title}</h4>
+                            <p className="text-sm text-slate-500 line-clamp-3 min-h-[4.5rem]">
+                                {offer.offer_description}
+                            </p>
+                        </div>
+
+                        <div className="flex items-end justify-between pt-6 border-t border-slate-100">
+                            <div>
+                                <p className="text-xs text-slate-400 font-medium line-through mb-1">{offer.offer_original_price}€</p>
+                                <p className="text-2xl font-black text-emerald-600">{offer.offer_price}€</p>
+                            </div>
+                            <Button asChild size="sm" className="bg-slate-900 text-white hover:bg-slate-800 rounded-xl font-bold">
+                                <Link href={`/mon-reseau-local/dashboard/match/${offer.user_id}`}>
+                                    Voir le profil <ArrowRight className="ml-2 h-4 w-4" />
+                                </Link>
+                            </Button>
+                        </div>
+                    </div>
+                ))}
+
+                {/* 2. LOCKED OFFERS TEASERS (DUMMY DATA FOR GAMIFICATION) */}
+                {[
+                    { title: "Audit SEO & Visibilité", price: "450€", original: "900€" },
+                    { title: "Pack Photos Pro", price: "150€", original: "300€" },
+                    { title: "Coaching Vente B2B", price: "200€", original: "400€" },
+                    { title: "Site Web Vitrine", price: "800€", original: "1600€" }
+                ].map((dummy, i) => (
+                    <div key={i} className="relative group bg-white rounded-3xl border border-slate-200 p-6 overflow-hidden">
+                        {/* Blur Overlay */}
+                        <div className="absolute inset-0 bg-white/60 backdrop-blur-[6px] z-10 flex flex-col items-center justify-center text-center p-6 transition-opacity group-hover:bg-white/50">
+                            <div className="h-16 w-16 bg-slate-900 rounded-2xl flex items-center justify-center mb-4 shadow-xl shadow-slate-900/20 transform group-hover:scale-110 transition-transform">
+                                <Lock className="h-7 w-7 text-white" />
+                            </div>
+                            <h4 className="font-bold text-slate-900 mb-2 text-lg">Offre Verrouillée</h4>
+                            <p className="text-xs text-slate-500 font-medium leading-relaxed max-w-[200px]">
+                                Cette offre se débloquera dès que vous aurez matché avec cet entrepreneur.
+                            </p>
+                        </div>
+
+                        {/* Blurred Content Background */}
+                        <div className="opacity-30 blur-sm pointer-events-none select-none grayscale">
+                            <div className="absolute top-4 right-4 bg-slate-400 text-white font-black text-xs px-3 py-1.5 rounded-full shadow-lg rotate-3">
+                                -50%
                             </div>
 
                             <div className="flex items-center gap-4 mb-6">
-                                <Avatar className="h-14 w-14 border-2 border-slate-100">
-                                    <AvatarImage src={offer.avatar_url} />
-                                    <AvatarFallback>{offer.display_name[0]}</AvatarFallback>
-                                </Avatar>
+                                <div className="h-14 w-14 rounded-full bg-slate-200" />
                                 <div>
-                                    <h3 className="font-bold text-slate-900 leading-tight">{offer.display_name}</h3>
-                                    <p className="text-xs text-slate-500 font-medium">{offer.trade} • {offer.city}</p>
+                                    <div className="h-4 w-24 bg-slate-200 rounded mb-2" />
+                                    <div className="h-3 w-16 bg-slate-100 rounded" />
                                 </div>
                             </div>
 
                             <div className="space-y-4 mb-6">
-                                <h4 className="font-black text-xl text-slate-800 leading-tight min-h-[3.5rem]">{offer.offer_title}</h4>
-                                <p className="text-sm text-slate-500 line-clamp-3 min-h-[4.5rem]">
-                                    {offer.offer_description}
-                                </p>
+                                <h4 className="font-black text-xl text-slate-800 leading-tight">{dummy.title}</h4>
+                                <div className="space-y-2">
+                                    <div className="h-3 w-full bg-slate-100 rounded" />
+                                    <div className="h-3 w-5/6 bg-slate-100 rounded" />
+                                    <div className="h-3 w-4/6 bg-slate-100 rounded" />
+                                </div>
                             </div>
 
                             <div className="flex items-end justify-between pt-6 border-t border-slate-100">
                                 <div>
-                                    <p className="text-xs text-slate-400 font-medium line-through mb-1">{offer.offer_original_price}€</p>
-                                    <p className="text-2xl font-black text-emerald-600">{offer.offer_price}€</p>
+                                    <p className="text-xs text-slate-400 font-medium line-through mb-1">{dummy.original}</p>
+                                    <p className="text-2xl font-black text-slate-600">{dummy.price}</p>
                                 </div>
-                                <Button asChild size="sm" className="bg-slate-900 text-white hover:bg-slate-800 rounded-xl font-bold">
-                                    <Link href={`/mon-reseau-local/dashboard/match/${offer.user_id}`}>
-                                        Voir le profil <ArrowRight className="ml-2 h-4 w-4" />
-                                    </Link>
-                                </Button>
+                                <div className="h-9 w-24 bg-slate-900 rounded-xl" />
                             </div>
                         </div>
-                    ))}
-                </div>
-            ) : (
-                <div className="text-center py-12 px-4">
-                    <div className="h-20 w-20 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                        <Lock className="h-8 w-8 text-slate-400" />
                     </div>
-                    <h3 className="text-xl font-bold text-slate-900 mb-2">Aucune offre débloquée pour le moment</h3>
-                    <p className="text-slate-500 max-w-md mx-auto">
-                        Continuez à matcher chaque jour pour débloquer les offres exclusives de vos partenaires.
-                    </p>
-                </div>
-            )}
+                ))}
+            </div>
 
-            {/* LOCKED OFFERS TEASER */}
-            <div className="relative mt-16 mx-4 p-8 rounded-[2.5rem] bg-slate-900 overflow-hidden text-center">
-                {/* Background Pattern */}
-                <div className="absolute inset-0 opacity-10 bg-[url('/grid-pattern.svg')] bg-center" />
-                
-                <div className="relative z-10 flex flex-col items-center gap-6">
-                    <div className="h-16 w-16 bg-white/10 rounded-2xl flex items-center justify-center backdrop-blur-sm border border-white/10">
-                        <Lock className="h-8 w-8 text-white/60" />
-                    </div>
-                    
-                    <div>
-                        <h3 className="text-2xl md:text-3xl font-black text-white mb-2">
-                            {lockedCount > 0 ? `+${lockedCount} offres exclusives` : "De nombreuses offres"} à découvrir
-                        </h3>
-                        <p className="text-slate-400 font-medium max-w-lg mx-auto">
-                            Le réseau regorge de talents prêts à vous faire bénéficier de tarifs privilégiés.
-                            <br/>
-                            Chaque nouveau match est une clé pour ouvrir ce trésor.
-                        </p>
-                    </div>
-
-                    <Button asChild size="lg" className="bg-white text-slate-900 hover:bg-slate-200 font-black rounded-xl px-8 h-14 text-lg shadow-lg shadow-white/5">
-                        <Link href="/mon-reseau-local/dashboard">
-                            Chercher mon prochain match 🚀
-                        </Link>
-                    </Button>
-                </div>
+            {/* CALL TO ACTION FOOTER */}
+            <div className="text-center mt-12 pb-8">
+                <p className="text-slate-500 font-medium mb-4">
+                    + {lockedCount > 0 ? lockedCount : "150"} autres opportunités vous attendent dans le réseau.
+                </p>
+                <Button asChild variant="outline" className="rounded-xl border-white/10 text-slate-400 hover:text-white hover:bg-white/5">
+                    <Link href="/mon-reseau-local/dashboard">
+                        Retour au Dashboard
+                    </Link>
+                </Button>
             </div>
         </div>
     );
