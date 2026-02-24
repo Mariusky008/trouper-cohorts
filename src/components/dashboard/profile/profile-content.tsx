@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { 
     Briefcase, ShieldCheck, Award, Pencil, Save, X, Phone, 
     Linkedin, Instagram, Facebook, Globe, Upload, Loader2,
-    MapPin, Camera, CheckSquare
+    MapPin, Camera, CheckSquare, Percent, Euro
   } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -74,7 +74,13 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
     facebook: user.facebook_handle || "",
     website: user.website_url || "",
     avatar_url: user.avatar_url || "",
-    current_goals: user.current_goals || [] as string[]
+    current_goals: user.current_goals || [] as string[],
+    // Offer fields
+    offer_title: user.offer_title || "",
+    offer_description: user.offer_description || "",
+    offer_price: user.offer_price || "",
+    offer_original_price: user.offer_original_price || "",
+    offer_active: user.offer_active || false
   });
 
   const [noSocials, setNoSocials] = useState(user.linkedin_url === "https://none");
@@ -168,6 +174,13 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
 
       data.append("avatar_url", formData.avatar_url);
       
+      // Offer data
+      data.append("offer_title", formData.offer_title);
+      data.append("offer_description", formData.offer_description);
+      data.append("offer_price", formData.offer_price);
+      data.append("offer_original_price", formData.offer_original_price);
+      data.append("offer_active", formData.offer_active ? "true" : "false");
+
       // Append each goal individually for getAll on server
       formData.current_goals.forEach((goal: string) => {
           data.append("current_goals", goal);
@@ -387,8 +400,11 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
           </DialogHeader>
           
           <Tabs defaultValue="infos" className="w-full py-4">
-             <TabsList className="grid w-full grid-cols-1 mb-6">
+             <TabsList className="grid w-full grid-cols-2 mb-6">
                 <TabsTrigger value="infos">Informations Complètes</TabsTrigger>
+                <TabsTrigger value="offer" className="flex items-center gap-2">
+                    <Percent className="h-4 w-4" /> Mon Offre Club
+                </TabsTrigger>
              </TabsList>
 
              <TabsContent value="infos" className="space-y-6">
@@ -589,6 +605,95 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
              </TabsContent>
 
              {/* REMOVED SEPARATE SOCIALS TAB */}
+             
+             <TabsContent value="offer" className="space-y-6">
+                <div className="bg-amber-500/10 border border-amber-500/20 p-4 rounded-xl mb-6">
+                    <div className="flex items-start gap-3">
+                        <Award className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
+                        <div>
+                            <h4 className="font-bold text-amber-700 text-sm">Le principe du "Marché Caché"</h4>
+                            <p className="text-xs text-amber-700/80 mt-1 leading-relaxed">
+                                Votre offre ne sera visible <strong>que par les membres avec qui vous avez matché</strong>.
+                                C'est un privilège que vous accordez à votre réseau proche.
+                                <br/>
+                                <span className="font-bold mt-1 block">Règle d'or : Proposez au moins -50% par rapport au prix public.</span>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="flex items-center space-x-3 p-4 rounded-xl border border-slate-100 bg-slate-50 mb-4">
+                    <Checkbox 
+                        id="offer_active" 
+                        checked={formData.offer_active} 
+                        onCheckedChange={(c) => setFormData({...formData, offer_active: c === true})}
+                    />
+                    <div className="grid gap-1.5 leading-none">
+                        <label
+                            htmlFor="offer_active"
+                            className="text-sm font-bold leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                        >
+                            Activer mon Offre Club
+                        </label>
+                        <p className="text-xs text-slate-500">
+                            Cochez cette case pour rendre votre offre visible à vos matchs.
+                        </p>
+                    </div>
+                </div>
+
+                <div className={!formData.offer_active ? "opacity-50 pointer-events-none transition-opacity" : "transition-opacity"}>
+                    <div className="space-y-4">
+                        <div className="space-y-2">
+                            <Label>Titre de l'offre</Label>
+                            <Input 
+                                value={formData.offer_title} 
+                                onChange={e => setFormData({...formData, offer_title: e.target.value})} 
+                                placeholder="Ex: Création de Logo Express" 
+                                className="h-12 font-bold"
+                            />
+                        </div>
+                        
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label>Prix Public (pour info)</Label>
+                                <div className="relative">
+                                    <Input 
+                                        type="number"
+                                        value={formData.offer_original_price} 
+                                        onChange={e => setFormData({...formData, offer_original_price: e.target.value})} 
+                                        placeholder="500" 
+                                        className="h-12 pl-8"
+                                    />
+                                    <Euro className="absolute left-3 top-3.5 h-4 w-4 text-slate-400" />
+                                </div>
+                            </div>
+                            <div className="space-y-2">
+                                <Label className="text-emerald-600 font-bold">Prix Club (-50% min)</Label>
+                                <div className="relative">
+                                    <Input 
+                                        type="number"
+                                        value={formData.offer_price} 
+                                        onChange={e => setFormData({...formData, offer_price: e.target.value})} 
+                                        placeholder="250" 
+                                        className="h-12 pl-8 border-emerald-500 ring-emerald-500 focus-visible:ring-emerald-500 bg-emerald-50"
+                                    />
+                                    <Euro className="absolute left-3 top-3.5 h-4 w-4 text-emerald-600" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label>Détails de l'offre</Label>
+                            <Textarea 
+                                value={formData.offer_description} 
+                                onChange={e => setFormData({...formData, offer_description: e.target.value})} 
+                                className="min-h-[100px]"
+                                placeholder="Décrivez ce qui est inclus dans ce tarif préférentiel..." 
+                            />
+                        </div>
+                    </div>
+                </div>
+             </TabsContent>
           </Tabs>
 
           <DialogFooter>

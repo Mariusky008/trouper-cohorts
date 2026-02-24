@@ -23,6 +23,13 @@ export async function updateProfile(formData: FormData) {
   const trade = String(formData.get("trade") || "").trim();
   const city = String(formData.get("city") || "").trim();
   const phone = String(formData.get("phone") || "").trim();
+
+  // Offer Fields
+  const offerTitle = String(formData.get("offer_title") || "").trim();
+  const offerDescription = String(formData.get("offer_description") || "").trim();
+  const offerPrice = Number(formData.get("offer_price")) || null;
+  const offerOriginalPrice = Number(formData.get("offer_original_price")) || null;
+  const offerActive = formData.get("offer_active") === "true";
   
   // Extract current goals array
   // Assuming the frontend sends multiple "current_goals" fields or a single JSON string
@@ -33,7 +40,7 @@ export async function updateProfile(formData: FormData) {
   // Check if profile is complete enough (Name + Bio required)
   const isComplete = displayName.length > 0 && bio.length > 0;
 
-  const updates: Record<string, string | null | boolean | string[]> = {
+  const updates: Record<string, string | null | boolean | string[] | number | null> = {
       display_name: displayName || null,
       bio: bio || null,
       trade: trade || null,
@@ -45,7 +52,13 @@ export async function updateProfile(formData: FormData) {
       tiktok_handle: tiktok || null,
       website_url: website || null,
       current_goals: currentGoals,
-      onboarding_completed: isComplete
+      onboarding_completed: isComplete,
+      // Offer
+      offer_title: offerTitle || null,
+      offer_description: offerDescription || null,
+      offer_price: offerPrice,
+      offer_original_price: offerOriginalPrice,
+      offer_active: offerActive
   };
 
   // Only update avatar if explicitly provided (to avoid overwriting with empty string if not changed)
