@@ -159,8 +159,8 @@ export function DailyMatchCard({ matches }: DailyMatchCardProps) {
                 className="absolute inset-0 z-20 bg-[#0f172a] rounded-[2.5rem] border-2 border-dashed border-white/20 flex flex-col items-center justify-center p-8 text-center cursor-pointer hover:border-blue-500/50 transition-colors shadow-2xl overflow-hidden"
                 onClick={handleReveal}
             >
-                {/* Tech Background Effect */}
-                <div className="absolute inset-0 opacity-10 bg-[linear-gradient(0deg,transparent_24%,rgba(32,167,255,.3)_25%,rgba(32,167,255,.3)_26%,transparent_27%,transparent_74%,rgba(32,167,255,.3)_75%,rgba(32,167,255,.3)_76%,transparent_77%,transparent),linear-gradient(90deg,transparent_24%,rgba(32,167,255,.3)_25%,rgba(32,167,255,.3)_26%,transparent_27%,transparent_74%,rgba(32,167,255,.3)_75%,rgba(32,167,255,.3)_76%,transparent_77%,transparent)] bg-[length:30px_30px]" />
+                {/* Tech Background Effect (Simplified for compatibility) */}
+                <div className="absolute inset-0 opacity-10 bg-[url('/grid-pattern.svg')] bg-center bg-repeat" style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.15) 1px, transparent 0)', backgroundSize: '24px 24px' }} />
                 
                 <div className="h-24 w-24 bg-blue-500/10 rounded-full flex items-center justify-center mb-6 animate-pulse relative z-10">
                     <Zap className="h-12 w-12 text-blue-400" />
@@ -189,8 +189,16 @@ export function DailyMatchCard({ matches }: DailyMatchCardProps) {
         
         {/* Radar Scan Effect */}
         <div className="absolute inset-0 pointer-events-none opacity-20">
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] border border-blue-500/30 rounded-full animate-[spin_10s_linear_infinite]" />
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[350px] h-[350px] border border-blue-500/20 rounded-full animate-[spin_7s_linear_infinite_reverse]" />
+            <motion.div 
+                animate={{ rotate: 360 }}
+                transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
+                className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] border border-blue-500/30 rounded-full" 
+            />
+            <motion.div 
+                animate={{ rotate: -360 }}
+                transition={{ duration: 7, repeat: Infinity, ease: "linear" }}
+                className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[350px] h-[350px] border border-blue-500/20 rounded-full" 
+            />
         </div>
 
         <div className="relative z-10 max-w-md mx-auto">
