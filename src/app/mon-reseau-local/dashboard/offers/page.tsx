@@ -36,22 +36,62 @@ export default async function OffersPage() {
             {/* MY OFFER SHORTCUT */}
             <div className="px-4">
                 {currentUserOffer ? (
-                    <div className="bg-[#1e293b]/50 border border-amber-500/30 rounded-3xl p-6 flex flex-col md:flex-row items-center gap-6 shadow-xl shadow-black/20 mb-12">
-                        <div className="h-16 w-16 bg-amber-500/10 rounded-2xl flex items-center justify-center shrink-0 border border-amber-500/20">
-                            <Gift className="h-8 w-8 text-amber-500" />
+                    <div className="relative bg-[#1e293b]/80 backdrop-blur-xl border border-amber-500/20 rounded-[2.5rem] p-8 shadow-2xl shadow-black/30 mb-12 overflow-hidden group">
+                        {/* Golden Glow */}
+                        <div className="absolute top-0 right-0 w-[300px] h-[300px] bg-amber-500/10 rounded-full blur-[80px] -z-10 pointer-events-none" />
+                        
+                        <div className="flex flex-col md:flex-row gap-8 items-start">
+                            {/* Visual / Avatar */}
+                            <div className="relative shrink-0 mx-auto md:mx-0">
+                                <Avatar className="h-32 w-32 border-4 border-[#0a0f1c] shadow-2xl">
+                                    <AvatarImage src={currentUserOffer.avatar_url} className="object-cover" />
+                                    <AvatarFallback>{currentUserOffer.display_name[0]}</AvatarFallback>
+                                </Avatar>
+                                <div className="absolute -bottom-3 -right-3 bg-amber-500 text-white font-black text-sm px-3 py-1.5 rounded-full shadow-lg border-2 border-[#0a0f1c] rotate-3">
+                                    -{Math.round(((currentUserOffer.offer_original_price - currentUserOffer.offer_price) / currentUserOffer.offer_original_price) * 100)}%
+                                </div>
+                            </div>
+
+                            <div className="flex-1 space-y-4 text-center md:text-left">
+                                <div>
+                                    <div className="flex items-center justify-center md:justify-start gap-3 mb-2">
+                                        <Badge className="bg-amber-500/10 text-amber-500 border-amber-500/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide">
+                                            Votre Offre Active
+                                        </Badge>
+                                        <span className="flex items-center gap-1.5 text-xs font-bold text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded-full">
+                                            <span className="relative flex h-2 w-2">
+                                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                                            </span>
+                                            En ligne
+                                        </span>
+                                    </div>
+                                    <h2 className="text-3xl font-black text-white leading-tight mb-2">
+                                        {currentUserOffer.offer_title}
+                                    </h2>
+                                    <p className="text-slate-400 font-medium leading-relaxed max-w-2xl line-clamp-2">
+                                        {currentUserOffer.offer_description}
+                                    </p>
+                                </div>
+
+                                <div className="flex items-end justify-center md:justify-start gap-4 pt-2">
+                                    <div>
+                                        <p className="text-sm text-slate-500 font-bold line-through mb-0.5">Prix Public : {currentUserOffer.offer_original_price}€</p>
+                                        <div className="text-4xl font-black text-amber-500 flex items-baseline gap-1">
+                                            {currentUserOffer.offer_price}€ <span className="text-sm font-bold text-amber-500/60 uppercase">Club</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="shrink-0 w-full md:w-auto mt-4 md:mt-0">
+                                <Button asChild className="w-full md:w-auto bg-white/5 hover:bg-white/10 text-white border border-white/10 font-bold rounded-xl h-12 px-6 backdrop-blur-md transition-all hover:bg-white/20">
+                                    <Link href="/mon-reseau-local/dashboard/profile?edit=true&tab=offer">
+                                        <Pencil className="mr-2 h-4 w-4" /> Modifier
+                                    </Link>
+                                </Button>
+                            </div>
                         </div>
-                        <div className="flex-1 text-center md:text-left">
-                            <h3 className="text-xl font-bold text-white mb-1 flex items-center justify-center md:justify-start gap-2">
-                                Mon Offre Active <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/20 ml-2 text-[10px]">En ligne</Badge>
-                            </h3>
-                            <p className="text-slate-400 text-sm mb-1 font-medium">{currentUserOffer.offer_title}</p>
-                            <p className="text-emerald-400 font-black text-lg">{currentUserOffer.offer_price}€ <span className="text-slate-500 line-through text-xs font-normal ml-1">{currentUserOffer.offer_original_price}€</span></p>
-                        </div>
-                        <Button asChild className="bg-white/5 hover:bg-white/10 text-white border border-white/10 font-bold rounded-xl h-12 px-6">
-                            <Link href="/mon-reseau-local/dashboard/profile?edit=true&tab=offer">
-                                <Pencil className="mr-2 h-4 w-4" /> Modifier mon offre
-                            </Link>
-                        </Button>
                     </div>
                 ) : (
                     <div className="bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/20 rounded-3xl p-8 text-center mb-12">
