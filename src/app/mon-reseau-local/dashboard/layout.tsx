@@ -277,8 +277,25 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 {pathname === item.href && <ChevronRight className="ml-auto h-5 w-5 text-blue-400" />}
               </Link>
             ))}
+            
+            {/* LINK TO PROFILE EXPLICIT */}
+            <Link 
+                href="/mon-reseau-local/dashboard/profile"
+                className={cn(
+                  "flex items-center gap-4 p-4 rounded-xl transition-colors mt-2",
+                  pathname === "/mon-reseau-local/dashboard/profile" 
+                    ? "bg-blue-600/10 text-blue-400 font-bold" 
+                    : "text-slate-400 font-medium hover:bg-white/5"
+                )}
+              >
+                <div className={cn("p-2 rounded-lg", pathname === "/mon-reseau-local/dashboard/profile" ? "bg-blue-600/20 shadow-sm" : "bg-white/5")}>
+                  <User className={cn("h-5 w-5", pathname === "/mon-reseau-local/dashboard/profile" ? "text-blue-400" : "text-slate-500")} />
+                </div>
+                <span className="text-lg">Mon Profil</span>
+            </Link>
+
             <div className="mt-auto border-t border-white/5 pt-6">
-                <div className="flex items-center gap-4 p-4 bg-white/5 rounded-xl border border-white/5">
+                <Link href="/mon-reseau-local/dashboard/profile" className="flex items-center gap-4 p-4 bg-white/5 rounded-xl border border-white/5 active:scale-95 transition-transform">
                   <Avatar className="h-12 w-12 border border-white/10">
                     <AvatarImage src={avatarUrl} className="object-cover" />
                     <AvatarFallback className="bg-slate-800 text-slate-400">{initials}</AvatarFallback>
@@ -287,7 +304,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     <div className="font-bold text-lg text-white">{displayName}</div>
                     <div className="text-slate-400">{userProfile?.trade || "Membre"} • {userProfile?.city || "Réseau"}</div>
                   </div>
-                </div>
+                  <ChevronRight className="ml-auto h-5 w-5 text-slate-500" />
+                </Link>
                 <Button 
                   variant="destructive" 
                   className="w-full mt-4 h-12 rounded-xl font-bold bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20"

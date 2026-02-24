@@ -184,6 +184,19 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
         } else {
              toast({ title: "Erreur de validation", description: "Veuillez corriger les champs indiqués en rouge.", variant: "destructive" });
         }
+
+        // Auto-scroll to first error
+        const firstErrorKey = Object.keys(errors)[0];
+        if (firstErrorKey) {
+            // Small delay to allow tab switch if needed
+            setTimeout(() => {
+                const element = document.getElementById(`field-${firstErrorKey}`);
+                if (element) {
+                    element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    element.focus();
+                }
+            }, 100);
+        }
         return;
     }
 
@@ -450,7 +463,7 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
 
              <TabsContent value="infos" className="space-y-6">
                 {/* Avatar Upload in Edit Mode */}
-                <div className="flex flex-col items-center gap-4 mb-6">
+                <div className="flex flex-col items-center gap-4 mb-6" id="field-avatar_url">
                     <div className="relative group cursor-pointer" onClick={() => fileInputRef.current?.click()}>
                         <Avatar className={`h-24 w-24 border-4 ${formErrors.avatar_url ? 'border-red-500 animate-pulse' : 'border-slate-100'}`}>
                             <AvatarImage src={formData.avatar_url} className="object-cover" />
@@ -478,6 +491,7 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
                     <div className="space-y-2">
                         <Label className={formErrors.display_name ? "text-red-500" : ""}>Nom d'affichage {formErrors.display_name && "*"}</Label>
                         <Input 
+                            id="field-display_name"
                             value={formData.display_name} 
                             onChange={e => {
                                 setFormData({...formData, display_name: e.target.value});
@@ -491,6 +505,7 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
                         <div className="space-y-2">
                             <Label className={formErrors.trade ? "text-red-500" : ""}>Métier / Activité {formErrors.trade && "*"}</Label>
                             <Input 
+                                id="field-trade"
                                 value={formData.trade} 
                                 onChange={e => {
                                     setFormData({...formData, trade: e.target.value});
@@ -503,6 +518,7 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
                         <div className="space-y-2">
                             <Label className={formErrors.city ? "text-red-500" : ""}>Ville {formErrors.city && "*"}</Label>
                             <Input 
+                                id="field-city"
                                 value={formData.city} 
                                 onChange={e => {
                                     setFormData({...formData, city: e.target.value});
@@ -516,6 +532,7 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
                     <div className="space-y-2">
                         <Label className={formErrors.phone ? "text-red-500" : ""}>Téléphone {formErrors.phone && "*"}</Label>
                         <Input 
+                            id="field-phone"
                             value={formData.phone} 
                             onChange={e => {
                                 setFormData({...formData, phone: e.target.value});
@@ -528,6 +545,7 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
                     <div className="space-y-2">
                         <Label className={formErrors.bio ? "text-red-500" : ""}>À propos (Bio) {formErrors.bio && "*"}</Label>
                         <Textarea 
+                            id="field-bio"
                             value={formData.bio} 
                             onChange={e => {
                                 setFormData({...formData, bio: e.target.value});
@@ -560,6 +578,7 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
                                 </Label>
                                 <div className="relative group">
                                     <Textarea 
+                                        id="field-superpower"
                                         value={formData.superpower} 
                                         onChange={e => {
                                             setFormData({...formData, superpower: e.target.value});
@@ -582,6 +601,7 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
                                 </Label>
                                 <div className="relative group">
                                     <Textarea 
+                                        id="field-current_need"
                                         value={formData.current_need} 
                                         onChange={e => {
                                             setFormData({...formData, current_need: e.target.value});
@@ -620,7 +640,7 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
                     </div>
                     
                     {/* CURRENT GOALS SECTION */}
-                    <div className="space-y-3 pt-4 border-t border-slate-100">
+                    <div className="space-y-3 pt-4 border-t border-slate-100" id="field-current_goals">
                         <Label className={`text-base font-bold ${formErrors.current_goals ? "text-red-500" : ""}`}>
                             Ce que je recherche en ce moment {formErrors.current_goals && "*"}
                         </Label>
@@ -767,6 +787,7 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
                         <div className="space-y-2">
                             <Label className={formErrors.offer_title ? "text-red-500" : ""}>Titre de l'offre {formErrors.offer_title && "*"}</Label>
                             <Input 
+                                id="field-offer_title"
                                 value={formData.offer_title} 
                                 onChange={e => {
                                     setFormData({...formData, offer_title: e.target.value});
@@ -795,6 +816,7 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
                                 <Label className={`font-bold ${formErrors.offer_price ? "text-red-500" : "text-emerald-600"}`}>Prix Club (-50% min) {formErrors.offer_price && "*"}</Label>
                                 <div className="relative">
                                     <Input 
+                                        id="field-offer_price"
                                         type="number"
                                         value={formData.offer_price} 
                                         onChange={e => {
@@ -812,6 +834,7 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
                         <div className="space-y-2">
                             <Label className={formErrors.offer_description ? "text-red-500" : ""}>Détails de l'offre {formErrors.offer_description && "*"}</Label>
                             <Textarea 
+                                id="field-offer_description"
                                 value={formData.offer_description} 
                                 onChange={e => {
                                     setFormData({...formData, offer_description: e.target.value});
