@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { 
   Home, Users, Zap, ShieldCheck, User, Settings, 
-  Menu, Bell, LogOut, ChevronRight, BookOpen, Anchor, Trophy 
+  Menu, Bell, LogOut, ChevronRight, BookOpen, Anchor, Trophy, Percent 
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -17,9 +17,8 @@ const NAV_ITEMS = [
   { label: "Relations", href: "/mon-reseau-local/dashboard/connections", icon: Users },
   { label: "Opportunités", href: "/mon-reseau-local/dashboard/opportunities", icon: Zap },
   { label: "Engagements", href: "/mon-reseau-local/dashboard/trust", icon: ShieldCheck },
+  { label: "Marché Caché", href: "/mon-reseau-local/dashboard/offers", icon: Percent },
   { label: "Guides", href: "/mon-reseau-local/dashboard/guide", icon: BookOpen },
-  { label: "Profil", href: "/mon-reseau-local/dashboard/profile", icon: User },
-  { label: "Paramètres", href: "/mon-reseau-local/dashboard/settings", icon: Settings },
 ];
 
 import { createClient } from "@/lib/supabase/client";
@@ -33,6 +32,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const supabase = createClient();
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
   const [pendingCount, setPendingCount] = useState(0);
 
   const [userProfile, setUserProfile] = useState<any>(null);
@@ -42,6 +42,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   // Close mobile menu on route change
   useEffect(() => {
     setIsMobileMenuOpen(false);
+    setIsProfileDropdownOpen(false);
   }, [pathname]);
 
   const [isAuthorized, setIsAuthorized] = useState(true); 
@@ -190,13 +191,44 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                         <ShieldCheck className="h-3 w-3 text-emerald-500" /> <span className="text-emerald-500 font-bold">{trustScore}/5</span>
                     </div>
                 </div>
-                <Avatar className="h-9 w-9 border border-white/10 cursor-pointer hover:border-blue-500/50 transition-colors">
-                  <AvatarImage src={avatarUrl} className="object-cover" />
-                  <AvatarFallback className="bg-slate-800 text-slate-400 text-xs">{initials}</AvatarFallback>
-                </Avatar>
-                <Button size="icon" variant="ghost" className="h-8 w-8 text-slate-500 hover:text-red-400 hover:bg-white/5 rounded-full" onClick={handleSignOut}>
-                    <LogOut className="h-4 w-4" />
-                </Button>
+                <div className="relative">
+                    <Avatar 
+                        className="h-9 w-9 border border-white/10 cursor-pointer hover:border-blue-500/50 transition-colors"
+                        onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
+                    >
+                      <AvatarImage src={avatarUrl} className="object-cover" />
+                      <AvatarFallback className="bg-slate-800 text-slate-400 text-xs">{initials}</AvatarFallback>
+                    </Avatar>
+
+                    <AnimatePresence>
+                        {isProfileDropdownOpen && (
+                            <motion.div 
+                                initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                                animate={{ opacity: 1, y: 0, scale: 1 }}
+                                exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                                className="absolute top-full right-0 mt-2 w-56 bg-[#1e293b] border border-white/10 rounded-xl shadow-xl overflow-hidden z-50 p-1"
+                            >
+                                <div className="px-3 py-2 border-b border-white/5 mb-1">
+                                    <p className="text-sm font-bold text-white truncate">{displayName}</p>
+                                    <p className="text-xs text-slate-500 truncate">{userProfile?.trade || "Membre"}</p>
+                                </div>
+                                <Link href="/mon-reseau-local/dashboard/profile" className="flex items-center gap-2 px-3 py-2 text-sm text-slate-300 hover:text-white hover:bg-white/5 rounded-lg transition-colors">
+                                    <User className="h-4 w-4" /> Mon Profil
+                                </Link>
+                                <Link href="/mon-reseau-local/dashboard/settings" className="flex items-center gap-2 px-3 py-2 text-sm text-slate-300 hover:text-white hover:bg-white/5 rounded-lg transition-colors">
+                                    <Settings className="h-4 w-4" /> Paramètres
+                                </Link>
+                                <div className="h-px bg-white/5 my-1" />
+                                <button 
+                                    onClick={handleSignOut}
+                                    className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-400 hover:bg-red-500/10 rounded-lg transition-colors text-left"
+                                >
+                                    <LogOut className="h-4 w-4" /> Se déconnecter
+                                </button>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+                </div>
             </div>
 
             {/* Mobile Actions */}
