@@ -98,35 +98,6 @@ export default async function DashboardHome() {
              <div className="bg-[#0f172a]/50 backdrop-blur-xl rounded-[2rem] border border-white/5 shadow-xl shadow-black/20 overflow-hidden">
                  <TrustScoreCard scoreData={trustScore} />
              </div>
-
-             {/* HIDDEN MARKET TEASER */}
-             <div className="bg-gradient-to-br from-amber-500/10 to-orange-500/5 backdrop-blur-xl rounded-[2rem] p-6 border border-amber-500/20 shadow-xl shadow-black/20 group cursor-pointer hover:border-amber-500/40 transition-colors relative overflow-hidden">
-                <div className="absolute top-0 right-0 p-4 opacity-10">
-                    <Percent className="h-24 w-24 text-amber-500 rotate-12" />
-                </div>
-                
-                <div className="relative z-10">
-                    <div className="flex items-center gap-3 mb-4">
-                        <div className="h-10 w-10 bg-amber-500/10 rounded-xl flex items-center justify-center text-amber-500 border border-amber-500/20">
-                            <Percent className="h-5 w-5" />
-                        </div>
-                        <div>
-                            <h3 className="font-black text-white text-lg">Offres Privilèges</h3>
-                            <p className="text-xs text-amber-500 font-bold uppercase tracking-wide">Exclusivités Membres</p>
-                        </div>
-                    </div>
-                    
-                    <p className="text-slate-400 text-sm font-medium mb-6 leading-relaxed">
-                        Débloquez des offres exclusives (-50% min) proposées par vos matchs.
-                    </p>
-
-                    <Button asChild className="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl h-11 shadow-lg shadow-amber-500/20">
-                        <Link href="/mon-reseau-local/dashboard/offers">
-                            Voir les offres <ArrowRight className="ml-2 h-4 w-4" />
-                        </Link>
-                    </Button>
-                </div>
-             </div>
          </div>
 
       </div>
