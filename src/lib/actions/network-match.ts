@@ -147,7 +147,16 @@ export async function getDailyMatches() {
       return true;
   });
 
-  return activeMatches;
+  // Sort matches so that TODAY's matches come first, then FUTURE matches
+  // Within same day, sort by time
+  const sortedMatches = activeMatches.sort((a, b) => {
+      if (a.date !== b.date) {
+          return a.date.localeCompare(b.date);
+      }
+      return a.time.localeCompare(b.time);
+  });
+
+  return sortedMatches;
 }
 
 import { revalidatePath } from "next/cache";
