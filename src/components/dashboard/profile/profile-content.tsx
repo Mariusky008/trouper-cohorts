@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { 
     Briefcase, ShieldCheck, Award, Pencil, Save, X, Phone, 
     Linkedin, Instagram, Facebook, Globe, Upload, Loader2,
-    MapPin, Camera, CheckSquare, Percent, Euro
+    MapPin, Camera, CheckSquare, Percent, Euro, Zap
   } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -79,6 +79,9 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
     website: user.website_url || "",
     avatar_url: user.avatar_url || "",
     current_goals: user.current_goals || [] as string[],
+    // Give & Take
+    superpower: user.superpower || "",
+    current_need: user.current_need || "",
     // Offer fields
     offer_title: user.offer_title || "",
     offer_description: user.offer_description || "",
@@ -102,6 +105,8 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
     if (!formData.city.trim()) errors.city = "La ville est requise.";
     if (!formData.phone.trim()) errors.phone = "Le téléphone est requis.";
     if (!formData.bio.trim()) errors.bio = "La bio est requise.";
+    if (!formData.superpower.trim()) errors.superpower = "Indiquez ce que vous offrez.";
+    if (!formData.current_need.trim()) errors.current_need = "Indiquez ce que vous cherchez.";
     if (!formData.avatar_url) errors.avatar_url = "Une photo de profil est requise.";
     if (!formData.current_goals || formData.current_goals.length === 0) errors.current_goals = "Veuillez sélectionner au moins un objectif.";
 
@@ -166,7 +171,7 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
         const offerErrors = ['offer_title', 'offer_price', 'offer_description'];
         const hasOfferErrors = Object.keys(errors).some(key => offerErrors.includes(key));
         
-        const infoErrors = ['display_name', 'trade', 'city', 'phone', 'bio', 'avatar_url', 'current_goals', 'socials'];
+        const infoErrors = ['display_name', 'trade', 'city', 'phone', 'bio', 'avatar_url', 'current_goals', 'socials', 'superpower', 'current_need'];
         const hasInfoErrors = Object.keys(errors).some(key => infoErrors.includes(key));
 
         if (hasInfoErrors && activeTab !== 'infos') {
@@ -189,6 +194,8 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
       data.append("trade", formData.trade);
       data.append("city", formData.city);
       data.append("phone", formData.phone);
+      data.append("superpower", formData.superpower);
+      data.append("current_need", formData.current_need);
       
       // Socials logic
       if (noSocials) {
@@ -528,6 +535,41 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
                             placeholder="Décrivez votre activité et ce que vous recherchez..." 
                         />
                         {formErrors.bio && <p className="text-xs text-red-500">{formErrors.bio}</p>}
+                    </div>
+
+                    {/* GIVE & TAKE SECTION */}
+                    <div className="space-y-4 pt-4 border-t border-slate-100">
+                        <Label className="text-base font-bold flex items-center gap-2">
+                           <Zap className="h-4 w-4 text-yellow-500" /> Le "Donnant-Donnant" <span className="text-xs font-normal text-slate-500">(Pour matcher intelligemment)</span>
+                        </Label>
+                        
+                        <div className="space-y-2">
+                            <Label className={formErrors.superpower ? "text-red-500" : ""}>Votre Super-Pouvoir (Ce que vous offrez au réseau) {formErrors.superpower && "*"}</Label>
+                            <Input 
+                                value={formData.superpower} 
+                                onChange={e => {
+                                    setFormData({...formData, superpower: e.target.value});
+                                    if(e.target.value) setFormErrors({...formErrors, superpower: ""});
+                                }} 
+                                placeholder="Ex: Mises en relation architectes, Audit SEO gratuit, Camion de déménagement..." 
+                                className={`h-12 ${formErrors.superpower ? "border-red-500" : ""}`}
+                            />
+                            <p className="text-xs text-slate-500">Une ressource concrète que vous pouvez partager facilement.</p>
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label className={formErrors.current_need ? "text-red-500" : ""}>Votre Besoin du Moment (Ce que vous cherchez) {formErrors.current_need && "*"}</Label>
+                            <Input 
+                                value={formData.current_need} 
+                                onChange={e => {
+                                    setFormData({...formData, current_need: e.target.value});
+                                    if(e.target.value) setFormErrors({...formErrors, current_need: ""});
+                                }} 
+                                placeholder="Ex: Fournisseur de bois local, Avis sur mon offre, Associé technique..." 
+                                className={`h-12 ${formErrors.current_need ? "border-red-500" : ""}`}
+                            />
+                             <p className="text-xs text-slate-500">Soyez précis pour qu'on puisse vous aider.</p>
+                        </div>
                     </div>
                     
                     {/* CURRENT GOALS SECTION */}

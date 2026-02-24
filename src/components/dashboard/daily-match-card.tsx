@@ -279,7 +279,12 @@ export function DailyMatchCard({ matches, userStreak = 0, userId }: DailyMatchCa
             ? GOAL_LABELS[match.current_goals[0]]?.toLowerCase() 
             : "développer son activité";
             
-        const whyText = `"${match.name.split(' ')[0]} cherche activement à ${goalLabel}. Vos profils sont complémentaires : vous allez pouvoir vous aider mutuellement."`;
+        let whyText = `"${match.name.split(' ')[0]} cherche activement à ${goalLabel}. Vos profils sont complémentaires : vous allez pouvoir vous aider mutuellement."`;
+        
+        // Use Real Give & Take Data if available
+        if (match.current_need && match.superpower) {
+            whyText = `🎯 ${match.name.split(' ')[0]} a besoin de : "${match.current_need}". \n🎁 En échange, il peut vous offrir : "${match.superpower}".`;
+        }
 
         return (
         <div className="relative max-w-md mx-auto w-full">
