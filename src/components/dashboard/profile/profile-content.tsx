@@ -78,8 +78,30 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
   });
 
   const [noSocials, setNoSocials] = useState(user.linkedin_url === "https://none");
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
   const supabase = createClient();
+
+  const validateForm = () => {
+    const errors: Record<string, string> = {};
+    if (!formData.display_name.trim()) errors.display_name = "Le nom d'affichage est requis.";
+    if (!formData.trade.trim()) errors.trade = "Le métier est requis.";
+    if (!formData.city.trim()) errors.city = "La ville est requise.";
+    if (!formData.phone.trim()) errors.phone = "Le téléphone est requis.";
+    if (!formData.bio.trim()) errors.bio = "La bio est requise.";
+    if (!formData.avatar_url) errors.avatar_url = "Une photo de profil est requise.";
+
+    // Socials validation
+    if (!noSocials) {
+        const hasSocial = formData.linkedin || formData.instagram || formData.facebook || formData.website;
+        if (!hasSocial) {
+            errors.socials = "Au moins un réseau social ou site web est requis.";
+        }
+    }
+
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
 
   const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     try {
@@ -115,6 +137,11 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
   };
 
   const handleSave = async () => {
+    if (!validateForm()) {
+        toast({ title: "Profil incomplet", description: "Veuillez remplir les champs indiqués en rouge.", variant: "destructive" });
+        return;
+    }
+
     setLoading(true);
     try {
       const data = new FormData();
@@ -356,7 +383,7 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
                 {/* Avatar Upload in Edit Mode */}
                 <div className="flex flex-col items-center gap-4 mb-6">
                     <div className="relative group cursor-pointer" onClick={() => fileInputRef.current?.click()}>
-                        <Avatar className="h-24 w-24 border-4 border-slate-100">
+                        <Avatar className={`h-24 w-24 border-4 ${formErrors.avatar_url ? 'border-red-500 animate-pulse' : 'border-slate-100'}`}>
                             <AvatarImage src={formData.avatar_url} className="object-cover" />
                             <AvatarFallback>{formData.display_name?.[0]}</AvatarFallback>
                         </Avatar>
@@ -372,36 +399,75 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
                             disabled={uploading}
                         />
                     </div>
-                    <p className="text-xs text-slate-500 font-medium">{uploading ? "Téléchargement..." : "Cliquez pour changer la photo"}</p>
+                    <div className="text-center">
+                        <p className="text-xs text-slate-500 font-medium">{uploading ? "Téléchargement..." : "Cliquez pour changer la photo"}</p>
+                        {formErrors.avatar_url && <p className="text-xs text-red-500 font-bold mt-1">{formErrors.avatar_url}</p>}
+                    </div>
                 </div>
 
                 <div className="space-y-4">
                     <div className="space-y-2">
-                        <Label>Nom d'affichage</Label>
-                        <Input value={formData.display_name} onChange={e => setFormData({...formData, display_name: e.target.value})} className="h-12 text-lg" />
+                        <Label className={formErrors.display_name ? "text-red-500" : ""}>Nom d'affichage {formErrors.display_name && "*"}</Label>
+                        <Input 
+                            value={formData.display_name} 
+                            onChange={e => {
+                                setFormData({...formData, display_name: e.target.value});
+                                if (e.target.value) setFormErrors({...formErrors, display_name: ""});
+                            }} 
+                            className={`h-12 text-lg ${formErrors.display_name ? "border-red-500 ring-red-500 focus-visible:ring-red-500" : ""}`} 
+                        />
+                        {formErrors.display_name && <p className="text-xs text-red-500">{formErrors.display_name}</p>}
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <Label>Métier / Activité</Label>
-                            <Input value={formData.trade} onChange={e => setFormData({...formData, trade: e.target.value})} className="h-12" placeholder="Ex: Architecte" />
+                            <Label className={formErrors.trade ? "text-red-500" : ""}>Métier / Activité {formErrors.trade && "*"}</Label>
+                            <Input 
+                                value={formData.trade} 
+                                onChange={e => {
+                                    setFormData({...formData, trade: e.target.value});
+                                    if (e.target.value) setFormErrors({...formErrors, trade: ""});
+                                }} 
+                                className={`h-12 ${formErrors.trade ? "border-red-500 focus-visible:ring-red-500" : ""}`} 
+                                placeholder="Ex: Architecte" 
+                            />
                         </div>
                         <div className="space-y-2">
-                            <Label>Ville</Label>
-                            <Input value={formData.city} onChange={e => setFormData({...formData, city: e.target.value})} className="h-12" placeholder="Ex: Bordeaux" />
+                            <Label className={formErrors.city ? "text-red-500" : ""}>Ville {formErrors.city && "*"}</Label>
+                            <Input 
+                                value={formData.city} 
+                                onChange={e => {
+                                    setFormData({...formData, city: e.target.value});
+                                    if (e.target.value) setFormErrors({...formErrors, city: ""});
+                                }} 
+                                className={`h-12 ${formErrors.city ? "border-red-500 focus-visible:ring-red-500" : ""}`} 
+                                placeholder="Ex: Bordeaux" 
+                            />
                         </div>
                     </div>
                     <div className="space-y-2">
-                        <Label>Téléphone</Label>
-                        <Input value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} className="h-12" placeholder="06..." />
+                        <Label className={formErrors.phone ? "text-red-500" : ""}>Téléphone {formErrors.phone && "*"}</Label>
+                        <Input 
+                            value={formData.phone} 
+                            onChange={e => {
+                                setFormData({...formData, phone: e.target.value});
+                                if (e.target.value) setFormErrors({...formErrors, phone: ""});
+                            }} 
+                            className={`h-12 ${formErrors.phone ? "border-red-500 focus-visible:ring-red-500" : ""}`} 
+                            placeholder="06..." 
+                        />
                     </div>
                     <div className="space-y-2">
-                        <Label>À propos (Bio)</Label>
+                        <Label className={formErrors.bio ? "text-red-500" : ""}>À propos (Bio) {formErrors.bio && "*"}</Label>
                         <Textarea 
                             value={formData.bio} 
-                            onChange={e => setFormData({...formData, bio: e.target.value})} 
-                            className="min-h-[120px] text-base"
+                            onChange={e => {
+                                setFormData({...formData, bio: e.target.value});
+                                if (e.target.value) setFormErrors({...formErrors, bio: ""});
+                            }} 
+                            className={`min-h-[120px] text-base ${formErrors.bio ? "border-red-500 focus-visible:ring-red-500" : ""}`}
                             placeholder="Décrivez votre activité et ce que vous recherchez..." 
                         />
+                        {formErrors.bio && <p className="text-xs text-red-500">{formErrors.bio}</p>}
                     </div>
                     
                     {/* CURRENT GOALS SECTION */}
@@ -428,41 +494,78 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
 
                     {/* SOCIALS SECTION (INTEGRATED INTO MAIN TAB FOR BETTER VISIBILITY) */}
                     <div className="space-y-4 pt-6 border-t border-slate-100">
-                        <Label className="text-base font-bold flex items-center gap-2">
-                            Mes Réseaux Sociaux <span className="text-xs font-normal text-slate-500">(Au moins un requis)</span>
+                        <Label className={`text-base font-bold flex items-center gap-2 ${formErrors.socials ? "text-red-500" : ""}`}>
+                            Mes Réseaux Sociaux <span className={`text-xs font-normal ${formErrors.socials ? "text-red-400 font-bold" : "text-slate-500"}`}>(Au moins un requis)</span>
                         </Label>
                         
-                        <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 mb-4 flex items-center gap-3">
+                        <div className={`bg-slate-50 p-4 rounded-xl border mb-4 flex items-center gap-3 ${formErrors.socials ? "border-red-200 bg-red-50" : "border-slate-100"}`}>
                             <Checkbox 
                                 id="no-socials" 
                                 checked={noSocials} 
-                                onCheckedChange={(c) => setNoSocials(c === true)} 
+                                onCheckedChange={(c) => {
+                                    setNoSocials(c === true);
+                                    if(c === true) setFormErrors({...formErrors, socials: ""});
+                                }} 
                             />
                             <Label htmlFor="no-socials" className="cursor-pointer font-bold text-slate-700">
                                 Je ne suis pas présent sur les réseaux sociaux
                             </Label>
                         </div>
+                        
+                        {formErrors.socials && <p className="text-xs text-red-500 font-bold mb-2">{formErrors.socials}</p>}
 
                         <div className={noSocials ? "opacity-40 pointer-events-none transition-opacity" : "transition-opacity"}>
                             <div className="space-y-4">
                                 <div className="space-y-2">
                                     <Label className="flex items-center gap-2"><Linkedin className="h-4 w-4 text-blue-700" /> LinkedIn URL</Label>
-                                    <Input value={formData.linkedin} onChange={e => setFormData({...formData, linkedin: e.target.value})} placeholder="https://linkedin.com/in/..." className="h-12" />
+                                    <Input 
+                                        value={formData.linkedin} 
+                                        onChange={e => {
+                                            setFormData({...formData, linkedin: e.target.value});
+                                            if (e.target.value) setFormErrors({...formErrors, socials: ""});
+                                        }} 
+                                        placeholder="https://linkedin.com/in/..." 
+                                        className="h-12" 
+                                    />
                                 </div>
                                 <div className="space-y-2">
                                     <Label className="flex items-center gap-2"><Instagram className="h-4 w-4 text-pink-600" /> Instagram Handle</Label>
                                     <div className="relative">
                                         <span className="absolute left-3 top-3 text-slate-400 font-bold">@</span>
-                                        <Input value={formData.instagram} onChange={e => setFormData({...formData, instagram: e.target.value})} placeholder="mon_compte" className="h-12 pl-8" />
+                                        <Input 
+                                            value={formData.instagram} 
+                                            onChange={e => {
+                                                setFormData({...formData, instagram: e.target.value});
+                                                if (e.target.value) setFormErrors({...formErrors, socials: ""});
+                                            }} 
+                                            placeholder="mon_compte" 
+                                            className="h-12 pl-8" 
+                                        />
                                     </div>
                                 </div>
                                 <div className="space-y-2">
                                     <Label className="flex items-center gap-2"><Facebook className="h-4 w-4 text-blue-600" /> Facebook URL</Label>
-                                    <Input value={formData.facebook} onChange={e => setFormData({...formData, facebook: e.target.value})} placeholder="https://facebook.com/..." className="h-12" />
+                                    <Input 
+                                        value={formData.facebook} 
+                                        onChange={e => {
+                                            setFormData({...formData, facebook: e.target.value});
+                                            if (e.target.value) setFormErrors({...formErrors, socials: ""});
+                                        }} 
+                                        placeholder="https://facebook.com/..." 
+                                        className="h-12" 
+                                    />
                                 </div>
                                 <div className="space-y-2">
                                     <Label className="flex items-center gap-2"><Globe className="h-4 w-4 text-slate-600" /> Site Web</Label>
-                                    <Input value={formData.website} onChange={e => setFormData({...formData, website: e.target.value})} placeholder="https://monsite.com" className="h-12" />
+                                    <Input 
+                                        value={formData.website} 
+                                        onChange={e => {
+                                            setFormData({...formData, website: e.target.value});
+                                            if (e.target.value) setFormErrors({...formErrors, socials: ""});
+                                        }} 
+                                        placeholder="https://monsite.com" 
+                                        className="h-12" 
+                                    />
                                 </div>
                             </div>
                         </div>
