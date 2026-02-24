@@ -165,15 +165,15 @@ export function DailyMatchCard({ matches }: DailyMatchCardProps) {
                 <div className="h-24 w-24 bg-blue-500/10 rounded-full flex items-center justify-center mb-6 animate-pulse relative z-10">
                     <Zap className="h-12 w-12 text-blue-400" />
                 </div>
-                <h3 className="text-3xl font-black text-white uppercase italic mb-2 relative z-10">Lancement du Protocole</h3>
+                <h3 className="text-3xl font-black text-white uppercase italic mb-2 relative z-10">Initialisation de l'IA</h3>
                 <p className="text-slate-400 font-medium mb-8 max-w-xs leading-relaxed text-lg relative z-10">
                     Votre profil est prêt.
                     <br />
-                    <span className="text-white font-bold">Cliquez pour lancer la recherche de votre premier partenaire.</span>
+                    <span className="text-white font-bold">Lancez l'analyse pour trouver votre binôme idéal.</span>
                 </p>
                 
                 <Button className="bg-white text-slate-900 hover:bg-slate-200 font-black px-8 py-6 rounded-xl text-lg shadow-lg shadow-white/10 w-full animate-bounce-subtle relative z-10">
-                    LANCER L'ALGORITHME 🚀
+                    LANCER L'ANALYSE 📡
                 </Button>
             </motion.div>
         )}
@@ -188,16 +188,16 @@ export function DailyMatchCard({ matches }: DailyMatchCardProps) {
         <div className="absolute bottom-0 left-0 -mb-10 -ml-10 h-40 w-40 bg-purple-500/20 rounded-full blur-3xl pointer-events-none"></div>
         
         {/* Radar Scan Effect */}
-        <div className="absolute inset-0 pointer-events-none opacity-20">
+        <div className="absolute inset-0 pointer-events-none opacity-40">
             <motion.div 
                 animate={{ rotate: 360 }}
                 transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
-                className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] border border-blue-500/30 rounded-full" 
+                className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] border-[2px] border-blue-400/30 rounded-full" 
             />
             <motion.div 
                 animate={{ rotate: -360 }}
                 transition={{ duration: 7, repeat: Infinity, ease: "linear" }}
-                className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[350px] h-[350px] border border-blue-500/20 rounded-full" 
+                className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[350px] h-[350px] border-[2px] border-blue-400/20 rounded-full" 
             />
         </div>
 
@@ -210,11 +210,11 @@ export function DailyMatchCard({ matches }: DailyMatchCardProps) {
             </div>
             
             <h3 className="text-2xl font-black text-white leading-tight mb-4">
-                Recherche lancée ! 🚀
+                Analyse en cours... 📡
             </h3>
             
             <p className="text-lg text-slate-400 font-medium leading-relaxed mb-8">
-                L'algorithme analyse actuellement votre profil pour vous trouver <span className="text-white font-bold bg-white/10 px-1 rounded">la meilleure opportunité</span> locale.
+                Pour garantir un match de qualité, notre algorithme compare votre profil avec <span className="text-white font-bold bg-white/10 px-1 rounded">+50 opportunités locales</span>.
             </p>
 
             <div className="bg-[#0f172a]/50 p-6 rounded-2xl border border-white/5 text-left mb-8">
