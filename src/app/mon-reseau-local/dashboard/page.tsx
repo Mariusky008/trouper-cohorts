@@ -1,3 +1,4 @@
+import { incrementUserPoints, getUserStreak } from "@/lib/actions/gamification";
 import { getDailyMatches } from "@/lib/actions/network-match";
 import { getTrustScore } from "@/lib/actions/network-trust";
 import { getNetworkSettings } from "@/lib/actions/network-settings";
@@ -17,12 +18,14 @@ export default async function DashboardHome() {
   let trustScore = null;
   let settings = null;
   let potentialCount = 0;
+  let userStreak = 0;
 
   try {
     matches = await getDailyMatches();
     trustScore = await getTrustScore();
     settings = await getNetworkSettings();
     potentialCount = await getPotentialOpportunitiesCount();
+    userStreak = await getUserStreak();
   } catch (e) {
     console.error(e);
   }
@@ -52,7 +55,7 @@ export default async function DashboardHome() {
 
       {/* 2. FOCUS PRINCIPAL - MISSION DU JOUR */}
       <div className="relative z-20 -mt-8">
-         <DailyMatchCard matches={matches} />
+         <DailyMatchCard matches={matches} userStreak={userStreak} />
       </div>
 
       {/* 3. GRID LAYOUT "MODERNE" */}

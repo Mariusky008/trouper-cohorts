@@ -15,6 +15,7 @@ import { incrementUserPoints } from "@/lib/actions/gamification";
 
 interface DailyMatchCardProps {
   matches: any[];
+  userStreak?: number;
 }
 
 const GOAL_LABELS: Record<string, string> = {
@@ -30,7 +31,7 @@ const GOAL_LABELS: Record<string, string> = {
     training: "Formation"
 };
 
-export function DailyMatchCard({ matches }: DailyMatchCardProps) {
+export function DailyMatchCard({ matches, userStreak = 0 }: DailyMatchCardProps) {
   // Date Formatting
   const now = new Date();
   const dayName = new Intl.DateTimeFormat('fr-FR', { weekday: 'long' }).format(now);
@@ -314,7 +315,7 @@ export function DailyMatchCard({ matches }: DailyMatchCardProps) {
              <div className="flex items-center gap-2">
                  <div className="hidden md:flex items-center gap-1.5 bg-blue-500/10 border border-blue-500/20 px-2 py-1 rounded-full">
                     <Zap className="h-3 w-3 text-blue-400 fill-blue-400" />
-                    <span className="text-blue-200 text-[10px] font-bold">3 jours</span>
+                    <span className="text-blue-200 text-[10px] font-bold">{userStreak} jours</span>
                  </div>
                  <div className="bg-white/5 text-blue-400 p-2 rounded-xl border border-white/5 flex flex-col items-center justify-center min-w-[70px]">
                    <span className="text-[9px] font-bold text-slate-500 uppercase">Appel dans</span>
