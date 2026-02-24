@@ -82,6 +82,7 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
     // Give & Take
     superpower: user.superpower || "",
     current_need: user.current_need || "",
+    big_goal: user.big_goal || "",
     // Offer fields
     offer_title: user.offer_title || "",
     offer_description: user.offer_description || "",
@@ -196,6 +197,7 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
       data.append("phone", formData.phone);
       data.append("superpower", formData.superpower);
       data.append("current_need", formData.current_need);
+      data.append("big_goal", formData.big_goal);
       
       // Socials logic
       if (noSocials) {
@@ -537,24 +539,24 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
                         {formErrors.bio && <p className="text-xs text-red-500">{formErrors.bio}</p>}
                     </div>
 
-                    {/* GIVE & TAKE SECTION (REDESIGNED) */}
-                    <div className="bg-slate-50/80 p-6 rounded-2xl border border-slate-200/60 mt-6 shadow-sm">
+                    {/* GIVE & TAKE SECTION (REDESIGNED V2 - QUICK WINS) */}
+                    <div className="bg-gradient-to-br from-slate-50 to-blue-50/50 p-6 rounded-2xl border border-slate-200/60 mt-6 shadow-sm">
                         <div className="flex items-center gap-3 mb-6">
-                            <div className="h-10 w-10 bg-blue-100 rounded-xl flex items-center justify-center border border-blue-200 shadow-sm">
+                            <div className="h-10 w-10 bg-blue-100 rounded-xl flex items-center justify-center border border-blue-200 shadow-sm animate-bounce-subtle">
                                 <Handshake className="h-5 w-5 text-blue-600" />
                             </div>
                             <div>
-                                <h3 className="font-bold text-slate-800 text-lg leading-tight">L'Entraide</h3>
-                                <p className="text-xs text-slate-500 font-medium">Pour que la magie du réseau opère, soyez précis et généreux.</p>
+                                <h3 className="font-bold text-slate-800 text-lg leading-tight">L'Entraide "Express" (5 min max)</h3>
+                                <p className="text-xs text-slate-500 font-medium">De petits gestes simples pour initier la relation sans pression.</p>
                             </div>
                         </div>
 
                         <div className="grid md:grid-cols-2 gap-6">
-                            {/* DONNER */}
+                            {/* DONNER (EASY) */}
                             <div className="space-y-3">
                                 <Label className={`flex items-center gap-2 font-bold ${formErrors.superpower ? "text-red-600" : "text-emerald-700"}`}>
                                     <div className="p-1 bg-emerald-100 rounded text-emerald-600"><Gift className="h-3.5 w-3.5" /></div>
-                                    Ce que je peux offrir {formErrors.superpower && "*"}
+                                    Ce que je peux offrir facilement {formErrors.superpower && "*"}
                                 </Label>
                                 <div className="relative group">
                                     <Textarea 
@@ -563,20 +565,20 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
                                             setFormData({...formData, superpower: e.target.value});
                                             if(e.target.value) setFormErrors({...formErrors, superpower: ""});
                                         }} 
-                                        placeholder="Ex: Une oreille attentive, des conseils en marketing, mon carnet d'adresses, une relecture de CV, un café..." 
-                                        className={`min-h-[100px] resize-none border-emerald-200/60 bg-white focus:border-emerald-500 focus:ring-emerald-500 placeholder:text-slate-400 text-sm leading-relaxed shadow-sm transition-all group-hover:border-emerald-300 ${formErrors.superpower ? "border-red-300 ring-red-200" : ""}`}
+                                        placeholder="Ex: Liker tes posts, laisser un avis Google, relire ta bio, te présenter quelqu'un..." 
+                                        className={`min-h-[80px] resize-none border-emerald-200/60 bg-white focus:border-emerald-500 focus:ring-emerald-500 placeholder:text-slate-400 text-sm leading-relaxed shadow-sm transition-all group-hover:border-emerald-300 ${formErrors.superpower ? "border-red-300 ring-red-200" : ""}`}
                                     />
                                     <p className="text-[10px] text-emerald-600/80 mt-1.5 font-medium flex items-center gap-1">
-                                        <CheckSquare className="h-3 w-3" /> Même un petit geste compte !
+                                        <CheckSquare className="h-3 w-3" /> Pensez "Quick Win" : facile pour vous, utile pour l'autre.
                                     </p>
                                 </div>
                             </div>
 
-                            {/* RECEVOIR */}
+                            {/* RECEVOIR (EASY) */}
                             <div className="space-y-3">
                                 <Label className={`flex items-center gap-2 font-bold ${formErrors.current_need ? "text-red-600" : "text-amber-700"}`}>
                                     <div className="p-1 bg-amber-100 rounded text-amber-600"><Target className="h-3.5 w-3.5" /></div>
-                                    Ce dont j'ai besoin {formErrors.current_need && "*"}
+                                    Mon besoin simple du moment {formErrors.current_need && "*"}
                                 </Label>
                                 <div className="relative group">
                                     <Textarea 
@@ -585,11 +587,32 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
                                             setFormData({...formData, current_need: e.target.value});
                                             if(e.target.value) setFormErrors({...formErrors, current_need: ""});
                                         }} 
-                                        placeholder="Ex: Un avis sincère sur mon offre, trouver un bon comptable, de la motivation pour courir, un associé technique..." 
-                                        className={`min-h-[100px] resize-none border-amber-200/60 bg-white focus:border-amber-500 focus:ring-amber-500 placeholder:text-slate-400 text-sm leading-relaxed shadow-sm transition-all group-hover:border-amber-300 ${formErrors.current_need ? "border-red-300 ring-red-200" : ""}`}
+                                        placeholder="Ex: Un like sur mon dernier post LinkedIn, un avis sur ma page Google, un feedback sur mon site..." 
+                                        className={`min-h-[80px] resize-none border-amber-200/60 bg-white focus:border-amber-500 focus:ring-amber-500 placeholder:text-slate-400 text-sm leading-relaxed shadow-sm transition-all group-hover:border-amber-300 ${formErrors.current_need ? "border-red-300 ring-red-200" : ""}`}
                                     />
                                     <p className="text-[10px] text-amber-600/80 mt-1.5 font-medium flex items-center gap-1">
-                                        <CheckSquare className="h-3 w-3" /> Osez demander, le réseau est là pour ça.
+                                        <CheckSquare className="h-3 w-3" /> Demandez quelque chose qui prend moins de 5 min.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* BIG GOAL (OPTIONAL) */}
+                        <div className="mt-6 pt-6 border-t border-slate-200/60">
+                             <div className="space-y-3">
+                                <Label className="flex items-center gap-2 font-bold text-purple-700">
+                                    <div className="p-1 bg-purple-100 rounded text-purple-600"><Award className="h-3.5 w-3.5" /></div>
+                                    Mon Grand Défi (Optionnel)
+                                </Label>
+                                <div className="relative group">
+                                    <Input 
+                                        value={formData.big_goal} 
+                                        onChange={e => setFormData({...formData, big_goal: e.target.value})}
+                                        placeholder="Ex: Trouver un associé technique, lever 50k€, ouvrir une boutique..." 
+                                        className="h-12 border-purple-200/60 bg-white focus:border-purple-500 focus:ring-purple-500 placeholder:text-slate-400 text-sm shadow-sm transition-all group-hover:border-purple-300"
+                                    />
+                                    <p className="text-[10px] text-purple-600/80 mt-1.5 font-medium">
+                                        Ici, c'est pour les demandes exceptionnelles qui demandent plus d'investissement.
                                     </p>
                                 </div>
                             </div>
