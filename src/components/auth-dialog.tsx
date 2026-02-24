@@ -104,6 +104,10 @@ export function AuthDialog({ mode = "signup", trigger, defaultOpen = false }: Au
       formData.append("trade", signupData.trade);
       formData.append("phone", signupData.phone);
 
+      // 2. Call Server Action to Create User
+      const result = await registerNetworkUser(formData);
+      if (result.error) throw new Error(result.error);
+
       // 3. Login Immediately with Retry
       let finalError = null;
       for (let i = 0; i < 3; i++) {
