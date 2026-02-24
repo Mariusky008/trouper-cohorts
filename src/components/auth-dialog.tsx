@@ -96,6 +96,9 @@ export function AuthDialog({ mode = "signup", trigger, defaultOpen = false }: Au
     setIsLoading(true);
 
     try {
+      // Start timing to ensure animation lasts at least 4.5s (3 steps * 1.5s)
+      const startTime = Date.now();
+
       const formData = new FormData();
       formData.append("email", signupData.email);
       formData.append("password", signupData.password);
@@ -130,9 +133,24 @@ export function AuthDialog({ mode = "signup", trigger, defaultOpen = false }: Au
           throw finalError;
       }
 
+      // 4. Force Animation Completion
+      // Calculate remaining time to match minimum animation duration (e.g., 5000ms)
+      const MIN_DURATION = 5000;
+      const elapsedTime = Date.now() - startTime;
+      const remainingTime = Math.max(0, MIN_DURATION - elapsedTime);
+      
+      if (remainingTime > 0) {
+          await new Promise(resolve => setTimeout(resolve, remainingTime));
+      }
+      
+      // Ensure all steps are shown as completed visually before redirect
+      setLoadingStep(loadingMessages.length - 1);
+      await new Promise(resolve => setTimeout(resolve, 800)); // Small pause at the end
+
       toast({ title: "Compte créé !", description: "Redirection..." });
       
-      // 4. Client-side Redirect
+      // 5. Client-side Redirect (Keep modal open until redirect happens to avoid white flash)
+      // We do NOT set isLoading(false) here to keep the animation visible until the page changes.
       router.push("/mon-reseau-local/dashboard");
       router.refresh();
 
@@ -143,9 +161,8 @@ export function AuthDialog({ mode = "signup", trigger, defaultOpen = false }: Au
         description: error.message || "Une erreur est survenue.", 
         variant: "destructive" 
       });
-    } finally {
-      setIsLoading(false);
-    }
+      setIsLoading(false); // Only stop loading on error
+    } 
   };
 
   return (
