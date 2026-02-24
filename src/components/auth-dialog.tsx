@@ -83,32 +83,27 @@ export function AuthDialog({ mode = "signup", trigger, defaultOpen = false }: Au
       formData.append("trade", signupData.trade);
       formData.append("phone", signupData.phone);
 
-      const result = await registerNetworkUser(formData);
-
-      if (result.error) throw new Error(result.error);
-
-      toast({ title: "Compte créé !", description: "Bienvenue sur Mon Réseau Local." });
-      setIsOpen(false);
-      
-      // Force sign out first to ensure clean state before logging in
-      await supabase.auth.signOut();
-
-      // Auto login after registration (optional, but good UX)
-      // Since server action created the user, we just need to sign in client-side to get the session
+      // 3. Login Immediately
       const { error: loginError } = await supabase.auth.signInWithPassword({
         email: signupData.email,
         password: signupData.password,
       });
 
-      if (!loginError) {
-        router.push("/mon-reseau-local/dashboard");
-        router.refresh();
+      if (loginError) {
+          throw loginError;
       }
 
+      toast({ title: "Compte créé !", description: "Redirection..." });
+      
+      // 4. Client-side Redirect
+      router.push("/mon-reseau-local/dashboard");
+      router.refresh();
+
     } catch (error: any) {
+      console.error("Signup error:", error);
       toast({ 
         title: "Erreur d'inscription", 
-        description: error.message, 
+        description: error.message || "Une erreur est survenue.", 
         variant: "destructive" 
       });
     } finally {
@@ -119,7 +114,7 @@ export function AuthDialog({ mode = "signup", trigger, defaultOpen = false }: Au
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        {trigger || <Button>Connexion</Button>}
+        {trigger}
       </DialogTrigger>
       <DialogContent className="sm:max-w-lg p-0 overflow-hidden bg-white border-slate-200">
         <div className="p-6">
@@ -127,15 +122,11 @@ export function AuthDialog({ mode = "signup", trigger, defaultOpen = false }: Au
              <DialogTitle className="text-2xl font-black text-slate-900 text-center">
                {activeMode === 'login' ? 'Bon retour 👋' : 'Rejoindre le réseau 🚀'}
              </DialogTitle>
-             <p className="text-center text-slate-500 text-sm">
-               {activeMode === 'login' 
-                 ? "Connectez-vous pour accéder à vos opportunités." 
-                 : "Créez votre compte pour commencer à matcher."}
-             </p>
           </DialogHeader>
 
           {activeMode === 'login' ? (
             <form onSubmit={handleLogin} className="space-y-4">
+               {/* Login Form Fields */}
                <div className="space-y-2">
                  <Label>Email</Label>
                  <Input 
@@ -149,7 +140,6 @@ export function AuthDialog({ mode = "signup", trigger, defaultOpen = false }: Au
                <div className="space-y-2">
                  <div className="flex justify-between items-center">
                    <Label>Mot de passe</Label>
-                   <Link href="#" className="text-xs text-blue-600 font-bold">Oublié ?</Link>
                  </div>
                  <Input 
                    type="password" 
@@ -164,6 +154,7 @@ export function AuthDialog({ mode = "signup", trigger, defaultOpen = false }: Au
             </form>
           ) : (
             <form onSubmit={handleSignup} className="space-y-4">
+               {/* Simplified Signup Form */}
                <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label>Prénom Nom</Label>
@@ -186,9 +177,9 @@ export function AuthDialog({ mode = "signup", trigger, defaultOpen = false }: Au
                </div>
                <div className="grid grid-cols-2 gap-4">
                  <div className="space-y-2">
-                   <Label>Votre Activité</Label>
+                   <Label>Activité</Label>
                    <Input 
-                     placeholder="Ex: Architecte..." 
+                     placeholder="Architecte" 
                      value={signupData.trade}
                      onChange={(e) => setSignupData({...signupData, trade: e.target.value})}
                      required
@@ -198,7 +189,7 @@ export function AuthDialog({ mode = "signup", trigger, defaultOpen = false }: Au
                    <Label>Téléphone</Label>
                    <Input 
                      type="tel"
-                     placeholder="06 12 34 56 78" 
+                     placeholder="06..." 
                      value={signupData.phone}
                      onChange={(e) => setSignupData({...signupData, phone: e.target.value})}
                      required
@@ -229,7 +220,7 @@ export function AuthDialog({ mode = "signup", trigger, defaultOpen = false }: Au
                  {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Créer mon compte (1€)"}
                </Button>
                <p className="text-xs text-center text-slate-400">
-                 En vous inscrivant, vous acceptez nos CGU. 3 jours d'essai pour 1€, puis 49€/mois.
+                 3 jours d'essai pour 1€, puis 49€/mois.
                </p>
             </form>
           )}

@@ -348,9 +348,8 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
           </DialogHeader>
           
           <Tabs defaultValue="infos" className="w-full py-4">
-             <TabsList className="grid w-full grid-cols-2 mb-6">
-                <TabsTrigger value="infos">Infos Personnelles</TabsTrigger>
-                <TabsTrigger value="socials">Réseaux Sociaux</TabsTrigger>
+             <TabsList className="grid w-full grid-cols-1 mb-6">
+                <TabsTrigger value="infos">Informations Complètes</TabsTrigger>
              </TabsList>
 
              <TabsContent value="infos" className="space-y-6">
@@ -426,47 +425,52 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
                             ))}
                         </div>
                     </div>
-                </div>
-             </TabsContent>
 
-             <TabsContent value="socials" className="space-y-6">
-                <div className="space-y-4">
-                    <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 mb-6 flex items-center gap-3">
-                        <Checkbox 
-                            id="no-socials" 
-                            checked={noSocials} 
-                            onCheckedChange={(c) => setNoSocials(c === true)} 
-                        />
-                        <Label htmlFor="no-socials" className="cursor-pointer font-bold text-slate-700">
-                            Je ne suis pas présent sur les réseaux sociaux
+                    {/* SOCIALS SECTION (INTEGRATED INTO MAIN TAB FOR BETTER VISIBILITY) */}
+                    <div className="space-y-4 pt-6 border-t border-slate-100">
+                        <Label className="text-base font-bold flex items-center gap-2">
+                            Mes Réseaux Sociaux <span className="text-xs font-normal text-slate-500">(Au moins un requis)</span>
                         </Label>
-                    </div>
+                        
+                        <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 mb-4 flex items-center gap-3">
+                            <Checkbox 
+                                id="no-socials" 
+                                checked={noSocials} 
+                                onCheckedChange={(c) => setNoSocials(c === true)} 
+                            />
+                            <Label htmlFor="no-socials" className="cursor-pointer font-bold text-slate-700">
+                                Je ne suis pas présent sur les réseaux sociaux
+                            </Label>
+                        </div>
 
-                    <div className={noSocials ? "opacity-40 pointer-events-none transition-opacity" : "transition-opacity"}>
-                        <div className="space-y-4">
-                            <div className="space-y-2">
-                                <Label className="flex items-center gap-2"><Linkedin className="h-4 w-4 text-blue-700" /> LinkedIn URL</Label>
-                                <Input value={formData.linkedin} onChange={e => setFormData({...formData, linkedin: e.target.value})} placeholder="https://linkedin.com/in/..." className="h-12" />
-                            </div>
-                            <div className="space-y-2">
-                                <Label className="flex items-center gap-2"><Instagram className="h-4 w-4 text-pink-600" /> Instagram Handle</Label>
-                                <div className="relative">
-                                    <span className="absolute left-3 top-3 text-slate-400 font-bold">@</span>
-                                    <Input value={formData.instagram} onChange={e => setFormData({...formData, instagram: e.target.value})} placeholder="mon_compte" className="h-12 pl-8" />
+                        <div className={noSocials ? "opacity-40 pointer-events-none transition-opacity" : "transition-opacity"}>
+                            <div className="space-y-4">
+                                <div className="space-y-2">
+                                    <Label className="flex items-center gap-2"><Linkedin className="h-4 w-4 text-blue-700" /> LinkedIn URL</Label>
+                                    <Input value={formData.linkedin} onChange={e => setFormData({...formData, linkedin: e.target.value})} placeholder="https://linkedin.com/in/..." className="h-12" />
                                 </div>
-                            </div>
-                            <div className="space-y-2">
-                                <Label className="flex items-center gap-2"><Facebook className="h-4 w-4 text-blue-600" /> Facebook URL</Label>
-                                <Input value={formData.facebook} onChange={e => setFormData({...formData, facebook: e.target.value})} placeholder="https://facebook.com/..." className="h-12" />
-                            </div>
-                            <div className="space-y-2">
-                                <Label className="flex items-center gap-2"><Globe className="h-4 w-4 text-slate-600" /> Site Web</Label>
-                                <Input value={formData.website} onChange={e => setFormData({...formData, website: e.target.value})} placeholder="https://monsite.com" className="h-12" />
+                                <div className="space-y-2">
+                                    <Label className="flex items-center gap-2"><Instagram className="h-4 w-4 text-pink-600" /> Instagram Handle</Label>
+                                    <div className="relative">
+                                        <span className="absolute left-3 top-3 text-slate-400 font-bold">@</span>
+                                        <Input value={formData.instagram} onChange={e => setFormData({...formData, instagram: e.target.value})} placeholder="mon_compte" className="h-12 pl-8" />
+                                    </div>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className="flex items-center gap-2"><Facebook className="h-4 w-4 text-blue-600" /> Facebook URL</Label>
+                                    <Input value={formData.facebook} onChange={e => setFormData({...formData, facebook: e.target.value})} placeholder="https://facebook.com/..." className="h-12" />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className="flex items-center gap-2"><Globe className="h-4 w-4 text-slate-600" /> Site Web</Label>
+                                    <Input value={formData.website} onChange={e => setFormData({...formData, website: e.target.value})} placeholder="https://monsite.com" className="h-12" />
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
              </TabsContent>
+
+             {/* REMOVED SEPARATE SOCIALS TAB */}
           </Tabs>
 
           <DialogFooter>
