@@ -85,11 +85,14 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
 
   const [noSocials, setNoSocials] = useState(user.linkedin_url === "https://none");
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  const [activeTab, setActiveTab] = useState("infos");
 
   const supabase = createClient();
 
   const validateForm = () => {
     const errors: Record<string, string> = {};
+    
+    // Basic Info Validation
     if (!formData.display_name.trim()) errors.display_name = "Le nom d'affichage est requis.";
     if (!formData.trade.trim()) errors.trade = "Le métier est requis.";
     if (!formData.city.trim()) errors.city = "La ville est requise.";
@@ -106,8 +109,15 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
         }
     }
 
+    // Offer Validation (only if active)
+    if (formData.offer_active) {
+        if (!formData.offer_title.trim()) errors.offer_title = "Le titre de l'offre est requis.";
+        if (!formData.offer_price) errors.offer_price = "Le prix club est requis.";
+        if (!formData.offer_description.trim()) errors.offer_description = "La description est requise.";
+    }
+
     setFormErrors(errors);
-    return Object.keys(errors).length === 0;
+    return errors;
   };
 
   const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -144,8 +154,26 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
   };
 
   const handleSave = async () => {
-    if (!validateForm()) {
-        toast({ title: "Profil incomplet", description: "Veuillez remplir les champs indiqués en rouge.", variant: "destructive" });
+    const errors = validateForm();
+    const hasErrors = Object.keys(errors).length > 0;
+
+    if (hasErrors) {
+        // Determine which tab has errors
+        const offerErrors = ['offer_title', 'offer_price', 'offer_description'];
+        const hasOfferErrors = Object.keys(errors).some(key => offerErrors.includes(key));
+        
+        const infoErrors = ['display_name', 'trade', 'city', 'phone', 'bio', 'avatar_url', 'current_goals', 'socials'];
+        const hasInfoErrors = Object.keys(errors).some(key => infoErrors.includes(key));
+
+        if (hasInfoErrors && activeTab !== 'infos') {
+            setActiveTab('infos');
+            toast({ title: "Profil incomplet", description: "Veuillez remplir les informations manquantes dans l'onglet principal.", variant: "destructive" });
+        } else if (hasOfferErrors && activeTab !== 'offer') {
+            setActiveTab('offer');
+            toast({ title: "Offre incomplète", description: "Veuillez compléter les détails de votre offre.", variant: "destructive" });
+        } else {
+             toast({ title: "Erreur de validation", description: "Veuillez corriger les champs indiqués en rouge.", variant: "destructive" });
+        }
         return;
     }
 
@@ -399,7 +427,7 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
             </DialogDescription>
           </DialogHeader>
           
-          <Tabs defaultValue="infos" className="w-full py-4">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full py-4">
              <TabsList className="grid w-full grid-cols-2 mb-6">
                 <TabsTrigger value="infos">Informations Complètes</TabsTrigger>
                 <TabsTrigger value="offer" className="flex items-center gap-2">
@@ -644,12 +672,15 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
                 <div className={!formData.offer_active ? "opacity-50 pointer-events-none transition-opacity" : "transition-opacity"}>
                     <div className="space-y-4">
                         <div className="space-y-2">
-                            <Label>Titre de l'offre</Label>
+                            <Label className={formErrors.offer_title ? "text-red-500" : ""}>Titre de l'offre {formErrors.offer_title && "*"}</Label>
                             <Input 
                                 value={formData.offer_title} 
-                                onChange={e => setFormData({...formData, offer_title: e.target.value})} 
+                                onChange={e => {
+                                    setFormData({...formData, offer_title: e.target.value});
+                                    if(e.target.value) setFormErrors({...formErrors, offer_title: ""});
+                                }} 
                                 placeholder="Ex: Création de Logo Express" 
-                                className="h-12 font-bold"
+                                className={`h-12 font-bold ${formErrors.offer_title ? "border-red-500 ring-red-500 focus-visible:ring-red-500" : ""}`}
                             />
                         </div>
                         
@@ -668,26 +699,32 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
                                 </div>
                             </div>
                             <div className="space-y-2">
-                                <Label className="text-emerald-600 font-bold">Prix Club (-50% min)</Label>
+                                <Label className={`font-bold ${formErrors.offer_price ? "text-red-500" : "text-emerald-600"}`}>Prix Club (-50% min) {formErrors.offer_price && "*"}</Label>
                                 <div className="relative">
                                     <Input 
                                         type="number"
                                         value={formData.offer_price} 
-                                        onChange={e => setFormData({...formData, offer_price: e.target.value})} 
+                                        onChange={e => {
+                                            setFormData({...formData, offer_price: e.target.value});
+                                            if(e.target.value) setFormErrors({...formErrors, offer_price: ""});
+                                        }} 
                                         placeholder="250" 
-                                        className="h-12 pl-8 border-emerald-500 ring-emerald-500 focus-visible:ring-emerald-500 bg-emerald-50"
+                                        className={`h-12 pl-8 bg-emerald-50 ${formErrors.offer_price ? "border-red-500 ring-red-500 focus-visible:ring-red-500" : "border-emerald-500 ring-emerald-500 focus-visible:ring-emerald-500"}`}
                                     />
-                                    <Euro className="absolute left-3 top-3.5 h-4 w-4 text-emerald-600" />
+                                    <Euro className={`absolute left-3 top-3.5 h-4 w-4 ${formErrors.offer_price ? "text-red-500" : "text-emerald-600"}`} />
                                 </div>
                             </div>
                         </div>
 
                         <div className="space-y-2">
-                            <Label>Détails de l'offre</Label>
+                            <Label className={formErrors.offer_description ? "text-red-500" : ""}>Détails de l'offre {formErrors.offer_description && "*"}</Label>
                             <Textarea 
                                 value={formData.offer_description} 
-                                onChange={e => setFormData({...formData, offer_description: e.target.value})} 
-                                className="min-h-[100px]"
+                                onChange={e => {
+                                    setFormData({...formData, offer_description: e.target.value});
+                                    if(e.target.value) setFormErrors({...formErrors, offer_description: ""});
+                                }} 
+                                className={`min-h-[100px] ${formErrors.offer_description ? "border-red-500 ring-red-500 focus-visible:ring-red-500" : ""}`}
                                 placeholder="Décrivez ce qui est inclus dans ce tarif préférentiel..." 
                             />
                         </div>
