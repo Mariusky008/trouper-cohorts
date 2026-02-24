@@ -133,29 +133,93 @@ async function handleMatching(request: Request) {
       return NextResponse.json({ message: 'Not enough participants for ' + dateStr, count: 0 });
     }
 
-    // 4. Simple Matching Logic (Random Pairing for MVP)
-    const shuffled = availabilities.sort(() => 0.5 - Math.random());
-    const matches = [];
+    // 4. Enhanced Matching Logic (Prevent Duplicates + Random Pairing)
     
-    while (shuffled.length >= 2) {
-      const user1 = shuffled.pop()!;
-      const user2 = shuffled.pop()!;
+    // 4a. Fetch History: Get all past matches for these users to prevent repeats
+    const userIds = availabilities.map((a: any) => a.user_id);
+    const { data: pastMatches } = await supabase
+        .from('network_matches')
+        .select('user1_id, user2_id')
+        .or(`user1_id.in.(${userIds.join(',')}),user2_id.in.(${userIds.join(',')})`);
+    
+    // Build a map of "who has met whom"
+    const metHistory: Record<string, Set<string>> = {};
+    if (pastMatches) {
+        pastMatches.forEach((m: any) => {
+            if (!metHistory[m.user1_id]) metHistory[m.user1_id] = new Set();
+            if (!metHistory[m.user2_id]) metHistory[m.user2_id] = new Set();
+            
+            metHistory[m.user1_id].add(m.user2_id);
+            metHistory[m.user2_id].add(m.user1_id);
+        });
+    }
 
-      // Find common slot (MVP: just take the first common one, or default to first slot of user1)
-      const u1Slots = Array.isArray(user1.slots) ? user1.slots : [];
-      const u2Slots = Array.isArray(user2.slots) ? user2.slots : [];
-      
-      const commonSlot = u1Slots.find((s: string) => u2Slots.includes(s)) || u1Slots[0];
+    // 4b. Greedy Matching with History Check
+    // Shuffle first to ensure randomness
+    const pool = availabilities.sort(() => 0.5 - Math.random());
+    const matches = [];
+    const matchedUserIds = new Set<string>();
 
-      matches.push({
-        user1_id: user1.user_id,
-        user2_id: user2.user_id,
-        date: dateStr,
-        time: commonSlot || "09h – 11h", 
-        status: 'pending',
-        meeting_url: `https://meet.google.com/new`,
-        topic: "Échange réseau : Présentez vos activités respectives."
-      });
+    // Iterate through the pool to find matches
+    for (let i = 0; i < pool.length; i++) {
+        const user1 = pool[i];
+        if (matchedUserIds.has(user1.user_id)) continue;
+
+        let bestPartnerIndex = -1;
+
+        // Look for a partner in the rest of the pool
+        for (let j = i + 1; j < pool.length; j++) {
+            const candidate = pool[j];
+            if (matchedUserIds.has(candidate.user_id)) continue;
+
+            // Check if they have met before
+            const hasMet = metHistory[user1.user_id]?.has(candidate.user_id);
+            if (!hasMet) {
+                // Found a fresh partner!
+                bestPartnerIndex = j;
+                break; 
+            }
+        }
+
+        // If no fresh partner found, try to match with anyone available (fallback)
+        // Only if we really want to guarantee a match even if repeated. 
+        // For now, let's prioritize freshness, but if list is exhausted, maybe skip or pick first available.
+        // Let's do a second pass if no fresh partner found? 
+        // For MVP: If no fresh partner, pick the next available one (better a repeat match than no match?)
+        // The user complained about repeats, so let's try to avoid it strictly first.
+        
+        if (bestPartnerIndex === -1) {
+            // Second pass: Find ANY partner available
+             for (let j = i + 1; j < pool.length; j++) {
+                if (!matchedUserIds.has(pool[j].user_id)) {
+                    bestPartnerIndex = j;
+                    break;
+                }
+             }
+        }
+
+        if (bestPartnerIndex !== -1) {
+            const user2 = pool[bestPartnerIndex];
+            
+            // Mark both as matched
+            matchedUserIds.add(user1.user_id);
+            matchedUserIds.add(user2.user_id);
+
+            // Find common slot
+            const u1Slots = Array.isArray(user1.slots) ? user1.slots : [];
+            const u2Slots = Array.isArray(user2.slots) ? user2.slots : [];
+            const commonSlot = u1Slots.find((s: string) => u2Slots.includes(s)) || u1Slots[0];
+
+            matches.push({
+                user1_id: user1.user_id,
+                user2_id: user2.user_id,
+                date: dateStr,
+                time: commonSlot || "09h – 11h", 
+                status: 'pending',
+                meeting_url: `https://meet.google.com/new`,
+                topic: "Échange réseau : Présentez vos activités respectives."
+            });
+        }
     }
 
     // 5. Insert Matches
@@ -174,7 +238,7 @@ async function handleMatching(request: Request) {
       success: true, 
       date: dateStr,
       matches_created: matches.length,
-      unmatched_users: shuffled.length 
+      unmatched_users: pool.length - matchedUserIds.size
     });
 
   } catch (error: any) {
