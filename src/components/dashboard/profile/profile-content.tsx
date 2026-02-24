@@ -90,6 +90,7 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
     if (!formData.phone.trim()) errors.phone = "Le téléphone est requis.";
     if (!formData.bio.trim()) errors.bio = "La bio est requise.";
     if (!formData.avatar_url) errors.avatar_url = "Une photo de profil est requise.";
+    if (!formData.current_goals || formData.current_goals.length === 0) errors.current_goals = "Veuillez sélectionner au moins un objectif.";
 
     // Socials validation
     if (!noSocials) {
@@ -190,11 +191,22 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
   const toggleGoal = (goalId: string) => {
       setFormData(prev => {
           const goals = prev.current_goals || [];
+          let newGoals;
           if (goals.includes(goalId)) {
-              return { ...prev, current_goals: goals.filter((g: string) => g !== goalId) };
+              newGoals = goals.filter((g: string) => g !== goalId);
           } else {
-              return { ...prev, current_goals: [...goals, goalId] };
+              newGoals = [...goals, goalId];
           }
+          
+          if (newGoals.length > 0) {
+              setFormErrors(prevErrors => {
+                  const newErrors = { ...prevErrors };
+                  delete newErrors.current_goals;
+                  return newErrors;
+              });
+          }
+          
+          return { ...prev, current_goals: newGoals };
       });
   };
 
@@ -472,10 +484,12 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
                     
                     {/* CURRENT GOALS SECTION */}
                     <div className="space-y-3 pt-4 border-t border-slate-100">
-                        <Label className="text-base font-bold">Ce que je recherche en ce moment</Label>
-                        <div className="grid grid-cols-1 gap-2">
+                        <Label className={`text-base font-bold ${formErrors.current_goals ? "text-red-500" : ""}`}>
+                            Ce que je recherche en ce moment {formErrors.current_goals && "*"}
+                        </Label>
+                        <div className={`grid grid-cols-1 gap-2 p-2 rounded-xl ${formErrors.current_goals ? "border border-red-200 bg-red-50" : ""}`}>
                             {GOAL_OPTIONS.map((goal) => (
-                                <div key={goal.id} className="flex items-center space-x-3 p-3 rounded-xl border border-slate-100 hover:bg-slate-50 transition-colors">
+                                <div key={goal.id} className="flex items-center space-x-3 p-3 rounded-xl border border-slate-100 hover:bg-slate-50 transition-colors bg-white">
                                     <Checkbox 
                                         id={goal.id} 
                                         checked={(formData.current_goals || []).includes(goal.id)}
@@ -490,6 +504,7 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
                                 </div>
                             ))}
                         </div>
+                        {formErrors.current_goals && <p className="text-xs text-red-500 font-bold">{formErrors.current_goals}</p>}
                     </div>
 
                     {/* SOCIALS SECTION (INTEGRATED INTO MAIN TAB FOR BETTER VISIBILITY) */}
