@@ -53,9 +53,24 @@ export function DailyMatchCard({ matches, userStreak = 0, userId }: DailyMatchCa
 
   // Opportunity Modal State
   const [isOpportunityOpen, setIsOpportunityOpen] = useState(false);
+  const [isRatingOpen, setIsRatingOpen] = useState(false);
   const [oppType, setOppType] = useState("business");
   const [oppDetails, setOppDetails] = useState("");
   const [isSubmittingOpp, setIsSubmittingOpp] = useState(false);
+
+  const handleRate = (score: number, tag: string) => {
+      setIsRatingOpen(false);
+      
+      // Fun feedback based on score
+      if (score === 5) confetti({ particleCount: 200, spread: 100, colors: ['#10b981', '#fbbf24'] }); // Green & Gold
+      else if (score === 4) confetti({ particleCount: 50, spread: 50 });
+      
+      toast.success("Feedback enregistré ! 📝", {
+          description: `Vous avez qualifié l'échange de "${tag}"`
+      });
+      
+      // TODO: Call server action to save to DB
+  };
 
   const handleCreateOpportunity = async (partnerId: string, partnerName: string) => {
       if (!oppDetails.trim()) {
@@ -571,18 +586,62 @@ export function DailyMatchCard({ matches, userStreak = 0, userId }: DailyMatchCa
                                     </DialogContent>
                                 </Dialog>
 
-                                {/* LOG INTERACTION BUTTON */}
-                                <Button 
-                                    onClick={() => {
-                                        confetti({ particleCount: 50, spread: 40, colors: ['#94a3b8', '#cbd5e1'] });
-                                        toast.success("Échange noté ! 📝", { description: "Merci de contribuer à la qualité du réseau." });
-                                    }}
-                                    className="h-auto py-4 flex flex-col items-center gap-1 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl border border-white/5 hover:-translate-y-1 transition-transform"
-                                >
-                                    <Handshake className="h-7 w-7 mb-1" />
-                                    <span className="font-bold text-sm">NOTER</span>
-                                    <span className="text-[9px] opacity-80 font-bold uppercase">Un échange</span>
-                                </Button>
+                                {/* LOG INTERACTION BUTTON (RATING MODAL) */}
+                                <Dialog open={isRatingOpen} onOpenChange={setIsRatingOpen}>
+                                    <DialogTrigger asChild>
+                                        <Button className="h-auto py-4 flex flex-col items-center gap-1 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl border border-white/5 hover:-translate-y-1 transition-transform">
+                                            <Handshake className="h-7 w-7 mb-1" />
+                                            <span className="font-bold text-sm">NOTER</span>
+                                            <span className="text-[9px] opacity-80 font-bold uppercase">Un échange</span>
+                                        </Button>
+                                    </DialogTrigger>
+                                    <DialogContent className="bg-[#0f172a] border-white/10 text-white sm:max-w-md rounded-2xl">
+                                        <DialogHeader>
+                                            <DialogTitle className="flex items-center gap-2 text-xl font-black justify-center">
+                                                <Handshake className="h-6 w-6 text-blue-400" />
+                                                Comment s'est passé l'échange ?
+                                            </DialogTitle>
+                                            <DialogDescription className="text-center text-slate-400 text-xs">
+                                                Votre avis nous aide à vous proposer de meilleurs matchs demain.
+                                            </DialogDescription>
+                                        </DialogHeader>
+                                        
+                                        <div className="grid grid-cols-3 gap-3 py-6">
+                                            <Button 
+                                                onClick={() => handleRate(5, "Top 🔥")} 
+                                                className="flex flex-col items-center justify-center h-28 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 hover:border-emerald-500 text-emerald-400 hover:text-emerald-300 transition-all hover:scale-105 group rounded-xl"
+                                            >
+                                                <span className="text-4xl mb-2 group-hover:animate-bounce filter drop-shadow-lg">🔥</span>
+                                                <span className="font-black text-lg">TOP !</span>
+                                                <span className="text-[9px] uppercase font-bold opacity-70">Super Fit</span>
+                                            </Button>
+                                            
+                                            <Button 
+                                                onClick={() => handleRate(4, "Sympa 👍")} 
+                                                className="flex flex-col items-center justify-center h-28 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/30 hover:border-blue-500 text-blue-400 hover:text-blue-300 transition-all hover:scale-105 group rounded-xl"
+                                            >
+                                                <span className="text-4xl mb-2 group-hover:animate-pulse filter drop-shadow-lg">👍</span>
+                                                <span className="font-black text-lg">SYMPA</span>
+                                                <span className="text-[10px] uppercase font-bold opacity-70">Bon Contact</span>
+                                            </Button>
+                                            
+                                            <Button 
+                                                onClick={() => handleRate(2, "Moyen 😕")} 
+                                                className="flex flex-col items-center justify-center h-28 bg-slate-500/10 hover:bg-slate-500/20 border border-slate-500/30 hover:border-slate-500 text-slate-400 hover:text-slate-300 transition-all hover:scale-105 group rounded-xl"
+                                            >
+                                                <span className="text-4xl mb-2 group-hover:rotate-12 filter drop-shadow-lg">😕</span>
+                                                <span className="font-black text-lg">BOF</span>
+                                                <span className="text-[10px] uppercase font-bold opacity-70">Pas de Fit</span>
+                                            </Button>
+                                        </div>
+                                        
+                                        <div className="text-center">
+                                            <Button variant="ghost" onClick={() => setIsRatingOpen(false)} className="text-slate-500 hover:text-white text-xs">
+                                                Annuler / Je n'ai pas encore appelé
+                                            </Button>
+                                        </div>
+                                    </DialogContent>
+                                </Dialog>
                             </div>
                         </div>
                     )}
