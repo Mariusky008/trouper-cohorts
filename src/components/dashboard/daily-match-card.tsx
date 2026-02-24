@@ -490,6 +490,26 @@ export function DailyMatchCard({ matches, userStreak = 0, userId }: DailyMatchCa
                                 </Button>
                             </div>
 
+                            {/* THE SCRIPT (Now Below Button) */}
+                            <AnimatePresence>
+                                {isWhyVisible && (
+                                    <motion.div 
+                                        initial={{ opacity: 0, height: 0 }}
+                                        animate={{ opacity: 1, height: "auto" }}
+                                        exit={{ opacity: 0, height: 0 }}
+                                        className="bg-[#0f172a]/80 backdrop-blur-xl rounded-xl p-4 border border-blue-500/30 relative overflow-hidden"
+                                    >
+                                        <div className="absolute left-0 top-0 w-1 h-full bg-blue-500" />
+                                        <h5 className="text-xs font-bold text-blue-400 uppercase mb-2 flex items-center gap-2">
+                                            <MessageSquare className="h-3 w-3" /> Pistes de discussion
+                                        </h5>
+                                        <p className="text-sm text-slate-200 font-medium leading-relaxed whitespace-pre-line">
+                                            {whyText}
+                                        </p>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+
                             {/* ACTION BUTTONS (The "Cockpit") */}
                             <div className="grid grid-cols-2 gap-3">
                                 {/* OFFER OPPORTUNITY BUTTON */}
@@ -552,7 +572,13 @@ export function DailyMatchCard({ matches, userStreak = 0, userId }: DailyMatchCa
                                 </Dialog>
 
                                 {/* LOG INTERACTION BUTTON */}
-                                <Button className="h-auto py-4 flex flex-col items-center gap-1 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl border border-white/5 hover:-translate-y-1 transition-transform">
+                                <Button 
+                                    onClick={() => {
+                                        confetti({ particleCount: 50, spread: 40, colors: ['#94a3b8', '#cbd5e1'] });
+                                        toast.success("Échange noté ! 📝", { description: "Merci de contribuer à la qualité du réseau." });
+                                    }}
+                                    className="h-auto py-4 flex flex-col items-center gap-1 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl border border-white/5 hover:-translate-y-1 transition-transform"
+                                >
                                     <Handshake className="h-7 w-7 mb-1" />
                                     <span className="font-bold text-sm">NOTER</span>
                                     <span className="text-[9px] opacity-80 font-bold uppercase">Un échange</span>
