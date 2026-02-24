@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,9 +8,10 @@ import { Label } from "@/components/ui/label";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2 } from "lucide-react";
+import { Loader2, Check, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { registerNetworkUser } from "@/actions/network-registration";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface AuthDialogProps {
   mode?: "login" | "signup";
@@ -39,6 +40,26 @@ export function AuthDialog({ mode = "signup", trigger, defaultOpen = false }: Au
     trade: "",
     phone: ""
   });
+
+  // Animation Step State
+  const [loadingStep, setLoadingStep] = useState(0);
+  const loadingMessages = [
+    "Création de votre compte sécurisé...",
+    "Initialisation de votre profil...",
+    "Recherche des opportunités locales...",
+    "Finalisation de l'espace membre..."
+  ];
+
+  useEffect(() => {
+    if (isLoading && activeMode === 'signup') {
+        const interval = setInterval(() => {
+            setLoadingStep((prev) => (prev < loadingMessages.length - 1 ? prev + 1 : prev));
+        }, 1500); // Change message every 1.5s
+        return () => clearInterval(interval);
+    } else {
+        setLoadingStep(0);
+    }
+  }, [isLoading, activeMode]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -129,6 +150,61 @@ export function AuthDialog({ mode = "signup", trigger, defaultOpen = false }: Au
         {trigger}
       </DialogTrigger>
       <DialogContent className="sm:max-w-lg p-0 overflow-hidden bg-white border-slate-200">
+        <AnimatePresence mode="wait">
+            {isLoading && activeMode === 'signup' ? (
+                <motion.div
+                    key="signup-loading"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="absolute inset-0 z-50 bg-white/95 backdrop-blur-md flex flex-col items-center justify-center p-8 text-center"
+                >
+                    <motion.div 
+                        initial={{ scale: 0.5, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        transition={{ duration: 0.5, type: "spring" }}
+                        className="h-24 w-24 bg-blue-50 rounded-full flex items-center justify-center mb-8 relative"
+                    >
+                        <div className="absolute inset-0 border-4 border-blue-100 rounded-full animate-ping opacity-20"></div>
+                        <Sparkles className="h-10 w-10 text-blue-600 animate-pulse" />
+                    </motion.div>
+                    
+                    <h3 className="text-2xl font-black text-slate-800 mb-2">Bienvenue à bord ! 🚀</h3>
+                    <p className="text-slate-500 mb-8 max-w-xs mx-auto">
+                        Nous préparons votre espace personnel. Cela ne prendra que quelques secondes.
+                    </p>
+
+                    <div className="w-full max-w-xs space-y-4">
+                        {loadingMessages.map((msg, index) => (
+                            <motion.div 
+                                key={index}
+                                initial={{ opacity: 0, x: -20 }}
+                                animate={{ 
+                                    opacity: index <= loadingStep ? 1 : 0.3, 
+                                    x: 0,
+                                    scale: index === loadingStep ? 1.05 : 1
+                                }}
+                                className="flex items-center gap-3 text-sm font-medium"
+                            >
+                                <div className={`h-6 w-6 rounded-full flex items-center justify-center shrink-0 transition-colors duration-300 ${
+                                    index < loadingStep ? "bg-green-100 text-green-600" : 
+                                    index === loadingStep ? "bg-blue-100 text-blue-600 animate-pulse" : 
+                                    "bg-slate-100 text-slate-300"
+                                }`}>
+                                    {index < loadingStep ? <Check className="h-3.5 w-3.5" /> : 
+                                     index === loadingStep ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : 
+                                     <div className="h-2 w-2 rounded-full bg-current" />}
+                                </div>
+                                <span className={index === loadingStep ? "text-blue-700 font-bold" : "text-slate-600"}>
+                                    {msg}
+                                </span>
+                            </motion.div>
+                        ))}
+                    </div>
+                </motion.div>
+            ) : null}
+        </AnimatePresence>
+
         <div className="p-6">
           <DialogHeader className="mb-4">
              <DialogTitle className="text-2xl font-black text-slate-900 text-center">
