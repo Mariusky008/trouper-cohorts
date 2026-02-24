@@ -147,13 +147,16 @@ export function AuthDialog({ mode = "signup", trigger, defaultOpen = false }: Au
       setLoadingStep(loadingMessages.length - 1);
       await new Promise(resolve => setTimeout(resolve, 800)); // Small pause at the end
 
-      toast({ title: "Compte créé !", description: "Redirection..." });
+      toast({ title: "Compte créé !", description: "Redirection vers votre espace..." });
       
-      // 5. Client-side Redirect (Keep modal open until redirect happens to avoid white flash)
+      // 5. Client-side Redirect
       // We do NOT set isLoading(false) here to keep the animation visible until the page changes.
-      router.push("/mon-reseau-local/dashboard");
-      router.refresh();
-
+      // Small delay to let the toast appear
+      await new Promise(r => setTimeout(r, 500));
+      
+      // Use window.location.href to ensure a full reload and clear any stale client state
+      // This also guarantees the browser's native loading indicator helps
+      window.location.href = "/mon-reseau-local/dashboard";
     } catch (error: any) {
       console.error("Signup error:", error);
       toast({ 
