@@ -1,13 +1,14 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Lock, Percent, ArrowRight, Star } from "lucide-react";
-import { getUnlockedOffers, getLockedOffersCount } from "@/lib/actions/network-offers";
+import { Lock, Percent, ArrowRight, Star, Pencil, Gift } from "lucide-react";
+import { getUnlockedOffers, getLockedOffersCount, getCurrentUserOffer } from "@/lib/actions/network-offers";
 import Link from "next/link";
 
 export default async function OffersPage() {
     const unlockedOffers = await getUnlockedOffers();
     const lockedCount = await getLockedOffersCount();
+    const currentUserOffer = await getCurrentUserOffer();
 
     return (
         <div className="space-y-12 pb-24 relative max-w-6xl mx-auto">
@@ -16,20 +17,53 @@ export default async function OffersPage() {
                 <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-amber-500/10 rounded-full blur-[100px] -z-10 pointer-events-none" />
                 
                 <div className="text-center space-y-6">
-                    <Badge className="bg-amber-500/10 text-amber-600 border-amber-500/20 px-4 py-1.5 text-xs font-bold uppercase tracking-widest shadow-sm">
+                    <Badge className="bg-amber-500/10 text-amber-500 border-amber-500/20 px-4 py-1.5 text-xs font-bold uppercase tracking-widest shadow-sm">
                     <Percent className="h-3 w-3 mr-2" /> Le Marché Caché
                     </Badge>
                     
-                    <h1 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tighter leading-none">
+                    <h1 className="text-4xl md:text-5xl font-black text-white tracking-tighter leading-none">
                     Mes Offres <span className="text-amber-500">Privilèges.</span>
                     </h1>
                     
-                    <p className="text-lg text-slate-500 font-medium max-w-2xl mx-auto leading-relaxed">
+                    <p className="text-lg text-slate-400 font-medium max-w-2xl mx-auto leading-relaxed">
                     Découvrez les services exclusifs proposés par vos partenaires de confiance.
                     <br/>
-                    <span className="text-slate-900 font-bold">Chaque match débloque une nouvelle opportunité.</span>
+                    <span className="text-white font-bold">Chaque match débloque une nouvelle opportunité.</span>
                     </p>
                 </div>
+            </div>
+
+            {/* MY OFFER SHORTCUT */}
+            <div className="px-4">
+                {currentUserOffer ? (
+                    <div className="bg-[#1e293b]/50 border border-amber-500/30 rounded-3xl p-6 flex flex-col md:flex-row items-center gap-6 shadow-xl shadow-black/20 mb-12">
+                        <div className="h-16 w-16 bg-amber-500/10 rounded-2xl flex items-center justify-center shrink-0 border border-amber-500/20">
+                            <Gift className="h-8 w-8 text-amber-500" />
+                        </div>
+                        <div className="flex-1 text-center md:text-left">
+                            <h3 className="text-xl font-bold text-white mb-1 flex items-center justify-center md:justify-start gap-2">
+                                Mon Offre Active <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/20 ml-2 text-[10px]">En ligne</Badge>
+                            </h3>
+                            <p className="text-slate-400 text-sm mb-1 font-medium">{currentUserOffer.offer_title}</p>
+                            <p className="text-emerald-400 font-black text-lg">{currentUserOffer.offer_price}€ <span className="text-slate-500 line-through text-xs font-normal ml-1">{currentUserOffer.offer_original_price}€</span></p>
+                        </div>
+                        <Button asChild className="bg-white/5 hover:bg-white/10 text-white border border-white/10 font-bold rounded-xl h-12 px-6">
+                            <Link href="/mon-reseau-local/dashboard/profile?edit=true&tab=offer">
+                                <Pencil className="mr-2 h-4 w-4" /> Modifier mon offre
+                            </Link>
+                        </Button>
+                    </div>
+                ) : (
+                    <div className="bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/20 rounded-3xl p-8 text-center mb-12">
+                        <h3 className="text-xl font-bold text-white mb-2">Vous n'avez pas encore d'offre active</h3>
+                        <p className="text-slate-400 mb-6 max-w-lg mx-auto font-medium">Créez votre offre exclusive pour gagner en visibilité auprès de vos futurs matchs.</p>
+                        <Button asChild className="bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl shadow-lg shadow-amber-900/20 h-12 px-8 text-lg">
+                            <Link href="/mon-reseau-local/dashboard/profile?edit=true&tab=offer">
+                                🎁 Créer mon offre maintenant
+                            </Link>
+                        </Button>
+                    </div>
+                )}
             </div>
 
             {/* UNLOCKED OFFERS */}

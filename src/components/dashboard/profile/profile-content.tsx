@@ -45,9 +45,13 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
           const params = new URLSearchParams(window.location.search);
           if (params.get("edit") === "true") {
               setIsEditing(true);
+              if (params.get("tab")) {
+                  setActiveTab(params.get("tab") || "infos");
+              }
               // Clean up param
               const url = new URL(window.location.href);
               url.searchParams.delete("edit");
+              url.searchParams.delete("tab");
               window.history.replaceState({}, "", url);
           }
       };

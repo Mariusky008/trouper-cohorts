@@ -62,6 +62,34 @@ export async function getUnlockedOffers(): Promise<NetworkOffer[]> {
     }).sort((a, b) => new Date(b.match_date).getTime() - new Date(a.match_date).getTime());
 }
 
+export async function getCurrentUserOffer(): Promise<NetworkOffer | null> {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) return null;
+
+    const { data: profile } = await supabase
+        .from("profiles")
+        .select("id, display_name, avatar_url, trade, city, offer_title, offer_description, offer_price, offer_original_price, offer_active")
+        .eq("id", user.id)
+        .single();
+
+    if (!profile || !profile.offer_title || !profile.offer_active) return null;
+
+    return {
+        user_id: profile.id,
+        display_name: profile.display_name,
+        avatar_url: profile.avatar_url,
+        trade: profile.trade,
+        city: profile.city,
+        offer_title: profile.offer_title,
+        offer_description: profile.offer_description,
+        offer_price: profile.offer_price,
+        offer_original_price: profile.offer_original_price,
+        match_date: new Date().toISOString()
+    };
+}
+
 export async function getLockedOffersCount(): Promise<number> {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
