@@ -465,6 +465,13 @@ export function DailyMatchCard({ matches, userStreak = 0, userId }: DailyMatchCa
                         {match.current_need || goalLabel || "Développer mon activité"}
                     </p>
                 </div>
+                
+                {/* View Profile Link */}
+                <div className="mt-4 flex justify-end">
+                    <Link href={`/mon-reseau-local/dashboard/profile/${match.partnerId}`} className="text-xs font-bold text-slate-300 hover:text-white flex items-center gap-1 hover:underline decoration-blue-400 decoration-2 underline-offset-4 transition-all">
+                        Voir son profil complet <ArrowRight className="h-3 w-3" />
+                    </Link>
+                </div>
             </div>
 
             {/* 4. ACTION DOCK (FLOATING BOTTOM) */}
