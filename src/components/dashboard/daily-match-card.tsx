@@ -434,10 +434,11 @@ export function DailyMatchCard({ matches, userStreak = 0, userId }: DailyMatchCa
                </div>
              </div>
 
-             {/* CALL BUTTON / ACTION AREA */}
-             {isCallOut ? (
-                <div className="space-y-4 mb-6">
-                    {!callMade ? (
+             {/* CALL BUTTON / ACTION AREA (UNIFIED COCKPIT) */}
+             <div className="space-y-4 mb-6">
+                {!callMade ? (
+                    // STATE 1: BEFORE CALL (Different for Caller vs Receiver)
+                    isCallOut ? (
                         <Button 
                             onClick={handleCallClick}
                             className="w-full font-black h-16 rounded-2xl shadow-lg shadow-blue-600/30 text-lg transition-all border border-white/10 bg-blue-600 hover:bg-blue-500 text-white animate-shimmer bg-[linear-gradient(110deg,#2563eb,45%,#3b82f6,55%,#2563eb)] bg-[length:200%_100%]"
@@ -450,197 +451,209 @@ export function DailyMatchCard({ matches, userStreak = 0, userId }: DailyMatchCa
                             </div>
                         </Button>
                     ) : (
-                        <div className="space-y-6 animate-in fade-in zoom-in duration-500">
-                            {/* CALL HEADER */}
-                            <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-2xl p-6 text-center relative overflow-hidden group">
-                                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-emerald-500 to-transparent animate-shimmer" />
-                                
-                                <div className="flex items-center justify-center gap-3 mb-2">
-                                    <div className="relative">
-                                        <div className="absolute inset-0 bg-emerald-500 rounded-full animate-ping opacity-75"></div>
-                                        <div className="h-3 w-3 bg-emerald-500 rounded-full relative z-10"></div>
-                                    </div>
-                                    <h4 className="text-lg font-black text-emerald-400 uppercase tracking-widest">Appel en cours</h4>
+                        <div className="space-y-3">
+                             {/* WAITING STATE CARD */}
+                             <div className="bg-[#0f172a]/50 border-2 border-dashed border-slate-700 rounded-xl p-4 flex flex-col items-center justify-center gap-2 text-center">
+                                <div className="h-10 w-10 bg-slate-800 rounded-full flex items-center justify-center relative">
+                                    <div className="absolute top-0 right-0 h-3 w-3 bg-emerald-500 rounded-full animate-ping" />
+                                    <Phone className="h-5 w-5 text-slate-400" />
                                 </div>
-                                
-                                <a href={`tel:${match.phone}`} className="block text-white font-black text-3xl mb-1 tracking-wider hover:scale-105 transition-transform">
-                                    {match.phone}
-                                </a>
-                                <p className="text-slate-400 text-xs font-bold uppercase">Appelez {match.name.split(' ')[0]} maintenant</p>
-                            </div>
-
-                            {/* WHY THIS MATCH (PULSING CTA) */}
-                            <div className="relative z-10">
-                                <div className="absolute inset-0 bg-blue-500/20 rounded-xl blur-lg animate-pulse"></div>
-                                <Button 
-                                    onClick={() => setIsWhyVisible(!isWhyVisible)}
-                                    className="relative w-full bg-blue-600 hover:bg-blue-500 text-white font-bold h-14 rounded-xl shadow-lg shadow-blue-500/30 border border-blue-400/50 animate-bounce-subtle text-base"
-                                >
-                                    <Zap className="mr-2 h-5 w-5 text-yellow-300 fill-yellow-300" />
-                                    POURQUOI CE MATCH ? (Le Script)
-                                </Button>
-                            </div>
-
-                            {/* THE SCRIPT (Now Below Button) */}
-                            <AnimatePresence>
-                                {isWhyVisible && (
-                                    <motion.div 
-                                        initial={{ opacity: 0, height: 0 }}
-                                        animate={{ opacity: 1, height: "auto" }}
-                                        exit={{ opacity: 0, height: 0 }}
-                                        className="bg-[#0f172a]/80 backdrop-blur-xl rounded-xl p-4 border border-blue-500/30 relative overflow-hidden"
-                                    >
-                                        <div className="absolute left-0 top-0 w-1 h-full bg-blue-500" />
-                                        <h5 className="text-xs font-bold text-blue-400 uppercase mb-2 flex items-center gap-2">
-                                            <MessageSquare className="h-3 w-3" /> Pistes de discussion
-                                        </h5>
-                                        <p className="text-sm text-slate-200 font-medium leading-relaxed whitespace-pre-line">
-                                            {whyText}
-                                        </p>
-                                    </motion.div>
-                                )}
-                            </AnimatePresence>
-
-                            {/* ACTION BUTTONS (The "Cockpit") */}
-                            <div className="grid grid-cols-2 gap-3">
-                                {/* OFFER OPPORTUNITY BUTTON */}
-                                <Dialog open={isOpportunityOpen} onOpenChange={setIsOpportunityOpen}>
-                                    <DialogTrigger asChild>
-                                        <Button className="h-auto py-4 flex flex-col items-center gap-1 bg-purple-600 hover:bg-purple-500 text-white rounded-xl border border-purple-400/30 shadow-lg shadow-purple-500/20 hover:-translate-y-1 transition-transform">
-                                            <Gift className="h-7 w-7 mb-1" />
-                                            <span className="font-black text-sm">OFFRIR</span>
-                                            <span className="text-[9px] opacity-80 font-bold uppercase">Une opportunité</span>
-                                        </Button>
-                                    </DialogTrigger>
-                                    <DialogContent className="bg-[#0f172a] border-white/10 text-white sm:max-w-md w-[95vw] rounded-2xl">
-                                        <DialogHeader>
-                                            <DialogTitle className="flex items-center gap-2 text-xl font-black">
-                                                <Gift className="h-6 w-6 text-purple-400" />
-                                                Offrir une Opportunité
-                                            </DialogTitle>
-                                            <DialogDescription className="text-slate-400">
-                                                Envoyez un contact, une info ou un coup de pouce à {match.name}.
-                                            </DialogDescription>
-                                        </DialogHeader>
-                                        
-                                        <div className="space-y-4 py-4">
-                                            <div className="space-y-2">
-                                                <Label className="text-xs font-bold uppercase text-slate-500">Type d'opportunité</Label>
-                                                <Select value={oppType} onValueChange={setOppType}>
-                                                    <SelectTrigger className="bg-slate-900 border-white/10 text-white h-12 rounded-xl font-bold">
-                                                        <SelectValue />
-                                                    </SelectTrigger>
-                                                    <SelectContent className="bg-slate-900 border-white/10 text-white">
-                                                        <SelectItem value="business">💰 Apport d'Affaires / Client</SelectItem>
-                                                        <SelectItem value="intro">🤝 Mise en relation</SelectItem>
-                                                        <SelectItem value="info">💡 Information / Conseil</SelectItem>
-                                                        <SelectItem value="resource">🛠️ Prêt de matériel / Service</SelectItem>
-                                                    </SelectContent>
-                                                </Select>
-                                            </div>
-
-                                            <div className="space-y-2">
-                                                <Label className="text-xs font-bold uppercase text-slate-500">Détails (Privé)</Label>
-                                                <Textarea 
-                                                    value={oppDetails}
-                                                    onChange={(e) => setOppDetails(e.target.value)}
-                                                    placeholder="Ex: J'ai un contact pour toi, appelle Mr Martin au 06..." 
-                                                    className="bg-slate-900 border-white/10 text-white min-h-[120px] resize-none rounded-xl"
-                                                />
-                                            </div>
-                                        </div>
-
-                                        <DialogFooter>
-                                            <Button 
-                                                onClick={() => handleCreateOpportunity(match.partnerId, match.name)} 
-                                                disabled={isSubmittingOpp}
-                                                className="w-full bg-purple-600 hover:bg-purple-500 font-bold h-12 rounded-xl shadow-lg shadow-purple-500/20"
-                                            >
-                                                {isSubmittingOpp ? "Envoi..." : "Envoyer le cadeau 🎁"}
-                                            </Button>
-                                        </DialogFooter>
-                                    </DialogContent>
-                                </Dialog>
-
-                                {/* LOG INTERACTION BUTTON (RATING MODAL) */}
-                                <Dialog open={isRatingOpen} onOpenChange={setIsRatingOpen}>
-                                    <DialogTrigger asChild>
-                                        <Button className="h-auto py-4 flex flex-col items-center gap-1 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl border border-white/5 hover:-translate-y-1 transition-transform">
-                                            <Handshake className="h-7 w-7 mb-1" />
-                                            <span className="font-bold text-sm">NOTER</span>
-                                            <span className="text-[9px] opacity-80 font-bold uppercase">Un échange</span>
-                                        </Button>
-                                    </DialogTrigger>
-                                    <DialogContent className="bg-[#0f172a] border-white/10 text-white sm:max-w-md rounded-2xl">
-                                        <DialogHeader>
-                                            <DialogTitle className="flex items-center gap-2 text-xl font-black justify-center">
-                                                <Handshake className="h-6 w-6 text-blue-400" />
-                                                Comment s'est passé l'échange ?
-                                            </DialogTitle>
-                                            <DialogDescription className="text-center text-slate-400 text-xs">
-                                                Votre avis nous aide à vous proposer de meilleurs matchs demain.
-                                            </DialogDescription>
-                                        </DialogHeader>
-                                        
-                                        <div className="grid grid-cols-3 gap-3 py-6">
-                                            <Button 
-                                                onClick={() => handleRate(5, "Top 🔥", match.partnerId)} 
-                                                className="flex flex-col items-center justify-center h-28 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 hover:border-emerald-500 text-emerald-400 hover:text-emerald-300 transition-all hover:scale-105 group rounded-xl"
-                                            >
-                                                <span className="text-4xl mb-2 group-hover:animate-bounce filter drop-shadow-lg">🔥</span>
-                                                <span className="font-black text-lg">TOP !</span>
-                                                <span className="text-[9px] uppercase font-bold opacity-70">Super Fit</span>
-                                            </Button>
-                                            
-                                            <Button 
-                                                onClick={() => handleRate(4, "Sympa 👍", match.partnerId)} 
-                                                className="flex flex-col items-center justify-center h-28 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/30 hover:border-blue-500 text-blue-400 hover:text-blue-300 transition-all hover:scale-105 group rounded-xl"
-                                            >
-                                                <span className="text-4xl mb-2 group-hover:animate-pulse filter drop-shadow-lg">👍</span>
-                                                <span className="font-black text-lg">SYMPA</span>
-                                                <span className="text-[10px] uppercase font-bold opacity-70">Bon Contact</span>
-                                            </Button>
-                                            
-                                            <Button 
-                                                onClick={() => handleRate(2, "Moyen 😕", match.partnerId)} 
-                                                className="flex flex-col items-center justify-center h-28 bg-slate-500/10 hover:bg-slate-500/20 border border-slate-500/30 hover:border-slate-500 text-slate-400 hover:text-slate-300 transition-all hover:scale-105 group rounded-xl"
-                                            >
-                                                <span className="text-4xl mb-2 group-hover:rotate-12 filter drop-shadow-lg">😕</span>
-                                                <span className="font-black text-lg">BOF</span>
-                                                <span className="text-[10px] uppercase font-bold opacity-70">Pas de Fit</span>
-                                            </Button>
-                                        </div>
-                                        
-                                        <div className="text-center">
-                                            <Button variant="ghost" onClick={() => setIsRatingOpen(false)} className="text-slate-500 hover:text-white text-xs">
-                                                Annuler / Je n'ai pas encore appelé
-                                            </Button>
-                                        </div>
-                                    </DialogContent>
-                                </Dialog>
-                            </div>
+                                <div>
+                                    <h4 className="font-bold text-slate-200">En attente de son appel</h4>
+                                    <p className="text-xs text-slate-500">Prévu entre {match.time}</p>
+                                </div>
+                             </div>
+                             
+                             {/* ACTIVATE COCKPIT BUTTON */}
+                             <Button 
+                                onClick={handleCallClick}
+                                className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold h-14 rounded-xl shadow-lg shadow-emerald-900/20 border border-emerald-400/30 animate-bounce-subtle transition-transform hover:scale-[1.02]"
+                             >
+                                <PhoneCall className="mr-2 h-5 w-5" />
+                                C'EST BON, ON EST EN LIGNE ! 🚀
+                             </Button>
+                             
+                             <p className="text-[10px] text-slate-500 text-center">
+                                Cliquez dès que vous décrochez pour accéder aux outils.
+                             </p>
                         </div>
-                    )}
-                </div>
-             ) : (
-                <div className="space-y-2 mb-4">
-                    <div className="w-full h-12 bg-[#0f172a]/50 border-2 border-dashed border-slate-700 rounded-xl flex flex-col items-center justify-center gap-0.5 text-slate-400 font-bold">
-                        <div className="flex items-center gap-2">
-                            <div className="h-1.5 w-1.5 bg-emerald-500 rounded-full animate-pulse" />
-                            <span className="text-sm">En attente de son appel</span>
-                        </div>
-                        <span className="text-[10px] font-medium text-slate-500">Prévu entre {match.time}</span>
-                    </div>
-                    {/* Secondary Action: Call Anyway Button */}
-                    <div className="text-center">
-                        <Button variant="link" className="text-[10px] text-slate-500 hover:text-white h-auto p-0" asChild>
-                            <a href={`tel:${match.phone}`}>
-                                En cas d'oubli : Appeler {match.name.split(' ')[0]} ({match.phone})
+                    )
+                ) : (
+                    // STATE 2: DURING CALL (SHARED COCKPIT)
+                    <div className="space-y-6 animate-in fade-in zoom-in duration-500">
+                        {/* CALL HEADER */}
+                        <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-2xl p-6 text-center relative overflow-hidden group">
+                            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-emerald-500 to-transparent animate-shimmer" />
+                            
+                            <div className="flex items-center justify-center gap-3 mb-2">
+                                <div className="relative">
+                                    <div className="absolute inset-0 bg-emerald-500 rounded-full animate-ping opacity-75"></div>
+                                    <div className="h-3 w-3 bg-emerald-500 rounded-full relative z-10"></div>
+                                </div>
+                                <h4 className="text-lg font-black text-emerald-400 uppercase tracking-widest">Appel en cours</h4>
+                            </div>
+                            
+                            <a href={`tel:${match.phone}`} className="block text-white font-black text-3xl mb-1 tracking-wider hover:scale-105 transition-transform">
+                                {match.phone}
                             </a>
-                        </Button>
+                            <p className="text-slate-400 text-xs font-bold uppercase">
+                                {isCallOut ? `Appelez ${match.name.split(' ')[0]} maintenant` : `En ligne avec ${match.name.split(' ')[0]}`}
+                            </p>
+                        </div>
+
+                        {/* WHY THIS MATCH (PULSING CTA) */}
+                        <div className="relative z-10">
+                            <div className="absolute inset-0 bg-blue-500/20 rounded-xl blur-lg animate-pulse"></div>
+                            <Button 
+                                onClick={() => setIsWhyVisible(!isWhyVisible)}
+                                className="relative w-full bg-blue-600 hover:bg-blue-500 text-white font-bold h-14 rounded-xl shadow-lg shadow-blue-500/30 border border-blue-400/50 animate-bounce-subtle text-base"
+                            >
+                                <Zap className="mr-2 h-5 w-5 text-yellow-300 fill-yellow-300" />
+                                POURQUOI CE MATCH ? (Le Script)
+                            </Button>
+                        </div>
+
+                        {/* THE SCRIPT (Now Below Button) */}
+                        <AnimatePresence>
+                            {isWhyVisible && (
+                                <motion.div 
+                                    initial={{ opacity: 0, height: 0 }}
+                                    animate={{ opacity: 1, height: "auto" }}
+                                    exit={{ opacity: 0, height: 0 }}
+                                    className="bg-[#0f172a]/80 backdrop-blur-xl rounded-xl p-4 border border-blue-500/30 relative overflow-hidden"
+                                >
+                                    <div className="absolute left-0 top-0 w-1 h-full bg-blue-500" />
+                                    <h5 className="text-xs font-bold text-blue-400 uppercase mb-2 flex items-center gap-2">
+                                        <MessageSquare className="h-3 w-3" /> Pistes de discussion
+                                    </h5>
+                                    <p className="text-sm text-slate-200 font-medium leading-relaxed whitespace-pre-line">
+                                        {whyText}
+                                    </p>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+
+                        {/* ACTION BUTTONS (The "Cockpit") */}
+                        <div className="grid grid-cols-2 gap-3">
+                            {/* OFFER OPPORTUNITY BUTTON */}
+                            <Dialog open={isOpportunityOpen} onOpenChange={setIsOpportunityOpen}>
+                                <DialogTrigger asChild>
+                                    <Button className="h-auto py-4 flex flex-col items-center gap-1 bg-purple-600 hover:bg-purple-500 text-white rounded-xl border border-purple-400/30 shadow-lg shadow-purple-500/20 hover:-translate-y-1 transition-transform">
+                                        <Gift className="h-7 w-7 mb-1" />
+                                        <span className="font-black text-sm">OFFRIR</span>
+                                        <span className="text-[9px] opacity-80 font-bold uppercase">Une opportunité</span>
+                                    </Button>
+                                </DialogTrigger>
+                                <DialogContent className="bg-[#0f172a] border-white/10 text-white sm:max-w-md w-[95vw] rounded-2xl">
+                                    <DialogHeader>
+                                        <DialogTitle className="flex items-center gap-2 text-xl font-black">
+                                            <Gift className="h-6 w-6 text-purple-400" />
+                                            Offrir une Opportunité
+                                        </DialogTitle>
+                                        <DialogDescription className="text-slate-400">
+                                            Envoyez un contact, une info ou un coup de pouce à {match.name}.
+                                        </DialogDescription>
+                                    </DialogHeader>
+                                    
+                                    <div className="space-y-4 py-4">
+                                        <div className="space-y-2">
+                                            <Label className="text-xs font-bold uppercase text-slate-500">Type d'opportunité</Label>
+                                            <Select value={oppType} onValueChange={setOppType}>
+                                                <SelectTrigger className="bg-slate-900 border-white/10 text-white h-12 rounded-xl font-bold">
+                                                    <SelectValue />
+                                                </SelectTrigger>
+                                                <SelectContent className="bg-slate-900 border-white/10 text-white">
+                                                    <SelectItem value="business">💰 Apport d'Affaires / Client</SelectItem>
+                                                    <SelectItem value="intro">🤝 Mise en relation</SelectItem>
+                                                    <SelectItem value="info">💡 Information / Conseil</SelectItem>
+                                                    <SelectItem value="resource">🛠️ Prêt de matériel / Service</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+
+                                        <div className="space-y-2">
+                                            <Label className="text-xs font-bold uppercase text-slate-500">Détails (Privé)</Label>
+                                            <Textarea 
+                                                value={oppDetails}
+                                                onChange={(e) => setOppDetails(e.target.value)}
+                                                placeholder="Ex: J'ai un contact pour toi, appelle Mr Martin au 06..." 
+                                                className="bg-slate-900 border-white/10 text-white min-h-[120px] resize-none rounded-xl"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <DialogFooter>
+                                        <Button 
+                                            onClick={() => handleCreateOpportunity(match.partnerId, match.name)} 
+                                            disabled={isSubmittingOpp}
+                                            className="w-full bg-purple-600 hover:bg-purple-500 font-bold h-12 rounded-xl shadow-lg shadow-purple-500/20"
+                                        >
+                                            {isSubmittingOpp ? "Envoi..." : "Envoyer le cadeau 🎁"}
+                                        </Button>
+                                    </DialogFooter>
+                                </DialogContent>
+                            </Dialog>
+
+                            {/* LOG INTERACTION BUTTON (RATING MODAL) */}
+                            <Dialog open={isRatingOpen} onOpenChange={setIsRatingOpen}>
+                                <DialogTrigger asChild>
+                                    <Button className="h-auto py-4 flex flex-col items-center gap-1 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl border border-white/5 hover:-translate-y-1 transition-transform">
+                                        <Handshake className="h-7 w-7 mb-1" />
+                                        <span className="font-bold text-sm">NOTER</span>
+                                        <span className="text-[9px] opacity-80 font-bold uppercase">Un échange</span>
+                                    </Button>
+                                </DialogTrigger>
+                                <DialogContent className="bg-[#0f172a] border-white/10 text-white sm:max-w-md rounded-2xl">
+                                    <DialogHeader>
+                                        <DialogTitle className="flex items-center gap-2 text-xl font-black justify-center">
+                                            <Handshake className="h-6 w-6 text-blue-400" />
+                                            Comment s'est passé l'échange ?
+                                        </DialogTitle>
+                                        <DialogDescription className="text-center text-slate-400 text-xs">
+                                            Votre avis nous aide à vous proposer de meilleurs matchs demain.
+                                        </DialogDescription>
+                                    </DialogHeader>
+                                    
+                                    <div className="grid grid-cols-3 gap-3 py-6">
+                                        <Button 
+                                            onClick={() => handleRate(5, "Top 🔥", match.partnerId)} 
+                                            className="flex flex-col items-center justify-center h-28 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 hover:border-emerald-500 text-emerald-400 hover:text-emerald-300 transition-all hover:scale-105 group rounded-xl"
+                                        >
+                                            <span className="text-4xl mb-2 group-hover:animate-bounce filter drop-shadow-lg">🔥</span>
+                                            <span className="font-black text-lg">TOP !</span>
+                                            <span className="text-[9px] uppercase font-bold opacity-70">Super Fit</span>
+                                        </Button>
+                                        
+                                        <Button 
+                                            onClick={() => handleRate(4, "Sympa 👍", match.partnerId)} 
+                                            className="flex flex-col items-center justify-center h-28 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/30 hover:border-blue-500 text-blue-400 hover:text-blue-300 transition-all hover:scale-105 group rounded-xl"
+                                        >
+                                            <span className="text-4xl mb-2 group-hover:animate-pulse filter drop-shadow-lg">👍</span>
+                                            <span className="font-black text-lg">SYMPA</span>
+                                            <span className="text-[10px] uppercase font-bold opacity-70">Bon Contact</span>
+                                        </Button>
+                                        
+                                        <Button 
+                                            onClick={() => handleRate(2, "Moyen 😕", match.partnerId)} 
+                                            className="flex flex-col items-center justify-center h-28 bg-slate-500/10 hover:bg-slate-500/20 border border-slate-500/30 hover:border-slate-500 text-slate-400 hover:text-slate-300 transition-all hover:scale-105 group rounded-xl"
+                                        >
+                                            <span className="text-4xl mb-2 group-hover:rotate-12 filter drop-shadow-lg">😕</span>
+                                            <span className="font-black text-lg">BOF</span>
+                                            <span className="text-[10px] uppercase font-bold opacity-70">Pas de Fit</span>
+                                        </Button>
+                                    </div>
+                                    
+                                    <div className="text-center">
+                                        <Button variant="ghost" onClick={() => setIsRatingOpen(false)} className="text-slate-500 hover:text-white text-xs">
+                                            Annuler / Je n'ai pas encore appelé
+                                        </Button>
+                                    </div>
+                                </DialogContent>
+                            </Dialog>
+                        </div>
                     </div>
-                </div>
-             )}
+                )}
+             </div>
 
              {/* STATS FOOTER (DYNAMIC) */}
              <div className="grid grid-cols-2 gap-3">
