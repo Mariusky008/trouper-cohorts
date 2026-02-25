@@ -19,6 +19,9 @@ import { createOpportunity } from "@/lib/actions/network-opportunities";
 import { saveMatchFeedback } from "@/lib/actions/network-feedback";
 import { incrementUserPoints } from "@/lib/actions/gamification";
 
+import { OPPORTUNITY_TYPES } from "@/constants/opportunities";
+import { OpportunityType } from "@/types/network";
+
 interface DailyMatchCardProps {
   matches: any[];
   userStreak?: number;
@@ -57,9 +60,19 @@ export function DailyMatchCard({ matches, userStreak = 0, userId }: DailyMatchCa
   // Opportunity Modal State
   const [isOpportunityOpen, setIsOpportunityOpen] = useState(false);
   const [isRatingOpen, setIsRatingOpen] = useState(false);
-  const [oppType, setOppType] = useState("business");
+  
+  // Use proper typing and default to null to force selection
+  const [oppType, setOppType] = useState<string | undefined>(undefined);
   const [oppDetails, setOppDetails] = useState("");
   const [isSubmittingOpp, setIsSubmittingOpp] = useState(false);
+
+  // Reset form when dialog opens/closes
+  useEffect(() => {
+      if (!isOpportunityOpen) {
+          setOppType(undefined);
+          setOppDetails("");
+      }
+  }, [isOpportunityOpen]);
 
   const handleRate = async (score: number, tag: string, partnerId: string) => {
       setIsRatingOpen(false);
@@ -77,6 +90,11 @@ export function DailyMatchCard({ matches, userStreak = 0, userId }: DailyMatchCa
   };
 
   const handleCreateOpportunity = async (partnerId: string, partnerName: string) => {
+      if (!oppType) {
+          toast.error("Veuillez sélectionner un type d'opportunité");
+          return;
+      }
+
       if (!oppDetails.trim()) {
           toast.error("Veuillez décrire l'opportunité");
           return;
@@ -84,10 +102,13 @@ export function DailyMatchCard({ matches, userStreak = 0, userId }: DailyMatchCa
 
       setIsSubmittingOpp(true);
       try {
+          const selectedTypeObj = OPPORTUNITY_TYPES.find(t => t.id === oppType);
+          const points = selectedTypeObj?.points || 10;
+
           const result = await createOpportunity({
               receiverId: partnerId,
               type: oppType,
-              points: 20, // Default points reward
+              points: points,
               details: oppDetails
           });
 
@@ -541,40 +562,64 @@ export function DailyMatchCard({ matches, userStreak = 0, userId }: DailyMatchCa
                                 <Gift className="h-6 w-6" />
                             </Button>
                         </DialogTrigger>
-                        <DialogContent className="bg-[#0f172a] border-white/10 text-white sm:max-w-md w-[95vw] rounded-2xl">
+                        <DialogContent className="bg-[#0f172a] border-white/10 text-white sm:max-w-md w-[95vw] rounded-2xl overflow-hidden">
+                            {!oppType ? (
+                                <>
                                     <DialogHeader>
                                         <DialogTitle className="flex items-center gap-2 text-xl font-black">
                                             <Gift className="h-6 w-6 text-purple-400" />
                                             Offrir une Opportunité
                                         </DialogTitle>
                                         <DialogDescription className="text-slate-400">
-                                            Envoyez un contact, une info ou un coup de pouce à {match.name}.
+                                            Quelle valeur souhaitez-vous apporter à {match.name} ?
                                         </DialogDescription>
                                     </DialogHeader>
                                     
+                                    <div className="grid grid-cols-2 gap-3 py-4 max-h-[60vh] overflow-y-auto">
+                                        {OPPORTUNITY_TYPES.map((type) => (
+                                            <button
+                                                key={type.id}
+                                                onClick={() => setOppType(type.id)}
+                                                className={`flex flex-col items-center justify-center p-3 rounded-xl border transition-all hover:scale-105 text-center gap-2 group ${type.bg.replace('bg-', 'bg-opacity-10 bg-')} ${type.border.replace('border-', 'border-opacity-20 border-')}`}
+                                                style={{ backgroundColor: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.1)' }}
+                                            >
+                                                <div className={`h-10 w-10 rounded-full flex items-center justify-center shadow-sm ${type.color} bg-white/10`}>
+                                                    <type.icon className="h-5 w-5" />
+                                                </div>
+                                                <span className="font-bold text-white text-xs leading-tight">{type.label}</span>
+                                                <span className="text-[10px] text-emerald-400 font-bold">+{type.points} pts</span>
+                                            </button>
+                                        ))}
+                                    </div>
+                                </>
+                            ) : (
+                                <>
+                                    <DialogHeader>
+                                        <div className="flex items-center justify-between">
+                                            <Button variant="ghost" size="sm" onClick={() => setOppType(undefined)} className="text-slate-400 -ml-2">
+                                                ← Retour
+                                            </Button>
+                                            <Badge className="bg-purple-500/20 text-purple-300 border-purple-500/30">
+                                                {OPPORTUNITY_TYPES.find(t => t.id === oppType)?.label}
+                                            </Badge>
+                                        </div>
+                                        <DialogTitle className="text-lg font-bold mt-2">
+                                            Détails du cadeau 🎁
+                                        </DialogTitle>
+                                        <DialogDescription className="text-slate-400">
+                                            Donnez un maximum d'infos pour que {match.name} puisse saisir cette opportunité.
+                                        </DialogDescription>
+                                    </DialogHeader>
+
                                     <div className="space-y-4 py-4">
                                         <div className="space-y-2">
-                                            <Label className="text-xs font-bold uppercase text-slate-500">Type d'opportunité</Label>
-                                            <Select value={oppType} onValueChange={setOppType}>
-                                                <SelectTrigger className="bg-slate-900 border-white/10 text-white h-12 rounded-xl font-bold">
-                                                    <SelectValue />
-                                                </SelectTrigger>
-                                                <SelectContent className="bg-slate-900 border-white/10 text-white">
-                                                    <SelectItem value="business">💰 Apport d'Affaires / Client</SelectItem>
-                                                    <SelectItem value="intro">🤝 Mise en relation</SelectItem>
-                                                    <SelectItem value="info">💡 Information / Conseil</SelectItem>
-                                                    <SelectItem value="resource">🛠️ Prêt de matériel / Service</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-
-                                        <div className="space-y-2">
-                                            <Label className="text-xs font-bold uppercase text-slate-500">Détails (Privé)</Label>
+                                            <Label className="text-xs font-bold uppercase text-slate-500">Votre message (Privé)</Label>
                                             <Textarea 
                                                 value={oppDetails}
                                                 onChange={(e) => setOppDetails(e.target.value)}
-                                                placeholder="Ex: J'ai un contact pour toi, appelle Mr Martin au 06..." 
-                                                className="bg-slate-900 border-white/10 text-white min-h-[120px] resize-none rounded-xl"
+                                                placeholder="Ex: J'ai un contact pour toi, appelle Mr Martin au 06... Il attend ton appel de ma part." 
+                                                className="bg-slate-900 border-white/10 text-white min-h-[150px] resize-none rounded-xl focus:ring-purple-500/50"
+                                                autoFocus
                                             />
                                         </div>
                                     </div>
@@ -582,13 +627,15 @@ export function DailyMatchCard({ matches, userStreak = 0, userId }: DailyMatchCa
                                     <DialogFooter>
                                         <Button 
                                             onClick={() => handleCreateOpportunity(match.partnerId, match.name)} 
-                                            disabled={isSubmittingOpp}
+                                            disabled={isSubmittingOpp || !oppDetails.trim()}
                                             className="w-full bg-purple-600 hover:bg-purple-500 font-bold h-12 rounded-xl shadow-lg shadow-purple-500/20"
                                         >
-                                            {isSubmittingOpp ? "Envoi..." : "Envoyer le cadeau 🎁"}
+                                            {isSubmittingOpp ? "Envoi..." : "Envoyer l'opportunité 🚀"}
                                         </Button>
                                     </DialogFooter>
-                                </DialogContent>
+                                </>
+                            )}
+                        </DialogContent>
                     </Dialog>
 
                     {/* RATE */}
