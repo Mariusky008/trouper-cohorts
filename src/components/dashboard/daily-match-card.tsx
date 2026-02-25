@@ -1,11 +1,12 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { Clock, Star, MapPin, Phone, CheckCircle2, MessageSquare, ArrowRight, Calendar, User, Briefcase, Zap, Trophy, Handshake, Gift, PhoneCall } from "lucide-react";
+import { Clock, Star, MapPin, Phone, CheckCircle2, MessageSquare, ArrowRight, Calendar, User, Briefcase, Zap, Trophy, Handshake, Gift, PhoneCall, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import Link from "next/link";
+import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
 import confetti from "canvas-confetti";
@@ -344,207 +345,143 @@ export function DailyMatchCard({ matches, userStreak = 0, userId }: DailyMatchCa
         }
 
         return (
-        <div className="relative max-w-md mx-auto w-full">
+        <div className="relative w-full max-w-sm mx-auto h-[75vh] md:h-[600px] rounded-[2.5rem] overflow-hidden shadow-2xl shadow-black/50 border border-white/10 bg-[#0f172a] group transition-all hover:scale-[1.01] select-none">
+            
             {/* LOOT BOX / MYSTERY CARD OVERLAY */}
             {!revealed && (
                 <motion.div 
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 1.1, filter: "blur(10px)" }}
-                    className="absolute inset-0 z-20 bg-[#0f172a] rounded-[2rem] border-2 border-dashed border-white/20 flex flex-col items-center justify-center p-8 text-center cursor-pointer hover:border-blue-500/50 transition-colors shadow-2xl"
+                    className="absolute inset-0 z-50 bg-[#0f172a] flex flex-col items-center justify-center p-8 text-center cursor-pointer"
                     onClick={handleReveal}
                 >
-                    <div className="h-20 w-20 bg-blue-500/10 rounded-full flex items-center justify-center mb-6 animate-pulse">
-                        <Zap className="h-10 w-10 text-blue-400" />
+                    {/* Background Pattern */}
+                    <div className="absolute inset-0 opacity-20 bg-[url('/grid-pattern.svg')] bg-center" />
+                    
+                    <div className="h-24 w-24 bg-blue-500/10 rounded-full flex items-center justify-center mb-6 animate-pulse relative z-10 border border-blue-500/20">
+                        <Zap className="h-12 w-12 text-blue-400" />
                     </div>
-                    <h3 className="text-2xl font-black text-white uppercase italic mb-2">Mission Secrète</h3>
-                    <p className="text-slate-400 font-medium mb-8 max-w-xs leading-relaxed">
+                    <h3 className="text-3xl font-black text-white uppercase italic mb-2 relative z-10">Mission Secrète</h3>
+                    <p className="text-slate-400 font-medium mb-8 max-w-xs leading-relaxed text-sm relative z-10">
                         Nouveau client ? Partage réseau ? Conseil précieux ?
                         <br />
-                        <span className="text-white font-bold">Découvrez ce que vous allez vous apporter mutuellement !</span>
+                        <span className="text-white font-bold">Découvrez votre binôme du jour !</span>
                     </p>
-                    <div className="flex gap-3 mb-8">
-                        <Badge variant="outline" className="border-white/10 text-slate-400 bg-white/5 px-3 py-1">
-                            Secteur : {match.job.split(' ')[0]}...
-                        </Badge>
-                        <Badge variant="outline" className="border-red-500/20 text-red-400 bg-red-500/10 px-3 py-1 animate-pulse">
-                            Priorité : Haute
-                        </Badge>
-                    </div>
-                    <Button className="bg-white text-slate-900 hover:bg-slate-200 font-black px-8 py-6 rounded-xl text-lg shadow-lg shadow-white/10 w-full animate-bounce-subtle">
+                    <Button className="bg-white text-slate-900 hover:bg-slate-200 font-black px-8 py-6 rounded-full text-lg shadow-lg shadow-white/10 w-full animate-bounce-subtle relative z-10">
                         DÉCOUVRIR LE MATCH
                     </Button>
                 </motion.div>
             )}
 
-        <motion.div 
-          key={match.id}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: revealed ? 1 : 0, y: 0, filter: revealed ? "blur(0px)" : "blur(20px)" }}
-          transition={{ duration: 0.5 }}
-          className="bg-[#1e293b]/80 backdrop-blur-xl rounded-[2rem] p-6 md:p-8 shadow-2xl shadow-black/40 border border-white/10 relative overflow-visible group hover:scale-[1.01] transition-transform duration-300"
-        >
-          {/* DATE HEADER (Now Inside) */}
-          <div className="flex justify-between items-end mb-6 pb-4 border-b border-white/5">
-             <div>
-               <div className="text-3xl font-black text-white leading-none mb-1">
-                 {capitalize(dayName)} {dayNumber}
-               </div>
-               <div className="text-slate-400 font-bold text-base capitalize">{monthYear}</div>
-             </div>
-             
-             {/* TIMER & STREAK BADGES */}
-             <div className="flex items-center gap-2">
-                 <div className="hidden md:flex items-center gap-1.5 bg-blue-500/10 border border-blue-500/20 px-2 py-1 rounded-full">
-                    <Zap className="h-3 w-3 text-blue-400 fill-blue-400" />
-                    <span className="text-blue-200 text-[10px] font-bold">{userStreak} jours</span>
-                 </div>
-                 <div className="bg-white/5 text-blue-400 p-2 rounded-xl border border-white/5 flex flex-col items-center justify-center min-w-[70px]">
-                   <span className="text-[9px] font-bold text-slate-500 uppercase">Appel dans</span>
-                   <span className="font-black text-white text-xs">{timeLeft || "--:--"}</span>
-                 </div>
-             </div>
-           </div>
-
-             {/* ORANGE BADGE */}
-             <div className="absolute -top-3 right-6 bg-orange-500 text-white text-[9px] font-bold px-3 py-1 rounded-full uppercase tracking-widest shadow-lg shadow-orange-900/50 z-10 animate-pulse">
-               Opportunité Chaude
-             </div>
-
-             {/* PROFILE INFO */}
-             <div className="flex flex-col items-center text-center mb-8 transform scale-100">
-               <div className="relative mb-4">
-                 <Avatar className="h-36 w-36 border-4 border-[#1e293b] shadow-xl">
-                    <AvatarImage src={match.avatar} className="object-cover" />
-                    <AvatarFallback className="text-3xl font-black bg-slate-800 text-slate-500">{match.name[0]}</AvatarFallback>
-                 </Avatar>
-                 <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-[#0f172a] text-emerald-400 border border-emerald-500/30 px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap flex items-center gap-1 shadow-md">
-                    <CheckCircle2 className="h-3.5 w-3.5" /> Vérifié fiable
-                 </div>
-               </div>
-               
-               <h3 className="text-3xl md:text-4xl font-black text-white mb-1.5 mt-3">{match.name}</h3>
-               <div className="flex items-center justify-center gap-2 text-sm md:text-base font-bold text-slate-400 uppercase tracking-wide mb-2">
-                  {match.job} • {match.city}
-               </div>
-               <div className="flex gap-1">
-                  {[1,2,3,4,5].map(i => (
-                    <Star key={i} className={cn("h-4 w-4", i <= Math.round(match.score) ? "text-yellow-400 fill-yellow-400" : "text-slate-700")} />
-                  ))}
-               </div>
-             </div>
-
-             {/* CALL BUTTON / ACTION AREA (UNIFIED COCKPIT) */}
-             <div className="space-y-4 mb-6">
-                {!callMade ? (
-                    // STATE 1: BEFORE CALL (Different for Caller vs Receiver)
-                    isCallOut ? (
-                        <Button 
-                            onClick={handleCallClick}
-                            className="w-full font-black h-16 rounded-2xl shadow-lg shadow-blue-600/30 text-lg transition-all border border-white/10 bg-blue-600 hover:bg-blue-500 text-white animate-shimmer bg-[linear-gradient(110deg,#2563eb,45%,#3b82f6,55%,#2563eb)] bg-[length:200%_100%]"
-                        >
-                            <div className="flex flex-col items-center leading-none gap-1">
-                                <span className="flex items-center gap-2">
-                                    <Trophy className="h-5 w-5 text-yellow-300" /> CLIQUE POUR TON DÉFI
-                                </span>
-                                <span className="text-[10px] text-blue-200 font-bold uppercase tracking-widest">(+20 PTS DE CONFIANCE)</span>
-                            </div>
-                        </Button>
-                    ) : (
-                        <div className="space-y-3">
-                             {/* WAITING STATE CARD */}
-                             <div className="bg-[#0f172a]/50 border-2 border-dashed border-slate-700 rounded-xl p-4 flex flex-col items-center justify-center gap-2 text-center">
-                                <div className="h-10 w-10 bg-slate-800 rounded-full flex items-center justify-center relative">
-                                    <div className="absolute top-0 right-0 h-3 w-3 bg-emerald-500 rounded-full animate-ping" />
-                                    <Phone className="h-5 w-5 text-slate-400" />
-                                </div>
-                                <div>
-                                    <h4 className="font-bold text-slate-200">En attente de son appel</h4>
-                                    <p className="text-xs text-slate-500">Prévu entre {match.time}</p>
-                                </div>
-                             </div>
-                             
-                             {/* ACTIVATE COCKPIT BUTTON */}
-                             <Button 
-                                onClick={handleCallClick}
-                                className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold h-14 rounded-xl shadow-lg shadow-emerald-900/20 border border-emerald-400/30 animate-bounce-subtle transition-transform hover:scale-[1.02]"
-                             >
-                                <PhoneCall className="mr-2 h-5 w-5" />
-                                C'EST BON, ON EST EN LIGNE ! 🚀
-                             </Button>
-                             
-                             <p className="text-[10px] text-slate-500 text-center">
-                                Cliquez dès que vous décrochez pour accéder aux outils.
-                             </p>
-                        </div>
-                    )
+            {/* 1. BACKGROUND IMAGE (FULL COVER) */}
+            <div className="absolute inset-0 z-0 bg-slate-800">
+                {match.avatar ? (
+                    <Image 
+                        src={match.avatar} 
+                        alt={match.name} 
+                        fill 
+                        className="object-cover opacity-90 group-hover:opacity-100 transition-opacity"
+                        priority
+                    />
                 ) : (
-                    // STATE 2: DURING CALL (SHARED COCKPIT)
-                    <div className="space-y-6 animate-in fade-in zoom-in duration-500">
-                        {/* CALL HEADER */}
-                        <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-2xl p-6 text-center relative overflow-hidden group">
-                            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-emerald-500 to-transparent animate-shimmer" />
-                            
-                            <div className="flex items-center justify-center gap-3 mb-2">
-                                <div className="relative">
-                                    <div className="absolute inset-0 bg-emerald-500 rounded-full animate-ping opacity-75"></div>
-                                    <div className="h-3 w-3 bg-emerald-500 rounded-full relative z-10"></div>
-                                </div>
-                                <h4 className="text-lg font-black text-emerald-400 uppercase tracking-widest">Appel en cours</h4>
-                            </div>
-                            
-                            <a href={`tel:${match.phone}`} className="block text-white font-black text-3xl mb-1 tracking-wider hover:scale-105 transition-transform">
-                                {match.phone}
-                            </a>
-                            <p className="text-slate-400 text-xs font-bold uppercase">
-                                {isCallOut ? `Appelez ${match.name.split(' ')[0]} maintenant` : `En ligne avec ${match.name.split(' ')[0]}`}
-                            </p>
-                        </div>
+                    <div className="w-full h-full flex items-center justify-center bg-slate-800 text-slate-600">
+                        <User className="h-32 w-32" />
+                    </div>
+                )}
+                {/* Gradient Overlay for Text Readability */}
+                <div className="absolute inset-0 bg-gradient-to-t from-[#0a0f1c] via-[#0a0f1c]/40 to-transparent" />
+                <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-[#0a0f1c]/80 to-transparent" />
+            </div>
 
-                        {/* WHY THIS MATCH (PULSING CTA) */}
-                        <div className="relative z-10">
-                            <div className="absolute inset-0 bg-blue-500/20 rounded-xl blur-lg animate-pulse"></div>
-                            <Button 
-                                onClick={() => setIsWhyVisible(!isWhyVisible)}
-                                className="relative w-full bg-blue-600 hover:bg-blue-500 text-white font-bold h-14 rounded-xl shadow-lg shadow-blue-500/30 border border-blue-400/50 animate-bounce-subtle text-base"
+            {/* 2. TOP HEADER (Date & Status) */}
+            <div className="absolute top-6 left-6 right-6 flex justify-between items-start z-10">
+                <div>
+                    <h3 className="text-white font-black text-xl drop-shadow-md shadow-black">{capitalize(dayName)} {dayNumber}</h3>
+                    <p className="text-slate-300 text-xs font-bold uppercase tracking-wider drop-shadow-md">{match.time}</p>
+                </div>
+                <Badge className="bg-white/10 backdrop-blur-md border-white/20 text-white hover:bg-white/20 px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-lg">
+                    <div className={`h-2 w-2 rounded-full ${isCallOut ? 'bg-emerald-400 animate-pulse' : 'bg-blue-400'}`} />
+                    {isCallOut ? "À appeler" : "Appel entrant"}
+                </Badge>
+            </div>
+
+            {/* 3. MAIN INFO (BOTTOM OVERLAY) */}
+            <div className="absolute bottom-28 left-6 right-6 z-10 text-left">
+                <div className="flex items-end gap-3 mb-2">
+                    <h2 className="text-4xl font-black text-white leading-none drop-shadow-xl shadow-black">
+                        {match.name.split(' ')[0]}
+                    </h2>
+                    <span className="text-2xl text-emerald-400 font-black mb-0.5 drop-shadow-md">{match.score.toFixed(1)}★</span>
+                </div>
+                
+                <p className="text-lg text-slate-200 font-medium flex items-center gap-2 mb-4 drop-shadow-md line-clamp-1">
+                    <Briefcase className="h-4 w-4 text-blue-400 fill-blue-400" /> {match.job}
+                </p>
+                
+                {/* "I'm here for..." Card */}
+                <div className="bg-white/10 backdrop-blur-xl rounded-2xl p-4 border border-white/10 shadow-lg relative overflow-hidden group/card hover:bg-white/15 transition-colors">
+                    <div className="absolute top-0 left-0 w-1 h-full bg-blue-500" />
+                    <p className="text-[10px] text-blue-300 uppercase font-bold mb-1 flex items-center gap-1">
+                        <Zap className="h-3 w-3" /> Objectif du moment
+                    </p>
+                    <p className="text-sm text-white font-bold leading-snug line-clamp-2">
+                        {match.current_need || goalLabel || "Développer mon activité"}
+                    </p>
+                </div>
+            </div>
+
+            {/* 4. ACTION DOCK (FLOATING BOTTOM) */}
+            <div className="absolute bottom-6 left-0 right-0 flex justify-center items-center gap-5 z-20 px-6">
+                
+                {/* SCRIPT (WHY) */}
+                <div className="relative">
+                    <Button 
+                        size="icon" 
+                        onClick={() => setIsWhyVisible(!isWhyVisible)}
+                        className="h-14 w-14 rounded-full bg-slate-800/80 backdrop-blur-md border border-white/10 text-yellow-400 hover:bg-slate-700 hover:scale-110 transition-all shadow-lg"
+                    >
+                        <MessageSquare className="h-6 w-6 fill-current" />
+                    </Button>
+                    {/* Popover Script */}
+                    <AnimatePresence>
+                        {isWhyVisible && (
+                            <motion.div 
+                                initial={{ opacity: 0, y: 10, scale: 0.9 }}
+                                animate={{ opacity: 1, y: 0, scale: 1 }}
+                                exit={{ opacity: 0, y: 10, scale: 0.9 }}
+                                className="absolute bottom-20 left-0 w-64 bg-slate-900/95 backdrop-blur-xl p-4 rounded-2xl border border-white/10 shadow-2xl z-50 text-left"
                             >
-                                <Zap className="mr-2 h-5 w-5 text-yellow-300 fill-yellow-300" />
-                                POURQUOI CE MATCH ? (Le Script)
+                                <div className="text-xs text-slate-400 uppercase font-bold mb-2">Pourquoi ce match ?</div>
+                                <p className="text-sm text-white leading-relaxed">{whyText}</p>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+                </div>
+
+                {/* CALL (MAIN ACTION) */}
+                <Button 
+                    size="icon" 
+                    onClick={handleCallClick}
+                    className={`h-20 w-20 rounded-full bg-gradient-to-br from-emerald-500 to-blue-600 text-white hover:scale-110 transition-all shadow-xl shadow-emerald-500/30 border-4 border-[#0f172a] relative group ${!callMade && 'animate-pulse'}`}
+                >
+                    {callMade ? (
+                        <PhoneCall className="h-8 w-8 fill-current" />
+                    ) : (
+                        <Phone className="h-8 w-8 fill-current group-hover:rotate-12 transition-transform" />
+                    )}
+                </Button>
+
+                {/* GIFT / RATE (MENU) */}
+                <div className="flex gap-3">
+                    {/* GIFT */}
+                    <Dialog open={isOpportunityOpen} onOpenChange={setIsOpportunityOpen}>
+                        <DialogTrigger asChild>
+                            <Button size="icon" className="h-14 w-14 rounded-full bg-slate-800/80 backdrop-blur-md border border-white/10 text-purple-400 hover:bg-slate-700 hover:scale-110 transition-all shadow-lg">
+                                <Gift className="h-6 w-6" />
                             </Button>
-                        </div>
-
-                        {/* THE SCRIPT (Now Below Button) */}
-                        <AnimatePresence>
-                            {isWhyVisible && (
-                                <motion.div 
-                                    initial={{ opacity: 0, height: 0 }}
-                                    animate={{ opacity: 1, height: "auto" }}
-                                    exit={{ opacity: 0, height: 0 }}
-                                    className="bg-[#0f172a]/80 backdrop-blur-xl rounded-xl p-4 border border-blue-500/30 relative overflow-hidden"
-                                >
-                                    <div className="absolute left-0 top-0 w-1 h-full bg-blue-500" />
-                                    <h5 className="text-xs font-bold text-blue-400 uppercase mb-2 flex items-center gap-2">
-                                        <MessageSquare className="h-3 w-3" /> Pistes de discussion
-                                    </h5>
-                                    <p className="text-sm text-slate-200 font-medium leading-relaxed whitespace-pre-line">
-                                        {whyText}
-                                    </p>
-                                </motion.div>
-                            )}
-                        </AnimatePresence>
-
-                        {/* ACTION BUTTONS (The "Cockpit") */}
-                        <div className="grid grid-cols-2 gap-3">
-                            {/* OFFER OPPORTUNITY BUTTON */}
-                            <Dialog open={isOpportunityOpen} onOpenChange={setIsOpportunityOpen}>
-                                <DialogTrigger asChild>
-                                    <Button className="h-auto py-4 flex flex-col items-center gap-1 bg-purple-600 hover:bg-purple-500 text-white rounded-xl border border-purple-400/30 shadow-lg shadow-purple-500/20 hover:-translate-y-1 transition-transform">
-                                        <Gift className="h-7 w-7 mb-1" />
-                                        <span className="font-black text-sm">OFFRIR</span>
-                                        <span className="text-[9px] opacity-80 font-bold uppercase">Une opportunité</span>
-                                    </Button>
-                                </DialogTrigger>
-                                <DialogContent className="bg-[#0f172a] border-white/10 text-white sm:max-w-md w-[95vw] rounded-2xl">
+                        </DialogTrigger>
+                        <DialogContent className="bg-[#0f172a] border-white/10 text-white sm:max-w-md w-[95vw] rounded-2xl">
                                     <DialogHeader>
                                         <DialogTitle className="flex items-center gap-2 text-xl font-black">
                                             <Gift className="h-6 w-6 text-purple-400" />
@@ -592,18 +529,16 @@ export function DailyMatchCard({ matches, userStreak = 0, userId }: DailyMatchCa
                                         </Button>
                                     </DialogFooter>
                                 </DialogContent>
-                            </Dialog>
+                    </Dialog>
 
-                            {/* LOG INTERACTION BUTTON (RATING MODAL) */}
-                            <Dialog open={isRatingOpen} onOpenChange={setIsRatingOpen}>
-                                <DialogTrigger asChild>
-                                    <Button className="h-auto py-4 flex flex-col items-center gap-1 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl border border-white/5 hover:-translate-y-1 transition-transform">
-                                        <Handshake className="h-7 w-7 mb-1" />
-                                        <span className="font-bold text-sm">NOTER</span>
-                                        <span className="text-[9px] opacity-80 font-bold uppercase">Un échange</span>
-                                    </Button>
-                                </DialogTrigger>
-                                <DialogContent className="bg-[#0f172a] border-white/10 text-white sm:max-w-md rounded-2xl">
+                    {/* RATE */}
+                    <Dialog open={isRatingOpen} onOpenChange={setIsRatingOpen}>
+                        <DialogTrigger asChild>
+                            <Button size="icon" className="h-14 w-14 rounded-full bg-slate-800/80 backdrop-blur-md border border-white/10 text-orange-400 hover:bg-slate-700 hover:scale-110 transition-all shadow-lg">
+                                <Star className="h-6 w-6 fill-current" />
+                            </Button>
+                        </DialogTrigger>
+                        <DialogContent className="bg-[#0f172a] border-white/10 text-white sm:max-w-md rounded-2xl">
                                     <DialogHeader>
                                         <DialogTitle className="flex items-center gap-2 text-xl font-black justify-center">
                                             <Handshake className="h-6 w-6 text-blue-400" />
@@ -649,36 +584,10 @@ export function DailyMatchCard({ matches, userStreak = 0, userId }: DailyMatchCa
                                         </Button>
                                     </div>
                                 </DialogContent>
-                            </Dialog>
-                        </div>
-                    </div>
-                )}
-             </div>
-
-             {/* STATS FOOTER (DYNAMIC) */}
-             <div className="grid grid-cols-2 gap-3">
-                <div className="bg-[#0f172a]/50 rounded-lg p-2.5 border border-white/5 shadow-sm text-center">
-                   <div className="text-[9px] text-slate-500 font-bold uppercase mb-0.5">Objectif Principal</div>
-                   <div className="font-black text-white text-xs leading-tight line-clamp-1">
-                      {goalLabel ? capitalize(goalLabel) : "Développement"}
-                   </div>
+                    </Dialog>
                 </div>
-                <div className="bg-[#0f172a]/50 rounded-lg p-2.5 border border-white/5 shadow-sm text-center">
-                   <div className="text-[9px] text-slate-500 font-bold uppercase mb-0.5">Score de Confiance</div>
-                   <div className="font-black text-emerald-400 text-base">{match.score.toFixed(1)}/5</div>
-                </div>
-             </div>
+            </div>
 
-             {/* SEE PROFILE LINK (IMPROVED) */}
-             <div className="mt-4">
-                <Button variant="secondary" className="w-full h-9 rounded-lg font-bold text-xs text-slate-400 hover:text-white bg-white/5 hover:bg-white/10 border border-white/5 hover:border-white/10 transition-all" asChild>
-                    <Link href={`/mon-reseau-local/dashboard/profile/${match.partnerId}`}>
-                        Voir le profil complet
-                    </Link>
-                </Button>
-             </div>
-
-        </motion.div>
         </div>
         );
       })}
