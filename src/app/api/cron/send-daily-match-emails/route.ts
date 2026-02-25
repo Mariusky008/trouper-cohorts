@@ -83,7 +83,7 @@ export async function GET(request: Request) {
             await resend.emails.send({
                 from: 'Popey Academy <onboarding@resend.dev>', // Update with verified domain in production
                 to: user1.email,
-                subject: `⚓️ Votre opportunité Popey du jour est prête !`,
+                subject: `⚓️ Votre match du jour : ${user2.display_name} !`,
                 react: DailyMatchEmail({
                     userName: user1.display_name,
                     matchName: user2.display_name,
@@ -91,6 +91,8 @@ export async function GET(request: Request) {
                     matchCity: user2.city,
                     matchAvatar: user2.avatar_url,
                     matchGoal: goalLabel,
+                    matchSuperpower: user2.superpower,
+                    matchNeed: user2.current_need,
                     dashboardUrl: `${process.env.NEXT_PUBLIC_APP_URL || 'https://popey.academy'}/mon-reseau-local/dashboard`
                 })
             });
@@ -103,7 +105,7 @@ export async function GET(request: Request) {
             await resend.emails.send({
                 from: 'Popey Academy <onboarding@resend.dev>',
                 to: user2.email,
-                subject: `⚓️ Votre opportunité Popey du jour est prête !`,
+                subject: `⚓️ Votre match du jour : ${user1.display_name} !`,
                 react: DailyMatchEmail({
                     userName: user2.display_name,
                     matchName: user1.display_name,
@@ -111,6 +113,8 @@ export async function GET(request: Request) {
                     matchCity: user1.city,
                     matchAvatar: user1.avatar_url,
                     matchGoal: goalLabel,
+                    matchSuperpower: user1.superpower,
+                    matchNeed: user1.current_need,
                     dashboardUrl: `${process.env.NEXT_PUBLIC_APP_URL || 'https://popey.academy'}/mon-reseau-local/dashboard`
                 })
             });

@@ -23,6 +23,8 @@ interface DailyMatchEmailProps {
   matchCity: string;
   matchAvatar: string;
   matchGoal: string;
+  matchSuperpower?: string;
+  matchNeed?: string;
   dashboardUrl: string;
 }
 
@@ -33,6 +35,8 @@ export const DailyMatchEmail = ({
   matchCity = "Paris",
   matchAvatar = "https://ui.shadcn.com/avatars/02.png",
   matchGoal = "Trouver des clients",
+  matchSuperpower,
+  matchNeed,
   dashboardUrl = "https://popey.academy/mon-reseau-local/dashboard",
 }: DailyMatchEmailProps) => {
   return (
@@ -76,9 +80,21 @@ export const DailyMatchEmail = ({
                     {matchJob} • {matchCity}
                 </Text>
                 
-                <div className="bg-white rounded-xl p-3 border border-slate-200 text-sm text-slate-600 italic">
-                    "{matchName} cherche à <strong>{matchGoal.toLowerCase()}</strong> et votre profil l'intéresse."
-                </div>
+                {matchSuperpower && matchNeed ? (
+                    <div className="bg-white rounded-xl p-4 border border-slate-200 text-left">
+                        <Text className="text-[12px] font-bold text-slate-400 uppercase m-0 mb-1">CE QU'IL CHERCHE :</Text>
+                        <Text className="text-slate-800 text-[14px] m-0 mb-3 font-medium">"{matchNeed}"</Text>
+                        
+                        <div className="h-px bg-slate-100 w-full my-2"></div>
+                        
+                        <Text className="text-[12px] font-bold text-slate-400 uppercase m-0 mb-1">CE QU'IL OFFRE :</Text>
+                        <Text className="text-slate-800 text-[14px] m-0 font-medium">"{matchSuperpower}"</Text>
+                    </div>
+                ) : (
+                    <div className="bg-white rounded-xl p-3 border border-slate-200 text-sm text-slate-600 italic">
+                        "{matchName} cherche à <strong>{matchGoal.toLowerCase()}</strong> et votre profil l'intéresse."
+                    </div>
+                )}
             </Section>
 
             {/* CTA */}

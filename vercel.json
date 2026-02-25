@@ -10,7 +10,7 @@
     },
     {
       "path": "/api/cron/send-daily-match-emails",
-      "schedule": "0 7 * * *"
+      "schedule": "0 8 * * *"
     }
   ]
 }
