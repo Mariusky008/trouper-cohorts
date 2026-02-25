@@ -39,6 +39,7 @@ const GOAL_LABELS: Record<string, string> = {
 };
 
 export function DailyMatchCard({ matches, userStreak = 0, userId }: DailyMatchCardProps) {
+  // Immersive Dating App Style Redesign
   // Date Formatting
   const now = new Date();
   const dayName = new Intl.DateTimeFormat('fr-FR', { weekday: 'long' }).format(now);
