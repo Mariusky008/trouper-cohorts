@@ -511,7 +511,7 @@ export function DailyMatchCard({ matches, userStreak = 0, userId }: DailyMatchCa
                                 <Button 
                                     onClick={() => handleCopyPhone(match.phone)}
                                     variant="outline"
-                                    className="h-14 border-white/10 text-white hover:bg-white/10 hover:text-white text-lg font-bold gap-2"
+                                    className="h-14 border-white/20 bg-transparent text-white hover:bg-white/10 hover:text-white text-lg font-bold gap-2"
                                 >
                                     <Copy className="h-5 w-5" />
                                     Copier
