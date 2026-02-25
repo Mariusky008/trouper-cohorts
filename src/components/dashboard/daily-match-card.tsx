@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { Clock, Star, MapPin, Phone, CheckCircle2, MessageSquare, ArrowRight, Calendar, User, Briefcase, Zap, Trophy, Handshake, Gift, PhoneCall, Info } from "lucide-react";
+import { Clock, Star, MapPin, Phone, CheckCircle2, MessageSquare, ArrowRight, Calendar, User, Briefcase, Zap, Trophy, Handshake, Gift, PhoneCall, Info, Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -160,7 +160,9 @@ export function DailyMatchCard({ matches, userStreak = 0, userId }: DailyMatchCa
       });
   };
 
-  const handleCallClick = async () => {
+  const [isPhoneOpen, setIsPhoneOpen] = useState(false);
+
+  const triggerCallRewards = async () => {
       if (callMade) return;
       
       setCallMade(true);
@@ -192,6 +194,18 @@ export function DailyMatchCard({ matches, userStreak = 0, userId }: DailyMatchCa
           console.error("Failed to add points", error);
           toast.error("Erreur lors de l'ajout des points");
       }
+  };
+
+  const handleCopyPhone = (phone: string) => {
+      navigator.clipboard.writeText(phone);
+      toast.success("Numéro copié ! 📋");
+      triggerCallRewards();
+      setIsPhoneOpen(false);
+  };
+
+  const handleCallAction = () => {
+      triggerCallRewards();
+      setIsPhoneOpen(false);
   };
 
   // Countdown Logic
@@ -461,17 +475,62 @@ export function DailyMatchCard({ matches, userStreak = 0, userId }: DailyMatchCa
                 </div>
 
                 {/* CALL (MAIN ACTION) */}
-                <Button 
-                    size="icon" 
-                    onClick={handleCallClick}
-                    className={`h-20 w-20 rounded-full bg-gradient-to-br from-emerald-500 to-blue-600 text-white hover:scale-110 transition-all shadow-xl shadow-emerald-500/30 border-4 border-[#0f172a] relative group ${!callMade && 'animate-pulse'}`}
-                >
-                    {callMade ? (
-                        <PhoneCall className="h-8 w-8 fill-current" />
-                    ) : (
-                        <Phone className="h-8 w-8 fill-current group-hover:rotate-12 transition-transform" />
-                    )}
-                </Button>
+                <Dialog open={isPhoneOpen} onOpenChange={setIsPhoneOpen}>
+                    <DialogTrigger asChild>
+                        <Button 
+                            size="icon" 
+                            className={`h-20 w-20 rounded-full bg-gradient-to-br from-emerald-500 to-blue-600 text-white hover:scale-110 transition-all shadow-xl shadow-emerald-500/30 border-4 border-[#0f172a] relative group ${!callMade && 'animate-pulse'}`}
+                        >
+                            {callMade ? (
+                                <PhoneCall className="h-8 w-8 fill-current" />
+                            ) : (
+                                <Phone className="h-8 w-8 fill-current group-hover:rotate-12 transition-transform" />
+                            )}
+                        </Button>
+                    </DialogTrigger>
+                    <DialogContent className="bg-[#0f172a] border-white/10 text-white sm:max-w-md rounded-2xl w-[90vw]">
+                        <DialogHeader>
+                            <DialogTitle className="flex flex-col items-center gap-4 text-2xl font-black justify-center pt-4">
+                                <div className="h-20 w-20 rounded-full bg-emerald-500/20 flex items-center justify-center animate-pulse">
+                                    <Phone className="h-10 w-10 text-emerald-400" />
+                                </div>
+                                <span>C'est parti ! 🚀</span>
+                            </DialogTitle>
+                            <DialogDescription className="text-center text-slate-400 text-base">
+                                Voici le numéro de <span className="text-white font-bold">{match.name}</span>.
+                                <br/>Appelez-le maintenant pour votre échange de 15 min.
+                            </DialogDescription>
+                        </DialogHeader>
+
+                        <div className="flex flex-col items-center gap-6 py-6">
+                            <div className="text-3xl sm:text-4xl font-black tracking-widest text-white bg-slate-900 px-6 py-4 rounded-xl border border-white/10 shadow-inner select-all">
+                                {match.phone || "Non renseigné"}
+                            </div>
+                            
+                            <div className="grid grid-cols-2 gap-4 w-full">
+                                <Button 
+                                    onClick={() => handleCopyPhone(match.phone)}
+                                    variant="outline"
+                                    className="h-14 border-white/10 text-white hover:bg-white/10 hover:text-white text-lg font-bold gap-2"
+                                >
+                                    <Copy className="h-5 w-5" />
+                                    Copier
+                                </Button>
+                                
+                                <Button 
+                                    asChild
+                                    className="h-14 bg-emerald-500 hover:bg-emerald-400 text-white text-lg font-bold gap-2 shadow-lg shadow-emerald-500/20"
+                                    onClick={handleCallAction}
+                                >
+                                    <a href={`tel:${match.phone}`}>
+                                        <PhoneCall className="h-5 w-5" />
+                                        Appeler
+                                    </a>
+                                </Button>
+                            </div>
+                        </div>
+                    </DialogContent>
+                </Dialog>
 
                 {/* GIFT / RATE (MENU) */}
                 <div className="flex gap-3">
