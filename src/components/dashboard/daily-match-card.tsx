@@ -436,9 +436,12 @@ export function DailyMatchCard({ matches, userStreak = 0, userId }: DailyMatchCa
                     <h3 className="text-white font-black text-xl drop-shadow-md shadow-black">{capitalize(dayName)} {dayNumber}</h3>
                     <p className="text-slate-300 text-xs font-bold uppercase tracking-wider drop-shadow-md">{match.time}</p>
                 </div>
-                <Badge className="bg-white/10 backdrop-blur-md border-white/20 text-white hover:bg-white/20 px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-lg">
-                    <div className={`h-2 w-2 rounded-full ${isCallOut ? 'bg-emerald-400 animate-pulse' : 'bg-blue-400'}`} />
-                    {isCallOut ? "À appeler" : "Appel entrant"}
+                <Badge className={cn(
+                    "backdrop-blur-md border-white/20 text-white px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-lg font-bold uppercase text-[10px] tracking-wide",
+                    isCallOut ? "bg-emerald-600/90 hover:bg-emerald-600 shadow-emerald-500/20" : "bg-blue-600/90 hover:bg-blue-600 shadow-blue-500/20"
+                )}>
+                    <div className={cn("h-2 w-2 rounded-full bg-white", isCallOut && "animate-pulse")} />
+                    {isCallOut ? "C'EST À VOUS D'APPELER" : "ATTENDEZ SON APPEL"}
                 </Badge>
             </div>
 
