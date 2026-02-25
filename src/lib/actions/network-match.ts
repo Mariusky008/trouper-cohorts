@@ -158,7 +158,9 @@ export async function getDailyMatches() {
       return a.time.localeCompare(b.time);
   });
 
-  return sortedMatches;
+  // DAILY DASHBOARD RULE: Only show ONE primary match at a time to focus the user.
+  // We return the most urgent one (earliest today or next available).
+  return sortedMatches.length > 0 ? [sortedMatches[0]] : [];
 }
 
 import { revalidatePath } from "next/cache";
