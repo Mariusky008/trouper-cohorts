@@ -13,7 +13,7 @@ export default async function AdminLayout({
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) redirect("/");
+  if (!user) redirect("/login");
 
   // Check if admin
   const { data: adminData } = await supabase
