@@ -513,23 +513,7 @@ export default function HomePage() {
          </div>
       </section>
 
-      {/* --- 5. DASHBOARD / MOCKUP SECTION --- */}
-      <section className="py-20 bg-white overflow-hidden">
-        <div className="container mx-auto px-4 text-center">
-            <h2 className="text-3xl font-black text-slate-900 mb-12">Votre tableau de bord quotidien</h2>
-            <InteractiveMockup />
-            
-            <div className="mt-12">
-               <Button 
-                  size="lg" 
-                  className="bg-slate-900 text-white hover:bg-slate-800 font-bold rounded-full px-8 h-12"
-                  onClick={() => document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' })}
-               >
-                 Voir mon tableau de bord <ArrowRight className="ml-2 h-4 w-4" />
-               </Button>
-            </div>
-        </div>
-      </section>
+      {/* --- 4. HOW IT WORKS --- */}
 
       {/* --- 6. TRUST SCORE & RECIPROCITY --- */}
       <section className="py-24 bg-slate-50">
