@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { Clock, Star, MapPin, Phone, CheckCircle2, MessageSquare, ArrowRight, Calendar, User, Briefcase, Zap, Trophy, Handshake, Gift, PhoneCall, Info, Copy } from "lucide-react";
+import { Clock, Star, MapPin, Phone, CheckCircle2, MessageSquare, ArrowRight, Calendar, User, Briefcase, Zap, Trophy, Handshake, Gift, PhoneCall, Info, Copy, Target, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -51,6 +51,10 @@ export function DailyMatchCard({ matches, userStreak = 0, userId }: DailyMatchCa
   
   const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
+  // Logic: "Why this match" script
+  // If user has specific superpower/need, use it. Otherwise generic.
+  const hasGiveTake = matches[0]?.superpower && matches[0]?.current_need;
+  
   const [callMade, setCallMade] = useState(false);
   const [timeLeft, setTimeLeft] = useState("");
   const [revealed, setRevealed] = useState(false); // State for the "Loot Box" reveal
@@ -417,7 +421,7 @@ export function DailyMatchCard({ matches, userStreak = 0, userId }: DailyMatchCa
                         src={match.avatar} 
                         alt={match.name} 
                         fill 
-                        className="object-cover opacity-90 group-hover:opacity-100 transition-opacity"
+                        className="object-cover object-top transition-transform duration-700 group-hover:scale-105"
                         priority
                     />
                 ) : (
@@ -431,13 +435,13 @@ export function DailyMatchCard({ matches, userStreak = 0, userId }: DailyMatchCa
             </div>
 
             {/* 2. TOP HEADER (Date & Status) */}
-            <div className="absolute top-6 left-6 right-6 flex justify-between items-start z-10">
-                <div>
+            <div className="absolute top-6 left-6 right-6 flex justify-between items-start z-10 pointer-events-none">
+                <div className="pointer-events-auto">
                     <h3 className="text-white font-black text-xl drop-shadow-md shadow-black">{capitalize(dayName)} {dayNumber}</h3>
                     <p className="text-slate-300 text-xs font-bold uppercase tracking-wider drop-shadow-md">{match.time}</p>
                 </div>
                 <Badge className={cn(
-                    "backdrop-blur-md border-white/20 text-white px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-lg font-bold uppercase text-[10px] tracking-wide",
+                    "backdrop-blur-md border-white/20 text-white px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-lg font-bold uppercase text-[10px] tracking-wide pointer-events-auto",
                     isCallOut ? "bg-emerald-600/90 hover:bg-emerald-600 shadow-emerald-500/20" : "bg-blue-600/90 hover:bg-blue-600 shadow-blue-500/20"
                 )}>
                     <div className={cn("h-2 w-2 rounded-full bg-white", isCallOut && "animate-pulse")} />
@@ -458,52 +462,103 @@ export function DailyMatchCard({ matches, userStreak = 0, userId }: DailyMatchCa
                     <Briefcase className="h-4 w-4 text-blue-400 fill-blue-400" /> {match.job}
                 </p>
                 
-                {/* "I'm here for..." Card */}
-                <div className="bg-white/10 backdrop-blur-xl rounded-2xl p-4 border border-white/10 shadow-lg relative overflow-hidden group/card hover:bg-white/15 transition-colors">
-                    <div className="absolute top-0 left-0 w-1 h-full bg-blue-500" />
-                    <p className="text-[10px] text-blue-300 uppercase font-bold mb-1 flex items-center gap-1">
-                        <Zap className="h-3 w-3" /> Objectif du moment
-                    </p>
-                    <p className="text-sm text-white font-bold leading-snug line-clamp-2">
-                        {match.current_need || goalLabel || "Développer mon activité"}
-                    </p>
+                {/* "I'm here for..." Card -> REPLACED WITH PROFILE BUTTON */}
+                <div className="flex justify-start mt-2">
+                    <Button 
+                        asChild
+                        variant="outline" 
+                        className="bg-white/10 hover:bg-white/20 backdrop-blur-md border-white/20 text-white rounded-full px-5 h-10 text-xs font-bold uppercase tracking-wide transition-all hover:scale-105"
+                    >
+                        <Link href={`/mon-reseau-local/dashboard/profile/${match.partnerId}`} className="flex items-center gap-2">
+                            <User className="h-4 w-4" />
+                            Voir son profil complet
+                        </Link>
+                    </Button>
                 </div>
                 
-                {/* View Profile Link */}
-                <div className="mt-4 flex justify-end">
-                    <Link href={`/mon-reseau-local/dashboard/profile/${match.partnerId}`} className="text-xs font-bold text-slate-300 hover:text-white flex items-center gap-1 hover:underline decoration-blue-400 decoration-2 underline-offset-4 transition-all">
-                        Voir son profil complet <ArrowRight className="h-3 w-3" />
-                    </Link>
-                </div>
+                {/* View Profile Link - REMOVED since we have the button above now */}
             </div>
 
             {/* 4. ACTION DOCK (FLOATING BOTTOM) */}
             <div className="absolute bottom-6 left-0 right-0 flex justify-center items-center gap-5 z-20 px-6">
                 
                 {/* SCRIPT (WHY) */}
-                <div className="relative">
-                    <Button 
-                        size="icon" 
-                        onClick={() => setIsWhyVisible(!isWhyVisible)}
-                        className="h-14 w-14 rounded-full bg-slate-800/80 backdrop-blur-md border border-white/10 text-yellow-400 hover:bg-slate-700 hover:scale-110 transition-all shadow-lg"
-                    >
-                        <MessageSquare className="h-6 w-6 fill-current" />
-                    </Button>
-                    {/* Popover Script */}
-                    <AnimatePresence>
-                        {isWhyVisible && (
-                            <motion.div 
-                                initial={{ opacity: 0, y: 10, scale: 0.9 }}
-                                animate={{ opacity: 1, y: 0, scale: 1 }}
-                                exit={{ opacity: 0, y: 10, scale: 0.9 }}
-                                className="absolute bottom-20 left-0 w-64 bg-slate-900/95 backdrop-blur-xl p-4 rounded-2xl border border-white/10 shadow-2xl z-50 text-left"
-                            >
-                                <div className="text-xs text-slate-400 uppercase font-bold mb-2">Pourquoi ce match ?</div>
-                                <p className="text-sm text-white leading-relaxed">{whyText}</p>
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
-                </div>
+                <Dialog open={isWhyVisible} onOpenChange={setIsWhyVisible}>
+                    <DialogTrigger asChild>
+                        <Button 
+                            size="icon" 
+                            className="h-14 w-14 rounded-full bg-slate-800/80 backdrop-blur-md border border-white/10 text-yellow-400 hover:bg-slate-700 hover:scale-110 transition-all shadow-lg"
+                        >
+                            <MessageSquare className="h-6 w-6 fill-current" />
+                        </Button>
+                    </DialogTrigger>
+                    <DialogContent className="bg-[#0f172a] border-white/10 text-white sm:max-w-md rounded-2xl w-[90vw] p-0 overflow-hidden">
+                        <div className="bg-gradient-to-br from-blue-600/20 to-purple-600/20 p-6">
+                            <DialogHeader>
+                                <DialogTitle className="flex items-center gap-2 text-xl font-black">
+                                    <Zap className="h-6 w-6 text-yellow-400 fill-yellow-400" />
+                                    Pourquoi ce match ?
+                                </DialogTitle>
+                                <DialogDescription className="text-slate-300">
+                                    Voici pourquoi l'algorithme vous a réunis aujourd'hui.
+                                </DialogDescription>
+                            </DialogHeader>
+                        </div>
+                        
+                        <div className="p-6 space-y-6 max-h-[60vh] overflow-y-auto">
+                            {/* 1. Objectif du moment */}
+                            <div className="space-y-2">
+                                <h4 className="text-xs font-bold text-slate-500 uppercase flex items-center gap-2">
+                                    <Target className="h-4 w-4" /> Objectif du moment
+                                </h4>
+                                <p className="text-lg font-bold text-white leading-tight">
+                                    {match.current_goals && match.current_goals.length > 0 
+                                        ? GOAL_LABELS[match.current_goals[0]] 
+                                        : "Développer son activité"}
+                                </p>
+                            </div>
+
+                            {/* 2. Grand Défi */}
+                            {match.big_goal && (
+                                <div className="space-y-2">
+                                    <h4 className="text-xs font-bold text-slate-500 uppercase flex items-center gap-2">
+                                        <Trophy className="h-4 w-4" /> Son Grand Défi
+                                    </h4>
+                                    <div className="bg-slate-900/50 p-3 rounded-xl border border-white/5 text-sm text-slate-200 italic">
+                                        "{match.big_goal}"
+                                    </div>
+                                </div>
+                            )}
+
+                            <div className="grid grid-cols-1 gap-4 pt-2">
+                                {/* 3. Ce qu'il offre */}
+                                <div className="bg-emerald-500/10 p-4 rounded-xl border border-emerald-500/20 space-y-2">
+                                    <h4 className="text-xs font-bold text-emerald-400 uppercase flex items-center gap-2">
+                                        <Gift className="h-4 w-4" /> Ce qu'il peut offrir
+                                    </h4>
+                                    <p className="text-sm font-medium text-emerald-100">
+                                        {match.superpower || "Son expérience et son réseau"}
+                                    </p>
+                                </div>
+
+                                {/* 4. Ce qu'il cherche */}
+                                <div className="bg-blue-500/10 p-4 rounded-xl border border-blue-500/20 space-y-2">
+                                    <h4 className="text-xs font-bold text-blue-400 uppercase flex items-center gap-2">
+                                        <Search className="h-4 w-4" /> Ce qu'il recherche
+                                    </h4>
+                                    <p className="text-sm font-medium text-blue-100">
+                                        {match.current_need || "Des opportunités de croissance"}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="p-4 bg-slate-900 border-t border-white/5">
+                            <Button className="w-full bg-slate-800 hover:bg-slate-700 text-white font-bold" onClick={() => setIsWhyVisible(false)}>
+                                Compris, je l'appelle !
+                            </Button>
+                        </div>
+                    </DialogContent>
+                </Dialog>
 
                 {/* CALL (MAIN ACTION) */}
                 <Dialog open={isPhoneOpen} onOpenChange={setIsPhoneOpen}>
@@ -528,8 +583,17 @@ export function DailyMatchCard({ matches, userStreak = 0, userId }: DailyMatchCa
                                 <span>C'est parti ! 🚀</span>
                             </DialogTitle>
                             <DialogDescription className="text-center text-slate-400 text-base">
-                                Voici le numéro de <span className="text-white font-bold">{match.name}</span>.
-                                <br/>Appelez-le maintenant pour votre échange de 15 min.
+                                {isCallOut ? (
+                                    <>
+                                        Voici le numéro de <span className="text-white font-bold">{match.name}</span>.
+                                        <br/>Appelez-le maintenant pour votre échange de 15 min.
+                                    </>
+                                ) : (
+                                    <>
+                                        Vous attendez l'appel de <span className="text-white font-bold">{match.name}</span>.
+                                        <br/>Si à {match.time.split('h')[0]}h10 vous n'avez pas de nouvelles, appelez-le !
+                                    </>
+                                )}
                             </DialogDescription>
                         </DialogHeader>
 

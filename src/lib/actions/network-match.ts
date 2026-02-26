@@ -17,8 +17,8 @@ export async function getDailyMatches() {
     .from("network_matches")
     .select(`
       *,
-      user1:user1_id(id, display_name, avatar_url, trade, phone, superpower, current_need),
-      user2:user2_id(id, display_name, avatar_url, trade, phone, superpower, current_need)
+      user1:user1_id(id, display_name, avatar_url, trade, phone, superpower, current_need, big_goal),
+      user2:user2_id(id, display_name, avatar_url, trade, phone, superpower, current_need, big_goal)
     `)
     .gte("date", searchDate) // Fetch from yesterday onwards
     .or(`user1_id.eq.${user.id},user2_id.eq.${user.id}`)
@@ -52,7 +52,7 @@ export async function getDailyMatches() {
       if (!partnerData) {
           const { data: p } = await supabase
             .from("profiles")
-            .select("id, display_name, avatar_url, trade, city, bio, phone, current_goals, superpower, current_need")
+            .select("id, display_name, avatar_url, trade, city, bio, phone, current_goals, superpower, current_need, big_goal")
             .eq("id", partnerId)
             .single();
           partnerData = p;
@@ -81,6 +81,7 @@ export async function getDailyMatches() {
         avatar: partnerData.avatar_url,
         tags: [partnerData.trade || "Entrepreneur"],
         current_goals: partnerData.current_goals || [],
+        big_goal: partnerData.big_goal,
         superpower: partnerData.superpower,
         current_need: partnerData.current_need,
         status: match.status,
