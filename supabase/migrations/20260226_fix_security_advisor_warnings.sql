@@ -36,23 +36,23 @@ CREATE POLICY "Allow public registration" ON public.pre_registrations
 FOR INSERT TO anon, authenticated
 WITH CHECK (true); 
 
--- 5. Fix RLS Policy Always True for public.victory_likes
-DROP POLICY IF EXISTS "Enable all for authenticated" ON public.victory_likes;
+-- 5. Fix RLS Policy Always True for public.proof_likes
+DROP POLICY IF EXISTS "Enable all for authenticated" ON public.proof_likes;
 
-CREATE POLICY "Enable read for authenticated" ON public.victory_likes
+CREATE POLICY "Enable read for authenticated" ON public.proof_likes
 FOR SELECT TO authenticated
 USING (true);
 
-CREATE POLICY "Enable insert for authenticated" ON public.victory_likes
+CREATE POLICY "Enable insert for authenticated" ON public.proof_likes
 FOR INSERT TO authenticated
 WITH CHECK (auth.uid() = user_id);
 
-CREATE POLICY "Enable delete for users" ON public.victory_likes
+CREATE POLICY "Enable delete for users" ON public.proof_likes
 FOR DELETE TO authenticated
 USING (auth.uid() = user_id);
 
--- 6. Fix RLS Policy Always True for public.victory_posts
-DROP POLICY IF EXISTS "Enable insert for authenticated" ON public.victory_posts;
-CREATE POLICY "Enable insert for authenticated" ON public.victory_posts
+-- 6. Fix RLS Policy Always True for public.proofs
+DROP POLICY IF EXISTS "Enable insert for authenticated" ON public.proofs;
+CREATE POLICY "Enable insert for authenticated" ON public.proofs
 FOR INSERT TO authenticated
 WITH CHECK (auth.uid() = user_id);
