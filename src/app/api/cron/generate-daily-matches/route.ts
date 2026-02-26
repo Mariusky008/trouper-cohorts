@@ -38,6 +38,22 @@ async function handleMatching(request: Request) {
     const dateStr = targetDate.toISOString().split('T')[0];
 
     // 3. Fetch all availabilities for that date
+    // AND Check if matches already exist for today to prevent duplicates
+    
+    // Check existing matches first
+    const { count: existingCount } = await supabase
+        .from('network_matches')
+        .select('*', { count: 'exact', head: true })
+        .eq('date', dateStr);
+
+    if (existingCount && existingCount > 0) {
+        return NextResponse.json({ 
+            success: true, 
+            message: `Matches already generated for ${dateStr}. Skipping to prevent duplicates.`,
+            count: existingCount 
+        });
+    }
+
     let { data: availabilities, error: availError } = await supabase
       .from('network_availabilities')
       .select('user_id, slots')
