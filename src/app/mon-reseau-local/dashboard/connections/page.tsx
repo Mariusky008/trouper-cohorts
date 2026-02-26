@@ -10,7 +10,7 @@ export default async function ConnectionsPage() {
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect('/login');
+    redirect('/');
   }
 
   const connections = await getConnections();
