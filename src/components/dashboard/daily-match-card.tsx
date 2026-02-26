@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { Clock, Star, MapPin, Phone, CheckCircle2, MessageSquare, ArrowRight, Calendar, User, Briefcase, Zap, Trophy, Handshake, Gift, PhoneCall, Info, Copy, Target, Search } from "lucide-react";
+import { Clock, Star, MapPin, Phone, CheckCircle2, MessageSquare, ArrowRight, Calendar, User, Briefcase, Zap, Trophy, Handshake, Gift, PhoneCall, Info, Copy, Target, Search, Coffee } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -267,6 +267,69 @@ export function DailyMatchCard({ matches, userStreak = 0, userId }: DailyMatchCa
   }, [matches]);
 
   if (!matches || matches.length === 0) {
+    const isWeekend = now.getDay() === 0 || now.getDay() === 6;
+
+    if (isWeekend) {
+      return (
+        <div className="relative max-w-md mx-auto w-full">
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="flex flex-col items-center justify-center py-16 px-6 text-center space-y-8 bg-[#0f172a]/80 backdrop-blur-xl rounded-[2.5rem] border-2 border-dashed border-blue-500/20 shadow-2xl relative overflow-hidden"
+          >
+            {/* Animated Background Elements */}
+            <div className="absolute top-0 right-0 -mt-20 -mr-20 h-64 w-64 bg-blue-600/10 rounded-full blur-[80px] animate-pulse"></div>
+            <div className="absolute bottom-0 left-0 -mb-20 -ml-20 h-64 w-64 bg-purple-600/10 rounded-full blur-[80px] animate-pulse" style={{ animationDelay: '2s' }}></div>
+            
+            <div className="relative z-10">
+              <div className="h-28 w-28 bg-gradient-to-br from-blue-500/20 to-purple-600/20 rounded-full flex items-center justify-center mb-8 mx-auto border border-white/10 shadow-lg">
+                <motion.div
+                  animate={{ 
+                    rotate: [0, 10, -10, 10, 0],
+                    scale: [1, 1.1, 1, 1.1, 1]
+                  }}
+                  transition={{ duration: 4, repeat: Infinity }}
+                >
+                  <Coffee className="h-14 w-14 text-blue-400" />
+                </motion.div>
+              </div>
+
+              <Badge className="bg-blue-500/10 text-blue-400 border-blue-500/20 mb-4 px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-[0.2em]">
+                Mode Repos Activé ⚓️
+              </Badge>
+              
+              <h3 className="text-4xl font-black text-white uppercase italic tracking-tighter mb-4 leading-none">
+                C'est le <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500">Week-End !</span>
+              </h3>
+              
+              <p className="text-lg text-slate-400 font-medium leading-relaxed mb-8 max-w-xs mx-auto">
+                Pas de match aujourd'hui. Profitez de ce repos bien mérité pour recharger les batteries. 🔋
+              </p>
+
+              <div className="bg-white/5 border border-white/10 rounded-2xl p-6 text-left space-y-4 mb-8">
+                <div className="flex items-center gap-4">
+                  <div className="h-10 w-10 bg-emerald-500/20 rounded-xl flex items-center justify-center border border-emerald-500/30">
+                    <CheckCircle2 className="h-6 w-6 text-emerald-400" />
+                  </div>
+                  <p className="text-sm font-bold text-slate-200 leading-tight">Missions de la semaine terminées</p>
+                </div>
+                <div className="flex items-center gap-4">
+                  <div className="h-10 w-10 bg-blue-500/20 rounded-xl flex items-center justify-center border border-blue-500/30">
+                    <Zap className="h-6 w-6 text-blue-400" />
+                  </div>
+                  <p className="text-sm font-bold text-slate-200 leading-tight">Analyse IA en pause jusqu'à lundi</p>
+                </div>
+              </div>
+
+              <p className="text-sm font-black text-slate-500 uppercase tracking-widest">
+                Rendez-vous lundi à 08h00 🚀
+              </p>
+            </div>
+          </motion.div>
+        </div>
+      );
+    }
+
     return (
       <div className="relative max-w-md mx-auto w-full">
          {/* MYSTERY OVERLAY FOR FIRST TIME USERS */}
