@@ -184,18 +184,18 @@ export function MatchCardPreview() {
         <motion.div 
             initial={{ y: -20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            className="bg-red-500/90 backdrop-blur-md text-white px-5 py-3 rounded-2xl flex flex-col items-center justify-center shadow-[0_0_20px_rgba(239,68,68,0.4)] text-center gap-1 border border-red-400/30"
+            className="bg-red-500/20 backdrop-blur-md text-white px-5 py-3 rounded-2xl flex flex-col items-center justify-center shadow-[0_0_20px_rgba(239,68,68,0.2)] text-center gap-1 border border-red-500/30"
         >
-            <div className="flex items-center gap-2 font-bold text-sm uppercase tracking-wider text-red-50 mb-1">
+            <div className="flex items-center gap-2 font-bold text-sm uppercase tracking-wider text-red-100 mb-1">
                 <Phone className="w-4 h-4 animate-bounce" />
                 Jean-Paul vous appelle
             </div>
-            <div className="flex items-center gap-2 bg-black/20 px-3 py-1 rounded-lg">
+            <div className="flex items-center gap-2 bg-black/40 px-3 py-1 rounded-lg border border-white/10">
                  <Clock className="w-3 h-3 text-red-200" />
-                 <span className="font-mono font-bold text-sm">09h - 11h</span>
+                 <span className="font-mono font-bold text-sm text-white">09h - 11h</span>
             </div>
-            <div className="text-[10px] font-bold opacity-80 mt-1">
-                Fin du créneau dans <span className="font-mono text-xs">01:59:00</span>
+            <div className="text-[10px] font-bold text-red-200/80 mt-1">
+                Fin du créneau dans <span className="font-mono text-xs text-white">01:59:00</span>
             </div>
         </motion.div>
       </div>
