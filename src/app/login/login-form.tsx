@@ -10,14 +10,16 @@ import { Label } from "@/components/ui/label";
 
 interface LoginFormProps {
   defaultEmail?: string;
+  isNetworkLogin?: boolean;
 }
 
-export function LoginForm({ defaultEmail = "" }: LoginFormProps) {
+export function LoginForm({ defaultEmail = "", isNetworkLogin = false }: LoginFormProps) {
   const supabase = useMemo(() => createClient(), []);
   const router = useRouter();
   const [email, setEmail] = useState(defaultEmail);
   const [password, setPassword] = useState("");
-  const [isPasswordMode, setIsPasswordMode] = useState(false);
+  // If isNetworkLogin is true, default to password mode and hide toggle
+  const [isPasswordMode, setIsPasswordMode] = useState(isNetworkLogin);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   async function onSubmit(event: React.FormEvent) {
@@ -94,16 +96,18 @@ export function LoginForm({ defaultEmail = "" }: LoginFormProps) {
       </Button>
 
       <div className="text-center">
-        <button
-          type="button"
-          onClick={() => setIsPasswordMode(!isPasswordMode)}
-          className="text-xs text-muted-foreground underline hover:text-primary transition-colors"
-        >
-          {isPasswordMode 
-            ? "Se connecter avec un lien magique (sans mot de passe)" 
-            : "J'ai un mot de passe, je veux l'utiliser"
-          }
-        </button>
+        {!isNetworkLogin && (
+            <button
+            type="button"
+            onClick={() => setIsPasswordMode(!isPasswordMode)}
+            className="text-xs text-muted-foreground underline hover:text-primary transition-colors"
+            >
+            {isPasswordMode 
+                ? "Se connecter avec un lien magique (sans mot de passe)" 
+                : "J'ai un mot de passe, je veux l'utiliser"
+            }
+            </button>
+        )}
       </div>
     </form>
   );
