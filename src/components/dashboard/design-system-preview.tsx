@@ -164,8 +164,8 @@ export function MatchCardPreview() {
             </Button>
         </div>
 
-        <p className="text-slate-300 text-lg font-medium mb-6 line-clamp-2">
-            "Directeur Commercial qui cherche exactement votre type de services."
+        <p className="text-slate-300 text-lg font-medium mb-6 line-clamp-3 leading-snug">
+            "Ce directeur commercial peut vous ouvrir des opportunités auxquelles vous n’aviez pas accès hier. À vous de créer une collaboration."
         </p>
 
         {/* The "Hook" / FOMO Text */}
