@@ -14,9 +14,10 @@ import { useToast } from "@/hooks/use-toast";
 interface AvailabilitySelectorProps {
   settings?: any;
   potentialCount?: number;
+  onSuccess?: () => void;
 }
 
-export function AvailabilitySelector({ settings, potentialCount = 0 }: AvailabilitySelectorProps) {
+export function AvailabilitySelector({ settings, potentialCount = 0, onSuccess }: AvailabilitySelectorProps) {
   const { toast } = useToast();
   
   // AVAILABILITY STATE
@@ -62,6 +63,11 @@ export function AvailabilitySelector({ settings, potentialCount = 0 }: Availabil
         title: "Disponibilités enregistrées !",
         description: "Nous chercherons un partenaire pour demain.",
       });
+      if (onSuccess) {
+          setTimeout(() => {
+              onSuccess();
+          }, 1500);
+      }
     } catch (error) {
       toast({
         title: "Erreur",

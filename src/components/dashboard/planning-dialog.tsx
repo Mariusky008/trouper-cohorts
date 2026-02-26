@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { Calendar, ChevronRight, Clock } from "lucide-react";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { AvailabilitySelector } from "@/components/dashboard/availability-selector";
@@ -11,8 +12,10 @@ interface PlanningDialogProps {
 }
 
 export function PlanningDialog({ settings, potentialCount }: PlanningDialogProps) {
+  const [open, setOpen] = useState(false);
+
   return (
-    <Dialog>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <div className="group relative bg-[#1e293b]/50 backdrop-blur-md border border-white/5 rounded-2xl p-6 cursor-pointer hover:bg-[#1e293b] hover:border-blue-500/30 transition-all shadow-sm hover:shadow-blue-900/20">
             <div className="flex items-center justify-between mb-4">
@@ -35,7 +38,11 @@ export function PlanningDialog({ settings, potentialCount }: PlanningDialogProps
       </DialogTrigger>
       <DialogContent className="sm:max-w-xl bg-[#0f172a] border-white/10 p-0 overflow-hidden">
          <div className="p-6">
-            <AvailabilitySelector settings={settings} potentialCount={potentialCount} />
+            <AvailabilitySelector 
+                settings={settings} 
+                potentialCount={potentialCount} 
+                onSuccess={() => setOpen(false)} 
+            />
          </div>
       </DialogContent>
     </Dialog>
