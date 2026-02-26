@@ -16,6 +16,19 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Popey Academy — La force du groupe",
   description: "Cohortes de 14 jours pour devenir ultra visible localement.",
+  manifest: "/manifest.json",
+  themeColor: "#0f172a",
+  viewport: {
+    width: "device-width",
+    initialScale: 1,
+    maximumScale: 1,
+    userScalable: false,
+  },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "Popey",
+  },
   icons: {
     icon: "/icon.svg",
     shortcut: "/icon.svg",
