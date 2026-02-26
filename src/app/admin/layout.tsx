@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -15,12 +16,19 @@ export default async function AdminLayout({
 
   if (!user) redirect("/login");
 
-  // Check if admin
-  const { data: adminData } = await supabase
+  // Check if admin with explicit status check
+  // Using supabaseAdmin (service role) to bypass RLS in case user doesn't have read access to admins table
+  const supabaseAdmin = createAdminClient();
+  
+  const { data: adminData, error: adminError } = await supabaseAdmin
     .from("admins")
     .select("user_id")
     .eq("user_id", user.id)
     .maybeSingle();
+
+  if (adminError) {
+      console.error("Admin Check Error:", adminError);
+  }
 
   if (!adminData) {
     console.error("Admin Access Denied. User:", user.id, "Admin Table Check:", adminData);
