@@ -23,10 +23,16 @@ export default async function AdminLayout({
     .maybeSingle();
 
   if (!adminData) {
+    console.error("Admin Access Denied. User:", user.id, "Admin Table Check:", adminData);
     return (
       <div className="flex flex-col items-center justify-center min-h-screen gap-4 p-4 text-center">
         <h1 className="text-2xl font-bold">Accès refusé</h1>
         <p>Tu n&apos;as pas les droits administrateur.</p>
+        <div className="text-left text-xs bg-slate-100 p-4 rounded border font-mono">
+            <p>User ID: {user.id}</p>
+            <p>Email: {user.email}</p>
+            <p>Admin Check: {adminData ? "Found" : "Not Found"}</p>
+        </div>
         <p className="text-sm text-muted-foreground bg-muted p-2 rounded">
           Exécute ce SQL dans Supabase pour devenir admin :<br />
           <code>insert into public.admins (user_id) values (&apos;{user.id}&apos;);</code>
