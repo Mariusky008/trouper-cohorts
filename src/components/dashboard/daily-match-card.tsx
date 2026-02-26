@@ -501,7 +501,7 @@ export function DailyMatchCard({ matches, userStreak = 0, userId }: DailyMatchCa
             {/* 2. TOP HEADER (Date & Status) */}
             <div className="absolute top-6 left-6 right-6 flex justify-between items-start z-10 pointer-events-none">
                 <div className="pointer-events-auto">
-                    <h3 className="text-white font-black text-xl drop-shadow-md shadow-black">{capitalize(dayName)} {dayNumber}</h3>
+                    <h3 className="text-white font-black text-2xl drop-shadow-md shadow-black">{capitalize(dayName)} {dayNumber}</h3>
                     <p className="text-slate-300 text-xs font-bold uppercase tracking-wider drop-shadow-md">{match.time}</p>
                 </div>
                 <Badge className={cn(
@@ -509,7 +509,7 @@ export function DailyMatchCard({ matches, userStreak = 0, userId }: DailyMatchCa
                     isCallOut ? "bg-emerald-600/90 hover:bg-emerald-600 shadow-emerald-500/20" : "bg-blue-600/90 hover:bg-blue-600 shadow-blue-500/20"
                 )}>
                     <div className={cn("h-2 w-2 rounded-full bg-white", isCallOut && "animate-pulse")} />
-                    {isCallOut ? "C'EST À VOUS D'APPELER" : "ATTENDEZ SON APPEL"}
+                    {isCallOut ? "C'EST À VOUS D'APPELER" : `ATTENDEZ SON APPEL (${match.time.split('h')[0]}h00 - ${match.time.split('h')[0]}h15)`}
                 </Badge>
             </div>
 
