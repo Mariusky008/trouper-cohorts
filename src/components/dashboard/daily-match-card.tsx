@@ -516,7 +516,7 @@ export function DailyMatchCard({ matches, userStreak = 0, userId }: DailyMatchCa
         </div>
 
         <p className="text-slate-300 text-sm font-medium mb-6 line-clamp-3 leading-snug">
-            "Ce {match.job || 'partenaire'} peut vous ouvrir des opportunités auxquelles vous n’aviez pas accès hier. À vous de créer une collaboration."
+            "Ce {match.job || 'partenaire'} peut vous ouvrir des opportunités auxquelles vous n’aviez pas accès hier."
         </p>
 
         {/* 3. MICRO-MISSION (Added per user request) */}
@@ -525,11 +525,11 @@ export function DailyMatchCard({ matches, userStreak = 0, userId }: DailyMatchCa
                 <Target className="w-4 h-4 text-indigo-400" />
                 <span className="text-[10px] font-black text-indigo-300 uppercase tracking-wider">Mission du jour</span>
             </div>
-            <p className="text-indigo-100 text-xs font-medium italic">
+            <p className="text-white text-xs font-medium italic">
                 "{microMission} avec {match.name} lors de l'appel."
             </p>
-            <p className="text-[9px] text-indigo-300/60 mt-1 font-medium">
-                (Cliquez sur <Gift className="w-3 h-3 inline align-text-bottom mx-0.5" /> pour choisir vos collabs)
+            <p className="text-[10px] text-indigo-200 mt-2 font-medium">
+                (Cliquez pendant votre appel sur <Gift className="w-3 h-3 inline align-text-bottom mx-0.5 text-purple-400" /> pour choisir vos collabs)
             </p>
         </div>
 

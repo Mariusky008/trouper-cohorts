@@ -230,7 +230,7 @@ export function MatchCardPreview() {
         </div>
 
         <p className="text-slate-300 text-sm font-medium mb-4 line-clamp-2 leading-snug opacity-90">
-            "Ce directeur commercial peut vous ouvrir des opportunités auxquelles vous n’aviez pas accès hier. À vous de créer une collaboration."
+            "Ce directeur commercial peut vous ouvrir des opportunités auxquelles vous n’aviez pas accès hier."
         </p>
 
         {/* 3. MICRO-MISSION (Added per user request) */}
@@ -239,9 +239,12 @@ export function MatchCardPreview() {
                 <Target className="w-4 h-4 text-indigo-400" />
                 <span className="text-[10px] font-black text-indigo-300 uppercase tracking-wider">Mission du jour</span>
             </div>
-            <p className="text-indigo-100 text-xs font-medium italic">
+            <p className="text-white text-xs font-medium italic">
                 "Identifiez 2 synergies possibles avec lui lors de l'appel."
             </p>
+             <p className="text-[10px] text-indigo-200 mt-2 font-medium">
+                 (Cliquez pendant votre appel sur <Gift className="w-3 h-3 inline align-text-bottom mx-0.5 text-purple-400" /> pour choisir vos collabs)
+             </p>
         </div>
 
         {/* Action Buttons (Dock Style) */}
