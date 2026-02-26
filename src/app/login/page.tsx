@@ -33,7 +33,7 @@ export default async function LoginPage({
           </div>
           <h1 className="text-2xl font-bold tracking-tight">Bienvenue sur Popey Academy</h1>
           <p className="text-sm text-muted-foreground">
-            Entrez votre email pour recevoir votre lien de connexion magique.
+            Entrez votre email pour vous connecter.
           </p>
         </div>
 

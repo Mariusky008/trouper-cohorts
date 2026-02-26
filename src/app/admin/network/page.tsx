@@ -188,6 +188,19 @@ async function getNetworkStats() {
     });
   }
 
+  // 6. Analytics Events (Today)
+  const { data: eventsToday } = await supabaseAdmin
+    .from('analytics_events')
+    .select('event_type')
+    .gte('created_at', today + 'T00:00:00')
+    .lte('created_at', today + 'T23:59:59');
+
+  const statsToday = eventsToday?.reduce((acc: any, curr: any) => {
+    const type = curr.event_type;
+    acc[type] = (acc[type] || 0) + 1;
+    return acc;
+  }, {}) || {};
+
   return {
     matchesToday: matchesCount || 0,
     matchesUpcoming: matchesUpcomingCount || 0,
@@ -196,7 +209,8 @@ async function getNetworkStats() {
     opportunities: oppsCount || 0,
     activeMembers: membersCount || 0,
     avgTrustScore: avgScore,
-    recentMembers: recentProfiles
+    recentMembers: recentProfiles,
+    analyticsToday: statsToday
   };
 }
 
@@ -205,10 +219,21 @@ import { MatchBuilder } from "@/components/admin/match-builder";
 import { ManualMatchLauncher } from "@/components/admin/manual-match-launcher";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import { MousePointerClick, PhoneCall, MessageSquare, Gift, Star, User, Copy } from "lucide-react";
 
 export default async function AdminNetworkPage() {
   const stats = await getNetworkStats();
   const usersForDropdown = await getAllUsersForDropdown();
+
+  const ANALYTICS_LABELS: Record<string, { label: string, icon: any, color: string }> = {
+    'click_why_open': { label: 'Pourquoi ce match', icon: MessageSquare, color: 'text-yellow-500' },
+    'click_call_open': { label: 'Bouton Appel (Ouvrir)', icon: PhoneCall, color: 'text-emerald-500' },
+    'click_call_action': { label: 'Clic Numéro (Appeler)', icon: PhoneCall, color: 'text-emerald-700' },
+    'click_copy_phone': { label: 'Copie Numéro', icon: Copy, color: 'text-slate-500' },
+    'click_profile': { label: 'Voir Profil', icon: User, color: 'text-blue-500' },
+    'click_gift_open': { label: 'Cadeau', icon: Gift, color: 'text-purple-500' },
+    'click_rate_open': { label: 'Noter', icon: Star, color: 'text-orange-500' },
+  };
 
   return (
     <div className="space-y-8">
@@ -276,6 +301,32 @@ export default async function AdminNetworkPage() {
           
           {/* MANUAL MATCH BUILDER */}
           <MatchBuilder users={usersForDropdown} />
+
+          {/* ANALYTICS CARD */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <MousePointerClick className="h-5 w-5 text-blue-500" /> Clics Mission (Aujourd'hui)
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                {Object.entries(ANALYTICS_LABELS).map(([key, config]) => {
+                  const count = (stats.analyticsToday as any)[key] || 0;
+                  const Icon = config.icon;
+                  return (
+                    <div key={key} className="flex flex-col items-center justify-center p-3 bg-slate-50 rounded-xl border border-slate-100 hover:bg-slate-100 transition-colors">
+                        <div className={`h-10 w-10 rounded-full flex items-center justify-center bg-white shadow-sm mb-2`}>
+                            <Icon className={`h-5 w-5 ${config.color}`} />
+                        </div>
+                        <div className="text-2xl font-black text-slate-900">{count}</div>
+                        <div className="text-[10px] uppercase font-bold text-slate-500 text-center leading-tight">{config.label}</div>
+                    </div>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
 
           <Card>
               <CardHeader>

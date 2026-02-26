@@ -1,12 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { Bell, Shield, Calendar, Clock, PauseCircle, PlayCircle } from "lucide-react";
+import { Bell, Shield, Calendar, Clock, PauseCircle, PlayCircle, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
 import { updateNetworkSettings } from "@/lib/actions/network-settings";
+import { createClient } from "@/lib/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 
@@ -39,6 +41,37 @@ export function SettingsForm({ initialSettings }: { initialSettings: any }) {
   const [status, setStatus] = useState(initialSettings?.status || 'active');
 
   const [loading, setLoading] = useState(false);
+  
+  // Password State
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordLoading, setPasswordLoading] = useState(false);
+  const supabase = createClient();
+
+  const handlePasswordUpdate = async () => {
+    if (!newPassword || !confirmPassword) return;
+    
+    if (newPassword !== confirmPassword) {
+      toast({ title: "Erreur", description: "Les mots de passe ne correspondent pas.", variant: "destructive" });
+      return;
+    }
+    if (newPassword.length < 6) {
+      toast({ title: "Erreur", description: "Le mot de passe doit faire au moins 6 caractères.", variant: "destructive" });
+      return;
+    }
+
+    setPasswordLoading(true);
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    setPasswordLoading(false);
+
+    if (error) {
+      toast({ title: "Erreur", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Succès", description: "Mot de passe mis à jour ! Vous pourrez désormais vous connecter avec votre email et ce mot de passe." });
+      setNewPassword("");
+      setConfirmPassword("");
+    }
+  };
 
   const toggleDay = (day: string) => {
     setSelectedDays((prev: string[]) => 
@@ -220,6 +253,53 @@ export function SettingsForm({ initialSettings }: { initialSettings: any }) {
                </div>
              </button>
            ))}
+         </div>
+      </div>
+
+      {/* SECURITY / PASSWORD */}
+      <div className="bg-[#1e293b]/50 backdrop-blur-md p-6 rounded-[2rem] border border-white/5 shadow-sm">
+         <h3 className="font-bold text-lg text-white mb-6 flex items-center gap-2">
+           <Lock className="h-5 w-5 text-rose-400" /> Sécurité & Mot de passe
+         </h3>
+         
+         <div className="space-y-4 bg-[#0a0f1c]/50 p-6 rounded-2xl border border-white/5">
+            <p className="text-sm text-slate-400 mb-4">
+              Définissez un mot de passe pour vous connecter plus facilement sans attendre le lien magique.
+            </p>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="new-password">Nouveau mot de passe</Label>
+                <Input 
+                  id="new-password"
+                  type="password"
+                  placeholder="••••••••"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  className="bg-slate-900 border-white/10"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="confirm-password">Confirmer</Label>
+                <Input 
+                  id="confirm-password"
+                  type="password"
+                  placeholder="••••••••"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="bg-slate-900 border-white/10"
+                />
+              </div>
+            </div>
+            <div className="flex justify-end pt-2">
+              <Button 
+                onClick={handlePasswordUpdate} 
+                disabled={passwordLoading || !newPassword || !confirmPassword}
+                variant="outline"
+                className="border-white/10 hover:bg-white/5 text-white"
+              >
+                {passwordLoading ? "Mise à jour..." : "Mettre à jour le mot de passe"}
+              </Button>
+            </div>
          </div>
       </div>
 

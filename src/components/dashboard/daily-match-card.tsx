@@ -18,6 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { createOpportunity } from "@/lib/actions/network-opportunities";
 import { saveMatchFeedback } from "@/lib/actions/network-feedback";
 import { incrementUserPoints } from "@/lib/actions/gamification";
+import { trackEvent } from "@/lib/actions/analytics";
 
 import { OPPORTUNITY_TYPES } from "@/constants/opportunities";
 import { OpportunityType } from "@/types/network";
@@ -531,6 +532,7 @@ export function DailyMatchCard({ matches, userStreak = 0, userId }: DailyMatchCa
                         asChild
                         variant="outline" 
                         className="bg-white/10 hover:bg-white/20 backdrop-blur-md border-white/20 text-white rounded-full px-5 h-10 text-xs font-bold uppercase tracking-wide transition-all hover:scale-105"
+                        onClick={() => trackEvent('click_profile', { partnerId: match.partnerId })}
                     >
                         <Link href={`/mon-reseau-local/dashboard/profile/${match.partnerId}`} className="flex items-center gap-2">
                             <User className="h-4 w-4" />
@@ -551,6 +553,7 @@ export function DailyMatchCard({ matches, userStreak = 0, userId }: DailyMatchCa
                         <Button 
                             size="icon" 
                             className="h-14 w-14 rounded-full bg-slate-800/80 backdrop-blur-md border border-white/10 text-yellow-400 hover:bg-slate-700 hover:scale-110 transition-all shadow-lg"
+                            onClick={() => trackEvent('click_why_open', { partnerId: match.partnerId })}
                         >
                             <MessageSquare className="h-6 w-6 fill-current" />
                         </Button>
@@ -616,7 +619,13 @@ export function DailyMatchCard({ matches, userStreak = 0, userId }: DailyMatchCa
                             </div>
                         </div>
                         <div className="p-4 bg-slate-900 border-t border-white/5">
-                            <Button className="w-full bg-slate-800 hover:bg-slate-700 text-white font-bold" onClick={() => setIsWhyVisible(false)}>
+                            <Button 
+                                className="w-full bg-slate-800 hover:bg-slate-700 text-white font-bold" 
+                                onClick={() => {
+                                    setIsWhyVisible(false);
+                                    trackEvent('click_why_close_ack', { partnerId: match.partnerId });
+                                }}
+                            >
                                 {isCallOut ? "Compris, je l'appelle ! 📞" : "Compris, j'attends son appel ! ⏳"}
                             </Button>
                         </div>
@@ -629,6 +638,7 @@ export function DailyMatchCard({ matches, userStreak = 0, userId }: DailyMatchCa
                         <Button 
                             size="icon" 
                             className={`h-20 w-20 rounded-full bg-gradient-to-br from-emerald-500 to-blue-600 text-white hover:scale-110 transition-all shadow-xl shadow-emerald-500/30 border-4 border-[#0f172a] relative group ${!callMade && 'animate-pulse'}`}
+                            onClick={() => trackEvent('click_call_open', { partnerId: match.partnerId })}
                         >
                             {callMade ? (
                                 <PhoneCall className="h-8 w-8 fill-current" />
@@ -667,7 +677,10 @@ export function DailyMatchCard({ matches, userStreak = 0, userId }: DailyMatchCa
                             
                             <div className="grid grid-cols-2 gap-4 w-full">
                                 <Button 
-                                    onClick={() => handleCopyPhone(match.phone)}
+                                    onClick={() => {
+                                        handleCopyPhone(match.phone);
+                                        trackEvent('click_copy_phone', { partnerId: match.partnerId });
+                                    }}
                                     variant="outline"
                                     className="h-14 border-white/20 bg-transparent text-white hover:bg-white/10 hover:text-white text-lg font-bold gap-2"
                                 >
@@ -678,7 +691,10 @@ export function DailyMatchCard({ matches, userStreak = 0, userId }: DailyMatchCa
                                 <Button 
                                     asChild
                                     className="h-14 bg-emerald-500 hover:bg-emerald-400 text-white text-lg font-bold gap-2 shadow-lg shadow-emerald-500/20"
-                                    onClick={handleCallAction}
+                                    onClick={() => {
+                                        handleCallAction();
+                                        trackEvent('click_call_action', { partnerId: match.partnerId });
+                                    }}
                                 >
                                     <a href={`tel:${match.phone}`}>
                                         <PhoneCall className="h-5 w-5" />
@@ -695,7 +711,11 @@ export function DailyMatchCard({ matches, userStreak = 0, userId }: DailyMatchCa
                     {/* GIFT */}
                     <Dialog open={isOpportunityOpen} onOpenChange={setIsOpportunityOpen}>
                         <DialogTrigger asChild>
-                            <Button size="icon" className="h-14 w-14 rounded-full bg-slate-800/80 backdrop-blur-md border border-white/10 text-purple-400 hover:bg-slate-700 hover:scale-110 transition-all shadow-lg">
+                            <Button 
+                                size="icon" 
+                                className="h-14 w-14 rounded-full bg-slate-800/80 backdrop-blur-md border border-white/10 text-purple-400 hover:bg-slate-700 hover:scale-110 transition-all shadow-lg"
+                                onClick={() => trackEvent('click_gift_open', { partnerId: match.partnerId })}
+                            >
                                 <Gift className="h-6 w-6" />
                             </Button>
                         </DialogTrigger>
@@ -763,7 +783,10 @@ export function DailyMatchCard({ matches, userStreak = 0, userId }: DailyMatchCa
 
                                     <DialogFooter>
                                         <Button 
-                                            onClick={() => handleCreateOpportunity(match.partnerId, match.name)} 
+                                            onClick={() => {
+                                                handleCreateOpportunity(match.partnerId, match.name);
+                                                trackEvent('click_gift_submit', { partnerId: match.partnerId, type: oppType });
+                                            }} 
                                             disabled={isSubmittingOpp || !oppDetails.trim()}
                                             className="w-full bg-purple-600 hover:bg-purple-500 font-bold h-12 rounded-xl shadow-lg shadow-purple-500/20"
                                         >
@@ -778,7 +801,11 @@ export function DailyMatchCard({ matches, userStreak = 0, userId }: DailyMatchCa
                     {/* RATE */}
                     <Dialog open={isRatingOpen} onOpenChange={setIsRatingOpen}>
                         <DialogTrigger asChild>
-                            <Button size="icon" className="h-14 w-14 rounded-full bg-slate-800/80 backdrop-blur-md border border-white/10 text-orange-400 hover:bg-slate-700 hover:scale-110 transition-all shadow-lg">
+                            <Button 
+                                size="icon" 
+                                className="h-14 w-14 rounded-full bg-slate-800/80 backdrop-blur-md border border-white/10 text-orange-400 hover:bg-slate-700 hover:scale-110 transition-all shadow-lg"
+                                onClick={() => trackEvent('click_rate_open', { partnerId: match.partnerId })}
+                            >
                                 <Star className="h-6 w-6 fill-current" />
                             </Button>
                         </DialogTrigger>

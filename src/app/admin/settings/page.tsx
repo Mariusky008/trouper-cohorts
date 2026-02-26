@@ -6,6 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Trash2, UserPlus, Shield, AlertTriangle } from "lucide-react";
 import { removeAdmin } from "@/actions/admin-management";
 import { AdminAddForm } from "./form";
+import { AdminPasswordForm } from "./password-form";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 export default async function AdminSettingsPage() {
@@ -158,6 +159,22 @@ export default async function AdminSettingsPage() {
           </CardHeader>
           <CardContent>
             <AdminAddForm />
+          </CardContent>
+        </Card>
+
+        {/* MODIFIER MOT DE PASSE */}
+        <Card className="md:col-span-2">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+                <Shield className="h-5 w-5 text-purple-600" />
+                Mon Mot de Passe Admin
+            </CardTitle>
+            <CardDescription>
+              Définissez un mot de passe pour accéder directement à l&apos;admin sans attendre le lien magique.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <AdminPasswordForm />
           </CardContent>
         </Card>
       </div>
