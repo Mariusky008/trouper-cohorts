@@ -69,14 +69,13 @@ export async function getDailyMatches() {
         .single();
 
       // Fetch Partner Collabs (Opportunities Received this month)
-      const now = new Date();
-      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-      
-      const { count: collabsCount } = await supabase
-        .from("network_opportunities")
-        .select("id", { count: 'exact', head: true })
-        .eq("receiver_id", partnerId)
-        .gte("created_at", startOfMonth);
+      // We use an RPC function to bypass RLS and get the global count
+      const { data: collabsCount, error: collabsError } = await supabase
+        .rpc('get_monthly_collabs_count', { target_user_id: partnerId });
+        
+      if (collabsError) {
+          console.error("Error fetching collabs count:", collabsError);
+      }
 
       return {
         id: match.id,
@@ -85,7 +84,7 @@ export async function getDailyMatches() {
         job: partnerData.trade || "Membre",
         city: partnerData.city || "En ligne",
         score: trustScore?.score || 5.0,
-        collabsCount: collabsCount || 0, // Real data
+        collabsCount: collabsCount || 0, // Real data from RPC
         time: match.time || "14:00",
         type: isUser1 ? 'call_out' : 'call_in',
         phone: partnerData.phone,
