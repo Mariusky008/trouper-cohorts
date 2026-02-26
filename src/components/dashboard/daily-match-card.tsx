@@ -180,15 +180,19 @@ function MysteryCard({ onReveal, match, locked = false }: { onReveal: () => void
             {/* Identity Lock (Smaller) */}
             <div className="relative mb-8">
                 <motion.div 
-                    animate={locked ? {} : { scale: [1, 1.05, 1] }}
-                    transition={{ duration: 2, repeat: Infinity }}
+                    animate={locked ? { 
+                        scale: [1, 0.98, 1],
+                        borderColor: ["rgba(255,255,255,0.1)", "rgba(99,102,241,0.3)", "rgba(255,255,255,0.1)"],
+                        boxShadow: ["0 0 0px rgba(99,102,241,0)", "0 0 20px rgba(99,102,241,0.2)", "0 0 0px rgba(99,102,241,0)"]
+                    } : { scale: [1, 1.05, 1] }}
+                    transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
                     className={cn(
                         "w-24 h-24 rounded-full border flex items-center justify-center backdrop-blur-sm relative z-10 shadow-lg",
                         // Always vibrant borders and backgrounds
                         "border-white/10 bg-white/5 shadow-[0_0_30px_rgba(16,185,129,0.1)]"
                     )}
                 >
-                    {locked ? <Lock className="w-10 h-10 text-white/50" /> : <Fingerprint className="w-12 h-12 text-white/70" />}
+                    {locked ? <Lock className="w-10 h-10 text-indigo-300/70" /> : <Fingerprint className="w-12 h-12 text-white/70" />}
                     {!locked && <div className="absolute inset-0 rounded-full border-t-2 border-emerald-500 animate-spin"></div>}
                 </motion.div>
                 {/* Glow for both, maybe slightly different color for locked */}
@@ -257,7 +261,13 @@ function MysteryCard({ onReveal, match, locked = false }: { onReveal: () => void
             )}
         >
             {locked ? (
-                <span className="flex items-center gap-2"><Lock className="w-4 h-4" /> DÉVERROUILLAGE DEMAIN</span>
+                <motion.span 
+                    animate={{ opacity: [0.5, 1, 0.5] }}
+                    transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                    className="flex items-center gap-2"
+                >
+                    <Lock className="w-4 h-4" /> DÉVERROUILLAGE DEMAIN
+                </motion.span>
             ) : "DÉCOUVRIR QUI C'EST 🔓"}
         </Button>
       </div>
