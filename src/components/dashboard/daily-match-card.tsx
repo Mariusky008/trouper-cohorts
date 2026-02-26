@@ -441,11 +441,11 @@ export function DailyMatchCard({ matches, userStreak = 0, userId }: DailyMatchCa
             ? GOAL_LABELS[match.current_goals[0]]?.toLowerCase() 
             : "développer son activité";
             
-        let whyText = `"${match.name.split(' ')[0]} cherche activement à ${goalLabel}. Vos profils sont complémentaires : vous allez pouvoir vous aider mutuellement."`;
+        let whyText = `"${match.name} cherche activement à ${goalLabel}. Vos profils sont complémentaires : vous allez pouvoir vous aider mutuellement."`;
         
         // Use Real Give & Take Data if available
         if (match.current_need && match.superpower) {
-            whyText = `🎯 ${match.name.split(' ')[0]} a besoin de : "${match.current_need}". \n🎁 En échange, il peut vous offrir : "${match.superpower}".`;
+            whyText = `🎯 ${match.name} a besoin de : "${match.current_need}". \n🎁 En échange, il peut vous offrir : "${match.superpower}".`;
         }
 
         return (
@@ -517,7 +517,7 @@ export function DailyMatchCard({ matches, userStreak = 0, userId }: DailyMatchCa
             <div className="absolute bottom-28 left-6 right-6 z-10 text-left">
                 <div className="flex items-end gap-3 mb-2">
                     <h2 className="text-4xl font-black text-white leading-none drop-shadow-xl shadow-black">
-                        {match.name.split(' ')[0]}
+                        {match.name}
                     </h2>
                     <span className="text-2xl text-emerald-400 font-black mb-0.5 drop-shadow-md">{match.score.toFixed(1)}★</span>
                 </div>
