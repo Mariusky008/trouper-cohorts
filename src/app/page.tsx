@@ -907,6 +907,7 @@ export default function HomePage() {
                     <ul className="space-y-2 text-sm text-slate-500">
                         <li>hello@popey.academy</li>
                         <li>Paris, France</li>
+                        <li className="pt-4"><Link href="/login" className="text-slate-400 hover:text-blue-600 font-bold">Admin / Connexion Email</Link></li>
                     </ul>
                 </div>
             </div>
