@@ -256,6 +256,7 @@ export function DailyMatchCard({ matches, userStreak = 0, userId }: DailyMatchCa
   const [isPhoneOpen, setIsPhoneOpen] = useState(false);
   const [isOpportunityOpen, setIsOpportunityOpen] = useState(false);
   const [isRatingOpen, setIsRatingOpen] = useState(false);
+  const [isMissionOpen, setIsMissionOpen] = useState(false); // New Mission Dialog State
 
   // Opportunity Logic
   const [oppType, setOppType] = useState<string | undefined>(undefined);
@@ -531,22 +532,53 @@ export function DailyMatchCard({ matches, userStreak = 0, userId }: DailyMatchCa
         </p>
 
         {/* 3. MICRO-MISSION (Added per user request) */}
-        <div className="bg-indigo-500/20 border border-indigo-500/30 rounded-xl p-3 mb-6 backdrop-blur-sm">
+        <div className="bg-indigo-500/20 border border-indigo-500/30 rounded-xl p-3 mb-6 backdrop-blur-sm cursor-pointer hover:bg-indigo-500/30 transition-colors" onClick={() => setIsMissionOpen(true)}>
             <div className="flex items-center gap-2 mb-1">
                 <Target className="w-4 h-4 text-indigo-400" />
                 <span className="text-[10px] font-black text-indigo-300 uppercase tracking-wider">Mission du jour</span>
             </div>
-            <p className="text-white text-xs font-medium italic">
-                "{microMission} avec {match.name} lors de l'appel."
-            </p>
-            <p className="text-[10px] text-indigo-200 mt-2 font-medium">
-                (Cliquez pendant votre appel sur <Gift className="w-3 h-3 inline align-text-bottom mx-0.5 text-purple-400" /> pour choisir vos collabs)
+            <p className="text-white text-xs font-medium italic truncate">
+                Cliquez pour voir votre mission secrète 🕵️‍♂️
             </p>
         </div>
 
         {/* Action Buttons (Dock Style) */}
         <div className="flex justify-center items-center gap-4 pb-4">
             
+            {/* 0. Mission Dialog */}
+            <Dialog open={isMissionOpen} onOpenChange={setIsMissionOpen}>
+                <DialogContent className="bg-[#0f172a] border-white/10 text-white sm:max-w-md rounded-2xl w-[90vw]">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2 text-xl font-black text-indigo-400">
+                            <Target className="h-6 w-6" />
+                            Votre Mission Secrète
+                        </DialogTitle>
+                        <DialogDescription className="text-slate-400">
+                            Pour maximiser l'impact de cet appel.
+                        </DialogDescription>
+                    </DialogHeader>
+                    
+                    <div className="bg-indigo-500/10 p-6 rounded-xl border border-indigo-500/20 my-4">
+                        <p className="text-lg font-bold text-white text-center leading-relaxed">
+                            "{microMission} avec {match.name} lors de l'appel."
+                        </p>
+                    </div>
+
+                    <div className="flex items-center gap-3 bg-purple-500/10 p-4 rounded-xl border border-purple-500/20">
+                         <div className="h-10 w-10 rounded-full bg-purple-500/20 flex items-center justify-center shrink-0">
+                             <Gift className="h-5 w-5 text-purple-400" />
+                         </div>
+                         <p className="text-sm text-slate-300">
+                             <span className="text-purple-300 font-bold">Astuce :</span> Cliquez sur le cadeau pendant l'appel pour lui envoyer une opportunité.
+                         </p>
+                    </div>
+
+                    <Button className="w-full mt-4 bg-indigo-600 hover:bg-indigo-500 font-bold" onClick={() => setIsMissionOpen(false)}>
+                        C'est noté ! 🫡
+                    </Button>
+                </DialogContent>
+            </Dialog>
+
             {/* 1. Message / Script (Why) */}
             <Dialog open={isWhyVisible} onOpenChange={setIsWhyVisible}>
                 <DialogTrigger asChild>

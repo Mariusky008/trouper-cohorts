@@ -216,17 +216,14 @@ export function MatchCardPreview() {
         </p>
 
         {/* 3. MICRO-MISSION (Added per user request) */}
-        <div className="bg-indigo-500/20 border border-indigo-500/30 rounded-xl p-3 mb-6 backdrop-blur-sm">
+        <div className="bg-indigo-500/20 border border-indigo-500/30 rounded-xl p-3 mb-6 backdrop-blur-sm cursor-pointer hover:bg-indigo-500/30 transition-colors">
             <div className="flex items-center gap-2 mb-1">
                 <Target className="w-4 h-4 text-indigo-400" />
                 <span className="text-[10px] font-black text-indigo-300 uppercase tracking-wider">Mission du jour</span>
             </div>
-            <p className="text-white text-xs font-medium italic">
-                "Identifiez 2 synergies possibles avec lui lors de l'appel."
+            <p className="text-white text-xs font-medium italic truncate">
+                Cliquez pour voir votre mission secrète 🕵️‍♂️
             </p>
-             <p className="text-[10px] text-indigo-200 mt-2 font-medium">
-                 (Cliquez pendant votre appel sur <Gift className="w-3 h-3 inline align-text-bottom mx-0.5 text-purple-400" /> pour choisir vos collabs)
-             </p>
         </div>
 
         {/* Action Buttons (Dock Style) */}
