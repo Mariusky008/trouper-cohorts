@@ -123,6 +123,8 @@ export function MysteryCardPreview() {
 
 // --- 3. MATCH CARD (The Match) ---
 // Goal: FOMO, "I can't wait", "Don't miss this".
+import { MessageSquare, Gift, Star, PhoneCall } from "lucide-react";
+
 export function MatchCardPreview() {
   return (
     <div className="relative w-full max-w-sm mx-auto h-[600px] rounded-[2.5rem] overflow-hidden shadow-2xl bg-[#0f172a] border border-slate-800">
@@ -147,7 +149,7 @@ export function MatchCardPreview() {
                 <Clock className="w-4 h-4 animate-pulse" />
                 Opportunité Éphémère
             </div>
-            <span className="font-mono font-bold text-xs">14:59</span>
+            <span className="font-mono font-bold text-xs">01:59:00</span>
         </motion.div>
       </div>
 
@@ -157,9 +159,9 @@ export function MatchCardPreview() {
         {/* Match Score */}
         <div className="flex items-end gap-3 mb-3">
             <h2 className="text-5xl font-black text-white tracking-tighter">Jean-Paul</h2>
-            <div className="bg-emerald-500/20 border border-emerald-500/50 text-emerald-400 px-2 py-1 rounded-lg text-xl font-black mb-1.5 flex items-center gap-1">
-                98% <Sparkles className="w-4 h-4" />
-            </div>
+            <Button variant="outline" className="bg-emerald-500/20 border border-emerald-500/50 text-emerald-400 hover:bg-emerald-500/30 hover:text-emerald-300 px-3 py-1 rounded-lg text-xs font-black mb-1.5 flex items-center gap-1 h-auto transition-colors">
+                <User className="w-3 h-3" /> Voir profil
+            </Button>
         </div>
 
         <p className="text-slate-300 text-lg font-medium mb-6 line-clamp-2">
@@ -168,23 +170,37 @@ export function MatchCardPreview() {
 
         {/* The "Hook" / FOMO Text */}
         <div className="bg-white/5 border-l-4 border-yellow-500 pl-4 py-2 mb-8">
-            <p className="text-yellow-200 text-sm italic font-medium">
-                "Jean-Paul a réservé ce créneau spécialement pour vous. Ne le faites pas attendre, c'est rare."
+            <p className="text-yellow-200 text-sm italic font-medium leading-relaxed">
+                "Jean-Paul a réservé ce créneau spécialement pour vous. C'est lui qui va vous appeler entre 09h00 et 09h15."
             </p>
         </div>
 
-        {/* Action Button */}
-        <div className="grid grid-cols-[1fr_auto] gap-3">
-            <Button className="h-16 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-2xl font-black text-lg shadow-lg shadow-blue-900/30 flex flex-col items-center justify-center gap-0.5 group">
-                <span className="flex items-center gap-2">
-                    APPELER MAINTENANT <Phone className="w-5 h-5 fill-current group-hover:rotate-12 transition-transform" />
-                </span>
-                <span className="text-[10px] opacity-80 font-medium tracking-wide uppercase">Ça peut tout changer</span>
-            </Button>
+        {/* Action Buttons (Dock Style) */}
+        <div className="flex justify-center items-center gap-4 pb-4">
             
-            <Button variant="outline" className="h-16 w-16 rounded-2xl border-white/10 bg-white/5 hover:bg-white/10 text-white">
-                <Lock className="w-6 h-6" />
+            {/* 1. Message / Script */}
+            <Button size="icon" className="h-14 w-14 rounded-full bg-slate-800/80 backdrop-blur-md border border-white/10 text-yellow-400 hover:bg-slate-700 hover:scale-110 transition-all shadow-lg">
+                <MessageSquare className="h-6 w-6 fill-current" />
             </Button>
+
+            {/* 2. CALL (Main Action) */}
+            <div className="relative group">
+                <div className="absolute inset-0 bg-gradient-to-br from-emerald-400 to-blue-600 rounded-full blur opacity-40 group-hover:opacity-70 transition-opacity animate-pulse"></div>
+                <Button size="icon" className="h-20 w-20 rounded-full bg-gradient-to-br from-emerald-500 to-blue-600 text-white hover:scale-105 transition-all shadow-xl border-4 border-[#0f172a] relative z-10">
+                    <PhoneCall className="h-8 w-8 fill-current" />
+                </Button>
+            </div>
+
+            {/* 3. Gift */}
+            <Button size="icon" className="h-14 w-14 rounded-full bg-slate-800/80 backdrop-blur-md border border-white/10 text-purple-400 hover:bg-slate-700 hover:scale-110 transition-all shadow-lg">
+                <Gift className="h-6 w-6" />
+            </Button>
+
+            {/* 4. Rate */}
+            <Button size="icon" className="h-14 w-14 rounded-full bg-slate-800/80 backdrop-blur-md border border-white/10 text-orange-400 hover:bg-slate-700 hover:scale-110 transition-all shadow-lg">
+                <Star className="h-6 w-6 fill-current" />
+            </Button>
+
         </div>
       </div>
     </div>
