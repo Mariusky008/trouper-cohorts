@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { 
     Briefcase, ShieldCheck, Award, Pencil, Save, X, Phone, 
     Linkedin, Instagram, Facebook, Globe, Upload, Loader2,
@@ -37,6 +38,7 @@ const GOAL_OPTIONS = [
 
 export function ProfileContent({ user, isReadOnly = false }: { user: any; isReadOnly?: boolean }) {
   const { toast } = useToast();
+  const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
   
   // Auto-open edit modal if query param "edit=true" is present or event triggered
@@ -246,8 +248,8 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
       
       setIsEditing(false);
       toast({ title: "Profil mis à jour avec succès !" });
-      // Redirect to dashboard on successful update
-      window.location.href = "/mon-reseau-local/dashboard";
+      // Refresh to update server data
+      router.refresh();
     } catch (e: any) {
       toast({ title: "Erreur", description: e.message || "Impossible de mettre à jour le profil.", variant: "destructive" });
     } finally {

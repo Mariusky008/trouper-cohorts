@@ -3,6 +3,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin"; // Import admin client
 import { revalidatePath } from "next/cache";
+import { format } from "date-fns";
+import { fr } from "date-fns/locale";
 
 export async function searchMembers(query: string) {
   const supabase = await createClient();
@@ -147,7 +149,7 @@ export async function getUserProfile(userId?: string) {
     stats: {
       opportunities: given + received,
       reciprocity: `${reciprocity}%`,
-      seniority: new Date(profile.created_at || Date.now()).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })
+      seniority: format(new Date(profile.created_at || new Date()), 'MMMM yyyy', { locale: fr })
     }
   };
 }
