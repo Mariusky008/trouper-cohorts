@@ -157,7 +157,13 @@ export function GlobalChatWidget({ currentUserId }: { currentUserId: string }) {
                       <div className="flex justify-between items-center mb-0.5">
                         <span className="font-bold text-sm text-slate-900 truncate">{conv.partner.name}</span>
                         <span className="text-[10px] text-slate-400">
-                          {new Date(conv.lastMessageDate).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}
+                          {(() => {
+                            try {
+                              return format(new Date(conv.lastMessageDate || new Date()), 'd MMM', { locale: fr });
+                            } catch (e) {
+                              return "";
+                            }
+                          })()}
                         </span>
                       </div>
                       <p className="text-xs text-slate-500 truncate group-hover:text-slate-700">

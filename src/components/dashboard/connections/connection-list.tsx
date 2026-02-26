@@ -104,7 +104,14 @@ export function ConnectionList({ initialConnections, currentUserId }: { initialC
               </div>
               
               <div className="flex items-center gap-2 text-xs font-bold text-slate-500 mb-6 uppercase tracking-wide relative z-10">
-                <Calendar className="h-3 w-3" /> {new Date(user.lastInteraction).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })}
+                <Calendar className="h-3 w-3" /> 
+                {(() => {
+                    try {
+                        return format(new Date(user.lastInteraction || new Date()), 'd MMMM', { locale: fr });
+                    } catch (e) {
+                        return "Date inconnue";
+                    }
+                })()}
               </div>
 
               <div className="mt-auto space-y-3 relative z-10">

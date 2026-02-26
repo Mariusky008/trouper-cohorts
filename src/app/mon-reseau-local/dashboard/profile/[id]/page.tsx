@@ -10,11 +10,25 @@ interface PageProps {
 
 export default async function PublicProfilePage({ params }: PageProps) {
   const { id } = await params;
-  const user = await getUserProfile(id);
+  const rawUser = await getUserProfile(id);
 
-  if (!user) {
+  if (!rawUser) {
     notFound();
   }
+
+  // Sanitize user data to prevent client-side hydration errors or crashes
+  const user = {
+    ...rawUser,
+    current_goals: Array.isArray(rawUser.current_goals) ? rawUser.current_goals : [],
+    display_name: rawUser.display_name || "",
+    trade: rawUser.trade || "",
+    city: rawUser.city || "",
+    phone: rawUser.phone || "",
+    bio: rawUser.bio || "",
+    avatar_url: rawUser.avatar_url || "",
+    stats: rawUser.stats || { opportunities: 0, reciprocity: "100%", seniority: "Récemment" },
+    score: typeof rawUser.score === 'number' ? rawUser.score : 5.0
+  };
 
   return (
     <div className="pb-24">
