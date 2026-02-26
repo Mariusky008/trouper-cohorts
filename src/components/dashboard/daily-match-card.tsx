@@ -158,7 +158,7 @@ function MysteryCard({ onReveal, match, locked = false }: { onReveal: () => void
       <div className="absolute inset-[2px] bg-[#050505] rounded-[2.4rem] z-0"></div>
 
       {/* Content */}
-      <div className="relative z-10 flex flex-col items-center h-full justify-between py-8">
+      <div className="relative z-10 flex flex-col items-center h-full justify-between py-8 w-full">
         
         {/* Header Badge */}
         {locked ? (
@@ -176,9 +176,12 @@ function MysteryCard({ onReveal, match, locked = false }: { onReveal: () => void
             <motion.div 
                 animate={locked ? {} : { scale: [1, 1.05, 1] }}
                 transition={{ duration: 2, repeat: Infinity }}
-                className="w-20 h-20 rounded-full border-2 border-white/10 flex items-center justify-center bg-white/5 backdrop-blur-sm relative z-10"
+                className={cn(
+                    "w-20 h-20 rounded-full border-2 flex items-center justify-center backdrop-blur-sm relative z-10",
+                    locked ? "border-slate-800 bg-slate-900" : "border-white/10 bg-white/5"
+                )}
             >
-                {locked ? <Lock className="w-8 h-8 text-slate-500" /> : <Fingerprint className="w-10 h-10 text-white/50" />}
+                {locked ? <Lock className="w-8 h-8 text-slate-700" /> : <Fingerprint className="w-10 h-10 text-white/50" />}
                 {!locked && <div className="absolute inset-0 rounded-full border-t-2 border-emerald-500 animate-spin-slow"></div>}
             </motion.div>
             {!locked && <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 bg-emerald-500/20 blur-[40px] rounded-full pointer-events-none"></div>}
@@ -190,40 +193,40 @@ function MysteryCard({ onReveal, match, locked = false }: { onReveal: () => void
                 <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Impact Potentiel</span>
                 <div className="flex gap-1">
                     {[1,2,3,4,5].map(i => (
-                        <div key={i} className={`h-1.5 w-4 rounded-full ${i <= 4 ? (locked ? 'bg-slate-700' : 'bg-emerald-500') : 'bg-slate-800'}`} />
+                        <div key={i} className={`h-1.5 w-4 rounded-full ${i <= 4 ? (locked ? 'bg-slate-800' : 'bg-emerald-500') : 'bg-slate-900'}`} />
                     ))}
                 </div>
             </div>
             
             <div className="grid grid-cols-3 gap-2">
-                <div className="bg-white/5 rounded-xl p-2 flex flex-col items-center justify-center border border-white/5">
-                    <Zap className={cn("w-5 h-5 mb-1", locked ? "text-slate-500" : "text-orange-500")} />
-                    <span className="text-[10px] text-slate-400 uppercase font-bold">Business</span>
-                    <span className="text-xs font-black text-white">{potential}</span>
+                <div className={cn("rounded-xl p-2 flex flex-col items-center justify-center border", locked ? "bg-slate-900/50 border-slate-800" : "bg-white/5 border-white/5")}>
+                    <Zap className={cn("w-5 h-5 mb-1", locked ? "text-slate-700" : "text-orange-500")} />
+                    <span className="text-[10px] text-slate-500 uppercase font-bold">Business</span>
+                    <span className={cn("text-xs font-black", locked ? "text-slate-600" : "text-white")}>{potential}</span>
                 </div>
-                <div className="bg-white/5 rounded-xl p-2 flex flex-col items-center justify-center border border-white/5">
-                    <Users className={cn("w-5 h-5 mb-1", locked ? "text-slate-500" : "text-blue-500")} />
-                    <span className="text-[10px] text-slate-400 uppercase font-bold">Ce mois-ci</span>
-                    <span className="text-xs font-black text-white">{collabs} Collabs</span>
+                <div className={cn("rounded-xl p-2 flex flex-col items-center justify-center border", locked ? "bg-slate-900/50 border-slate-800" : "bg-white/5 border-white/5")}>
+                    <Users className={cn("w-5 h-5 mb-1", locked ? "text-slate-700" : "text-blue-500")} />
+                    <span className="text-[10px] text-slate-500 uppercase font-bold">Ce mois-ci</span>
+                    <span className={cn("text-xs font-black", locked ? "text-slate-600" : "text-white")}>{collabs} Collabs</span>
                 </div>
-                <div className="bg-white/5 rounded-xl p-2 flex flex-col items-center justify-center border border-white/5">
-                    <Handshake className={cn("w-5 h-5 mb-1", locked ? "text-slate-500" : "text-purple-500")} />
-                    <span className="text-[10px] text-slate-400 uppercase font-bold">Taux de compatibilité</span>
-                    <span className="text-xs font-black text-white">{compatibility}%</span>
+                <div className={cn("rounded-xl p-2 flex flex-col items-center justify-center border", locked ? "bg-slate-900/50 border-slate-800" : "bg-white/5 border-white/5")}>
+                    <Handshake className={cn("w-5 h-5 mb-1", locked ? "text-slate-700" : "text-purple-500")} />
+                    <span className="text-[10px] text-slate-500 uppercase font-bold">Taux de compatibilité</span>
+                    <span className={cn("text-xs font-black", locked ? "text-slate-600" : "text-white")}>{compatibility}%</span>
                 </div>
             </div>
         </div>
 
         {/* 2. CONCRETE BENEFITS */}
-        <div className="w-full bg-slate-900/50 rounded-2xl p-4 text-left border border-white/5 mb-auto">
+        <div className={cn("w-full rounded-2xl p-4 text-left border mb-auto", locked ? "bg-slate-900/30 border-slate-800" : "bg-slate-900/50 border-white/5")}>
             <div className="flex items-center gap-2 mb-3">
-                <Target className={cn("w-4 h-4", locked ? "text-slate-500" : "text-emerald-400")} />
-                <span className="text-xs font-bold text-white uppercase">Ce qu'il peut vous apporter</span>
+                <Target className={cn("w-4 h-4", locked ? "text-slate-700" : "text-emerald-400")} />
+                <span className={cn("text-xs font-bold uppercase", locked ? "text-slate-600" : "text-white")}>Ce qu'il peut vous apporter</span>
             </div>
             <ul className="space-y-2.5">
                 {benefits.map((benefit, index) => (
-                    <li key={index} className="flex items-start gap-2 text-xs text-slate-300 font-medium">
-                        <div className={cn("mt-0.5 shrink-0 h-1.5 w-1.5 rounded-full", locked ? "bg-slate-600" : "bg-emerald-500")} />
+                    <li key={index} className={cn("flex items-start gap-2 text-xs font-medium", locked ? "text-slate-600" : "text-slate-300")}>
+                        <div className={cn("mt-0.5 shrink-0 h-1.5 w-1.5 rounded-full", locked ? "bg-slate-800" : "bg-emerald-500")} />
                         {benefit}
                     </li>
                 ))}
@@ -233,13 +236,15 @@ function MysteryCard({ onReveal, match, locked = false }: { onReveal: () => void
         <Button 
             disabled={locked}
             className={cn(
-                "w-full h-12 font-black text-base rounded-xl transition-all shadow-[0_0_20px_rgba(255,255,255,0.1)] mt-4",
+                "w-full h-12 font-black text-base rounded-xl transition-all shadow-none mt-4",
                 locked 
-                    ? "bg-slate-800 text-slate-500 cursor-not-allowed" 
+                    ? "bg-slate-900 text-slate-700 cursor-not-allowed border border-slate-800" 
                     : "bg-white text-black hover:scale-[1.02] shadow-[0_0_20px_rgba(255,255,255,0.2)] animate-bounce-subtle"
             )}
         >
-            {locked ? "VERROUILLÉ 🔒" : "DÉCOUVRIR QUI C'EST 🔓"}
+            {locked ? (
+                <span className="flex items-center gap-2"><Lock className="w-4 h-4" /> VERROUILLÉ</span>
+            ) : "DÉCOUVRIR QUI C'EST 🔓"}
         </Button>
       </div>
     </div>
