@@ -171,7 +171,7 @@ export function MatchCardPreview() {
         {/* The "Hook" / FOMO Text */}
         <div className="bg-white/5 border-l-4 border-yellow-500 pl-4 py-2 mb-8">
             <p className="text-yellow-200 text-sm italic font-medium leading-relaxed">
-                "Jean-Paul a réservé ce créneau spécialement pour vous. C'est lui qui va vous appeler entre 09h00 et 09h15."
+                "Jean-Paul a réservé ce créneau pour vous. Il vous appelle entre 09h et 11h."
             </p>
         </div>
 
