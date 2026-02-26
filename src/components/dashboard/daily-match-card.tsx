@@ -110,7 +110,7 @@ function MysteryCard({ onReveal, match }: { onReveal: () => void, match: any }) 
   
   const potential = ["ÉLEVÉ", "TRÈS ÉLEVÉ", "EXPLOSIF"][seed % 3];
   const collabs = 12 + (seed % 20); // 12 to 31
-  const opportunities = (seed % 3) + 3; // 3 to 5
+  const compatibility = 77 + (seed % 20); // 77 to 96
   
   // Dynamic benefits based on job/superpower if available, or generic
   const getBenefits = () => {
@@ -196,8 +196,8 @@ function MysteryCard({ onReveal, match }: { onReveal: () => void, match: any }) 
                 </div>
                 <div className="bg-white/5 rounded-xl p-2 flex flex-col items-center justify-center border border-white/5">
                     <Handshake className="w-5 h-5 text-purple-500 mb-1" />
-                    <span className="text-[10px] text-slate-400 uppercase font-bold">Opportunités</span>
-                    <span className="text-xs font-black text-white">{opportunities}</span>
+                    <span className="text-[10px] text-slate-400 uppercase font-bold">Taux de compatibilité</span>
+                    <span className="text-xs font-black text-white">{compatibility}%</span>
                 </div>
             </div>
         </div>

@@ -126,8 +126,8 @@ export function MysteryCardPreview() {
                 </div>
                 <div className="bg-white/5 rounded-xl p-2 flex flex-col items-center justify-center border border-white/5">
                     <Handshake className="w-5 h-5 text-purple-500 mb-1" />
-                    <span className="text-[10px] text-slate-400 uppercase font-bold">Opportunités</span>
-                    <span className="text-sm font-black text-white">3</span>
+                    <span className="text-[10px] text-slate-400 uppercase font-bold">Taux de compatibilité</span>
+                    <span className="text-sm font-black text-white">77%</span>
                 </div>
             </div>
         </div>
