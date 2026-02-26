@@ -59,15 +59,19 @@ export function OpportunityForm({ preSelectedUser, onSuccess }: OpportunityFormP
     }
   };
 
+  const [customPoints, setCustomPoints] = useState<number>(5);
+
   const handleSubmit = async () => {
     if (!selectedType || !selectedMember) return;
     
     setIsSubmitting(true);
     try {
+      const pointsToSend = selectedType.id === 'custom' ? customPoints : selectedType.points;
+
       const result = await createOpportunity({
         receiverId: selectedMember.id,
         type: selectedType.id,
-        points: selectedType.points,
+        points: pointsToSend,
         details: details
       });
 
@@ -76,7 +80,7 @@ export function OpportunityForm({ preSelectedUser, onSuccess }: OpportunityFormP
       }
       
       toast.success("Opportunité envoyée !", {
-        description: `Vous avez offert ${selectedType.points} points à ${selectedMember.name}.`,
+        description: `Vous avez offert ${pointsToSend} points à ${selectedMember.name}.`,
       });
       
       router.refresh();
@@ -84,9 +88,10 @@ export function OpportunityForm({ preSelectedUser, onSuccess }: OpportunityFormP
       
       // Reset form if no onSuccess that closes it
       if (!onSuccess) {
-          setStep("type");
-          setSelectedType(null);
-          setDetails("");
+        setStep("type");
+        setSelectedType(null);
+        setDetails("");
+        setCustomPoints(5);
       }
 
     } catch (error) {
@@ -128,7 +133,7 @@ export function OpportunityForm({ preSelectedUser, onSuccess }: OpportunityFormP
            </div>
            {selectedType && (
              <div className="bg-white text-slate-900 font-bold px-3 py-1 rounded-full text-sm">
-               +{selectedType.points} pts
+               +{selectedType.id === 'custom' ? customPoints : selectedType.points} pts
              </div>
            )}
         </div>
@@ -252,6 +257,23 @@ export function OpportunityForm({ preSelectedUser, onSuccess }: OpportunityFormP
                   />
                   <p className="text-xs text-slate-400">Ces informations seront visibles uniquement par {selectedMember.name}.</p>
                 </div>
+
+                {selectedType.id === 'custom' && (
+                  <div className="space-y-2 pt-2 border-t border-slate-100">
+                    <label className="text-sm font-bold text-slate-700">Valeur en points (à définir)</label>
+                    <div className="flex items-center gap-4">
+                        <Input 
+                            type="number" 
+                            min="1" 
+                            max="50" 
+                            value={customPoints} 
+                            onChange={(e) => setCustomPoints(Number(e.target.value))}
+                            className="w-24 font-bold text-center"
+                        />
+                        <span className="text-sm text-slate-500">points pour cette action personnalisée.</span>
+                    </div>
+                  </div>
+                )}
 
                 <div className="flex gap-3 pt-4">
                   <Button 

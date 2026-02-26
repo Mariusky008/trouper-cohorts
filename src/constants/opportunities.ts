@@ -93,4 +93,24 @@ export const OPPORTUNITY_TYPES: {
     bg: "bg-pink-50", 
     border: "border-pink-100" 
   },
+  { 
+    id: "feedback", 
+    label: "Test & Feedback Produit", 
+    points: 7, 
+    description: "Je teste ton produit/service et je te fais un retour détaillé pour l'améliorer.",
+    icon: Zap, 
+    color: "text-cyan-600", 
+    bg: "bg-cyan-50", 
+    border: "border-cyan-100" 
+  },
+  { 
+    id: "custom", 
+    label: "Autre (Personnalisé)", 
+    points: 0, 
+    description: "Propose une opportunité unique non listée ici.",
+    icon: Star, 
+    color: "text-slate-600", 
+    bg: "bg-slate-50", 
+    border: "border-slate-100" 
+  },
 ];

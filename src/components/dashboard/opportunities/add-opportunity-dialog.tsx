@@ -14,7 +14,7 @@ export function AddOpportunityDialog({ children }: { children: React.ReactNode }
       <DialogTrigger asChild>
         {children}
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[600px] p-0 overflow-hidden bg-white border-none shadow-2xl rounded-3xl h-[600px]">
+      <DialogContent className="sm:max-w-[600px] p-0 overflow-hidden bg-white border-none shadow-2xl rounded-3xl h-[85vh] max-h-[800px]">
          <OpportunityForm onSuccess={() => setIsOpen(false)} />
       </DialogContent>
     </Dialog>
