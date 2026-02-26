@@ -184,13 +184,13 @@ export function MatchCardPreview() {
         <motion.div 
             initial={{ y: -20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            className="bg-red-500 text-white px-4 py-2 rounded-xl flex items-center justify-between shadow-lg shadow-red-900/50"
+            className="bg-red-500 text-white px-4 py-2 rounded-xl flex flex-col items-center justify-center shadow-lg shadow-red-900/50 text-center gap-1"
         >
             <div className="flex items-center gap-2 font-bold text-xs uppercase tracking-wider">
-                <Clock className="w-4 h-4 animate-pulse" />
-                Opportunité Éphémère
+                <Clock className="w-3 h-3 animate-pulse" />
+                Jean-Paul vous appelle entre 09h et 11h
             </div>
-            <span className="font-mono font-bold text-xs">01:59:00</span>
+            <span className="font-mono font-bold text-xs opacity-90">01:59:00</span>
         </motion.div>
       </div>
 
@@ -206,7 +206,7 @@ export function MatchCardPreview() {
         </div>
 
         <p className="text-slate-300 text-sm font-medium mb-4 line-clamp-2 leading-snug opacity-90">
-            "Directeur Commercial qui cherche exactement votre type de services. Une opportunité rare."
+            "Ce directeur commercial peut vous ouvrir des opportunités auxquelles vous n’aviez pas accès hier. À vous de créer une collaboration."
         </p>
 
         {/* 3. MICRO-MISSION (Added per user request) */}
