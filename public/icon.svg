@@ -1,6 +1,39 @@
-<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect width="512" height="512" rx="128" fill="#0f172a"/>
-  <path d="M256 128C273.673 128 288 113.673 288 96C288 78.3269 273.673 64 256 64C238.327 64 224 78.3269 224 96C224 113.673 238.327 128 256 128Z" stroke="#f97316" stroke-width="32" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M256 448V128" stroke="#f97316" stroke-width="32" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M106.667 234.667H42.6667C42.6667 352.507 138.16 448 256 448C373.84 448 469.333 352.507 469.333 234.667H405.333" stroke="#f97316" stroke-width="32" stroke-linecap="round" stroke-linejoin="round"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0f172a;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1e293b;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="logo-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#fbbf24;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#f59e0b;stop-opacity:1" />
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="10" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="512" height="512" fill="url(#bg)" />
+  
+  <!-- Subtle Grid/Network Background -->
+  <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+    <circle cx="2" cy="2" r="1" fill="#334155" opacity="0.3" />
+  </pattern>
+  <rect width="512" height="512" fill="url(#grid)" />
+
+  <!-- Logo Group -->
+  <g transform="translate(256, 256) scale(12) translate(-12, -12)" filter="url(#glow)">
+    <!-- Head -->
+    <circle cx="12" cy="5" r="3" fill="none" stroke="url(#logo-gradient)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+    <!-- Body -->
+    <line x1="12" x2="12" y1="22" y2="8" stroke="url(#logo-gradient)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+    <!-- Arms/Network -->
+    <path d="M5 12H2a10 10 0 0 0 20 0h-3" stroke="url(#logo-gradient)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+    
+    <!-- Extra: Connection dots on ends of arms -->
+    <circle cx="2" cy="12" r="1" fill="#fbbf24" />
+    <circle cx="22" cy="12" r="1" fill="#fbbf24" />
+  </g>
 </svg>
