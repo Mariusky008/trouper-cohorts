@@ -1,6 +1,6 @@
 'use server';
 
-import { createClient } from '@/utils/supabase/server';
+import { createClient } from '@/lib/supabase/server';
 
 export async function trackEvent(eventType: string, metadata: any = {}) {
   const supabase = await createClient();
