@@ -27,6 +27,7 @@ export async function updateProfile(formData: FormData) {
   // Give & Take
   const superpower = String(formData.get("superpower") || "").trim();
   const currentNeed = String(formData.get("current_need") || "").trim();
+  const bigGoal = String(formData.get("big_goal") || "").trim();
 
   // Offer Fields
   const offerTitle = String(formData.get("offer_title") || "").trim();
@@ -52,6 +53,7 @@ export async function updateProfile(formData: FormData) {
     phone: phone || null,
     superpower: superpower || null,
     current_need: currentNeed || null,
+    big_goal: bigGoal || null,
     instagram_handle: instagram || null,
       linkedin_url: linkedin || null,
       facebook_handle: facebook || null,
