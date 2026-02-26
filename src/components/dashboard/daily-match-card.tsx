@@ -440,16 +440,22 @@ export function DailyMatchCard({ matches, userStreak = 0, userId }: DailyMatchCa
         <motion.div 
             initial={{ y: -20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            className="bg-red-500 text-white px-4 py-2 rounded-xl flex flex-col items-center justify-center shadow-lg shadow-red-900/50 text-center gap-1"
+            className="bg-red-500/90 backdrop-blur-md text-white px-5 py-3 rounded-2xl flex flex-col items-center justify-center shadow-[0_0_20px_rgba(239,68,68,0.4)] text-center gap-1 border border-red-400/30"
         >
-            <div className="flex items-center gap-2 font-bold text-xs uppercase tracking-wider">
-                <Clock className="w-3 h-3 animate-pulse" />
+            <div className="flex items-center gap-2 font-bold text-sm uppercase tracking-wider text-red-50 mb-1">
+                <Phone className="w-4 h-4 animate-bounce" />
                 {isCallOut 
-                    ? `C'est à vous d'appeler entre ${match.time}`
-                    : `${match.name} vous appelle entre ${match.time}`
+                    ? `C'est à vous d'appeler`
+                    : `${match.name} vous appelle`
                 }
             </div>
-            <span className="font-mono font-bold text-xs opacity-90">{matchCountdown}</span>
+            <div className="flex items-center gap-2 bg-black/20 px-3 py-1 rounded-lg">
+                 <Clock className="w-3 h-3 text-red-200" />
+                 <span className="font-mono font-bold text-sm">{match.time}</span>
+            </div>
+            <div className="text-[10px] font-bold opacity-80 mt-1">
+                Fin du créneau dans <span className="font-mono text-xs">{matchCountdown}</span>
+            </div>
         </motion.div>
       </div>
 
@@ -483,16 +489,6 @@ export function DailyMatchCard({ matches, userStreak = 0, userId }: DailyMatchCa
             </div>
             <p className="text-indigo-100 text-xs font-medium italic">
                 "Identifiez 2 synergies possibles avec {match.name} lors de l'appel."
-            </p>
-        </div>
-
-        {/* The "Hook" / FOMO Text */}
-        <div className="bg-white/5 border-l-4 border-yellow-500 pl-4 py-2 mb-8 rounded-r-xl backdrop-blur-sm">
-            <p className="text-yellow-200 text-sm italic font-medium leading-relaxed">
-                {isCallOut 
-                    ? `"${match.name} a réservé ce créneau. C'est à vous de l'appeler entre ${match.time}."`
-                    : `"${match.name} a réservé ce créneau pour vous. Il vous appelle entre ${match.time}."`
-                }
             </p>
         </div>
 

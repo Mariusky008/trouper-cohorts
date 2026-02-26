@@ -184,13 +184,19 @@ export function MatchCardPreview() {
         <motion.div 
             initial={{ y: -20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            className="bg-red-500 text-white px-4 py-2 rounded-xl flex flex-col items-center justify-center shadow-lg shadow-red-900/50 text-center gap-1"
+            className="bg-red-500/90 backdrop-blur-md text-white px-5 py-3 rounded-2xl flex flex-col items-center justify-center shadow-[0_0_20px_rgba(239,68,68,0.4)] text-center gap-1 border border-red-400/30"
         >
-            <div className="flex items-center gap-2 font-bold text-xs uppercase tracking-wider">
-                <Clock className="w-3 h-3 animate-pulse" />
-                Jean-Paul vous appelle entre 09h et 11h
+            <div className="flex items-center gap-2 font-bold text-sm uppercase tracking-wider text-red-50 mb-1">
+                <Phone className="w-4 h-4 animate-bounce" />
+                Jean-Paul vous appelle
             </div>
-            <span className="font-mono font-bold text-xs opacity-90">01:59:00</span>
+            <div className="flex items-center gap-2 bg-black/20 px-3 py-1 rounded-lg">
+                 <Clock className="w-3 h-3 text-red-200" />
+                 <span className="font-mono font-bold text-sm">09h - 11h</span>
+            </div>
+            <div className="text-[10px] font-bold opacity-80 mt-1">
+                Fin du créneau dans <span className="font-mono text-xs">01:59:00</span>
+            </div>
         </motion.div>
       </div>
 
@@ -210,20 +216,13 @@ export function MatchCardPreview() {
         </p>
 
         {/* 3. MICRO-MISSION (Added per user request) */}
-        <div className="bg-indigo-500/20 border border-indigo-500/30 rounded-xl p-3 mb-4 backdrop-blur-sm">
+        <div className="bg-indigo-500/20 border border-indigo-500/30 rounded-xl p-3 mb-6 backdrop-blur-sm">
             <div className="flex items-center gap-2 mb-1">
                 <Target className="w-4 h-4 text-indigo-400" />
                 <span className="text-[10px] font-black text-indigo-300 uppercase tracking-wider">Mission du jour</span>
             </div>
             <p className="text-indigo-100 text-xs font-medium italic">
                 "Identifiez 2 synergies possibles avec lui lors de l'appel."
-            </p>
-        </div>
-
-        {/* The "Hook" / FOMO Text */}
-        <div className="bg-white/5 border-l-4 border-yellow-500 pl-4 py-2 mb-6 rounded-r-xl">
-            <p className="text-yellow-200 text-sm italic font-medium leading-relaxed">
-                "Jean-Paul a réservé ce créneau pour vous. Il vous appelle entre 09h et 11h."
             </p>
         </div>
 
