@@ -26,6 +26,7 @@ import { useRouter } from "next/navigation";
 import { ProfileCompletionModal } from "@/components/dashboard/profile-completion-modal";
 import { getPendingOpportunitiesCount } from "@/lib/actions/network-opportunities";
 import { GlobalChatWidget } from "@/components/dashboard/chat/global-chat-widget";
+import { PWAInstallPrompt } from "@/components/pwa-install-prompt";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -330,6 +331,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
       {/* GLOBAL CHAT WIDGET */}
       {currentUserId && <GlobalChatWidget currentUserId={currentUserId} />}
+      
+      {/* PWA INSTALL PROMPT */}
+      <PWAInstallPrompt />
 
     </div>
   );
