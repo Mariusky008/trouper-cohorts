@@ -10,6 +10,8 @@ import { ChatDialog } from "@/components/dashboard/connections/chat-dialog";
 import { getConversations } from "@/lib/actions/network-conversations";
 import { toast } from "sonner";
 import { usePathname } from "next/navigation";
+import { format } from "date-fns";
+import { fr } from "date-fns/locale";
 
 export function GlobalChatWidget({ currentUserId }: { currentUserId: string }) {
   const [isOpen, setIsOpen] = useState(false);
