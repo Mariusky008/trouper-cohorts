@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Clock, Star, Phone, MessageSquare, User, Zap, Trophy, Handshake, Gift, PhoneCall, Copy, Target, Search, Fingerprint, Briefcase } from "lucide-react";
+import { Clock, Star, Phone, MessageSquare, User, Zap, Trophy, Handshake, Gift, PhoneCall, Copy, Target, Search, Fingerprint, Briefcase, CheckCircle2, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
@@ -84,6 +84,18 @@ function WaitingCard({ countdown }: { countdown: string }) {
           </p>
         </div>
 
+        {/* Social Proof */}
+        <div className="flex justify-center gap-4 text-[10px] font-bold text-slate-400 bg-white/5 py-2 px-4 rounded-full border border-white/5">
+            <div className="flex items-center gap-1.5">
+                <CheckCircle2 className="w-3 h-3 text-emerald-500" />
+                <span>127 collaborations créées ce mois-ci</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+                <Star className="w-3 h-3 text-yellow-500 fill-yellow-500" />
+                <span>4.8/5 satisfaction</span>
+            </div>
+        </div>
+
         <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-4 w-full">
            <div className="flex justify-between items-center text-sm mb-2">
               <span className="text-slate-400">Prochain match dans</span>
@@ -111,6 +123,7 @@ function MysteryCard({ onReveal, match }: { onReveal: () => void, match: any }) 
   const potential = ["ÉLEVÉ", "TRÈS ÉLEVÉ", "EXPLOSIF"][seed % 3];
   const sectors = (seed % 4) + 2; // 2 to 5
   const opportunities = (seed % 3) + 3; // 3 to 5
+  const compatibility = 85 + (seed % 14); // 85% to 98%
   
   // Dynamic benefits based on job/superpower if available, or generic
   const getBenefits = () => {
@@ -155,9 +168,15 @@ function MysteryCard({ onReveal, match }: { onReveal: () => void, match: any }) 
       <div className="relative z-10 flex flex-col items-center h-full justify-between py-8">
         
         {/* Header Badge */}
-        <Badge className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20 px-3 py-1 animate-pulse mb-2">
-            MATCH DÉTECTÉ ⚡️
-        </Badge>
+        <div className="flex items-center gap-3 mb-2 w-full justify-center">
+            <Badge className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20 px-3 py-1 animate-pulse">
+                MATCH DÉTECTÉ ⚡️
+            </Badge>
+            <div className="bg-white/5 px-3 py-1 rounded-full border border-white/10 flex items-center gap-1.5">
+                <Users className="w-3 h-3 text-blue-400" />
+                <span className="text-[10px] font-bold text-slate-300">Compatibilité réseau : <span className="text-white">{compatibility}%</span></span>
+            </div>
+        </div>
 
         {/* Identity Lock (Smaller) */}
         <div className="relative mb-2">

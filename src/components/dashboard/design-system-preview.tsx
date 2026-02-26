@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { User, Zap, Lock, Phone, Clock, Sparkles, Fingerprint, Search, Flame, Briefcase, Handshake, TrendingUp, Target, CheckCircle2 } from "lucide-react";
+import { User, Zap, Lock, Phone, Clock, Sparkles, Fingerprint, Search, Flame, Briefcase, Handshake, TrendingUp, Target, CheckCircle2, Users, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -53,6 +53,18 @@ export function WaitingCardPreview() {
           </p>
         </div>
 
+        {/* Social Proof */}
+        <div className="flex justify-center gap-4 text-[10px] font-bold text-slate-400 bg-white/5 py-2 px-4 rounded-full border border-white/5">
+            <div className="flex items-center gap-1.5">
+                <CheckCircle2 className="w-3 h-3 text-emerald-500" />
+                <span>127 collaborations créées ce mois-ci</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+                <Star className="w-3 h-3 text-yellow-500 fill-yellow-500" />
+                <span>4.8/5 satisfaction</span>
+            </div>
+        </div>
+
         <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-4 w-full">
            <div className="flex justify-between items-center text-sm mb-2">
               <span className="text-slate-400">Prochain match dans</span>
@@ -85,12 +97,18 @@ export function MysteryCardPreview() {
       <div className="relative z-10 flex flex-col items-center w-full h-full pt-6 pb-4">
         
         {/* Header Badge */}
-        <Badge className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20 px-3 py-1 animate-pulse mb-6">
-            MATCH DÉTECTÉ ⚡️
-        </Badge>
+        <div className="flex items-center gap-3 mb-4 w-full justify-center">
+            <Badge className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20 px-3 py-1 animate-pulse">
+                MATCH DÉTECTÉ ⚡️
+            </Badge>
+            <div className="bg-white/5 px-3 py-1 rounded-full border border-white/10 flex items-center gap-1.5">
+                <Users className="w-3 h-3 text-blue-400" />
+                <span className="text-[10px] font-bold text-slate-300">Compatibilité réseau : <span className="text-white">92%</span></span>
+            </div>
+        </div>
 
         {/* Identity Lock (Smaller) */}
-        <div className="relative mb-6">
+        <div className="relative mb-4">
             <motion.div 
                 animate={{ scale: [1, 1.05, 1] }}
                 transition={{ duration: 2, repeat: Infinity }}
@@ -164,7 +182,7 @@ export function MysteryCardPreview() {
 
 // --- 3. MATCH CARD (The Match) ---
 // Goal: FOMO, "I can't wait", "Don't miss this".
-import { MessageSquare, Gift, Star, PhoneCall } from "lucide-react";
+import { MessageSquare, Gift, PhoneCall } from "lucide-react";
 
 export function MatchCardPreview() {
   return (
