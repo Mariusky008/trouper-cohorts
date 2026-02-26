@@ -13,7 +13,7 @@ export default async function CrewPage() {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+  if (!user) redirect("/");
 
   // Sign out function for the header button
   async function signOut() {

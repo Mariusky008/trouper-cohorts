@@ -9,7 +9,8 @@ export default async function ProofPage() {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+
+  if (!user) redirect("/");
 
   const submissionsRes = await supabase
     .from("submissions")

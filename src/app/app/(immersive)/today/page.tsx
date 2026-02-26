@@ -25,7 +25,7 @@ export default async function TodayPage({
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+  if (!user) redirect("/");
 
   const membershipRes = await supabase
     .from("cohort_members")
@@ -51,7 +51,7 @@ export default async function TodayPage({
       "use server";
       const supabase = await createClient();
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) redirect("/login");
+      if (!user) redirect("/");
 
       const cohortRes = await supabase.from("cohorts").select("id").eq("slug", "demo-coach").maybeSingle();
       if (!cohortRes.data?.id) redirect("/app/today");
