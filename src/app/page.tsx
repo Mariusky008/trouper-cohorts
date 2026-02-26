@@ -430,84 +430,52 @@ export default function HomePage() {
          </div>
       </section>
 
-      {/* --- 4. HOW IT WORKS --- */}
+      {/* --- 4. GAMIFICATION REWARDS (NEW) --- */}
       <section className="py-24 bg-slate-50">
          <div className="container mx-auto px-4">
             <div className="max-w-4xl mx-auto text-center mb-16">
-               <span className="text-blue-600 font-bold tracking-widest uppercase text-sm mb-2 block">Fonctionnement</span>
-               <h2 className="text-3xl md:text-5xl font-black mb-6 text-slate-900">Voici concrètement ce qui se passe quand vous rejoignez Popey</h2>
+               <span className="text-blue-600 font-bold tracking-widest uppercase text-sm mb-2 block">Option recommandée</span>
+               <h2 className="text-3xl md:text-5xl font-black mb-6 text-slate-900">Ce que chaque échange peut vous apporter</h2>
+               <p className="text-xl text-slate-600 leading-relaxed max-w-2xl mx-auto font-medium">
+                 Chaque conversation de 5 minutes crée de nouvelles opportunités concrètes pour votre business.
+               </p>
             </div>
 
-            <div className="grid md:grid-cols-3 gap-8 relative max-w-6xl mx-auto mb-12">
-               {/* Step 1 */}
-               <motion.div 
-                 initial={{ opacity: 0, y: 30 }}
-                 whileInView={{ opacity: 1, y: 0 }}
-                 viewport={{ once: true }}
-                 transition={{ duration: 0.5 }}
-                 className="bg-white rounded-3xl p-8 border border-slate-200 shadow-sm hover:shadow-xl transition-all"
-               >
-                  <div className="h-16 w-16 bg-blue-100 rounded-2xl flex items-center justify-center text-blue-600 mb-6">
-                     <Calendar className="h-8 w-8" />
-                  </div>
-                  <h3 className="text-2xl font-black mb-4 text-slate-900">1. Le Match</h3>
-                  <p className="text-slate-600 leading-relaxed">
-                     Chaque matin, notre algorithme vous trouve <strong className="text-slate-900">le meilleur partenaire</strong> pour échanger. Pas de recherche, pas de friction.
-                  </p>
-               </motion.div>
-
-               {/* Step 2 */}
-               <motion.div 
-                 initial={{ opacity: 0, y: 30 }}
-                 whileInView={{ opacity: 1, y: 0 }}
-                 viewport={{ once: true }}
-                 transition={{ duration: 0.5, delay: 0.1 }}
-                 className="bg-white rounded-3xl p-8 border border-slate-200 shadow-sm hover:shadow-xl transition-all"
-               >
-                  <div className="h-16 w-16 bg-purple-100 rounded-2xl flex items-center justify-center text-purple-600 mb-6">
-                     <Phone className="h-8 w-8" />
-                  </div>
-                  <h3 className="text-2xl font-black mb-4 text-slate-900">2. L'Appel</h3>
-                  <p className="text-slate-600 leading-relaxed">
-                     5 à 10 minutes pour échanger. Présentez-vous, partagez vos défis, offrez de l'aide et obtenez la sienne. <strong className="text-slate-900">Court, efficace, humain.</strong>
-                  </p>
-               </motion.div>
-
-               {/* Step 3 */}
-               <motion.div 
-                 initial={{ opacity: 0, y: 30 }}
-                 whileInView={{ opacity: 1, y: 0 }}
-                 viewport={{ once: true }}
-                 transition={{ duration: 0.5, delay: 0.2 }}
-                 className="bg-white rounded-3xl p-8 border border-slate-200 shadow-sm hover:shadow-xl transition-all"
-               >
-                  <div className="h-16 w-16 bg-green-100 rounded-2xl flex items-center justify-center text-green-600 mb-6">
-                     <TrendingUp className="h-8 w-8" />
-                  </div>
-                  <h3 className="text-2xl font-black mb-4 text-slate-900">3. L'Opportunité d'un appel de 5 minutes</h3>
-                  <p className="text-slate-600 leading-relaxed text-sm">
-                     Vous décidez ensemble à chaque appel ce que vous pouvez vous offrir mutuellement :<br/><br/>
-                     <span className="block mb-1">• Des clients (+10 pts)</span>
-                     <span className="block mb-1">• Mise en relation (+8 pts)</span>
-                     <span className="block mb-1">• Partage de réseau (+6 pts)</span>
-                     <span className="block mb-1">• Recommandation (+5 pts)</span>
-                     <span className="block mb-1">• Échange de services (+5 pts)</span>
-                     <span className="block mb-1">• Synergies (+3 pts)</span>
-                     <span className="block mb-1">• Engagement Social (+3 pts)</span>
-                     <span className="block mb-1">• Faire un Live ensemble (+7 pts)</span>
-                     <span className="block mb-1">• Partager un Post (+4 pts)</span>
-                     <span className="block mb-1 text-slate-400 italic">etc...</span>
-                  </p>
-               </motion.div>
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto mb-12">
+               {[
+                 { label: "Des clients", pts: "+10 pts", color: "bg-blue-100 text-blue-700" },
+                 { label: "Mise en relation", pts: "+8 pts", color: "bg-purple-100 text-purple-700" },
+                 { label: "Partage de réseau", pts: "+6 pts", color: "bg-indigo-100 text-indigo-700" },
+                 { label: "Recommandation", pts: "+5 pts", color: "bg-green-100 text-green-700" },
+                 { label: "Échange de services", pts: "+5 pts", color: "bg-emerald-100 text-emerald-700" },
+                 { label: "Synergies", pts: "+3 pts", color: "bg-orange-100 text-orange-700" },
+                 { label: "Engagement social", pts: "+3 pts", color: "bg-pink-100 text-pink-700" },
+                 { label: "Live ensemble", pts: "+7 pts", color: "bg-red-100 text-red-700" },
+                 { label: "Partage de post", pts: "+4 pts", color: "bg-cyan-100 text-cyan-700" },
+               ].map((item, i) => (
+                  <motion.div 
+                    key={i}
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    whileInView={{ opacity: 1, scale: 1 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: i * 0.05 }}
+                    className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between hover:shadow-md transition-all group"
+                  >
+                     <span className="font-bold text-slate-700 text-lg group-hover:text-slate-900 transition-colors">{item.label}</span>
+                     <Badge className={cn("font-black text-sm px-3 py-1", item.color)}>
+                        {item.pts}
+                     </Badge>
+                  </motion.div>
+               ))}
             </div>
             
             <div className="flex justify-center">
                 <Button 
                    size="lg" 
-                   className="bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-full px-8 h-12 shadow-lg shadow-blue-200"
+                   className="bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-full px-8 h-12 shadow-lg shadow-blue-200 hover:scale-105 transition-transform"
                    onClick={() => document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' })}
                 >
-                  Je veux mes 5 minutes <ArrowRight className="ml-2 h-4 w-4" />
+                  👉 Je veux mes 5 minutes <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
             </div>
          </div>
