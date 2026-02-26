@@ -110,7 +110,8 @@ function MysteryCard({ onReveal, match, locked = false }: { onReveal: () => void
   const seed = match.partnerId ? match.partnerId.split("").reduce((a: number, c: string) => a + c.charCodeAt(0), 0) : 0;
   
   const potential = ["ÉLEVÉ", "TRÈS ÉLEVÉ", "EXPLOSIF"][seed % 3];
-  const collabs = 12 + (seed % 20); // 12 to 31
+  // Use real count if available, otherwise fallback to seed (for preview/legacy)
+  const collabs = match.collabsCount !== undefined ? match.collabsCount : (12 + (seed % 20));
   const compatibility = 77 + (seed % 20); // 77 to 96
   
   // Dynamic benefits based on job/superpower if available, or generic

@@ -68,6 +68,16 @@ export async function getDailyMatches() {
         .eq("user_id", partnerId)
         .single();
 
+      // Fetch Partner Collabs (Opportunities Received this month)
+      const now = new Date();
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+      
+      const { count: collabsCount } = await supabase
+        .from("network_opportunities")
+        .select("id", { count: 'exact', head: true })
+        .eq("receiver_id", partnerId)
+        .gte("created_at", startOfMonth);
+
       return {
         id: match.id,
         partnerId: partnerId,
@@ -75,6 +85,7 @@ export async function getDailyMatches() {
         job: partnerData.trade || "Membre",
         city: partnerData.city || "En ligne",
         score: trustScore?.score || 5.0,
+        collabsCount: collabsCount || 0, // Real data
         time: match.time || "14:00",
         type: isUser1 ? 'call_out' : 'call_in',
         phone: partnerData.phone,
