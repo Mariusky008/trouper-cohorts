@@ -435,36 +435,43 @@ export default function HomePage() {
          <div className="container mx-auto px-4">
             <div className="max-w-4xl mx-auto text-center mb-16">
                <span className="text-blue-600 font-bold tracking-widest uppercase text-sm mb-2 block">Option recommandée</span>
-               <h2 className="text-3xl md:text-5xl font-black mb-6 text-slate-900">Ce que chaque échange peut vous apporter</h2>
+               <h2 className="text-3xl md:text-5xl font-black mb-6 text-slate-900">Ce que chaque échange peut réellement générer</h2>
                <p className="text-xl text-slate-600 leading-relaxed max-w-2xl mx-auto font-medium">
-                 Chaque conversation de 5 minutes crée de nouvelles opportunités concrètes pour votre business.
+                 5 minutes peuvent suffire à débloquer des opportunités que vous n’auriez jamais obtenues seul.
                </p>
             </div>
 
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto mb-12">
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto mb-12">
                {[
-                 { label: "Des clients", pts: "+10 pts", color: "bg-blue-100 text-blue-700" },
-                 { label: "Mise en relation", pts: "+8 pts", color: "bg-purple-100 text-purple-700" },
-                 { label: "Partage de réseau", pts: "+6 pts", color: "bg-indigo-100 text-indigo-700" },
-                 { label: "Recommandation", pts: "+5 pts", color: "bg-green-100 text-green-700" },
-                 { label: "Échange de services", pts: "+5 pts", color: "bg-emerald-100 text-emerald-700" },
-                 { label: "Synergies", pts: "+3 pts", color: "bg-orange-100 text-orange-700" },
-                 { label: "Engagement social", pts: "+3 pts", color: "bg-pink-100 text-pink-700" },
-                 { label: "Live ensemble", pts: "+7 pts", color: "bg-red-100 text-red-700" },
-                 { label: "Partage de post", pts: "+4 pts", color: "bg-cyan-100 text-cyan-700" },
+                 { icon: "🔥", label: "Des clients directs", desc: "Transformez une conversation en chiffre d’affaires concret.", pts: "+10 pts", color: "bg-blue-100 text-blue-700" },
+                 { icon: "🤝", label: "Des mises en relation stratégiques", desc: "Accédez au réseau de votre partenaire instantanément.", pts: "+8 pts", color: "bg-purple-100 text-purple-700" },
+                 { icon: "🌐", label: "Partage de réseau", desc: "Exposez votre activité à des cercles que vous ne touchez pas aujourd’hui.", pts: "+6 pts", color: "bg-indigo-100 text-indigo-700" },
+                 { icon: "⭐", label: "Recommandations ciblées", desc: "Soyez recommandé à la bonne personne, au bon moment.", pts: "+5 pts", color: "bg-green-100 text-green-700" },
+                 { icon: "🧩", label: "Synergies & collaborations", desc: "Lives, contenus croisés, échanges de services, partenariats long terme.", pts: "+3 pts", color: "bg-orange-100 text-orange-700" },
+                 { icon: "📣", label: "Visibilité sur les réseaux sociaux", desc: "Augmentez votre visibilité grâce à des partages croisés, mentions et collaborations.", pts: "+4 pts", color: "bg-cyan-100 text-cyan-700" },
+                 { icon: "🎥", label: "Opportunités de communication", desc: "Créez des lives, podcasts, interviews ou contenus communs pour renforcer votre crédibilité.", pts: "+7 pts", color: "bg-red-100 text-red-700" },
                ].map((item, i) => (
                   <motion.div 
                     key={i}
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    whileInView={{ opacity: 1, scale: 1 }}
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
                     transition={{ delay: i * 0.05 }}
-                    className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between hover:shadow-md transition-all group"
+                    className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm flex flex-col gap-4 hover:shadow-xl transition-all group relative overflow-hidden"
                   >
-                     <span className="font-bold text-slate-700 text-lg group-hover:text-slate-900 transition-colors">{item.label}</span>
-                     <Badge className={cn("font-black text-sm px-3 py-1", item.color)}>
-                        {item.pts}
-                     </Badge>
+                     <div className="flex justify-between items-start">
+                        <div className="text-4xl">{item.icon}</div>
+                        <Badge className={cn("font-bold text-[10px] px-2 py-0.5 opacity-60 group-hover:opacity-100 transition-opacity", item.color)}>
+                           {item.pts}
+                        </Badge>
+                     </div>
+                     
+                     <div>
+                        <h3 className="font-bold text-slate-900 text-xl mb-2 group-hover:text-blue-600 transition-colors">{item.label}</h3>
+                        <p className="text-slate-600 text-sm leading-relaxed font-medium">
+                           {item.desc}
+                        </p>
+                     </div>
                   </motion.div>
                ))}
             </div>

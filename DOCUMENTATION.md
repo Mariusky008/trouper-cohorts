@@ -82,7 +82,52 @@ Le système a évolué pour supporter deux types de programmes distincts :
 
 ---
 
-## 6. Maintenance & Déploiement
+## 6. Programme "Mon Réseau Local"
+
+Ce programme est une surcouche sociale et gamifiée visant à créer des opportunités d'affaires locales quotidiennes.
+
+### Fonctionnalités Clés
+
+#### 1. Le Cockpit (`/mon-reseau-local/dashboard`)
+Point d'entrée principal pour l'utilisateur.
+- **Vue "Aujourd'hui"** : Centralise les actions prioritaires (Match du jour, Missions).
+- **Parcours de Missions** :
+    - Structure quotidienne guidée (14 jours).
+    - Catégories : Intellectuel, Créatif, Social, Événement.
+    - **Validation de Preuves** : Soumission de texte, lien ou média pour valider chaque étape.
+
+#### 2. Système de Matching (Daily Match)
+Algorithme de mise en relation quotidienne pour un appel de 15 minutes.
+- **Mystery Card** : Le profil du partenaire est masqué jusqu'à révélation par l'utilisateur (Gamification "Teasing").
+- **Smart Matching** : Tente de varier les partenaires et d'éviter les doublons récents.
+- **Call-to-Action** : Instructions claires (Call-in vs Call-out) et compte à rebours.
+- **Micro-Missions** : Objectifs contextuels générés pour chaque appel (ex: "Trouver 2 synergies").
+
+#### 3. Impact & Trust Score
+Système de réputation pour encourager les comportements vertueux.
+- **Trust Score** : Note de fiabilité basée sur la réciprocité et les feedbacks des partenaires.
+- **Règle des 30 jours** : Incitation à rendre la pareille sous 30 jours.
+- **Dette Réseau** : Suivi des opportunités reçues vs données.
+
+#### 4. Gestion des Opportunités
+Catalogue d'actions pour apporter de la valeur.
+- **Types d'Opportunités** : Clients, Partenariats, Mentorat, Visibilité, etc.
+- **Système de Points** : Chaque type d'opportunité rapporte des points (ex: +10 pts pour un Client).
+- **Feedback** : Les utilisateurs peuvent noter la qualité des échanges.
+
+#### 5. Gamification
+- **Streaks** : Suivi de la régularité (Jours consécutifs).
+- **Mur des Victoires** : Feed social des réussites de la cohorte.
+- **Niveaux** : Progression (ex: "Connecteur") basée sur l'activité.
+
+#### 6. Outils d'Accompagnement
+- **Coach IA (Popey)** : Assistant contextuel fournissant des conseils personnalisés.
+- **Messagerie Intégrée** : Chat direct avec le binôme du jour.
+- **Disponibilités** : Gestion des créneaux horaires pour les matchs.
+
+---
+
+## 7. Maintenance & Déploiement
 
 ### Mise à jour du Contenu Pédagogique
 Le contenu du programme "Emploi" est défini dans `src/app/actions/seed-program.ts`.
