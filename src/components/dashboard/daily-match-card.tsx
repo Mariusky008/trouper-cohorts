@@ -746,14 +746,17 @@ export function DailyMatchCard({ matches, userStreak = 0, userId }: DailyMatchCa
                                             <button
                                                 key={type.id}
                                                 onClick={() => setOppType(type.id)}
-                                                className={`flex flex-col items-center justify-center p-3 rounded-xl border transition-all hover:scale-105 text-center gap-2 group ${type.bg.replace('bg-', 'bg-opacity-10 bg-')} ${type.border.replace('border-', 'border-opacity-20 border-')}`}
+                                                className={`flex flex-col items-center justify-start p-3 rounded-xl border transition-all hover:scale-105 text-center gap-2 group ${type.bg.replace('bg-', 'bg-opacity-10 bg-')} ${type.border.replace('border-', 'border-opacity-20 border-')}`}
                                                 style={{ backgroundColor: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.1)' }}
                                             >
-                                                <div className={`h-10 w-10 rounded-full flex items-center justify-center shadow-sm ${type.color} bg-white/10`}>
+                                                <div className={`h-10 w-10 rounded-full flex items-center justify-center shadow-sm ${type.color} bg-white/10 shrink-0`}>
                                                     <type.icon className="h-5 w-5" />
                                                 </div>
-                                                <span className="font-bold text-white text-xs leading-tight">{type.label}</span>
-                                                <span className="text-[10px] text-emerald-400 font-bold">+{type.points} pts</span>
+                                                <div className="flex flex-col gap-1 w-full">
+                                                    <span className="font-bold text-white text-xs leading-tight">{type.label}</span>
+                                                    <span className="text-[10px] text-slate-400 font-medium leading-tight px-1 line-clamp-3 opacity-80">{type.description}</span>
+                                                    <span className="text-[10px] text-emerald-400 font-bold mt-1">+{type.points} pts</span>
+                                                </div>
                                             </button>
                                         ))}
                                     </div>

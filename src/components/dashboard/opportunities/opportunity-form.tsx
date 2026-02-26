@@ -159,14 +159,22 @@ export function OpportunityForm({ preSelectedUser, onSuccess }: OpportunityFormP
                         }
                     }}
                     className={cn(
-                      "flex flex-col items-center justify-center p-4 rounded-xl border transition-all hover:scale-105 text-center gap-2 group",
+                      "flex flex-col items-center justify-start p-3 rounded-xl border transition-all hover:scale-105 text-center gap-2 group min-h-[140px]",
                       type.bg, type.border
                     )}
                   >
-                    <div className={cn("h-10 w-10 rounded-full bg-white flex items-center justify-center shadow-sm", type.color)}>
+                    <div className={cn("h-10 w-10 rounded-full bg-white flex items-center justify-center shadow-sm shrink-0", type.color)}>
                       <type.icon className="h-5 w-5" />
                     </div>
-                    <span className="font-bold text-slate-900 text-sm leading-tight">{type.label}</span>
+                    <div className="flex flex-col gap-1 w-full">
+                      <span className="font-bold text-slate-900 text-xs leading-tight">{type.label}</span>
+                      <span className="text-[10px] font-medium text-slate-600 leading-tight px-1 line-clamp-3 opacity-80">
+                          {type.description}
+                      </span>
+                      <span className="text-[10px] font-bold mt-1 text-emerald-600">
+                          +{type.points} pts
+                      </span>
+                    </div>
                   </button>
                 ))}
               </motion.div>
