@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Clock, Star, Phone, MessageSquare, User, Zap, Trophy, Handshake, Gift, PhoneCall, Copy, Target, Search, Fingerprint, Briefcase, CheckCircle2, Users } from "lucide-react";
+import { Clock, Star, Phone, MessageSquare, User, Zap, Trophy, Handshake, Gift, PhoneCall, Copy, Target, Search, Fingerprint, Briefcase, CheckCircle2, Users, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
@@ -9,6 +9,7 @@ import Image from "next/image";
 import { useState, useEffect } from "react";
 import confetti from "canvas-confetti";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -104,7 +105,7 @@ function WaitingCard({ countdown }: { countdown: string }) {
 }
 
 // --- 2. MYSTERY CARD COMPONENT ---
-function MysteryCard({ onReveal, match }: { onReveal: () => void, match: any }) {
+function MysteryCard({ onReveal, match, locked = false }: { onReveal: () => void, match: any, locked?: boolean }) {
   // Generate stable "fake" stats based on partner ID to keep it consistent for the same user
   const seed = match.partnerId ? match.partnerId.split("").reduce((a: number, c: string) => a + c.charCodeAt(0), 0) : 0;
   
@@ -144,32 +145,43 @@ function MysteryCard({ onReveal, match }: { onReveal: () => void, match: any }) 
 
   return (
     <div 
-        onClick={onReveal}
-        className="relative w-full max-w-sm mx-auto h-[600px] rounded-[2.5rem] overflow-hidden shadow-2xl bg-black flex flex-col items-center justify-center text-center p-6 cursor-pointer group border border-white/10"
+        onClick={locked ? undefined : onReveal}
+        className={cn(
+            "relative w-full max-w-sm mx-auto h-[600px] rounded-[2.5rem] overflow-hidden shadow-2xl bg-black flex flex-col items-center justify-center text-center p-6 border border-white/10 transition-all",
+            locked ? "opacity-90 grayscale-[0.3]" : "cursor-pointer group"
+        )}
     >
       {/* Animated Gradient Border */}
-      <div className="absolute inset-0 bg-gradient-to-br from-emerald-500 via-blue-600 to-purple-600 opacity-20 group-hover:opacity-40 transition-opacity duration-500"></div>
+      {!locked && (
+        <div className="absolute inset-0 bg-gradient-to-br from-emerald-500 via-blue-600 to-purple-600 opacity-20 group-hover:opacity-40 transition-opacity duration-500"></div>
+      )}
       <div className="absolute inset-[2px] bg-[#050505] rounded-[2.4rem] z-0"></div>
 
       {/* Content */}
       <div className="relative z-10 flex flex-col items-center h-full justify-between py-8">
         
         {/* Header Badge */}
-        <Badge className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20 px-3 py-1 animate-pulse mb-6">
-            MATCH DÉTECTÉ ⚡️
-        </Badge>
+        {locked ? (
+            <Badge className="bg-slate-800 text-slate-400 border-slate-700 px-3 py-1 mb-6 flex items-center gap-2">
+                <Clock className="w-3 h-3" /> DISPONIBLE DEMAIN 06H
+            </Badge>
+        ) : (
+            <Badge className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20 px-3 py-1 animate-pulse mb-6">
+                MATCH DÉTECTÉ ⚡️
+            </Badge>
+        )}
 
         {/* Identity Lock (Smaller) */}
         <div className="relative mb-2">
             <motion.div 
-                animate={{ scale: [1, 1.05, 1] }}
+                animate={locked ? {} : { scale: [1, 1.05, 1] }}
                 transition={{ duration: 2, repeat: Infinity }}
                 className="w-20 h-20 rounded-full border-2 border-white/10 flex items-center justify-center bg-white/5 backdrop-blur-sm relative z-10"
             >
-                <Fingerprint className="w-10 h-10 text-white/50" />
-                <div className="absolute inset-0 rounded-full border-t-2 border-emerald-500 animate-spin-slow"></div>
+                {locked ? <Lock className="w-8 h-8 text-slate-500" /> : <Fingerprint className="w-10 h-10 text-white/50" />}
+                {!locked && <div className="absolute inset-0 rounded-full border-t-2 border-emerald-500 animate-spin-slow"></div>}
             </motion.div>
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 bg-emerald-500/20 blur-[40px] rounded-full pointer-events-none"></div>
+            {!locked && <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 bg-emerald-500/20 blur-[40px] rounded-full pointer-events-none"></div>}
         </div>
 
         {/* 1. IMPACT SCORE */}
@@ -178,24 +190,24 @@ function MysteryCard({ onReveal, match }: { onReveal: () => void, match: any }) 
                 <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Impact Potentiel</span>
                 <div className="flex gap-1">
                     {[1,2,3,4,5].map(i => (
-                        <div key={i} className={`h-1.5 w-4 rounded-full ${i <= 4 ? 'bg-emerald-500' : 'bg-slate-800'}`} />
+                        <div key={i} className={`h-1.5 w-4 rounded-full ${i <= 4 ? (locked ? 'bg-slate-700' : 'bg-emerald-500') : 'bg-slate-800'}`} />
                     ))}
                 </div>
             </div>
             
             <div className="grid grid-cols-3 gap-2">
                 <div className="bg-white/5 rounded-xl p-2 flex flex-col items-center justify-center border border-white/5">
-                    <Zap className="w-5 h-5 text-orange-500 mb-1" />
+                    <Zap className={cn("w-5 h-5 mb-1", locked ? "text-slate-500" : "text-orange-500")} />
                     <span className="text-[10px] text-slate-400 uppercase font-bold">Business</span>
                     <span className="text-xs font-black text-white">{potential}</span>
                 </div>
                 <div className="bg-white/5 rounded-xl p-2 flex flex-col items-center justify-center border border-white/5">
-                    <Users className="w-5 h-5 text-blue-500 mb-1" />
+                    <Users className={cn("w-5 h-5 mb-1", locked ? "text-slate-500" : "text-blue-500")} />
                     <span className="text-[10px] text-slate-400 uppercase font-bold">Ce mois-ci</span>
                     <span className="text-xs font-black text-white">{collabs} Collabs</span>
                 </div>
                 <div className="bg-white/5 rounded-xl p-2 flex flex-col items-center justify-center border border-white/5">
-                    <Handshake className="w-5 h-5 text-purple-500 mb-1" />
+                    <Handshake className={cn("w-5 h-5 mb-1", locked ? "text-slate-500" : "text-purple-500")} />
                     <span className="text-[10px] text-slate-400 uppercase font-bold">Taux de compatibilité</span>
                     <span className="text-xs font-black text-white">{compatibility}%</span>
                 </div>
@@ -205,21 +217,29 @@ function MysteryCard({ onReveal, match }: { onReveal: () => void, match: any }) 
         {/* 2. CONCRETE BENEFITS */}
         <div className="w-full bg-slate-900/50 rounded-2xl p-4 text-left border border-white/5 mb-auto">
             <div className="flex items-center gap-2 mb-3">
-                <Target className="w-4 h-4 text-emerald-400" />
+                <Target className={cn("w-4 h-4", locked ? "text-slate-500" : "text-emerald-400")} />
                 <span className="text-xs font-bold text-white uppercase">Ce qu'il peut vous apporter</span>
             </div>
             <ul className="space-y-2.5">
                 {benefits.map((benefit, index) => (
                     <li key={index} className="flex items-start gap-2 text-xs text-slate-300 font-medium">
-                        <div className="mt-0.5 shrink-0 h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                        <div className={cn("mt-0.5 shrink-0 h-1.5 w-1.5 rounded-full", locked ? "bg-slate-600" : "bg-emerald-500")} />
                         {benefit}
                     </li>
                 ))}
             </ul>
         </div>
 
-        <Button className="w-full h-12 bg-white text-black font-black text-base rounded-xl hover:scale-[1.02] transition-transform shadow-[0_0_20px_rgba(255,255,255,0.2)] animate-bounce-subtle mt-4">
-            DÉCOUVRIR QUI C'EST 🔓
+        <Button 
+            disabled={locked}
+            className={cn(
+                "w-full h-12 font-black text-base rounded-xl transition-all shadow-[0_0_20px_rgba(255,255,255,0.1)] mt-4",
+                locked 
+                    ? "bg-slate-800 text-slate-500 cursor-not-allowed" 
+                    : "bg-white text-black hover:scale-[1.02] shadow-[0_0_20px_rgba(255,255,255,0.2)] animate-bounce-subtle"
+            )}
+        >
+            {locked ? "VERROUILLÉ 🔒" : "DÉCOUVRIR QUI C'EST 🔓"}
         </Button>
       </div>
     </div>
@@ -429,6 +449,16 @@ export function DailyMatchCard({ matches, userStreak = 0, userId }: DailyMatchCa
 
   const match = matches[0];
   const isCallOut = match.type === 'call_out';
+
+  // Check if match is in the future (Tomorrow or later)
+  const now = new Date();
+  const today = new Date().toLocaleDateString('fr-CA', { timeZone: 'Europe/Paris' }); // YYYY-MM-DD
+  const isFuture = match.date > today;
+  
+  // If it's a future match, show Mystery Card in LOCKED state
+  if (isFuture) {
+      return <MysteryCard onReveal={() => {}} match={match} locked={true} />;
+  }
 
   if (!revealed) {
       return <MysteryCard onReveal={handleReveal} match={match} />;
