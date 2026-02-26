@@ -148,14 +148,18 @@ function MysteryCard({ onReveal, match, locked = false }: { onReveal: () => void
         onClick={locked ? undefined : onReveal}
         className={cn(
             "relative w-full max-w-sm mx-auto h-[600px] rounded-[2.5rem] overflow-hidden shadow-2xl flex flex-col items-center justify-center text-center p-6 border transition-all",
-            locked ? "bg-black opacity-90 grayscale-[0.3] border-slate-800" : "bg-[#020617] cursor-pointer group border-white/10"
+            // ALWAYS use the vibrant dark blue background, never the gray/black locked one
+            "bg-[#020617] border-white/10",
+            !locked && "cursor-pointer group hover:scale-[1.01]"
         )}
     >
-      {/* Animated Gradient Border */}
-      {!locked && (
-        <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/30 via-blue-600/20 to-purple-600/30 opacity-40 group-hover:opacity-60 transition-opacity duration-500"></div>
-      )}
-      <div className={cn("absolute inset-[1px] rounded-[2.4rem] z-0", locked ? "bg-black" : "bg-[#020617]")}></div>
+      {/* Animated Gradient Border - Show for BOTH states to keep it vibrant */}
+      <div className={cn(
+          "absolute inset-0 bg-gradient-to-br from-emerald-500/30 via-blue-600/20 to-purple-600/30 transition-opacity duration-500",
+          locked ? "opacity-50" : "opacity-40 group-hover:opacity-60"
+      )}></div>
+      
+      <div className="absolute inset-[1px] bg-[#020617] rounded-[2.4rem] z-0"></div>
 
       {/* Content */}
       <div className="relative z-10 flex flex-col items-center h-full justify-between py-8 w-full">
@@ -163,7 +167,7 @@ function MysteryCard({ onReveal, match, locked = false }: { onReveal: () => void
         <div className="flex flex-col items-center w-full">
             {/* Header Badge */}
             {locked ? (
-                <Badge className="bg-slate-800 text-slate-400 border-slate-700 px-3 py-1 mb-8 flex items-center gap-2">
+                <Badge className="bg-indigo-500/10 text-indigo-300 border-indigo-500/20 px-3 py-1 mb-8 flex items-center gap-2 shadow-[0_0_15px_rgba(99,102,241,0.2)]">
                     <Clock className="w-3 h-3" /> DISPONIBLE DEMAIN 06H
                 </Badge>
             ) : (
@@ -179,13 +183,18 @@ function MysteryCard({ onReveal, match, locked = false }: { onReveal: () => void
                     transition={{ duration: 2, repeat: Infinity }}
                     className={cn(
                         "w-24 h-24 rounded-full border flex items-center justify-center backdrop-blur-sm relative z-10 shadow-lg",
-                        locked ? "border-slate-800 bg-slate-900" : "border-white/10 bg-white/5 shadow-[0_0_30px_rgba(16,185,129,0.1)]"
+                        // Always vibrant borders and backgrounds
+                        "border-white/10 bg-white/5 shadow-[0_0_30px_rgba(16,185,129,0.1)]"
                     )}
                 >
-                    {locked ? <Lock className="w-10 h-10 text-slate-700" /> : <Fingerprint className="w-12 h-12 text-white/70" />}
+                    {locked ? <Lock className="w-10 h-10 text-white/50" /> : <Fingerprint className="w-12 h-12 text-white/70" />}
                     {!locked && <div className="absolute inset-0 rounded-full border-t-2 border-emerald-500 animate-spin"></div>}
                 </motion.div>
-                {!locked && <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-40 h-40 bg-emerald-500/20 blur-[50px] rounded-full pointer-events-none"></div>}
+                {/* Glow for both, maybe slightly different color for locked */}
+                <div className={cn(
+                    "absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-40 h-40 blur-[50px] rounded-full pointer-events-none",
+                    locked ? "bg-indigo-500/10" : "bg-emerald-500/20"
+                )}></div>
             </div>
 
             {/* 1. IMPACT SCORE */}
@@ -194,42 +203,42 @@ function MysteryCard({ onReveal, match, locked = false }: { onReveal: () => void
                     <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">IMPACT POTENTIEL</span>
                     <div className="flex gap-1.5">
                         {[1,2,3,4,5].map(i => (
-                            <div key={i} className={`h-1.5 w-5 rounded-full ${i <= 4 ? (locked ? 'bg-slate-800' : 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]') : 'bg-slate-900'}`} />
+                            <div key={i} className={`h-1.5 w-5 rounded-full ${i <= 4 ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]' : 'bg-slate-900'}`} />
                         ))}
                     </div>
                 </div>
                 
                 <div className="grid grid-cols-3 gap-2">
-                    <div className={cn("rounded-xl p-3 flex flex-col items-center justify-center border shadow-lg", locked ? "bg-slate-900/50 border-slate-800" : "bg-[#0f172a] border-white/5")}>
-                        <Zap className={cn("w-5 h-5 mb-1.5", locked ? "text-slate-700" : "text-orange-500")} />
-                        <span className="text-[9px] text-slate-500 uppercase font-bold tracking-wider">BUSINESS</span>
-                        <span className={cn("text-xs font-black", locked ? "text-slate-600" : "text-white")}>{potential}</span>
+                    <div className="bg-[#0f172a] rounded-xl p-3 flex flex-col items-center justify-center border border-white/5 shadow-lg">
+                        <Zap className="w-5 h-5 text-orange-500 mb-1.5" />
+                        <span className="text-[9px] text-slate-400 uppercase font-bold tracking-wider">BUSINESS</span>
+                        <span className="text-xs font-black text-white">{potential}</span>
                     </div>
-                    <div className={cn("rounded-xl p-3 flex flex-col items-center justify-center border shadow-lg", locked ? "bg-slate-900/50 border-slate-800" : "bg-[#0f172a] border-white/5")}>
-                        <Users className={cn("w-5 h-5 mb-1.5", locked ? "text-slate-700" : "text-blue-500")} />
-                        <span className="text-[9px] text-slate-500 uppercase font-bold tracking-wider">CE MOIS-CI</span>
-                        <span className={cn("text-xs font-black", locked ? "text-slate-600" : "text-white")}>{collabs} Collabs</span>
+                    <div className="bg-[#0f172a] rounded-xl p-3 flex flex-col items-center justify-center border border-white/5 shadow-lg">
+                        <Users className="w-5 h-5 text-blue-500 mb-1.5" />
+                        <span className="text-[9px] text-slate-400 uppercase font-bold tracking-wider">CE MOIS-CI</span>
+                        <span className="text-xs font-black text-white">{collabs} Collabs</span>
                     </div>
-                    <div className={cn("rounded-xl p-3 flex flex-col items-center justify-center border shadow-lg", locked ? "bg-slate-900/50 border-slate-800" : "bg-[#0f172a] border-white/5")}>
-                        <Handshake className={cn("w-5 h-5 mb-1.5", locked ? "text-slate-700" : "text-purple-500")} />
-                        <span className="text-[9px] text-slate-500 uppercase font-bold tracking-wider text-center leading-tight">TAUX DE<br/>COMPATIBILITÉ</span>
-                        <span className={cn("text-xs font-black", locked ? "text-slate-600" : "text-white")}>{compatibility}%</span>
+                    <div className="bg-[#0f172a] rounded-xl p-3 flex flex-col items-center justify-center border border-white/5 shadow-lg">
+                        <Handshake className="w-5 h-5 text-purple-500 mb-1.5" />
+                        <span className="text-[9px] text-slate-400 uppercase font-bold tracking-wider text-center leading-tight">TAUX DE<br/>COMPATIBILITÉ</span>
+                        <span className="text-xs font-black text-white">{compatibility}%</span>
                     </div>
                 </div>
             </div>
         </div>
 
         {/* 2. CONCRETE BENEFITS */}
-        <div className={cn("w-full rounded-2xl p-5 text-left border mb-4 backdrop-blur-sm", locked ? "bg-slate-900/30 border-slate-800" : "bg-slate-900/40 border-white/5")}>
+        <div className="w-full bg-slate-900/40 rounded-2xl p-5 text-left border border-white/5 mb-4 backdrop-blur-sm">
             <div className="flex items-center gap-2 mb-4">
-                <Target className={cn("w-4 h-4", locked ? "text-slate-700" : "text-emerald-400")} />
-                <span className={cn("text-[10px] font-black uppercase tracking-wider", locked ? "text-slate-600" : "text-white")}>CE QU'IL PEUT VOUS APPORTER</span>
+                <Target className={cn("w-4 h-4", locked ? "text-indigo-400" : "text-emerald-400")} />
+                <span className="text-[10px] font-black text-white uppercase tracking-wider">CE QU'IL PEUT VOUS APPORTER</span>
             </div>
             <ul className="space-y-3">
                 {benefits.map((benefit, index) => (
-                    <li key={index} className={cn("flex items-center gap-3 text-xs font-medium", locked ? "text-slate-600" : "text-slate-300")}>
-                        <div className={cn("p-1 rounded-full", locked ? "bg-slate-800" : "bg-emerald-500/20")}>
-                            <CheckCircle2 className={cn("w-3.5 h-3.5", locked ? "text-slate-700" : "text-emerald-400")} />
+                    <li key={index} className="flex items-center gap-3 text-xs font-medium text-slate-300">
+                        <div className={cn("p-1 rounded-full", locked ? "bg-indigo-500/20" : "bg-emerald-500/20")}>
+                            <CheckCircle2 className={cn("w-3.5 h-3.5", locked ? "text-indigo-400" : "text-emerald-400")} />
                         </div>
                         {benefit}
                     </li>
@@ -242,12 +251,12 @@ function MysteryCard({ onReveal, match, locked = false }: { onReveal: () => void
             className={cn(
                 "w-full h-14 font-black text-base rounded-2xl transition-all shadow-none",
                 locked 
-                    ? "bg-slate-900 text-slate-700 cursor-not-allowed border border-slate-800" 
+                    ? "bg-slate-800/50 text-slate-400 cursor-not-allowed border border-white/5" 
                     : "bg-white text-black hover:scale-[1.02] shadow-[0_0_30px_rgba(255,255,255,0.15)] animate-bounce-subtle border-2 border-white/50"
             )}
         >
             {locked ? (
-                <span className="flex items-center gap-2"><Lock className="w-4 h-4" /> VERROUILLÉ</span>
+                <span className="flex items-center gap-2"><Lock className="w-4 h-4" /> DÉVERROUILLAGE DEMAIN</span>
             ) : "DÉCOUVRIR QUI C'EST 🔓"}
         </Button>
       </div>

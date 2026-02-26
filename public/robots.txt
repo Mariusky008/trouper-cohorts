@@ -1,4 +1,9 @@
+# *
 User-agent: *
 Allow: /
 
-Sitemap: https://www.popey.academy/sitemap.xml
+# Host
+Host: https://popey.academy
+
+# Sitemaps
+Sitemap: https://popey.academy/sitemap.xml

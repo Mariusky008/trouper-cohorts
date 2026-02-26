@@ -170,6 +170,101 @@ export function MysteryCardPreview() {
   );
 }
 
+// --- 2b. MYSTERY CARD (LOCKED) ---
+// Goal: Vibrant locked state, not dead/gray.
+export function MysteryCardLockedPreview() {
+  return (
+    <div className="relative w-full max-w-sm mx-auto h-[600px] rounded-[2.5rem] overflow-hidden shadow-2xl bg-[#020617] flex flex-col items-center text-center p-6 border border-white/10">
+      {/* Animated Gradient Border (Still visible but subtler) */}
+      <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/30 via-blue-600/20 to-purple-600/30 opacity-50 transition-opacity duration-500"></div>
+      <div className="absolute inset-[1px] bg-[#020617] rounded-[2.4rem] z-0"></div>
+
+      {/* Content */}
+      <div className="relative z-10 flex flex-col items-center w-full h-full pt-6 pb-4 justify-between">
+        
+        <div className="flex flex-col items-center w-full">
+            {/* Header Badge */}
+            <Badge className="bg-indigo-500/10 text-indigo-300 border-indigo-500/20 px-3 py-1 mb-8 flex items-center gap-2 shadow-[0_0_15px_rgba(99,102,241,0.2)]">
+                <Clock className="w-3 h-3" /> DISPONIBLE DEMAIN 06H
+            </Badge>
+
+            {/* Identity Lock (Smaller) */}
+            <div className="relative mb-8">
+                <motion.div 
+                    className="w-24 h-24 rounded-full border border-white/10 flex items-center justify-center bg-white/5 backdrop-blur-sm relative z-10 shadow-[0_0_30px_rgba(16,185,129,0.1)]"
+                >
+                    <Lock className="w-10 h-10 text-white/50" />
+                </motion.div>
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-40 h-40 bg-indigo-500/10 blur-[50px] rounded-full pointer-events-none"></div>
+            </div>
+
+            {/* 1. IMPACT SCORE */}
+            <div className="w-full space-y-3 mb-6">
+                <div className="flex justify-between items-center px-2">
+                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">IMPACT POTENTIEL</span>
+                    <div className="flex gap-1.5">
+                        {[1,2,3,4,5].map(i => (
+                            <div key={i} className={`h-1.5 w-5 rounded-full ${i <= 4 ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]' : 'bg-slate-900'}`} />
+                        ))}
+                    </div>
+                </div>
+                
+                <div className="grid grid-cols-3 gap-2">
+                    <div className="bg-[#0f172a] rounded-xl p-3 flex flex-col items-center justify-center border border-white/5 shadow-lg">
+                        <Flame className="w-5 h-5 text-orange-500 mb-1.5" />
+                        <span className="text-[9px] text-slate-400 uppercase font-bold tracking-wider">BUSINESS</span>
+                        <span className="text-xs font-black text-white">ÉLEVÉ</span>
+                    </div>
+                    <div className="bg-[#0f172a] rounded-xl p-3 flex flex-col items-center justify-center border border-white/5 shadow-lg">
+                        <Users className="w-5 h-5 text-blue-500 mb-1.5" />
+                        <span className="text-[9px] text-slate-400 uppercase font-bold tracking-wider">CE MOIS-CI</span>
+                        <span className="text-xs font-black text-white">12 Collabs</span>
+                    </div>
+                    <div className="bg-[#0f172a] rounded-xl p-3 flex flex-col items-center justify-center border border-white/5 shadow-lg">
+                        <Handshake className="w-5 h-5 text-purple-500 mb-1.5" />
+                        <span className="text-[9px] text-slate-400 uppercase font-bold tracking-wider text-center leading-tight">TAUX DE<br/>COMPATIBILITÉ</span>
+                        <span className="text-xs font-black text-white">77%</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {/* 2. CONCRETE BENEFITS */}
+        <div className="w-full bg-slate-900/40 rounded-2xl p-5 text-left border border-white/5 mb-4 backdrop-blur-sm">
+            <div className="flex items-center gap-2 mb-4">
+                <TrendingUp className="w-4 h-4 text-indigo-400" />
+                <span className="text-[10px] font-black text-white uppercase tracking-wider">CE QU'IL PEUT VOUS APPORTER</span>
+            </div>
+            <ul className="space-y-3">
+                <li className="flex items-center gap-3 text-xs text-slate-300 font-medium">
+                    <div className="bg-indigo-500/20 p-1 rounded-full">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-indigo-400" />
+                    </div>
+                    2 à 5 clients potentiels / mois
+                </li>
+                <li className="flex items-center gap-3 text-xs text-slate-300 font-medium">
+                    <div className="bg-indigo-500/20 p-1 rounded-full">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-indigo-400" />
+                    </div>
+                    Partenariats locaux stratégiques
+                </li>
+                <li className="flex items-center gap-3 text-xs text-slate-300 font-medium">
+                    <div className="bg-indigo-500/20 p-1 rounded-full">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-indigo-400" />
+                    </div>
+                    Recommandations croisées
+                </li>
+            </ul>
+        </div>
+
+        <Button disabled className="w-full h-14 bg-slate-800/50 text-slate-400 cursor-not-allowed border border-white/5 font-black text-base rounded-2xl transition-all shadow-none">
+            <span className="flex items-center gap-2"><Lock className="w-4 h-4" /> DÉVERROUILLAGE DEMAIN</span>
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 // --- 3. MATCH CARD (The Match) ---
 // Goal: FOMO, "I can't wait", "Don't miss this".
 import { MessageSquare, Gift, PhoneCall } from "lucide-react";
