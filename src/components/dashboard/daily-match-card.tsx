@@ -505,11 +505,20 @@ export function DailyMatchCard({ matches, userStreak = 0, userId }: DailyMatchCa
                     <p className="text-slate-300 text-xs font-bold uppercase tracking-wider drop-shadow-md">{match.time}</p>
                 </div>
                 <Badge className={cn(
-                    "backdrop-blur-md border-white/20 text-white px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-lg font-bold uppercase text-[10px] tracking-wide pointer-events-auto",
+                    "backdrop-blur-md border-white/20 text-white px-3 py-1.5 rounded-2xl flex flex-col items-center gap-0.5 shadow-lg font-bold uppercase text-[10px] tracking-wide pointer-events-auto text-center min-w-[140px]",
                     isCallOut ? "bg-emerald-600/90 hover:bg-emerald-600 shadow-emerald-500/20" : "bg-blue-600/90 hover:bg-blue-600 shadow-blue-500/20"
                 )}>
-                    <div className={cn("h-2 w-2 rounded-full bg-white", isCallOut && "animate-pulse")} />
-                    {isCallOut ? "C'EST À VOUS D'APPELER" : `ATTENDEZ SON APPEL (${match.time.split('h')[0]}h00 - ${match.time.split('h')[0]}h15)`}
+                    <div className="flex items-center gap-1.5 mb-0.5">
+                        <div className={cn("h-2 w-2 rounded-full bg-white", isCallOut && "animate-pulse")} />
+                        <span>{isCallOut ? "C'EST À VOUS D'APPELER" : "ATTENDEZ SON APPEL"}</span>
+                    </div>
+                    
+                    <span className="opacity-80 text-[9px]">
+                        {isCallOut 
+                            ? `Entre ${match.time.split('h')[0]}h00 et ${match.time.split('h')[0]}h15`
+                            : `Entre ${match.time.split('h')[0]}h00 et ${match.time.split('h')[0]}h15`
+                        }
+                    </span>
                 </Badge>
             </div>
 
