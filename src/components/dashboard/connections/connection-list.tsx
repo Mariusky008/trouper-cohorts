@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Search, Filter, MessageCircle, Calendar, UserX, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,8 @@ import { Dialog, DialogContent, DialogTrigger, DialogTitle, DialogDescription } 
 import { OpportunityForm } from "@/components/dashboard/opportunities/opportunity-form";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import { ChatDialog } from "./chat-dialog";
+import { format } from "date-fns";
+import { fr } from "date-fns/locale";
 
 import Link from "next/link";
 
@@ -27,10 +29,20 @@ export function ConnectionList({ initialConnections, currentUserId }: { initialC
   const [selectedUser, setSelectedUser] = useState<Connection | null>(null);
   const [chatPartner, setChatPartner] = useState<Connection | null>(null);
   
+  const [hydrated, setHydrated] = useState(false);
+
+  useEffect(() => {
+    setHydrated(true);
+  }, []);
+
   const filtered = initialConnections.filter(c => 
     c.name.toLowerCase().includes(query.toLowerCase()) || 
     c.job.toLowerCase().includes(query.toLowerCase())
   );
+
+  if (!hydrated) {
+    return null; // Or a skeleton/loading state
+  }
 
   return (
     <div className="space-y-8">
