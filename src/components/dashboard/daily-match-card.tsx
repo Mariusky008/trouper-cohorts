@@ -554,7 +554,7 @@ export function DailyMatchCard({ matches, userStreak = 0, userId }: DailyMatchCa
                         </div>
                         <div className="p-4 bg-slate-900 border-t border-white/5">
                             <Button className="w-full bg-slate-800 hover:bg-slate-700 text-white font-bold" onClick={() => setIsWhyVisible(false)}>
-                                Compris, je l'appelle !
+                                {isCallOut ? "Compris, je l'appelle ! 📞" : "Compris, j'attends son appel ! ⏳"}
                             </Button>
                         </div>
                     </DialogContent>
