@@ -229,11 +229,11 @@ export default function HomePage() {
               </div>
               
               <h1 className="text-5xl md:text-6xl lg:text-7xl font-black text-slate-900 leading-[1.05] tracking-tight">
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">5 à 10 minutes</span> par jour pour trouver vos prochains clients.
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">5 minutes</span> par jour pour trouver vos prochains clients.
               </h1>
               
               <p className="text-xl text-slate-600 leading-relaxed max-w-2xl mx-auto font-medium">
-                Arrêtez de prospecter dans le vide. Chaque jour, rencontrez un entrepreneur local différent (5 mn de télèphone) et transformez son réseau en opportunités pour vous.
+                Arrêtez de prospecter dans le vide. Chaque jour, échangez avec un entrepreneur local et transformez son réseau en opportunités pour vous.
               </p>
               
               <div className="flex flex-col sm:flex-row gap-4 justify-center pt-2">
