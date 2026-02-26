@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/accordion";
 
 import { AuthDialog } from "@/components/auth-dialog";
+import { MysteryCardPreview, MatchCardPreview } from "@/components/dashboard/design-system-preview";
 
 // --- ANIMATED COMPONENTS ---
 
@@ -344,6 +345,89 @@ export default function HomePage() {
                 </Button>
             </div>
         </div>
+      </section>
+
+      {/* --- 3b. NEW CONCRETE EXPLANATION --- */}
+      <section className="py-24 bg-slate-950 overflow-hidden relative">
+         {/* Background glow effects */}
+         <div className="absolute top-0 left-0 w-[500px] h-[500px] bg-blue-600/20 rounded-full blur-[120px] pointer-events-none" />
+         <div className="absolute bottom-0 right-0 w-[500px] h-[500px] bg-purple-600/20 rounded-full blur-[120px] pointer-events-none" />
+
+         <div className="container mx-auto px-4 relative z-10">
+            <div className="text-center max-w-4xl mx-auto mb-16 space-y-6">
+               <Badge className="bg-white/10 text-white border-white/20 px-4 py-1.5 text-sm font-bold uppercase tracking-widest backdrop-blur-sm shadow-lg">
+                 🧠 Comment ça se passe concrètement
+               </Badge>
+               <h2 className="text-4xl md:text-6xl font-black text-white leading-tight">
+                 Votre opportunité du jour <br/><span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">en 3 secondes.</span>
+               </h2>
+               <p className="text-xl md:text-2xl text-slate-400 leading-relaxed max-w-2xl mx-auto font-medium">
+                 Chaque matin, Popey vous propose une nouvelle opportunité business adaptée à votre profil. Découvrez votre match, comprenez son potentiel et passez à l’action immédiatement.
+               </p>
+            </div>
+
+            <div className="grid lg:grid-cols-2 gap-8 lg:gap-16 items-start max-w-6xl mx-auto">
+               
+               {/* Screen 1 - Mystery */}
+               <div className="flex flex-col gap-8 group">
+                  <div className="relative transform transition-transform duration-500 group-hover:-translate-y-2">
+                     <div className="absolute -inset-4 bg-gradient-to-r from-blue-600 to-purple-600 rounded-[3.5rem] opacity-20 blur-xl group-hover:opacity-30 transition-opacity duration-500"></div>
+                     <div className="bg-slate-900 border border-white/10 rounded-[3rem] p-4 backdrop-blur-sm relative z-10 shadow-2xl">
+                        <div className="scale-[0.85] origin-top">
+                            <MysteryCardPreview />
+                        </div>
+                     </div>
+                  </div>
+                  <div className="space-y-4 text-center lg:text-left px-4">
+                     <div className="inline-flex items-center justify-center h-12 w-12 rounded-2xl bg-blue-500/10 text-blue-400 border border-blue-500/20 mb-2 shadow-[0_0_15px_rgba(59,130,246,0.2)]">
+                        <span className="font-black text-xl">1</span>
+                     </div>
+                     <h3 className="text-2xl font-black text-white">Découvrez votre match du jour</h3>
+                     <p className="text-slate-400 text-lg leading-relaxed font-medium">
+                        Popey détecte automatiquement l’entrepreneur le plus pertinent pour vous. <br className="hidden md:block" />
+                        Avant même de révéler son identité, vous voyez le potentiel business, la compatibilité et ce que cette rencontre peut vous apporter.
+                     </p>
+                  </div>
+               </div>
+
+               {/* Screen 2 - Action */}
+               <div className="flex flex-col gap-8 group mt-12 lg:mt-0">
+                  <div className="relative transform transition-transform duration-500 group-hover:-translate-y-2">
+                     <div className="absolute -inset-4 bg-gradient-to-r from-emerald-600 to-blue-600 rounded-[3.5rem] opacity-20 blur-xl group-hover:opacity-30 transition-opacity duration-500"></div>
+                     <div className="bg-slate-900 border border-white/10 rounded-[3rem] p-4 backdrop-blur-sm relative z-10 shadow-2xl">
+                        <div className="scale-[0.85] origin-top">
+                            <MatchCardPreview />
+                        </div>
+                     </div>
+                  </div>
+                  <div className="space-y-4 text-center lg:text-left px-4">
+                     <div className="inline-flex items-center justify-center h-12 w-12 rounded-2xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 mb-2 shadow-[0_0_15px_rgba(16,185,129,0.2)]">
+                        <span className="font-black text-xl">2</span>
+                     </div>
+                     <h3 className="text-2xl font-black text-white">Passez à l’action en un clic</h3>
+                     <p className="text-slate-400 text-lg leading-relaxed font-medium">
+                        Le profil est révélé avec les informations essentielles et un créneau d’appel. <br className="hidden md:block" />
+                        Échangez 5 minutes, partagez vos réseaux et créez de nouvelles opportunités.
+                     </p>
+                  </div>
+               </div>
+
+            </div>
+
+            <div className="mt-20 text-center">
+               <AuthDialog 
+                 mode="signup"
+                 trigger={
+                   <Button 
+                     size="lg" 
+                     className="bg-white text-slate-900 hover:bg-slate-200 hover:text-blue-900 font-black rounded-full px-12 h-20 text-xl shadow-[0_0_50px_rgba(255,255,255,0.2)] transition-all hover:scale-105 hover:shadow-[0_0_80px_rgba(255,255,255,0.4)] ring-4 ring-white/10"
+                   >
+                     👉 Découvrir mon premier match
+                   </Button>
+                 }
+               />
+            </div>
+         </div>
       </section>
 
       {/* --- 4. HOW IT WORKS --- */}
