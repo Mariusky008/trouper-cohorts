@@ -76,85 +76,93 @@ export function WaitingCardPreview() {
 // Goal: "Trigger for business", "Wahoo", catchy text.
 export function MysteryCardPreview() {
   return (
-    <div className="relative w-full max-w-sm mx-auto h-[600px] rounded-[2.5rem] overflow-hidden shadow-2xl bg-black flex flex-col items-center text-center p-6 cursor-pointer group border border-white/10">
+    <div className="relative w-full max-w-sm mx-auto h-[600px] rounded-[2.5rem] overflow-hidden shadow-2xl bg-[#020617] flex flex-col items-center text-center p-6 cursor-pointer group border border-white/10">
       {/* Animated Gradient Border */}
-      <div className="absolute inset-0 bg-gradient-to-br from-emerald-500 via-blue-600 to-purple-600 opacity-20 group-hover:opacity-40 transition-opacity duration-500"></div>
-      <div className="absolute inset-[1px] bg-[#050505] rounded-[2.4rem] z-0"></div>
+      <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/30 via-blue-600/20 to-purple-600/30 opacity-40 group-hover:opacity-60 transition-opacity duration-500"></div>
+      <div className="absolute inset-[1px] bg-[#020617] rounded-[2.4rem] z-0"></div>
 
       {/* Content */}
-      <div className="relative z-10 flex flex-col items-center w-full h-full pt-6 pb-4">
+      <div className="relative z-10 flex flex-col items-center w-full h-full pt-6 pb-4 justify-between">
         
-        {/* Header Badge */}
-        <Badge className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20 px-3 py-1 animate-pulse mb-6">
-            MATCH DÉTECTÉ ⚡️
-        </Badge>
+        <div className="flex flex-col items-center w-full">
+            {/* Header Badge */}
+            <Badge className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20 px-3 py-1 animate-pulse mb-8 shadow-[0_0_15px_rgba(16,185,129,0.2)]">
+                MATCH DÉTECTÉ ⚡️
+            </Badge>
 
-        {/* Identity Lock (Smaller) */}
-        <div className="relative mb-6">
-            <motion.div 
-                animate={{ scale: [1, 1.05, 1] }}
-                transition={{ duration: 2, repeat: Infinity }}
-                className="w-20 h-20 rounded-full border-2 border-white/10 flex items-center justify-center bg-white/5 backdrop-blur-sm relative z-10"
-            >
-                <Fingerprint className="w-10 h-10 text-white/50" />
-                <div className="absolute inset-0 rounded-full border-t-2 border-emerald-500 animate-spin-slow"></div>
-            </motion.div>
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 bg-emerald-500/20 blur-[40px] rounded-full pointer-events-none"></div>
-        </div>
-
-        {/* 1. IMPACT SCORE */}
-        <div className="w-full space-y-3 mb-6">
-            <div className="flex justify-between items-center px-2">
-                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Impact Potentiel</span>
-                <div className="flex gap-1">
-                    {[1,2,3,4,5].map(i => (
-                        <div key={i} className={`h-1.5 w-4 rounded-full ${i <= 4 ? 'bg-emerald-500' : 'bg-slate-800'}`} />
-                    ))}
-                </div>
+            {/* Identity Lock (Smaller) */}
+            <div className="relative mb-8">
+                <motion.div 
+                    animate={{ scale: [1, 1.05, 1] }}
+                    transition={{ duration: 2, repeat: Infinity }}
+                    className="w-24 h-24 rounded-full border border-white/10 flex items-center justify-center bg-white/5 backdrop-blur-sm relative z-10 shadow-[0_0_30px_rgba(16,185,129,0.1)]"
+                >
+                    <Fingerprint className="w-12 h-12 text-white/70" />
+                    <div className="absolute inset-0 rounded-full border-t-2 border-emerald-500 animate-spin"></div>
+                </motion.div>
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-40 h-40 bg-emerald-500/20 blur-[50px] rounded-full pointer-events-none"></div>
             </div>
-            
-            <div className="grid grid-cols-3 gap-2">
-                <div className="bg-white/5 rounded-xl p-2 flex flex-col items-center justify-center border border-white/5">
-                    <Flame className="w-5 h-5 text-orange-500 mb-1" />
-                    <span className="text-[10px] text-slate-400 uppercase font-bold">Business</span>
-                    <span className="text-sm font-black text-white">ÉLEVÉ</span>
+
+            {/* 1. IMPACT SCORE */}
+            <div className="w-full space-y-3 mb-6">
+                <div className="flex justify-between items-center px-2">
+                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">IMPACT POTENTIEL</span>
+                    <div className="flex gap-1.5">
+                        {[1,2,3,4,5].map(i => (
+                            <div key={i} className={`h-1.5 w-5 rounded-full ${i <= 4 ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]' : 'bg-slate-800'}`} />
+                        ))}
+                    </div>
                 </div>
-                <div className="bg-white/5 rounded-xl p-2 flex flex-col items-center justify-center border border-white/5">
-                    <Users className="w-5 h-5 text-blue-500 mb-1" />
-                    <span className="text-[10px] text-slate-400 uppercase font-bold">Ce mois-ci</span>
-                    <span className="text-xs font-black text-white">12 Collabs</span>
-                </div>
-                <div className="bg-white/5 rounded-xl p-2 flex flex-col items-center justify-center border border-white/5">
-                    <Handshake className="w-5 h-5 text-purple-500 mb-1" />
-                    <span className="text-[10px] text-slate-400 uppercase font-bold">Taux de compatibilité</span>
-                    <span className="text-sm font-black text-white">77%</span>
+                
+                <div className="grid grid-cols-3 gap-2">
+                    <div className="bg-[#0f172a] rounded-xl p-3 flex flex-col items-center justify-center border border-white/5 shadow-lg">
+                        <Flame className="w-5 h-5 text-orange-500 mb-1.5" />
+                        <span className="text-[9px] text-slate-400 uppercase font-bold tracking-wider">BUSINESS</span>
+                        <span className="text-xs font-black text-white">ÉLEVÉ</span>
+                    </div>
+                    <div className="bg-[#0f172a] rounded-xl p-3 flex flex-col items-center justify-center border border-white/5 shadow-lg">
+                        <Users className="w-5 h-5 text-blue-500 mb-1.5" />
+                        <span className="text-[9px] text-slate-400 uppercase font-bold tracking-wider">CE MOIS-CI</span>
+                        <span className="text-xs font-black text-white">12 Collabs</span>
+                    </div>
+                    <div className="bg-[#0f172a] rounded-xl p-3 flex flex-col items-center justify-center border border-white/5 shadow-lg">
+                        <Handshake className="w-5 h-5 text-purple-500 mb-1.5" />
+                        <span className="text-[9px] text-slate-400 uppercase font-bold tracking-wider text-center leading-tight">TAUX DE<br/>COMPATIBILITÉ</span>
+                        <span className="text-xs font-black text-white">77%</span>
+                    </div>
                 </div>
             </div>
         </div>
 
         {/* 2. CONCRETE BENEFITS */}
-        <div className="w-full bg-slate-900/50 rounded-2xl p-4 text-left border border-white/5 mb-auto">
-            <div className="flex items-center gap-2 mb-3">
+        <div className="w-full bg-slate-900/40 rounded-2xl p-5 text-left border border-white/5 mb-4 backdrop-blur-sm">
+            <div className="flex items-center gap-2 mb-4">
                 <TrendingUp className="w-4 h-4 text-emerald-400" />
-                <span className="text-xs font-bold text-white uppercase">Ce qu'il peut vous apporter</span>
+                <span className="text-[10px] font-black text-white uppercase tracking-wider">CE QU'IL PEUT VOUS APPORTER</span>
             </div>
-            <ul className="space-y-2.5">
-                <li className="flex items-start gap-2 text-xs text-slate-300 font-medium">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500/70 mt-0.5 shrink-0" />
+            <ul className="space-y-3">
+                <li className="flex items-center gap-3 text-xs text-slate-300 font-medium">
+                    <div className="bg-emerald-500/20 p-1 rounded-full">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                    </div>
                     2 à 5 clients potentiels / mois
                 </li>
-                <li className="flex items-start gap-2 text-xs text-slate-300 font-medium">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500/70 mt-0.5 shrink-0" />
+                <li className="flex items-center gap-3 text-xs text-slate-300 font-medium">
+                    <div className="bg-emerald-500/20 p-1 rounded-full">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                    </div>
                     Partenariats locaux stratégiques
                 </li>
-                <li className="flex items-start gap-2 text-xs text-slate-300 font-medium">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500/70 mt-0.5 shrink-0" />
+                <li className="flex items-center gap-3 text-xs text-slate-300 font-medium">
+                    <div className="bg-emerald-500/20 p-1 rounded-full">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                    </div>
                     Recommandations croisées
                 </li>
             </ul>
         </div>
 
-        <Button className="w-full h-12 bg-white text-black font-black text-base rounded-xl hover:scale-[1.02] transition-transform shadow-[0_0_20px_rgba(255,255,255,0.2)] animate-bounce-subtle mt-4">
+        <Button className="w-full h-14 bg-white text-black font-black text-base rounded-2xl hover:scale-[1.02] transition-transform shadow-[0_0_30px_rgba(255,255,255,0.15)] animate-bounce-subtle border-2 border-white/50">
             DÉCOUVRIR QUI C'EST 🔓
         </Button>
       </div>
