@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Clock, Star, Phone, MessageSquare, User, Zap, Trophy, Handshake, Gift, PhoneCall, Copy, Target, Search, Fingerprint } from "lucide-react";
+import { Clock, Star, Phone, MessageSquare, User, Zap, Trophy, Handshake, Gift, PhoneCall, Copy, Target, Search, Fingerprint, Briefcase } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
@@ -104,49 +104,121 @@ function WaitingCard({ countdown }: { countdown: string }) {
 }
 
 // --- 2. MYSTERY CARD COMPONENT ---
-function MysteryCard({ onReveal }: { onReveal: () => void }) {
+function MysteryCard({ onReveal, match }: { onReveal: () => void, match: any }) {
+  // Generate stable "fake" stats based on partner ID to keep it consistent for the same user
+  const seed = match.partnerId ? match.partnerId.split("").reduce((a: number, c: string) => a + c.charCodeAt(0), 0) : 0;
+  
+  const potential = ["ÉLEVÉ", "TRÈS ÉLEVÉ", "EXPLOSIF"][seed % 3];
+  const sectors = (seed % 4) + 2; // 2 to 5
+  const opportunities = (seed % 3) + 3; // 3 to 5
+  
+  // Dynamic benefits based on job/superpower if available, or generic
+  const getBenefits = () => {
+      const benefits = [
+          "Partenariats locaux stratégiques",
+          "Recommandations croisées",
+          "Accès à un nouveau réseau",
+          "Partage d'expérience",
+          "Opportunités de co-création",
+          "Mentorat mutuel"
+      ];
+      
+      // Add specific ones based on job
+      const job = (match.job || "").toLowerCase();
+      if (job.includes("commercial") || job.includes("vente")) benefits.unshift("2 à 5 clients potentiels / mois");
+      if (job.includes("marketing") || job.includes("com")) benefits.unshift("Stratégies de visibilité");
+      if (job.includes("tech") || job.includes("dev")) benefits.unshift("Expertise technique");
+      if (job.includes("immo")) benefits.unshift("Opportunités d'investissement");
+      
+      // Shuffle deterministically
+      const shuffled = benefits.sort((a, b) => {
+          const valA = a.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0);
+          const valB = b.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0);
+          return (valA % 10) - (valB % 10);
+      });
+      
+      return shuffled.slice(0, 3);
+  };
+
+  const benefits = getBenefits();
+
   return (
     <div 
         onClick={onReveal}
-        className="relative w-full max-w-sm mx-auto h-[600px] rounded-[2.5rem] overflow-hidden shadow-2xl bg-black flex flex-col items-center justify-center text-center p-8 cursor-pointer group"
+        className="relative w-full max-w-sm mx-auto h-[600px] rounded-[2.5rem] overflow-hidden shadow-2xl bg-black flex flex-col items-center justify-center text-center p-6 cursor-pointer group border border-white/10"
     >
       {/* Animated Gradient Border */}
       <div className="absolute inset-0 bg-gradient-to-br from-emerald-500 via-blue-600 to-purple-600 opacity-20 group-hover:opacity-40 transition-opacity duration-500"></div>
       <div className="absolute inset-[2px] bg-[#050505] rounded-[2.4rem] z-0"></div>
 
       {/* Content */}
-      <div className="relative z-10 flex flex-col items-center h-full justify-between py-10">
+      <div className="relative z-10 flex flex-col items-center h-full justify-between py-8">
         
-        <div className="space-y-2">
-            <Badge className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20 px-3 py-1 animate-pulse">
-                MATCH DÉTECTÉ ⚡️
-            </Badge>
-        </div>
+        {/* Header Badge */}
+        <Badge className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20 px-3 py-1 animate-pulse mb-2">
+            MATCH DÉTECTÉ ⚡️
+        </Badge>
 
-        <div className="relative">
-            {/* Fingerprint / Identity Lock */}
+        {/* Identity Lock (Smaller) */}
+        <div className="relative mb-2">
             <motion.div 
                 animate={{ scale: [1, 1.05, 1] }}
                 transition={{ duration: 2, repeat: Infinity }}
-                className="w-32 h-32 rounded-full border-4 border-white/10 flex items-center justify-center bg-white/5 backdrop-blur-sm relative"
+                className="w-20 h-20 rounded-full border-2 border-white/10 flex items-center justify-center bg-white/5 backdrop-blur-sm relative z-10"
             >
-                <Fingerprint className="w-16 h-16 text-white/50" />
-                <div className="absolute inset-0 rounded-full border-t-4 border-emerald-500 animate-spin-slow"></div>
+                <Fingerprint className="w-10 h-10 text-white/50" />
+                <div className="absolute inset-0 rounded-full border-t-2 border-emerald-500 animate-spin-slow"></div>
             </motion.div>
-            {/* Glowing background behind icon */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 bg-emerald-500/20 blur-[60px] rounded-full pointer-events-none"></div>
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 bg-emerald-500/20 blur-[40px] rounded-full pointer-events-none"></div>
         </div>
 
-        <div className="space-y-4 max-w-[280px]">
-            <h2 className="text-3xl font-black text-white leading-none">
-                Ce profil est un <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400">déclencheur</span>.
-            </h2>
-            <p className="text-slate-400 text-sm font-medium leading-relaxed">
-                Il possède une compétence ou un réseau qui manque cruellement à votre activité aujourd'hui.
-            </p>
+        {/* 1. IMPACT SCORE */}
+        <div className="w-full space-y-3 mb-4">
+            <div className="flex justify-between items-center px-2">
+                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Impact Potentiel</span>
+                <div className="flex gap-1">
+                    {[1,2,3,4,5].map(i => (
+                        <div key={i} className={`h-1.5 w-4 rounded-full ${i <= 4 ? 'bg-emerald-500' : 'bg-slate-800'}`} />
+                    ))}
+                </div>
+            </div>
+            
+            <div className="grid grid-cols-3 gap-2">
+                <div className="bg-white/5 rounded-xl p-2 flex flex-col items-center justify-center border border-white/5">
+                    <Zap className="w-5 h-5 text-orange-500 mb-1" />
+                    <span className="text-[10px] text-slate-400 uppercase font-bold">Business</span>
+                    <span className="text-xs font-black text-white">{potential}</span>
+                </div>
+                <div className="bg-white/5 rounded-xl p-2 flex flex-col items-center justify-center border border-white/5">
+                    <Briefcase className="w-5 h-5 text-blue-500 mb-1" />
+                    <span className="text-[10px] text-slate-400 uppercase font-bold">Secteurs</span>
+                    <span className="text-xs font-black text-white">{sectors}</span>
+                </div>
+                <div className="bg-white/5 rounded-xl p-2 flex flex-col items-center justify-center border border-white/5">
+                    <Handshake className="w-5 h-5 text-purple-500 mb-1" />
+                    <span className="text-[10px] text-slate-400 uppercase font-bold">Opportunités</span>
+                    <span className="text-xs font-black text-white">{opportunities}</span>
+                </div>
+            </div>
         </div>
 
-        <Button className="w-full h-14 bg-white text-black font-black text-lg rounded-xl hover:scale-[1.02] transition-transform shadow-[0_0_30px_rgba(255,255,255,0.3)] animate-bounce-subtle">
+        {/* 2. CONCRETE BENEFITS */}
+        <div className="w-full bg-slate-900/50 rounded-2xl p-4 text-left border border-white/5 mb-auto">
+            <div className="flex items-center gap-2 mb-3">
+                <Target className="w-4 h-4 text-emerald-400" />
+                <span className="text-xs font-bold text-white uppercase">Ce qu'il peut vous apporter</span>
+            </div>
+            <ul className="space-y-2.5">
+                {benefits.map((benefit, index) => (
+                    <li key={index} className="flex items-start gap-2 text-xs text-slate-300 font-medium">
+                        <div className="mt-0.5 shrink-0 h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                        {benefit}
+                    </li>
+                ))}
+            </ul>
+        </div>
+
+        <Button className="w-full h-12 bg-white text-black font-black text-base rounded-xl hover:scale-[1.02] transition-transform shadow-[0_0_20px_rgba(255,255,255,0.2)] animate-bounce-subtle mt-4">
             DÉCOUVRIR QUI C'EST 🔓
         </Button>
       </div>
@@ -340,7 +412,7 @@ export function DailyMatchCard({ matches, userStreak = 0, userId }: DailyMatchCa
   const isCallOut = match.type === 'call_out';
 
   if (!revealed) {
-      return <MysteryCard onReveal={handleReveal} />;
+      return <MysteryCard onReveal={handleReveal} match={match} />;
   }
 
   // MATCH CARD (REVEALED)
@@ -402,6 +474,17 @@ export function DailyMatchCard({ matches, userStreak = 0, userId }: DailyMatchCa
         <p className="text-slate-300 text-sm font-medium mb-6 line-clamp-3 leading-snug">
             "Ce {match.job || 'partenaire'} peut vous ouvrir des opportunités auxquelles vous n’aviez pas accès hier. À vous de créer une collaboration."
         </p>
+
+        {/* 3. MICRO-MISSION (Added per user request) */}
+        <div className="bg-indigo-500/20 border border-indigo-500/30 rounded-xl p-3 mb-6 backdrop-blur-sm">
+            <div className="flex items-center gap-2 mb-1">
+                <Target className="w-4 h-4 text-indigo-400" />
+                <span className="text-[10px] font-black text-indigo-300 uppercase tracking-wider">Mission du jour</span>
+            </div>
+            <p className="text-indigo-100 text-xs font-medium italic">
+                "Identifiez 2 synergies possibles avec {match.name} lors de l'appel."
+            </p>
+        </div>
 
         {/* The "Hook" / FOMO Text */}
         <div className="bg-white/5 border-l-4 border-yellow-500 pl-4 py-2 mb-8 rounded-r-xl backdrop-blur-sm">
