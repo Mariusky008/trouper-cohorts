@@ -242,6 +242,25 @@ export function DailyMatchCard({ matches, userStreak = 0, userId }: DailyMatchCa
   const [oppDetails, setOppDetails] = useState("");
   const [isSubmittingOpp, setIsSubmittingOpp] = useState(false);
 
+  // Dynamic micro-missions based on seed
+  const getMicroMission = () => {
+      const currentMatch = matches?.[0];
+      if (!currentMatch) return "";
+
+      const seed = currentMatch.partnerId ? currentMatch.partnerId.split("").reduce((a: number, c: string) => a + c.charCodeAt(0), 0) : 0;
+      const missions = [
+          "Identifiez 2 synergies possibles",
+          "Trouvez 1 contact en commun",
+          "Détectez 1 opportunité de business immédiate",
+          "Proposez 1 introduction pertinente",
+          "Échangez sur 1 défi commun",
+          "Partagez 1 ressource utile"
+      ];
+      return missions[seed % missions.length];
+  };
+
+  const microMission = getMicroMission();
+
   // Check LocalStorage for Reveal Status
   useEffect(() => {
       if (!userId) return;
@@ -488,7 +507,10 @@ export function DailyMatchCard({ matches, userStreak = 0, userId }: DailyMatchCa
                 <span className="text-[10px] font-black text-indigo-300 uppercase tracking-wider">Mission du jour</span>
             </div>
             <p className="text-indigo-100 text-xs font-medium italic">
-                "Identifiez 2 synergies possibles avec {match.name} lors de l'appel."
+                "{microMission} avec {match.name} lors de l'appel."
+            </p>
+            <p className="text-[9px] text-indigo-300/60 mt-1 font-medium">
+                (Cliquez sur <Gift className="w-3 h-3 inline align-text-bottom mx-0.5" /> pour choisir vos collabs)
             </p>
         </div>
 
