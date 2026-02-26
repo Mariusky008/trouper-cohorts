@@ -31,10 +31,11 @@ async function handleMatching(request: Request) {
       process.env.SUPABASE_SERVICE_ROLE_KEY
     );
 
-    // 2. Determine target date (Tomorrow)
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    const dateStr = tomorrow.toISOString().split('T')[0];
+    // 2. Determine target date (Today)
+    // Matches are generated at 4 AM for the current day
+    const targetDate = new Date();
+    // targetDate.setDate(targetDate.getDate() + 1); // REMOVED: We want matches for TODAY, not tomorrow
+    const dateStr = targetDate.toISOString().split('T')[0];
 
     // 3. Fetch all availabilities for that date
     let { data: availabilities, error: availError } = await supabase
@@ -56,7 +57,7 @@ async function handleMatching(request: Request) {
     
     // Get day name (mon, tue, wed...)
     const days = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
-    const tomorrowDay = days[tomorrow.getDay()]; // getDay() returns 0 for Sunday
+    const targetDay = days[targetDate.getDay()]; // getDay() returns 0 for Sunday
 
     // Fetch active network settings with frequency
     const { data: allSettings, error: settingsError } = await supabase
@@ -113,7 +114,7 @@ async function handleMatching(request: Request) {
             }
 
             // Check if user prefers this day
-            if (setting.preferred_days && setting.preferred_days.includes(tomorrowDay)) {
+            if (setting.preferred_days && setting.preferred_days.includes(targetDay)) {
                 // Map preferred slots to the format used in matching
                 const mappedSlots = (setting.preferred_slots || [])
                     .map((s: string) => slotMapping[s])
