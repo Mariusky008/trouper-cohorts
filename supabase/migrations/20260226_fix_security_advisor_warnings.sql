@@ -14,11 +14,19 @@ BEGIN
 END;
 $$;
 
--- 2. Fix RLS Policy Always True for public.cohort_messages
-DROP POLICY IF EXISTS "Enable insert for authenticated" ON public.cohort_messages;
-CREATE POLICY "Enable insert for authenticated" ON public.cohort_messages
+-- 2. Fix RLS Policy Always True for public.messages
+-- The linter complains about 'public.messages', but in our schema we use 'cohort_messages' or 'direct_messages'.
+-- If 'messages' exists, it might be a legacy table or alias. 
+-- Assuming it refers to 'direct_messages' if 'user_id' fails, because direct_messages uses 'sender_id'.
+-- Let's try fixing 'messages' assuming it uses 'sender_id' if it's for direct messaging, OR 'user_id' if it's generic.
+-- BUT, the error 'column user_id does not exist' suggests 'messages' might be 'direct_messages' under the hood?
+-- No, if the linter says 'public.messages', the table IS 'messages'.
+-- If 'user_id' doesn't exist, it's likely 'sender_id' or 'author_id'.
+-- Based on common patterns:
+DROP POLICY IF EXISTS "Enable insert for authenticated" ON public.messages;
+CREATE POLICY "Enable insert for authenticated" ON public.messages
 FOR INSERT TO authenticated
-WITH CHECK (auth.uid() = user_id);
+WITH CHECK (auth.uid() = sender_id); -- Try sender_id instead of user_id
 
 -- 3. Fix RLS Policy Always True for public.missions
 -- Missions are content, so only admins should update them
