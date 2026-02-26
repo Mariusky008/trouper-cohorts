@@ -6,7 +6,9 @@ export type OpportunityType =
   | 'recommendation' 
   | 'service' 
   | 'synergy' 
-  | 'social';
+  | 'social'
+  | 'feedback'
+  | 'custom';
 
 export type OpportunityStatus = 'pending' | 'validated' | 'rejected';
 
