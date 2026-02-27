@@ -170,6 +170,84 @@ export async function getDailyMatches() {
       return a.time.localeCompare(b.time);
   });
 
+  // Check if today is the user's 2nd day (Day 2 of membership)
+  // Or if we need to inject a "Rescue" match because the user has NO match for today but is available.
+  
+  // 1. Get User Creation Date
+  const { data: userData } = await supabase
+    .from("profiles")
+    .select("created_at, availability_status")
+    .eq("id", user.id)
+    .single();
+
+  // Calculate if Day 2
+  // We compare created_at date with today
+  let isDay2 = false;
+  if (userData?.created_at) {
+      const created = new Date(userData.created_at);
+      const createdDateStr = parisDateFormatter.format(created);
+      
+      // If today is NOT created date, but close?
+      // Actually, simple logic:
+      const oneDay = 24 * 60 * 60 * 1000;
+      const diffDays = Math.round(Math.abs((now.getTime() - created.getTime()) / oneDay));
+      
+      // Day 1 = 0 diff (or < 1). Day 2 = 1 diff.
+      // Let's say Day 2 is the day AFTER signup.
+      isDay2 = diffDays === 1;
+  }
+  
+  // 2. Check availability for today (Is today a working day for the user?)
+  // We assume the user is available if not paused.
+  
+  // 3. Inject Founder Match if needed
+  // Condition: No active match for TODAY + (Day 2 OR Rescue needed)
+  const hasMatchToday = activeMatches.some(m => m.date === todayParisStr);
+  
+  if (!hasMatchToday && userData?.availability_status !== 'paused') {
+      // Logic:
+      // If Day 2 -> Inject "Onboarding" Founder Match (Priority: Founder)
+      // If Day > 2 and no match -> Inject "Rescue" Founder Match
+      
+      // Determine type
+      const isRescue = !isDay2; 
+      
+      const founderMatch = {
+          id: 'founder-joker-' + todayParisStr,
+          partnerId: 'popey-founder',
+          name: 'Jean-Philippe',
+          job: 'Fondateur Popey',
+          city: 'Paris',
+          score: 5.0,
+          collabsCount: 999,
+          time: '09h - 18h', // All day availability
+          type: 'call_in', // User receives call
+          phone: '+33600000000', // Placeholder
+          avatar: '/jeanphilipperoth.jpg',
+          tags: isRescue ? ['rescue'] : ['founder'], // Tag determines UI
+          current_goals: ['Aider les membres'],
+          big_goal: 'Créer le meilleur réseau',
+          superpower: 'Connecteur',
+          current_need: 'Feedback',
+          status: 'pending',
+          date: todayParisStr
+      };
+      
+      // Add to list and resort
+      // sortedMatches.unshift(founderMatch);
+      // Actually, we should return this as the primary match if empty
+      // But wait, getDailyMatches returns array.
+      
+      // Only inject if strictly NO match today.
+      // activeMatches is already filtered for today/future.
+      
+      // Let's modify the return.
+      if (sortedMatches.length === 0 || sortedMatches[0].date > todayParisStr) {
+          // If no match at all OR next match is in future -> Show Founder Match TODAY
+          return [founderMatch];
+      }
+  }
+
   // DAILY DASHBOARD RULE: Only show ONE primary match at a time to focus the user.
   // We return the most urgent one (earliest today or next available).
   // If we have future matches but no match today, we still return the future match (Waiting Card).

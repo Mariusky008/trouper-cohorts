@@ -106,11 +106,12 @@ async function getNetworkStats() {
     : "5.0";
 
   // 5. Recent Members (Who activated the network feature)
+  // UPDATED: Now fetches ALL members (limit 100 for now to avoid overload without pagination component)
   const { data: recentMembers } = await supabaseAdmin
     .from('network_settings')
     .select('user_id, created_at, status')
     .order('created_at', { ascending: false })
-    .limit(5);
+    .limit(100);
 
   let recentProfiles: { user_id: string; created_at: string; status: string; profile: { display_name: string; trade: string; city: string; phone: string } }[] = [];
   if (recentMembers && recentMembers.length > 0) {
@@ -191,7 +192,7 @@ async function getNetworkStats() {
   // 6. Analytics Events (Today)
   const { data: eventsToday } = await supabaseAdmin
     .from('analytics_events')
-    .select('event_type')
+    .select('*') // Get full event to filter by metadata
     .gte('created_at', today + 'T00:00:00')
     .lte('created_at', today + 'T23:59:59');
 
@@ -200,6 +201,32 @@ async function getNetworkStats() {
     acc[type] = (acc[type] || 0) + 1;
     return acc;
   }, {}) || {};
+  
+  // 6b. Get Founder Calls Requests (Today)
+  const founderCalls = eventsToday?.filter((e: any) => e.event_type === 'founder_call_request') || [];
+  
+  // Enrich Founder Calls with User Profile
+  let enrichedFounderCalls: any[] = [];
+  if (founderCalls.length > 0) {
+      const uIds = new Set(founderCalls.map((c: any) => c.user_id));
+      const { data: profiles } = await supabaseAdmin
+        .from('profiles')
+        .select('id, display_name, phone, trade, city')
+        .in('id', Array.from(uIds));
+      
+      const pMap = new Map(profiles?.map(p => [p.id, p]));
+      
+      // Also try fallback if profile missing (auth user)
+      // (Similar logic to recent members fallback)
+      
+      enrichedFounderCalls = founderCalls.map((call: any) => {
+          const profile = pMap.get(call.user_id);
+          return {
+              ...call,
+              user: profile || { display_name: "Utilisateur Inconnu", phone: "N/A" }
+          };
+      });
+  }
 
   return {
     matchesToday: matchesCount || 0,
@@ -209,8 +236,9 @@ async function getNetworkStats() {
     opportunities: oppsCount || 0,
     activeMembers: membersCount || 0,
     avgTrustScore: avgScore,
-    recentMembers: recentProfiles,
-    analyticsToday: statsToday
+    recentMembers: recentProfiles, // This variable name is slightly misleading now if we load ALL, but let's keep it for now.
+    analyticsToday: statsToday,
+    founderCalls: enrichedFounderCalls
   };
 }
 
@@ -293,6 +321,46 @@ export default async function AdminNetworkPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* FOUNDER CALLS (JOKER) SECTION */}
+      {stats.founderCalls && stats.founderCalls.length > 0 && (
+          <Card className="border-l-4 border-l-amber-500 bg-amber-50 shadow-md animate-pulse-slow">
+              <CardHeader className="pb-2">
+                  <CardTitle className="flex items-center gap-2 text-amber-800">
+                      <PhoneCall className="h-5 w-5 animate-bounce" /> 
+                      DEMANDES D'APPEL JOKER ({stats.founderCalls.length})
+                  </CardTitle>
+              </CardHeader>
+              <CardContent>
+                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {stats.founderCalls.map((call: any) => (
+                          <div key={call.id} className="bg-white p-4 rounded-xl shadow-sm border border-amber-200 flex flex-col gap-2">
+                              <div className="flex justify-between items-start">
+                                  <div>
+                                      <div className="font-bold text-slate-900">{call.user.display_name}</div>
+                                      <div className="text-xs text-slate-500">{call.user.trade} • {call.user.city}</div>
+                                  </div>
+                                  <Badge className={call.metadata?.card_type === 'rescue' ? 'bg-red-500' : 'bg-amber-500'}>
+                                      {call.metadata?.card_type === 'rescue' ? 'SAUVETAGE' : 'ONBOARDING'}
+                                  </Badge>
+                              </div>
+                              
+                              <div className="flex items-center gap-2 bg-slate-50 p-2 rounded-lg mt-1">
+                                  <PhoneCall className="h-4 w-4 text-slate-400" />
+                                  <span className="font-mono text-lg font-bold text-slate-900 select-all">
+                                      {call.user.phone || "Pas de numéro"}
+                                  </span>
+                              </div>
+                              
+                              <div className="text-[10px] text-slate-400 text-right mt-1">
+                                  Demandé à {format(new Date(call.created_at), 'HH:mm', { locale: fr })}
+                              </div>
+                          </div>
+                      ))}
+                  </div>
+              </CardContent>
+          </Card>
+      )}
 
       <div className="grid lg:grid-cols-3 gap-8">
         
@@ -377,30 +445,33 @@ export default async function AdminNetworkPage() {
 
         {/* RIGHT COLUMN: RECENT MEMBERS */}
         <div>
-          <Card>
+          <Card className="h-full">
             <CardHeader>
-              <CardTitle className="text-sm font-bold uppercase tracking-widest text-slate-500">Derniers Inscrits Réseau</CardTitle>
+              <CardTitle className="text-sm font-bold uppercase tracking-widest text-slate-500">Membres du Réseau ({stats.recentMembers.length})</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-4 max-h-[800px] overflow-y-auto">
               {stats.recentMembers.length > 0 ? (
                 stats.recentMembers.map((m) => (
                   <div key={m.user_id} className="flex items-center gap-3 border-b border-slate-100 last:border-0 pb-3 last:pb-0">
-                    <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-xs">
+                    <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-xs shrink-0">
                       {m.profile?.display_name?.[0] || "?"}
                     </div>
-                    <div className="overflow-hidden">
-                      <div className="text-sm font-bold text-slate-900 truncate">{m.profile?.display_name || "Utilisateur"}</div>
+                    <div className="overflow-hidden w-full">
+                      <div className="flex justify-between items-start">
+                          <div className="text-sm font-bold text-slate-900 truncate">{m.profile?.display_name || "Utilisateur"}</div>
+                          <Badge variant="outline" className="text-[10px] h-5">{format(new Date(m.created_at), 'dd/MM')}</Badge>
+                      </div>
                       <div className="text-xs text-slate-500 truncate">
                         {m.profile?.trade || "Non renseigné"} • {m.profile?.city || "Non renseigné"}
                       </div>
-                      <div className="text-xs text-blue-600 font-mono">
-                        {m.profile?.phone || "Sans tél"}
+                      <div className="text-xs text-blue-600 font-mono flex items-center gap-1 mt-1">
+                        <PhoneCall className="w-3 h-3" /> {m.profile?.phone || "Sans tél"}
                       </div>
                     </div>
                   </div>
                 ))
               ) : (
-                <div className="text-sm text-slate-400 italic">Aucun membre récent.</div>
+                <div className="text-sm text-slate-400 italic">Aucun membre trouvé.</div>
               )}
             </CardContent>
           </Card>

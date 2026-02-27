@@ -17,6 +17,7 @@ import { createOpportunity } from "@/lib/actions/network-opportunities";
 import { saveMatchFeedback } from "@/lib/actions/network-feedback";
 import { incrementUserPoints } from "@/lib/actions/gamification";
 import { trackEvent } from "@/lib/actions/analytics";
+import { FounderCardPreview } from "@/components/dashboard/design-system-preview";
 
 import { OPPORTUNITY_TYPES } from "@/constants/opportunities";
 
@@ -504,6 +505,20 @@ export function DailyMatchCard({ matches, userStreak = 0, userId }: DailyMatchCa
   // If it's a future match, show Mystery Card in LOCKED state
   if (isFuture) {
       return <MysteryCard onReveal={() => {}} match={match} locked={true} />;
+  }
+
+  // --- SPECIAL FOUNDER MATCH (POPEY) ---
+  // If match.partnerId is 'popey-founder' or specific ID, show Founder Card
+  const isFounderMatch = match.partnerId === 'popey-founder' || match.name?.toLowerCase().includes("jean-philippe");
+  const isRescue = match.tags?.includes('rescue');
+
+  if (isFounderMatch) {
+      // Import FounderCardPreview dynamically or use it if available in scope. 
+      // Since it's in design-system-preview, we should ideally move it to a shared component.
+      // For now, let's assume we copy the FounderCardPreview logic here or import it.
+      // But wait, FounderCardPreview is exported from design-system-preview.tsx.
+      // Let's import it at the top of the file first.
+      return <FounderCardPreview type={isRescue ? "rescue" : "onboarding"} />;
   }
 
   if (!revealed) {
