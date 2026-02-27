@@ -368,25 +368,74 @@ export function FounderCardPreview() {
   return (
     <div className="relative w-full max-w-sm mx-auto min-h-[600px] h-auto rounded-[2.5rem] overflow-hidden shadow-2xl bg-[#0f0f12] border border-amber-500/20 flex flex-col items-center justify-between text-center p-6 pb-8 group">
       
-      {/* Premium Background */}
+      {/* Premium Background with Sparkles */}
       <div className="absolute inset-0 bg-gradient-to-b from-amber-900/10 via-[#0a0a0c] to-[#0a0a0c] z-0"></div>
       <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-5 z-0"></div>
       
+      {/* Moving Particles / Fireflies */}
+      {[...Array(5)].map((_, i) => (
+        <motion.div
+          key={i}
+          className="absolute w-1 h-1 bg-amber-400 rounded-full blur-[1px]"
+          initial={{ 
+            x: Math.random() * 300, 
+            y: Math.random() * 600, 
+            opacity: 0 
+          }}
+          animate={{ 
+            y: [null, Math.random() * -100],
+            opacity: [0, 1, 0],
+            scale: [0, 1.5, 0]
+          }}
+          transition={{ 
+            duration: 3 + Math.random() * 2,
+            repeat: Infinity,
+            delay: Math.random() * 2,
+            ease: "easeInOut"
+          }}
+        />
+      ))}
+
       {/* Animated Glow */}
-      <div className="absolute top-0 left-0 right-0 h-32 bg-amber-500/20 blur-[60px] rounded-full opacity-50 animate-pulse-slow"></div>
+      <motion.div 
+        animate={{ opacity: [0.3, 0.6, 0.3], scale: [1, 1.1, 1] }}
+        transition={{ duration: 4, repeat: Infinity }}
+        className="absolute top-0 left-0 right-0 h-40 bg-amber-500/30 blur-[80px] rounded-full z-0"
+      />
 
       {/* Content */}
       <div className="relative z-10 w-full flex flex-col items-center h-full">
         
         {/* VIP Badge */}
-        <Badge className="bg-gradient-to-r from-amber-400 to-orange-500 text-black border-none px-4 py-1.5 mb-8 flex items-center gap-2 shadow-[0_0_20px_rgba(245,158,11,0.4)] font-black uppercase tracking-widest animate-shimmer bg-[length:200%_100%]">
-            <Crown className="w-4 h-4 fill-black" /> JOKER FONDATEUR
-        </Badge>
+        <motion.div
+          whileHover={{ scale: 1.05 }}
+          className="relative mb-8"
+        >
+          <div className="absolute inset-0 bg-amber-500 blur-md opacity-40 animate-pulse"></div>
+          <Badge className="relative bg-gradient-to-r from-amber-300 via-yellow-400 to-orange-500 text-black border-none px-4 py-1.5 flex items-center gap-2 shadow-[0_0_20px_rgba(245,158,11,0.4)] font-black uppercase tracking-widest bg-[length:200%_100%] animate-shimmer">
+              <Crown className="w-4 h-4 fill-black animate-bounce-subtle" /> JOKER FONDATEUR
+          </Badge>
+        </motion.div>
 
-        {/* Founder Avatar with Ring */}
+        {/* Founder Avatar with Rotating Rings */}
         <div className="relative mb-6">
-            <div className="absolute inset-0 bg-gradient-to-r from-amber-300 to-orange-600 rounded-full blur opacity-40 animate-spin-slow"></div>
-            <div className="w-32 h-32 rounded-full p-[3px] bg-gradient-to-r from-amber-300 to-orange-600 shadow-2xl relative z-10">
+            {/* Outer Ring - Slow Rotation */}
+            <motion.div 
+                animate={{ rotate: 360 }}
+                transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+                className="absolute -inset-4 rounded-full border border-amber-500/20 border-dashed"
+            />
+            {/* Middle Ring - Reverse Rotation */}
+            <motion.div 
+                animate={{ rotate: -360 }}
+                transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
+                className="absolute -inset-2 rounded-full border border-orange-500/30 border-dotted"
+            />
+            
+            {/* Glow behind avatar */}
+            <div className="absolute inset-0 bg-gradient-to-r from-amber-300 to-orange-600 rounded-full blur-md opacity-60 animate-pulse-slow"></div>
+            
+            <div className="w-32 h-32 rounded-full p-[3px] bg-gradient-to-r from-amber-300 via-yellow-300 to-orange-600 shadow-2xl relative z-10">
                 <div className="w-full h-full rounded-full overflow-hidden border-4 border-[#0f0f12]">
                     <img 
                         src="/jeanphilipperoth.jpg" 
@@ -395,36 +444,48 @@ export function FounderCardPreview() {
                     />
                 </div>
             </div>
-            {/* Status Indicator */}
+            
+            {/* Status Indicator with Ping */}
             <div className="absolute bottom-1 right-1 w-8 h-8 bg-[#0f0f12] rounded-full flex items-center justify-center z-20">
-                <div className="w-5 h-5 bg-green-500 rounded-full border-2 border-[#0f0f12] animate-pulse"></div>
+                <span className="absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75 animate-ping"></span>
+                <div className="relative w-5 h-5 bg-green-500 rounded-full border-2 border-[#0f0f12]"></div>
             </div>
         </div>
 
         {/* Name & Role */}
         <div className="mb-8">
-            <h2 className="text-3xl font-black text-white mb-1">Jean-Philippe</h2>
-            <p className="text-amber-500/80 font-bold uppercase text-xs tracking-[0.2em]">Fondateur Popey</p>
-        </div>
-
-        {/* The Pitch */}
-        <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6 text-left relative overflow-hidden mb-6">
-            <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-amber-400 to-orange-600"></div>
-            <QuoteIcon className="absolute top-4 right-4 w-8 h-8 text-white/5 rotate-180" />
-            
-            <h3 className="text-white font-bold text-lg mb-2">Session Stratégique Imprévue</h3>
-            <p className="text-slate-300 text-sm leading-relaxed">
-                "On ne se connaît pas encore très bien. Aujourd'hui, je prends le relais de l'algorithme. Je t'appelle dans la journée pour faire le point sur tes attentes et t'ouvrir mon carnet d'adresses personnel."
+            <h2 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-b from-white to-slate-400 mb-1">Jean-Philippe</h2>
+            <p className="text-amber-400 font-bold uppercase text-xs tracking-[0.2em] flex items-center justify-center gap-2">
+                <StarIcon className="w-3 h-3 fill-current" /> Fondateur Popey <StarIcon className="w-3 h-3 fill-current" />
             </p>
         </div>
 
-        {/* Action Button */}
-        <Button className="w-full h-14 bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-300 hover:to-orange-400 text-black font-black text-base rounded-2xl shadow-[0_0_30px_rgba(245,158,11,0.3)] animate-bounce-subtle border-2 border-white/20 transition-all hover:scale-[1.02]">
-            J'attends ton appel 🤙
-        </Button>
+        {/* The Pitch with Glassmorphism */}
+        <motion.div 
+            whileHover={{ y: -2 }}
+            className="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-6 text-left relative overflow-hidden mb-6 shadow-xl group-hover:shadow-amber-900/20 transition-all"
+        >
+            <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-amber-300 to-orange-600 shadow-[0_0_10px_rgba(245,158,11,0.5)]"></div>
+            <QuoteIcon className="absolute top-4 right-4 w-8 h-8 text-white/10 rotate-180" />
+            
+            <h3 className="text-white font-bold text-lg mb-2 flex items-center gap-2">
+                Session Stratégique <span className="text-amber-400">OFFERTE</span>
+            </h3>
+            <p className="text-slate-300 text-sm leading-relaxed font-medium">
+                "On ne se connaît pas encore très bien. Aujourd'hui, je prends le relais de l'algorithme. Je t'appelle dans la journée pour faire le point sur tes attentes et t'ouvrir mon carnet d'adresses personnel."
+            </p>
+        </motion.div>
+
+        {/* Action Button - Pulsing */}
+        <div className="w-full relative group">
+            <div className="absolute -inset-0.5 bg-gradient-to-r from-amber-400 to-orange-600 rounded-2xl blur opacity-30 group-hover:opacity-75 transition duration-200 animate-pulse"></div>
+            <Button className="relative w-full h-14 bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-300 hover:to-orange-400 text-black font-black text-base rounded-2xl shadow-[0_0_30px_rgba(245,158,11,0.3)] border-2 border-white/20 transition-all transform group-hover:scale-[1.01]">
+                J'attends ton appel 🤙
+            </Button>
+        </div>
         
-        <p className="mt-4 text-[10px] text-slate-500 uppercase tracking-wider font-medium">
-            Créneau réservé automatiquement
+        <p className="mt-4 text-[10px] text-slate-500 uppercase tracking-wider font-medium flex items-center gap-1.5">
+            <Clock className="w-3 h-3" /> Créneau réservé automatiquement
         </p>
 
       </div>
