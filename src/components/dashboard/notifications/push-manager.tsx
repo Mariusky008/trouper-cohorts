@@ -43,13 +43,14 @@ export function PushManager() {
   const subscribe = async () => {
     setLoading(true);
     try {
-      // 1. Force fetch environment variable (sometimes Next.js caches old envs in SW)
-      const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+      // 1. Force fetch environment variable or use fallback
+      // Fallback is safe for PUBLIC key only
+      const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || "BOgNNnfAD5tq4QdsJhDaDKUetmSJXgpgZLPh2F5qDIWN25bBatd3MuUNENRBeeW0O8L322dkFFTuslZCyf_tBeQ";
       
       console.log("VAPID Key check:", vapidKey ? "Present" : "Missing", vapidKey?.substring(0, 5));
 
       if (!vapidKey) {
-          throw new Error("Clé VAPID non trouvée. Redéploiement nécessaire ?");
+          throw new Error("Clé VAPID non trouvée.");
       }
 
       // 2. Check permission first
