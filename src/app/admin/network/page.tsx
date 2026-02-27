@@ -190,19 +190,21 @@ async function getNetworkStats() {
   }
 
   // 6. Analytics Events (Today)
+  // MODIFIED: Fetch ALL 'founder_call_request' events regardless of date, ordered by newest first
   const { data: eventsToday } = await supabaseAdmin
     .from('analytics_events')
-    .select('*') // Get full event to filter by metadata
-    .gte('created_at', today + 'T00:00:00')
-    .lte('created_at', today + 'T23:59:59');
+    .select('*')
+    .order('created_at', { ascending: false }) // Newest first
+    .limit(500); // Reasonable limit
 
-  const statsToday = eventsToday?.reduce((acc: any, curr: any) => {
+  // Filter for stats (only today's events for the counters)
+  const statsToday = eventsToday?.filter((e: any) => e.created_at >= today + 'T00:00:00').reduce((acc: any, curr: any) => {
     const type = curr.event_type;
     acc[type] = (acc[type] || 0) + 1;
     return acc;
   }, {}) || {};
   
-  // 6b. Get Founder Calls Requests (Today)
+  // 6b. Get Founder Calls Requests (ALL TIME)
   const founderCalls = eventsToday?.filter((e: any) => e.event_type === 'founder_call_request') || [];
   
   // Enrich Founder Calls with User Profile
@@ -322,45 +324,82 @@ export default async function AdminNetworkPage() {
         </Card>
       </div>
 
-      {/* FOUNDER CALLS (JOKER) SECTION */}
-      {stats.founderCalls && stats.founderCalls.length > 0 && (
-          <Card className="border-l-4 border-l-amber-500 bg-amber-50 shadow-md animate-pulse-slow">
-              <CardHeader className="pb-2">
-                  <CardTitle className="flex items-center gap-2 text-amber-800">
-                      <PhoneCall className="h-5 w-5 animate-bounce" /> 
-                      DEMANDES D'APPEL JOKER ({stats.founderCalls.length})
-                  </CardTitle>
-              </CardHeader>
-              <CardContent>
+      {/* FOUNDER CALLS (JOKER) SECTION - ALWAYS VISIBLE */}
+      <Card className="border-l-4 border-l-amber-500 bg-amber-50/50 shadow-md">
+          <CardHeader className="pb-2 border-b border-amber-100/50 mb-2">
+              <CardTitle className="flex items-center justify-between text-amber-900">
+                  <div className="flex items-center gap-2">
+                    <div className="relative">
+                        <PhoneCall className="h-6 w-6 text-amber-600" />
+                        {stats.founderCalls.length > 0 && (
+                            <span className="absolute -top-1 -right-1 h-3 w-3 bg-red-500 rounded-full animate-ping"></span>
+                        )}
+                    </div>
+                    DEMANDES D'APPEL JOKER
+                  </div>
+                  <Badge variant="secondary" className="bg-amber-100 text-amber-800 text-lg px-3">
+                    {stats.founderCalls.length}
+                  </Badge>
+              </CardTitle>
+              <p className="text-xs text-amber-700/60 mt-1">
+                Liste des membres ayant reçu une carte Joker (Onboarding ou Sauvetage) et cliqué sur "Je me rends disponible".
+              </p>
+          </CardHeader>
+          <CardContent>
+              {stats.founderCalls.length > 0 ? (
                   <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
                       {stats.founderCalls.map((call: any) => (
-                          <div key={call.id} className="bg-white p-4 rounded-xl shadow-sm border border-amber-200 flex flex-col gap-2">
+                          <div key={call.id} className="bg-white p-4 rounded-xl shadow-sm border border-amber-200 flex flex-col gap-3 transition-all hover:shadow-md hover:border-amber-300">
+                              
+                              {/* Header: User Info */}
                               <div className="flex justify-between items-start">
                                   <div>
-                                      <div className="font-bold text-slate-900">{call.user.display_name}</div>
-                                      <div className="text-xs text-slate-500">{call.user.trade} • {call.user.city}</div>
+                                      <div className="font-bold text-slate-900 text-lg">{call.user.display_name}</div>
+                                      <div className="text-xs text-slate-500 font-medium">{call.user.trade} • {call.user.city}</div>
                                   </div>
-                                  <Badge className={call.metadata?.card_type === 'rescue' ? 'bg-red-500' : 'bg-amber-500'}>
-                                      {call.metadata?.card_type === 'rescue' ? 'SAUVETAGE' : 'ONBOARDING'}
+                                  <Badge className={`${call.metadata?.card_type === 'rescue' ? 'bg-red-100 text-red-700 border-red-200' : 'bg-amber-100 text-amber-700 border-amber-200'} border`}>
+                                      {call.metadata?.card_type === 'rescue' ? '🚨 SAUVETAGE' : '👋 ONBOARDING'}
                                   </Badge>
                               </div>
                               
-                              <div className="flex items-center gap-2 bg-slate-50 p-2 rounded-lg mt-1">
-                                  <PhoneCall className="h-4 w-4 text-slate-400" />
-                                  <span className="font-mono text-lg font-bold text-slate-900 select-all">
-                                      {call.user.phone || "Pas de numéro"}
-                                  </span>
+                              {/* Phone Number - Prominent */}
+                              <div className="flex items-center justify-between bg-slate-50 p-3 rounded-lg border border-slate-100">
+                                  <div className="flex items-center gap-3">
+                                      <div className="h-8 w-8 rounded-full bg-green-100 flex items-center justify-center">
+                                        <PhoneCall className="h-4 w-4 text-green-600" />
+                                      </div>
+                                      <span className="font-mono text-xl font-black text-slate-800 tracking-wider">
+                                          {call.user.phone || "Pas de numéro"}
+                                      </span>
+                                  </div>
                               </div>
                               
-                              <div className="text-[10px] text-slate-400 text-right mt-1">
-                                  Demandé à {format(new Date(call.created_at), 'HH:mm', { locale: fr })}
+                              {/* Footer: Date & Status */}
+                              <div className="flex justify-between items-center text-xs pt-2 border-t border-slate-100">
+                                  <span className="text-slate-400 font-medium">
+                                      {format(new Date(call.created_at), "d MMM à HH:mm", { locale: fr })}
+                                  </span>
+                                  <div className="flex items-center gap-1 text-emerald-600 font-bold">
+                                      <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                                      PRÊT À RECEVOIR L'APPEL
+                                  </div>
                               </div>
                           </div>
                       ))}
                   </div>
-              </CardContent>
-          </Card>
-      )}
+              ) : (
+                  <div className="flex flex-col items-center justify-center py-12 text-center border-2 border-dashed border-amber-200 rounded-xl bg-amber-50/30">
+                      <div className="h-16 w-16 bg-amber-100 rounded-full flex items-center justify-center mb-4">
+                          <PhoneCall className="h-8 w-8 text-amber-400" />
+                      </div>
+                      <h3 className="text-lg font-bold text-amber-900">Aucune demande en attente</h3>
+                      <p className="text-amber-700/60 max-w-sm">
+                          Dès qu'un membre utilisera son Joker, il apparaîtra ici avec son numéro.
+                      </p>
+                  </div>
+              )}
+          </CardContent>
+      </Card>
 
       <div className="grid lg:grid-cols-3 gap-8">
         
