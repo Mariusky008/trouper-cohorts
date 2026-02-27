@@ -32,10 +32,10 @@ async function handleMatching(request: Request) {
       process.env.SUPABASE_SERVICE_ROLE_KEY
     );
 
-    // 2. Determine target date (Today)
-    // Matches are generated at 4 AM for the current day
+    // 2. Determine target date (Tomorrow)
+    // Matches are now generated at 13h for the NEXT DAY.
     const targetDate = new Date();
-    // targetDate.setDate(targetDate.getDate() + 1); // REMOVED: We want matches for TODAY, not tomorrow
+    targetDate.setDate(targetDate.getDate() + 1); // We want matches for TOMORROW
     const dateStr = targetDate.toISOString().split('T')[0];
 
     // 3. Fetch all availabilities for that date
@@ -129,6 +129,10 @@ async function handleMatching(request: Request) {
             });
         }
 
+        // --- NEW: Calculate "Compatibility" and "Collabs" for the locked card ---
+        // We will store this as metadata in the match record if possible, or assume frontend calculates it deterministically.
+        // For now, let's keep it simple in the DB insert.
+        
         for (const setting of allSettings) {
             // If user already declared availability, skip
             if (declaredUserIds.has(setting.user_id)) continue;
