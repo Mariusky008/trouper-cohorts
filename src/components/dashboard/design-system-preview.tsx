@@ -372,7 +372,7 @@ export function FounderCardPreview({ type = "onboarding" }: { type?: "onboarding
   const title = isRescue ? "Opportunité Premium 💎" : "Session Stratégique";
   const subtitle = isRescue ? "OFFERTE (VALEUR 150€)" : "OFFERTE";
   const pitch = isRescue 
-    ? "L'algorithme n'a pas trouvé de match parfait pour toi aujourd'hui. Pas question de perdre une journée ! Je t'appelle personnellement pour une session de coaching express."
+    ? "L'algorithme n'a pas trouvé de match parfait pour toi aujourd'hui. Pas question de perdre une journée ! Je t'appelle pour t'aider personnellement."
     : "On ne se connaît pas encore très bien. Aujourd'hui, je prends le relais de l'algorithme. Je t'appelle dans la journée pour faire le point sur tes attentes et t'aider avec mon propre réseau.";
 
   return (
