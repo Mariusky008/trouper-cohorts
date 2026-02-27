@@ -59,13 +59,18 @@ export function PushManager() {
         throw new Error("Permission refusée. Vérifiez vos réglages.");
       }
 
-      // 3. Wait for SW with timeout
+      // 3. Wait for SW with timeout (increased to 10s)
       const registration = await Promise.race([
           navigator.serviceWorker.ready,
-          new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout Service Worker")), 4000))
+          new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout Service Worker")), 10000))
       ]) as ServiceWorkerRegistration;
 
       if (!registration) throw new Error("Service Worker non enregistré.");
+      
+      // If registration exists but pushManager is missing (safeguard)
+      if (!registration.pushManager) {
+          throw new Error("Push Manager non disponible.");
+      }
 
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
