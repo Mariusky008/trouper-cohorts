@@ -16,8 +16,13 @@ export function PushManager() {
     if ("serviceWorker" in navigator && "PushManager" in window) {
       setIsSupported(true);
       
-      // Wait for SW to be ready
+      // Don't wait forever for SW. If it's not ready quickly, just show button.
+      const checkTimeout = setTimeout(() => {
+          setLoading(false);
+      }, 2000); // 2s timeout
+
       navigator.serviceWorker.ready.then((registration) => {
+          clearTimeout(checkTimeout); // Clear timeout if ready
           registration.pushManager.getSubscription().then((subscription) => {
               setIsSubscribed(!!subscription);
               setLoading(false);
@@ -27,7 +32,6 @@ export function PushManager() {
           });
       }).catch((e) => {
           console.error("Error waiting for SW ready:", e);
-          // If SW fails, just stop loading
           setLoading(false);
       });
     } else {
