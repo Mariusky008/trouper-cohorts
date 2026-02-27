@@ -6,7 +6,7 @@
     },
     {
       "path": "/api/cron/generate-daily-matches",
-      "schedule": "0 13 * * *"
+      "schedule": "0 20 * * *"
     },
     {
       "path": "/api/cron/send-daily-match-emails",
