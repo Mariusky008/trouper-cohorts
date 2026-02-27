@@ -43,31 +43,30 @@ export function PushManager() {
   const subscribe = async () => {
     setLoading(true);
     try {
-      // 1. Force fetch environment variable or use fallback
-      // Fallback is safe for PUBLIC key only
       const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || "BOgNNnfAD5tq4QdsJhDaDKUetmSJXgpgZLPh2F5qDIWN25bBatd3MuUNENRBeeW0O8L322dkFFTuslZCyf_tBeQ";
       
-      console.log("VAPID Key check:", vapidKey ? "Present" : "Missing", vapidKey?.substring(0, 5));
+      if (!vapidKey) throw new Error("Clé VAPID manquante");
 
-      if (!vapidKey) {
-          throw new Error("Clé VAPID non trouvée.");
-      }
-
-      // 2. Check permission first
+      // Check permission first
       const permission = await Notification.requestPermission();
       if (permission !== "granted") {
         throw new Error("Permission refusée. Vérifiez vos réglages.");
       }
 
-      // 3. Wait for SW with timeout (increased to 10s)
+      // Check if SW is active
+      if (!navigator.serviceWorker.controller) {
+          // Force register if not controlled
+          await navigator.serviceWorker.register("/sw.js");
+      }
+
+      // Wait for SW with increased timeout
       const registration = await Promise.race([
           navigator.serviceWorker.ready,
-          new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout Service Worker")), 10000))
+          new Promise((_, reject) => setTimeout(() => reject(new Error("Le Service Worker ne répond pas.")), 15000))
       ]) as ServiceWorkerRegistration;
 
       if (!registration) throw new Error("Service Worker non enregistré.");
       
-      // If registration exists but pushManager is missing (safeguard)
       if (!registration.pushManager) {
           throw new Error("Push Manager non disponible.");
       }
