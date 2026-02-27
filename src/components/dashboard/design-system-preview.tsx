@@ -1,10 +1,13 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { User, Zap, Lock, Phone, Clock, Sparkles, Fingerprint, Search, Flame, Briefcase, Handshake, TrendingUp, Target, CheckCircle2, Users, Star } from "lucide-react";
+import { User, Zap, Lock, Phone, Clock, Sparkles, Fingerprint, Search, Flame, Briefcase, Handshake, TrendingUp, Target, CheckCircle2, Users, Star, MessageSquare, Gift, PhoneCall } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import confetti from "canvas-confetti";
 
 // --- 1. WAITING CARD (Post-registration / Next Day) ---
 // Goal: "Wahoo", colorful, anticipation for tomorrow.
@@ -267,7 +270,6 @@ export function MysteryCardLockedPreview() {
 
 // --- 3. MATCH CARD (The Match) ---
 // Goal: FOMO, "I can't wait", "Don't miss this".
-import { MessageSquare, Gift, PhoneCall } from "lucide-react";
 
 export function MatchCardPreview() {
   return (
@@ -472,16 +474,85 @@ export function FounderCardPreview() {
                 Session Stratégique <span className="text-amber-400">OFFERTE</span>
             </h3>
             <p className="text-slate-300 text-sm leading-relaxed font-medium">
-                "On ne se connaît pas encore très bien. Aujourd'hui, je prends le relais de l'algorithme. Je t'appelle dans la journée pour faire le point sur tes attentes et t'ouvrir mon carnet d'adresses personnel."
+                "On ne se connaît pas encore très bien. Aujourd'hui, je prends le relais de l'algorithme. Je t'appelle dans la journée pour faire le point sur tes attentes et t'aider avec mon propre réseau."
             </p>
         </motion.div>
 
         {/* Action Button - Pulsing */}
         <div className="w-full relative group">
-            <div className="absolute -inset-0.5 bg-gradient-to-r from-amber-400 to-orange-600 rounded-2xl blur opacity-30 group-hover:opacity-75 transition duration-200 animate-pulse"></div>
-            <Button className="relative w-full h-14 bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-300 hover:to-orange-400 text-black font-black text-base rounded-2xl shadow-[0_0_30px_rgba(245,158,11,0.3)] border-2 border-white/20 transition-all transform group-hover:scale-[1.01]">
-                J'attends ton appel 🤙
-            </Button>
+            <Dialog>
+                <DialogTrigger asChild>
+                    <div className="w-full relative group cursor-pointer">
+                        <div className="absolute -inset-0.5 bg-gradient-to-r from-amber-400 to-orange-600 rounded-2xl blur opacity-30 group-hover:opacity-75 transition duration-200 animate-pulse"></div>
+                        <Button className="relative w-full h-14 bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-300 hover:to-orange-400 text-black font-black text-base rounded-2xl shadow-[0_0_30px_rgba(245,158,11,0.3)] border-2 border-white/20 transition-all transform group-hover:scale-[1.01]">
+                            Je me rends disponible 👍
+                        </Button>
+                    </div>
+                </DialogTrigger>
+                <DialogContent className="bg-[#0f0f12] border-amber-500/20 text-white sm:max-w-md rounded-3xl p-0 overflow-hidden">
+                    <div className="relative h-32 bg-gradient-to-r from-amber-500 to-orange-600 flex items-center justify-center overflow-hidden">
+                         <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-20"></div>
+                         <div className="z-10 text-center">
+                             <div className="mx-auto w-16 h-16 rounded-full border-4 border-[#0f0f12] overflow-hidden shadow-xl mb-2">
+                                 <img src="/jeanphilipperoth.jpg" alt="JP" className="w-full h-full object-cover" />
+                             </div>
+                         </div>
+                    </div>
+                    
+                    <div className="p-8 text-center space-y-6">
+                        <div>
+                            <h3 className="text-2xl font-black text-white mb-2">C'est noté ! 📞</h3>
+                            <p className="text-slate-400 text-sm leading-relaxed">
+                                J'ai bien reçu ta confirmation. Garde ton téléphone près de toi aujourd'hui.
+                            </p>
+                        </div>
+
+                        <div className="bg-slate-900/50 rounded-2xl p-4 border border-white/5 text-left space-y-3">
+                            <div className="flex items-center gap-3">
+                                <div className="h-10 w-10 rounded-full bg-green-500/20 flex items-center justify-center shrink-0">
+                                    <Phone className="h-5 w-5 text-green-400" />
+                                </div>
+                                <div className="text-sm">
+                                    <p className="text-white font-bold">Appel entrant</p>
+                                    <p className="text-slate-500 text-xs">Probablement d'un 06 ou WhatsApp</p>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-3">
+                                <div className="h-10 w-10 rounded-full bg-blue-500/20 flex items-center justify-center shrink-0">
+                                    <MessageSquare className="h-5 w-5 text-blue-400" />
+                                </div>
+                                <div className="text-sm">
+                                    <p className="text-white font-bold">Si indisponible</p>
+                                    <p className="text-slate-500 text-xs">Je te laisserai un vocal WhatsApp</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="space-y-3">
+                            <Label className="text-xs font-bold uppercase text-slate-500 block text-left pl-1">Confirme ton numéro (Optionnel)</Label>
+                            <div className="flex gap-2">
+                                <input 
+                                    type="tel" 
+                                    placeholder="06 12 34 56 78" 
+                                    className="flex-1 bg-slate-900 border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50 font-mono text-sm"
+                                />
+                                <Button size="icon" className="h-auto w-12 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-500">
+                                    <CheckCircle2 className="h-5 w-5" />
+                                </Button>
+                            </div>
+                        </div>
+
+                        <Button 
+                            onClick={() => {
+                                confetti({ particleCount: 150, spread: 70, origin: { y: 0.7 }, colors: ['#f59e0b', '#ef4444', '#ffffff'] });
+                            }}
+                            className="w-full h-14 bg-white text-black font-black text-lg rounded-2xl hover:scale-[1.02] transition-transform shadow-xl"
+                        >
+                            Compris, à tout de suite ! 🚀
+                        </Button>
+                    </div>
+                </DialogContent>
+            </Dialog>
         </div>
         
         <p className="mt-4 text-[10px] text-slate-500 uppercase tracking-wider font-medium flex items-center gap-1.5">
