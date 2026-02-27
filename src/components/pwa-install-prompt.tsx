@@ -48,13 +48,16 @@ export function PWAInstallPrompt({ forceShow = false, onDismiss }: { forceShow?:
   }, [forceShow]);
 
   const handleInstallClick = async () => {
-    if (!isIOS && deferredPrompt) {
+    if (deferredPrompt) {
       deferredPrompt.prompt();
       const { outcome } = await deferredPrompt.userChoice;
       if (outcome === 'accepted') {
         setDeferredPrompt(null);
         setShowPrompt(false);
       }
+    } else {
+        // Fallback for manual trigger on desktop without prompt event
+        alert("Pour installer l'application :\n1. Cliquez sur l'icône d'installation dans la barre d'adresse (à droite)\nOU\n2. Menu Chrome (⋮) > Installer l'application");
     }
   };
 
