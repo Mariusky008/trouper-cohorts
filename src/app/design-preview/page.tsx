@@ -1,6 +1,9 @@
-import { WaitingCardPreview, MysteryCardPreview, MatchCardPreview, MysteryCardLockedPreview, FounderCardPreview, PremiumLockedCardPreview } from "@/components/dashboard/design-system-preview";
+import { WaitingCardPreview, MysteryCardPreview, MatchCardPreview, MysteryCardLockedPreview, FounderCardPreview } from "@/components/dashboard/design-system-preview";
+import { PremiumLockedCard } from "@/components/dashboard/premium-locked-card";
 
 export default function DesignPreviewPage() {
+  const stripePriceId = process.env.NEXT_PUBLIC_STRIPE_PRICE_ID || "";
+  
   return (
     <div className="min-h-screen bg-slate-950 p-8">
       <div className="max-w-7xl mx-auto space-y-12">
@@ -79,7 +82,7 @@ export default function DesignPreviewPage() {
               6. Pay-to-Reveal (Futur)
             </h2>
             <p className="text-sm text-slate-400 mb-4">Stratégie monétisation J3+.</p>
-            <PremiumLockedCardPreview />
+            <PremiumLockedCard priceId={stripePriceId} />
           </div>
 
         </div>
