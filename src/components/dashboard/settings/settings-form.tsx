@@ -21,8 +21,6 @@ const DAYS = [
   { id: 'wed', label: 'Mer' },
   { id: 'thu', label: 'Jeu' },
   { id: 'fri', label: 'Ven' },
-  { id: 'sat', label: 'Sam' },
-  { id: 'sun', label: 'Dim' },
 ];
 
 const SLOTS = [
@@ -39,7 +37,11 @@ export function SettingsForm({ initialSettings }: { initialSettings: any }) {
   
   // Frequency & Availability
   const [frequency, setFrequency] = useState(initialSettings?.frequency_per_week ?? 5);
-  const [selectedDays, setSelectedDays] = useState<string[]>(initialSettings?.preferred_days || ['mon', 'tue', 'wed', 'thu', 'fri']);
+  // Ensure we filter out old 'sat'/'sun' if they exist in DB
+  const [selectedDays, setSelectedDays] = useState<string[]>(
+    (initialSettings?.preferred_days || ['mon', 'tue', 'wed', 'thu', 'fri'])
+    .filter((d: string) => d !== 'sat' && d !== 'sun')
+  );
   const [selectedSlots, setSelectedSlots] = useState<string[]>(initialSettings?.preferred_slots || ['09-11', '14-16']);
   const [status, setStatus] = useState(initialSettings?.status || 'active');
 
@@ -175,14 +177,14 @@ export function SettingsForm({ initialSettings }: { initialSettings: any }) {
            <Slider 
              value={[frequency]} 
              min={1} 
-             max={7} 
+             max={5} 
              step={1} 
              onValueChange={(vals) => setFrequency(vals[0])}
              className="py-2"
            />
            <div className="flex justify-between text-[10px] text-slate-500 font-bold uppercase tracking-wider px-1">
               <span>Mode Léger (1j)</span>
-              <span>Mode Intensif (7j)</span>
+              <span>Mode Intensif (5j)</span>
            </div>
         </div>
 
