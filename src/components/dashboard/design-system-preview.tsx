@@ -366,7 +366,15 @@ export function MatchCardPreview() {
 // --- 4. FOUNDER CARD (Joker / VIP) ---
 import { Crown, Star as StarIcon } from "lucide-react";
 
-export function FounderCardPreview() {
+export function FounderCardPreview({ type = "onboarding" }: { type?: "onboarding" | "rescue" }) {
+  const isRescue = type === "rescue";
+  
+  const title = isRescue ? "Opportunité Premium 💎" : "Session Stratégique";
+  const subtitle = isRescue ? "OFFERTE (VALEUR 150€)" : "OFFERTE";
+  const pitch = isRescue 
+    ? "L'algorithme n'a pas trouvé de match parfait pour toi aujourd'hui. Pas question de perdre une journée ! Je t'appelle personnellement pour une session de coaching express."
+    : "On ne se connaît pas encore très bien. Aujourd'hui, je prends le relais de l'algorithme. Je t'appelle dans la journée pour faire le point sur tes attentes et t'aider avec mon propre réseau.";
+
   return (
     <div className="relative w-full max-w-sm mx-auto min-h-[600px] h-auto rounded-[2.5rem] overflow-hidden shadow-2xl bg-[#0f0f12] border border-amber-500/20 flex flex-col items-center justify-between text-center p-6 pb-8 group">
       
@@ -415,7 +423,7 @@ export function FounderCardPreview() {
         >
           <div className="absolute inset-0 bg-amber-500 blur-md opacity-40 animate-pulse"></div>
           <Badge className="relative bg-gradient-to-r from-amber-300 via-yellow-400 to-orange-500 text-black border-none px-4 py-1.5 flex items-center gap-2 shadow-[0_0_20px_rgba(245,158,11,0.4)] font-black uppercase tracking-widest bg-[length:200%_100%] animate-shimmer">
-              <Crown className="w-4 h-4 fill-black animate-bounce-subtle" /> JOKER FONDATEUR
+              <Crown className="w-4 h-4 fill-black animate-bounce-subtle" /> {isRescue ? "JOKER SAUVETAGE" : "JOKER FONDATEUR"}
           </Badge>
         </motion.div>
 
@@ -471,10 +479,10 @@ export function FounderCardPreview() {
             <QuoteIcon className="absolute top-4 right-4 w-8 h-8 text-white/10 rotate-180" />
             
             <h3 className="text-white font-bold text-lg mb-2 flex items-center gap-2">
-                Session Stratégique <span className="text-amber-400">OFFERTE</span>
+                {title} <span className="text-amber-400">{subtitle}</span>
             </h3>
             <p className="text-slate-300 text-sm leading-relaxed font-medium">
-                "On ne se connaît pas encore très bien. Aujourd'hui, je prends le relais de l'algorithme. Je t'appelle dans la journée pour faire le point sur tes attentes et t'aider avec mon propre réseau."
+                "{pitch}"
             </p>
         </motion.div>
 

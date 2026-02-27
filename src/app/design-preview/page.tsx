@@ -52,14 +52,24 @@ export default function DesignPreviewPage() {
             <MatchCardPreview />
           </div>
 
-          {/* 4. Founder Joker State */}
+          {/* 4. Founder Joker State (Onboarding) */}
           <div className="space-y-6 w-full max-w-sm">
             <h2 className="text-xl font-bold text-white flex items-center gap-2">
               <span className="bg-amber-500 w-2 h-8 rounded-full"></span>
-              4. Joker Fondateur
+              4. Joker Fondateur (J+2)
             </h2>
-            <p className="text-sm text-slate-400 mb-4">Impair ou VIP, le fondateur prend le relais.</p>
-            <FounderCardPreview />
+            <p className="text-sm text-slate-400 mb-4">Onboarding VIP personnalisé.</p>
+            <FounderCardPreview type="onboarding" />
+          </div>
+
+          {/* 5. Founder Joker State (Rescue) */}
+          <div className="space-y-6 w-full max-w-sm">
+            <h2 className="text-xl font-bold text-white flex items-center gap-2">
+              <span className="bg-red-500 w-2 h-8 rounded-full"></span>
+              5. Joker Sauvetage
+            </h2>
+            <p className="text-sm text-slate-400 mb-4">Impair ou pas de match dispo.</p>
+            <FounderCardPreview type="rescue" />
           </div>
 
         </div>
