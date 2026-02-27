@@ -12,34 +12,42 @@ export function PushManager() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Check support
     if ("serviceWorker" in navigator && "PushManager" in window) {
       setIsSupported(true);
-      checkSubscription();
+      
+      // Wait for SW to be ready
+      navigator.serviceWorker.ready.then((registration) => {
+          registration.pushManager.getSubscription().then((subscription) => {
+              setIsSubscribed(!!subscription);
+              setLoading(false);
+          }).catch((e) => {
+              console.error("Error getting subscription:", e);
+              setLoading(false);
+          });
+      }).catch((e) => {
+          console.error("Error waiting for SW ready:", e);
+          // If SW fails, just stop loading
+          setLoading(false);
+      });
     } else {
+      setIsSupported(false);
       setLoading(false);
     }
   }, []);
-
-  const checkSubscription = async () => {
-    try {
-      const registration = await navigator.serviceWorker.ready;
-      const subscription = await registration.pushManager.getSubscription();
-      setIsSubscribed(!!subscription);
-    } catch (error) {
-      console.error("Error checking subscription:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const subscribe = async () => {
     setLoading(true);
     try {
       const registration = await navigator.serviceWorker.ready;
+      
       const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+      if (!vapidKey) throw new Error("VAPID Key Missing");
 
-      if (!vapidKey) {
-        throw new Error("VAPID public key not found");
+      // Check permission first
+      const permission = await Notification.requestPermission();
+      if (permission !== "granted") {
+        throw new Error("Permission denied");
       }
 
       const subscription = await registration.pushManager.subscribe({
@@ -52,9 +60,9 @@ export function PushManager() {
       
       setIsSubscribed(true);
       toast.success("Notifications activées !");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to subscribe:", error);
-      toast.error("Impossible d'activer les notifications. Vérifiez les permissions.");
+      toast.error(`Erreur: ${error.message || "Impossible d'activer"}`);
     } finally {
       setLoading(false);
     }
@@ -67,7 +75,6 @@ export function PushManager() {
       const subscription = await registration.pushManager.getSubscription();
       if (subscription) {
         await subscription.unsubscribe();
-        // Ideally remove from backend too, but for now browser unsub is enough
         setIsSubscribed(false);
         toast.info("Notifications désactivées.");
       }
@@ -93,20 +100,30 @@ export function PushManager() {
     return outputArray;
   }
 
-  if (!isSupported) return null;
-
   if (loading) {
-    return (
-      <Button variant="outline" disabled className="w-full justify-start gap-3">
-        <Loader2 className="h-4 w-4 animate-spin" /> Chargement...
-      </Button>
-    );
+      return (
+        <Button variant="outline" disabled className="w-full justify-start gap-3 bg-white/5 border-white/10 text-slate-400">
+          <Loader2 className="h-4 w-4 animate-spin" /> Vérification...
+        </Button>
+      );
+  }
+
+  if (!isSupported) {
+      return (
+          <div className="text-xs text-red-400 bg-red-500/10 p-2 rounded border border-red-500/20">
+              Non supporté sur cet appareil.
+          </div>
+      );
   }
 
   return (
     <Button
       variant={isSubscribed ? "outline" : "default"}
-      className={`w-full justify-start gap-3 ${isSubscribed ? "border-green-500/30 bg-green-500/10 text-green-400 hover:bg-green-500/20" : "bg-blue-600 hover:bg-blue-500"}`}
+      className={`w-full justify-start gap-3 ${
+          isSubscribed 
+            ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 hover:text-emerald-300" 
+            : "bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-900/20"
+      }`}
       onClick={isSubscribed ? unsubscribe : subscribe}
     >
       {isSubscribed ? (

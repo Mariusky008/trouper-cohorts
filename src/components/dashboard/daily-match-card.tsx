@@ -488,8 +488,18 @@ export function DailyMatchCard({ matches, userStreak = 0, userId }: DailyMatchCa
   };
 
   // RENDER LOGIC
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   if (!matches || matches.length === 0) {
       return <WaitingCard countdown={waitingCountdown} />;
+  }
+
+  // Prevent hydration mismatch for time-dependent rendering
+  if (!mounted) {
+      return <div className="w-full max-w-sm mx-auto h-[600px] rounded-[2.5rem] bg-[#0f172a] animate-pulse border border-white/5" />;
   }
 
   const match = matches[0];

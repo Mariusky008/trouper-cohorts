@@ -92,6 +92,13 @@ export function GlobalChatWidget({ currentUserId }: { currentUserId: string }) {
     setIsOpen(false); // Close the list, open the dialog
   };
 
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) return null;
+
   return (
     <>
       {/* Floating Button */}
