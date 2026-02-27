@@ -4,11 +4,33 @@ import { createClient as createServerClient } from "@/lib/supabase/server";
 import { createClient } from "@supabase/supabase-js";
 import webpush from "web-push";
 
-webpush.setVapidDetails(
-  "mailto:contact@popey.academy",
-  process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
-  process.env.VAPID_PRIVATE_KEY!
-);
+// Lazy initialization of VAPID details
+let isVapidInitialized = false;
+
+function ensureVapidInitialized() {
+  if (isVapidInitialized) return true;
+
+  const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+  const privateKey = process.env.VAPID_PRIVATE_KEY;
+
+  if (!publicKey || !privateKey) {
+    console.warn("VAPID keys are missing. Push notifications will be disabled.");
+    return false;
+  }
+
+  try {
+    webpush.setVapidDetails(
+      "mailto:contact@popey.academy",
+      publicKey,
+      privateKey
+    );
+    isVapidInitialized = true;
+    return true;
+  } catch (error) {
+    console.error("Failed to initialize VAPID:", error);
+    return false;
+  }
+}
 
 export async function saveSubscription(subscription: any) {
   const supabase = await createServerClient();
@@ -56,6 +78,12 @@ export async function saveSubscription(subscription: any) {
 }
 
 export async function sendNotification(userId: string, title: string, body: string, url: string = "/mon-reseau-local/dashboard") {
+  // Check VAPID config before anything else
+  if (!ensureVapidInitialized()) {
+    console.error("Cannot send notification: VAPID keys missing or invalid");
+    return { success: false, message: "VAPID configuration error" };
+  }
+
   // USE ADMIN CLIENT to bypass RLS and read other users' subscriptions
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
