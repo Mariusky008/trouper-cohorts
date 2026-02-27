@@ -150,10 +150,11 @@ export async function getDailyMatches() {
           const startHour = startHourMatch ? parseInt(startHourMatch[1], 10) : 0;
           
           // Slot ends at start + 2 hours
+          // IMPORTANT: If current hour is < endHour, the slot is still active.
+          // Example: Slot 09h-11h (End 11). If current is 10:59, it's active. If 11:00, it's expired.
+          // We add a grace period? No, stick to logic.
           const endHour = startHour + 2;
           
-          // If current Paris hour is greater or equal to end hour, it's expired.
-          // Example: Slot 12h-14h. End is 14. If current is 14:00+, it is expired.
           if (currentParisHour >= endHour) return false;
       }
 
@@ -171,6 +172,9 @@ export async function getDailyMatches() {
 
   // DAILY DASHBOARD RULE: Only show ONE primary match at a time to focus the user.
   // We return the most urgent one (earliest today or next available).
+  // If we have future matches but no match today, we still return the future match (Waiting Card).
+  // If we have NO matches at all, we return empty array (Waiting Card will calculate next slot).
+  
   return sortedMatches.length > 0 ? [sortedMatches[0]] : [];
 }
 
