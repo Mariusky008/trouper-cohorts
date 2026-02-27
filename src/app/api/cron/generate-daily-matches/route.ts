@@ -73,6 +73,10 @@ async function handleMatching(request: Request) {
     // This allows users who forgot to declare availability to be matched if the day is in their preferences.
     
     // Get day name (mon, tue, wed...)
+    // IMPORTANT: Fix for weekend matching.
+    // If targetDay is 'sat' or 'sun', we should ONLY match users who explicitly have these days in their preferences.
+    // The current logic is correct but relies on 'preferred_days' being populated.
+    
     const days = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
     const targetDay = days[targetDate.getDay()]; // getDay() returns 0 for Sunday
 
@@ -125,13 +129,16 @@ async function handleMatching(request: Request) {
             const currentMatches = userMatchCounts[setting.user_id] || 0;
             const maxFrequency = setting.frequency_per_week || 5; // Default to 5 if not set
             
+            // Allow matching if limit not reached
             if (currentMatches >= maxFrequency) {
-                // User has reached their weekly limit, skip matching
                 continue;
             }
 
             // Check if user prefers this day
-            if (setting.preferred_days && setting.preferred_days.includes(targetDay)) {
+            // CRITICAL FIX: Ensure setting.preferred_days is an array
+            const preferredDays = Array.isArray(setting.preferred_days) ? setting.preferred_days : [];
+            
+            if (preferredDays.includes(targetDay)) {
                 // Map preferred slots to the format used in matching
                 const mappedSlots = (setting.preferred_slots || [])
                     .map((s: string) => slotMapping[s])

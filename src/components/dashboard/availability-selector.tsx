@@ -31,8 +31,21 @@ export function AvailabilitySelector({ settings, potentialCount = 0, onSuccess }
   const [isSettingsLoading, setIsSettingsLoading] = useState(false);
 
   // Tomorrow's date YYYY-MM-DD
-  const tomorrow = new Date();
-  tomorrow.setDate(tomorrow.getDate() + 1);
+  const today = new Date();
+  const tomorrow = new Date(today);
+  tomorrow.setDate(today.getDate() + 1);
+
+  // Skip weekends logic:
+  // If today is Friday (5), tomorrow is Saturday (6) -> Skip to Monday
+  // If today is Saturday (6), tomorrow is Sunday (0) -> Skip to Monday
+  // If today is Sunday (0), tomorrow is Monday (1) -> OK
+  
+  if (today.getDay() === 5) { // Friday -> Next match is Monday
+      tomorrow.setDate(today.getDate() + 3);
+  } else if (today.getDay() === 6) { // Saturday -> Next match is Monday
+      tomorrow.setDate(today.getDate() + 2);
+  }
+
   const dateStr = tomorrow.toISOString().split('T')[0];
   const formattedDate = tomorrow.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
 
