@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/accordion";
 
 import { AuthDialog } from "@/components/auth-dialog";
-import { MysteryCardPreview, MatchCardPreview } from "@/components/dashboard/design-system-preview";
+import { MysteryCardPreview, MatchCardPreview, FounderCardPreview } from "@/components/dashboard/design-system-preview";
 
 // --- ANIMATED COMPONENTS ---
 
@@ -408,6 +408,31 @@ export default function HomePage() {
                      <p className="text-slate-400 text-lg leading-relaxed font-medium">
                         Le profil est révélé avec les informations essentielles et un créneau d’appel. <br className="hidden md:block" />
                         Échangez 5 minutes, partagez vos réseaux et créez de nouvelles opportunités.
+                     </p>
+                  </div>
+               </div>
+
+               {/* Screen 3 - Joker Founder (NEW) */}
+               <div className="flex flex-col gap-8 group mt-12 lg:mt-0 lg:col-span-2 lg:flex-row lg:items-center lg:max-w-4xl lg:mx-auto">
+                  <div className="relative transform transition-transform duration-500 group-hover:-translate-y-2 lg:w-1/2">
+                     <div className="absolute -inset-4 bg-gradient-to-r from-amber-500 to-orange-600 rounded-[3.5rem] opacity-20 blur-xl group-hover:opacity-30 transition-opacity duration-500"></div>
+                     <div className="bg-slate-900 border border-amber-500/20 rounded-[3rem] p-4 backdrop-blur-sm relative z-10 shadow-2xl">
+                        <div className="scale-[0.85] origin-top">
+                            <FounderCardPreview type="rescue" />
+                        </div>
+                     </div>
+                  </div>
+                  <div className="space-y-4 text-center lg:text-left px-4 lg:w-1/2">
+                     <div className="inline-flex items-center justify-center h-12 w-12 rounded-2xl bg-amber-500/10 text-amber-400 border border-amber-500/20 mb-2 shadow-[0_0_15px_rgba(245,158,11,0.2)]">
+                        <span className="font-black text-xl">3</span>
+                     </div>
+                     <Badge className="ml-3 bg-amber-500/20 text-amber-400 border-amber-500/30">GARANTIE ANTI-ÉCHEC</Badge>
+                     <h3 className="text-2xl font-black text-white">Et si l'algorithme ne trouve personne ?</h3>
+                     <p className="text-slate-400 text-lg leading-relaxed font-medium">
+                        Pas de panique. Si aucun match n'est disponible, <strong className="text-white">le fondateur lui-même prend le relais.</strong>
+                        <br/><br/>
+                        Vous recevez une session de coaching express ou une mise en relation manuelle. <br/>
+                        <span className="text-amber-400 font-bold">Zéro journée perdue. Jamais.</span>
                      </p>
                   </div>
                </div>
