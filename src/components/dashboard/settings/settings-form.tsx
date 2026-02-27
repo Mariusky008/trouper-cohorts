@@ -42,6 +42,7 @@ export function SettingsForm({ initialSettings }: { initialSettings: any }) {
   const [status, setStatus] = useState(initialSettings?.status || 'active');
 
   const [loading, setLoading] = useState(false);
+  const [showInstallPrompt, setShowInstallPrompt] = useState(false);
   
   // Password State
   const [newPassword, setNewPassword] = useState("");
@@ -109,9 +110,46 @@ export function SettingsForm({ initialSettings }: { initialSettings: any }) {
     }
   };
 
+import { PWAInstallPrompt } from "@/components/pwa-install-prompt";
+import { Download } from "lucide-react";
+
+// ... existing imports
+
+export function SettingsForm({ initialSettings }: { initialSettings: any }) {
+  // ... existing state
+
+  // Add state to trigger PWA prompt manually
+  const [showInstallPrompt, setShowInstallPrompt] = useState(false);
+
+  // ... existing handlers
+
   return (
     <div className="space-y-8 max-w-3xl animate-in fade-in duration-500">
       
+      {/* 0. APPLICATION (New Section) */}
+      <div className="bg-[#1e293b]/50 backdrop-blur-md p-6 rounded-[2rem] border border-white/5 shadow-sm space-y-4">
+        <h3 className="font-bold text-lg text-white flex items-center gap-2">
+           <Download className="h-5 w-5 text-indigo-400" /> Application
+        </h3>
+        <div className="bg-[#0a0f1c]/50 p-5 rounded-2xl border border-white/5 flex items-center justify-between gap-4">
+            <div>
+                <p className="font-bold text-white text-sm">Installer sur l'appareil</p>
+                <p className="text-xs text-slate-400 mt-1">
+                    Ajoutez l'application à votre écran d'accueil pour un accès rapide.
+                </p>
+            </div>
+            {/* We can re-use the PWA logic but simpler */}
+            <PWAInstallPrompt forceShow={showInstallPrompt} onDismiss={() => setShowInstallPrompt(false)} />
+            <Button 
+                variant="outline" 
+                onClick={() => setShowInstallPrompt(true)}
+                className="bg-indigo-600/10 text-indigo-400 border-indigo-500/20 hover:bg-indigo-600/20"
+            >
+                Installer
+            </Button>
+        </div>
+      </div>
+
       {/* 1. FREQUENCY & RHYTHM (New Section) */}
       <div className="bg-[#1e293b]/50 backdrop-blur-md p-6 rounded-[2rem] border border-white/5 shadow-sm space-y-8">
         <div className="flex items-center justify-between">

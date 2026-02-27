@@ -5,8 +5,8 @@ import { X, Share, Download, PlusSquare, Smartphone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
 
-export function PWAInstallPrompt() {
-  const [showPrompt, setShowPrompt] = useState(false);
+export function PWAInstallPrompt({ forceShow = false, onDismiss }: { forceShow?: boolean, onDismiss?: () => void }) {
+  const [showPrompt, setShowPrompt] = useState(forceShow);
   const [isIOS, setIsIOS] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
 
@@ -14,35 +14,38 @@ export function PWAInstallPrompt() {
     // Only run on client
     if (typeof window === "undefined") return;
 
-    // Check if already installed (standalone mode)
-    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone;
-    if (isStandalone) return;
-
     // Check if iOS
     const userAgent = window.navigator.userAgent.toLowerCase();
     const isIosDevice = /iphone|ipad|ipod/.test(userAgent);
     setIsIOS(isIosDevice);
 
+    if (forceShow) {
+        setShowPrompt(true);
+    } else {
+        const isStandalone = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone;
+        if (isStandalone) return;
+        
+        // Auto-show logic for iOS (since no beforeinstallprompt)
+        if (isIosDevice) {
+             setTimeout(() => setShowPrompt(true), 3000);
+        }
+    }
+
     // For Android/Desktop (Chrome)
     const handleBeforeInstallPrompt = (e: any) => {
       e.preventDefault();
       setDeferredPrompt(e);
-      // Show prompt after a small delay to not annoy immediately
-      // Only show if we haven't dismissed it recently (optional, skipping for MVP)
-      setTimeout(() => setShowPrompt(true), 3000);
+      if (!forceShow) {
+         setTimeout(() => setShowPrompt(true), 3000);
+      }
     };
 
     window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
 
-    // For iOS, show prompt anyway after delay if not standalone
-    if (isIosDevice) {
-       setTimeout(() => setShowPrompt(true), 3000);
-    }
-
     return () => {
       window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
     };
-  }, []);
+  }, [forceShow]);
 
   const handleInstallClick = async () => {
     if (!isIOS && deferredPrompt) {
@@ -57,6 +60,7 @@ export function PWAInstallPrompt() {
 
   const handleDismiss = () => {
     setShowPrompt(false);
+    if (onDismiss) onDismiss();
   };
 
   return (
