@@ -10,6 +10,7 @@ Initialement conçue pour les entrepreneurs (Sprint de 14 jours), elle supporte 
 - **Base de données & Auth** : Supabase
 - **UI** : Tailwind CSS + shadcn/ui + Framer Motion
 - **Icônes** : Lucide React
+- **Paiement** : Stripe
 
 ---
 
@@ -18,6 +19,7 @@ Initialement conçue pour les entrepreneurs (Sprint de 14 jours), elle supporte 
 Le système a évolué pour supporter deux types de programmes distincts :
 1.  **Entrepreneur (`entrepreneur`)** : Le format historique. 14 jours consécutifs.
 2.  **Emploi / Job Seeker (`job_seeker`)** : Nouveau format. 3 semaines (15 jours de contenu + week-ends off).
+3.  **Mon Réseau Local (`mon_reseau_local`)** : Format mensuel (Abonnement), 1 match/jour, 5 jours/semaine.
 
 ### Impact Technique
 - **Base de Données** : Ajout d'une colonne `program_type` (text) dans les tables clés :
@@ -52,6 +54,9 @@ Le système a évolué pour supporter deux types de programmes distincts :
     - Éditeur de contenu jour par jour.
     - **Seed Button** : Bouton permettant de réinitialiser le contenu pédagogique.
 - **Buddy System** : Rotation quotidienne des binômes.
+- **Demandes d'Appel Joker** :
+    - Section dédiée pour voir les utilisateurs ayant demandé un "Joker Fondateur" (Onboarding J+2) ou "Joker Sauvetage" (Pas de match).
+    - Basé sur les événements `founder_call_request` dans `analytics_events`.
 
 ---
 
@@ -66,6 +71,8 @@ Le système a évolué pour supporter deux types de programmes distincts :
 - **`missions`** : Les instances de missions.
 - **`mission_steps`** : Les étapes instanciées. Colonnes `proof_type`, `proof_content`, `status` ajoutées pour la validation granulaire.
 - **`pre_registrations`** : Les leads avant validation.
+- **`network_matches`** : Gestion des mises en relation quotidiennes.
+- **`analytics_events`** : Logs d'activité, utilisé notamment pour les demandes de Joker ("Founder Call").
 
 ### Scripts Importants (`supabase/migrations/`)
 - `20240212_add_program_type.sql` : Ajout du support multi-programmes.
@@ -86,6 +93,14 @@ Le système a évolué pour supporter deux types de programmes distincts :
 
 Ce programme est une surcouche sociale et gamifiée visant à créer des opportunités d'affaires locales quotidiennes.
 
+### Stratégie Gagnante (Hybride)
+Le modèle économique et d'engagement repose sur 3 phases :
+1.  **J1 (Gratuit)** : Match classique avec effet "Wahoo" pour accrocher l'utilisateur.
+2.  **J2 (Joker Fondateur)** : Onboarding VIP personnalisé via la carte "Popey" (Joker).
+    - Si l'utilisateur n'a pas de match (nombre impair ou indisponibilité), la carte "Joker Sauvetage" s'active automatiquement pour transformer l'échec en opportunité.
+3.  **J3+ (Pay-to-Reveal)** : Stratégie de monétisation. Les matchs sont floutés et nécessitent un abonnement pour être révélés.
+    - *État actuel* : Fonctionnalité prête techniquement (Stripe intégré) mais inactive pour les utilisateurs. Visualisable sur `/design-preview`.
+
 ### Fonctionnalités Clés
 
 #### 1. Le Cockpit (`/mon-reseau-local/dashboard`)
@@ -102,6 +117,10 @@ Algorithme de mise en relation quotidienne pour un appel de 15 minutes.
 - **Smart Matching** : Tente de varier les partenaires et d'éviter les doublons récents.
 - **Call-to-Action** : Instructions claires (Call-in vs Call-out) et compte à rebours.
 - **Micro-Missions** : Objectifs contextuels générés pour chaque appel (ex: "Trouver 2 synergies").
+- **Carte Joker ("Popey")** :
+    - **Onboarding (J+2)** : Carte spéciale pour un appel avec le fondateur.
+    - **Sauvetage** : S'active si aucun match n'est trouvé.
+    - **Intégration Admin** : Les demandes d'appel remontent dans le dashboard Admin.
 
 #### 3. Impact & Trust Score
 Système de réputation pour encourager les comportements vertueux.
@@ -143,5 +162,10 @@ L'algorithme de validation (`src/app/actions/admin-registration.ts`) suit cette 
 3. Si elle n'existe pas, elle est créée automatiquement.
 4. L'utilisateur est assigné.
 
+### Paiement (Stripe)
+- **Configuration** : Clés API (`STRIPE_SECRET_KEY`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`) et ID Produit (`NEXT_PUBLIC_STRIPE_PRICE_ID`) dans `.env`.
+- **Produit** : "Abonnement Mon Réseau Local" (Mensuel).
+- **Actions** : `createCheckoutSession` dans `src/lib/actions/stripe.ts`.
+
 ---
-*Dernière mise à jour : 18 Février 2026*
+*Dernière mise à jour : 27 Février 2026*
