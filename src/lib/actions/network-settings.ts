@@ -27,7 +27,12 @@ export async function getNetworkSettings() {
     };
   }
 
-  return settings;
+  // Ensure arrays are initialized even if null in DB
+  return {
+    ...settings,
+    preferred_days: settings.preferred_days || ['mon', 'tue', 'wed', 'thu', 'fri'],
+    preferred_slots: settings.preferred_slots || ['09-11', '14-16']
+  };
 }
 
 export async function updateNetworkSettings(data: { 
