@@ -11,6 +11,7 @@ import { updateNetworkSettings } from "@/lib/actions/network-settings";
 import { createClient } from "@/lib/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { PushManager } from "@/components/dashboard/notifications/push-manager";
 
 const DAYS = [
   { id: 'mon', label: 'Lun' },
@@ -206,17 +207,24 @@ export function SettingsForm({ initialSettings }: { initialSettings: any }) {
          <h3 className="font-bold text-lg text-white mb-6 flex items-center gap-2">
            <Bell className="h-5 w-5 text-orange-400" /> Notifications
          </h3>
-         <div className="flex items-center justify-between bg-[#0a0f1c]/50 p-4 rounded-2xl border border-white/5">
-           <div className="space-y-0.5">
-             <Label htmlFor="notifications" className="text-base font-bold text-slate-200">Activer les notifications</Label>
-             <p className="text-sm text-slate-500">Recevez des alertes pour les matchs et opportunités.</p>
+         <div className="flex flex-col gap-4 bg-[#0a0f1c]/50 p-4 rounded-2xl border border-white/5">
+           <div className="flex items-center justify-between">
+             <div className="space-y-0.5">
+               <Label htmlFor="notifications" className="text-base font-bold text-slate-200">Activer les notifications</Label>
+               <p className="text-sm text-slate-500">Recevez des alertes pour les matchs et opportunités.</p>
+             </div>
+             <Checkbox 
+               id="notifications" 
+               checked={notifications} 
+               onCheckedChange={(checked) => setNotifications(checked === true)}
+               className="h-6 w-6 border-white/20 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
+             />
            </div>
-           <Checkbox 
-             id="notifications" 
-             checked={notifications} 
-             onCheckedChange={(checked) => setNotifications(checked === true)}
-             className="h-6 w-6 border-white/20 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
-           />
+           
+           <div className="pt-4 border-t border-white/5">
+              <p className="text-xs text-slate-400 mb-3 uppercase tracking-wider font-bold">Notifications Push (Mobile & Desktop)</p>
+              <PushManager />
+           </div>
          </div>
       </div>
 
