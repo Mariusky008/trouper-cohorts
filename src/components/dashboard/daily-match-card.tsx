@@ -115,45 +115,59 @@ function MysteryCard({ onReveal, match, locked = false }: { onReveal: () => void
   const compatibility = 77 + (seed % 20); // 77 to 96
   
   // Dynamic benefits based on job/superpower if available, or generic
-  const getBenefits = () => {
-      const benefits = [
-          "Partenariats locaux stratégiques",
-          "Recommandations croisées",
-          "Accès à un nouveau réseau",
-          "Partage d'expérience",
-          "Opportunités de co-création",
-          "Mentorat mutuel"
-      ];
-      
-      // Add specific ones based on job
+    const getSector = () => {
       const job = (match.job || "").toLowerCase();
-      if (job.includes("commercial") || job.includes("vente")) benefits.unshift("2 à 5 clients potentiels / mois");
-      if (job.includes("marketing") || job.includes("com")) benefits.unshift("Stratégies de visibilité");
-      if (job.includes("tech") || job.includes("dev")) benefits.unshift("Expertise technique");
-      if (job.includes("immo")) benefits.unshift("Opportunités d'investissement");
-      
-      // Shuffle deterministically
-      const shuffled = benefits.sort((a, b) => {
-          const valA = a.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0);
-          const valB = b.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0);
-          return (valA % 10) - (valB % 10);
-      });
-      
-      return shuffled.slice(0, 3);
-  };
+      if (job.includes("commercial") || job.includes("vente") || job.includes("business")) return "COMMERCE";
+      if (job.includes("marketing") || job.includes("com") || job.includes("social")) return "MARKETING";
+      if (job.includes("tech") || job.includes("dev") || job.includes("data")) return "TECH";
+      if (job.includes("immo")) return "IMMOBILIER";
+      if (job.includes("design") || job.includes("graphis")) return "CRÉATIF";
+      if (job.includes("finance") || job.includes("compta")) return "FINANCE";
+      if (job.includes("rh") || job.includes("recrut")) return "RH";
+      return "GÉNÉRALISTE";
+    };
 
-  const benefits = getBenefits();
+    const sector = getSector();
 
-  return (
-    <div 
-        onClick={locked ? undefined : onReveal}
-        className={cn(
-            "relative w-full max-w-sm mx-auto h-[600px] rounded-[2.5rem] overflow-hidden shadow-2xl flex flex-col items-center justify-center text-center p-6 border transition-all",
-            // ALWAYS use the vibrant dark blue background, never the gray/black locked one
-            "bg-[#020617] border-white/10",
-            !locked && "cursor-pointer group hover:scale-[1.01]"
-        )}
-    >
+    const getBenefits = () => {
+        const benefits = [
+            "Partenariats locaux stratégiques",
+            "Recommandations croisées",
+            "Accès à un nouveau réseau",
+            "Partage d'expérience",
+            "Opportunités de co-création",
+            "Mentorat mutuel"
+        ];
+        
+        // Add specific ones based on job
+        const job = (match.job || "").toLowerCase();
+        if (job.includes("commercial") || job.includes("vente")) benefits.unshift("2 à 5 clients potentiels / mois");
+        if (job.includes("marketing") || job.includes("com")) benefits.unshift("Stratégies de visibilité");
+        if (job.includes("tech") || job.includes("dev")) benefits.unshift("Expertise technique");
+        if (job.includes("immo")) benefits.unshift("Opportunités d'investissement");
+        
+        // Shuffle deterministically
+        const shuffled = benefits.sort((a, b) => {
+            const valA = a.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0);
+            const valB = b.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0);
+            return (valA % 10) - (valB % 10);
+        });
+        
+        return shuffled.slice(0, 3);
+    };
+
+    const benefits = getBenefits();
+
+    return (
+      <div 
+          onClick={locked ? undefined : onReveal}
+          className={cn(
+              "relative w-full max-w-sm mx-auto min-h-[600px] h-auto rounded-[2.5rem] overflow-hidden shadow-2xl flex flex-col items-center justify-center text-center p-6 border transition-all pb-8",
+              // ALWAYS use the vibrant dark blue background, never the gray/black locked one
+              "bg-[#020617] border-white/10",
+              !locked && "cursor-pointer group hover:scale-[1.01]"
+          )}
+      >
       {/* Animated Gradient Border - Show for BOTH states to keep it vibrant */}
       <div className={cn(
           "absolute inset-0 bg-gradient-to-br from-emerald-500/30 via-blue-600/20 to-purple-600/30 transition-opacity duration-500",
@@ -216,14 +230,14 @@ function MysteryCard({ onReveal, match, locked = false }: { onReveal: () => void
                 
                 <div className="grid grid-cols-3 gap-2">
                     <div className="bg-[#0f172a] rounded-xl p-3 flex flex-col items-center justify-center border border-white/5 shadow-lg">
-                        <Zap className="w-5 h-5 text-orange-500 mb-1.5" />
-                        <span className="text-[9px] text-slate-400 uppercase font-bold tracking-wider">BUSINESS</span>
-                        <span className="text-xs font-black text-white">{potential}</span>
+                        <Briefcase className="w-5 h-5 text-orange-500 mb-1.5" />
+                        <span className="text-[9px] text-slate-400 uppercase font-bold tracking-wider">SECTEUR</span>
+                        <span className="text-xs font-black text-white">{sector}</span>
                     </div>
                     <div className="bg-[#0f172a] rounded-xl p-3 flex flex-col items-center justify-center border border-white/5 shadow-lg">
                         <Users className="w-5 h-5 text-blue-500 mb-1.5" />
-                        <span className="text-[9px] text-slate-400 uppercase font-bold tracking-wider">CE MOIS-CI</span>
-                        <span className="text-xs font-black text-white">{collabs} Collabs</span>
+                        <span className="text-[9px] text-slate-400 uppercase font-bold tracking-wider">TOTAL COLLABS</span>
+                        <span className="text-xs font-black text-white">{collabs < 10 ? "DÉBUTANT" : collabs}</span>
                     </div>
                     <div className="bg-[#0f172a] rounded-xl p-3 flex flex-col items-center justify-center border border-white/5 shadow-lg">
                         <Handshake className="w-5 h-5 text-purple-500 mb-1.5" />

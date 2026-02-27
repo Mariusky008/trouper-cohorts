@@ -22,6 +22,8 @@ export async function getConversation(partnerId: string) {
   return messages || [];
 }
 
+import { sendNotification } from "./notifications";
+
 export async function sendMessage(partnerId: string, content: string) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -40,6 +42,28 @@ export async function sendMessage(partnerId: string, content: string) {
   if (error) {
     console.error("Error sending message:", error);
     return { success: false, error: error.message };
+  }
+
+  // Send Push Notification
+  try {
+    // Get sender name for the notification
+    const { data: senderProfile } = await supabase
+      .from("profiles")
+      .select("display_name")
+      .eq("id", user.id)
+      .single();
+      
+    const senderName = senderProfile?.display_name || "Un membre";
+    
+    await sendNotification(
+      partnerId,
+      `Nouveau message de ${senderName}`,
+      content.length > 50 ? content.substring(0, 50) + "..." : content,
+      `/mon-reseau-local/dashboard/chat/${user.id}` // Link to the conversation
+    );
+  } catch (e) {
+    console.error("Failed to send push notification:", e);
+    // Don't block the response, just log error
   }
 
   return { success: true };

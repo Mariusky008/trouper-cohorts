@@ -295,6 +295,22 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 <span className="text-lg">Mon Profil</span>
             </Link>
 
+            {/* LINK TO SETTINGS EXPLICIT */}
+            <Link 
+                href="/mon-reseau-local/dashboard/settings"
+                className={cn(
+                  "flex items-center gap-4 p-4 rounded-xl transition-colors",
+                  pathname === "/mon-reseau-local/dashboard/settings" 
+                    ? "bg-blue-600/10 text-blue-400 font-bold" 
+                    : "text-slate-400 font-medium hover:bg-white/5"
+                )}
+              >
+                <div className={cn("p-2 rounded-lg", pathname === "/mon-reseau-local/dashboard/settings" ? "bg-blue-600/20 shadow-sm" : "bg-white/5")}>
+                  <Settings className={cn("h-5 w-5", pathname === "/mon-reseau-local/dashboard/settings" ? "text-blue-400" : "text-slate-500")} />
+                </div>
+                <span className="text-lg">Paramètres</span>
+            </Link>
+
             <div className="mt-auto border-t border-white/5 pt-6">
                 <Link href="/mon-reseau-local/dashboard/profile" className="flex items-center gap-4 p-4 bg-white/5 rounded-xl border border-white/5 active:scale-95 transition-transform">
                   <Avatar className="h-12 w-12 border border-white/10">

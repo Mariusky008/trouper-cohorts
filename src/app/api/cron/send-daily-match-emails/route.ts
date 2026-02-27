@@ -19,6 +19,14 @@ const GOAL_LABELS: Record<string, string> = {
 };
 
 export async function GET(request: Request) {
+  return handleSendEmails(request);
+}
+
+export async function POST(request: Request) {
+  return handleSendEmails(request);
+}
+
+async function handleSendEmails(request: Request) {
   try {
     // 1. Init Admin Client & Resend
     if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
@@ -69,68 +77,94 @@ export async function GET(request: Request) {
     // 5. Send Emails
     let emailsSent = 0;
     const emailPromises = [];
+    const errors: any[] = [];
+
+    const fromEmail = process.env.EMAIL_FROM || 'Popey Academy <onboarding@resend.dev>';
 
     for (const match of matches) {
         const user1 = profileMap.get(match.user1_id);
         const user2 = profileMap.get(match.user2_id);
 
-        if (!user1 || !user2) continue;
+        if (!user1 || !user2) {
+            console.warn(`Skipping match ${match.id}: missing profiles`);
+            continue;
+        }
 
         // Prepare email for User 1 (About User 2)
         const sendToUser1 = async () => {
-            const goalLabel = user2.current_goals?.[0] ? GOAL_LABELS[user2.current_goals[0]] : "Développer son activité";
-            
-            await resend.emails.send({
-                from: 'Popey Academy <onboarding@resend.dev>', // Update with verified domain in production
-                to: user1.email,
-                subject: `⚓️ Votre match du jour : ${user2.display_name} !`,
-                react: DailyMatchEmail({
-                    userName: user1.display_name,
-                    matchName: user2.display_name,
-                    matchJob: user2.trade,
-                    matchCity: user2.city,
-                    matchAvatar: user2.avatar_url,
-                    matchGoal: goalLabel,
-                    matchSuperpower: user2.superpower,
-                    matchNeed: user2.current_need,
-                    dashboardUrl: `${process.env.NEXT_PUBLIC_APP_URL || 'https://popey.academy'}/mon-reseau-local/dashboard`
-                })
-            });
+            try {
+                const goalLabel = user2.current_goals?.[0] ? GOAL_LABELS[user2.current_goals[0]] : "Développer son activité";
+                
+                await resend.emails.send({
+                    from: fromEmail,
+                    to: user1.email,
+                    subject: `⚓️ Votre match du jour : ${user2.display_name} !`,
+                    react: DailyMatchEmail({
+                        userName: user1.display_name,
+                        matchName: user2.display_name,
+                        matchJob: user2.trade || "Entrepreneur",
+                        matchCity: user2.city || "En ligne",
+                        matchAvatar: user2.avatar_url,
+                        matchGoal: goalLabel,
+                        matchSuperpower: user2.superpower,
+                        matchNeed: user2.current_need,
+                        dashboardUrl: `${process.env.NEXT_PUBLIC_APP_URL || 'https://popey.academy'}/mon-reseau-local/dashboard`
+                    })
+                });
+                return { success: true, userId: user1.id };
+            } catch (err: any) {
+                console.error(`Failed to send to user1 (${user1.email}):`, err);
+                throw { userId: user1.id, error: err.message };
+            }
         };
 
         // Prepare email for User 2 (About User 1)
         const sendToUser2 = async () => {
-            const goalLabel = user1.current_goals?.[0] ? GOAL_LABELS[user1.current_goals[0]] : "Développer son activité";
+            try {
+                const goalLabel = user1.current_goals?.[0] ? GOAL_LABELS[user1.current_goals[0]] : "Développer son activité";
 
-            await resend.emails.send({
-                from: 'Popey Academy <onboarding@resend.dev>',
-                to: user2.email,
-                subject: `⚓️ Votre match du jour : ${user1.display_name} !`,
-                react: DailyMatchEmail({
-                    userName: user2.display_name,
-                    matchName: user1.display_name,
-                    matchJob: user1.trade,
-                    matchCity: user1.city,
-                    matchAvatar: user1.avatar_url,
-                    matchGoal: goalLabel,
-                    matchSuperpower: user1.superpower,
-                    matchNeed: user1.current_need,
-                    dashboardUrl: `${process.env.NEXT_PUBLIC_APP_URL || 'https://popey.academy'}/mon-reseau-local/dashboard`
-                })
-            });
+                await resend.emails.send({
+                    from: fromEmail,
+                    to: user2.email,
+                    subject: `⚓️ Votre match du jour : ${user1.display_name} !`,
+                    react: DailyMatchEmail({
+                        userName: user2.display_name,
+                        matchName: user1.display_name,
+                        matchJob: user1.trade || "Entrepreneur",
+                        matchCity: user1.city || "En ligne",
+                        matchAvatar: user1.avatar_url,
+                        matchGoal: goalLabel,
+                        matchSuperpower: user1.superpower,
+                        matchNeed: user1.current_need,
+                        dashboardUrl: `${process.env.NEXT_PUBLIC_APP_URL || 'https://popey.academy'}/mon-reseau-local/dashboard`
+                    })
+                });
+                return { success: true, userId: user2.id };
+            } catch (err: any) {
+                console.error(`Failed to send to user2 (${user2.email}):`, err);
+                throw { userId: user2.id, error: err.message };
+            }
         };
 
         emailPromises.push(sendToUser1());
         emailPromises.push(sendToUser2());
-        emailsSent += 2;
     }
 
-    await Promise.allSettled(emailPromises);
+    const results = await Promise.allSettled(emailPromises);
+    
+    results.forEach((result) => {
+        if (result.status === 'fulfilled') {
+            emailsSent++;
+        } else {
+            errors.push(result.reason);
+        }
+    });
 
     return NextResponse.json({ 
         success: true, 
         matches_processed: matches.length,
-        emails_sent: emailsSent 
+        emails_sent: emailsSent,
+        errors: errors.length > 0 ? errors : undefined
     });
 
   } catch (error: any) {

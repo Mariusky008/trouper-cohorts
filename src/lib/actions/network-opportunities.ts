@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { OpportunityType, OpportunityStatus } from "@/types/network";
 import { revalidatePath } from "next/cache";
+import { sendNotification } from "./notifications";
 
 // ... existing createOpportunity function
 
@@ -50,6 +51,26 @@ export async function createOpportunity(data: {
     if (error) {
       console.error("Error creating opportunity:", error);
       return { success: false, error: `Erreur lors de la création: ${error.message}` };
+    }
+
+    // Send Notification
+    try {
+        const { data: senderProfile } = await supabase
+            .from("profiles")
+            .select("display_name")
+            .eq("id", user.id)
+            .single();
+        
+        const senderName = senderProfile?.display_name || "Un membre";
+
+        await sendNotification(
+            data.receiverId,
+            `Nouvelle opportunité reçue ! 🎁`,
+            `${senderName} vous a envoyé une opportunité : ${data.type}`,
+            `/mon-reseau-local/dashboard/opportunities`
+        );
+    } catch (e) {
+        console.error("Failed to send notification for opportunity:", e);
     }
 
     // Revalidate ALL dashboard paths to ensure consistency

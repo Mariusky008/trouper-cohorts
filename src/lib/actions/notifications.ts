@@ -1,6 +1,7 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
+import { createClient as createServerClient } from "@/lib/supabase/server";
+import { createClient } from "@supabase/supabase-js";
 import webpush from "web-push";
 
 webpush.setVapidDetails(
@@ -10,7 +11,7 @@ webpush.setVapidDetails(
 );
 
 export async function saveSubscription(subscription: any) {
-  const supabase = await createClient();
+  const supabase = await createServerClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -55,7 +56,11 @@ export async function saveSubscription(subscription: any) {
 }
 
 export async function sendNotification(userId: string, title: string, body: string, url: string = "/mon-reseau-local/dashboard") {
-  const supabase = await createClient();
+  // USE ADMIN CLIENT to bypass RLS and read other users' subscriptions
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
   
   // 1. Get user subscriptions
   const { data: subscriptions } = await supabase

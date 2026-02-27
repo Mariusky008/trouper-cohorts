@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
+import { sendNotification } from '@/lib/actions/notifications';
 
 // Note: This route should be protected (e.g., via a secret key header) in production
 // to prevent unauthorized triggering.
@@ -248,6 +249,70 @@ async function handleMatching(request: Request) {
       if (insertError) {
           console.error("Supabase Error inserting matches:", insertError);
           throw new Error(`Insert error: ${insertError.message}`);
+      }
+
+      // --- NOTIFICATIONS LOGIC ---
+      try {
+        // 5a. Identify users with offers
+        const allUserIds = Array.from(matchedUserIds);
+        const { data: usersWithOffersData } = await supabase
+            .from('network_offers')
+            .select('user_id')
+            .in('user_id', allUserIds)
+            // Assuming offers are always active if present, or check 'status'
+            // If there's a status column: .eq('status', 'active')
+            ;
+        
+        const usersWithOffers = new Set(usersWithOffersData?.map((o: any) => o.user_id) || []);
+
+        // 5b. Send Notifications
+        const notificationPromises = matches.map(async (match) => {
+            // Notify User 1
+            const p1 = sendNotification(
+                match.user1_id,
+                "Nouveau Match du Jour ! ⚡️",
+                "Votre binôme vous attend. Découvrez qui c'est !",
+                "/mon-reseau-local/dashboard"
+            );
+
+            // Notify User 2
+            const p2 = sendNotification(
+                match.user2_id,
+                "Nouveau Match du Jour ! ⚡️",
+                "Votre binôme vous attend. Découvrez qui c'est !",
+                "/mon-reseau-local/dashboard"
+            );
+
+            // Offer Notifications
+            let p3 = Promise.resolve();
+            if (usersWithOffers.has(match.user2_id)) {
+                p3 = sendNotification(
+                    match.user1_id,
+                    "Nouvelle offre débloquée ! 🔓",
+                    "Votre match a une offre exclusive pour vous.",
+                    "/mon-reseau-local/dashboard/offers"
+                ) as any;
+            }
+
+            let p4 = Promise.resolve();
+            if (usersWithOffers.has(match.user1_id)) {
+                p4 = sendNotification(
+                    match.user2_id,
+                    "Nouvelle offre débloquée ! 🔓",
+                    "Votre match a une offre exclusive pour vous.",
+                    "/mon-reseau-local/dashboard/offers"
+                ) as any;
+            }
+
+            return Promise.all([p1, p2, p3, p4]);
+        });
+
+        await Promise.all(notificationPromises);
+        console.log(`Sent notifications for ${matches.length} matches.`);
+
+      } catch (notifError) {
+          console.error("Error sending match notifications:", notifError);
+          // Continue execution, don't fail the cron
       }
     }
 
