@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Clock, Star, Phone, MessageSquare, User, Zap, Trophy, Handshake, Gift, PhoneCall, Copy, Target, Search, Fingerprint, Briefcase, CheckCircle2, Users, Lock } from "lucide-react";
+import { Clock, Star, Phone, MessageSquare, User, Zap, Trophy, Handshake, Gift, PhoneCall, Copy, Target, Search, Fingerprint, Briefcase, CheckCircle2, Users, Lock, Flame, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
@@ -115,20 +115,7 @@ function MysteryCard({ onReveal, match, locked = false }: { onReveal: () => void
   const compatibility = 77 + (seed % 20); // 77 to 96
   
   // Dynamic benefits based on job/superpower if available, or generic
-    const getSector = () => {
-      const job = (match.job || "").toLowerCase();
-      if (job.includes("commercial") || job.includes("vente") || job.includes("business")) return "COMMERCE";
-      if (job.includes("marketing") || job.includes("com") || job.includes("social")) return "MARKETING";
-      if (job.includes("tech") || job.includes("dev") || job.includes("data")) return "TECH";
-      if (job.includes("immo")) return "IMMOBILIER";
-      if (job.includes("design") || job.includes("graphis")) return "CRÉATIF";
-      if (job.includes("finance") || job.includes("compta")) return "FINANCE";
-      if (job.includes("rh") || job.includes("recrut")) return "RH";
-      return "GÉNÉRALISTE";
-    };
-
-    const sector = getSector();
-
+    // FIXED: Removed sector logic as requested by user to match design
     const getBenefits = () => {
         const benefits = [
             "Partenariats locaux stratégiques",
@@ -218,34 +205,34 @@ function MysteryCard({ onReveal, match, locked = false }: { onReveal: () => void
             </div>
 
             {/* 1. IMPACT SCORE */}
-            <div className="w-full space-y-3 mb-6">
-                <div className="flex justify-between items-center px-2">
-                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">IMPACT POTENTIEL</span>
-                    <div className="flex gap-1.5">
-                        {[1,2,3,4,5].map(i => (
-                            <div key={i} className={`h-1.5 w-5 rounded-full ${i <= 4 ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]' : 'bg-slate-900'}`} />
-                        ))}
-                    </div>
-                </div>
-                
-                <div className="grid grid-cols-3 gap-2">
-                    <div className="bg-[#0f172a] rounded-xl p-3 flex flex-col items-center justify-center border border-white/5 shadow-lg">
-                        <Briefcase className="w-5 h-5 text-orange-500 mb-1.5" />
-                        <span className="text-[9px] text-slate-400 uppercase font-bold tracking-wider">SECTEUR</span>
-                        <span className="text-xs font-black text-white">{sector}</span>
-                    </div>
-                    <div className="bg-[#0f172a] rounded-xl p-3 flex flex-col items-center justify-center border border-white/5 shadow-lg">
-                        <Users className="w-5 h-5 text-blue-500 mb-1.5" />
-                        <span className="text-[9px] text-slate-400 uppercase font-bold tracking-wider">TOTAL COLLABS</span>
-                        <span className="text-xs font-black text-white">{collabs < 10 ? "DÉBUTANT" : collabs}</span>
-                    </div>
-                    <div className="bg-[#0f172a] rounded-xl p-3 flex flex-col items-center justify-center border border-white/5 shadow-lg">
-                        <Handshake className="w-5 h-5 text-purple-500 mb-1.5" />
-                        <span className="text-[9px] text-slate-400 uppercase font-bold tracking-wider text-center leading-tight">TAUX DE<br/>COMPATIBILITÉ</span>
-                        <span className="text-xs font-black text-white">{compatibility}%</span>
-                    </div>
-                </div>
-            </div>
+              <div className="w-full space-y-3 mb-6">
+                  <div className="flex justify-between items-center px-2">
+                      <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">IMPACT POTENTIEL</span>
+                      <div className="flex gap-1.5">
+                          {[1,2,3,4,5].map(i => (
+                              <div key={i} className={`h-1.5 w-5 rounded-full ${i <= 4 ? 'bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.4)]' : 'bg-slate-900'}`} />
+                          ))}
+                      </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-3 gap-2">
+                      <div className="bg-[#0f172a] rounded-xl p-3 flex flex-col items-center justify-center border border-white/5 shadow-lg">
+                          <Flame className="w-5 h-5 text-orange-500 mb-1.5" />
+                          <span className="text-[9px] text-slate-400 uppercase font-bold tracking-wider">BUSINESS</span>
+                          <span className="text-xs font-black text-white">ÉLEVÉ</span>
+                      </div>
+                      <div className="bg-[#0f172a] rounded-xl p-3 flex flex-col items-center justify-center border border-white/5 shadow-lg">
+                          <Users className="w-5 h-5 text-blue-500 mb-1.5" />
+                          <span className="text-[9px] text-slate-400 uppercase font-bold tracking-wider">CE MOIS-CI</span>
+                          <span className="text-xs font-black text-white">12 Collabs</span>
+                      </div>
+                      <div className="bg-[#0f172a] rounded-xl p-3 flex flex-col items-center justify-center border border-white/5 shadow-lg">
+                          <Handshake className="w-5 h-5 text-purple-500 mb-1.5" />
+                          <span className="text-[9px] text-slate-400 uppercase font-bold tracking-wider text-center leading-tight">TAUX DE<br/>COMPATIBILITÉ</span>
+                          <span className="text-xs font-black text-white">77%</span>
+                      </div>
+                  </div>
+              </div>
         </div>
 
         {/* 2. CONCRETE BENEFITS */}

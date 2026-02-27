@@ -204,7 +204,7 @@ export function MysteryCardLockedPreview() {
                     <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">IMPACT POTENTIEL</span>
                     <div className="flex gap-1.5">
                         {[1,2,3,4,5].map(i => (
-                            <div key={i} className={`h-1.5 w-5 rounded-full ${i <= 4 ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]' : 'bg-slate-900'}`} />
+                            <div key={i} className={`h-1.5 w-5 rounded-full ${i <= 4 ? 'bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.4)]' : 'bg-slate-900'}`} />
                         ))}
                     </div>
                 </div>
