@@ -409,12 +409,11 @@ export function PremiumLockedCardPreview() {
                 </h3>
                 <div className="flex justify-center gap-2">
                     <Badge variant="secondary" className="bg-slate-800 text-slate-300 border-slate-700">Architecte</Badge>
-                    <Badge variant="secondary" className="bg-slate-800 text-slate-300 border-slate-700">Lyon</Badge>
                 </div>
                 
                 <div className="bg-white/5 rounded-xl p-4 border border-white/10 backdrop-blur-sm mt-4">
                     <p className="text-slate-300 text-sm font-medium leading-relaxed">
-                        "Je cherche un partenaire pour <span className="bg-yellow-500/20 text-yellow-200 px-1 rounded">refaire le branding</span> de mes 3 prochains chantiers..."
+                        "Je cherche à étendre mon réseau, j'ai déjà un bon réseau moi-même donc je peux aider aussi et échanger des bons plans..."
                     </p>
                 </div>
             </div>
@@ -422,18 +421,11 @@ export function PremiumLockedCardPreview() {
 
         {/* CTA Section */}
         <div className="w-full space-y-3">
-            <div className="flex items-center justify-between text-xs text-slate-400 px-2">
-                <span>Potentiel estimé</span>
-                <span className="text-green-400 font-bold">~2 500 €</span>
-            </div>
             
             <Button className="w-full h-14 bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-300 hover:to-orange-400 text-black font-black text-base rounded-2xl shadow-[0_0_30px_rgba(234,179,8,0.3)] border-2 border-white/20 transition-all hover:scale-[1.02]">
                 DÉBLOQUER CE MATCH 🔓
             </Button>
             
-            <p className="text-[10px] text-slate-500 font-medium">
-                À partir de 1€ / jour • Sans engagement
-            </p>
         </div>
 
       </div>
