@@ -43,16 +43,20 @@ export function PushManager() {
   const subscribe = async () => {
     setLoading(true);
     try {
-      const registration = await navigator.serviceWorker.ready;
-      
       const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
-      if (!vapidKey) throw new Error("VAPID Key Missing");
+      if (!vapidKey) throw new Error("Clé VAPID manquante");
 
       // Check permission first
       const permission = await Notification.requestPermission();
       if (permission !== "granted") {
-        throw new Error("Permission denied");
+        throw new Error("Permission refusée. Vérifiez vos réglages.");
       }
+
+      // Wait for SW with timeout
+      const registration = await Promise.race([
+          navigator.serviceWorker.ready,
+          new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout Service Worker")), 4000))
+      ]) as ServiceWorkerRegistration;
 
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
