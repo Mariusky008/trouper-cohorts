@@ -485,7 +485,7 @@ export function FounderCardPreview() {
                     <div className="w-full relative group cursor-pointer">
                         <div className="absolute -inset-0.5 bg-gradient-to-r from-amber-400 to-orange-600 rounded-2xl blur opacity-30 group-hover:opacity-75 transition duration-200 animate-pulse"></div>
                         <Button className="relative w-full h-14 bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-300 hover:to-orange-400 text-black font-black text-base rounded-2xl shadow-[0_0_30px_rgba(245,158,11,0.3)] border-2 border-white/20 transition-all transform group-hover:scale-[1.01]">
-                            Je me rends disponible 👍
+                            Clique si tu es OK 👍
                         </Button>
                     </div>
                 </DialogTrigger>
@@ -503,7 +503,7 @@ export function FounderCardPreview() {
                         <div>
                             <h3 className="text-2xl font-black text-white mb-2">C'est noté ! 📞</h3>
                             <p className="text-slate-400 text-sm leading-relaxed">
-                                J'ai bien reçu ta confirmation. Garde ton téléphone près de toi aujourd'hui.
+                                Jean-Philippe a été notifié.
                             </p>
                         </div>
 
@@ -525,20 +525,6 @@ export function FounderCardPreview() {
                                     <p className="text-white font-bold">Si indisponible</p>
                                     <p className="text-slate-500 text-xs">Je te laisserai un vocal WhatsApp</p>
                                 </div>
-                            </div>
-                        </div>
-
-                        <div className="space-y-3">
-                            <Label className="text-xs font-bold uppercase text-slate-500 block text-left pl-1">Confirme ton numéro (Optionnel)</Label>
-                            <div className="flex gap-2">
-                                <input 
-                                    type="tel" 
-                                    placeholder="06 12 34 56 78" 
-                                    className="flex-1 bg-slate-900 border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50 font-mono text-sm"
-                                />
-                                <Button size="icon" className="h-auto w-12 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-500">
-                                    <CheckCircle2 className="h-5 w-5" />
-                                </Button>
                             </div>
                         </div>
 
