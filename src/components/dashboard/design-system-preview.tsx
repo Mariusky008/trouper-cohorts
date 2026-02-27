@@ -366,6 +366,82 @@ export function MatchCardPreview() {
 // --- 4. FOUNDER CARD (Joker / VIP) ---
 import { Crown, Star as StarIcon } from "lucide-react";
 
+export function PremiumLockedCardPreview() {
+  return (
+    <div className="relative w-full max-w-sm mx-auto min-h-[600px] h-auto rounded-[2.5rem] overflow-hidden shadow-2xl bg-[#020617] flex flex-col items-center text-center p-6 border border-white/10 pb-8 group">
+      
+      {/* Background Image with HEAVY Blur */}
+      <div className="absolute inset-0 z-0">
+        <img 
+            src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=800&q=80" 
+            alt="Match Flouté" 
+            className="w-full h-full object-cover opacity-40 blur-[20px] scale-110"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#020617] via-[#020617]/80 to-transparent"></div>
+      </div>
+
+      {/* Content */}
+      <div className="relative z-10 flex flex-col items-center w-full h-full justify-between">
+        
+        <div className="flex flex-col items-center w-full">
+            {/* Header Badge */}
+            <Badge className="bg-yellow-500/10 text-yellow-400 border-yellow-500/20 px-3 py-1 mb-8 flex items-center gap-2 shadow-[0_0_15px_rgba(234,179,8,0.2)] animate-pulse">
+                <Sparkles className="w-3 h-3" /> MATCH PREMIUM DÉTECTÉ
+            </Badge>
+
+            {/* Blurred Identity */}
+            <div className="relative mb-6">
+                <div className="w-28 h-28 rounded-full border-4 border-white/5 flex items-center justify-center bg-white/5 backdrop-blur-md relative z-10 overflow-hidden shadow-2xl">
+                    <img 
+                        src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=800&q=80" 
+                        className="w-full h-full object-cover blur-[15px] opacity-80"
+                    />
+                    <div className="absolute inset-0 flex items-center justify-center">
+                        <Lock className="w-10 h-10 text-white drop-shadow-md" />
+                    </div>
+                </div>
+            </div>
+
+            {/* Teasing Info */}
+            <div className="w-full space-y-4 mb-6 text-center">
+                <h3 className="text-2xl font-black text-white leading-tight">
+                    <span className="blur-[6px]">Sarah Martin</span>
+                </h3>
+                <div className="flex justify-center gap-2">
+                    <Badge variant="secondary" className="bg-slate-800 text-slate-300 border-slate-700">Architecte</Badge>
+                    <Badge variant="secondary" className="bg-slate-800 text-slate-300 border-slate-700">Lyon</Badge>
+                </div>
+                
+                <div className="bg-white/5 rounded-xl p-4 border border-white/10 backdrop-blur-sm mt-4">
+                    <p className="text-slate-300 text-sm font-medium leading-relaxed">
+                        "Je cherche un partenaire pour <span className="bg-yellow-500/20 text-yellow-200 px-1 rounded">refaire le branding</span> de mes 3 prochains chantiers..."
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        {/* CTA Section */}
+        <div className="w-full space-y-3">
+            <div className="flex items-center justify-between text-xs text-slate-400 px-2">
+                <span>Potentiel estimé</span>
+                <span className="text-green-400 font-bold">~2 500 €</span>
+            </div>
+            
+            <Button className="w-full h-14 bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-300 hover:to-orange-400 text-black font-black text-base rounded-2xl shadow-[0_0_30px_rgba(234,179,8,0.3)] border-2 border-white/20 transition-all hover:scale-[1.02]">
+                DÉBLOQUER CE MATCH 🔓
+            </Button>
+            
+            <p className="text-[10px] text-slate-500 font-medium">
+                À partir de 1€ / jour • Sans engagement
+            </p>
+        </div>
+
+      </div>
+    </div>
+  );
+}
+
+// --- 5. FOUNDER CARD (Joker / VIP) ---
 export function FounderCardPreview({ type = "onboarding" }: { type?: "onboarding" | "rescue" }) {
   const isRescue = type === "rescue";
   
