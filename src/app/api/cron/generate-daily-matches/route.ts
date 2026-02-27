@@ -74,11 +74,19 @@ async function handleMatching(request: Request) {
     
     // Get day name (mon, tue, wed...)
     // IMPORTANT: Fix for weekend matching.
-    // If targetDay is 'sat' or 'sun', we should ONLY match users who explicitly have these days in their preferences.
-    // The current logic is correct but relies on 'preferred_days' being populated.
+    // Weekends (Saturday and Sunday) are ALWAYS OFF. No matching allowed.
     
     const days = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
     const targetDay = days[targetDate.getDay()]; // getDay() returns 0 for Sunday
+
+    // If today is Saturday or Sunday, we stop immediately.
+    if (targetDay === 'sat' || targetDay === 'sun') {
+        return NextResponse.json({ 
+            success: true, 
+            message: `Weekends are off. No matches generated for ${targetDay}.`,
+            count: 0 
+        });
+    }
 
     // Fetch active network settings with frequency
     const { data: allSettings, error: settingsError } = await supabase
