@@ -360,3 +360,94 @@ export function MatchCardPreview() {
     </div>
   );
 }
+
+// --- 4. FOUNDER CARD (Joker / VIP) ---
+import { Crown, Star as StarIcon } from "lucide-react";
+
+export function FounderCardPreview() {
+  return (
+    <div className="relative w-full max-w-sm mx-auto min-h-[600px] h-auto rounded-[2.5rem] overflow-hidden shadow-2xl bg-[#0f0f12] border border-amber-500/20 flex flex-col items-center justify-between text-center p-6 pb-8 group">
+      
+      {/* Premium Background */}
+      <div className="absolute inset-0 bg-gradient-to-b from-amber-900/10 via-[#0a0a0c] to-[#0a0a0c] z-0"></div>
+      <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-5 z-0"></div>
+      
+      {/* Animated Glow */}
+      <div className="absolute top-0 left-0 right-0 h-32 bg-amber-500/20 blur-[60px] rounded-full opacity-50 animate-pulse-slow"></div>
+
+      {/* Content */}
+      <div className="relative z-10 w-full flex flex-col items-center h-full">
+        
+        {/* VIP Badge */}
+        <Badge className="bg-gradient-to-r from-amber-400 to-orange-500 text-black border-none px-4 py-1.5 mb-8 flex items-center gap-2 shadow-[0_0_20px_rgba(245,158,11,0.4)] font-black uppercase tracking-widest animate-shimmer bg-[length:200%_100%]">
+            <Crown className="w-4 h-4 fill-black" /> JOKER FONDATEUR
+        </Badge>
+
+        {/* Founder Avatar with Ring */}
+        <div className="relative mb-6">
+            <div className="absolute inset-0 bg-gradient-to-r from-amber-300 to-orange-600 rounded-full blur opacity-40 animate-spin-slow"></div>
+            <div className="w-32 h-32 rounded-full p-[3px] bg-gradient-to-r from-amber-300 to-orange-600 shadow-2xl relative z-10">
+                <div className="w-full h-full rounded-full overflow-hidden border-4 border-[#0f0f12]">
+                    <img 
+                        src="/jeanphilipperoth.jpg" 
+                        alt="Jean-Philippe" 
+                        className="w-full h-full object-cover transform transition-transform hover:scale-110 duration-700"
+                    />
+                </div>
+            </div>
+            {/* Status Indicator */}
+            <div className="absolute bottom-1 right-1 w-8 h-8 bg-[#0f0f12] rounded-full flex items-center justify-center z-20">
+                <div className="w-5 h-5 bg-green-500 rounded-full border-2 border-[#0f0f12] animate-pulse"></div>
+            </div>
+        </div>
+
+        {/* Name & Role */}
+        <div className="mb-8">
+            <h2 className="text-3xl font-black text-white mb-1">Jean-Philippe</h2>
+            <p className="text-amber-500/80 font-bold uppercase text-xs tracking-[0.2em]">Fondateur Popey</p>
+        </div>
+
+        {/* The Pitch */}
+        <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6 text-left relative overflow-hidden mb-6">
+            <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-amber-400 to-orange-600"></div>
+            <QuoteIcon className="absolute top-4 right-4 w-8 h-8 text-white/5 rotate-180" />
+            
+            <h3 className="text-white font-bold text-lg mb-2">Session Stratégique Imprévue</h3>
+            <p className="text-slate-300 text-sm leading-relaxed">
+                "On ne se connaît pas encore très bien. Aujourd'hui, je prends le relais de l'algorithme. Je t'appelle dans la journée pour faire le point sur tes attentes et t'ouvrir mon carnet d'adresses personnel."
+            </p>
+        </div>
+
+        {/* Action Button */}
+        <Button className="w-full h-14 bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-300 hover:to-orange-400 text-black font-black text-base rounded-2xl shadow-[0_0_30px_rgba(245,158,11,0.3)] animate-bounce-subtle border-2 border-white/20 transition-all hover:scale-[1.02]">
+            J'attends ton appel 🤙
+        </Button>
+        
+        <p className="mt-4 text-[10px] text-slate-500 uppercase tracking-wider font-medium">
+            Créneau réservé automatiquement
+        </p>
+
+      </div>
+    </div>
+  );
+}
+
+function QuoteIcon(props: any) {
+    return (
+        <svg
+        {...props}
+        xmlns="http://www.w3.org/2000/svg"
+        width="24"
+        height="24"
+        viewBox="0 0 24 24"
+        fill="currentColor"
+        stroke="none"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        >
+        <path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z" />
+        <path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z" />
+        </svg>
+    )
+}

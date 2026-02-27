@@ -1,4 +1,4 @@
-import { WaitingCardPreview, MysteryCardPreview, MatchCardPreview, MysteryCardLockedPreview } from "@/components/dashboard/design-system-preview";
+import { WaitingCardPreview, MysteryCardPreview, MatchCardPreview, MysteryCardLockedPreview, FounderCardPreview } from "@/components/dashboard/design-system-preview";
 
 export default function DesignPreviewPage() {
   return (
@@ -50,6 +50,16 @@ export default function DesignPreviewPage() {
             </h2>
             <p className="text-sm text-slate-400 mb-4">Le profil est révélé, incitation à l'appel.</p>
             <MatchCardPreview />
+          </div>
+
+          {/* 4. Founder Joker State */}
+          <div className="space-y-4">
+            <h2 className="text-xl font-bold text-white flex items-center gap-2">
+              <span className="bg-amber-500 w-2 h-8 rounded-full"></span>
+              4. Joker Fondateur
+            </h2>
+            <p className="text-sm text-slate-400 mb-4">Impair ou VIP, le fondateur prend le relais.</p>
+            <FounderCardPreview />
           </div>
 
         </div>
