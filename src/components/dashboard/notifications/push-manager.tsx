@@ -43,20 +43,28 @@ export function PushManager() {
   const subscribe = async () => {
     setLoading(true);
     try {
+      // 1. Force fetch environment variable (sometimes Next.js caches old envs in SW)
       const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
-      if (!vapidKey) throw new Error("Clé VAPID manquante");
+      
+      console.log("VAPID Key check:", vapidKey ? "Present" : "Missing", vapidKey?.substring(0, 5));
 
-      // Check permission first
+      if (!vapidKey) {
+          throw new Error("Clé VAPID non trouvée. Redéploiement nécessaire ?");
+      }
+
+      // 2. Check permission first
       const permission = await Notification.requestPermission();
       if (permission !== "granted") {
         throw new Error("Permission refusée. Vérifiez vos réglages.");
       }
 
-      // Wait for SW with timeout
+      // 3. Wait for SW with timeout
       const registration = await Promise.race([
           navigator.serviceWorker.ready,
           new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout Service Worker")), 4000))
       ]) as ServiceWorkerRegistration;
+
+      if (!registration) throw new Error("Service Worker non enregistré.");
 
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
