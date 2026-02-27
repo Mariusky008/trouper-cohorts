@@ -47,8 +47,8 @@ export async function createCheckoutSession(priceId: string) {
     }
 
     return { url: session.url };
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error creating checkout session:", error);
-    return { error: "Erreur lors de la création de la session de paiement." };
+    return { error: `Erreur Stripe: ${error.message || "Erreur inconnue"}` };
   }
 }
