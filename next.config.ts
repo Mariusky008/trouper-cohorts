@@ -31,11 +31,12 @@ const config: NextConfig = {
 export default withPWA({
   dest: "public",
   register: true,
-  skipWaiting: true,
-  disable: false, // Always enable for now to fix SW generation
-  importScripts: ["/sw-push.js"],
+  // skipWaiting is now part of workboxOptions in newer versions or handled automatically
+  disable: false, 
   // Custom workbox options
   workboxOptions: {
+    skipWaiting: true, // Moved here
     disableDevLogs: true,
+    importScripts: ["/sw-push.js"], // Moved here as well for better compatibility
   },
 })(config);
