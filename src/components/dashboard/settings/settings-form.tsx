@@ -12,6 +12,8 @@ import { createClient } from "@/lib/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { PushManager } from "@/components/dashboard/notifications/push-manager";
+import { PWAInstallPrompt } from "@/components/pwa-install-prompt";
+import { Download } from "lucide-react";
 
 const DAYS = [
   { id: 'mon', label: 'Lun' },
@@ -109,19 +111,6 @@ export function SettingsForm({ initialSettings }: { initialSettings: any }) {
       setLoading(false);
     }
   };
-
-import { PWAInstallPrompt } from "@/components/pwa-install-prompt";
-import { Download } from "lucide-react";
-
-// ... existing imports
-
-export function SettingsForm({ initialSettings }: { initialSettings: any }) {
-  // ... existing state
-
-  // Add state to trigger PWA prompt manually
-  const [showInstallPrompt, setShowInstallPrompt] = useState(false);
-
-  // ... existing handlers
 
   return (
     <div className="space-y-8 max-w-3xl animate-in fade-in duration-500">
