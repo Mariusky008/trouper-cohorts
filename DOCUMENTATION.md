@@ -54,9 +54,11 @@ Le système a évolué pour supporter deux types de programmes distincts :
     - Éditeur de contenu jour par jour.
     - **Seed Button** : Bouton permettant de réinitialiser le contenu pédagogique.
 - **Buddy System** : Rotation quotidienne des binômes.
-- **Demandes d'Appel Joker** :
-    - Section dédiée pour voir les utilisateurs ayant demandé un "Joker Fondateur" (Onboarding J+2) ou "Joker Sauvetage" (Pas de match).
-    - Basé sur les événements `founder_call_request` dans `analytics_events`.
+- **Demandes d'Appel Joker (NOUVEAU)** :
+    - Section dédiée et toujours visible dans le dashboard Admin.
+    - Affiche les demandes d'appel (Onboarding ou Sauvetage) en temps réel.
+    - Indicateur visuel (pastille rouge) pour les nouvelles demandes.
+    - Affiche l'historique complet (500 derniers événements) au lieu de filtrer par jour.
 
 ---
 
@@ -120,7 +122,7 @@ Algorithme de mise en relation quotidienne pour un appel de 15 minutes.
 - **Carte Joker ("Popey")** :
     - **Onboarding (J+2)** : Carte spéciale pour un appel avec le fondateur.
     - **Sauvetage** : S'active si aucun match n'est trouvé.
-    - **Intégration Admin** : Les demandes d'appel remontent dans le dashboard Admin.
+    - **Intégration Admin** : Les demandes d'appel remontent dans le dashboard Admin (Section dédiée "Demandes d'Appel Joker").
 
 #### 3. Impact & Trust Score
 Système de réputation pour encourager les comportements vertueux.
