@@ -144,6 +144,10 @@ function MysteryCard({ onReveal, match, locked = false }: { onReveal: () => void
     };
 
     const benefits = getBenefits();
+    
+    // Logic for "Collabs" label
+    const collabsCount = match.collabsCount !== undefined ? match.collabsCount : (12 + (seed % 20));
+    const collabsLabel = collabsCount < 10 ? "DÉBUTANT" : `${collabsCount}`;
 
     return (
       <div 
@@ -218,18 +222,18 @@ function MysteryCard({ onReveal, match, locked = false }: { onReveal: () => void
                   <div className="grid grid-cols-3 gap-2">
                       <div className="bg-[#0f172a] rounded-xl p-3 flex flex-col items-center justify-center border border-white/5 shadow-lg">
                           <Flame className="w-5 h-5 text-orange-500 mb-1.5" />
-                          <span className="text-[9px] text-slate-400 uppercase font-bold tracking-wider">BUSINESS</span>
-                          <span className="text-xs font-black text-white">ÉLEVÉ</span>
+                          <span className="text-[9px] text-slate-400 uppercase font-bold tracking-wider">POTENTIEL</span>
+                          <span className="text-xs font-black text-white">SYNERGIES</span>
                       </div>
                       <div className="bg-[#0f172a] rounded-xl p-3 flex flex-col items-center justify-center border border-white/5 shadow-lg">
                           <Users className="w-5 h-5 text-blue-500 mb-1.5" />
-                          <span className="text-[9px] text-slate-400 uppercase font-bold tracking-wider">CE MOIS-CI</span>
-                          <span className="text-xs font-black text-white">12 Collabs</span>
+                          <span className="text-[9px] text-slate-400 uppercase font-bold tracking-wider">TOTAL COLLABS</span>
+                          <span className="text-xs font-black text-white">{collabsLabel}</span>
                       </div>
                       <div className="bg-[#0f172a] rounded-xl p-3 flex flex-col items-center justify-center border border-white/5 shadow-lg">
                           <Handshake className="w-5 h-5 text-purple-500 mb-1.5" />
                           <span className="text-[9px] text-slate-400 uppercase font-bold tracking-wider text-center leading-tight">TAUX DE<br/>COMPATIBILITÉ</span>
-                          <span className="text-xs font-black text-white">77%</span>
+                          <span className="text-xs font-black text-white">{compatibility}%</span>
                       </div>
                   </div>
               </div>

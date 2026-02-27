@@ -76,7 +76,7 @@ export function WaitingCardPreview() {
 // Goal: "Trigger for business", "Wahoo", catchy text.
 export function MysteryCardPreview() {
   return (
-    <div className="relative w-full max-w-sm mx-auto h-[600px] rounded-[2.5rem] overflow-hidden shadow-2xl bg-[#020617] flex flex-col items-center text-center p-6 cursor-pointer group border border-white/10">
+    <div className="relative w-full max-w-sm mx-auto min-h-[600px] h-auto rounded-[2.5rem] overflow-hidden shadow-2xl bg-[#020617] flex flex-col items-center text-center p-6 cursor-pointer group border border-white/10 pb-8">
       {/* Animated Gradient Border */}
       <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/30 via-blue-600/20 to-purple-600/30 opacity-40 group-hover:opacity-60 transition-opacity duration-500"></div>
       <div className="absolute inset-[1px] bg-[#020617] rounded-[2.4rem] z-0"></div>
@@ -117,13 +117,13 @@ export function MysteryCardPreview() {
                 <div className="grid grid-cols-3 gap-2">
                     <div className="bg-[#0f172a] rounded-xl p-3 flex flex-col items-center justify-center border border-white/5 shadow-lg">
                         <Flame className="w-5 h-5 text-orange-500 mb-1.5" />
-                        <span className="text-[9px] text-slate-400 uppercase font-bold tracking-wider">BUSINESS</span>
-                        <span className="text-xs font-black text-white">ÉLEVÉ</span>
+                        <span className="text-[9px] text-slate-400 uppercase font-bold tracking-wider">POTENTIEL</span>
+                        <span className="text-xs font-black text-white">SYNERGIES</span>
                     </div>
                     <div className="bg-[#0f172a] rounded-xl p-3 flex flex-col items-center justify-center border border-white/5 shadow-lg">
                         <Users className="w-5 h-5 text-blue-500 mb-1.5" />
-                        <span className="text-[9px] text-slate-400 uppercase font-bold tracking-wider">CE MOIS-CI</span>
-                        <span className="text-xs font-black text-white">12 Collabs</span>
+                        <span className="text-[9px] text-slate-400 uppercase font-bold tracking-wider">TOTAL COLLABS</span>
+                        <span className="text-xs font-black text-white">12</span>
                     </div>
                     <div className="bg-[#0f172a] rounded-xl p-3 flex flex-col items-center justify-center border border-white/5 shadow-lg">
                         <Handshake className="w-5 h-5 text-purple-500 mb-1.5" />
@@ -162,7 +162,7 @@ export function MysteryCardPreview() {
             </ul>
         </div>
 
-        <Button className="w-full h-14 bg-white text-black font-black text-base rounded-2xl hover:scale-[1.02] transition-transform shadow-[0_0_30px_rgba(255,255,255,0.15)] animate-bounce-subtle border-2 border-white/50">
+        <Button className="w-full h-14 bg-white text-black font-black text-base rounded-2xl hover:scale-[1.02] transition-transform shadow-[0_0_30px_rgba(255,255,255,0.15)] animate-bounce-subtle border-2 border-white/50 flex items-center justify-center">
             DÉCOUVRIR QUI C'EST 🔓
         </Button>
       </div>
@@ -174,7 +174,7 @@ export function MysteryCardPreview() {
 // Goal: Vibrant locked state, not dead/gray.
 export function MysteryCardLockedPreview() {
   return (
-    <div className="relative w-full max-w-sm mx-auto h-[600px] rounded-[2.5rem] overflow-hidden shadow-2xl bg-[#020617] flex flex-col items-center text-center p-6 border border-white/10">
+    <div className="relative w-full max-w-sm mx-auto min-h-[600px] h-auto rounded-[2.5rem] overflow-hidden shadow-2xl bg-[#020617] flex flex-col items-center text-center p-6 border border-white/10 pb-8">
       {/* Animated Gradient Border (Still visible but subtler) */}
       <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/30 via-blue-600/20 to-purple-600/30 opacity-50 transition-opacity duration-500"></div>
       <div className="absolute inset-[1px] bg-[#020617] rounded-[2.4rem] z-0"></div>
@@ -212,13 +212,13 @@ export function MysteryCardLockedPreview() {
                 <div className="grid grid-cols-3 gap-2">
                     <div className="bg-[#0f172a] rounded-xl p-3 flex flex-col items-center justify-center border border-white/5 shadow-lg">
                         <Flame className="w-5 h-5 text-orange-500 mb-1.5" />
-                        <span className="text-[9px] text-slate-400 uppercase font-bold tracking-wider">BUSINESS</span>
-                        <span className="text-xs font-black text-white">ÉLEVÉ</span>
+                        <span className="text-[9px] text-slate-400 uppercase font-bold tracking-wider">POTENTIEL</span>
+                        <span className="text-xs font-black text-white">SYNERGIES</span>
                     </div>
                     <div className="bg-[#0f172a] rounded-xl p-3 flex flex-col items-center justify-center border border-white/5 shadow-lg">
                         <Users className="w-5 h-5 text-blue-500 mb-1.5" />
-                        <span className="text-[9px] text-slate-400 uppercase font-bold tracking-wider">CE MOIS-CI</span>
-                        <span className="text-xs font-black text-white">12 Collabs</span>
+                        <span className="text-[9px] text-slate-400 uppercase font-bold tracking-wider">TOTAL COLLABS</span>
+                        <span className="text-xs font-black text-white">DÉBUTANT</span>
                     </div>
                     <div className="bg-[#0f172a] rounded-xl p-3 flex flex-col items-center justify-center border border-white/5 shadow-lg">
                         <Handshake className="w-5 h-5 text-purple-500 mb-1.5" />
