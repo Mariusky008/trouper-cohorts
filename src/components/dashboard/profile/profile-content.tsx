@@ -6,7 +6,7 @@ import {
     Briefcase, ShieldCheck, Award, Pencil, Save, X, Phone, 
     Linkedin, Instagram, Facebook, Globe, Upload, Loader2,
     MapPin, Camera, CheckSquare, Percent, Euro, Zap, Handshake, Gift, Target,
-    Building2, Users, Megaphone, Share2, Crown
+    Building2, Users, Megaphone, Share2, Crown, Star
   } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -470,10 +470,6 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
                                <span className="block text-blue-500/60 font-bold text-xs mb-1 flex items-center gap-1"><Megaphone className="h-3 w-3" /> L'Amplificateur (Comm)</span>
                                <span className="text-white font-medium">{formData.comm_goal || "Non renseigné"}</span>
                            </li>
-                           <li className="text-sm">
-                               <span className="block text-blue-500/60 font-bold text-xs mb-1 flex items-center gap-1"><Star className="h-3 w-3" /> Le Recommandeur</span>
-                               <span className="text-white font-medium">{formData.recommender || "Non renseigné"}</span>
-                           </li>
                        </ul>
                    </div>
                </div>
@@ -786,6 +782,18 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
                                     value={formData.comm_goal} 
                                     onChange={e => setFormData({...formData, comm_goal: e.target.value})}
                                     placeholder="Ex: Gagner 500 abonnés, Vendre ma formation..." 
+                                    className="bg-white border-blue-200"
+                                />
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label className="text-blue-800 font-bold flex items-center gap-2">
+                                    <Star className="w-4 h-4" /> Le Recommandeur (Preuve Sociale)
+                                </Label>
+                                <Input 
+                                    value={formData.recommender} 
+                                    onChange={e => setFormData({...formData, recommender: e.target.value})}
+                                    placeholder="Ex: Avis Google, Recommandation LinkedIn, Trustpilot..." 
                                     className="bg-white border-blue-200"
                                 />
                             </div>
