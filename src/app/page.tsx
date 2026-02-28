@@ -364,6 +364,26 @@ export default function HomePage() {
                <p className="text-xl md:text-2xl text-slate-400 leading-relaxed max-w-2xl mx-auto font-medium">
                  Chaque matin, Popey vous propose une nouvelle opportunité business adaptée à votre profil. Découvrez votre match, comprenez son potentiel et passez à l’action immédiatement.
                </p>
+               
+               {/* 3️⃣ ALGORITHM EXPLANATION */}
+               <div className="flex flex-wrap justify-center gap-4 mt-8">
+                  <div className="flex items-center gap-2 bg-white/5 border border-white/10 px-4 py-2 rounded-full text-slate-300 text-sm font-medium backdrop-blur-sm">
+                     <Target className="h-4 w-4 text-blue-400" />
+                     Votre secteur
+                  </div>
+                  <div className="flex items-center gap-2 bg-white/5 border border-white/10 px-4 py-2 rounded-full text-slate-300 text-sm font-medium backdrop-blur-sm">
+                     <Anchor className="h-4 w-4 text-purple-400" />
+                     Votre localisation
+                  </div>
+                  <div className="flex items-center gap-2 bg-white/5 border border-white/10 px-4 py-2 rounded-full text-slate-300 text-sm font-medium backdrop-blur-sm">
+                     <TrendingUp className="h-4 w-4 text-emerald-400" />
+                     Vos objectifs
+                  </div>
+                  <div className="flex items-center gap-2 bg-white/5 border border-white/10 px-4 py-2 rounded-full text-slate-300 text-sm font-medium backdrop-blur-sm">
+                     <ShieldCheck className="h-4 w-4 text-orange-400" />
+                     Votre score de confiance
+                  </div>
+               </div>
             </div>
 
             <div className="grid lg:grid-cols-2 gap-8 lg:gap-16 items-start max-w-6xl mx-auto">
@@ -458,6 +478,44 @@ export default function HomePage() {
       {/* --- 4. GAMIFICATION REWARDS (NEW) --- */}
       <section className="py-24 bg-slate-50">
          <div className="container mx-auto px-4">
+            
+            {/* 1️⃣ ROI MATH SECTION */}
+            <div className="max-w-4xl mx-auto bg-white rounded-3xl p-8 shadow-xl border border-blue-100 mb-20 text-center transform hover:scale-[1.01] transition-transform">
+                <div className="inline-block bg-green-100 text-green-700 font-bold px-4 py-1 rounded-full mb-4 uppercase tracking-wider text-sm">
+                    Simulation Rentabilité
+                </div>
+                <h3 className="text-3xl md:text-4xl font-black text-slate-900 mb-6">
+                    Et si 5 minutes par jour valaient <span className="text-blue-600">3 000 € ?</span>
+                </h3>
+                
+                <div className="grid md:grid-cols-3 gap-8 items-center justify-center my-8">
+                    <div className="space-y-2">
+                        <div className="text-4xl font-black text-slate-300">20</div>
+                        <div className="text-sm font-bold text-slate-500 uppercase">Matchs / mois</div>
+                    </div>
+                    <div className="text-2xl font-black text-slate-200">×</div>
+                    <div className="space-y-2">
+                        <div className="text-4xl font-black text-slate-300">150€</div>
+                        <div className="text-sm font-bold text-slate-500 uppercase">Valeur Moyenne / Opportunité</div>
+                    </div>
+                </div>
+
+                <div className="bg-slate-50 rounded-2xl p-6 border border-slate-100 inline-block w-full max-w-lg">
+                    <div className="flex justify-between items-center mb-2">
+                        <span className="text-slate-600 font-medium">Coût de l'abonnement</span>
+                        <span className="font-bold text-slate-900">49 €</span>
+                    </div>
+                    <div className="flex justify-between items-center mb-4">
+                        <span className="text-slate-600 font-medium">Valeur générée estimée</span>
+                        <span className="font-bold text-green-600">+ 3 000 €</span>
+                    </div>
+                    <div className="h-2 w-full bg-slate-200 rounded-full overflow-hidden">
+                        <div className="h-full bg-green-500 w-[98%]"></div>
+                    </div>
+                    <p className="text-xs text-slate-400 mt-2 text-right">ROI x60</p>
+                </div>
+            </div>
+
             <div className="max-w-4xl mx-auto text-center mb-16">
                <span className="text-blue-600 font-bold tracking-widest uppercase text-sm mb-2 block">Option recommandée</span>
                <h2 className="text-3xl md:text-5xl font-black mb-6 text-slate-900">Ce que chaque échange peut réellement générer</h2>
@@ -650,6 +708,32 @@ export default function HomePage() {
       {/* --- 8. TESTIMONIALS --- */}
       <section className="py-24 bg-white">
          <div className="container mx-auto px-4">
+            
+            {/* 2️⃣ STRONG PROOF SECTION */}
+            <div className="max-w-5xl mx-auto bg-slate-900 rounded-3xl p-8 md:p-12 mb-20 text-center relative overflow-hidden shadow-2xl">
+                <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600 rounded-full blur-[80px] opacity-20"></div>
+                <div className="absolute bottom-0 left-0 w-64 h-64 bg-purple-600 rounded-full blur-[80px] opacity-20"></div>
+                
+                <h3 className="text-2xl md:text-3xl font-black text-white mb-8 relative z-10">
+                    Ce mois-ci sur <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">Bordeaux</span> :
+                </h3>
+                
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative z-10">
+                    <div className="flex flex-col items-center">
+                        <div className="text-5xl font-black text-white mb-2">312</div>
+                        <div className="text-blue-300 font-bold uppercase text-sm tracking-widest">Mises en relation</div>
+                    </div>
+                    <div className="flex flex-col items-center border-x border-white/10 px-4">
+                        <div className="text-5xl font-black text-white mb-2">472</div>
+                        <div className="text-purple-300 font-bold uppercase text-sm tracking-widest">Recommandations</div>
+                    </div>
+                    <div className="flex flex-col items-center">
+                        <div className="text-5xl font-black text-emerald-400 mb-2">47</div>
+                        <div className="text-emerald-300 font-bold uppercase text-sm tracking-widest">Deals conclus</div>
+                    </div>
+                </div>
+            </div>
+
             <div className="text-center mb-16">
                <h2 className="text-3xl md:text-4xl font-black text-slate-900 mb-4">Ils ont arrêté de prospecter dans le vide</h2>
                <p className="text-slate-500 text-lg">Des résultats concrets, pas juste des discussions.</p>
