@@ -421,6 +421,57 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
                  </p>
                </div>
 
+               {/* GIVE & RECEIVE DISPLAY (PUBLIC VIEW) */}
+               <div className="grid md:grid-cols-2 gap-6 pt-6 border-t border-white/5">
+                   {/* DONNER */}
+                   <div className="bg-emerald-500/5 border border-emerald-500/10 rounded-2xl p-5">
+                       <h4 className="font-bold text-emerald-400 text-sm uppercase tracking-widest mb-4 flex items-center gap-2">
+                           <Share2 className="h-4 w-4" /> Terrain de Chasse (Donner)
+                       </h4>
+                       <ul className="space-y-4">
+                           <li className="text-sm">
+                               <span className="block text-emerald-500/60 font-bold text-xs mb-1">Secteurs d'influence</span>
+                               <span className="text-white font-medium">{formData.influence_sectors || "Non renseigné"}</span>
+                           </li>
+                           <li className="text-sm">
+                               <span className="block text-emerald-500/60 font-bold text-xs mb-1">Clubs & Réseaux</span>
+                               <span className="text-white font-medium">{formData.clubs || "Non renseigné"}</span>
+                           </li>
+                           <li className="text-sm">
+                               <span className="block text-emerald-500/60 font-bold text-xs mb-1">Réseau Social Principal</span>
+                               <span className="text-white font-medium">
+                                   {formData.social_network_platform} ({formData.social_network_followers} abonnés)
+                               </span>
+                           </li>
+                       </ul>
+                   </div>
+
+                   {/* RECEVOIR */}
+                   <div className="bg-blue-500/5 border border-blue-500/10 rounded-2xl p-5">
+                       <h4 className="font-bold text-blue-400 text-sm uppercase tracking-widest mb-4 flex items-center gap-2">
+                           <Target className="h-4 w-4" /> Mes Besoins (Recevoir)
+                       </h4>
+                       <ul className="space-y-4">
+                           <li className="text-sm">
+                               <span className="block text-blue-500/60 font-bold text-xs mb-1 flex items-center gap-1"><Building2 className="h-3 w-3" /> Le Portier (Cibles)</span>
+                               <span className="text-white font-medium">{formData.target_companies || "Non renseigné"}</span>
+                           </li>
+                           <li className="text-sm">
+                               <span className="block text-blue-500/60 font-bold text-xs mb-1 flex items-center gap-1"><Users className="h-3 w-3" /> Le Prescripteur</span>
+                               <span className="text-white font-medium">{formData.prescribers || "Non renseigné"}</span>
+                           </li>
+                           <li className="text-sm">
+                               <span className="block text-blue-500/60 font-bold text-xs mb-1 flex items-center gap-1"><Crown className="h-3 w-3" /> L'Infiltré (Clubs visés)</span>
+                               <span className="text-white font-medium">{formData.target_clubs || "Non renseigné"}</span>
+                           </li>
+                           <li className="text-sm">
+                               <span className="block text-blue-500/60 font-bold text-xs mb-1 flex items-center gap-1"><Megaphone className="h-3 w-3" /> L'Amplificateur (Comm)</span>
+                               <span className="text-white font-medium">{formData.comm_goal || "Non renseigné"}</span>
+                           </li>
+                       </ul>
+                   </div>
+               </div>
+
                {/* DISPLAY GOALS IF ANY */}
                {formData.current_goals && formData.current_goals.length > 0 && (
                    <div className="pt-6 border-t border-white/5">
