@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import { 
     Briefcase, ShieldCheck, Award, Pencil, Save, X, Phone, 
     Linkedin, Instagram, Facebook, Globe, Upload, Loader2,
-    MapPin, Camera, CheckSquare, Percent, Euro, Zap, Handshake, Gift, Target
+    MapPin, Camera, CheckSquare, Percent, Euro, Zap, Handshake, Gift, Target,
+    Building2, Users, Megaphone, Share2, Crown
   } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -81,10 +82,19 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
     website: user.website_url || "",
     avatar_url: user.avatar_url || "",
     current_goals: user.current_goals || [] as string[],
-    // Give & Take
-    superpower: user.superpower || "",
-    current_need: user.current_need || "",
-    big_goal: user.big_goal || "",
+    
+    // Give Profile (Donner)
+    influence_sectors: user.give_profile?.influence_sectors?.join(", ") || "",
+    clubs: user.give_profile?.clubs?.join(", ") || "",
+    social_network_platform: user.give_profile?.social_network?.platform || "LinkedIn",
+    social_network_followers: user.give_profile?.social_network?.followers || "0-1000",
+
+    // Receive Profile (Recevoir)
+    target_companies: user.receive_profile?.target_companies?.join(", ") || "",
+    prescribers: user.receive_profile?.prescribers?.join(", ") || "",
+    target_clubs: user.receive_profile?.target_clubs?.join(", ") || "",
+    comm_goal: user.receive_profile?.comm_goal || "",
+
     // Offer fields
     offer_title: user.offer_title || "",
     offer_description: user.offer_description || "",
@@ -108,8 +118,12 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
     if (!formData.city.trim()) errors.city = "La ville est requise.";
     if (!formData.phone.trim()) errors.phone = "Le téléphone est requis.";
     if (!formData.bio.trim()) errors.bio = "La bio est requise.";
-    if (!formData.superpower.trim()) errors.superpower = "Indiquez ce que vous offrez.";
-    if (!formData.current_need.trim()) errors.current_need = "Indiquez ce que vous cherchez.";
+    
+    // New Profile Validation
+    if (!formData.influence_sectors.trim()) errors.influence_sectors = "Vos secteurs d'influence sont requis.";
+    if (!formData.target_companies.trim()) errors.target_companies = "Vos cibles (Le Portier) sont requises.";
+    if (!formData.prescribers.trim()) errors.prescribers = "Vos prescripteurs sont requis.";
+
     if (!formData.avatar_url) errors.avatar_url = "Une photo de profil est requise.";
     if (!formData.current_goals || formData.current_goals.length === 0) errors.current_goals = "Veuillez sélectionner au moins un objectif.";
 
@@ -174,7 +188,7 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
         const offerErrors = ['offer_title', 'offer_price', 'offer_description'];
         const hasOfferErrors = Object.keys(errors).some(key => offerErrors.includes(key));
         
-        const infoErrors = ['display_name', 'trade', 'city', 'phone', 'bio', 'avatar_url', 'current_goals', 'socials', 'superpower', 'current_need'];
+        const infoErrors = ['display_name', 'trade', 'city', 'phone', 'bio', 'avatar_url', 'current_goals', 'socials', 'influence_sectors', 'target_companies', 'prescribers'];
         const hasInfoErrors = Object.keys(errors).some(key => infoErrors.includes(key));
 
         if (hasInfoErrors && activeTab !== 'infos') {
@@ -210,9 +224,26 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
       data.append("trade", formData.trade);
       data.append("city", formData.city);
       data.append("phone", formData.phone);
-      data.append("superpower", formData.superpower);
-      data.append("current_need", formData.current_need);
-      data.append("big_goal", formData.big_goal);
+      
+      // Construct Give & Receive Profiles
+      const giveProfile = {
+        influence_sectors: formData.influence_sectors.split(',').map((s: string) => s.trim()).filter(Boolean),
+        clubs: formData.clubs.split(',').map((s: string) => s.trim()).filter(Boolean),
+        social_network: {
+            platform: formData.social_network_platform,
+            followers: formData.social_network_followers
+        }
+      };
+
+      const receiveProfile = {
+        target_companies: formData.target_companies.split(',').map((s: string) => s.trim()).filter(Boolean),
+        prescribers: formData.prescribers.split(',').map((s: string) => s.trim()).filter(Boolean),
+        target_clubs: formData.target_clubs.split(',').map((s: string) => s.trim()).filter(Boolean),
+        comm_goal: formData.comm_goal
+      };
+
+      data.append("give_profile", JSON.stringify(giveProfile));
+      data.append("receive_profile", JSON.stringify(receiveProfile));
       
       // Socials logic
       if (noSocials) {
@@ -559,84 +590,147 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
                         {formErrors.bio && <p className="text-xs text-red-500">{formErrors.bio}</p>}
                     </div>
 
-                    {/* GIVE & TAKE SECTION (REDESIGNED V2 - QUICK WINS) */}
-                    <div className="bg-gradient-to-br from-slate-50 to-blue-50/50 p-6 rounded-2xl border border-slate-200/60 mt-6 shadow-sm">
+                    {/* GIVE & RECEIVE SECTIONS (NEW STRUCTURE) */}
+                    
+                    {/* SECTION 1: DONNER (Terrain de Chasse) */}
+                    <div className="bg-emerald-50/50 p-6 rounded-2xl border border-emerald-100 mt-6 shadow-sm">
                         <div className="flex items-center gap-3 mb-6">
-                            <div className="h-10 w-10 bg-blue-100 rounded-xl flex items-center justify-center border border-blue-200 shadow-sm animate-bounce-subtle">
-                                <Handshake className="h-5 w-5 text-blue-600" />
+                            <div className="h-10 w-10 bg-emerald-100 rounded-xl flex items-center justify-center border border-emerald-200 shadow-sm">
+                                <Share2 className="h-5 w-5 text-emerald-600" />
                             </div>
                             <div>
-                                <h3 className="font-bold text-slate-800 text-lg leading-tight">L'Entraide "Express" (5 min max)</h3>
-                                <p className="text-xs text-slate-500 font-medium">De petits gestes simples pour initier la relation sans pression.</p>
+                                <h3 className="font-bold text-slate-800 text-lg leading-tight">Votre Terrain de Chasse (DONNER)</h3>
+                                <p className="text-xs text-slate-500 font-medium">Ce que vous pouvez apporter au réseau.</p>
                             </div>
                         </div>
 
-                        <div className="grid md:grid-cols-2 gap-6">
-                            {/* DONNER (EASY) */}
-                            <div className="space-y-3">
-                                <Label className={`flex items-center gap-2 font-bold ${formErrors.superpower ? "text-red-600" : "text-emerald-700"}`}>
-                                    <div className="p-1 bg-emerald-100 rounded text-emerald-600"><Gift className="h-3.5 w-3.5" /></div>
-                                    Ce que je peux offrir facilement {formErrors.superpower && "*"}
+                        <div className="space-y-4">
+                            <div className="space-y-2">
+                                <Label className="text-emerald-800 font-bold flex items-center gap-2">
+                                    <ShieldCheck className="w-4 h-4" /> Secteurs d'influence {formErrors.influence_sectors && "*"}
                                 </Label>
-                                <div className="relative group">
-                                    <Textarea 
-                                        id="field-superpower"
-                                        value={formData.superpower} 
-                                        onChange={e => {
-                                            setFormData({...formData, superpower: e.target.value});
-                                            if(e.target.value) setFormErrors({...formErrors, superpower: ""});
-                                        }} 
-                                        placeholder="Ex: Liker tes posts, laisser un avis Google, relire ta bio, te présenter quelqu'un..." 
-                                        className={`min-h-[80px] resize-none border-emerald-200/60 bg-white focus:border-emerald-500 focus:ring-emerald-500 placeholder:text-slate-400 text-sm leading-relaxed shadow-sm transition-all group-hover:border-emerald-300 ${formErrors.superpower ? "border-red-300 ring-red-200" : ""}`}
-                                    />
-                                    <p className="text-[10px] text-emerald-600/80 mt-1.5 font-medium flex items-center gap-1">
-                                        <CheckSquare className="h-3 w-3" /> Pensez "Quick Win" : facile pour vous, utile pour l'autre.
-                                    </p>
-                                </div>
+                                <Input 
+                                    value={formData.influence_sectors} 
+                                    onChange={e => {
+                                        setFormData({...formData, influence_sectors: e.target.value});
+                                        if(e.target.value) setFormErrors({...formErrors, influence_sectors: ""});
+                                    }} 
+                                    placeholder="Ex: BTP, Restauration, Immobilier, Startups..." 
+                                    className={`bg-white ${formErrors.influence_sectors ? "border-red-300 ring-red-200" : "border-emerald-200"}`}
+                                />
+                                <p className="text-[10px] text-emerald-600/70">Dans quels domaines avez-vous le plus de contacts ?</p>
                             </div>
 
-                            {/* RECEVOIR (EASY) */}
-                            <div className="space-y-3">
-                                <Label className={`flex items-center gap-2 font-bold ${formErrors.current_need ? "text-red-600" : "text-amber-700"}`}>
-                                    <div className="p-1 bg-amber-100 rounded text-amber-600"><Target className="h-3.5 w-3.5" /></div>
-                                    Mon besoin simple du moment {formErrors.current_need && "*"}
+                            <div className="space-y-2">
+                                <Label className="text-emerald-800 font-bold flex items-center gap-2">
+                                    <Users className="w-4 h-4" /> Clubs & Réseaux
                                 </Label>
-                                <div className="relative group">
-                                    <Textarea 
-                                        id="field-current_need"
-                                        value={formData.current_need} 
-                                        onChange={e => {
-                                            setFormData({...formData, current_need: e.target.value});
-                                            if(e.target.value) setFormErrors({...formErrors, current_need: ""});
-                                        }} 
-                                        placeholder="Ex: Un like sur mon dernier post LinkedIn, un avis sur ma page Google, un feedback sur mon site..." 
-                                        className={`min-h-[80px] resize-none border-amber-200/60 bg-white focus:border-amber-500 focus:ring-amber-500 placeholder:text-slate-400 text-sm leading-relaxed shadow-sm transition-all group-hover:border-amber-300 ${formErrors.current_need ? "border-red-300 ring-red-200" : ""}`}
-                                    />
-                                    <p className="text-[10px] text-amber-600/80 mt-1.5 font-medium flex items-center gap-1">
-                                        <CheckSquare className="h-3 w-3" /> Demandez quelque chose qui prend moins de 5 min.
-                                    </p>
+                                <Input 
+                                    value={formData.clubs} 
+                                    onChange={e => setFormData({...formData, clubs: e.target.value})}
+                                    placeholder="Ex: BNI, Club d'entreprises, Asso sportive..." 
+                                    className="bg-white border-emerald-200"
+                                />
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label className="text-emerald-800 font-bold">Réseau Social Principal</Label>
+                                    <select 
+                                        className="flex h-10 w-full rounded-md border border-emerald-200 bg-white px-3 py-2 text-sm ring-offset-background"
+                                        value={formData.social_network_platform}
+                                        onChange={e => setFormData({...formData, social_network_platform: e.target.value})}
+                                    >
+                                        <option value="LinkedIn">LinkedIn</option>
+                                        <option value="Instagram">Instagram</option>
+                                        <option value="Facebook">Facebook</option>
+                                        <option value="TikTok">TikTok</option>
+                                    </select>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className="text-emerald-800 font-bold">Volume d'abonnés</Label>
+                                    <select 
+                                        className="flex h-10 w-full rounded-md border border-emerald-200 bg-white px-3 py-2 text-sm ring-offset-background"
+                                        value={formData.social_network_followers}
+                                        onChange={e => setFormData({...formData, social_network_followers: e.target.value})}
+                                    >
+                                        <option value="0-1000">0 - 1k</option>
+                                        <option value="1000-5000">1k - 5k</option>
+                                        <option value="5000-10000">5k - 10k</option>
+                                        <option value="10000+">10k +</option>
+                                    </select>
                                 </div>
                             </div>
                         </div>
+                    </div>
 
-                        {/* BIG GOAL (OPTIONAL) */}
-                        <div className="mt-6 pt-6 border-t border-slate-200/60">
-                             <div className="space-y-3">
-                                <Label className="flex items-center gap-2 font-bold text-purple-700">
-                                    <div className="p-1 bg-purple-100 rounded text-purple-600"><Award className="h-3.5 w-3.5" /></div>
-                                    Mon Grand Défi (Optionnel)
+                    {/* SECTION 2: RECEVOIR (Besoins) */}
+                    <div className="bg-blue-50/50 p-6 rounded-2xl border border-blue-100 mt-6 shadow-sm">
+                        <div className="flex items-center gap-3 mb-6">
+                            <div className="h-10 w-10 bg-blue-100 rounded-xl flex items-center justify-center border border-blue-200 shadow-sm">
+                                <Target className="h-5 w-5 text-blue-600" />
+                            </div>
+                            <div>
+                                <h3 className="font-bold text-slate-800 text-lg leading-tight">Vos Besoins (RECEVOIR)</h3>
+                                <p className="text-xs text-slate-500 font-medium">Pour que l'algorithme travaille pour vous.</p>
+                            </div>
+                        </div>
+
+                        <div className="space-y-4">
+                            <div className="space-y-2">
+                                <Label className="text-blue-800 font-bold flex items-center gap-2">
+                                    <Building2 className="w-4 h-4" /> Le Portier (Cibles précises) {formErrors.target_companies && "*"}
                                 </Label>
-                                <div className="relative group">
-                                    <Input 
-                                        value={formData.big_goal} 
-                                        onChange={e => setFormData({...formData, big_goal: e.target.value})}
-                                        placeholder="Ex: Trouver un associé technique, lever 50k€, ouvrir une boutique..." 
-                                        className="h-12 border-purple-200/60 bg-white focus:border-purple-500 focus:ring-purple-500 placeholder:text-slate-400 text-sm shadow-sm transition-all group-hover:border-purple-300"
-                                    />
-                                    <p className="text-[10px] text-purple-600/80 mt-1.5 font-medium">
-                                        Ici, c'est pour les demandes exceptionnelles qui demandent plus d'investissement.
-                                    </p>
-                                </div>
+                                <Input 
+                                    value={formData.target_companies} 
+                                    onChange={e => {
+                                        setFormData({...formData, target_companies: e.target.value});
+                                        if(e.target.value) setFormErrors({...formErrors, target_companies: ""});
+                                    }}
+                                    placeholder="Ex: DRH de Cdiscount, Mairie de Bordeaux..." 
+                                    className={`bg-white ${formErrors.target_companies ? "border-red-300 ring-red-200" : "border-blue-200"}`}
+                                />
+                                <p className="text-[10px] text-blue-600/70">Qui rêvez-vous d'approcher ?</p>
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label className="text-blue-800 font-bold flex items-center gap-2">
+                                    <Users className="w-4 h-4" /> Le Prescripteur (Partenaires) {formErrors.prescribers && "*"}
+                                </Label>
+                                <Input 
+                                    value={formData.prescribers} 
+                                    onChange={e => {
+                                        setFormData({...formData, prescribers: e.target.value});
+                                        if(e.target.value) setFormErrors({...formErrors, prescribers: ""});
+                                    }}
+                                    placeholder="Ex: Agents immo, Experts comptables..." 
+                                    className={`bg-white ${formErrors.prescribers ? "border-red-300 ring-red-200" : "border-blue-200"}`}
+                                />
+                                <p className="text-[10px] text-blue-600/70">Qui voit vos clients juste avant vous ?</p>
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label className="text-blue-800 font-bold flex items-center gap-2">
+                                    <Crown className="w-4 h-4" /> L'Infiltré (Réseaux visés)
+                                </Label>
+                                <Input 
+                                    value={formData.target_clubs} 
+                                    onChange={e => setFormData({...formData, target_clubs: e.target.value})}
+                                    placeholder="Ex: Club Med, Rotary, Cercle des Entrepreneurs..." 
+                                    className="bg-white border-blue-200"
+                                />
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label className="text-blue-800 font-bold flex items-center gap-2">
+                                    <Megaphone className="w-4 h-4" /> L'Amplificateur (Comm)
+                                </Label>
+                                <Input 
+                                    value={formData.comm_goal} 
+                                    onChange={e => setFormData({...formData, comm_goal: e.target.value})}
+                                    placeholder="Ex: Gagner 500 abonnés, Vendre ma formation..." 
+                                    className="bg-white border-blue-200"
+                                />
                             </div>
                         </div>
                     </div>

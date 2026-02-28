@@ -24,10 +24,19 @@ export async function updateProfile(formData: FormData) {
   const city = String(formData.get("city") || "").trim();
   const phone = String(formData.get("phone") || "").trim();
 
-  // Give & Take
-  const superpower = String(formData.get("superpower") || "").trim();
-  const currentNeed = String(formData.get("current_need") || "").trim();
-  const bigGoal = String(formData.get("big_goal") || "").trim();
+  // Give & Take (New Structured Profile)
+  const giveProfileStr = String(formData.get("give_profile") || "{}");
+  const receiveProfileStr = String(formData.get("receive_profile") || "{}");
+  
+  let giveProfile = {};
+  let receiveProfile = {};
+
+  try {
+      if (giveProfileStr) giveProfile = JSON.parse(giveProfileStr);
+      if (receiveProfileStr) receiveProfile = JSON.parse(receiveProfileStr);
+  } catch (e) {
+      console.error("Error parsing profile JSON:", e);
+  }
 
   // Offer Fields
   const offerTitle = String(formData.get("offer_title") || "").trim();
@@ -45,15 +54,14 @@ export async function updateProfile(formData: FormData) {
   // Check if profile is complete enough (Name + Bio required)
   const isComplete = displayName.length > 0 && bio.length > 0;
 
-  const updates: Record<string, string | null | boolean | string[] | number | null> = {
+  const updates: Record<string, string | null | boolean | string[] | number | null | object> = {
       display_name: displayName || null,
       bio: bio || null,
     trade: trade || null,
     city: city || null,
     phone: phone || null,
-    superpower: superpower || null,
-    current_need: currentNeed || null,
-    big_goal: bigGoal || null,
+    give_profile: giveProfile,
+    receive_profile: receiveProfile,
     instagram_handle: instagram || null,
       linkedin_url: linkedin || null,
       facebook_handle: facebook || null,
