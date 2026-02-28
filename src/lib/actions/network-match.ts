@@ -52,7 +52,7 @@ export async function getDailyMatches() {
       if (!partnerData) {
           const { data: p } = await supabase
             .from("profiles")
-            .select("id, display_name, avatar_url, trade, city, bio, phone, current_goals, superpower, current_need, big_goal")
+            .select("id, display_name, avatar_url, trade, city, bio, phone, current_goals, superpower, current_need, big_goal, give_profile, receive_profile")
             .eq("id", partnerId)
             .single();
           partnerData = p;
@@ -94,6 +94,8 @@ export async function getDailyMatches() {
         big_goal: partnerData.big_goal,
         superpower: partnerData.superpower,
         current_need: partnerData.current_need,
+        give_profile: partnerData.give_profile,
+        receive_profile: partnerData.receive_profile,
         status: match.status,
         date: match.date
       };

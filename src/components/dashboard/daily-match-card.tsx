@@ -25,7 +25,16 @@ interface DailyMatchCardProps {
   matches: any[];
   userStreak?: number;
   userId?: string;
+  currentUserProfile?: any;
 }
+
+const MISSION_TYPES = [
+    { id: 'portier', label: 'Portier', icon: Lock, desc: "Ouvre-moi une porte spécifique", color: 'text-blue-400', bg: 'bg-blue-500/10', border: 'border-blue-500/20' },
+    { id: 'amplificateur', label: 'Amplificateur', icon: TrendingUp, desc: "Boostons notre visibilité mutuelle", color: 'text-purple-400', bg: 'bg-purple-500/10', border: 'border-purple-500/20' },
+    { id: 'prescripteur', label: 'Prescripteur', icon: Handshake, desc: "Devenons apporteurs d'affaires", color: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20' },
+    { id: 'recommandeur', label: 'Recommandeur', icon: Star, desc: "Échangeons un avis ou une reco", color: 'text-yellow-400', bg: 'bg-yellow-500/10', border: 'border-yellow-500/20' },
+    { id: 'infiltre', label: 'Infiltré', icon: Fingerprint, desc: "Parraine-moi dans ton club/réseau", color: 'text-red-400', bg: 'bg-red-500/10', border: 'border-red-500/20' }
+];
 
 const GOAL_LABELS: Record<string, string> = {
     clients: "Trouver des clients",
@@ -282,7 +291,7 @@ function MysteryCard({ onReveal, match, locked = false }: { onReveal: () => void
   );
 }
 
-export function DailyMatchCard({ matches, userStreak = 0, userId }: DailyMatchCardProps) {
+export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserProfile }: DailyMatchCardProps) {
   // State
   const [revealed, setRevealed] = useState(false);
   const [callMade, setCallMade] = useState(false);
@@ -293,6 +302,7 @@ export function DailyMatchCard({ matches, userStreak = 0, userId }: DailyMatchCa
   const [isOpportunityOpen, setIsOpportunityOpen] = useState(false);
   const [isRatingOpen, setIsRatingOpen] = useState(false);
   const [isMissionOpen, setIsMissionOpen] = useState(false); // New Mission Dialog State
+  const [selectedMission, setSelectedMission] = useState<string | null>(null);
 
   // Opportunity Logic
   const [oppType, setOppType] = useState<string | undefined>(undefined);
@@ -300,23 +310,28 @@ export function DailyMatchCard({ matches, userStreak = 0, userId }: DailyMatchCa
   const [isSubmittingOpp, setIsSubmittingOpp] = useState(false);
 
   // Dynamic micro-missions based on seed
-  const getMicroMission = () => {
+  const getSmartMissionSuggestion = () => {
       const currentMatch = matches?.[0];
-      if (!currentMatch) return "";
+      if (!currentMatch || !currentUserProfile) return null;
 
-      const seed = currentMatch.partnerId ? currentMatch.partnerId.split("").reduce((a: number, c: string) => a + c.charCodeAt(0), 0) : 0;
-      const missions = [
-          "Identifiez 2 synergies possibles",
-          "Trouvez 1 contact en commun",
-          "Détectez 1 opportunité de business immédiate",
-          "Proposez 1 introduction pertinente",
-          "Échangez sur 1 défi commun",
-          "Partagez 1 ressource utile"
-      ];
-      return missions[seed % missions.length];
+      // Logic: Compare profiles to suggest best mission
+      // 1. Amplificateur: If partner has high social followers (>1000) or user needs visibility
+      const partnerFollowers = parseInt(currentMatch.give_profile?.social_network?.followers?.split('-')[0] || "0");
+      if (partnerFollowers >= 1000) return 'amplificateur';
+
+      // 2. Portier: If user needs specific target and partner has relevant sector
+      // (Simplified: just check if partner is 'Connecteur' or has many collabs)
+      if (currentMatch.superpower?.toLowerCase().includes('réseau') || currentMatch.collabsCount > 20) return 'portier';
+
+      // 3. Recommandeur: If user needs credibility (check if 'recommender' field is filled in user profile? No, check partner's need)
+      // Actually, we suggest what WE can do for THEM or what THEY can do for US.
+      // Let's suggest based on MUTUAL benefit.
+      
+      return 'prescripteur'; // Default fallback
   };
 
-  const microMission = getMicroMission();
+  const suggestedMissionId = getSmartMissionSuggestion();
+  const suggestedMission = MISSION_TYPES.find(m => m.id === suggestedMissionId);
 
   // Check LocalStorage for Reveal Status
   useEffect(() => {
@@ -606,14 +621,21 @@ export function DailyMatchCard({ matches, userStreak = 0, userId }: DailyMatchCa
             "Ce {match.job || 'partenaire'} peut vous ouvrir des opportunités auxquelles vous n’aviez pas accès hier."
         </p>
 
-        {/* 3. MICRO-MISSION (Added per user request) */}
+        {/* 3. MISSION SELECTOR (NEW) */}
         <div className="bg-indigo-500/20 border border-indigo-500/30 rounded-xl p-3 mb-6 backdrop-blur-sm cursor-pointer hover:bg-indigo-500/30 transition-colors" onClick={() => setIsMissionOpen(true)}>
-            <div className="flex items-center gap-2 mb-1">
-                <Target className="w-4 h-4 text-indigo-400" />
-                <span className="text-[10px] font-black text-indigo-300 uppercase tracking-wider">Mission du jour</span>
+            <div className="flex items-center justify-between mb-1">
+                <div className="flex items-center gap-2">
+                    <Target className="w-4 h-4 text-indigo-400" />
+                    <span className="text-[10px] font-black text-indigo-300 uppercase tracking-wider">Objectif de l'appel</span>
+                </div>
+                {selectedMission && <Badge className="text-[9px] h-4 bg-indigo-500 text-white">Choisi</Badge>}
             </div>
             <p className="text-white text-xs font-medium italic truncate">
-                Cliquez pour voir votre mission secrète 🕵️‍♂️
+                {selectedMission 
+                    ? MISSION_TYPES.find(m => m.id === selectedMission)?.desc 
+                    : suggestedMission 
+                        ? `Suggestion : ${suggestedMission.label} (Cliquez pour valider)`
+                        : "Cliquez pour définir votre objectif 🎯"}
             </p>
         </div>
 
@@ -622,35 +644,68 @@ export function DailyMatchCard({ matches, userStreak = 0, userId }: DailyMatchCa
             
             {/* 0. Mission Dialog */}
             <Dialog open={isMissionOpen} onOpenChange={setIsMissionOpen}>
-                <DialogContent className="bg-[#0f172a] border-white/10 text-white sm:max-w-md rounded-2xl w-[90vw]">
+                <DialogContent className="bg-[#0f172a] border-white/10 text-white sm:max-w-md rounded-2xl w-[90vw] max-h-[85vh] overflow-y-auto">
                     <DialogHeader>
                         <DialogTitle className="flex items-center gap-2 text-xl font-black text-indigo-400">
                             <Target className="h-6 w-6" />
-                            Votre Mission Secrète
+                            Menu de la Carte 🍽️
                         </DialogTitle>
                         <DialogDescription className="text-slate-400">
-                            Pour maximiser l'impact de cet appel.
+                            Ne partez pas sans objectif. Choisissez le thème de votre échange.
                         </DialogDescription>
                     </DialogHeader>
                     
-                    <div className="bg-indigo-500/10 p-6 rounded-xl border border-indigo-500/20 my-4">
-                        <p className="text-lg font-bold text-white text-center leading-relaxed">
-                            "{microMission} avec {match.name} lors de l'appel."
-                        </p>
+                    <div className="grid gap-3 py-4">
+                        {MISSION_TYPES.map((mission) => {
+                            const isSuggested = mission.id === suggestedMissionId;
+                            const isSelected = mission.id === selectedMission;
+                            const Icon = mission.icon;
+                            
+                            return (
+                                <button
+                                    key={mission.id}
+                                    onClick={() => {
+                                        setSelectedMission(mission.id);
+                                        setIsMissionOpen(false);
+                                        toast.success(`Objectif "${mission.label}" sélectionné !`);
+                                    }}
+                                    className={cn(
+                                        "flex items-center gap-4 p-4 rounded-xl border transition-all text-left relative overflow-hidden group",
+                                        isSelected 
+                                            ? "bg-indigo-600/20 border-indigo-500 shadow-[0_0_15px_rgba(99,102,241,0.3)]" 
+                                            : "bg-slate-900/50 border-white/5 hover:bg-slate-800",
+                                        isSuggested && !isSelected && "border-indigo-500/50"
+                                    )}
+                                >
+                                    <div className={cn("h-10 w-10 rounded-full flex items-center justify-center shrink-0", mission.bg)}>
+                                        <Icon className={cn("h-5 w-5", mission.color)} />
+                                    </div>
+                                    <div className="flex-1">
+                                        <div className="flex items-center gap-2">
+                                            <span className={cn("font-bold text-sm", isSelected ? "text-indigo-300" : "text-white")}>
+                                                {mission.label}
+                                            </span>
+                                            {isSuggested && (
+                                                <Badge className="bg-indigo-500/20 text-indigo-300 border-indigo-500/30 text-[9px] px-1.5 h-4">
+                                                    Recommandé
+                                                </Badge>
+                                            )}
+                                        </div>
+                                        <p className="text-xs text-slate-400 font-medium leading-tight mt-0.5">
+                                            "{mission.desc}"
+                                        </p>
+                                    </div>
+                                    {isSelected && <div className="absolute right-4"><CheckCircle2 className="w-5 h-5 text-indigo-400" /></div>}
+                                </button>
+                            );
+                        })}
                     </div>
 
-                    <div className="flex items-center gap-3 bg-purple-500/10 p-4 rounded-xl border border-purple-500/20">
-                         <div className="h-10 w-10 rounded-full bg-purple-500/20 flex items-center justify-center shrink-0">
-                             <Gift className="h-5 w-5 text-purple-400" />
-                         </div>
-                         <p className="text-sm text-slate-300">
-                             <span className="text-purple-300 font-bold">Astuce :</span> Cliquez sur le cadeau pendant l'appel pour lui envoyer une opportunité.
+                    <div className="bg-indigo-500/10 p-4 rounded-xl border border-indigo-500/20 mb-2">
+                         <p className="text-xs text-indigo-200 text-center font-medium">
+                             <span className="font-bold">Astuce :</span> En choisissant un thème, vous évitez le "blabla" inutile et garantissez un résultat concret.
                          </p>
                     </div>
-
-                    <Button className="w-full mt-4 bg-indigo-600 hover:bg-indigo-500 font-bold" onClick={() => setIsMissionOpen(false)}>
-                        C'est noté ! 🫡
-                    </Button>
                 </DialogContent>
             </Dialog>
 

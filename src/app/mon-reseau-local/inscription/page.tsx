@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight, Check, ArrowLeft, Target, Shield, Users, Building2, Megaphone, Share2, Crown } from "lucide-react";
+import { ArrowRight, Check, ArrowLeft, Target, Shield, Users, Building2, Megaphone, Share2, Crown, Star
+  } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -50,6 +51,7 @@ export default function RegistrationWizard() {
     prescribers: "", // "Le Prescripteur"
     targetClubs: "", // "L'Infiltré"
     commGoal: "", // "L'Amplificateur"
+    recommender: "", // "Le Recommandeur" (NEW)
   });
 
   const updateForm = (key: string, value: string) => {
@@ -342,6 +344,18 @@ export default function RegistrationWizard() {
                                     value={formData.commGoal} 
                                     onChange={e => updateForm("commGoal", e.target.value)} 
                                 />
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label className="flex items-center gap-2 text-blue-800 font-bold">
+                                    <Star className="w-4 h-4" /> Le Recommandeur (Preuve Sociale)
+                                </Label>
+                                <Input 
+                                    placeholder="Ex: Avis Google, Recommandation LinkedIn, Trustpilot..." 
+                                    value={formData.recommender} 
+                                    onChange={e => updateForm("recommender", e.target.value)} 
+                                />
+                                <p className="text-[10px] text-slate-400">Où avez-vous besoin de crédibilité ?</p>
                             </div>
                         </div>
                     </motion.div>

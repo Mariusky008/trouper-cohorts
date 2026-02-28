@@ -13,6 +13,8 @@ import { Badge } from "@/components/ui/badge";
 
 import { createClient } from "@/lib/supabase/server";
 
+import { getUserProfile } from "@/lib/actions/network-members";
+
 export const dynamic = 'force-dynamic';
 
 export default async function DashboardHome() {
@@ -24,6 +26,7 @@ export default async function DashboardHome() {
   let settings = null;
   let potentialCount = 0;
   let userStreak = 0;
+  let currentUserProfile = null;
 
   try {
     matches = await getDailyMatches();
@@ -31,6 +34,7 @@ export default async function DashboardHome() {
     settings = await getNetworkSettings();
     potentialCount = await getPotentialOpportunitiesCount();
     userStreak = await getUserStreak();
+    currentUserProfile = await getUserProfile(user?.id);
   } catch (e) {
     console.error(e);
   }
@@ -49,14 +53,14 @@ export default async function DashboardHome() {
             </Badge>
             
             <h1 className="text-4xl md:text-6xl font-black text-white tracking-tighter leading-none">
-              Bonjour <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">Champion.</span>
+              Bonjour <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">{currentUserProfile?.display_name?.split(' ')[0] || "Champion"}.</span>
             </h1>
          </div>
       </div>
 
       {/* 2. FOCUS PRINCIPAL - MISSION DU JOUR */}
       <div className="relative z-20">
-         <DailyMatchCard matches={matches} userStreak={userStreak} userId={user?.id} />
+         <DailyMatchCard matches={matches} userStreak={userStreak} userId={user?.id} currentUserProfile={currentUserProfile} />
       </div>
 
       {/* 3. QUICK ACTIONS GRID (Planning & Reputation) */}

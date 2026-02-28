@@ -94,6 +94,7 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
     prescribers: user.receive_profile?.prescribers?.join(", ") || "",
     target_clubs: user.receive_profile?.target_clubs?.join(", ") || "",
     comm_goal: user.receive_profile?.comm_goal || "",
+    recommender: user.receive_profile?.recommender || "",
 
     // Offer fields
     offer_title: user.offer_title || "",
@@ -239,7 +240,8 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
         target_companies: formData.target_companies.split(',').map((s: string) => s.trim()).filter(Boolean),
         prescribers: formData.prescribers.split(',').map((s: string) => s.trim()).filter(Boolean),
         target_clubs: formData.target_clubs.split(',').map((s: string) => s.trim()).filter(Boolean),
-        comm_goal: formData.comm_goal
+        comm_goal: formData.comm_goal,
+        recommender: formData.recommender
       };
 
       data.append("give_profile", JSON.stringify(giveProfile));
@@ -467,6 +469,10 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
                            <li className="text-sm">
                                <span className="block text-blue-500/60 font-bold text-xs mb-1 flex items-center gap-1"><Megaphone className="h-3 w-3" /> L'Amplificateur (Comm)</span>
                                <span className="text-white font-medium">{formData.comm_goal || "Non renseigné"}</span>
+                           </li>
+                           <li className="text-sm">
+                               <span className="block text-blue-500/60 font-bold text-xs mb-1 flex items-center gap-1"><Star className="h-3 w-3" /> Le Recommandeur</span>
+                               <span className="text-white font-medium">{formData.recommender || "Non renseigné"}</span>
                            </li>
                        </ul>
                    </div>
