@@ -13,6 +13,18 @@ export async function registerNetworkUser(formData: FormData) {
   const city = formData.get("city") as string;
   const trade = formData.get("trade") as string;
   const phone = formData.get("phone") as string;
+  const giveProfileStr = formData.get("give_profile") as string;
+  const receiveProfileStr = formData.get("receive_profile") as string;
+
+  let giveProfile = {};
+  let receiveProfile = {};
+
+  try {
+    if (giveProfileStr) giveProfile = JSON.parse(giveProfileStr);
+    if (receiveProfileStr) receiveProfile = JSON.parse(receiveProfileStr);
+  } catch (e) {
+    console.error("Error parsing profile JSON:", e);
+  }
 
   // 1. Créer le compte Auth (Côté Serveur - Admin)
   const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
@@ -35,6 +47,8 @@ export async function registerNetworkUser(formData: FormData) {
     city,
     trade,
     phone,
+    give_profile: giveProfile,
+    receive_profile: receiveProfile,
     role: 'member'
   });
 
