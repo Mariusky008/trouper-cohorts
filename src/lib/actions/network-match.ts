@@ -193,8 +193,8 @@ export async function getDailyMatches() {
       const diffDays = Math.round(Math.abs((now.getTime() - created.getTime()) / oneDay));
       
       // Day 1 = 0 diff (or < 1). Day 2 = 1 diff.
-      // Let's say Day 2 is the day AFTER signup.
-      isDay2 = diffDays === 1;
+      // We extend the window to 3 days to account for weekends (Friday signup -> Monday is Day 4? No, Day 3).
+      isDay2 = diffDays >= 1 && diffDays <= 3;
   }
   
   // 2. Check availability for today (Is today a working day for the user?)
@@ -202,9 +202,12 @@ export async function getDailyMatches() {
   
   // 3. Inject Founder Match if needed
   // Condition: No active match for TODAY + (Day 2 OR Rescue needed)
+  // AND not a weekend (Mon-Fri only)
   const hasMatchToday = activeMatches.some(m => m.date === todayParisStr);
+  const currentDay = now.getDay(); // 0 = Sunday, 6 = Saturday
+  const isWeekend = currentDay === 0 || currentDay === 6;
   
-  if (!hasMatchToday && userData?.availability_status !== 'paused') {
+  if (!hasMatchToday && !isWeekend && userData?.availability_status !== 'paused') {
       // Logic:
       // If Day 2 -> Inject "Onboarding" Founder Match (Priority: Founder)
       // If Day > 2 and no match -> Inject "Rescue" Founder Match

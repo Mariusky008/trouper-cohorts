@@ -434,7 +434,7 @@ export function PremiumLockedCardPreview() {
 }
 
 // --- 5. FOUNDER CARD (Joker / VIP) ---
-export function FounderCardPreview({ type = "onboarding" }: { type?: "onboarding" | "rescue" }) {
+export function FounderCardPreview({ type = "onboarding", onConfirm }: { type?: "onboarding" | "rescue", onConfirm?: () => void }) {
   const isRescue = type === "rescue";
   
   const title = isRescue ? "Opportunité Premium 💎" : "Session Stratégique";
@@ -556,7 +556,11 @@ export function FounderCardPreview({ type = "onboarding" }: { type?: "onboarding
 
         {/* Action Button - Pulsing */}
         <div className="w-full relative group">
-            <Dialog>
+            <Dialog onOpenChange={(open) => {
+                if (open) {
+                    onConfirm?.();
+                }
+            }}>
                 <DialogTrigger asChild>
                     <div className="w-full relative group cursor-pointer">
                         <div className="absolute -inset-0.5 bg-gradient-to-r from-amber-400 to-orange-600 rounded-2xl blur opacity-30 group-hover:opacity-75 transition duration-200 animate-pulse"></div>

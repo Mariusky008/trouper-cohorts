@@ -13,7 +13,7 @@ import { cn } from "@/lib/utils";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { createOpportunity } from "@/lib/actions/network-opportunities";
+import { createOpportunity, notifyFounderCall } from "@/lib/actions/network-opportunities";
 import { saveMatchFeedback } from "@/lib/actions/network-feedback";
 import { incrementUserPoints } from "@/lib/actions/gamification";
 import { trackEvent } from "@/lib/actions/analytics";
@@ -518,7 +518,22 @@ export function DailyMatchCard({ matches, userStreak = 0, userId }: DailyMatchCa
       // For now, let's assume we copy the FounderCardPreview logic here or import it.
       // But wait, FounderCardPreview is exported from design-system-preview.tsx.
       // Let's import it at the top of the file first.
-      return <FounderCardPreview type={isRescue ? "rescue" : "onboarding"} />;
+      
+      const handleFounderCall = async () => {
+          const type = isRescue ? "rescue" : "onboarding";
+          try {
+              const result = await notifyFounderCall(type);
+              if (result.success) {
+                  toast.success("Demande envoyée ! 📞", { description: "Jean-Philippe a été notifié." });
+              } else {
+                  toast.error("Erreur lors de l'envoi", { description: result.error });
+              }
+          } catch (e) {
+              toast.error("Erreur de connexion");
+          }
+      };
+
+      return <FounderCardPreview type={isRescue ? "rescue" : "onboarding"} onConfirm={handleFounderCall} />;
   }
 
   if (!revealed) {
