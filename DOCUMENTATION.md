@@ -85,6 +85,10 @@ Le système a évolué pour supporter deux types de programmes distincts :
 
 ## 5. Landing Pages
 - **`/` (Home)** : Landing page générique / Entrepreneur.
+    - **Nouveau Messaging (Mars 2026)** :
+        - Concept de **"Sphère de Croissance"** remplaçant l'approche "Rencontre aléatoire".
+        - Mise en avant des **3 Filtres de l'Algorithme** : Complémentarité, Proximité, Réciprocité.
+        - Simulation de ROI et Preuve Sociale ("Hiérarchie de Qualité").
 - **`/emploi`** : Landing page spécifique "Job Seeker".
 - **`/france-travail`** : Page institutionnelle B2B pour présenter le dispositif pilote à France Travail.
     - Ton formel, focus sur la remobilisation et l'innovation sociale.
@@ -105,7 +109,17 @@ Le modèle économique et d'engagement repose sur 3 phases :
 
 ### Fonctionnalités Clés
 
-#### 1. Le Cockpit (`/mon-reseau-local/dashboard`)
+#### 1. Onboarding & Profil (`/mon-reseau-local/dashboard/profile`)
+- **Wizard en 3 Étapes** :
+    1. **Identité** : Infos de base obligatoires (Nom, Métier, Ville, Bio).
+    2. **Donner (Terrain de Chasse)** : Secteurs d'influence, Clubs, Réseaux sociaux (Optionnel).
+    3. **Recevoir (Besoins)** : Cibles (Portier), Partenaires (Prescripteur), Clubs visés (Infiltré).
+- **Nouveaux Champs** :
+    - **Recommandeur** : Type de preuve sociale recherchée.
+    - **Situation** : Adaptation du champ "Métier" pour les demandeurs d'emploi.
+- **Offre Club** : Possibilité de définir une offre exclusive (-50%) pour le réseau.
+
+#### 2. Le Cockpit (`/mon-reseau-local/dashboard`)
 Point d'entrée principal pour l'utilisateur.
 - **Vue "Aujourd'hui"** : Centralise les actions prioritaires (Match du jour, Missions).
 - **Parcours de Missions** :
@@ -113,35 +127,35 @@ Point d'entrée principal pour l'utilisateur.
     - Catégories : Intellectuel, Créatif, Social, Événement.
     - **Validation de Preuves** : Soumission de texte, lien ou média pour valider chaque étape.
 
-#### 2. Système de Matching (Daily Match)
+#### 3. Système de Matching (Daily Match)
 Algorithme de mise en relation quotidienne pour un appel de 15 minutes.
 - **Mystery Card** : Le profil du partenaire est masqué jusqu'à révélation par l'utilisateur (Gamification "Teasing").
 - **Smart Matching** : Tente de varier les partenaires et d'éviter les doublons récents.
+- **Smart Fake Benefits** : En l'absence de données historiques, l'UI génère des "bénéfices potentiels" réalistes basés sur le métier du partenaire (ex: un Architecte peut apporter des "Chantiers de rénovation").
 - **Call-to-Action** : Instructions claires (Call-in vs Call-out) et compte à rebours.
-- **Micro-Missions** : Objectifs contextuels générés pour chaque appel (ex: "Trouver 2 synergies").
 - **Carte Joker ("Popey")** :
     - **Onboarding (J+2)** : Carte spéciale pour un appel avec le fondateur.
     - **Sauvetage** : S'active si aucun match n'est trouvé.
     - **Intégration Admin** : Les demandes d'appel remontent dans le dashboard Admin (Section dédiée "Demandes d'Appel Joker").
 
-#### 3. Impact & Trust Score
+#### 4. Impact & Trust Score
 Système de réputation pour encourager les comportements vertueux.
 - **Trust Score** : Note de fiabilité basée sur la réciprocité et les feedbacks des partenaires.
-- **Règle des 30 jours** : Incitation à rendre la pareille sous 30 jours.
+- **Hiérarchie de Qualité** : Concept remplaçant la "Règle des 30 jours" (trop punitive) par une approche méritocratique (Score > 4.5 = Accès Elite).
 - **Dette Réseau** : Suivi des opportunités reçues vs données.
 
-#### 4. Gestion des Opportunités
+#### 5. Gestion des Opportunités
 Catalogue d'actions pour apporter de la valeur.
 - **Types d'Opportunités** : Clients, Partenariats, Mentorat, Visibilité, etc.
-- **Système de Points** : Chaque type d'opportunité rapporte des points (ex: +10 pts pour un Client).
+- **Système de Points** : Mise à jour de la grille de points (Clients +10, Stratégique +8, Co-Création +7...).
 - **Feedback** : Les utilisateurs peuvent noter la qualité des échanges.
 
-#### 5. Gamification
+#### 6. Gamification
 - **Streaks** : Suivi de la régularité (Jours consécutifs).
 - **Mur des Victoires** : Feed social des réussites de la cohorte.
 - **Niveaux** : Progression (ex: "Connecteur") basée sur l'activité.
 
-#### 6. Outils d'Accompagnement
+#### 7. Outils d'Accompagnement
 - **Coach IA (Popey)** : Assistant contextuel fournissant des conseils personnalisés.
 - **Messagerie Intégrée** : Chat direct avec le binôme du jour.
 - **Disponibilités** : Gestion des créneaux horaires pour les matchs.
@@ -170,4 +184,4 @@ L'algorithme de validation (`src/app/actions/admin-registration.ts`) suit cette 
 - **Actions** : `createCheckoutSession` dans `src/lib/actions/stripe.ts`.
 
 ---
-*Dernière mise à jour : 27 Février 2026*
+*Dernière mise à jour : 01 Mars 2026*
