@@ -7,7 +7,7 @@ import {
   Users, Calendar, Phone, CheckCircle2, 
   ArrowRight, ShieldCheck, Zap, Briefcase, 
   Target, TrendingUp, Star, Play, Lock,
-  MessageCircle, Clock, Bell, ChevronRight, Anchor, Heart, Coffee, HelpCircle, Trophy
+  MessageCircle, Clock, Bell, ChevronRight, Anchor, Heart, Coffee, HelpCircle, Trophy, MapPin, Handshake
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -309,39 +309,60 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* --- 3. METAPHOR SECTION (NEW) --- */}
-      <section className="py-20 bg-slate-900 text-white">
-        <div className="container mx-auto px-4 max-w-5xl text-center">
-            <h2 className="text-3xl md:text-4xl font-black mb-8">Imaginez si chaque entrepreneur que vous rencontrez devenait une opportunité</h2>
+      {/* --- 3. GROWTH SPHERE (NEW) --- */}
+      <section className="py-20 bg-slate-900 text-white relative overflow-hidden">
+        <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-10"></div>
+        <div className="container mx-auto px-4 max-w-5xl text-center relative z-10">
+            <Badge className="bg-blue-500/20 text-blue-300 border-blue-500/30 mb-6 uppercase tracking-widest px-3 py-1">Fini le hasard</Badge>
+            <h2 className="text-3xl md:text-5xl font-black mb-8 leading-tight">
+                Ne cherchez plus de clients.<br/>
+                Construisez votre <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">Sphère de Croissance.</span>
+            </h2>
             
-            <p className="text-xl text-slate-300 mb-12">
-                Popey fonctionne comme une application de rencontre... <strong className="text-white">Mais pour le business.</strong>
+            <p className="text-xl text-slate-300 mb-12 max-w-3xl mx-auto leading-relaxed">
+                Le "networking" classique est épuisant et aléatoire. <br/>
+                Popey remplace la quantité par la <strong className="text-white">stratégie</strong>.
             </p>
 
-            <div className="grid md:grid-cols-4 gap-6 text-left">
-                {[
-                    { icon: Users, text: "Vous rencontrez un entrepreneur local" },
-                    { icon: Coffee, text: "Vous échangez pendant 5 à 10 minutes" },
-                    { icon: Zap, text: "Vous découvrez son réseau" },
-                    { icon: Star, text: "Il découvre le vôtre" }
-                ].map((item, i) => (
-                    <div key={i} className="bg-slate-800 p-6 rounded-2xl border border-slate-700">
-                        <item.icon className="h-8 w-8 text-blue-400 mb-4" />
-                        <p className="font-bold">{item.text}</p>
+            <div className="grid md:grid-cols-3 gap-8 text-left">
+                <div className="bg-slate-800/50 p-8 rounded-3xl border border-slate-700 hover:border-blue-500/50 transition-colors group">
+                    <div className="h-12 w-12 bg-blue-900/50 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                        <Users className="h-6 w-6 text-blue-400" />
                     </div>
-                ))}
+                    <h3 className="text-xl font-bold text-white mb-3">Plus de solitude</h3>
+                    <p className="text-slate-400 leading-relaxed">
+                        Vous n'êtes plus un entrepreneur isolé, mais le membre d'une escouade qui s'entraide au quotidien.
+                    </p>
+                </div>
+
+                <div className="bg-slate-800/50 p-8 rounded-3xl border border-slate-700 hover:border-purple-500/50 transition-colors group">
+                    <div className="h-12 w-12 bg-purple-900/50 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                        <Zap className="h-6 w-6 text-purple-400" />
+                    </div>
+                    <h3 className="text-xl font-bold text-white mb-3">Plus d'impact</h3>
+                    <p className="text-slate-400 leading-relaxed">
+                        Chaque membre de votre sphère devient un ambassadeur qui parle de vous à son propre réseau.
+                    </p>
+                </div>
+
+                <div className="bg-slate-800/50 p-8 rounded-3xl border border-slate-700 hover:border-emerald-500/50 transition-colors group">
+                    <div className="h-12 w-12 bg-emerald-900/50 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                        <TrendingUp className="h-6 w-6 text-emerald-400" />
+                    </div>
+                    <h3 className="text-xl font-bold text-white mb-3">Plus de revenus</h3>
+                    <p className="text-slate-400 leading-relaxed">
+                        Le but n'est pas de boire du café, mais de signer des contrats grâce à des recommandations qualifiées.
+                    </p>
+                </div>
             </div>
 
-            <div className="mt-12 flex flex-col items-center gap-6">
-                <div className="inline-block bg-blue-600/20 border border-blue-500/50 rounded-xl px-6 py-3 text-blue-300 font-bold">
-                    Et ensemble vous créez des opportunités.
-                </div>
+            <div className="mt-16">
                 <Button 
                   size="lg" 
-                  className="bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-full px-8 h-12 shadow-lg shadow-blue-900/50"
+                  className="bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-full px-10 h-14 text-lg shadow-lg shadow-blue-900/50 transition-transform hover:scale-105"
                   onClick={() => document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' })}
                 >
-                  Je veux essayer <ArrowRight className="ml-2 h-4 w-4" />
+                  Rejoindre ma sphère <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
             </div>
         </div>
@@ -365,23 +386,54 @@ export default function HomePage() {
                  Chaque matin, Popey vous propose une nouvelle opportunité business adaptée à votre profil. Découvrez votre match, comprenez son potentiel et passez à l’action immédiatement.
                </p>
                
-               {/* 3️⃣ ALGORITHM EXPLANATION */}
-               <div className="flex flex-wrap justify-center gap-4 mt-8">
-                  <div className="flex items-center gap-2 bg-white/5 border border-white/10 px-4 py-2 rounded-full text-slate-300 text-sm font-medium backdrop-blur-sm">
-                     <Target className="h-4 w-4 text-blue-400" />
-                     Votre secteur
+               {/* 3 FILTERS OF THE ALGORITHM */}
+               <div className="grid md:grid-cols-3 gap-6 mt-12 mb-16 text-left">
+                  <div className="bg-white/5 border border-white/10 p-6 rounded-2xl backdrop-blur-sm hover:bg-white/10 transition-colors">
+                     <div className="flex items-center gap-3 mb-3">
+                        <div className="p-2 bg-blue-500/20 rounded-lg text-blue-400">
+                           <Target className="h-5 w-5" />
+                        </div>
+                        <h4 className="font-bold text-white text-lg">1. Complémentarité</h4>
+                     </div>
+                     <p className="text-slate-400 text-sm leading-relaxed mb-4">
+                        Fini les rencontres fortuites. Popey vous connecte prioritairement à des métiers complémentaires au vôtre.
+                     </p>
+                     <div className="bg-white/5 rounded-xl p-3 text-xs text-slate-300 font-medium">
+                        <strong className="text-blue-300 block mb-1">Exemple :</strong>
+                        Vous êtes Webdesigner ? On vous matche avec des Copywriters ou des Agences SEO pour créer des offres complètes.
+                     </div>
                   </div>
-                  <div className="flex items-center gap-2 bg-white/5 border border-white/10 px-4 py-2 rounded-full text-slate-300 text-sm font-medium backdrop-blur-sm">
-                     <Anchor className="h-4 w-4 text-purple-400" />
-                     Votre localisation
+
+                  <div className="bg-white/5 border border-white/10 p-6 rounded-2xl backdrop-blur-sm hover:bg-white/10 transition-colors">
+                     <div className="flex items-center gap-3 mb-3">
+                        <div className="p-2 bg-purple-500/20 rounded-lg text-purple-400">
+                           <MapPin className="h-5 w-5" />
+                        </div>
+                        <h4 className="font-bold text-white text-lg">2. Proximité</h4>
+                     </div>
+                     <p className="text-slate-400 text-sm leading-relaxed mb-4">
+                        Pas de visio à l'autre bout du monde. Vous matchez avec des entrepreneurs de votre ville pour créer du lien réel.
+                     </p>
+                     <div className="bg-white/5 rounded-xl p-3 text-xs text-slate-300 font-medium">
+                        <strong className="text-purple-300 block mb-1">Exemple :</strong>
+                        Vous êtes à Bordeaux ? Déjeunez avec un décideur local qui fréquente les mêmes réseaux que vous.
+                     </div>
                   </div>
-                  <div className="flex items-center gap-2 bg-white/5 border border-white/10 px-4 py-2 rounded-full text-slate-300 text-sm font-medium backdrop-blur-sm">
-                     <TrendingUp className="h-4 w-4 text-emerald-400" />
-                     Vos objectifs
-                  </div>
-                  <div className="flex items-center gap-2 bg-white/5 border border-white/10 px-4 py-2 rounded-full text-slate-300 text-sm font-medium backdrop-blur-sm">
-                     <ShieldCheck className="h-4 w-4 text-orange-400" />
-                     Votre score de confiance
+
+                  <div className="bg-white/5 border border-white/10 p-6 rounded-2xl backdrop-blur-sm hover:bg-white/10 transition-colors">
+                     <div className="flex items-center gap-3 mb-3">
+                        <div className="p-2 bg-emerald-500/20 rounded-lg text-emerald-400">
+                           <Handshake className="h-5 w-5" />
+                        </div>
+                        <h4 className="font-bold text-white text-lg">3. Réciprocité</h4>
+                     </div>
+                     <p className="text-slate-400 text-sm leading-relaxed mb-4">
+                        Notre système unique de points filtre les "preneurs". Ici, vous ne rencontrez que ceux qui jouent le jeu.
+                     </p>
+                     <div className="bg-white/5 rounded-xl p-3 text-xs text-slate-300 font-medium">
+                        <strong className="text-emerald-300 block mb-1">Garantie :</strong>
+                        Un score de confiance de 4.9/5 assure que votre interlocuteur est là pour donner autant que recevoir.
+                     </div>
                   </div>
                </div>
             </div>

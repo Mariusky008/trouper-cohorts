@@ -824,7 +824,7 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
                                     placeholder="Ex: Agents immo, Experts comptables..." 
                                     className={`bg-white ${formErrors.prescribers ? "border-red-300" : "border-blue-200"}`}
                                 />
-                                <p className="text-[10px] text-blue-600/70 italic">"Cite 3 métiers qui rencontrent tes clients juste AVANT toi."</p>
+                                <p className="text-[10px] text-blue-600/70 italic">"Quels sont les 3 métiers qui, s'ils vous recommandaient, feraient exploser votre chiffre d'affaires ?"</p>
                             </div>
 
                             <div className="space-y-2">
