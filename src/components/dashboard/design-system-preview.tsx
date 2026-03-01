@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import confetti from "canvas-confetti";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { OPPORTUNITY_TYPES } from "@/constants/opportunities";
 
 const MISSION_TYPES = [
     { id: 'portier', label: 'Portier', icon: Lock, desc: "Ouvre-moi une porte spécifique", color: 'text-blue-400', bg: 'bg-blue-500/10', border: 'border-blue-500/20' },
@@ -449,9 +450,35 @@ export function MatchCardPreview() {
                             </DialogDescription>
                         </DialogHeader>
                     </div>
-                    <div className="p-6 space-y-4">
-                        <p className="text-slate-300">Ceci est une simulation de l'explication du match.</p>
-                        <Button className="w-full bg-slate-800" onClick={() => setIsWhyVisible(false)}>Compris !</Button>
+                    <div className="p-6 space-y-6">
+                        <div className="bg-white/5 p-4 rounded-xl border border-white/10">
+                            <h4 className="text-sm font-bold text-slate-400 uppercase mb-2 flex items-center gap-2">
+                                <Target className="h-4 w-4 text-blue-400" /> Synergie Détectée
+                            </h4>
+                            <p className="text-slate-200 leading-relaxed text-sm">
+                                "L'algorithme a détecté une complémentarité rare : votre expertise en <span className="text-white font-bold">stratégie commerciale</span> est exactement ce dont Jean-Paul a besoin pour structurer sa croissance. En retour, son réseau influent dans la Tech peut vous ouvrir les portes des grands comptes que vous ciblez."
+                            </p>
+                        </div>
+
+                        <div className="space-y-3">
+                            <h4 className="text-sm font-bold text-slate-400 uppercase flex items-center gap-2">
+                                <TrendingUp className="h-4 w-4 text-emerald-400" /> Potentiel Immédiat
+                            </h4>
+                            <ul className="space-y-2">
+                                <li className="flex items-center gap-3 text-sm text-slate-300">
+                                    <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                                    <span>Opportunité de co-création (Podcast/Live)</span>
+                                </li>
+                                <li className="flex items-center gap-3 text-sm text-slate-300">
+                                    <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                                    <span>Partage de réseau local (Bordeaux)</span>
+                                </li>
+                            </ul>
+                        </div>
+
+                        <Button className="w-full bg-slate-800 hover:bg-slate-700 font-bold h-12 rounded-xl" onClick={() => setIsWhyVisible(false)}>
+                            Compris, je l'appelle ! 📞
+                        </Button>
                     </div>
                 </DialogContent>
             </Dialog>
@@ -490,25 +517,45 @@ export function MatchCardPreview() {
                         <Gift className="h-6 w-6" />
                     </Button>
                 </DialogTrigger>
-                <DialogContent className="bg-[#0f172a] border-white/10 text-white sm:max-w-md rounded-2xl">
+                <DialogContent className="bg-[#0f172a] border-white/10 text-white sm:max-w-md rounded-2xl w-[95vw] max-h-[85vh] overflow-y-auto">
                     <DialogHeader>
                         <DialogTitle className="flex items-center gap-2 text-xl font-black">
                             <Gift className="h-6 w-6 text-purple-400" />
                             Offrir une Opportunité
                         </DialogTitle>
                         <DialogDescription className="text-slate-400">
-                            Simulez l'envoi d'une opportunité à votre partenaire.
+                            Quelle valeur souhaitez-vous apporter à Jean-Paul ?
                         </DialogDescription>
                     </DialogHeader>
-                    <div className="py-8 text-center">
-                        <p className="text-slate-300 mb-6">Sélectionnez un type d'opportunité (Deal, Intro, etc.)</p>
-                        <Button className="bg-purple-600 hover:bg-purple-500 w-full font-bold" onClick={() => {
-                            setIsOpportunityOpen(false);
-                            toast.success("Opportunité envoyée (Simulation) ! 🎁");
-                            confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
-                        }}>
-                            Simuler l'envoi
-                        </Button>
+                    
+                    <div className="grid grid-cols-2 gap-3 py-4">
+                        {OPPORTUNITY_TYPES.map((type) => (
+                            <button
+                                key={type.id}
+                                onClick={() => {
+                                    setIsOpportunityOpen(false);
+                                    toast.success(`Opportunité "${type.label}" envoyée ! 🎁`);
+                                    confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+                                }}
+                                className={cn(
+                                    "flex flex-col items-center justify-start p-3 rounded-xl border transition-all hover:scale-105 text-center gap-2 group min-h-[120px]",
+                                    type.bg.replace('bg-', 'bg-opacity-10 bg-'),
+                                    type.border.replace('border-', 'border-opacity-20 border-')
+                                )}
+                                style={{ backgroundColor: 'rgba(255,255,255,0.03)' }}
+                            >
+                                <div className={cn("h-10 w-10 rounded-full flex items-center justify-center shadow-sm shrink-0 bg-white/5", type.color)}>
+                                    <type.icon className="h-5 w-5" />
+                                </div>
+                                <div className="flex flex-col gap-1 w-full">
+                                    <span className="font-bold text-white text-xs leading-tight">{type.cardLabel || type.label}</span>
+                                    <span className="text-[10px] text-slate-400 font-medium leading-tight px-1 line-clamp-2 opacity-70">
+                                        {type.cardDescription || type.description}
+                                    </span>
+                                    <span className="text-[10px] text-emerald-400 font-bold mt-auto pt-1">+{type.points} pts</span>
+                                </div>
+                            </button>
+                        ))}
                     </div>
                 </DialogContent>
             </Dialog>
