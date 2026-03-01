@@ -59,14 +59,12 @@ export function OpportunityForm({ preSelectedUser, onSuccess }: OpportunityFormP
     }
   };
 
-  const [customPoints, setCustomPoints] = useState<number>(5);
-
   const handleSubmit = async () => {
     if (!selectedType || !selectedMember) return;
     
     setIsSubmitting(true);
     try {
-      const pointsToSend = selectedType.id === 'custom' ? customPoints : selectedType.points;
+      const pointsToSend = selectedType.id === 'custom' ? 0 : selectedType.points;
 
       const result = await createOpportunity({
         receiverId: selectedMember.id,
@@ -80,7 +78,9 @@ export function OpportunityForm({ preSelectedUser, onSuccess }: OpportunityFormP
       }
       
       toast.success("Opportunité envoyée !", {
-        description: `Vous avez offert ${pointsToSend} points à ${selectedMember.name}.`,
+        description: selectedType.id === 'custom' 
+          ? `Vous avez envoyé une opportunité personnalisée à ${selectedMember.name}. Il/elle définira la valeur en points.`
+          : `Vous avez offert ${pointsToSend} points à ${selectedMember.name}.`,
       });
       
       router.refresh();
@@ -91,7 +91,6 @@ export function OpportunityForm({ preSelectedUser, onSuccess }: OpportunityFormP
         setStep("type");
         setSelectedType(null);
         setDetails("");
-        setCustomPoints(5);
       }
 
     } catch (error) {
@@ -133,7 +132,7 @@ export function OpportunityForm({ preSelectedUser, onSuccess }: OpportunityFormP
            </div>
            {selectedType && (
              <div className="bg-white text-slate-900 font-bold px-3 py-1 rounded-full text-sm">
-               +{selectedType.id === 'custom' ? customPoints : selectedType.points} pts
+               {selectedType.id === 'custom' ? '?' : `+${selectedType.points}`} pts
              </div>
            )}
         </div>
@@ -260,18 +259,10 @@ export function OpportunityForm({ preSelectedUser, onSuccess }: OpportunityFormP
 
                 {selectedType.id === 'custom' && (
                   <div className="space-y-2 pt-2 border-t border-slate-100">
-                    <label className="text-sm font-bold text-slate-700">Valeur en points (à définir)</label>
-                    <div className="flex items-center gap-4">
-                        <Input 
-                            type="number" 
-                            min="1" 
-                            max="50" 
-                            value={customPoints} 
-                            onChange={(e) => setCustomPoints(Number(e.target.value))}
-                            className="w-24 font-bold text-center"
-                        />
-                        <span className="text-sm text-slate-500">points pour cette action personnalisée.</span>
-                    </div>
+                    <p className="text-sm font-bold text-slate-700">Valeur en points</p>
+                    <p className="text-sm text-slate-500 italic">
+                        C'est {selectedMember.name} qui définira la valeur de cette opportunité lors de sa validation.
+                    </p>
                   </div>
                 )}
 

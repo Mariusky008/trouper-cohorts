@@ -265,20 +265,27 @@ export async function getOpportunities(filter: 'all' | 'received' | 'given' = 'a
   });
 }
 
-export async function updateOpportunityStatus(id: string, status: 'validated' | 'rejected') {
+export async function updateOpportunityStatus(id: string, status: 'validated' | 'rejected', points?: number) {
   try {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
 
     if (!user) return { success: false, error: "Unauthorized" };
 
+    const updateData: any = { 
+        status,
+        validated_at: status === 'validated' ? new Date().toISOString() : null
+    };
+    
+    // If points are provided (e.g. for custom opportunities), update them
+    if (points !== undefined) {
+        updateData.points = points;
+    }
+
     // Only receiver can validate/reject
     const { error } = await supabase
       .from("network_opportunities")
-      .update({ 
-        status,
-        validated_at: status === 'validated' ? new Date().toISOString() : null
-      })
+      .update(updateData)
       .eq('id', id)
       .eq('receiver_id', user.id);
 

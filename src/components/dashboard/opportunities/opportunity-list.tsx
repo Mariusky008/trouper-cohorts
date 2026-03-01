@@ -41,10 +41,12 @@ export function OpportunityList({ initialData }: OpportunityListProps) {
   const givenCount = opportunities.filter(o => o.direction === 'given').length;
   const pendingCount = opportunities.filter(o => o.status === 'pending').length;
 
-  const handleStatusUpdate = async (id: string, status: 'validated' | 'rejected') => {
+  const [validationPoints, setValidationPoints] = useState<Record<string, number>>({});
+
+  const handleStatusUpdate = async (id: string, status: 'validated' | 'rejected', points?: number) => {
     setLoadingId(id);
     try {
-      const result = await updateOpportunityStatus(id, status);
+      const result = await updateOpportunityStatus(id, status, points);
       
       if (!result.success) {
         throw new Error(result.error || "Failed to update status");
@@ -52,7 +54,7 @@ export function OpportunityList({ initialData }: OpportunityListProps) {
       
       // Optimistic update
       setOpportunities(prev => prev.map(o => 
-        o.id === id ? { ...o, status } : o
+        o.id === id ? { ...o, status, points: points || o.points } : o
       ));
 
       toast({
@@ -171,10 +173,26 @@ export function OpportunityList({ initialData }: OpportunityListProps) {
                           >
                             Refuser
                           </Button>
+                          
+                          {opp.type === 'custom' && (
+                            <div className="flex items-center bg-white/5 rounded-lg border border-white/10 px-2 h-9">
+                                <span className="text-[10px] text-slate-400 mr-2 font-bold uppercase">Points</span>
+                                <select 
+                                    className="bg-transparent text-white font-bold text-sm outline-none w-12"
+                                    value={validationPoints[opp.id] || 5}
+                                    onChange={(e) => setValidationPoints({...validationPoints, [opp.id]: Number(e.target.value)})}
+                                >
+                                    {[2, 4, 6, 8, 10, 15, 20, 30, 50].map(pt => (
+                                        <option key={pt} value={pt} className="text-slate-900">{pt}</option>
+                                    ))}
+                                </select>
+                            </div>
+                          )}
+
                           <Button 
                             size="sm" 
                             className="flex-1 md:flex-none bg-emerald-600 hover:bg-emerald-500 text-white font-bold shadow-lg shadow-emerald-900/20"
-                            onClick={() => handleStatusUpdate(opp.id, 'validated')}
+                            onClick={() => handleStatusUpdate(opp.id, 'validated', opp.type === 'custom' ? (validationPoints[opp.id] || 5) : undefined)}
                             disabled={loadingId === opp.id}
                           >
                             {loadingId === opp.id ? "..." : <><CheckCircle2 className="mr-1 h-4 w-4" /> Valider</>}
