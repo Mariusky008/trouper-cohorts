@@ -320,14 +320,17 @@ export function MatchCardPreview() {
             "Ce directeur commercial peut vous ouvrir des opportunités auxquelles vous n’aviez pas accès hier."
         </p>
 
-        {/* 3. MICRO-MISSION (Added per user request) */}
+        {/* 3. MISSION SELECTOR (NEW) */}
         <div className="bg-indigo-500/20 border border-indigo-500/30 rounded-xl p-3 mb-6 backdrop-blur-sm cursor-pointer hover:bg-indigo-500/30 transition-colors">
-            <div className="flex items-center gap-2 mb-1">
-                <Target className="w-4 h-4 text-indigo-400" />
-                <span className="text-[10px] font-black text-indigo-300 uppercase tracking-wider">Mission du jour</span>
+            <div className="flex items-center justify-between mb-1">
+                <div className="flex items-center gap-2">
+                    <Target className="w-4 h-4 text-indigo-400" />
+                    <span className="text-[10px] font-black text-indigo-300 uppercase tracking-wider">Objectif de l'appel</span>
+                </div>
+                <Badge className="text-[9px] h-4 bg-indigo-500 text-white">Choisi</Badge>
             </div>
             <p className="text-white text-xs font-medium italic truncate">
-                Cliquez pour voir votre mission secrète 🕵️‍♂️
+                Amplificateur : "Boostons notre visibilité mutuelle"
             </p>
         </div>
 
