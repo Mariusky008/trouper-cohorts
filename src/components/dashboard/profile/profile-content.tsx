@@ -808,6 +808,7 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
                                     placeholder="Ex: DRH de Cdiscount, Mairie de Bordeaux..." 
                                     className={`bg-white ${formErrors.target_companies ? "border-red-300" : "border-blue-200"}`}
                                 />
+                                <p className="text-[10px] text-blue-600/70 italic">"Donne-moi le nom de 1,2,3 personnes ou entreprises avec qui tu rêves de prendre un café ce mois-ci."</p>
                             </div>
 
                             <div className="space-y-2">
@@ -823,6 +824,7 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
                                     placeholder="Ex: Agents immo, Experts comptables..." 
                                     className={`bg-white ${formErrors.prescribers ? "border-red-300" : "border-blue-200"}`}
                                 />
+                                <p className="text-[10px] text-blue-600/70 italic">"Cite 3 métiers qui rencontrent tes clients juste AVANT toi."</p>
                             </div>
 
                             <div className="space-y-2">
@@ -833,6 +835,7 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
                                     placeholder="Ex: Club Med, Rotary..." 
                                     className="bg-white border-blue-200"
                                 />
+                                <p className="text-[10px] text-blue-600/70 italic">"Quel événement, groupe WhatsApp ou club privé aimerais-tu rejoindre à Bordeaux ?"</p>
                             </div>
                             
                             <div className="space-y-2">
@@ -840,9 +843,21 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
                                 <Input 
                                     value={formData.comm_goal} 
                                     onChange={e => setFormData({...formData, comm_goal: e.target.value})}
-                                    placeholder="Ex: Gagner 500 abonnés..." 
+                                    placeholder="Ex: Lien vers ton post..." 
                                     className="bg-white border-blue-200"
                                 />
+                                <p className="text-[10px] text-blue-600/70 italic">"Donne-moi le lien de ton post LinkedIn ou Instagram le plus important de la semaine."</p>
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label className="text-blue-800 font-bold">Le Recommandeur (Témoignages)</Label>
+                                <Input 
+                                    value={formData.recommender} 
+                                    onChange={e => setFormData({...formData, recommender: e.target.value})}
+                                    placeholder="Ex: Avis Google, LinkedIn..." 
+                                    className="bg-white border-blue-200"
+                                />
+                                <p className="text-[10px] text-blue-600/70 italic">"De quel type de témoignage ou recommandation publique as-tu besoin pour rassurer tes futurs clients ?"</p>
                             </div>
                         </div>
                     </div>
