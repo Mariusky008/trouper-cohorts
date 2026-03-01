@@ -126,12 +126,9 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
             }
         }
     } else if (step === 2) {
-        // Step 2: Give Profile
-        if (!formData.influence_sectors.trim()) errors.influence_sectors = "Vos secteurs d'influence sont requis.";
+        // Step 2: Give Profile - OPTIONAL
     } else if (step === 3) {
-        // Step 3: Receive Profile & Goals
-        if (!formData.target_companies.trim()) errors.target_companies = "Vos cibles (Le Portier) sont requises.";
-        if (!formData.prescribers.trim()) errors.prescribers = "Vos prescripteurs sont requis.";
+        // Step 3: Receive Profile & Goals - OPTIONAL
         if (!formData.current_goals || formData.current_goals.length === 0) errors.current_goals = "Veuillez sélectionner au moins un objectif.";
     }
 
@@ -800,7 +797,7 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
                         <div className="space-y-4">
                             <div className="space-y-2">
                                 <Label className="text-blue-800 font-bold">
-                                    Le Portier (Cibles précises) {formErrors.target_companies && <span className="text-red-500">*</span>}
+                                    Le Portier (Cibles précises)
                                 </Label>
                                 <Input 
                                     value={formData.target_companies} 
@@ -815,7 +812,7 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
 
                             <div className="space-y-2">
                                 <Label className="text-blue-800 font-bold">
-                                    Le Prescripteur (Partenaires) {formErrors.prescribers && <span className="text-red-500">*</span>}
+                                    Le Prescripteur (Partenaires)
                                 </Label>
                                 <Input 
                                     value={formData.prescribers} 
