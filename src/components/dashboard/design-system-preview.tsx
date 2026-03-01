@@ -118,32 +118,19 @@ export function MysteryCardPreview() {
                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-40 h-40 bg-emerald-500/20 blur-[50px] rounded-full pointer-events-none"></div>
             </div>
 
-            {/* 1. IMPACT SCORE */}
-            <div className="w-full space-y-3 mb-6">
-                <div className="flex justify-between items-center px-2">
-                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">IMPACT POTENTIEL</span>
-                    <div className="flex gap-1.5">
-                        {[1,2,3,4,5].map(i => (
-                            <div key={i} className={`h-1.5 w-5 rounded-full ${i <= 4 ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]' : 'bg-slate-800'}`} />
-                        ))}
-                    </div>
+            {/* 1. KEY INFO SIMPLIFIED */}
+            <div className="w-full space-y-4 mb-6">
+                <div className="text-center">
+                    <p className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-1">PROFIL</p>
+                    <p className="text-xl font-black text-white">Dirigeant B2B <span className="text-slate-500 mx-2">•</span> Bordeaux</p>
                 </div>
                 
-                <div className="grid grid-cols-3 gap-2">
-                    <div className="bg-[#0f172a] rounded-xl p-3 flex flex-col items-center justify-center border border-white/5 shadow-lg">
-                        <Flame className="w-5 h-5 text-orange-500 mb-1.5" />
-                        <span className="text-[9px] text-slate-400 uppercase font-bold tracking-wider">POTENTIEL</span>
-                        <span className="text-xs font-black text-white">SYNERGIES</span>
-                    </div>
-                    <div className="bg-[#0f172a] rounded-xl p-3 flex flex-col items-center justify-center border border-white/5 shadow-lg">
-                        <Users className="w-5 h-5 text-blue-500 mb-1.5" />
-                        <span className="text-[9px] text-slate-400 uppercase font-bold tracking-wider">TOTAL COLLABS</span>
-                        <span className="text-xs font-black text-white">12</span>
-                    </div>
-                    <div className="bg-[#0f172a] rounded-xl p-3 flex flex-col items-center justify-center border border-white/5 shadow-lg">
-                        <Handshake className="w-5 h-5 text-purple-500 mb-1.5" />
-                        <span className="text-[9px] text-slate-400 uppercase font-bold tracking-wider text-center leading-tight">TAUX DE<br/>COMPATIBILITÉ</span>
-                        <span className="text-xs font-black text-white">77%</span>
+                <div className="flex flex-col items-center justify-center gap-2 bg-[#0f172a] rounded-xl p-4 border border-white/5 shadow-lg max-w-[80%] mx-auto">
+                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">POTENTIEL SYNERGIE</span>
+                    <div className="flex gap-1">
+                        {[1,2,3,4,5].map(i => (
+                            <Star key={i} className="w-5 h-5 text-orange-400 fill-orange-400" />
+                        ))}
                     </div>
                 </div>
             </div>
@@ -160,19 +147,19 @@ export function MysteryCardPreview() {
                     <div className="bg-emerald-500/20 p-1 rounded-full">
                         <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
                     </div>
-                    2 à 5 clients potentiels / mois
+                    Introduction stratégique (Décideurs)
                 </li>
                 <li className="flex items-center gap-3 text-xs text-slate-300 font-medium">
                     <div className="bg-emerald-500/20 p-1 rounded-full">
                         <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
                     </div>
-                    Partenariats locaux stratégiques
+                    Boost de visibilité LinkedIn
                 </li>
                 <li className="flex items-center gap-3 text-xs text-slate-300 font-medium">
                     <div className="bg-emerald-500/20 p-1 rounded-full">
                         <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
                     </div>
-                    Recommandations croisées
+                    Partenariats locaux
                 </li>
             </ul>
         </div>
