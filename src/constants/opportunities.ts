@@ -6,8 +6,10 @@ import { OpportunityType } from "@/types/network";
 export const OPPORTUNITY_TYPES: { 
   id: OpportunityType; 
   label: string; 
+  cardLabel?: string;
   points: number; 
   description: string;
+  cardDescription?: string;
   icon: any; 
   color: string; 
   bg: string; 
@@ -15,39 +17,47 @@ export const OPPORTUNITY_TYPES: {
 }[] = [
   { 
     id: "clients", 
-    label: "Apport d'Affaire", 
+    label: "Le Deal", 
+    cardLabel: "Un Client potentiel",
     points: 10, 
-    description: "Je te mets en relation directe avec un prospect qualifié prêt à acheter.",
+    description: "Je te présente à un prospect vraiment intéressé par ce que tu proposes. (La personne a confirmé qu’elle est ouverte à en parler.)",
+    cardDescription: "Il a un besoin réel et attend ton appel/mail.",
     icon: Target, 
     color: "text-red-600", 
     bg: "bg-red-50", 
     border: "border-red-100" 
   },
   { 
-    id: "live", 
-    label: "Co-Création (Live/Contenu)", 
-    points: 9, 
-    description: "On organise un Live, un webinaire ou un post commun pour toucher nos deux audiences.",
-    icon: Play, 
-    color: "text-purple-600", 
-    bg: "bg-purple-50", 
-    border: "border-purple-100" 
-  },
-  { 
     id: "intro", 
-    label: "Introduction Stratégique", 
+    label: "Le Portier", 
+    cardLabel: "Un Contact Stratégique",
     points: 8, 
-    description: "Je te présente un partenaire clé (fournisseur, investisseur, mentor) pour ton business.",
+    description: "Je t’ouvre la porte d’un contact stratégique. (Décideur, partenaire important ou personne clé pour ton activité.)",
+    cardDescription: "Une porte ouverte vers un décideur ou un partenaire clé.",
     icon: Users, 
     color: "text-blue-600", 
     bg: "bg-blue-50", 
     border: "border-blue-100" 
   },
   { 
+    id: "live", 
+    label: "Co-Création", 
+    cardLabel: "Un Projet Commun",
+    points: 7, 
+    description: "On crée quelque chose ensemble pour nos audiences. (Live, post commun, webinar, vidéo, etc.)",
+    cardDescription: "Organisation d'un Live, webinar ou post croisé.",
+    icon: Play, 
+    color: "text-purple-600", 
+    bg: "bg-purple-50", 
+    border: "border-purple-100" 
+  },
+  { 
     id: "network", 
-    label: "Boost Visibilité (Post)", 
+    label: "Accès Cercle", 
+    cardLabel: "Une Invitation / Accès",
     points: 6, 
-    description: "Je partage ton dernier post à ma communauté ou je le commente pour le booster.",
+    description: "Je t’invite dans un événement ou un réseau utile. (Dîner business, club, groupe privé, rencontre sectorielle…)",
+    cardDescription: "Entrée dans un club, événement VIP ou groupe privé.",
     icon: Briefcase, 
     color: "text-orange-600", 
     bg: "bg-orange-50", 
@@ -55,9 +65,11 @@ export const OPPORTUNITY_TYPES: {
   },
   { 
     id: "recommendation", 
-    label: "Avis & Recommandation", 
-    points: 5, 
-    description: "Je laisse un avis positif sur ton profil LinkedIn ou ta page Google.",
+    label: "Crédibilité", 
+    cardLabel: "Une Recommandation",
+    points: 4, 
+    description: "Je renforce ta réputation publiquement. (Avis Google ou recommandation LinkedIn détaillée.)",
+    cardDescription: "Avis Google ou recommandation LinkedIn détaillée.",
     icon: Star, 
     color: "text-yellow-600", 
     bg: "bg-yellow-50", 
@@ -65,43 +77,15 @@ export const OPPORTUNITY_TYPES: {
   },
   { 
     id: "service", 
-    label: "Coup de Main / Service", 
-    points: 5, 
-    description: "Je t'aide ponctuellement sur un sujet (relecture, conseil technique, feedback).",
+    label: "Coup de Pouce", 
+    cardLabel: "Un Conseil / Aide",
+    points: 2, 
+    description: "Je t’aide concrètement sur un sujet précis. (Partage de post/commentaire, Conseil, feedback, mise en garde utile, partage d’info…)",
+    cardDescription: "Feedback, info utile ou coup de main ponctuel.",
     icon: Zap, 
     color: "text-green-600", 
     bg: "bg-green-50", 
     border: "border-green-100" 
-  },
-  { 
-    id: "synergy", 
-    label: "Veille & Info Utile", 
-    points: 3, 
-    description: "J'ai vu passer une info, un outil ou un événement qui pourrait t'intéresser.",
-    icon: TrendingUp, 
-    color: "text-indigo-600", 
-    bg: "bg-indigo-50", 
-    border: "border-indigo-100" 
-  },
-  { 
-    id: "social", 
-    label: "Soutien Moral / Café", 
-    points: 2, 
-    description: "On prend un café virtuel pour échanger et se motiver.",
-    icon: MessageCircle, 
-    color: "text-pink-600", 
-    bg: "bg-pink-50", 
-    border: "border-pink-100" 
-  },
-  { 
-    id: "feedback", 
-    label: "Test & Feedback Produit", 
-    points: 7, 
-    description: "Je teste ton produit/service et je te fais un retour détaillé pour l'améliorer.",
-    icon: Zap, 
-    color: "text-cyan-600", 
-    bg: "bg-cyan-50", 
-    border: "border-cyan-100" 
   },
   { 
     id: "custom", 

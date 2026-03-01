@@ -891,8 +891,8 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
                                                     <type.icon className="h-5 w-5" />
                                                 </div>
                                                 <div className="flex flex-col gap-1 w-full">
-                                                    <span className="font-bold text-white text-xs leading-tight">{type.label}</span>
-                                                    <span className="text-[10px] text-slate-400 font-medium leading-tight px-1 line-clamp-3 opacity-80">{type.description}</span>
+                                                    <span className="font-bold text-white text-xs leading-tight">{type.cardLabel || type.label}</span>
+                                                    <span className="text-[10px] text-slate-400 font-medium leading-tight px-1 line-clamp-3 opacity-80">{type.cardDescription || type.description}</span>
                                                     <span className="text-[10px] text-emerald-400 font-bold mt-1">+{type.points} pts</span>
                                                 </div>
                                             </button>
@@ -907,7 +907,10 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
                                                 ← Retour
                                             </Button>
                                             <Badge className="bg-purple-500/20 text-purple-300 border-purple-500/30">
-                                                {OPPORTUNITY_TYPES.find(t => t.id === oppType)?.label}
+                                                {(() => {
+                                                    const t = OPPORTUNITY_TYPES.find(t => t.id === oppType);
+                                                    return t?.cardLabel || t?.label;
+                                                })()}
                                             </Badge>
                                         </div>
                                         <DialogTitle className="text-lg font-bold mt-2">
