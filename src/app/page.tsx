@@ -497,6 +497,9 @@ export default function HomePage() {
                     <div className="space-y-2">
                         <div className="text-4xl font-black text-slate-300">150€</div>
                         <div className="text-sm font-bold text-slate-500 uppercase">Valeur Moyenne / Opportunité</div>
+                        <div className="text-xs text-slate-400 italic font-medium max-w-[150px] mx-auto leading-tight">
+                            (Basé sur le coût moyen d'une mise en relation qualifiée à Bordeaux)
+                        </div>
                     </div>
                 </div>
 
@@ -507,12 +510,17 @@ export default function HomePage() {
                     </div>
                     <div className="flex justify-between items-center mb-4">
                         <span className="text-slate-600 font-medium">Valeur générée estimée</span>
-                        <span className="font-bold text-green-600">+ 3 000 €</span>
+                        <span className="font-bold text-green-600">+ 3 000 € / mois</span>
                     </div>
                     <div className="h-2 w-full bg-slate-200 rounded-full overflow-hidden">
                         <div className="h-full bg-green-500 w-[98%]"></div>
                     </div>
-                    <p className="text-xs text-slate-400 mt-2 text-right">ROI x60</p>
+                    <div className="flex justify-between items-center mt-2">
+                        <p className="text-xs text-slate-400 text-left font-medium max-w-[70%]">
+                            Note : Simulation basée sur un score de réciprocité moyen. Plus votre score monte, plus vous accédez aux opportunités à +10 pts.
+                        </p>
+                        <p className="text-xs text-slate-900 font-black bg-green-100 text-green-700 px-2 py-1 rounded-lg uppercase tracking-wider">ROI x60</p>
+                    </div>
                 </div>
             </div>
 
