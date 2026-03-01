@@ -179,10 +179,10 @@ export function OpportunityList({ initialData }: OpportunityListProps) {
                                 <span className="text-[10px] text-slate-400 mr-2 font-bold uppercase">Points</span>
                                 <select 
                                     className="bg-transparent text-white font-bold text-sm outline-none w-12"
-                                    value={validationPoints[opp.id] || 5}
+                                    value={validationPoints[opp.id] || 2}
                                     onChange={(e) => setValidationPoints({...validationPoints, [opp.id]: Number(e.target.value)})}
                                 >
-                                    {[2, 4, 6, 8, 10, 15, 20, 30, 50].map(pt => (
+                                    {[2, 4, 6, 7, 8, 10].map(pt => (
                                         <option key={pt} value={pt} className="text-slate-900">{pt}</option>
                                     ))}
                                 </select>
