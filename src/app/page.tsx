@@ -520,19 +520,18 @@ export default function HomePage() {
                <span className="text-blue-600 font-bold tracking-widest uppercase text-sm mb-2 block">Option recommandée</span>
                <h2 className="text-3xl md:text-5xl font-black mb-6 text-slate-900">Ce que chaque échange peut réellement générer</h2>
                <p className="text-xl text-slate-600 leading-relaxed max-w-2xl mx-auto font-medium">
-                 5 minutes peuvent suffire à débloquer des opportunités que vous n’auriez jamais obtenues seul.
+                 5 minutes suffisent pour débloquer des opportunités que vous n’auriez jamais obtenues seul.
                </p>
             </div>
 
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto mb-12">
                {[
-                 { icon: "🔥", label: "Des clients directs", desc: "Transformez une conversation en chiffre d’affaires concret.", pts: "+10 pts", color: "bg-blue-100 text-blue-700" },
-                 { icon: "🤝", label: "Des mises en relation stratégiques", desc: "Accédez au réseau de votre partenaire instantanément.", pts: "+8 pts", color: "bg-purple-100 text-purple-700" },
-                 { icon: "🌐", label: "Partage de réseau", desc: "Exposez votre activité à des cercles que vous ne touchez pas aujourd’hui.", pts: "+6 pts", color: "bg-indigo-100 text-indigo-700" },
-                 { icon: "⭐", label: "Recommandations ciblées", desc: "Soyez recommandé à la bonne personne, au bon moment.", pts: "+5 pts", color: "bg-green-100 text-green-700" },
-                 { icon: "🧩", label: "Synergies & collaborations", desc: "Lives, contenus croisés, échanges de services, partenariats long terme.", pts: "+3 pts", color: "bg-orange-100 text-orange-700" },
-                 { icon: "📣", label: "Visibilité sur les réseaux sociaux", desc: "Augmentez votre visibilité grâce à des partages croisés, mentions et collaborations.", pts: "+4 pts", color: "bg-cyan-100 text-cyan-700" },
-                 { icon: "🎥", label: "Opportunités de communication", desc: "Créez des lives, podcasts, interviews ou contenus communs pour renforcer votre crédibilité.", pts: "+7 pts", color: "bg-red-100 text-red-700" },
+                 { icon: "�", label: "Des Clients Directs", desc: "Transformez une conversation en mise en relation avec un prospect chaud.", pts: "+10 pts", color: "bg-blue-100 text-blue-700" },
+                 { icon: "🔑", label: "Des Accès Stratégiques", desc: "Faites-vous ouvrir la porte d'un décideur ou d'un partenaire clé.", pts: "+8 pts", color: "bg-purple-100 text-purple-700" },
+                 { icon: "📢", label: "Co-Créations & Visibilité", desc: "Lives, posts croisés ou webinaires : fusionnez vos audiences pour booster votre image.", pts: "+7 pts", color: "bg-pink-100 text-pink-700" },
+                 { icon: "🎟", label: "Accès Cercles Fermés", desc: "Soyez invité dans les clubs, dîners business et réseaux VIP de Bordeaux.", pts: "+6 pts", color: "bg-indigo-100 text-indigo-700" },
+                 { icon: "⭐", label: "Crédibilité & Preuve Sociale", desc: "Bétonnez votre réputation avec des avis Google et recommandations LinkedIn.", pts: "+4 pts", color: "bg-orange-100 text-orange-700" },
+                 { icon: "🤝", label: "Coups de Pouce & Entraide", desc: "Feedback, conseil d'expert ou partage d'infos utiles pour avancer plus vite.", pts: "+2 pts", color: "bg-emerald-100 text-emerald-700" },
                ].map((item, i) => (
                   <motion.div 
                     key={i}
