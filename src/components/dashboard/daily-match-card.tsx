@@ -128,9 +128,9 @@ function MysteryCard({ onReveal, match, locked = false }: { onReveal: () => void
     // FIXED: Removed sector logic as requested by user to match design
     const getBenefits = () => {
         const benefits = [
-            "Partenariats locaux stratégiques",
-            "Recommandations croisées",
-            "Accès à un nouveau réseau",
+            "Introduction stratégique (Décideurs)",
+            "Boost de visibilité LinkedIn",
+            "Partenariats locaux",
             "Partage d'expérience",
             "Opportunités de co-création",
             "Mentorat mutuel"
@@ -138,8 +138,8 @@ function MysteryCard({ onReveal, match, locked = false }: { onReveal: () => void
         
         // Add specific ones based on job
         const job = (match.job || "").toLowerCase();
-        if (job.includes("commercial") || job.includes("vente")) benefits.unshift("2 à 5 clients potentiels / mois");
-        if (job.includes("marketing") || job.includes("com")) benefits.unshift("Stratégies de visibilité");
+        if (job.includes("commercial") || job.includes("vente")) benefits.unshift("Introduction stratégique (Décideurs)");
+        if (job.includes("marketing") || job.includes("com")) benefits.unshift("Boost de visibilité LinkedIn");
         if (job.includes("tech") || job.includes("dev")) benefits.unshift("Expertise technique");
         if (job.includes("immo")) benefits.unshift("Opportunités d'investissement");
         
@@ -218,35 +218,22 @@ function MysteryCard({ onReveal, match, locked = false }: { onReveal: () => void
                 )}></div>
             </div>
 
-            {/* 1. IMPACT SCORE */}
-              <div className="w-full space-y-3 mb-6">
-                  <div className="flex justify-between items-center px-2">
-                      <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">IMPACT POTENTIEL</span>
-                      <div className="flex gap-1.5">
-                          {[1,2,3,4,5].map(i => (
-                              <div key={i} className={`h-1.5 w-5 rounded-full ${i <= 4 ? 'bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.4)]' : 'bg-slate-900'}`} />
-                          ))}
-                      </div>
-                  </div>
-                  
-                  <div className="grid grid-cols-3 gap-2">
-                      <div className="bg-[#0f172a] rounded-xl p-3 flex flex-col items-center justify-center border border-white/5 shadow-lg">
-                          <Flame className="w-5 h-5 text-orange-500 mb-1.5" />
-                          <span className="text-[9px] text-slate-400 uppercase font-bold tracking-wider">POTENTIEL</span>
-                          <span className="text-xs font-black text-white">SYNERGIES</span>
-                      </div>
-                      <div className="bg-[#0f172a] rounded-xl p-3 flex flex-col items-center justify-center border border-white/5 shadow-lg">
-                          <Users className="w-5 h-5 text-blue-500 mb-1.5" />
-                          <span className="text-[9px] text-slate-400 uppercase font-bold tracking-wider">TOTAL COLLABS</span>
-                          <span className="text-xs font-black text-white">{collabsLabel}</span>
-                      </div>
-                      <div className="bg-[#0f172a] rounded-xl p-3 flex flex-col items-center justify-center border border-white/5 shadow-lg">
-                          <Handshake className="w-5 h-5 text-purple-500 mb-1.5" />
-                          <span className="text-[9px] text-slate-400 uppercase font-bold tracking-wider text-center leading-tight">TAUX DE<br/>COMPATIBILITÉ</span>
-                          <span className="text-xs font-black text-white">{compatibility}%</span>
-                      </div>
-                  </div>
-              </div>
+            {/* 1. KEY INFO SIMPLIFIED */}
+            <div className="w-full space-y-4 mb-6">
+                 <div className="text-center">
+                     <p className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-1">PROFIL</p>
+                     <p className="text-xl font-black text-white">{match.name ? match.name.split(' ')[0] : "Membre"} <span className="text-slate-500 mx-2">•</span> {match.job || "Dirigeant"} <span className="text-slate-500 mx-2">•</span> {match.city || "Bordeaux"}</p>
+                 </div>
+                 
+                 <div className="flex flex-col items-center justify-center gap-2 bg-[#0f172a] rounded-xl p-4 border border-white/5 shadow-lg max-w-[80%] mx-auto">
+                     <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">POTENTIEL SYNERGIE</span>
+                     <div className="flex gap-1">
+                         {[1,2,3,4,5].map(i => (
+                             <Star key={i} className="w-5 h-5 text-orange-400 fill-orange-400" />
+                         ))}
+                     </div>
+                 </div>
+            </div>
         </div>
 
         {/* 2. CONCRETE BENEFITS */}
