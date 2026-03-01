@@ -285,6 +285,10 @@ export function MysteryCardLockedPreview() {
 export function MatchCardPreview() {
   const [isMissionOpen, setIsMissionOpen] = useState(false);
   const [selectedMission, setSelectedMission] = useState<string | null>(null);
+  const [isWhyVisible, setIsWhyVisible] = useState(false);
+  const [isPhoneOpen, setIsPhoneOpen] = useState(false);
+  const [isOpportunityOpen, setIsOpportunityOpen] = useState(false);
+  const [isRatingOpen, setIsRatingOpen] = useState(false);
   
   // Mock suggestion for preview
   const suggestedMissionId = 'amplificateur';
@@ -427,27 +431,114 @@ export function MatchCardPreview() {
             </Dialog>
 
             {/* 1. Message / Script */}
-            <Button size="icon" className="h-14 w-14 rounded-full bg-slate-800/80 backdrop-blur-md border border-white/10 text-yellow-400 hover:bg-slate-700 hover:scale-110 transition-all shadow-lg">
-                <MessageSquare className="h-6 w-6 fill-current" />
-            </Button>
+            <Dialog open={isWhyVisible} onOpenChange={setIsWhyVisible}>
+                <DialogTrigger asChild>
+                    <Button size="icon" className="h-14 w-14 rounded-full bg-slate-800/80 backdrop-blur-md border border-white/10 text-yellow-400 hover:bg-slate-700 hover:scale-110 transition-all shadow-lg">
+                        <MessageSquare className="h-6 w-6 fill-current" />
+                    </Button>
+                </DialogTrigger>
+                <DialogContent className="bg-[#0f172a] border-white/10 text-white sm:max-w-md rounded-2xl w-[90vw] p-0 overflow-hidden">
+                    <div className="bg-gradient-to-br from-blue-600/20 to-purple-600/20 p-6">
+                        <DialogHeader>
+                            <DialogTitle className="flex items-center gap-2 text-xl font-black">
+                                <Zap className="h-6 w-6 text-yellow-400 fill-yellow-400" />
+                                Pourquoi ce match ?
+                            </DialogTitle>
+                            <DialogDescription className="text-slate-300">
+                                Voici pourquoi l'algorithme vous a réunis aujourd'hui.
+                            </DialogDescription>
+                        </DialogHeader>
+                    </div>
+                    <div className="p-6 space-y-4">
+                        <p className="text-slate-300">Ceci est une simulation de l'explication du match.</p>
+                        <Button className="w-full bg-slate-800" onClick={() => setIsWhyVisible(false)}>Compris !</Button>
+                    </div>
+                </DialogContent>
+            </Dialog>
 
             {/* 2. CALL (Main Action) */}
-            <div className="relative group">
-                <div className="absolute inset-0 bg-gradient-to-br from-emerald-400 to-blue-600 rounded-full blur opacity-40 group-hover:opacity-70 transition-opacity animate-pulse"></div>
-                <Button size="icon" className="h-20 w-20 rounded-full bg-gradient-to-br from-emerald-500 to-blue-600 text-white hover:scale-105 transition-all shadow-xl border-4 border-[#0f172a] relative z-10">
-                    <PhoneCall className="h-8 w-8 fill-current" />
-                </Button>
-            </div>
+            <Dialog open={isPhoneOpen} onOpenChange={setIsPhoneOpen}>
+                <DialogTrigger asChild>
+                    <div className="relative group cursor-pointer">
+                        <div className="absolute inset-0 bg-gradient-to-br from-emerald-400 to-blue-600 rounded-full blur opacity-40 group-hover:opacity-70 transition-opacity animate-pulse"></div>
+                        <Button size="icon" className="h-20 w-20 rounded-full bg-gradient-to-br from-emerald-500 to-blue-600 text-white hover:scale-105 transition-all shadow-xl border-4 border-[#0f172a] relative z-10">
+                            <PhoneCall className="h-8 w-8 fill-current" />
+                        </Button>
+                    </div>
+                </DialogTrigger>
+                <DialogContent className="bg-[#0f172a] border-white/10 text-white sm:max-w-md rounded-2xl">
+                    <div className="flex flex-col items-center gap-6 py-8">
+                        <div className="h-20 w-20 rounded-full bg-emerald-500/20 flex items-center justify-center animate-pulse">
+                            <Phone className="h-10 w-10 text-emerald-400" />
+                        </div>
+                        <div className="text-center space-y-2">
+                            <h3 className="text-2xl font-black">C'est parti ! 🚀</h3>
+                            <p className="text-slate-400">Appelez Jean-Paul maintenant.</p>
+                        </div>
+                        <div className="text-3xl font-black tracking-widest text-white bg-slate-900 px-6 py-4 rounded-xl border border-white/10 shadow-inner select-all">
+                            06 12 34 56 78
+                        </div>
+                        <Button className="w-full bg-emerald-600 hover:bg-emerald-500 font-bold h-12 rounded-xl" onClick={() => setIsPhoneOpen(false)}>Fermer</Button>
+                    </div>
+                </DialogContent>
+            </Dialog>
 
             {/* 3. Gift */}
-            <Button size="icon" className="h-14 w-14 rounded-full bg-slate-800/80 backdrop-blur-md border border-white/10 text-purple-400 hover:bg-slate-700 hover:scale-110 transition-all shadow-lg">
-                <Gift className="h-6 w-6" />
-            </Button>
+            <Dialog open={isOpportunityOpen} onOpenChange={setIsOpportunityOpen}>
+                <DialogTrigger asChild>
+                    <Button size="icon" className="h-14 w-14 rounded-full bg-slate-800/80 backdrop-blur-md border border-white/10 text-purple-400 hover:bg-slate-700 hover:scale-110 transition-all shadow-lg">
+                        <Gift className="h-6 w-6" />
+                    </Button>
+                </DialogTrigger>
+                <DialogContent className="bg-[#0f172a] border-white/10 text-white sm:max-w-md rounded-2xl">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2 text-xl font-black">
+                            <Gift className="h-6 w-6 text-purple-400" />
+                            Offrir une Opportunité
+                        </DialogTitle>
+                        <DialogDescription className="text-slate-400">
+                            Simulez l'envoi d'une opportunité à votre partenaire.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="py-8 text-center">
+                        <p className="text-slate-300 mb-6">Sélectionnez un type d'opportunité (Deal, Intro, etc.)</p>
+                        <Button className="bg-purple-600 hover:bg-purple-500 w-full font-bold" onClick={() => {
+                            setIsOpportunityOpen(false);
+                            toast.success("Opportunité envoyée (Simulation) ! 🎁");
+                            confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+                        }}>
+                            Simuler l'envoi
+                        </Button>
+                    </div>
+                </DialogContent>
+            </Dialog>
 
             {/* 4. Rate */}
-            <Button size="icon" className="h-14 w-14 rounded-full bg-slate-800/80 backdrop-blur-md border border-white/10 text-orange-400 hover:bg-slate-700 hover:scale-110 transition-all shadow-lg">
-                <Star className="h-6 w-6 fill-current" />
-            </Button>
+            <Dialog open={isRatingOpen} onOpenChange={setIsRatingOpen}>
+                <DialogTrigger asChild>
+                    <Button size="icon" className="h-14 w-14 rounded-full bg-slate-800/80 backdrop-blur-md border border-white/10 text-orange-400 hover:bg-slate-700 hover:scale-110 transition-all shadow-lg">
+                        <Star className="h-6 w-6 fill-current" />
+                    </Button>
+                </DialogTrigger>
+                <DialogContent className="bg-[#0f172a] border-white/10 text-white sm:max-w-md rounded-2xl">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2 text-xl font-black justify-center">
+                            Comment s'est passé l'échange ?
+                        </DialogTitle>
+                    </DialogHeader>
+                    <div className="grid grid-cols-3 gap-3 py-6">
+                        <Button onClick={() => { setIsRatingOpen(false); toast.success("Feedback enregistré ! 🔥"); }} className="h-24 flex flex-col bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                            <span className="text-3xl mb-2">🔥</span> TOP
+                        </Button>
+                        <Button onClick={() => { setIsRatingOpen(false); toast.success("Feedback enregistré ! 👍"); }} className="h-24 flex flex-col bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/30">
+                            <span className="text-3xl mb-2">👍</span> SYMPA
+                        </Button>
+                        <Button onClick={() => { setIsRatingOpen(false); toast.success("Feedback enregistré ! 😕"); }} className="h-24 flex flex-col bg-slate-500/10 hover:bg-slate-500/20 text-slate-400 border border-slate-500/30">
+                            <span className="text-3xl mb-2">😕</span> BOF
+                        </Button>
+                    </div>
+                </DialogContent>
+            </Dialog>
 
         </div>
       </div>
