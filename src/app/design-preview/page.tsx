@@ -61,13 +61,8 @@ export default function DesignPreviewPage() {
               <span className="bg-emerald-500 w-2 h-8 rounded-full"></span>
               3b. Daily Match (Mission Selector)
             </h2>
-            <p className="text-sm text-slate-400 mb-4">Composant réel avec sélecteur de mission.</p>
-            <div className="pointer-events-none opacity-80">
-                {/* Note: This is just a placeholder because DailyMatchCard requires complex props */}
-                <div className="bg-[#0f172a] rounded-[2.5rem] border border-slate-800 p-6 h-[600px] flex items-center justify-center text-center">
-                    <p className="text-slate-400">Le composant DailyMatchCard nécessite des données serveur.<br/>Utilisez MatchCardPreview ci-dessus qui a été mis à jour.</p>
-                </div>
-            </div>
+            <p className="text-sm text-slate-400 mb-4">Aperçu interactif du sélecteur.</p>
+            <MatchCardPreview />
           </div>
 
           {/* 4. Founder Joker State (Onboarding) */}
