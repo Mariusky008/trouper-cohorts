@@ -636,11 +636,11 @@ export default function HomePage() {
                   <div className="space-y-6">
                      <div className="flex gap-4">
                         <div className="h-12 w-12 bg-orange-100 rounded-xl flex items-center justify-center shrink-0">
-                           <Clock className="h-6 w-6 text-orange-600" />
+                           <Trophy className="h-6 w-6 text-orange-600" />
                         </div>
                         <div>
-                           <h4 className="text-xl font-bold text-slate-900">La Règle des 30 Jours</h4>
-                           <p className="text-slate-500">Si vous recevez une opportunité, vous avez 30 jours pour rendre la pareille. Sinon, votre score baisse.</p>
+                           <h4 className="text-xl font-bold text-slate-900">Hiérarchie de Qualité</h4>
+                           <p className="text-slate-500">Ici, la fiabilité est récompensée. Plus vous jouez le jeu, plus l'algorithme vous matche avec les membres 'Elite'.</p>
                         </div>
                      </div>
                      <div className="flex gap-4">
@@ -648,8 +648,8 @@ export default function HomePage() {
                            <ShieldCheck className="h-6 w-6 text-green-600" />
                         </div>
                         <div>
-                           <h4 className="text-xl font-bold text-slate-900">Transparence Totale</h4>
-                           <p className="text-slate-500">Le score de confiance est visible par tous. Les membres fiables attirent les meilleures opportunités.</p>
+                           <h4 className="text-xl font-bold text-slate-900">Accès Privilégié</h4>
+                           <p className="text-slate-500">Un score de 4.5/5 vous donne accès aux décideurs les plus influents de la région.</p>
                         </div>
                      </div>
                   </div>
