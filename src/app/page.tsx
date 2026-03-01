@@ -7,7 +7,7 @@ import {
   Users, Calendar, Phone, CheckCircle2, 
   ArrowRight, ShieldCheck, Zap, Briefcase, 
   Target, TrendingUp, Star, Play, Lock,
-  MessageCircle, Clock, Bell, ChevronRight, Anchor, Heart, Coffee, HelpCircle
+  MessageCircle, Clock, Bell, ChevronRight, Anchor, Heart, Coffee, HelpCircle, Trophy
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
