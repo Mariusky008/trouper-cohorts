@@ -6,11 +6,11 @@ import {
     Briefcase, ShieldCheck, Award, Pencil, Save, X, Phone, 
     Linkedin, Instagram, Facebook, Globe, Upload, Loader2,
     MapPin, Camera, CheckSquare, Percent, Euro, Zap, Handshake, Gift, Target,
-    Building2, Users, Megaphone, Share2, Crown, Star
+    Building2, Users, Megaphone, Share2, Crown, Star, ArrowRight, ArrowLeft
   } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Checkbox } from "@/components/ui/checkbox"; // Assuming Checkbox component exists
+import { Checkbox } from "@/components/ui/checkbox";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
 import { Input } from "@/components/ui/input";
@@ -22,7 +22,6 @@ import { updateProfile } from "@/app/actions/profile";
 import {
     Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter
 } from "@/components/ui/dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const GOAL_OPTIONS = [
     { id: "clients", label: "Trouver des clients" },
@@ -41,31 +40,8 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
   const { toast } = useToast();
   const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
+  const [isOfferModalOpen, setIsOfferModalOpen] = useState(false);
   
-  // Auto-open edit modal if query param "edit=true" is present or event triggered
-  useEffect(() => {
-      const checkEditParam = () => {
-          const params = new URLSearchParams(window.location.search);
-          if (params.get("edit") === "true") {
-              setIsEditing(true);
-              if (params.get("tab")) {
-                  setActiveTab(params.get("tab") || "infos");
-              }
-              // Clean up param
-              const url = new URL(window.location.href);
-              url.searchParams.delete("edit");
-              url.searchParams.delete("tab");
-              window.history.replaceState({}, "", url);
-          }
-      };
-
-      checkEditParam();
-
-      const handleCustomEvent = () => setIsEditing(true);
-      window.addEventListener("trigger-profile-edit", handleCustomEvent);
-      return () => window.removeEventListener("trigger-profile-edit", handleCustomEvent);
-  }, []);
-
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -106,45 +82,84 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
 
   const [noSocials, setNoSocials] = useState(user.linkedin_url === "https://none");
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
-  const [activeTab, setActiveTab] = useState("infos");
+  const [currentStep, setCurrentStep] = useState(1);
+
+  // Auto-open edit modal if query param "edit=true" is present
+  useEffect(() => {
+      const checkEditParam = () => {
+          const params = new URLSearchParams(window.location.search);
+          if (params.get("edit") === "true") {
+              setIsEditing(true);
+              const url = new URL(window.location.href);
+              url.searchParams.delete("edit");
+              url.searchParams.delete("tab");
+              window.history.replaceState({}, "", url);
+          }
+      };
+
+      checkEditParam();
+
+      const handleCustomEvent = () => setIsEditing(true);
+      window.addEventListener("trigger-profile-edit", handleCustomEvent);
+      return () => window.removeEventListener("trigger-profile-edit", handleCustomEvent);
+  }, []);
 
   const supabase = createClient();
 
-  const validateForm = () => {
+  const validateStep = (step: number) => {
     const errors: Record<string, string> = {};
     
-    // Basic Info Validation
-    if (!formData.display_name.trim()) errors.display_name = "Le nom d'affichage est requis.";
-    if (!formData.trade.trim()) errors.trade = "Le métier est requis.";
-    if (!formData.city.trim()) errors.city = "La ville est requise.";
-    if (!formData.phone.trim()) errors.phone = "Le téléphone est requis.";
-    if (!formData.bio.trim()) errors.bio = "La bio est requise.";
-    
-    // New Profile Validation
-    if (!formData.influence_sectors.trim()) errors.influence_sectors = "Vos secteurs d'influence sont requis.";
-    if (!formData.target_companies.trim()) errors.target_companies = "Vos cibles (Le Portier) sont requises.";
-    if (!formData.prescribers.trim()) errors.prescribers = "Vos prescripteurs sont requis.";
-
-    if (!formData.avatar_url) errors.avatar_url = "Une photo de profil est requise.";
-    if (!formData.current_goals || formData.current_goals.length === 0) errors.current_goals = "Veuillez sélectionner au moins un objectif.";
-
-    // Socials validation
-    if (!noSocials) {
-        const hasSocial = formData.linkedin || formData.instagram || formData.facebook || formData.website;
-        if (!hasSocial) {
-            errors.socials = "Au moins un réseau social ou site web est requis.";
+    if (step === 1) {
+        // Step 1: Identity & Contact
+        if (!formData.display_name.trim()) errors.display_name = "Le nom d'affichage est requis.";
+        if (!formData.trade.trim()) errors.trade = "Le métier est requis.";
+        if (!formData.city.trim()) errors.city = "La ville est requise.";
+        if (!formData.phone.trim()) errors.phone = "Le téléphone est requis.";
+        if (!formData.bio.trim()) errors.bio = "La bio est requise.";
+        if (!formData.avatar_url) errors.avatar_url = "Une photo de profil est requise.";
+        
+        // Socials validation
+        if (!noSocials) {
+            const hasSocial = formData.linkedin || formData.instagram || formData.facebook || formData.website;
+            if (!hasSocial) {
+                errors.socials = "Au moins un réseau social ou site web est requis.";
+            }
         }
+    } else if (step === 2) {
+        // Step 2: Give Profile
+        if (!formData.influence_sectors.trim()) errors.influence_sectors = "Vos secteurs d'influence sont requis.";
+    } else if (step === 3) {
+        // Step 3: Receive Profile & Goals
+        if (!formData.target_companies.trim()) errors.target_companies = "Vos cibles (Le Portier) sont requises.";
+        if (!formData.prescribers.trim()) errors.prescribers = "Vos prescripteurs sont requis.";
+        if (!formData.current_goals || formData.current_goals.length === 0) errors.current_goals = "Veuillez sélectionner au moins un objectif.";
     }
 
-    // Offer Validation (only if active)
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const validateOfferForm = () => {
+    const errors: Record<string, string> = {};
     if (formData.offer_active) {
         if (!formData.offer_title.trim()) errors.offer_title = "Le titre de l'offre est requis.";
         if (!formData.offer_price) errors.offer_price = "Le prix club est requis.";
         if (!formData.offer_description.trim()) errors.offer_description = "La description est requise.";
     }
-
     setFormErrors(errors);
-    return errors;
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleNextStep = () => {
+      if (validateStep(currentStep)) {
+          setCurrentStep(prev => Math.min(prev + 1, 3));
+      } else {
+          toast({ title: "Erreur", description: "Veuillez remplir les champs obligatoires.", variant: "destructive" });
+      }
+  };
+
+  const handlePrevStep = () => {
+      setCurrentStep(prev => Math.max(prev - 1, 1));
   };
 
   const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -180,53 +195,36 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
     }
   };
 
-  const handleSave = async () => {
-    const errors = validateForm();
-    const hasErrors = Object.keys(errors).length > 0;
-
-    if (hasErrors) {
-        // Determine which tab has errors
-        const offerErrors = ['offer_title', 'offer_price', 'offer_description'];
-        const hasOfferErrors = Object.keys(errors).some(key => offerErrors.includes(key));
-        
-        const infoErrors = ['display_name', 'trade', 'city', 'phone', 'bio', 'avatar_url', 'current_goals', 'socials', 'influence_sectors', 'target_companies', 'prescribers'];
-        const hasInfoErrors = Object.keys(errors).some(key => infoErrors.includes(key));
-
-        if (hasInfoErrors && activeTab !== 'infos') {
-            setActiveTab('infos');
-            toast({ title: "Profil incomplet", description: "Veuillez remplir les informations manquantes dans l'onglet principal.", variant: "destructive" });
-        } else if (hasOfferErrors && activeTab !== 'offer') {
-            setActiveTab('offer');
-            toast({ title: "Offre incomplète", description: "Veuillez compléter les détails de votre offre.", variant: "destructive" });
-        } else {
-             toast({ title: "Erreur de validation", description: "Veuillez corriger les champs indiqués en rouge.", variant: "destructive" });
-        }
-
-        // Auto-scroll to first error
-        const firstErrorKey = Object.keys(errors)[0];
-        if (firstErrorKey) {
-            // Small delay to allow tab switch if needed
-            setTimeout(() => {
-                const element = document.getElementById(`field-${firstErrorKey}`);
-                if (element) {
-                    element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    element.focus();
-                }
-            }, 100);
-        }
+  const handleSaveProfile = async () => {
+    // Validate current step before saving if we are on the last step, or validate all?
+    // Since it's a wizard, we assume previous steps are valid. We just validate the current one (Step 3).
+    if (!validateStep(3)) {
+        toast({ title: "Erreur", description: "Veuillez remplir les champs obligatoires.", variant: "destructive" });
         return;
     }
+    
+    await performUpdate();
+  };
 
+  const handleSaveOffer = async () => {
+      if (!validateOfferForm()) {
+        toast({ title: "Erreur", description: "Veuillez corriger les erreurs.", variant: "destructive" });
+        return;
+      }
+      await performUpdate(true);
+  };
+
+  const performUpdate = async (isOfferUpdate = false) => {
     setLoading(true);
     try {
       const data = new FormData();
+      // Always send basic info as it might be required by backend validation, or just send everything
       data.append("display_name", formData.display_name);
       data.append("bio", formData.bio);
       data.append("trade", formData.trade);
       data.append("city", formData.city);
       data.append("phone", formData.phone);
       
-      // Construct Give & Receive Profiles
       const giveProfile = {
         influence_sectors: formData.influence_sectors.split(',').map((s: string) => s.trim()).filter(Boolean),
         clubs: formData.clubs.split(',').map((s: string) => s.trim()).filter(Boolean),
@@ -247,9 +245,7 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
       data.append("give_profile", JSON.stringify(giveProfile));
       data.append("receive_profile", JSON.stringify(receiveProfile));
       
-      // Socials logic
       if (noSocials) {
-          // If user declared no socials, we save a marker in one field to pass validation
           data.append("linkedin", "https://none");
           data.append("instagram", "");
           data.append("facebook", "");
@@ -263,14 +259,12 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
 
       data.append("avatar_url", formData.avatar_url);
       
-      // Offer data
       data.append("offer_title", formData.offer_title);
       data.append("offer_description", formData.offer_description);
       data.append("offer_price", formData.offer_price);
       data.append("offer_original_price", formData.offer_original_price);
       data.append("offer_active", formData.offer_active ? "true" : "false");
 
-      // Append each goal individually for getAll on server
       formData.current_goals.forEach((goal: string) => {
           data.append("current_goals", goal);
       });
@@ -279,12 +273,17 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
       
       if (result.error) throw new Error(result.error);
       
-      setIsEditing(false);
-      toast({ title: "Profil mis à jour avec succès !" });
-      // Refresh to update server data
+      if (isOfferUpdate) {
+          setIsOfferModalOpen(false);
+          toast({ title: "Offre mise à jour !" });
+      } else {
+          setIsEditing(false);
+          toast({ title: "Profil mis à jour avec succès !" });
+      }
+      
       router.refresh();
     } catch (e: any) {
-      toast({ title: "Erreur", description: e.message || "Impossible de mettre à jour le profil.", variant: "destructive" });
+      toast({ title: "Erreur", description: e.message || "Impossible de mettre à jour.", variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -351,11 +350,16 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
              </div>
           </div>
           
-          <div className="flex gap-3 mb-2">
+          <div className="flex flex-col gap-3 mb-2">
              {!isReadOnly && (
-                 <Button onClick={() => setIsEditing(true)} className="rounded-xl font-bold h-12 px-6 shadow-lg shadow-blue-900/20 bg-blue-600 text-white hover:bg-blue-500 border border-white/10">
-                   <Pencil className="mr-2 h-4 w-4" /> Modifier mon profil
-                 </Button>
+                 <>
+                    <Button onClick={() => setIsEditing(true)} className="rounded-xl font-bold h-12 px-6 shadow-lg shadow-blue-900/20 bg-blue-600 text-white hover:bg-blue-500 border border-white/10 w-full md:w-auto">
+                        <Pencil className="mr-2 h-4 w-4" /> Modifier mon profil
+                    </Button>
+                    <Button onClick={() => setIsOfferModalOpen(true)} variant="outline" className="rounded-xl font-bold h-12 px-6 border-amber-500/30 text-amber-400 hover:bg-amber-500/10 hover:text-amber-300 w-full md:w-auto">
+                        <Percent className="mr-2 h-4 w-4" /> Gérer mon Offre -50%
+                    </Button>
+                 </>
              )}
           </div>
         </div>
@@ -529,138 +533,199 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
            </div>
         </div>
 
-      {/* --- EDIT MODAL --- */}
-      <Dialog open={isEditing} onOpenChange={setIsEditing}>
+      {/* --- WIZARD PROFILE EDIT MODAL (3 STEPS) --- */}
+      <Dialog open={isEditing} onOpenChange={(open) => {
+          setIsEditing(open);
+          if(!open) setCurrentStep(1); // Reset to step 1 on close
+      }}>
         <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="text-2xl font-black">Modifier mon profil</DialogTitle>
+            <DialogTitle className="text-2xl font-black flex items-center justify-between">
+                <span>Modifier mon profil</span>
+                <span className="text-sm font-normal text-slate-500 bg-slate-100 px-3 py-1 rounded-full border border-slate-200">
+                    Étape {currentStep} / 3
+                </span>
+            </DialogTitle>
             <DialogDescription>
-              Mettez à jour vos informations pour être plus visible sur le réseau.
+              {currentStep === 1 && "Commençons par les présentations."}
+              {currentStep === 2 && "Dites-nous ce que vous pouvez apporter au réseau."}
+              {currentStep === 3 && "Dites-nous ce que vous recherchez en retour."}
             </DialogDescription>
           </DialogHeader>
           
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full py-4">
-             <TabsList className="grid w-full grid-cols-2 mb-6">
-                <TabsTrigger value="infos">Informations Complètes</TabsTrigger>
-                <TabsTrigger value="offer" className="flex items-center gap-2">
-                    <Percent className="h-4 w-4" /> Mon Offre Club
-                </TabsTrigger>
-             </TabsList>
+          {/* STEP INDICATOR */}
+          <div className="w-full bg-slate-100 h-2 rounded-full mb-6 overflow-hidden">
+              <div 
+                className="bg-blue-600 h-full transition-all duration-300 ease-out"
+                style={{ width: `${(currentStep / 3) * 100}%` }}
+              />
+          </div>
 
-             <TabsContent value="infos" className="space-y-6">
-                {/* Avatar Upload in Edit Mode */}
-                <div className="flex flex-col items-center gap-4 mb-6" id="field-avatar_url">
-                    <div className="relative group cursor-pointer" onClick={() => fileInputRef.current?.click()}>
-                        <Avatar className={`h-24 w-24 border-4 ${formErrors.avatar_url ? 'border-red-500 animate-pulse' : 'border-slate-100'}`}>
-                            <AvatarImage src={formData.avatar_url} className="object-cover" />
-                            <AvatarFallback>{formData.display_name?.[0]}</AvatarFallback>
-                        </Avatar>
-                        <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                            <Camera className="h-8 w-8 text-white" />
+          <div className="py-2">
+             {/* STEP 1: IDENTITY */}
+             {currentStep === 1 && (
+                 <div className="space-y-6 animate-in slide-in-from-right-4 duration-300">
+                    <div className="flex flex-col items-center gap-4 mb-6">
+                        <div className="relative group cursor-pointer" onClick={() => fileInputRef.current?.click()}>
+                            <Avatar className={`h-24 w-24 border-4 ${formErrors.avatar_url ? 'border-red-500 animate-pulse' : 'border-slate-100'}`}>
+                                <AvatarImage src={formData.avatar_url} className="object-cover" />
+                                <AvatarFallback>{formData.display_name?.[0]}</AvatarFallback>
+                            </Avatar>
+                            <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                <Camera className="h-8 w-8 text-white" />
+                            </div>
+                            <input 
+                                type="file" 
+                                ref={fileInputRef} 
+                                className="hidden" 
+                                accept="image/*"
+                                onChange={handleAvatarUpload}
+                                disabled={uploading}
+                            />
                         </div>
-                        <input 
-                            type="file" 
-                            ref={fileInputRef} 
-                            className="hidden" 
-                            accept="image/*"
-                            onChange={handleAvatarUpload}
-                            disabled={uploading}
-                        />
+                        <div className="text-center">
+                            <p className="text-xs text-slate-500 font-medium">{uploading ? "Téléchargement..." : "Cliquez pour changer la photo"}</p>
+                            {formErrors.avatar_url && <p className="text-xs text-red-500 font-bold mt-1">{formErrors.avatar_url}</p>}
+                        </div>
                     </div>
-                    <div className="text-center">
-                        <p className="text-xs text-slate-500 font-medium">{uploading ? "Téléchargement..." : "Cliquez pour changer la photo"}</p>
-                        {formErrors.avatar_url && <p className="text-xs text-red-500 font-bold mt-1">{formErrors.avatar_url}</p>}
-                    </div>
-                </div>
 
-                <div className="space-y-4">
-                    <div className="space-y-2">
-                        <Label className={formErrors.display_name ? "text-red-500" : ""}>Nom d'affichage {formErrors.display_name && "*"}</Label>
-                        <Input 
-                            id="field-display_name"
-                            value={formData.display_name} 
-                            onChange={e => {
-                                setFormData({...formData, display_name: e.target.value});
-                                if (e.target.value) setFormErrors({...formErrors, display_name: ""});
-                            }} 
-                            className={`h-12 text-lg ${formErrors.display_name ? "border-red-500 ring-red-500 focus-visible:ring-red-500" : ""}`} 
-                        />
-                        {formErrors.display_name && <p className="text-xs text-red-500">{formErrors.display_name}</p>}
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-4">
                         <div className="space-y-2">
-                            <Label className={formErrors.trade ? "text-red-500" : ""}>Métier / Activité {formErrors.trade && "*"}</Label>
+                            <Label>Nom d'affichage {formErrors.display_name && <span className="text-red-500">*</span>}</Label>
                             <Input 
-                                id="field-trade"
-                                value={formData.trade} 
+                                value={formData.display_name} 
                                 onChange={e => {
-                                    setFormData({...formData, trade: e.target.value});
-                                    if (e.target.value) setFormErrors({...formErrors, trade: ""});
+                                    setFormData({...formData, display_name: e.target.value});
+                                    if (e.target.value) setFormErrors({...formErrors, display_name: ""});
                                 }} 
-                                className={`h-12 ${formErrors.trade ? "border-red-500 focus-visible:ring-red-500" : ""}`} 
-                                placeholder="Ex: Architecte" 
+                                className={formErrors.display_name ? "border-red-500" : ""} 
+                            />
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label>Métier / Activité {formErrors.trade && <span className="text-red-500">*</span>}</Label>
+                                <Input 
+                                    value={formData.trade} 
+                                    onChange={e => {
+                                        setFormData({...formData, trade: e.target.value});
+                                        if (e.target.value) setFormErrors({...formErrors, trade: ""});
+                                    }} 
+                                    className={formErrors.trade ? "border-red-500" : ""} 
+                                    placeholder="Ex: Architecte" 
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Ville {formErrors.city && <span className="text-red-500">*</span>}</Label>
+                                <Input 
+                                    value={formData.city} 
+                                    onChange={e => {
+                                        setFormData({...formData, city: e.target.value});
+                                        if (e.target.value) setFormErrors({...formErrors, city: ""});
+                                    }} 
+                                    className={formErrors.city ? "border-red-500" : ""} 
+                                    placeholder="Ex: Bordeaux" 
+                                />
+                            </div>
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Téléphone {formErrors.phone && <span className="text-red-500">*</span>}</Label>
+                            <Input 
+                                value={formData.phone} 
+                                onChange={e => {
+                                    setFormData({...formData, phone: e.target.value});
+                                    if (e.target.value) setFormErrors({...formErrors, phone: ""});
+                                }} 
+                                className={formErrors.phone ? "border-red-500" : ""} 
+                                placeholder="06..." 
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label className={formErrors.city ? "text-red-500" : ""}>Ville {formErrors.city && "*"}</Label>
-                            <Input 
-                                id="field-city"
-                                value={formData.city} 
+                            <Label>À propos (Bio) {formErrors.bio && <span className="text-red-500">*</span>}</Label>
+                            <Textarea 
+                                value={formData.bio} 
                                 onChange={e => {
-                                    setFormData({...formData, city: e.target.value});
-                                    if (e.target.value) setFormErrors({...formErrors, city: ""});
+                                    setFormData({...formData, bio: e.target.value});
+                                    if (e.target.value) setFormErrors({...formErrors, bio: ""});
                                 }} 
-                                className={`h-12 ${formErrors.city ? "border-red-500 focus-visible:ring-red-500" : ""}`} 
-                                placeholder="Ex: Bordeaux" 
+                                className={`min-h-[100px] ${formErrors.bio ? "border-red-500" : ""}`}
+                                placeholder="Décrivez votre activité et ce que vous recherchez..." 
                             />
                         </div>
-                    </div>
-                    <div className="space-y-2">
-                        <Label className={formErrors.phone ? "text-red-500" : ""}>Téléphone {formErrors.phone && "*"}</Label>
-                        <Input 
-                            id="field-phone"
-                            value={formData.phone} 
-                            onChange={e => {
-                                setFormData({...formData, phone: e.target.value});
-                                if (e.target.value) setFormErrors({...formErrors, phone: ""});
-                            }} 
-                            className={`h-12 ${formErrors.phone ? "border-red-500 focus-visible:ring-red-500" : ""}`} 
-                            placeholder="06..." 
-                        />
-                    </div>
-                    <div className="space-y-2">
-                        <Label className={formErrors.bio ? "text-red-500" : ""}>À propos (Bio) {formErrors.bio && "*"}</Label>
-                        <Textarea 
-                            id="field-bio"
-                            value={formData.bio} 
-                            onChange={e => {
-                                setFormData({...formData, bio: e.target.value});
-                                if (e.target.value) setFormErrors({...formErrors, bio: ""});
-                            }} 
-                            className={`min-h-[120px] text-base ${formErrors.bio ? "border-red-500 focus-visible:ring-red-500" : ""}`}
-                            placeholder="Décrivez votre activité et ce que vous recherchez..." 
-                        />
-                        {formErrors.bio && <p className="text-xs text-red-500">{formErrors.bio}</p>}
-                    </div>
 
-                    {/* GIVE & RECEIVE SECTIONS (NEW STRUCTURE) */}
-                    
-                    {/* SECTION 1: DONNER (Terrain de Chasse) */}
-                    <div className="bg-emerald-50/50 p-6 rounded-2xl border border-emerald-100 mt-6 shadow-sm">
+                        {/* SOCIALS - MOVED TO STEP 1 */}
+                        <div className="space-y-4 pt-4 border-t border-slate-100">
+                            <Label className="font-bold flex items-center gap-2">
+                                Vos Réseaux Sociaux <span className="text-xs font-normal text-slate-500">(Au moins un requis)</span>
+                            </Label>
+                            
+                            <div className="bg-slate-50 p-3 rounded-xl border flex items-center gap-3">
+                                <Checkbox 
+                                    id="no-socials" 
+                                    checked={noSocials} 
+                                    onCheckedChange={(c) => {
+                                        setNoSocials(c === true);
+                                        if(c === true) setFormErrors({...formErrors, socials: ""});
+                                    }} 
+                                />
+                                <Label htmlFor="no-socials" className="cursor-pointer text-sm">
+                                    Je ne suis pas présent sur les réseaux sociaux
+                                </Label>
+                            </div>
+                            
+                            {formErrors.socials && <p className="text-xs text-red-500 font-bold">{formErrors.socials}</p>}
+
+                            <div className={`space-y-3 ${noSocials ? "opacity-40 pointer-events-none" : ""}`}>
+                                <Input 
+                                    value={formData.linkedin} 
+                                    onChange={e => {
+                                        setFormData({...formData, linkedin: e.target.value});
+                                        if (e.target.value) setFormErrors({...formErrors, socials: ""});
+                                    }} 
+                                    placeholder="LinkedIn URL" 
+                                    className="h-10" 
+                                />
+                                <Input 
+                                    value={formData.instagram} 
+                                    onChange={e => {
+                                        setFormData({...formData, instagram: e.target.value});
+                                        if (e.target.value) setFormErrors({...formErrors, socials: ""});
+                                    }} 
+                                    placeholder="Instagram Handle (@...)" 
+                                    className="h-10" 
+                                />
+                                <Input 
+                                    value={formData.website} 
+                                    onChange={e => {
+                                        setFormData({...formData, website: e.target.value});
+                                        if (e.target.value) setFormErrors({...formErrors, socials: ""});
+                                    }} 
+                                    placeholder="Site Web" 
+                                    className="h-10" 
+                                />
+                            </div>
+                        </div>
+                    </div>
+                 </div>
+             )}
+
+             {/* STEP 2: GIVE (TERRAIN DE CHASSE) */}
+             {currentStep === 2 && (
+                 <div className="space-y-6 animate-in slide-in-from-right-4 duration-300">
+                     <div className="bg-emerald-50/50 p-6 rounded-2xl border border-emerald-100 shadow-sm">
                         <div className="flex items-center gap-3 mb-6">
                             <div className="h-10 w-10 bg-emerald-100 rounded-xl flex items-center justify-center border border-emerald-200 shadow-sm">
                                 <Share2 className="h-5 w-5 text-emerald-600" />
                             </div>
                             <div>
-                                <h3 className="font-bold text-slate-800 text-lg leading-tight">Votre Terrain de Chasse (DONNER)</h3>
+                                <h3 className="font-bold text-slate-800 text-lg leading-tight">Votre Terrain de Chasse</h3>
                                 <p className="text-xs text-slate-500 font-medium">Ce que vous pouvez apporter au réseau.</p>
                             </div>
                         </div>
 
                         <div className="space-y-4">
                             <div className="space-y-2">
-                                <Label className="text-emerald-800 font-bold flex items-center gap-2">
-                                    <ShieldCheck className="w-4 h-4" /> Secteurs d'influence {formErrors.influence_sectors && "*"}
+                                <Label className="text-emerald-800 font-bold">
+                                    Secteurs d'influence {formErrors.influence_sectors && <span className="text-red-500">*</span>}
                                 </Label>
                                 <Input 
                                     value={formData.influence_sectors} 
@@ -668,29 +733,28 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
                                         setFormData({...formData, influence_sectors: e.target.value});
                                         if(e.target.value) setFormErrors({...formErrors, influence_sectors: ""});
                                     }} 
-                                    placeholder="Ex: BTP, Restauration, Immobilier, Startups..." 
-                                    className={`bg-white ${formErrors.influence_sectors ? "border-red-300 ring-red-200" : "border-emerald-200"}`}
+                                    placeholder="Ex: BTP, Restauration, Immobilier..." 
+                                    className={`bg-white ${formErrors.influence_sectors ? "border-red-300" : "border-emerald-200"}`}
                                 />
-                                <p className="text-[10px] text-emerald-600/70">Dans quels domaines avez-vous le plus de contacts ?</p>
                             </div>
 
                             <div className="space-y-2">
-                                <Label className="text-emerald-800 font-bold flex items-center gap-2">
-                                    <Users className="w-4 h-4" /> Clubs & Réseaux
+                                <Label className="text-emerald-800 font-bold">
+                                    Clubs & Réseaux
                                 </Label>
                                 <Input 
                                     value={formData.clubs} 
                                     onChange={e => setFormData({...formData, clubs: e.target.value})}
-                                    placeholder="Ex: BNI, Club d'entreprises, Asso sportive..." 
+                                    placeholder="Ex: BNI, Asso sportive..." 
                                     className="bg-white border-emerald-200"
                                 />
                             </div>
 
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
-                                    <Label className="text-emerald-800 font-bold">Réseau Social Principal</Label>
+                                    <Label className="text-emerald-800 font-bold">Réseau Principal</Label>
                                     <select 
-                                        className="flex h-10 w-full rounded-md border border-emerald-200 bg-white px-3 py-2 text-sm ring-offset-background"
+                                        className="flex h-10 w-full rounded-md border border-emerald-200 bg-white px-3 py-2 text-sm"
                                         value={formData.social_network_platform}
                                         onChange={e => setFormData({...formData, social_network_platform: e.target.value})}
                                     >
@@ -701,9 +765,9 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
                                     </select>
                                 </div>
                                 <div className="space-y-2">
-                                    <Label className="text-emerald-800 font-bold">Volume d'abonnés</Label>
+                                    <Label className="text-emerald-800 font-bold">Volume</Label>
                                     <select 
-                                        className="flex h-10 w-full rounded-md border border-emerald-200 bg-white px-3 py-2 text-sm ring-offset-background"
+                                        className="flex h-10 w-full rounded-md border border-emerald-200 bg-white px-3 py-2 text-sm"
                                         value={formData.social_network_followers}
                                         onChange={e => setFormData({...formData, social_network_followers: e.target.value})}
                                     >
@@ -716,23 +780,27 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
                             </div>
                         </div>
                     </div>
+                 </div>
+             )}
 
-                    {/* SECTION 2: RECEVOIR (Besoins) */}
-                    <div className="bg-blue-50/50 p-6 rounded-2xl border border-blue-100 mt-6 shadow-sm">
+             {/* STEP 3: RECEIVE (BESOINS) */}
+             {currentStep === 3 && (
+                 <div className="space-y-6 animate-in slide-in-from-right-4 duration-300">
+                     <div className="bg-blue-50/50 p-6 rounded-2xl border border-blue-100 shadow-sm">
                         <div className="flex items-center gap-3 mb-6">
                             <div className="h-10 w-10 bg-blue-100 rounded-xl flex items-center justify-center border border-blue-200 shadow-sm">
                                 <Target className="h-5 w-5 text-blue-600" />
                             </div>
                             <div>
-                                <h3 className="font-bold text-slate-800 text-lg leading-tight">Vos Besoins (RECEVOIR)</h3>
+                                <h3 className="font-bold text-slate-800 text-lg leading-tight">Vos Besoins</h3>
                                 <p className="text-xs text-slate-500 font-medium">Pour que l'algorithme travaille pour vous.</p>
                             </div>
                         </div>
 
                         <div className="space-y-4">
                             <div className="space-y-2">
-                                <Label className="text-blue-800 font-bold flex items-center gap-2">
-                                    <Building2 className="w-4 h-4" /> Le Portier (Cibles précises) {formErrors.target_companies && "*"}
+                                <Label className="text-blue-800 font-bold">
+                                    Le Portier (Cibles précises) {formErrors.target_companies && <span className="text-red-500">*</span>}
                                 </Label>
                                 <Input 
                                     value={formData.target_companies} 
@@ -741,14 +809,13 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
                                         if(e.target.value) setFormErrors({...formErrors, target_companies: ""});
                                     }}
                                     placeholder="Ex: DRH de Cdiscount, Mairie de Bordeaux..." 
-                                    className={`bg-white ${formErrors.target_companies ? "border-red-300 ring-red-200" : "border-blue-200"}`}
+                                    className={`bg-white ${formErrors.target_companies ? "border-red-300" : "border-blue-200"}`}
                                 />
-                                <p className="text-[10px] text-blue-600/70">Qui rêvez-vous d'approcher ?</p>
                             </div>
 
                             <div className="space-y-2">
-                                <Label className="text-blue-800 font-bold flex items-center gap-2">
-                                    <Users className="w-4 h-4" /> Le Prescripteur (Partenaires) {formErrors.prescribers && "*"}
+                                <Label className="text-blue-800 font-bold">
+                                    Le Prescripteur (Partenaires) {formErrors.prescribers && <span className="text-red-500">*</span>}
                                 </Label>
                                 <Input 
                                     value={formData.prescribers} 
@@ -757,55 +824,37 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
                                         if(e.target.value) setFormErrors({...formErrors, prescribers: ""});
                                     }}
                                     placeholder="Ex: Agents immo, Experts comptables..." 
-                                    className={`bg-white ${formErrors.prescribers ? "border-red-300 ring-red-200" : "border-blue-200"}`}
+                                    className={`bg-white ${formErrors.prescribers ? "border-red-300" : "border-blue-200"}`}
                                 />
-                                <p className="text-[10px] text-blue-600/70">Qui voit vos clients juste avant vous ?</p>
                             </div>
 
                             <div className="space-y-2">
-                                <Label className="text-blue-800 font-bold flex items-center gap-2">
-                                    <Crown className="w-4 h-4" /> L'Infiltré (Réseaux visés)
-                                </Label>
+                                <Label className="text-blue-800 font-bold">L'Infiltré (Réseaux visés)</Label>
                                 <Input 
                                     value={formData.target_clubs} 
                                     onChange={e => setFormData({...formData, target_clubs: e.target.value})}
-                                    placeholder="Ex: Club Med, Rotary, Cercle des Entrepreneurs..." 
+                                    placeholder="Ex: Club Med, Rotary..." 
                                     className="bg-white border-blue-200"
                                 />
                             </div>
-
+                            
                             <div className="space-y-2">
-                                <Label className="text-blue-800 font-bold flex items-center gap-2">
-                                    <Megaphone className="w-4 h-4" /> L'Amplificateur (Comm)
-                                </Label>
+                                <Label className="text-blue-800 font-bold">L'Amplificateur (Comm)</Label>
                                 <Input 
                                     value={formData.comm_goal} 
                                     onChange={e => setFormData({...formData, comm_goal: e.target.value})}
-                                    placeholder="Ex: Gagner 500 abonnés, Vendre ma formation..." 
-                                    className="bg-white border-blue-200"
-                                />
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label className="text-blue-800 font-bold flex items-center gap-2">
-                                    <Star className="w-4 h-4" /> Le Recommandeur (Preuve Sociale)
-                                </Label>
-                                <Input 
-                                    value={formData.recommender} 
-                                    onChange={e => setFormData({...formData, recommender: e.target.value})}
-                                    placeholder="Ex: Avis Google, Recommandation LinkedIn, Trustpilot..." 
+                                    placeholder="Ex: Gagner 500 abonnés..." 
                                     className="bg-white border-blue-200"
                                 />
                             </div>
                         </div>
                     </div>
-                    
-                    {/* CURRENT GOALS SECTION */}
-                    <div className="space-y-3 pt-4 border-t border-slate-100" id="field-current_goals">
+
+                    <div className="space-y-3 pt-4 border-t border-slate-100">
                         <Label className={`text-base font-bold ${formErrors.current_goals ? "text-red-500" : ""}`}>
                             Ce que je recherche en ce moment {formErrors.current_goals && "*"}
                         </Label>
-                        <div className={`grid grid-cols-1 gap-2 p-2 rounded-xl ${formErrors.current_goals ? "border border-red-200 bg-red-50" : ""}`}>
+                        <div className="grid grid-cols-1 gap-2">
                             {GOAL_OPTIONS.map((goal) => (
                                 <div key={goal.id} className="flex items-center space-x-3 p-3 rounded-xl border border-slate-100 hover:bg-slate-50 transition-colors bg-white">
                                     <Checkbox 
@@ -815,7 +864,7 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
                                     />
                                     <label
                                         htmlFor={goal.id}
-                                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer flex-1"
+                                        className="text-sm font-medium leading-none cursor-pointer flex-1"
                                     >
                                         {goal.label}
                                     </label>
@@ -824,107 +873,62 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
                         </div>
                         {formErrors.current_goals && <p className="text-xs text-red-500 font-bold">{formErrors.current_goals}</p>}
                     </div>
+                 </div>
+             )}
 
-                    {/* SOCIALS SECTION (INTEGRATED INTO MAIN TAB FOR BETTER VISIBILITY) */}
-                    <div className="space-y-4 pt-6 border-t border-slate-100">
-                        <Label className={`text-base font-bold flex items-center gap-2 ${formErrors.socials ? "text-red-500" : ""}`}>
-                            Mes Réseaux Sociaux <span className={`text-xs font-normal ${formErrors.socials ? "text-red-400 font-bold" : "text-slate-500"}`}>(Au moins un requis)</span>
-                        </Label>
-                        
-                        <div className={`bg-slate-50 p-4 rounded-xl border mb-4 flex items-center gap-3 ${formErrors.socials ? "border-red-200 bg-red-50" : "border-slate-100"}`}>
-                            <Checkbox 
-                                id="no-socials" 
-                                checked={noSocials} 
-                                onCheckedChange={(c) => {
-                                    setNoSocials(c === true);
-                                    if(c === true) setFormErrors({...formErrors, socials: ""});
-                                }} 
-                            />
-                            <Label htmlFor="no-socials" className="cursor-pointer font-bold text-slate-700">
-                                Je ne suis pas présent sur les réseaux sociaux
-                            </Label>
-                        </div>
-                        
-                        {formErrors.socials && <p className="text-xs text-red-500 font-bold mb-2">{formErrors.socials}</p>}
+          </div>
 
-                        <div className={noSocials ? "opacity-40 pointer-events-none transition-opacity" : "transition-opacity"}>
-                            <div className="space-y-4">
-                                <div className="space-y-2">
-                                    <Label className="flex items-center gap-2"><Linkedin className="h-4 w-4 text-blue-700" /> LinkedIn URL</Label>
-                                    <Input 
-                                        value={formData.linkedin} 
-                                        onChange={e => {
-                                            setFormData({...formData, linkedin: e.target.value});
-                                            if (e.target.value) setFormErrors({...formErrors, socials: ""});
-                                        }} 
-                                        placeholder="https://linkedin.com/in/..." 
-                                        className="h-12" 
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label className="flex items-center gap-2"><Instagram className="h-4 w-4 text-pink-600" /> Instagram Handle</Label>
-                                    <div className="relative">
-                                        <span className="absolute left-3 top-3 text-slate-400 font-bold">@</span>
-                                        <Input 
-                                            value={formData.instagram} 
-                                            onChange={e => {
-                                                setFormData({...formData, instagram: e.target.value});
-                                                if (e.target.value) setFormErrors({...formErrors, socials: ""});
-                                            }} 
-                                            placeholder="mon_compte" 
-                                            className="h-12 pl-8" 
-                                        />
-                                    </div>
-                                </div>
-                                <div className="space-y-2">
-                                    <Label className="flex items-center gap-2"><Facebook className="h-4 w-4 text-blue-600" /> Facebook URL</Label>
-                                    <Input 
-                                        value={formData.facebook} 
-                                        onChange={e => {
-                                            setFormData({...formData, facebook: e.target.value});
-                                            if (e.target.value) setFormErrors({...formErrors, socials: ""});
-                                        }} 
-                                        placeholder="https://facebook.com/..." 
-                                        className="h-12" 
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label className="flex items-center gap-2"><Globe className="h-4 w-4 text-slate-600" /> Site Web</Label>
-                                    <Input 
-                                        value={formData.website} 
-                                        onChange={e => {
-                                            setFormData({...formData, website: e.target.value});
-                                            if (e.target.value) setFormErrors({...formErrors, socials: ""});
-                                        }} 
-                                        placeholder="https://monsite.com" 
-                                        className="h-12" 
-                                    />
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-             </TabsContent>
+          <DialogFooter className="flex items-center justify-between gap-3 sm:justify-between">
+            {currentStep > 1 ? (
+                 <Button variant="outline" onClick={handlePrevStep} className="gap-2">
+                     <ArrowLeft className="h-4 w-4" /> Précédent
+                 </Button>
+            ) : (
+                <Button variant="ghost" onClick={() => setIsEditing(false)}>Annuler</Button>
+            )}
 
-             {/* REMOVED SEPARATE SOCIALS TAB */}
-             
-             <TabsContent value="offer" className="space-y-6">
-                <div className="bg-amber-500/10 border border-amber-500/20 p-4 rounded-xl mb-6">
+            {currentStep < 3 ? (
+                 <Button onClick={handleNextStep} className="bg-blue-600 hover:bg-blue-500 gap-2">
+                     Suivant <ArrowRight className="h-4 w-4" />
+                 </Button>
+            ) : (
+                 <Button onClick={handleSaveProfile} disabled={loading} className="bg-slate-900 text-white hover:bg-slate-800 font-bold px-8">
+                    {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                    Enregistrer
+                 </Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* --- SEPARATE OFFER MODAL --- */}
+      <Dialog open={isOfferModalOpen} onOpenChange={setIsOfferModalOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-black text-amber-600 flex items-center gap-2">
+                <Percent className="h-6 w-6" /> Mon Offre Club
+            </DialogTitle>
+            <DialogDescription>
+                Proposez une offre exclusive (-50% min) visible uniquement par vos matchs.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="py-4 space-y-6">
+                <div className="bg-amber-500/10 border border-amber-500/20 p-4 rounded-xl">
                     <div className="flex items-start gap-3">
                         <Award className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
                         <div>
                             <h4 className="font-bold text-amber-700 text-sm">Le principe des Offres Privilèges</h4>
                             <p className="text-xs text-amber-700/80 mt-1 leading-relaxed">
-                                Votre offre ne sera visible <strong>que par les membres avec qui vous avez matché</strong>.
-                                C'est un privilège que vous accordez à votre réseau proche.
+                                Votre offre est un privilège pour votre réseau proche.
                                 <br/>
-                                <span className="font-bold mt-1 block">Règle d'or : Proposez au moins -50% par rapport au prix public.</span>
+                                <span className="font-bold mt-1 block">Règle d'or : -50% par rapport au prix public.</span>
                             </p>
                         </div>
                     </div>
                 </div>
 
-                <div className="flex items-center space-x-3 p-4 rounded-xl border border-slate-100 bg-slate-50 mb-4">
+                <div className="flex items-center space-x-3 p-4 rounded-xl border border-slate-100 bg-slate-50">
                     <Checkbox 
                         id="offer_active" 
                         checked={formData.offer_active} 
@@ -933,88 +937,82 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
                     <div className="grid gap-1.5 leading-none">
                         <label
                             htmlFor="offer_active"
-                            className="text-sm font-bold leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                            className="text-sm font-bold leading-none cursor-pointer"
                         >
                             Activer mon Offre Club
                         </label>
                         <p className="text-xs text-slate-500">
-                            Cochez cette case pour rendre votre offre visible à vos matchs.
+                            Rendre visible à mes matchs.
                         </p>
                     </div>
                 </div>
 
-                <div className={!formData.offer_active ? "opacity-50 pointer-events-none transition-opacity" : "transition-opacity"}>
-                    <div className="space-y-4">
+                <div className={!formData.offer_active ? "opacity-50 pointer-events-none transition-opacity space-y-4" : "transition-opacity space-y-4"}>
+                    <div className="space-y-2">
+                        <Label>Titre de l'offre {formErrors.offer_title && <span className="text-red-500">*</span>}</Label>
+                        <Input 
+                            value={formData.offer_title} 
+                            onChange={e => {
+                                setFormData({...formData, offer_title: e.target.value});
+                                if(e.target.value) setFormErrors({...formErrors, offer_title: ""});
+                            }} 
+                            placeholder="Ex: Création de Logo Express" 
+                            className={`font-bold ${formErrors.offer_title ? "border-red-500" : ""}`}
+                        />
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <Label className={formErrors.offer_title ? "text-red-500" : ""}>Titre de l'offre {formErrors.offer_title && "*"}</Label>
-                            <Input 
-                                id="field-offer_title"
-                                value={formData.offer_title} 
-                                onChange={e => {
-                                    setFormData({...formData, offer_title: e.target.value});
-                                    if(e.target.value) setFormErrors({...formErrors, offer_title: ""});
-                                }} 
-                                placeholder="Ex: Création de Logo Express" 
-                                className={`h-12 font-bold ${formErrors.offer_title ? "border-red-500 ring-red-500 focus-visible:ring-red-500" : ""}`}
-                            />
-                        </div>
-                        
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                                <Label>Prix Public (pour info)</Label>
-                                <div className="relative">
-                                    <Input 
-                                        type="number"
-                                        value={formData.offer_original_price} 
-                                        onChange={e => setFormData({...formData, offer_original_price: e.target.value})} 
-                                        placeholder="500" 
-                                        className="h-12 pl-8"
-                                    />
-                                    <Euro className="absolute left-3 top-3.5 h-4 w-4 text-slate-400" />
-                                </div>
-                            </div>
-                            <div className="space-y-2">
-                                <Label className={`font-bold ${formErrors.offer_price ? "text-red-500" : "text-emerald-600"}`}>Prix Club (-50% min) {formErrors.offer_price && "*"}</Label>
-                                <div className="relative">
-                                    <Input 
-                                        id="field-offer_price"
-                                        type="number"
-                                        value={formData.offer_price} 
-                                        onChange={e => {
-                                            setFormData({...formData, offer_price: e.target.value});
-                                            if(e.target.value) setFormErrors({...formErrors, offer_price: ""});
-                                        }} 
-                                        placeholder="250" 
-                                        className={`h-12 pl-8 bg-emerald-50 ${formErrors.offer_price ? "border-red-500 ring-red-500 focus-visible:ring-red-500" : "border-emerald-500 ring-emerald-500 focus-visible:ring-emerald-500"}`}
-                                    />
-                                    <Euro className={`absolute left-3 top-3.5 h-4 w-4 ${formErrors.offer_price ? "text-red-500" : "text-emerald-600"}`} />
-                                </div>
+                            <Label>Prix Public</Label>
+                            <div className="relative">
+                                <Input 
+                                    type="number"
+                                    value={formData.offer_original_price} 
+                                    onChange={e => setFormData({...formData, offer_original_price: e.target.value})} 
+                                    placeholder="500" 
+                                    className="pl-8"
+                                />
+                                <Euro className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
                             </div>
                         </div>
-
                         <div className="space-y-2">
-                            <Label className={formErrors.offer_description ? "text-red-500" : ""}>Détails de l'offre {formErrors.offer_description && "*"}</Label>
-                            <Textarea 
-                                id="field-offer_description"
-                                value={formData.offer_description} 
-                                onChange={e => {
-                                    setFormData({...formData, offer_description: e.target.value});
-                                    if(e.target.value) setFormErrors({...formErrors, offer_description: ""});
-                                }} 
-                                className={`min-h-[100px] ${formErrors.offer_description ? "border-red-500 ring-red-500 focus-visible:ring-red-500" : ""}`}
-                                placeholder="Décrivez ce qui est inclus dans ce tarif préférentiel..." 
-                            />
+                            <Label className="text-emerald-600 font-bold">Prix Club (-50%) {formErrors.offer_price && "*"}</Label>
+                            <div className="relative">
+                                <Input 
+                                    type="number"
+                                    value={formData.offer_price} 
+                                    onChange={e => {
+                                        setFormData({...formData, offer_price: e.target.value});
+                                        if(e.target.value) setFormErrors({...formErrors, offer_price: ""});
+                                    }} 
+                                    placeholder="250" 
+                                    className={`pl-8 bg-emerald-50 ${formErrors.offer_price ? "border-red-500" : "border-emerald-500"}`}
+                                />
+                                <Euro className="absolute left-3 top-2.5 h-4 w-4 text-emerald-600" />
+                            </div>
                         </div>
                     </div>
+
+                    <div className="space-y-2">
+                        <Label>Détails {formErrors.offer_description && <span className="text-red-500">*</span>}</Label>
+                        <Textarea 
+                            value={formData.offer_description} 
+                            onChange={e => {
+                                setFormData({...formData, offer_description: e.target.value});
+                                if(e.target.value) setFormErrors({...formErrors, offer_description: ""});
+                            }} 
+                            className={`min-h-[100px] ${formErrors.offer_description ? "border-red-500" : ""}`}
+                            placeholder="Décrivez ce qui est inclus..." 
+                        />
+                    </div>
                 </div>
-             </TabsContent>
-          </Tabs>
+          </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsEditing(false)} disabled={loading}>Annuler</Button>
-            <Button onClick={handleSave} disabled={loading} className="bg-slate-900 text-white hover:bg-slate-800 font-bold px-8">
+            <Button variant="outline" onClick={() => setIsOfferModalOpen(false)}>Annuler</Button>
+            <Button onClick={handleSaveOffer} disabled={loading} className="bg-amber-600 text-white hover:bg-amber-500 font-bold">
                 {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                Enregistrer les modifications
+                Enregistrer l'offre
             </Button>
           </DialogFooter>
         </DialogContent>
