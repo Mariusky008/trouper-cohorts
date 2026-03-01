@@ -386,56 +386,7 @@ export default function HomePage() {
                  Chaque matin, Popey vous propose une nouvelle opportunité business adaptée à votre profil. Découvrez votre match, comprenez son potentiel et passez à l’action immédiatement.
                </p>
                
-               {/* 3 FILTERS OF THE ALGORITHM */}
-               <div className="grid md:grid-cols-3 gap-6 mt-12 mb-16 text-left">
-                  <div className="bg-white/5 border border-white/10 p-6 rounded-2xl backdrop-blur-sm hover:bg-white/10 transition-colors">
-                     <div className="flex items-center gap-3 mb-3">
-                        <div className="p-2 bg-blue-500/20 rounded-lg text-blue-400">
-                           <Target className="h-5 w-5" />
-                        </div>
-                        <h4 className="font-bold text-white text-lg">1. Complémentarité</h4>
-                     </div>
-                     <p className="text-slate-400 text-sm leading-relaxed mb-4">
-                        Fini les rencontres fortuites. Popey vous connecte prioritairement à des métiers complémentaires au vôtre.
-                     </p>
-                     <div className="bg-white/5 rounded-xl p-3 text-xs text-slate-300 font-medium">
-                        <strong className="text-blue-300 block mb-1">Exemple :</strong>
-                        Vous êtes Webdesigner ? On vous matche avec des Copywriters ou des Agences SEO pour créer des offres complètes.
-                     </div>
-                  </div>
-
-                  <div className="bg-white/5 border border-white/10 p-6 rounded-2xl backdrop-blur-sm hover:bg-white/10 transition-colors">
-                     <div className="flex items-center gap-3 mb-3">
-                        <div className="p-2 bg-purple-500/20 rounded-lg text-purple-400">
-                           <MapPin className="h-5 w-5" />
-                        </div>
-                        <h4 className="font-bold text-white text-lg">2. Proximité</h4>
-                     </div>
-                     <p className="text-slate-400 text-sm leading-relaxed mb-4">
-                        Pas de visio à l'autre bout du monde. Vous matchez avec des entrepreneurs de votre ville pour créer du lien réel.
-                     </p>
-                     <div className="bg-white/5 rounded-xl p-3 text-xs text-slate-300 font-medium">
-                        <strong className="text-purple-300 block mb-1">Exemple :</strong>
-                        Vous êtes à Bordeaux ? Déjeunez avec un décideur local qui fréquente les mêmes réseaux que vous.
-                     </div>
-                  </div>
-
-                  <div className="bg-white/5 border border-white/10 p-6 rounded-2xl backdrop-blur-sm hover:bg-white/10 transition-colors">
-                     <div className="flex items-center gap-3 mb-3">
-                        <div className="p-2 bg-emerald-500/20 rounded-lg text-emerald-400">
-                           <Handshake className="h-5 w-5" />
-                        </div>
-                        <h4 className="font-bold text-white text-lg">3. Réciprocité</h4>
-                     </div>
-                     <p className="text-slate-400 text-sm leading-relaxed mb-4">
-                        Notre système unique de points filtre les "preneurs". Ici, vous ne rencontrez que ceux qui jouent le jeu.
-                     </p>
-                     <div className="bg-white/5 rounded-xl p-3 text-xs text-slate-300 font-medium">
-                        <strong className="text-emerald-300 block mb-1">Garantie :</strong>
-                        Un score de confiance de 4.9/5 assure que votre interlocuteur est là pour donner autant que recevoir.
-                     </div>
-                  </div>
-               </div>
+               
             </div>
 
             <div className="grid lg:grid-cols-2 gap-8 lg:gap-16 items-start max-w-6xl mx-auto">
@@ -523,6 +474,72 @@ export default function HomePage() {
                    </Button>
                  }
                />
+            </div>
+         </div>
+      </section>
+
+      {/* --- 3c. ALGORITHM FILTERS (NEW) --- */}
+      <section className="py-24 bg-slate-50 border-b border-slate-200">
+         <div className="container mx-auto px-4 max-w-6xl">
+            <div className="text-center max-w-3xl mx-auto mb-16">
+               <Badge className="bg-slate-900 text-white border-0 mb-4 uppercase tracking-widest px-3 py-1">L'Algorithme Popey</Badge>
+               <h2 className="text-3xl md:text-5xl font-black text-slate-900 mb-6">3 filtres pour garantir <span className="text-blue-600">la qualité</span></h2>
+               <p className="text-xl text-slate-600 leading-relaxed font-medium">
+                  Fini le hasard. Notre algorithme analyse chaque profil pour créer des connexions qui ont du sens.
+               </p>
+            </div>
+
+            <div className="grid md:grid-cols-3 gap-8">
+               {/* Filter 1 */}
+               <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-xl shadow-slate-200/50 hover:-translate-y-1 transition-transform duration-300">
+                  <div className="h-14 w-14 bg-blue-100 rounded-2xl flex items-center justify-center mb-6 text-blue-600">
+                     <Target className="h-7 w-7" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-slate-900 mb-4">1. Complémentarité</h3>
+                  <p className="text-slate-600 mb-6 leading-relaxed">
+                     Popey vous connecte prioritairement à des métiers complémentaires au vôtre pour créer des synergies immédiates.
+                  </p>
+                  <div className="bg-blue-50 rounded-xl p-4 border border-blue-100">
+                     <p className="text-xs font-bold text-blue-800 uppercase tracking-wide mb-2">Exemple Concret</p>
+                     <p className="text-sm text-blue-900 font-medium italic">
+                        "Vous êtes Webdesigner ? On vous matche avec des Copywriters ou des Agences SEO pour créer des offres complètes."
+                     </p>
+                  </div>
+               </div>
+
+               {/* Filter 2 */}
+               <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-xl shadow-slate-200/50 hover:-translate-y-1 transition-transform duration-300">
+                  <div className="h-14 w-14 bg-purple-100 rounded-2xl flex items-center justify-center mb-6 text-purple-600">
+                     <MapPin className="h-7 w-7" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-slate-900 mb-4">2. Proximité</h3>
+                  <p className="text-slate-600 mb-6 leading-relaxed">
+                     Pas de visio à l'autre bout du monde. Vous matchez avec des entrepreneurs de votre ville pour créer du lien réel.
+                  </p>
+                  <div className="bg-purple-50 rounded-xl p-4 border border-purple-100">
+                     <p className="text-xs font-bold text-purple-800 uppercase tracking-wide mb-2">Exemple Concret</p>
+                     <p className="text-sm text-purple-900 font-medium italic">
+                        "Vous êtes à Bordeaux ? Déjeunez avec un décideur local qui fréquente les mêmes réseaux que vous."
+                     </p>
+                  </div>
+               </div>
+
+               {/* Filter 3 */}
+               <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-xl shadow-slate-200/50 hover:-translate-y-1 transition-transform duration-300">
+                  <div className="h-14 w-14 bg-emerald-100 rounded-2xl flex items-center justify-center mb-6 text-emerald-600">
+                     <Handshake className="h-7 w-7" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-slate-900 mb-4">3. Réciprocité</h3>
+                  <p className="text-slate-600 mb-6 leading-relaxed">
+                     Notre système unique de points filtre les "preneurs". Ici, vous ne rencontrez que ceux qui jouent le jeu.
+                  </p>
+                  <div className="bg-emerald-50 rounded-xl p-4 border border-emerald-100">
+                     <p className="text-xs font-bold text-emerald-800 uppercase tracking-wide mb-2">La Garantie</p>
+                     <p className="text-sm text-emerald-900 font-medium italic">
+                        "Un score de confiance de 4.9/5 assure que votre interlocuteur est là pour donner autant que recevoir."
+                     </p>
+                  </div>
+               </div>
             </div>
          </div>
       </section>

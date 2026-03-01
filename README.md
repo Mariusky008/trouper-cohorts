@@ -1,25 +1,41 @@
-# Trouper — Sprint Local (Cohorts)
+# Popey Academy (Trouper Cohorts)
 
-Produit: cohorte de 14 jours (24 pros / 24 départements) pour devenir ultra visible localement.
+Plateforme d'apprentissage et de networking gamifiée pour entrepreneurs et chercheurs d'emploi.
 
-## Concept
+## Produits
 
-Voir [CONCEPT.md](file:///Users/jeanphilippe/Desktop/trouper-cohorts/CONCEPT.md).
+### 1. Mon Réseau Local (Nouveau - Mars 2026)
+Un réseau d'affaires local algorithmique et gamifié.
+- **Principe** : 5 minutes par jour pour matcher avec un entrepreneur local complémentaire.
+- **Algorithme** : Basé sur 3 filtres (Complémentarité, Proximité, Réciprocité).
+- **Accès** : `/mon-reseau-local`
 
-## Docs
+### 2. Cohortes (Sprint Local)
+Programme intensif de 14 jours par cohorte de 24 pros.
+- **Principe** : Devenir ultra visible localement en 2 semaines.
+- **Accès** : `/secret-cohorts`
 
-- Produit (cahier des charges): [SPEC.md](file:///Users/jeanphilippe/Desktop/trouper-cohorts/SPEC.md)
-- Sécurité/RLS: [SECURITY_CHECKLIST.md](file:///Users/jeanphilippe/Desktop/trouper-cohorts/SECURITY_CHECKLIST.md)
-- Roadmap (issues): [ROADMAP_ISSUES.md](file:///Users/jeanphilippe/Desktop/trouper-cohorts/ROADMAP_ISSUES.md)
+### 3. Programme Emploi
+Parcours de 3 semaines pour les chercheurs d'emploi.
+- **Accès** : `/emploi`
 
-## Pages
+## Documentation
 
-- `/` : page d’accueil (présentation rapide)
-- `/secret-cohorts` : landing “concept” (peut être protégée par `COHORTS_SECRET_KEY`)
-- `/cohorts-demo` : démo UI (optionnelle)
+- **Technique** : [DOCUMENTATION.md](file:///Users/jeanphilippe/Desktop/trouper-cohorts/DOCUMENTATION.md) (Architecture, Base de données, Déploiement)
+- **Concept** : [CONCEPT.md](file:///Users/jeanphilippe/Desktop/trouper-cohorts/CONCEPT.md) (Vision produit, Philosophie)
+- **Spécifications** : [SPEC.md](file:///Users/jeanphilippe/Desktop/trouper-cohorts/SPEC.md)
+- **Sécurité** : [SECURITY_CHECKLIST.md](file:///Users/jeanphilippe/Desktop/trouper-cohorts/SECURITY_CHECKLIST.md)
 
-## Variables d’environnement
+## Stack Technique
 
-- `NEXT_PUBLIC_SUPABASE_URL` (Project URL Supabase)
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY` (clé publique Supabase, jamais une `sb_secret_*`)
-- `COHORTS_SECRET_KEY` (optionnel)
+- **Framework** : Next.js 15 (App Router)
+- **Base de données** : Supabase
+- **UI** : Tailwind CSS, shadcn/ui, Framer Motion
+- **Paiement** : Stripe
+
+## Installation
+
+1.  Cloner le repo
+2.  `npm install`
+3.  Configurer `.env.local` (voir `.env.example`)
+4.  `npm run dev`

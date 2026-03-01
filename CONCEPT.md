@@ -56,11 +56,39 @@
 - “1 client, ou on continue”: si exécution complète + preuves, accès gratuit à la cohorte suivante jusqu’à 1 client.
 - Basée sur preuves (annonces, lives, DM, posts, suivi).
 
+---
+
+# Concept "Mon Réseau Local" (Nouveau - Mars 2026)
+
+## Vision : La Sphère de Croissance
+Contrairement aux réseaux d'affaires traditionnels (BNI, etc.) qui sont contraignants (7h/semaine) et chers, ou aux apps de networking (Shapr) qui sont aléatoires et sans suivi.
+
+**Mon Réseau Local** propose une approche algorithmique et gamifiée :
+- **5 minutes / jour** (Micro-actions).
+- **Matching Algorithmique** basé sur 3 filtres : Complémentarité, Proximité, Réciprocité.
+- **Engagement sans contrainte** : On peut skipper un jour, le système s'adapte.
+
+## Les 3 Piliers de l'Algorithme
+1. **Complémentarité** : Connecter l'Offre et la Demande (ex: Webdesigner + SEO).
+2. **Proximité** : Favoriser le lien réel local.
+3. **Réciprocité** : Un système de points et de Trust Score qui filtre les "preneurs".
+
+## Modèle Économique (Freemium Hybride)
+1. **J1 (Gratuit)** : 1 Match Wahoo offert.
+2. **J2 (Joker)** : Onboarding VIP ou Sauvetage.
+3. **J3+ (Abonnement)** : 49€/mois pour révéler les matchs et accéder au réseau complet.
+
+## Gamification
+- **Trust Score** : Note de fiabilité visible (4.9/5).
+- **Hiérarchie de Qualité** : Les meilleurs profils (Elite) matchent entre eux.
+- **Offres Club** : -50% exclusif pour les membres.
+
 ## Structure produit (pages / UI déjà présentes)
 
 - `/secret-cohorts`: landing privée du concept (protégée par `COHORTS_SECRET_KEY` possible).
 - `/cohorts-demo`: démo UI (optionnelle) avec pages type leaderboard/proof/today/admin (si on la garde).
 - `/`: home simple qui renvoie vers le concept.
+- `/mon-reseau-local`: Landing page dédiée.
 
 ## Principes de scope (pour éviter bugs)
 
