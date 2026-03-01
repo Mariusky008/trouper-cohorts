@@ -7,7 +7,7 @@ import {
   Users, Calendar, Phone, CheckCircle2, 
   ArrowRight, ShieldCheck, Zap, Briefcase, 
   Target, TrendingUp, Star, Play, Lock,
-  MessageCircle, Clock, Bell, ChevronRight, Anchor, Heart, Coffee, HelpCircle, Trophy, MapPin, Handshake
+  MessageCircle, Clock, Bell, ChevronRight, Anchor, Heart, Coffee, HelpCircle, Trophy, MapPin, Handshake, Search, Sparkles
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -23,6 +23,75 @@ import {
 
 import { AuthDialog } from "@/components/auth-dialog";
 import { MysteryCardPreview, MatchCardPreview, FounderCardPreview } from "@/components/dashboard/design-system-preview";
+
+// --- SPHERES DATA ---
+const SPHERES = {
+  habitat: {
+    id: 'habitat',
+    label: 'IMMOBILIER & HABITAT',
+    icon: '🏠',
+    color: 'blue',
+    description: 'Pour ceux qui gravitent autour de la vente, de la rénovation et du logement.',
+    jobs: [
+      "Agent Immobilier", "Courtier en prêt", "Gestionnaire de patrimoine", "Diagnostiqueur",
+      "Architecte d'intérieur", "Maître d'œuvre", "Cuisiniste / Bainiste", "Électricien / Domotique",
+      "Paysagiste", "Pisciniste", "Notaire", "Déménageur", "Conciergerie Airbnb", "Photographe Immo",
+      "Chasseur Immobilier", "Avocat fiscaliste", "Courtier Assurances", "Menuisier", "Panneaux Solaires", "Home Stager"
+    ]
+  },
+  business: {
+    id: 'business',
+    label: 'BUSINESS & DIGITAL',
+    icon: '💻',
+    color: 'purple',
+    description: 'Pour les experts qui font croître les entreprises (B2B).',
+    jobs: [
+      "Webdesigner", "Expert SEO", "Copywriter", "Community Manager", "Vidéaste Corporate",
+      "Agence Pub (Ads)", "Expert Tunnel de vente", "Coach Business", "Expert Comptable", "Recruteur",
+      "Consultant RH", "Développeur Web", "Expert Cybersécurité", "Graphiste", "Imprimeur local",
+      "Consultant CRM", "Expert No-code", "Commercial Freelance", "Growth Hacker", "Community Builder"
+    ]
+  },
+  wellness: {
+    id: 'wellness',
+    label: 'BIEN-ÊTRE & SERVICES',
+    icon: '✨',
+    color: 'emerald',
+    description: 'Pour les professionnels du soin et du service aux particuliers.',
+    jobs: [
+      "Coach Sportif", "Nutritionniste", "Ostéopathe", "Prof de Yoga", "Naturopathe",
+      "Magasin Bio", "Coiffeur / Barbier", "Esthéticienne", "Sophrologue", "Psychologue",
+      "Wedding Planner", "Traiteur", "Photographe Famille", "Coach de vie", "Hypnothérapeute",
+      "Masseuse / Spa", "Kinésiologue", "Acupuncteur", "Personal Shopper", "Éducateur canin"
+    ]
+  },
+  retail: {
+    id: 'retail',
+    label: 'COMMERCE & LOCAL',
+    icon: '🛍️',
+    color: 'amber',
+    description: 'Pour les commerçants et acteurs de la vie locale.',
+    jobs: [
+      "Restaurateur", "Caviste", "Gérant salle de sport", "Fleuriste", "Chocolatier",
+      "Propriétaire Gîte", "Bijoutier", "Opticien", "Libraire", "Gérant Coworking",
+      "Tailleur / Mode", "Loueur voitures", "Assureur local", "Organisateur événements", "Agent de voyage",
+      "Courtier énergie", "Enseigne / Signalétique", "Nettoyage pro", "Torréfacteur", "Conférencier"
+    ]
+  },
+  legal: {
+    id: 'legal',
+    label: 'CONSEIL & DROIT',
+    icon: '⚖️',
+    color: 'slate',
+    description: 'Pour les dossiers à haute valeur ajoutée et le conseil stratégique.',
+    jobs: [
+      "Avocat Affaires", "Avocat Travail", "Conseil PI", "Courtier Pro", "Consultant RSE",
+      "Traducteur Business", "Expert levée de fonds", "Audit Cybersécurité", "Commissaire aux comptes", "Gestion de crise",
+      "Courtier Flotte", "Immobilier entreprise", "Formateur Qualiopi", "Consultant Supply Chain", "Expert recrutement",
+      "Huissier", "Médiateur", "Expert transmission", "Consultant IA", "Agent d'artistes"
+    ]
+  }
+};
 
 // --- ANIMATED COMPONENTS ---
 
@@ -203,6 +272,8 @@ const InteractiveMockup = () => {
 // --- MAIN PAGE COMPONENT ---
 
 export default function HomePage() {
+  const [activeSphere, setActiveSphere] = useState<keyof typeof SPHERES>('business');
+
   return (
     <div className="min-h-screen bg-white text-slate-900 font-sans selection:bg-blue-100 selection:text-blue-900 overflow-x-hidden">
       
@@ -492,40 +563,62 @@ export default function HomePage() {
             <div className="grid md:grid-cols-2 gap-8">
                {/* Filter 1 */}
                <div className="md:col-span-2 bg-white p-8 rounded-3xl border border-slate-100 shadow-xl shadow-slate-200/50 hover:-translate-y-1 transition-transform duration-300">
-                  <div className="flex flex-col md:flex-row items-center gap-8">
-                     <div className="flex-1 text-left">
-                        <div className="flex items-center gap-4 mb-6">
-                           <div className="h-14 w-14 bg-blue-100 rounded-2xl flex items-center justify-center text-blue-600">
-                              <Target className="h-7 w-7" />
-                           </div>
-                           <h3 className="text-2xl font-bold text-slate-900">1. Complémentarité</h3>
+                  <div className="flex flex-col gap-6">
+                     <div className="flex items-center gap-4">
+                        <div className="h-14 w-14 bg-blue-100 rounded-2xl flex items-center justify-center text-blue-600">
+                           <Target className="h-7 w-7" />
                         </div>
-                        <p className="text-slate-600 mb-6 leading-relaxed">
-                           Fini les rencontres fortuites. Popey vous connecte prioritairement à des métiers complémentaires au vôtre.
-                           <br/><strong className="text-slate-900">L'objectif ? Que 1 + 1 = 3.</strong>
-                        </p>
-                        
-                        <div className="space-y-4">
-                           <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Exemples de duos fréquents :</p>
-                           <div className="grid md:grid-cols-3 gap-4">
-                              <div className="bg-slate-50 border border-slate-100 p-4 rounded-xl flex items-center gap-3">
-                                 <div className="h-10 w-10 rounded-full bg-white flex items-center justify-center text-lg shadow-sm">🏠</div>
-                                 <div className="text-sm font-bold text-slate-700">
-                                    Agent Immo <span className="text-slate-400 mx-1">↔️</span> Courtier
-                                 </div>
+                        <div>
+                          <h3 className="text-2xl font-bold text-slate-900">1. Complémentarité</h3>
+                          <p className="text-slate-500 font-medium text-sm">Choisissez votre sphère et découvrez vos futurs alliés.</p>
+                        </div>
+                     </div>
+
+                     {/* TABS HEADER */}
+                     <div className="flex flex-wrap gap-2 pb-2 border-b border-slate-100">
+                        {Object.values(SPHERES).map((sphere) => (
+                           <button
+                              key={sphere.id}
+                              onClick={() => setActiveSphere(sphere.id as keyof typeof SPHERES)}
+                              className={cn(
+                                 "px-4 py-2 rounded-full text-sm font-bold transition-all border",
+                                 activeSphere === sphere.id 
+                                    ? `bg-${sphere.color}-100 text-${sphere.color}-700 border-${sphere.color}-200 shadow-sm` 
+                                    : "bg-white text-slate-500 border-transparent hover:bg-slate-50"
+                              )}
+                           >
+                              {sphere.icon} {sphere.label.split(' &')[0]}
+                           </button>
+                        ))}
+                     </div>
+
+                     {/* ACTIVE SPHERE CONTENT */}
+                     <div className="bg-slate-50/50 rounded-2xl p-6 border border-slate-100 min-h-[300px]">
+                        <div className="flex items-start gap-4 mb-6">
+                           <div className={cn("p-3 rounded-xl bg-white shadow-sm", `text-${SPHERES[activeSphere].color}-600`)}>
+                              <Sparkles className="h-6 w-6" />
+                           </div>
+                           <div>
+                              <h4 className="font-bold text-slate-900 text-lg">
+                                 Sphère {SPHERES[activeSphere].label}
+                              </h4>
+                              <p className="text-slate-500 text-sm">
+                                 {SPHERES[activeSphere].description}
+                              </p>
+                           </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                           {SPHERES[activeSphere].jobs.slice(0, 16).map((job, i) => (
+                              <div key={i} className="bg-white px-3 py-2 rounded-lg border border-slate-100 text-xs font-bold text-slate-600 shadow-sm flex items-center gap-2 hover:border-blue-200 hover:text-blue-700 transition-colors cursor-default">
+                                 <div className={`h-1.5 w-1.5 rounded-full bg-${SPHERES[activeSphere].color}-400 shrink-0`} />
+                                 <span className="truncate">{job}</span>
                               </div>
-                              <div className="bg-slate-50 border border-slate-100 p-4 rounded-xl flex items-center gap-3">
-                                 <div className="h-10 w-10 rounded-full bg-white flex items-center justify-center text-lg shadow-sm">💻</div>
-                                 <div className="text-sm font-bold text-slate-700">
-                                    Webdesigner <span className="text-slate-400 mx-1">↔️</span> SEO
-                                 </div>
-                              </div>
-                              <div className="bg-slate-50 border border-slate-100 p-4 rounded-xl flex items-center gap-3">
-                                 <div className="h-10 w-10 rounded-full bg-white flex items-center justify-center text-lg shadow-sm">✨</div>
-                                 <div className="text-sm font-bold text-slate-700">
-                                    Coach Sportif <span className="text-slate-400 mx-1">↔️</span> Nutrition
-                                 </div>
-                              </div>
+                           ))}
+                           <div className="col-span-2 md:col-span-4 text-center mt-2">
+                              <p className="text-xs text-slate-400 italic font-medium">
+                                 💡 Astuce Popey : Un <strong className={`text-${SPHERES[activeSphere].color}-600`}>{SPHERES[activeSphere].jobs[0]}</strong> matche aussi très bien avec un <strong className={`text-${SPHERES[activeSphere].color}-600`}>{SPHERES[activeSphere].jobs[5]}</strong> !
+                              </p>
                            </div>
                         </div>
                      </div>
