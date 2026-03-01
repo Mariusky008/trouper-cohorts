@@ -45,23 +45,13 @@ export default function DesignPreviewPage() {
             <MysteryCardPreview />
           </div>
 
-          {/* 3. Match State */}
+          {/* 3. Match (Mission Selector) */}
           <div className="space-y-6 w-full max-w-sm">
             <h2 className="text-xl font-bold text-white flex items-center gap-2">
               <span className="bg-emerald-500 w-2 h-8 rounded-full"></span>
-              3. Match (FOMO)
+              3. Match (Mission Selector)
             </h2>
-            <p className="text-sm text-slate-400 mb-4">Le profil est révélé, incitation à l'appel.</p>
-            <MatchCardPreview />
-          </div>
-
-          {/* 3b. Daily Match Card (Real Component) */}
-          <div className="space-y-6 w-full max-w-sm">
-            <h2 className="text-xl font-bold text-white flex items-center gap-2">
-              <span className="bg-emerald-500 w-2 h-8 rounded-full"></span>
-              3b. Daily Match (Mission Selector)
-            </h2>
-            <p className="text-sm text-slate-400 mb-4">Aperçu interactif du sélecteur.</p>
+            <p className="text-sm text-slate-400 mb-4">Aperçu interactif du sélecteur de mission.</p>
             <MatchCardPreview />
           </div>
 

@@ -1,13 +1,24 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { useState } from "react";
 import { User, Zap, Lock, Phone, Clock, Sparkles, Fingerprint, Search, Flame, Briefcase, Handshake, TrendingUp, Target, CheckCircle2, Users, Star, MessageSquare, Gift, PhoneCall } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTrigger, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import confetti from "canvas-confetti";
+import { cn } from "@/lib/utils";
+import { toast } from "sonner";
+
+const MISSION_TYPES = [
+    { id: 'portier', label: 'Portier', icon: Lock, desc: "Ouvre-moi une porte spécifique", color: 'text-blue-400', bg: 'bg-blue-500/10', border: 'border-blue-500/20' },
+    { id: 'amplificateur', label: 'Amplificateur', icon: TrendingUp, desc: "Boostons notre visibilité mutuelle", color: 'text-purple-400', bg: 'bg-purple-500/10', border: 'border-purple-500/20' },
+    { id: 'prescripteur', label: 'Prescripteur', icon: Handshake, desc: "Devenons apporteurs d'affaires", color: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20' },
+    { id: 'recommandeur', label: 'Recommandeur', icon: Star, desc: "Échangeons un avis ou une reco", color: 'text-yellow-400', bg: 'bg-yellow-500/10', border: 'border-yellow-500/20' },
+    { id: 'infiltre', label: 'Infiltré', icon: Fingerprint, desc: "Parraine-moi dans ton club/réseau", color: 'text-red-400', bg: 'bg-red-500/10', border: 'border-red-500/20' }
+];
 
 // --- 1. WAITING CARD (Post-registration / Next Day) ---
 // Goal: "Wahoo", colorful, anticipation for tomorrow.
@@ -272,6 +283,13 @@ export function MysteryCardLockedPreview() {
 // Goal: FOMO, "I can't wait", "Don't miss this".
 
 export function MatchCardPreview() {
+  const [isMissionOpen, setIsMissionOpen] = useState(false);
+  const [selectedMission, setSelectedMission] = useState<string | null>(null);
+  
+  // Mock suggestion for preview
+  const suggestedMissionId = 'amplificateur';
+  const suggestedMission = MISSION_TYPES.find(m => m.id === suggestedMissionId);
+
   return (
     <div className="relative w-full max-w-sm mx-auto h-[600px] rounded-[2.5rem] overflow-hidden shadow-2xl bg-[#0f172a] border border-slate-800">
       {/* Background Image */}
@@ -321,22 +339,93 @@ export function MatchCardPreview() {
         </p>
 
         {/* 3. MISSION SELECTOR (NEW) */}
-        <div className="bg-indigo-500/20 border border-indigo-500/30 rounded-xl p-3 mb-6 backdrop-blur-sm cursor-pointer hover:bg-indigo-500/30 transition-colors">
+        <div className="bg-indigo-500/20 border border-indigo-500/30 rounded-xl p-3 mb-6 backdrop-blur-sm cursor-pointer hover:bg-indigo-500/30 transition-colors" onClick={() => setIsMissionOpen(true)}>
             <div className="flex items-center justify-between mb-1">
                 <div className="flex items-center gap-2">
                     <Target className="w-4 h-4 text-indigo-400" />
                     <span className="text-[10px] font-black text-indigo-300 uppercase tracking-wider">Objectif de l'appel</span>
                 </div>
-                <Badge className="text-[9px] h-4 bg-indigo-500 text-white">Choisi</Badge>
+                {selectedMission && <Badge className="text-[9px] h-4 bg-indigo-500 text-white">Choisi</Badge>}
             </div>
             <p className="text-white text-xs font-medium italic truncate">
-                Amplificateur : "Boostons notre visibilité mutuelle"
+                {selectedMission 
+                    ? MISSION_TYPES.find(m => m.id === selectedMission)?.desc 
+                    : suggestedMission 
+                        ? `Suggestion : ${suggestedMission.label} (Cliquez pour valider)`
+                        : "Cliquez pour définir votre objectif 🎯"}
             </p>
         </div>
 
         {/* Action Buttons (Dock Style) */}
         <div className="flex justify-center items-center gap-4 pb-4">
             
+            {/* 0. Mission Dialog */}
+            <Dialog open={isMissionOpen} onOpenChange={setIsMissionOpen}>
+                <DialogContent className="bg-[#0f172a] border-white/10 text-white sm:max-w-md rounded-2xl w-[90vw] max-h-[85vh] overflow-y-auto">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2 text-xl font-black text-indigo-400">
+                            <Target className="h-6 w-6" />
+                            Menu de la Carte 🍽️
+                        </DialogTitle>
+                        <DialogDescription className="text-slate-400">
+                            Ne partez pas sans objectif. Choisissez le thème de votre échange.
+                        </DialogDescription>
+                    </DialogHeader>
+                    
+                    <div className="grid gap-3 py-4">
+                        {MISSION_TYPES.map((mission) => {
+                            const isSuggested = mission.id === suggestedMissionId;
+                            const isSelected = mission.id === selectedMission;
+                            const Icon = mission.icon;
+                            
+                            return (
+                                <button
+                                    key={mission.id}
+                                    onClick={() => {
+                                        setSelectedMission(mission.id);
+                                        setIsMissionOpen(false);
+                                        toast.success(`Objectif "${mission.label}" sélectionné !`);
+                                    }}
+                                    className={cn(
+                                        "flex items-center gap-4 p-4 rounded-xl border transition-all text-left relative overflow-hidden group",
+                                        isSelected 
+                                            ? "bg-indigo-600/20 border-indigo-500 shadow-[0_0_15px_rgba(99,102,241,0.3)]" 
+                                            : "bg-slate-900/50 border-white/5 hover:bg-slate-800",
+                                        isSuggested && !isSelected && "border-indigo-500/50"
+                                    )}
+                                >
+                                    <div className={cn("h-10 w-10 rounded-full flex items-center justify-center shrink-0", mission.bg)}>
+                                        <Icon className={cn("h-5 w-5", mission.color)} />
+                                    </div>
+                                    <div className="flex-1">
+                                        <div className="flex items-center gap-2">
+                                            <span className={cn("font-bold text-sm", isSelected ? "text-indigo-300" : "text-white")}>
+                                                {mission.label}
+                                            </span>
+                                            {isSuggested && (
+                                                <Badge className="bg-indigo-500/20 text-indigo-300 border-indigo-500/30 text-[9px] px-1.5 h-4">
+                                                    Recommandé
+                                                </Badge>
+                                            )}
+                                        </div>
+                                        <p className="text-xs text-slate-400 font-medium leading-tight mt-0.5">
+                                            "{mission.desc}"
+                                        </p>
+                                    </div>
+                                    {isSelected && <div className="absolute right-4"><CheckCircle2 className="w-5 h-5 text-indigo-400" /></div>}
+                                </button>
+                            );
+                        })}
+                    </div>
+
+                    <div className="bg-indigo-500/10 p-4 rounded-xl border border-indigo-500/20 mb-2">
+                         <p className="text-xs text-indigo-200 text-center font-medium">
+                             <span className="font-bold">Astuce :</span> En choisissant un thème, vous évitez le "blabla" inutile et garantissez un résultat concret.
+                         </p>
+                    </div>
+                </DialogContent>
+            </Dialog>
+
             {/* 1. Message / Script */}
             <Button size="icon" className="h-14 w-14 rounded-full bg-slate-800/80 backdrop-blur-md border border-white/10 text-yellow-400 hover:bg-slate-700 hover:scale-110 transition-all shadow-lg">
                 <MessageSquare className="h-6 w-6 fill-current" />
