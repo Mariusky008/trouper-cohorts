@@ -489,26 +489,51 @@ export default function HomePage() {
                </p>
             </div>
 
-            <div className="grid md:grid-cols-3 gap-8">
+            <div className="grid md:grid-cols-2 gap-8">
                {/* Filter 1 */}
-               <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-xl shadow-slate-200/50 hover:-translate-y-1 transition-transform duration-300">
-                  <div className="h-14 w-14 bg-blue-100 rounded-2xl flex items-center justify-center mb-6 text-blue-600">
-                     <Target className="h-7 w-7" />
-                  </div>
-                  <h3 className="text-2xl font-bold text-slate-900 mb-4">1. Complémentarité</h3>
-                  <p className="text-slate-600 mb-6 leading-relaxed">
-                     Popey vous connecte prioritairement à des métiers complémentaires au vôtre pour créer des synergies immédiates.
-                  </p>
-                  <div className="bg-blue-50 rounded-xl p-4 border border-blue-100">
-                     <p className="text-xs font-bold text-blue-800 uppercase tracking-wide mb-2">Exemple Concret</p>
-                     <p className="text-sm text-blue-900 font-medium italic">
-                        "Vous êtes Webdesigner ? On vous matche avec des Copywriters ou des Agences SEO pour créer des offres complètes."
-                     </p>
+               <div className="md:col-span-2 bg-white p-8 rounded-3xl border border-slate-100 shadow-xl shadow-slate-200/50 hover:-translate-y-1 transition-transform duration-300">
+                  <div className="flex flex-col md:flex-row items-center gap-8">
+                     <div className="flex-1 text-left">
+                        <div className="flex items-center gap-4 mb-6">
+                           <div className="h-14 w-14 bg-blue-100 rounded-2xl flex items-center justify-center text-blue-600">
+                              <Target className="h-7 w-7" />
+                           </div>
+                           <h3 className="text-2xl font-bold text-slate-900">1. Complémentarité</h3>
+                        </div>
+                        <p className="text-slate-600 mb-6 leading-relaxed">
+                           Fini les rencontres fortuites. Popey vous connecte prioritairement à des métiers complémentaires au vôtre.
+                           <br/><strong className="text-slate-900">L'objectif ? Que 1 + 1 = 3.</strong>
+                        </p>
+                        
+                        <div className="space-y-4">
+                           <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Exemples de duos fréquents :</p>
+                           <div className="grid md:grid-cols-3 gap-4">
+                              <div className="bg-slate-50 border border-slate-100 p-4 rounded-xl flex items-center gap-3">
+                                 <div className="h-10 w-10 rounded-full bg-white flex items-center justify-center text-lg shadow-sm">🏠</div>
+                                 <div className="text-sm font-bold text-slate-700">
+                                    Agent Immo <span className="text-slate-400 mx-1">↔️</span> Courtier
+                                 </div>
+                              </div>
+                              <div className="bg-slate-50 border border-slate-100 p-4 rounded-xl flex items-center gap-3">
+                                 <div className="h-10 w-10 rounded-full bg-white flex items-center justify-center text-lg shadow-sm">💻</div>
+                                 <div className="text-sm font-bold text-slate-700">
+                                    Webdesigner <span className="text-slate-400 mx-1">↔️</span> SEO
+                                 </div>
+                              </div>
+                              <div className="bg-slate-50 border border-slate-100 p-4 rounded-xl flex items-center gap-3">
+                                 <div className="h-10 w-10 rounded-full bg-white flex items-center justify-center text-lg shadow-sm">✨</div>
+                                 <div className="text-sm font-bold text-slate-700">
+                                    Coach Sportif <span className="text-slate-400 mx-1">↔️</span> Nutrition
+                                 </div>
+                              </div>
+                           </div>
+                        </div>
+                     </div>
                   </div>
                </div>
 
                {/* Filter 2 */}
-               <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-xl shadow-slate-200/50 hover:-translate-y-1 transition-transform duration-300">
+               <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-xl shadow-slate-200/50 hover:-translate-y-1 transition-transform duration-300 md:col-span-1">
                   <div className="h-14 w-14 bg-purple-100 rounded-2xl flex items-center justify-center mb-6 text-purple-600">
                      <MapPin className="h-7 w-7" />
                   </div>
@@ -525,7 +550,7 @@ export default function HomePage() {
                </div>
 
                {/* Filter 3 */}
-               <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-xl shadow-slate-200/50 hover:-translate-y-1 transition-transform duration-300">
+               <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-xl shadow-slate-200/50 hover:-translate-y-1 transition-transform duration-300 md:col-span-1">
                   <div className="h-14 w-14 bg-emerald-100 rounded-2xl flex items-center justify-center mb-6 text-emerald-600">
                      <Handshake className="h-7 w-7" />
                   </div>
@@ -540,6 +565,10 @@ export default function HomePage() {
                      </p>
                   </div>
                </div>
+            </div>
+
+            <div className="md:grid md:grid-cols-2 gap-8 mt-8 hidden">
+               {/* Spacer for layout if needed, or just let CSS Grid handle it */}
             </div>
          </div>
       </section>
