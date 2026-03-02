@@ -17,6 +17,7 @@ import { createOpportunity, notifyFounderCall } from "@/lib/actions/network-oppo
 import { saveMatchFeedback } from "@/lib/actions/network-feedback";
 import { incrementUserPoints } from "@/lib/actions/gamification";
 import { trackEvent } from "@/lib/actions/analytics";
+import { updateMatchMission } from "@/lib/actions/network-match";
 import { FounderCardPreview } from "@/components/dashboard/design-system-preview";
 
 import { OPPORTUNITY_TYPES } from "@/constants/opportunities";
@@ -289,7 +290,14 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
   const [isOpportunityOpen, setIsOpportunityOpen] = useState(false);
   const [isRatingOpen, setIsRatingOpen] = useState(false);
   const [isMissionOpen, setIsMissionOpen] = useState(false); // New Mission Dialog State
-  const [selectedMission, setSelectedMission] = useState<string | null>(null);
+  const [selectedMission, setSelectedMission] = useState<string | null>(matches[0]?.my_mission || null);
+
+  // Sync state if props change (e.g. after revalidate)
+  useEffect(() => {
+      if (matches[0]?.my_mission) {
+          setSelectedMission(matches[0].my_mission);
+      }
+  }, [matches]);
 
   // Opportunity Logic
   const [oppType, setOppType] = useState<string | undefined>(undefined);
@@ -624,6 +632,14 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
                         ? `Suggestion : ${suggestedMission.label} (Cliquez pour valider)`
                         : "Cliquez pour définir votre objectif 🎯"}
             </p>
+            {match.partner_mission && (
+                <div className="mt-2 pt-2 border-t border-white/10 flex items-center gap-2">
+                    <div className="h-4 w-4 rounded-full bg-slate-700 flex items-center justify-center text-[8px]">👤</div>
+                    <p className="text-[10px] text-slate-400">
+                        Il cherche un : <span className="text-indigo-300 font-bold">{MISSION_TYPES.find(m => m.id === match.partner_mission)?.label || match.partner_mission}</span>
+                    </p>
+                </div>
+            )}
         </div>
 
         {/* Action Buttons (Dock Style) */}
@@ -651,10 +667,16 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
                             return (
                                 <button
                                     key={mission.id}
-                                    onClick={() => {
-                                        setSelectedMission(mission.id);
+                                    onClick={async () => {
+                                        const newMission = mission.id;
+                                        setSelectedMission(newMission);
                                         setIsMissionOpen(false);
                                         toast.success(`Objectif "${mission.label}" sélectionné !`);
+                                        try {
+                                            await updateMatchMission(match.id, newMission);
+                                        } catch (e) {
+                                            toast.error("Erreur lors de la sauvegarde");
+                                        }
                                     }}
                                     className={cn(
                                         "flex items-center gap-4 p-4 rounded-xl border transition-all text-left relative overflow-hidden group",
