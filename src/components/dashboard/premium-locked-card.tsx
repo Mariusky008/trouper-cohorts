@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { Lock, Sparkles, Flame, Users, Handshake, TrendingUp, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { createCheckoutSession } from "@/lib/actions/stripe";
+// import { createCheckoutSession } from "@/lib/actions/stripe"; // COMMENTED OUT FOR DEBUG
 import { toast } from "sonner";
 import { useState } from "react";
 
@@ -16,12 +16,13 @@ export function PremiumLockedCard({ priceId }: { priceId: string }) {
   const handleCheckout = async () => {
     setLoading(true);
     try {
-      const result = await createCheckoutSession(priceId);
-      if (result.error) {
-        toast.error(result.error);
-      } else if (result.url) {
-        window.location.href = result.url;
-      }
+      // const result = await createCheckoutSession(priceId);
+      // if (result.error) {
+      //   toast.error(result.error);
+      // } else if (result.url) {
+      //   window.location.href = result.url;
+      // }
+      toast.info("Le paiement est temporairement désactivé pour maintenance.");
     } catch (error) {
       toast.error("Une erreur est survenue.");
     } finally {
