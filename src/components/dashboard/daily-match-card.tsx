@@ -332,14 +332,16 @@ function MysteryCard({ onReveal, match, locked = false }: { onReveal: () => void
 export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserProfile }: DailyMatchCardProps) {
   // State
   const [revealed, setRevealed] = useState(false);
-  const [callMade, setCallMade] = useState(false);
-  
+  const [step, setStep] = useState<'initial' | 'called' | 'validated'>('initial');
+  const [popupView, setPopupView] = useState<'step1_status' | 'step2_rating' | 'step3_gift'>('step1_status');
+  const [callHappened, setCallHappened] = useState<boolean | null>(null);
+  const [rating, setRating] = useState<'fire' | 'good' | 'meh' | null>(null);
+
   // Dialog States
   const [isWhyVisible, setIsWhyVisible] = useState(false);
   const [isPhoneOpen, setIsPhoneOpen] = useState(false);
-  const [isOpportunityOpen, setIsOpportunityOpen] = useState(false);
-  const [isRatingOpen, setIsRatingOpen] = useState(false);
-  const [isMissionOpen, setIsMissionOpen] = useState(false); // New Mission Dialog State
+  const [isValidationOpen, setIsValidationOpen] = useState(false);
+  const [isMissionOpen, setIsMissionOpen] = useState(false);
   const [selectedMission, setSelectedMission] = useState<string | null>(matches[0]?.my_mission || null);
 
   // Sync state if props change (e.g. after revalidate)
@@ -610,7 +612,10 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
                 src={match.avatar} 
                 alt={match.name} 
                 fill 
-                className="object-cover opacity-60 transition-transform duration-700 hover:scale-105"
+                className={cn(
+                    "object-cover transition-all duration-700",
+                    step === 'validated' ? "grayscale opacity-20 blur-sm" : "opacity-60 hover:scale-105"
+                )}
             />
         ) : (
             <div className="w-full h-full bg-slate-800 flex items-center justify-center">
@@ -621,6 +626,7 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
       </div>
 
       {/* FOMO Badge - Top */}
+      {step !== 'validated' && (
       <div className="absolute top-6 left-6 right-6 z-20">
         <motion.div 
             initial={{ y: -20, opacity: 0 }}
@@ -643,10 +649,27 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
             </div>
         </motion.div>
       </div>
+      )}
 
       {/* Main Content - Bottom */}
-      <div className="absolute bottom-0 left-0 right-0 z-20 p-6 pt-24 bg-gradient-to-t from-[#0f172a] via-[#0f172a] to-transparent">
+      <div className="absolute bottom-0 left-0 right-0 z-20 p-6 pt-24 bg-gradient-to-t from-[#0f172a] via-[#0f172a] to-transparent flex flex-col justify-end h-full">
         
+        {step === 'validated' ? (
+             // --- STATE 3: VALIDATED ---
+             <motion.div 
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                className="bg-slate-900/90 backdrop-blur-md rounded-2xl p-6 text-center border border-white/10 mb-auto mt-auto"
+            >
+                <CheckCircle2 className="w-16 h-16 text-emerald-400 mx-auto mb-4" />
+                <h3 className="text-2xl font-black text-white mb-1">MISSION ACCOMPLIE</h3>
+                <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-6">PROCHAIN MATCH DANS</p>
+                <div className="text-5xl font-mono font-black text-white tracking-widest bg-black/30 rounded-xl py-4 border border-white/10">
+                    {waitingCountdown}
+                </div>
+            </motion.div>
+        ) : (
+            <>
         {/* Match Score */}
         <div className="flex items-end gap-3 mb-3">
             <h2 className="text-4xl font-black text-white tracking-tighter">{match.name}</h2>
@@ -769,7 +792,8 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
                 </DialogContent>
             </Dialog>
 
-            {/* 1. Message / Script (Why) */}
+            {/* 1. Message / Script (Why) - ONLY IN INITIAL */}
+            {step === 'initial' && (
             <Dialog open={isWhyVisible} onOpenChange={setIsWhyVisible}>
                 <DialogTrigger asChild>
                     <Button size="icon" className="h-14 w-14 rounded-full bg-slate-800/80 backdrop-blur-md border border-white/10 text-yellow-400 hover:bg-slate-700 hover:scale-110 transition-all shadow-lg">
@@ -853,18 +877,20 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
                         </div>
                     </DialogContent>
             </Dialog>
+            )}
 
             {/* 2. CALL (Main Action) */}
-            <Dialog open={isPhoneOpen} onOpenChange={setIsPhoneOpen}>
-                <DialogTrigger asChild>
-                    <div className="relative group cursor-pointer" onClick={() => trackEvent('click_call_open', { partnerId: match.partnerId })}>
-                        <div className="absolute inset-0 bg-gradient-to-br from-emerald-400 to-blue-600 rounded-full blur opacity-40 group-hover:opacity-70 transition-opacity animate-pulse"></div>
-                        <Button size="icon" className="h-20 w-20 rounded-full bg-gradient-to-br from-emerald-500 to-blue-600 text-white hover:scale-105 transition-all shadow-xl border-4 border-[#0f172a] relative z-10">
-                            <PhoneCall className="h-8 w-8 fill-current" />
-                        </Button>
-                    </div>
-                </DialogTrigger>
-                <DialogContent className="bg-[#0f172a] border-white/10 text-white sm:max-w-md rounded-2xl w-[90vw]">
+            {step === 'initial' ? (
+                <Dialog open={isPhoneOpen} onOpenChange={setIsPhoneOpen}>
+                    <DialogTrigger asChild>
+                        <div className="relative group cursor-pointer" onClick={() => trackEvent('click_call_open', { partnerId: match.partnerId })}>
+                            <div className="absolute inset-0 bg-gradient-to-br from-emerald-400 to-blue-600 rounded-full blur opacity-40 group-hover:opacity-70 transition-opacity animate-pulse"></div>
+                            <Button size="icon" className="h-20 w-20 rounded-full bg-gradient-to-br from-emerald-500 to-blue-600 text-white hover:scale-105 transition-all shadow-xl border-4 border-[#0f172a] relative z-10">
+                                <PhoneCall className="h-8 w-8 fill-current" />
+                            </Button>
+                        </div>
+                    </DialogTrigger>
+                    <DialogContent className="bg-[#0f172a] border-white/10 text-white sm:max-w-md rounded-2xl w-[90vw]">
                         <DialogHeader>
                             <DialogTitle className="flex flex-col items-center gap-4 text-2xl font-black justify-center pt-4">
                                 <div className="h-20 w-20 rounded-full bg-emerald-500/20 flex items-center justify-center animate-pulse">
@@ -921,156 +947,228 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
                             </div>
                         </div>
                     </DialogContent>
-            </Dialog>
+                </Dialog>
+            ) : (
+                // --- STEP: CALLED (VALIDATION WIZARD) ---
+                <div className="flex flex-col items-center gap-3">
+                    <Dialog open={isValidationOpen} onOpenChange={(open) => {
+                        setIsValidationOpen(open);
+                        if (!open) {
+                            setPopupView('step1_status'); // Reset view on close
+                            setCallHappened(null);
+                            setRating(null);
+                            setOppType(undefined);
+                            setOppDetails("");
+                        }
+                    }}>
+                        <DialogTrigger asChild>
+                            <div className="relative group cursor-pointer w-full">
+                                <div className="absolute inset-0 bg-gradient-to-br from-indigo-400 to-purple-600 rounded-2xl blur opacity-40 group-hover:opacity-70 transition-opacity animate-pulse"></div>
+                                <Button className="h-20 px-8 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 text-white hover:scale-105 transition-all shadow-xl border-4 border-[#0f172a] relative z-10 flex flex-col items-center justify-center gap-1">
+                                    <CheckCircle2 className="h-6 w-6" />
+                                    <span className="text-xs font-black uppercase tracking-wider">Terminer la mission</span>
+                                </Button>
+                            </div>
+                        </DialogTrigger>
+                        <DialogContent className="bg-[#0f172a] border-white/10 text-white sm:max-w-md rounded-2xl w-[95vw] min-h-[400px] flex flex-col justify-center transition-all duration-300">
+                            
+                            {/* PROGRESS INDICATOR */}
+                            <div className="absolute top-0 left-0 right-0 h-1 bg-white/5">
+                                <motion.div 
+                                    className="h-full bg-gradient-to-r from-indigo-500 to-purple-500"
+                                    initial={{ width: "0%" }}
+                                    animate={{ 
+                                        width: popupView === 'step1_status' ? "33%" : popupView === 'step2_rating' ? "66%" : "100%" 
+                                    }}
+                                    transition={{ duration: 0.5 }}
+                                />
+                            </div>
 
-            {/* 3. Gift */}
-            <Dialog open={isOpportunityOpen} onOpenChange={setIsOpportunityOpen}>
-                <DialogTrigger asChild>
-                    <Button size="icon" className="h-14 w-14 rounded-full bg-slate-800/80 backdrop-blur-md border border-white/10 text-purple-400 hover:bg-slate-700 hover:scale-110 transition-all shadow-lg">
-                        <Gift className="h-6 w-6" />
-                    </Button>
-                </DialogTrigger>
-                <DialogContent className="bg-[#0f172a] border-white/10 text-white sm:max-w-md w-[95vw] rounded-2xl overflow-hidden">
-                            {!oppType ? (
-                                <>
-                                    <DialogHeader>
-                                        <DialogTitle className="flex items-center gap-2 text-xl font-black">
-                                            <Gift className="h-6 w-6 text-purple-400" />
-                                            Offrir une Opportunité
-                                        </DialogTitle>
-                                        <DialogDescription className="text-slate-400">
-                                            Quelle valeur souhaitez-vous apporter à {match.name} ?
-                                        </DialogDescription>
-                                    </DialogHeader>
+                            {/* HEADER */}
+                            <DialogHeader className="mb-6 mt-4">
+                                <DialogTitle className="text-center text-3xl font-black bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
+                                    {popupView === 'step1_status' ? "Bilan de la mission" : popupView === 'step2_rating' ? "Notez l'échange" : "Offrir une opportunité"}
+                                </DialogTitle>
+                            </DialogHeader>
+                            
+                            {/* VIEW 1: STATUS CALL */}
+                            {popupView === 'step1_status' && (
+                                <div className="flex flex-col gap-6 p-2">
                                     
-                                    <div className="grid grid-cols-2 gap-3 py-4 max-h-[60vh] overflow-y-auto">
-                                        {OPPORTUNITY_TYPES.map((type) => (
-                                            <button
-                                                key={type.id}
-                                                onClick={() => setOppType(type.id)}
-                                                className={`flex flex-col items-center justify-start p-3 rounded-xl border transition-all hover:scale-105 text-center gap-2 group ${type.bg.replace('bg-', 'bg-opacity-10 bg-')} ${type.border.replace('border-', 'border-opacity-20 border-')}`}
-                                                style={{ backgroundColor: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.1)' }}
+                                    {/* Question */}
+                                    <div className="bg-white/5 p-6 rounded-2xl border border-white/5 text-center space-y-6">
+                                        <Label className="text-slate-400 uppercase text-xs font-bold tracking-wider block">L'appel a-t-il eu lieu ?</Label>
+                                        
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <Button 
+                                                onClick={() => {
+                                                    setCallHappened(true);
+                                                    setPopupView('step2_rating'); // AUTO NEXT
+                                                }} 
+                                                variant="outline"
+                                                className="h-24 flex flex-col gap-2 font-bold border-emerald-500/30 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 hover:scale-105 transition-all"
                                             >
-                                                <div className={`h-10 w-10 rounded-full flex items-center justify-center shadow-sm ${type.color} bg-white/10 shrink-0`}>
-                                                    <type.icon className="h-5 w-5" />
-                                                </div>
-                                                <div className="flex flex-col gap-1 w-full">
-                                                    <span className="font-bold text-white text-xs leading-tight">{type.cardLabel || type.label}</span>
-                                                    <span className="text-[10px] text-slate-400 font-medium leading-tight px-1 line-clamp-3 opacity-80">{type.cardDescription || type.description}</span>
-                                                    <span className="text-[10px] text-emerald-400 font-bold mt-1">+{type.points} pts</span>
-                                                </div>
-                                            </button>
-                                        ))}
-                                    </div>
-                                </>
-                            ) : (
-                                <>
-                                    <DialogHeader>
-                                        <div className="flex items-center justify-between">
-                                            <Button variant="ghost" size="sm" onClick={() => setOppType(undefined)} className="text-slate-400 -ml-2">
-                                                ← Retour
+                                                <PhoneCall className="w-8 h-8" />
+                                                <span className="text-lg">OUI ✅</span>
                                             </Button>
-                                            <Badge className="bg-purple-500/20 text-purple-300 border-purple-500/30">
-                                                {(() => {
-                                                    const t = OPPORTUNITY_TYPES.find(t => t.id === oppType);
-                                                    return t?.cardLabel || t?.label;
-                                                })()}
-                                            </Badge>
-                                        </div>
-                                        <DialogTitle className="text-lg font-bold mt-2">
-                                            Détails du cadeau 🎁
-                                        </DialogTitle>
-                                        <DialogDescription className="text-slate-400">
-                                            Donnez un maximum d'infos pour que {match.name} puisse saisir cette opportunité.
-                                        </DialogDescription>
-                                    </DialogHeader>
-
-                                    <div className="space-y-4 py-4">
-                                        <div className="space-y-2">
-                                            <Label className="text-xs font-bold uppercase text-slate-500">Votre message (Privé)</Label>
-                                            <Textarea 
-                                                value={oppDetails}
-                                                onChange={(e) => setOppDetails(e.target.value)}
-                                                placeholder="Ex: J'ai un contact pour toi, appelle Mr Martin au 06... Il attend ton appel de ma part." 
-                                                className="bg-slate-900 border-white/10 text-white min-h-[150px] resize-none rounded-xl focus:ring-purple-500/50"
-                                                autoFocus
-                                            />
+                                            <Button 
+                                                onClick={() => setCallHappened(false)} 
+                                                variant="outline"
+                                                className={cn(
+                                                    "h-24 flex flex-col gap-2 font-bold border-red-500/30 transition-all",
+                                                    callHappened === false ? "bg-red-500 text-white hover:bg-red-600" : "bg-red-500/10 text-red-400 hover:bg-red-500/20 hover:scale-105"
+                                                )}
+                                            >
+                                                <Phone className="w-8 h-8 rotate-135" />
+                                                <span className="text-lg">NON ❌</span>
+                                            </Button>
                                         </div>
                                     </div>
 
-                                    <DialogFooter>
-                                        <Button 
-                                            onClick={() => {
-                                                handleCreateOpportunity(match.partnerId, match.name);
-                                                trackEvent('click_gift_submit', { partnerId: match.partnerId, type: oppType });
-                                            }} 
-                                            disabled={isSubmittingOpp || !oppDetails.trim()}
-                                            className="w-full bg-purple-600 hover:bg-purple-500 font-bold h-12 rounded-xl shadow-lg shadow-purple-500/20"
-                                        >
-                                            {isSubmittingOpp ? "Envoi..." : "Envoyer l'opportunité 🚀"}
-                                        </Button>
-                                    </DialogFooter>
-                                </>
+                                    {/* If NO -> Validate Absence Directly */}
+                                    {callHappened === false && (
+                                        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+                                            <Button onClick={handleValidate} className="w-full h-14 text-lg font-black bg-white text-black hover:bg-slate-200 rounded-xl shadow-lg">
+                                                VALIDER L'ABSENCE
+                                            </Button>
+                                        </motion.div>
+                                    )}
+                                </div>
                             )}
-                </DialogContent>
-            </Dialog>
 
-            {/* 4. Rate */}
-            <Dialog open={isRatingOpen} onOpenChange={setIsRatingOpen}>
-                <DialogTrigger asChild>
-                    <Button size="icon" className="h-14 w-14 rounded-full bg-slate-800/80 backdrop-blur-md border border-white/10 text-orange-400 hover:bg-slate-700 hover:scale-110 transition-all shadow-lg">
-                        <Star className="h-6 w-6 fill-current" />
+                            {/* VIEW 2: RATE (Auto Next) */}
+                            {popupView === 'step2_rating' && (
+                                <div className="space-y-6 p-4">
+                                    <div className="flex justify-between gap-3">
+                                        <button 
+                                            onClick={() => { setRating('fire'); setPopupView('step3_gift'); }}
+                                            className="flex-1 aspect-square rounded-2xl border flex flex-col items-center justify-center gap-3 transition-all bg-orange-500/10 border-orange-500/30 hover:bg-orange-500/20 hover:scale-105 group"
+                                        >
+                                            <span className="text-4xl group-hover:scale-125 transition-transform">🔥</span>
+                                            <span className="text-xs uppercase font-black text-orange-300">Top</span>
+                                        </button>
+                                        <button 
+                                            onClick={() => { setRating('good'); setPopupView('step3_gift'); }}
+                                            className="flex-1 aspect-square rounded-2xl border flex flex-col items-center justify-center gap-3 transition-all bg-blue-500/10 border-blue-500/30 hover:bg-blue-500/20 hover:scale-105 group"
+                                        >
+                                            <span className="text-4xl group-hover:scale-125 transition-transform">👍</span>
+                                            <span className="text-xs uppercase font-black text-blue-300">Bien</span>
+                                        </button>
+                                        <button 
+                                            onClick={() => { setRating('meh'); setPopupView('step3_gift'); }}
+                                            className="flex-1 aspect-square rounded-2xl border flex flex-col items-center justify-center gap-3 transition-all bg-slate-500/10 border-slate-500/30 hover:bg-slate-500/20 hover:scale-105 group"
+                                        >
+                                            <span className="text-4xl group-hover:scale-125 transition-transform">😐</span>
+                                            <span className="text-xs uppercase font-black text-slate-300">Bof</span>
+                                        </button>
+                                    </div>
+                                    <Button variant="ghost" onClick={() => setPopupView('step1_status')} className="w-full text-slate-500">Retour</Button>
+                                </div>
+                            )}
+
+                            {/* VIEW 3: GIFT & MESSAGE */}
+                            {popupView === 'step3_gift' && (
+                                <div className="space-y-4 p-2">
+                                    {/* Gift Selector */}
+                                    {!oppType ? (
+                                        <div className="grid grid-cols-2 gap-2 max-h-[40vh] overflow-y-auto pr-1">
+                                            {OPPORTUNITY_TYPES.map(type => (
+                                                <button
+                                                    key={type.id}
+                                                    onClick={() => setOppType(type.id)}
+                                                    className="px-3 py-3 rounded-xl border text-xs font-bold flex flex-col items-center gap-2 transition-all text-center bg-white/5 border-white/10 text-slate-400 hover:bg-white/10 hover:border-purple-500/50 hover:text-purple-300 hover:scale-[1.02]"
+                                                >
+                                                    <div className={cn("p-2 rounded-full bg-white/5", type.color)}>
+                                                        <type.icon className="w-4 h-4" />
+                                                    </div>
+                                                    {type.label}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <div className="space-y-4">
+                                            <motion.div 
+                                                initial={{ scale: 0.9, opacity: 0 }}
+                                                animate={{ scale: 1, opacity: 1 }}
+                                                className="flex items-center justify-between bg-purple-500/10 p-3 rounded-xl border border-purple-500/30"
+                                            >
+                                                <span className="text-sm font-bold text-purple-300 flex items-center gap-2">
+                                                    <Gift className="w-4 h-4" /> {OPPORTUNITY_TYPES.find(t => t.id === oppType)?.label}
+                                                </span>
+                                                <button onClick={() => setOppType(undefined)} className="text-xs text-slate-400 underline hover:text-white">Changer</button>
+                                            </motion.div>
+                                            
+                                            <div className="space-y-2">
+                                                <Label className="text-xs text-slate-400 uppercase font-bold ml-1">Message (Optionnel)</Label>
+                                                <Textarea 
+                                                    className="w-full bg-black/30 border border-white/10 rounded-xl p-3 text-sm text-white min-h-[80px] focus:ring-1 focus:ring-purple-500 outline-none resize-none placeholder:text-slate-600"
+                                                    placeholder="Ex: Je te mets en relation avec..."
+                                                    value={oppDetails}
+                                                    onChange={(e) => setOppDetails(e.target.value)}
+                                                />
+                                            </div>
+
+                                            <Button onClick={handleValidate} className="w-full h-14 text-lg font-black bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-white rounded-xl shadow-lg shadow-emerald-900/20 transform transition-all hover:scale-[1.02]">
+                                                VALIDER & ENVOYER 🚀
+                                            </Button>
+                                        </div>
+                                    )}
+                                    
+                                    {!oppType && (
+                                            <Button variant="ghost" onClick={() => setPopupView('step2_rating')} className="w-full text-slate-500">Retour</Button>
+                                    )}
+                                </div>
+                            )}
+
+                        </DialogContent>
+                    </Dialog>
+                    
+                    <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="text-xs text-slate-400 hover:text-white flex items-center gap-1 h-auto py-1"
+                        onClick={() => {
+                            setIsPhoneOpen(true);
+                        }}
+                    >
+                        <Phone className="w-3 h-3" />
+                        Revoir le numéro
                     </Button>
-                </DialogTrigger>
-                <DialogContent className="bg-[#0f172a] border-white/10 text-white sm:max-w-md rounded-2xl">
-                                    <DialogHeader>
-                                        <DialogTitle className="flex items-center gap-2 text-xl font-black justify-center">
-                                            <Handshake className="h-6 w-6 text-blue-400" />
-                                            Comment s'est passé l'échange ?
-                                        </DialogTitle>
-                                        <DialogDescription className="text-center text-slate-400 text-xs">
-                                            Votre avis nous aide à vous proposer de meilleurs matchs demain.
-                                        </DialogDescription>
-                                    </DialogHeader>
-                                    
-                                    <div className="grid grid-cols-3 gap-3 py-6">
-                                        <Button 
-                                            onClick={() => handleRate(5, "Top 🔥", match.partnerId)} 
-                                            className="flex flex-col items-center justify-center h-28 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 hover:border-emerald-500 text-emerald-400 hover:text-emerald-300 transition-all hover:scale-105 group rounded-xl"
-                                        >
-                                            <span className="text-4xl mb-2 group-hover:animate-bounce filter drop-shadow-lg">🔥</span>
-                                            <span className="font-black text-lg">TOP !</span>
-                                            <span className="text-[9px] uppercase font-bold opacity-70">Super Fit</span>
-                                        </Button>
-                                        
-                                        <Button 
-                                            onClick={() => handleRate(4, "Sympa 👍", match.partnerId)} 
-                                            className="flex flex-col items-center justify-center h-28 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/30 hover:border-blue-500 text-blue-400 hover:text-blue-300 transition-all hover:scale-105 group rounded-xl"
-                                        >
-                                            <span className="text-4xl mb-2 group-hover:animate-pulse filter drop-shadow-lg">👍</span>
-                                            <span className="font-black text-lg">SYMPA</span>
-                                            <span className="text-[10px] uppercase font-bold opacity-70">Bon Contact</span>
-                                        </Button>
-                                        
-                                        <Button 
-                                            onClick={() => handleRate(2, "Moyen 😕", match.partnerId)} 
-                                            className="flex flex-col items-center justify-center h-28 bg-slate-500/10 hover:bg-slate-500/20 border border-slate-500/30 hover:border-slate-500 text-slate-400 hover:text-slate-300 transition-all hover:scale-105 group rounded-xl"
-                                        >
-                                            <span className="text-4xl mb-2 group-hover:rotate-12 filter drop-shadow-lg">😕</span>
-                                            <span className="font-black text-lg">BOF</span>
-                                            <span className="text-[10px] uppercase font-bold opacity-70">Pas de Fit</span>
-                                        </Button>
+                    
+                    <Dialog open={isPhoneOpen} onOpenChange={setIsPhoneOpen}>
+                        <DialogContent className="bg-[#0f172a] border-white/10 text-white sm:max-w-md rounded-2xl w-[90vw]">
+                            <DialogHeader>
+                                <DialogTitle className="flex flex-col items-center gap-4 text-2xl font-black justify-center pt-4">
+                                    <div className="h-20 w-20 rounded-full bg-emerald-500/20 flex items-center justify-center animate-pulse">
+                                        <Phone className="h-10 w-10 text-emerald-400" />
                                     </div>
-                                    
-                                    <div className="text-center">
-                                        <Button variant="ghost" onClick={() => setIsRatingOpen(false)} className="text-slate-500 hover:text-white text-xs">
-                                            Annuler / Je n'ai pas encore appelé
-                                        </Button>
-                                    </div>
-                                </DialogContent>
-            </Dialog>
+                                    <span>C'est parti ! 🚀</span>
+                                </DialogTitle>
+                                <DialogDescription className="text-center text-slate-400 text-base">
+                                    Voici le numéro de <span className="text-white font-bold">{match.name}</span>.
+                                </DialogDescription>
+                            </DialogHeader>
+
+                            <div className="flex flex-col items-center gap-6 py-6">
+                                <div className="text-3xl sm:text-4xl font-black tracking-widest text-white bg-slate-900 px-6 py-4 rounded-xl border border-white/10 shadow-inner select-all">
+                                    {match.phone || "Non renseigné"}
+                                </div>
+                                <Button 
+                                    onClick={() => setIsPhoneOpen(false)}
+                                    className="w-full h-12 bg-slate-800 text-white font-bold"
+                                >
+                                    Fermer
+                                </Button>
+                            </div>
+                        </DialogContent>
+                    </Dialog>
+                </div>
+            )}
 
         </div>
+        </>
+        )}
+
       </div>
     </div>
   );
