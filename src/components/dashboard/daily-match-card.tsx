@@ -666,6 +666,11 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
       return <MysteryCard onReveal={handleReveal} match={match} />;
   }
 
+  // IF VALIDATED -> SHOW NEXT MATCH LOCKED (TEASER)
+  if (step === 'validated') {
+      return <MysteryCard onReveal={() => {}} match={nextMatch} locked={true} />;
+  }
+
   // MATCH CARD (REVEALED)
   return (
     <div className="relative w-full max-w-sm mx-auto h-[600px] rounded-[2.5rem] overflow-hidden shadow-2xl bg-[#0f172a] border border-slate-800">
@@ -720,22 +725,6 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
       {/* Main Content - Bottom */}
       <div className="absolute bottom-0 left-0 right-0 z-20 p-6 pt-24 bg-gradient-to-t from-[#0f172a] via-[#0f172a] to-transparent flex flex-col justify-end h-full">
         
-        {step === 'validated' ? (
-             // --- STATE 3: VALIDATED ---
-             <motion.div 
-                initial={{ scale: 0.9, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                className="bg-slate-900/90 backdrop-blur-md rounded-2xl p-6 text-center border border-white/10 mb-auto mt-auto"
-            >
-                <CheckCircle2 className="w-16 h-16 text-emerald-400 mx-auto mb-4" />
-                <h3 className="text-2xl font-black text-white mb-1">MISSION ACCOMPLIE</h3>
-                <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-6">PROCHAIN MATCH DANS</p>
-                <div className="text-5xl font-mono font-black text-white tracking-widest bg-black/30 rounded-xl py-4 border border-white/10">
-                    {waitingCountdown}
-                </div>
-            </motion.div>
-        ) : (
-            <>
         {/* Match Score */}
         <div className="flex items-end gap-3 mb-3">
             <h2 className="text-4xl font-black text-white tracking-tighter">{match.name}</h2>
