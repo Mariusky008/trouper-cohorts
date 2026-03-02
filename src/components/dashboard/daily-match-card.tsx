@@ -583,7 +583,22 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
   }, []);
 
   if (!matches || matches.length === 0) {
-      return <WaitingCard countdown={waitingCountdown} />;
+      // If no matches, we show the Mystery Card in LOCKED state (Teaser) instead of the old WaitingCard.
+      // This ensures consistency: "There is always a next match coming".
+      return <MysteryCard 
+          onReveal={() => {}} 
+          match={{
+            id: 'teaser-future',
+            partnerId: 'teaser-next',
+            name: 'Prochain Match',
+            job: 'Membre du Club',
+            city: 'Gironde', // Default or random
+            collabsCount: 15,
+            score: 5.0,
+            tags: ['Entrepreneur']
+          }} 
+          locked={true} 
+      />;
   }
 
   // Prevent hydration mismatch for time-dependent rendering
