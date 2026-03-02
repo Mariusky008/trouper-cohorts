@@ -596,6 +596,8 @@ export function MissionValidationPreview() {
   const [interlocutorGoal, setInterlocutorGoal] = useState<string | null>("Trouver un associé technique"); // Simulating user has a goal
   // const [interlocutorGoal, setInterlocutorGoal] = useState<string | null>(null); // Simulating user has NO goal
   const [selectedMission, setSelectedMission] = useState<string | null>(null);
+  const [popupView, setPopupView] = useState<'menu' | 'rate' | 'gift'>('menu');
+  const [callHappened, setCallHappened] = useState<boolean | null>(null);
 
   // Simulation of the call action
   const handleCall = () => {
@@ -706,15 +708,17 @@ export function MissionValidationPreview() {
                 {/* Action Buttons (Dock Style) */}
                 <div className="flex justify-center items-center gap-4 pb-4">
                     
-                    {/* Secondary Actions (Why, Gift, Rate) */}
-                    <div className="flex gap-2">
-                        <Button size="icon" className="h-14 w-14 rounded-full bg-slate-800/80 backdrop-blur-md border border-white/10 text-yellow-400 hover:scale-110 transition-transform">
-                            <MessageSquare className="h-6 w-6 fill-current" />
-                        </Button>
-                        <Button size="icon" className="h-14 w-14 rounded-full bg-slate-800/80 backdrop-blur-md border border-white/10 text-purple-400 hover:scale-110 transition-transform">
-                            <Gift className="h-6 w-6" />
-                        </Button>
-                    </div>
+                    {/* Secondary Actions (Why, Gift, Rate) - ONLY VISIBLE IN INITIAL STEP */}
+                    {step === 'initial' && (
+                        <div className="flex gap-2">
+                            <Button size="icon" className="h-14 w-14 rounded-full bg-slate-800/80 backdrop-blur-md border border-white/10 text-yellow-400 hover:scale-110 transition-transform">
+                                <MessageSquare className="h-6 w-6 fill-current" />
+                            </Button>
+                            <Button size="icon" className="h-14 w-14 rounded-full bg-slate-800/80 backdrop-blur-md border border-white/10 text-purple-400 hover:scale-110 transition-transform">
+                                <Gift className="h-6 w-6" />
+                            </Button>
+                        </div>
+                    )}
 
                     {/* MAIN BUTTON - TRANSFORMS */}
                     {step === 'initial' ? (
@@ -726,7 +730,13 @@ export function MissionValidationPreview() {
                         </div>
                     ) : (
                         <div className="flex flex-col items-center gap-3">
-                            <Dialog open={isValidationOpen} onOpenChange={setIsValidationOpen}>
+                            <Dialog open={isValidationOpen} onOpenChange={(open) => {
+                                setIsValidationOpen(open);
+                                if (!open) {
+                                    setPopupView('menu'); // Reset view on close
+                                    setCallHappened(null);
+                                }
+                            }}>
                                 <DialogTrigger asChild>
                                     <div className="relative group cursor-pointer w-full">
                                         <div className="absolute inset-0 bg-gradient-to-br from-indigo-400 to-purple-600 rounded-2xl blur opacity-40 group-hover:opacity-70 transition-opacity animate-pulse"></div>
@@ -736,60 +746,128 @@ export function MissionValidationPreview() {
                                         </Button>
                                     </div>
                                 </DialogTrigger>
-                                <DialogContent className="bg-[#0f172a] border-white/10 text-white sm:max-w-md rounded-2xl w-[95vw] min-h-[400px] flex flex-col justify-center">
-                                    <DialogHeader className="mb-8">
+                                <DialogContent className="bg-[#0f172a] border-white/10 text-white sm:max-w-md rounded-2xl w-[95vw] min-h-[400px] flex flex-col justify-center transition-all duration-300">
+                                    
+                                    {/* HEADER */}
+                                    <DialogHeader className="mb-6">
                                         <DialogTitle className="text-center text-3xl font-black bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
-                                            Mission Terminée ! 🚀
+                                            {popupView === 'menu' ? "Bilan de la mission" : popupView === 'rate' ? "Notez l'échange" : "Offrir une opportunité"}
                                         </DialogTitle>
-                                        <DialogDescription className="text-center text-slate-400">
-                                            Validez votre échange pour débloquer la suite.
-                                        </DialogDescription>
                                     </DialogHeader>
                                     
-                                    <div className="grid grid-cols-2 gap-6 p-4">
-                                        {/* OPTION 1: Feedback */}
-                                        <motion.button 
-                                            initial={{ scale: 0.8, opacity: 0, y: 50 }}
-                                            animate={{ scale: 1, opacity: 1, y: 0 }}
-                                            transition={{ delay: 0.1, type: "spring", stiffness: 200 }}
-                                            onClick={() => {
-                                                setIsValidationOpen(false);
-                                                setIsRatingOpen(true);
-                                            }}
-                                            className="aspect-square rounded-3xl bg-gradient-to-br from-orange-500/10 to-red-500/10 border-2 border-orange-500/30 hover:border-orange-500 flex flex-col items-center justify-center gap-3 group transition-all hover:bg-orange-500/20"
-                                        >
-                                            <div className="w-16 h-16 rounded-full bg-orange-500/20 flex items-center justify-center group-hover:scale-110 transition-transform shadow-lg shadow-orange-500/20">
-                                                <Star className="w-8 h-8 text-orange-400 fill-orange-400" />
+                                    {/* VIEW: MENU (Status + Choices) */}
+                                    {popupView === 'menu' && (
+                                        <div className="flex flex-col gap-6 p-2">
+                                            
+                                            {/* 1. STATUS CALL */}
+                                            <div className="bg-white/5 p-4 rounded-xl border border-white/5 text-center">
+                                                <Label className="text-slate-400 uppercase text-xs font-bold tracking-wider mb-4 block">L'appel a-t-il eu lieu ?</Label>
+                                                <div className="flex gap-3 justify-center">
+                                                    <Button 
+                                                        onClick={() => setCallHappened(true)} 
+                                                        variant={callHappened === true ? 'default' : 'outline'}
+                                                        className={cn("h-12 w-24 font-bold border-emerald-500/30", callHappened === true ? "bg-emerald-500 hover:bg-emerald-600" : "bg-transparent text-emerald-400 hover:bg-emerald-500/10")}
+                                                    >
+                                                        OUI ✅
+                                                    </Button>
+                                                    <Button 
+                                                        onClick={() => setCallHappened(false)} 
+                                                        variant={callHappened === false ? 'default' : 'outline'}
+                                                        className={cn("h-12 w-24 font-bold border-red-500/30", callHappened === false ? "bg-red-500 hover:bg-red-600" : "bg-transparent text-red-400 hover:bg-red-500/10")}
+                                                    >
+                                                        NON ❌
+                                                    </Button>
+                                                </div>
                                             </div>
-                                            <span className="text-sm font-bold text-orange-200 uppercase tracking-wider">Noter</span>
-                                        </motion.button>
 
-                                        {/* OPTION 2: Gift */}
-                                        <motion.button 
-                                            initial={{ scale: 0.8, opacity: 0, y: 50 }}
-                                            animate={{ scale: 1, opacity: 1, y: 0 }}
-                                            transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
-                                            onClick={() => {
-                                                setIsValidationOpen(false);
-                                                setIsOpportunityOpen(true);
-                                            }}
-                                            className="aspect-square rounded-3xl bg-gradient-to-br from-purple-500/10 to-indigo-500/10 border-2 border-purple-500/30 hover:border-purple-500 flex flex-col items-center justify-center gap-3 group transition-all hover:bg-purple-500/20"
-                                        >
-                                            <div className="w-16 h-16 rounded-full bg-purple-500/20 flex items-center justify-center group-hover:scale-110 transition-transform shadow-lg shadow-purple-500/20">
-                                                <Gift className="w-8 h-8 text-purple-400" />
+                                            {/* 2. ACTIONS (Animated in if Call Happened) */}
+                                            {callHappened === true && (
+                                                <motion.div 
+                                                    initial={{ opacity: 0, height: 0 }}
+                                                    animate={{ opacity: 1, height: 'auto' }}
+                                                    className="grid grid-cols-2 gap-4"
+                                                >
+                                                    {/* OPTION 1: Feedback */}
+                                                    <motion.button 
+                                                        initial={{ scale: 0.8, y: 20 }}
+                                                        animate={{ scale: 1, y: 0 }}
+                                                        onClick={() => setPopupView('rate')}
+                                                        className="aspect-square rounded-2xl bg-gradient-to-br from-orange-500/10 to-red-500/10 border-2 border-orange-500/30 hover:border-orange-500 flex flex-col items-center justify-center gap-2 group transition-all hover:bg-orange-500/20"
+                                                    >
+                                                        <div className="w-12 h-12 rounded-full bg-orange-500/20 flex items-center justify-center group-hover:scale-110 transition-transform shadow-lg shadow-orange-500/20">
+                                                            <Star className="w-6 h-6 text-orange-400 fill-orange-400" />
+                                                        </div>
+                                                        <span className="text-xs font-bold text-orange-200 uppercase tracking-wider">Noter</span>
+                                                    </motion.button>
+
+                                                    {/* OPTION 2: Gift */}
+                                                    <motion.button 
+                                                        initial={{ scale: 0.8, y: 20 }}
+                                                        animate={{ scale: 1, y: 0 }}
+                                                        onClick={() => setPopupView('gift')}
+                                                        className="aspect-square rounded-2xl bg-gradient-to-br from-purple-500/10 to-indigo-500/10 border-2 border-purple-500/30 hover:border-purple-500 flex flex-col items-center justify-center gap-2 group transition-all hover:bg-purple-500/20"
+                                                    >
+                                                        <div className="w-12 h-12 rounded-full bg-purple-500/20 flex items-center justify-center group-hover:scale-110 transition-transform shadow-lg shadow-purple-500/20">
+                                                            <Gift className="w-6 h-6 text-purple-400" />
+                                                        </div>
+                                                        <span className="text-xs font-bold text-purple-200 uppercase tracking-wider">Offrir</span>
+                                                    </motion.button>
+                                                </motion.div>
+                                            )}
+
+                                            {/* Validate Button */}
+                                            {callHappened !== null && (
+                                                <Button onClick={handleValidate} className="w-full h-14 text-lg font-black bg-white text-black hover:bg-slate-200 rounded-xl shadow-lg mt-2">
+                                                    {callHappened ? "TERMINER LA MISSION" : "VALIDER L'ABSENCE"}
+                                                </Button>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    {/* VIEW: RATE */}
+                                    {popupView === 'rate' && (
+                                        <div className="space-y-6 p-4">
+                                            <div className="flex justify-between gap-2">
+                                                <button onClick={() => setRating('fire')} className={`flex-1 h-20 rounded-xl border flex flex-col items-center justify-center transition-all ${rating === 'fire' ? 'bg-orange-500/20 border-orange-500 scale-105' : 'bg-white/5 border-white/10 hover:bg-white/10'}`}>
+                                                    <span className="text-3xl mb-1">🔥</span>
+                                                    <span className="text-[10px] uppercase font-bold text-slate-400">Top</span>
+                                                </button>
+                                                <button onClick={() => setRating('good')} className={`flex-1 h-20 rounded-xl border flex flex-col items-center justify-center transition-all ${rating === 'good' ? 'bg-blue-500/20 border-blue-500 scale-105' : 'bg-white/5 border-white/10 hover:bg-white/10'}`}>
+                                                    <span className="text-3xl mb-1">👍</span>
+                                                    <span className="text-[10px] uppercase font-bold text-slate-400">Sympa</span>
+                                                </button>
+                                                <button onClick={() => setRating('meh')} className={`flex-1 h-20 rounded-xl border flex flex-col items-center justify-center transition-all ${rating === 'meh' ? 'bg-slate-500/20 border-slate-500 scale-105' : 'bg-white/5 border-white/10 hover:bg-white/10'}`}>
+                                                    <span className="text-3xl mb-1">😐</span>
+                                                    <span className="text-[10px] uppercase font-bold text-slate-400">Bof</span>
+                                                </button>
                                             </div>
-                                            <span className="text-sm font-bold text-purple-200 uppercase tracking-wider">Offrir</span>
-                                        </motion.button>
-                                    </div>
-                                    
-                                    <div className="text-center mt-4">
-                                        <button 
-                                            onClick={handleValidate}
-                                            className="text-xs text-slate-500 font-medium hover:text-slate-300 underline decoration-slate-700 underline-offset-4"
-                                        >
-                                            Je n'ai rien à ajouter (Valider simple)
-                                        </button>
-                                    </div>
+                                            <Button variant="ghost" onClick={() => setPopupView('menu')} className="w-full">Retour</Button>
+                                        </div>
+                                    )}
+
+                                    {/* VIEW: GIFT */}
+                                    {popupView === 'gift' && (
+                                        <div className="space-y-4 p-2 max-h-[60vh] overflow-y-auto">
+                                            <div className="grid grid-cols-2 gap-2">
+                                                {OPPORTUNITY_TYPES.map(type => (
+                                                    <button
+                                                        key={type.id}
+                                                        onClick={() => {
+                                                            setSelectedOpportunity(type.id);
+                                                            toast.success(`Cadeau sélectionné : ${type.label}`);
+                                                            setPopupView('menu'); // Auto return after selection
+                                                        }}
+                                                        className="px-3 py-3 rounded-lg border text-xs font-bold flex flex-col items-center gap-1.5 transition-all text-center bg-white/5 border-white/10 text-slate-400 hover:bg-white/10 hover:border-purple-500/50 hover:text-purple-300"
+                                                    >
+                                                        <type.icon className="w-4 h-4 text-slate-500 group-hover:text-purple-400" />
+                                                        {type.label}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                            <Button variant="ghost" onClick={() => setPopupView('menu')} className="w-full">Retour</Button>
+                                        </div>
+                                    )}
+
                                 </DialogContent>
                             </Dialog>
                             
@@ -807,12 +885,14 @@ export function MissionValidationPreview() {
                         </div>
                     )}
 
-                    {/* Secondary Action: Rate */}
-                    <div className="flex gap-2">
-                        <Button size="icon" className="h-14 w-14 rounded-full bg-slate-800/80 backdrop-blur-md border border-white/10 text-orange-400 hover:scale-110 transition-transform">
-                            <Star className="h-6 w-6 fill-current" />
-                        </Button>
-                    </div>
+                    {/* Secondary Action: Rate - ONLY VISIBLE IN INITIAL STEP */}
+                    {step === 'initial' && (
+                        <div className="flex gap-2">
+                            <Button size="icon" className="h-14 w-14 rounded-full bg-slate-800/80 backdrop-blur-md border border-white/10 text-orange-400 hover:scale-110 transition-transform">
+                                <Star className="h-6 w-6 fill-current" />
+                            </Button>
+                        </div>
+                    )}
 
                 </div>
             </>
