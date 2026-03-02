@@ -632,14 +632,19 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
                         ? `Suggestion : ${suggestedMission.label} (Cliquez pour valider)`
                         : "Cliquez pour définir votre objectif 🎯"}
             </p>
-            {match.partner_mission && (
-                <div className="mt-2 pt-2 border-t border-white/10 flex items-center gap-2">
-                    <div className="h-4 w-4 rounded-full bg-slate-700 flex items-center justify-center text-[8px]">👤</div>
+            {/* Partner Mission Display - Always visible (Pending or Selected) */}
+            <div className="mt-2 pt-2 border-t border-white/10 flex items-center gap-2">
+                <div className="h-4 w-4 rounded-full bg-slate-700 flex items-center justify-center text-[8px] shrink-0">👤</div>
+                {match.partner_mission ? (
                     <p className="text-[10px] text-slate-400">
                         Il cherche un : <span className="text-indigo-300 font-bold">{MISSION_TYPES.find(m => m.id === match.partner_mission)?.label || match.partner_mission}</span>
                     </p>
-                </div>
-            )}
+                ) : (
+                    <p className="text-[10px] text-slate-500 italic">
+                        En attente de son choix d'objectif...
+                    </p>
+                )}
+            </div>
         </div>
 
         {/* Action Buttons (Dock Style) */}
