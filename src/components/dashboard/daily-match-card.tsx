@@ -714,7 +714,6 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
             </div>
         </motion.div>
       </div>
-      )}
 
       {/* Main Content - Bottom */}
       <div className="absolute bottom-0 left-0 right-0 z-20 p-6 pt-24 bg-gradient-to-t from-[#0f172a] via-[#0f172a] to-transparent flex flex-col justify-end h-full">
