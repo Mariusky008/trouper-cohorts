@@ -11,21 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Download, Save, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { SPHERES_DATA } from "./constants";
-
-type TrackingStatus = "todo" | "pending" | "validated" | "followup";
-
-interface TradeTracking {
-  linkedinContacted: boolean;
-  instagramContacted: boolean;
-  firstName: string;
-  lastName: string;
-  link: string;
-  status: TrackingStatus;
-}
-
 import { getCMTracking, upsertCMTracking, clearCMTracking, type TradeTracking, type TrackingStatus } from "@/lib/actions/cm-tracker";
-import { toast } from "sonner";
-import { SPHERES_DATA } from "./constants";
 
 export function CMTracker() {
   const [data, setData] = useState<Record<string, TradeTracking>>({});
