@@ -764,11 +764,7 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
                         })}
                     </div>
 
-                    <div className="bg-indigo-500/10 p-4 rounded-xl border border-indigo-500/20 mb-2">
-                         <p className="text-xs text-indigo-200 text-center font-medium">
-                             <span className="font-bold">Astuce :</span> En choisissant un thème, vous évitez le "blabla" inutile et garantissez un résultat concret.
-                         </p>
-                    </div>
+
                 </DialogContent>
             </Dialog>
 
