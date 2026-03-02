@@ -711,12 +711,12 @@ export function MissionValidationPreview() {
                     {/* Secondary Actions (Why, Gift, Rate) - ONLY VISIBLE IN INITIAL STEP */}
                     {step === 'initial' && (
                         <div className="flex gap-2">
-                            <Button size="icon" className="h-14 w-14 rounded-full bg-slate-800/80 backdrop-blur-md border border-white/10 text-yellow-400 hover:scale-110 transition-transform">
+                            {/* <Button size="icon" className="h-14 w-14 rounded-full bg-slate-800/80 backdrop-blur-md border border-white/10 text-yellow-400 hover:scale-110 transition-transform">
                                 <MessageSquare className="h-6 w-6 fill-current" />
-                            </Button>
-                            <Button size="icon" className="h-14 w-14 rounded-full bg-slate-800/80 backdrop-blur-md border border-white/10 text-purple-400 hover:scale-110 transition-transform">
+                            </Button> */}
+                            {/* <Button size="icon" className="h-14 w-14 rounded-full bg-slate-800/80 backdrop-blur-md border border-white/10 text-purple-400 hover:scale-110 transition-transform">
                                 <Gift className="h-6 w-6" />
-                            </Button>
+                            </Button> */}
                         </div>
                     )}
 
@@ -919,9 +919,9 @@ export function MissionValidationPreview() {
                     {/* Secondary Action: Rate - ONLY VISIBLE IN INITIAL STEP */}
                     {step === 'initial' && (
                         <div className="flex gap-2">
-                            <Button size="icon" className="h-14 w-14 rounded-full bg-slate-800/80 backdrop-blur-md border border-white/10 text-orange-400 hover:scale-110 transition-transform">
+                            {/* <Button size="icon" className="h-14 w-14 rounded-full bg-slate-800/80 backdrop-blur-md border border-white/10 text-orange-400 hover:scale-110 transition-transform">
                                 <Star className="h-6 w-6 fill-current" />
-                            </Button>
+                            </Button> */}
                         </div>
                     )}
 
