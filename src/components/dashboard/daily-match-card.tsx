@@ -335,6 +335,7 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
   const [step, setStep] = useState<'initial' | 'called' | 'validated'>('initial');
   const [popupView, setPopupView] = useState<'step1_status' | 'step2_rating' | 'step3_gift'>('step1_status');
   const [callHappened, setCallHappened] = useState<boolean | null>(null);
+  const [callMade, setCallMade] = useState(false);
   const [rating, setRating] = useState<'fire' | 'good' | 'meh' | null>(null);
 
   // Dialog States
@@ -468,8 +469,38 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
   }, [matches]);
 
   // Actions Handlers
+  const handleValidate = async () => {
+    const currentMatch = matches[0];
+    if (!currentMatch) return;
+
+    // 1. Save Rating if exists
+    if (rating && currentMatch.partnerId) {
+        let score = 3;
+        let tag = "bof";
+        if (rating === 'fire') { score = 5; tag = "top"; }
+        if (rating === 'good') { score = 4; tag = "bien"; }
+        
+        await saveMatchFeedback(currentMatch.partnerId, score, tag);
+    }
+
+    // 2. Save Opportunity if exists
+    if (oppType && currentMatch.partnerId) {
+        await handleCreateOpportunity(currentMatch.partnerId, currentMatch.name);
+    }
+
+    // 3. Finalize
+    setStep('validated');
+    setIsValidationOpen(false);
+    confetti({ particleCount: 200, spread: 100, origin: { y: 0.6 } });
+    
+    if (callHappened !== false) {
+        toast.success("Mission validée ! +50 pts 🚀");
+    } else {
+        toast.success("Absence validée");
+    }
+  };
+
   const handleRate = async (score: number, tag: string, partnerId: string) => {
-      setIsRatingOpen(false);
       if (score >= 4) confetti({ particleCount: 100, spread: 70, colors: ['#10b981', '#fbbf24'] });
       toast.success("Feedback enregistré ! 📝", { description: `Vous avez qualifié l'échange de "${tag}"` });
       await saveMatchFeedback(partnerId, score, tag);
@@ -493,7 +524,6 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
           if (result.success) {
               toast.success(`Opportunité envoyée à ${partnerName} ! 🎁`);
               setOppDetails("");
-              setIsOpportunityOpen(false);
               confetti({ particleCount: 150, spread: 60, origin: { y: 0.7 } });
           } else {
               toast.error(result.error || "Erreur lors de l'envoi");
@@ -533,11 +563,13 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
       navigator.clipboard.writeText(phone);
       toast.success("Numéro copié ! 📋");
       triggerCallRewards();
+      setStep('called');
       setIsPhoneOpen(false);
   };
 
   const handleCallAction = () => {
       triggerCallRewards();
+      setStep('called');
       setIsPhoneOpen(false);
   };
 
@@ -689,34 +721,39 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
             "Ce {match.job || 'partenaire'} peut vous ouvrir des opportunités auxquelles vous n’aviez pas accès hier."
         </p>
 
-        {/* 3. MISSION SELECTOR (NEW) */}
-        <div className="bg-indigo-500/20 border border-indigo-500/30 rounded-xl p-3 mb-6 backdrop-blur-sm cursor-pointer hover:bg-indigo-500/30 transition-colors" onClick={() => setIsMissionOpen(true)}>
-            <div className="flex items-center justify-between mb-1">
-                <div className="flex items-center gap-2">
-                    <Target className="w-4 h-4 text-indigo-400" />
-                    <span className="text-[10px] font-black text-indigo-300 uppercase tracking-wider">🍽️ Le Menu des Opportunités</span>
+        {/* Mission Selector (My Goal + His Goal) */}
+        <div className="grid grid-cols-2 gap-3 mb-6">
+            {/* 1. My Goal */}
+            <div className="bg-indigo-500/20 border border-indigo-500/30 rounded-xl p-3 backdrop-blur-sm cursor-pointer hover:bg-indigo-500/30 transition-colors" onClick={() => setIsMissionOpen(true)}>
+                <div className="flex items-center gap-1.5 mb-1.5">
+                    <Target className="w-3.5 h-3.5 text-indigo-400" />
+                    <span className="text-[9px] font-black text-indigo-300 uppercase tracking-wider">Mon Objectif</span>
                 </div>
-                {selectedMission && <Badge className="text-[9px] h-4 bg-indigo-500 text-white">Choisi</Badge>}
+                <p className="text-white text-[11px] font-medium leading-tight line-clamp-2">
+                    {selectedMission 
+                        ? MISSION_TYPES.find(m => m.id === selectedMission)?.label 
+                        : "Définir mon objectif 🎯"}
+                </p>
             </div>
-            <p className="text-white text-xs font-medium italic truncate">
-                {selectedMission 
-                    ? MISSION_TYPES.find(m => m.id === selectedMission)?.desc 
-                    : suggestedMission 
-                        ? `Suggestion : ${suggestedMission.label} (Cliquez pour valider)`
-                        : "Cliquez pour définir votre objectif 🎯"}
-            </p>
-            {/* Partner Mission Display - Always visible (Pending or Selected) */}
-            <div className="mt-2 pt-2 border-t border-white/10 flex items-center gap-2">
-                <div className="h-4 w-4 rounded-full bg-slate-700 flex items-center justify-center text-[8px] shrink-0">👤</div>
-                {match.partner_mission ? (
-                    <p className="text-[10px] text-slate-400">
-                        Il cherche un : <span className="text-indigo-300 font-bold">{MISSION_TYPES.find(m => m.id === match.partner_mission)?.label || match.partner_mission}</span>
-                    </p>
-                ) : (
-                    <p className="text-[10px] text-slate-500 italic">
-                        En attente de son choix d'objectif...
-                    </p>
-                )}
+
+            {/* 2. His Goal */}
+            <div className={cn(
+                "rounded-xl p-3 backdrop-blur-sm border",
+                match.partner_mission 
+                    ? "bg-purple-500/20 border-purple-500/30" 
+                    : "bg-orange-500/10 border-orange-500/20 border-dashed"
+            )}>
+                <div className="flex items-center gap-1.5 mb-1.5">
+                    <Users className={cn("w-3.5 h-3.5", match.partner_mission ? "text-purple-400" : "text-orange-400")} />
+                    <span className={cn("text-[9px] font-black uppercase tracking-wider", match.partner_mission ? "text-purple-300" : "text-orange-300")}>
+                        Son Objectif
+                    </span>
+                </div>
+                <p className={cn("text-[11px] font-medium leading-tight line-clamp-2", match.partner_mission ? "text-white" : "text-orange-200/70 italic")}>
+                    {match.partner_mission 
+                        ? (MISSION_TYPES.find(m => m.id === match.partner_mission)?.label || match.partner_mission)
+                        : "N'a pas encore défini son objectif..."}
+                </p>
             </div>
         </div>
 
@@ -881,7 +918,14 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
 
             {/* 2. CALL (Main Action) */}
             {step === 'initial' ? (
-                <Dialog open={isPhoneOpen} onOpenChange={setIsPhoneOpen}>
+                <Dialog open={isPhoneOpen} onOpenChange={(open) => {
+                    setIsPhoneOpen(open);
+                    // When closing the phone dialog, we assume the user might have interacted (seen the number).
+                    // We unlock the next step (Validation) to ensure they aren't stuck if they called externally.
+                    if (!open) {
+                        setStep('called');
+                    }
+                }}>
                     <DialogTrigger asChild>
                         <div className="relative group cursor-pointer" onClick={() => trackEvent('click_call_open', { partnerId: match.partnerId })}>
                             <div className="absolute inset-0 bg-gradient-to-br from-emerald-400 to-blue-600 rounded-full blur opacity-40 group-hover:opacity-70 transition-opacity animate-pulse"></div>
