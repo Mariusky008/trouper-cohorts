@@ -129,12 +129,12 @@ export function CMTracker() {
       </div>
 
       <Tabs defaultValue={SPHERES_DATA[0].id} className="w-full">
-        <TabsList className="w-full h-auto flex flex-wrap gap-2 bg-slate-900/50 p-2 rounded-xl border border-white/10 mb-6">
+        <TabsList className="w-full h-auto flex flex-wrap gap-2 bg-slate-800/80 p-2 rounded-xl border border-white/20 mb-6">
           {SPHERES_DATA.map((sphere) => (
             <TabsTrigger 
               key={sphere.id} 
               value={sphere.id}
-              className="flex-1 min-w-[150px] data-[state=active]:bg-indigo-600 data-[state=active]:text-white py-3 font-bold uppercase tracking-wide text-xs"
+              className="flex-1 min-w-[150px] data-[state=active]:bg-indigo-600 data-[state=active]:text-white data-[state=inactive]:text-slate-400 data-[state=inactive]:hover:bg-white/5 py-3 font-bold uppercase tracking-wide text-xs transition-all"
             >
               {sphere.title.split('. ')[1]}
             </TabsTrigger>
