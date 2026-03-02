@@ -30,11 +30,60 @@ interface DailyMatchCardProps {
 }
 
 const MISSION_TYPES = [
-    { id: 'portier', label: 'Portier', icon: Lock, desc: "Ouvre-moi une porte spécifique", color: 'text-blue-400', bg: 'bg-blue-500/10', border: 'border-blue-500/20' },
-    { id: 'amplificateur', label: 'Amplificateur', icon: TrendingUp, desc: "Boostons notre visibilité mutuelle", color: 'text-purple-400', bg: 'bg-purple-500/10', border: 'border-purple-500/20' },
-    { id: 'prescripteur', label: 'Prescripteur', icon: Handshake, desc: "Devenons apporteurs d'affaires", color: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20' },
-    { id: 'recommandeur', label: 'Recommandeur', icon: Star, desc: "Échangeons un avis ou une reco", color: 'text-yellow-400', bg: 'bg-yellow-500/10', border: 'border-yellow-500/20' },
-    { id: 'infiltre', label: 'Infiltré', icon: Fingerprint, desc: "Parraine-moi dans ton club/réseau", color: 'text-red-400', bg: 'bg-red-500/10', border: 'border-red-500/20' }
+    { 
+        id: 'portier', 
+        label: 'Le Portier — "Ouvre-moi une porte"', 
+        icon: Lock, 
+        desc: "Je cible une entreprise ou un décideur précis. Tu regardes ton LinkedIn/Répertoire et me fais une intro directe (Mail ou WhatsApp).", 
+        color: 'text-blue-400', 
+        bg: 'bg-blue-500/10', 
+        border: 'border-blue-500/20' 
+    },
+    { 
+        id: 'amplificateur', 
+        label: 'L\'Amplificateur — "Propulse ma visibilité"', 
+        icon: TrendingUp, 
+        desc: "Je viens de publier un post ou une offre. Soutien mutuel immédiat (Commentaire, partage ou tag de prospects).", 
+        color: 'text-purple-400', 
+        bg: 'bg-purple-500/10', 
+        border: 'border-purple-500/20' 
+    },
+    { 
+        id: 'prescripteur', 
+        label: 'Le Prescripteur — "Apporte-moi un deal"', 
+        icon: Handshake, 
+        desc: "Je cherche un client chaud. On définit mon client idéal et tu identifies un prospect dans ton entourage.", 
+        color: 'text-emerald-400', 
+        bg: 'bg-emerald-500/10', 
+        border: 'border-emerald-500/20' 
+    },
+    { 
+        id: 'recommandeur', 
+        label: 'Le Recommandeur — "Bétonne ma crédibilité"', 
+        icon: Star, 
+        desc: "Je manque de preuve sociale. Échange croisé d'un avis Google ou d'une recommandation LinkedIn détaillée.", 
+        color: 'text-yellow-400', 
+        bg: 'bg-yellow-500/10', 
+        border: 'border-yellow-500/20' 
+    },
+    { 
+        id: 'infiltre', 
+        label: 'L\'Infiltré — "Intègre-moi dans ton cercle"', 
+        icon: Fingerprint, 
+        desc: "Je veux entrer dans des réseaux fermés (BNI, Clubs). Tu m'invites comme 'Guest' ou me parraines.", 
+        color: 'text-red-400', 
+        bg: 'bg-red-500/10', 
+        border: 'border-red-500/20' 
+    },
+    { 
+        id: 'joker', 
+        label: 'Le Joker — "L\'Opportuniste"', 
+        icon: Zap, 
+        desc: "Tu as une idée précise hors cases. Tu proposes un échange de valeur unique (partenariat, troc, conseil expert).", 
+        color: 'text-pink-400', 
+        bg: 'bg-pink-500/10', 
+        border: 'border-pink-500/20' 
+    }
 ];
 
 const GOAL_LABELS: Record<string, string> = {
