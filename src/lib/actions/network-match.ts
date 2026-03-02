@@ -153,13 +153,8 @@ export async function getDailyMatches() {
           const startHourMatch = timeStr.match(/^(\d{1,2})/);
           const startHour = startHourMatch ? parseInt(startHourMatch[1], 10) : 0;
           
-          // Slot ends at start + 2 hours
-          // IMPORTANT: If current hour is < endHour, the slot is still active.
-          // Example: Slot 09h-11h (End 11). If current is 10:59, it's active. If 11:00, it's expired.
-          // We add a grace period? No, stick to logic.
-          const endHour = startHour + 2;
-          
-          if (currentParisHour >= endHour) return false;
+          // Keep match visible all day (until 21h) even if slot is passed
+          if (currentParisHour >= 21) return false;
       }
 
       return true;
