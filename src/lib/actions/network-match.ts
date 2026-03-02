@@ -270,7 +270,14 @@ export async function getDailyMatches() {
   // If we have future matches but no match today, we still return the future match (Waiting Card).
   // If we have NO matches at all, we return empty array (Waiting Card will calculate next slot).
   
-  return sortedMatches.length > 0 ? [sortedMatches[0]] : [];
+  // NEW LOGIC (Requested by User):
+  // We want to pass the FUTURE match to the frontend so it can be displayed as a "Locked Mystery Card" 
+  // immediately after the current mission is validated.
+  // So instead of returning just [sortedMatches[0]], we return up to 2 matches:
+  // 1. The current active match (Today)
+  // 2. The next upcoming match (Tomorrow)
+  
+  return sortedMatches.slice(0, 2);
 }
 
 import { revalidatePath } from "next/cache";

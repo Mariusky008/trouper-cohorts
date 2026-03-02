@@ -481,16 +481,12 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
         if (rating === 'fire') { score = 5; tag = "top"; }
         if (rating === 'good') { score = 4; tag = "bien"; }
         
-        await saveMatchFeedback(currentMatch.partnerId, score, tag, currentMatch.id);
+        await saveMatchFeedback(currentMatch.partnerId, score, tag);
     }
 
     // 2. Save Opportunity if exists
     if (oppType && currentMatch.partnerId) {
         await handleCreateOpportunity(currentMatch.partnerId, currentMatch.name);
-        // Ensure we also mark as met if we didn't rate (e.g. only gift)
-        if (!rating) {
-             await saveMatchFeedback(currentMatch.partnerId, 0, "gift_only", currentMatch.id);
-        }
     }
 
     // 3. Finalize
@@ -508,7 +504,9 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
   const handleRate = async (score: number, tag: string, partnerId: string) => {
       if (score >= 4) confetti({ particleCount: 100, spread: 70, colors: ['#10b981', '#fbbf24'] });
       toast.success("Feedback enregistré ! 📝", { description: `Vous avez qualifié l'échange de "${tag}"` });
-      await saveMatchFeedback(partnerId, score, tag);
+      // Pass match.id if available (we need to find it from matches array since we only have partnerId here)
+      const matchId = matches.find(m => m.partnerId === partnerId)?.id;
+      await saveMatchFeedback(partnerId, score, tag, matchId);
   };
 
   const handleCreateOpportunity = async (partnerId: string, partnerName: string) => {
@@ -635,6 +633,20 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
       return <FounderCardPreview type={isRescue ? "rescue" : "onboarding"} onConfirm={handleFounderCall} />;
   }
 
+  // Determine the next match to tease
+  // If we have more than 1 match in the array, the second one is the future match.
+  // Otherwise, we create a generic placeholder.
+  const nextMatch = matches.length > 1 ? matches[1] : {
+      id: 'teaser-future',
+      partnerId: 'teaser-next',
+      name: 'Prochain Match',
+      job: 'Membre du Club',
+      city: 'Gironde', // Default or random
+      collabsCount: 15,
+      score: 5.0,
+      tags: ['Entrepreneur']
+  };
+
   if (!revealed) {
       return <MysteryCard onReveal={handleReveal} match={match} />;
   }
@@ -644,14 +656,16 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
     <div className="relative w-full max-w-sm mx-auto h-[600px] rounded-[2.5rem] overflow-hidden shadow-2xl bg-[#0f172a] border border-slate-800">
       {/* Background Image */}
       <div className="absolute inset-0 z-0">
-        {match.avatar ? (
+        {step === 'validated' ? (
+             // Blurred background for teaser
+             <div className="absolute inset-0 bg-indigo-900/50 backdrop-blur-3xl z-10" />
+        ) : match.avatar ? (
             <Image 
                 src={match.avatar} 
                 alt={match.name} 
                 fill 
                 className={cn(
-                    "object-cover transition-all duration-700",
-                    step === 'validated' ? "grayscale opacity-20 blur-sm" : "opacity-60 hover:scale-105"
+                    "object-cover transition-all duration-700 opacity-60 hover:scale-105"
                 )}
             />
         ) : (
