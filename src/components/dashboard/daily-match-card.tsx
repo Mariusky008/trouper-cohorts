@@ -676,17 +676,12 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
     <div className="relative w-full max-w-sm mx-auto h-[600px] rounded-[2.5rem] overflow-hidden shadow-2xl bg-[#0f172a] border border-slate-800">
       {/* Background Image */}
       <div className="absolute inset-0 z-0">
-        {step === 'validated' ? (
-             // Blurred background for teaser
-             <div className="absolute inset-0 bg-indigo-900/50 backdrop-blur-3xl z-10" />
-        ) : match.avatar ? (
+        {match.avatar ? (
             <Image 
                 src={match.avatar} 
                 alt={match.name} 
                 fill 
-                className={cn(
-                    "object-cover transition-all duration-700 opacity-60 hover:scale-105"
-                )}
+                className="object-cover transition-all duration-700 opacity-60 hover:scale-105"
             />
         ) : (
             <div className="w-full h-full bg-slate-800 flex items-center justify-center">
@@ -697,7 +692,6 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
       </div>
 
       {/* FOMO Badge - Top */}
-      {step !== 'validated' && (
       <div className="absolute top-6 left-6 right-6 z-20">
         <motion.div 
             initial={{ y: -20, opacity: 0 }}
