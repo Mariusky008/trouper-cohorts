@@ -90,73 +90,7 @@ export async function createOpportunity(data: {
   }
 }
 
-/**
- * Creates a special "Founder Call Request" opportunity.
- * This is used when a user clicks "Je me rends disponible" on the Founder/Rescue card.
- * It's stored as an opportunity given by the USER to the FOUNDER (or System).
- * But to make it visible in Admin, we might want to store it as a special type.
- * 
- * Ideally, we should insert into `network_opportunities` where:
- * - giver_id = USER (The member asking for call)
- * - receiver_id = FOUNDER_ID (You) OR a specific System ID.
- * - type = 'founder_call_request'
- * - details = 'Joker Onboarding' or 'Joker Sauvetage'
- */
-export async function notifyFounderCall(type: 'onboarding' | 'rescue') {
-  try {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    
-    if (!user) return { success: false, error: "Non connecté" };
 
-    // We need a target ID for the "receiver". 
-    // If you have a fixed Admin ID, use it. Otherwise, use a placeholder or system ID.
-    // For now, let's use a convention: receiver_id = 'popey-admin' (if UUID validation allows) 
-    // OR better: we don't use opportunities table if it requires valid UUIDs for foreign keys.
-    // DOES opportunities table enforce FK on receiver_id?
-    // Usually yes. So we need a real Admin User ID.
-    // Let's try to find YOUR admin user ID by email 'jeanphilippe.roth@gmail.com' or similar?
-    // OR simpler: we insert it as a 'system_event' in a new table?
-    // OR we use the existing 'network_matches' table with a special status?
-    
-    // EASIEST WAY: Insert into 'network_opportunities' aiming at a known Admin UUID.
-    // If we don't have it hardcoded, we can fetch it.
-    // But to be safe and robust without knowing your UUID:
-    // We will insert a record where receiver_id is the USER itself (Self-assigned task?) NO.
-    
-    // ALTERNATIVE: Use `analytics_events`! 
-    // It's perfect for this. It's a log. "User X requested Founder Call".
-    // But you want it in "Opportunités" list in Admin?
-    
-    // Let's stick to `network_opportunities`. We need your UUID.
-    // I will fetch the first user with role 'service_role' or specific email?
-    // Let's try to fetch user with email 'admin@popey.co' or similar if exists.
-    // If not, we can't insert if FK constraint exists.
-    
-    // Let's assume for now we use the `analytics_events` table which I see used in `getNetworkStats`.
-    // It's safer. I will create a specific event 'founder_call_request'.
-    
-    const { error } = await supabase
-      .from("analytics_events")
-      .insert({
-        user_id: user.id,
-        event_type: 'founder_call_request',
-        page_path: '/dashboard',
-        metadata: { 
-            card_type: type,
-            status: 'pending_call'
-        }
-      });
-      
-    if (error) throw error;
-    
-    return { success: true };
-
-  } catch (err) {
-    console.error("Error notifying founder:", err);
-    return { success: false, error: "Erreur technique" };
-  }
-}
 
 export async function getPendingOpportunitiesCount() {
   const supabase = await createClient();
