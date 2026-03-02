@@ -481,12 +481,16 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
         if (rating === 'fire') { score = 5; tag = "top"; }
         if (rating === 'good') { score = 4; tag = "bien"; }
         
-        await saveMatchFeedback(currentMatch.partnerId, score, tag);
+        await saveMatchFeedback(currentMatch.partnerId, score, tag, currentMatch.id);
     }
 
     // 2. Save Opportunity if exists
     if (oppType && currentMatch.partnerId) {
         await handleCreateOpportunity(currentMatch.partnerId, currentMatch.name);
+        // Ensure we also mark as met if we didn't rate (e.g. only gift)
+        if (!rating) {
+             await saveMatchFeedback(currentMatch.partnerId, 0, "gift_only", currentMatch.id);
+        }
     }
 
     // 3. Finalize
