@@ -12,7 +12,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { searchMembers } from "@/lib/actions/network-members";
-import { createOpportunity } from "@/lib/actions/network-opportunities";
+import { createOpportunity } from "@/lib/actions/opportunity-creation";
 import { toast } from "sonner";
 import { OPPORTUNITY_TYPES } from "@/constants/opportunities";
 import { useRouter } from "next/navigation";
