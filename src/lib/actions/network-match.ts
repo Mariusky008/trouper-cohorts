@@ -214,6 +214,21 @@ export async function getDailyMatches() {
       // Determine type
       const isRescue = !isDay2; 
       
+      // CHECK IF ALREADY COMPLETED (Feedback exists for today)
+      // Since the Founder Match is not in network_matches, we check if the user left a feedback for 'popey-founder' today.
+      const { count: feedbackCount } = await supabase
+        .from('match_feedback')
+        .select('*', { count: 'exact', head: true })
+        .eq('giver_id', user.id)
+        .eq('receiver_id', 'popey-founder')
+        .gte('created_at', todayParisStr); // Feedback created today
+        
+      if (feedbackCount && feedbackCount > 0) {
+          // Already completed the founder match today!
+          // Do not inject it. Return empty or next future match.
+          return sortedMatches.length > 0 ? [sortedMatches[0]] : [];
+      }
+
       const founderMatch = {
           id: 'founder-joker-' + todayParisStr,
           partnerId: 'popey-founder',
