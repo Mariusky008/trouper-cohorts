@@ -621,7 +621,7 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
             <div className="flex items-center justify-between mb-1">
                 <div className="flex items-center gap-2">
                     <Target className="w-4 h-4 text-indigo-400" />
-                    <span className="text-[10px] font-black text-indigo-300 uppercase tracking-wider">Objectif de l'appel</span>
+                    <span className="text-[10px] font-black text-indigo-300 uppercase tracking-wider">🍽️ Le Menu des Opportunités</span>
                 </div>
                 {selectedMission && <Badge className="text-[9px] h-4 bg-indigo-500 text-white">Choisi</Badge>}
             </div>
