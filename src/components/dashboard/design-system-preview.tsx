@@ -627,7 +627,7 @@ export function MissionValidationPreview() {
       <div className="relative z-10 flex flex-col h-full p-6 pt-12">
         
         {/* Header / Identity */}
-        <div className="mb-auto">
+        <div className="mb-4">
             <div className="flex items-center gap-3 mb-2">
                 <Avatar className="h-16 w-16 border-2 border-white/20 shadow-lg">
                     <AvatarImage src="https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=800&q=80" />
@@ -639,7 +639,7 @@ export function MissionValidationPreview() {
                 </div>
             </div>
             
-            {step === 'validated' && (
+            {step === 'validated' ? (
                 <motion.div 
                     initial={{ scale: 0.5, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
@@ -649,15 +649,48 @@ export function MissionValidationPreview() {
                     <h3 className="text-xl font-black text-white">MISSION ACCOMPLIE</h3>
                     <p className="text-emerald-300 text-sm font-medium">Tu as débloqué l'indice de demain.</p>
                 </motion.div>
+            ) : (
+                <div className="bg-white/5 border border-white/10 rounded-xl p-3 backdrop-blur-sm mt-4">
+                    <p className="text-slate-200 text-sm italic font-medium leading-snug">
+                        "Je peux vous ouvrir des opportunités auxquelles vous n’aviez pas accès hier."
+                    </p>
+                </div>
             )}
         </div>
+
+        {/* MIDDLE ACTIONS (Why, Gift, Rate) - ONLY IF NOT VALIDATED */}
+        {step !== 'validated' && (
+            <div className="flex justify-center gap-4 mb-auto mt-4">
+                {/* Why Button */}
+                <div className="flex flex-col items-center gap-1">
+                     <Button size="icon" className="h-12 w-12 rounded-full bg-slate-800/80 border border-white/10 text-yellow-400">
+                        <MessageSquare className="h-5 w-5 fill-current" />
+                     </Button>
+                     <span className="text-[10px] text-slate-400 font-bold uppercase">Pourquoi</span>
+                </div>
+                {/* Gift Button */}
+                <div className="flex flex-col items-center gap-1">
+                     <Button size="icon" className="h-12 w-12 rounded-full bg-slate-800/80 border border-white/10 text-purple-400">
+                        <Gift className="h-5 w-5" />
+                     </Button>
+                     <span className="text-[10px] text-slate-400 font-bold uppercase">Offrir</span>
+                </div>
+                 {/* Rate Button */}
+                 <div className="flex flex-col items-center gap-1">
+                     <Button size="icon" className="h-12 w-12 rounded-full bg-slate-800/80 border border-white/10 text-orange-400">
+                        <Star className="h-5 w-5 fill-current" />
+                     </Button>
+                     <span className="text-[10px] text-slate-400 font-bold uppercase">Noter</span>
+                </div>
+            </div>
+        )}
 
         {/* BOTTOM ACTION AREA */}
         <div className="mt-auto space-y-4">
             
             {step === 'validated' ? (
                 // --- STATE 3: VALIDATED (Countdown) ---
-                <div className="bg-slate-900/80 backdrop-blur-md rounded-2xl p-6 text-center border border-white/10">
+                <div className="bg-slate-900/80 backdrop-blur-md rounded-2xl p-6 text-center border border-white/10 mt-auto">
                     <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-2">PROCHAIN MATCH DANS</p>
                     <div className="text-4xl font-mono font-black text-white tracking-widest">
                         14:23:05
