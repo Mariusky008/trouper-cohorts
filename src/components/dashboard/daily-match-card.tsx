@@ -17,7 +17,7 @@ import { createOpportunity, notifyFounderCall } from "@/lib/actions/network-oppo
 import { saveMatchFeedback } from "@/lib/actions/network-feedback";
 import { incrementUserPoints } from "@/lib/actions/gamification";
 import { trackEvent } from "@/lib/actions/analytics";
-import { updateMatchMission } from "@/lib/actions/network-match";
+import { updateMatchMission } from "@/lib/actions/match-mission";
 import { FounderCardPreview } from "@/components/dashboard/design-system-preview";
 
 import { OPPORTUNITY_TYPES } from "@/constants/opportunities";
