@@ -586,6 +586,7 @@ export function MatchCardPreview() {
 export function MissionValidationPreview() {
   const [step, setStep] = useState<'initial' | 'called' | 'validated'>('initial');
   const [isValidationOpen, setIsValidationOpen] = useState(false);
+  const [isPhoneOpen, setIsPhoneOpen] = useState(false);
   const [rating, setRating] = useState<'fire' | 'good' | 'meh' | null>(null);
   const [selectedOpportunity, setSelectedOpportunity] = useState<string | null>(null);
   const [opportunityDetails, setOpportunityDetails] = useState("");
@@ -697,97 +698,111 @@ export function MissionValidationPreview() {
                             </Button>
                         </div>
                     ) : (
-                        <Dialog open={isValidationOpen} onOpenChange={setIsValidationOpen}>
-                            <DialogTrigger asChild>
-                                <div className="relative group cursor-pointer">
-                                    <div className="absolute inset-0 bg-gradient-to-br from-indigo-400 to-purple-600 rounded-full blur opacity-40 group-hover:opacity-70 transition-opacity animate-pulse"></div>
-                                    <Button size="icon" className="h-20 w-20 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 text-white hover:scale-105 transition-all shadow-xl border-4 border-[#0f172a] relative z-10">
-                                        <CheckCircle2 className="h-8 w-8" />
-                                    </Button>
-                                </div>
-                            </DialogTrigger>
-                            <DialogContent className="bg-[#0f172a] border-white/10 text-white sm:max-w-md rounded-2xl w-[95vw]">
-                                <DialogHeader>
-                                    <DialogTitle className="text-center text-2xl font-black">Mission Accomplie ? 🎯</DialogTitle>
-                                </DialogHeader>
-                                
-                                <div className="space-y-6 py-4">
-                                    {/* 1. Status */}
-                                    <div className="bg-white/5 p-4 rounded-xl border border-white/5">
-                                        <Label className="text-slate-400 uppercase text-xs font-bold tracking-wider mb-3 block">1. Statut de l'appel</Label>
-                                        <div className="grid grid-cols-2 gap-3">
-                                            <Button variant="outline" className="h-12 border-emerald-500/30 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 font-bold">
-                                                Oui, on s'est parlé 📞
-                                            </Button>
-                                            <Button variant="outline" className="h-12 border-white/10 bg-white/5 text-slate-400 hover:bg-white/10 font-bold">
-                                                Pas de réponse ❌
-                                            </Button>
-                                        </div>
+                        <div className="flex flex-col items-center gap-3">
+                            <Dialog open={isValidationOpen} onOpenChange={setIsValidationOpen}>
+                                <DialogTrigger asChild>
+                                    <div className="relative group cursor-pointer w-full">
+                                        <div className="absolute inset-0 bg-gradient-to-br from-indigo-400 to-purple-600 rounded-2xl blur opacity-40 group-hover:opacity-70 transition-opacity animate-pulse"></div>
+                                        <Button className="h-20 px-8 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 text-white hover:scale-105 transition-all shadow-xl border-4 border-[#0f172a] relative z-10 flex flex-col items-center justify-center gap-1">
+                                            <CheckCircle2 className="h-6 w-6" />
+                                            <span className="text-xs font-black uppercase tracking-wider">Terminer la mission</span>
+                                        </Button>
                                     </div>
-
-                                    {/* 2. Feeling */}
-                                    <div className="bg-white/5 p-4 rounded-xl border border-white/5">
-                                        <Label className="text-slate-400 uppercase text-xs font-bold tracking-wider mb-3 block">2. Ton ressenti</Label>
-                                        <div className="flex justify-between gap-2">
-                                            <button onClick={() => setRating('fire')} className={`flex-1 h-14 rounded-xl border flex flex-col items-center justify-center transition-all ${rating === 'fire' ? 'bg-orange-500/20 border-orange-500 scale-105' : 'bg-white/5 border-white/10 hover:bg-white/10'}`}>
-                                                <span className="text-2xl">🔥</span>
-                                            </button>
-                                            <button onClick={() => setRating('good')} className={`flex-1 h-14 rounded-xl border flex flex-col items-center justify-center transition-all ${rating === 'good' ? 'bg-blue-500/20 border-blue-500 scale-105' : 'bg-white/5 border-white/10 hover:bg-white/10'}`}>
-                                                <span className="text-2xl">👍</span>
-                                            </button>
-                                            <button onClick={() => setRating('meh')} className={`flex-1 h-14 rounded-xl border flex flex-col items-center justify-center transition-all ${rating === 'meh' ? 'bg-slate-500/20 border-slate-500 scale-105' : 'bg-white/5 border-white/10 hover:bg-white/10'}`}>
-                                                <span className="text-2xl">😐</span>
-                                            </button>
-                                        </div>
-                                    </div>
-
-                                    {/* 3. Give Opportunity (Real Gift) */}
-                                    <div className="bg-white/5 p-4 rounded-xl border border-white/5">
-                                        <Label className="text-slate-400 uppercase text-xs font-bold tracking-wider mb-3 flex items-center justify-between">
-                                            <span>3. Offrir une opportunité (Réel)</span>
-                                            <span className="text-[10px] bg-purple-500/20 text-purple-300 px-1.5 py-0.5 rounded">Génère une dette</span>
-                                        </Label>
-                                        
-                                        {!selectedOpportunity ? (
-                                            <div className="grid grid-cols-2 gap-2">
-                                                {OPPORTUNITY_TYPES.slice(0, 4).map(type => (
-                                                    <button
-                                                        key={type.id}
-                                                        onClick={() => setSelectedOpportunity(type.id)}
-                                                        className="px-3 py-3 rounded-lg border text-xs font-bold flex flex-col items-center gap-1.5 transition-all text-center bg-white/5 border-white/10 text-slate-400 hover:bg-white/10 hover:border-purple-500/50 hover:text-purple-300"
-                                                    >
-                                                        <type.icon className="w-4 h-4 text-slate-500 group-hover:text-purple-400" />
-                                                        {type.label}
-                                                    </button>
-                                                ))}
+                                </DialogTrigger>
+                                <DialogContent className="bg-[#0f172a] border-white/10 text-white sm:max-w-md rounded-2xl w-[95vw]">
+                                    <DialogHeader>
+                                        <DialogTitle className="text-center text-2xl font-black">Mission Accomplie ? 🎯</DialogTitle>
+                                    </DialogHeader>
+                                    
+                                    <div className="space-y-6 py-4">
+                                        {/* 1. Status */}
+                                        <div className="bg-white/5 p-4 rounded-xl border border-white/5">
+                                            <Label className="text-slate-400 uppercase text-xs font-bold tracking-wider mb-3 block">1. Statut de l'appel</Label>
+                                            <div className="grid grid-cols-2 gap-3">
+                                                <Button variant="outline" className="h-12 border-emerald-500/30 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 font-bold">
+                                                    Oui, on s'est parlé 📞
+                                                </Button>
+                                                <Button variant="outline" className="h-12 border-white/10 bg-white/5 text-slate-400 hover:bg-white/10 font-bold">
+                                                    Pas de réponse ❌
+                                                </Button>
                                             </div>
-                                        ) : (
-                                            <div className="space-y-3">
-                                                <div className="flex items-center justify-between bg-purple-500/10 p-2 rounded-lg border border-purple-500/30">
-                                                    <span className="text-xs font-bold text-purple-300 flex items-center gap-2">
-                                                        <Gift className="w-3 h-3" /> {OPPORTUNITY_TYPES.find(t => t.id === selectedOpportunity)?.label}
-                                                    </span>
-                                                    <button onClick={() => setSelectedOpportunity(null)} className="text-[10px] text-slate-400 underline">Changer</button>
-                                                </div>
-                                                <div className="space-y-1">
-                                                    <Label className="text-[10px] text-slate-400 uppercase">Détails (Ce que tu vas lui envoyer)</Label>
-                                                    <textarea 
-                                                        className="w-full bg-black/30 border border-white/10 rounded-lg p-2 text-xs text-white min-h-[60px] focus:ring-1 focus:ring-purple-500 outline-none"
-                                                        placeholder="Ex: Je te mets en relation avec le CEO de..."
-                                                        value={opportunityDetails}
-                                                        onChange={(e) => setOpportunityDetails(e.target.value)}
-                                                    />
-                                                </div>
-                                            </div>
-                                        )}
-                                    </div>
+                                        </div>
 
-                                    <Button onClick={handleValidate} className="w-full h-16 text-xl font-black bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl shadow-lg shadow-emerald-900/20 mt-4">
-                                        VALIDER (+50 PTS) 🚀
-                                    </Button>
-                                </div>
-                            </DialogContent>
-                        </Dialog>
+                                        {/* 2. Feeling */}
+                                        <div className="bg-white/5 p-4 rounded-xl border border-white/5">
+                                            <Label className="text-slate-400 uppercase text-xs font-bold tracking-wider mb-3 block">2. Ton ressenti</Label>
+                                            <div className="flex justify-between gap-2">
+                                                <button onClick={() => setRating('fire')} className={`flex-1 h-14 rounded-xl border flex flex-col items-center justify-center transition-all ${rating === 'fire' ? 'bg-orange-500/20 border-orange-500 scale-105' : 'bg-white/5 border-white/10 hover:bg-white/10'}`}>
+                                                    <span className="text-2xl">🔥</span>
+                                                </button>
+                                                <button onClick={() => setRating('good')} className={`flex-1 h-14 rounded-xl border flex flex-col items-center justify-center transition-all ${rating === 'good' ? 'bg-blue-500/20 border-blue-500 scale-105' : 'bg-white/5 border-white/10 hover:bg-white/10'}`}>
+                                                    <span className="text-2xl">👍</span>
+                                                </button>
+                                                <button onClick={() => setRating('meh')} className={`flex-1 h-14 rounded-xl border flex flex-col items-center justify-center transition-all ${rating === 'meh' ? 'bg-slate-500/20 border-slate-500 scale-105' : 'bg-white/5 border-white/10 hover:bg-white/10'}`}>
+                                                    <span className="text-2xl">😐</span>
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        {/* 3. Give Opportunity (Real Gift) */}
+                                        <div className="bg-white/5 p-4 rounded-xl border border-white/5">
+                                            <Label className="text-slate-400 uppercase text-xs font-bold tracking-wider mb-3 flex items-center justify-between">
+                                                <span>3. Offrir une opportunité (Réel)</span>
+                                            </Label>
+                                            
+                                            {!selectedOpportunity ? (
+                                                <div className="grid grid-cols-2 gap-2">
+                                                    {OPPORTUNITY_TYPES.map(type => (
+                                                        <button
+                                                            key={type.id}
+                                                            onClick={() => setSelectedOpportunity(type.id)}
+                                                            className="px-3 py-3 rounded-lg border text-xs font-bold flex flex-col items-center gap-1.5 transition-all text-center bg-white/5 border-white/10 text-slate-400 hover:bg-white/10 hover:border-purple-500/50 hover:text-purple-300"
+                                                        >
+                                                            <type.icon className="w-4 h-4 text-slate-500 group-hover:text-purple-400" />
+                                                            {type.label}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            ) : (
+                                                <div className="space-y-3">
+                                                    <div className="flex items-center justify-between bg-purple-500/10 p-2 rounded-lg border border-purple-500/30">
+                                                        <span className="text-xs font-bold text-purple-300 flex items-center gap-2">
+                                                            <Gift className="w-3 h-3" /> {OPPORTUNITY_TYPES.find(t => t.id === selectedOpportunity)?.label}
+                                                        </span>
+                                                        <button onClick={() => setSelectedOpportunity(null)} className="text-[10px] text-slate-400 underline">Changer</button>
+                                                    </div>
+                                                    <div className="space-y-1">
+                                                        <Label className="text-[10px] text-slate-400 uppercase">Détails (Ce que tu vas lui envoyer)</Label>
+                                                        <textarea 
+                                                            className="w-full bg-black/30 border border-white/10 rounded-lg p-2 text-xs text-white min-h-[60px] focus:ring-1 focus:ring-purple-500 outline-none"
+                                                            placeholder="Ex: Je te mets en relation avec le CEO de..."
+                                                            value={opportunityDetails}
+                                                            onChange={(e) => setOpportunityDetails(e.target.value)}
+                                                        />
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        <Button onClick={handleValidate} className="w-full h-16 text-xl font-black bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl shadow-lg shadow-emerald-900/20 mt-4">
+                                            VALIDER (+50 PTS) 🚀
+                                        </Button>
+                                    </div>
+                                </DialogContent>
+                            </Dialog>
+                            
+                            <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                className="text-xs text-slate-400 hover:text-white flex items-center gap-1 h-auto py-1"
+                                onClick={() => {
+                                    setIsPhoneOpen(true);
+                                }}
+                            >
+                                <Phone className="w-3 h-3" />
+                                Revoir le numéro
+                            </Button>
+                        </div>
                     )}
 
                     {/* Secondary Action: Rate */}
@@ -800,6 +815,24 @@ export function MissionValidationPreview() {
                 </div>
             </>
         )}
+
+        <Dialog open={isPhoneOpen} onOpenChange={setIsPhoneOpen}>
+            <DialogContent className="bg-[#0f172a] border-white/10 text-white sm:max-w-md rounded-2xl">
+                <div className="flex flex-col items-center gap-6 py-8">
+                    <div className="h-20 w-20 rounded-full bg-emerald-500/20 flex items-center justify-center animate-pulse">
+                        <Phone className="h-10 w-10 text-emerald-400" />
+                    </div>
+                    <div className="text-center space-y-2">
+                        <h3 className="text-2xl font-black">C'est parti ! 🚀</h3>
+                        <p className="text-slate-400">Appelez Jean-Paul maintenant.</p>
+                    </div>
+                    <div className="text-3xl font-black tracking-widest text-white bg-slate-900 px-6 py-4 rounded-xl border border-white/10 shadow-inner select-all">
+                        06 12 34 56 78
+                    </div>
+                    <Button className="w-full bg-emerald-600 hover:bg-emerald-500 font-bold h-12 rounded-xl" onClick={() => setIsPhoneOpen(false)}>Fermer</Button>
+                </div>
+            </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
