@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { Bell, BellOff, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { saveSubscription } from "@/lib/actions/notifications";
+import { saveSubscription } from "@/lib/actions/push-subscription";
 import { toast } from "sonner";
 
 export function PushManager() {
