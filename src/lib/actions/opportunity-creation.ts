@@ -1,8 +1,9 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
-import { sendNotification } from "./notifications";
+// import { sendNotification } from "./notifications"; // REMOVED to avoid bundling web-push
 import { revalidatePath } from "next/cache";
+import { headers } from "next/headers";
 
 export async function createOpportunity(data: {
   receiverId: string;
@@ -50,7 +51,7 @@ export async function createOpportunity(data: {
       return { success: false, error: `Erreur lors de la création: ${error.message}` };
     }
 
-    // Send Notification
+    // Send Notification via Internal API (Decoupled)
     try {
         const { data: senderProfile } = await supabase
             .from("profiles")
@@ -60,14 +61,28 @@ export async function createOpportunity(data: {
         
         const senderName = senderProfile?.display_name || "Un membre";
 
-        await sendNotification(
-            data.receiverId,
-            `Nouvelle opportunité reçue ! 🎁`,
-            `${senderName} vous a envoyé une opportunité : ${data.type}`,
-            `/mon-reseau-local/dashboard/opportunities`
-        );
+        // Construct absolute URL for internal fetch
+        // In Server Actions, we can't easily get the host, but we can assume localhost or use env
+        const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+        
+        // We trigger the notification asynchronously without awaiting the result to speed up response
+        // Fetch to internal API
+        fetch(`${appUrl}/api/internal/send-notification`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                userId: data.receiverId,
+                title: `Nouvelle opportunité reçue ! 🎁`,
+                message: `${senderName} vous a envoyé une opportunité : ${data.type}`,
+                url: `/mon-reseau-local/dashboard/opportunities`,
+                secret: process.env.CRON_SECRET || "internal-popey-secret"
+            })
+        }).catch(e => console.error("Async notification trigger failed:", e));
+
     } catch (e) {
-        console.error("Failed to send notification for opportunity:", e);
+        console.error("Failed to trigger notification for opportunity:", e);
     }
 
     // Revalidate ALL dashboard paths to ensure consistency
@@ -77,7 +92,6 @@ export async function createOpportunity(data: {
       revalidatePath("/mon-reseau-local/dashboard");
     } catch (e) {
       console.error("Error revalidating paths:", e);
-      // We continue even if revalidation fails, as the action was successful
     }
     
     return { success: true };
