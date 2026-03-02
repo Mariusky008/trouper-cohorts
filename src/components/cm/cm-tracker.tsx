@@ -23,59 +23,80 @@ interface TradeTracking {
   status: TrackingStatus;
 }
 
-const STORAGE_KEY = "cm-tracker-data-v1";
+import { getCMTracking, upsertCMTracking, clearCMTracking, type TradeTracking, type TrackingStatus } from "@/lib/actions/cm-tracker";
+import { toast } from "sonner";
+import { SPHERES_DATA } from "./constants";
 
 export function CMTracker() {
   const [data, setData] = useState<Record<string, TradeTracking>>({});
-  const [mounted, setMounted] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  // Load from localStorage on mount
+  // Load from Supabase on mount
   useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      try {
-        setData(JSON.parse(saved));
-      } catch (e) {
-        console.error("Failed to parse CM tracker data", e);
-      }
-    }
-    setMounted(true);
+    const loadData = async () => {
+      setLoading(true);
+      const items = await getCMTracking();
+      const mappedData: Record<string, TradeTracking> = {};
+      
+      items.forEach(item => {
+        const key = `${item.sphere_id}-${item.trade_name}`;
+        mappedData[key] = item;
+      });
+      
+      setData(mappedData);
+      setLoading(false);
+    };
+    
+    loadData();
   }, []);
 
-  // Save to localStorage whenever data changes
-  useEffect(() => {
-    if (mounted) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-    }
-  }, [data, mounted]);
-
-  const updateTrade = (sphereId: string, trade: string, updates: Partial<TradeTracking>) => {
+  const updateTrade = async (sphereId: string, trade: string, updates: Partial<TradeTracking>) => {
     const key = `${sphereId}-${trade}`;
+    
+    // 1. Optimistic Update (UI updates immediately)
+    const newData = {
+      ...(data[key] || {
+        sphere_id: sphereId,
+        trade_name: trade,
+        linkedin_contacted: false,
+        instagram_contacted: false,
+        first_name: "",
+        last_name: "",
+        profile_link: "",
+        status: "todo",
+      }),
+      ...updates,
+    };
+
     setData((prev) => ({
       ...prev,
-      [key]: {
-        ...(prev[key] || {
-          linkedinContacted: false,
-          instagramContacted: false,
-          firstName: "",
-          lastName: "",
-          link: "",
-          status: "todo",
-        }),
-        ...updates,
-      },
+      [key]: newData,
     }));
+
+    // 2. Server Update (Background)
+    const { error } = await upsertCMTracking({
+      sphere_id: sphereId,
+      trade_name: trade,
+      ...updates,
+    });
+
+    if (error) {
+      toast.error("Erreur de sauvegarde !");
+      console.error(error);
+    }
   };
 
   const getTradeData = (sphereId: string, trade: string): TradeTracking => {
     const key = `${sphereId}-${trade}`;
     return (
       data[key] || {
-        linkedinContacted: false,
-        instagramContacted: false,
-        firstName: "",
-        lastName: "",
-        link: "",
+        sphere_id: sphereId,
+        trade_name: trade,
+        linkedin_contacted: false,
+        instagram_contacted: false,
+        first_name: "",
+        last_name: "",
+        profile_link: "",
         status: "todo",
       }
     );
@@ -87,7 +108,7 @@ export function CMTracker() {
       + SPHERES_DATA.flatMap(sphere => 
           sphere.trades.map(trade => {
             const d = getTradeData(sphere.id, trade);
-            return `"${sphere.title}","${trade}",${d.linkedinContacted},${d.instagramContacted},"${d.firstName}","${d.lastName}","${d.link}","${d.status}"`;
+            return `"${sphere.title}","${trade}",${d.linkedin_contacted},${d.instagram_contacted},"${d.first_name}","${d.last_name}","${d.profile_link}","${d.status}"`;
           })
         ).join("\n");
     
@@ -101,15 +122,15 @@ export function CMTracker() {
     toast.success("Export CSV téléchargé !");
   };
 
-  const clearData = () => {
+  const handleClearData = async () => {
     if (confirm("Êtes-vous sûr de vouloir tout effacer ? Cette action est irréversible.")) {
       setData({});
-      localStorage.removeItem(STORAGE_KEY);
-      toast.success("Données effacées.");
+      await clearCMTracking();
+      toast.success("Base de données effacée.");
     }
   };
 
-  if (!mounted) return null;
+  if (loading) return <div className="text-center p-10 text-slate-400">Chargement des données...</div>;
 
   return (
     <div className="space-y-6">
@@ -119,7 +140,7 @@ export function CMTracker() {
           <p className="text-slate-400">Suivi des 5 Sphères de Croissance (Bordeaux & Gironde)</p>
         </div>
         <div className="flex gap-3">
-          <Button variant="outline" onClick={clearData} className="border-red-500/30 text-red-400 hover:bg-red-500/10">
+          <Button variant="outline" onClick={handleClearData} className="border-red-500/30 text-red-400 hover:bg-red-500/10">
             <Trash2 className="w-4 h-4 mr-2" /> Reset
           </Button>
           <Button onClick={exportData} className="bg-emerald-600 hover:bg-emerald-500 text-white">
@@ -175,38 +196,38 @@ export function CMTracker() {
                           </TableCell>
                           <TableCell className="text-center bg-blue-500/5">
                             <Checkbox 
-                              checked={d.linkedinContacted}
-                              onCheckedChange={(c) => updateTrade(sphere.id, trade, { linkedinContacted: c as boolean })}
+                              checked={d.linkedin_contacted}
+                              onCheckedChange={(c) => updateTrade(sphere.id, trade, { linkedin_contacted: c as boolean })}
                               className="border-blue-500/50 data-[state=checked]:bg-blue-500 data-[state=checked]:border-blue-500"
                             />
                           </TableCell>
                           <TableCell className="text-center bg-pink-500/5">
                             <Checkbox 
-                              checked={d.instagramContacted}
-                              onCheckedChange={(c) => updateTrade(sphere.id, trade, { instagramContacted: c as boolean })}
+                              checked={d.instagram_contacted}
+                              onCheckedChange={(c) => updateTrade(sphere.id, trade, { instagram_contacted: c as boolean })}
                               className="border-pink-500/50 data-[state=checked]:bg-pink-500 data-[state=checked]:border-pink-500"
                             />
                           </TableCell>
                           <TableCell>
                             <Input 
-                              value={d.firstName} 
-                              onChange={(e) => updateTrade(sphere.id, trade, { firstName: e.target.value })}
+                              value={d.first_name} 
+                              onChange={(e) => updateTrade(sphere.id, trade, { first_name: e.target.value })}
                               placeholder="Prénom"
                               className="bg-transparent border-transparent hover:border-white/20 focus:border-indigo-500 h-8 text-sm"
                             />
                           </TableCell>
                           <TableCell>
                             <Input 
-                              value={d.lastName} 
-                              onChange={(e) => updateTrade(sphere.id, trade, { lastName: e.target.value })}
+                              value={d.last_name} 
+                              onChange={(e) => updateTrade(sphere.id, trade, { last_name: e.target.value })}
                               placeholder="Nom"
                               className="bg-transparent border-transparent hover:border-white/20 focus:border-indigo-500 h-8 text-sm"
                             />
                           </TableCell>
                           <TableCell>
                             <Input 
-                              value={d.link} 
-                              onChange={(e) => updateTrade(sphere.id, trade, { link: e.target.value })}
+                              value={d.profile_link} 
+                              onChange={(e) => updateTrade(sphere.id, trade, { profile_link: e.target.value })}
                               placeholder="https://..."
                               className="bg-transparent border-transparent hover:border-white/20 focus:border-indigo-500 h-8 text-xs font-mono text-blue-300"
                             />
