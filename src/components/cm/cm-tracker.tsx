@@ -1,0 +1,251 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Download, Save, Trash2 } from "lucide-react";
+import { toast } from "sonner";
+import { SPHERES_DATA } from "./constants";
+
+type TrackingStatus = "todo" | "pending" | "validated" | "followup";
+
+interface TradeTracking {
+  linkedinContacted: boolean;
+  instagramContacted: boolean;
+  firstName: string;
+  lastName: string;
+  link: string;
+  status: TrackingStatus;
+}
+
+const STORAGE_KEY = "cm-tracker-data-v1";
+
+export function CMTracker() {
+  const [data, setData] = useState<Record<string, TradeTracking>>({});
+  const [mounted, setMounted] = useState(false);
+
+  // Load from localStorage on mount
+  useEffect(() => {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      try {
+        setData(JSON.parse(saved));
+      } catch (e) {
+        console.error("Failed to parse CM tracker data", e);
+      }
+    }
+    setMounted(true);
+  }, []);
+
+  // Save to localStorage whenever data changes
+  useEffect(() => {
+    if (mounted) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    }
+  }, [data, mounted]);
+
+  const updateTrade = (sphereId: string, trade: string, updates: Partial<TradeTracking>) => {
+    const key = `${sphereId}-${trade}`;
+    setData((prev) => ({
+      ...prev,
+      [key]: {
+        ...(prev[key] || {
+          linkedinContacted: false,
+          instagramContacted: false,
+          firstName: "",
+          lastName: "",
+          link: "",
+          status: "todo",
+        }),
+        ...updates,
+      },
+    }));
+  };
+
+  const getTradeData = (sphereId: string, trade: string): TradeTracking => {
+    const key = `${sphereId}-${trade}`;
+    return (
+      data[key] || {
+        linkedinContacted: false,
+        instagramContacted: false,
+        firstName: "",
+        lastName: "",
+        link: "",
+        status: "todo",
+      }
+    );
+  };
+
+  const exportData = () => {
+    const csvContent = "data:text/csv;charset=utf-8," 
+      + "Sphere,Metier,LinkedIn Contact,Instagram Contact,Prenom,Nom,Lien,Statut\n"
+      + SPHERES_DATA.flatMap(sphere => 
+          sphere.trades.map(trade => {
+            const d = getTradeData(sphere.id, trade);
+            return `"${sphere.title}","${trade}",${d.linkedinContacted},${d.instagramContacted},"${d.firstName}","${d.lastName}","${d.link}","${d.status}"`;
+          })
+        ).join("\n");
+    
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "cm_tracking_export.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success("Export CSV téléchargé !");
+  };
+
+  const clearData = () => {
+    if (confirm("Êtes-vous sûr de vouloir tout effacer ? Cette action est irréversible.")) {
+      setData({});
+      localStorage.removeItem(STORAGE_KEY);
+      toast.success("Données effacées.");
+    }
+  };
+
+  if (!mounted) return null;
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center bg-slate-900/50 p-6 rounded-2xl border border-white/10">
+        <div>
+          <h1 className="text-3xl font-black text-white mb-2">CM Dashboard 🚀</h1>
+          <p className="text-slate-400">Suivi des 5 Sphères de Croissance (Bordeaux & Gironde)</p>
+        </div>
+        <div className="flex gap-3">
+          <Button variant="outline" onClick={clearData} className="border-red-500/30 text-red-400 hover:bg-red-500/10">
+            <Trash2 className="w-4 h-4 mr-2" /> Reset
+          </Button>
+          <Button onClick={exportData} className="bg-emerald-600 hover:bg-emerald-500 text-white">
+            <Download className="w-4 h-4 mr-2" /> Exporter CSV
+          </Button>
+        </div>
+      </div>
+
+      <Tabs defaultValue={SPHERES_DATA[0].id} className="w-full">
+        <TabsList className="w-full h-auto flex flex-wrap gap-2 bg-slate-900/50 p-2 rounded-xl border border-white/10 mb-6">
+          {SPHERES_DATA.map((sphere) => (
+            <TabsTrigger 
+              key={sphere.id} 
+              value={sphere.id}
+              className="flex-1 min-w-[150px] data-[state=active]:bg-indigo-600 data-[state=active]:text-white py-3 font-bold uppercase tracking-wide text-xs"
+            >
+              {sphere.title.split('. ')[1]}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+
+        {SPHERES_DATA.map((sphere) => (
+          <TabsContent key={sphere.id} value={sphere.id} className="mt-0">
+            <div className="bg-slate-900/80 backdrop-blur-sm border border-white/10 rounded-2xl overflow-hidden shadow-xl">
+              <div className="p-6 border-b border-white/10 bg-gradient-to-r from-indigo-900/20 to-purple-900/20">
+                <h2 className="text-xl font-black text-white mb-1">{sphere.title}</h2>
+                <p className="text-indigo-300 font-medium italic">{sphere.description}</p>
+              </div>
+
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader className="bg-slate-950/50">
+                    <TableRow className="border-white/5 hover:bg-transparent">
+                      <TableHead className="w-[250px] text-white font-bold">MÉTIER</TableHead>
+                      <TableHead className="w-[100px] text-center text-blue-400 font-bold">LINKEDIN</TableHead>
+                      <TableHead className="w-[100px] text-center text-pink-400 font-bold">INSTA</TableHead>
+                      <TableHead className="w-[150px] text-slate-300 font-bold">PRÉNOM</TableHead>
+                      <TableHead className="w-[150px] text-slate-300 font-bold">NOM</TableHead>
+                      <TableHead className="w-[200px] text-slate-300 font-bold">LIEN PROFIL</TableHead>
+                      <TableHead className="w-[180px] text-slate-300 font-bold">STATUT</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {sphere.trades.map((trade, index) => {
+                      const d = getTradeData(sphere.id, trade);
+                      return (
+                        <TableRow key={trade} className="border-white/5 hover:bg-white/5 transition-colors">
+                          <TableCell className="font-medium text-white bg-slate-900/30">
+                            <div className="flex items-center gap-3">
+                              <span className="text-slate-500 font-mono text-xs w-6">{index + 1}.</span>
+                              {trade}
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-center bg-blue-500/5">
+                            <Checkbox 
+                              checked={d.linkedinContacted}
+                              onCheckedChange={(c) => updateTrade(sphere.id, trade, { linkedinContacted: c as boolean })}
+                              className="border-blue-500/50 data-[state=checked]:bg-blue-500 data-[state=checked]:border-blue-500"
+                            />
+                          </TableCell>
+                          <TableCell className="text-center bg-pink-500/5">
+                            <Checkbox 
+                              checked={d.instagramContacted}
+                              onCheckedChange={(c) => updateTrade(sphere.id, trade, { instagramContacted: c as boolean })}
+                              className="border-pink-500/50 data-[state=checked]:bg-pink-500 data-[state=checked]:border-pink-500"
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Input 
+                              value={d.firstName} 
+                              onChange={(e) => updateTrade(sphere.id, trade, { firstName: e.target.value })}
+                              placeholder="Prénom"
+                              className="bg-transparent border-transparent hover:border-white/20 focus:border-indigo-500 h-8 text-sm"
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Input 
+                              value={d.lastName} 
+                              onChange={(e) => updateTrade(sphere.id, trade, { lastName: e.target.value })}
+                              placeholder="Nom"
+                              className="bg-transparent border-transparent hover:border-white/20 focus:border-indigo-500 h-8 text-sm"
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Input 
+                              value={d.link} 
+                              onChange={(e) => updateTrade(sphere.id, trade, { link: e.target.value })}
+                              placeholder="https://..."
+                              className="bg-transparent border-transparent hover:border-white/20 focus:border-indigo-500 h-8 text-xs font-mono text-blue-300"
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Select 
+                              value={d.status} 
+                              onValueChange={(v) => updateTrade(sphere.id, trade, { status: v as TrackingStatus })}
+                            >
+                              <SelectTrigger className={getStatusColor(d.status)}>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="todo">À faire</SelectItem>
+                                <SelectItem value="pending">En attente ⏳</SelectItem>
+                                <SelectItem value="followup">À relancer 📞</SelectItem>
+                                <SelectItem value="validated">Validé ✅</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
+          </TabsContent>
+        ))}
+      </Tabs>
+    </div>
+  );
+}
+
+function getStatusColor(status: TrackingStatus) {
+  switch (status) {
+    case "validated": return "bg-emerald-500/20 text-emerald-400 border-emerald-500/50";
+    case "pending": return "bg-orange-500/20 text-orange-400 border-orange-500/50";
+    case "followup": return "bg-red-500/20 text-red-400 border-red-500/50";
+    default: return "bg-slate-800 text-slate-400 border-slate-700";
+  }
+}
