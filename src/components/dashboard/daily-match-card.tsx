@@ -13,7 +13,7 @@ import { cn } from "@/lib/utils";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { createOpportunity } from "@/lib/actions/network-opportunities";
+import { createOpportunity } from "@/lib/actions/opportunity-creation";
 import { notifyFounderCall } from "@/lib/actions/founder-call";
 import { saveMatchFeedback } from "@/lib/actions/network-feedback";
 import { incrementUserPoints } from "@/lib/actions/gamification";
