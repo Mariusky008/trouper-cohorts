@@ -581,19 +581,18 @@ export function MatchCardPreview() {
 }
 
 // --- 6. MISSION VALIDATION (Post-Call Flow) ---
-// Goal: Seamless transition from Call to Validation.
+// Goal: Seamless transition from Call to Validation with identical design.
 
 export function MissionValidationPreview() {
   const [step, setStep] = useState<'initial' | 'called' | 'validated'>('initial');
   const [isValidationOpen, setIsValidationOpen] = useState(false);
   const [rating, setRating] = useState<'fire' | 'good' | 'meh' | null>(null);
-  const [selectedBadges, setSelectedBadges] = useState<string[]>([]);
+  const [selectedOpportunity, setSelectedOpportunity] = useState<string | null>(null);
+  const [opportunityDetails, setOpportunityDetails] = useState("");
 
   // Simulation of the call action
   const handleCall = () => {
-    // Open phone dialer simulation
     window.location.href = "tel:0612345678";
-    // Change state to "called" immediately after click
     setStep('called');
   };
 
@@ -604,16 +603,9 @@ export function MissionValidationPreview() {
     toast.success("Mission validée ! +50 pts 🚀");
   };
 
-  const toggleBadge = (id: string) => {
-    setSelectedBadges(prev => 
-      prev.includes(id) ? prev.filter(b => b !== id) : [...prev, id]
-    );
-  };
-
   return (
-    <div className="relative w-full max-w-sm mx-auto h-[600px] rounded-[2.5rem] overflow-hidden shadow-2xl bg-[#0f172a] border border-slate-800 flex flex-col">
-      
-      {/* Background (Same as Match Card) */}
+    <div className="relative w-full max-w-sm mx-auto h-[600px] rounded-[2.5rem] overflow-hidden shadow-2xl bg-[#0f172a] border border-slate-800">
+      {/* Background Image (Identical to Match Card) */}
       <div className="absolute inset-0 z-0">
         <img 
             src="https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=800&q=80" 
@@ -623,175 +615,191 @@ export function MissionValidationPreview() {
         <div className="absolute inset-0 bg-gradient-to-t from-[#0f172a] via-[#0f172a]/80 to-transparent"></div>
       </div>
 
-      {/* Content */}
-      <div className="relative z-10 flex flex-col h-full p-6 pt-12 justify-between">
-        
-        {/* Header / Identity (Always visible) */}
-        <div>
-            <div className="flex items-end gap-3 mb-2">
-                <h2 className="text-5xl font-black text-white tracking-tighter">Jean-Paul</h2>
-                <Button variant="outline" className="bg-emerald-500/20 border border-emerald-500/50 text-emerald-400 hover:bg-emerald-500/30 hover:text-emerald-300 px-3 py-1 rounded-lg text-xs font-black mb-1.5 flex items-center gap-1 h-auto transition-colors">
-                    <User className="w-3 h-3" /> Voir profil
-                </Button>
+      {/* FOMO Badge - Top (Identical to Match Card) */}
+      {step !== 'validated' && (
+          <div className="absolute top-6 left-6 right-6 z-20">
+            <div className="bg-red-500/20 backdrop-blur-md text-white px-5 py-3 rounded-2xl flex flex-col items-center justify-center shadow-[0_0_20px_rgba(239,68,68,0.2)] text-center gap-1 border border-red-500/30">
+                <div className="flex items-center gap-2 font-bold text-sm uppercase tracking-wider text-red-100 mb-1">
+                    <Phone className="w-4 h-4 animate-bounce" />
+                    Jean-Paul vous appelle
+                </div>
+                <div className="flex items-center gap-2 bg-black/40 px-3 py-1 rounded-lg border border-white/10">
+                     <Clock className="w-3 h-3 text-red-200" />
+                     <span className="font-mono font-bold text-sm text-white">09h - 11h</span>
+                </div>
             </div>
-            
-            <p className="text-slate-300 text-sm font-medium mb-4 line-clamp-2 leading-snug opacity-90">
-                "Ce directeur commercial peut vous ouvrir des opportunités auxquelles vous n’aviez pas accès hier."
-            </p>
-        </div>
+          </div>
+      )}
 
-        {/* BOTTOM ACTION AREA */}
-        <div className="space-y-4">
-            
-            {step === 'validated' ? (
-                // --- STATE 3: VALIDATED (Countdown) ---
-                <motion.div 
-                    initial={{ scale: 0.9, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    className="bg-slate-900/90 backdrop-blur-md rounded-2xl p-6 text-center border border-white/10"
-                >
-                    <CheckCircle2 className="w-12 h-12 text-emerald-400 mx-auto mb-4" />
-                    <h3 className="text-xl font-black text-white mb-1">MISSION ACCOMPLIE</h3>
-                    <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-4">PROCHAIN MATCH DANS</p>
-                    <div className="text-4xl font-mono font-black text-white tracking-widest bg-black/30 rounded-xl py-2">
-                        14:23:05
+      {/* Main Content - Bottom */}
+      <div className="absolute bottom-0 left-0 right-0 z-20 p-6 pt-24 bg-gradient-to-t from-[#0f172a] via-[#0f172a] to-transparent flex flex-col justify-end h-full">
+        
+        {step === 'validated' ? (
+             // --- STATE 3: VALIDATED ---
+             <motion.div 
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                className="bg-slate-900/90 backdrop-blur-md rounded-2xl p-6 text-center border border-white/10 mb-auto mt-auto"
+            >
+                <CheckCircle2 className="w-16 h-16 text-emerald-400 mx-auto mb-4" />
+                <h3 className="text-2xl font-black text-white mb-1">MISSION ACCOMPLIE</h3>
+                <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-6">PROCHAIN MATCH DANS</p>
+                <div className="text-5xl font-mono font-black text-white tracking-widest bg-black/30 rounded-xl py-4 border border-white/10">
+                    14:23:05
+                </div>
+            </motion.div>
+        ) : (
+            <>
+                {/* Match Score & Info (Identical to Match Card) */}
+                <div className="flex items-end gap-3 mb-2">
+                    <h2 className="text-5xl font-black text-white tracking-tighter">Jean-Paul</h2>
+                    <Button variant="outline" className="bg-emerald-500/20 border border-emerald-500/50 text-emerald-400 hover:bg-emerald-500/30 hover:text-emerald-300 px-3 py-1 rounded-lg text-xs font-black mb-1.5 flex items-center gap-1 h-auto transition-colors">
+                        <User className="w-3 h-3" /> Voir profil
+                    </Button>
+                </div>
+
+                <p className="text-slate-300 text-sm font-medium mb-4 line-clamp-2 leading-snug opacity-90">
+                    "Ce directeur commercial peut vous ouvrir des opportunités auxquelles vous n’aviez pas accès hier."
+                </p>
+
+                {/* Mission Selector (Identical to Match Card) */}
+                <div className="bg-indigo-500/20 border border-indigo-500/30 rounded-xl p-3 mb-6 backdrop-blur-sm">
+                    <div className="flex items-center justify-between mb-1">
+                        <div className="flex items-center gap-2">
+                            <Target className="w-4 h-4 text-indigo-400" />
+                            <span className="text-[10px] font-black text-indigo-300 uppercase tracking-wider">Objectif de l'appel</span>
+                        </div>
                     </div>
-                </motion.div>
-            ) : (
-                // --- STATE 1 & 2: ACTION ---
-                <div className="space-y-4">
+                    <p className="text-white text-xs font-medium italic truncate">
+                        Cliquez pour définir votre objectif 🎯
+                    </p>
+                </div>
+
+                {/* Action Buttons (Dock Style) */}
+                <div className="flex justify-center items-center gap-4 pb-4">
                     
-                    {step === 'called' ? (
-                        // STATE 2: POST-CALL
-                        <motion.div 
-                            initial={{ y: 20, opacity: 0 }}
-                            animate={{ y: 0, opacity: 1 }}
-                            className="space-y-4"
-                        >
-                            {/* Primary Action: VALIDATE */}
-                            <Dialog open={isValidationOpen} onOpenChange={setIsValidationOpen}>
-                                <DialogTrigger asChild>
-                                    <Button className="w-full h-20 text-xl font-black bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-[2rem] shadow-xl shadow-blue-900/20 animate-pulse-slow border-2 border-white/10 flex items-center justify-center gap-3">
-                                        <CheckCircle2 className="w-8 h-8" />
-                                        J'AI TERMINÉ L'APPEL
+                    {/* Secondary Actions (Why, Gift, Rate) */}
+                    <div className="flex gap-2">
+                        <Button size="icon" className="h-14 w-14 rounded-full bg-slate-800/80 backdrop-blur-md border border-white/10 text-yellow-400 hover:scale-110 transition-transform">
+                            <MessageSquare className="h-6 w-6 fill-current" />
+                        </Button>
+                        <Button size="icon" className="h-14 w-14 rounded-full bg-slate-800/80 backdrop-blur-md border border-white/10 text-purple-400 hover:scale-110 transition-transform">
+                            <Gift className="h-6 w-6" />
+                        </Button>
+                    </div>
+
+                    {/* MAIN BUTTON - TRANSFORMS */}
+                    {step === 'initial' ? (
+                        <div className="relative group cursor-pointer" onClick={handleCall}>
+                            <div className="absolute inset-0 bg-gradient-to-br from-emerald-400 to-blue-600 rounded-full blur opacity-40 group-hover:opacity-70 transition-opacity animate-pulse"></div>
+                            <Button size="icon" className="h-20 w-20 rounded-full bg-gradient-to-br from-emerald-500 to-blue-600 text-white hover:scale-105 transition-all shadow-xl border-4 border-[#0f172a] relative z-10">
+                                <PhoneCall className="h-8 w-8 fill-current" />
+                            </Button>
+                        </div>
+                    ) : (
+                        <Dialog open={isValidationOpen} onOpenChange={setIsValidationOpen}>
+                            <DialogTrigger asChild>
+                                <div className="relative group cursor-pointer">
+                                    <div className="absolute inset-0 bg-gradient-to-br from-indigo-400 to-purple-600 rounded-full blur opacity-40 group-hover:opacity-70 transition-opacity animate-pulse"></div>
+                                    <Button size="icon" className="h-20 w-20 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 text-white hover:scale-105 transition-all shadow-xl border-4 border-[#0f172a] relative z-10">
+                                        <CheckCircle2 className="h-8 w-8" />
                                     </Button>
-                                </DialogTrigger>
-                                <DialogContent className="bg-[#0f172a] border-white/10 text-white sm:max-w-md rounded-2xl w-[95vw]">
-                                    <DialogHeader>
-                                        <DialogTitle className="text-center text-2xl font-black">Mission Accomplie ? 🎯</DialogTitle>
-                                    </DialogHeader>
-                                    
-                                    <div className="space-y-6 py-4">
-                                        {/* 1. Status */}
-                                        <div className="bg-white/5 p-4 rounded-xl border border-white/5">
-                                            <Label className="text-slate-400 uppercase text-xs font-bold tracking-wider mb-3 block">1. Statut de l'appel</Label>
-                                            <div className="grid grid-cols-2 gap-3">
-                                                <Button variant="outline" className="h-12 border-emerald-500/30 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 font-bold">
-                                                    Oui, on s'est parlé 📞
-                                                </Button>
-                                                <Button variant="outline" className="h-12 border-white/10 bg-white/5 text-slate-400 hover:bg-white/10 font-bold">
-                                                    Pas de réponse ❌
-                                                </Button>
-                                            </div>
+                                </div>
+                            </DialogTrigger>
+                            <DialogContent className="bg-[#0f172a] border-white/10 text-white sm:max-w-md rounded-2xl w-[95vw]">
+                                <DialogHeader>
+                                    <DialogTitle className="text-center text-2xl font-black">Mission Accomplie ? 🎯</DialogTitle>
+                                </DialogHeader>
+                                
+                                <div className="space-y-6 py-4">
+                                    {/* 1. Status */}
+                                    <div className="bg-white/5 p-4 rounded-xl border border-white/5">
+                                        <Label className="text-slate-400 uppercase text-xs font-bold tracking-wider mb-3 block">1. Statut de l'appel</Label>
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <Button variant="outline" className="h-12 border-emerald-500/30 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 font-bold">
+                                                Oui, on s'est parlé 📞
+                                            </Button>
+                                            <Button variant="outline" className="h-12 border-white/10 bg-white/5 text-slate-400 hover:bg-white/10 font-bold">
+                                                Pas de réponse ❌
+                                            </Button>
                                         </div>
+                                    </div>
 
-                                        {/* 2. Feeling */}
-                                        <div className="bg-white/5 p-4 rounded-xl border border-white/5">
-                                            <Label className="text-slate-400 uppercase text-xs font-bold tracking-wider mb-3 block">2. Ton ressenti</Label>
-                                            <div className="flex justify-between gap-2">
-                                                <button onClick={() => setRating('fire')} className={`flex-1 h-14 rounded-xl border flex flex-col items-center justify-center transition-all ${rating === 'fire' ? 'bg-orange-500/20 border-orange-500 scale-105' : 'bg-white/5 border-white/10 hover:bg-white/10'}`}>
-                                                    <span className="text-2xl">🔥</span>
-                                                </button>
-                                                <button onClick={() => setRating('good')} className={`flex-1 h-14 rounded-xl border flex flex-col items-center justify-center transition-all ${rating === 'good' ? 'bg-blue-500/20 border-blue-500 scale-105' : 'bg-white/5 border-white/10 hover:bg-white/10'}`}>
-                                                    <span className="text-2xl">👍</span>
-                                                </button>
-                                                <button onClick={() => setRating('meh')} className={`flex-1 h-14 rounded-xl border flex flex-col items-center justify-center transition-all ${rating === 'meh' ? 'bg-slate-500/20 border-slate-500 scale-105' : 'bg-white/5 border-white/10 hover:bg-white/10'}`}>
-                                                    <span className="text-2xl">😐</span>
-                                                </button>
-                                            </div>
+                                    {/* 2. Feeling */}
+                                    <div className="bg-white/5 p-4 rounded-xl border border-white/5">
+                                        <Label className="text-slate-400 uppercase text-xs font-bold tracking-wider mb-3 block">2. Ton ressenti</Label>
+                                        <div className="flex justify-between gap-2">
+                                            <button onClick={() => setRating('fire')} className={`flex-1 h-14 rounded-xl border flex flex-col items-center justify-center transition-all ${rating === 'fire' ? 'bg-orange-500/20 border-orange-500 scale-105' : 'bg-white/5 border-white/10 hover:bg-white/10'}`}>
+                                                <span className="text-2xl">🔥</span>
+                                            </button>
+                                            <button onClick={() => setRating('good')} className={`flex-1 h-14 rounded-xl border flex flex-col items-center justify-center transition-all ${rating === 'good' ? 'bg-blue-500/20 border-blue-500 scale-105' : 'bg-white/5 border-white/10 hover:bg-white/10'}`}>
+                                                <span className="text-2xl">👍</span>
+                                            </button>
+                                            <button onClick={() => setRating('meh')} className={`flex-1 h-14 rounded-xl border flex flex-col items-center justify-center transition-all ${rating === 'meh' ? 'bg-slate-500/20 border-slate-500 scale-105' : 'bg-white/5 border-white/10 hover:bg-white/10'}`}>
+                                                <span className="text-2xl">😐</span>
+                                            </button>
                                         </div>
+                                    </div>
 
-                                        {/* 3. Badges / Gift Shortcut */}
-                                        <div className="bg-white/5 p-4 rounded-xl border border-white/5">
-                                            <Label className="text-slate-400 uppercase text-xs font-bold tracking-wider mb-3 flex items-center justify-between">
-                                                <span>3. Offrir une opportunité</span>
-                                                <span className="text-[10px] bg-purple-500/20 text-purple-300 px-1.5 py-0.5 rounded">Optionnel</span>
-                                            </Label>
+                                    {/* 3. Give Opportunity (Real Gift) */}
+                                    <div className="bg-white/5 p-4 rounded-xl border border-white/5">
+                                        <Label className="text-slate-400 uppercase text-xs font-bold tracking-wider mb-3 flex items-center justify-between">
+                                            <span>3. Offrir une opportunité (Réel)</span>
+                                            <span className="text-[10px] bg-purple-500/20 text-purple-300 px-1.5 py-0.5 rounded">Génère une dette</span>
+                                        </Label>
+                                        
+                                        {!selectedOpportunity ? (
                                             <div className="grid grid-cols-2 gap-2">
                                                 {OPPORTUNITY_TYPES.slice(0, 4).map(type => (
                                                     <button
                                                         key={type.id}
-                                                        onClick={() => toggleBadge(type.id)}
-                                                        className={cn(
-                                                            "px-3 py-3 rounded-lg border text-xs font-bold flex flex-col items-center gap-1.5 transition-all text-center",
-                                                            selectedBadges.includes(type.id)
-                                                                ? "bg-purple-500/20 border-purple-500 text-white shadow-[0_0_10px_rgba(168,85,247,0.3)]"
-                                                                : "bg-white/5 border-white/10 text-slate-400 hover:bg-white/10"
-                                                        )}
+                                                        onClick={() => setSelectedOpportunity(type.id)}
+                                                        className="px-3 py-3 rounded-lg border text-xs font-bold flex flex-col items-center gap-1.5 transition-all text-center bg-white/5 border-white/10 text-slate-400 hover:bg-white/10 hover:border-purple-500/50 hover:text-purple-300"
                                                     >
-                                                        <type.icon className={cn("w-4 h-4", selectedBadges.includes(type.id) ? "text-purple-400" : "text-slate-500")} />
+                                                        <type.icon className="w-4 h-4 text-slate-500 group-hover:text-purple-400" />
                                                         {type.label}
                                                     </button>
                                                 ))}
                                             </div>
-                                        </div>
-
-                                        <Button onClick={handleValidate} className="w-full h-16 text-xl font-black bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl shadow-lg shadow-emerald-900/20 mt-4">
-                                            VALIDER (+50 PTS) 🚀
-                                        </Button>
+                                        ) : (
+                                            <div className="space-y-3">
+                                                <div className="flex items-center justify-between bg-purple-500/10 p-2 rounded-lg border border-purple-500/30">
+                                                    <span className="text-xs font-bold text-purple-300 flex items-center gap-2">
+                                                        <Gift className="w-3 h-3" /> {OPPORTUNITY_TYPES.find(t => t.id === selectedOpportunity)?.label}
+                                                    </span>
+                                                    <button onClick={() => setSelectedOpportunity(null)} className="text-[10px] text-slate-400 underline">Changer</button>
+                                                </div>
+                                                <div className="space-y-1">
+                                                    <Label className="text-[10px] text-slate-400 uppercase">Détails (Ce que tu vas lui envoyer)</Label>
+                                                    <textarea 
+                                                        className="w-full bg-black/30 border border-white/10 rounded-lg p-2 text-xs text-white min-h-[60px] focus:ring-1 focus:ring-purple-500 outline-none"
+                                                        placeholder="Ex: Je te mets en relation avec le CEO de..."
+                                                        value={opportunityDetails}
+                                                        onChange={(e) => setOpportunityDetails(e.target.value)}
+                                                    />
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
-                                </DialogContent>
-                            </Dialog>
 
-                            {/* Secondary Action: RE-CALL */}
-                            <div className="flex justify-center">
-                                <Button 
-                                    variant="ghost" 
-                                    className="text-slate-400 hover:text-white hover:bg-white/5 gap-2 text-xs font-bold uppercase tracking-widest"
-                                    onClick={() => window.location.href = "tel:0612345678"}
-                                >
-                                    <Phone className="w-3 h-3" /> Revoir le numéro
-                                </Button>
-                            </div>
-                        </motion.div>
-                    ) : (
-                        // STATE 1: INITIAL CALL (Identical to Match Card)
-                        <div className="space-y-4">
-                            {/* Info Badges */}
-                            <div className="flex justify-center gap-4">
-                                {/* Why Button */}
-                                <div className="flex flex-col items-center gap-1">
-                                     <Button size="icon" className="h-12 w-12 rounded-full bg-slate-800/80 border border-white/10 text-yellow-400 hover:scale-110 transition-transform">
-                                        <MessageSquare className="h-5 w-5 fill-current" />
-                                     </Button>
-                                     <span className="text-[10px] text-slate-400 font-bold uppercase">Pourquoi</span>
+                                    <Button onClick={handleValidate} className="w-full h-16 text-xl font-black bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl shadow-lg shadow-emerald-900/20 mt-4">
+                                        VALIDER (+50 PTS) 🚀
+                                    </Button>
                                 </div>
-                                {/* Gift Button */}
-                                <div className="flex flex-col items-center gap-1">
-                                     <Button size="icon" className="h-12 w-12 rounded-full bg-slate-800/80 border border-white/10 text-purple-400 hover:scale-110 transition-transform">
-                                        <Gift className="h-5 w-5" />
-                                     </Button>
-                                     <span className="text-[10px] text-slate-400 font-bold uppercase">Offrir</span>
-                                </div>
-                            </div>
-
-                            <Button 
-                                onClick={handleCall}
-                                className="w-full h-20 text-xl font-black bg-emerald-500 hover:bg-emerald-400 text-white rounded-[2rem] shadow-[0_0_30px_rgba(16,185,129,0.3)] flex items-center justify-center gap-3 transition-all hover:scale-[1.02] active:scale-95"
-                            >
-                                <PhoneCall className="w-8 h-8 fill-current" />
-                                APPELER MAINTENANT
-                            </Button>
-                            
-                            <p className="text-center text-xs text-slate-400 font-medium opacity-80">
-                                Le numéro s'affichera ici
-                            </p>
-                        </div>
+                            </DialogContent>
+                        </Dialog>
                     )}
-                </div>
-            )}
 
-        </div>
+                    {/* Secondary Action: Rate */}
+                    <div className="flex gap-2">
+                        <Button size="icon" className="h-14 w-14 rounded-full bg-slate-800/80 backdrop-blur-md border border-white/10 text-orange-400 hover:scale-110 transition-transform">
+                            <Star className="h-6 w-6 fill-current" />
+                        </Button>
+                    </div>
+
+                </div>
+            </>
+        )}
       </div>
     </div>
   );

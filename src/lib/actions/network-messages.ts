@@ -22,7 +22,7 @@ export async function getConversation(partnerId: string) {
   return messages || [];
 }
 
-import { sendNotification } from "./notifications";
+// import { sendNotification } from "./notifications"; // REMOVED to avoid bundling web-push
 
 export async function sendMessage(partnerId: string, content: string) {
   const supabase = await createClient();
@@ -44,7 +44,7 @@ export async function sendMessage(partnerId: string, content: string) {
     return { success: false, error: error.message };
   }
 
-  // Send Push Notification
+  // Send Push Notification via Internal API
   try {
     // Get sender name for the notification
     const { data: senderProfile } = await supabase
@@ -55,14 +55,24 @@ export async function sendMessage(partnerId: string, content: string) {
       
     const senderName = senderProfile?.display_name || "Un membre";
     
-    await sendNotification(
-      partnerId,
-      `Nouveau message de ${senderName}`,
-      content.length > 50 ? content.substring(0, 50) + "..." : content,
-      `/mon-reseau-local/dashboard/chat/${user.id}` // Link to the conversation
-    );
+    // Construct absolute URL for internal fetch
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+
+    // Trigger internal notification API
+    fetch(`${appUrl}/api/internal/send-notification`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            userId: partnerId,
+            title: `Nouveau message de ${senderName}`,
+            message: content.length > 50 ? content.substring(0, 50) + "..." : content,
+            url: `/mon-reseau-local/dashboard/chat/${user.id}`,
+            secret: process.env.CRON_SECRET || "internal-popey-secret"
+        })
+    }).catch(e => console.error("Async notification trigger failed:", e));
+
   } catch (e) {
-    console.error("Failed to send push notification:", e);
+    console.error("Failed to trigger push notification:", e);
     // Don't block the response, just log error
   }
 
