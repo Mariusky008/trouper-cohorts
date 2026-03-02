@@ -3,7 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { OpportunityType, OpportunityStatus } from "@/types/network";
 import { revalidatePath } from "next/cache";
-import { sendNotification } from "./notifications";
+// import { sendNotification } from "./notifications"; // REMOVED: Unused and causes web-push bundle issues
 
 // ... createOpportunity removed and moved to opportunity-creation.ts
 
