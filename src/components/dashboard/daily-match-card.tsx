@@ -777,6 +777,10 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
                     </Button>
                 </DialogTrigger>
                 <DialogContent className="bg-[#0f172a] border-white/10 text-white sm:max-w-md rounded-2xl w-[90vw] p-0 overflow-hidden">
+                    <div className="sr-only">
+                        <DialogTitle>Pourquoi ce match ?</DialogTitle>
+                        <DialogDescription>Détails du match algorithmique</DialogDescription>
+                    </div>
                         <div className="bg-gradient-to-br from-blue-600/20 to-purple-600/20 p-6">
                             <DialogHeader>
                                 <DialogTitle className="flex items-center gap-2 text-xl font-black">
