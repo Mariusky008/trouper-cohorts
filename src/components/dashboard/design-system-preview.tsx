@@ -580,6 +580,205 @@ export function MatchCardPreview() {
   );
 }
 
+// --- 6. MISSION VALIDATION (Post-Call Flow) ---
+// Goal: Convert "Call" into "Validation" naturally.
+
+export function MissionValidationPreview() {
+  const [step, setStep] = useState<'initial' | 'called' | 'validated'>('initial');
+  const [isValidationOpen, setIsValidationOpen] = useState(false);
+  const [rating, setRating] = useState<'fire' | 'good' | 'meh' | null>(null);
+  const [selectedBadges, setSelectedBadges] = useState<string[]>([]);
+
+  // Simulation of the call action
+  const handleCall = () => {
+    // Open phone dialer simulation
+    window.location.href = "tel:0612345678";
+    // Change state to "called" immediately after click
+    setStep('called');
+  };
+
+  const handleValidate = () => {
+    setStep('validated');
+    setIsValidationOpen(false);
+    confetti({ particleCount: 200, spread: 100, origin: { y: 0.6 } });
+    toast.success("Mission validée ! +50 pts 🚀");
+  };
+
+  const toggleBadge = (id: string) => {
+    setSelectedBadges(prev => 
+      prev.includes(id) ? prev.filter(b => b !== id) : [...prev, id]
+    );
+  };
+
+  return (
+    <div className="relative w-full max-w-sm mx-auto h-[600px] rounded-[2.5rem] overflow-hidden shadow-2xl bg-[#0f172a] border border-slate-800 flex flex-col">
+      
+      {/* Background (Same as Match Card) */}
+      <div className="absolute inset-0 z-0">
+        <img 
+            src="https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=800&q=80" 
+            alt="Match" 
+            className={`w-full h-full object-cover transition-all duration-700 ${step === 'validated' ? 'grayscale opacity-20' : 'opacity-60'}`}
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#0f172a] via-[#0f172a]/80 to-transparent"></div>
+      </div>
+
+      {/* Content */}
+      <div className="relative z-10 flex flex-col h-full p-6 pt-12">
+        
+        {/* Header / Identity */}
+        <div className="mb-auto">
+            <div className="flex items-center gap-3 mb-2">
+                <Avatar className="h-16 w-16 border-2 border-white/20 shadow-lg">
+                    <AvatarImage src="https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=800&q=80" />
+                    <AvatarFallback>JP</AvatarFallback>
+                </Avatar>
+                <div>
+                    <h2 className="text-3xl font-black text-white leading-none">Jean-Paul</h2>
+                    <p className="text-slate-400 text-sm font-medium">Directeur Commercial</p>
+                </div>
+            </div>
+            
+            {step === 'validated' && (
+                <motion.div 
+                    initial={{ scale: 0.5, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    className="mt-6 bg-emerald-500/20 border border-emerald-500/50 rounded-xl p-4 text-center"
+                >
+                    <CheckCircle2 className="w-12 h-12 text-emerald-400 mx-auto mb-2" />
+                    <h3 className="text-xl font-black text-white">MISSION ACCOMPLIE</h3>
+                    <p className="text-emerald-300 text-sm font-medium">Tu as débloqué l'indice de demain.</p>
+                </motion.div>
+            )}
+        </div>
+
+        {/* BOTTOM ACTION AREA */}
+        <div className="mt-auto space-y-4">
+            
+            {step === 'validated' ? (
+                // --- STATE 3: VALIDATED (Countdown) ---
+                <div className="bg-slate-900/80 backdrop-blur-md rounded-2xl p-6 text-center border border-white/10">
+                    <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-2">PROCHAIN MATCH DANS</p>
+                    <div className="text-4xl font-mono font-black text-white tracking-widest">
+                        14:23:05
+                    </div>
+                    <p className="text-slate-500 text-xs mt-4">Rendez-vous à 21h01 pour découvrir ton prochain contact.</p>
+                </div>
+            ) : (
+                // --- STATE 1 & 2: ACTION ---
+                <div className="space-y-3">
+                    
+                    {step === 'called' ? (
+                        // STATE 2: POST-CALL
+                        <motion.div 
+                            initial={{ y: 20, opacity: 0 }}
+                            animate={{ y: 0, opacity: 1 }}
+                            className="space-y-3"
+                        >
+                            {/* Primary Action: VALIDATE */}
+                            <Dialog open={isValidationOpen} onOpenChange={setIsValidationOpen}>
+                                <DialogTrigger asChild>
+                                    <Button className="w-full h-16 text-lg font-black bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-2xl shadow-xl shadow-blue-900/20 animate-pulse-slow border-2 border-white/10">
+                                        ✅ J'AI TERMINÉ L'APPEL
+                                    </Button>
+                                </DialogTrigger>
+                                <DialogContent className="bg-[#0f172a] border-white/10 text-white sm:max-w-md rounded-2xl w-[95vw]">
+                                    <DialogHeader>
+                                        <DialogTitle className="text-center text-2xl font-black">Mission Accomplie ? 🎯</DialogTitle>
+                                    </DialogHeader>
+                                    
+                                    <div className="space-y-6 py-4">
+                                        {/* 1. Status */}
+                                        <div className="space-y-2">
+                                            <Label className="text-slate-400 uppercase text-xs font-bold tracking-wider">1. L'appel a eu lieu ?</Label>
+                                            <div className="grid grid-cols-2 gap-3">
+                                                <Button variant="outline" className="h-12 border-emerald-500/30 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20">
+                                                    Oui, on s'est parlé 📞
+                                                </Button>
+                                                <Button variant="outline" className="h-12 border-white/10 bg-white/5 text-slate-400 hover:bg-white/10">
+                                                    Pas de réponse ❌
+                                                </Button>
+                                            </div>
+                                        </div>
+
+                                        {/* 2. Feeling */}
+                                        <div className="space-y-2">
+                                            <Label className="text-slate-400 uppercase text-xs font-bold tracking-wider">2. Comment ça s'est passé ?</Label>
+                                            <div className="flex justify-between gap-2">
+                                                <button onClick={() => setRating('fire')} className={`flex-1 h-14 rounded-xl border flex items-center justify-center text-2xl transition-all ${rating === 'fire' ? 'bg-orange-500/20 border-orange-500 scale-105' : 'bg-white/5 border-white/10 hover:bg-white/10'}`}>🔥</button>
+                                                <button onClick={() => setRating('good')} className={`flex-1 h-14 rounded-xl border flex items-center justify-center text-2xl transition-all ${rating === 'good' ? 'bg-blue-500/20 border-blue-500 scale-105' : 'bg-white/5 border-white/10 hover:bg-white/10'}`}>👍</button>
+                                                <button onClick={() => setRating('meh')} className={`flex-1 h-14 rounded-xl border flex items-center justify-center text-2xl transition-all ${rating === 'meh' ? 'bg-slate-500/20 border-slate-500 scale-105' : 'bg-white/5 border-white/10 hover:bg-white/10'}`}>😐</button>
+                                            </div>
+                                        </div>
+
+                                        {/* 3. Badges / Gift Shortcut */}
+                                        <div className="space-y-2">
+                                            <Label className="text-slate-400 uppercase text-xs font-bold tracking-wider flex items-center gap-2">
+                                                3. Un merci spécial ? <span className="text-[10px] bg-purple-500/20 text-purple-300 px-1.5 rounded">Optionnel</span>
+                                            </Label>
+                                            <div className="flex flex-wrap gap-2">
+                                                {OPPORTUNITY_TYPES.slice(0, 4).map(type => (
+                                                    <button
+                                                        key={type.id}
+                                                        onClick={() => toggleBadge(type.id)}
+                                                        className={cn(
+                                                            "px-3 py-2 rounded-lg border text-xs font-bold flex items-center gap-2 transition-all",
+                                                            selectedBadges.includes(type.id)
+                                                                ? "bg-purple-500/20 border-purple-500 text-white"
+                                                                : "bg-white/5 border-white/10 text-slate-400 hover:bg-white/10"
+                                                        )}
+                                                    >
+                                                        <type.icon className="w-3 h-3" />
+                                                        {type.label}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        <Button onClick={handleValidate} className="w-full h-14 text-lg font-black bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl shadow-lg shadow-emerald-900/20 mt-4">
+                                            VALIDER ET GAGNER 50 PTS 🚀
+                                        </Button>
+                                    </div>
+                                </DialogContent>
+                            </Dialog>
+
+                            {/* Secondary Action: RE-CALL */}
+                            <div className="flex justify-center">
+                                <Button 
+                                    variant="ghost" 
+                                    size="sm" 
+                                    className="text-slate-400 hover:text-white hover:bg-white/5 gap-2 text-xs font-medium"
+                                    onClick={() => window.location.href = "tel:0612345678"}
+                                >
+                                    <Phone className="w-3 h-3" /> J'ai besoin de rappeler
+                                </Button>
+                            </div>
+                        </motion.div>
+                    ) : (
+                        // STATE 1: INITIAL CALL
+                        <Button 
+                            onClick={handleCall}
+                            className="w-full h-20 text-xl font-black bg-emerald-500 hover:bg-emerald-400 text-white rounded-[2rem] shadow-[0_0_30px_rgba(16,185,129,0.3)] flex items-center justify-center gap-3 transition-all hover:scale-[1.02] active:scale-95"
+                        >
+                            <PhoneCall className="w-8 h-8 fill-current" />
+                            APPELER MAINTENANT
+                        </Button>
+                    )}
+                    
+                    {step === 'initial' && (
+                        <p className="text-center text-xs text-slate-400 font-medium opacity-80">
+                            Clique pour révéler le numéro
+                        </p>
+                    )}
+                </div>
+            )}
+
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // --- 4. FOUNDER CARD (Joker / VIP) ---
 import { Crown, Star as StarIcon } from "lucide-react";
 
