@@ -410,13 +410,11 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
   // Countdown Logic for Waiting State
   const [waitingCountdown, setWaitingCountdown] = useState("00:00:00");
   useEffect(() => {
-    if (matches && matches.length > 0) return;
-
     const targetDate = new Date();
     targetDate.setDate(targetDate.getDate() + 1);
     targetDate.setHours(8, 0, 0, 0); // Tomorrow 08:00
 
-    const interval = setInterval(() => {
+    const calculateCountdown = () => {
         const now = new Date();
         const diff = targetDate.getTime() - now.getTime();
         if (diff <= 0) {
@@ -429,9 +427,12 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
         setWaitingCountdown(
             `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`
         );
-    }, 1000);
+    };
+
+    calculateCountdown();
+    const interval = setInterval(calculateCountdown, 1000);
     return () => clearInterval(interval);
-  }, [matches]);
+  }, []); // Remove dependency on matches to ensure it runs even if match exists
 
   // Match Timer Logic (Ephemeral Opportunity)
   const [matchCountdown, setMatchCountdown] = useState("02:00:00");
