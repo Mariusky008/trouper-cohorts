@@ -598,6 +598,7 @@ export function MissionValidationPreview() {
   const [selectedMission, setSelectedMission] = useState<string | null>(null);
   const [popupView, setPopupView] = useState<'step1_status' | 'step2_rating' | 'step3_gift'>('step1_status');
   const [callHappened, setCallHappened] = useState<boolean | null>(null);
+  const [isWhyVisible, setIsWhyVisible] = useState(false);
 
   // Simulation of the call action
   const handleCall = () => {
@@ -711,12 +712,56 @@ export function MissionValidationPreview() {
                     {/* Secondary Actions (Why, Gift, Rate) - ONLY VISIBLE IN INITIAL STEP */}
                     {step === 'initial' && (
                         <div className="flex gap-2">
-                            {/* <Button size="icon" className="h-14 w-14 rounded-full bg-slate-800/80 backdrop-blur-md border border-white/10 text-yellow-400 hover:scale-110 transition-transform">
-                                <MessageSquare className="h-6 w-6 fill-current" />
-                            </Button> */}
-                            {/* <Button size="icon" className="h-14 w-14 rounded-full bg-slate-800/80 backdrop-blur-md border border-white/10 text-purple-400 hover:scale-110 transition-transform">
-                                <Gift className="h-6 w-6" />
-                            </Button> */}
+                            <Dialog open={isWhyVisible} onOpenChange={setIsWhyVisible}>
+                                <DialogTrigger asChild>
+                                    <Button size="icon" className="h-14 w-14 rounded-full bg-slate-800/80 backdrop-blur-md border border-white/10 text-yellow-400 hover:scale-110 transition-transform">
+                                        <MessageSquare className="h-6 w-6 fill-current" />
+                                    </Button>
+                                </DialogTrigger>
+                                <DialogContent className="bg-[#0f172a] border-white/10 text-white sm:max-w-md rounded-2xl w-[90vw] p-0 overflow-hidden">
+                                    <div className="bg-gradient-to-br from-blue-600/20 to-purple-600/20 p-6">
+                                        <DialogHeader>
+                                            <DialogTitle className="flex items-center gap-2 text-xl font-black">
+                                                <Zap className="h-6 w-6 text-yellow-400 fill-yellow-400" />
+                                                Pourquoi ce match ?
+                                            </DialogTitle>
+                                            <DialogDescription className="text-slate-300">
+                                                Voici pourquoi l'algorithme vous a réunis aujourd'hui.
+                                            </DialogDescription>
+                                        </DialogHeader>
+                                    </div>
+                                    <div className="p-6 space-y-6">
+                                        <div className="bg-white/5 p-4 rounded-xl border border-white/10">
+                                            <h4 className="text-sm font-bold text-slate-400 uppercase mb-2 flex items-center gap-2">
+                                                <Target className="h-4 w-4 text-blue-400" /> Synergie Détectée
+                                            </h4>
+                                            <p className="text-slate-200 leading-relaxed text-sm">
+                                                "L'algorithme a détecté une complémentarité rare : votre expertise en <span className="text-white font-bold">stratégie commerciale</span> est exactement ce dont Jean-Paul a besoin pour structurer sa croissance. En retour, son réseau influent dans la Tech peut vous ouvrir les portes des grands comptes que vous ciblez."
+                                            </p>
+                                        </div>
+
+                                        <div className="space-y-3">
+                                            <h4 className="text-sm font-bold text-slate-400 uppercase flex items-center gap-2">
+                                                <TrendingUp className="h-4 w-4 text-emerald-400" /> Potentiel Immédiat
+                                            </h4>
+                                            <ul className="space-y-2">
+                                                <li className="flex items-center gap-3 text-sm text-slate-300">
+                                                    <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                                                    <span>Opportunité de co-création (Podcast/Live)</span>
+                                                </li>
+                                                <li className="flex items-center gap-3 text-sm text-slate-300">
+                                                    <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                                                    <span>Partage de réseau local (Bordeaux)</span>
+                                                </li>
+                                            </ul>
+                                        </div>
+
+                                        <Button className="w-full bg-slate-800 hover:bg-slate-700 font-bold h-12 rounded-xl" onClick={() => setIsWhyVisible(false)}>
+                                            Compris, je l'appelle ! 📞
+                                        </Button>
+                                    </div>
+                                </DialogContent>
+                            </Dialog>
                         </div>
                     )}
 
