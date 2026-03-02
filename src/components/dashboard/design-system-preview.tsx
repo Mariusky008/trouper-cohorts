@@ -587,9 +587,15 @@ export function MissionValidationPreview() {
   const [step, setStep] = useState<'initial' | 'called' | 'validated'>('initial');
   const [isValidationOpen, setIsValidationOpen] = useState(false);
   const [isPhoneOpen, setIsPhoneOpen] = useState(false);
+  const [isRatingOpen, setIsRatingOpen] = useState(false);
+  const [isOpportunityOpen, setIsOpportunityOpen] = useState(false);
+  const [isMissionOpen, setIsMissionOpen] = useState(false);
   const [rating, setRating] = useState<'fire' | 'good' | 'meh' | null>(null);
   const [selectedOpportunity, setSelectedOpportunity] = useState<string | null>(null);
   const [opportunityDetails, setOpportunityDetails] = useState("");
+  const [interlocutorGoal, setInterlocutorGoal] = useState<string | null>("Trouver un associé technique"); // Simulating user has a goal
+  // const [interlocutorGoal, setInterlocutorGoal] = useState<string | null>(null); // Simulating user has NO goal
+  const [selectedMission, setSelectedMission] = useState<string | null>(null);
 
   // Simulation of the call action
   const handleCall = () => {
@@ -663,17 +669,38 @@ export function MissionValidationPreview() {
                     "Ce directeur commercial peut vous ouvrir des opportunités auxquelles vous n’aviez pas accès hier."
                 </p>
 
-                {/* Mission Selector (Identical to Match Card) */}
-                <div className="bg-indigo-500/20 border border-indigo-500/30 rounded-xl p-3 mb-6 backdrop-blur-sm">
-                    <div className="flex items-center justify-between mb-1">
-                        <div className="flex items-center gap-2">
-                            <Target className="w-4 h-4 text-indigo-400" />
-                            <span className="text-[10px] font-black text-indigo-300 uppercase tracking-wider">Objectif de l'appel</span>
+                {/* Mission Selector (My Goal + His Goal) */}
+                <div className="grid grid-cols-2 gap-3 mb-6">
+                    {/* 1. My Goal */}
+                    <div className="bg-indigo-500/20 border border-indigo-500/30 rounded-xl p-3 backdrop-blur-sm cursor-pointer hover:bg-indigo-500/30 transition-colors" onClick={() => setIsMissionOpen(true)}>
+                        <div className="flex items-center gap-1.5 mb-1.5">
+                            <Target className="w-3.5 h-3.5 text-indigo-400" />
+                            <span className="text-[9px] font-black text-indigo-300 uppercase tracking-wider">Mon Objectif</span>
                         </div>
+                        <p className="text-white text-[11px] font-medium leading-tight line-clamp-2">
+                            {selectedMission 
+                                ? MISSION_TYPES.find(m => m.id === selectedMission)?.label 
+                                : "Définir mon objectif 🎯"}
+                        </p>
                     </div>
-                    <p className="text-white text-xs font-medium italic truncate">
-                        Cliquez pour définir votre objectif 🎯
-                    </p>
+
+                    {/* 2. His Goal */}
+                    <div className={cn(
+                        "rounded-xl p-3 backdrop-blur-sm border",
+                        interlocutorGoal 
+                            ? "bg-purple-500/20 border-purple-500/30" 
+                            : "bg-orange-500/10 border-orange-500/20 border-dashed"
+                    )}>
+                        <div className="flex items-center gap-1.5 mb-1.5">
+                            <Users className={cn("w-3.5 h-3.5", interlocutorGoal ? "text-purple-400" : "text-orange-400")} />
+                            <span className={cn("text-[9px] font-black uppercase tracking-wider", interlocutorGoal ? "text-purple-300" : "text-orange-300")}>
+                                Son Objectif
+                            </span>
+                        </div>
+                        <p className={cn("text-[11px] font-medium leading-tight line-clamp-2", interlocutorGoal ? "text-white" : "text-orange-200/70 italic")}>
+                            {interlocutorGoal || "N'a pas encore défini son objectif..."}
+                        </p>
+                    </div>
                 </div>
 
                 {/* Action Buttons (Dock Style) */}
@@ -709,84 +736,59 @@ export function MissionValidationPreview() {
                                         </Button>
                                     </div>
                                 </DialogTrigger>
-                                <DialogContent className="bg-[#0f172a] border-white/10 text-white sm:max-w-md rounded-2xl w-[95vw]">
-                                    <DialogHeader>
-                                        <DialogTitle className="text-center text-2xl font-black">Mission Accomplie ? 🎯</DialogTitle>
+                                <DialogContent className="bg-[#0f172a] border-white/10 text-white sm:max-w-md rounded-2xl w-[95vw] min-h-[400px] flex flex-col justify-center">
+                                    <DialogHeader className="mb-8">
+                                        <DialogTitle className="text-center text-3xl font-black bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
+                                            Mission Terminée ! 🚀
+                                        </DialogTitle>
+                                        <DialogDescription className="text-center text-slate-400">
+                                            Validez votre échange pour débloquer la suite.
+                                        </DialogDescription>
                                     </DialogHeader>
                                     
-                                    <div className="space-y-6 py-4">
-                                        {/* 1. Status */}
-                                        <div className="bg-white/5 p-4 rounded-xl border border-white/5">
-                                            <Label className="text-slate-400 uppercase text-xs font-bold tracking-wider mb-3 block">1. Statut de l'appel</Label>
-                                            <div className="grid grid-cols-2 gap-3">
-                                                <Button variant="outline" className="h-12 border-emerald-500/30 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 font-bold">
-                                                    Oui, on s'est parlé 📞
-                                                </Button>
-                                                <Button variant="outline" className="h-12 border-white/10 bg-white/5 text-slate-400 hover:bg-white/10 font-bold">
-                                                    Pas de réponse ❌
-                                                </Button>
+                                    <div className="grid grid-cols-2 gap-6 p-4">
+                                        {/* OPTION 1: Feedback */}
+                                        <motion.button 
+                                            initial={{ scale: 0.8, opacity: 0, y: 50 }}
+                                            animate={{ scale: 1, opacity: 1, y: 0 }}
+                                            transition={{ delay: 0.1, type: "spring", stiffness: 200 }}
+                                            onClick={() => {
+                                                setIsValidationOpen(false);
+                                                setIsRatingOpen(true);
+                                            }}
+                                            className="aspect-square rounded-3xl bg-gradient-to-br from-orange-500/10 to-red-500/10 border-2 border-orange-500/30 hover:border-orange-500 flex flex-col items-center justify-center gap-3 group transition-all hover:bg-orange-500/20"
+                                        >
+                                            <div className="w-16 h-16 rounded-full bg-orange-500/20 flex items-center justify-center group-hover:scale-110 transition-transform shadow-lg shadow-orange-500/20">
+                                                <Star className="w-8 h-8 text-orange-400 fill-orange-400" />
                                             </div>
-                                        </div>
+                                            <span className="text-sm font-bold text-orange-200 uppercase tracking-wider">Noter</span>
+                                        </motion.button>
 
-                                        {/* 2. Feeling */}
-                                        <div className="bg-white/5 p-4 rounded-xl border border-white/5">
-                                            <Label className="text-slate-400 uppercase text-xs font-bold tracking-wider mb-3 block">2. Ton ressenti</Label>
-                                            <div className="flex justify-between gap-2">
-                                                <button onClick={() => setRating('fire')} className={`flex-1 h-14 rounded-xl border flex flex-col items-center justify-center transition-all ${rating === 'fire' ? 'bg-orange-500/20 border-orange-500 scale-105' : 'bg-white/5 border-white/10 hover:bg-white/10'}`}>
-                                                    <span className="text-2xl">🔥</span>
-                                                </button>
-                                                <button onClick={() => setRating('good')} className={`flex-1 h-14 rounded-xl border flex flex-col items-center justify-center transition-all ${rating === 'good' ? 'bg-blue-500/20 border-blue-500 scale-105' : 'bg-white/5 border-white/10 hover:bg-white/10'}`}>
-                                                    <span className="text-2xl">👍</span>
-                                                </button>
-                                                <button onClick={() => setRating('meh')} className={`flex-1 h-14 rounded-xl border flex flex-col items-center justify-center transition-all ${rating === 'meh' ? 'bg-slate-500/20 border-slate-500 scale-105' : 'bg-white/5 border-white/10 hover:bg-white/10'}`}>
-                                                    <span className="text-2xl">😐</span>
-                                                </button>
+                                        {/* OPTION 2: Gift */}
+                                        <motion.button 
+                                            initial={{ scale: 0.8, opacity: 0, y: 50 }}
+                                            animate={{ scale: 1, opacity: 1, y: 0 }}
+                                            transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
+                                            onClick={() => {
+                                                setIsValidationOpen(false);
+                                                setIsOpportunityOpen(true);
+                                            }}
+                                            className="aspect-square rounded-3xl bg-gradient-to-br from-purple-500/10 to-indigo-500/10 border-2 border-purple-500/30 hover:border-purple-500 flex flex-col items-center justify-center gap-3 group transition-all hover:bg-purple-500/20"
+                                        >
+                                            <div className="w-16 h-16 rounded-full bg-purple-500/20 flex items-center justify-center group-hover:scale-110 transition-transform shadow-lg shadow-purple-500/20">
+                                                <Gift className="w-8 h-8 text-purple-400" />
                                             </div>
-                                        </div>
-
-                                        {/* 3. Give Opportunity (Real Gift) */}
-                                        <div className="bg-white/5 p-4 rounded-xl border border-white/5">
-                                            <Label className="text-slate-400 uppercase text-xs font-bold tracking-wider mb-3 flex items-center justify-between">
-                                                <span>3. Offrir une opportunité (Réel)</span>
-                                            </Label>
-                                            
-                                            {!selectedOpportunity ? (
-                                                <div className="grid grid-cols-2 gap-2">
-                                                    {OPPORTUNITY_TYPES.map(type => (
-                                                        <button
-                                                            key={type.id}
-                                                            onClick={() => setSelectedOpportunity(type.id)}
-                                                            className="px-3 py-3 rounded-lg border text-xs font-bold flex flex-col items-center gap-1.5 transition-all text-center bg-white/5 border-white/10 text-slate-400 hover:bg-white/10 hover:border-purple-500/50 hover:text-purple-300"
-                                                        >
-                                                            <type.icon className="w-4 h-4 text-slate-500 group-hover:text-purple-400" />
-                                                            {type.label}
-                                                        </button>
-                                                    ))}
-                                                </div>
-                                            ) : (
-                                                <div className="space-y-3">
-                                                    <div className="flex items-center justify-between bg-purple-500/10 p-2 rounded-lg border border-purple-500/30">
-                                                        <span className="text-xs font-bold text-purple-300 flex items-center gap-2">
-                                                            <Gift className="w-3 h-3" /> {OPPORTUNITY_TYPES.find(t => t.id === selectedOpportunity)?.label}
-                                                        </span>
-                                                        <button onClick={() => setSelectedOpportunity(null)} className="text-[10px] text-slate-400 underline">Changer</button>
-                                                    </div>
-                                                    <div className="space-y-1">
-                                                        <Label className="text-[10px] text-slate-400 uppercase">Détails (Ce que tu vas lui envoyer)</Label>
-                                                        <textarea 
-                                                            className="w-full bg-black/30 border border-white/10 rounded-lg p-2 text-xs text-white min-h-[60px] focus:ring-1 focus:ring-purple-500 outline-none"
-                                                            placeholder="Ex: Je te mets en relation avec le CEO de..."
-                                                            value={opportunityDetails}
-                                                            onChange={(e) => setOpportunityDetails(e.target.value)}
-                                                        />
-                                                    </div>
-                                                </div>
-                                            )}
-                                        </div>
-
-                                        <Button onClick={handleValidate} className="w-full h-16 text-xl font-black bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl shadow-lg shadow-emerald-900/20 mt-4">
-                                            VALIDER (+50 PTS) 🚀
-                                        </Button>
+                                            <span className="text-sm font-bold text-purple-200 uppercase tracking-wider">Offrir</span>
+                                        </motion.button>
+                                    </div>
+                                    
+                                    <div className="text-center mt-4">
+                                        <button 
+                                            onClick={handleValidate}
+                                            className="text-xs text-slate-500 font-medium hover:text-slate-300 underline decoration-slate-700 underline-offset-4"
+                                        >
+                                            Je n'ai rien à ajouter (Valider simple)
+                                        </button>
                                     </div>
                                 </DialogContent>
                             </Dialog>
