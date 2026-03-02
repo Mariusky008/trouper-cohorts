@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-// import { sendNotification } from "@/lib/actions/notifications"; // COMMENTED OUT TO DEBUG DEPLOYMENT
+import { sendNotification } from "@/lib/actions/notifications";
 
 export const dynamic = 'force-dynamic'; // Ensure it's not statically optimized
 
@@ -13,14 +13,14 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // if (!userId || !title || !message) {
-    //   return NextResponse.json({ error: "Missing fields" }, { status: 400 });
-    // }
+    if (!userId || !title || !message) {
+      return NextResponse.json({ error: "Missing fields" }, { status: 400 });
+    }
 
-    // const result = await sendNotification(userId, title, message, url);
-    console.log("Notification skipped for debugging deployment issues:", { userId, title });
+    const result = await sendNotification(userId, title, message, url);
+    // console.log("Notification skipped for debugging deployment issues:", { userId, title });
     
-    return NextResponse.json({ success: true, skipped: true });
+    return NextResponse.json(result);
   } catch (error) {
     console.error("Internal Notification Error:", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
