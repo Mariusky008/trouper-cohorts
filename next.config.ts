@@ -32,17 +32,17 @@ const config: NextConfig = {
   // },
 };
 
-export default config;
+// export default config;
 
-// export default withPWA({
-//   dest: "public",
-//   register: true,
-//   // skipWaiting is now part of workboxOptions in newer versions or handled automatically
-//   disable: false, 
-//   // Custom workbox options
-//   workboxOptions: {
-//     skipWaiting: true, // Moved here
-//     disableDevLogs: true,
-//     importScripts: ["/sw-push.js"], // Moved here as well for better compatibility
-//   },
-// })(config);
+export default withPWA({
+  dest: "public",
+  register: true,
+  // skipWaiting is now part of workboxOptions in newer versions or handled automatically
+  disable: false, 
+  // Custom workbox options
+  workboxOptions: {
+    skipWaiting: true, // Moved here
+    disableDevLogs: true,
+    importScripts: ["/sw-push.js"], // Moved here as well for better compatibility
+  },
+})(config);
