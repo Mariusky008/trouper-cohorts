@@ -251,25 +251,48 @@ export default function SpheresRegistrationPage() {
           </DialogHeader>
 
           <div className="space-y-6 py-6">
+            {/* Row 1: Prénom Nom & Ville */}
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="firstname" className="text-xs font-bold uppercase tracking-widest text-slate-500 ml-1">Prénom</Label>
-                <Input id="firstname" placeholder="Ex: Jean" className="bg-white/5 border-white/10 h-12 rounded-xl focus:ring-indigo-500" />
+                <Label htmlFor="fullname" className="text-xs font-bold text-slate-500 ml-1">Prénom Nom</Label>
+                <Input id="fullname" placeholder="Jean Dupont" className="bg-white/5 border-white/10 h-12 rounded-xl focus:ring-indigo-500" />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="lastname" className="text-xs font-bold uppercase tracking-widest text-slate-500 ml-1">Nom</Label>
-                <Input id="lastname" placeholder="Ex: Dupont" className="bg-white/5 border-white/10 h-12 rounded-xl focus:ring-indigo-500" />
+                <Label htmlFor="city" className="text-xs font-bold text-slate-500 ml-1">Ville</Label>
+                <Input id="city" placeholder="Paris" className="bg-white/5 border-white/10 h-12 rounded-xl focus:ring-indigo-500" />
+              </div>
+            </div>
+
+            {/* Row 2: Activité & Téléphone */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="activity" className="text-xs font-bold text-slate-500 ml-1">Activité</Label>
+                <Input 
+                    id="activity" 
+                    defaultValue={selectedSlot || ""} 
+                    className="bg-white/5 border-white/10 h-12 rounded-xl focus:ring-indigo-500 font-bold text-white" 
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="phone" className="text-xs font-bold text-slate-500 ml-1">Téléphone</Label>
+                <Input id="phone" placeholder="06..." className="bg-white/5 border-white/10 h-12 rounded-xl focus:ring-indigo-500" />
               </div>
             </div>
             
+            {/* Row 3: Email */}
             <div className="space-y-2">
-              <Label htmlFor="linkedin" className="text-xs font-bold uppercase tracking-widest text-slate-500 ml-1 flex items-center gap-2">
-                <Linkedin className="w-3 h-3" /> Profil LinkedIn (Obligatoire)
-              </Label>
-              <Input id="linkedin" placeholder="linkedin.com/in/..." className="bg-white/5 border-white/10 h-12 rounded-xl focus:ring-indigo-500" />
+              <Label htmlFor="email" className="text-xs font-bold text-slate-500 ml-1">Email</Label>
+              <Input id="email" type="email" placeholder="vous@exemple.com" className="bg-white/5 border-white/10 h-12 rounded-xl focus:ring-indigo-500" />
             </div>
 
+            {/* Row 4: Mot de passe */}
             <div className="space-y-2">
+              <Label htmlFor="password" className="text-xs font-bold text-slate-500 ml-1">Mot de passe</Label>
+              <Input id="password" type="password" className="bg-white/5 border-white/10 h-12 rounded-xl focus:ring-indigo-500" />
+            </div>
+
+            {/* Row 5: Quick Win Question */}
+            <div className="space-y-2 pt-2 border-t border-white/5">
               <Label className="text-xs font-bold uppercase tracking-widest text-indigo-400 ml-1 flex items-center gap-2">
                 <Zap className="w-3 h-3 fill-current" /> Question Quick-Win
               </Label>
