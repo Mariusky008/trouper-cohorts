@@ -290,22 +290,6 @@ export default function SpheresRegistrationPage() {
         </Tabs>
       </main>
 
-      {/* FOOTER / STATUS BAR (IF NOT CONFIRMED) */}
-      {!isConfirmed && (
-        <footer className="fixed bottom-8 left-1/2 -translate-x-1/2 w-full max-w-xl px-6 z-50">
-          <div className="bg-slate-900/80 backdrop-blur-xl border border-white/10 rounded-3xl p-6 shadow-2xl flex items-center justify-between">
-            <div className="flex flex-col">
-              <span className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">Places disponibles</span>
-              <p className="text-2xl font-black">76 / 100</p>
-            </div>
-            <div className="h-10 w-px bg-white/10" />
-            <div className="text-right">
-              <p className="text-xs font-medium text-slate-400">Prenez votre siège avant <br />qu'un concurrent ne le fasse.</p>
-            </div>
-          </div>
-        </footer>
-      )}
-
       {/* MODAL: RESERVATION TUNNEL */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
         <DialogContent className="bg-[#0f172a] border-white/10 text-white sm:max-w-md rounded-[2.5rem] p-8 shadow-2xl">
