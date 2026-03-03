@@ -1141,19 +1141,32 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
                                 <div className="space-y-4 p-2">
                                     {/* Gift Selector */}
                                     {!oppType ? (
-                                        <div className="grid grid-cols-2 gap-2 max-h-[40vh] overflow-y-auto pr-1">
-                                            {OPPORTUNITY_TYPES.map(type => (
-                                                <button
-                                                    key={type.id}
-                                                    onClick={() => setOppType(type.id)}
-                                                    className="px-3 py-3 rounded-xl border text-xs font-bold flex flex-col items-center gap-2 transition-all text-center bg-white/5 border-white/10 text-slate-400 hover:bg-white/10 hover:border-purple-500/50 hover:text-purple-300 hover:scale-[1.02]"
-                                                >
-                                                    <div className={cn("p-2 rounded-full bg-white/5", type.color)}>
-                                                        <type.icon className="w-4 h-4" />
-                                                    </div>
-                                                    {type.label}
-                                                </button>
-                                            ))}
+                                        <div className="grid grid-cols-1 gap-2 max-h-[50vh] overflow-y-auto pr-1">
+                                            {OPPORTUNITY_TYPES.map((type) => {
+                                                const Icon = type.icon;
+                                                return (
+                                                    <button
+                                                        key={type.id}
+                                                        onClick={() => setOppType(type.id)}
+                                                        className="group relative flex items-center gap-3 p-3 rounded-xl border border-white/5 bg-white/5 hover:bg-white/10 hover:border-purple-500/50 hover:shadow-[0_0_15px_rgba(168,85,247,0.15)] transition-all text-left"
+                                                    >
+                                                        <div className={cn("shrink-0 h-10 w-10 rounded-full flex items-center justify-center bg-black/20", type.color)}>
+                                                            <Icon className="w-5 h-5" />
+                                                        </div>
+                                                        <div className="flex-1">
+                                                            <div className="text-sm font-bold text-white group-hover:text-purple-300 transition-colors">
+                                                                {type.label}
+                                                            </div>
+                                                            <div className="text-[10px] text-slate-400 font-medium leading-tight">
+                                                                {type.cardLabel || type.description}
+                                                            </div>
+                                                        </div>
+                                                        <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                                                            <ChevronRight className="w-4 h-4 text-purple-400" />
+                                                        </div>
+                                                    </button>
+                                                );
+                                            })}
                                         </div>
                                     ) : (
                                         <div className="space-y-4">
