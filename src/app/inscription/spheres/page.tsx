@@ -104,7 +104,7 @@ const MOCK_SLOTS: Record<SphereId, string[]> = {
 
 // --- COMPONENT ---
 export default function SpheresRegistrationPage() {
-  const [activeCity, setActiveCity] = useState<CityId>('bordeaux');
+  const [activeCity, setActiveCity] = useState<CityId | null>(null);
   const [activeSphere, setActiveSphere] = useState<SphereId>('habitat');
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -119,7 +119,7 @@ export default function SpheresRegistrationPage() {
       'dax': ['Restaurateur', 'Plombier', 'Coiffeur']
   };
 
-  const lockedSlots = lockedSlotsByCity[activeCity] || [];
+  const lockedSlots = activeCity ? (lockedSlotsByCity[activeCity] || []) : [];
 
   const handleReserve = (slot: string) => {
     setSelectedSlot(slot);
@@ -142,48 +142,79 @@ export default function SpheresRegistrationPage() {
     return "🚀 Sphère Opérationnelle : Matches quotidiens activés.";
   };
 
-  return (
-    <div className="min-h-screen bg-[#020617] text-white p-6 md:p-12 font-sans selection:bg-indigo-500/30 pb-32">
-      
-      {/* HEADER & CITY SELECTOR */}
-      <header className="max-w-4xl mx-auto text-center mb-12">
-        <motion.div 
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-sm font-bold mb-6"
-        >
-          <Zap className="w-4 h-4 fill-current" />
-          ACCÈS EXCLUSIF - {CITIES.find(c => c.id === activeCity)?.label.toUpperCase()} 2026
-        </motion.div>
-        
-        <h1 className="text-4xl md:text-6xl font-black tracking-tighter mb-6 bg-gradient-to-r from-white via-white to-slate-500 bg-clip-text text-transparent">
-          VÉRIFIEZ LA DISPONIBILITÉ <br className="hidden md:block" />
-          DE VOTRE MÉTIER.
-        </h1>
+  // STEP 1: CITY SELECTION
+  if (!activeCity) {
+      return (
+        <div className="min-h-screen bg-[#020617] text-white p-6 flex flex-col items-center justify-center font-sans">
+            <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="max-w-2xl w-full text-center space-y-12"
+            >
+                <div>
+                    <h1 className="text-4xl md:text-6xl font-black tracking-tighter mb-4 bg-gradient-to-r from-white via-white to-slate-500 bg-clip-text text-transparent">
+                        OÙ EXERCEZ-VOUS ?
+                    </h1>
+                    <p className="text-slate-400 text-lg font-medium">
+                        Choisissez votre zone d'influence pour voir les disponibilités.
+                    </p>
+                </div>
 
-        {/* CITY SELECTOR */}
-        <div className="flex justify-center mb-8">
-            <div className="bg-slate-900/50 p-1.5 rounded-2xl border border-white/10 flex items-center gap-2">
-                <MapPin className="w-5 h-5 text-indigo-400 ml-3" />
-                <Select value={activeCity} onValueChange={(v) => setActiveCity(v as CityId)}>
-                    <SelectTrigger className="w-[280px] h-12 border-none bg-transparent text-lg font-bold focus:ring-0 focus:ring-offset-0">
-                        <SelectValue placeholder="Choisir une ville" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-[#0f172a] border-white/10 text-white">
-                        {CITIES.map(city => (
-                            <SelectItem key={city.id} value={city.id} className="focus:bg-white/10 cursor-pointer font-medium">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {CITIES.map((city) => (
+                        <button
+                            key={city.id}
+                            onClick={() => setActiveCity(city.id)}
+                            className="group relative h-48 rounded-3xl border border-white/10 bg-slate-900/50 hover:bg-white/5 hover:border-indigo-500/50 hover:scale-105 transition-all duration-300 flex flex-col items-center justify-center gap-4 shadow-2xl"
+                        >
+                            <div className="w-16 h-16 rounded-2xl bg-indigo-500/10 flex items-center justify-center group-hover:bg-indigo-500/20 transition-colors">
+                                <MapPin className="w-8 h-8 text-indigo-400" />
+                            </div>
+                            <span className="text-xl font-black uppercase tracking-tight text-white group-hover:text-indigo-300 transition-colors px-4">
                                 {city.label}
-                            </SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
-            </div>
+                            </span>
+                        </button>
+                    ))}
+                </div>
+            </motion.div>
         </div>
-        
-        <p className="text-slate-400 text-lg font-medium max-w-2xl mx-auto">
-          Un seul expert par profession sur <span className="text-white font-bold">{CITIES.find(c => c.id === activeCity)?.label}</span>. <br/>
-          Une fois le siège pris, l'accès est verrouillé pour vos concurrents.
-        </p>
+      );
+  }
+
+  // STEP 2: SPHERES & SLOTS
+  return (
+    <div className="min-h-screen bg-[#020617] text-white p-6 md:p-12 font-sans selection:bg-indigo-500/30">
+      
+      {/* HEADER & CITY INFO */}
+      <header className="max-w-6xl mx-auto mb-12 flex flex-col md:flex-row md:items-end justify-between gap-6">
+        <div>
+            <button 
+                onClick={() => setActiveCity(null)}
+                className="text-xs font-bold text-slate-500 hover:text-white mb-4 flex items-center gap-1 transition-colors"
+            >
+                <ChevronRight className="w-3 h-3 rotate-180" /> CHANGER DE VILLE
+            </button>
+            <h1 className="text-3xl md:text-5xl font-black tracking-tighter mb-2 bg-gradient-to-r from-white via-white to-slate-500 bg-clip-text text-transparent">
+            {CITIES.find(c => c.id === activeCity)?.label.toUpperCase()}
+            </h1>
+            <p className="text-slate-400 font-medium">
+            Vérifiez la disponibilité de votre métier.
+            </p>
+        </div>
+
+        {/* STATUS BAR (MOVED TO TOP) */}
+        {!isConfirmed && (
+            <div className="bg-slate-900/80 backdrop-blur-xl border border-white/10 rounded-2xl p-4 flex items-center gap-6 shadow-xl">
+                <div className="flex flex-col">
+                <span className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">Places disponibles</span>
+                <p className="text-2xl font-black">76 / 100</p>
+                </div>
+                <div className="h-8 w-px bg-white/10" />
+                <div className="text-right">
+                <p className="text-xs font-medium text-slate-400">Prenez votre siège avant <br />qu'un concurrent ne le fasse.</p>
+                </div>
+            </div>
+        )}
       </header>
 
       {/* MAIN CONTENT */}
