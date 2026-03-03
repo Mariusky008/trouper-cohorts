@@ -481,12 +481,22 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
         if (rating === 'fire') { score = 5; tag = "top"; }
         if (rating === 'good') { score = 4; tag = "bien"; }
         
-        await saveMatchFeedback(currentMatch.partnerId, score, tag);
+        await saveMatchFeedback(currentMatch.partnerId, score, tag, currentMatch.id);
     }
 
     // 2. Save Opportunity if exists
     if (oppType && currentMatch.partnerId) {
         await handleCreateOpportunity(currentMatch.partnerId, currentMatch.name);
+        // Ensure we mark as met even if no rating was given
+        if (!rating) {
+             await saveMatchFeedback(currentMatch.partnerId, 0, "gift_only", currentMatch.id);
+        }
+    }
+    
+    // 3. Fallback: If neither rating nor opportunity, but call happened, we must close the match
+    if (!rating && !oppType && currentMatch.partnerId) {
+         // Default close with no specific rating (or neutral)
+         await saveMatchFeedback(currentMatch.partnerId, 3, "completed", currentMatch.id);
     }
 
     // 3. Finalize
