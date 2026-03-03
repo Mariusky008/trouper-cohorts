@@ -5,12 +5,15 @@ import { motion, AnimatePresence } from "framer-motion";
 import { 
   Home, Globe, Heart, ShoppingBag, Scale, 
   Lock, CheckCircle2, ChevronRight, User, 
-  Linkedin, Mail, Users, Rocket, Zap, Target
+  Linkedin, Mail, Users, Rocket, Zap, Target, MapPin
 } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { 
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue 
+} from "@/components/ui/select";
 import { 
   Dialog, DialogContent, DialogHeader, 
   DialogTitle, DialogDescription, DialogFooter 
@@ -21,7 +24,18 @@ import { cn } from "@/lib/utils";
 
 // --- TYPES ---
 type SphereId = 'habitat' | 'digital' | 'sante' | 'commerce' | 'conseil';
-type SlotStatus = 'AVAILABLE' | 'LOCKED' | 'PENDING';
+type CityId = 'bab' | 'dax' | 'bordeaux';
+
+interface City {
+    id: CityId;
+    label: string;
+}
+
+const CITIES: City[] = [
+    { id: 'bab', label: 'Bayonne-Anglet-Biarritz' },
+    { id: 'dax', label: 'Le Grand Dax' },
+    { id: 'bordeaux', label: 'Bordeaux' },
+];
 
 interface Sphere {
   id: SphereId;
@@ -90,6 +104,7 @@ const MOCK_SLOTS: Record<SphereId, string[]> = {
 
 // --- COMPONENT ---
 export default function SpheresRegistrationPage() {
+  const [activeCity, setActiveCity] = useState<CityId>('bordeaux');
   const [activeSphere, setActiveSphere] = useState<SphereId>('habitat');
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -97,8 +112,14 @@ export default function SpheresRegistrationPage() {
   const [formStep, setFormStep] = useState(1);
   const [memberCount, setMemberCount] = useState(14); // Simulation
   
-  // Simulation de slots déjà pris
-  const lockedSlots = ['Agent Immobilier', 'Courtier en prêt', 'Webdesigner', 'Coach Sportif'];
+  // Simulation de slots déjà pris (différents par ville pour le réalisme)
+  const lockedSlotsByCity: Record<CityId, string[]> = {
+      'bordeaux': ['Agent Immobilier', 'Courtier en prêt', 'Webdesigner', 'Coach Sportif'],
+      'bab': ['Notaire', 'Paysagiste', 'Avocat Affaires'],
+      'dax': ['Restaurateur', 'Plombier', 'Coiffeur']
+  };
+
+  const lockedSlots = lockedSlotsByCity[activeCity] || [];
 
   const handleReserve = (slot: string) => {
     setSelectedSlot(slot);
@@ -122,26 +143,46 @@ export default function SpheresRegistrationPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#020617] text-white p-6 md:p-12 font-sans selection:bg-indigo-500/30">
+    <div className="min-h-screen bg-[#020617] text-white p-6 md:p-12 font-sans selection:bg-indigo-500/30 pb-32">
       
-      {/* HEADER */}
-      <header className="max-w-4xl mx-auto text-center mb-16">
+      {/* HEADER & CITY SELECTOR */}
+      <header className="max-w-4xl mx-auto text-center mb-12">
         <motion.div 
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-sm font-bold mb-6"
         >
           <Zap className="w-4 h-4 fill-current" />
-          ACCÈS EXCLUSIF - BDX 2026
+          ACCÈS EXCLUSIF - {CITIES.find(c => c.id === activeCity)?.label.toUpperCase()} 2026
         </motion.div>
         
-        <h1 className="text-4xl md:text-6xl font-black tracking-tighter mb-4 bg-gradient-to-r from-white via-white to-slate-500 bg-clip-text text-transparent">
+        <h1 className="text-4xl md:text-6xl font-black tracking-tighter mb-6 bg-gradient-to-r from-white via-white to-slate-500 bg-clip-text text-transparent">
           VÉRIFIEZ LA DISPONIBILITÉ <br className="hidden md:block" />
-          DE VOTRE MÉTIER À BORDEAUX.
+          DE VOTRE MÉTIER.
         </h1>
+
+        {/* CITY SELECTOR */}
+        <div className="flex justify-center mb-8">
+            <div className="bg-slate-900/50 p-1.5 rounded-2xl border border-white/10 flex items-center gap-2">
+                <MapPin className="w-5 h-5 text-indigo-400 ml-3" />
+                <Select value={activeCity} onValueChange={(v) => setActiveCity(v as CityId)}>
+                    <SelectTrigger className="w-[280px] h-12 border-none bg-transparent text-lg font-bold focus:ring-0 focus:ring-offset-0">
+                        <SelectValue placeholder="Choisir une ville" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-[#0f172a] border-white/10 text-white">
+                        {CITIES.map(city => (
+                            <SelectItem key={city.id} value={city.id} className="focus:bg-white/10 cursor-pointer font-medium">
+                                {city.label}
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+            </div>
+        </div>
         
         <p className="text-slate-400 text-lg font-medium max-w-2xl mx-auto">
-          Un seul expert par profession. Une fois le siège pris, l'accès est verrouillé pour vos concurrents.
+          Un seul expert par profession sur <span className="text-white font-bold">{CITIES.find(c => c.id === activeCity)?.label}</span>. <br/>
+          Une fois le siège pris, l'accès est verrouillé pour vos concurrents.
         </p>
       </header>
 
