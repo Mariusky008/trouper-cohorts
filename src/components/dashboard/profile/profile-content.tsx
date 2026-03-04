@@ -295,6 +295,7 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
           toast({ title: "Profil mis à jour avec succès !" });
           
           // Redirect to dashboard if this was an onboarding completion
+          // Trigger the availability setup wizard
           if (!wasProfileComplete) {
              router.push("/mon-reseau-local/dashboard?setup=availability");
           }
