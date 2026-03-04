@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { Calendar, ChevronRight, Clock } from "lucide-react";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { AvailabilitySelector } from "@/components/dashboard/availability-selector";
@@ -13,6 +14,21 @@ interface PlanningDialogProps {
 
 export function PlanningDialog({ settings, potentialCount }: PlanningDialogProps) {
   const [open, setOpen] = useState(false);
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+
+  useEffect(() => {
+    // Automatically open if requested by query param
+    if (searchParams.get("setup") === "availability") {
+      setOpen(true);
+      
+      // Clean up the URL without refreshing to prevent reopening on reload
+      const params = new URLSearchParams(searchParams);
+      params.delete("setup");
+      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+    }
+  }, [searchParams, router, pathname]);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
