@@ -84,6 +84,23 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [currentStep, setCurrentStep] = useState(1);
 
+  // Helper to check if profile was already complete before this edit
+  const hasSocialsOrOptOut = 
+      (user.linkedin_url && user.linkedin_url !== "https://none") || 
+      !!user.instagram_handle || 
+      !!user.facebook_handle || 
+      !!user.website_url || 
+      user.linkedin_url === "https://none";
+
+  const wasProfileComplete = 
+      !!user.display_name && 
+      !!user.trade && 
+      !!user.city && 
+      !!user.phone && 
+      !!user.bio && 
+      !!user.avatar_url && 
+      hasSocialsOrOptOut;
+
   // Auto-open edit modal if query param "edit=true" is present
   useEffect(() => {
       const checkEditParam = () => {
@@ -276,6 +293,11 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
       } else {
           setIsEditing(false);
           toast({ title: "Profil mis à jour avec succès !" });
+          
+          // Redirect to dashboard if this was an onboarding completion
+          if (!wasProfileComplete) {
+             router.push("/mon-reseau-local/dashboard");
+          }
       }
       
       router.refresh();
