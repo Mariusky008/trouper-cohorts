@@ -82,12 +82,28 @@ async function handleSendEmails(request: Request) {
     const fromEmail = process.env.EMAIL_FROM || 'Popey Academy <onboarding@resend.dev>';
 
     for (const match of matches) {
-        const user1 = profileMap.get(match.user1_id);
-        const user2 = profileMap.get(match.user2_id);
+        let user1 = profileMap.get(match.user1_id);
+        let user2 = profileMap.get(match.user2_id);
 
         if (!user1 || !user2) {
             console.warn(`Skipping match ${match.id}: missing profiles`);
             continue;
+        }
+
+        // Fetch emails from Auth if not in profile
+        if (!user1.email) {
+            const { data: u1Auth } = await supabase.auth.admin.getUserById(match.user1_id);
+            if (u1Auth?.user?.email) user1 = { ...user1, email: u1Auth.user.email };
+        }
+        if (!user2.email) {
+            const { data: u2Auth } = await supabase.auth.admin.getUserById(match.user2_id);
+            if (u2Auth?.user?.email) user2 = { ...user2, email: u2Auth.user.email };
+        }
+
+        if (!user1.email || !user2.email) {
+             console.error(`Skipping match ${match.id}: missing emails (U1: ${!!user1.email}, U2: ${!!user2.email})`);
+             errors.push(`Match ${match.id}: Missing emails`);
+             continue;
         }
 
         // Prepare email for User 1 (About User 2)
