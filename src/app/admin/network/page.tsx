@@ -32,7 +32,7 @@ async function getNetworkStats() {
     .select('id, date, time, user1_id, user2_id')
     .gte('date', today)
     .order('date', { ascending: true })
-    .limit(10);
+    .limit(100);
   
   // Enrich upcoming matches with profiles
   let enrichedUpcomingMatches: any[] = [];
@@ -54,6 +54,9 @@ async function getNetworkStats() {
      }));
 
      // Filter out matches where the time slot has passed today
+     // ADMIN VIEW: We want to see ALL matches for today, even past ones.
+     // So we remove the time filtering logic that hides past slots.
+     /*
      const now = new Date();
      enrichedUpcomingMatches = enrichedUpcomingMatches.filter(match => {
         // If match is in future date, keep it
@@ -77,6 +80,7 @@ async function getNetworkStats() {
         
         return false;
      });
+     */
   }
 
   // 1b. Availabilities for Tomorrow
