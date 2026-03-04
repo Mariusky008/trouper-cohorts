@@ -168,14 +168,11 @@ const StickyCTA = () => {
                  
                  <div className={cn("flex items-center gap-4")}>
                     {isVisible && <span className="text-xs font-bold text-slate-500 hidden lg:inline">1€ les 3 premiers jours</span>}
-                    <AuthDialog 
-                      mode="signup"
-                      trigger={
-                        <Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-full px-6 shadow-lg shadow-blue-200/50">
-                          Commencer
-                        </Button>
-                      }
-                    />
+                    <Link href="/inscription/spheres">
+                      <Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-full px-6 shadow-lg shadow-blue-200/50">
+                        Commencer
+                      </Button>
+                    </Link>
                  </div>
              </div>
           </div>
@@ -309,15 +306,12 @@ export default function HomePage() {
               </p>
               
               <div className="flex flex-col sm:flex-row gap-4 justify-center pt-2">
-                <AuthDialog 
-                  mode="signup"
-                  trigger={
-                    <Button size="lg" className="h-16 px-10 bg-blue-600 hover:bg-blue-500 text-white font-black text-lg rounded-full shadow-2xl shadow-blue-300 hover:scale-105 transition-all duration-300 ring-4 ring-blue-50">
-                      Commencer maintenant
-                      <ArrowRight className="ml-2 h-5 w-5" />
-                    </Button>
-                  }
-                />
+                <Link href="/inscription/spheres">
+                  <Button size="lg" className="h-16 px-10 bg-blue-600 hover:bg-blue-500 text-white font-black text-lg rounded-full shadow-2xl shadow-blue-300 hover:scale-105 transition-all duration-300 ring-4 ring-blue-50">
+                    Commencer maintenant
+                    <ArrowRight className="ml-2 h-5 w-5" />
+                  </Button>
+                </Link>
               </div>
 
               {/* Stats Counters */}
@@ -534,17 +528,14 @@ export default function HomePage() {
             </div>
 
             <div className="mt-20 text-center">
-               <AuthDialog 
-                 mode="signup"
-                 trigger={
-                   <Button 
-                     size="lg" 
-                     className="bg-white text-slate-900 hover:bg-slate-200 hover:text-blue-900 font-black rounded-full px-12 h-20 text-xl shadow-[0_0_50px_rgba(255,255,255,0.2)] transition-all hover:scale-105 hover:shadow-[0_0_80px_rgba(255,255,255,0.4)] ring-4 ring-white/10"
-                   >
-                     👉 Découvrir mon premier match
-                   </Button>
-                 }
-               />
+               <Link href="/inscription/spheres">
+                 <Button 
+                   size="lg" 
+                   className="bg-white text-slate-900 hover:bg-slate-200 hover:text-blue-900 font-black rounded-full px-12 h-20 text-xl shadow-[0_0_50px_rgba(255,255,255,0.2)] transition-all hover:scale-105 hover:shadow-[0_0_80px_rgba(255,255,255,0.4)] ring-4 ring-white/10"
+                 >
+                   👉 Découvrir mon premier match
+                 </Button>
+               </Link>
             </div>
          </div>
       </section>
@@ -1205,14 +1196,11 @@ export default function HomePage() {
                      </li>
                   </ul>
                   
-                  <AuthDialog 
-                    mode="signup"
-                    trigger={
-                      <Button className="w-full h-16 bg-white text-slate-900 hover:bg-slate-100 font-black rounded-xl text-xl shadow-xl shadow-white/10 transition-transform hover:scale-[1.02]">
-                        Commencer mon essai gratuit
-                      </Button>
-                    }
-                  />
+                  <Link href="/inscription/spheres">
+                    <Button className="w-full h-16 bg-white text-slate-900 hover:bg-slate-100 font-black rounded-xl text-xl shadow-xl shadow-white/10 transition-transform hover:scale-[1.02]">
+                      Commencer mon essai gratuit
+                    </Button>
+                  </Link>
                   
                   <div className="text-sm text-slate-400 mt-6 text-center leading-relaxed">
                       Après ce test, l’accès complet devient <span className="text-white font-bold">49 €/mois</span> pour profiter de toutes les opportunités et booster réellement ton réseau.

@@ -1,10 +1,8 @@
 "use server";
 
 import { createAdminClient } from "@/lib/supabase/admin";
-import { createClient } from "@/lib/supabase/server";
 
 export async function registerNetworkUser(formData: FormData) {
-  const supabase = await createClient();
   const supabaseAdmin = createAdminClient();
 
   const email = formData.get("email") as string;
@@ -13,11 +11,16 @@ export async function registerNetworkUser(formData: FormData) {
   const city = formData.get("city") as string;
   const trade = formData.get("trade") as string;
   const phone = formData.get("phone") as string;
+  
+  // New fields for Spheres flow
+  const sphere = formData.get("sphere") as string;
+  const quickWin = formData.get("quickWin") as string;
+  
   const giveProfileStr = formData.get("give_profile") as string;
   const receiveProfileStr = formData.get("receive_profile") as string;
 
   let giveProfile = {};
-  let receiveProfile = {};
+  let receiveProfile: any = {};
 
   try {
     if (giveProfileStr) giveProfile = JSON.parse(giveProfileStr);
@@ -26,12 +29,21 @@ export async function registerNetworkUser(formData: FormData) {
     console.error("Error parsing profile JSON:", e);
   }
 
+  // Add sphere and quickWin to receive_profile (needs)
+  if (quickWin) receiveProfile.quick_win_need = quickWin;
+  if (sphere) receiveProfile.sphere_interest = sphere;
+
   // 1. Créer le compte Auth (Côté Serveur - Admin)
   const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
     email,
     password,
     email_confirm: true,
-    user_metadata: { full_name: fullName }
+    user_metadata: { 
+      full_name: fullName,
+      city,
+      trade,
+      sphere 
+    }
   });
 
   if (authError) return { error: authError.message };

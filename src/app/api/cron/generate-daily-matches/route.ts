@@ -170,14 +170,31 @@ async function handleMatching(request: Request) {
       return NextResponse.json({ message: 'Not enough participants for ' + dateStr, count: 0 });
     }
 
-    // 4. Enhanced Matching Logic (Prevent Duplicates + Random Pairing)
+    // 4. Enhanced Matching Logic (Prevent Duplicates + Random Pairing + Spheres)
     
-    // 4a. Fetch History: Get all past matches for these users to prevent repeats
+    // 4a. Fetch History and Profile Data: Get all past matches and sphere/trade info
     const userIds = availabilities.map((a: any) => a.user_id);
     const { data: pastMatches } = await supabase
         .from('network_matches')
         .select('user1_id, user2_id')
         .or(`user1_id.in.(${userIds.join(',')}),user2_id.in.(${userIds.join(',')})`);
+    
+    // Fetch profiles for sphere and trade info
+    const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, trade, city, receive_profile')
+        .in('id', userIds);
+
+    const profileMap: Record<string, any> = {};
+    if (profiles) {
+        profiles.forEach(p => {
+            profileMap[p.id] = {
+                trade: p.trade?.toLowerCase() || '',
+                sphere: p.receive_profile?.sphere_interest || '',
+                city: p.city || ''
+            };
+        });
+    }
     
     // Build a map of "who has met whom"
     const metHistory: Record<string, Set<string>> = {};
@@ -191,7 +208,7 @@ async function handleMatching(request: Request) {
         });
     }
 
-    // 4b. Greedy Matching with History Check
+    // 4b. Greedy Matching with History, Sphere and Trade Check
     // Shuffle first to ensure randomness
     const pool = availabilities.sort(() => 0.5 - Math.random());
     const matches = [];
@@ -202,37 +219,71 @@ async function handleMatching(request: Request) {
         const user1 = pool[i];
         if (matchedUserIds.has(user1.user_id)) continue;
 
+        const p1 = profileMap[user1.user_id] || { trade: '', sphere: '', city: '' };
         let bestPartnerIndex = -1;
+        let bestScore = -1;
 
-        // Look for a partner in the rest of the pool
+        // Look for the best partner in the rest of the pool
         for (let j = i + 1; j < pool.length; j++) {
             const candidate = pool[j];
             if (matchedUserIds.has(candidate.user_id)) continue;
 
-            // Check if they have met before
+            const p2 = profileMap[candidate.user_id] || { trade: '', sphere: '', city: '' };
+
+            // RULE 1: STRICT TRADE EXCLUSION (Only if trades are clearly defined)
+            if (p1.trade && p2.trade && p1.trade === p2.trade) {
+                continue; 
+            }
+
+            // RULE 2: STRICT CITY EXCLUSION (Must be in same city)
+            // If both have a city, they must match.
+            // If one has no city (e.g. online), maybe allow? For now, STRICT MATCH.
+            if (p1.city && p2.city && p1.city !== p2.city) {
+                continue;
+            }
+
+            // RULE 3: PREVENT REPEATS (Strongly discouraged)
             const hasMet = metHistory[user1.user_id]?.has(candidate.user_id);
-            if (!hasMet) {
-                // Found a fresh partner!
+            if (hasMet) continue;
+
+            // Calculate matching score
+            let currentScore = 0;
+            
+            // PRIORITY 1: SAME SPHERE (Boost score)
+            if (p1.sphere && p2.sphere && p1.sphere === p2.sphere) {
+                currentScore += 100;
+            }
+
+            // City match is now mandatory, so no bonus needed, but we can keep a small one to prioritize explicit city matches over empty ones if logic changes
+            if (p1.city && p2.city && p1.city === p2.city) {
+                currentScore += 50;
+            }
+
+            if (currentScore > bestScore) {
+                bestScore = currentScore;
                 bestPartnerIndex = j;
-                break; 
             }
         }
 
-        // If no fresh partner found, try to match with anyone available (fallback)
-        // Only if we really want to guarantee a match even if repeated. 
-        // For now, let's prioritize freshness, but if list is exhausted, maybe skip or pick first available.
-        // Let's do a second pass if no fresh partner found? 
-        // For MVP: If no fresh partner, pick the next available one (better a repeat match than no match?)
-        // The user complained about repeats, so let's try to avoid it strictly first.
-        
+        // If no partner found with strict rules, try a fallback without sphere priority 
+        // but still keeping trade/city exclusion and repeat prevention if possible.
         if (bestPartnerIndex === -1) {
-            // Second pass: Find ANY partner available
-             for (let j = i + 1; j < pool.length; j++) {
-                if (!matchedUserIds.has(pool[j].user_id)) {
-                    bestPartnerIndex = j;
-                    break;
-                }
-             }
+            for (let j = i + 1; j < pool.length; j++) {
+                const candidate = pool[j];
+                if (matchedUserIds.has(candidate.user_id)) continue;
+                
+                const p2 = profileMap[candidate.user_id] || { trade: '', sphere: '', city: '' };
+                
+                // Still exclude same trade
+                if (p1.trade && p2.trade && p1.trade === p2.trade) continue;
+
+                // Still exclude different cities
+                if (p1.city && p2.city && p1.city !== p2.city) continue;
+                
+                // Pick the first available (greedy)
+                bestPartnerIndex = j;
+                break;
+            }
         }
 
         if (bestPartnerIndex !== -1) {

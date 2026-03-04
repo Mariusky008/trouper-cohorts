@@ -21,6 +21,10 @@ import {
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { createClient } from "@/lib/supabase/client";
+import { registerNetworkUser } from "@/actions/network-registration";
+import { useRouter } from "next/navigation";
+import { Loader2 } from "lucide-react";
 
 // --- TYPES ---
 type SphereId = 'habitat' | 'digital' | 'sante' | 'commerce' | 'conseil';
@@ -109,9 +113,20 @@ export default function SpheresRegistrationPage() {
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isConfirmed, setIsConfirmed] = useState(false);
-  const [formStep, setFormStep] = useState(1);
   const [memberCount, setMemberCount] = useState(14); // Simulation
   
+  const [formData, setFormData] = useState({
+    fullName: "",
+    city: "",
+    phone: "",
+    email: "",
+    password: "",
+    quickWin: ""
+  });
+  const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
+  const supabase = createClient();
+
   // Simulation de slots déjà pris (différents par ville pour le réalisme)
   const lockedSlotsByCity: Record<CityId, string[]> = {
       'bordeaux': ['Agent Immobilier', 'Courtier en prêt', 'Webdesigner', 'Coach Sportif'],
@@ -124,14 +139,48 @@ export default function SpheresRegistrationPage() {
   const handleReserve = (slot: string) => {
     setSelectedSlot(slot);
     setIsModalOpen(true);
-    setFormStep(1);
+    setFormData(prev => ({
+        ...prev,
+        city: activeCity ? CITIES.find(c => c.id === activeCity)?.label || "" : ""
+    }));
   };
 
-  const handleConfirm = () => {
-    setIsModalOpen(false);
-    setIsConfirmed(true);
-    setMemberCount(prev => prev + 1);
-    toast.success("Votre siège est réservé ! 🚀");
+  const handleConfirm = async () => {
+    setIsLoading(true);
+    
+    try {
+        const payload = new FormData();
+        payload.append("email", formData.email);
+        payload.append("password", formData.password);
+        payload.append("fullName", formData.fullName);
+        payload.append("city", formData.city);
+        payload.append("trade", selectedSlot || "");
+        payload.append("phone", formData.phone);
+        payload.append("sphere", activeSphere);
+        payload.append("quickWin", formData.quickWin);
+
+        const result = await registerNetworkUser(payload);
+        
+        if (result.error) throw new Error(result.error);
+        
+        // Auto login
+        const { error: loginError } = await supabase.auth.signInWithPassword({
+            email: formData.email,
+            password: formData.password
+        });
+        
+        if (loginError) throw loginError;
+
+        setIsModalOpen(false);
+        setIsConfirmed(true);
+        setMemberCount(prev => prev + 1);
+        toast.success("Votre siège est réservé ! 🚀");
+        
+    } catch (error: any) {
+        toast.error(error.message || "Erreur lors de l'inscription");
+    } finally {
+        setIsLoading(false);
+    }
   };
 
   const getGaugeMessage = (count: number) => {
@@ -311,11 +360,23 @@ export default function SpheresRegistrationPage() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="fullname" className="text-xs font-bold text-slate-500 ml-1">Prénom Nom</Label>
-                <Input id="fullname" placeholder="Jean Dupont" className="bg-white/5 border-white/10 h-12 rounded-xl focus:ring-indigo-500" />
+                <Input 
+                  id="fullname" 
+                  placeholder="Jean Dupont" 
+                  className="bg-white/5 border-white/10 h-12 rounded-xl focus:ring-indigo-500" 
+                  value={formData.fullName}
+                  onChange={(e) => setFormData({...formData, fullName: e.target.value})}
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="city" className="text-xs font-bold text-slate-500 ml-1">Ville</Label>
-                <Input id="city" placeholder="Paris" className="bg-white/5 border-white/10 h-12 rounded-xl focus:ring-indigo-500" />
+                <Input 
+                  id="city" 
+                  placeholder="Paris" 
+                  className="bg-white/5 border-white/10 h-12 rounded-xl focus:ring-indigo-500" 
+                  value={formData.city}
+                  onChange={(e) => setFormData({...formData, city: e.target.value})}
+                />
               </div>
             </div>
 
@@ -327,24 +388,44 @@ export default function SpheresRegistrationPage() {
                     id="activity" 
                     defaultValue={selectedSlot || ""} 
                     className="bg-white/5 border-white/10 h-12 rounded-xl focus:ring-indigo-500 font-bold text-white" 
+                    readOnly
                 />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="phone" className="text-xs font-bold text-slate-500 ml-1">Téléphone</Label>
-                <Input id="phone" placeholder="06..." className="bg-white/5 border-white/10 h-12 rounded-xl focus:ring-indigo-500" />
+                <Input 
+                  id="phone" 
+                  placeholder="06..." 
+                  className="bg-white/5 border-white/10 h-12 rounded-xl focus:ring-indigo-500" 
+                  value={formData.phone}
+                  onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                />
               </div>
             </div>
             
             {/* Row 3: Email */}
             <div className="space-y-2">
               <Label htmlFor="email" className="text-xs font-bold text-slate-500 ml-1">Email</Label>
-              <Input id="email" type="email" placeholder="vous@exemple.com" className="bg-white/5 border-white/10 h-12 rounded-xl focus:ring-indigo-500" />
+              <Input 
+                id="email" 
+                type="email" 
+                placeholder="vous@exemple.com" 
+                className="bg-white/5 border-white/10 h-12 rounded-xl focus:ring-indigo-500" 
+                value={formData.email}
+                onChange={(e) => setFormData({...formData, email: e.target.value})}
+              />
             </div>
 
             {/* Row 4: Mot de passe */}
             <div className="space-y-2">
               <Label htmlFor="password" className="text-xs font-bold text-slate-500 ml-1">Mot de passe</Label>
-              <Input id="password" type="password" className="bg-white/5 border-white/10 h-12 rounded-xl focus:ring-indigo-500" />
+              <Input 
+                id="password" 
+                type="password" 
+                className="bg-white/5 border-white/10 h-12 rounded-xl focus:ring-indigo-500" 
+                value={formData.password}
+                onChange={(e) => setFormData({...formData, password: e.target.value})}
+              />
             </div>
 
             {/* Row 5: Quick Win Question */}
@@ -355,16 +436,29 @@ export default function SpheresRegistrationPage() {
               <p className="text-[10px] text-slate-500 font-medium ml-1 leading-tight mb-2">
                 Quel métier complémentaire vous manque-t-il aujourd'hui pour faire plus de business ?
               </p>
-              <Input placeholder="Ex: Un notaire, un décorateur..." className="bg-white/5 border-white/10 h-12 rounded-xl focus:ring-indigo-500" />
+              <Input 
+                placeholder="Ex: Un notaire, un décorateur..." 
+                className="bg-white/5 border-white/10 h-12 rounded-xl focus:ring-indigo-500" 
+                value={formData.quickWin}
+                onChange={(e) => setFormData({...formData, quickWin: e.target.value})}
+              />
             </div>
           </div>
 
           <DialogFooter>
             <Button 
               onClick={handleConfirm}
+              disabled={isLoading}
               className="w-full h-16 bg-white text-black hover:bg-slate-200 text-lg font-black rounded-2xl shadow-[0_0_30px_rgba(255,255,255,0.15)] transition-all active:scale-95"
             >
-              VALIDER MON EXCLUSIVITÉ
+              {isLoading ? (
+                  <>
+                      <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                      CRÉATION EN COURS...
+                  </>
+              ) : (
+                  "VALIDER MON EXCLUSIVITÉ"
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -421,7 +515,10 @@ export default function SpheresRegistrationPage() {
               </div>
 
               <div className="flex flex-col md:flex-row gap-4 pt-4">
-                <Button className="h-16 flex-1 bg-white text-black hover:bg-slate-200 font-black rounded-2xl text-lg gap-3">
+                <Button 
+                  onClick={() => router.push("/mon-reseau-local/dashboard")}
+                  className="h-16 flex-1 bg-white text-black hover:bg-slate-200 font-black rounded-2xl text-lg gap-3"
+                >
                   ACCÉDER À MON DASHBOARD
                 </Button>
                 <Button variant="outline" className="h-16 flex-1 border-indigo-500/50 text-indigo-400 hover:bg-indigo-500/10 font-black rounded-2xl text-lg gap-3">
