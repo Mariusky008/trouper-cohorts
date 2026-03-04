@@ -296,7 +296,7 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
           
           // Redirect to dashboard if this was an onboarding completion
           if (!wasProfileComplete) {
-             router.push("/mon-reseau-local/dashboard");
+             router.push("/mon-reseau-local/dashboard?setup=availability");
           }
       }
       
