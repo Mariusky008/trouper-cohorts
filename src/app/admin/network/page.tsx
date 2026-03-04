@@ -120,7 +120,7 @@ async function getNetworkStats() {
     // Use supabaseAdmin instead of supabase to bypass RLS policies and see all profiles
     const { data: profiles, error: profileError } = await supabaseAdmin
       .from('profiles')
-      .select('id, display_name, email, trade, city, phone')
+      .select('id, display_name, email, trade, city, phone, receive_profile')
       .in('id', userIds);
     
     // If profiles query fails (e.g. missing column) or returns null, we try to fallback to Auth users
@@ -247,6 +247,7 @@ async function getNetworkStats() {
 import { getAllUsersForDropdown } from "@/lib/actions/network-admin";
 import { MatchBuilder } from "@/components/admin/match-builder";
 import { ManualMatchLauncher } from "@/components/admin/manual-match-launcher";
+import { NetworkMembersList } from "@/components/admin/network-members-list";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { MousePointerClick, PhoneCall, MessageSquare, Gift, Star, User, Copy } from "lucide-react";
@@ -484,36 +485,7 @@ export default async function AdminNetworkPage() {
 
         {/* RIGHT COLUMN: RECENT MEMBERS */}
         <div>
-          <Card className="h-full">
-            <CardHeader>
-              <CardTitle className="text-sm font-bold uppercase tracking-widest text-slate-500">Membres du Réseau ({stats.recentMembers.length})</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4 max-h-[800px] overflow-y-auto">
-              {stats.recentMembers.length > 0 ? (
-                stats.recentMembers.map((m) => (
-                  <div key={m.user_id} className="flex items-center gap-3 border-b border-slate-100 last:border-0 pb-3 last:pb-0">
-                    <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-xs shrink-0">
-                      {m.profile?.display_name?.[0] || "?"}
-                    </div>
-                    <div className="overflow-hidden w-full">
-                      <div className="flex justify-between items-start">
-                          <div className="text-sm font-bold text-slate-900 truncate">{m.profile?.display_name || "Utilisateur"}</div>
-                          <Badge variant="outline" className="text-[10px] h-5">{format(new Date(m.created_at), 'dd/MM')}</Badge>
-                      </div>
-                      <div className="text-xs text-slate-500 truncate">
-                        {m.profile?.trade || "Non renseigné"} • {m.profile?.city || "Non renseigné"}
-                      </div>
-                      <div className="text-xs text-blue-600 font-mono flex items-center gap-1 mt-1">
-                        <PhoneCall className="w-3 h-3" /> {m.profile?.phone || "Sans tél"}
-                      </div>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <div className="text-sm text-slate-400 italic">Aucun membre trouvé.</div>
-              )}
-            </CardContent>
-          </Card>
+           <NetworkMembersList members={stats.recentMembers} />
         </div>
 
       </div>

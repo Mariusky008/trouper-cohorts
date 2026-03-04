@@ -1,0 +1,158 @@
+"use client";
+
+import { useState } from "react";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Users, PhoneCall, Zap, MapPin, Briefcase } from "lucide-react";
+import { format } from "date-fns";
+import { fr } from "date-fns/locale";
+
+export function NetworkMembersList({ members }: any) {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [cityFilter, setCityFilter] = useState("all");
+  const [sphereFilter, setSphereFilter] = useState("all");
+
+  // Extract unique cities and spheres for filters
+  const cities: string[] = Array.from(new Set(members.map((m: any) => m.profile?.city || "Non renseigné").filter(Boolean)));
+  const spheres: string[] = Array.from(new Set(members.map((m: any) => m.profile?.receive_profile?.sphere_interest || "Non renseigné").filter(Boolean)));
+
+  const filteredMembers = members.filter((m: any) => {
+    const matchesSearch = (
+      m.profile?.display_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      m.profile?.trade?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      m.profile?.phone?.includes(searchTerm)
+    );
+    const matchesCity = cityFilter === "all" || (m.profile?.city || "Non renseigné") === cityFilter;
+    const matchesSphere = sphereFilter === "all" || (m.profile?.receive_profile?.sphere_interest || "Non renseigné") === sphereFilter;
+
+    return matchesSearch && matchesCity && matchesSphere;
+  });
+
+  const getSphereColor = (sphere: string) => {
+    switch (sphere?.toLowerCase()) {
+      case 'habitat': return 'bg-amber-100 text-amber-800 border-amber-200';
+      case 'sante': return 'bg-green-100 text-green-800 border-green-200';
+      case 'digital': return 'bg-blue-100 text-blue-800 border-blue-200';
+      case 'commerce': return 'bg-purple-100 text-purple-800 border-purple-200';
+      case 'conseil': return 'bg-slate-100 text-slate-800 border-slate-200';
+      default: return 'bg-slate-100 text-slate-600 border-slate-200';
+    }
+  };
+
+  return (
+    <Card className="h-full border-slate-200 shadow-sm bg-white">
+      <CardHeader className="bg-slate-50 border-b border-slate-100 pb-4">
+        <div className="flex flex-col gap-4">
+          <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2 text-lg font-bold text-slate-800">
+                <Users className="h-5 w-5 text-blue-600" />
+                Membres du Réseau ({filteredMembers.length})
+              </CardTitle>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+             <Input 
+               placeholder="Rechercher (Nom, Métier...)" 
+               className="h-9 bg-white"
+               value={searchTerm}
+               onChange={(e) => setSearchTerm(e.target.value)}
+             />
+             <Select value={cityFilter} onValueChange={setCityFilter}>
+               <SelectTrigger className="h-9 bg-white">
+                 <SelectValue placeholder="Toutes villes" />
+               </SelectTrigger>
+               <SelectContent>
+                 <SelectItem value="all">Toutes villes</SelectItem>
+                 {cities.map((c: string) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+               </SelectContent>
+             </Select>
+             <Select value={sphereFilter} onValueChange={setSphereFilter}>
+               <SelectTrigger className="h-9 bg-white">
+                 <SelectValue placeholder="Toutes sphères" />
+               </SelectTrigger>
+               <SelectContent>
+                 <SelectItem value="all">Toutes sphères</SelectItem>
+                 {spheres.map((s: string) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+               </SelectContent>
+             </Select>
+          </div>
+        </div>
+      </CardHeader>
+      
+      <CardContent className="p-0">
+        <div className="max-h-[800px] overflow-y-auto divide-y divide-slate-100">
+          {filteredMembers.length > 0 ? (
+            filteredMembers.map((m: any) => (
+              <div key={m.user_id} className="p-4 hover:bg-slate-50 transition-colors group">
+                <div className="flex items-start gap-4">
+                  {/* Sphere Initial Badge */}
+                  <div className={`h-12 w-12 rounded-xl flex items-center justify-center text-xl font-black shrink-0 shadow-sm border ${getSphereColor(m.profile?.receive_profile?.sphere_interest || '')}`}>
+                    {m.profile?.display_name?.[0]?.toUpperCase() || "?"}
+                  </div>
+                  
+                  <div className="flex-1 min-w-0">
+                    {/* Header: Name & Sphere */}
+                    <div className="flex justify-between items-start mb-1">
+                        <h3 className="font-bold text-slate-900 truncate text-base">
+                            {m.profile?.display_name || "Utilisateur Inconnu"}
+                        </h3>
+                        {m.profile?.receive_profile?.sphere_interest && (
+                            <Badge variant="outline" className={`capitalize text-[10px] h-5 px-2 border ${getSphereColor(m.profile?.receive_profile?.sphere_interest)} bg-opacity-20`}>
+                                {m.profile?.receive_profile?.sphere_interest}
+                            </Badge>
+                        )}
+                    </div>
+
+                    {/* Meta: City & Trade */}
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500 font-medium mb-2">
+                        <span className="flex items-center gap-1 text-slate-700">
+                            <MapPin className="h-3 w-3" /> {m.profile?.city || "Ville ?"}
+                        </span>
+                        <span className="text-slate-300">|</span>
+                        <span className="flex items-center gap-1">
+                            <Briefcase className="h-3 w-3" /> {m.profile?.trade || "Métier ?"}
+                        </span>
+                    </div>
+
+                    {/* Quick Win / Needs */}
+                    {m.profile?.receive_profile?.quick_win_need ? (
+                        <div className="bg-amber-50/80 border border-amber-100 rounded-lg p-2.5 mb-3">
+                            <div className="flex items-center gap-1.5 text-amber-800 font-bold uppercase tracking-wider text-[10px] mb-1">
+                                <Zap className="h-3 w-3 fill-amber-500 text-amber-500" /> Besoin Immédiat (Quick-Win)
+                            </div>
+                            <p className="text-sm text-slate-800 italic leading-snug">
+                                &ldquo;{m.profile.receive_profile.quick_win_need}&rdquo;
+                            </p>
+                        </div>
+                    ) : (
+                        <div className="mb-3"></div>
+                    )}
+
+                    {/* Footer: Phone & Date */}
+                    <div className="flex items-center justify-between border-t border-slate-100 pt-2 mt-2">
+                        <div className="flex items-center gap-2 font-mono font-bold text-slate-600 bg-slate-100 px-2 py-1 rounded text-xs">
+                            <PhoneCall className="h-3 w-3 text-slate-400" />
+                            {m.profile?.phone || "Non renseigné"}
+                        </div>
+                        <div className="text-[10px] text-slate-400 font-medium">
+                            Inscrit le {format(new Date(m.created_at), 'dd MMM yyyy', { locale: fr })}
+                        </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="flex flex-col items-center justify-center py-12 text-center text-slate-400">
+              <Users className="h-12 w-12 text-slate-200 mb-2" />
+              <p>Aucun membre trouvé.</p>
+            </div>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
