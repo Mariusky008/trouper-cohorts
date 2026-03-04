@@ -1263,7 +1263,299 @@ export function FounderCardPreview({ type = "onboarding", onConfirm }: { type?: 
   );
 }
 
+// --- 8. MATCH CARD (FOUNDER STYLE ALTERNATIVE) ---
+export function MatchCardFounderStylePreview() {
+  const [isMissionOpen, setIsMissionOpen] = useState(false);
+  const [selectedMission, setSelectedMission] = useState<string | null>(null);
+  const [isWhyVisible, setIsWhyVisible] = useState(false);
+  const [isPhoneOpen, setIsPhoneOpen] = useState(false);
+  const [isOpportunityOpen, setIsOpportunityOpen] = useState(false);
+  const [isRatingOpen, setIsRatingOpen] = useState(false);
+  
+  // Mock suggestion for preview
+  const suggestedMissionId = 'amplificateur';
+  const suggestedMission = MISSION_TYPES.find(m => m.id === suggestedMissionId);
+
+  return (
+    <div className="relative w-full max-w-sm mx-auto min-h-[600px] h-auto rounded-[2.5rem] overflow-hidden shadow-2xl bg-[#0f0f12] border border-indigo-500/20 flex flex-col items-center justify-between text-center p-6 pb-8 group">
+      
+      {/* Premium Background with Sparkles (Adapted to Indigo/Blue) */}
+      <div className="absolute inset-0 bg-gradient-to-b from-indigo-900/10 via-[#0a0a0c] to-[#0a0a0c] z-0"></div>
+      <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-5 z-0"></div>
+      
+      {/* Moving Particles / Fireflies (Blue/Indigo) */}
+      {[...Array(5)].map((_, i) => (
+        <motion.div
+          key={i}
+          className="absolute w-1 h-1 bg-indigo-400 rounded-full blur-[1px]"
+          initial={{ 
+            x: Math.random() * 300, 
+            y: Math.random() * 600, 
+            opacity: 0 
+          }}
+          animate={{ 
+            y: [null, Math.random() * -100],
+            opacity: [0, 1, 0],
+            scale: [0, 1.5, 0]
+          }}
+          transition={{ 
+            duration: 3 + Math.random() * 2,
+            repeat: Infinity,
+            delay: Math.random() * 2,
+            ease: "easeInOut"
+          }}
+        />
+      ))}
+
+      {/* Animated Glow */}
+      <motion.div 
+        animate={{ opacity: [0.3, 0.6, 0.3], scale: [1, 1.1, 1] }}
+        transition={{ duration: 4, repeat: Infinity }}
+        className="absolute top-0 left-0 right-0 h-40 bg-indigo-500/30 blur-[80px] rounded-full z-0"
+      />
+
+      {/* Content */}
+      <div className="relative z-10 w-full flex flex-col items-center h-full">
+        
+        {/* FOMO Badge (Top) */}
+        <motion.div 
+            initial={{ y: -20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            className="mb-6 bg-red-500/10 backdrop-blur-md text-white px-4 py-2 rounded-2xl flex flex-col items-center justify-center shadow-[0_0_20px_rgba(239,68,68,0.2)] text-center gap-1 border border-red-500/20 w-full max-w-[90%]"
+        >
+            <div className="flex items-center gap-2 font-bold text-xs uppercase tracking-wider text-red-200">
+                <Phone className="w-3 h-3 animate-bounce" />
+                Jean-Paul vous appelle
+            </div>
+            <div className="flex items-center gap-2">
+                 <Clock className="w-3 h-3 text-red-200" />
+                 <span className="font-mono font-bold text-xs text-white">09h - 11h</span>
+            </div>
+        </motion.div>
+
+        {/* Avatar with Rotating Rings */}
+        <div className="relative mb-4">
+            {/* Outer Ring - Slow Rotation */}
+            <motion.div 
+                animate={{ rotate: 360 }}
+                transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+                className="absolute -inset-4 rounded-full border border-indigo-500/20 border-dashed"
+            />
+            {/* Middle Ring - Reverse Rotation */}
+            <motion.div 
+                animate={{ rotate: -360 }}
+                transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
+                className="absolute -inset-2 rounded-full border border-blue-500/30 border-dotted"
+            />
+            
+            {/* Glow behind avatar */}
+            <div className="absolute inset-0 bg-gradient-to-r from-indigo-300 to-blue-600 rounded-full blur-md opacity-60 animate-pulse-slow"></div>
+            
+            <div className="w-28 h-28 rounded-full p-[3px] bg-gradient-to-r from-indigo-300 via-blue-300 to-purple-600 shadow-2xl relative z-10">
+                <div className="w-full h-full rounded-full overflow-hidden border-4 border-[#0f0f12]">
+                    <img 
+                        src="https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=800&q=80" 
+                        alt="Jean-Paul" 
+                        className="w-full h-full object-cover transform transition-transform hover:scale-110 duration-700"
+                    />
+                </div>
+            </div>
+            
+            {/* Status Indicator */}
+            <div className="absolute bottom-1 right-1 w-6 h-6 bg-[#0f0f12] rounded-full flex items-center justify-center z-20">
+                <span className="absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75 animate-ping"></span>
+                <div className="relative w-4 h-4 bg-green-500 rounded-full border-2 border-[#0f0f12]"></div>
+            </div>
+        </div>
+
+        {/* Name & Role */}
+        <div className="mb-6 text-center">
+            <h2 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-b from-white to-indigo-200 mb-1">Jean-Paul</h2>
+            <p className="text-indigo-400 font-bold uppercase text-xs tracking-[0.2em] flex items-center justify-center gap-2">
+                Directeur Commercial
+            </p>
+        </div>
+
+        {/* Mission Selector (Styled like Founder Pitch) */}
+        <motion.div 
+            whileHover={{ y: -2 }}
+            onClick={() => setIsMissionOpen(true)}
+            className="w-full bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-4 text-left relative overflow-hidden mb-auto shadow-xl cursor-pointer group-hover:shadow-indigo-900/20 transition-all"
+        >
+            <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-indigo-400 to-purple-600 shadow-[0_0_10px_rgba(99,102,241,0.5)]"></div>
+            <Target className="absolute top-4 right-4 w-6 h-6 text-white/10" />
+            
+            <h3 className="text-white font-bold text-sm mb-1 flex items-center gap-2">
+                <Target className="w-4 h-4 text-indigo-400" />
+                {selectedMission ? "Objectif défini" : "Objectif de l'appel"}
+            </h3>
+            <p className={cn("text-sm leading-relaxed font-medium", selectedMission ? "text-indigo-300" : "text-slate-400 italic")}>
+                {selectedMission 
+                    ? MISSION_TYPES.find(m => m.id === selectedMission)?.desc 
+                    : suggestedMission 
+                        ? `Suggestion : ${suggestedMission.label} ?`
+                        : "Cliquez pour définir..."}
+            </p>
+            {selectedMission && <Badge className="mt-2 bg-indigo-500/20 text-indigo-300 border-indigo-500/30 text-[10px]">Validé</Badge>}
+        </motion.div>
+
+        {/* Action Buttons (Dock Style) - Identical Functionality */}
+        <div className="flex justify-center items-center gap-4 mt-6 w-full">
+            
+            {/* 1. Message / Script */}
+            <Dialog open={isWhyVisible} onOpenChange={setIsWhyVisible}>
+                <DialogTrigger asChild>
+                    <Button size="icon" className="h-12 w-12 rounded-full bg-slate-800/80 backdrop-blur-md border border-white/10 text-yellow-400 hover:bg-slate-700 hover:scale-110 transition-all shadow-lg">
+                        <MessageSquare className="h-5 w-5 fill-current" />
+                    </Button>
+                </DialogTrigger>
+                <DialogContent className="bg-[#0f172a] border-white/10 text-white sm:max-w-md rounded-2xl w-[90vw] p-0 overflow-hidden">
+                    <div className="bg-gradient-to-br from-blue-600/20 to-purple-600/20 p-6">
+                        <DialogHeader>
+                            <DialogTitle className="flex items-center gap-2 text-xl font-black">
+                                <Zap className="h-6 w-6 text-yellow-400 fill-yellow-400" />
+                                Pourquoi ce match ?
+                            </DialogTitle>
+                        </DialogHeader>
+                    </div>
+                    <div className="p-6 space-y-6">
+                        <div className="bg-white/5 p-4 rounded-xl border border-white/10">
+                            <h4 className="text-sm font-bold text-slate-400 uppercase mb-2 flex items-center gap-2">
+                                <Target className="h-4 w-4 text-blue-400" /> Synergie Détectée
+                            </h4>
+                            <p className="text-slate-200 leading-relaxed text-sm">
+                                "L'algorithme a détecté une complémentarité rare..."
+                            </p>
+                        </div>
+                        <Button className="w-full bg-slate-800 hover:bg-slate-700 font-bold h-12 rounded-xl" onClick={() => setIsWhyVisible(false)}>
+                            Compris !
+                        </Button>
+                    </div>
+                </DialogContent>
+            </Dialog>
+
+            {/* 2. CALL (Main Action) */}
+            <Dialog open={isPhoneOpen} onOpenChange={setIsPhoneOpen}>
+                <DialogTrigger asChild>
+                    <div className="relative group cursor-pointer">
+                        <div className="absolute inset-0 bg-gradient-to-br from-emerald-400 to-blue-600 rounded-full blur opacity-40 group-hover:opacity-70 transition-opacity animate-pulse"></div>
+                        <Button size="icon" className="h-16 w-16 rounded-full bg-gradient-to-br from-emerald-500 to-blue-600 text-white hover:scale-105 transition-all shadow-xl border-4 border-[#0f172a] relative z-10">
+                            <PhoneCall className="h-7 w-7 fill-current" />
+                        </Button>
+                    </div>
+                </DialogTrigger>
+                <DialogContent className="bg-[#0f172a] border-white/10 text-white sm:max-w-md rounded-2xl">
+                    <div className="flex flex-col items-center gap-6 py-8">
+                        <div className="h-20 w-20 rounded-full bg-emerald-500/20 flex items-center justify-center animate-pulse">
+                            <Phone className="h-10 w-10 text-emerald-400" />
+                        </div>
+                        <div className="text-center space-y-2">
+                            <h3 className="text-2xl font-black">C'est parti ! 🚀</h3>
+                            <div className="text-3xl font-black tracking-widest text-white bg-slate-900 px-6 py-4 rounded-xl border border-white/10 shadow-inner select-all">
+                                06 12 34 56 78
+                            </div>
+                        </div>
+                    </div>
+                </DialogContent>
+            </Dialog>
+
+            {/* 3. Gift */}
+            <Dialog open={isOpportunityOpen} onOpenChange={setIsOpportunityOpen}>
+                <DialogTrigger asChild>
+                    <Button size="icon" className="h-12 w-12 rounded-full bg-slate-800/80 backdrop-blur-md border border-white/10 text-purple-400 hover:bg-slate-700 hover:scale-110 transition-all shadow-lg">
+                        <Gift className="h-5 w-5" />
+                    </Button>
+                </DialogTrigger>
+                <DialogContent className="bg-[#0f172a] border-white/10 text-white sm:max-w-md rounded-2xl">
+                     <DialogHeader>
+                        <DialogTitle>Offrir une opportunité</DialogTitle>
+                     </DialogHeader>
+                     <div className="grid grid-cols-2 gap-3 py-4">
+                        {OPPORTUNITY_TYPES.map((type) => (
+                            <button
+                                key={type.id}
+                                onClick={() => {
+                                    setIsOpportunityOpen(false);
+                                    toast.success(`Opportunité "${type.label}" envoyée ! 🎁`);
+                                    confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+                                }}
+                                className="p-3 rounded-xl border border-white/10 bg-white/5 text-center text-xs font-bold text-slate-300 hover:bg-white/10"
+                            >
+                                {type.label}
+                            </button>
+                        ))}
+                     </div>
+                </DialogContent>
+            </Dialog>
+
+            {/* 4. Rate */}
+            <Dialog open={isRatingOpen} onOpenChange={setIsRatingOpen}>
+                <DialogTrigger asChild>
+                    <Button size="icon" className="h-12 w-12 rounded-full bg-slate-800/80 backdrop-blur-md border border-white/10 text-orange-400 hover:bg-slate-700 hover:scale-110 transition-all shadow-lg">
+                        <Star className="h-5 w-5 fill-current" />
+                    </Button>
+                </DialogTrigger>
+                <DialogContent className="bg-[#0f172a] border-white/10 text-white sm:max-w-md rounded-2xl">
+                    <DialogHeader>
+                        <DialogTitle className="text-center">Notez l'échange</DialogTitle>
+                    </DialogHeader>
+                    <div className="grid grid-cols-3 gap-3 py-6">
+                        <Button onClick={() => setIsRatingOpen(false)} className="h-20 bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">TOP 🔥</Button>
+                        <Button onClick={() => setIsRatingOpen(false)} className="h-20 bg-blue-500/10 text-blue-400 border border-blue-500/30">SYMPA 👍</Button>
+                        <Button onClick={() => setIsRatingOpen(false)} className="h-20 bg-slate-500/10 text-slate-400 border border-slate-500/30">BOF 😕</Button>
+                    </div>
+                </DialogContent>
+            </Dialog>
+
+        </div>
+        
+        {/* Mission Dialog (Hidden Logic) */}
+        <Dialog open={isMissionOpen} onOpenChange={setIsMissionOpen}>
+            <DialogContent className="bg-[#0f172a] border-white/10 text-white sm:max-w-md rounded-2xl w-[90vw] max-h-[85vh] overflow-y-auto">
+                <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2 text-xl font-black text-indigo-400">
+                        <Target className="h-6 w-6" />
+                        Menu de la Carte 🍽️
+                    </DialogTitle>
+                    <DialogDescription className="text-slate-400">
+                        Ne partez pas sans objectif.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-3 py-4">
+                    {MISSION_TYPES.map((mission) => (
+                        <button
+                            key={mission.id}
+                            onClick={() => {
+                                setSelectedMission(mission.id);
+                                setIsMissionOpen(false);
+                            }}
+                            className={cn(
+                                "flex items-center gap-4 p-4 rounded-xl border transition-all text-left relative overflow-hidden group",
+                                mission.id === selectedMission 
+                                    ? "bg-indigo-600/20 border-indigo-500" 
+                                    : "bg-slate-900/50 border-white/5 hover:bg-slate-800"
+                            )}
+                        >
+                            <div className={cn("h-10 w-10 rounded-full flex items-center justify-center shrink-0", mission.bg)}>
+                                <mission.icon className={cn("h-5 w-5", mission.color)} />
+                            </div>
+                            <div className="flex-1">
+                                <span className="font-bold text-sm text-white">{mission.label}</span>
+                                <p className="text-xs text-slate-400">{mission.desc}</p>
+                            </div>
+                        </button>
+                    ))}
+                </div>
+            </DialogContent>
+        </Dialog>
+
+      </div>
+    </div>
+  );
+}
+
 function QuoteIcon(props: any) {
+
     return (
         <svg
         {...props}
