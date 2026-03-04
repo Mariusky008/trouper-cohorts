@@ -22,7 +22,6 @@ export async function getDailyMatches() {
     `)
     .gte("date", searchDate) // Fetch from yesterday onwards
     .or(`user1_id.eq.${user.id},user2_id.eq.${user.id}`)
-    .neq('status', 'met') // Exclude completed matches
     .neq('status', 'canceled')
     .order('date', { ascending: true }) // Earliest date first
     .order('time', { ascending: true })
