@@ -683,99 +683,158 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
 
   // MATCH CARD (REVEALED)
   return (
-    <div className="relative w-full max-w-sm mx-auto h-[600px] rounded-[2.5rem] overflow-hidden shadow-2xl bg-[#0f172a] border border-slate-800">
-      {/* Background Image */}
-      <div className="absolute inset-0 z-0">
-        {match.avatar ? (
-            <Image 
-                src={match.avatar} 
-                alt={match.name} 
-                fill 
-                className="object-cover transition-all duration-700 opacity-60 hover:scale-105"
-            />
-        ) : (
-            <div className="w-full h-full bg-slate-800 flex items-center justify-center">
-                <User className="h-32 w-32 text-slate-600" />
-            </div>
-        )}
-        <div className="absolute inset-0 bg-gradient-to-t from-[#0f172a] via-[#0f172a]/60 to-transparent"></div>
-      </div>
+    <div className="relative w-full max-w-sm mx-auto min-h-[600px] h-auto rounded-[2.5rem] overflow-hidden shadow-2xl bg-[#0f0f12] border border-indigo-500/20 flex flex-col items-center justify-between text-center p-6 pb-8 group">
+      
+      {/* Premium Background with Sparkles */}
+      <div className="absolute inset-0 bg-gradient-to-b from-indigo-900/10 via-[#0a0a0c] to-[#0a0a0c] z-0"></div>
+      <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-5 z-0"></div>
+      
+      {/* Moving Particles / Fireflies */}
+      {[...Array(5)].map((_, i) => (
+        <motion.div
+          key={i}
+          className="absolute w-1 h-1 bg-indigo-400 rounded-full blur-[1px]"
+          initial={{ 
+            x: Math.random() * 300, 
+            y: Math.random() * 600, 
+            opacity: 0 
+          }}
+          animate={{ 
+            y: [null, Math.random() * -100],
+            opacity: [0, 1, 0],
+            scale: [0, 1.5, 0]
+          }}
+          transition={{ 
+            duration: 3 + Math.random() * 2,
+            repeat: Infinity,
+            delay: Math.random() * 2,
+            ease: "easeInOut"
+          }}
+        />
+      ))}
 
-      {/* FOMO Badge - Top */}
-      <div className="absolute top-6 left-6 right-6 z-20">
+      {/* Animated Glow */}
+      <motion.div 
+        animate={{ opacity: [0.3, 0.6, 0.3], scale: [1, 1.1, 1] }}
+        transition={{ duration: 4, repeat: Infinity }}
+        className="absolute top-0 left-0 right-0 h-40 bg-indigo-500/30 blur-[80px] rounded-full z-0"
+      />
+
+      {/* Content */}
+      <div className="relative z-10 w-full flex flex-col items-center h-full pt-4">
+        
+        {/* FOMO Badge (Top) */}
         <motion.div 
             initial={{ y: -20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            className="bg-red-500/20 backdrop-blur-md text-white px-5 py-3 rounded-2xl flex flex-col items-center justify-center shadow-[0_0_20px_rgba(239,68,68,0.2)] text-center gap-1 border border-red-500/30"
+            className="mb-4 bg-red-500/10 backdrop-blur-md text-white px-4 py-2 rounded-2xl flex flex-col items-center justify-center shadow-[0_0_20px_rgba(239,68,68,0.2)] text-center gap-1 border border-red-500/20 w-full max-w-[90%]"
         >
-            <div className="flex items-center gap-2 font-bold text-sm uppercase tracking-wider text-red-100 mb-1">
-                <Phone className="w-4 h-4 animate-bounce" />
-                {isCallOut 
-                    ? `C'est à vous d'appeler`
-                    : `${match.name} vous appelle`
-                }
+            <div className="flex items-center gap-2 font-bold text-xs uppercase tracking-wider text-red-200">
+                <Phone className="w-3 h-3 animate-bounce" />
+                {isCallOut ? `C'est à vous d'appeler` : `${match.name.split(' ')[0]} vous appelle`}
             </div>
-            <div className="flex items-center gap-2 bg-black/40 px-3 py-1 rounded-lg border border-white/10">
+            <div className="flex items-center gap-2">
                  <Clock className="w-3 h-3 text-red-200" />
-                 <span className="font-mono font-bold text-sm text-white">{match.time}</span>
-            </div>
-            <div className="text-[10px] font-bold text-red-200/80 mt-1">
-                Fin du créneau dans <span className="font-mono text-xs text-white">{matchCountdown}</span>
+                 <span className="font-mono font-bold text-xs text-white">{match.time}</span>
             </div>
         </motion.div>
-      </div>
 
-      {/* Main Content - Bottom */}
-      <div className="absolute bottom-0 left-0 right-0 z-20 p-6 pt-24 bg-gradient-to-t from-[#0f172a] via-[#0f172a] to-transparent flex flex-col justify-end h-full">
-        
-        {/* Match Score */}
-        <div className="flex items-end gap-3 mb-3">
-            <h2 className="text-4xl font-black text-white tracking-tighter">{match.name}</h2>
+        {/* Avatar with Rotating Rings */}
+        <div className="relative mb-4">
+            {/* Outer Ring - Slow Rotation */}
+            <motion.div 
+                animate={{ rotate: 360 }}
+                transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+                className="absolute -inset-4 rounded-full border border-indigo-500/20 border-dashed"
+            />
+            {/* Middle Ring - Reverse Rotation */}
+            <motion.div 
+                animate={{ rotate: -360 }}
+                transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
+                className="absolute -inset-2 rounded-full border border-blue-500/30 border-dotted"
+            />
+            
+            {/* Glow behind avatar */}
+            <div className="absolute inset-0 bg-gradient-to-r from-indigo-300 to-blue-600 rounded-full blur-md opacity-60 animate-pulse-slow"></div>
+            
+            <div className="w-24 h-24 rounded-full p-[3px] bg-gradient-to-r from-indigo-300 via-blue-300 to-purple-600 shadow-2xl relative z-10">
+                <div className="w-full h-full rounded-full overflow-hidden border-4 border-[#0f0f12] relative bg-slate-800">
+                    {match.avatar ? (
+                        <Image 
+                            src={match.avatar} 
+                            alt={match.name} 
+                            fill 
+                            className="object-cover transform transition-transform hover:scale-110 duration-700"
+                        />
+                    ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                            <User className="h-10 w-10 text-slate-500" />
+                        </div>
+                    )}
+                </div>
+            </div>
+            
+            {/* Status Indicator */}
+            <div className="absolute bottom-1 right-1 w-5 h-5 bg-[#0f0f12] rounded-full flex items-center justify-center z-20">
+                <span className="absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75 animate-ping"></span>
+                <div className="relative w-3 h-3 bg-green-500 rounded-full border-2 border-[#0f0f12]"></div>
+            </div>
+        </div>
+
+        {/* Name & View Profile */}
+        <div className="mb-4 flex flex-col items-center gap-2">
+            <h2 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-b from-white to-indigo-200 leading-none">
+                {match.name.split(' ')[0]}
+            </h2>
             <Button 
                 asChild
                 variant="outline" 
-                className="bg-emerald-500/20 border border-emerald-500/50 text-emerald-400 hover:bg-emerald-500/30 hover:text-emerald-300 px-3 py-1 rounded-lg text-xs font-black mb-1.5 flex items-center gap-1 h-auto transition-colors"
+                className="h-7 text-[10px] px-3 bg-indigo-500/10 border-indigo-500/30 text-indigo-300 hover:bg-indigo-500/20 hover:text-indigo-200 rounded-full uppercase font-bold tracking-wider transition-all hover:scale-105"
                 onClick={() => trackEvent('click_profile', { partnerId: match.partnerId })}
             >
                 <Link href={`/mon-reseau-local/dashboard/profile/${match.partnerId}`}>
-                    <User className="w-3 h-3" /> Voir profil
+                    <User className="w-3 h-3 mr-1.5" /> Voir profil
                 </Link>
             </Button>
         </div>
 
-        <p className="text-slate-300 text-sm font-medium mb-6 line-clamp-3 leading-snug">
-            "Ce {match.job || 'partenaire'} peut vous ouvrir des opportunités auxquelles vous n’aviez pas accès hier."
-        </p>
+        {/* Quote */}
+        <div className="mb-6 px-2 w-full">
+            <p className="text-slate-300 text-sm font-medium italic leading-relaxed">
+                "Ce {match.job || 'partenaire'} peut vous ouvrir des opportunités auxquelles vous n’aviez pas accès hier."
+            </p>
+        </div>
 
-        {/* Mission Selector (My Goal + His Goal) */}
-        <div className="grid grid-cols-2 gap-3 mb-6">
-            {/* 1. My Goal */}
-            <div className="bg-indigo-500/20 border border-indigo-500/30 rounded-xl p-3 backdrop-blur-sm cursor-pointer hover:bg-indigo-500/30 transition-colors" onClick={() => setIsMissionOpen(true)}>
-                <div className="flex items-center gap-1.5 mb-1.5">
+        {/* Goals Grid */}
+        <div className="grid grid-cols-2 gap-3 w-full mb-auto">
+            {/* My Goal */}
+            <div 
+                onClick={() => setIsMissionOpen(true)}
+                className="bg-indigo-500/10 border border-indigo-500/20 rounded-xl p-3 cursor-pointer hover:bg-indigo-500/20 transition-all text-left group/box hover:border-indigo-500/40"
+            >
+                <div className="flex items-center gap-1.5 mb-2">
                     <Target className="w-3.5 h-3.5 text-indigo-400" />
                     <span className="text-[9px] font-black text-indigo-300 uppercase tracking-wider">Mon Objectif</span>
                 </div>
-                <p className="text-white text-[11px] font-medium leading-tight line-clamp-2">
+                <p className={cn("text-[11px] font-bold leading-tight line-clamp-2 group-hover/box:text-white transition-colors", selectedMission ? "text-white" : "text-indigo-200/70")}>
                     {selectedMission 
                         ? MISSION_TYPES.find(m => m.id === selectedMission)?.label 
                         : "Définir mon objectif 🎯"}
                 </p>
             </div>
 
-            {/* 2. His Goal */}
+            {/* His Goal */}
             <div className={cn(
-                "rounded-xl p-3 backdrop-blur-sm border",
+                "rounded-xl p-3 text-left border",
                 match.partner_mission 
-                    ? "bg-purple-500/20 border-purple-500/30" 
+                    ? "bg-purple-500/10 border-purple-500/20" 
                     : "bg-orange-500/10 border-orange-500/20 border-dashed"
             )}>
-                <div className="flex items-center gap-1.5 mb-1.5">
+                <div className="flex items-center gap-1.5 mb-2">
                     <Users className={cn("w-3.5 h-3.5", match.partner_mission ? "text-purple-400" : "text-orange-400")} />
-                    <span className={cn("text-[9px] font-black uppercase tracking-wider", match.partner_mission ? "text-purple-300" : "text-orange-300")}>
-                        Son Objectif
-                    </span>
+                    <span className={cn("text-[9px] font-black uppercase tracking-wider", match.partner_mission ? "text-purple-300" : "text-orange-300")}>Son Objectif</span>
                 </div>
-                <p className={cn("text-[11px] font-medium leading-tight line-clamp-2", match.partner_mission ? "text-white" : "text-orange-200/70 italic")}>
+                <p className={cn("text-[11px] font-bold leading-tight line-clamp-2", match.partner_mission ? "text-white" : "text-orange-200/70 italic")}>
                     {match.partner_mission 
                         ? (MISSION_TYPES.find(m => m.id === match.partner_mission)?.label || match.partner_mission)
                         : "N'a pas encore défini son objectif..."}
@@ -783,245 +842,39 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
             </div>
         </div>
 
-        {/* Action Buttons (Dock Style) */}
-        <div className="flex justify-center items-center gap-4 pb-4">
-            
-            {/* 0. Mission Dialog */}
-            <Dialog open={isMissionOpen} onOpenChange={setIsMissionOpen}>
-                <DialogContent className="bg-[#0f172a] border-white/10 text-white sm:max-w-md rounded-2xl w-[90vw] max-h-[85vh] overflow-y-auto">
-                    <DialogHeader>
-                        <DialogTitle className="flex items-center gap-2 text-xl font-black text-indigo-400">
-                            <Target className="h-6 w-6" />
-                            Menu de la Carte 🍽️
-                        </DialogTitle>
-                        <DialogDescription className="text-slate-400">
-                            Ne partez pas sans objectif. Choisissez le thème de votre échange.
-                        </DialogDescription>
-                    </DialogHeader>
-                    
-                    <div className="grid gap-3 py-4">
-                        {MISSION_TYPES.map((mission) => {
-                            const isSuggested = mission.id === suggestedMissionId;
-                            const isSelected = mission.id === selectedMission;
-                            const Icon = mission.icon;
-                            
-                            return (
-                                <button
-                                    key={mission.id}
-                                    onClick={async () => {
-                                        const newMission = mission.id;
-                                        setSelectedMission(newMission);
-                                        setIsMissionOpen(false);
-                                        toast.success(`Objectif "${mission.label}" sélectionné !`);
-                                        try {
-                                            await updateMatchMission(match.id, newMission);
-                                        } catch (e) {
-                                            toast.error("Erreur lors de la sauvegarde");
-                                        }
-                                    }}
-                                    className={cn(
-                                        "flex items-center gap-4 p-4 rounded-xl border transition-all text-left relative overflow-hidden group",
-                                        isSelected 
-                                            ? "bg-indigo-600/20 border-indigo-500 shadow-[0_0_15px_rgba(99,102,241,0.3)]" 
-                                            : "bg-slate-900/50 border-white/5 hover:bg-slate-800",
-                                        isSuggested && !isSelected && "border-indigo-500/50"
-                                    )}
-                                >
-                                    <div className={cn("h-10 w-10 rounded-full flex items-center justify-center shrink-0", mission.bg)}>
-                                        <Icon className={cn("h-5 w-5", mission.color)} />
-                                    </div>
-                                    <div className="flex-1">
-                                        <div className="flex items-center gap-2">
-                                            <span className={cn("font-bold text-sm", isSelected ? "text-indigo-300" : "text-white")}>
-                                                {mission.label}
-                                            </span>
-                                            {isSuggested && (
-                                                <Badge className="bg-indigo-500/20 text-indigo-300 border-indigo-500/30 text-[9px] px-1.5 h-4">
-                                                    Recommandé
-                                                </Badge>
-                                            )}
-                                        </div>
-                                        <p className="text-xs text-slate-400 font-medium leading-tight mt-0.5">
-                                            "{mission.desc}"
-                                        </p>
-                                    </div>
-                                    {isSelected && <div className="absolute right-4"><CheckCircle2 className="w-5 h-5 text-indigo-400" /></div>}
-                                </button>
-                            );
-                        })}
-                    </div>
-
-
-                </DialogContent>
-            </Dialog>
-
-            {/* 1. Message / Script (Why) - ONLY IN INITIAL */}
-            {step === 'initial' && (
-            <Dialog open={isWhyVisible} onOpenChange={setIsWhyVisible}>
-                <DialogTrigger asChild>
-                    <Button size="icon" className="h-14 w-14 rounded-full bg-slate-800/80 backdrop-blur-md border border-white/10 text-yellow-400 hover:bg-slate-700 hover:scale-110 transition-all shadow-lg">
-                        <MessageSquare className="h-6 w-6 fill-current" />
+        {/* Action Buttons */}
+        <div className="flex flex-col gap-3 w-full mt-6">
+             
+             {/* STEP INITIAL: SHOW ACTION BUTTONS */}
+             {step === 'initial' && (
+                 <>
+                    <Button 
+                        onClick={() => {
+                            setIsWhyVisible(true);
+                            trackEvent('click_why_open', { partnerId: match.partnerId });
+                        }}
+                        variant="ghost" 
+                        className="w-full h-12 border border-white/10 bg-white/5 text-slate-300 hover:bg-white/10 hover:text-white rounded-xl font-bold transition-all hover:scale-[1.02]"
+                    >
+                        <Zap className="w-4 h-4 mr-2 text-yellow-400" /> Pourquoi ce match ?
                     </Button>
-                </DialogTrigger>
-                <DialogContent className="bg-[#0f172a] border-white/10 text-white sm:max-w-md rounded-2xl w-[90vw] p-0 overflow-hidden">
-                    <div className="sr-only">
-                        <DialogTitle>Pourquoi ce match ?</DialogTitle>
-                        <DialogDescription>Détails du match algorithmique</DialogDescription>
-                    </div>
-                        <div className="bg-gradient-to-br from-blue-600/20 to-purple-600/20 p-6">
-                            <DialogHeader>
-                                <DialogTitle className="flex items-center gap-2 text-xl font-black">
-                                    <Zap className="h-6 w-6 text-yellow-400 fill-yellow-400" />
-                                    Pourquoi ce match ?
-                                </DialogTitle>
-                                <DialogDescription className="text-slate-300">
-                                    Voici pourquoi l'algorithme vous a réunis aujourd'hui.
-                                </DialogDescription>
-                            </DialogHeader>
-                        </div>
-                        
-                        <div className="p-6 space-y-6 max-h-[60vh] overflow-y-auto">
-                            {/* 1. Objectif du moment */}
-                            <div className="space-y-2">
-                                <h4 className="text-xs font-bold text-slate-500 uppercase flex items-center gap-2">
-                                    <Target className="h-4 w-4" /> Objectif du moment
-                                </h4>
-                                <p className="text-lg font-bold text-white leading-tight">
-                                    {match.current_goals && match.current_goals.length > 0 
-                                        ? GOAL_LABELS[match.current_goals[0]] 
-                                        : "Développer son activité"}
-                                </p>
-                            </div>
 
-                            {/* 2. Grand Défi */}
-                            {match.big_goal && (
-                                <div className="space-y-2">
-                                    <h4 className="text-xs font-bold text-slate-500 uppercase flex items-center gap-2">
-                                        <Trophy className="h-4 w-4" /> Son Grand Défi
-                                    </h4>
-                                    <div className="bg-slate-900/50 p-3 rounded-xl border border-white/5 text-sm text-slate-200 italic">
-                                        "{match.big_goal}"
-                                    </div>
-                                </div>
-                            )}
+                    <Button 
+                        onClick={() => {
+                            setIsPhoneOpen(true);
+                            trackEvent('click_call_open', { partnerId: match.partnerId });
+                        }}
+                        className="w-full h-14 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white font-black text-lg rounded-xl shadow-lg shadow-emerald-900/20 tracking-wide transition-all hover:scale-[1.02] relative overflow-hidden group/btn"
+                    >
+                        <div className="absolute inset-0 bg-white/20 translate-y-full group-hover/btn:translate-y-0 transition-transform duration-300"></div>
+                        <PhoneCall className="w-5 h-5 mr-2 relative z-10" /> <span className="relative z-10">APPELER</span>
+                    </Button>
+                 </>
+             )}
 
-                            <div className="grid grid-cols-1 gap-4 pt-2">
-                                {/* 3. Ce qu'il offre */}
-                                <div className="bg-emerald-500/10 p-4 rounded-xl border border-emerald-500/20 space-y-2">
-                                    <h4 className="text-xs font-bold text-emerald-400 uppercase flex items-center gap-2">
-                                        <Gift className="h-4 w-4" /> Ce qu'il peut offrir
-                                    </h4>
-                                    <p className="text-sm font-medium text-emerald-100">
-                                        {match.superpower || "Son expérience et son réseau"}
-                                    </p>
-                                </div>
-
-                                {/* 4. Ce qu'il cherche */}
-                                <div className="bg-blue-500/10 p-4 rounded-xl border border-blue-500/20 space-y-2">
-                                    <h4 className="text-xs font-bold text-blue-400 uppercase flex items-center gap-2">
-                                        <Search className="h-4 w-4" /> Ce qu'il recherche
-                                    </h4>
-                                    <p className="text-sm font-medium text-blue-100">
-                                        {match.current_need || "Des opportunités de croissance"}
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                        <div className="p-4 bg-slate-900 border-t border-white/5">
-                            <Button 
-                                className="w-full bg-slate-800 hover:bg-slate-700 text-white font-bold" 
-                                onClick={() => {
-                                    setIsWhyVisible(false);
-                                    trackEvent('click_why_close_ack', { partnerId: match.partnerId });
-                                }}
-                            >
-                                {isCallOut ? "Compris, je l'appelle ! 📞" : "Compris, j'attends son appel ! ⏳"}
-                            </Button>
-                        </div>
-                    </DialogContent>
-            </Dialog>
-            )}
-
-            {/* 2. CALL (Main Action) */}
-            {step === 'initial' ? (
-                <Dialog open={isPhoneOpen} onOpenChange={(open) => {
-                    setIsPhoneOpen(open);
-                    // When closing the phone dialog, we assume the user might have interacted (seen the number).
-                    // We unlock the next step (Validation) to ensure they aren't stuck if they called externally.
-                    if (!open) {
-                        setStep('called');
-                    }
-                }}>
-                    <DialogTrigger asChild>
-                        <div className="relative group cursor-pointer" onClick={() => trackEvent('click_call_open', { partnerId: match.partnerId })}>
-                            <div className="absolute inset-0 bg-gradient-to-br from-emerald-400 to-blue-600 rounded-full blur opacity-40 group-hover:opacity-70 transition-opacity animate-pulse"></div>
-                            <Button size="icon" className="h-20 w-20 rounded-full bg-gradient-to-br from-emerald-500 to-blue-600 text-white hover:scale-105 transition-all shadow-xl border-4 border-[#0f172a] relative z-10">
-                                <PhoneCall className="h-8 w-8 fill-current" />
-                            </Button>
-                        </div>
-                    </DialogTrigger>
-                    <DialogContent className="bg-[#0f172a] border-white/10 text-white sm:max-w-md rounded-2xl w-[90vw]">
-                        <DialogHeader>
-                            <DialogTitle className="flex flex-col items-center gap-4 text-2xl font-black justify-center pt-4">
-                                <div className="h-20 w-20 rounded-full bg-emerald-500/20 flex items-center justify-center animate-pulse">
-                                    <Phone className="h-10 w-10 text-emerald-400" />
-                                </div>
-                                <span>C'est parti ! 🚀</span>
-                            </DialogTitle>
-                            <DialogDescription className="text-center text-slate-400 text-base">
-                                {isCallOut ? (
-                                    <>
-                                        Voici le numéro de <span className="text-white font-bold">{match.name}</span>.
-                                        <br/>Appelez-le maintenant pour votre échange de 15 min.
-                                    </>
-                                ) : (
-                                    <>
-                                        Vous attendez l'appel de <span className="text-white font-bold">{match.name}</span>.
-                                        <br/>Si à {match.time.split('h')[0]}h10 vous n'avez pas de nouvelles, appelez-le !
-                                    </>
-                                )}
-                            </DialogDescription>
-                        </DialogHeader>
-
-                        <div className="flex flex-col items-center gap-6 py-6">
-                            <div className="text-3xl sm:text-4xl font-black tracking-widest text-white bg-slate-900 px-6 py-4 rounded-xl border border-white/10 shadow-inner select-all">
-                                {match.phone || "Non renseigné"}
-                            </div>
-                            
-                            <div className="grid grid-cols-2 gap-4 w-full">
-                                <Button 
-                                    onClick={() => {
-                                        handleCopyPhone(match.phone);
-                                        trackEvent('click_copy_phone', { partnerId: match.partnerId });
-                                    }}
-                                    variant="outline"
-                                    className="h-14 border-white/20 bg-transparent text-white hover:bg-white/10 hover:text-white text-lg font-bold gap-2"
-                                >
-                                    <Copy className="h-5 w-5" />
-                                    Copier
-                                </Button>
-                                
-                                <Button 
-                                    asChild
-                                    className="h-14 bg-emerald-500 hover:bg-emerald-400 text-white text-lg font-bold gap-2 shadow-lg shadow-emerald-500/20"
-                                    onClick={() => {
-                                        handleCallAction();
-                                        trackEvent('click_call_action', { partnerId: match.partnerId });
-                                    }}
-                                >
-                                    <a href={`tel:${match.phone}`}>
-                                        <PhoneCall className="h-5 w-5" />
-                                        Appeler
-                                    </a>
-                                </Button>
-                            </div>
-                        </div>
-                    </DialogContent>
-                </Dialog>
-            ) : (
-                // --- STEP: CALLED (VALIDATION WIZARD) ---
-                <div className="flex flex-col items-center gap-3">
-                    <Dialog open={isValidationOpen} onOpenChange={(open) => {
+             {/* STEP CALLED: SHOW VALIDATION BUTTON */}
+             {step === 'called' && (
+                <Dialog open={isValidationOpen} onOpenChange={(open) => {
                         setIsValidationOpen(open);
                         if (!open) {
                             setPopupView('step1_status'); // Reset view on close
@@ -1032,16 +885,13 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
                         }
                     }}>
                         <DialogTrigger asChild>
-                            <div className="relative group cursor-pointer w-full">
-                                <div className="absolute inset-0 bg-gradient-to-br from-indigo-400 to-purple-600 rounded-2xl blur opacity-40 group-hover:opacity-70 transition-opacity animate-pulse"></div>
-                                <Button className="h-20 px-8 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 text-white hover:scale-105 transition-all shadow-xl border-4 border-[#0f172a] relative z-10 flex flex-col items-center justify-center gap-1">
-                                    <CheckCircle2 className="h-6 w-6" />
-                                    <span className="text-xs font-black uppercase tracking-wider">Terminer la mission</span>
-                                </Button>
-                            </div>
+                            <Button className="w-full h-20 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 text-white hover:scale-[1.02] transition-all shadow-xl border-2 border-indigo-400/50 relative z-10 flex flex-col items-center justify-center gap-1">
+                                <CheckCircle2 className="h-6 w-6" />
+                                <span className="text-xs font-black uppercase tracking-wider">Terminer la mission</span>
+                            </Button>
                         </DialogTrigger>
+                        {/* VALIDATION WIZARD CONTENT (Re-inserted here) */}
                         <DialogContent className="bg-[#0f172a] border-white/10 text-white sm:max-w-md rounded-2xl w-[95vw] min-h-[400px] flex flex-col justify-center transition-all duration-300">
-                            
                             {/* PROGRESS INDICATOR */}
                             <div className="absolute top-0 left-0 right-0 h-1 bg-white/5">
                                 <motion.div 
@@ -1064,16 +914,13 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
                             {/* VIEW 1: STATUS CALL */}
                             {popupView === 'step1_status' && (
                                 <div className="flex flex-col gap-6 p-2">
-                                    
-                                    {/* Question */}
                                     <div className="bg-white/5 p-6 rounded-2xl border border-white/5 text-center space-y-6">
                                         <Label className="text-slate-400 uppercase text-xs font-bold tracking-wider block">L'appel a-t-il eu lieu ?</Label>
-                                        
                                         <div className="grid grid-cols-2 gap-4">
                                             <Button 
                                                 onClick={() => {
                                                     setCallHappened(true);
-                                                    setPopupView('step2_rating'); // AUTO NEXT
+                                                    setPopupView('step2_rating');
                                                 }} 
                                                 variant="outline"
                                                 className="h-24 flex flex-col gap-2 font-bold border-emerald-500/30 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 hover:scale-105 transition-all"
@@ -1094,8 +941,6 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
                                             </Button>
                                         </div>
                                     </div>
-
-                                    {/* If NO -> Validate Absence Directly */}
                                     {callHappened === false && (
                                         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
                                             <Button onClick={handleValidate} className="w-full h-14 text-lg font-black bg-white text-black hover:bg-slate-200 rounded-xl shadow-lg">
@@ -1106,7 +951,7 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
                                 </div>
                             )}
 
-                            {/* VIEW 2: RATE (Auto Next) */}
+                            {/* VIEW 2: RATE */}
                             {popupView === 'step2_rating' && (
                                 <div className="space-y-6 p-4">
                                     <div className="flex justify-between gap-3">
@@ -1139,7 +984,6 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
                             {/* VIEW 3: GIFT & MESSAGE */}
                             {popupView === 'step3_gift' && (
                                 <div className="space-y-4 p-2">
-                                    {/* Gift Selector */}
                                     {!oppType ? (
                                         <div className="grid grid-cols-1 gap-2 max-h-[50vh] overflow-y-auto pr-1">
                                             {OPPORTUNITY_TYPES.map((type) => {
@@ -1196,59 +1040,211 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
                                             </Button>
                                         </div>
                                     )}
-                                    
                                     {!oppType && (
                                             <Button variant="ghost" onClick={() => setPopupView('step2_rating')} className="w-full text-slate-500">Retour</Button>
                                     )}
                                 </div>
                             )}
-
                         </DialogContent>
-                    </Dialog>
-                    
-                    <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="text-xs text-slate-400 hover:text-white flex items-center gap-1 h-auto py-1"
-                        onClick={() => {
-                            setIsPhoneOpen(true);
-                        }}
-                    >
-                        <Phone className="w-3 h-3" />
-                        Revoir le numéro
-                    </Button>
-                    
-                    <Dialog open={isPhoneOpen} onOpenChange={setIsPhoneOpen}>
-                        <DialogContent className="bg-[#0f172a] border-white/10 text-white sm:max-w-md rounded-2xl w-[90vw]">
-                            <DialogHeader>
-                                <DialogTitle className="flex flex-col items-center gap-4 text-2xl font-black justify-center pt-4">
-                                    <div className="h-20 w-20 rounded-full bg-emerald-500/20 flex items-center justify-center animate-pulse">
-                                        <Phone className="h-10 w-10 text-emerald-400" />
-                                    </div>
-                                    <span>C'est parti ! 🚀</span>
-                                </DialogTitle>
-                                <DialogDescription className="text-center text-slate-400 text-base">
-                                    Voici le numéro de <span className="text-white font-bold">{match.name}</span>.
-                                </DialogDescription>
-                            </DialogHeader>
-
-                            <div className="flex flex-col items-center gap-6 py-6">
-                                <div className="text-3xl sm:text-4xl font-black tracking-widest text-white bg-slate-900 px-6 py-4 rounded-xl border border-white/10 shadow-inner select-all">
-                                    {match.phone || "Non renseigné"}
-                                </div>
-                                <Button 
-                                    onClick={() => setIsPhoneOpen(false)}
-                                    className="w-full h-12 bg-slate-800 text-white font-bold"
-                                >
-                                    Fermer
-                                </Button>
-                            </div>
-                        </DialogContent>
-                    </Dialog>
-                </div>
-            )}
+                </Dialog>
+             )}
 
         </div>
+        
+        {/* HIDDEN DIALOGS (To ensure content is available) */}
+        {/* Mission Dialog */}
+        <Dialog open={isMissionOpen} onOpenChange={setIsMissionOpen}>
+            <DialogContent className="bg-[#0f172a] border-white/10 text-white sm:max-w-md rounded-2xl w-[90vw] max-h-[85vh] overflow-y-auto">
+                <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2 text-xl font-black text-indigo-400">
+                        <Target className="h-6 w-6" />
+                        Menu de la Carte 🍽️
+                    </DialogTitle>
+                    <DialogDescription className="text-slate-400">
+                        Ne partez pas sans objectif. Choisissez le thème de votre échange.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-3 py-4">
+                    {MISSION_TYPES.map((mission) => {
+                        const isSuggested = mission.id === suggestedMissionId;
+                        const isSelected = mission.id === selectedMission;
+                        const Icon = mission.icon;
+                        return (
+                            <button
+                                key={mission.id}
+                                onClick={async () => {
+                                    const newMission = mission.id;
+                                    setSelectedMission(newMission);
+                                    setIsMissionOpen(false);
+                                    toast.success(`Objectif "${mission.label}" sélectionné !`);
+                                    try {
+                                        await updateMatchMission(match.id, newMission);
+                                    } catch (e) {
+                                        toast.error("Erreur lors de la sauvegarde");
+                                    }
+                                }}
+                                className={cn(
+                                    "flex items-center gap-4 p-4 rounded-xl border transition-all text-left relative overflow-hidden group",
+                                    isSelected 
+                                        ? "bg-indigo-600/20 border-indigo-500 shadow-[0_0_15px_rgba(99,102,241,0.3)]" 
+                                        : "bg-slate-900/50 border-white/5 hover:bg-slate-800",
+                                    isSuggested && !isSelected && "border-indigo-500/50"
+                                )}
+                            >
+                                <div className={cn("h-10 w-10 rounded-full flex items-center justify-center shrink-0", mission.bg)}>
+                                    <Icon className={cn("h-5 w-5", mission.color)} />
+                                </div>
+                                <div className="flex-1">
+                                    <div className="flex items-center gap-2">
+                                        <span className={cn("font-bold text-sm", isSelected ? "text-indigo-300" : "text-white")}>
+                                            {mission.label}
+                                        </span>
+                                        {isSuggested && (
+                                            <Badge className="bg-indigo-500/20 text-indigo-300 border-indigo-500/30 text-[9px] px-1.5 h-4">
+                                                Recommandé
+                                            </Badge>
+                                        )}
+                                    </div>
+                                    <p className="text-xs text-slate-400 font-medium leading-tight mt-0.5">
+                                        "{mission.desc}"
+                                    </p>
+                                </div>
+                                {isSelected && <div className="absolute right-4"><CheckCircle2 className="w-5 h-5 text-indigo-400" /></div>}
+                            </button>
+                        );
+                    })}
+                </div>
+            </DialogContent>
+        </Dialog>
+
+        {/* Why Dialog Content (Reused) */}
+        <Dialog open={isWhyVisible} onOpenChange={setIsWhyVisible}>
+            <DialogContent className="bg-[#0f172a] border-white/10 text-white sm:max-w-md rounded-2xl w-[90vw] p-0 overflow-hidden">
+                <div className="bg-gradient-to-br from-blue-600/20 to-purple-600/20 p-6">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2 text-xl font-black">
+                            <Zap className="h-6 w-6 text-yellow-400 fill-yellow-400" />
+                            Pourquoi ce match ?
+                        </DialogTitle>
+                    </DialogHeader>
+                </div>
+                <div className="p-6 space-y-6 max-h-[60vh] overflow-y-auto">
+                    <div className="space-y-2">
+                        <h4 className="text-xs font-bold text-slate-500 uppercase flex items-center gap-2">
+                            <Target className="h-4 w-4" /> Objectif du moment
+                        </h4>
+                        <p className="text-lg font-bold text-white leading-tight">
+                            {match.current_goals && match.current_goals.length > 0 
+                                ? GOAL_LABELS[match.current_goals[0]] 
+                                : "Développer son activité"}
+                        </p>
+                    </div>
+                    {match.big_goal && (
+                        <div className="space-y-2">
+                            <h4 className="text-xs font-bold text-slate-500 uppercase flex items-center gap-2">
+                                <Trophy className="h-4 w-4" /> Son Grand Défi
+                            </h4>
+                            <div className="bg-slate-900/50 p-3 rounded-xl border border-white/5 text-sm text-slate-200 italic">
+                                "{match.big_goal}"
+                            </div>
+                        </div>
+                    )}
+                    <div className="grid grid-cols-1 gap-4 pt-2">
+                        <div className="bg-emerald-500/10 p-4 rounded-xl border border-emerald-500/20 space-y-2">
+                            <h4 className="text-xs font-bold text-emerald-400 uppercase flex items-center gap-2">
+                                <Gift className="h-4 w-4" /> Ce qu'il peut offrir
+                            </h4>
+                            <p className="text-sm font-medium text-emerald-100">
+                                {match.superpower || "Son expérience et son réseau"}
+                            </p>
+                        </div>
+                        <div className="bg-blue-500/10 p-4 rounded-xl border border-blue-500/20 space-y-2">
+                            <h4 className="text-xs font-bold text-blue-400 uppercase flex items-center gap-2">
+                                <Search className="h-4 w-4" /> Ce qu'il recherche
+                            </h4>
+                            <p className="text-sm font-medium text-blue-100">
+                                {match.current_need || "Des opportunités de croissance"}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div className="p-4 bg-slate-900 border-t border-white/5">
+                    <Button 
+                        className="w-full bg-slate-800 hover:bg-slate-700 text-white font-bold" 
+                        onClick={() => {
+                            setIsWhyVisible(false);
+                            trackEvent('click_why_close_ack', { partnerId: match.partnerId });
+                        }}
+                    >
+                        {isCallOut ? "Compris, je l'appelle ! 📞" : "Compris, j'attends son appel ! ⏳"}
+                    </Button>
+                </div>
+            </DialogContent>
+        </Dialog>
+
+        {/* Phone Dialog Content (Reused) */}
+        <Dialog open={isPhoneOpen} onOpenChange={(open) => {
+            setIsPhoneOpen(open);
+            if (!open) {
+                setStep('called');
+            }
+        }}>
+            <DialogContent className="bg-[#0f172a] border-white/10 text-white sm:max-w-md rounded-2xl w-[90vw]">
+                <DialogHeader>
+                    <DialogTitle className="flex flex-col items-center gap-4 text-2xl font-black justify-center pt-4">
+                        <div className="h-20 w-20 rounded-full bg-emerald-500/20 flex items-center justify-center animate-pulse">
+                            <Phone className="h-10 w-10 text-emerald-400" />
+                        </div>
+                        <span>C'est parti ! 🚀</span>
+                    </DialogTitle>
+                    <DialogDescription className="text-center text-slate-400 text-base">
+                        {isCallOut ? (
+                            <>
+                                Voici le numéro de <span className="text-white font-bold">{match.name}</span>.
+                                <br/>Appelez-le maintenant pour votre échange de 15 min.
+                            </>
+                        ) : (
+                            <>
+                                Vous attendez l'appel de <span className="text-white font-bold">{match.name}</span>.
+                                <br/>Si à {match.time.split('h')[0]}h10 vous n'avez pas de nouvelles, appelez-le !
+                            </>
+                        )}
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="flex flex-col items-center gap-6 py-6">
+                    <div className="text-3xl sm:text-4xl font-black tracking-widest text-white bg-slate-900 px-6 py-4 rounded-xl border border-white/10 shadow-inner select-all">
+                        {match.phone || "Non renseigné"}
+                    </div>
+                    <div className="grid grid-cols-2 gap-4 w-full">
+                        <Button 
+                            onClick={() => {
+                                handleCopyPhone(match.phone);
+                                trackEvent('click_copy_phone', { partnerId: match.partnerId });
+                            }}
+                            variant="outline"
+                            className="h-14 border-white/20 bg-transparent text-white hover:bg-white/10 hover:text-white text-lg font-bold gap-2"
+                        >
+                            <Copy className="h-5 w-5" />
+                            Copier
+                        </Button>
+                        <Button 
+                            asChild
+                            className="h-14 bg-emerald-500 hover:bg-emerald-400 text-white text-lg font-bold gap-2 shadow-lg shadow-emerald-500/20"
+                            onClick={() => {
+                                handleCallAction();
+                                trackEvent('click_call_action', { partnerId: match.partnerId });
+                            }}
+                        >
+                            <a href={`tel:${match.phone}`}>
+                                <PhoneCall className="h-5 w-5" />
+                                Appeler
+                            </a>
+                        </Button>
+                    </div>
+                </div>
+            </DialogContent>
+        </Dialog>
+
       </div>
     </div>
   );
