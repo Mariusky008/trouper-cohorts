@@ -152,8 +152,8 @@ export async function getDailyMatches() {
           const startHourMatch = timeStr.match(/^(\d{1,2})/);
           const startHour = startHourMatch ? parseInt(startHourMatch[1], 10) : 0;
           
-          // Keep match visible all day (until 21h) even if slot is passed
-          if (currentParisHour >= 21) return false;
+          // Keep match visible all day (until 23h59) even if slot is passed
+          // if (currentParisHour >= 21) return false;
       }
 
       return true;
