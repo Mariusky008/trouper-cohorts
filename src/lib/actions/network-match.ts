@@ -258,8 +258,9 @@ export async function getDailyMatches() {
       // activeMatches is already filtered for today/future.
       
       // Let's modify the return.
-      if (sortedMatches.length === 0 || sortedMatches[0].date > todayParisStr) {
-          // If no match at all OR next match is in future -> Show Founder Match TODAY
+      if (sortedMatches.length === 0) {
+          // If no match at all -> Show Founder Match TODAY (Rescue)
+          // If there is a future match (sortedMatches > 0), we prefer to show that (Teaser) instead of the Joker.
           return [founderMatch];
       }
   }
