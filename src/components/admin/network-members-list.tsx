@@ -3,32 +3,37 @@
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Users, PhoneCall, Zap, MapPin, Briefcase } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 
 export function NetworkMembersList({ members }: any) {
-  const [searchTerm, setSearchTerm] = useState("");
   const [cityFilter, setCityFilter] = useState("all");
   const [sphereFilter, setSphereFilter] = useState("all");
 
-  // Extract unique cities and spheres for filters
-  const cities: string[] = Array.from(new Set(members.map((m: any) => m.profile?.city || "Non renseigné").filter(Boolean)));
+  // Fixed cities list as per requirements
+  const cities = [
+    "Bayonne - Anglet - Biarritz",
+    "Le Grand Dax",
+    "Bordeaux"
+  ];
+
+  // Extract unique spheres from members for dynamic filtering, or keep fixed if needed
+  // Keeping dynamic for spheres as requested "Toutes sphères" is default but content might vary
   const spheres: string[] = Array.from(new Set(members.map((m: any) => m.profile?.receive_profile?.sphere_interest || "Non renseigné").filter(Boolean)));
 
   const filteredMembers = members.filter((m: any) => {
-    const matchesSearch = (
-      m.profile?.display_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      m.profile?.trade?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      m.profile?.phone?.includes(searchTerm)
-    );
-    const matchesCity = cityFilter === "all" || (m.profile?.city || "Non renseigné") === cityFilter;
+    // Search logic removed as requested
+    
+    // City filter logic
+    const memberCity = m.profile?.city || "Non renseigné";
+    const matchesCity = cityFilter === "all" || memberCity === cityFilter;
+    
+    // Sphere filter logic
     const matchesSphere = sphereFilter === "all" || (m.profile?.receive_profile?.sphere_interest || "Non renseigné") === sphereFilter;
 
-    return matchesSearch && matchesCity && matchesSphere;
+    return matchesCity && matchesSphere;
   });
 
   const getSphereColor = (sphere: string) => {
@@ -53,13 +58,7 @@ export function NetworkMembersList({ members }: any) {
               </CardTitle>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-             <Input 
-               placeholder="Rechercher (Nom, Métier...)" 
-               className="h-9 bg-white"
-               value={searchTerm}
-               onChange={(e) => setSearchTerm(e.target.value)}
-             />
+          <div className="grid grid-cols-2 gap-2">
              <Select value={cityFilter} onValueChange={setCityFilter}>
                <SelectTrigger className="h-9 bg-white">
                  <SelectValue placeholder="Toutes villes" />
