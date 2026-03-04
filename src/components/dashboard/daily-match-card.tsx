@@ -214,10 +214,10 @@ function MysteryCard({ onReveal, match, locked = false }: { onReveal: () => void
       <div 
           onClick={locked ? undefined : onReveal}
           className={cn(
-              "relative w-full max-w-sm mx-auto min-h-[600px] h-auto rounded-[2.5rem] overflow-hidden shadow-2xl flex flex-col items-center justify-center text-center p-6 border transition-all pb-8",
-              // ALWAYS use the vibrant dark blue background, never the gray/black locked one
-              "bg-[#020617] border-white/10",
-              !locked && "cursor-pointer group hover:scale-[1.01]"
+              "relative w-full max-w-sm mx-auto min-h-[600px] h-auto rounded-[2.5rem] overflow-hidden shadow-[0_20px_50px_-12px_rgba(0,0,0,0.5)] flex flex-col items-center justify-center text-center p-6 border transition-all pb-8",
+              // Use a lighter gradient to pop against the dark background
+              "bg-gradient-to-b from-[#1e293b] to-[#0f172a] border-white/20",
+              !locked && "cursor-pointer group hover:scale-[1.01] hover:border-white/30"
           )}
       >
       {/* Animated Gradient Border - Show for BOTH states to keep it vibrant */}
@@ -683,7 +683,7 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
 
   // MATCH CARD (REVEALED)
   return (
-    <div className="relative w-full max-w-sm mx-auto min-h-[600px] h-auto rounded-[2.5rem] overflow-hidden shadow-2xl bg-[#0f0f12] border border-indigo-500/20 flex flex-col items-center justify-between text-center p-6 pb-8 group">
+    <div className="relative w-full max-w-sm mx-auto min-h-[600px] h-auto rounded-[2.5rem] overflow-hidden shadow-[0_20px_50px_-12px_rgba(79,70,229,0.15)] bg-gradient-to-b from-[#1e1b4b] to-[#0f172a] border border-indigo-500/30 flex flex-col items-center justify-between text-center p-6 pb-8 group">
       
       {/* Premium Background with Sparkles */}
       <div className="absolute inset-0 bg-gradient-to-b from-indigo-900/10 via-[#0a0a0c] to-[#0a0a0c] z-0"></div>
