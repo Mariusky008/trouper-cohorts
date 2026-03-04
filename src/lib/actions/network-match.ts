@@ -36,6 +36,16 @@ export async function getDailyMatches() {
       return [];
   }
 
+  // Fetch Availabilities for slot comparison
+  const matchDates = Array.from(new Set(matches.map(m => m.date)));
+  const matchUserIds = Array.from(new Set(matches.flatMap(m => [m.user1_id, m.user2_id])));
+  
+  const { data: availabilities } = await supabase
+      .from('network_availabilities')
+      .select('user_id, date, slots')
+      .in('user_id', matchUserIds)
+      .in('date', matchDates);
+
   const matchesWithDetails = await Promise.all(matches.map(async (match) => {
       const isUser1 = match.user1_id === user.id;
       // Using 'as any' casting because the select query returns nested objects
@@ -76,6 +86,12 @@ export async function getDailyMatches() {
           console.error("Error fetching collabs count:", collabsError);
       }
 
+      // Get slots for comparison
+      const myAvail = availabilities?.find(a => a.user_id === user.id && a.date === match.date);
+      const partnerAvail = availabilities?.find(a => a.user_id === partnerId && a.date === match.date);
+      const mySlots = myAvail?.slots || [];
+      const partnerSlots = partnerAvail?.slots || [];
+
       return {
         id: match.id,
         partnerId: partnerId,
@@ -85,6 +101,8 @@ export async function getDailyMatches() {
         score: trustScore?.score || 5.0,
         collabsCount: collabsCount || 0, // Real data from RPC
         time: match.time || "14:00",
+        mySlots: mySlots,
+        partnerSlots: partnerSlots,
         type: isUser1 ? 'call_out' : 'call_in',
         phone: partnerData.phone,
         avatar: partnerData.avatar_url,

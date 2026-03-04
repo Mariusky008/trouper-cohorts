@@ -619,6 +619,13 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
   const match = matches[0];
   const isCallOut = match.type === 'call_out';
 
+  // Check for slot mismatch (loose matching)
+  const mySlots = match.mySlots || [];
+  const partnerSlots = match.partnerSlots || [];
+  const commonSlots = mySlots.filter((s: string) => partnerSlots.includes(s));
+  // Mismatch only if both have slots but no intersection
+  const hasMismatch = mySlots.length > 0 && partnerSlots.length > 0 && commonSlots.length === 0;
+
   // Check if match is in the future (Tomorrow or later)
   const now = new Date();
   const today = new Date().toLocaleDateString('fr-CA', { timeZone: 'Europe/Paris' }); // YYYY-MM-DD
@@ -733,10 +740,24 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
                 <Phone className="w-3 h-3 animate-bounce" />
                 {isCallOut ? `C'est à vous d'appeler` : `${match.name.split(' ')[0]} vous appelle`}
             </div>
-            <div className="flex items-center gap-2">
-                 <Clock className="w-3 h-3 text-red-200" />
-                 <span className="font-mono font-bold text-xs text-white">{match.time}</span>
-            </div>
+
+            {hasMismatch ? (
+                 <div className="flex flex-col items-center mt-1 animate-pulse">
+                     <div className="flex items-center gap-2">
+                         <Clock className="w-3 h-3 text-orange-300" />
+                         <span className="font-mono font-bold text-xs text-orange-200">Créneaux différents ⚠️</span>
+                     </div>
+                     <span className="text-[10px] text-orange-200/80 font-medium mt-0.5 leading-tight">
+                        Lui : {partnerSlots[0]?.replace('h – ', 'h-')?.split(' ')[0]} • Vous : {mySlots[0]?.replace('h – ', 'h-')?.split(' ')[0]}
+                     </span>
+                     <span className="text-[9px] text-white/60 mt-0.5">Appelez quand vous pouvez !</span>
+                 </div>
+            ) : (
+                <div className="flex items-center gap-2">
+                     <Clock className="w-3 h-3 text-red-200" />
+                     <span className="font-mono font-bold text-xs text-white">{match.time}</span>
+                </div>
+            )}
         </motion.div>
 
         {/* Avatar with Rotating Rings */}
