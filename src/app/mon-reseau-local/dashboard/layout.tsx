@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { 
   Home, Users, Zap, ShieldCheck, User, Settings, 
-  Menu, Bell, LogOut, ChevronRight, BookOpen, Anchor, Trophy, Percent 
+  Menu, Bell, LogOut, ChevronRight, BookOpen, Anchor, Trophy, Percent, ShoppingBag 
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -18,7 +18,7 @@ const NAV_ITEMS = [
   { label: "Opportunités", href: "/mon-reseau-local/dashboard/opportunities", icon: Zap },
   { label: "Engagements", href: "/mon-reseau-local/dashboard/trust", icon: ShieldCheck },
   { label: "Offres", href: "/mon-reseau-local/dashboard/offers", icon: Percent },
-  { label: "Guides", href: "/mon-reseau-local/dashboard/guide", icon: BookOpen },
+  { label: "Marché", href: "/mon-reseau-local/dashboard/guide", icon: ShoppingBag },
 ];
 
 import { createClient } from "@/lib/supabase/client";

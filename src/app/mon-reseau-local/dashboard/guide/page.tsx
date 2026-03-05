@@ -1,7 +1,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { getOpportunities } from "@/lib/actions/network-opportunities";
-import { Users, ShoppingBag, Target, ArrowRight } from "lucide-react";
+import { Users, ShoppingBag, Target, ArrowRight, MapPin } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { OPPORTUNITY_TYPES } from "@/constants/opportunities";
@@ -9,6 +9,13 @@ import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getUserPoints } from "@/lib/actions/gamification";
 import { MarketAction } from "@/components/dashboard/market/market-action";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export const dynamic = 'force-dynamic';
 
@@ -20,16 +27,48 @@ export default async function MarketPage() {
   let opportunities: any[] = [];
   let userPoints = 0;
   
+  // Fake opportunities for demo
+  const fakeOpportunities = [
+    {
+      id: "fake-1",
+      type: "clients",
+      points: 20,
+      description: "Lead qualifié pour rénovation complète maison 120m2 Bordeaux centre.",
+      partner: {
+        display_name: "Jean D.",
+        avatar_url: null,
+        city: "Bordeaux"
+      },
+      date: "2 jours",
+      status: "sold" // Locked
+    },
+    {
+      id: "fake-2",
+      type: "intro",
+      points: 15,
+      description: "Intro DGA Marketing - Retail (400 magasins)",
+      partner: {
+        display_name: "Marie L.",
+        avatar_url: null,
+        city: "Le Grand Dax"
+      },
+      date: "4 heures",
+      status: "available"
+    }
+  ];
+  
   try {
     // @ts-ignore - 'public' filter added recently
     const [opps, points] = await Promise.all([
         getOpportunities('public'),
         getUserPoints()
     ]);
-    opportunities = opps;
+    // Merge real opportunities with fake ones for demo
+    opportunities = [...opps, ...fakeOpportunities];
     userPoints = points;
   } catch (e) {
     console.error(e);
+    opportunities = fakeOpportunities;
   }
 
   return (
@@ -63,6 +102,24 @@ export default async function MarketPage() {
                 Recharger
             </Button>
         </div>
+      </div>
+
+      {/* FILTERS */}
+      <div className="flex items-center gap-4 bg-[#1e293b]/30 p-2 rounded-2xl border border-white/5 w-fit">
+         <div className="h-10 w-10 bg-white/5 rounded-xl flex items-center justify-center text-slate-400">
+            <MapPin className="h-5 w-5" />
+         </div>
+         <Select defaultValue="all">
+            <SelectTrigger className="w-[200px] border-none bg-transparent text-white font-bold focus:ring-0">
+                <SelectValue placeholder="Filtrer par ville" />
+            </SelectTrigger>
+            <SelectContent className="bg-[#1e293b] border-white/10 text-white">
+                <SelectItem value="all">Toutes les villes</SelectItem>
+                <SelectItem value="bab">Bayonne-Anglet-Biarritz</SelectItem>
+                <SelectItem value="dax">Le Grand Dax</SelectItem>
+                <SelectItem value="bordeaux">Bordeaux</SelectItem>
+            </SelectContent>
+         </Select>
       </div>
 
       {/* MARKET GRID */}
@@ -127,15 +184,26 @@ export default async function MarketPage() {
                                     <div className="text-sm font-bold text-white truncate max-w-[100px]">
                                         {opp.partner?.display_name}
                                     </div>
+                                    {opp.partner?.city && (
+                                        <div className="text-[10px] text-slate-500 flex items-center gap-1">
+                                            <MapPin className="h-3 w-3" /> {opp.partner.city}
+                                        </div>
+                                    )}
                                 </div>
                             </div>
 
                             {/* Client Action Component */}
-                            <MarketAction 
-                                opportunityId={opp.id} 
-                                price={opp.points} 
-                                userPoints={userPoints}
-                            />
+                            {opp.status === 'sold' ? (
+                                <Button disabled className="bg-slate-700 text-slate-400 font-bold rounded-xl border border-white/5 cursor-not-allowed">
+                                    Vendu
+                                </Button>
+                            ) : (
+                                <MarketAction 
+                                    opportunityId={opp.id} 
+                                    price={opp.points} 
+                                    userPoints={userPoints}
+                                />
+                            )}
                         </div>
                     </div>
                 );

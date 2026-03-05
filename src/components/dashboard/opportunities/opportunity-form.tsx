@@ -25,9 +25,10 @@ interface OpportunityFormProps {
     avatar?: string;
   };
   onSuccess?: () => void;
+  canPostToMarket?: boolean;
 }
 
-export function OpportunityForm({ preSelectedUser, onSuccess }: OpportunityFormProps) {
+export function OpportunityForm({ preSelectedUser, onSuccess, canPostToMarket = false }: OpportunityFormProps) {
   const router = useRouter();
   
   // Si un utilisateur est pré-sélectionné, on commence directement à l'étape "type"
@@ -178,16 +179,41 @@ export function OpportunityForm({ preSelectedUser, onSuccess }: OpportunityFormP
                     </button>
 
                     <button
-                        onClick={() => { setSelectedSource("community"); setStep("type"); }}
-                        className="flex items-center gap-4 p-6 rounded-2xl border-2 border-slate-100 hover:border-emerald-500 hover:bg-emerald-50 transition-all group text-left"
+                        onClick={() => { 
+                            if (!canPostToMarket) {
+                                toast.error("Action bloquée 🔒", {
+                                    description: "Vous devez avoir terminé votre appel du jour pour publier sur le marché."
+                                });
+                                return;
+                            }
+                            setSelectedSource("community"); 
+                            setStep("type"); 
+                        }}
+                        className={cn(
+                            "flex items-center gap-4 p-6 rounded-2xl border-2 transition-all group text-left",
+                            canPostToMarket 
+                                ? "border-slate-100 hover:border-emerald-500 hover:bg-emerald-50 cursor-pointer" 
+                                : "border-slate-100 opacity-60 bg-slate-50 cursor-not-allowed"
+                        )}
                     >
-                        <div className="h-16 w-16 rounded-full bg-emerald-100 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
-                            <Target className="h-8 w-8 text-emerald-600" />
+                        <div className={cn(
+                            "h-16 w-16 rounded-full flex items-center justify-center shrink-0 transition-transform",
+                            canPostToMarket ? "bg-emerald-100 group-hover:scale-110" : "bg-slate-200"
+                        )}>
+                            <Target className={cn("h-8 w-8", canPostToMarket ? "text-emerald-600" : "text-slate-400")} />
                         </div>
                         <div>
-                            <h3 className="text-lg font-black text-slate-900">🌍 Pour la communauté (Marché)</h3>
+                            <h3 className="text-lg font-black text-slate-900 flex items-center gap-2">
+                                🌍 Pour la communauté
+                                {!canPostToMarket && (
+                                    <span className="text-[10px] bg-slate-200 text-slate-500 px-2 py-1 rounded-full uppercase font-bold">Verrouillé</span>
+                                )}
+                            </h3>
                             <p className="text-slate-500 text-sm mt-1">
-                                Vous ne savez pas qui en a besoin. Publiez-la sur le marché et gagnez des crédits.
+                                {!canPostToMarket 
+                                    ? "Faites votre appel du jour pour débloquer cette option."
+                                    : "Vous ne savez pas qui en a besoin. Publiez-la sur le marché et gagnez des crédits."
+                                }
                             </p>
                         </div>
                     </button>
