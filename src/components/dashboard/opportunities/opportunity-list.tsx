@@ -104,9 +104,9 @@ export function OpportunityList({ initialData }: OpportunityListProps) {
           <TabsTrigger value="given" className="rounded-lg data-[state=active]:bg-blue-600 data-[state=active]:text-white text-slate-400 font-bold transition-all">Données</TabsTrigger>
         </TabsList>
 
-        <div className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
           {filteredOpportunities.length === 0 && (
-            <div className="text-center py-12 text-slate-500 italic">
+            <div className="col-span-full text-center py-12 text-slate-500 italic">
               Aucune opportunité pour le moment.
             </div>
           )}
@@ -120,65 +120,65 @@ export function OpportunityList({ initialData }: OpportunityListProps) {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.05 }}
-                className="bg-[#1e293b]/50 backdrop-blur-md rounded-2xl p-6 border border-white/5 shadow-lg shadow-black/20 hover:bg-[#1e293b]/80 transition-all flex flex-col md:flex-row gap-6 items-start md:items-center group"
+                className="bg-[#1e293b]/50 backdrop-blur-md rounded-2xl p-6 border border-white/5 shadow-lg shadow-black/20 hover:bg-[#1e293b]/80 transition-all flex flex-col gap-4 group h-full relative overflow-hidden"
               >
-                {/* Icon / Direction */}
+                {/* Decorative background gradient */}
                 <div className={cn(
-                  "h-12 w-12 rounded-full flex items-center justify-center shrink-0 border border-white/5 shadow-inner",
-                  opp.direction === 'received' ? "bg-emerald-500/10 text-emerald-400" : "bg-blue-500/10 text-blue-400"
-                )}>
-                  {opp.direction === 'received' ? <ArrowDownLeft className="h-6 w-6" /> : <ArrowUpRight className="h-6 w-6" />}
-                </div>
+                  "absolute top-0 right-0 w-32 h-32 rounded-full blur-3xl -z-10 opacity-20 pointer-events-none",
+                  opp.direction === 'received' ? "bg-emerald-500" : "bg-blue-500"
+                )} />
 
-                {/* Content */}
-                <div className="flex-1 w-full">
-                  <div className="flex items-center gap-2 mb-2">
+                {/* Header: Icon + Type + Points */}
+                <div className="flex items-start justify-between gap-4">
+                    <div className={cn(
+                      "h-10 w-10 rounded-xl flex items-center justify-center shrink-0 border border-white/5 shadow-inner",
+                      opp.direction === 'received' ? "bg-emerald-500/10 text-emerald-400" : "bg-blue-500/10 text-blue-400"
+                    )}>
+                      {opp.direction === 'received' ? <ArrowDownLeft className="h-5 w-5" /> : <ArrowUpRight className="h-5 w-5" />}
+                    </div>
                     <Badge variant="outline" className={cn(
-                      "border-white/10 font-bold px-2 py-0.5",
+                      "border-white/10 font-bold px-2 py-1 ml-auto",
                       typeInfo?.bg?.replace('bg-', 'bg-').replace('-100', '-500/20') || "bg-slate-500/20",
                       typeInfo?.color?.replace('text-', 'text-').replace('-600', '-300') || "text-slate-300"
                     )}>
                       {typeInfo?.label || opp.type} (+{opp.points} pts)
                     </Badge>
-                    <span className="text-xs text-slate-500 font-bold uppercase tracking-wide">• {opp.date}</span>
-                  </div>
-                  
-                  <div className="bg-[#0a0f1c]/50 p-3 rounded-xl border border-white/5 mb-3">
-                     <p className="text-slate-300 text-sm italic leading-relaxed">"{opp.description}"</p>
-                  </div>
+                </div>
 
-                  <div className="flex items-center gap-2 text-sm text-slate-400 mt-2">
-                    {opp.direction === 'received' ? "De la part de" : "Pour"} 
-                    <span className="font-bold text-white flex items-center gap-1.5 bg-white/5 px-2 py-0.5 rounded-lg border border-white/5">
-                      <Avatar className="h-5 w-5 border border-white/10">
-                        <AvatarImage src={opp.partner?.avatar_url} />
-                        <AvatarFallback className="bg-slate-700 text-xs">{opp.partner?.display_name?.[0] || "?"}</AvatarFallback>
-                      </Avatar>
-                      {opp.partner?.display_name || "Membre inconnu"}
-                    </span>
+                {/* Date */}
+                <div className="text-xs text-slate-500 font-bold uppercase tracking-wide flex items-center gap-1">
+                   <Clock className="h-3 w-3" /> {opp.date}
+                </div>
+
+                {/* Content */}
+                <div className="flex-1">
+                  <div className="bg-[#0a0f1c]/50 p-3 rounded-xl border border-white/5 min-h-[80px]">
+                     <p className="text-slate-300 text-sm italic leading-relaxed line-clamp-4">"{opp.description}"</p>
                   </div>
                 </div>
 
+                {/* User Info */}
+                <div className="flex items-center gap-2 text-sm text-slate-400 border-t border-white/5 pt-4">
+                    {opp.direction === 'received' ? "De :" : "Pour :"} 
+                    <div className="font-bold text-white flex items-center gap-2">
+                      <Avatar className="h-6 w-6 border border-white/10">
+                        <AvatarImage src={opp.partner?.avatar_url} />
+                        <AvatarFallback className="bg-slate-700 text-[10px]">{opp.partner?.display_name?.[0] || "?"}</AvatarFallback>
+                      </Avatar>
+                      <span className="truncate max-w-[150px]">{opp.partner?.display_name || "Membre inconnu"}</span>
+                    </div>
+                </div>
+
                 {/* Status / Action */}
-                <div className="shrink-0 flex items-center gap-4 w-full md:w-auto justify-end border-t md:border-t-0 border-white/5 pt-4 md:pt-0 mt-2 md:mt-0">
+                <div className="pt-2">
                   {opp.status === 'pending' ? (
                      opp.direction === 'received' ? (
-                       <div className="flex gap-2 w-full md:w-auto">
-                          <Button 
-                            size="sm" 
-                            variant="outline" 
-                            className="flex-1 md:flex-none border-white/10 bg-white/5 text-slate-400 hover:text-white hover:bg-white/10"
-                            onClick={() => handleStatusUpdate(opp.id, 'rejected')}
-                            disabled={loadingId === opp.id}
-                          >
-                            Refuser
-                          </Button>
-                          
+                       <div className="flex flex-col gap-2 w-full">
                           {opp.type === 'custom' && (
-                            <div className="flex items-center bg-white/5 rounded-lg border border-white/10 px-2 h-9">
-                                <span className="text-[10px] text-slate-400 mr-2 font-bold uppercase">Points</span>
+                            <div className="flex items-center justify-between bg-white/5 rounded-lg border border-white/10 px-3 h-10 w-full mb-1">
+                                <span className="text-xs text-slate-400 font-bold uppercase">Points à attribuer</span>
                                 <select 
-                                    className="bg-transparent text-white font-bold text-sm outline-none w-12"
+                                    className="bg-transparent text-white font-bold text-sm outline-none text-right cursor-pointer"
                                     value={validationPoints[opp.id] || 2}
                                     onChange={(e) => setValidationPoints({...validationPoints, [opp.id]: Number(e.target.value)})}
                                 >
@@ -189,32 +189,43 @@ export function OpportunityList({ initialData }: OpportunityListProps) {
                             </div>
                           )}
 
-                          <Button 
-                            size="sm" 
-                            className="flex-1 md:flex-none bg-emerald-600 hover:bg-emerald-500 text-white font-bold shadow-lg shadow-emerald-900/20"
-                            onClick={() => handleStatusUpdate(opp.id, 'validated', opp.type === 'custom' ? (validationPoints[opp.id] || 5) : undefined)}
-                            disabled={loadingId === opp.id}
-                          >
-                            {loadingId === opp.id ? "..." : <><CheckCircle2 className="mr-1 h-4 w-4" /> Valider</>}
-                          </Button>
+                          <div className="flex gap-2 w-full">
+                            <Button 
+                                size="sm" 
+                                variant="outline" 
+                                className="flex-1 border-white/10 bg-white/5 text-slate-400 hover:text-white hover:bg-white/10"
+                                onClick={() => handleStatusUpdate(opp.id, 'rejected')}
+                                disabled={loadingId === opp.id}
+                            >
+                                Refuser
+                            </Button>
+                            <Button 
+                                size="sm" 
+                                className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold shadow-lg shadow-emerald-900/20"
+                                onClick={() => handleStatusUpdate(opp.id, 'validated', opp.type === 'custom' ? (validationPoints[opp.id] || 5) : undefined)}
+                                disabled={loadingId === opp.id}
+                            >
+                                {loadingId === opp.id ? "..." : <><CheckCircle2 className="mr-1 h-4 w-4" /> Valider</>}
+                            </Button>
+                          </div>
                        </div>
                      ) : (
-                       <Badge variant="outline" className="bg-orange-500/10 text-orange-400 border-orange-500/20 font-bold px-3 py-1 animate-pulse">
-                         <Clock className="mr-1 h-3 w-3" /> En attente
-                       </Badge>
+                       <div className="w-full bg-orange-500/10 text-orange-400 border border-orange-500/20 font-bold px-3 py-2 rounded-lg text-center text-sm animate-pulse flex items-center justify-center gap-2">
+                         <Clock className="h-4 w-4" /> En attente de validation
+                       </div>
                      )
                   ) : (
-                    <Badge variant="outline" className={cn(
-                      "font-bold px-3 py-1",
+                    <div className={cn(
+                      "w-full font-bold px-3 py-2 rounded-lg text-center text-sm flex items-center justify-center gap-2 border",
                       opp.status === 'validated' 
                         ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" 
                         : "bg-red-500/10 text-red-400 border-red-500/20"
                     )}>
                       {opp.status === 'validated' 
-                        ? <><CheckCircle2 className="mr-1 h-3 w-3 inline" /> Validé</>
+                        ? <><CheckCircle2 className="h-4 w-4" /> Validé (+{opp.points} pts)</>
                         : "Refusé"
                       }
-                    </Badge>
+                    </div>
                   )}
                 </div>
 
