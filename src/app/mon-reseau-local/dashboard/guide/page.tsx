@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { OPPORTUNITY_TYPES } from "@/constants/opportunities";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { getUserPoints } from "@/lib/actions/gamification";
+import { MarketAction } from "@/components/dashboard/market/market-action";
 
 export const dynamic = 'force-dynamic';
 
@@ -16,9 +18,16 @@ export default async function MarketPage() {
   
   // Fetch PUBLIC opportunities
   let opportunities: any[] = [];
+  let userPoints = 0;
+  
   try {
     // @ts-ignore - 'public' filter added recently
-    opportunities = await getOpportunities('public');
+    const [opps, points] = await Promise.all([
+        getOpportunities('public'),
+        getUserPoints()
+    ]);
+    opportunities = opps;
+    userPoints = points;
   } catch (e) {
     console.error(e);
   }
@@ -41,14 +50,14 @@ export default async function MarketPage() {
             </p>
         </div>
 
-        {/* User Credits (Placeholder) */}
+        {/* User Credits */}
         <div className="bg-[#1e293b]/50 backdrop-blur-md border border-white/5 rounded-2xl p-4 flex items-center gap-4">
             <div className="h-12 w-12 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-400 border border-emerald-500/20">
                 <ShoppingBag className="h-6 w-6" />
             </div>
             <div>
                 <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">Vos Crédits</div>
-                <div className="text-2xl font-black text-white">120 pts</div>
+                <div className="text-2xl font-black text-white">{userPoints} pts</div>
             </div>
             <Button variant="outline" size="sm" className="ml-2 border-white/10 bg-white/5 hover:bg-white/10 text-xs">
                 Recharger
@@ -121,10 +130,12 @@ export default async function MarketPage() {
                                 </div>
                             </div>
 
-                            {/* Action */}
-                            <Button className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl shadow-lg shadow-emerald-900/20">
-                                Voir <ArrowRight className="ml-2 h-4 w-4" />
-                            </Button>
+                            {/* Client Action Component */}
+                            <MarketAction 
+                                opportunityId={opp.id} 
+                                price={opp.points} 
+                                userPoints={userPoints}
+                            />
                         </div>
                     </div>
                 );
