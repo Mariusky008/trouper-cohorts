@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 
 export type CMTaskStatus = 'todo' | 'in_progress' | 'review' | 'done';
 export type CMPriority = 'low' | 'medium' | 'high' | 'urgent';
-export type CMPlatform = 'linkedin' | 'instagram' | 'tiktok' | 'newsletter' | 'website' | 'other';
+export type CMPlatform = 'linkedin' | 'instagram' | 'tiktok' | 'newsletter' | 'website' | 'other' | 'design' | 'video' | 'research' | 'strategy' | 'admin';
 
 export interface CMTask {
     id: string;

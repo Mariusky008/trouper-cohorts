@@ -58,9 +58,25 @@ export function CMTaskCard({ task }: { task: CMTask }) {
     )}>
       {/* Header */}
       <div className="flex justify-between items-start mb-3">
-          <Badge className={cn("text-[10px] uppercase font-bold border-0", getPriorityColor(task.priority))}>
-              {task.priority === 'urgent' ? 'Urgent' : task.priority}
-          </Badge>
+          <div className="flex items-center gap-2">
+            <Badge className={cn("text-[10px] uppercase font-bold border-0", getPriorityColor(task.priority))}>
+                {task.priority === 'urgent' ? 'Urgent' : task.priority}
+            </Badge>
+            {task.platform && (
+                <Badge variant="outline" className="text-[10px] uppercase border-white/10 text-slate-400">
+                    {task.platform === 'linkedin' && 'LinkedIn'}
+                    {task.platform === 'instagram' && 'Instagram'}
+                    {task.platform === 'tiktok' && 'TikTok'}
+                    {task.platform === 'newsletter' && 'News'}
+                    {task.platform === 'website' && 'Web'}
+                    {task.platform === 'design' && 'Design'}
+                    {task.platform === 'video' && 'Vidéo'}
+                    {task.platform === 'research' && 'Recherche'}
+                    {task.platform === 'strategy' && 'Stratégie'}
+                    {task.platform === 'admin' && 'Admin'}
+                </Badge>
+            )}
+          </div>
           
           <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                <Button variant="ghost" size="icon" className="h-6 w-6 text-slate-400 hover:text-red-400" onClick={handleDelete}>
@@ -168,7 +184,11 @@ export function CreateTaskDialog() {
                                     <SelectItem value="tiktok">TikTok</SelectItem>
                                     <SelectItem value="newsletter">Newsletter</SelectItem>
                                     <SelectItem value="website">Site Web</SelectItem>
-                                    <SelectItem value="other">Autre</SelectItem>
+                                    <SelectItem value="design">Design / Graphisme</SelectItem>
+                                    <SelectItem value="video">Montage Vidéo</SelectItem>
+                                    <SelectItem value="research">Recherche</SelectItem>
+                                    <SelectItem value="strategy">Stratégie</SelectItem>
+                                    <SelectItem value="admin">Admin / Autre</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>

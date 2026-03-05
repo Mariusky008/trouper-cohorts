@@ -10,7 +10,7 @@ CREATE TABLE cm_tasks (
     updated_at TIMESTAMPTZ DEFAULT NOW(),
     
     -- Additional useful fields for CM
-    platform TEXT CHECK (platform IN ('linkedin', 'instagram', 'tiktok', 'newsletter', 'website', 'other')),
+    platform TEXT CHECK (platform IN ('linkedin', 'instagram', 'tiktok', 'newsletter', 'website', 'design', 'video', 'research', 'strategy', 'admin', 'other')),
     link_url TEXT, -- Link to the draft or published post
     feedback TEXT -- Your feedback for the CM
 );
