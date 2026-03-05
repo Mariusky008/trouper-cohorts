@@ -66,9 +66,19 @@ export function MarketAction({ opportunityId, price, userPoints }: MarketActionP
         </DialogHeader>
 
         <div className="py-6 space-y-4">
-          <div className="bg-[#0f172a] rounded-xl p-4 border border-white/5 flex justify-between items-center">
-             <span className="text-sm font-bold text-slate-400 uppercase">Prix</span>
-             <span className="text-xl font-black text-emerald-400">{price} Crédits</span>
+          <div className="bg-[#0f172a] rounded-xl p-4 border border-white/5 flex flex-col gap-2">
+             <div className="flex justify-between items-center">
+                <span className="text-sm font-bold text-slate-400 uppercase">Prix de vente</span>
+                <span className="text-xl font-black text-white">{price} Crédits</span>
+             </div>
+             <div className="flex justify-between items-center text-xs text-slate-500 pt-2 border-t border-white/5">
+                <span>Commission Popey (10%)</span>
+                <span>-{Math.floor(price * 0.10)} Crédits</span>
+             </div>
+             <div className="flex justify-between items-center text-xs text-emerald-400 font-bold">
+                <span>Reversé au vendeur</span>
+                <span>+{Math.floor(price * 0.90)} Crédits</span>
+             </div>
           </div>
 
           <div className="flex justify-between items-center px-2">

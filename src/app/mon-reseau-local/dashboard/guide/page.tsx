@@ -1,4 +1,3 @@
-
 import { createClient } from "@/lib/supabase/server";
 import { getOpportunities } from "@/lib/actions/network-opportunities";
 import { Users, ShoppingBag, Target, ArrowRight, MapPin } from "lucide-react";
@@ -9,6 +8,7 @@ import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getUserPoints } from "@/lib/actions/gamification";
 import { MarketAction } from "@/components/dashboard/market/market-action";
+import { CreditPackDialog } from "@/components/dashboard/market/credit-pack-dialog";
 import {
   Select,
   SelectContent,
@@ -98,9 +98,7 @@ export default async function MarketPage() {
                 <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">Vos Crédits</div>
                 <div className="text-2xl font-black text-white">{userPoints} pts</div>
             </div>
-            <Button variant="outline" size="sm" className="ml-2 border-white/10 bg-white/5 hover:bg-white/10 text-xs">
-                Recharger
-            </Button>
+            <CreditPackDialog />
         </div>
       </div>
 
@@ -121,6 +119,7 @@ export default async function MarketPage() {
             </SelectContent>
          </Select>
       </div>
+
 
       {/* MARKET GRID */}
       {opportunities.length === 0 ? (

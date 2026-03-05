@@ -52,15 +52,19 @@ export async function purchaseOpportunity(opportunityId: string) {
     // Ideally this should be a transaction, but Supabase via JS client doesn't support transactions easily without RPC.
     // We will do it sequentially with optimistic checks.
 
-    // A. Debit Buyer
+    // A. Debit Buyer (Full Price)
     const newBuyerBalance = await incrementUserPoints(-price);
     
-    // B. Credit Seller
+    // B. Credit Seller (Price - 10% Commission)
+    const commissionRate = 0.10; // 10%
+    const sellerAmount = Math.floor(price * (1 - commissionRate));
+    // The difference (price - sellerAmount) is "burned" or kept by the platform.
+
     // We can't use incrementUserPoints for another user easily because of RLS/Auth check inside it usually checks current user.
     // However, the RPC 'increment_points' is SECURITY DEFINER, so we can call it directly for the seller.
     const { error: creditError } = await supabase.rpc('increment_points', { 
         user_id: opportunity.giver_id, 
-        amount: price 
+        amount: sellerAmount 
     });
 
     if (creditError) {
