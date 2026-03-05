@@ -88,6 +88,7 @@ Le système a évolué pour supporter deux types de programmes distincts :
     - **Nouveau Messaging (Mars 2026)** :
         - Concept de **"Sphère de Croissance"** remplaçant l'approche "Rencontre aléatoire".
         - Mise en avant des **3 Filtres de l'Algorithme** : Complémentarité, Proximité, Réciprocité.
+        - **Section "Marché Caché" (Accélérateur de Business)** : Mise en avant des opportunités exclusives (Lead, Intro, Visibilité) accessibles même sans match.
         - Simulation de ROI et Preuve Sociale ("Hiérarchie de Qualité").
 - **`/emploi`** : Landing page spécifique "Job Seeker".
 - **`/france-travail`** : Page institutionnelle B2B pour présenter le dispositif pilote à France Travail.
@@ -149,13 +150,13 @@ Catalogue d'actions pour apporter de la valeur et monétiser son réseau.
 
 - **Types d'Opportunités** : Clients, Partenariats, Mentorat, Visibilité, etc.
 - **Double Flux (Mars 2026)** :
-    1. **Flux Privé (Cadeau)** : Offert directement à un partenaire spécifique (Gratuit ou Points).
+    1. **Flux Privé (Cadeau)** : Offert directement à un partenaire spécifique (Gratuit).
     2. **Flux Public (Marché)** : Publié sur la marketplace pour la communauté.
         - **Mécanique** : Nécessite d'avoir validé son appel du jour pour poster ("Règle de Protection").
         - **Monétisation** : L'auteur fixe un prix en crédits.
-        - **Commission Popey** : La plateforme prélève **10%** sur chaque transaction (Taxe anti-inflation).
-- **Achat de Crédits** : Les utilisateurs peuvent acheter des packs de crédits (Starter, Pro, Business) pour débloquer des opportunités.
-- **Système de Points** : Mise à jour de la grille de points (Clients +10, Stratégique +8, Co-Création +7...).
+        - **Économie Stricte** : Les points ne sont plus distribués gratuitement (fin des +20 pts/appel). Ils s'obtiennent uniquement en **vendant** des opportunités ou en **achetant** des packs.
+        - **Commission Popey** : La plateforme prélève **10%** sur chaque transaction entre membres (Modèle "Taxe & Burn").
+- **Achat de Crédits** : Les utilisateurs peuvent acheter des packs de crédits (Starter, Pro, Business) via Stripe pour débloquer des opportunités.
 - **Feedback** : Les utilisateurs peuvent noter la qualité des échanges.
 
 #### 6. Gamification
