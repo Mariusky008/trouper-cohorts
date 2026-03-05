@@ -42,11 +42,11 @@ export default async function CMDashboardPage() {
         
         <div className="flex gap-3">
              <div className="bg-red-500/20 p-4 rounded-xl border border-red-500/30 text-center min-w-[100px]">
-                 <div className="text-xs text-red-200 uppercase font-bold mb-1">En retard</div>
+                 <div className="text-xs text-white uppercase font-black mb-1">En retard</div>
                  <div className="text-2xl font-black text-white">{overdueTasks.length}</div>
              </div>
              <div className="bg-blue-500/20 p-4 rounded-xl border border-blue-500/30 text-center min-w-[100px]">
-                 <div className="text-xs text-blue-200 uppercase font-bold mb-1">En cours</div>
+                 <div className="text-xs text-white uppercase font-black mb-1">En cours</div>
                  <div className="text-2xl font-black text-white">{inProgressTasks.length + reviewTasks.length}</div>
              </div>
              <CreateTaskDialog />
@@ -57,8 +57,8 @@ export default async function CMDashboardPage() {
       <div className="grid md:grid-cols-4 gap-6 h-[calc(100vh-300px)] overflow-x-auto pb-4">
           
           {/* Column: A Faire */}
-          <div className="bg-slate-900/50 rounded-2xl border border-white/5 flex flex-col h-full min-w-[280px]">
-              <div className="p-4 border-b border-white/5 flex justify-between items-center sticky top-0 bg-slate-900/90 backdrop-blur-sm z-10 rounded-t-2xl">
+          <div className="bg-[#0f172a] rounded-2xl border border-white/5 flex flex-col h-full min-w-[280px]">
+              <div className="p-4 border-b border-white/5 flex justify-between items-center sticky top-0 bg-[#0f172a] z-10 rounded-t-2xl">
                   <h3 className="font-bold text-slate-300 flex items-center gap-2">
                       <div className="h-2 w-2 rounded-full bg-slate-500"></div> À faire
                   </h3>
@@ -67,7 +67,7 @@ export default async function CMDashboardPage() {
               <div className="p-3 space-y-3 overflow-y-auto flex-1 custom-scrollbar">
                   {todoTasks.map(task => <CMTaskCard key={task.id} task={task} />)}
                   {todoTasks.length === 0 && (
-                      <div className="text-center py-8 text-slate-600 text-sm italic border-2 border-dashed border-slate-800 rounded-xl">
+                      <div className="text-center py-8 text-slate-600 text-sm italic border-2 border-dashed border-slate-800/50 rounded-xl">
                           Aucune tâche en attente
                       </div>
                   )}
@@ -75,17 +75,17 @@ export default async function CMDashboardPage() {
           </div>
 
           {/* Column: En Cours */}
-          <div className="bg-slate-900/50 rounded-2xl border border-blue-500/10 flex flex-col h-full min-w-[280px]">
-              <div className="p-4 border-b border-white/5 flex justify-between items-center sticky top-0 bg-slate-900/90 backdrop-blur-sm z-10 rounded-t-2xl">
+          <div className="bg-[#1e3a8a]/10 rounded-2xl border border-blue-500/20 flex flex-col h-full min-w-[280px]">
+              <div className="p-4 border-b border-blue-500/10 flex justify-between items-center sticky top-0 bg-[#0f172a] z-10 rounded-t-2xl">
                   <h3 className="font-bold text-blue-300 flex items-center gap-2">
                       <div className="h-2 w-2 rounded-full bg-blue-500 animate-pulse"></div> En cours
                   </h3>
-                  <Badge variant="secondary" className="bg-blue-900/30 text-blue-300">{inProgressTasks.length}</Badge>
+                  <Badge variant="secondary" className="bg-blue-500/20 text-blue-300">{inProgressTasks.length}</Badge>
               </div>
               <div className="p-3 space-y-3 overflow-y-auto flex-1 custom-scrollbar">
                   {inProgressTasks.map(task => <CMTaskCard key={task.id} task={task} />)}
                    {inProgressTasks.length === 0 && (
-                      <div className="text-center py-8 text-slate-600 text-sm italic border-2 border-dashed border-slate-800 rounded-xl">
+                      <div className="text-center py-8 text-blue-400/50 text-sm italic border-2 border-dashed border-blue-500/20 rounded-xl">
                           Rien en cours
                       </div>
                   )}
@@ -93,17 +93,17 @@ export default async function CMDashboardPage() {
           </div>
 
           {/* Column: À Valider (Review) */}
-          <div className="bg-slate-900/50 rounded-2xl border border-purple-500/10 flex flex-col h-full min-w-[280px]">
-              <div className="p-4 border-b border-white/5 flex justify-between items-center sticky top-0 bg-slate-900/90 backdrop-blur-sm z-10 rounded-t-2xl">
+          <div className="bg-[#581c87]/10 rounded-2xl border border-purple-500/20 flex flex-col h-full min-w-[280px]">
+              <div className="p-4 border-b border-purple-500/10 flex justify-between items-center sticky top-0 bg-[#0f172a] z-10 rounded-t-2xl">
                   <h3 className="font-bold text-purple-300 flex items-center gap-2">
                       <div className="h-2 w-2 rounded-full bg-purple-500"></div> À valider
                   </h3>
-                  <Badge variant="secondary" className="bg-purple-900/30 text-purple-300">{reviewTasks.length}</Badge>
+                  <Badge variant="secondary" className="bg-purple-500/20 text-purple-300">{reviewTasks.length}</Badge>
               </div>
               <div className="p-3 space-y-3 overflow-y-auto flex-1 custom-scrollbar">
                   {reviewTasks.map(task => <CMTaskCard key={task.id} task={task} />)}
                    {reviewTasks.length === 0 && (
-                      <div className="text-center py-8 text-slate-600 text-sm italic border-2 border-dashed border-slate-800 rounded-xl">
+                      <div className="text-center py-8 text-purple-400/50 text-sm italic border-2 border-dashed border-purple-500/20 rounded-xl">
                           Rien à valider
                       </div>
                   )}
@@ -111,17 +111,17 @@ export default async function CMDashboardPage() {
           </div>
 
           {/* Column: Terminé */}
-          <div className="bg-slate-900/50 rounded-2xl border border-emerald-500/10 flex flex-col h-full min-w-[280px]">
-              <div className="p-4 border-b border-white/5 flex justify-between items-center sticky top-0 bg-slate-900/90 backdrop-blur-sm z-10 rounded-t-2xl">
+          <div className="bg-[#064e3b]/10 rounded-2xl border border-emerald-500/20 flex flex-col h-full min-w-[280px]">
+              <div className="p-4 border-b border-emerald-500/10 flex justify-between items-center sticky top-0 bg-[#0f172a] z-10 rounded-t-2xl">
                   <h3 className="font-bold text-emerald-300 flex items-center gap-2">
                       <CheckCircle2 className="h-4 w-4 text-emerald-500" /> Terminé
                   </h3>
-                  <Badge variant="secondary" className="bg-emerald-900/30 text-emerald-300">{doneTasks.length}</Badge>
+                  <Badge variant="secondary" className="bg-emerald-500/20 text-emerald-300">{doneTasks.length}</Badge>
               </div>
               <div className="p-3 space-y-3 overflow-y-auto flex-1 custom-scrollbar">
                   {doneTasks.map(task => <CMTaskCard key={task.id} task={task} />)}
                   {doneTasks.length === 0 && (
-                      <div className="text-center py-8 text-slate-600 text-sm italic border-2 border-dashed border-slate-800 rounded-xl">
+                      <div className="text-center py-8 text-emerald-400/50 text-sm italic border-2 border-dashed border-emerald-500/20 rounded-xl">
                           Historique vide
                       </div>
                   )}
