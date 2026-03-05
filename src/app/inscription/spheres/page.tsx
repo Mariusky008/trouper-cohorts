@@ -270,13 +270,13 @@ export default function SpheresRegistrationPage() {
       <main className="max-w-6xl mx-auto">
         
         <Tabs defaultValue="habitat" onValueChange={(v) => setActiveSphere(v as SphereId)} className="w-full">
-          <TabsList className="flex flex-wrap justify-center gap-2 bg-transparent h-auto mb-12">
+          <TabsList className="flex flex-nowrap md:flex-wrap overflow-x-auto md:overflow-visible justify-start md:justify-center gap-2 bg-transparent h-auto mb-8 pb-4 w-full px-4 md:px-0 scrollbar-hide -mx-4 md:mx-0 snap-x">
             {SPHERES.map((sphere) => (
               <TabsTrigger 
                 key={sphere.id} 
                 value={sphere.id}
                 className={cn(
-                  "px-6 py-3 rounded-xl border-2 transition-all duration-300 data-[state=active]:shadow-[0_0_20px_rgba(99,102,241,0.2)]",
+                  "shrink-0 px-4 py-3 md:px-6 rounded-xl border-2 transition-all duration-300 data-[state=active]:shadow-[0_0_20px_rgba(99,102,241,0.2)] snap-center",
                   "bg-slate-900/50 border-white/5 text-slate-400",
                   "data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:border-white"
                 )}
@@ -289,7 +289,7 @@ export default function SpheresRegistrationPage() {
 
           {SPHERES.map((sphere) => (
             <TabsContent key={sphere.id} value={sphere.id} className="mt-0">
-              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4">
                 {MOCK_SLOTS[sphere.id].map((job) => {
                   const isLocked = lockedSlots.includes(job);
                   return (
@@ -297,7 +297,7 @@ export default function SpheresRegistrationPage() {
                       key={job}
                       whileHover={!isLocked ? { scale: 1.02, y: -5 } : {}}
                       className={cn(
-                        "relative group p-6 rounded-2xl border transition-all duration-500 flex flex-col items-center justify-center text-center gap-4 h-48",
+                        "relative group p-4 md:p-6 rounded-2xl border transition-all duration-500 flex flex-col items-center justify-center text-center gap-3 md:gap-4 h-40 md:h-48",
                         isLocked 
                           ? "bg-slate-900/20 border-white/5 opacity-50 cursor-not-allowed" 
                           : "bg-slate-900/40 border-white/10 hover:border-white/40 cursor-pointer shadow-xl hover:shadow-indigo-500/10"
