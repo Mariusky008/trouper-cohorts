@@ -505,7 +505,7 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
     confetti({ particleCount: 200, spread: 100, origin: { y: 0.6 } });
     
     if (callHappened !== false) {
-        toast.success("Mission validée ! +50 pts 🚀");
+        toast.success("Mission validée ! 🚀");
     } else {
         toast.success("Absence validée");
     }
@@ -564,12 +564,8 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
         confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } });
       }, 250);
 
-      try {
-          await incrementUserPoints(20);
-          toast.success("Points ajoutés ! 🏆");
-      } catch (error) {
-          console.error("Failed to add points", error);
-      }
+      // Points logic removed for strict economy
+      // toast.success("Points ajoutés ! 🏆");
   };
 
   const handleCopyPhone = (phone: string) => {
