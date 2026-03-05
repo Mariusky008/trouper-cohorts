@@ -41,13 +41,13 @@ export default async function CMDashboardPage() {
         </div>
         
         <div className="flex gap-3">
-             <div className="bg-slate-800/50 p-4 rounded-xl border border-white/5 text-center min-w-[100px]">
-                 <div className="text-xs text-slate-500 uppercase font-bold mb-1">En retard</div>
-                 <div className="text-2xl font-black text-red-400">{overdueTasks.length}</div>
+             <div className="bg-red-500/20 p-4 rounded-xl border border-red-500/30 text-center min-w-[100px]">
+                 <div className="text-xs text-red-200 uppercase font-bold mb-1">En retard</div>
+                 <div className="text-2xl font-black text-white">{overdueTasks.length}</div>
              </div>
-             <div className="bg-slate-800/50 p-4 rounded-xl border border-white/5 text-center min-w-[100px]">
-                 <div className="text-xs text-slate-500 uppercase font-bold mb-1">En cours</div>
-                 <div className="text-2xl font-black text-blue-400">{inProgressTasks.length + reviewTasks.length}</div>
+             <div className="bg-blue-500/20 p-4 rounded-xl border border-blue-500/30 text-center min-w-[100px]">
+                 <div className="text-xs text-blue-200 uppercase font-bold mb-1">En cours</div>
+                 <div className="text-2xl font-black text-white">{inProgressTasks.length + reviewTasks.length}</div>
              </div>
              <CreateTaskDialog />
         </div>
