@@ -1,0 +1,131 @@
+"use server";
+
+import { createClient } from "@/lib/supabase/server";
+import { revalidatePath } from "next/cache";
+
+export type CMTaskStatus = 'todo' | 'in_progress' | 'review' | 'done';
+export type CMPriority = 'low' | 'medium' | 'high' | 'urgent';
+export type CMPlatform = 'linkedin' | 'instagram' | 'tiktok' | 'newsletter' | 'website' | 'other';
+
+export interface CMTask {
+    id: string;
+    title: string;
+    description: string | null;
+    status: CMTaskStatus;
+    priority: CMPriority;
+    due_date: string | null;
+    created_at: string;
+    platform: CMPlatform | null;
+    link_url: string | null;
+    feedback: string | null;
+}
+
+// 1. Fetch Tasks
+export async function getCMTasks(filter?: { status?: CMTaskStatus }) {
+    const supabase = await createClient();
+    
+    let query = supabase
+        .from('cm_tasks')
+        .select('*')
+        .order('priority', { ascending: false }) // Urgent first
+        .order('due_date', { ascending: true }); // Soonest first
+
+    if (filter?.status) {
+        query = query.eq('status', filter.status);
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+        console.error("Error fetching CM tasks:", error);
+        return [];
+    }
+
+    return data as CMTask[];
+}
+
+// 2. Create Task
+export async function createCMTask(formData: FormData) {
+    const supabase = await createClient();
+
+    const title = formData.get('title') as string;
+    const description = formData.get('description') as string;
+    const priority = formData.get('priority') as CMPriority || 'medium';
+    const due_date = formData.get('due_date') as string; // ISO string
+    const platform = formData.get('platform') as CMPlatform;
+
+    if (!title) return { error: "Title is required" };
+
+    const { error } = await supabase
+        .from('cm_tasks')
+        .insert({
+            title,
+            description,
+            priority,
+            due_date: due_date || null,
+            platform: platform || 'other',
+            status: 'todo'
+        });
+
+    if (error) {
+        console.error("Error creating task:", error);
+        return { error: "Failed to create task" };
+    }
+
+    revalidatePath('/cm-dashboard');
+    return { success: true };
+}
+
+// 3. Update Status (Kanban drag/drop or button click)
+export async function updateCMTaskStatus(id: string, status: CMTaskStatus) {
+    const supabase = await createClient();
+
+    const { error } = await supabase
+        .from('cm_tasks')
+        .update({ status })
+        .eq('id', id);
+
+    if (error) {
+        console.error("Error updating status:", error);
+        return { error: "Failed to update status" };
+    }
+
+    revalidatePath('/cm-dashboard');
+    return { success: true };
+}
+
+// 4. Update Task Details (Due date, priority, feedback)
+export async function updateCMTask(id: string, updates: Partial<CMTask>) {
+    const supabase = await createClient();
+
+    const { error } = await supabase
+        .from('cm_tasks')
+        .update(updates)
+        .eq('id', id);
+
+    if (error) {
+        console.error("Error updating task:", error);
+        return { error: "Failed to update task" };
+    }
+
+    revalidatePath('/cm-dashboard');
+    return { success: true };
+}
+
+// 5. Delete Task
+export async function deleteCMTask(id: string) {
+    const supabase = await createClient();
+
+    const { error } = await supabase
+        .from('cm_tasks')
+        .delete()
+        .eq('id', id);
+
+    if (error) {
+        console.error("Error deleting task:", error);
+        return { error: "Failed to delete task" };
+    }
+
+    revalidatePath('/cm-dashboard');
+    return { success: true };
+}
