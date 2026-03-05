@@ -760,7 +760,114 @@ export default function HomePage() {
          </div>
       </section>
 
-      {/* --- 4. HOW IT WORKS --- */}
+      {/* --- 5. MARKETPLACE (NEW) --- */}
+      <section className="py-24 bg-slate-900 text-white relative overflow-hidden">
+        {/* Background Effects */}
+        <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-10"></div>
+        <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-yellow-600/10 rounded-full blur-[120px] pointer-events-none"></div>
+        <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-orange-600/10 rounded-full blur-[120px] pointer-events-none"></div>
+
+        <div className="container mx-auto px-4 relative z-10">
+           <div className="text-center max-w-3xl mx-auto mb-16">
+              <Badge className="bg-yellow-500/20 text-yellow-300 border-yellow-500/30 mb-6 uppercase tracking-widest px-3 py-1">Accélérateur de Business</Badge>
+              <h2 className="text-3xl md:text-5xl font-black mb-6 leading-tight">
+                  Pas de match aujourd'hui ? <br/>
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-400">Accédez au Marché Caché.</span>
+              </h2>
+              <p className="text-xl text-slate-300 leading-relaxed font-medium">
+                  Ne restez jamais bloqué. Si l'algorithme ne trouve pas de match parfait, puisez directement dans les opportunités partagées par la communauté.
+              </p>
+           </div>
+
+           <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto mb-16">
+               {/* Opportunity Card 1 */}
+               <div className="bg-slate-800/50 rounded-3xl p-6 border border-yellow-500/20 hover:border-yellow-500/50 transition-all hover:-translate-y-2 group">
+                   <div className="flex justify-between items-start mb-6">
+                       <div className="bg-yellow-500/10 p-3 rounded-2xl">
+                           <Briefcase className="h-8 w-8 text-yellow-400" />
+                       </div>
+                       <Badge className="bg-yellow-500 text-slate-900 font-bold border-0">
+                           50 crédits
+                       </Badge>
+                   </div>
+                   <h3 className="text-xl font-bold text-white mb-2">Lead Qualifié - Immo</h3>
+                   <p className="text-slate-400 text-sm mb-6 leading-relaxed">
+                       "Je cherche un architecte pour un projet de rénovation complète (120m²) à Bordeaux Centre. Budget validé."
+                   </p>
+                   <div className="flex items-center gap-3 text-sm text-slate-500 font-bold uppercase tracking-wider mb-6">
+                       <div className="h-6 w-6 rounded-full bg-slate-700 border border-slate-600 flex items-center justify-center text-[10px] text-slate-300 font-bold">JL</div>
+                       Posté par Julien L.
+                   </div>
+                   <Button className="w-full bg-slate-700 hover:bg-yellow-500 hover:text-slate-900 text-white font-bold rounded-xl h-12 transition-colors">
+                       Débloquer le contact
+                   </Button>
+               </div>
+
+               {/* Opportunity Card 2 */}
+               <div className="bg-slate-800/50 rounded-3xl p-6 border border-yellow-500/20 hover:border-yellow-500/50 transition-all hover:-translate-y-2 group relative overflow-hidden">
+                   <div className="absolute top-0 right-0 bg-red-500 text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl uppercase tracking-wider">
+                       Exclusivité
+                   </div>
+                   <div className="flex justify-between items-start mb-6">
+                       <div className="bg-purple-500/10 p-3 rounded-2xl">
+                           <Users className="h-8 w-8 text-purple-400" />
+                       </div>
+                       <Badge className="bg-purple-500 text-white font-bold border-0">
+                           150 crédits
+                       </Badge>
+                   </div>
+                   <h3 className="text-xl font-bold text-white mb-2">Intro Décideur - BTP</h3>
+                   <p className="text-slate-400 text-sm mb-6 leading-relaxed">
+                       "Je déjeune demain avec le directeur des achats d'un grand groupe de construction. Je peux faire une intro."
+                   </p>
+                   <div className="flex items-center gap-3 text-sm text-slate-500 font-bold uppercase tracking-wider mb-6">
+                       <div className="h-6 w-6 rounded-full bg-slate-700 border border-slate-600 flex items-center justify-center text-[10px] text-slate-300 font-bold">MS</div>
+                       Posté par Marc S.
+                   </div>
+                   <Button className="w-full bg-slate-700 hover:bg-purple-500 hover:text-white text-white font-bold rounded-xl h-12 transition-colors">
+                       Réserver l'intro
+                   </Button>
+               </div>
+
+               {/* Opportunity Card 3 */}
+               <div className="bg-slate-800/50 rounded-3xl p-6 border border-yellow-500/20 hover:border-yellow-500/50 transition-all hover:-translate-y-2 group">
+                   <div className="flex justify-between items-start mb-6">
+                       <div className="bg-blue-500/10 p-3 rounded-2xl">
+                           <MessageCircle className="h-8 w-8 text-blue-400" />
+                       </div>
+                       <Badge className="bg-blue-500 text-white font-bold border-0">
+                           30 crédits
+                       </Badge>
+                   </div>
+                   <h3 className="text-xl font-bold text-white mb-2">Visibilité - LinkedIn</h3>
+                   <p className="text-slate-400 text-sm mb-6 leading-relaxed">
+                       "Je cherche un expert en marketing pour intervenir dans mon prochain live (5k abonnés). Sujet : Acquisition."
+                   </p>
+                   <div className="flex items-center gap-3 text-sm text-slate-500 font-bold uppercase tracking-wider mb-6">
+                       <div className="h-6 w-6 rounded-full bg-slate-700 border border-slate-600 flex items-center justify-center text-[10px] text-slate-300 font-bold">CL</div>
+                       Posté par Chloé L.
+                   </div>
+                   <Button className="w-full bg-slate-700 hover:bg-blue-500 hover:text-white text-white font-bold rounded-xl h-12 transition-colors">
+                       Postuler
+                   </Button>
+               </div>
+           </div>
+
+           <div className="text-center">
+               <p className="text-slate-400 mb-6 font-medium">
+                   Plus de 50 nouvelles opportunités postées chaque semaine par les membres.
+               </p>
+               <Link href="/inscription/spheres">
+                   <Button 
+                      size="lg" 
+                      className="bg-yellow-500 hover:bg-yellow-400 text-slate-900 font-black rounded-full px-10 h-14 text-lg shadow-lg shadow-yellow-500/20 transition-transform hover:scale-105"
+                    >
+                      Accéder au Marché <ArrowRight className="ml-2 h-5 w-5" />
+                   </Button>
+               </Link>
+           </div>
+        </div>
+      </section>
 
       {/* --- 6. TRUST SCORE & RECIPROCITY --- */}
       <section className="py-24 bg-slate-50">
