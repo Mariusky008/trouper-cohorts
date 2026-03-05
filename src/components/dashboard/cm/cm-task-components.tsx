@@ -88,7 +88,7 @@ export function CMTaskCard({ task }: { task: CMTask }) {
       {/* Content */}
       <h4 className="font-bold text-white mb-1 break-words">{task.title}</h4>
       {task.description && (
-          <p className="text-sm text-slate-300 break-words whitespace-pre-wrap mb-3">
+          <p className="text-sm text-slate-300 break-words line-clamp-3 mb-3">
               {task.description}
           </p>
       )}
