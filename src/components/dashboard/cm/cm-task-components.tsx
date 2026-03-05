@@ -86,12 +86,16 @@ export function CMTaskCard({ task }: { task: CMTask }) {
       </div>
 
       {/* Content */}
-      <h4 className="font-bold text-white mb-1 line-clamp-2">{task.title}</h4>
-      {task.description && <p className="text-sm text-slate-400 line-clamp-2 mb-3">{task.description}</p>}
+      <h4 className="font-bold text-white mb-1 break-words">{task.title}</h4>
+      {task.description && (
+          <p className="text-sm text-slate-300 break-words whitespace-pre-wrap mb-3">
+              {task.description}
+          </p>
+      )}
 
       {/* Footer (Date & Actions) */}
       <div className="flex items-center justify-between mt-4 pt-3 border-t border-white/5">
-          <div className={cn("flex items-center gap-1.5 text-xs font-medium", isOverdue ? "text-red-400" : "text-slate-500")}>
+          <div className={cn("flex items-center gap-1.5 text-xs font-medium", isOverdue ? "text-red-400" : "text-slate-400")}>
               <Clock className="h-3 w-3" />
               {task.due_date ? format(new Date(task.due_date), "d MMM", { locale: fr }) : "Pas de date"}
           </div>
@@ -154,14 +158,20 @@ export function CreateTaskDialog() {
                 <form onSubmit={onSubmit} className="space-y-4 mt-4">
                     <div className="space-y-2">
                         <Label htmlFor="title">Titre de la tâche</Label>
-                        <Input id="title" name="title" placeholder="Ex: Post LinkedIn Lundi" className="bg-slate-800 border-white/10" required />
+                        <Input 
+                            id="title" 
+                            name="title" 
+                            placeholder="Ex: Post LinkedIn Lundi" 
+                            className="bg-slate-800 border-white/10 text-white placeholder:text-slate-500" 
+                            required 
+                        />
                     </div>
                     
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <Label htmlFor="priority">Priorité</Label>
                             <Select name="priority" defaultValue="medium">
-                                <SelectTrigger className="bg-slate-800 border-white/10">
+                                <SelectTrigger className="bg-slate-800 border-white/10 text-white">
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent className="bg-slate-800 border-white/10 text-white">
@@ -175,7 +185,7 @@ export function CreateTaskDialog() {
                          <div className="space-y-2">
                             <Label htmlFor="platform">Plateforme</Label>
                             <Select name="platform" defaultValue="linkedin">
-                                <SelectTrigger className="bg-slate-800 border-white/10">
+                                <SelectTrigger className="bg-slate-800 border-white/10 text-white">
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent className="bg-slate-800 border-white/10 text-white">
@@ -201,8 +211,8 @@ export function CreateTaskDialog() {
                                 <Button
                                     variant={"outline"}
                                     className={cn(
-                                        "w-full justify-start text-left font-normal bg-slate-800 border-white/10",
-                                        !date && "text-muted-foreground"
+                                        "w-full justify-start text-left font-normal bg-slate-800 border-white/10 text-white",
+                                        !date && "text-slate-500"
                                     )}
                                 >
                                     <CalendarIcon className="mr-2 h-4 w-4" />
@@ -223,7 +233,12 @@ export function CreateTaskDialog() {
 
                     <div className="space-y-2">
                         <Label htmlFor="description">Description / Notes</Label>
-                        <Textarea id="description" name="description" placeholder="Détails, liens, idées..." className="bg-slate-800 border-white/10 min-h-[100px]" />
+                        <Textarea 
+                            id="description" 
+                            name="description" 
+                            placeholder="Détails, liens, idées..." 
+                            className="bg-slate-800 border-white/10 min-h-[100px] text-white placeholder:text-slate-500" 
+                        />
                     </div>
 
                     <Button type="submit" className="w-full bg-emerald-500 hover:bg-emerald-600 font-bold">Créer la tâche</Button>
