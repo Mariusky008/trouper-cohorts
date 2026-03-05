@@ -59,9 +59,21 @@ export function OpportunityForm({ preSelectedUser, onSuccess, canPostToMarket = 
   
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // ... (keep useEffect for preSelectedUser update)
+  useEffect(() => {
+    if (preSelectedUser) {
+      setSelectedMember(preSelectedUser);
+    }
+  }, [preSelectedUser]);
 
-  // ... (keep handleSearch)
+  const handleSearch = async (query: string) => {
+    setSearchQuery(query);
+    if (query.length >= 3) {
+        const results = await searchMembers(query);
+        setMembers(results);
+    } else {
+        setMembers([]);
+    }
+  };
 
   const handleSubmit = async () => {
     if (!selectedType) return;
@@ -295,7 +307,7 @@ export function OpportunityForm({ preSelectedUser, onSuccess, canPostToMarket = 
                   <Search className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
                   <Input 
                     placeholder="Rechercher un membre (min 3 lettres)..." 
-                    className="pl-10 h-12 rounded-xl bg-slate-50 border-slate-200" 
+                    className="pl-10 h-12 rounded-xl bg-slate-50 border-slate-200 text-slate-900 placeholder:text-slate-400" 
                     value={searchQuery}
                     onChange={(e) => handleSearch(e.target.value)}
                     autoFocus
@@ -350,7 +362,7 @@ export function OpportunityForm({ preSelectedUser, onSuccess, canPostToMarket = 
                   <label className="text-sm font-bold text-slate-700">Détails (Privé)</label>
                   <Textarea 
                     placeholder="Ex: Voici le numéro de Mr Dupont (06...), il attend ton appel de ma part..." 
-                    className="min-h-[120px] rounded-xl border-slate-200 bg-slate-50 focus:bg-white transition-colors"
+                    className="min-h-[120px] rounded-xl border-slate-200 bg-slate-50 focus:bg-white transition-colors text-slate-900 placeholder:text-slate-400"
                     value={details}
                     onChange={(e) => setDetails(e.target.value)}
                   />
@@ -402,7 +414,7 @@ export function OpportunityForm({ preSelectedUser, onSuccess, canPostToMarket = 
                             <label className="text-sm font-bold text-slate-700">Titre Public (L'Hameçon)</label>
                             <Input 
                                 placeholder="Ex: Lead Rénovation Toiture - Bordeaux Caudéran" 
-                                className="h-12 rounded-xl border-slate-200 bg-slate-50 focus:bg-white"
+                                className="h-12 rounded-xl border-slate-200 bg-slate-50 focus:bg-white text-slate-900 placeholder:text-slate-400"
                                 value={marketTitle}
                                 onChange={(e) => setMarketTitle(e.target.value)}
                             />
@@ -416,7 +428,7 @@ export function OpportunityForm({ preSelectedUser, onSuccess, canPostToMarket = 
                                 <Input 
                                     type="number"
                                     min={1}
-                                    className="h-12 rounded-xl border-slate-200 bg-slate-50 focus:bg-white w-32 font-bold text-lg"
+                                    className="h-12 rounded-xl border-slate-200 bg-slate-50 focus:bg-white w-32 font-bold text-lg text-slate-900 placeholder:text-slate-400"
                                     value={marketPrice}
                                     onChange={(e) => setMarketPrice(Number(e.target.value))}
                                 />
@@ -432,7 +444,7 @@ export function OpportunityForm({ preSelectedUser, onSuccess, canPostToMarket = 
                             <label className="text-sm font-bold text-slate-700">Détails Privés (Le Trésor)</label>
                             <Textarea 
                                 placeholder="Ex: Mme Michu, 06.XX.XX.XX.XX, dispo le soir..." 
-                                className="min-h-[100px] rounded-xl border-slate-200 bg-slate-50 focus:bg-white"
+                                className="min-h-[100px] rounded-xl border-slate-200 bg-slate-50 focus:bg-white text-slate-900 placeholder:text-slate-400"
                                 value={details}
                                 onChange={(e) => setDetails(e.target.value)}
                             />
