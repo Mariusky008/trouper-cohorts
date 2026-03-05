@@ -144,9 +144,17 @@ Système de réputation pour encourager les comportements vertueux.
 - **Hiérarchie de Qualité** : Concept remplaçant la "Règle des 30 jours" (trop punitive) par une approche méritocratique (Score > 4.5 = Accès Elite).
 - **Dette Réseau** : Suivi des opportunités reçues vs données.
 
-#### 5. Gestion des Opportunités
-Catalogue d'actions pour apporter de la valeur.
+#### 5. Gestion des Opportunités & Marché Public (Marketplace)
+Catalogue d'actions pour apporter de la valeur et monétiser son réseau.
+
 - **Types d'Opportunités** : Clients, Partenariats, Mentorat, Visibilité, etc.
+- **Double Flux (Mars 2026)** :
+    1. **Flux Privé (Cadeau)** : Offert directement à un partenaire spécifique (Gratuit ou Points).
+    2. **Flux Public (Marché)** : Publié sur la marketplace pour la communauté.
+        - **Mécanique** : Nécessite d'avoir validé son appel du jour pour poster ("Règle de Protection").
+        - **Monétisation** : L'auteur fixe un prix en crédits.
+        - **Commission Popey** : La plateforme prélève **10%** sur chaque transaction (Taxe anti-inflation).
+- **Achat de Crédits** : Les utilisateurs peuvent acheter des packs de crédits (Starter, Pro, Business) pour débloquer des opportunités.
 - **Système de Points** : Mise à jour de la grille de points (Clients +10, Stratégique +8, Co-Création +7...).
 - **Feedback** : Les utilisateurs peuvent noter la qualité des échanges.
 
@@ -184,4 +192,4 @@ L'algorithme de validation (`src/app/actions/admin-registration.ts`) suit cette 
 - **Actions** : `createCheckoutSession` dans `src/lib/actions/stripe.ts`.
 
 ---
-*Dernière mise à jour : 01 Mars 2026*
+*Dernière mise à jour : 05 Mars 2026*
