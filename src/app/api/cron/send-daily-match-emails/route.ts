@@ -29,7 +29,7 @@ export async function POST(request: Request) {
 async function handleSendEmails(request: Request) {
   try {
     // 1. Init Admin Client & Resend
-    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
       throw new Error('Missing Supabase credentials');
     }
     
@@ -39,7 +39,7 @@ async function handleSendEmails(request: Request) {
 
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL,
-      process.env.SUPABASE_SERVICE_ROLE_KEY
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
     );
     
     const resend = new Resend(process.env.RESEND_API_KEY);
