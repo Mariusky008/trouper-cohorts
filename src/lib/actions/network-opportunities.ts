@@ -90,6 +90,20 @@ export async function getOpportunities(filter: 'all' | 'received' | 'given' | 'p
     return [];
   }
 
+  // 1.5 Fetch Match History for Public View
+  const metPartnerIds = new Set<string>();
+  if (filter === 'public') {
+      const { data: matches } = await supabase
+          .from("network_matches")
+          .select("user1_id, user2_id")
+          .or(`user1_id.eq.${user.id},user2_id.eq.${user.id}`);
+      
+      matches?.forEach((m: any) => {
+          if (m.user1_id === user.id) metPartnerIds.add(m.user2_id);
+          else metPartnerIds.add(m.user1_id);
+      });
+  }
+
   // 2. Collect User IDs to fetch profiles manually (avoid join issues)
   const userIds = new Set<string>();
   opportunities.forEach((opp: any) => {
@@ -125,6 +139,9 @@ export async function getOpportunities(filter: 'all' | 'received' | 'given' | 'p
     }
     
     const partner = profileMap.get(partnerId) || { display_name: "Membre Inconnu", trade: "N/A" };
+    
+    // Check if partner was already met
+    const isMet = filter === 'public' ? metPartnerIds.has(partnerId) : false;
 
     return {
       id: opp.id,
@@ -137,8 +154,16 @@ export async function getOpportunities(filter: 'all' | 'received' | 'given' | 'p
       status: opp.status,
       direction: direction,
       price: opp.price,
-      visibility: opp.visibility
+      visibility: opp.visibility,
+      isMet: isMet
     };
+  }).sort((a: any, b: any) => {
+      // Prioritize "Met" partners in public view
+      if (filter === 'public') {
+          if (a.isMet && !b.isMet) return -1;
+          if (!a.isMet && b.isMet) return 1;
+      }
+      return 0; // Keep original date order
   });
 }
 

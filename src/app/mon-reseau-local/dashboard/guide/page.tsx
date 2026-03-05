@@ -53,7 +53,8 @@ export default async function MarketPage() {
         city: "Le Grand Dax"
       },
       date: "4 heures",
-      status: "available"
+      status: "available",
+      isMet: true
     }
   ];
   
@@ -146,13 +147,20 @@ export default async function MarketPage() {
                     >
                         {/* Type Badge */}
                         <div className="flex justify-between items-start mb-4">
-                            <Badge variant="outline" className={cn(
-                                "border-white/10 font-bold px-3 py-1.5 rounded-lg",
-                                typeInfo?.bg?.replace('bg-', 'bg-').replace('-100', '-500/20') || "bg-slate-500/20",
-                                typeInfo?.color?.replace('text-', 'text-').replace('-600', '-300') || "text-slate-300"
-                            )}>
-                                {typeInfo?.label || opp.type}
-                            </Badge>
+                            <div className="flex flex-col gap-2 items-start">
+                                {opp.isMet && (
+                                    <Badge className="bg-gradient-to-r from-indigo-500 to-purple-500 text-white border-0 font-bold px-2 py-0.5 text-[10px] uppercase tracking-wider animate-pulse">
+                                        Déjà rencontré
+                                    </Badge>
+                                )}
+                                <Badge variant="outline" className={cn(
+                                    "border-white/10 font-bold px-3 py-1.5 rounded-lg",
+                                    typeInfo?.bg?.replace('bg-', 'bg-').replace('-100', '-500/20') || "bg-slate-500/20",
+                                    typeInfo?.color?.replace('text-', 'text-').replace('-600', '-300') || "text-slate-300"
+                                )}>
+                                    {typeInfo?.label || opp.type}
+                                </Badge>
+                            </div>
                             <span className="text-xs font-bold text-slate-500 uppercase tracking-wider bg-black/20 px-2 py-1 rounded-md">
                                 {opp.date}
                             </span>
