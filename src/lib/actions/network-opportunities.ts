@@ -54,7 +54,7 @@ export async function getPotentialOpportunitiesCount() {
   return diffDays; 
 }
 
-export async function getOpportunities(filter: 'all' | 'received' | 'given' = 'all') {
+export async function getOpportunities(filter: 'all' | 'received' | 'given' | 'public' = 'all') {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   
@@ -65,12 +65,21 @@ export async function getOpportunities(filter: 'all' | 'received' | 'given' = 'a
     .select("*")
     .order("created_at", { ascending: false });
 
-  if (filter === 'received') {
+  if (filter === 'public') {
+    // Public opportunities logic: 
+    // - visibility = 'public'
+    // - status = 'available' (not sold yet)
+    // - giver_id != user.id (don't show own listings)
+    query = query
+        .eq('visibility', 'public')
+        .eq('status', 'available')
+        .neq('giver_id', user.id); // Optionnel: ne pas voir ses propres offres
+  } else if (filter === 'received') {
     query = query.eq('receiver_id', user.id);
   } else if (filter === 'given') {
     query = query.eq('giver_id', user.id);
   } else {
-    // All means both given and received
+    // All means both given and received (PRIVATE ONLY)
     query = query.or(`giver_id.eq.${user.id},receiver_id.eq.${user.id}`);
   }
 
@@ -84,32 +93,51 @@ export async function getOpportunities(filter: 'all' | 'received' | 'given' = 'a
   // 2. Collect User IDs to fetch profiles manually (avoid join issues)
   const userIds = new Set<string>();
   opportunities.forEach((opp: any) => {
-    userIds.add(opp.giver_id);
-    userIds.add(opp.receiver_id);
+    if (opp.giver_id) userIds.add(opp.giver_id);
+    if (opp.receiver_id) userIds.add(opp.receiver_id);
   });
 
   // 3. Fetch Profiles
-  const { data: profiles } = await supabase
-    .from("profiles")
-    .select("id, display_name, avatar_url, trade")
-    .in("id", Array.from(userIds));
+  let profiles: any[] = [];
+  if (userIds.size > 0) {
+      const { data } = await supabase
+        .from("profiles")
+        .select("id, display_name, avatar_url, trade")
+        .in("id", Array.from(userIds));
+      profiles = data || [];
+  }
 
-  const profileMap = new Map(profiles?.map((p: any) => [p.id, p]));
+  const profileMap = new Map(profiles.map((p: any) => [p.id, p]));
 
   return opportunities.map((opp: any) => {
-    const isGiver = opp.giver_id === user.id;
-    const partnerId = isGiver ? opp.receiver_id : opp.giver_id;
+    // Determine partner
+    let partnerId;
+    let direction;
+    
+    if (filter === 'public') {
+        // For public listings, partner is the Giver
+        partnerId = opp.giver_id;
+        direction = 'market';
+    } else {
+        const isGiver = opp.giver_id === user.id;
+        partnerId = isGiver ? opp.receiver_id : opp.giver_id;
+        direction = isGiver ? 'given' : 'received';
+    }
+    
     const partner = profileMap.get(partnerId) || { display_name: "Membre Inconnu", trade: "N/A" };
 
     return {
       id: opp.id,
       type: opp.type,
       points: opp.points,
-      description: opp.details, 
+      // For public market, use public_title instead of details
+      description: filter === 'public' ? opp.public_title : opp.details, 
       partner: partner,
       date: new Date(opp.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' }),
       status: opp.status,
-      direction: isGiver ? 'given' : 'received'
+      direction: direction,
+      price: opp.price,
+      visibility: opp.visibility
     };
   });
 }

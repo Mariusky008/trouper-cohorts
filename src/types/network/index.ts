@@ -10,18 +10,26 @@ export type OpportunityType =
   | 'feedback'
   | 'custom';
 
-export type OpportunityStatus = 'pending' | 'validated' | 'rejected';
+export type OpportunityStatus = 'pending' | 'validated' | 'rejected' | 'available' | 'sold' | 'disputed';
+export type OpportunityVisibility = 'private' | 'public';
 
 export interface NetworkOpportunity {
   id: string;
   created_at: string;
   giver_id: string;
-  receiver_id: string;
+  receiver_id?: string;
   type: OpportunityType;
   points: number;
   details?: string;
   status: OpportunityStatus;
   validated_at?: string;
+  
+  // Public Market Fields
+  visibility: OpportunityVisibility;
+  price?: number;
+  public_title?: string;
+  private_details?: string;
+  buyer_id?: string;
   
   // Relations (often joined)
   giver?: {
@@ -31,6 +39,12 @@ export interface NetworkOpportunity {
     trade?: string;
   };
   receiver?: {
+    id: string;
+    display_name: string;
+    avatar_url?: string;
+    trade?: string;
+  };
+  buyer?: {
     id: string;
     display_name: string;
     avatar_url?: string;

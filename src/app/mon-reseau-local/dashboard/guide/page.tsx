@@ -1,189 +1,136 @@
-import { 
-  MessageCircle, Phone, Target, Star, ShieldCheck, 
-  AlertCircle, CheckCircle2, ArrowRight, Play, Users, Briefcase, Zap, TrendingUp 
-} from "lucide-react";
+
+import { createClient } from "@/lib/supabase/server";
+import { getOpportunities } from "@/lib/actions/network-opportunities";
+import { Users, ShoppingBag, Target, ArrowRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { OPPORTUNITY_TYPES } from "@/constants/opportunities";
+import { cn } from "@/lib/utils";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
-export default function GuidePage() {
+export const dynamic = 'force-dynamic';
+
+export default async function MarketPage() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  
+  // Fetch PUBLIC opportunities
+  let opportunities: any[] = [];
+  try {
+    // @ts-ignore - 'public' filter added recently
+    opportunities = await getOpportunities('public');
+  } catch (e) {
+    console.error(e);
+  }
+
   return (
-    <div className="pb-24 space-y-12 max-w-4xl mx-auto">
+    <div className="pb-24 space-y-8 max-w-6xl mx-auto">
       
       {/* HEADER */}
-      <div className="space-y-4">
-        <Badge className="bg-blue-500/10 text-blue-300 hover:bg-blue-500/20 border-blue-500/20 uppercase tracking-widest px-3 py-1">
-          Ressource Officielle
-        </Badge>
-        <h1 className="text-3xl md:text-4xl font-black text-white tracking-tight leading-tight">
-          Votre script d’appel : <span className="text-blue-400">5 étapes pour des échanges productifs</span>
-        </h1>
-        <p className="text-xl text-slate-400 leading-relaxed max-w-2xl">
-          Chaque jour, vous avez 5 à 10 minutes pour créer des opportunités. Suivez ce guide pour que chaque appel compte.
-        </p>
-      </div>
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+        <div className="space-y-4">
+            <Badge className="bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20 border-emerald-500/20 uppercase tracking-widest px-3 py-1">
+            Marché Public
+            </Badge>
+            <h1 className="text-3xl md:text-5xl font-black text-white tracking-tight leading-tight">
+            Opportunités <span className="text-emerald-400">du Réseau</span>
+            </h1>
+            <p className="text-xl text-slate-400 leading-relaxed max-w-2xl">
+            Découvrez les opportunités partagées par la communauté. <br/>
+            Utilisez vos crédits pour accéder aux mises en relation qualifiées.
+            </p>
+        </div>
 
-      {/* 1. THE SCRIPT STEPS */}
-      <div className="space-y-8">
-        <div className="bg-[#1e293b]/50 backdrop-blur-md rounded-[2.5rem] p-8 border border-white/5 shadow-lg shadow-black/20 relative overflow-hidden">
-           <div className="absolute top-0 right-0 bg-blue-600 text-white text-xs font-bold px-4 py-2 rounded-bl-2xl uppercase tracking-wider shadow-lg">
-             Structure Idéale (10 min)
-           </div>
-           
-           <div className="space-y-10 relative z-10">
-              
-              {/* STEP 1 */}
-              <div className="flex gap-6 group">
-                <div className="flex flex-col items-center">
-                  <div className="h-10 w-10 rounded-full bg-blue-500/10 text-blue-400 flex items-center justify-center font-black border border-blue-500/20 shadow-sm shrink-0 group-hover:bg-blue-600 group-hover:text-white transition-colors">1</div>
-                  <div className="w-0.5 h-full bg-white/5 mt-2 group-hover:bg-blue-500/20 transition-colors"></div>
-                </div>
-                <div className="pb-4 flex-1">
-                  <h3 className="text-lg font-bold text-white mb-2 group-hover:text-blue-400 transition-colors">L'Introduction (30 sec)</h3>
-                  <p className="text-slate-400 mb-3 text-sm">Brisez la glace immédiatement avec énergie.</p>
-                  <div className="bg-[#0a0f1c]/50 border border-white/5 rounded-xl p-4 text-slate-300 font-medium italic relative">
-                    <div className="absolute top-0 left-0 w-1 h-full bg-blue-500 rounded-l-xl opacity-50"></div>
-                    "Salut [Prénom], c'est [Votre Prénom] de Popey Academy ! Ravi de te parler, je vois qu'on est tous les deux basés à [Ville]. Tu as 5 minutes ?"
-                  </div>
-                </div>
-              </div>
-
-              {/* STEP 2 */}
-              <div className="flex gap-6 group">
-                <div className="flex flex-col items-center">
-                  <div className="h-10 w-10 rounded-full bg-purple-500/10 text-purple-400 flex items-center justify-center font-black border border-purple-500/20 shadow-sm shrink-0 group-hover:bg-purple-600 group-hover:text-white transition-colors">2</div>
-                  <div className="w-0.5 h-full bg-white/5 mt-2 group-hover:bg-purple-500/20 transition-colors"></div>
-                </div>
-                <div className="pb-4 flex-1">
-                  <h3 className="text-lg font-bold text-white mb-2 group-hover:text-purple-400 transition-colors">Le Pitch "Elevator" (1 min)</h3>
-                  <p className="text-slate-400 mb-3 text-sm">Soyez clair sur ce que vous faites. Pas de jargon.</p>
-                  <div className="bg-[#0a0f1c]/50 border border-white/5 rounded-xl p-4 text-slate-300 font-medium italic relative">
-                    <div className="absolute top-0 left-0 w-1 h-full bg-purple-500 rounded-l-xl opacity-50"></div>
-                    "Pour faire simple, j'aide [Cible] à [Résultat] grâce à [Votre Méthode]. Et toi, quel est ton gros focus du moment ?"
-                  </div>
-                </div>
-              </div>
-
-              {/* STEP 3 */}
-              <div className="flex gap-6 group">
-                <div className="flex flex-col items-center">
-                  <div className="h-10 w-10 rounded-full bg-emerald-500/10 text-emerald-400 flex items-center justify-center font-black border border-emerald-500/20 shadow-sm shrink-0 group-hover:bg-emerald-600 group-hover:text-white transition-colors">3</div>
-                  <div className="w-0.5 h-full bg-white/5 mt-2 group-hover:bg-emerald-500/20 transition-colors"></div>
-                </div>
-                <div className="pb-4 flex-1">
-                  <h3 className="text-lg font-bold text-white mb-2 group-hover:text-emerald-400 transition-colors">La Recherche d'Opportunité (3 min)</h3>
-                  <p className="text-slate-400 mb-3 text-sm">C'est le cœur de l'échange. Cherchez comment vous aider mutuellement.</p>
-                  <div className="bg-[#0a0f1c]/50 border border-white/5 rounded-xl p-4 text-slate-300 font-medium italic mb-4 relative">
-                    <div className="absolute top-0 left-0 w-1 h-full bg-emerald-500 rounded-l-xl opacity-50"></div>
-                    "De quoi as-tu le plus besoin cette semaine ? Un contact ? Un avis ? De la visibilité ?"
-                  </div>
-                  <div className="grid sm:grid-cols-2 gap-3">
-                     <div className="flex items-center gap-2 text-xs font-bold text-slate-300 bg-white/5 border border-white/5 p-2 rounded-lg hover:bg-white/10 transition-colors">
-                       <Target className="h-4 w-4 text-red-400" /> Trouver des clients (10 pts)
-                     </div>
-                     <div className="flex items-center gap-2 text-xs font-bold text-slate-300 bg-white/5 border border-white/5 p-2 rounded-lg hover:bg-white/10 transition-colors">
-                       <Users className="h-4 w-4 text-blue-400" /> Mise en relation (8 pts)
-                     </div>
-                     <div className="flex items-center gap-2 text-xs font-bold text-slate-300 bg-white/5 border border-white/5 p-2 rounded-lg hover:bg-white/10 transition-colors">
-                       <Star className="h-4 w-4 text-yellow-400" /> Recommandation (5 pts)
-                     </div>
-                     <div className="flex items-center gap-2 text-xs font-bold text-slate-300 bg-white/5 border border-white/5 p-2 rounded-lg hover:bg-white/10 transition-colors">
-                       <TrendingUp className="h-4 w-4 text-indigo-400" /> Synergies (3 pts)
-                     </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* STEP 4 */}
-              <div className="flex gap-6 group">
-                <div className="flex flex-col items-center">
-                  <div className="h-10 w-10 rounded-full bg-orange-500/10 text-orange-400 flex items-center justify-center font-black border border-orange-500/20 shadow-sm shrink-0 group-hover:bg-orange-600 group-hover:text-white transition-colors">4</div>
-                  <div className="w-0.5 h-full bg-white/5 mt-2 group-hover:bg-orange-500/20 transition-colors"></div>
-                </div>
-                <div className="pb-4 flex-1">
-                  <h3 className="text-lg font-bold text-white mb-2 group-hover:text-orange-400 transition-colors">L'Action Concrète (30 sec)</h3>
-                  <p className="text-slate-400 mb-3 text-sm">Ne raccrochez jamais sans une prochaine étape définie.</p>
-                  <div className="bg-[#0a0f1c]/50 border border-white/5 rounded-xl p-4 text-slate-300 font-medium italic relative">
-                    <div className="absolute top-0 left-0 w-1 h-full bg-orange-500 rounded-l-xl opacity-50"></div>
-                    "Super, je t'envoie le contact de [Nom] par SMS tout de suite. De ton côté, tu penses à moi si tu croises un [Votre Cible], ça marche ?"
-                  </div>
-                </div>
-              </div>
-
-               {/* STEP 5 */}
-               <div className="flex gap-6 group">
-                <div className="flex flex-col items-center">
-                  <div className="h-10 w-10 rounded-full bg-slate-700 text-white flex items-center justify-center font-black border border-slate-600 shadow-sm shrink-0 group-hover:bg-white group-hover:text-slate-900 transition-colors">5</div>
-                </div>
-                <div>
-                  <h3 className="text-lg font-bold text-white mb-2">La Validation (Post-Appel)</h3>
-                  <p className="text-slate-400 mb-3 text-sm">N'oubliez pas de valider l'échange sur le dashboard pour vos points.</p>
-                  <Button size="sm" variant="outline" className="h-8 text-xs font-bold bg-white/5 border-white/10 text-slate-300 hover:text-white hover:bg-white/10">
-                    Voir mes opportunités
-                  </Button>
-                </div>
-              </div>
-
-           </div>
+        {/* User Credits (Placeholder) */}
+        <div className="bg-[#1e293b]/50 backdrop-blur-md border border-white/5 rounded-2xl p-4 flex items-center gap-4">
+            <div className="h-12 w-12 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-400 border border-emerald-500/20">
+                <ShoppingBag className="h-6 w-6" />
+            </div>
+            <div>
+                <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">Vos Crédits</div>
+                <div className="text-2xl font-black text-white">120 pts</div>
+            </div>
+            <Button variant="outline" size="sm" className="ml-2 border-white/10 bg-white/5 hover:bg-white/10 text-xs">
+                Recharger
+            </Button>
         </div>
       </div>
 
-      {/* 2. DO'S AND DON'TS */}
-      <div className="grid md:grid-cols-2 gap-8">
-         <div className="bg-emerald-500/10 backdrop-blur-md rounded-[2rem] p-8 border border-emerald-500/20">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="h-10 w-10 bg-emerald-500/20 rounded-full flex items-center justify-center border border-emerald-500/30">
-                <CheckCircle2 className="h-6 w-6 text-emerald-400" />
+      {/* MARKET GRID */}
+      {opportunities.length === 0 ? (
+          <div className="bg-[#1e293b]/30 border border-white/5 rounded-3xl p-12 text-center space-y-6">
+              <div className="h-24 w-24 bg-slate-800/50 rounded-full flex items-center justify-center mx-auto">
+                  <ShoppingBag className="h-10 w-10 text-slate-600" />
               </div>
-              <h3 className="font-black text-xl text-emerald-100">À FAIRE</h3>
-            </div>
-            <ul className="space-y-4">
-              <li className="flex items-start gap-3">
-                <div className="h-1.5 w-1.5 rounded-full bg-emerald-400 mt-2 shrink-0 shadow-[0_0_8px_rgba(52,211,153,0.5)]"></div>
-                <p className="text-emerald-100/80 text-sm font-medium">Écouter plus que parler (Règle du 60/40).</p>
-              </li>
-              <li className="flex items-start gap-3">
-                <div className="h-1.5 w-1.5 rounded-full bg-emerald-400 mt-2 shrink-0 shadow-[0_0_8px_rgba(52,211,153,0.5)]"></div>
-                <p className="text-emerald-100/80 text-sm font-medium">Être curieux sincèrement du business de l'autre.</p>
-              </li>
-              <li className="flex items-start gap-3">
-                <div className="h-1.5 w-1.5 rounded-full bg-emerald-400 mt-2 shrink-0 shadow-[0_0_8px_rgba(52,211,153,0.5)]"></div>
-                <p className="text-emerald-100/80 text-sm font-medium">Proposer de l'aide AVANT de demander quelque chose.</p>
-              </li>
-              <li className="flex items-start gap-3">
-                <div className="h-1.5 w-1.5 rounded-full bg-emerald-400 mt-2 shrink-0 shadow-[0_0_8px_rgba(52,211,153,0.5)]"></div>
-                <p className="text-emerald-100/80 text-sm font-medium">Respecter le timing (10-15 min max).</p>
-              </li>
-            </ul>
-         </div>
+              <div>
+                  <h3 className="text-xl font-bold text-white mb-2">Le marché est calme...</h3>
+                  <p className="text-slate-400 max-w-md mx-auto">
+                      Aucune opportunité publique pour le moment. Revenez plus tard ou soyez le premier à en publier une !
+                  </p>
+              </div>
+          </div>
+      ) : (
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {opportunities.map((opp) => {
+                const typeInfo = OPPORTUNITY_TYPES.find(t => t.id === opp.type);
+                
+                return (
+                    <div 
+                        key={opp.id}
+                        className="group bg-[#1e293b]/50 backdrop-blur-md rounded-3xl p-6 border border-white/5 hover:border-emerald-500/30 transition-all hover:shadow-[0_0_30px_rgba(16,185,129,0.1)] relative overflow-hidden flex flex-col"
+                    >
+                        {/* Type Badge */}
+                        <div className="flex justify-between items-start mb-4">
+                            <Badge variant="outline" className={cn(
+                                "border-white/10 font-bold px-3 py-1.5 rounded-lg",
+                                typeInfo?.bg?.replace('bg-', 'bg-').replace('-100', '-500/20') || "bg-slate-500/20",
+                                typeInfo?.color?.replace('text-', 'text-').replace('-600', '-300') || "text-slate-300"
+                            )}>
+                                {typeInfo?.label || opp.type}
+                            </Badge>
+                            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider bg-black/20 px-2 py-1 rounded-md">
+                                {opp.date}
+                            </span>
+                        </div>
 
-         <div className="bg-red-500/10 backdrop-blur-md rounded-[2rem] p-8 border border-red-500/20">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="h-10 w-10 bg-red-500/20 rounded-full flex items-center justify-center border border-red-500/30">
-                <AlertCircle className="h-6 w-6 text-red-400" />
-              </div>
-              <h3 className="font-black text-xl text-red-100">À ÉVITER</h3>
-            </div>
-            <ul className="space-y-4">
-              <li className="flex items-start gap-3">
-                <div className="h-1.5 w-1.5 rounded-full bg-red-400 mt-2 shrink-0 shadow-[0_0_8px_rgba(248,113,113,0.5)]"></div>
-                <p className="text-red-100/80 text-sm font-medium">Vendre votre produit directement (c'est du réseau, pas du démarchage).</p>
-              </li>
-              <li className="flex items-start gap-3">
-                <div className="h-1.5 w-1.5 rounded-full bg-red-400 mt-2 shrink-0 shadow-[0_0_8px_rgba(248,113,113,0.5)]"></div>
-                <p className="text-red-100/80 text-sm font-medium">Monopoliser la parole.</p>
-              </li>
-              <li className="flex items-start gap-3">
-                <div className="h-1.5 w-1.5 rounded-full bg-red-400 mt-2 shrink-0 shadow-[0_0_8px_rgba(248,113,113,0.5)]"></div>
-                <p className="text-red-100/80 text-sm font-medium">Oublier de noter l'échange après l'appel.</p>
-              </li>
-              <li className="flex items-start gap-3">
-                <div className="h-1.5 w-1.5 rounded-full bg-red-400 mt-2 shrink-0 shadow-[0_0_8px_rgba(248,113,113,0.5)]"></div>
-                <p className="text-red-100/80 text-sm font-medium">Dire "On se recontacte" sans date précise.</p>
-              </li>
-            </ul>
-         </div>
-      </div>
+                        {/* Title (Hameçon) */}
+                        <h3 className="text-xl font-black text-white mb-3 leading-tight group-hover:text-emerald-300 transition-colors line-clamp-2">
+                            {opp.description}
+                        </h3>
+
+                        {/* Price Tag */}
+                        <div className="flex items-center gap-2 mb-6">
+                            <span className="text-3xl font-black text-emerald-400">{opp.points}</span>
+                            <span className="text-xs font-bold text-emerald-600/70 uppercase tracking-widest mt-2">Crédits</span>
+                        </div>
+
+                        <div className="mt-auto pt-6 border-t border-white/5 flex items-center justify-between gap-4">
+                            {/* Giver Info */}
+                            <div className="flex items-center gap-3">
+                                <Avatar className="h-10 w-10 border-2 border-slate-800">
+                                    <AvatarImage src={opp.partner?.avatar_url} />
+                                    <AvatarFallback className="bg-slate-700 font-bold text-slate-300">
+                                        {opp.partner?.display_name?.[0]}
+                                    </AvatarFallback>
+                                </Avatar>
+                                <div>
+                                    <div className="text-xs font-bold text-slate-400 uppercase">Proposé par</div>
+                                    <div className="text-sm font-bold text-white truncate max-w-[100px]">
+                                        {opp.partner?.display_name}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Action */}
+                            <Button className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl shadow-lg shadow-emerald-900/20">
+                                Voir <ArrowRight className="ml-2 h-4 w-4" />
+                            </Button>
+                        </div>
+                    </div>
+                );
+            })}
+          </div>
+      )}
 
     </div>
   );
