@@ -64,7 +64,7 @@ export function CreditPackDialog() {
                                 <CheckCircle2 className="h-3 w-3 text-emerald-500" /> Accès immédiat
                             </li>
                             <li className="flex items-center gap-2">
-                                <CheckCircle2 className="h-3 w-3 text-emerald-500" /> Facture pro
+                                <CheckCircle2 className="h-3 w-3 text-emerald-500" /> Facture pro & crédits reversés aux vendeurs
                             </li>
                         </ul>
 
