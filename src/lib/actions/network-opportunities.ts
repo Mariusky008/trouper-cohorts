@@ -72,8 +72,8 @@ export async function getOpportunities(filter: 'all' | 'received' | 'given' | 'p
     // - giver_id != user.id (don't show own listings)
     query = query
         .eq('visibility', 'public')
-        .eq('status', 'available')
-        .neq('giver_id', user.id); // Optionnel: ne pas voir ses propres offres
+        .eq('status', 'available');
+        // .neq('giver_id', user.id); // COMMENTED OUT FOR TESTING: allow seeing own listings
   } else if (filter === 'received') {
     query = query.eq('receiver_id', user.id);
   } else if (filter === 'given') {
