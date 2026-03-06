@@ -29,17 +29,24 @@ export async function POST(request: Request) {
 async function handleSendEmails(request: Request) {
   try {
     // 1. Init Admin Client & Resend
-    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-      throw new Error('Missing Supabase credentials');
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
+      throw new Error('Missing NEXT_PUBLIC_SUPABASE_URL');
     }
     
+    // CRITICAL: Use Service Role Key for Admin Access (fetching emails)
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    
+    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+        console.warn("WARNING: SUPABASE_SERVICE_ROLE_KEY is missing. Email fetching might fail if emails are not in public profile.");
+    }
+
     if (!process.env.RESEND_API_KEY) {
         throw new Error('Missing RESEND_API_KEY');
     }
 
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+      supabaseKey!
     );
     
     const resend = new Resend(process.env.RESEND_API_KEY);
