@@ -3,6 +3,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 
+// Type definition for a network search request
+
 export interface NetworkSearch {
     id: string;
     user_id: string;
