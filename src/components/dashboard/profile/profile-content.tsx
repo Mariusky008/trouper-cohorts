@@ -858,7 +858,7 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
                                     placeholder="Ex: Club Med, Rotary..." 
                                     className="bg-white border-blue-200"
                                 />
-                                <p className="text-[10px] text-blue-600/70 italic">"Quel événement, groupe WhatsApp ou club privé aimerais-tu rejoindre à Bordeaux ?"</p>
+                                <p className="text-[10px] text-blue-600/70 italic">"Quel événement, groupe WhatsApp ou club privé aimerais-tu rejoindre ?"</p>
                             </div>
                             
                             <div className="space-y-2">

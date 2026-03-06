@@ -97,7 +97,7 @@ export function OffersView({
                                             <AvatarFallback>{currentUserOffer.display_name[0]}</AvatarFallback>
                                         </Avatar>
                                         <div className="absolute -bottom-3 -right-3 bg-amber-500 text-white font-black text-sm px-3 py-1.5 rounded-full shadow-lg border-2 border-[#0a0f1c] rotate-3">
-                                            -{Math.round(((currentUserOffer.offer_original_price - currentUserOffer.offer_price) / currentUserOffer.offer_original_price) * 100)}%
+                                            -{currentUserOffer.offer_original_price > 0 ? Math.round(((currentUserOffer.offer_original_price - currentUserOffer.offer_price) / currentUserOffer.offer_original_price) * 100) : 0}%
                                         </div>
                                     </div>
 
@@ -157,10 +157,10 @@ export function OffersView({
 
                     {/* OFFERS GRID */}
                     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 px-4">
-                        {unlockedOffers.map((offer) => (
+                        {(unlockedOffers || []).map((offer) => (
                             <div key={offer.user_id} className="group relative bg-white rounded-3xl border border-slate-200 p-6 hover:shadow-xl transition-all hover:-translate-y-1 overflow-hidden">
                                 <div className="absolute top-4 right-4 bg-red-500 text-white font-black text-xs px-3 py-1.5 rounded-full shadow-lg rotate-3 group-hover:rotate-6 transition-transform">
-                                    -{Math.round(((offer.offer_original_price - offer.offer_price) / offer.offer_original_price) * 100)}%
+                                    -{offer.offer_original_price > 0 ? Math.round(((offer.offer_original_price - offer.offer_price) / offer.offer_original_price) * 100) : 0}%
                                 </div>
 
                                 <div className="flex items-center gap-4 mb-6">
@@ -289,14 +289,14 @@ export function OffersView({
 
                     {/* SEARCHES GRID */}
                     <div className="grid md:grid-cols-2 gap-6 px-4">
-                        {searches.length === 0 ? (
+                        {(searches || []).length === 0 ? (
                             <div className="col-span-full text-center py-12 border-2 border-dashed border-slate-800 rounded-3xl bg-slate-900/50">
                                 <Search className="h-12 w-12 text-slate-600 mx-auto mb-4" />
                                 <h3 className="text-xl font-bold text-slate-400">Aucune recherche en cours</h3>
                                 <p className="text-slate-600">Soyez le premier à solliciter le réseau !</p>
                             </div>
                         ) : (
-                            searches.map((search) => (
+                            (searches || []).map((search) => (
                                 <div key={search.id} className="bg-[#1e293b]/50 border border-slate-700/50 rounded-2xl p-6 hover:bg-[#1e293b] transition-colors relative group">
                                     {/* Category Badge */}
                                     <div className="absolute top-4 right-4">
