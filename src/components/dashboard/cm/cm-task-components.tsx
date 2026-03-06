@@ -3,22 +3,59 @@
 import { useState } from "react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
-import { Calendar as CalendarIcon, Clock, CheckCircle2, AlertCircle, Trash2, MoreHorizontal, ArrowRight } from "lucide-react";
+import { 
+    Calendar as CalendarIcon, Clock, CheckCircle2, AlertCircle, Trash2, 
+    MoreHorizontal, ArrowRight, Layout, ListTodo, CheckSquare, 
+    PlayCircle, Eye, PenTool, Video, Search, Megaphone, Globe, 
+    MoreVertical, Flag
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
-import { createCMTask, updateCMTask, updateCMTaskStatus, deleteCMTask, CMTask, CMTaskStatus, CMPriority } from "@/lib/actions/cm-tasks";
+import { createCMTask, updateCMTask, updateCMTaskStatus, deleteCMTask, CMTask, CMTaskStatus, CMPriority, CMPlatform } from "@/lib/actions/cm-tasks";
 import { toast } from "sonner";
+import { motion } from "framer-motion";
+
+// --- HELPERS ---
+const getPriorityInfo = (p: CMPriority) => {
+    switch(p) {
+        case 'urgent': return { color: 'text-red-400', bg: 'bg-red-500/10', border: 'border-red-500/20', label: 'Urgent', icon: AlertCircle };
+        case 'high': return { color: 'text-orange-400', bg: 'bg-orange-500/10', border: 'border-orange-500/20', label: 'Haute', icon: Flag };
+        case 'medium': return { color: 'text-blue-400', bg: 'bg-blue-500/10', border: 'border-blue-500/20', label: 'Moyenne', icon: Flag };
+        case 'low': return { color: 'text-slate-400', bg: 'bg-slate-500/10', border: 'border-slate-500/20', label: 'Basse', icon: Flag };
+        default: return { color: 'text-slate-400', bg: 'bg-slate-500/10', border: 'border-slate-500/20', label: 'Normal', icon: Flag };
+    }
+};
+
+const getPlatformIcon = (platform: CMPlatform | null) => {
+    switch(platform) {
+        case 'linkedin': return <span className="text-blue-400">Linked<span className="font-bold">in</span></span>;
+        case 'instagram': return <span className="text-pink-400">Instagram</span>;
+        case 'tiktok': return <span className="text-cyan-400">TikTok</span>;
+        case 'newsletter': return <span className="text-amber-400">Newsletter</span>;
+        case 'website': return <span className="text-emerald-400">Site Web</span>;
+        case 'design': return <span className="text-purple-400">Design</span>;
+        case 'video': return <span className="text-rose-400">Vidéo</span>;
+        case 'research': return <span className="text-indigo-400">Recherche</span>;
+        case 'strategy': return <span className="text-yellow-400">Stratégie</span>;
+        default: return <span className="text-slate-400">Autre</span>;
+    }
+};
+
+// --- COMPONENTS ---
 
 export function CMTaskCard({ task }: { task: CMTask }) {
   const [isUpdating, setIsUpdating] = useState(false);
+  const priorityInfo = getPriorityInfo(task.priority);
+  const isOverdue = task.due_date && new Date(task.due_date) < new Date() && task.status !== 'done';
 
   const handleStatusChange = async (newStatus: CMTaskStatus) => {
     setIsUpdating(true);
@@ -39,90 +76,113 @@ export function CMTaskCard({ task }: { task: CMTask }) {
       }
   };
 
-  const getPriorityColor = (p: CMPriority) => {
-      switch(p) {
-          case 'urgent': return 'bg-red-500 text-white animate-pulse';
-          case 'high': return 'bg-orange-500 text-white';
-          case 'medium': return 'bg-blue-500 text-white';
-          case 'low': return 'bg-slate-500 text-white';
-          default: return 'bg-slate-500';
-      }
-  };
-
-  const isOverdue = task.due_date && new Date(task.due_date) < new Date() && task.status !== 'done';
-
   return (
-    <div className={cn(
-        "bg-slate-800/50 backdrop-blur-sm border border-white/5 rounded-xl p-4 transition-all hover:border-white/10 group",
-        isOverdue ? "border-red-500/30 bg-red-500/5" : ""
-    )}>
-      {/* Header */}
-      <div className="flex justify-between items-start mb-3">
+    <motion.div 
+        layout
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95 }}
+        className={cn(
+            "group relative flex flex-col gap-3 p-4 rounded-xl border transition-all duration-200",
+            "bg-[#1e293b]/50 hover:bg-[#1e293b] backdrop-blur-sm shadow-sm hover:shadow-md",
+            isOverdue ? "border-red-500/40 bg-red-900/10 hover:bg-red-900/20" : "border-slate-800 hover:border-slate-700"
+        )}
+    >
+      {/* Header: Platform & Priority */}
+      <div className="flex justify-between items-start">
           <div className="flex items-center gap-2">
-            <Badge className={cn("text-[10px] uppercase font-bold border-0", getPriorityColor(task.priority))}>
-                {task.priority === 'urgent' ? 'Urgent' : task.priority}
-            </Badge>
-            {task.platform && (
-                <Badge variant="outline" className="text-[10px] uppercase border-white/10 text-slate-400">
-                    {task.platform === 'linkedin' && 'LinkedIn'}
-                    {task.platform === 'instagram' && 'Instagram'}
-                    {task.platform === 'tiktok' && 'TikTok'}
-                    {task.platform === 'newsletter' && 'News'}
-                    {task.platform === 'website' && 'Web'}
-                    {task.platform === 'design' && 'Design'}
-                    {task.platform === 'video' && 'Vidéo'}
-                    {task.platform === 'research' && 'Recherche'}
-                    {task.platform === 'strategy' && 'Stratégie'}
-                    {task.platform === 'admin' && 'Admin'}
-                </Badge>
-            )}
+              <Badge variant="outline" className="bg-slate-950/50 border-slate-800 text-[10px] uppercase tracking-wider px-2 py-0.5">
+                  {getPlatformIcon(task.platform)}
+              </Badge>
+              {task.priority === 'urgent' && (
+                   <Badge variant="outline" className="bg-red-500/10 border-red-500/20 text-red-400 text-[10px] px-2 py-0.5 animate-pulse">
+                       URGENT
+                   </Badge>
+              )}
           </div>
           
-          <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-               <Button variant="ghost" size="icon" className="h-6 w-6 text-slate-400 hover:text-red-400" onClick={handleDelete}>
-                   <Trash2 className="h-3 w-3" />
-               </Button>
-          </div>
+          <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-6 w-6 -mr-2 text-slate-500 hover:text-white opacity-0 group-hover:opacity-100 transition-opacity">
+                      <MoreHorizontal className="h-4 w-4" />
+                  </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="bg-slate-900 border-slate-800 text-slate-200">
+                  <DropdownMenuItem className="text-red-400 focus:text-red-300 focus:bg-red-900/20 cursor-pointer" onClick={handleDelete}>
+                      <Trash2 className="mr-2 h-4 w-4" /> Supprimer
+                  </DropdownMenuItem>
+              </DropdownMenuContent>
+          </DropdownMenu>
       </div>
 
-      {/* Content */}
-      <h4 className="font-bold text-white mb-1 break-all line-clamp-2">{task.title}</h4>
-      {task.description && (
-          <p className="text-sm text-slate-300 break-all line-clamp-3 mb-3">
-              {task.description}
-          </p>
-      )}
+      {/* Main Content */}
+      <div className="space-y-1">
+          <h4 className={cn(
+              "font-bold text-base leading-tight break-words",
+              task.status === 'done' ? "text-slate-500 line-through decoration-slate-600" : "text-slate-100"
+          )}>
+              {task.title}
+          </h4>
+          {task.description && (
+              <p className="text-sm text-slate-400 line-clamp-3 break-words whitespace-pre-wrap leading-relaxed">
+                  {task.description}
+              </p>
+          )}
+      </div>
 
-      {/* Footer (Date & Actions) */}
-      <div className="flex items-center justify-between mt-4 pt-3 border-t border-white/5">
-          <div className={cn("flex items-center gap-1.5 text-xs font-medium", isOverdue ? "text-red-400" : "text-slate-400")}>
-              <Clock className="h-3 w-3" />
-              {task.due_date ? format(new Date(task.due_date), "d MMM", { locale: fr }) : "Pas de date"}
-          </div>
+      {/* Footer: Date & Actions */}
+      <div className="flex items-center justify-between pt-2 mt-auto">
+          {task.due_date ? (
+               <div className={cn(
+                   "flex items-center gap-1.5 text-xs font-medium px-2 py-1 rounded-md border",
+                   isOverdue 
+                       ? "bg-red-500/10 border-red-500/20 text-red-400" 
+                       : "bg-slate-800/50 border-slate-700/50 text-slate-400"
+               )}>
+                   <Clock className="h-3 w-3" />
+                   {format(new Date(task.due_date), "d MMM", { locale: fr })}
+               </div>
+          ) : (
+              <div className="text-xs text-slate-600 italic">Pas de date</div>
+          )}
 
-          {/* Status Actions */}
-          <div className="flex gap-1">
+          {/* Quick Actions based on Status */}
+          <div className="flex items-center gap-1">
               {task.status === 'todo' && (
-                  <Button size="sm" variant="outline" className="h-7 text-xs border-blue-500/20 text-blue-400 hover:bg-blue-500/10" onClick={() => handleStatusChange('in_progress')}>
-                      Start
+                  <Button 
+                    size="sm" 
+                    className="h-7 px-3 text-xs bg-blue-600/20 hover:bg-blue-600/40 text-blue-300 border border-blue-500/30 font-medium" 
+                    onClick={() => handleStatusChange('in_progress')}
+                  >
+                      Commencer
                   </Button>
               )}
               {task.status === 'in_progress' && (
-                  <Button size="sm" variant="outline" className="h-7 text-xs border-purple-500/20 text-purple-400 hover:bg-purple-500/10" onClick={() => handleStatusChange('review')}>
-                      Review
+                  <Button 
+                    size="sm" 
+                    className="h-7 px-3 text-xs bg-purple-600/20 hover:bg-purple-600/40 text-purple-300 border border-purple-500/30 font-medium" 
+                    onClick={() => handleStatusChange('review')}
+                  >
+                      À Valider
                   </Button>
               )}
               {task.status === 'review' && (
-                  <Button size="sm" variant="outline" className="h-7 text-xs border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/10" onClick={() => handleStatusChange('done')}>
+                  <Button 
+                    size="sm" 
+                    className="h-7 px-3 text-xs bg-emerald-600/20 hover:bg-emerald-600/40 text-emerald-300 border border-emerald-500/30 font-medium" 
+                    onClick={() => handleStatusChange('done')}
+                  >
                       Valider
                   </Button>
               )}
-               {task.status === 'done' && (
-                  <Badge variant="outline" className="border-emerald-500/20 text-emerald-500 text-[10px]">Terminé</Badge>
+              {task.status === 'done' && (
+                  <div className="h-7 w-7 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-500">
+                      <CheckCircle2 className="h-4 w-4" />
+                  </div>
               )}
           </div>
       </div>
-    </div>
+    </motion.div>
   );
 }
 
@@ -139,6 +199,7 @@ export function CreateTaskDialog() {
         if (result.success) {
             toast.success("Tâche créée !");
             setIsOpen(false);
+            setDate(undefined);
         } else {
             toast.error("Erreur lors de la création");
         }
@@ -147,48 +208,45 @@ export function CreateTaskDialog() {
     return (
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <DialogTrigger asChild>
-                <Button className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold">
-                    + Nouvelle Tâche
+                <Button className="bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-bold shadow-lg shadow-emerald-500/20 transition-all hover:scale-105">
+                    <PenTool className="w-4 h-4 mr-2" />
+                    Nouvelle Tâche
                 </Button>
             </DialogTrigger>
-            <DialogContent className="bg-slate-900 border-white/10 text-white sm:max-w-[425px]">
-                <DialogHeader>
-                    <DialogTitle>Ajouter une tâche pour le CM</DialogTitle>
-                </DialogHeader>
-                <form onSubmit={onSubmit} className="space-y-4 mt-4">
+            <DialogContent className="bg-[#0f172a] border-slate-800 text-slate-100 sm:max-w-[500px] p-0 overflow-hidden gap-0">
+                <div className="bg-slate-900/50 p-6 border-b border-slate-800">
+                    <DialogHeader>
+                        <DialogTitle className="text-xl font-bold flex items-center gap-2">
+                            <PenTool className="w-5 h-5 text-emerald-500" />
+                            Créer une mission
+                        </DialogTitle>
+                        <p className="text-sm text-slate-400">
+                            Définissez une nouvelle tâche pour votre Community Manager.
+                        </p>
+                    </DialogHeader>
+                </div>
+                
+                <form onSubmit={onSubmit} className="p-6 space-y-5">
                     <div className="space-y-2">
-                        <Label htmlFor="title">Titre de la tâche</Label>
+                        <Label htmlFor="title" className="text-slate-300 font-medium">Titre de la mission <span className="text-red-400">*</span></Label>
                         <Input 
                             id="title" 
                             name="title" 
-                            placeholder="Ex: Post LinkedIn Lundi" 
-                            className="bg-slate-800 border-white/10 text-white placeholder:text-slate-500" 
+                            placeholder="Ex: Carrousel LinkedIn 'Nos Valeurs'" 
+                            className="bg-slate-950 border-slate-800 focus:border-emerald-500/50 focus:ring-emerald-500/20 text-white placeholder:text-slate-600 h-11" 
                             required 
+                            autoFocus
                         />
                     </div>
                     
                     <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="priority">Priorité</Label>
-                            <Select name="priority" defaultValue="medium">
-                                <SelectTrigger className="bg-slate-800 border-white/10 text-white">
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent className="bg-slate-800 border-white/10 text-white">
-                                    <SelectItem value="low">Basse</SelectItem>
-                                    <SelectItem value="medium">Moyenne</SelectItem>
-                                    <SelectItem value="high">Haute</SelectItem>
-                                    <SelectItem value="urgent">Urgente</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
                          <div className="space-y-2">
-                            <Label htmlFor="platform">Plateforme</Label>
+                            <Label htmlFor="platform" className="text-slate-300 font-medium">Plateforme</Label>
                             <Select name="platform" defaultValue="linkedin">
-                                <SelectTrigger className="bg-slate-800 border-white/10 text-white">
+                                <SelectTrigger className="bg-slate-950 border-slate-800 text-white h-11">
                                     <SelectValue />
                                 </SelectTrigger>
-                                <SelectContent className="bg-slate-800 border-white/10 text-white">
+                                <SelectContent className="bg-slate-900 border-slate-800 text-slate-200">
                                     <SelectItem value="linkedin">LinkedIn</SelectItem>
                                     <SelectItem value="instagram">Instagram</SelectItem>
                                     <SelectItem value="tiktok">TikTok</SelectItem>
@@ -202,24 +260,39 @@ export function CreateTaskDialog() {
                                 </SelectContent>
                             </Select>
                         </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="priority" className="text-slate-300 font-medium">Priorité</Label>
+                            <Select name="priority" defaultValue="medium">
+                                <SelectTrigger className="bg-slate-950 border-slate-800 text-white h-11">
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent className="bg-slate-900 border-slate-800 text-slate-200">
+                                    <SelectItem value="low">Basse (Pas pressé)</SelectItem>
+                                    <SelectItem value="medium">Moyenne (Standard)</SelectItem>
+                                    <SelectItem value="high">Haute (Important)</SelectItem>
+                                    <SelectItem value="urgent">🔥 Urgente (ASAP)</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
                     </div>
 
                     <div className="space-y-2">
-                        <Label>Date d'échéance</Label>
+                        <Label className="text-slate-300 font-medium">Date limite (Optionnel)</Label>
                         <Popover>
                             <PopoverTrigger asChild>
                                 <Button
                                     variant={"outline"}
                                     className={cn(
-                                        "w-full justify-start text-left font-normal bg-slate-800 border-white/10 text-white",
+                                        "w-full justify-start text-left font-normal bg-slate-950 border-slate-800 text-white h-11 hover:bg-slate-900",
                                         !date && "text-slate-500"
                                     )}
                                 >
                                     <CalendarIcon className="mr-2 h-4 w-4" />
-                                    {date ? format(date, "PPP", { locale: fr }) : <span>Choisir une date</span>}
+                                    {date ? format(date, "PPP", { locale: fr }) : <span>Sélectionner une date</span>}
                                 </Button>
                             </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0 bg-slate-900 border-white/10">
+                            <PopoverContent className="w-auto p-0 bg-slate-900 border-slate-800">
                                 <Calendar
                                     mode="single"
                                     selected={date}
@@ -232,16 +305,23 @@ export function CreateTaskDialog() {
                     </div>
 
                     <div className="space-y-2">
-                        <Label htmlFor="description">Description / Notes</Label>
+                        <Label htmlFor="description" className="text-slate-300 font-medium">Description & Consignes</Label>
                         <Textarea 
                             id="description" 
                             name="description" 
-                            placeholder="Détails, liens, idées..." 
-                            className="bg-slate-800 border-white/10 min-h-[100px] text-white placeholder:text-slate-500" 
+                            placeholder="Détaillez la demande : ton, format, liens d'inspiration..." 
+                            className="bg-slate-950 border-slate-800 focus:border-emerald-500/50 focus:ring-emerald-500/20 min-h-[120px] text-white placeholder:text-slate-600 resize-none" 
                         />
                     </div>
 
-                    <Button type="submit" className="w-full bg-emerald-500 hover:bg-emerald-600 font-bold">Créer la tâche</Button>
+                    <DialogFooter className="pt-2">
+                        <Button type="button" variant="ghost" onClick={() => setIsOpen(false)} className="text-slate-400 hover:text-white hover:bg-slate-800">
+                            Annuler
+                        </Button>
+                        <Button type="submit" className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold px-8">
+                            Confirmer la tâche
+                        </Button>
+                    </DialogFooter>
                 </form>
             </DialogContent>
         </Dialog>
