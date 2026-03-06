@@ -38,6 +38,7 @@ export async function createOpportunity(data: {
             .from("network_opportunities")
             .insert({
                 giver_id: user.id,
+                // receiver_id: null, // Explicitly null for public
                 type: data.type,
                 points: data.price, // Ici points = prix de vente
                 details: data.details, // private_details
