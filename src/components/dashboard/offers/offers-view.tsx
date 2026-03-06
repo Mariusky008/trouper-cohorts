@@ -67,13 +67,13 @@ export function OffersView({
                     <TabsList className="bg-slate-800/50 border border-white/10 p-1 rounded-full h-auto">
                         <TabsTrigger 
                             value="offers" 
-                            className="rounded-full px-6 py-2.5 text-sm font-bold data-[state=active]:bg-amber-500 data-[state=active]:text-white transition-all"
+                            className="rounded-full px-6 py-2.5 text-sm font-bold text-slate-400 data-[state=active]:bg-amber-500 data-[state=active]:text-white transition-all"
                         >
                             <Percent className="h-4 w-4 mr-2" /> Offres Privilèges
                         </TabsTrigger>
                         <TabsTrigger 
                             value="searches" 
-                            className="rounded-full px-6 py-2.5 text-sm font-bold data-[state=active]:bg-blue-600 data-[state=active]:text-white transition-all"
+                            className="rounded-full px-6 py-2.5 text-sm font-bold text-slate-400 data-[state=active]:bg-blue-600 data-[state=active]:text-white transition-all"
                         >
                             <Search className="h-4 w-4 mr-2" /> Appels d'Offres / Recherches
                         </TabsTrigger>
