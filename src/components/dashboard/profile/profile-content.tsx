@@ -377,7 +377,7 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
                         <Pencil className="mr-2 h-4 w-4" /> Modifier mon profil
                     </Button>
                     <Button onClick={() => setIsOfferModalOpen(true)} variant="outline" className="rounded-xl font-bold h-12 px-6 border-amber-500/30 text-amber-400 hover:bg-amber-500/10 hover:text-amber-300 w-full md:w-auto">
-                        <Percent className="mr-2 h-4 w-4" /> Gérer mon Offre -50%
+                        <Percent className="mr-2 h-4 w-4" /> Gérer mon Offre -20%
                     </Button>
                  </>
              )}
@@ -944,7 +944,7 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
                 <Percent className="h-6 w-6" /> Mon Offre Club
             </DialogTitle>
             <DialogDescription>
-                Proposez une offre exclusive (-50% min) visible uniquement par vos matchs.
+                Proposez une offre exclusive (-20% min) visible uniquement par vos matchs.
             </DialogDescription>
           </DialogHeader>
           
@@ -957,7 +957,7 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
                             <p className="text-xs text-amber-700/80 mt-1 leading-relaxed">
                                 Votre offre est un privilège pour votre réseau proche.
                                 <br/>
-                                <span className="font-bold mt-1 block">Règle d'or : -50% par rapport au prix public.</span>
+                                <span className="font-bold mt-1 block">Règle d'or : -20% minimum par rapport au prix public.</span>
                             </p>
                         </div>
                     </div>
@@ -1011,7 +1011,7 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
                             </div>
                         </div>
                         <div className="space-y-2">
-                            <Label className="text-emerald-600 font-bold">Prix Club (-50%) {formErrors.offer_price && "*"}</Label>
+                            <Label className="text-emerald-600 font-bold">Prix Club (-20% min) {formErrors.offer_price && "*"}</Label>
                             <div className="relative">
                                 <Input 
                                     type="number"

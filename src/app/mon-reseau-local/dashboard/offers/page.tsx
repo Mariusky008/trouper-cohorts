@@ -152,10 +152,10 @@ export default async function OffersPage() {
 
                 {/* 2. LOCKED OFFERS TEASERS (DUMMY DATA FOR GAMIFICATION) */}
                 {[
-                    { title: "Audit SEO & Visibilité", price: "450€", original: "900€" },
-                    { title: "Pack Photos Pro", price: "150€", original: "300€" },
-                    { title: "Coaching Vente B2B", price: "200€", original: "400€" },
-                    { title: "Site Web Vitrine", price: "800€", original: "1600€" }
+                    { title: "Audit SEO & Visibilité", price: "720€", original: "900€" },
+                    { title: "Pack Photos Pro", price: "240€", original: "300€" },
+                    { title: "Coaching Vente B2B", price: "320€", original: "400€" },
+                    { title: "Site Web Vitrine", price: "1280€", original: "1600€" }
                 ].map((dummy, i) => (
                     <LockedOfferCard key={i} title={dummy.title} price={dummy.price} original={dummy.original} />
                 ))}

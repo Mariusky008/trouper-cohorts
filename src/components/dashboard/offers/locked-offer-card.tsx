@@ -70,7 +70,7 @@ export function LockedOfferCard({ title, price, original }: LockedOfferCardProps
       {/* Content (Visible but slightly obscured) */}
       <div className="opacity-60 pointer-events-none select-none filter grayscale-[0.5]">
         <div className="absolute top-4 right-4 bg-slate-900 text-white font-black text-xs px-3 py-1.5 rounded-full shadow-lg rotate-3 opacity-50">
-          -50%
+          -20%
         </div>
 
         <div className="flex items-center gap-4 mb-6 opacity-50">
