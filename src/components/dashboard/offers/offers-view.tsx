@@ -187,7 +187,7 @@ export function OffersView({
                                         <p className="text-2xl font-black text-emerald-600">{offer.offer_price}€</p>
                                     </div>
                                     <Button asChild size="sm" className="bg-slate-900 text-white hover:bg-slate-800 rounded-xl font-bold">
-                                        <Link href={`/mon-reseau-local/dashboard/match/${offer.user_id}`}>
+                                        <Link href={`/mon-reseau-local/dashboard/profile/${offer.user_id}`}>
                                             Voir le profil <ArrowRight className="ml-2 h-4 w-4" />
                                         </Link>
                                     </Button>
@@ -350,7 +350,7 @@ export function OffersView({
                                         {/* Contact Button */}
                                         {search.user_id !== currentUserId && (
                                             <Button asChild size="sm" className="bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-bold text-xs h-8">
-                                                <Link href={`/mon-reseau-local/dashboard/match/${search.user_id}`}>
+                                                <Link href={`/mon-reseau-local/dashboard/profile/${search.user_id}`}>
                                                     Contacter
                                                 </Link>
                                             </Button>
