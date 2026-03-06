@@ -195,6 +195,10 @@ export function CreateTaskDialog() {
         const formData = new FormData(event.currentTarget);
         if (date) formData.append('due_date', date.toISOString());
         
+        // Add default values for selects if not present in FormData (sometimes happens with controlled components or shadcn Select)
+        if (!formData.get('platform')) formData.append('platform', 'linkedin');
+        if (!formData.get('priority')) formData.append('priority', 'medium');
+
         const result = await createCMTask(formData);
         if (result.success) {
             toast.success("Tâche créée !");
@@ -240,7 +244,7 @@ export function CreateTaskDialog() {
                     </div>
                     
                     <div className="grid grid-cols-2 gap-4">
-                         <div className="space-y-2">
+                        <div className="space-y-2">
                             <Label htmlFor="platform" className="text-slate-300 font-medium">Plateforme</Label>
                             <Select name="platform" defaultValue="linkedin">
                                 <SelectTrigger className="bg-slate-950 border-slate-800 text-white h-11">

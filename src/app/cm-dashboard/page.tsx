@@ -120,7 +120,7 @@ export default function CMDashboardPage() {
               <BoardColumn 
                   title="En cours" 
                   count={inProgressTasks.length} 
-                  icon={<Loader2 className="h-4 w-4 animate-spin" />}
+                  icon={<Loader2 className="h-4 w-4" />}
                   color="blue"
                   borderColor="border-blue-500/20"
                   bgColor="bg-blue-500/5"
