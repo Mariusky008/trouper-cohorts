@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Percent, Search, Briefcase, MapPin, Building2, Megaphone, Trash2, ArrowRight } from "lucide-react";
+import { Pencil, Percent, Search, Briefcase, MapPin, Building2, Megaphone, Trash2, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
