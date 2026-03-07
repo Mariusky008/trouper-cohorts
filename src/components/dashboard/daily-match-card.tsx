@@ -19,7 +19,105 @@ import { saveMatchFeedback } from "@/lib/actions/network-feedback";
 import { incrementUserPoints } from "@/lib/actions/gamification";
 import { trackEvent } from "@/lib/actions/analytics";
 import { updateMatchMission } from "@/lib/actions/match-mission";
-import { FounderCardPreview } from "@/components/dashboard/design-system-preview";
+// import { FounderCardPreview } from "@/components/dashboard/design-system-preview";
+
+// --- FOUNDER CARD PREVIEW COMPONENT (INLINED TO AVOID CIRCULAR DEPENDENCY) ---
+function FounderCardPreview({ type = "onboarding", onConfirm }: { type?: "onboarding" | "rescue", onConfirm: () => void }) {
+    const isRescue = type === "rescue";
+    const [confirmed, setConfirmed] = useState(false);
+
+    const handleAction = () => {
+        setConfirmed(true);
+        onConfirm();
+    };
+
+    if (confirmed) {
+        return (
+            <div className="relative w-full max-w-sm mx-auto h-[600px] rounded-[2.5rem] overflow-hidden shadow-2xl bg-[#0f172a] flex flex-col items-center justify-center text-center p-6 border border-emerald-500/30">
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-emerald-900/20 via-[#0f172a] to-[#0f172a]"></div>
+                <motion.div 
+                    initial={{ scale: 0 }} animate={{ scale: 1 }} 
+                    className="w-24 h-24 bg-emerald-500 rounded-full flex items-center justify-center mb-6 shadow-[0_0_30px_rgba(16,185,129,0.4)]"
+                >
+                    <CheckCircle2 className="w-12 h-12 text-white" />
+                </motion.div>
+                <h3 className="text-3xl font-black text-white mb-2">Message Envoyé !</h3>
+                <p className="text-slate-400 max-w-[250px]">
+                    Jean-Philippe a reçu votre demande. <br/>Il vous contactera très vite.
+                </p>
+            </div>
+        );
+    }
+
+    return (
+        <div className="relative w-full max-w-sm mx-auto min-h-[600px] h-auto rounded-[2.5rem] overflow-hidden shadow-[0_20px_50px_-12px_rgba(0,0,0,0.5)] bg-gradient-to-b from-[#1e293b] to-[#0f172a] border border-white/10 flex flex-col items-center p-0 group">
+            
+            {/* Background Image/Effect */}
+            <div className="absolute inset-0 opacity-40">
+                <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#0f172a]/80 to-[#0f172a] z-10"></div>
+                <Image 
+                    src="/jeanphilipperoth.jpg" 
+                    alt="Jean-Philippe Founder" 
+                    fill 
+                    className="object-cover object-top"
+                />
+            </div>
+
+            {/* Content Container */}
+            <div className="relative z-20 flex flex-col h-full w-full justify-between p-6 pt-48 bg-gradient-to-b from-transparent via-[#0f172a]/90 to-[#0f172a]">
+                
+                {/* Header Badge */}
+                <div className="flex justify-center -mt-12 mb-4">
+                    <Badge className={cn(
+                        "px-4 py-1.5 text-xs font-bold uppercase tracking-widest shadow-lg border backdrop-blur-md",
+                        isRescue 
+                            ? "bg-red-500/20 text-red-200 border-red-500/30" 
+                            : "bg-indigo-500/20 text-indigo-200 border-indigo-500/30"
+                    )}>
+                        {isRescue ? "🆘 JOKER DE SECOURS" : "👋 BIENVENUE AU CLUB"}
+                    </Badge>
+                </div>
+
+                {/* Title & Message */}
+                <div className="text-center space-y-4 mb-8">
+                    <h2 className="text-3xl font-black text-white leading-none">
+                        Jean-Philippe <br/>
+                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400 text-xl">Fondateur Popey</span>
+                    </h2>
+                    
+                    <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-4 text-left relative">
+                        <div className="absolute -top-3 -left-2 text-4xl opacity-20">❝</div>
+                        <p className="text-slate-200 text-sm font-medium leading-relaxed italic relative z-10">
+                            {isRescue 
+                                ? "Je vois que l'algo n'a pas trouvé de match parfait pour toi aujourd'hui. Pas de panique, je prends le relais ! Discutons 15 min de ton business."
+                                : "Ravi de te compter parmi nous ! Pour bien démarrer, je te propose un échange direct de 15 min pour t'aider à tirer le meilleur du réseau."
+                            }
+                        </p>
+                    </div>
+                </div>
+
+                {/* Action Button */}
+                <Button 
+                    onClick={handleAction}
+                    className={cn(
+                        "w-full h-14 font-black text-lg rounded-2xl shadow-xl transition-all hover:scale-[1.02] relative overflow-hidden group/btn",
+                        isRescue 
+                            ? "bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-400 hover:to-orange-400 text-white shadow-red-900/20"
+                            : "bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-400 hover:to-purple-500 text-white shadow-indigo-900/20"
+                    )}
+                >
+                    <div className="absolute inset-0 bg-white/20 translate-y-full group-hover/btn:translate-y-0 transition-transform duration-300"></div>
+                    <PhoneCall className="w-5 h-5 mr-2 relative z-10" /> 
+                    <span className="relative z-10">ACCEPTER L'APPEL</span>
+                </Button>
+
+                <p className="text-[10px] text-slate-500 text-center mt-3 font-medium uppercase tracking-wide">
+                    Disponible aujourd'hui • 09h - 18h
+                </p>
+            </div>
+        </div>
+    );
+}
 
 import { OPPORTUNITY_TYPES } from "@/constants/opportunities";
 
@@ -587,6 +685,8 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  const now = new Date(); // Définir 'now' ici, au début de la logique de rendu
 
   // Check if today is weekend
   const isWeekend = now.getDay() === 6 || now.getDay() === 0; // 6 = Saturday, 0 = Sunday
