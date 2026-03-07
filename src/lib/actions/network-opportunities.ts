@@ -1,9 +1,9 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin"; // Import admin client
 import { OpportunityType, OpportunityStatus } from "@/types/network";
 import { revalidatePath } from "next/cache";
-// import { sendNotification } from "./notifications"; // REMOVED: Unused and causes web-push bundle issues
 
 // ... createOpportunity removed and moved to opportunity-creation.ts
 
@@ -60,27 +60,51 @@ export async function getOpportunities(filter: 'all' | 'received' | 'given' | 'p
   
   if (!user) return [];
 
-  let query = supabase
-    .from("network_opportunities")
-    .select("*")
-    .order("created_at", { ascending: false });
+  // Use Admin Client for Public Opportunities to bypass RLS restrictions if they exist
+  // Or just standard client if RLS is configured correctly.
+  // Given user feedback, it seems RLS prevents reading public opps from others.
+  // So let's try using admin client ONLY for public view.
+  
+  let query;
+  let supabaseClient = supabase;
 
   if (filter === 'public') {
-    // Public opportunities logic: 
-    // - visibility = 'public'
-    // - status = 'available' (not sold yet)
-    // - giver_id != user.id (don't show own listings)
-    query = query
-        .eq('visibility', 'public')
-        .eq('status', 'available');
-        // .neq('giver_id', user.id); // For testing, allow seeing own
-  } else if (filter === 'received') {
-    query = query.eq('receiver_id', user.id);
-  } else if (filter === 'given') {
-    query = query.eq('giver_id', user.id);
+      // Use Admin Client to ensure we can see ALL public opportunities regardless of RLS
+      // Note: This requires SUPABASE_SERVICE_ROLE_KEY to be set in environment variables.
+      // If not set, fallback to standard client.
+      if (process.env.SUPABASE_SERVICE_ROLE_KEY) {
+          const adminClient = createAdminClient();
+          supabaseClient = adminClient as any; 
+      }
+      
+      query = supabaseClient
+        .from("network_opportunities")
+        .select("*")
+        .order("created_at", { ascending: false });
+        
+      // Public opportunities logic: 
+      // - visibility = 'public'
+      // - status = 'available' (not sold yet)
+      // - giver_id != user.id (don't show own listings - OPTIONAL, keep for now to avoid confusion)
+      query = query
+          .eq('visibility', 'public')
+          .eq('status', 'available');
+          // .neq('giver_id', user.id); // For testing, allow seeing own
   } else {
-    // All means both given and received (PRIVATE ONLY)
-    query = query.or(`giver_id.eq.${user.id},receiver_id.eq.${user.id}`);
+      // Standard Private Logic
+      query = supabase
+        .from("network_opportunities")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (filter === 'received') {
+        query = query.eq('receiver_id', user.id);
+      } else if (filter === 'given') {
+        query = query.eq('giver_id', user.id);
+      } else {
+        // All means both given and received (PRIVATE ONLY)
+        query = query.or(`giver_id.eq.${user.id},receiver_id.eq.${user.id}`);
+      }
   }
 
   const { data: opportunities, error } = await query;
