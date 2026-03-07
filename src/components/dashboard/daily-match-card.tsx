@@ -767,7 +767,7 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
   const hasMismatch = mySlots.length > 0 && partnerSlots.length > 0 && commonSlots.length === 0;
 
   // Check if match is in the future (Tomorrow or later)
-  const now = new Date();
+  // const now = new Date(); // Removed duplicate declaration
   const today = new Date().toLocaleDateString('fr-CA', { timeZone: 'Europe/Paris' }); // YYYY-MM-DD
   const isFuture = match.date > today;
   
