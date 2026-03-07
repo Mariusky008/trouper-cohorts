@@ -588,9 +588,53 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
     setMounted(true);
   }, []);
 
+  // Check if today is weekend
+  const isWeekend = now.getDay() === 6 || now.getDay() === 0; // 6 = Saturday, 0 = Sunday
+
+  // If no matches, we show the Mystery Card in LOCKED state (Teaser) instead of the old WaitingCard.
+  // This ensures consistency: "There is always a next match coming".
   if (!matches || matches.length === 0) {
-      // If no matches, we show the Mystery Card in LOCKED state (Teaser) instead of the old WaitingCard.
-      // This ensures consistency: "There is always a next match coming".
+      if (isWeekend) {
+          return (
+            <div className="relative w-full max-w-sm mx-auto min-h-[600px] h-auto rounded-[2.5rem] overflow-hidden shadow-[0_20px_50px_-12px_rgba(234,179,8,0.3)] bg-gradient-to-b from-[#422006] to-[#0f172a] border border-yellow-500/30 flex flex-col items-center justify-center text-center p-6 pb-8 group">
+                <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10 z-0"></div>
+                
+                {/* Gold Glow */}
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-yellow-500/20 blur-[100px] rounded-full z-0"></div>
+
+                <div className="relative z-10 space-y-8 flex flex-col items-center">
+                    <motion.div 
+                        animate={{ rotate: [0, 10, -10, 0], scale: [1, 1.1, 1] }}
+                        transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
+                        className="w-32 h-32 rounded-full bg-gradient-to-br from-yellow-300 to-yellow-600 flex items-center justify-center shadow-[0_0_40px_rgba(234,179,8,0.4)] border-4 border-yellow-200"
+                    >
+                        <span className="text-6xl">🃏</span>
+                    </motion.div>
+
+                    <div>
+                        <h2 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-200 to-yellow-500 mb-3 uppercase tracking-tight">
+                            Mode Joker Activé
+                        </h2>
+                        <p className="text-yellow-100/80 font-medium text-lg max-w-[280px] mx-auto leading-relaxed">
+                            C'est le week-end ! <br/>
+                            Profitez-en pour vous reposer.
+                        </p>
+                    </div>
+
+                    <div className="bg-yellow-950/40 border border-yellow-500/20 rounded-2xl p-6 w-full max-w-[300px]">
+                        <p className="text-yellow-200/90 text-sm font-medium italic">
+                            "Le repos est l'arme secrète de la productivité. On reprend lundi avec de nouveaux clients !" 🚀
+                        </p>
+                    </div>
+
+                    <Badge className="bg-yellow-500/20 text-yellow-300 border-yellow-500/30 px-4 py-1.5 uppercase tracking-widest font-bold animate-pulse">
+                        Rendez-vous Lundi 08h
+                    </Badge>
+                </div>
+            </div>
+          );
+      }
+
       return <MysteryCard 
           onReveal={() => {}} 
           match={{
