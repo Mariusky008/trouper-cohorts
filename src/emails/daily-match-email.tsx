@@ -98,13 +98,23 @@ export const DailyMatchEmail = ({
             </Section>
 
             {/* CTA */}
-            <Section className="text-center mb-8">
+            <Section className="text-center mb-4">
               <Button
                 className="bg-blue-600 rounded-xl text-white text-[16px] font-bold no-underline text-center px-8 py-4 shadow-lg shadow-blue-200 block w-full"
                 href={dashboardUrl}
               >
                 Voir mon match maintenant 🚀
               </Button>
+            </Section>
+
+            {/* Add to Calendar Nudge */}
+            <Section className="text-center mb-8">
+                 <Button 
+                    className="bg-white border-2 border-slate-100 rounded-xl text-slate-500 text-[14px] font-bold no-underline text-center px-4 py-3 w-full hover:bg-slate-50 block"
+                    href={`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent("Call Réseau avec " + matchName)}&details=${encodeURIComponent("Rappel Popey : Échange de 15 min pour booster votre réseau.")}&location=${encodeURIComponent("Par téléphone")}`}
+                 >
+                     📅 Bloquer 15 min dans mon agenda
+                 </Button>
             </Section>
 
             {/* Footer / Gamification Nudge */}
