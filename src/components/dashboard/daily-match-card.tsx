@@ -713,7 +713,7 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
 
                     <div>
                         <h2 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-200 to-yellow-500 mb-3 uppercase tracking-tight">
-                            Mode Joker Activé
+                            Mode Popey Activé !
                         </h2>
                         <p className="text-yellow-100/80 font-medium text-lg max-w-[280px] mx-auto leading-relaxed">
                             C'est le week-end ! <br/>
