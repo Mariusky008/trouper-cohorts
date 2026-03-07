@@ -703,13 +703,26 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-yellow-500/20 blur-[100px] rounded-full z-0"></div>
 
                 <div className="relative z-10 space-y-8 flex flex-col items-center">
-                    <motion.div 
-                        animate={{ rotate: [0, 10, -10, 0], scale: [1, 1.1, 1] }}
-                        transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
-                        className="w-32 h-32 rounded-full bg-gradient-to-br from-yellow-300 to-yellow-600 flex items-center justify-center shadow-[0_0_40px_rgba(234,179,8,0.4)] border-4 border-yellow-200"
-                    >
-                        <span className="text-6xl">🃏</span>
-                    </motion.div>
+                    
+                    {/* Popey Themed Icon: Anchor */}
+                    <div className="relative">
+                        <motion.div 
+                            animate={{ y: [0, -10, 0] }}
+                            transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+                            className="relative z-10"
+                        >
+                            <div className="w-32 h-32 rounded-full bg-gradient-to-br from-yellow-300 to-yellow-600 flex items-center justify-center shadow-[0_0_50px_rgba(234,179,8,0.5)] border-4 border-yellow-200">
+                                <span className="text-6xl drop-shadow-md">⚓️</span>
+                            </div>
+                        </motion.div>
+                        
+                        {/* Ripple Effect behind Anchor */}
+                        <motion.div 
+                            animate={{ scale: [1, 1.5, 1], opacity: [0.3, 0, 0.3] }}
+                            transition={{ duration: 3, repeat: Infinity }}
+                            className="absolute inset-0 bg-yellow-500/30 rounded-full blur-xl -z-10"
+                        />
+                    </div>
 
                     <div>
                         <h2 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-200 to-yellow-500 mb-3 uppercase tracking-tight">
@@ -717,13 +730,13 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
                         </h2>
                         <p className="text-yellow-100/80 font-medium text-lg max-w-[280px] mx-auto leading-relaxed">
                             C'est le week-end ! <br/>
-                            Profitez-en pour vous reposer.
+                            Le navire reste au port.
                         </p>
                     </div>
 
                     <div className="bg-yellow-950/40 border border-yellow-500/20 rounded-2xl p-6 w-full max-w-[300px]">
                         <p className="text-yellow-200/90 text-sm font-medium italic">
-                            "Le repos est l'arme secrète de la productivité. On reprend lundi avec de nouveaux clients !" 🚀
+                            "Même les marins les plus aguerris ont besoin de repos. Reviens lundi pour de nouvelles aventures !" 🌊
                         </p>
                     </div>
 
