@@ -771,9 +771,43 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
   const today = new Date().toLocaleDateString('fr-CA', { timeZone: 'Europe/Paris' }); // YYYY-MM-DD
   const isFuture = match.date > today;
   
-  // If it's a future match, show Mystery Card in LOCKED state
+  // If it's a future match, show Mystery Card in LOCKED state (Teaser) + Add to Calendar
   if (isFuture) {
-      return <MysteryCard onReveal={() => {}} match={match} locked={true} />;
+      // 1. Sur la carte "Preview Bloquée" (celle du lendemain) : C'est là que l'engagement se prend.
+      // "Je sais que j'ai un match demain à 9h, je le bloque tout de suite dans mon agenda pour être sûr d'être dispo."
+      return (
+          <div className="relative group">
+              <MysteryCard onReveal={() => {}} match={match} locked={true} />
+              
+              {/* Add to Calendar Overlay/Button */}
+              <div className="absolute bottom-24 left-1/2 -translate-x-1/2 w-[90%] z-30 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none group-hover:pointer-events-auto">
+                   <Button 
+                        className="w-full bg-white text-indigo-900 hover:bg-indigo-50 font-bold shadow-xl border-2 border-indigo-100"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            // Generate Google Calendar Link
+                            const title = `Call Réseau avec ${match.name.split(' ')[0]} ⚡️`;
+                            const details = "Rappel Popey : Échange de 15 min pour booster votre réseau. Objectif : Faire connaissance et explorer les synergies.";
+                            const location = "Par téléphone";
+                            // Date logic: assume tomorrow 9am if no specific time, or use match.time if available (e.g. "09h - 09h15")
+                            // For simplicity, let's default to tomorrow 09:00 for the link, user can adjust.
+                            const startTime = new Date();
+                            startTime.setDate(startTime.getDate() + 1);
+                            startTime.setHours(9, 0, 0, 0);
+                            const endTime = new Date(startTime);
+                            endTime.setMinutes(endTime.getMinutes() + 15);
+                            
+                            const googleUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}&details=${encodeURIComponent(details)}&location=${encodeURIComponent(location)}&dates=${startTime.toISOString().replace(/-|:|\.\d\d\d/g, "")}/${endTime.toISOString().replace(/-|:|\.\d\d\d/g, "")}`;
+                            
+                            window.open(googleUrl, '_blank');
+                            toast.success("Agenda ouvert ! 📅", { description: "N'oubliez pas d'enregistrer le créneau." });
+                        }}
+                   >
+                       <span className="mr-2">📅</span> Bloquer mon créneau (15 min)
+                   </Button>
+              </div>
+          </div>
+      );
   }
 
   // --- SPECIAL FOUNDER MATCH (POPEY) ---
