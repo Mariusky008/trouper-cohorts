@@ -199,12 +199,11 @@ export async function getDailyMatches() {
   // Calculate if Day 2
   // We compare created_at date with today
   let isDay2 = false;
+  let created = new Date(); // Default
+  
   if (userData?.created_at) {
-      const created = new Date(userData.created_at);
-      const createdDateStr = parisDateFormatter.format(created);
+      created = new Date(userData.created_at);
       
-      // If today is NOT created date, but close?
-      // Actually, simple logic:
       const oneDay = 24 * 60 * 60 * 1000;
       const diffDays = Math.round(Math.abs((now.getTime() - created.getTime()) / oneDay));
       
@@ -243,42 +242,32 @@ export async function getDailyMatches() {
       if (feedbackCount && feedbackCount > 0) {
           // Already completed the founder match today!
           // Do not inject it. Return empty or next future match.
-          return sortedMatches.length > 0 ? [sortedMatches[0]] : [];
-      }
-
-      const founderMatch = {
-          id: 'founder-joker-' + todayParisStr,
-          partnerId: 'popey-founder',
-          name: 'Jean-Philippe',
-          job: 'Fondateur Popey',
-          city: 'Paris',
-          score: 5.0,
-          collabsCount: 999,
-          time: '09h - 18h', // All day availability
-          type: 'call_in', // User receives call
-          phone: '+33600000000', // Placeholder
-          avatar: '/jeanphilipperoth.jpg',
-          tags: isRescue ? ['rescue'] : ['founder'], // Tag determines UI
-          current_goals: ['Aider les membres'],
-          big_goal: 'Créer le meilleur réseau',
-          superpower: 'Connecteur',
-          current_need: 'Feedback',
-          status: 'pending',
-          date: todayParisStr
-      };
-      
-      // Add to list and resort
-      // sortedMatches.unshift(founderMatch);
-      // Actually, we should return this as the primary match if empty
-      // But wait, getDailyMatches returns array.
-      
-      // Only inject if strictly NO match today.
-      // activeMatches is already filtered for today/future.
-      
-      // Let's modify the return.
-      if (sortedMatches.length === 0) {
+          // return sortedMatches.length > 0 ? [sortedMatches[0]] : [];
+      } else if (sortedMatches.length === 0) {
+          // Only inject if strictly NO match today AND no future match waiting
+          
+          const founderMatch = {
+              id: 'founder-joker-' + todayParisStr,
+              partnerId: 'popey-founder',
+              name: 'Jean-Philippe',
+              job: 'Fondateur Popey',
+              city: 'Paris',
+              score: 5.0,
+              collabsCount: 999,
+              time: '09h - 18h', // All day availability
+              type: 'call_in', // User receives call
+              phone: '+33600000000', // Placeholder
+              avatar: '/jeanphilipperoth.jpg',
+              tags: isRescue ? ['rescue'] : ['founder'], // Tag determines UI
+              current_goals: ['Aider les membres'],
+              big_goal: 'Créer le meilleur réseau',
+              superpower: 'Connecteur',
+              current_need: 'Feedback',
+              status: 'pending',
+              date: todayParisStr
+          };
+          
           // If no match at all -> Show Founder Match TODAY (Rescue)
-          // If there is a future match (sortedMatches > 0), we prefer to show that (Teaser) instead of the Joker.
           return [founderMatch];
       }
   }
