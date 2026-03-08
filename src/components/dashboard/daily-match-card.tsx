@@ -274,8 +274,16 @@ function MysteryCard({ onReveal, match, locked = false, children }: { onReveal: 
   const compatibility = 77 + (seed % 20); // 77 to 96
   
   // Dynamic benefits based on job/superpower if available, or generic
-    // FIXED: Removed sector logic as requested by user to match design
     const getBenefits = () => {
+        // If we have a REAL superpower, use it as the first benefit
+        if (match.superpower && match.superpower.length > 5) {
+             return [
+                 match.superpower,
+                 "Partage d'expérience terrain",
+                 "Réseau local qualifié"
+             ];
+        }
+
         const benefits = [
             "Introduction stratégique (Décideurs)",
             "Boost de visibilité LinkedIn",
@@ -371,7 +379,7 @@ function MysteryCard({ onReveal, match, locked = false, children }: { onReveal: 
             <div className="w-full space-y-4 mb-6">
                  <div className="text-center">
                      <p className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-1">PROFIL</p>
-                     <p className="text-xl font-black text-white">{match.name ? match.name.split(' ')[0] : "Membre"} <span className="text-slate-500 mx-2">•</span> {match.job || "Dirigeant"} <span className="text-slate-500 mx-2">•</span> {match.city || "Bordeaux"}</p>
+                     <p className="text-xl font-black text-white">{match.name ? match.name.split(' ')[0] : "Membre"} <span className="text-slate-500 mx-2">•</span> {match.job || "Dirigeant"} <span className="text-slate-500 mx-2">•</span> {match.city || "Gironde"}</p>
                  </div>
                  
                  <div className="flex flex-col items-center justify-center gap-2 bg-[#0f172a] rounded-xl p-4 border border-white/5 shadow-lg max-w-[80%] mx-auto">
@@ -798,7 +806,7 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
       return (
           <MysteryCard onReveal={() => {}} match={match} locked={true}>
                <Button 
-                    className="w-full h-12 bg-[#0f172a] hover:bg-[#1e293b] text-indigo-200 border border-indigo-500/30 rounded-xl font-bold text-sm mb-3 flex items-center justify-center gap-2 transition-all hover:border-indigo-500/50 hover:text-white group/cal"
+                    className="w-full h-12 bg-white text-indigo-900 border border-indigo-100 rounded-xl font-black text-sm mb-3 flex items-center justify-center gap-2 transition-all hover:bg-indigo-50 hover:scale-[1.02] shadow-lg shadow-indigo-900/20 animate-pulse-slow group/cal"
                     onClick={(e) => {
                         e.stopPropagation();
                         // Generate Google Calendar Link
@@ -818,8 +826,8 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
                         toast.success("Agenda ouvert ! 📅", { description: "N'oubliez pas d'enregistrer le créneau." });
                     }}
                >
-                   <Clock className="w-4 h-4 text-indigo-400 group-hover/cal:text-white transition-colors" /> 
-                   <span>Bloquer mon créneau (15 min)</span>
+                   <Clock className="w-4 h-4 text-indigo-600 transition-colors" /> 
+                   <span>BLOQUER MON CRÉNEAU (15 min)</span>
                </Button>
           </MysteryCard>
       );
