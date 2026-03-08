@@ -379,11 +379,11 @@ function MysteryCard({ onReveal, match, locked = false, children }: { onReveal: 
             <div className="w-full space-y-4 mb-6">
                  <div className="text-center">
                      <p className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-1">PROFIL</p>
-                     <p className="text-xl font-black text-white">{match.name ? match.name.split(' ')[0] : "Membre"} <span className="text-slate-500 mx-2">•</span> {match.job || "Dirigeant"} <span className="text-slate-500 mx-2">•</span> {match.city || "Gironde"}</p>
+                     <p className="text-xl font-black text-white">{match.name ? match.name.split(' ')[0] : "Membre"} <span className="text-slate-500 mx-2">•</span> {match.job || "Dirigeant"} <span className="text-slate-500 mx-2">•</span> {match.city && match.city !== 'En ligne' ? match.city : "Gironde"}</p>
                  </div>
                  
                  <div className="flex flex-col items-center justify-center gap-2 bg-[#0f172a] rounded-xl p-4 border border-white/5 shadow-lg max-w-[80%] mx-auto">
-                     <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">POTENTIEL SYNERGIE</span>
+                     <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">POTENTIEL BUSINESS</span>
                      <div className="flex gap-1">
                          {[1,2,3,4,5].map(i => (
                              <Star key={i} className="w-5 h-5 text-orange-400 fill-orange-400" />
