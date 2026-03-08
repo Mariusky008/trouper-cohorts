@@ -402,6 +402,13 @@ function MysteryCard({ onReveal, match, locked = false, children }: { onReveal: 
                 ))}
             </ul>
         </div>
+        
+        {/* OPTIONAL CHILDREN (e.g. Add to Calendar) */}
+        {children && (
+            <div className="w-full mb-3 z-20 relative">
+                {children}
+            </div>
+        )}
 
         <Button 
             disabled={locked}
