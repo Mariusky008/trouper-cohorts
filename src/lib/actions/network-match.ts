@@ -189,26 +189,31 @@ export async function getDailyMatches() {
   // Check if today is the user's 2nd day (Day 2 of membership)
   // Or if we need to inject a "Rescue" match because the user has NO match for today but is available.
   
-  // 1. Get User Creation Date
+  // 1. Get User Creation Date & Check if Onboarding Completed
   const { data: userData } = await supabase
     .from("profiles")
     .select("created_at, availability_status")
     .eq("id", user.id)
     .single();
 
-  // Calculate if Day 2
+  // Check if user has EVER validated a match (feedback count > 0)
+  // This determines if they are still in "Onboarding" phase
+  const { count: totalFeedbackCount } = await supabase
+    .from('match_feedback')
+    .select('*', { count: 'exact', head: true })
+    .eq('giver_id', user.id);
+    
+  const hasCompletedFirstMatch = totalFeedbackCount && totalFeedbackCount > 0;
+
+  // Calculate if Day 2 (Legacy logic kept for context, but now superseded by hasCompletedFirstMatch)
   // We compare created_at date with today
   let isDay2 = false;
   let created = new Date(); // Default
   
   if (userData?.created_at) {
       created = new Date(userData.created_at);
-      
       const oneDay = 24 * 60 * 60 * 1000;
       const diffDays = Math.round(Math.abs((now.getTime() - created.getTime()) / oneDay));
-      
-      // Day 1 = 0 diff (or < 1). Day 2 = 1 diff.
-      // We extend the window to 3 days to account for weekends (Friday signup -> Monday is Day 4? No, Day 3).
       isDay2 = diffDays >= 1 && diffDays <= 3;
   }
   
@@ -216,19 +221,25 @@ export async function getDailyMatches() {
   // We assume the user is available if not paused.
   
   // 3. Inject Founder Match if needed
-  // Condition: No active match for TODAY + (Day 2 OR Rescue needed)
+  // Condition: No active match for TODAY + (Onboarding Pending OR Rescue needed)
   // AND not a weekend (Mon-Fri only)
   const hasMatchToday = activeMatches.some(m => m.date === todayParisStr);
   const currentDay = now.getDay(); // 0 = Sunday, 6 = Saturday
   const isWeekend = currentDay === 0 || currentDay === 6;
   
+  // RULE 1: If onboarding not completed (never validated a match), force Joker even if it's been weeks.
+  // RULE 2: If no match today and no weekend, force Joker (Rescue).
+  // Note: We check if they already did the match TODAY below.
+  
   if (!hasMatchToday && !isWeekend && userData?.availability_status !== 'paused') {
       // Logic:
-      // If Day 2 -> Inject "Onboarding" Founder Match (Priority: Founder)
-      // If Day > 2 and no match -> Inject "Rescue" Founder Match
+      // If Not Completed First Match -> Inject "Onboarding" Founder Match (Priority: Founder)
+      // If Completed but no match -> Inject "Rescue" Founder Match
       
       // Determine type
-      const isRescue = !isDay2; 
+      // If they haven't completed their first match yet, we keep them in "Onboarding" mode (Joker J+2 style)
+      // regardless of how many days have passed.
+      const isRescue = hasCompletedFirstMatch; 
       
       // CHECK IF ALREADY COMPLETED (Feedback exists for today)
       // Since the Founder Match is not in network_matches, we check if the user left a feedback for 'popey-founder' today.
@@ -254,7 +265,7 @@ export async function getDailyMatches() {
               city: 'Paris',
               score: 5.0,
               collabsCount: 999,
-              time: '09h - 18h', // All day availability
+              time: '09h - 11h', // Default Slot 9h-11h (Rule 2)
               type: 'call_in', // User receives call
               phone: '+33600000000', // Placeholder
               avatar: '/jeanphilipperoth.jpg',
@@ -267,7 +278,7 @@ export async function getDailyMatches() {
               date: todayParisStr
           };
           
-          // If no match at all -> Show Founder Match TODAY (Rescue)
+          // If no match at all -> Show Founder Match TODAY (Rescue/Onboarding)
           return [founderMatch];
       }
   }
