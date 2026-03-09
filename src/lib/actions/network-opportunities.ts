@@ -236,3 +236,30 @@ export async function updateOpportunityStatus(id: string, status: 'validated' | 
     return { success: false, error: "Une erreur inattendue est survenue." };
   }
 }
+
+export async function deleteOpportunity(id: string) {
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) return { success: false, error: "Unauthorized" };
+
+    // Only the giver (author) can delete their own opportunity
+    const { error } = await supabase
+      .from("network_opportunities")
+      .delete()
+      .eq('id', id)
+      .eq('giver_id', user.id); // Ensure ownership
+
+    if (error) {
+      console.error("Error deleting opportunity:", error);
+      return { success: false, error: error.message };
+    }
+
+    revalidatePath("/mon-reseau-local/dashboard/guide");
+    return { success: true };
+  } catch (err) {
+    console.error("Unexpected error in deleteOpportunity:", err);
+    return { success: false, error: "Une erreur inattendue est survenue." };
+  }
+}

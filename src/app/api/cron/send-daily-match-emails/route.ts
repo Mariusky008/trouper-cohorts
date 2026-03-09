@@ -86,7 +86,8 @@ async function handleSendEmails(request: Request) {
     const emailPromises = [];
     const errors: any[] = [];
 
-    const fromEmail = process.env.EMAIL_FROM || 'Popey Academy <onboarding@resend.dev>';
+    // Use verified domain sender
+    const fromEmail = process.env.EMAIL_FROM || 'Popey Academy <contact@popey.academy>';
 
     for (const match of matches) {
         let user1 = profileMap.get(match.user1_id);

@@ -19,9 +19,10 @@ interface MarketActionProps {
   opportunityId: string;
   price: number;
   userPoints: number;
+  onUnlock?: (newPoints: number) => void;
 }
 
-export function MarketAction({ opportunityId, price, userPoints }: MarketActionProps) {
+export function MarketAction({ opportunityId, price, userPoints, onUnlock }: MarketActionProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
@@ -35,6 +36,9 @@ export function MarketAction({ opportunityId, price, userPoints }: MarketActionP
           description: "Vous avez accès aux détails dans votre historique."
         });
         setIsDialogOpen(false);
+        if (onUnlock && result.newBalance !== undefined) {
+            onUnlock(result.newBalance);
+        }
       } else {
         toast.error("Erreur", {
           description: result.error || "Impossible d'acheter l'opportunité."

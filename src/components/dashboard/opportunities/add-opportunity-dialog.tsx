@@ -8,10 +8,12 @@ import { Plus, Gift } from "lucide-react";
 
 export function AddOpportunityDialog({ 
     preSelectedUser,
-    forceMarketMode = false 
+    forceMarketMode = false,
+    onSuccess
 }: { 
     preSelectedUser?: { id: string, name: string, job: string, avatar?: string },
-    forceMarketMode?: boolean
+    forceMarketMode?: boolean,
+    onSuccess?: () => void
 }) {
     const [isOpen, setIsOpen] = useState(false);
     const [hasCompletedDailyCall, setHasCompletedDailyCall] = useState(false);
@@ -59,7 +61,10 @@ export function AddOpportunityDialog({
                         preSelectedUser={preSelectedUser}
                         canPostToMarket={hasCompletedDailyCall}
                         forceMarketMode={forceMarketMode}
-                        onSuccess={() => setIsOpen(false)}
+                        onSuccess={() => {
+                            setIsOpen(false);
+                            if (onSuccess) onSuccess();
+                        }}
                     />
                 )}
             </DialogContent>

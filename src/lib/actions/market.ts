@@ -95,7 +95,7 @@ export async function purchaseOpportunity(opportunityId: string) {
     revalidatePath("/mon-reseau-local/dashboard/opportunities"); // History page
     revalidatePath("/mon-reseau-local/dashboard"); // Header credits
 
-    return { success: true };
+    return { success: true, newBalance: newBuyerBalance };
 
   } catch (error) {
     console.error("Purchase error:", error);

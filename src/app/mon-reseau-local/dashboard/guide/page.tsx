@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { Users, ShoppingBag, Target, ArrowRight, MapPin, Search, Trash2, X } from "lucide-react";
+import { Users, ShoppingBag, Target, ArrowRight, MapPin, Search, Trash2, X, Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { OPPORTUNITY_TYPES } from "@/constants/opportunities";
@@ -20,46 +20,34 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
-
-// Fake opportunities for demo
-const INITIAL_OPPORTUNITIES = [
-    {
-      id: "fake-1",
-      type: "clients",
-      points: 20,
-      description: "Lead qualifié pour rénovation complète maison 120m2 Bordeaux centre.",
-      partner: {
-        id: "mock-1",
-        display_name: "Jean D.",
-        avatar_url: null,
-        city: "Bordeaux"
-      },
-      date: "2 jours",
-      status: "sold" // Locked
-    },
-    {
-      id: "fake-2",
-      type: "intro",
-      points: 15,
-      description: "Intro DGA Marketing - Retail (400 magasins)",
-      partner: {
-        id: "mock-2",
-        display_name: "Marie L.",
-        avatar_url: null,
-        city: "Le Grand Dax"
-      },
-      date: "4 heures",
-      status: "available",
-      isMet: true
-    }
-];
+import { getOpportunities, deleteOpportunity } from "@/lib/actions/network-opportunities";
+import { getUserPoints } from "@/lib/actions/gamification";
 
 export default function MarketPage() {
-  const [opportunities, setOpportunities] = useState(INITIAL_OPPORTUNITIES);
+  const [opportunities, setOpportunities] = useState<any[]>([]);
   const [userPoints, setUserPoints] = useState(0);
   const [userId, setUserId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCity, setSelectedCity] = useState("all");
+  const [loading, setLoading] = useState(true);
+
+  // Load Real Data
+  const refreshData = async () => {
+      setLoading(true);
+      try {
+          const [opps, points] = await Promise.all([
+              getOpportunities('public'),
+              getUserPoints()
+          ]);
+          setOpportunities(opps);
+          setUserPoints(points);
+      } catch (e) {
+          console.error(e);
+          toast.error("Erreur lors du chargement des opportunités.");
+      } finally {
+          setLoading(false);
+      }
+  };
 
   useEffect(() => {
     const supabase = createClient();
@@ -67,44 +55,33 @@ export default function MarketPage() {
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
             setUserId(user.id);
-            // Mock points fetch or call getUserPoints action
-            setUserPoints(50);
+            refreshData();
         }
     }
     loadUser();
   }, []);
 
-  const handleAddOpportunity = (newOp: any) => {
-    // Add locally for immediate feedback
-    const op = {
-        id: Date.now().toString(),
-        type: newOp.typeId || 'intro', // Default type
-        points: newOp.price || 10,
-        description: newOp.title || "Nouvelle opportunité",
-        partner: {
-            id: userId, // It's ME !
-            display_name: "Moi", // Should get from profile
-            avatar_url: null,
-            city: "Ma ville"
-        },
-        date: "À l'instant",
-        status: "available",
-        isMet: true
-    };
-    setOpportunities([op, ...opportunities]);
+  const handleAddSuccess = () => {
+    // Refresh list from server to get the real new item
+    refreshData();
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
       if (confirm("Êtes-vous sûr de vouloir supprimer cette opportunité ?")) {
-          setOpportunities(opportunities.filter(op => op.id !== id));
-          toast.success("Opportunité supprimée !");
+          const result = await deleteOpportunity(id);
+          if (result.success) {
+              setOpportunities(prev => prev.filter(op => op.id !== id));
+              toast.success("Opportunité supprimée !");
+          } else {
+              toast.error("Erreur lors de la suppression.");
+          }
       }
   };
 
   const filteredOpportunities = opportunities.filter(op => {
-      const matchesSearch = op.description.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                            op.partner.display_name.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesCity = selectedCity === "all" || op.partner.city.toLowerCase().includes(selectedCity.toLowerCase());
+      const matchesSearch = op.description?.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                            op.partner?.display_name?.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesCity = selectedCity === "all" || op.partner?.city?.toLowerCase().includes(selectedCity.toLowerCase());
       return matchesSearch && matchesCity;
   });
 
@@ -141,7 +118,7 @@ export default function MarketPage() {
             
             <AddOpportunityDialog 
                 forceMarketMode={true} 
-                onSuccess={(data) => handleAddOpportunity(data)}
+                onSuccess={handleAddSuccess}
             />
         </div>
       </div>
@@ -177,7 +154,11 @@ export default function MarketPage() {
 
 
       {/* MARKET GRID */}
-      {filteredOpportunities.length === 0 ? (
+      {loading ? (
+          <div className="py-20 flex justify-center">
+              <Loader2 className="h-10 w-10 text-emerald-500 animate-spin" />
+          </div>
+      ) : filteredOpportunities.length === 0 ? (
           <div className="bg-[#1e293b]/30 border border-white/5 rounded-3xl p-12 text-center space-y-6">
               <div className="h-24 w-24 bg-slate-800/50 rounded-full flex items-center justify-center mx-auto">
                   <ShoppingBag className="h-10 w-10 text-slate-600" />
@@ -272,6 +253,7 @@ export default function MarketPage() {
                                     opportunityId={opp.id} 
                                     price={opp.points} 
                                     userPoints={userPoints}
+                                    onUnlock={(newPoints) => setUserPoints(newPoints)}
                                 />
                             )}
                         </div>
