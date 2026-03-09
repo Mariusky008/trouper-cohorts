@@ -56,6 +56,12 @@ export async function createCMTask(formData: FormData) {
 
     if (!title) return { error: "Title is required" };
 
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+        return { error: "You must be logged in to create a task" };
+    }
+
     const { error } = await supabase
         .from('cm_tasks')
         .insert({
@@ -64,7 +70,8 @@ export async function createCMTask(formData: FormData) {
             priority,
             due_date: due_date || null,
             platform: platform || 'other',
-            status: 'todo'
+            status: 'todo',
+            user_id: user.id // Explicitly set user_id to pass RLS
         });
 
     if (error) {
