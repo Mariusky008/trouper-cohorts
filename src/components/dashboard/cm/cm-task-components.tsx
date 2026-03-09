@@ -217,8 +217,8 @@ export function CreateTaskDialog() {
                     Nouvelle Tâche
                 </Button>
             </DialogTrigger>
-            <DialogContent className="bg-[#0f172a] border-slate-800 text-slate-100 sm:max-w-[500px] p-0 overflow-hidden gap-0">
-                <div className="bg-slate-900/50 p-6 border-b border-slate-800">
+            <DialogContent className="bg-[#0f172a] border-slate-800 text-slate-100 sm:max-w-[500px] w-full p-0 overflow-hidden gap-0 max-h-[90vh] flex flex-col">
+                <div className="bg-slate-900/50 p-6 border-b border-slate-800 shrink-0">
                     <DialogHeader>
                         <DialogTitle className="text-xl font-bold flex items-center gap-2">
                             <PenTool className="w-5 h-5 text-emerald-500" />
@@ -230,7 +230,7 @@ export function CreateTaskDialog() {
                     </DialogHeader>
                 </div>
                 
-                <form onSubmit={onSubmit} className="p-6 space-y-5">
+                <form onSubmit={onSubmit} className="p-6 space-y-5 overflow-y-auto flex-1">
                     <div className="space-y-2">
                         <Label htmlFor="title" className="text-slate-300 font-medium">Titre de la mission <span className="text-red-400">*</span></Label>
                         <Input 
@@ -318,7 +318,7 @@ export function CreateTaskDialog() {
                         />
                     </div>
 
-                    <DialogFooter className="pt-2">
+                    <DialogFooter className="pt-2 sticky bottom-0 bg-[#0f172a] -mx-6 -mb-6 p-6 border-t border-slate-800">
                         <Button type="button" variant="ghost" onClick={() => setIsOpen(false)} className="text-slate-400 hover:text-white hover:bg-slate-800">
                             Annuler
                         </Button>

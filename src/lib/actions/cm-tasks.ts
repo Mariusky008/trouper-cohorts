@@ -73,6 +73,8 @@ export async function createCMTask(formData: FormData) {
     }
 
     revalidatePath('/cm-dashboard');
+    revalidatePath('/mon-reseau-local/dashboard'); // Also revalidate main dashboard if tasks are shown there
+    revalidatePath('/', 'layout'); // Force full revalidation to be safe
     return { success: true };
 }
 
@@ -91,6 +93,8 @@ export async function updateCMTaskStatus(id: string, status: CMTaskStatus) {
     }
 
     revalidatePath('/cm-dashboard');
+    revalidatePath('/mon-reseau-local/dashboard');
+    revalidatePath('/', 'layout');
     return { success: true };
 }
 
