@@ -198,6 +198,13 @@ const GOAL_LABELS: Record<string, string> = {
     training: "Formation"
 };
 
+const REPUTATION_BADGES = [
+    { id: 'connector', label: 'Le Connecteur', icon: '🤝', desc: "M'a ouvert son réseau" },
+    { id: 'expert', label: 'L\'Expert', icon: '🧠', desc: "M'a appris quelque chose" },
+    { id: 'energizer', label: 'L\'Énergiseur', icon: '⚡', desc: "Super motivant" },
+    { id: 'listener', label: 'L\'Écouteur', icon: '👂', desc: "Très bonne écoute" }
+];
+
 // --- 1. WAITING CARD COMPONENT ---
 function WaitingCard({ countdown }: { countdown: string }) {
   return (
@@ -450,6 +457,7 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
   const [callHappened, setCallHappened] = useState<boolean | null>(null);
   const [callMade, setCallMade] = useState(false);
   const [rating, setRating] = useState<'fire' | 'good' | 'meh' | null>(null);
+  const [selectedBadge, setSelectedBadge] = useState<string | null>(null);
 
   // Dialog States
   const [isWhyVisible, setIsWhyVisible] = useState(false);
@@ -594,6 +602,11 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
         let tag = "bof";
         if (rating === 'fire') { score = 5; tag = "top"; }
         if (rating === 'good') { score = 4; tag = "bien"; }
+        
+        // Append badge to tag if selected (e.g. "top:connector")
+        if (selectedBadge) {
+            tag = `${tag}:${selectedBadge}`;
+        }
         
         await saveMatchFeedback(currentMatch.partnerId, score, tag, currentMatch.id);
     }
@@ -754,6 +767,31 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
                         <p className="text-yellow-200/90 text-sm font-medium italic">
                             "Même les marins les plus aguerris ont besoin de repos. Reviens lundi pour de nouvelles aventures !" 🌊
                         </p>
+                    </div>
+
+                    <div className="flex flex-col gap-3 w-full max-w-[280px]">
+                        <Button 
+                            asChild
+                            className="w-full h-12 bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-200 border border-yellow-500/30 rounded-xl font-bold transition-all"
+                        >
+                            <Link href="/mon-reseau-local/dashboard/profile">
+                                <User className="w-4 h-4 mr-2" />
+                                Mettre à jour mon profil
+                            </Link>
+                        </Button>
+                        <Button 
+                            variant="ghost"
+                            className="w-full h-12 text-slate-400 hover:text-white hover:bg-white/5 rounded-xl font-medium text-xs"
+                            onClick={() => {
+                                toast.info("Conseil du week-end", {
+                                    description: "Profitez-en pour envoyer un message de remerciement à vos contacts de la semaine. La gratitude fidélise !",
+                                    duration: 8000,
+                                });
+                            }}
+                        >
+                            <MessageSquare className="w-3 h-3 mr-2" />
+                            L'astuce du week-end
+                        </Button>
                     </div>
 
                     <Badge className="bg-yellow-500/20 text-yellow-300 border-yellow-500/30 px-4 py-1.5 uppercase tracking-widest font-bold animate-pulse">
@@ -1195,28 +1233,80 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
                                 <div className="space-y-6 p-4">
                                     <div className="flex justify-between gap-3">
                                         <button 
-                                            onClick={() => { setRating('fire'); setPopupView('step3_gift'); }}
-                                            className="flex-1 aspect-square rounded-2xl border flex flex-col items-center justify-center gap-3 transition-all bg-orange-500/10 border-orange-500/30 hover:bg-orange-500/20 hover:scale-105 group"
+                                            onClick={() => setRating('fire')}
+                                            className={cn(
+                                                "flex-1 aspect-square rounded-2xl border flex flex-col items-center justify-center gap-3 transition-all group relative overflow-hidden",
+                                                rating === 'fire' 
+                                                    ? "bg-orange-500/20 border-orange-500 ring-2 ring-orange-500/50 scale-105" 
+                                                    : "bg-orange-500/10 border-orange-500/30 hover:bg-orange-500/20 hover:scale-105"
+                                            )}
                                         >
                                             <span className="text-4xl group-hover:scale-125 transition-transform">🔥</span>
                                             <span className="text-xs uppercase font-black text-orange-300">Top</span>
                                         </button>
                                         <button 
-                                            onClick={() => { setRating('good'); setPopupView('step3_gift'); }}
-                                            className="flex-1 aspect-square rounded-2xl border flex flex-col items-center justify-center gap-3 transition-all bg-blue-500/10 border-blue-500/30 hover:bg-blue-500/20 hover:scale-105 group"
+                                            onClick={() => setRating('good')}
+                                            className={cn(
+                                                "flex-1 aspect-square rounded-2xl border flex flex-col items-center justify-center gap-3 transition-all group relative overflow-hidden",
+                                                rating === 'good' 
+                                                    ? "bg-blue-500/20 border-blue-500 ring-2 ring-blue-500/50 scale-105" 
+                                                    : "bg-blue-500/10 border-blue-500/30 hover:bg-blue-500/20 hover:scale-105"
+                                            )}
                                         >
                                             <span className="text-4xl group-hover:scale-125 transition-transform">👍</span>
                                             <span className="text-xs uppercase font-black text-blue-300">Bien</span>
                                         </button>
                                         <button 
-                                            onClick={() => { setRating('meh'); setPopupView('step3_gift'); }}
+                                            onClick={() => { setRating('meh'); setSelectedBadge(null); setPopupView('step3_gift'); }}
                                             className="flex-1 aspect-square rounded-2xl border flex flex-col items-center justify-center gap-3 transition-all bg-slate-500/10 border-slate-500/30 hover:bg-slate-500/20 hover:scale-105 group"
                                         >
                                             <span className="text-4xl group-hover:scale-125 transition-transform">😐</span>
                                             <span className="text-xs uppercase font-black text-slate-300">Bof</span>
                                         </button>
                                     </div>
-                                    <Button variant="ghost" onClick={() => setPopupView('step1_status')} className="w-full text-slate-500">Retour</Button>
+
+                                    {/* BADGE SELECTION (Only if Good or Fire) */}
+                                    {(rating === 'fire' || rating === 'good') && (
+                                        <motion.div 
+                                            initial={{ opacity: 0, height: 0 }}
+                                            animate={{ opacity: 1, height: 'auto' }}
+                                            className="space-y-3 pt-2 border-t border-white/5"
+                                        >
+                                            <Label className="text-xs uppercase font-bold text-slate-400 text-center block">
+                                                Pourquoi ? (Optionnel)
+                                            </Label>
+                                            <div className="grid grid-cols-2 gap-2">
+                                                {REPUTATION_BADGES.map((badge) => (
+                                                    <button
+                                                        key={badge.id}
+                                                        onClick={() => setSelectedBadge(badge.id)}
+                                                        className={cn(
+                                                            "flex items-center gap-2 p-2 rounded-lg border text-left transition-all",
+                                                            selectedBadge === badge.id 
+                                                                ? "bg-indigo-500/30 border-indigo-400 text-white" 
+                                                                : "bg-white/5 border-white/5 text-slate-300 hover:bg-white/10"
+                                                        )}
+                                                    >
+                                                        <span className="text-lg">{badge.icon}</span>
+                                                        <div className="flex flex-col">
+                                                            <span className="text-[10px] font-bold uppercase">{badge.label}</span>
+                                                            <span className="text-[9px] opacity-70 leading-none">{badge.desc}</span>
+                                                        </div>
+                                                    </button>
+                                                ))}
+                                            </div>
+                                            <Button 
+                                                onClick={() => setPopupView('step3_gift')} 
+                                                className="w-full bg-white text-black hover:bg-slate-200 font-bold mt-2"
+                                            >
+                                                Continuer <ChevronRight className="w-4 h-4 ml-1" />
+                                            </Button>
+                                        </motion.div>
+                                    )}
+
+                                    {!rating && (
+                                        <Button variant="ghost" onClick={() => setPopupView('step1_status')} className="w-full text-slate-500">Retour</Button>
+                                    )}
                                 </div>
                             )}
 
