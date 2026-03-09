@@ -69,7 +69,7 @@ export async function createCMTask(formData: FormData) {
 
     if (error) {
         console.error("Error creating task:", error);
-        return { error: "Failed to create task" };
+        return { error: `Failed to create task: ${error.message} (Code: ${error.code})` };
     }
 
     revalidatePath('/cm-dashboard');

@@ -205,7 +205,7 @@ export function CreateTaskDialog() {
             setIsOpen(false);
             setDate(undefined);
         } else {
-            toast.error("Erreur lors de la création");
+            toast.error(result.error || "Erreur lors de la création");
         }
     }
 
