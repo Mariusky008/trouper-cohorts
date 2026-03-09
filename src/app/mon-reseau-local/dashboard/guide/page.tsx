@@ -23,6 +23,15 @@ import { Input } from "@/components/ui/input";
 import { getOpportunities, deleteOpportunity } from "@/lib/actions/network-opportunities";
 import { getUserPoints } from "@/lib/actions/gamification";
 
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+
 export default function MarketPage() {
   const [opportunities, setOpportunities] = useState<any[]>([]);
   const [userPoints, setUserPoints] = useState(0);
@@ -30,6 +39,10 @@ export default function MarketPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCity, setSelectedCity] = useState("all");
   const [loading, setLoading] = useState(true);
+  
+  // Delete Dialog State
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Load Real Data
   const refreshData = async () => {
@@ -66,16 +79,19 @@ export default function MarketPage() {
     refreshData();
   };
 
-  const handleDelete = async (id: string) => {
-      if (confirm("Êtes-vous sûr de vouloir supprimer cette opportunité ?")) {
-          const result = await deleteOpportunity(id);
-          if (result.success) {
-              setOpportunities(prev => prev.filter(op => op.id !== id));
-              toast.success("Opportunité supprimée !");
-          } else {
-              toast.error("Erreur lors de la suppression.");
-          }
+  const confirmDelete = async () => {
+      if (!deleteId) return;
+      
+      setIsDeleting(true);
+      const result = await deleteOpportunity(deleteId);
+      if (result.success) {
+          setOpportunities(prev => prev.filter(op => op.id !== deleteId));
+          toast.success("Opportunité supprimée !");
+          setDeleteId(null);
+      } else {
+          toast.error("Erreur lors de la suppression.");
       }
+      setIsDeleting(false);
   };
 
   const filteredOpportunities = opportunities.filter(op => {
@@ -238,7 +254,7 @@ export default function MarketPage() {
                             {/* Client Action Component */}
                             {isMyOpportunity ? (
                                 <Button 
-                                    onClick={() => handleDelete(opp.id)}
+                                    onClick={() => setDeleteId(opp.id)}
                                     className="bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 font-bold gap-2 h-12 px-4 rounded-xl transition-all hover:scale-105"
                                 >
                                     <Trash2 className="h-4 w-4" />
@@ -262,6 +278,40 @@ export default function MarketPage() {
             })}
           </div>
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
+        <DialogContent className="bg-[#1e293b] border-white/10 text-white sm:max-w-md">
+            <DialogHeader>
+                <DialogTitle className="text-xl font-black text-white flex items-center gap-2">
+                    <Trash2 className="h-5 w-5 text-red-500" />
+                    Supprimer l'opportunité
+                </DialogTitle>
+                <DialogDescription className="text-slate-400">
+                    Êtes-vous sûr de vouloir supprimer cette opportunité du marché ?
+                    <br />
+                    Cette action est irréversible.
+                </DialogDescription>
+            </DialogHeader>
+            <DialogFooter className="flex gap-2 sm:justify-end">
+                <Button 
+                    variant="ghost" 
+                    onClick={() => setDeleteId(null)}
+                    className="text-slate-400 hover:text-white"
+                >
+                    Annuler
+                </Button>
+                <Button 
+                    onClick={confirmDelete}
+                    disabled={isDeleting}
+                    className="bg-red-600 hover:bg-red-700 text-white font-bold"
+                >
+                    {isDeleting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                    Supprimer définitivement
+                </Button>
+            </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
     </div>
   );
