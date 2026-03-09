@@ -88,7 +88,7 @@ export async function createCMTask(formData: FormData) {
             due_date: due_date || null,
             platform: platform || 'other',
             status: 'todo'
-            // user_id removed because column does not exist in DB
+            // NOTE: user_id column removed as it does not exist in DB schema
         });
 
     if (error) {
