@@ -456,6 +456,7 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
   const [isPhoneOpen, setIsPhoneOpen] = useState(false);
   const [isValidationOpen, setIsValidationOpen] = useState(false);
   const [isMissionOpen, setIsMissionOpen] = useState(false);
+  const [isPartnerMissionOpen, setIsPartnerMissionOpen] = useState(false);
   const [selectedMission, setSelectedMission] = useState<string | null>(matches[0]?.my_mission || null);
 
   // Sync state if props change (e.g. after revalidate)
@@ -1028,26 +1029,46 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
             {/* My Goal */}
             <div 
                 onClick={() => setIsMissionOpen(true)}
-                className="bg-indigo-500/10 border border-indigo-500/20 rounded-xl p-3 cursor-pointer hover:bg-indigo-500/20 transition-all text-left group/box hover:border-indigo-500/40"
+                className={cn(
+                    "relative rounded-xl p-3 cursor-pointer transition-all text-left group/box border",
+                    !selectedMission 
+                        ? "bg-indigo-500/10 border-indigo-500/50 hover:bg-indigo-500/20 hover:border-indigo-400 animate-pulse-slow shadow-[0_0_15px_rgba(99,102,241,0.15)]" 
+                        : "bg-indigo-500/10 border-indigo-500/20 hover:bg-indigo-500/20 hover:border-indigo-500/40"
+                )}
             >
+                {!selectedMission && (
+                    <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[9px] font-black px-2 py-0.5 rounded-full animate-bounce shadow-sm border border-red-400">
+                        À DÉFINIR ⚠️
+                    </span>
+                )}
                 <div className="flex items-center gap-1.5 mb-2">
-                    <Target className="w-3.5 h-3.5 text-indigo-400" />
+                    <Target className={cn("w-3.5 h-3.5", !selectedMission ? "text-indigo-300 animate-pulse" : "text-indigo-400")} />
                     <span className="text-[9px] font-black text-indigo-300 uppercase tracking-wider">Mon Objectif</span>
                 </div>
-                <p className={cn("text-[11px] font-bold leading-tight line-clamp-2 group-hover/box:text-white transition-colors", selectedMission ? "text-white" : "text-indigo-200/70")}>
+                <p className={cn("text-[11px] font-bold leading-tight line-clamp-2 transition-colors", 
+                    !selectedMission ? "text-indigo-200 underline decoration-indigo-500/50 decoration-wavy" : "text-white group-hover/box:text-indigo-100"
+                )}>
                     {selectedMission 
                         ? MISSION_TYPES.find(m => m.id === selectedMission)?.label 
-                        : "Définir mon objectif 🎯"}
+                        : "Cliquez ici pour définir votre objectif du jour !"}
                 </p>
             </div>
 
             {/* His Goal */}
-            <div className={cn(
-                "rounded-xl p-3 text-left border",
-                match.partner_mission 
-                    ? "bg-purple-500/10 border-purple-500/20" 
-                    : "bg-orange-500/10 border-orange-500/20 border-dashed"
-            )}>
+            <div 
+                onClick={() => setIsPartnerMissionOpen(true)}
+                className={cn(
+                    "rounded-xl p-3 text-left border cursor-pointer hover:scale-[1.02] transition-transform relative group/partner",
+                    match.partner_mission 
+                        ? "bg-purple-500/10 border-purple-500/20 hover:bg-purple-500/20 hover:border-purple-500/40" 
+                        : "bg-orange-500/10 border-orange-500/20 border-dashed"
+                )}
+            >
+                {match.partner_mission && (
+                    <div className="absolute top-2 right-2 opacity-0 group-hover/partner:opacity-100 transition-opacity">
+                        <Search className="w-3 h-3 text-purple-400" />
+                    </div>
+                )}
                 <div className="flex items-center gap-1.5 mb-2">
                     <Users className={cn("w-3.5 h-3.5", match.partner_mission ? "text-purple-400" : "text-orange-400")} />
                     <span className={cn("text-[9px] font-black uppercase tracking-wider", match.partner_mission ? "text-purple-300" : "text-orange-300")}>Son Objectif</span>
@@ -1331,6 +1352,61 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
                             </button>
                         );
                     })}
+                </div>
+            </DialogContent>
+        </Dialog>
+
+        {/* Partner Mission Dialog */}
+        <Dialog open={isPartnerMissionOpen} onOpenChange={setIsPartnerMissionOpen}>
+            <DialogContent className="bg-[#0f172a] border-white/10 text-white sm:max-w-md rounded-2xl w-[90vw]">
+                <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2 text-xl font-black text-purple-400">
+                        <Users className="h-6 w-6" />
+                        Objectif de {match.name.split(' ')[0]}
+                    </DialogTitle>
+                </DialogHeader>
+                <div className="py-6 space-y-6">
+                    {match.partner_mission ? (
+                        <>
+                            <div className="bg-purple-500/10 p-6 rounded-2xl border border-purple-500/30 text-center space-y-4">
+                                <div className="h-16 w-16 rounded-full bg-purple-500/20 flex items-center justify-center mx-auto">
+                                    {(() => {
+                                        const mission = MISSION_TYPES.find(m => m.id === match.partner_mission);
+                                        const Icon = mission?.icon || Users;
+                                        return <Icon className="h-8 w-8 text-purple-400" />;
+                                    })()}
+                                </div>
+                                <div>
+                                    <h3 className="text-lg font-black text-white mb-2">
+                                        {MISSION_TYPES.find(m => m.id === match.partner_mission)?.label || match.partner_mission}
+                                    </h3>
+                                    <p className="text-sm text-purple-200/80 font-medium leading-relaxed">
+                                        "{MISSION_TYPES.find(m => m.id === match.partner_mission)?.desc || "Objectif personnalisé"}"
+                                    </p>
+                                </div>
+                            </div>
+                            <div className="bg-slate-900/50 p-4 rounded-xl border border-white/5">
+                                <p className="text-xs text-slate-400 text-center font-medium">
+                                    💡 <span className="text-white font-bold">Conseil :</span> Demandez-lui comment vous pouvez l'aider à atteindre cet objectif pendant l'appel. C'est le meilleur moyen de créer une relation forte.
+                                </p>
+                            </div>
+                        </>
+                    ) : (
+                        <div className="text-center py-8 space-y-4">
+                            <div className="h-20 w-20 rounded-full bg-slate-800 flex items-center justify-center mx-auto opacity-50">
+                                <Users className="h-10 w-10 text-slate-500" />
+                            </div>
+                            <p className="text-slate-400 font-medium">
+                                {match.name.split(' ')[0]} n'a pas encore défini son objectif pour cet échange.
+                            </p>
+                            <p className="text-sm text-slate-500">
+                                Profitez-en pour lui demander ce qu'il recherche en début d'appel !
+                            </p>
+                        </div>
+                    )}
+                    <Button onClick={() => setIsPartnerMissionOpen(false)} className="w-full bg-slate-800 hover:bg-slate-700 text-white font-bold">
+                        Fermer
+                    </Button>
                 </div>
             </DialogContent>
         </Dialog>
