@@ -153,7 +153,32 @@ export async function getDailyMatches() {
   };
   const currentParisHour = getParisHours();
 
+  // Fetch Feedbacks to determine if current user has already validated
+  const partnerIds = validMatches.map(m => m.partnerId);
+  let userFeedbacks: any[] = [];
+  
+  if (partnerIds.length > 0) {
+      const { data: feedbacks } = await supabase
+        .from('match_feedback')
+        .select('receiver_id, created_at')
+        .eq('giver_id', user.id)
+        .in('receiver_id', partnerIds)
+        .gte('created_at', searchDate); // Fetch feedbacks from yesterday onwards
+      
+      if (feedbacks) userFeedbacks = feedbacks;
+  }
+
   const activeMatches = validMatches.filter(match => {
+      // Check if feedback exists for this partner on/after the match date
+      // We compare dates (YYYY-MM-DD) vs created_at (ISO timestamp)
+      const hasFeedback = userFeedbacks.some(f => 
+          f.receiver_id === match.partnerId && 
+          f.created_at >= match.date
+      );
+      
+      // Inject hasFeedback status
+      match.hasFeedback = hasFeedback;
+
       // If date is in future, keep it
       if (match.date > todayParisStr) return true;
       

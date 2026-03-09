@@ -21,6 +21,8 @@ import { trackEvent } from "@/lib/actions/analytics";
 import { updateMatchMission } from "@/lib/actions/match-mission";
 // import { FounderCardPreview } from "@/components/dashboard/design-system-preview";
 
+import { createClient } from "@/lib/supabase/client";
+
 // --- FOUNDER CARD PREVIEW COMPONENT (INLINED TO AVOID CIRCULAR DEPENDENCY) ---
 function FounderCardPreview({ type = "onboarding", onConfirm }: { type?: "onboarding" | "rescue", onConfirm: () => void }) {
     const isRescue = type === "rescue";
@@ -452,7 +454,50 @@ function MysteryCard({ onReveal, match, locked = false, children }: { onReveal: 
 export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserProfile }: DailyMatchCardProps) {
   // State
   const [revealed, setRevealed] = useState(false);
-  const [step, setStep] = useState<'initial' | 'called' | 'validated'>('initial');
+  const [step, setStep] = useState<'initial' | 'called' | 'validated'>(
+      matches[0]?.hasFeedback || matches[0]?.status === 'met' ? 'validated' : 'initial'
+  );
+
+  // Sync state if props change (e.g. after revalidate)
+  useEffect(() => {
+      if (matches[0]?.hasFeedback || matches[0]?.status === 'met') {
+          setStep('validated');
+      }
+  }, [matches]);
+
+  // Realtime Subscription for Sync across devices
+  useEffect(() => {
+      if (!userId) return;
+      
+      const supabase = createClient();
+      const channel = supabase.channel('match_feedback_changes')
+          .on(
+              'postgres_changes',
+              {
+                  event: 'INSERT',
+                  schema: 'public',
+                  table: 'match_feedback',
+                  filter: `giver_id=eq.${userId}`
+              },
+              (payload) => {
+                  // Check if this feedback is for the current match
+                  const currentPartnerId = matches[0]?.partnerId;
+                  // payload.new is typed as any usually, so we cast or assume
+                  const newRecord = payload.new as any;
+                  
+                  if (newRecord.receiver_id === currentPartnerId) {
+                      setStep('validated');
+                      toast.success("Mission validée sur un autre appareil ! 🔄");
+                  }
+              }
+          )
+          .subscribe();
+
+      return () => {
+          supabase.removeChannel(channel);
+      };
+  }, [userId, matches]);
+
   const [popupView, setPopupView] = useState<'step1_status' | 'step2_rating' | 'step3_gift'>('step1_status');
   const [callHappened, setCallHappened] = useState<boolean | null>(null);
   const [callMade, setCallMade] = useState(false);
