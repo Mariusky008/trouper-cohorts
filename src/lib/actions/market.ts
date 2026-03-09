@@ -79,6 +79,7 @@ export async function purchaseOpportunity(opportunityId: string) {
         .update({
             status: 'sold',
             buyer_id: user.id,
+            receiver_id: user.id, // IMPORTANT: Set receiver so it appears in "Received" list
             // We keep visibility 'public' but status 'sold' makes it disappear from 'available' filter
         })
         .eq("id", opportunityId);

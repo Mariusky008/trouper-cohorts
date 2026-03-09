@@ -147,7 +147,17 @@ export async function getOpportunities(filter: 'all' | 'received' | 'given' | 'p
 
   const profileMap = new Map(profiles.map((p: any) => [p.id, p]));
 
-  return opportunities.map((opp: any) => {
+  return opportunities.filter((opp: any) => {
+      // If we are in 'public' mode (Market), we show everything that the query returned.
+      if (filter === 'public') return true;
+
+      // If we are in 'private' mode (Opportunities page), we MUST hide Public listings that are still on the market.
+      // We only want to see Private exchanges OR Public listings that have been bought (sold).
+      if (opp.visibility === 'public' && opp.status === 'available') {
+          return false;
+      }
+      return true;
+  }).map((opp: any) => {
     // Determine partner
     let partnerId;
     let direction;
