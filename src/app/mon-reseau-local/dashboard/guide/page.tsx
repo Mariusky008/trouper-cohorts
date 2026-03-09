@@ -9,6 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getUserPoints } from "@/lib/actions/gamification";
 import { MarketAction } from "@/components/dashboard/market/market-action";
 import { CreditPackDialog } from "@/components/dashboard/market/credit-pack-dialog";
+import { AddOpportunityDialog } from "@/components/dashboard/opportunities/add-opportunity-dialog";
 import {
   Select,
   SelectContent,
@@ -91,15 +92,19 @@ export default async function MarketPage() {
         </div>
 
         {/* User Credits */}
-        <div className="bg-[#1e293b]/50 backdrop-blur-md border border-white/5 rounded-2xl p-4 flex items-center gap-4">
-            <div className="h-12 w-12 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-400 border border-emerald-500/20">
-                <ShoppingBag className="h-6 w-6" />
+        <div className="flex flex-col sm:flex-row items-end gap-4">
+            <div className="bg-[#1e293b]/50 backdrop-blur-md border border-white/5 rounded-2xl p-4 flex items-center gap-4">
+                <div className="h-12 w-12 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-400 border border-emerald-500/20">
+                    <ShoppingBag className="h-6 w-6" />
+                </div>
+                <div>
+                    <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">Vos Crédits</div>
+                    <div className="text-2xl font-black text-white">{userPoints} pts</div>
+                </div>
+                <CreditPackDialog />
             </div>
-            <div>
-                <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">Vos Crédits</div>
-                <div className="text-2xl font-black text-white">{userPoints} pts</div>
-            </div>
-            <CreditPackDialog />
+            
+            <AddOpportunityDialog forceMarketMode={true} />
         </div>
       </div>
 

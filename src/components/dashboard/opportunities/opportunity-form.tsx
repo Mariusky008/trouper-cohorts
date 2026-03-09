@@ -26,9 +26,10 @@ interface OpportunityFormProps {
   };
   onSuccess?: () => void;
   canPostToMarket?: boolean;
+  forceMarketMode?: boolean;
 }
 
-export function OpportunityForm({ preSelectedUser, onSuccess, canPostToMarket = false }: OpportunityFormProps) {
+export function OpportunityForm({ preSelectedUser, onSuccess, canPostToMarket = false, forceMarketMode = false }: OpportunityFormProps) {
   const router = useRouter();
   
   // Si un utilisateur est pré-sélectionné, on commence directement à l'étape "type"
@@ -42,8 +43,11 @@ export function OpportunityForm({ preSelectedUser, onSuccess, canPostToMarket = 
     if (preSelectedUser) {
       setSelectedSource("match");
       setStep("type");
+    } else if (forceMarketMode) {
+      setSelectedSource("community");
+      setStep("type");
     }
-  }, [preSelectedUser]);
+  }, [preSelectedUser, forceMarketMode]);
 
   const [selectedType, setSelectedType] = useState<typeof OPPORTUNITY_TYPES[0] | null>(null);
   

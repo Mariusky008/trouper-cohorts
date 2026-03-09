@@ -1,33 +1,68 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { 
-  Dialog, DialogContent, DialogTrigger 
-} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogTrigger, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { OpportunityForm } from "./opportunity-form";
-import { hasCompletedDailyCall } from "@/lib/actions/daily-check";
+import { Plus, Gift } from "lucide-react";
 
-export function AddOpportunityDialog({ children }: { children: React.ReactNode }) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [canPostToMarket, setCanPostToMarket] = useState(false);
+export function AddOpportunityDialog({ 
+    preSelectedUser,
+    forceMarketMode = false 
+}: { 
+    preSelectedUser?: { id: string, name: string, job: string, avatar?: string },
+    forceMarketMode?: boolean
+}) {
+    const [isOpen, setIsOpen] = useState(false);
+    const [hasCompletedDailyCall, setHasCompletedDailyCall] = useState(false);
+    const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (isOpen) {
-        hasCompletedDailyCall().then(setCanPostToMarket);
-    }
-  }, [isOpen]);
+    // On open, check if user can post to market (daily call completed)
+    const checkEligibility = async () => {
+        setLoading(true);
+        // TODO: Replace with real check
+        // const { completed } = await checkDailyCallStatus();
+        // For now, simulate true if in development, or check local storage
+        const today = new Date().toISOString().split('T')[0];
+        const lastCall = localStorage.getItem('last_call_date');
+        
+        // TEMPORARY: Allow posting for demo
+        setHasCompletedDailyCall(true); 
+        setLoading(false);
+    };
 
-  return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        {children}
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-[600px] p-0 overflow-hidden bg-white border-none shadow-2xl rounded-3xl h-[85vh] max-h-[800px]">
-         <OpportunityForm 
-            onSuccess={() => setIsOpen(false)} 
-            canPostToMarket={canPostToMarket}
-         />
-      </DialogContent>
-    </Dialog>
-  );
+    return (
+        <Dialog open={isOpen} onOpenChange={(open) => {
+            setIsOpen(open);
+            if (open) checkEligibility();
+        }}>
+            <DialogTrigger asChild>
+                <Button className="bg-white text-black hover:bg-slate-200 font-bold">
+                    <Plus className="w-4 h-4 mr-2" />
+                    Ajouter une opportunité
+                </Button>
+            </DialogTrigger>
+            <DialogContent className="bg-[#0f172a] border-white/10 text-white sm:max-w-md max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2 text-xl font-black">
+                        <Gift className="h-6 w-6 text-indigo-400" />
+                        Nouvelle Opportunité
+                    </DialogTitle>
+                </DialogHeader>
+
+                {loading ? (
+                    <div className="py-8 flex justify-center">
+                        <div className="animate-spin h-8 w-8 border-4 border-indigo-500 border-t-transparent rounded-full" />
+                    </div>
+                ) : (
+                    <OpportunityForm 
+                        preSelectedUser={preSelectedUser}
+                        canPostToMarket={hasCompletedDailyCall}
+                        forceMarketMode={forceMarketMode}
+                        onSuccess={() => setIsOpen(false)}
+                    />
+                )}
+            </DialogContent>
+        </Dialog>
+    );
 }

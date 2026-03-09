@@ -23,7 +23,7 @@ export function CreditPackDialog() {
             Recharger
         </Button>
       </DialogTrigger>
-      <DialogContent className="bg-[#1e293b] border-white/10 text-white sm:max-w-3xl">
+      <DialogContent className="bg-[#1e293b] border-white/10 text-white sm:max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
             <DialogTitle className="text-2xl font-black flex items-center gap-3">
                 <div className="h-10 w-10 bg-emerald-500/10 rounded-xl flex items-center justify-center text-emerald-400 border border-emerald-500/20">
