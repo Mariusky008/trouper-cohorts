@@ -1,12 +1,13 @@
-import { createClient } from "@/lib/supabase/server";
-import { getOpportunities } from "@/lib/actions/network-opportunities";
-import { Users, ShoppingBag, Target, ArrowRight, MapPin } from "lucide-react";
+"use client";
+
+import { useState, useEffect } from "react";
+import { createClient } from "@/lib/supabase/client";
+import { Users, ShoppingBag, Target, ArrowRight, MapPin, Search, Trash2, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { OPPORTUNITY_TYPES } from "@/constants/opportunities";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { getUserPoints } from "@/lib/actions/gamification";
 import { MarketAction } from "@/components/dashboard/market/market-action";
 import { CreditPackDialog } from "@/components/dashboard/market/credit-pack-dialog";
 import { AddOpportunityDialog } from "@/components/dashboard/opportunities/add-opportunity-dialog";
@@ -17,25 +18,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { toast } from "sonner";
+import { Input } from "@/components/ui/input";
 
-export const dynamic = 'force-dynamic';
-
-export default async function MarketPage() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  
-  // Fetch PUBLIC opportunities
-  let opportunities: any[] = [];
-  let userPoints = 0;
-  
-  // Fake opportunities for demo
-  const fakeOpportunities = [
+// Fake opportunities for demo
+const INITIAL_OPPORTUNITIES = [
     {
       id: "fake-1",
       type: "clients",
       points: 20,
       description: "Lead qualifié pour rénovation complète maison 120m2 Bordeaux centre.",
       partner: {
+        id: "mock-1",
         display_name: "Jean D.",
         avatar_url: null,
         city: "Bordeaux"
@@ -49,6 +43,7 @@ export default async function MarketPage() {
       points: 15,
       description: "Intro DGA Marketing - Retail (400 magasins)",
       partner: {
+        id: "mock-2",
         display_name: "Marie L.",
         avatar_url: null,
         city: "Le Grand Dax"
@@ -57,21 +52,61 @@ export default async function MarketPage() {
       status: "available",
       isMet: true
     }
-  ];
-  
-  try {
-    // @ts-ignore - 'public' filter added recently
-    const [opps, points] = await Promise.all([
-        getOpportunities('public'),
-        getUserPoints()
-    ]);
-    // Merge real opportunities with fake ones for demo
-    opportunities = [...opps, ...fakeOpportunities];
-    userPoints = points;
-  } catch (e) {
-    console.error(e);
-    opportunities = fakeOpportunities;
-  }
+];
+
+export default function MarketPage() {
+  const [opportunities, setOpportunities] = useState(INITIAL_OPPORTUNITIES);
+  const [userPoints, setUserPoints] = useState(0);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCity, setSelectedCity] = useState("all");
+
+  useEffect(() => {
+    const supabase = createClient();
+    async function loadUser() {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+            setUserId(user.id);
+            // Mock points fetch or call getUserPoints action
+            setUserPoints(50);
+        }
+    }
+    loadUser();
+  }, []);
+
+  const handleAddOpportunity = (newOp: any) => {
+    // Add locally for immediate feedback
+    const op = {
+        id: Date.now().toString(),
+        type: newOp.typeId || 'intro', // Default type
+        points: newOp.price || 10,
+        description: newOp.title || "Nouvelle opportunité",
+        partner: {
+            id: userId, // It's ME !
+            display_name: "Moi", // Should get from profile
+            avatar_url: null,
+            city: "Ma ville"
+        },
+        date: "À l'instant",
+        status: "available",
+        isMet: true
+    };
+    setOpportunities([op, ...opportunities]);
+  };
+
+  const handleDelete = (id: string) => {
+      if (confirm("Êtes-vous sûr de vouloir supprimer cette opportunité ?")) {
+          setOpportunities(opportunities.filter(op => op.id !== id));
+          toast.success("Opportunité supprimée !");
+      }
+  };
+
+  const filteredOpportunities = opportunities.filter(op => {
+      const matchesSearch = op.description.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                            op.partner.display_name.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesCity = selectedCity === "all" || op.partner.city.toLowerCase().includes(selectedCity.toLowerCase());
+      return matchesSearch && matchesCity;
+  });
 
   return (
     <div className="pb-24 space-y-8 max-w-6xl mx-auto">
@@ -104,31 +139,45 @@ export default async function MarketPage() {
                 <CreditPackDialog />
             </div>
             
-            <AddOpportunityDialog forceMarketMode={true} />
+            <AddOpportunityDialog 
+                forceMarketMode={true} 
+                onSuccess={(data) => handleAddOpportunity(data)}
+            />
         </div>
       </div>
 
       {/* FILTERS */}
-      <div className="flex items-center gap-4 bg-[#1e293b]/30 p-2 rounded-2xl border border-white/5 w-fit">
-         <div className="h-10 w-10 bg-white/5 rounded-xl flex items-center justify-center text-slate-400">
-            <MapPin className="h-5 w-5" />
+      <div className="flex flex-col sm:flex-row gap-4 w-full">
+         <div className="relative flex-1">
+            <Search className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+            <Input 
+                placeholder="Rechercher une opportunité..." 
+                className="pl-10 h-10 bg-[#1e293b] border-slate-700 text-white placeholder:text-slate-500 rounded-xl w-full"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+            />
          </div>
-         <Select defaultValue="all">
-            <SelectTrigger className="w-[200px] border-none bg-transparent text-white font-bold focus:ring-0">
-                <SelectValue placeholder="Filtrer par ville" />
-            </SelectTrigger>
-            <SelectContent className="bg-[#1e293b] border-white/10 text-white">
-                <SelectItem value="all">Toutes les villes</SelectItem>
-                <SelectItem value="bab">Bayonne-Anglet-Biarritz</SelectItem>
-                <SelectItem value="dax">Le Grand Dax</SelectItem>
-                <SelectItem value="bordeaux">Bordeaux</SelectItem>
-            </SelectContent>
-         </Select>
+         <div className="flex items-center gap-4 bg-[#1e293b]/30 p-2 rounded-2xl border border-white/5 w-fit shrink-0">
+            <div className="h-10 w-10 bg-white/5 rounded-xl flex items-center justify-center text-slate-400">
+                <MapPin className="h-5 w-5" />
+            </div>
+            <Select value={selectedCity} onValueChange={setSelectedCity}>
+                <SelectTrigger className="w-[180px] border-none bg-transparent text-white font-bold focus:ring-0">
+                    <SelectValue placeholder="Filtrer par ville" />
+                </SelectTrigger>
+                <SelectContent className="bg-[#1e293b] border-white/10 text-white">
+                    <SelectItem value="all">Toutes les villes</SelectItem>
+                    <SelectItem value="bab">Bayonne-Anglet-Biarritz</SelectItem>
+                    <SelectItem value="dax">Le Grand Dax</SelectItem>
+                    <SelectItem value="bordeaux">Bordeaux</SelectItem>
+                </SelectContent>
+            </Select>
+         </div>
       </div>
 
 
       {/* MARKET GRID */}
-      {opportunities.length === 0 ? (
+      {filteredOpportunities.length === 0 ? (
           <div className="bg-[#1e293b]/30 border border-white/5 rounded-3xl p-12 text-center space-y-6">
               <div className="h-24 w-24 bg-slate-800/50 rounded-full flex items-center justify-center mx-auto">
                   <ShoppingBag className="h-10 w-10 text-slate-600" />
@@ -136,14 +185,15 @@ export default async function MarketPage() {
               <div>
                   <h3 className="text-xl font-bold text-white mb-2">Le marché est calme...</h3>
                   <p className="text-slate-400 max-w-md mx-auto">
-                      Aucune opportunité publique pour le moment. Revenez plus tard ou soyez le premier à en publier une !
+                      Aucune opportunité ne correspond à vos critères. Revenez plus tard ou soyez le premier à en publier une !
                   </p>
               </div>
           </div>
       ) : (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {opportunities.map((opp) => {
+            {filteredOpportunities.map((opp) => {
                 const typeInfo = OPPORTUNITY_TYPES.find(t => t.id === opp.type);
+                const isMyOpportunity = userId && opp.partner?.id === userId;
                 
                 return (
                     <div 
@@ -153,7 +203,7 @@ export default async function MarketPage() {
                         {/* Type Badge */}
                         <div className="flex justify-between items-start mb-4">
                             <div className="flex flex-col gap-2 items-start">
-                                {opp.isMet && (
+                                {(opp as any).isMet && (
                                     <Badge className="bg-gradient-to-r from-indigo-500 to-purple-500 text-white border-0 font-bold px-2 py-0.5 text-[10px] uppercase tracking-wider animate-pulse">
                                         Déjà rencontré
                                     </Badge>
@@ -186,7 +236,7 @@ export default async function MarketPage() {
                             {/* Giver Info */}
                             <div className="flex items-center gap-3">
                                 <Avatar className="h-10 w-10 border-2 border-slate-800">
-                                    <AvatarImage src={opp.partner?.avatar_url} />
+                                    <AvatarImage src={opp.partner?.avatar_url || undefined} />
                                     <AvatarFallback className="bg-slate-700 font-bold text-slate-300">
                                         {opp.partner?.display_name?.[0]}
                                     </AvatarFallback>
@@ -205,7 +255,15 @@ export default async function MarketPage() {
                             </div>
 
                             {/* Client Action Component */}
-                            {opp.status === 'sold' ? (
+                            {isMyOpportunity ? (
+                                <Button 
+                                    onClick={() => handleDelete(opp.id)}
+                                    className="bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 font-bold gap-2 h-12 px-4 rounded-xl transition-all hover:scale-105"
+                                >
+                                    <Trash2 className="h-4 w-4" />
+                                    Supprimer
+                                </Button>
+                            ) : opp.status === 'sold' ? (
                                 <Button disabled className="bg-slate-700 text-slate-400 font-bold rounded-xl border border-white/5 cursor-not-allowed">
                                     Vendu
                                 </Button>
