@@ -23,18 +23,97 @@ export default function CMDashboardPage() {
   const [tasks, setTasks] = useState<CMTask[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  
+  // Auth State
+  const [isAuthorized, setIsAuthorized] = useState(false);
+  const [authChecking, setAuthChecking] = useState(true);
+  const [secretCode, setSecretCode] = useState("");
+  const [passwordInput, setPasswordInput] = useState("");
 
   useEffect(() => {
-      async function load() {
-          const data = await getCMTasks();
-          setTasks(data);
-          setLoading(false);
+      async function checkAuth() {
+          const supabase = createClient();
+          const { data: { user } } = await supabase.auth.getUser();
+          
+          if (user) {
+              setIsAuthorized(true);
+              setAuthChecking(false);
+              loadTasks(); // Load immediately if authenticated
+          } else {
+              // Check local storage for guest code
+              const savedCode = localStorage.getItem('cm_guest_code');
+              if (savedCode === 'Mariusky007') {
+                  setSecretCode(savedCode);
+                  setIsAuthorized(true);
+                  setAuthChecking(false);
+                  loadTasks(savedCode); // Load with code
+              } else {
+                  setAuthChecking(false);
+                  setLoading(false); // Stop global loading to show login form
+              }
+          }
       }
-      load();
-      // Poll for updates every 5s for real-time feel (or use Supabase Realtime later)
-      const interval = setInterval(load, 5000);
-      return () => clearInterval(interval);
+      checkAuth();
   }, []);
+
+  async function loadTasks(code?: string) {
+      setLoading(true);
+      const data = await getCMTasks(undefined, code || secretCode);
+      setTasks(data);
+      setLoading(false);
+  }
+
+  // Poll for updates
+  useEffect(() => {
+      if (!isAuthorized) return;
+      const interval = setInterval(() => loadTasks(secretCode), 5000);
+      return () => clearInterval(interval);
+  }, [isAuthorized, secretCode]);
+
+  const handleLogin = (e: React.FormEvent) => {
+      e.preventDefault();
+      if (passwordInput === 'Mariusky007') {
+          localStorage.setItem('cm_guest_code', passwordInput);
+          setSecretCode(passwordInput);
+          setIsAuthorized(true);
+          loadTasks(passwordInput);
+      } else {
+          alert("Code incorrect");
+      }
+  };
+
+  if (authChecking) {
+      return <div className="h-screen bg-[#020617] flex items-center justify-center text-white"><Loader2 className="animate-spin" /></div>;
+  }
+
+  if (!isAuthorized) {
+      return (
+          <div className="h-screen bg-[#020617] flex flex-col items-center justify-center text-white p-4">
+              <div className="bg-[#0f172a] p-8 rounded-2xl border border-white/10 w-full max-w-md space-y-6">
+                  <div className="text-center space-y-2">
+                      <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/20 mx-auto mb-4">
+                          <LayoutDashboard className="h-6 w-6 text-white" />
+                      </div>
+                      <h1 className="text-2xl font-bold">Accès CM Cockpit</h1>
+                      <p className="text-slate-400 text-sm">Veuillez entrer le code d'accès pour continuer.</p>
+                  </div>
+                  <form onSubmit={handleLogin} className="space-y-4">
+                      <Input 
+                          type="password" 
+                          placeholder="Code d'accès" 
+                          className="bg-slate-950 border-slate-800 text-white h-12"
+                          value={passwordInput}
+                          onChange={(e) => setPasswordInput(e.target.value)}
+                          autoFocus
+                      />
+                      <Button type="submit" className="w-full h-12 bg-indigo-600 hover:bg-indigo-700 font-bold">
+                          Accéder au Workspace
+                      </Button>
+                  </form>
+              </div>
+          </div>
+      );
+  }
 
   // Filter tasks
   const filteredTasks = tasks.filter(t => 
@@ -97,7 +176,7 @@ export default function CMDashboardPage() {
 
               <div className="h-6 w-px bg-white/10 mx-2" />
               
-              <CreateTaskDialog />
+              <CreateTaskDialog secretCode={secretCode} />
           </div>
       </header>
 

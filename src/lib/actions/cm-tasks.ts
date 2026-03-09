@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin"; // Import admin client
 import { revalidatePath } from "next/cache";
 
 export type CMTaskStatus = 'todo' | 'in_progress' | 'review' | 'done';
@@ -20,9 +21,12 @@ export interface CMTask {
     feedback: string | null;
 }
 
-// 1. Fetch Tasks
-export async function getCMTasks(filter?: { status?: CMTaskStatus }) {
-    const supabase = await createClient();
+// 1. Fetch Tasks (Allow Guest Access if secret matches)
+export async function getCMTasks(filter?: { status?: CMTaskStatus }, secretCode?: string) {
+    const isGuest = secretCode === 'Mariusky007';
+    
+    // Use Admin Client if guest, else standard User Client
+    const supabase = isGuest ? createAdminClient() : await createClient();
     
     let query = supabase
         .from('cm_tasks')
@@ -44,9 +48,14 @@ export async function getCMTasks(filter?: { status?: CMTaskStatus }) {
     return data as CMTask[];
 }
 
-// 2. Create Task
+// 2. Create Task (Allow Guest Access if secret matches)
 export async function createCMTask(formData: FormData) {
-    const supabase = await createClient();
+    // Check for secret code in formData
+    const secretCode = formData.get('secret_code') as string;
+    const isGuest = secretCode === 'Mariusky007';
+
+    // Decide which client to use
+    const supabase = isGuest ? createAdminClient() : await createClient();
 
     const title = formData.get('title') as string;
     const description = formData.get('description') as string;
@@ -56,10 +65,21 @@ export async function createCMTask(formData: FormData) {
 
     if (!title) return { error: "Title is required" };
 
-    const { data: { user } } = await supabase.auth.getUser();
+    let userIdToUse = null;
 
-    if (!user) {
-        return { error: "You must be logged in to create a task" };
+    if (isGuest) {
+        // Guest Mode: Use a default Admin/User ID to bypass RLS constraint "user_id required"
+        // Ideally, fetch Marius ID, but hardcoding Julie's ID as fallback or leaving null if DB allows
+        // Assuming DB requires user_id. Let's try to fetch ANY user or use Julie's ID found earlier.
+        // Julie's ID: 2effef91-24c1-4e33-8eb3-89714f894e25
+        userIdToUse = '2effef91-24c1-4e33-8eb3-89714f894e25'; 
+    } else {
+        // Standard Mode: Get logged in user
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+            return { error: "You must be logged in to create a task" };
+        }
+        userIdToUse = user.id;
     }
 
     const { error } = await supabase
@@ -71,7 +91,7 @@ export async function createCMTask(formData: FormData) {
             due_date: due_date || null,
             platform: platform || 'other',
             status: 'todo',
-            user_id: user.id // Explicitly set user_id to pass RLS
+            user_id: userIdToUse
         });
 
     if (error) {

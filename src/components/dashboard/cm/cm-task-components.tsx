@@ -186,7 +186,7 @@ export function CMTaskCard({ task }: { task: CMTask }) {
   );
 }
 
-export function CreateTaskDialog() {
+export function CreateTaskDialog({ secretCode }: { secretCode?: string }) {
     const [isOpen, setIsOpen] = useState(false);
     const [date, setDate] = useState<Date>();
 
@@ -195,6 +195,9 @@ export function CreateTaskDialog() {
         const formData = new FormData(event.currentTarget);
         if (date) formData.append('due_date', date.toISOString());
         
+        // Add secret code if provided (Guest mode)
+        if (secretCode) formData.append('secret_code', secretCode);
+
         // Add default values for selects if not present in FormData (sometimes happens with controlled components or shadcn Select)
         if (!formData.get('platform')) formData.append('platform', 'linkedin');
         if (!formData.get('priority')) formData.append('priority', 'medium');
