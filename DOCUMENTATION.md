@@ -130,6 +130,8 @@ Point d'entrée principal pour l'utilisateur.
 
 #### 3. Système de Matching (Daily Match)
 Algorithme de mise en relation quotidienne pour un appel de 15 minutes.
+- **Synchronisation Temps Réel (Mars 2026)** : Le statut de validation de la mission est synchronisé instantanément entre les appareils (Mobile/Desktop) via Supabase Realtime.
+- **Emails Transactionnels** : Envoi quotidien à 9h via Resend (Domaine vérifié `contact@popey.academy`).
 - **Mystery Card** : Le profil du partenaire est masqué jusqu'à révélation par l'utilisateur (Gamification "Teasing").
 - **Smart Matching** : Tente de varier les partenaires et d'éviter les doublons récents.
 - **Smart Fake Benefits** : En l'absence de données historiques, l'UI génère des "bénéfices potentiels" réalistes basés sur le métier du partenaire (ex: un Architecte peut apporter des "Chantiers de rénovation").
@@ -151,8 +153,11 @@ Catalogue d'actions pour apporter de la valeur et monétiser son réseau.
 - **Types d'Opportunités** : Clients, Partenariats, Mentorat, Visibilité, etc.
 - **Double Flux (Mars 2026)** :
     1. **Flux Privé (Cadeau)** : Offert directement à un partenaire spécifique (Gratuit).
-    2. **Flux Public (Marché)** : Publié sur la marketplace pour la communauté.
+    2. **Flux Public (Marché)** : Publié sur la marketplace (`/dashboard/guide`) pour la communauté.
         - **Mécanique** : Nécessite d'avoir validé son appel du jour pour poster ("Règle de Protection").
+        - **Limite** : Une seule opportunité publique par jour.
+        - **Gestion** : L'auteur peut supprimer ses propres opportunités (remplace le bouton "Débloquer").
+        - **Visibilité** : Les opportunités publiques n'apparaissent pas dans l'historique privé (`/dashboard/opportunities`) tant qu'elles n'ont pas été achetées.
         - **Monétisation** : L'auteur fixe un prix en crédits.
         - **Économie Stricte** : Les points ne sont plus distribués gratuitement (fin des +20 pts/appel). Ils s'obtiennent uniquement en **vendant** des opportunités ou en **achetant** des packs.
         - **Commission Popey** : La plateforme prélève **10%** sur chaque transaction entre membres (Modèle "Taxe & Burn").
@@ -193,4 +198,4 @@ L'algorithme de validation (`src/app/actions/admin-registration.ts`) suit cette 
 - **Actions** : `createCheckoutSession` dans `src/lib/actions/stripe.ts`.
 
 ---
-*Dernière mise à jour : 05 Mars 2026*
+*Dernière mise à jour : 09 Mars 2026*
