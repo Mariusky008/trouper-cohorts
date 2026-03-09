@@ -65,21 +65,18 @@ export async function createCMTask(formData: FormData) {
 
     if (!title) return { error: "Title is required" };
 
-    let userIdToUse = null;
+    // let userIdToUse = null;
 
     if (isGuest) {
-        // Guest Mode: Use a default Admin/User ID to bypass RLS constraint "user_id required"
-        // Ideally, fetch Marius ID, but hardcoding Julie's ID as fallback or leaving null if DB allows
-        // Assuming DB requires user_id. Let's try to fetch ANY user or use Julie's ID found earlier.
-        // Julie's ID: 2effef91-24c1-4e33-8eb3-89714f894e25
-        userIdToUse = '2effef91-24c1-4e33-8eb3-89714f894e25'; 
+        // Guest Mode: Use Admin Client which bypasses RLS
+        // No need to set user_id if column doesn't exist
     } else {
-        // Standard Mode: Get logged in user
+        // Standard Mode: Check if logged in
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) {
             return { error: "You must be logged in to create a task" };
         }
-        userIdToUse = user.id;
+        // userIdToUse = user.id;
     }
 
     const { error } = await supabase
@@ -90,8 +87,8 @@ export async function createCMTask(formData: FormData) {
             priority,
             due_date: due_date || null,
             platform: platform || 'other',
-            status: 'todo',
-            user_id: userIdToUse
+            status: 'todo'
+            // user_id removed because column does not exist in DB
         });
 
     if (error) {
