@@ -454,15 +454,17 @@ function MysteryCard({ onReveal, match, locked = false, children }: { onReveal: 
 export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserProfile }: DailyMatchCardProps) {
   // State
   const [revealed, setRevealed] = useState(false);
-  const [step, setStep] = useState<'initial' | 'called' | 'validated'>(
-      matches[0]?.hasFeedback || matches[0]?.status === 'met' ? 'validated' : 'initial'
-  );
+  const [step, setStep] = useState<'initial' | 'called' | 'validated'>('initial');
 
-  // Sync state if props change (e.g. after revalidate)
   useEffect(() => {
-      if (matches[0]?.hasFeedback || matches[0]?.status === 'met') {
-          setStep('validated');
-      }
+    if (matches && matches.length > 0) {
+        const current = matches[0];
+        if (current.hasFeedback || current.status === 'met') {
+            setStep('validated');
+        } else {
+            setStep('initial');
+        }
+    }
   }, [matches]);
 
   // Realtime Subscription for Sync across devices
