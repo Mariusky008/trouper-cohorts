@@ -82,6 +82,29 @@ export async function getConnections() {
     });
   }
 
+  // Fetch "Trust Scores" to get opportunities_given for each partner
+  // We need to fetch trust scores for all partners in the matches
+  // First, collect all partner IDs
+  const partnerIds = new Set<string>();
+  if (matches) {
+      matches.forEach(m => {
+          const partnerId = m.user1_id === user.id ? m.user2_id : m.user1_id;
+          if (partnerId) partnerIds.add(partnerId);
+      });
+  }
+  
+  const trustMap = new Map();
+  if (partnerIds.size > 0) {
+      const { data: trustScores } = await supabase
+        .from("trust_scores")
+        .select("user_id, opportunities_given")
+        .in("user_id", Array.from(partnerIds));
+      
+      if (trustScores) {
+          trustScores.forEach((t: any) => trustMap.set(t.user_id, t.opportunities_given || 0));
+      }
+  }
+
   // Fetch feedbacks given by current user to display badges
   const { data: feedbacks } = await supabase
     .from("match_feedback")
@@ -106,6 +129,7 @@ export async function getConnections() {
       
       if (partner && !connectionsMap.has(partner.id)) {
         const feedback = feedbackMap.get(partner.id);
+        const givenCount = trustMap.get(partner.id) || 0;
         
         let allianceLevel = 0;
         // Level 1: Call validated
@@ -124,7 +148,8 @@ export async function getConnections() {
           avatar: partner.avatar_url,
           lastInteraction: match.date,
           feedback: feedback, // { rating, tag }
-          allianceLevel
+          allianceLevel,
+          givenCount // New field for generosity badge
         });
       }
     }

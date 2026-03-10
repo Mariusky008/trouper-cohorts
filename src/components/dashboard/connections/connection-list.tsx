@@ -24,6 +24,7 @@ interface Connection {
   lastInteraction: string;
   feedback?: { rating: number; tag: string };
   allianceLevel: number; // 0=Inconnu, 1=Connecté (Call), 2=Allié (Opportunité)
+  givenCount?: number; // Generosity badge
 }
 
 function AllianceLegend() {
@@ -162,10 +163,19 @@ export function ConnectionList({ initialConnections, currentUserId }: { initialC
               )}
 
               <div className="flex items-center gap-4 mb-4 relative z-10">
-                <Avatar className="h-14 w-14 border-2 border-[#0a0f1c] shadow-lg">
-                  <AvatarImage src={user.avatar} className="object-cover" />
-                  <AvatarFallback className="bg-slate-800 text-slate-400 font-bold">{user.name[0]}</AvatarFallback>
-                </Avatar>
+                <div className="relative">
+                    <Avatar className="h-14 w-14 border-2 border-[#0a0f1c] shadow-lg">
+                    <AvatarImage src={user.avatar} className="object-cover" />
+                    <AvatarFallback className="bg-slate-800 text-slate-400 font-bold">{user.name[0]}</AvatarFallback>
+                    </Avatar>
+                    {/* GENEROSITY BADGE */}
+                    {user.givenCount !== undefined && user.givenCount > 0 && (
+                        <div className="absolute -bottom-1 -right-1 bg-emerald-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full border-2 border-[#1e293b] shadow-sm flex items-center gap-0.5">
+                            <span>🎁</span>
+                            <span>{user.givenCount}</span>
+                        </div>
+                    )}
+                </div>
                 <div>
                   <h3 className="font-bold text-white text-lg group-hover:text-blue-400 transition-colors">{user.name}</h3>
                   <p className="text-sm text-slate-400 line-clamp-1">{user.job}</p>
