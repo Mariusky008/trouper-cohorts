@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Search, Filter, MessageCircle, Calendar, UserX, Send } from "lucide-react";
+import { Search, Filter, MessageCircle, Calendar, UserX, Send, History } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogTrigger, DialogTitle, DialogDescription } 
 import { OpportunityForm } from "@/components/dashboard/opportunities/opportunity-form";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import { ChatDialog } from "./chat-dialog";
+import { ConnectionHistoryDialog } from "./connection-history-dialog";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 
@@ -48,6 +49,7 @@ export function ConnectionList({ initialConnections, currentUserId }: { initialC
   const [query, setQuery] = useState("");
   const [selectedUser, setSelectedUser] = useState<Connection | null>(null);
   const [chatPartner, setChatPartner] = useState<Connection | null>(null);
+  const [historyPartner, setHistoryPartner] = useState<Connection | null>(null);
   
   const [hydrated, setHydrated] = useState(false);
 
@@ -73,6 +75,15 @@ export function ConnectionList({ initialConnections, currentUserId }: { initialC
           currentUserId={currentUserId} 
           isOpen={!!chatPartner} 
           onOpenChange={(open) => !open && setChatPartner(null)} 
+        />
+      )}
+
+      {/* HISTORY DIALOG */}
+      {historyPartner && (
+        <ConnectionHistoryDialog
+          connection={historyPartner}
+          isOpen={!!historyPartner}
+          onOpenChange={(open) => !open && setHistoryPartner(null)}
         />
       )}
 
@@ -162,14 +173,22 @@ export function ConnectionList({ initialConnections, currentUserId }: { initialC
               </div>
               
               <div className="flex items-center gap-2 text-xs font-bold text-slate-500 mb-6 uppercase tracking-wide relative z-10">
-                <Calendar className="h-3 w-3" /> 
-                {(() => {
-                    try {
-                        return format(new Date(user.lastInteraction || new Date()), 'd MMMM', { locale: fr });
-                    } catch (e) {
-                        return "Date inconnue";
-                    }
-                })()}
+                <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-auto p-0 text-slate-500 hover:text-blue-400 hover:bg-transparent group/date flex items-center"
+                    onClick={() => setHistoryPartner(user)}
+                >
+                    <Calendar className="h-3 w-3 mr-2" /> 
+                    {(() => {
+                        try {
+                            return format(new Date(user.lastInteraction || new Date()), 'd MMMM', { locale: fr });
+                        } catch (e) {
+                            return "Date inconnue";
+                        }
+                    })()}
+                    <History className="w-3 h-3 ml-2 opacity-0 group-hover/date:opacity-100 transition-opacity" />
+                </Button>
               </div>
 
               <div className="mt-auto space-y-3 relative z-10">
