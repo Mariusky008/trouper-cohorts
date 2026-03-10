@@ -34,20 +34,26 @@ async function handleSendEmails(request: Request) {
     }
     
     // CRITICAL: Use Service Role Key for Admin Access (fetching emails)
-    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
     
-    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
-        console.warn("WARNING: SUPABASE_SERVICE_ROLE_KEY is missing. Email fetching might fail if emails are not in public profile.");
-    }
-
-    if (!process.env.RESEND_API_KEY) {
-        throw new Error('Missing RESEND_API_KEY');
+    if (!supabaseKey) {
+        throw new Error("SUPABASE_SERVICE_ROLE_KEY is missing. Required for sending emails.");
     }
 
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL,
-      supabaseKey!
+      supabaseKey,
+      {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false
+        }
+      }
     );
+    
+    if (!process.env.RESEND_API_KEY) {
+        throw new Error('Missing RESEND_API_KEY');
+    }
     
     const resend = new Resend(process.env.RESEND_API_KEY);
 
