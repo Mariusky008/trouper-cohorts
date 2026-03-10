@@ -169,15 +169,19 @@ export async function getDailyMatches() {
   }
 
   const activeMatches = validMatches.filter(match => {
-      // Check if feedback exists for this partner on/after the match date
-      // We compare dates (YYYY-MM-DD) vs created_at (ISO timestamp)
+      // Check if feedback exists for this partner
+      // We rely on the SQL query filtering (created_at >= yesterday)
+      // We removed the strict JS date comparison to avoid timezone issues (e.g. UTC vs Paris midnight)
       const hasFeedback = userFeedbacks.some(f => 
-          f.receiver_id === match.partnerId && 
-          f.created_at >= match.date
+          f.receiver_id === match.partnerId
       );
       
       // Inject hasFeedback status
       match.hasFeedback = hasFeedback;
+      
+      if (hasFeedback) {
+          // console.log(`[DEBUG] Match ${match.id} has feedback. Status injected.`);
+      }
 
       // If date is in future, keep it
       if (match.date > todayParisStr) return true;

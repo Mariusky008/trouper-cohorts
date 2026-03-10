@@ -1,40 +1,52 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { revalidatePath } from "next/cache";
 
-export async function saveMatchFeedback(receiverId: string, rating: number, tag: string, matchId?: string) {
+export async function saveMatchFeedback(
+  receiverId: string,
+  rating: number,
+  tag: string,
+  matchId?: string
+) {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  if (!user) return { error: "Non connecté" };
+  if (!user) {
+    return { error: "Non authentifié" };
+  }
 
-  const { error } = await supabase
-    .from("match_feedback")
-    .insert({
-      giver_id: user.id,
-      receiver_id: receiverId,
-      rating: rating,
-      tag: tag
-    });
+  // 1. Insert Feedback (User Context)
+  const { error } = await supabase.from("match_feedback").insert({
+    match_id: matchId, // Can be null if not provided
+    giver_id: user.id,
+    receiver_id: receiverId,
+    rating,
+    tag,
+  });
 
   if (error) {
     console.error("Error saving feedback:", error);
-    return { error: "Erreur lors de l'enregistrement" };
+    return { error: error.message };
   }
 
-  // If matchId is provided, mark the match as completed ('met')
+  // 2. Update Match Status (Admin Context to bypass RLS)
   if (matchId) {
-      const { error: updateError } = await supabase
-        .from("network_matches")
-        .update({ status: 'met' })
-        .eq("id", matchId);
-      
-      if (updateError) console.error("Error updating match status:", updateError);
+    const adminClient = createAdminClient();
+    const { error: updateError } = await adminClient
+      .from("network_matches")
+      .update({ status: 'met' })
+      .eq("id", matchId);
+
+    if (updateError) {
+      console.error("Error updating match status:", updateError);
+      // We don't return error here as feedback was saved successfully
+    }
   }
 
-  // Refresh connections page and dashboard
-  revalidatePath("/mon-reseau-local/dashboard/connections"); 
-  revalidatePath("/mon-reseau-local/dashboard"); 
+  revalidatePath("/mon-reseau-local/dashboard");
   return { success: true };
 }
