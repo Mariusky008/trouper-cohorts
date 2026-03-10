@@ -22,6 +22,26 @@ interface Connection {
   avatar?: string;
   lastInteraction: string;
   feedback?: { rating: number; tag: string };
+  allianceLevel: number; // 0=Inconnu, 1=Connecté (Call), 2=Allié (Opportunité)
+}
+
+function AllianceLegend() {
+    return (
+        <div className="flex flex-wrap gap-4 text-xs font-medium text-slate-400 bg-slate-900/50 p-3 rounded-xl border border-white/5 mb-6">
+            <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-slate-700 border border-slate-500"></div>
+                <span>Niveau 0 : Inconnu</span>
+            </div>
+            <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-blue-500/20 border border-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]"></div>
+                <span>Niveau 1 : Connecté (Appel validé)</span>
+            </div>
+            <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-amber-500/20 border border-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.5)]"></div>
+                <span className="text-amber-200">Niveau 2 : Allié (Business échangé)</span>
+            </div>
+        </div>
+    )
 }
 
 export function ConnectionList({ initialConnections, currentUserId }: { initialConnections: Connection[], currentUserId: string }) {
@@ -77,6 +97,8 @@ export function ConnectionList({ initialConnections, currentUserId }: { initialC
         </div>
       </div>
 
+      <AllianceLegend />
+
       {filtered.length === 0 ? (
         <div className="text-center py-12 bg-[#1e293b]/50 backdrop-blur-md rounded-[2rem] border border-white/5 border-dashed">
           <UserX className="h-12 w-12 mx-auto text-slate-600 mb-3" />
@@ -85,18 +107,42 @@ export function ConnectionList({ initialConnections, currentUserId }: { initialC
         </div>
       ) : (
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filtered.map((user, i) => (
+          {filtered.map((user, i) => {
+            // Determine style based on allianceLevel
+            let cardStyle = "border-white/5"; // Level 0
+            let glowColor = "bg-blue-500/5"; 
+            
+            if (user.allianceLevel === 2) {
+                cardStyle = "border-amber-500/50 shadow-[0_0_30px_rgba(245,158,11,0.15)] bg-gradient-to-br from-[#1e293b]/80 to-amber-900/20";
+                glowColor = "bg-amber-500/20";
+            } else if (user.allianceLevel === 1) {
+                cardStyle = "border-blue-500/50 shadow-[0_0_20px_rgba(59,130,246,0.15)]";
+                glowColor = "bg-blue-500/10";
+            }
+
+            return (
             <motion.div 
               key={user.id}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.05 }}
-              className="bg-[#1e293b]/50 backdrop-blur-md p-6 rounded-[2rem] border border-white/5 shadow-lg shadow-black/20 hover:bg-[#1e293b]/80 transition-all group flex flex-col h-full relative overflow-hidden"
+              className={`bg-[#1e293b]/50 backdrop-blur-md p-6 rounded-[2rem] border shadow-lg shadow-black/20 hover:bg-[#1e293b]/80 transition-all group flex flex-col h-full relative overflow-hidden ${cardStyle}`}
             >
               {/* Background Glow */}
-              <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/5 rounded-bl-full -z-0 pointer-events-none group-hover:bg-blue-500/10 transition-colors" />
+              <div className={`absolute top-0 right-0 w-32 h-32 rounded-bl-full -z-0 pointer-events-none transition-colors ${glowColor}`} />
 
-              {/* RATING BADGE */}
+              {/* ALLIANCE BADGE (Top Left) */}
+              {user.allianceLevel > 0 && (
+                  <div className={`absolute top-0 left-0 px-4 py-1.5 rounded-br-2xl text-[10px] font-black uppercase tracking-widest border-r border-b backdrop-blur-md z-20 ${
+                      user.allianceLevel === 2 
+                      ? "bg-amber-500/20 text-amber-200 border-amber-500/30" 
+                      : "bg-blue-500/20 text-blue-200 border-blue-500/30"
+                  }`}>
+                      {user.allianceLevel === 2 ? "🏆 Allié" : "🔗 Connecté"}
+                  </div>
+              )}
+
+              {/* RATING BADGE (Top Right) */}
               {user.feedback && (
                 <div className="absolute top-4 right-4 z-20 flex items-center gap-1.5 bg-emerald-500/10 text-emerald-400 px-2.5 py-1 rounded-full text-[10px] font-bold border border-emerald-500/20 uppercase tracking-wide shadow-sm animate-in fade-in zoom-in">
                     <span className="text-sm filter drop-shadow-sm">{user.feedback.rating >= 5 ? "🔥" : user.feedback.rating >= 4 ? "👍" : "🤝"}</span>

@@ -53,6 +53,7 @@ export async function getConnections() {
       user1_id,
       user2_id,
       date,
+      status,
       user1:user1_id(id, display_name, trade, avatar_url),
       user2:user2_id(id, display_name, trade, avatar_url)
     `)
@@ -63,6 +64,22 @@ export async function getConnections() {
     console.error("Error fetching connections:", error);
     // Return empty array instead of throwing to prevent page crash
     return [];
+  }
+
+  // Fetch opportunities (sent or received by current user) to determine "Alliance Level"
+  // Level 2 (Allié) = Exchanged at least one opportunity
+  const { data: opportunities } = await supabase
+    .from("network_opportunities")
+    .select("author_id, receiver_id")
+    .or(`author_id.eq.${user.id},receiver_id.eq.${user.id}`);
+  
+  const opportunityPartners = new Set<string>();
+  if (opportunities) {
+    opportunities.forEach((op: any) => {
+      // If I am author, partner is receiver. If I am receiver, partner is author.
+      const partnerId = op.author_id === user.id ? op.receiver_id : op.author_id;
+      if (partnerId) opportunityPartners.add(partnerId);
+    });
   }
 
   // Fetch feedbacks given by current user to display badges
@@ -90,13 +107,24 @@ export async function getConnections() {
       if (partner && !connectionsMap.has(partner.id)) {
         const feedback = feedbackMap.get(partner.id);
         
+        let allianceLevel = 0;
+        // Level 1: Call validated
+        if (match.status === 'met') {
+            allianceLevel = 1;
+        }
+        // Level 2: Opportunity exchanged (Overrides Level 1)
+        if (opportunityPartners.has(partner.id)) {
+            allianceLevel = 2;
+        }
+
         connectionsMap.set(partner.id, {
           id: partner.id,
           name: partner.display_name || "Membre Inconnu",
           job: partner.trade || "Membre",
           avatar: partner.avatar_url,
           lastInteraction: match.date,
-          feedback: feedback // { rating, tag }
+          feedback: feedback, // { rating, tag }
+          allianceLevel
         });
       }
     }
