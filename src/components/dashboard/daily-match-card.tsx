@@ -454,15 +454,24 @@ function MysteryCard({ onReveal, match, locked = false, children }: { onReveal: 
 export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserProfile }: DailyMatchCardProps) {
   // State
   const [revealed, setRevealed] = useState(false);
-  const [step, setStep] = useState<'initial' | 'called' | 'validated'>('initial');
+  // State
+  // We initialize state based on props, BUT we also listen to props updates
+  const [step, setStep] = useState<'initial' | 'called' | 'validated'>(() => {
+      if (matches && matches.length > 0) {
+          const current = matches[0];
+          if (current.hasFeedback === true || current.status === 'met') {
+              return 'validated';
+          }
+      }
+      return 'initial';
+  });
 
   useEffect(() => {
+    // Force sync step with matches prop on mount and update
     if (matches && matches.length > 0) {
         const current = matches[0];
-        if (current.hasFeedback || current.status === 'met') {
+        if (current.hasFeedback === true || current.status === 'met') {
             setStep('validated');
-        } else {
-            setStep('initial');
         }
     }
   }, [matches]);
