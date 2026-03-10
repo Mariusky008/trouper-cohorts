@@ -208,7 +208,8 @@ export function ConnectionList({ initialConnections, currentUserId }: { initialC
                 </Dialog>
               </div>
             </motion.div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
