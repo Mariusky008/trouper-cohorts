@@ -457,8 +457,10 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
   // State
   // We initialize state based on props, BUT we also listen to props updates
   const [step, setStep] = useState<'initial' | 'called' | 'validated'>(() => {
+      // Initialize based on props immediately
       if (matches && matches.length > 0) {
           const current = matches[0];
+          // Use stricter check
           if (current.hasFeedback === true || current.status === 'met') {
               return 'validated';
           }
@@ -474,7 +476,7 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
             setStep('validated');
         }
     }
-  }, [matches]);
+  }, [matches, matches[0]?.hasFeedback, matches[0]?.status]);
 
   // Realtime Subscription for Sync across devices
   useEffect(() => {
