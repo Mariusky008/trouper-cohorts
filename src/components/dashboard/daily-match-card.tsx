@@ -402,22 +402,57 @@ function MysteryCard({ onReveal, match, locked = false, children }: { onReveal: 
             </div>
         </div>
 
-        {/* 2. CONCRETE BENEFITS */}
-        <div className="w-full bg-slate-900/40 rounded-2xl p-5 text-left border border-white/5 mb-4 backdrop-blur-sm">
-            <div className="flex items-center gap-2 mb-4">
-                <Target className={cn("w-4 h-4", locked ? "text-indigo-400" : "text-emerald-400")} />
-                <span className="text-[10px] font-black text-white uppercase tracking-wider">CE QU'IL PEUT VOUS APPORTER</span>
+        {/* 2. CONCRETE BENEFITS (NEW DESIGN: Il recherche / Il aide) */}
+        <div className="w-full space-y-3 mb-6">
+            
+            {/* IL RECHERCHE */}
+            <div className="bg-slate-900/40 rounded-2xl p-4 border border-white/5 backdrop-blur-sm relative overflow-hidden group/search">
+                <div className="absolute top-0 right-0 p-2 opacity-10 group-hover/search:opacity-20 transition-opacity">
+                    <Search className="w-12 h-12 text-blue-400" />
+                </div>
+                <div className="flex items-center gap-2 mb-3">
+                     <div className="p-1.5 rounded-lg bg-blue-500/20">
+                        <Search className="w-3.5 h-3.5 text-blue-400" />
+                     </div>
+                     <span className="text-[10px] font-black text-blue-200 uppercase tracking-wider">
+                         {match.name ? `Ce que ${match.name.split(' ')[0]} recherche` : "Ce qu'il recherche"}
+                     </span>
+                </div>
+                <ul className="space-y-2 relative z-10 pl-1">
+                    {/* Dynamic needs based on profile data or fallback */}
+                    {(match.current_need ? [match.current_need] : ["Nouveaux clients", "Partenaires locaux"]).map((item: string, i: number) => (
+                        <li key={i} className="flex items-start gap-2 text-xs font-medium text-slate-300">
+                            <span className="text-blue-500 font-bold text-lg leading-none">•</span>
+                            <span className="leading-tight pt-0.5">{item}</span>
+                        </li>
+                    ))}
+                </ul>
             </div>
-            <ul className="space-y-3">
-                {benefits.map((benefit, index) => (
-                    <li key={index} className="flex items-center gap-3 text-xs font-medium text-slate-300">
-                        <div className={cn("p-1 rounded-full", locked ? "bg-indigo-500/20" : "bg-emerald-500/20")}>
-                            <CheckCircle2 className={cn("w-3.5 h-3.5", locked ? "text-indigo-400" : "text-emerald-400")} />
-                        </div>
-                        {benefit}
-                    </li>
-                ))}
-            </ul>
+
+            {/* IL PEUT AIDER */}
+            <div className="bg-slate-900/40 rounded-2xl p-4 border border-white/5 backdrop-blur-sm relative overflow-hidden group/help">
+                <div className="absolute top-0 right-0 p-2 opacity-10 group-hover/help:opacity-20 transition-opacity">
+                    <Gift className="w-12 h-12 text-emerald-400" />
+                </div>
+                <div className="flex items-center gap-2 mb-3">
+                     <div className="p-1.5 rounded-lg bg-emerald-500/20">
+                        <Gift className="w-3.5 h-3.5 text-emerald-400" />
+                     </div>
+                     <span className="text-[10px] font-black text-emerald-200 uppercase tracking-wider">
+                         Ce qu'il peut vous offrir
+                     </span>
+                </div>
+                <ul className="space-y-2 relative z-10 pl-1">
+                     {/* Dynamic superpowers based on profile data or fallback */}
+                    {(match.superpower ? [match.superpower] : ["Son expertise métier", "Son réseau local"]).map((item: string, i: number) => (
+                        <li key={i} className="flex items-start gap-2 text-xs font-medium text-slate-300">
+                            <span className="text-emerald-500 font-bold text-lg leading-none">•</span>
+                            <span className="leading-tight pt-0.5">{item}</span>
+                        </li>
+                    ))}
+                </ul>
+            </div>
+
         </div>
         
         {/* OPTIONAL CHILDREN (e.g. Add to Calendar) */}
