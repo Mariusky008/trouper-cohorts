@@ -1,9 +1,11 @@
+
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
 import { Resend } from 'resend';
 import { DailyMatchEmail } from '@/emails/daily-match-email';
 
 export const dynamic = 'force-dynamic';
+export const maxDuration = 60; // Allow up to 60 seconds execution time
 
 const GOAL_LABELS: Record<string, string> = {
     clients: "Trouver des clients",
@@ -28,6 +30,8 @@ export async function POST(request: Request) {
 
 async function handleSendEmails(request: Request) {
   try {
+    console.log("[CRON] Starting Daily Match Email Process...");
+
     // 1. Init Admin Client & Resend
     if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
       throw new Error('Missing NEXT_PUBLIC_SUPABASE_URL');
@@ -59,6 +63,7 @@ async function handleSendEmails(request: Request) {
 
     // 2. Get Today's Date
     const today = new Date().toISOString().split('T')[0];
+    console.log(`[CRON] Target Date: ${today}`);
 
     // 3. Fetch Matches for Today
     const { data: matches, error: matchError } = await supabase
@@ -67,9 +72,13 @@ async function handleSendEmails(request: Request) {
         .eq('date', today);
 
     if (matchError) throw matchError;
+    
     if (!matches || matches.length === 0) {
+        console.log("[CRON] No matches found for today.");
         return NextResponse.json({ message: 'No matches found for today', count: 0 });
     }
+
+    console.log(`[CRON] Found ${matches.length} matches.`);
 
     // 4. Fetch Profiles
     const userIds = new Set<string>();
@@ -87,9 +96,39 @@ async function handleSendEmails(request: Request) {
 
     const profileMap = new Map(profiles?.map((p: any) => [p.id, p]));
 
-    // 5. Send Emails
+    // 5. Identify Users needing Email Fetch from Auth
+    const usersNeedingEmail = new Set<string>();
+    userIds.forEach(id => {
+        const profile = profileMap.get(id);
+        if (!profile || !profile.email) {
+            usersNeedingEmail.add(id);
+        }
+    });
+
+    // 6. Fetch Emails from Auth (Parallel)
+    if (usersNeedingEmail.size > 0) {
+        console.log(`[CRON] Fetching emails for ${usersNeedingEmail.size} users from Auth...`);
+        const emailPromises = Array.from(usersNeedingEmail).map(async (id) => {
+            const { data, error } = await supabase.auth.admin.getUserById(id);
+            if (error) {
+                console.error(`[CRON] Failed to fetch auth user ${id}:`, error);
+                return { id, email: null };
+            }
+            return { id, email: data.user.email };
+        });
+
+        const emailResults = await Promise.all(emailPromises);
+        emailResults.forEach(({ id, email }) => {
+            if (email) {
+                const profile = profileMap.get(id) || { id };
+                profileMap.set(id, { ...profile, email });
+            }
+        });
+    }
+
+    // 7. Prepare Emails
     let emailsSent = 0;
-    const emailPromises = [];
+    const emailPromises: Promise<any>[] = [];
     const errors: any[] = [];
 
     // Use verified domain sender
@@ -100,22 +139,12 @@ async function handleSendEmails(request: Request) {
         let user2 = profileMap.get(match.user2_id);
 
         if (!user1 || !user2) {
-            console.warn(`Skipping match ${match.id}: missing profiles`);
+            console.warn(`[CRON] Skipping match ${match.id}: missing profiles`);
             continue;
         }
 
-        // Fetch emails from Auth if not in profile
-        if (!user1.email) {
-            const { data: u1Auth } = await supabase.auth.admin.getUserById(match.user1_id);
-            if (u1Auth?.user?.email) user1 = { ...user1, email: u1Auth.user.email };
-        }
-        if (!user2.email) {
-            const { data: u2Auth } = await supabase.auth.admin.getUserById(match.user2_id);
-            if (u2Auth?.user?.email) user2 = { ...user2, email: u2Auth.user.email };
-        }
-
         if (!user1.email || !user2.email) {
-             console.error(`Skipping match ${match.id}: missing emails (U1: ${!!user1.email}, U2: ${!!user2.email})`);
+             console.error(`[CRON] Skipping match ${match.id}: missing emails (U1: ${!!user1.email}, U2: ${!!user2.email})`);
              errors.push(`Match ${match.id}: Missing emails`);
              continue;
         }
@@ -143,7 +172,7 @@ async function handleSendEmails(request: Request) {
                 });
                 return { success: true, userId: user1.id };
             } catch (err: any) {
-                console.error(`Failed to send to user1 (${user1.email}):`, err);
+                console.error(`[CRON] Failed to send to user1 (${user1.email}):`, err);
                 throw { userId: user1.id, error: err.message };
             }
         };
@@ -171,7 +200,7 @@ async function handleSendEmails(request: Request) {
                 });
                 return { success: true, userId: user2.id };
             } catch (err: any) {
-                console.error(`Failed to send to user2 (${user2.email}):`, err);
+                console.error(`[CRON] Failed to send to user2 (${user2.email}):`, err);
                 throw { userId: user2.id, error: err.message };
             }
         };
@@ -180,6 +209,7 @@ async function handleSendEmails(request: Request) {
         emailPromises.push(sendToUser2());
     }
 
+    // 8. Wait for all emails
     const results = await Promise.allSettled(emailPromises);
     
     results.forEach((result) => {
@@ -190,6 +220,8 @@ async function handleSendEmails(request: Request) {
         }
     });
 
+    console.log(`[CRON] Processed ${matches.length} matches. Sent ${emailsSent} emails. Errors: ${errors.length}`);
+
     return NextResponse.json({ 
         success: true, 
         matches_processed: matches.length,
@@ -198,7 +230,7 @@ async function handleSendEmails(request: Request) {
     });
 
   } catch (error: any) {
-    console.error('Email Sending Error:', error);
+    console.error('[CRON] Fatal Error:', error);
     return NextResponse.json({ 
         success: false, 
         error: error.message 
