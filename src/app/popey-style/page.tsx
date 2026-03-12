@@ -620,16 +620,6 @@ export default function PopeyStylePage() {
                </div>
             </div>
 
-            <div className="mt-20 text-center">
-               <Link href="/inscription/spheres">
-                 <Button 
-                   size="lg" 
-                   className="bg-[#2E130C] text-[#E2D9BC] hover:bg-[#4a2c22] font-titan rounded-2xl px-12 h-20 text-xl border-4 border-[#2E130C] shadow-[6px_6px_0px_0px_#7A0000] transition-all hover:scale-105 hover:shadow-[8px_8px_0px_0px_#7A0000]"
-                 >
-                   👉 Découvrir mon premier match
-                 </Button>
-               </Link>
-            </div>
          </div>
       </section>
 
