@@ -22,7 +22,7 @@ import {
 
 import { AuthDialog } from "@/components/auth-dialog";
 import { MysteryCardPreview, MatchCardPreview, FounderCardPreview } from "@/components/dashboard/design-system-preview";
-import { Titan_One, Pacifico, Nunito } from "next/font/google";
+import { Titan_One, Pacifico, Poppins } from "next/font/google";
 
 // --- FONTS ---
 const titanOne = Titan_One({ 
@@ -37,9 +37,10 @@ const pacifico = Pacifico({
   variable: "--font-pacifico",
 });
 
-const nunito = Nunito({
+const poppins = Poppins({
+  weight: ["400", "600", "700", "900"],
   subsets: ["latin"],
-  variable: "--font-nunito",
+  variable: "--font-poppins",
 });
 
 // --- COLORS (Tailwind Arbitrary Values Mapping) ---
@@ -81,7 +82,7 @@ const AnimatedCounter = ({ value, label, suffix = "" }: { value: number, label: 
       <div className="text-3xl md:text-4xl font-titan text-[#2E130C] mb-1 drop-shadow-sm">
         {count}{suffix}
       </div>
-      <div className="text-xs font-bold text-[#7A0000] uppercase tracking-widest font-nunito">{label}</div>
+      <div className="text-xs font-bold text-[#7A0000] uppercase tracking-widest font-poppins">{label}</div>
     </div>
   );
 };
@@ -115,7 +116,7 @@ const StickyCTA = () => {
                  <AuthDialog 
                    mode="login" 
                    trigger={
-                     <Button variant="ghost" className="text-[#2E130C] font-bold hover:text-[#B20B13] hover:bg-transparent h-9 font-nunito">
+                     <Button variant="ghost" className="text-[#2E130C] font-bold hover:text-[#B20B13] hover:bg-transparent h-9 font-poppins">
                        Connexion
                      </Button>
                    } 
@@ -187,7 +188,7 @@ const SynergySection = () => {
   const currentSynergies = getSynergies();
 
   return (
-    <section className="py-24 bg-white border-b-4 border-[#2E130C] relative overflow-hidden">
+    <section className="py-24 bg-[#E2D9BC] border-b-4 border-[#2E130C] relative overflow-hidden">
         {/* Background dots/pattern */}
         <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ backgroundImage: 'radial-gradient(#2E130C 1px, transparent 1px)', backgroundSize: '20px 20px' }}></div>
 
@@ -205,7 +206,7 @@ const SynergySection = () => {
                     <div className="w-full relative">
                         <Input 
                           placeholder="Votre métier (ex: Nutritionniste, Architecte...)" 
-                          className="h-16 text-lg md:text-xl border-4 border-[#2E130C] rounded-2xl font-nunito font-bold shadow-[4px_4px_0px_0px_#2E130C] focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-[#2E130C]/40 px-6 bg-[#E2D9BC]/20"
+                          className="h-16 text-lg md:text-xl border-4 border-[#2E130C] rounded-2xl font-poppins font-bold shadow-[4px_4px_0px_0px_#2E130C] focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-[#2E130C]/40 px-6 bg-[#E2D9BC]/20"
                           value={jobInput}
                           onChange={(e) => setJobInput(e.target.value)}
                           onKeyDown={(e) => e.key === 'Enter' && handleReveal()}
@@ -307,7 +308,7 @@ const SynergySection = () => {
                               
                               <div className="text-center md:text-left flex-1">
                                  <h4 className="text-3xl font-titan mb-4 text-[#E2D9BC]">Pourquoi {selectedSynergy.title} ?</h4>
-                                 <p className="text-xl font-nunito font-semibold leading-relaxed text-[#E2D9BC]/90 italic">
+                                 <p className="text-xl font-poppins font-semibold leading-relaxed text-[#E2D9BC]/90 italic">
                                     "{selectedSynergy.desc}"
                                  </p>
                               </div>
@@ -337,7 +338,7 @@ export default function PopeyStylePage() {
   return (
     <div className={cn(
       "min-h-screen bg-[#E2D9BC] text-[#2E130C] overflow-x-hidden",
-      titanOne.variable, pacifico.variable, nunito.variable
+      titanOne.variable, pacifico.variable, poppins.variable
     )}>
       
       <StickyCTA />
@@ -368,7 +369,7 @@ export default function PopeyStylePage() {
                 <span className="text-[#B20B13] underline decoration-wavy decoration-[#2E130C]/20">5 minutes</span> par jour pour trouver vos prochains clients.
               </h1>
               
-              <p className="text-xl text-[#2E130C] leading-relaxed max-w-2xl mx-auto font-nunito font-bold">
+              <p className="text-xl text-[#2E130C] leading-relaxed max-w-2xl mx-auto font-poppins font-bold">
                 Arrêtez de prospecter dans le vide. Chaque jour, échangez avec un entrepreneur local et transformez son réseau en opportunités pour vous.
               </p>
               
@@ -400,7 +401,7 @@ export default function PopeyStylePage() {
                 </div>
                 <h2 className="text-3xl md:text-5xl font-titan text-[#2E130C]">Pourquoi trouver des clients est devenu si difficile ?</h2>
                 
-                <div className="text-lg text-[#2E130C] leading-relaxed space-y-6 font-nunito font-semibold">
+                <div className="text-lg text-[#2E130C] leading-relaxed space-y-6 font-poppins font-semibold">
                     <p>
                         La plupart des entrepreneurs ne manquent pas de compétences. <br/>
                         <strong className="text-[#B20B13] font-black text-xl font-titan">Ils manquent de visibilité et de réseau.</strong>
@@ -442,46 +443,46 @@ export default function PopeyStylePage() {
       </section>
 
       {/* --- 3. GROWTH SPHERE --- */}
-      <section className="py-20 bg-[#7A0000] text-[#E2D9BC] relative overflow-hidden border-b-4 border-[#2E130C]">
+      <section className="py-20 bg-[#E2D9BC] text-[#2E130C] relative overflow-hidden border-b-4 border-[#2E130C]">
         <div className="container mx-auto px-4 max-w-5xl text-center relative z-10">
-            <Badge className="bg-[#E2D9BC] text-[#2E130C] border-2 border-[#2E130C] mb-6 uppercase tracking-widest px-3 py-1 font-titan shadow-[3px_3px_0px_0px_#2E130C]">Fini le hasard</Badge>
+            <Badge className="bg-[#2E130C] text-[#E2D9BC] border-2 border-[#2E130C] mb-6 uppercase tracking-widest px-3 py-1 font-titan shadow-[3px_3px_0px_0px_#2E130C]">Fini le hasard</Badge>
             <h2 className="text-3xl md:text-5xl font-titan mb-8 leading-tight">
                 Ne cherchez plus de clients.<br/>
-                Construisez votre <span className="text-[#D2E8FF] underline decoration-wavy">Sphère de Croissance.</span>
+                Construisez votre <span className="text-[#B20B13] underline decoration-wavy">Sphère de Croissance.</span>
             </h2>
             
-            <p className="text-xl text-[#E2D9BC]/90 mb-12 max-w-3xl mx-auto leading-relaxed font-nunito font-bold">
+            <p className="text-xl text-[#2E130C]/90 mb-12 max-w-3xl mx-auto leading-relaxed font-poppins font-bold">
                 Le "networking" classique est épuisant et aléatoire. <br/>
-                Popey remplace la quantité par la <strong className="text-white underline decoration-[#D2E8FF]">stratégie</strong>.
+                Popey remplace la quantité par la <strong className="text-[#B20B13] underline decoration-[#2E130C]">stratégie</strong>.
             </p>
 
             <div className="grid md:grid-cols-3 gap-8 text-left">
-                <div className="bg-[#2E130C] p-8 rounded-3xl border-2 border-[#E2D9BC] shadow-[6px_6px_0px_0px_#E2D9BC] group hover:translate-y-[-2px] transition-transform">
+                <div className="bg-[#2E130C] p-8 rounded-3xl border-2 border-[#2E130C] shadow-[6px_6px_0px_0px_#2E130C] group hover:translate-y-[-2px] transition-transform">
                     <div className="h-12 w-12 bg-[#D2E8FF] rounded-xl border-2 border-[#E2D9BC] flex items-center justify-center mb-6 text-[#2E130C]">
                         <Users className="h-6 w-6" />
                     </div>
                     <h3 className="text-xl font-titan text-[#E2D9BC] mb-3">Plus de solitude</h3>
-                    <p className="text-[#E2D9BC]/80 leading-relaxed font-nunito font-semibold">
+                    <p className="text-[#E2D9BC]/80 leading-relaxed font-poppins font-semibold">
                         Vous n'êtes plus un entrepreneur isolé, mais le membre d'une escouade qui s'entraide au quotidien.
                     </p>
                 </div>
 
-                <div className="bg-[#2E130C] p-8 rounded-3xl border-2 border-[#E2D9BC] shadow-[6px_6px_0px_0px_#E2D9BC] group hover:translate-y-[-2px] transition-transform">
+                <div className="bg-[#2E130C] p-8 rounded-3xl border-2 border-[#2E130C] shadow-[6px_6px_0px_0px_#2E130C] group hover:translate-y-[-2px] transition-transform">
                     <div className="h-12 w-12 bg-[#B20B13] rounded-xl border-2 border-[#E2D9BC] flex items-center justify-center mb-6 text-[#E2D9BC]">
                         <Zap className="h-6 w-6" />
                     </div>
                     <h3 className="text-xl font-titan text-[#E2D9BC] mb-3">Plus d'impact</h3>
-                    <p className="text-[#E2D9BC]/80 leading-relaxed font-nunito font-semibold">
+                    <p className="text-[#E2D9BC]/80 leading-relaxed font-poppins font-semibold">
                         Chaque membre de votre sphère devient un ambassadeur qui parle de vous à son propre réseau.
                     </p>
                 </div>
 
-                <div className="bg-[#2E130C] p-8 rounded-3xl border-2 border-[#E2D9BC] shadow-[6px_6px_0px_0px_#E2D9BC] group hover:translate-y-[-2px] transition-transform">
+                <div className="bg-[#2E130C] p-8 rounded-3xl border-2 border-[#2E130C] shadow-[6px_6px_0px_0px_#2E130C] group hover:translate-y-[-2px] transition-transform">
                     <div className="h-12 w-12 bg-[#E2D9BC] rounded-xl border-2 border-[#2E130C] flex items-center justify-center mb-6 text-[#2E130C]">
                         <TrendingUp className="h-6 w-6" />
                     </div>
                     <h3 className="text-xl font-titan text-[#E2D9BC] mb-3">Plus de revenus</h3>
-                    <p className="text-[#E2D9BC]/80 leading-relaxed font-nunito font-semibold">
+                    <p className="text-[#E2D9BC]/80 leading-relaxed font-poppins font-semibold">
                         Le but n'est pas de boire du café, mais de signer des contrats grâce à des recommandations qualifiées.
                     </p>
                 </div>
@@ -500,16 +501,16 @@ export default function PopeyStylePage() {
       </section>
 
       {/* --- 3b. NEW CONCRETE EXPLANATION --- */}
-      <section className="py-24 bg-[#2E130C] overflow-hidden relative border-b-4 border-[#E2D9BC]">
+      <section className="py-24 bg-[#D2E8FF] overflow-hidden relative border-b-4 border-[#2E130C]">
          <div className="container mx-auto px-4 relative z-10">
             <div className="text-center max-w-4xl mx-auto mb-16 space-y-6">
-               <Badge className="bg-[#E2D9BC]/10 text-[#E2D9BC] border-2 border-[#E2D9BC]/20 px-4 py-1.5 text-sm font-titan uppercase tracking-widest backdrop-blur-sm">
+               <Badge className="bg-[#2E130C]/10 text-[#2E130C] border-2 border-[#2E130C]/20 px-4 py-1.5 text-sm font-titan uppercase tracking-widest backdrop-blur-sm">
                  🧠 Comment ça se passe concrètement
                </Badge>
-               <h2 className="text-4xl md:text-6xl font-titan text-[#E2D9BC] leading-tight">
+               <h2 className="text-4xl md:text-6xl font-titan text-[#2E130C] leading-tight">
                  Votre opportunité du jour <br/><span className="text-[#B20B13] underline decoration-wavy">en 3 secondes.</span>
                </h2>
-               <p className="text-xl md:text-2xl text-[#E2D9BC]/80 leading-relaxed max-w-2xl mx-auto font-nunito font-bold">
+               <p className="text-xl md:text-2xl text-[#2E130C]/80 leading-relaxed max-w-2xl mx-auto font-poppins font-bold">
                  Chaque matin, Popey vous propose une nouvelle opportunité business adaptée à votre profil.
                </p>
             </div>
@@ -564,17 +565,17 @@ export default function PopeyStylePage() {
                            transition={{ duration: 0.3 }}
                            className="space-y-6 text-center md:text-left"
                          >
-                             <div className="inline-flex items-center justify-center h-12 w-12 rounded-2xl bg-[#D2E8FF] text-[#2E130C] border-2 border-[#2E130C] mb-2 shadow-[4px_4px_0px_0px_#2E130C]">
+                             <div className="inline-flex items-center justify-center h-12 w-12 rounded-2xl bg-[#E2D9BC] text-[#2E130C] border-2 border-[#2E130C] mb-2 shadow-[4px_4px_0px_0px_#2E130C]">
                                 <span className="font-titan text-xl">1</span>
                              </div>
-                             <h3 className="text-3xl font-titan text-[#E2D9BC]">Découvrez votre match du jour</h3>
-                             <p className="text-[#E2D9BC]/80 text-lg leading-relaxed font-nunito font-bold">
+                             <h3 className="text-3xl font-titan text-[#2E130C]">Découvrez votre match du jour</h3>
+                             <p className="text-[#2E130C]/80 text-lg leading-relaxed font-poppins font-bold">
                                 Popey détecte automatiquement l’entrepreneur le plus pertinent pour vous. 
                                 Avant même de révéler son identité, vous voyez le potentiel business, la compatibilité et ce que cette rencontre peut vous apporter.
                              </p>
                              <Button 
                                onClick={() => setActiveStep(2)}
-                               className="bg-[#B20B13] hover:bg-[#7A0000] text-[#E2D9BC] font-titan rounded-xl px-8 h-14 text-lg border-2 border-[#E2D9BC] shadow-[4px_4px_0px_0px_#E2D9BC] hover:translate-y-[2px] w-full md:w-auto animate-pulse"
+                               className="bg-[#B20B13] hover:bg-[#7A0000] text-[#E2D9BC] font-titan rounded-xl px-8 h-14 text-lg border-2 border-[#2E130C] shadow-[4px_4px_0px_0px_#2E130C] hover:translate-y-[2px] w-full md:w-auto animate-pulse"
                              >
                                DÉCOUVRIR QUI C'EST 🔓
                              </Button>
@@ -588,25 +589,25 @@ export default function PopeyStylePage() {
                            transition={{ duration: 0.3 }}
                            className="space-y-6 text-center md:text-left"
                          >
-                             <div className="inline-flex items-center justify-center h-12 w-12 rounded-2xl bg-[#B20B13] text-[#E2D9BC] border-2 border-[#E2D9BC] mb-2 shadow-[4px_4px_0px_0px_#E2D9BC]">
+                             <div className="inline-flex items-center justify-center h-12 w-12 rounded-2xl bg-[#B20B13] text-[#E2D9BC] border-2 border-[#2E130C] mb-2 shadow-[4px_4px_0px_0px_#E2D9BC]">
                                 <span className="font-titan text-xl">2</span>
                              </div>
-                             <h3 className="text-3xl font-titan text-[#E2D9BC]">Passez à l’action en un clic</h3>
-                             <p className="text-[#E2D9BC]/80 text-lg leading-relaxed font-nunito font-bold">
+                             <h3 className="text-3xl font-titan text-[#2E130C]">Passez à l’action en un clic</h3>
+                             <p className="text-[#2E130C]/80 text-lg leading-relaxed font-poppins font-bold">
                                 Le profil est révélé avec les informations essentielles et un créneau d’appel. 
                                 Échangez 5 minutes, créez de nouvelles opportunités (recommandations, avis, partages, clients...).
                              </p>
                              <div className="flex flex-col gap-3">
                                <Link href="/inscription/spheres">
                                  <Button 
-                                   className="bg-[#E2D9BC] text-[#2E130C] hover:bg-white font-titan rounded-xl px-8 h-14 text-lg border-4 border-[#2E130C] shadow-[4px_4px_0px_0px_#7A0000] hover:translate-y-[2px] w-full md:w-auto"
+                                   className="bg-[#2E130C] text-[#E2D9BC] hover:bg-[#4a2c22] font-titan rounded-xl px-8 h-14 text-lg border-4 border-[#2E130C] shadow-[4px_4px_0px_0px_#7A0000] hover:translate-y-[2px] w-full md:w-auto"
                                  >
                                    Je veux mon match 👉
                                  </Button>
                                </Link>
                                <Button 
                                  variant="ghost" 
-                                 className="text-[#E2D9BC]/60 hover:text-[#E2D9BC] hover:bg-transparent font-nunito underline text-sm"
+                                 className="text-[#2E130C]/60 hover:text-[#2E130C] hover:bg-transparent font-poppins underline text-sm"
                                  onClick={() => setActiveStep(1)}
                                >
                                  Retour au mystère
@@ -623,7 +624,7 @@ export default function PopeyStylePage() {
                <Link href="/inscription/spheres">
                  <Button 
                    size="lg" 
-                   className="bg-[#E2D9BC] text-[#2E130C] hover:bg-white font-titan rounded-2xl px-12 h-20 text-xl border-4 border-[#2E130C] shadow-[6px_6px_0px_0px_#7A0000] transition-all hover:scale-105 hover:shadow-[8px_8px_0px_0px_#7A0000]"
+                   className="bg-[#2E130C] text-[#E2D9BC] hover:bg-[#4a2c22] font-titan rounded-2xl px-12 h-20 text-xl border-4 border-[#2E130C] shadow-[6px_6px_0px_0px_#7A0000] transition-all hover:scale-105 hover:shadow-[8px_8px_0px_0px_#7A0000]"
                  >
                    👉 Découvrir mon premier match
                  </Button>
@@ -635,7 +636,7 @@ export default function PopeyStylePage() {
       <SynergySection />
 
       {/* --- 5. MARKETPLACE (ADDED) --- */}
-      <section className="py-24 bg-[#E2D9BC] text-[#2E130C] relative overflow-hidden border-b-4 border-[#2E130C]">
+      <section className="py-24 bg-[#D2E8FF] text-[#2E130C] relative overflow-hidden border-b-4 border-[#2E130C]">
         <div className="container mx-auto px-4 relative z-10">
            <div className="text-center max-w-3xl mx-auto mb-16">
               <Badge className="bg-[#2E130C] text-[#E2D9BC] border-2 border-[#2E130C] mb-6 uppercase tracking-widest px-3 py-1 font-titan">Accélérateur de Business</Badge>
@@ -643,7 +644,7 @@ export default function PopeyStylePage() {
                   Pas de match aujourd'hui ? <br/>
                   <span className="text-[#B20B13] underline decoration-wavy">Accédez au Marché Caché.</span>
               </h2>
-              <p className="text-xl text-[#2E130C]/80 leading-relaxed font-nunito font-bold">
+              <p className="text-xl text-[#2E130C]/80 leading-relaxed font-poppins font-bold">
                   Ne restez jamais bloqué. Si l'algorithme ne trouve pas de match parfait, puisez directement dans les opportunités partagées par la communauté.
               </p>
            </div>
@@ -655,12 +656,12 @@ export default function PopeyStylePage() {
                        <div className="bg-[#D2E8FF] p-3 rounded-2xl border-2 border-[#2E130C]">
                            <Briefcase className="h-8 w-8 text-[#2E130C]" />
                        </div>
-                       <Badge className="bg-[#2E130C] text-[#E2D9BC] font-bold border-0 font-nunito">
+                       <Badge className="bg-[#2E130C] text-[#E2D9BC] font-bold border-0 font-poppins">
                            50 crédits
                        </Badge>
                    </div>
                    <h3 className="text-xl font-titan text-[#2E130C] mb-2">Lead Qualifié - Immo</h3>
-                   <p className="text-[#2E130C]/70 text-sm mb-6 leading-relaxed font-nunito font-bold">
+                   <p className="text-[#2E130C]/70 text-sm mb-6 leading-relaxed font-poppins font-bold">
                        "Je cherche un architecte pour un projet de rénovation complète (120m²) à Bordeaux Centre. Budget validé."
                    </p>
                    <Button className="w-full bg-[#2E130C] hover:bg-[#B20B13] text-[#E2D9BC] font-titan rounded-xl h-12 transition-colors border-2 border-[#2E130C]">
@@ -677,12 +678,12 @@ export default function PopeyStylePage() {
                        <div className="bg-[#B20B13] p-3 rounded-2xl border-2 border-[#2E130C]">
                            <Users className="h-8 w-8 text-[#E2D9BC]" />
                        </div>
-                       <Badge className="bg-[#2E130C] text-[#E2D9BC] font-bold border-0 font-nunito">
+                       <Badge className="bg-[#2E130C] text-[#E2D9BC] font-bold border-0 font-poppins">
                            150 crédits
                        </Badge>
                    </div>
                    <h3 className="text-xl font-titan text-[#2E130C] mb-2">Intro Décideur - BTP</h3>
-                   <p className="text-[#2E130C]/70 text-sm mb-6 leading-relaxed font-nunito font-bold">
+                   <p className="text-[#2E130C]/70 text-sm mb-6 leading-relaxed font-poppins font-bold">
                        "Je déjeune demain avec le directeur des achats d'un grand groupe de construction. Je peux faire une intro."
                    </p>
                    <Button className="w-full bg-[#B20B13] hover:bg-[#7A0000] text-[#E2D9BC] font-titan rounded-xl h-12 transition-colors border-2 border-[#2E130C]">
@@ -696,12 +697,12 @@ export default function PopeyStylePage() {
                        <div className="bg-[#E2D9BC] p-3 rounded-2xl border-2 border-[#2E130C]">
                            <MessageCircle className="h-8 w-8 text-[#2E130C]" />
                        </div>
-                       <Badge className="bg-[#2E130C] text-[#E2D9BC] font-bold border-0 font-nunito">
+                       <Badge className="bg-[#2E130C] text-[#E2D9BC] font-bold border-0 font-poppins">
                            30 crédits
                        </Badge>
                    </div>
                    <h3 className="text-xl font-titan text-[#2E130C] mb-2">Visibilité - LinkedIn</h3>
-                   <p className="text-[#2E130C]/70 text-sm mb-6 leading-relaxed font-nunito font-bold">
+                   <p className="text-[#2E130C]/70 text-sm mb-6 leading-relaxed font-poppins font-bold">
                        "Je cherche un expert en marketing pour intervenir dans mon prochain live (5k abonnés). Sujet : Acquisition."
                    </p>
                    <Button className="w-full bg-[#2E130C] hover:bg-[#B20B13] text-[#E2D9BC] font-titan rounded-xl h-12 transition-colors border-2 border-[#2E130C]">
@@ -713,7 +714,7 @@ export default function PopeyStylePage() {
       </section>
 
       {/* --- 4. GAMIFICATION REWARDS --- */}
-      <section className="py-24 bg-[#D2E8FF] border-b-4 border-[#2E130C]">
+      <section className="py-24 bg-[#E2D9BC] border-b-4 border-[#2E130C]">
          <div className="container mx-auto px-4">
             
             {/* ROI MATH SECTION */}
@@ -725,7 +726,7 @@ export default function PopeyStylePage() {
                     Et si 5 minutes valaient <span className="text-[#B20B13] underline decoration-wavy">3 000 € ?</span>
                 </h3>
                 
-                <div className="grid md:grid-cols-3 gap-8 items-center justify-center my-8 font-nunito">
+                <div className="grid md:grid-cols-3 gap-8 items-center justify-center my-8 font-poppins">
                     <div className="space-y-2">
                         <div className="text-5xl font-titan text-[#2E130C]">20</div>
                         <div className="text-sm font-black text-[#2E130C]/60 uppercase">Matchs / mois</div>
@@ -739,7 +740,7 @@ export default function PopeyStylePage() {
 
                 <div className="bg-[#E2D9BC] rounded-2xl p-6 border-2 border-[#2E130C] inline-block w-full max-w-lg">
                     <div className="flex justify-between items-center mb-4">
-                        <span className="text-[#2E130C] font-bold font-nunito">Valeur générée estimée</span>
+                        <span className="text-[#2E130C] font-bold font-poppins">Valeur générée estimée</span>
                         <span className="font-titan text-[#B20B13] text-xl">+ 3 000 € / mois</span>
                     </div>
                     <div className="h-4 w-full bg-white rounded-full overflow-hidden border-2 border-[#2E130C]">
@@ -779,7 +780,7 @@ export default function PopeyStylePage() {
                      
                      <div>
                         <h3 className="font-titan text-[#2E130C] text-xl mb-2">{item.label}</h3>
-                        <p className="text-[#2E130C]/80 text-sm leading-relaxed font-nunito font-bold">
+                        <p className="text-[#2E130C]/80 text-sm leading-relaxed font-poppins font-bold">
                            {item.desc}
                         </p>
                      </div>
@@ -800,7 +801,7 @@ export default function PopeyStylePage() {
       </section>
 
       {/* --- 6. TESTIMONIALS (ADDED) --- */}
-      <section className="py-24 bg-white border-b-4 border-[#2E130C]">
+      <section className="py-24 bg-[#D2E8FF] border-b-4 border-[#2E130C]">
          <div className="container mx-auto px-4">
             
             {/* STRONG PROOF SECTION */}
@@ -809,7 +810,7 @@ export default function PopeyStylePage() {
                     Ce mois-ci sur <span className="text-[#B20B13] underline decoration-wavy">Bordeaux</span> :
                 </h3>
                 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative z-10 font-nunito">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative z-10 font-poppins">
                     <div className="flex flex-col items-center">
                         <div className="text-5xl font-titan text-[#E2D9BC] mb-2">312</div>
                         <div className="text-[#D2E8FF] font-bold uppercase text-sm tracking-widest">Mises en relation</div>
@@ -827,7 +828,7 @@ export default function PopeyStylePage() {
 
             <div className="text-center mb-16">
                <h2 className="text-3xl md:text-4xl font-titan text-[#2E130C] mb-4">Ils ont arrêté de prospecter dans le vide</h2>
-               <p className="text-[#2E130C]/60 text-lg font-nunito font-bold">Des résultats concrets, pas juste des discussions.</p>
+               <p className="text-[#2E130C]/60 text-lg font-poppins font-bold">Des résultats concrets, pas juste des discussions.</p>
             </div>
 
             <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto mb-16">
@@ -856,7 +857,7 @@ export default function PopeyStylePage() {
                     initial={{ opacity: 0, y: 20 }}
                     whileInView={{ opacity: 1, y: 0 }}
                     transition={{ delay: i * 0.1 }}
-                    className="bg-[#E2D9BC] p-8 rounded-3xl border-4 border-[#2E130C] shadow-[4px_4px_0px_0px_#2E130C] hover:translate-y-[-2px] hover:shadow-[2px_2px_0px_0px_#2E130C] transition-all relative"
+                    className="bg-white p-8 rounded-3xl border-4 border-[#2E130C] shadow-[4px_4px_0px_0px_#2E130C] hover:translate-y-[-2px] hover:shadow-[2px_2px_0px_0px_#2E130C] transition-all relative"
                   >
                      <div className="flex items-center gap-4 mb-6">
                         <Avatar className="h-14 w-14 border-2 border-[#2E130C]">
@@ -865,10 +866,10 @@ export default function PopeyStylePage() {
                         </Avatar>
                         <div>
                            <div className="font-titan text-[#2E130C] text-lg">{item.name}</div>
-                           <div className="text-xs text-[#7A0000] font-bold uppercase font-nunito">{item.role}</div>
+                           <div className="text-xs text-[#7A0000] font-bold uppercase font-poppins">{item.role}</div>
                         </div>
                      </div>
-                     <p className="text-[#2E130C] leading-relaxed italic font-nunito font-semibold">"{item.text}"</p>
+                     <p className="text-[#2E130C] leading-relaxed italic font-poppins font-semibold">"{item.text}"</p>
                   </motion.div>
                ))}
             </div>
@@ -888,7 +889,7 @@ export default function PopeyStylePage() {
                         <h2 className="text-3xl md:text-5xl font-titan text-[#2E130C] mb-6">Pourquoi Popey ?</h2>
                     </div>
                     
-                    <div className="space-y-10 text-lg text-[#2E130C] leading-relaxed max-w-3xl mx-auto font-nunito font-semibold">
+                    <div className="space-y-10 text-lg text-[#2E130C] leading-relaxed max-w-3xl mx-auto font-poppins font-semibold">
                         <div className="text-center">
                             <p className="mb-2">Pendant des années, nous avons observé la même chose :</p>
                             <p className="text-2xl font-bold text-[#2E130C]">Des entrepreneurs compétents... <span className="text-[#B20B13] font-black">Mais isolés.</span></p>
@@ -921,7 +922,7 @@ export default function PopeyStylePage() {
       </section>
 
       {/* --- 13. PRICING & FINAL CTA --- */}
-      <section id="pricing" className="py-24 bg-[#2E130C] relative overflow-hidden border-t-4 border-[#E2D9BC]">
+      <section id="pricing" className="py-24 bg-[#D2E8FF] relative overflow-hidden border-t-4 border-[#E2D9BC]">
          <div className="container mx-auto px-4 relative z-10">
             <div className="max-w-4xl mx-auto bg-[#E2D9BC] rounded-[3rem] p-8 md:p-16 text-center border-4 border-[#E2D9BC] shadow-2xl relative overflow-hidden">
                
@@ -935,12 +936,12 @@ export default function PopeyStylePage() {
                           Essai gratuit
                       </div>
                       <div className="text-3xl md:text-4xl font-titan text-[#2E130C] mb-2 leading-tight">1 jour = 1 match</div>
-                      <p className="text-[#2E130C] text-base md:text-lg mt-4 font-nunito font-bold">
+                      <p className="text-[#2E130C] text-base md:text-lg mt-4 font-poppins font-bold">
                           Découvre immédiatement une opportunité réelle pour ton business.
                       </p>
                   </div>
 
-                  <ul className="space-y-4 mb-8 font-nunito font-bold text-[#2E130C]">
+                  <ul className="space-y-4 mb-8 font-poppins font-bold text-[#2E130C]">
                      <li className="flex items-start gap-3 text-base md:text-lg">
                         <CheckCircle2 className="h-6 w-6 text-[#B20B13] shrink-0" /> 
                         <span className="font-bold">1 opportunité garantie dès aujourd’hui</span>
@@ -961,7 +962,7 @@ export default function PopeyStylePage() {
                     </Button>
                   </Link>
                   
-                  <div className="text-sm text-[#2E130C]/60 mt-6 text-center leading-relaxed font-nunito font-bold">
+                  <div className="text-sm text-[#2E130C]/60 mt-6 text-center leading-relaxed font-poppins font-bold">
                       Après ce test, l’accès complet devient <span className="text-[#2E130C] font-black">49 €/mois</span>.
                   </div>
                </div>
@@ -970,7 +971,7 @@ export default function PopeyStylePage() {
       </section>
 
       {/* FOOTER */}
-      <footer className="bg-[#E2D9BC] py-12 border-t-4 border-[#2E130C] text-[#2E130C] font-nunito font-bold">
+      <footer className="bg-[#E2D9BC] py-12 border-t-4 border-[#2E130C] text-[#2E130C] font-poppins font-bold">
         <div className="container mx-auto px-4">
             <div className="grid md:grid-cols-4 gap-8 mb-12">
                 <div className="space-y-4">
