@@ -320,11 +320,11 @@ export default function PopeyStylePage() {
                </p>
             </div>
 
-            <div className="max-w-5xl mx-auto">
-               <div className="flex flex-col md:flex-row gap-8 items-center min-h-[500px]">
+            <div className="max-w-6xl mx-auto mt-12">
+               <div className="flex flex-col md:flex-row gap-16 lg:gap-24 items-center min-h-[600px]">
                   
                   {/* LEFT COLUMN: 3D CARD FLIP */}
-                  <div className="w-full md:w-1/2 relative h-[500px] flex items-center justify-center perspective-[1000px]">
+                  <div className="w-full md:w-1/2 relative h-[600px] flex items-center justify-center perspective-[1000px]">
                      <motion.div 
                         className="relative w-full h-full flex items-center justify-center"
                         animate={{ rotateY: activeStep === 1 ? 0 : 180 }}
@@ -350,7 +350,7 @@ export default function PopeyStylePage() {
                         >
                            <div className="bg-[#D2E8FF] border-4 border-[#2E130C] rounded-[2rem] p-4 shadow-[8px_8px_0px_0px_#2E130C] transform rotate-[2deg] w-full max-w-[400px]">
                               {/* Increased scale for visibility */}
-                              <div className="scale-[1.1] origin-center">
+                              <div className="scale-[1.0] origin-center">
                                   <MatchCardPreview />
                               </div>
                            </div>
