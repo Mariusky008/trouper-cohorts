@@ -320,72 +320,109 @@ export default function PopeyStylePage() {
                </p>
             </div>
 
-            <div className="max-w-4xl mx-auto">
-               <AnimatePresence mode="wait">
-                 {activeStep === 1 ? (
-                   <motion.div
-                     key="step1"
-                     initial={{ opacity: 0, x: -20 }}
-                     animate={{ opacity: 1, x: 0 }}
-                     exit={{ opacity: 0, x: -20 }}
-                     className="flex flex-col md:flex-row gap-8 items-center"
-                   >
-                      <div className="w-full md:w-1/2">
-                         <div className="bg-[#E2D9BC] border-4 border-[#2E130C] rounded-[2rem] p-4 relative z-10 shadow-[8px_8px_0px_0px_#7A0000] transform rotate-[-2deg]">
-                            <div className="scale-[0.85] origin-top opacity-90 grayscale-[0.2]">
-                                <MysteryCardPreview />
-                            </div>
-                         </div>
-                      </div>
-                      <div className="w-full md:w-1/2 space-y-6 text-center md:text-left">
-                         <div className="inline-flex items-center justify-center h-12 w-12 rounded-2xl bg-[#D2E8FF] text-[#2E130C] border-2 border-[#2E130C] mb-2 shadow-[4px_4px_0px_0px_#2E130C]">
-                            <span className="font-titan text-xl">1</span>
-                         </div>
-                         <h3 className="text-3xl font-titan text-[#E2D9BC]">Découvrez votre match</h3>
-                         <p className="text-[#E2D9BC]/80 text-lg leading-relaxed font-nunito font-bold">
-                            Popey détecte l'entrepreneur le plus pertinent pour vous. Vous voyez le potentiel business avant tout.
-                         </p>
-                         <Button 
-                           onClick={() => setActiveStep(2)}
-                           className="bg-[#B20B13] hover:bg-[#7A0000] text-[#E2D9BC] font-titan rounded-xl px-8 h-14 text-lg border-2 border-[#E2D9BC] shadow-[4px_4px_0px_0px_#E2D9BC] hover:translate-y-[2px] w-full md:w-auto animate-pulse"
+            <div className="max-w-5xl mx-auto">
+               <div className="flex flex-col md:flex-row gap-8 items-center min-h-[500px]">
+                  
+                  {/* LEFT COLUMN: 3D CARD FLIP */}
+                  <div className="w-full md:w-1/2 relative h-[500px] flex items-center justify-center perspective-[1000px]">
+                     <motion.div 
+                        className="relative w-full h-full flex items-center justify-center"
+                        animate={{ rotateY: activeStep === 1 ? 0 : 180 }}
+                        transition={{ duration: 0.6, type: "spring", stiffness: 260, damping: 20 }}
+                        style={{ transformStyle: "preserve-3d" }}
+                     >
+                        {/* FRONT (MYSTERY) */}
+                        <div 
+                          className="absolute inset-0 flex items-center justify-center backface-hidden"
+                          style={{ backfaceVisibility: "hidden" }}
+                        >
+                           <div className="bg-[#E2D9BC] border-4 border-[#2E130C] rounded-[2rem] p-4 shadow-[8px_8px_0px_0px_#7A0000] transform rotate-[-2deg] w-full max-w-sm">
+                              <div className="scale-[0.9] origin-center opacity-90 grayscale-[0.2]">
+                                  <MysteryCardPreview />
+                              </div>
+                           </div>
+                        </div>
+
+                        {/* BACK (REVEALED) */}
+                        <div 
+                          className="absolute inset-0 flex items-center justify-center backface-hidden"
+                          style={{ backfaceVisibility: "hidden", transform: "rotateY(180deg)" }}
+                        >
+                           <div className="bg-[#D2E8FF] border-4 border-[#2E130C] rounded-[2rem] p-4 shadow-[8px_8px_0px_0px_#2E130C] transform rotate-[2deg] w-full max-w-[400px]">
+                              {/* Increased scale for visibility */}
+                              <div className="scale-[1.1] origin-center">
+                                  <MatchCardPreview />
+                              </div>
+                           </div>
+                        </div>
+                     </motion.div>
+                  </div>
+
+                  {/* RIGHT COLUMN: TEXT CONTENT */}
+                  <div className="w-full md:w-1/2">
+                     <AnimatePresence mode="wait">
+                       {activeStep === 1 ? (
+                         <motion.div
+                           key="text-step1"
+                           initial={{ opacity: 0, x: 20 }}
+                           animate={{ opacity: 1, x: 0 }}
+                           exit={{ opacity: 0, x: -20 }}
+                           transition={{ duration: 0.3 }}
+                           className="space-y-6 text-center md:text-left"
                          >
-                           DÉCOUVRIR QUI C'EST 🔓
-                         </Button>
-                      </div>
-                   </motion.div>
-                 ) : (
-                   <motion.div
-                     key="step2"
-                     initial={{ opacity: 0, x: 20 }}
-                     animate={{ opacity: 1, x: 0 }}
-                     className="flex flex-col md:flex-row gap-8 items-center"
-                   >
-                      <div className="w-full md:w-1/2">
-                         <div className="bg-[#D2E8FF] border-4 border-[#2E130C] rounded-[2rem] p-4 relative z-10 shadow-[8px_8px_0px_0px_#2E130C] transform rotate-[2deg]">
-                            <div className="scale-[0.85] origin-top">
-                                <MatchCardPreview />
-                            </div>
-                         </div>
-                      </div>
-                      <div className="w-full md:w-1/2 space-y-6 text-center md:text-left">
-                         <div className="inline-flex items-center justify-center h-12 w-12 rounded-2xl bg-[#B20B13] text-[#E2D9BC] border-2 border-[#E2D9BC] mb-2 shadow-[4px_4px_0px_0px_#E2D9BC]">
-                            <span className="font-titan text-xl">2</span>
-                         </div>
-                         <h3 className="text-3xl font-titan text-[#E2D9BC]">Action en un clic</h3>
-                         <p className="text-[#E2D9BC]/80 text-lg leading-relaxed font-nunito font-bold">
-                            Le profil est révélé. Échangez 5 minutes, partagez vos réseaux et créez de nouvelles opportunités.
-                         </p>
-                         <Link href="/inscription/spheres">
-                           <Button 
-                             className="bg-[#E2D9BC] text-[#2E130C] hover:bg-white font-titan rounded-xl px-8 h-14 text-lg border-4 border-[#2E130C] shadow-[4px_4px_0px_0px_#7A0000] hover:translate-y-[2px] w-full md:w-auto"
-                           >
-                             Je veux mon match 👉
-                           </Button>
-                         </Link>
-                      </div>
-                   </motion.div>
-                 )}
-               </AnimatePresence>
+                             <div className="inline-flex items-center justify-center h-12 w-12 rounded-2xl bg-[#D2E8FF] text-[#2E130C] border-2 border-[#2E130C] mb-2 shadow-[4px_4px_0px_0px_#2E130C]">
+                                <span className="font-titan text-xl">1</span>
+                             </div>
+                             <h3 className="text-3xl font-titan text-[#E2D9BC]">Découvrez votre match du jour</h3>
+                             <p className="text-[#E2D9BC]/80 text-lg leading-relaxed font-nunito font-bold">
+                                Popey détecte automatiquement l’entrepreneur le plus pertinent pour vous. 
+                                Avant même de révéler son identité, vous voyez le potentiel business, la compatibilité et ce que cette rencontre peut vous apporter.
+                             </p>
+                             <Button 
+                               onClick={() => setActiveStep(2)}
+                               className="bg-[#B20B13] hover:bg-[#7A0000] text-[#E2D9BC] font-titan rounded-xl px-8 h-14 text-lg border-2 border-[#E2D9BC] shadow-[4px_4px_0px_0px_#E2D9BC] hover:translate-y-[2px] w-full md:w-auto animate-pulse"
+                             >
+                               DÉCOUVRIR QUI C'EST 🔓
+                             </Button>
+                         </motion.div>
+                       ) : (
+                         <motion.div
+                           key="text-step2"
+                           initial={{ opacity: 0, x: 20 }}
+                           animate={{ opacity: 1, x: 0 }}
+                           exit={{ opacity: 0, x: -20 }}
+                           transition={{ duration: 0.3 }}
+                           className="space-y-6 text-center md:text-left"
+                         >
+                             <div className="inline-flex items-center justify-center h-12 w-12 rounded-2xl bg-[#B20B13] text-[#E2D9BC] border-2 border-[#E2D9BC] mb-2 shadow-[4px_4px_0px_0px_#E2D9BC]">
+                                <span className="font-titan text-xl">2</span>
+                             </div>
+                             <h3 className="text-3xl font-titan text-[#E2D9BC]">Passez à l’action en un clic</h3>
+                             <p className="text-[#E2D9BC]/80 text-lg leading-relaxed font-nunito font-bold">
+                                Le profil est révélé avec les informations essentielles et un créneau d’appel. 
+                                Échangez 5 minutes, créez de nouvelles opportunités (recommandations, avis, partages, clients...).
+                             </p>
+                             <div className="flex flex-col gap-3">
+                               <Link href="/inscription/spheres">
+                                 <Button 
+                                   className="bg-[#E2D9BC] text-[#2E130C] hover:bg-white font-titan rounded-xl px-8 h-14 text-lg border-4 border-[#2E130C] shadow-[4px_4px_0px_0px_#7A0000] hover:translate-y-[2px] w-full md:w-auto"
+                                 >
+                                   Je veux mon match 👉
+                                 </Button>
+                               </Link>
+                               <Button 
+                                 variant="ghost" 
+                                 className="text-[#E2D9BC]/60 hover:text-[#E2D9BC] hover:bg-transparent font-nunito underline text-sm"
+                                 onClick={() => setActiveStep(1)}
+                               >
+                                 Retour au mystère
+                               </Button>
+                             </div>
+                         </motion.div>
+                       )}
+                     </AnimatePresence>
+                  </div>
+               </div>
             </div>
 
             <div className="mt-20 text-center">
