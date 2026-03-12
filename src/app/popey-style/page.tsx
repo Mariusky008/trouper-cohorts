@@ -361,7 +361,7 @@ export default function PopeyStylePage() {
               transition={{ duration: 0.8 }}
               className="space-y-8"
             >
-              <div className="inline-block rotate-[-2deg]">
+              <div className="inline-block">
                 <div className="text-lg md:text-xl font-pacifico text-[#B20B13] mt-2">Ne restez plus seul face à votre business !</div>
               </div>
               
@@ -407,7 +407,7 @@ export default function PopeyStylePage() {
                         <strong className="text-[#B20B13] font-black text-xl font-titan">Ils manquent de visibilité et de réseau.</strong>
                     </p>
                     
-                    <div className="bg-[#E2D9BC] p-6 rounded-2xl border-2 border-[#2E130C] shadow-[4px_4px_0px_0px_#2E130C] text-left mx-auto max-w-lg rotate-1">
+                    <div className="bg-[#E2D9BC] p-6 rounded-2xl border-2 border-[#2E130C] shadow-[4px_4px_0px_0px_#2E130C] text-left mx-auto max-w-lg">
                         <p className="font-titan text-[#2E130C] mb-4 text-xl">Vous avez peut-être déjà essayé :</p>
                         <ul className="space-y-3 font-bold">
                             <li className="flex items-start gap-3 text-[#2E130C]">
@@ -750,7 +750,7 @@ export default function PopeyStylePage() {
             </div>
 
             <div className="max-w-4xl mx-auto text-center mb-16">
-               <span className="text-[#B20B13] font-pacifico text-2xl mb-2 block rotate-[-2deg]">C'est pas de la magie, c'est du réseau !</span>
+               <span className="text-[#B20B13] font-pacifico text-2xl mb-2 block">C'est pas de la magie, c'est du réseau !</span>
                <h2 className="text-3xl md:text-5xl font-titan mb-6 text-[#2E130C]">Ce que chaque échange rapporte</h2>
             </div>
 
