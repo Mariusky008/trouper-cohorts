@@ -121,7 +121,6 @@ const StickyCTA = () => {
                  />
                  
                  <div className={cn("flex items-center gap-4")}>
-                    {isVisible && <span className="text-xs font-bold text-[#2E130C] hidden lg:inline font-nunito">1€ les 3 premiers jours</span>}
                     <Link href="/inscription/spheres">
                       <Button size="sm" className="bg-[#B20B13] hover:bg-[#7A0000] text-[#E2D9BC] font-titan rounded-full px-6 border-2 border-[#2E130C] shadow-[2px_2px_0px_0px_#2E130C] hover:translate-y-[1px] hover:shadow-[1px_1px_0px_0px_#2E130C] transition-all">
                         Commencer
