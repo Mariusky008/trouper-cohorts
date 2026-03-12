@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import {
@@ -132,6 +133,199 @@ const StickyCTA = () => {
         </div>
       </motion.div>
     </AnimatePresence>
+  );
+};
+
+// --- 3c. SYNERGY GENERATOR ---
+
+const SYNERGY_DATA = {
+  health: [
+    { title: "Coach Sportif", match: 98, tags: ["Sport", "Santé"], desc: "Vos clients veulent des résultats physiques. Il s'occupe de l'entraînement, vous de l'assiette. Offre combinée = Ticket moyen x2.", color: "bg-green-100 text-green-800" },
+    { title: "Naturopathe", match: 92, tags: ["Bien-être", "Naturel"], desc: "Une approche complémentaire pour les troubles chroniques. Échangez vos patients qui stagnent.", color: "bg-emerald-100 text-emerald-800" },
+    { title: "Ostéopathe", match: 85, tags: ["Physique", "Soin"], desc: "Les douleurs articulaires freinent la perte de poids. Il débloque le corps, vous débloquez le métabolisme.", color: "bg-teal-100 text-teal-800" },
+    { title: "Psychologue", match: 78, tags: ["Mental", "TCA"], desc: "Pour les blocages émotionnels liés à l'alimentation. Indispensable pour les cas complexes.", color: "bg-cyan-100 text-cyan-800" },
+  ],
+  realestate: [
+    { title: "Agent Immobilier", match: 99, tags: ["Immo", "Vente"], desc: "Il vend la maison, vous la dessinez/rénovez. Il est votre meilleur apporteur d'affaires.", color: "bg-blue-100 text-blue-800" },
+    { title: "Courtier en Prêt", match: 94, tags: ["Finance", "Budget"], desc: "Il valide le budget travaux de vos clients avant même que vous ne dessiniez les plans.", color: "bg-indigo-100 text-indigo-800" },
+    { title: "Paysagiste", match: 88, tags: ["Extérieur", "Design"], desc: "Vous faites l'intérieur, il sublime l'extérieur. Une prestation globale pour le client.", color: "bg-violet-100 text-violet-800" },
+    { title: "Notaire", match: 80, tags: ["Juridique", "Acte"], desc: "Il voit passer tous les actes de vente. Une source de leads qualifiés en amont.", color: "bg-purple-100 text-purple-800" },
+  ],
+  business: [
+    { title: "Copywriter", match: 96, tags: ["Vente", "Écrit"], desc: "Vous avez l'expertise, il a les mots pour la vendre. Transformez votre savoir en pages de vente qui convertissent.", color: "bg-orange-100 text-orange-800" },
+    { title: "Expert Pubs (Ads)", match: 91, tags: ["Trafic", "Leads"], desc: "Il amène le trafic, vous le convertissez. Le duo gagnant pour scaler n'importe quel business.", color: "bg-amber-100 text-amber-800" },
+    { title: "Closer / Commercial", match: 87, tags: ["Vente", "Phone"], desc: "Arrêtez de perdre du temps au téléphone. Il ferme vos deals à votre place.", color: "bg-yellow-100 text-yellow-800" },
+    { title: "Expert Automatisation", match: 82, tags: ["Tech", "Gain de temps"], desc: "Il connecte vos outils pour que vous ne fassiez plus jamais de tâches répétitives.", color: "bg-lime-100 text-lime-800" },
+  ]
+};
+
+const SynergySection = () => {
+  const [jobInput, setJobInput] = useState("");
+  const [showResults, setShowResults] = useState(false);
+  const [selectedSynergy, setSelectedSynergy] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
+
+  // Default to "business" if no match, but try to match keywords
+  const getSynergies = () => {
+    const input = jobInput.toLowerCase();
+    if (input.includes("nutri") || input.includes("sport") || input.includes("santé") || input.includes("diet") || input.includes("naturopathe")) return SYNERGY_DATA.health;
+    if (input.includes("archi") || input.includes("immo") || input.includes("deco") || input.includes("batiment") || input.includes("travaux")) return SYNERGY_DATA.realestate;
+    return SYNERGY_DATA.business;
+  };
+
+  const handleReveal = () => {
+    if (!jobInput.trim()) return;
+    setLoading(true);
+    setShowResults(false);
+    setSelectedSynergy(null);
+    setTimeout(() => {
+      setLoading(false);
+      setShowResults(true);
+    }, 800); 
+  };
+
+  const currentSynergies = getSynergies();
+
+  return (
+    <section className="py-24 bg-white border-b-4 border-[#2E130C] relative overflow-hidden">
+        {/* Background dots/pattern */}
+        <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ backgroundImage: 'radial-gradient(#2E130C 1px, transparent 1px)', backgroundSize: '20px 20px' }}></div>
+
+        <div className="container mx-auto px-4 relative z-10">
+            <div className="max-w-4xl mx-auto text-center mb-16">
+               <Badge className="bg-[#B20B13] text-[#E2D9BC] border-2 border-[#2E130C] mb-6 uppercase tracking-widest px-3 py-1 font-titan shadow-[3px_3px_0px_0px_#2E130C]">
+                 Générateur de Synergies
+               </Badge>
+               <h2 className="text-3xl md:text-5xl font-titan text-[#2E130C] mb-8 leading-tight drop-shadow-sm">
+                 "Dites-nous qui vous êtes,<br/>nous vous dirons <span className="text-[#B20B13] underline decoration-wavy decoration-[#2E130C]/20">avec qui grandir.</span>"
+               </h2>
+               
+               <div className="max-w-xl mx-auto relative mt-8">
+                  <div className="flex flex-col md:flex-row gap-4 items-center">
+                    <div className="w-full relative">
+                        <Input 
+                          placeholder="Votre métier (ex: Nutritionniste, Architecte...)" 
+                          className="h-16 text-lg md:text-xl border-4 border-[#2E130C] rounded-2xl font-nunito font-bold shadow-[4px_4px_0px_0px_#2E130C] focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-[#2E130C]/40 px-6 bg-[#E2D9BC]/20"
+                          value={jobInput}
+                          onChange={(e) => setJobInput(e.target.value)}
+                          onKeyDown={(e) => e.key === 'Enter' && handleReveal()}
+                        />
+                    </div>
+                    <Button 
+                      onClick={handleReveal}
+                      disabled={loading || !jobInput.trim()}
+                      className="h-16 px-8 bg-[#B20B13] hover:bg-[#7A0000] text-[#E2D9BC] font-titan rounded-2xl border-4 border-[#2E130C] shadow-[4px_4px_0px_0px_#2E130C] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_#2E130C] transition-all whitespace-nowrap text-lg w-full md:w-auto"
+                    >
+                      {loading ? (
+                          <div className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full" />
+                      ) : (
+                          <>RÉVÉLER <Sparkles className="ml-2 h-5 w-5" /></>
+                      )}
+                    </Button>
+                  </div>
+               </div>
+            </div>
+
+            <AnimatePresence mode="wait">
+               {showResults && (
+                 <motion.div 
+                   initial={{ opacity: 0, y: 20 }}
+                   animate={{ opacity: 1, y: 0 }}
+                   exit={{ opacity: 0, y: -20 }}
+                   transition={{ duration: 0.5 }}
+                   className="max-w-6xl mx-auto"
+                 >
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 mb-12">
+                       {currentSynergies.map((synergy: any, index: number) => (
+                          <motion.div 
+                            key={index}
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ delay: index * 0.1 }}
+                            className={`
+                              cursor-pointer relative group
+                              ${selectedSynergy === synergy ? 'z-10' : 'hover:-translate-y-2'}
+                              transition-all duration-200
+                            `}
+                            onClick={() => setSelectedSynergy(synergy)}
+                          >
+                             <div className={`
+                               bg-white rounded-3xl p-6 border-4 border-[#2E130C] shadow-[6px_6px_0px_0px_#2E130C] h-full flex flex-col items-center text-center transition-all
+                               ${selectedSynergy === synergy ? 'ring-4 ring-[#B20B13] ring-offset-4' : ''}
+                               ${index === 0 ? 'bg-[#D2E8FF]' : ''}
+                             `}>
+                                {index === 0 && (
+                                  <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-[#FFD700] text-[#2E130C] text-[10px] font-black uppercase px-3 py-1.5 rounded-full border-2 border-[#2E130C] shadow-sm whitespace-nowrap z-20">
+                                    ⭐ Top Synergie
+                                  </div>
+                                )}
+                                
+                                <div className="h-20 w-20 rounded-full bg-white border-4 border-[#2E130C] mb-4 flex items-center justify-center text-3xl shadow-sm overflow-hidden shrink-0 relative">
+                                   <span className="font-titan text-[#2E130C]">{synergy.title[0]}</span>
+                                   <div className={`absolute inset-0 opacity-20 ${synergy.color}`}></div>
+                                </div>
+                                
+                                <h3 className="font-titan text-[#2E130C] text-lg leading-tight mb-3 min-h-[3rem] flex items-center justify-center">{synergy.title}</h3>
+                                
+                                <Badge className={`${index === 0 ? 'bg-[#B20B13] text-[#E2D9BC]' : 'bg-[#2E130C] text-[#E2D9BC]'} border-0 mb-4 px-3 py-1 text-sm font-titan`}>
+                                   {synergy.match}% Match
+                                </Badge>
+                                
+                                <div className="flex flex-wrap gap-2 justify-center mt-auto">
+                                   {synergy.tags.slice(0,2).map((tag: string, i: number) => (
+                                      <span key={i} className="text-[10px] bg-white border-2 border-[#2E130C]/10 px-2 py-1 rounded-lg font-bold text-[#2E130C]/60 uppercase tracking-wide">
+                                        {tag}
+                                      </span>
+                                   ))}
+                                </div>
+                                
+                                <div className="mt-6 w-full pt-4 border-t-2 border-[#2E130C]/10 flex items-center justify-center gap-1 text-xs font-bold text-[#2E130C]/40 group-hover:text-[#B20B13] transition-colors uppercase tracking-widest">
+                                   <TrendingUp className="h-3 w-3" /> Détails
+                                </div>
+                             </div>
+                          </motion.div>
+                       ))}
+                    </div>
+
+                    {/* Selected Synergy Detail View */}
+                    <AnimatePresence mode="wait">
+                      {selectedSynergy && (
+                        <motion.div 
+                          key={selectedSynergy.title}
+                          initial={{ opacity: 0, height: 0, y: 20 }}
+                          animate={{ opacity: 1, height: "auto", y: 0 }}
+                          exit={{ opacity: 0, height: 0, y: 20 }}
+                          className="overflow-hidden"
+                        >
+                           <div className="bg-[#2E130C] text-[#E2D9BC] p-8 md:p-10 rounded-[2.5rem] border-4 border-[#E2D9BC] shadow-[12px_12px_0px_0px_#B20B13] max-w-4xl mx-auto flex flex-col md:flex-row gap-8 items-center relative transform rotate-1 transition-transform hover:rotate-0">
+                              <div className="shrink-0 text-center md:text-left bg-[#E2D9BC]/10 p-6 rounded-3xl border-2 border-[#E2D9BC]/20 backdrop-blur-sm">
+                                 <div className="text-[#B20B13] font-titan text-7xl mb-0 leading-none drop-shadow-sm">{selectedSynergy.match}%</div>
+                                 <div className="text-xs uppercase tracking-[0.2em] font-bold opacity-60 mt-2">Compatibilité Business</div>
+                              </div>
+                              
+                              <div className="w-px h-32 bg-[#E2D9BC]/20 hidden md:block"></div>
+                              
+                              <div className="text-center md:text-left flex-1">
+                                 <h4 className="text-3xl font-titan mb-4 text-[#E2D9BC]">Pourquoi {selectedSynergy.title} ?</h4>
+                                 <p className="text-xl font-nunito font-semibold leading-relaxed text-[#E2D9BC]/90 italic">
+                                    "{selectedSynergy.desc}"
+                                 </p>
+                              </div>
+                              
+                              <div className="shrink-0 pt-4 md:pt-0">
+                                 <Button className="h-14 px-8 bg-[#E2D9BC] text-[#2E130C] hover:bg-white font-titan rounded-xl text-lg border-4 border-[#2E130C] shadow-[4px_4px_0px_0px_#2E130C] hover:translate-y-[2px] transition-all whitespace-nowrap">
+                                    Trouver ce profil
+                                 </Button>
+                              </div>
+                           </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                 </motion.div>
+               )}
+            </AnimatePresence>
+        </div>
+    </section>
   );
 };
 
@@ -437,6 +631,8 @@ export default function PopeyStylePage() {
             </div>
          </div>
       </section>
+
+      <SynergySection />
 
       {/* --- 5. MARKETPLACE (ADDED) --- */}
       <section className="py-24 bg-[#E2D9BC] text-[#2E130C] relative overflow-hidden border-b-4 border-[#2E130C]">
