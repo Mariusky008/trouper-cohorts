@@ -138,6 +138,8 @@ const StickyCTA = () => {
 // --- MAIN PAGE COMPONENT ---
 
 export default function PopeyStylePage() {
+  const [activeStep, setActiveStep] = useState(1);
+
   return (
     <div className={cn(
       "min-h-screen bg-[#E2D9BC] text-[#2E130C] overflow-x-hidden",
