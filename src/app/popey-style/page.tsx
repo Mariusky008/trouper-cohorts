@@ -973,7 +973,7 @@ export default function PopeyStylePage() {
       {/* FOOTER */}
       <footer className="bg-[#E2D9BC] py-12 border-t-4 border-[#2E130C] text-[#2E130C] font-poppins font-bold">
         <div className="container mx-auto px-4">
-            <div className="grid md:grid-cols-4 gap-8 mb-12">
+            <div className="grid md:grid-cols-3 gap-8 mb-12">
                 <div className="space-y-4">
                     <div className="flex items-center gap-2">
                         <div className="bg-[#B20B13] text-[#E2D9BC] p-1 rounded-md border-2 border-[#2E130C]">
@@ -987,14 +987,6 @@ export default function PopeyStylePage() {
                     </p>
                 </div>
                 <div>
-                    <h4 className="font-titan text-[#2E130C] uppercase mb-4 text-sm">Programmes</h4>
-                    <ul className="space-y-2 text-sm text-[#2E130C]/80">
-                        <li><Link href="/emploi" className="hover:text-[#B20B13]">Trouver sa voie</Link></li>
-                        <li><Link href="/entrepreneur" className="hover:text-[#B20B13]">Lancer son activité</Link></li>
-                        <li><Link href="/mon-reseau-local/connexion" className="hover:text-[#B20B13]">Réseau Local</Link></li>
-                    </ul>
-                </div>
-                <div>
                     <h4 className="font-titan text-[#2E130C] uppercase mb-4 text-sm">Légal</h4>
                     <ul className="space-y-2 text-sm text-[#2E130C]/80">
                         <li><Link href="/legal/mentions" className="hover:text-[#B20B13]">Mentions Légales</Link></li>
@@ -1004,8 +996,8 @@ export default function PopeyStylePage() {
                 <div>
                     <h4 className="font-titan text-[#2E130C] uppercase mb-4 text-sm">Contact</h4>
                     <ul className="space-y-2 text-sm text-[#2E130C]/80">
-                        <li>hello@popey.academy</li>
-                        <li>Paris, France</li>
+                        <li>contact@popey.academy</li>
+                        <li>Dax, France</li>
                     </ul>
                 </div>
             </div>
