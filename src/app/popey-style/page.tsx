@@ -319,47 +319,72 @@ export default function PopeyStylePage() {
                </p>
             </div>
 
-            <div className="grid lg:grid-cols-2 gap-8 lg:gap-16 items-start max-w-6xl mx-auto">
-               
-               {/* Screen 1 */}
-               <div className="flex flex-col gap-8 group">
-                  <div className="relative transform transition-transform duration-500 group-hover:-translate-y-2">
-                     <div className="bg-[#E2D9BC] border-4 border-[#2E130C] rounded-[2rem] p-4 relative z-10 shadow-[8px_8px_0px_0px_#7A0000]">
-                        <div className="scale-[0.85] origin-top opacity-90 grayscale-[0.2]">
-                            <MysteryCardPreview />
-                        </div>
-                     </div>
-                  </div>
-                  <div className="space-y-4 text-center lg:text-left px-4">
-                     <div className="inline-flex items-center justify-center h-12 w-12 rounded-2xl bg-[#D2E8FF] text-[#2E130C] border-2 border-[#2E130C] mb-2 shadow-[4px_4px_0px_0px_#2E130C]">
-                        <span className="font-titan text-xl">1</span>
-                     </div>
-                     <h3 className="text-2xl font-titan text-[#E2D9BC]">Découvrez votre match</h3>
-                     <p className="text-[#E2D9BC]/70 text-lg leading-relaxed font-nunito font-bold">
-                        Popey détecte l'entrepreneur le plus pertinent pour vous. Vous voyez le potentiel business avant tout.
-                     </p>
-                  </div>
-               </div>
-
-               {/* Screen 2 */}
-               <div className="flex flex-col gap-8 group mt-12 lg:mt-0">
-                  <div className="relative transform transition-transform duration-500 group-hover:-translate-y-2">
-                     <div className="bg-[#D2E8FF] border-4 border-[#2E130C] rounded-[2rem] p-4 relative z-10 shadow-[8px_8px_0px_0px_#2E130C]">
-                        <div className="scale-[0.85] origin-top">
-                            <MatchCardPreview />
-                        </div>
-                     </div>
-                  </div>
-                  <div className="space-y-4 text-center lg:text-left px-4">
-                     <div className="inline-flex items-center justify-center h-12 w-12 rounded-2xl bg-[#B20B13] text-[#E2D9BC] border-2 border-[#E2D9BC] mb-2 shadow-[4px_4px_0px_0px_#E2D9BC]">
-                        <span className="font-titan text-xl">2</span>
-                     </div>
-                     <h3 className="text-2xl font-titan text-[#E2D9BC]">Action en un clic</h3>
-                     <p className="text-[#E2D9BC]/70 text-lg leading-relaxed font-nunito font-bold">
-                        Le profil est révélé. Échangez 5 minutes, partagez vos réseaux et créez de nouvelles opportunités.
-                     </p>
-                  </div>
-               </div>
+            <div className="max-w-4xl mx-auto">
+               <AnimatePresence mode="wait">
+                 {activeStep === 1 ? (
+                   <motion.div
+                     key="step1"
+                     initial={{ opacity: 0, x: -20 }}
+                     animate={{ opacity: 1, x: 0 }}
+                     exit={{ opacity: 0, x: -20 }}
+                     className="flex flex-col md:flex-row gap-8 items-center"
+                   >
+                      <div className="w-full md:w-1/2">
+                         <div className="bg-[#E2D9BC] border-4 border-[#2E130C] rounded-[2rem] p-4 relative z-10 shadow-[8px_8px_0px_0px_#7A0000] transform rotate-[-2deg]">
+                            <div className="scale-[0.85] origin-top opacity-90 grayscale-[0.2]">
+                                <MysteryCardPreview />
+                            </div>
+                         </div>
+                      </div>
+                      <div className="w-full md:w-1/2 space-y-6 text-center md:text-left">
+                         <div className="inline-flex items-center justify-center h-12 w-12 rounded-2xl bg-[#D2E8FF] text-[#2E130C] border-2 border-[#2E130C] mb-2 shadow-[4px_4px_0px_0px_#2E130C]">
+                            <span className="font-titan text-xl">1</span>
+                         </div>
+                         <h3 className="text-3xl font-titan text-[#E2D9BC]">Découvrez votre match</h3>
+                         <p className="text-[#E2D9BC]/80 text-lg leading-relaxed font-nunito font-bold">
+                            Popey détecte l'entrepreneur le plus pertinent pour vous. Vous voyez le potentiel business avant tout.
+                         </p>
+                         <Button 
+                           onClick={() => setActiveStep(2)}
+                           className="bg-[#B20B13] hover:bg-[#7A0000] text-[#E2D9BC] font-titan rounded-xl px-8 h-14 text-lg border-2 border-[#E2D9BC] shadow-[4px_4px_0px_0px_#E2D9BC] hover:translate-y-[2px] w-full md:w-auto animate-pulse"
+                         >
+                           DÉCOUVRIR QUI C'EST 🔓
+                         </Button>
+                      </div>
+                   </motion.div>
+                 ) : (
+                   <motion.div
+                     key="step2"
+                     initial={{ opacity: 0, x: 20 }}
+                     animate={{ opacity: 1, x: 0 }}
+                     className="flex flex-col md:flex-row gap-8 items-center"
+                   >
+                      <div className="w-full md:w-1/2">
+                         <div className="bg-[#D2E8FF] border-4 border-[#2E130C] rounded-[2rem] p-4 relative z-10 shadow-[8px_8px_0px_0px_#2E130C] transform rotate-[2deg]">
+                            <div className="scale-[0.85] origin-top">
+                                <MatchCardPreview />
+                            </div>
+                         </div>
+                      </div>
+                      <div className="w-full md:w-1/2 space-y-6 text-center md:text-left">
+                         <div className="inline-flex items-center justify-center h-12 w-12 rounded-2xl bg-[#B20B13] text-[#E2D9BC] border-2 border-[#E2D9BC] mb-2 shadow-[4px_4px_0px_0px_#E2D9BC]">
+                            <span className="font-titan text-xl">2</span>
+                         </div>
+                         <h3 className="text-3xl font-titan text-[#E2D9BC]">Action en un clic</h3>
+                         <p className="text-[#E2D9BC]/80 text-lg leading-relaxed font-nunito font-bold">
+                            Le profil est révélé. Échangez 5 minutes, partagez vos réseaux et créez de nouvelles opportunités.
+                         </p>
+                         <Link href="/inscription/spheres">
+                           <Button 
+                             className="bg-[#E2D9BC] text-[#2E130C] hover:bg-white font-titan rounded-xl px-8 h-14 text-lg border-4 border-[#2E130C] shadow-[4px_4px_0px_0px_#7A0000] hover:translate-y-[2px] w-full md:w-auto"
+                           >
+                             Je veux mon match 👉
+                           </Button>
+                         </Link>
+                      </div>
+                   </motion.div>
+                 )}
+               </AnimatePresence>
             </div>
 
             <div className="mt-20 text-center">
