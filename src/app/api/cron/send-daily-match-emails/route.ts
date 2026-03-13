@@ -96,9 +96,6 @@ async function handleSendEmails(request: Request) {
     if (matchError) throw matchError;
     
     // --- SELF-HEALING: If no matches found, attempt to generate them now ---
-    // DISABLED: User confirmed match generation is working fine. 
-    // If no matches found, it might be due to date mismatch or empty DB, but we strictly respect existing data.
-    /*
     if (!matches || matches.length === 0) {
         log(`[CRON] No matches found for ${todayStr}. Attempting RESCUE GENERATION...`);
         
@@ -119,7 +116,6 @@ async function handleSendEmails(request: Request) {
              log(`[CRON] Rescue Generation result: ${generationResult.message || 'No matches created'}.`);
         }
     }
-    */
 
     if (!matches || matches.length === 0) {
         log("[CRON] Still no matches found. Stopping.");
