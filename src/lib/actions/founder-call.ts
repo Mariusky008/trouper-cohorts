@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { revalidatePath } from "next/cache";
 
 /**
  * Creates a special "Founder Call Request" opportunity.
@@ -37,6 +38,9 @@ export async function notifyFounderCall(type: 'onboarding' | 'rescue') {
         tag: `founder_${type}`, // 'founder_onboarding' or 'founder_rescue'
         // match_id is null as this is a virtual match
     });
+
+    // 3. Revalidate Dashboard to update UI state immediately
+    revalidatePath("/mon-reseau-local/dashboard");
     
     return { success: true };
 
