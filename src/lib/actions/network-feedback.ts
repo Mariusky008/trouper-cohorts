@@ -19,13 +19,34 @@ export async function saveMatchFeedback(
     return { error: "Non authentifié" };
   }
 
+  // 0. Handle Virtual IDs (Founder Match / Teasers)
+  let finalReceiverId = receiverId;
+  let finalMatchId = matchId;
+  let finalTag = tag;
+
+  // If this is a Founder Match (virtual ID 'popey-founder'), we treat it as a self-feedback
+  if (receiverId === 'popey-founder') {
+      finalReceiverId = user.id; // Self-reference
+      // Ensure tag reflects it was a founder match if generic "completed" was passed
+      if (tag === 'completed' || tag === 'bof' || tag === 'bien' || tag === 'top') {
+          finalTag = `founder_rescue:${tag}`; 
+      }
+  }
+
+  // If matchId is a virtual string (not a UUID), set to null
+  // UUID regex check
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (matchId && !uuidRegex.test(matchId)) {
+      finalMatchId = undefined; // Set to undefined/null for DB
+  }
+
   // 1. Insert Feedback (User Context)
   const { error } = await supabase.from("match_feedback").insert({
-    match_id: matchId, // Can be null if not provided
+    match_id: finalMatchId, // Can be null if not provided
     giver_id: user.id,
-    receiver_id: receiverId,
+    receiver_id: finalReceiverId,
     rating,
-    tag,
+    tag: finalTag,
   });
 
   if (error) {
