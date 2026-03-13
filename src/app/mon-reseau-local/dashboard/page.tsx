@@ -45,15 +45,15 @@ export default async function DashboardHome() {
       {/* 1. HERO HEADER (STYLE "APP/TODAY") */}
       <div className="relative pt-8 pb-8 overflow-hidden">
          {/* Background Glow */}
-         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-blue-500/20 rounded-full blur-[100px] -z-10 pointer-events-none" />
+         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-[#B20B13]/10 rounded-full blur-[100px] -z-10 pointer-events-none" />
          
          <div className="text-center space-y-4">
-            <Badge className="bg-blue-500/10 text-blue-300 hover:bg-blue-500/20 border-blue-500/20 px-4 py-1.5 text-xs font-bold uppercase tracking-widest shadow-sm">
-               <Zap className="h-3 w-3 mr-2 text-blue-400" /> Dashboard Quotidien
+            <Badge className="bg-[#B20B13]/10 text-[#B20B13] hover:bg-[#B20B13]/20 border-[#B20B13]/20 px-4 py-1.5 text-xs font-bold uppercase tracking-widest shadow-sm">
+               <Zap className="h-3 w-3 mr-2 text-[#B20B13]" /> Dashboard Quotidien
             </Badge>
             
-            <h1 className="text-4xl md:text-6xl font-black text-white tracking-tighter leading-none">
-              Bonjour <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">{currentUserProfile?.display_name?.split(' ')[0] || "Champion"}.</span>
+            <h1 className="text-4xl md:text-6xl font-black text-[#2E130C] tracking-tighter leading-none font-titan">
+              Bonjour <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#B20B13] to-[#7A0000]">{currentUserProfile?.display_name?.split(' ')[0] || "Champion"}.</span>
             </h1>
          </div>
       </div>

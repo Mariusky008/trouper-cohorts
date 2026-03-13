@@ -128,15 +128,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   // The user input only complained about the NAME "Jean Dupont".
   
   return (
-    <div className="min-h-screen bg-[#0a0f1c] flex flex-col font-sans text-slate-200 selection:bg-blue-500/30 selection:text-blue-200">
+    <div className="min-h-screen bg-[#E2D9BC] flex flex-col font-sans text-[#2E130C] selection:bg-[#B20B13] selection:text-[#E2D9BC]">
       <ProfileCompletionModal />
       
       {/* --- TOP NAVIGATION BAR (DESKTOP & MOBILE) --- */}
-      <header className="fixed top-0 w-full bg-[#0a0f1c]/80 backdrop-blur-md border-b border-white/5 z-30 h-16 px-4 lg:px-8 flex items-center justify-between">
+      <header className="fixed top-0 w-full bg-[#E2D9BC]/90 backdrop-blur-md border-b-2 border-[#2E130C]/10 z-30 h-16 px-4 lg:px-8 flex items-center justify-between shadow-sm">
          {/* LEFT: LOGO */}
          <div className="flex items-center gap-3">
             <Link href="/mon-reseau-local/dashboard" className="flex items-center gap-2">
-              <div className="h-8 w-8 bg-blue-600 rounded-lg flex items-center justify-center text-white shadow-lg shadow-blue-900/20">
+              <div className="h-8 w-8 bg-[#B20B13] rounded-lg flex items-center justify-center text-[#E2D9BC] border-2 border-[#2E130C] shadow-[2px_2px_0px_0px_#2E130C]">
                 <Anchor className="h-5 w-5" />
               </div>
             </Link>
@@ -151,21 +151,21 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   key={item.href} 
                   href={item.href}
                   className={cn(
-                    "flex items-center gap-2 px-3 py-2 rounded-lg transition-all duration-200 relative group",
+                    "flex items-center gap-2 px-3 py-2 rounded-lg transition-all duration-200 relative group font-titan tracking-wide",
                     isActive 
-                      ? "text-blue-400 bg-blue-500/10" 
-                      : "text-slate-400 hover:text-white hover:bg-white/5"
+                      ? "text-[#B20B13] bg-[#B20B13]/10" 
+                      : "text-[#2E130C]/60 hover:text-[#2E130C] hover:bg-[#2E130C]/5"
                   )}
                 >
-                  <item.icon className={cn("h-4 w-4", isActive ? "text-blue-400" : "text-slate-500 group-hover:text-slate-300")} />
+                  <item.icon className={cn("h-4 w-4", isActive ? "text-[#B20B13]" : "text-[#2E130C]/60 group-hover:text-[#2E130C]")} />
                   <span className="text-sm font-bold">{item.label}</span>
                   {item.label === "Opportunités" && pendingCount > 0 && (
-                    <span className="bg-blue-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full shadow-lg shadow-blue-900/50">{pendingCount}</span>
+                    <span className="bg-[#B20B13] text-[#E2D9BC] text-[9px] font-bold px-1.5 py-0.5 rounded-full border border-[#2E130C] shadow-[1px_1px_0px_0px_#2E130C]">{pendingCount}</span>
                   )}
                   {isActive && (
                     <motion.div
                       layoutId="activeTabBottom"
-                      className="absolute bottom-0 left-2 right-2 h-0.5 bg-blue-500 rounded-full"
+                      className="absolute bottom-0 left-2 right-2 h-0.5 bg-[#B20B13] rounded-full"
                     />
                   )}
                 </Link>
@@ -176,29 +176,29 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
          {/* RIGHT: ACTIONS & PROFILE */}
          <div className="flex items-center gap-4">
             {/* Desktop Profile */}
-            <div className="hidden lg:flex items-center gap-4 pl-4 border-l border-white/5">
+            <div className="hidden lg:flex items-center gap-4 pl-4 border-l-2 border-[#2E130C]/10">
                 {/* POINTS BADGE */}
-                <div className="bg-[#1e293b] border border-white/10 px-3 py-1.5 rounded-lg flex items-center gap-2 shadow-sm">
-                    <Trophy className="h-4 w-4 text-yellow-400" />
+                <div className="bg-white border-2 border-[#2E130C]/10 px-3 py-1.5 rounded-lg flex items-center gap-2 shadow-[2px_2px_0px_0px_#2E130C]">
+                    <Trophy className="h-4 w-4 text-[#B20B13]" />
                     <div className="flex flex-col items-end leading-none">
-                        <span className="text-[9px] font-bold text-slate-500 uppercase">Points</span>
-                        <span className="text-sm font-black text-white">{points.toLocaleString()}</span>
+                        <span className="text-[9px] font-bold text-[#2E130C]/60 uppercase">Points</span>
+                        <span className="text-sm font-black text-[#2E130C]">{points.toLocaleString()}</span>
                     </div>
                 </div>
 
                 <div className="text-right hidden xl:block">
-                    <div className="text-xs font-bold text-white">{displayName}</div>
-                    <div className="text-[10px] text-slate-500 flex items-center justify-end gap-1">
-                        <ShieldCheck className="h-3 w-3 text-emerald-500" /> <span className="text-emerald-500 font-bold">{trustScore}/5</span>
+                    <div className="text-xs font-bold text-[#2E130C] font-titan tracking-wide">{displayName}</div>
+                    <div className="text-[10px] text-[#2E130C]/60 flex items-center justify-end gap-1 font-bold">
+                        <ShieldCheck className="h-3 w-3 text-[#B20B13]" /> <span className="text-[#B20B13]">{trustScore}/5</span>
                     </div>
                 </div>
                 <div className="relative">
                     <Avatar 
-                        className="h-9 w-9 border border-white/10 cursor-pointer hover:border-blue-500/50 transition-colors"
+                        className="h-9 w-9 border-2 border-[#2E130C] cursor-pointer hover:shadow-[2px_2px_0px_0px_#B20B13] transition-all"
                         onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
                     >
                       <AvatarImage src={avatarUrl} className="object-cover" />
-                      <AvatarFallback className="bg-slate-800 text-slate-400 text-xs">{initials}</AvatarFallback>
+                      <AvatarFallback className="bg-[#2E130C] text-[#E2D9BC] text-xs border-2 border-[#2E130C]">{initials}</AvatarFallback>
                     </Avatar>
 
                     <AnimatePresence>
@@ -207,22 +207,22 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                                 initial={{ opacity: 0, y: 10, scale: 0.95 }}
                                 animate={{ opacity: 1, y: 0, scale: 1 }}
                                 exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                                className="absolute top-full right-0 mt-2 w-56 bg-[#1e293b] border border-white/10 rounded-xl shadow-xl overflow-hidden z-50 p-1"
+                                className="absolute top-full right-0 mt-2 w-56 bg-white border-2 border-[#2E130C] rounded-xl shadow-[4px_4px_0px_0px_#2E130C] overflow-hidden z-50 p-1"
                             >
-                                <div className="px-3 py-2 border-b border-white/5 mb-1">
-                                    <p className="text-sm font-bold text-white truncate">{displayName}</p>
-                                    <p className="text-xs text-slate-500 truncate">{userProfile?.trade || "Membre"}</p>
+                                <div className="px-3 py-2 border-b-2 border-[#2E130C]/10 mb-1">
+                                    <p className="text-sm font-bold text-[#2E130C] truncate font-titan">{displayName}</p>
+                                    <p className="text-xs text-[#2E130C]/60 truncate font-bold">{userProfile?.trade || "Membre"}</p>
                                 </div>
-                                <Link href="/mon-reseau-local/dashboard/profile" className="flex items-center gap-2 px-3 py-2 text-sm text-slate-300 hover:text-white hover:bg-white/5 rounded-lg transition-colors">
+                                <Link href="/mon-reseau-local/dashboard/profile" className="flex items-center gap-2 px-3 py-2 text-sm text-[#2E130C]/80 hover:text-[#2E130C] hover:bg-[#2E130C]/5 rounded-lg transition-colors font-bold">
                                     <User className="h-4 w-4" /> Mon Profil
                                 </Link>
-                                <Link href="/mon-reseau-local/dashboard/settings" className="flex items-center gap-2 px-3 py-2 text-sm text-slate-300 hover:text-white hover:bg-white/5 rounded-lg transition-colors">
+                                <Link href="/mon-reseau-local/dashboard/settings" className="flex items-center gap-2 px-3 py-2 text-sm text-[#2E130C]/80 hover:text-[#2E130C] hover:bg-[#2E130C]/5 rounded-lg transition-colors font-bold">
                                     <Settings className="h-4 w-4" /> Paramètres
                                 </Link>
-                                <div className="h-px bg-white/5 my-1" />
+                                <div className="h-0.5 bg-[#2E130C]/10 my-1" />
                                 <button 
                                     onClick={handleSignOut}
-                                    className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-400 hover:bg-red-500/10 rounded-lg transition-colors text-left"
+                                    className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[#B20B13] hover:bg-[#B20B13]/10 rounded-lg transition-colors text-left font-bold"
                                 >
                                     <LogOut className="h-4 w-4" /> Se déconnecter
                                 </button>
@@ -235,17 +235,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             {/* Mobile Actions */}
             <div className="lg:hidden flex items-center gap-2">
                 {/* Mobile Points Badge */}
-                <div className="bg-[#1e293b] border border-white/10 px-2 py-1 rounded-lg flex items-center gap-1.5 shadow-sm mr-1">
-                    <Trophy className="h-3.5 w-3.5 text-yellow-400" />
-                    <span className="text-xs font-black text-white">{points.toLocaleString()}</span>
+                <div className="bg-white border-2 border-[#2E130C]/10 px-2 py-1 rounded-lg flex items-center gap-1.5 shadow-[2px_2px_0px_0px_#2E130C] mr-1">
+                    <Trophy className="h-3.5 w-3.5 text-[#B20B13]" />
+                    <span className="text-xs font-black text-[#2E130C]">{points.toLocaleString()}</span>
                 </div>
                 
-                <Button size="icon" variant="ghost" className="relative hover:bg-white/5">
-                  <Bell className="h-5 w-5 text-slate-400" />
-                  <span className="absolute top-2 right-2 h-2 w-2 bg-red-500 rounded-full border border-[#0a0f1c]"></span>
+                <Button size="icon" variant="ghost" className="relative hover:bg-[#2E130C]/5">
+                  <Bell className="h-5 w-5 text-[#2E130C]/60" />
+                  <span className="absolute top-2 right-2 h-2 w-2 bg-[#B20B13] rounded-full border border-[#E2D9BC]"></span>
                 </Button>
-                <Button size="icon" variant="ghost" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="hover:bg-white/5">
-                  <Menu className="h-6 w-6 text-white" />
+                <Button size="icon" variant="ghost" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="hover:bg-[#2E130C]/5">
+                  <Menu className="h-6 w-6 text-[#2E130C]" />
                 </Button>
             </div>
          </div>
@@ -258,24 +258,24 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
-            className="fixed inset-0 top-16 bg-[#0a0f1c] z-50 p-4 flex flex-col gap-2 lg:hidden border-t border-white/5"
+            className="fixed inset-0 top-16 bg-[#E2D9BC] z-50 p-4 flex flex-col gap-2 lg:hidden border-t-2 border-[#2E130C]/10"
           >
             {NAV_ITEMS.map((item) => (
               <Link 
                 key={item.href} 
                 href={item.href}
                 className={cn(
-                  "flex items-center gap-4 p-4 rounded-xl transition-colors",
+                  "flex items-center gap-4 p-4 rounded-xl transition-colors font-titan tracking-wide",
                   pathname === item.href 
-                    ? "bg-blue-600/10 text-blue-400 font-bold" 
-                    : "text-slate-400 font-medium hover:bg-white/5"
+                    ? "bg-[#B20B13]/10 text-[#B20B13] border border-[#B20B13]/20" 
+                    : "text-[#2E130C]/60 hover:bg-[#2E130C]/5"
                 )}
               >
-                <div className={cn("p-2 rounded-lg", pathname === item.href ? "bg-blue-600/20 shadow-sm" : "bg-white/5")}>
-                  <item.icon className={cn("h-5 w-5", pathname === item.href ? "text-blue-400" : "text-slate-500")} />
+                <div className={cn("p-2 rounded-lg", pathname === item.href ? "bg-[#B20B13]/20 shadow-sm" : "bg-[#2E130C]/5")}>
+                  <item.icon className={cn("h-5 w-5", pathname === item.href ? "text-[#B20B13]" : "text-[#2E130C]/60")} />
                 </div>
                 <span className="text-lg">{item.label}</span>
-                {pathname === item.href && <ChevronRight className="ml-auto h-5 w-5 text-blue-400" />}
+                {pathname === item.href && <ChevronRight className="ml-auto h-5 w-5 text-[#B20B13]" />}
               </Link>
             ))}
             
@@ -283,14 +283,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <Link 
                 href="/mon-reseau-local/dashboard/profile"
                 className={cn(
-                  "flex items-center gap-4 p-4 rounded-xl transition-colors mt-2",
+                  "flex items-center gap-4 p-4 rounded-xl transition-colors mt-2 font-titan tracking-wide",
                   pathname === "/mon-reseau-local/dashboard/profile" 
-                    ? "bg-blue-600/10 text-blue-400 font-bold" 
-                    : "text-slate-400 font-medium hover:bg-white/5"
+                    ? "bg-[#B20B13]/10 text-[#B20B13] border border-[#B20B13]/20" 
+                    : "text-[#2E130C]/60 hover:bg-[#2E130C]/5"
                 )}
               >
-                <div className={cn("p-2 rounded-lg", pathname === "/mon-reseau-local/dashboard/profile" ? "bg-blue-600/20 shadow-sm" : "bg-white/5")}>
-                  <User className={cn("h-5 w-5", pathname === "/mon-reseau-local/dashboard/profile" ? "text-blue-400" : "text-slate-500")} />
+                <div className={cn("p-2 rounded-lg", pathname === "/mon-reseau-local/dashboard/profile" ? "bg-[#B20B13]/20 shadow-sm" : "bg-[#2E130C]/5")}>
+                  <User className={cn("h-5 w-5", pathname === "/mon-reseau-local/dashboard/profile" ? "text-[#B20B13]" : "text-[#2E130C]/60")} />
                 </div>
                 <span className="text-lg">Mon Profil</span>
             </Link>
@@ -299,33 +299,33 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <Link 
                 href="/mon-reseau-local/dashboard/settings"
                 className={cn(
-                  "flex items-center gap-4 p-4 rounded-xl transition-colors",
+                  "flex items-center gap-4 p-4 rounded-xl transition-colors font-titan tracking-wide",
                   pathname === "/mon-reseau-local/dashboard/settings" 
-                    ? "bg-blue-600/10 text-blue-400 font-bold" 
-                    : "text-slate-400 font-medium hover:bg-white/5"
+                    ? "bg-[#B20B13]/10 text-[#B20B13] border border-[#B20B13]/20" 
+                    : "text-[#2E130C]/60 hover:bg-[#2E130C]/5"
                 )}
               >
-                <div className={cn("p-2 rounded-lg", pathname === "/mon-reseau-local/dashboard/settings" ? "bg-blue-600/20 shadow-sm" : "bg-white/5")}>
-                  <Settings className={cn("h-5 w-5", pathname === "/mon-reseau-local/dashboard/settings" ? "text-blue-400" : "text-slate-500")} />
+                <div className={cn("p-2 rounded-lg", pathname === "/mon-reseau-local/dashboard/settings" ? "bg-[#B20B13]/20 shadow-sm" : "bg-[#2E130C]/5")}>
+                  <Settings className={cn("h-5 w-5", pathname === "/mon-reseau-local/dashboard/settings" ? "text-[#B20B13]" : "text-[#2E130C]/60")} />
                 </div>
                 <span className="text-lg">Paramètres</span>
             </Link>
 
-            <div className="mt-auto border-t border-white/5 pt-6">
-                <Link href="/mon-reseau-local/dashboard/profile" className="flex items-center gap-4 p-4 bg-white/5 rounded-xl border border-white/5 active:scale-95 transition-transform">
-                  <Avatar className="h-12 w-12 border border-white/10">
+            <div className="mt-auto border-t-2 border-[#2E130C]/10 pt-6">
+                <Link href="/mon-reseau-local/dashboard/profile" className="flex items-center gap-4 p-4 bg-white rounded-xl border-2 border-[#2E130C]/10 active:scale-95 transition-transform shadow-[2px_2px_0px_0px_#2E130C]">
+                  <Avatar className="h-12 w-12 border-2 border-[#2E130C]">
                     <AvatarImage src={avatarUrl} className="object-cover" />
-                    <AvatarFallback className="bg-slate-800 text-slate-400">{initials}</AvatarFallback>
+                    <AvatarFallback className="bg-[#2E130C] text-[#E2D9BC]">{initials}</AvatarFallback>
                   </Avatar>
                   <div>
-                    <div className="font-bold text-lg text-white">{displayName}</div>
-                    <div className="text-slate-400">{userProfile?.trade || "Membre"} • {userProfile?.city || "Réseau"}</div>
+                    <div className="font-titan text-lg text-[#2E130C]">{displayName}</div>
+                    <div className="text-[#2E130C]/60 font-bold text-sm">{userProfile?.trade || "Membre"} • {userProfile?.city || "Réseau"}</div>
                   </div>
-                  <ChevronRight className="ml-auto h-5 w-5 text-slate-500" />
+                  <ChevronRight className="ml-auto h-5 w-5 text-[#2E130C]/40" />
                 </Link>
                 <Button 
                   variant="destructive" 
-                  className="w-full mt-4 h-12 rounded-xl font-bold bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20"
+                  className="w-full mt-4 h-12 rounded-xl font-bold bg-[#B20B13]/10 hover:bg-[#B20B13]/20 text-[#B20B13] border border-[#B20B13]/20"
                   onClick={handleSignOut}
                 >
                   <LogOut className="mr-2 h-4 w-4" /> Se déconnecter
