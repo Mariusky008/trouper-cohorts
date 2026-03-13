@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin"; // Import admin client
 import { unstable_noStore as noStore } from "next/cache";
 
 export async function getDailyMatches() {
@@ -291,8 +292,10 @@ export async function getDailyMatches() {
         .ilike('tag', 'founder_%') // Match any founder feedback (onboarding or rescue)
         .gte('created_at', safeTodaySearchTimestamp); // Feedback created today (Paris Time adjusted)
         
-      // Also check analytics_events for robustness, in case match_feedback insert failed
-      const { count: analyticsCount } = await supabase
+      // Also check analytics_events for robustness, in case match_feedback insert failed.
+      // We use ADMIN CLIENT to bypass potential RLS on analytics_events (users often can't read their own analytics).
+      const supabaseAdmin = createAdminClient();
+      const { count: analyticsCount } = await supabaseAdmin
         .from('analytics_events')
         .select('*', { count: 'exact', head: true })
         .eq('user_id', user.id)
