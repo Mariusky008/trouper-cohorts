@@ -288,7 +288,7 @@ export async function getDailyMatches() {
         .from('match_feedback')
         .select('*', { count: 'exact', head: true })
         .eq('giver_id', user.id)
-        .eq('receiver_id', 'popey-founder')
+        .ilike('tag', 'founder_%') // Match any founder feedback (onboarding or rescue)
         .gte('created_at', safeTodaySearchTimestamp); // Feedback created today (Paris Time adjusted)
         
       if (feedbackCount && feedbackCount > 0) {

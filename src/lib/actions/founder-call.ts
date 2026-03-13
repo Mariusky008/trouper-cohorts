@@ -30,14 +30,22 @@ export async function notifyFounderCall(type: 'onboarding' | 'rescue') {
     if (error) throw error;
 
     // 2. Create Match Feedback to mark "Daily Mission" as completed
-    // This ensures the Founder Card disappears after refresh
-    await supabase.from("match_feedback").insert({
+    // This ensures the Founder Card disappears after refresh.
+    // NOTE: We use user.id as receiver_id to satisfy Foreign Key constraints (UUID),
+    // as 'popey-founder' is not a valid UUID. We distinguish this via the tag.
+    const { error: feedbackError } = await supabase.from("match_feedback").insert({
         giver_id: user.id,
-        receiver_id: 'popey-founder',
-        rating: 5, // Default max score for founder interaction
+        receiver_id: user.id, // Self-reference to satisfy FK
+        rating: 5, 
         tag: `founder_${type}`, // 'founder_onboarding' or 'founder_rescue'
         // match_id is null as this is a virtual match
     });
+
+    if (feedbackError) {
+        console.error("Error saving founder feedback:", feedbackError);
+        // We don't throw here to avoid breaking the UI flow if analytics worked,
+        // but it means the card might reappear.
+    }
 
     // 3. Revalidate Dashboard to update UI state immediately
     revalidatePath("/mon-reseau-local/dashboard");
