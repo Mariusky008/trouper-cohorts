@@ -291,7 +291,19 @@ export async function getDailyMatches() {
         .ilike('tag', 'founder_%') // Match any founder feedback (onboarding or rescue)
         .gte('created_at', safeTodaySearchTimestamp); // Feedback created today (Paris Time adjusted)
         
-      if (feedbackCount && feedbackCount > 0) {
+      // Also check analytics_events for robustness, in case match_feedback insert failed
+      const { count: analyticsCount } = await supabase
+        .from('analytics_events')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id)
+        .eq('event_type', 'founder_call_request')
+        .gte('created_at', safeTodaySearchTimestamp);
+
+      if ((feedbackCount && feedbackCount > 0) || (analyticsCount && analyticsCount > 0)) {
+          // Already completed the founder match today!
+          // Do not inject it. Return empty or next future match.
+          // return sortedMatches.length > 0 ? [sortedMatches[0]] : [];
+      } else if (sortedMatches.length === 0) {
           // Already completed the founder match today!
           // Do not inject it. Return empty or next future match.
           // return sortedMatches.length > 0 ? [sortedMatches[0]] : [];
