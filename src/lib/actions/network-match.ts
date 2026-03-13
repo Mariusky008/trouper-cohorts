@@ -284,21 +284,29 @@ export async function getDailyMatches() {
       
       // CHECK IF ALREADY COMPLETED (Feedback exists for today)
       // We look for a self-feedback (giver=receiver) which is the marker for Founder/Rescue mission completion
-      const { count: feedbackCount } = await supabase
+      const { count: feedbackCount, error: feedbackError } = await supabase
         .from('match_feedback')
         .select('*', { count: 'exact', head: true })
         .eq('giver_id', user.id)
         .eq('receiver_id', user.id) // Self-feedback marker
         .gte('created_at', safeTodaySearchTimestamp); 
         
+      if (feedbackError) {
+          console.error("Error fetching feedback count:", feedbackError);
+      }
+        
       // Also check analytics_events for robustness
       // We use the same 'supabase' client (user context) - requires RLS policy for SELECT
-      const { count: analyticsCount } = await supabase
+      const { count: analyticsCount, error: analyticsError } = await supabase
         .from('analytics_events')
         .select('*', { count: 'exact', head: true })
         .eq('user_id', user.id)
         .eq('event_type', 'founder_call_request')
         .gte('created_at', safeTodaySearchTimestamp);
+        
+      if (analyticsError) {
+          console.error("Error fetching analytics count:", analyticsError);
+      }
 
       if ((feedbackCount && feedbackCount > 0) || (analyticsCount && analyticsCount > 0)) {
           // Already completed.
