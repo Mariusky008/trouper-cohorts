@@ -827,6 +827,97 @@ export default function PopeyStylePage() {
         </div>
       </section>
 
+      {/* --- 5b. TRUST SCORE SECTION (NEW) --- */}
+      <section className="py-24 bg-[#E2D9BC] border-b-4 border-[#2E130C] relative overflow-hidden">
+         <div className="container mx-auto px-4 relative z-10">
+            <div className="flex flex-col md:flex-row gap-16 items-center max-w-6xl mx-auto">
+               
+               {/* LEFT: VISUAL */}
+               <div className="w-full md:w-1/2 relative">
+                  <div className="bg-white rounded-[2.5rem] p-8 border-4 border-[#2E130C] shadow-[8px_8px_0px_0px_#2E130C] relative z-10 transform rotate-[-2deg]">
+                      <div className="text-center mb-8">
+                          <div className="inline-block relative">
+                             <div className="text-8xl font-titan text-[#B20B13] drop-shadow-sm">4.6</div>
+                             <div className="absolute -top-4 -right-8 bg-[#FFD700] text-[#2E130C] text-xs font-black uppercase px-2 py-1 rounded-full border-2 border-[#2E130C] rotate-12">Top 10%</div>
+                          </div>
+                          <div className="flex justify-center gap-2 mt-2 text-[#FFD700]">
+                             {[1,2,3,4,5].map(i => <Star key={i} className="h-8 w-8 fill-current stroke-[#2E130C] stroke-2" />)}
+                          </div>
+                          <p className="text-[#2E130C]/60 font-bold font-poppins uppercase tracking-widest mt-2">Score de Confiance</p>
+                      </div>
+                      
+                      <div className="space-y-4">
+                          <div className="flex items-center justify-between p-4 bg-[#D2E8FF]/30 rounded-2xl border-2 border-[#2E130C]/10">
+                              <div className="flex items-center gap-3">
+                                  <div className="bg-[#D2E8FF] p-2 rounded-xl border-2 border-[#2E130C] text-[#2E130C]"><CheckCircle2 className="h-5 w-5" /></div>
+                                  <span className="font-titan text-[#2E130C]">Ponctualité</span>
+                              </div>
+                              <span className="font-black text-[#2E130C]">100%</span>
+                          </div>
+                          <div className="flex items-center justify-between p-4 bg-[#E2D9BC]/30 rounded-2xl border-2 border-[#2E130C]/10">
+                              <div className="flex items-center gap-3">
+                                  <div className="bg-[#E2D9BC] p-2 rounded-xl border-2 border-[#2E130C] text-[#2E130C]"><Handshake className="h-5 w-5" /></div>
+                                  <span className="font-titan text-[#2E130C]">Fiabilité</span>
+                              </div>
+                              <span className="font-black text-[#2E130C]">4.8/5</span>
+                          </div>
+                      </div>
+                  </div>
+                  
+                  {/* Decorative element behind */}
+                  <div className="absolute -inset-4 bg-[#2E130C] rounded-[3rem] transform rotate-[3deg] opacity-10 -z-10"></div>
+               </div>
+
+               {/* RIGHT: CONTENT */}
+               <div className="w-full md:w-1/2 space-y-10">
+                  <div>
+                      <Badge className="bg-[#2E130C] text-[#E2D9BC] border-2 border-[#2E130C] mb-6 uppercase tracking-widest px-3 py-1 font-titan">Réputation</Badge>
+                      <h2 className="text-4xl md:text-5xl font-titan text-[#2E130C] mb-6 leading-tight">
+                          Votre réputation est votre actif le <span className="text-[#B20B13] underline decoration-wavy">plus précieux.</span>
+                      </h2>
+                      <p className="text-xl text-[#2E130C]/80 font-poppins font-bold">
+                          Fini les "je te rappelle" qui n'arrivent jamais. Sur Mon Réseau Local, tout est mesuré.
+                      </p>
+                  </div>
+
+                  <div className="space-y-8">
+                      <div className="flex gap-6">
+                          <div className="shrink-0 bg-[#B20B13] text-[#E2D9BC] h-14 w-14 rounded-2xl border-2 border-[#2E130C] flex items-center justify-center shadow-[4px_4px_0px_0px_#2E130C]">
+                              <Trophy className="h-7 w-7" />
+                          </div>
+                          <div>
+                              <h3 className="text-xl font-titan text-[#2E130C] mb-2">Hiérarchie de Qualité</h3>
+                              <p className="text-[#2E130C]/70 font-poppins font-bold leading-relaxed">
+                                  Ici, la fiabilité est récompensée. Plus vous jouez le jeu, plus l'algorithme vous matche avec les membres 'Elite'.
+                              </p>
+                          </div>
+                      </div>
+
+                      <div className="flex gap-6">
+                          <div className="shrink-0 bg-[#2E130C] text-[#E2D9BC] h-14 w-14 rounded-2xl border-2 border-[#E2D9BC] flex items-center justify-center shadow-[4px_4px_0px_0px_#B20B13]">
+                              <ShieldCheck className="h-7 w-7" />
+                          </div>
+                          <div>
+                              <h3 className="text-xl font-titan text-[#2E130C] mb-2">Accès Privilégié</h3>
+                              <p className="text-[#2E130C]/70 font-poppins font-bold leading-relaxed">
+                                  Un score de 4.5/5 vous donne accès aux décideurs les plus influents de la région.
+                              </p>
+                          </div>
+                      </div>
+                  </div>
+
+                  <div className="pt-4">
+                      <Link href="/inscription/spheres">
+                        <Button className="h-14 px-8 bg-transparent hover:bg-[#2E130C]/5 text-[#2E130C] font-titan rounded-xl text-lg border-4 border-[#2E130C] shadow-[4px_4px_0px_0px_#2E130C] hover:translate-y-[2px] transition-all">
+                            Augmenter mon score
+                        </Button>
+                      </Link>
+                  </div>
+               </div>
+            </div>
+         </div>
+      </section>
+
       {/* --- 4. GAMIFICATION REWARDS --- */}
       <section className="py-24 bg-[#E2D9BC] border-b-4 border-[#2E130C]">
          <div className="container mx-auto px-4">
