@@ -284,7 +284,11 @@ export async function getDailyMatches() {
       
       // CHECK IF ALREADY COMPLETED (Feedback exists for today)
       // We look for a self-feedback (giver=receiver) which is the marker for Founder/Rescue mission completion
-      const { count: feedbackCount, error: feedbackError } = await supabase
+      
+      // Use Admin Client for read to bypass RLS in case user can't read own feedback (unlikely but safe)
+      const supabaseAdmin = createAdminClient();
+      
+      const { count: feedbackCount, error: feedbackError } = await supabaseAdmin
         .from('match_feedback')
         .select('*', { count: 'exact', head: true })
         .eq('giver_id', user.id)
@@ -296,8 +300,7 @@ export async function getDailyMatches() {
       }
         
       // Also check analytics_events for robustness
-      // We use the same 'supabase' client (user context) - requires RLS policy for SELECT
-      const { count: analyticsCount, error: analyticsError } = await supabase
+      const { count: analyticsCount, error: analyticsError } = await supabaseAdmin
         .from('analytics_events')
         .select('*', { count: 'exact', head: true })
         .eq('user_id', user.id)
