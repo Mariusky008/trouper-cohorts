@@ -82,6 +82,12 @@ async function handleSendEmails(request: Request) {
     }
 
     // 3. Fetch Matches for Target Date
+    // IMPORTANT: Fix date query to use the exact date string format from DB
+    // In DB it is 'YYYY-MM-DD', matches are created with this exact string.
+    
+    // Debug: Log the query we are about to make
+    log(`[CRON] Querying matches for date: '${todayStr}'`);
+
     let { data: matches, error: matchError } = await supabase
         .from('network_matches')
         .select('*')
