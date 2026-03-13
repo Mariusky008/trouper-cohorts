@@ -40,8 +40,11 @@ export async function saveMatchFeedback(
       finalMatchId = undefined; // Set to undefined/null for DB
   }
 
-  // 1. Insert Feedback (User Context)
-  const { error } = await supabase.from("match_feedback").insert({
+  // 1. Insert Feedback (Admin Context)
+  // Use Admin Client to bypass RLS policies if user policies are not set up correctly
+  const adminClient = createAdminClient();
+  
+  const { error } = await adminClient.from("match_feedback").insert({
     match_id: finalMatchId, // Can be null if not provided
     giver_id: user.id,
     receiver_id: finalReceiverId,
@@ -56,7 +59,6 @@ export async function saveMatchFeedback(
 
   // 2. Update Match Status (Admin Context to bypass RLS)
   if (matchId) {
-    const adminClient = createAdminClient();
     const { error: updateError } = await adminClient
       .from("network_matches")
       .update({ status: 'met' })
