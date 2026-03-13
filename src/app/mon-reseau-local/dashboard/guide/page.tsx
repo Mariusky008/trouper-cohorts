@@ -107,13 +107,13 @@ export default function MarketPage() {
       {/* HEADER */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div className="space-y-4">
-            <Badge className="bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20 border-emerald-500/20 uppercase tracking-widest px-3 py-1">
+            <Badge className="bg-[#B20B13]/10 text-[#B20B13] hover:bg-[#B20B13]/20 border-[#B20B13]/20 uppercase tracking-widest px-3 py-1">
             Marché Public
             </Badge>
-            <h1 className="text-3xl md:text-5xl font-black text-white tracking-tight leading-tight">
-            Opportunités <span className="text-emerald-400">du Réseau</span>
+            <h1 className="text-3xl md:text-5xl font-black text-[#2E130C] tracking-tight leading-tight">
+            Opportunités <span className="text-[#B20B13]">du Réseau</span>
             </h1>
-            <p className="text-xl text-slate-400 leading-relaxed max-w-2xl">
+            <p className="text-xl text-stone-600 leading-relaxed max-w-2xl">
             Découvrez les opportunités partagées par la communauté. <br/>
             Utilisez vos crédits pour accéder aux mises en relation qualifiées.
             </p>
@@ -121,13 +121,13 @@ export default function MarketPage() {
 
         {/* User Credits */}
         <div className="flex flex-col sm:flex-row items-end gap-4">
-            <div className="bg-[#1e293b]/50 backdrop-blur-md border border-white/5 rounded-2xl p-4 flex items-center gap-4">
-                <div className="h-12 w-12 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-400 border border-emerald-500/20">
+            <div className="bg-white border border-stone-200 rounded-2xl p-4 flex items-center gap-4 shadow-sm">
+                <div className="h-12 w-12 rounded-xl bg-[#B20B13]/10 flex items-center justify-center text-[#B20B13] border border-[#B20B13]/20">
                     <ShoppingBag className="h-6 w-6" />
                 </div>
                 <div>
-                    <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">Vos Crédits</div>
-                    <div className="text-2xl font-black text-white">{userPoints} pts</div>
+                    <div className="text-xs font-bold text-stone-500 uppercase tracking-wider">Vos Crédits</div>
+                    <div className="text-2xl font-black text-[#2E130C]">{userPoints} pts</div>
                 </div>
                 <CreditPackDialog />
             </div>
@@ -142,23 +142,23 @@ export default function MarketPage() {
       {/* FILTERS */}
       <div className="flex flex-col sm:flex-row gap-4 w-full">
          <div className="relative flex-1">
-            <Search className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+            <Search className="absolute left-3 top-3 h-4 w-4 text-stone-400" />
             <Input 
                 placeholder="Rechercher une opportunité..." 
-                className="pl-10 h-10 bg-[#1e293b] border-slate-700 text-white placeholder:text-slate-500 rounded-xl w-full"
+                className="pl-10 h-10 bg-white border-stone-200 text-[#2E130C] placeholder:text-stone-400 rounded-xl w-full focus:ring-[#B20B13]/20 focus:border-[#B20B13]/50"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
             />
          </div>
-         <div className="flex items-center gap-4 bg-[#1e293b]/30 p-2 rounded-2xl border border-white/5 w-fit shrink-0">
-            <div className="h-10 w-10 bg-white/5 rounded-xl flex items-center justify-center text-slate-400">
+         <div className="flex items-center gap-4 bg-white p-2 rounded-2xl border border-stone-200 w-fit shrink-0 shadow-sm">
+            <div className="h-10 w-10 bg-stone-100 rounded-xl flex items-center justify-center text-stone-500">
                 <MapPin className="h-5 w-5" />
             </div>
             <Select value={selectedCity} onValueChange={setSelectedCity}>
-                <SelectTrigger className="w-[180px] border-none bg-transparent text-white font-bold focus:ring-0">
+                <SelectTrigger className="w-[180px] border-none bg-transparent text-[#2E130C] font-bold focus:ring-0">
                     <SelectValue placeholder="Filtrer par ville" />
                 </SelectTrigger>
-                <SelectContent className="bg-[#1e293b] border-white/10 text-white">
+                <SelectContent className="bg-white border-stone-200 text-[#2E130C]">
                     <SelectItem value="all">Toutes les villes</SelectItem>
                     <SelectItem value="bab">Bayonne-Anglet-Biarritz</SelectItem>
                     <SelectItem value="dax">Le Grand Dax</SelectItem>
@@ -172,16 +172,16 @@ export default function MarketPage() {
       {/* MARKET GRID */}
       {loading ? (
           <div className="py-20 flex justify-center">
-              <Loader2 className="h-10 w-10 text-emerald-500 animate-spin" />
+              <Loader2 className="h-10 w-10 text-[#B20B13] animate-spin" />
           </div>
       ) : filteredOpportunities.length === 0 ? (
-          <div className="bg-[#1e293b]/30 border border-white/5 rounded-3xl p-12 text-center space-y-6">
-              <div className="h-24 w-24 bg-slate-800/50 rounded-full flex items-center justify-center mx-auto">
-                  <ShoppingBag className="h-10 w-10 text-slate-600" />
+          <div className="bg-white border border-stone-200 rounded-3xl p-12 text-center space-y-6 shadow-sm">
+              <div className="h-24 w-24 bg-stone-100 rounded-full flex items-center justify-center mx-auto">
+                  <ShoppingBag className="h-10 w-10 text-stone-400" />
               </div>
               <div>
-                  <h3 className="text-xl font-bold text-white mb-2">Le marché est calme...</h3>
-                  <p className="text-slate-400 max-w-md mx-auto">
+                  <h3 className="text-xl font-bold text-[#2E130C] mb-2">Le marché est calme...</h3>
+                  <p className="text-stone-500 max-w-md mx-auto">
                       Aucune opportunité ne correspond à vos critères. Revenez plus tard ou soyez le premier à en publier une !
                   </p>
               </div>
@@ -195,7 +195,7 @@ export default function MarketPage() {
                 return (
                     <div 
                         key={opp.id}
-                        className="group bg-[#1e293b]/50 backdrop-blur-md rounded-3xl p-6 border border-white/5 hover:border-emerald-500/30 transition-all hover:shadow-[0_0_30px_rgba(16,185,129,0.1)] relative overflow-hidden flex flex-col"
+                        className="group bg-white rounded-3xl p-6 border border-stone-200 hover:border-[#B20B13]/30 transition-all hover:shadow-[0_0_30px_rgba(178,11,19,0.1)] relative overflow-hidden flex flex-col shadow-sm"
                     >
                         {/* Type Badge */}
                         <div className="flex justify-between items-start mb-4">
@@ -206,45 +206,45 @@ export default function MarketPage() {
                                     </Badge>
                                 )}
                                 <Badge variant="outline" className={cn(
-                                    "border-white/10 font-bold px-3 py-1.5 rounded-lg",
-                                    typeInfo?.bg?.replace('bg-', 'bg-').replace('-100', '-500/20') || "bg-slate-500/20",
-                                    typeInfo?.color?.replace('text-', 'text-').replace('-600', '-300') || "text-slate-300"
+                                    "border-stone-200 font-bold px-3 py-1.5 rounded-lg",
+                                    typeInfo?.bg?.replace('bg-', 'bg-').replace('-100', '-100') || "bg-stone-100",
+                                    typeInfo?.color?.replace('text-', 'text-').replace('-600', '-600') || "text-stone-600"
                                 )}>
                                     {typeInfo?.label || opp.type}
                                 </Badge>
                             </div>
-                            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider bg-black/20 px-2 py-1 rounded-md">
+                            <span className="text-xs font-bold text-stone-500 uppercase tracking-wider bg-stone-100 px-2 py-1 rounded-md">
                                 {opp.date}
                             </span>
                         </div>
 
                         {/* Title (Hameçon) */}
-                        <h3 className="text-xl font-black text-white mb-3 leading-tight group-hover:text-emerald-300 transition-colors line-clamp-2">
+                        <h3 className="text-xl font-black text-[#2E130C] mb-3 leading-tight group-hover:text-[#B20B13] transition-colors line-clamp-2">
                             {opp.description}
                         </h3>
 
                         {/* Price Tag */}
                         <div className="flex items-center gap-2 mb-6">
-                            <span className="text-3xl font-black text-emerald-400">{opp.points}</span>
-                            <span className="text-xs font-bold text-emerald-600/70 uppercase tracking-widest mt-2">Crédits</span>
+                            <span className="text-3xl font-black text-[#B20B13]">{opp.points}</span>
+                            <span className="text-xs font-bold text-[#B20B13]/70 uppercase tracking-widest mt-2">Crédits</span>
                         </div>
 
-                        <div className="mt-auto pt-6 border-t border-white/5 flex items-center justify-between gap-4">
+                        <div className="mt-auto pt-6 border-t border-stone-100 flex items-center justify-between gap-4">
                             {/* Giver Info */}
                             <div className="flex items-center gap-3">
-                                <Avatar className="h-10 w-10 border-2 border-slate-800">
+                                <Avatar className="h-10 w-10 border-2 border-stone-100">
                                     <AvatarImage src={opp.partner?.avatar_url || undefined} />
-                                    <AvatarFallback className="bg-slate-700 font-bold text-slate-300">
+                                    <AvatarFallback className="bg-stone-200 font-bold text-stone-500">
                                         {opp.partner?.display_name?.[0]}
                                     </AvatarFallback>
                                 </Avatar>
                                 <div>
-                                    <div className="text-xs font-bold text-slate-400 uppercase">Proposé par</div>
-                                    <div className="text-sm font-bold text-white truncate max-w-[100px]">
+                                    <div className="text-xs font-bold text-stone-400 uppercase">Proposé par</div>
+                                    <div className="text-sm font-bold text-[#2E130C] truncate max-w-[100px]">
                                         {opp.partner?.display_name}
                                     </div>
                                     {opp.partner?.city && (
-                                        <div className="text-[10px] text-slate-500 flex items-center gap-1">
+                                        <div className="text-[10px] text-stone-500 flex items-center gap-1">
                                             <MapPin className="h-3 w-3" /> {opp.partner.city}
                                         </div>
                                     )}
@@ -255,13 +255,13 @@ export default function MarketPage() {
                             {isMyOpportunity ? (
                                 <Button 
                                     onClick={() => setDeleteId(opp.id)}
-                                    className="bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 font-bold gap-2 h-12 px-4 rounded-xl transition-all hover:scale-105"
+                                    className="bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 font-bold gap-2 h-12 px-4 rounded-xl transition-all hover:scale-105"
                                 >
                                     <Trash2 className="h-4 w-4" />
                                     Supprimer
                                 </Button>
                             ) : opp.status === 'sold' ? (
-                                <Button disabled className="bg-slate-700 text-slate-400 font-bold rounded-xl border border-white/5 cursor-not-allowed">
+                                <Button disabled className="bg-stone-100 text-stone-400 font-bold rounded-xl border border-stone-200 cursor-not-allowed">
                                     Vendu
                                 </Button>
                             ) : (
@@ -281,13 +281,13 @@ export default function MarketPage() {
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
-        <DialogContent className="bg-[#1e293b] border-white/10 text-white sm:max-w-md">
+        <DialogContent className="bg-white border-stone-200 text-[#2E130C] sm:max-w-md">
             <DialogHeader>
-                <DialogTitle className="text-xl font-black text-white flex items-center gap-2">
-                    <Trash2 className="h-5 w-5 text-red-500" />
+                <DialogTitle className="text-xl font-black text-[#2E130C] flex items-center gap-2">
+                    <Trash2 className="h-5 w-5 text-red-600" />
                     Supprimer l'opportunité
                 </DialogTitle>
-                <DialogDescription className="text-slate-400">
+                <DialogDescription className="text-stone-500">
                     Êtes-vous sûr de vouloir supprimer cette opportunité du marché ?
                     <br />
                     Cette action est irréversible.
@@ -297,7 +297,7 @@ export default function MarketPage() {
                 <Button 
                     variant="ghost" 
                     onClick={() => setDeleteId(null)}
-                    className="text-slate-400 hover:text-white"
+                    className="text-stone-500 hover:text-[#2E130C]"
                 >
                     Annuler
                 </Button>

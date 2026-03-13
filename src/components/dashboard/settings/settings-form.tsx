@@ -119,14 +119,14 @@ export function SettingsForm({ initialSettings }: { initialSettings: any }) {
     <div className="space-y-8 max-w-3xl animate-in fade-in duration-500">
       
       {/* 0. APPLICATION (New Section) */}
-      <div className="bg-[#1e293b]/50 backdrop-blur-md p-6 rounded-[2rem] border border-white/5 shadow-sm space-y-4">
-        <h3 className="font-bold text-lg text-white flex items-center gap-2">
-           <Download className="h-5 w-5 text-indigo-400" /> Application
+      <div className="bg-white p-6 rounded-[2rem] border border-stone-200 shadow-sm space-y-4">
+        <h3 className="font-bold text-lg text-[#2E130C] flex items-center gap-2">
+           <Download className="h-5 w-5 text-indigo-600" /> Application
         </h3>
-        <div className="bg-[#0a0f1c]/50 p-5 rounded-2xl border border-white/5 flex items-center justify-between gap-4">
+        <div className="bg-stone-50 p-5 rounded-2xl border border-stone-200 flex items-center justify-between gap-4">
             <div>
-                <p className="font-bold text-white text-sm">Installer sur l'appareil</p>
-                <p className="text-xs text-slate-400 mt-1">
+                <p className="font-bold text-[#2E130C] text-sm">Installer sur l'appareil</p>
+                <p className="text-xs text-stone-500 mt-1">
                     Ajoutez l'application à votre écran d'accueil pour un accès rapide.
                 </p>
             </div>
@@ -135,7 +135,7 @@ export function SettingsForm({ initialSettings }: { initialSettings: any }) {
             <Button 
                 variant="outline" 
                 onClick={() => setShowInstallPrompt(true)}
-                className="bg-indigo-600/10 text-indigo-400 border-indigo-500/20 hover:bg-indigo-600/20"
+                className="bg-indigo-50 text-indigo-600 border-indigo-200 hover:bg-indigo-100"
             >
                 Installer
             </Button>
@@ -143,10 +143,10 @@ export function SettingsForm({ initialSettings }: { initialSettings: any }) {
       </div>
 
       {/* 1. FREQUENCY & RHYTHM (New Section) */}
-      <div className="bg-[#1e293b]/50 backdrop-blur-md p-6 rounded-[2rem] border border-white/5 shadow-sm space-y-8">
+      <div className="bg-white p-6 rounded-[2rem] border border-stone-200 shadow-sm space-y-8">
         <div className="flex items-center justify-between">
-          <h3 className="font-bold text-lg text-white flex items-center gap-2">
-            <Clock className="h-5 w-5 text-blue-400" /> Rythme & Disponibilités
+          <h3 className="font-bold text-lg text-[#2E130C] flex items-center gap-2">
+            <Clock className="h-5 w-5 text-blue-600" /> Rythme & Disponibilités
           </h3>
           <Button 
             variant={status === 'active' ? "outline" : "default"}
@@ -155,7 +155,7 @@ export function SettingsForm({ initialSettings }: { initialSettings: any }) {
             className={cn(
               "font-bold transition-colors border rounded-xl h-9",
               status === 'active' 
-                ? "text-slate-400 border-white/10 bg-white/5 hover:text-red-400 hover:bg-red-500/10 hover:border-red-500/20" 
+                ? "text-stone-500 border-stone-200 bg-stone-50 hover:text-red-600 hover:bg-red-50 hover:border-red-200" 
                 : "bg-emerald-600 hover:bg-emerald-700 text-white border-transparent"
             )}
           >
@@ -168,10 +168,10 @@ export function SettingsForm({ initialSettings }: { initialSettings: any }) {
         </div>
 
         {/* Frequency Slider */}
-        <div className="space-y-4 bg-[#0a0f1c]/50 p-5 rounded-2xl border border-white/5">
+        <div className="space-y-4 bg-stone-50 p-5 rounded-2xl border border-stone-200">
            <div className="flex justify-between items-end mb-2">
-             <Label className="text-base font-bold text-slate-300">Fréquence Hebdomadaire</Label>
-             <span className="text-lg font-black text-blue-400 bg-blue-500/10 px-3 py-1 rounded-lg border border-blue-500/20 shadow-sm">
+             <Label className="text-base font-bold text-[#2E130C]">Fréquence Hebdomadaire</Label>
+             <span className="text-lg font-black text-blue-600 bg-blue-50 px-3 py-1 rounded-lg border border-blue-200 shadow-sm">
                {frequency} matchs / sem
              </span>
            </div>
@@ -183,7 +183,7 @@ export function SettingsForm({ initialSettings }: { initialSettings: any }) {
              onValueChange={(vals) => setFrequency(vals[0])}
              className="py-2"
            />
-           <div className="flex justify-between text-[10px] text-slate-500 font-bold uppercase tracking-wider px-1">
+           <div className="flex justify-between text-[10px] text-stone-400 font-bold uppercase tracking-wider px-1">
               <span>Mode Léger (1j)</span>
               <span>Mode Intensif (5j)</span>
            </div>
@@ -191,7 +191,7 @@ export function SettingsForm({ initialSettings }: { initialSettings: any }) {
 
         {/* Days Selection */}
         <div className="space-y-3">
-          <Label className="text-xs font-bold text-slate-400 uppercase tracking-widest">Jours de disponibilité</Label>
+          <Label className="text-xs font-bold text-stone-400 uppercase tracking-widest">Jours de disponibilité</Label>
           <div className="flex flex-wrap gap-2">
             {DAYS.map(day => (
               <button
@@ -200,8 +200,8 @@ export function SettingsForm({ initialSettings }: { initialSettings: any }) {
                 className={cn(
                   "h-10 w-10 rounded-xl flex items-center justify-center font-bold text-sm transition-all border",
                   selectedDays.includes(day.id) 
-                    ? "bg-blue-600 text-white border-blue-500 shadow-lg shadow-blue-900/40" 
-                    : "bg-white/5 text-slate-400 border-white/5 hover:bg-white/10 hover:text-white"
+                    ? "bg-blue-600 text-white border-blue-500 shadow-lg shadow-blue-900/20" 
+                    : "bg-white text-stone-500 border-stone-200 hover:bg-stone-50 hover:text-[#2E130C]"
                 )}
               >
                 {day.label}
@@ -212,7 +212,7 @@ export function SettingsForm({ initialSettings }: { initialSettings: any }) {
 
         {/* Slots Selection */}
         <div className="space-y-3">
-          <Label className="text-xs font-bold text-slate-400 uppercase tracking-widest">Créneaux horaires préférés</Label>
+          <Label className="text-xs font-bold text-stone-400 uppercase tracking-widest">Créneaux horaires préférés</Label>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {SLOTS.map(slot => (
               <div 
@@ -221,8 +221,8 @@ export function SettingsForm({ initialSettings }: { initialSettings: any }) {
                 className={cn(
                   "p-3 rounded-xl border cursor-pointer font-bold text-center text-sm transition-all",
                   selectedSlots.includes(slot.id)
-                    ? "border-blue-500/50 bg-blue-500/10 text-blue-300 shadow-sm"
-                    : "border-white/5 bg-white/5 text-slate-400 hover:bg-white/10 hover:text-white"
+                    ? "border-blue-200 bg-blue-50 text-blue-700 shadow-sm"
+                    : "border-stone-200 bg-white text-stone-500 hover:bg-stone-50 hover:text-[#2E130C]"
                 )}
               >
                 {slot.label}
@@ -233,35 +233,35 @@ export function SettingsForm({ initialSettings }: { initialSettings: any }) {
       </div>
 
       {/* 2. NOTIFICATIONS */}
-      <div className="bg-[#1e293b]/50 backdrop-blur-md p-6 rounded-[2rem] border border-white/5 shadow-sm">
-         <h3 className="font-bold text-lg text-white mb-6 flex items-center gap-2">
-           <Bell className="h-5 w-5 text-orange-400" /> Notifications
+      <div className="bg-white p-6 rounded-[2rem] border border-stone-200 shadow-sm">
+         <h3 className="font-bold text-lg text-[#2E130C] mb-6 flex items-center gap-2">
+           <Bell className="h-5 w-5 text-orange-600" /> Notifications
          </h3>
-         <div className="flex flex-col gap-4 bg-[#0a0f1c]/50 p-4 rounded-2xl border border-white/5">
+         <div className="flex flex-col gap-4 bg-stone-50 p-4 rounded-2xl border border-stone-200">
            <div className="flex items-center justify-between">
              <div className="space-y-0.5">
-               <Label htmlFor="notifications" className="text-base font-bold text-slate-200">Activer les notifications</Label>
-               <p className="text-sm text-slate-500">Recevez des alertes pour les matchs et opportunités.</p>
+               <Label htmlFor="notifications" className="text-base font-bold text-[#2E130C]">Activer les notifications</Label>
+               <p className="text-sm text-stone-500">Recevez des alertes pour les matchs et opportunités.</p>
              </div>
              <Checkbox 
                id="notifications" 
                checked={notifications} 
                onCheckedChange={(checked) => setNotifications(checked === true)}
-               className="h-6 w-6 border-white/20 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
+               className="h-6 w-6 border-stone-300 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
              />
            </div>
            
-           <div className="pt-4 border-t border-white/5">
-              <p className="text-xs text-slate-400 mb-3 uppercase tracking-wider font-bold">Notifications Push (Mobile & Desktop)</p>
+           <div className="pt-4 border-t border-stone-200">
+              <p className="text-xs text-stone-400 mb-3 uppercase tracking-wider font-bold">Notifications Push (Mobile & Desktop)</p>
               <PushManager />
            </div>
          </div>
       </div>
 
       {/* VISIBILITY */}
-      <div className="bg-[#1e293b]/50 backdrop-blur-md p-6 rounded-[2rem] border border-white/5 shadow-sm">
-         <h3 className="font-bold text-lg text-white mb-6 flex items-center gap-2">
-           <Shield className="h-5 w-5 text-emerald-400" /> Confidentialité du Profil
+      <div className="bg-white p-6 rounded-[2rem] border border-stone-200 shadow-sm">
+         <h3 className="font-bold text-lg text-[#2E130C] mb-6 flex items-center gap-2">
+           <Shield className="h-5 w-5 text-emerald-600" /> Confidentialité du Profil
          </h3>
          
          <div className="flex flex-col gap-3">
@@ -276,16 +276,16 @@ export function SettingsForm({ initialSettings }: { initialSettings: any }) {
                className={cn(
                  "flex items-center justify-between p-4 rounded-2xl border transition-all text-left",
                  visibility === option.value 
-                   ? "border-blue-500/50 bg-blue-500/10" 
-                   : "border-white/5 bg-[#0a0f1c]/30 hover:bg-[#0a0f1c]/50 hover:border-white/10"
+                   ? "border-blue-200 bg-blue-50" 
+                   : "border-stone-200 bg-stone-50 hover:bg-white hover:border-stone-300"
                )}
              >
-               <span className={cn("font-medium", visibility === option.value ? "text-blue-300 font-bold" : "text-slate-400")}>
+               <span className={cn("font-medium", visibility === option.value ? "text-blue-700 font-bold" : "text-stone-500")}>
                  {option.label}
                </span>
                <div className={cn(
                  "h-5 w-5 rounded-full border-2 flex items-center justify-center",
-                 visibility === option.value ? "border-blue-500 bg-blue-500" : "border-slate-600 bg-transparent"
+                 visibility === option.value ? "border-blue-500 bg-blue-500" : "border-stone-300 bg-transparent"
                )}>
                  {visibility === option.value && <div className="h-2 w-2 rounded-full bg-white" />}
                </div>
@@ -295,13 +295,13 @@ export function SettingsForm({ initialSettings }: { initialSettings: any }) {
       </div>
 
       {/* SECURITY / PASSWORD */}
-      <div className="bg-[#1e293b]/50 backdrop-blur-md p-6 rounded-[2rem] border border-white/5 shadow-sm">
-         <h3 className="font-bold text-lg text-white mb-6 flex items-center gap-2">
-           <Lock className="h-5 w-5 text-rose-400" /> Sécurité & Mot de passe
+      <div className="bg-white p-6 rounded-[2rem] border border-stone-200 shadow-sm">
+         <h3 className="font-bold text-lg text-[#2E130C] mb-6 flex items-center gap-2">
+           <Lock className="h-5 w-5 text-rose-600" /> Sécurité & Mot de passe
          </h3>
          
-         <div className="space-y-4 bg-[#0a0f1c]/50 p-6 rounded-2xl border border-white/5">
-            <p className="text-sm text-slate-400 mb-4">
+         <div className="space-y-4 bg-stone-50 p-6 rounded-2xl border border-stone-200">
+            <p className="text-sm text-stone-500 mb-4">
               Définissez un mot de passe pour vous connecter plus facilement sans attendre le lien magique.
             </p>
             <div className="grid gap-4 sm:grid-cols-2">
@@ -313,7 +313,7 @@ export function SettingsForm({ initialSettings }: { initialSettings: any }) {
                   placeholder="••••••••"
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
-                  className="bg-slate-900 border-white/10"
+                  className="bg-white border-stone-200"
                 />
               </div>
               <div className="space-y-2">
@@ -324,7 +324,7 @@ export function SettingsForm({ initialSettings }: { initialSettings: any }) {
                   placeholder="••••••••"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="bg-slate-900 border-white/10"
+                  className="bg-white border-stone-200"
                 />
               </div>
             </div>
@@ -333,7 +333,7 @@ export function SettingsForm({ initialSettings }: { initialSettings: any }) {
                 onClick={handlePasswordUpdate} 
                 disabled={passwordLoading || !newPassword || !confirmPassword}
                 variant="outline"
-                className="border-white/10 hover:bg-white/5 text-white"
+                className="border-stone-200 hover:bg-stone-100 text-stone-600 bg-white"
               >
                 {passwordLoading ? "Mise à jour..." : "Mettre à jour le mot de passe"}
               </Button>
@@ -345,7 +345,7 @@ export function SettingsForm({ initialSettings }: { initialSettings: any }) {
          <Button 
            onClick={handleSave} 
            disabled={loading}
-           className="bg-blue-600 hover:bg-blue-500 text-white font-bold h-12 px-8 rounded-xl shadow-lg shadow-blue-900/20 border border-white/10"
+           className="bg-blue-600 hover:bg-blue-500 text-white font-bold h-12 px-8 rounded-xl shadow-lg shadow-blue-900/20 border border-transparent"
          >
            {loading ? "Enregistrement..." : "Enregistrer les modifications"}
          </Button>

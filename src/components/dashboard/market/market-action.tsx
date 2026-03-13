@@ -61,46 +61,46 @@ export function MarketAction({ opportunityId, price, userPoints, onUnlock }: Mar
         </Button>
       </DialogTrigger>
       
-      <DialogContent className="bg-[#1e293b] border-white/10 text-white sm:max-w-md">
+      <DialogContent className="bg-white border-stone-200 text-[#2E130C] sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="text-2xl font-black">Confirmer l'achat</DialogTitle>
-          <DialogDescription className="text-slate-400">
+          <DialogTitle className="text-2xl font-black text-[#2E130C]">Confirmer l'achat</DialogTitle>
+          <DialogDescription className="text-stone-500">
             Vous êtes sur le point de débloquer cette opportunité.
           </DialogDescription>
         </DialogHeader>
 
         <div className="py-6 space-y-4">
-          <div className="bg-[#0f172a] rounded-xl p-4 border border-white/5 flex flex-col gap-2">
+          <div className="bg-stone-50 rounded-xl p-4 border border-stone-200 flex flex-col gap-2">
              <div className="flex justify-between items-center">
-                <span className="text-sm font-bold text-slate-400 uppercase">Prix de vente</span>
-                <span className="text-xl font-black text-white">{price} Crédits</span>
+                <span className="text-sm font-bold text-stone-500 uppercase">Prix de vente</span>
+                <span className="text-xl font-black text-[#2E130C]">{price} Crédits</span>
              </div>
-             <div className="flex justify-between items-center text-xs text-slate-500 pt-2 border-t border-white/5">
+             <div className="flex justify-between items-center text-xs text-stone-400 pt-2 border-t border-stone-200">
                 <span>Commission Popey (10%)</span>
                 <span>-{Math.floor(price * 0.10)} Crédits</span>
              </div>
-             <div className="flex justify-between items-center text-xs text-emerald-400 font-bold">
+             <div className="flex justify-between items-center text-xs text-emerald-600 font-bold">
                 <span>Reversé au vendeur</span>
                 <span>+{Math.floor(price * 0.90)} Crédits</span>
              </div>
           </div>
 
           <div className="flex justify-between items-center px-2">
-             <span className="text-sm text-slate-400">Votre solde actuel :</span>
-             <span className={canAfford ? "text-white font-bold" : "text-red-400 font-bold"}>
+             <span className="text-sm text-stone-500">Votre solde actuel :</span>
+             <span className={canAfford ? "text-[#2E130C] font-bold" : "text-red-500 font-bold"}>
                {userPoints} Crédits
              </span>
           </div>
 
           {!canAfford && (
-            <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-3 flex items-center gap-3 text-red-300 text-sm font-bold">
+            <div className="bg-red-50 border border-red-200 rounded-xl p-3 flex items-center gap-3 text-red-600 text-sm font-bold">
                <Lock className="h-4 w-4" /> Solde insuffisant pour cet achat.
             </div>
           )}
         </div>
 
         <DialogFooter className="flex-col sm:flex-row gap-2">
-          <Button variant="ghost" onClick={() => setIsDialogOpen(false)} className="text-slate-400 hover:text-white">
+          <Button variant="ghost" onClick={() => setIsDialogOpen(false)} className="text-stone-500 hover:text-[#2E130C] hover:bg-stone-100">
             Annuler
           </Button>
           <Button 
