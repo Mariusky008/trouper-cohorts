@@ -1,18 +1,17 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { motion, useScroll, useTransform, AnimatePresence, useInView } from "framer-motion";
+import { motion, useScroll, AnimatePresence, useInView } from "framer-motion";
 import Link from "next/link";
 import { 
   Users, Calendar, Phone, CheckCircle2, 
   ArrowRight, ShieldCheck, Zap, Briefcase, 
-  Target, TrendingUp, Star, Play, Lock,
-  MessageCircle, Clock, Bell, ChevronRight, Anchor, Heart, Coffee, HelpCircle, Trophy, MapPin, Handshake, Search, Sparkles
+  Target, TrendingUp, Star, Heart, MapPin, Handshake, Sparkles, Anchor, MessageCircle, Trophy
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 import {
   Accordion,
@@ -23,75 +22,33 @@ import {
 
 import { AuthDialog } from "@/components/auth-dialog";
 import { MysteryCardPreview, MatchCardPreview, FounderCardPreview } from "@/components/dashboard/design-system-preview";
+import { Titan_One, Pacifico, Poppins } from "next/font/google";
 
-// --- SPHERES DATA ---
-const SPHERES = {
-  habitat: {
-    id: 'habitat',
-    label: 'IMMOBILIER & HABITAT',
-    icon: '🏠',
-    color: 'blue',
-    description: 'Pour ceux qui gravitent autour de la vente, de la rénovation et du logement.',
-    jobs: [
-      "Agent Immobilier", "Courtier en prêt", "Gestionnaire de patrimoine", "Diagnostiqueur",
-      "Architecte d'intérieur", "Maître d'œuvre", "Cuisiniste / Bainiste", "Électricien / Domotique",
-      "Paysagiste", "Pisciniste", "Notaire", "Déménageur", "Conciergerie Airbnb", "Photographe Immo",
-      "Chasseur Immobilier", "Avocat fiscaliste", "Courtier Assurances", "Menuisier", "Panneaux Solaires", "Home Stager"
-    ]
-  },
-  business: {
-    id: 'business',
-    label: 'BUSINESS & DIGITAL',
-    icon: '💻',
-    color: 'purple',
-    description: 'Pour les experts qui font croître les entreprises (B2B).',
-    jobs: [
-      "Webdesigner", "Expert SEO", "Copywriter", "Community Manager", "Vidéaste Corporate",
-      "Agence Pub (Ads)", "Expert Tunnel de vente", "Coach Business", "Expert Comptable", "Recruteur",
-      "Consultant RH", "Développeur Web", "Expert Cybersécurité", "Graphiste", "Imprimeur local",
-      "Consultant CRM", "Expert No-code", "Commercial Freelance", "Growth Hacker", "Community Builder"
-    ]
-  },
-  wellness: {
-    id: 'wellness',
-    label: 'BIEN-ÊTRE & SERVICES',
-    icon: '✨',
-    color: 'emerald',
-    description: 'Pour les professionnels du soin et du service aux particuliers.',
-    jobs: [
-      "Coach Sportif", "Nutritionniste", "Ostéopathe", "Prof de Yoga", "Naturopathe",
-      "Magasin Bio", "Coiffeur / Barbier", "Esthéticienne", "Sophrologue", "Psychologue",
-      "Wedding Planner", "Traiteur", "Photographe Famille", "Coach de vie", "Hypnothérapeute",
-      "Masseuse / Spa", "Kinésiologue", "Acupuncteur", "Personal Shopper", "Éducateur canin"
-    ]
-  },
-  retail: {
-    id: 'retail',
-    label: 'COMMERCE & LOCAL',
-    icon: '🛍️',
-    color: 'amber',
-    description: 'Pour les commerçants et acteurs de la vie locale.',
-    jobs: [
-      "Restaurateur", "Caviste", "Gérant salle de sport", "Fleuriste", "Chocolatier",
-      "Propriétaire Gîte", "Bijoutier", "Opticien", "Libraire", "Gérant Coworking",
-      "Tailleur / Mode", "Loueur voitures", "Assureur local", "Organisateur événements", "Agent de voyage",
-      "Courtier énergie", "Enseigne / Signalétique", "Nettoyage pro", "Torréfacteur", "Conférencier"
-    ]
-  },
-  legal: {
-    id: 'legal',
-    label: 'CONSEIL & DROIT',
-    icon: '⚖️',
-    color: 'slate',
-    description: 'Pour les dossiers à haute valeur ajoutée et le conseil stratégique.',
-    jobs: [
-      "Avocat Affaires", "Avocat Travail", "Conseil PI", "Courtier Pro", "Consultant RSE",
-      "Traducteur Business", "Expert levée de fonds", "Audit Cybersécurité", "Commissaire aux comptes", "Gestion de crise",
-      "Courtier Flotte", "Immobilier entreprise", "Formateur Qualiopi", "Consultant Supply Chain", "Expert recrutement",
-      "Huissier", "Médiateur", "Expert transmission", "Consultant IA", "Agent d'artistes"
-    ]
-  }
-};
+// --- FONTS ---
+const titanOne = Titan_One({ 
+  weight: "400", 
+  subsets: ["latin"],
+  variable: "--font-titan",
+});
+
+const pacifico = Pacifico({ 
+  weight: "400", 
+  subsets: ["latin"],
+  variable: "--font-pacifico",
+});
+
+const poppins = Poppins({
+  weight: ["400", "600", "700", "900"],
+  subsets: ["latin"],
+  variable: "--font-poppins",
+});
+
+// --- COLORS (Tailwind Arbitrary Values Mapping) ---
+// Beige: bg-[#E2D9BC]
+// Brown: text-[#2E130C]
+// Cherry: text-[#7A0000] / bg-[#7A0000]
+// Pastel Blue: bg-[#D2E8FF]
+// Red: text-[#B20B13] / bg-[#B20B13]
 
 // --- ANIMATED COMPONENTS ---
 
@@ -122,10 +79,10 @@ const AnimatedCounter = ({ value, label, suffix = "" }: { value: number, label: 
 
   return (
     <div ref={ref} className="text-center">
-      <div className="text-3xl md:text-4xl font-black text-slate-900 mb-1">
+      <div className="text-3xl md:text-4xl font-titan text-[#2E130C] mb-1 drop-shadow-sm">
         {count}{suffix}
       </div>
-      <div className="text-xs font-bold text-slate-500 uppercase tracking-widest">{label}</div>
+      <div className="text-xs font-bold text-[#7A0000] uppercase tracking-widest font-poppins">{label}</div>
     </div>
   );
 };
@@ -135,7 +92,6 @@ const StickyCTA = () => {
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
-    // Only set visibility if window exists (client-side)
     if (typeof window !== "undefined") {
       return scrollY.on("change", (latest) => {
         setIsVisible(latest > 600);
@@ -149,9 +105,9 @@ const StickyCTA = () => {
         className="fixed top-0 left-0 right-0 z-50 pointer-events-none"
       >
         <div className="container mx-auto max-w-7xl px-4 pointer-events-auto">
-          <div className="bg-white/90 backdrop-blur-md border border-slate-200 shadow-sm py-3 px-6 rounded-full mt-4 flex justify-between items-center max-w-5xl mx-auto">
-             <div className="flex items-center gap-2 font-black text-slate-900 text-sm md:text-base">
-                <div className="bg-blue-600 text-white p-1 rounded-md">
+          <div className="bg-[#E2D9BC] border-2 border-[#2E130C] shadow-[4px_4px_0px_0px_#2E130C] py-3 px-6 rounded-full mt-4 flex justify-between items-center max-w-5xl mx-auto">
+             <div className="flex items-center gap-2 font-titan text-[#2E130C] text-sm md:text-base">
+                <div className="bg-[#B20B13] text-[#E2D9BC] p-1 rounded-md border border-[#2E130C]">
                   <Anchor className="h-4 w-4" />
                 </div>
                 <span className="hidden md:inline">Popey Academy</span>
@@ -160,16 +116,15 @@ const StickyCTA = () => {
                  <AuthDialog 
                    mode="login" 
                    trigger={
-                     <Button variant="ghost" className="text-slate-600 font-bold hover:text-blue-600 h-9">
+                     <Button variant="ghost" className="text-[#2E130C] font-bold hover:text-[#B20B13] hover:bg-transparent h-9 font-poppins">
                        Connexion
                      </Button>
                    } 
                  />
                  
                  <div className={cn("flex items-center gap-4")}>
-                    {isVisible && <span className="text-xs font-bold text-slate-500 hidden lg:inline">1€ les 3 premiers jours</span>}
                     <Link href="/inscription/spheres">
-                      <Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-full px-6 shadow-lg shadow-blue-200/50">
+                      <Button size="sm" className="bg-[#B20B13] hover:bg-[#7A0000] text-[#E2D9BC] font-titan rounded-full px-6 border-2 border-[#2E130C] shadow-[2px_2px_0px_0px_#2E130C] hover:translate-y-[1px] hover:shadow-[1px_1px_0px_0px_#2E130C] transition-all">
                         Commencer
                       </Button>
                     </Link>
@@ -182,107 +137,344 @@ const StickyCTA = () => {
   );
 };
 
-const InteractiveMockup = () => {
+// --- 3c. SYNERGY GENERATOR ---
+
+const SYNERGY_DATA = {
+  health: [
+    { 
+      title: "Coach Sportif", 
+      match: 98, 
+      tags: ["Sport", "Santé"], 
+      role: "PRESCRIPTEUR",
+      roleDesc: "Il peut Vendre à votre place, il vous recommande. Il transfère sa crédibilité pour rassurer vos futurs clients.",
+      color: "bg-green-100 text-green-800" 
+    },
+    { 
+      title: "Naturopathe", 
+      match: 92, 
+      tags: ["Bien-être", "Naturel"], 
+      role: "JOKER",
+      roleDesc: "Il Complète votre offre. Associez-vous pour répondre à un besoin client que vous ne couvrez pas seul.",
+      color: "bg-emerald-100 text-emerald-800" 
+    },
+    { 
+      title: "Ostéopathe", 
+      match: 85, 
+      tags: ["Physique", "Soin"], 
+      role: "MENTOR",
+      roleDesc: "Il Débloque la situation. Il a une expertise technique immédiate pour résoudre votre problème.",
+      color: "bg-teal-100 text-teal-800" 
+    },
+    { 
+      title: "Psychologue", 
+      match: 78, 
+      tags: ["Mental", "TCA"], 
+      role: "VEILLEUR",
+      roleDesc: "Surveille votre marché. Il est vos yeux et vos oreilles sur le terrain pour détecter les opportunités et vous prévient dès que ça bouge.",
+      color: "bg-cyan-100 text-cyan-800" 
+    },
+  ],
+  realestate: [
+    { 
+      title: "Agent Immobilier", 
+      match: 99, 
+      tags: ["Immo", "Vente"], 
+      role: "INFILTRÉ",
+      roleDesc: "Il vous Donnera une info avant tout le monde. Soyez le premier sur le coup grâce à une info confidentielle.",
+      color: "bg-blue-100 text-blue-800" 
+    },
+    { 
+      title: "Courtier en Prêt", 
+      match: 94, 
+      tags: ["Finance", "Budget"], 
+      role: "PORTIER",
+      roleDesc: "Il vous ouvre des portes qui vous sont fermées. Il vous permettra d'accéder directement au décideur que vous n'arrivez pas à joindre.",
+      color: "bg-indigo-100 text-indigo-800" 
+    },
+    { 
+      title: "Paysagiste", 
+      match: 88, 
+      tags: ["Extérieur", "Design"], 
+      role: "AMPLIFICATEUR",
+      roleDesc: "Il Booste votre visibilité. Il diffuse votre message à sa communauté pour toucher plus de monde (sur linkedin, facebook, instagram..).",
+      color: "bg-violet-100 text-violet-800" 
+    },
+    { 
+      title: "Notaire", 
+      match: 80, 
+      tags: ["Juridique", "Acte"], 
+      role: "VEILLEUR",
+      roleDesc: "Surveille votre marché. Il est vos yeux et vos oreilles sur le terrain pour détecter les opportunités et vous prévient dès que ça bouge.",
+      color: "bg-purple-100 text-purple-800" 
+    },
+  ],
+  business: [
+    { 
+      title: "Copywriter", 
+      match: 96, 
+      tags: ["Vente", "Écrit"], 
+      role: "AMPLIFICATEUR",
+      roleDesc: "Il Booste votre visibilité. Il diffuse votre message à sa communauté pour toucher plus de monde (sur linkedin, facebook, instagram..).",
+      color: "bg-orange-100 text-orange-800" 
+    },
+    { 
+      title: "Expert Pubs (Ads)", 
+      match: 91, 
+      tags: ["Trafic", "Leads"], 
+      role: "VEILLEUR",
+      roleDesc: "Surveille votre marché. Il est vos yeux et vos oreilles sur le terrain pour détecter les opportunités et vous prévient dès que ça bouge.",
+      color: "bg-amber-100 text-amber-800" 
+    },
+    { 
+      title: "Closer / Commercial", 
+      match: 87, 
+      tags: ["Vente", "Phone"], 
+      role: "PRESCRIPTEUR",
+      roleDesc: "Il peut Vendre à votre place, il vous recommande. Il transfère sa crédibilité pour rassurer vos futurs clients.",
+      color: "bg-yellow-100 text-yellow-800" 
+    },
+    { 
+      title: "Expert Automatisation", 
+      match: 82, 
+      tags: ["Tech", "Gain de temps"], 
+      role: "MENTOR",
+      roleDesc: "Il Débloque la situation. Il a une expertise technique immédiate pour résoudre votre problème.",
+      color: "bg-lime-100 text-lime-800" 
+    },
+  ]
+};
+
+const SynergySection = () => {
+  const [jobInput, setJobInput] = useState("");
+  const [showResults, setShowResults] = useState(false);
+  const [selectedSynergy, setSelectedSynergy] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
+  const detailsRef = useRef<HTMLDivElement>(null);
+
+  // Default to "business" if no match, but try to match keywords
+  const getSynergies = () => {
+    const input = jobInput.toLowerCase();
+    if (input.includes("nutri") || input.includes("sport") || input.includes("santé") || input.includes("diet") || input.includes("naturopathe")) return SYNERGY_DATA.health;
+    if (input.includes("archi") || input.includes("immo") || input.includes("deco") || input.includes("batiment") || input.includes("travaux")) return SYNERGY_DATA.realestate;
+    return SYNERGY_DATA.business;
+  };
+
+  const handleReveal = () => {
+    if (!jobInput.trim()) return;
+    setLoading(true);
+    setShowResults(false);
+    setSelectedSynergy(null);
+    setTimeout(() => {
+      setLoading(false);
+      setShowResults(true);
+    }, 800); 
+  };
+
+  const handleSynergyClick = (synergy: any) => {
+    setSelectedSynergy(synergy);
+    setTimeout(() => {
+      detailsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }, 100);
+  };
+
+  const currentSynergies = getSynergies();
+
   return (
-    <div className="relative w-full max-w-md mx-auto perspective-1000">
-      <motion.div
-        initial={{ rotateY: 0, rotateX: 0 }}
-        whileHover={{ rotateY: 0, rotateX: 0 }}
-        transition={{ type: "spring", stiffness: 100, damping: 20 }}
-        className="w-full bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden relative flex flex-col"
-      >
-        {/* Mockup Header */}
-        <div className="bg-slate-50 p-4 border-b border-slate-100 flex items-center justify-between">
-           <div className="flex items-center gap-2">
-             <div className="h-2 w-2 rounded-full bg-red-400"/>
-             <div className="h-2 w-2 rounded-full bg-yellow-400"/>
-             <div className="h-2 w-2 rounded-full bg-green-400"/>
-           </div>
-           <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Mon Dashboard</div>
-        </div>
+    <section className="py-24 bg-[#E2D9BC] border-b-4 border-[#2E130C] relative overflow-hidden">
+        {/* Background dots/pattern */}
+        <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ backgroundImage: 'radial-gradient(#2E130C 1px, transparent 1px)', backgroundSize: '20px 20px' }}></div>
 
-        {/* Mockup Content */}
-        <div className="flex-1 p-6 flex flex-col gap-6 relative bg-slate-50/50">
-           {/* Date */}
-           <div className="flex justify-between items-end">
-             <div>
-               <div className="text-3xl font-black text-slate-900">Mardi 24</div>
-               <div className="text-slate-500 font-medium">Octobre 2024</div>
-             </div>
-             <div className="bg-blue-100 text-blue-600 p-2 rounded-xl">
-               <Calendar className="h-6 w-6" />
-             </div>
-           </div>
-
-           {/* The Value Card */}
-           <motion.div 
-             whileHover={{ scale: 1.02 }}
-             className="bg-white rounded-2xl p-5 shadow-xl shadow-blue-100/50 border border-blue-100 relative group cursor-pointer"
-           >
-             <div className="absolute top-0 right-0 bg-orange-500 text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl rounded-tr-xl uppercase tracking-wider">
-               Opportunité Chaude
-             </div>
-             
-             <div className="flex items-start gap-4 mb-5 mt-2">
-               <Avatar className="h-16 w-16 border-2 border-white shadow-md">
-                 <AvatarImage src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=2000&auto=format&fit=crop" />
-                 <AvatarFallback>JM</AvatarFallback>
-               </Avatar>
-               <div>
-                 <div className="font-black text-slate-900 text-xl leading-tight mb-1">Julien Martin</div>
-                 <div className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">Architecte • Bordeaux</div>
-                 <div className="inline-flex items-center gap-1 bg-green-50 text-green-700 px-2 py-0.5 rounded text-[10px] font-bold border border-green-100">
-                    <CheckCircle2 className="h-3 w-3" /> Vérifié fiable
-                 </div>
+        <div className="container mx-auto px-4 relative z-10">
+            <div className="max-w-4xl mx-auto text-center mb-16">
+               <Badge className="bg-[#B20B13] text-[#E2D9BC] border-2 border-[#2E130C] mb-6 uppercase tracking-widest px-3 py-1 font-titan shadow-[3px_3px_0px_0px_#2E130C]">
+                 Générateur de Synergies
+               </Badge>
+               <h2 className="text-3xl md:text-5xl font-titan text-[#2E130C] mb-8 leading-tight drop-shadow-sm">
+                 &quot;Dites-nous qui vous êtes,<br/>nous vous dirons <span className="text-[#B20B13] underline decoration-wavy decoration-[#2E130C]/20">avec qui grandir.</span>&quot;
+               </h2>
+               
+               <div className="max-w-xl mx-auto relative mt-8">
+                  <div className="flex flex-col md:flex-row gap-4 items-center">
+                    <div className="w-full relative">
+                        <Input 
+                          placeholder="Votre métier (ex: Nutritionniste, Architecte...)" 
+                          className="h-16 text-lg md:text-xl border-4 border-[#2E130C] rounded-2xl font-poppins font-bold shadow-[4px_4px_0px_0px_#2E130C] focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-[#2E130C]/40 px-6 bg-[#E2D9BC]/20"
+                          value={jobInput}
+                          onChange={(e) => setJobInput(e.target.value)}
+                          onKeyDown={(e) => e.key === 'Enter' && handleReveal()}
+                        />
+                    </div>
+                    <Button 
+                      onClick={handleReveal}
+                      disabled={loading || !jobInput.trim()}
+                      className="h-16 px-8 bg-[#B20B13] hover:bg-[#7A0000] text-[#E2D9BC] font-titan rounded-2xl border-4 border-[#2E130C] shadow-[4px_4px_0px_0px_#2E130C] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_#2E130C] transition-all whitespace-nowrap text-lg w-full md:w-auto"
+                    >
+                      {loading ? (
+                          <div className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full" />
+                      ) : (
+                          <>RÉVÉLER <Sparkles className="ml-2 h-5 w-5" /></>
+                      )}
+                    </Button>
+                  </div>
                </div>
-             </div>
+            </div>
 
-             <div className="bg-slate-50 rounded-xl p-3 border border-slate-100 mb-5">
-                <div className="text-xs font-bold text-slate-400 uppercase mb-2">Pourquoi ce match ?</div>
-                <p className="text-sm text-slate-700 leading-snug font-medium">
-                  "Julien vient de signer 3 chantiers de rénovation et <strong className="text-slate-900 bg-yellow-100 px-1">cherche un partenaire</strong> pour refaire le branding de ses clients."
-                </p>
-             </div>
+            <AnimatePresence mode="wait">
+               {showResults && (
+                 <motion.div 
+                   initial={{ opacity: 0, y: 20 }}
+                   animate={{ opacity: 1, y: 0 }}
+                   exit={{ opacity: 0, y: -20 }}
+                   transition={{ duration: 0.5 }}
+                   className="max-w-6xl mx-auto"
+                 >
+                    <div className="grid grid-cols-2 md:grid-cols-5 gap-4 md:gap-6 mb-12">
+                       {currentSynergies.map((synergy: any, index: number) => (
+                          <motion.div 
+                            key={index}
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ delay: index * 0.1 }}
+                            className={`
+                              cursor-pointer relative group
+                              ${selectedSynergy === synergy ? 'z-10' : 'hover:-translate-y-2'}
+                              transition-all duration-200
+                            `}
+                            onClick={() => handleSynergyClick(synergy)}
+                          >
+                             <div className={`
+                               bg-white rounded-3xl p-6 border-4 border-[#2E130C] shadow-[6px_6px_0px_0px_#2E130C] h-full flex flex-col items-center text-center transition-all
+                               ${selectedSynergy === synergy ? 'ring-4 ring-[#B20B13] ring-offset-4' : ''}
+                               ${index === 0 ? 'bg-[#D2E8FF]' : ''}
+                             `}>
+                                {index === 0 && (
+                                  <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-[#FFD700] text-[#2E130C] text-[10px] font-black uppercase px-3 py-1.5 rounded-full border-2 border-[#2E130C] shadow-sm whitespace-nowrap z-20">
+                                    ⭐ Top Synergie
+                                  </div>
+                                )}
+                                
+                                <div className="h-20 w-20 rounded-full bg-white border-4 border-[#2E130C] mb-4 flex items-center justify-center text-3xl shadow-sm overflow-hidden shrink-0 relative">
+                                   <span className="font-titan text-[#2E130C]">{synergy.title[0]}</span>
+                                   <div className={`absolute inset-0 opacity-20 ${synergy.color}`}></div>
+                                </div>
+                                
+                                <h3 className="font-titan text-[#2E130C] text-lg leading-tight mb-3 min-h-[3rem] flex items-center justify-center">{synergy.title}</h3>
+                                
+                                <Badge className={`${index === 0 ? 'bg-[#B20B13] text-[#E2D9BC]' : 'bg-[#2E130C] text-[#E2D9BC]'} border-0 mb-4 px-3 py-1 text-sm font-titan`}>
+                                   {synergy.match}% Match
+                                </Badge>
+                                
+                                <div className="flex flex-wrap gap-2 justify-center mt-auto">
+                                   {synergy.tags.slice(0,2).map((tag: string, i: number) => (
+                                      <span key={i} className="text-[10px] bg-white border-2 border-[#2E130C]/10 px-2 py-1 rounded-lg font-bold text-[#2E130C]/60 uppercase tracking-wide">
+                                        {tag}
+                                      </span>
+                                   ))}
+                                </div>
+                                
+                                <div className="mt-6 w-full pt-4 border-t-2 border-[#2E130C]/10 flex items-center justify-center gap-1 text-xs font-bold text-[#2E130C]/40 group-hover:text-[#B20B13] transition-colors uppercase tracking-widest">
+                                   <TrendingUp className="h-3 w-3" /> Détails
+                                </div>
+                             </div>
+                          </motion.div>
+                       ))}
 
-             <Button className="w-full bg-blue-600 text-white hover:bg-blue-700 font-bold h-12 rounded-xl shadow-lg shadow-blue-200 group-hover:scale-[1.02] transition-all">
-               <Phone className="mr-2 h-4 w-4" /> Il vous appelle entre 12h et 12H30
-             </Button>
-           </motion.div>
+                       {/* 5th Blurred Card (Teaser) */}
+                       <motion.div 
+                          initial={{ opacity: 0, scale: 0.9 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          transition={{ delay: 0.5 }}
+                          className="cursor-not-allowed relative group"
+                       >
+                           <div className="bg-white/80 rounded-3xl p-6 border-4 border-[#2E130C]/30 shadow-[4px_4px_0px_0px_#2E130C]/20 h-full flex flex-col items-center text-center blur-[1px] opacity-70">
+                                <div className="h-20 w-20 rounded-full bg-white border-4 border-[#2E130C]/30 mb-4 flex items-center justify-center text-3xl shadow-sm">
+                                   <span className="font-titan text-[#2E130C]/30">?</span>
+                                </div>
+                                <h3 className="font-titan text-[#2E130C]/50 text-lg leading-tight mb-3 min-h-[3rem] flex items-center justify-center">Et bien d'autres...</h3>
+                                <Badge className="bg-[#2E130C]/20 text-[#2E130C]/50 border-0 mb-4 px-3 py-1 text-sm font-titan">
+                                   ??? Match
+                                </Badge>
+                                <div className="flex flex-wrap gap-2 justify-center mt-auto">
+                                   <span className="text-[10px] bg-white border-2 border-[#2E130C]/10 px-2 py-1 rounded-lg font-bold text-[#2E130C]/30 uppercase tracking-wide">???</span>
+                                   <span className="text-[10px] bg-white border-2 border-[#2E130C]/10 px-2 py-1 rounded-lg font-bold text-[#2E130C]/30 uppercase tracking-wide">???</span>
+                                </div>
+                           </div>
+                           {/* Overlay Text */}
+                           <div className="absolute inset-0 flex items-center justify-center z-20">
+                                <div className="bg-[#2E130C] text-[#E2D9BC] px-4 py-2 rounded-xl border-2 border-[#E2D9BC] shadow-lg font-titan text-sm transform rotate-[-3deg] whitespace-nowrap">
+                                    + 20 autres métiers
+                                </div>
+                           </div>
+                       </motion.div>
+                    </div>
 
-           {/* Quick Stats */}
-           <div className="grid grid-cols-2 gap-4">
-              <div className="bg-white rounded-xl p-3 border border-slate-100 shadow-sm">
-                 <div className="text-xs text-slate-400 font-bold uppercase mb-1">Potentiel</div>
-                 <div className="font-black text-slate-900 text-lg">~1500€</div>
-              </div>
-              <div className="bg-white rounded-xl p-3 border border-slate-100 shadow-sm">
-                 <div className="text-xs text-slate-400 font-bold uppercase mb-1">Réciprocité</div>
-                 <div className="font-black text-green-600 text-lg">Élevée</div>
-              </div>
-           </div>
+                    {/* Selected Synergy Detail View */}
+                    <AnimatePresence mode="wait">
+                      {selectedSynergy && (
+                        <motion.div 
+                          ref={detailsRef}
+                          key={selectedSynergy.title}
+                          initial={{ opacity: 0, height: 0, y: 20 }}
+                          animate={{ opacity: 1, height: "auto", y: 0 }}
+                          exit={{ opacity: 0, height: 0, y: 20 }}
+                          className="overflow-hidden scroll-mt-32"
+                        >
+                           <div className="bg-[#2E130C] text-[#E2D9BC] p-8 md:p-10 rounded-[2.5rem] border-4 border-[#E2D9BC] shadow-[12px_12px_0px_0px_#B20B13] max-w-4xl mx-auto flex flex-col md:flex-row gap-8 items-center relative transform rotate-1 transition-transform hover:rotate-0">
+                              <div className="shrink-0 text-center md:text-left bg-[#E2D9BC]/10 p-6 rounded-3xl border-2 border-[#E2D9BC]/20 backdrop-blur-sm">
+                                 <div className="text-[#B20B13] font-titan text-7xl mb-0 leading-none drop-shadow-sm">{selectedSynergy.match}%</div>
+                                 <div className="text-xs uppercase tracking-[0.2em] font-bold opacity-60 mt-2">Compatibilité Business</div>
+                              </div>
+                              
+                              <div className="w-px h-32 bg-[#E2D9BC]/20 hidden md:block"></div>
+                              
+                              <div className="text-center md:text-left flex-1">
+                                 <h4 className="text-2xl font-titan mb-4 text-[#E2D9BC] flex items-center gap-2 justify-center md:justify-start">
+                                    <span className="bg-[#B20B13] text-[#E2D9BC] px-3 py-1 rounded-lg text-lg border border-[#E2D9BC]/30">{selectedSynergy.role}</span>
+                                    <span>{selectedSynergy.title}</span>
+                                 </h4>
+                                 <p className="text-xl font-poppins font-semibold leading-relaxed text-[#E2D9BC]/90 italic">
+                                    &quot;{selectedSynergy.roleDesc}&quot;
+                                 </p>
+                              </div>
+                              
+                              <div className="shrink-0 pt-4 md:pt-0">
+                                 <Button className="h-14 px-8 bg-[#E2D9BC] text-[#2E130C] hover:bg-white font-titan rounded-xl text-lg border-4 border-[#2E130C] shadow-[4px_4px_0px_0px_#2E130C] hover:translate-y-[2px] transition-all whitespace-nowrap">
+                                    Trouver ce profil
+                                 </Button>
+                              </div>
+                           </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                 </motion.div>
+               )}
+            </AnimatePresence>
         </div>
-      </motion.div>
-    </div>
+    </section>
   );
 };
 
 // --- MAIN PAGE COMPONENT ---
 
 export default function HomePage() {
-  const [activeSphere, setActiveSphere] = useState<keyof typeof SPHERES>('business');
+  const [activeStep, setActiveStep] = useState(1);
 
   return (
-    <div className="min-h-screen bg-white text-slate-900 font-sans selection:bg-blue-100 selection:text-blue-900 overflow-x-hidden">
+    <div className={cn(
+      "min-h-screen bg-[#E2D9BC] text-[#2E130C] overflow-x-hidden",
+      titanOne.variable, pacifico.variable, poppins.variable
+    )}>
       
       <StickyCTA />
 
       {/* --- 1. HERO SECTION --- */}
       <section className="relative pt-20 pb-20 md:pt-32 md:pb-32 overflow-hidden">
-        {/* Dynamic Background */}
-        <div className="absolute inset-0 bg-slate-50">
-          <div className="absolute top-[-20%] right-[-10%] w-[600px] h-[600px] bg-blue-100/50 rounded-full blur-3xl opacity-60 animate-pulse" style={{ animationDuration: '8s' }} />
-          <div className="absolute bottom-[-10%] left-[-10%] w-[500px] h-[500px] bg-purple-100/50 rounded-full blur-3xl opacity-60 animate-pulse" style={{ animationDuration: '10s' }} />
-          <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-[0.03]" />
+        {/* Cartoon Background Elements */}
+        <div className="absolute inset-0 pointer-events-none">
+           {/* Clouds / Shapes */}
+           <div className="absolute top-10 right-10 w-32 h-16 bg-[#D2E8FF] rounded-full border-2 border-[#2E130C] opacity-80"></div>
+           <div className="absolute top-20 left-10 w-24 h-12 bg-white rounded-full border-2 border-[#2E130C] opacity-60"></div>
+           <div className="absolute bottom-10 left-[-5%] w-64 h-64 bg-[#B20B13]/10 rounded-full border-2 border-[#2E130C] border-dashed animate-spin-slow"></div>
         </div>
 
         <div className="container mx-auto px-4 relative z-10 text-center max-w-4xl">
@@ -294,28 +486,28 @@ export default function HomePage() {
               className="space-y-8"
             >
               <div className="inline-block">
-                <div className="text-sm font-bold text-slate-500 mt-2">Ne restez plus seul face à votre business.</div>
+                <div className="text-lg md:text-xl font-pacifico text-[#B20B13] mt-2">Ne restez plus seul face à votre business !</div>
               </div>
               
-              <h1 className="text-5xl md:text-6xl lg:text-7xl font-black text-slate-900 leading-[1.05] tracking-tight">
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">5 minutes</span> par jour pour trouver vos prochains clients.
+              <h1 className="text-5xl md:text-6xl lg:text-7xl font-titan text-[#2E130C] leading-[1.05] tracking-tight drop-shadow-sm">
+                <span className="text-[#B20B13] underline decoration-wavy decoration-[#2E130C]/20">5 minutes</span> par jour pour trouver vos prochains clients.
               </h1>
               
-              <p className="text-xl text-slate-600 leading-relaxed max-w-2xl mx-auto font-medium">
+              <p className="text-xl text-[#2E130C] leading-relaxed max-w-2xl mx-auto font-poppins font-bold">
                 Arrêtez de prospecter dans le vide. Chaque jour, échangez avec un entrepreneur local et transformez son réseau en opportunités pour vous.
               </p>
               
-              <div className="flex flex-col sm:flex-row gap-4 justify-center pt-2">
+              <div className="flex flex-col sm:flex-row gap-4 justify-center pt-6">
                 <Link href="/inscription/spheres">
-                  <Button size="lg" className="h-16 px-10 bg-blue-600 hover:bg-blue-500 text-white font-black text-lg rounded-full shadow-2xl shadow-blue-300 hover:scale-105 transition-all duration-300 ring-4 ring-blue-50">
+                  <Button size="lg" className="h-16 px-10 bg-[#B20B13] hover:bg-[#7A0000] text-[#E2D9BC] font-titan text-xl rounded-2xl border-4 border-[#2E130C] shadow-[6px_6px_0px_0px_#2E130C] hover:translate-y-[2px] hover:shadow-[4px_4px_0px_0px_#2E130C] transition-all duration-200">
                     Commencer maintenant
-                    <ArrowRight className="ml-2 h-5 w-5" />
+                    <ArrowRight className="ml-2 h-6 w-6" />
                   </Button>
                 </Link>
               </div>
 
               {/* Stats Counters */}
-              <div className="grid grid-cols-3 gap-8 pt-8 border-t border-slate-200/60 max-w-2xl mx-auto">
+              <div className="grid grid-cols-3 gap-8 pt-12 border-t-2 border-[#2E130C]/20 max-w-2xl mx-auto border-dashed">
                 <AnimatedCounter value={1200} label="Mises en relation" suffix="+" />
                 <AnimatedCounter value={98} label="Satisfaction" suffix="%" />
                 <AnimatedCounter value={300} label="Membres Actifs" suffix="+" />
@@ -324,47 +516,47 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* --- 2. PROBLEM SECTION (NEW) --- */}
-      <section className="py-20 bg-white border-y border-slate-100">
+      {/* --- 2. PROBLEM SECTION --- */}
+      <section className="py-20 bg-[#D2E8FF] border-y-4 border-[#2E130C]">
         <div className="container mx-auto px-4 max-w-4xl">
             <div className="text-center space-y-8">
-                <div className="inline-flex items-center justify-center p-3 bg-red-100 text-red-600 rounded-full mb-4">
-                    <Heart className="h-6 w-6" />
+                <div className="inline-flex items-center justify-center p-3 bg-[#E2D9BC] text-[#B20B13] rounded-full mb-4 border-2 border-[#2E130C] shadow-[3px_3px_0px_0px_#2E130C]">
+                    <Heart className="h-8 w-8 fill-current" />
                 </div>
-                <h2 className="text-3xl md:text-4xl font-black text-slate-900">Pourquoi trouver des clients est devenu si difficile aujourd’hui</h2>
+                <h2 className="text-3xl md:text-5xl font-titan text-[#2E130C]">Pourquoi trouver des clients est devenu si difficile ?</h2>
                 
-                <div className="text-lg text-slate-600 leading-relaxed space-y-6">
+                <div className="text-lg text-[#2E130C] leading-relaxed space-y-6 font-poppins font-semibold">
                     <p>
                         La plupart des entrepreneurs ne manquent pas de compétences. <br/>
-                        <strong className="text-slate-900">Ils manquent de visibilité et de réseau.</strong>
+                        <strong className="text-[#B20B13] font-black text-xl font-titan">Ils manquent de visibilité et de réseau.</strong>
                     </p>
                     
-                    <div className="bg-slate-50 p-6 rounded-2xl border border-slate-200 text-left mx-auto max-w-lg">
-                        <p className="font-bold text-slate-900 mb-4">Vous avez peut-être déjà essayé :</p>
-                        <ul className="space-y-3">
-                            <li className="flex items-start gap-3 text-slate-600">
-                                <span className="text-red-400 font-bold">×</span> Publier sur LinkedIn , instagram ... sans résultats
+                    <div className="bg-[#E2D9BC] p-6 rounded-2xl border-2 border-[#2E130C] shadow-[4px_4px_0px_0px_#2E130C] text-left mx-auto max-w-lg">
+                        <p className="font-titan text-[#2E130C] mb-4 text-xl">Vous avez peut-être déjà essayé :</p>
+                        <ul className="space-y-3 font-bold">
+                            <li className="flex items-start gap-3 text-[#2E130C]">
+                                <span className="text-[#B20B13] font-black text-xl">×</span> Publier sur LinkedIn , instagram ... sans résultats
                             </li>
-                            <li className="flex items-start gap-3 text-slate-600">
-                                <span className="text-red-400 font-bold">×</span> Envoyer des messages qui restent sans réponse
+                            <li className="flex items-start gap-3 text-[#2E130C]">
+                                <span className="text-[#B20B13] font-black text-xl">×</span> Envoyer des messages qui restent sans réponse
                             </li>
-                            <li className="flex items-start gap-3 text-slate-600">
-                                <span className="text-red-400 font-bold">×</span> Aller à des événements networking inutiles
+                            <li className="flex items-start gap-3 text-[#2E130C]">
+                                <span className="text-[#B20B13] font-black text-xl">×</span> Aller à des événements networking inutiles
                             </li>
                         </ul>
                     </div>
 
-                    <p>
+                    <p className="pt-4">
                         Le vrai problème est simple : <br/>
-                        <span className="bg-yellow-100 px-2 font-bold text-slate-900">👉 Vous essayez de trouver des clients ou d'augmenter votre visibilité seul.</span>
+                        <span className="bg-[#B20B13] text-[#E2D9BC] px-2 py-1 font-titan text-lg inline-block mt-2 transform -rotate-1 border-2 border-[#2E130C]">👉 Vous êtes seul.</span>
                     </p>
-                    <p className="font-medium">Alors que le business fonctionne toujours mieux en réseau.</p>
+                    <p className="font-pacifico text-2xl text-[#7A0000]">Alors que le business fonctionne toujours mieux en équipe !</p>
                 </div>
                 
                 <div className="pt-8">
                    <Button 
                       size="lg" 
-                      className="bg-slate-900 text-white hover:bg-slate-800 font-bold rounded-full px-8 h-12"
+                      className="bg-[#2E130C] text-[#E2D9BC] hover:bg-[#4a2c22] font-titan rounded-xl px-8 h-12 border-2 border-[#E2D9BC] shadow-lg"
                       onClick={() => document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' })}
                     >
                       Découvrir la solution <ArrowRight className="ml-2 h-4 w-4" />
@@ -374,48 +566,47 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* --- 3. GROWTH SPHERE (NEW) --- */}
-      <section className="py-20 bg-slate-900 text-white relative overflow-hidden">
-        <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-10"></div>
+      {/* --- 3. GROWTH SPHERE --- */}
+      <section className="py-20 bg-[#E2D9BC] text-[#2E130C] relative overflow-hidden border-b-4 border-[#2E130C]">
         <div className="container mx-auto px-4 max-w-5xl text-center relative z-10">
-            <Badge className="bg-blue-500/20 text-blue-300 border-blue-500/30 mb-6 uppercase tracking-widest px-3 py-1">Fini le hasard</Badge>
-            <h2 className="text-3xl md:text-5xl font-black mb-8 leading-tight">
+            <Badge className="bg-[#2E130C] text-[#E2D9BC] border-2 border-[#2E130C] mb-6 uppercase tracking-widest px-3 py-1 font-titan shadow-[3px_3px_0px_0px_#2E130C]">Fini le hasard</Badge>
+            <h2 className="text-3xl md:text-5xl font-titan mb-8 leading-tight">
                 Ne cherchez plus de clients.<br/>
-                Construisez votre <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">Sphère de Croissance.</span>
+                Construisez votre <span className="text-[#B20B13] underline decoration-wavy">Sphère de Croissance.</span>
             </h2>
             
-            <p className="text-xl text-slate-300 mb-12 max-w-3xl mx-auto leading-relaxed">
-                Le "networking" classique est épuisant et aléatoire. <br/>
-                Popey remplace la quantité par la <strong className="text-white">stratégie</strong>.
+            <p className="text-xl text-[#2E130C]/90 mb-12 max-w-3xl mx-auto leading-relaxed font-poppins font-bold">
+                Le &quot;networking&quot; classique est épuisant et aléatoire. <br/>
+                Popey remplace la quantité par la <strong className="text-[#B20B13] underline decoration-[#2E130C]">stratégie</strong>.
             </p>
 
             <div className="grid md:grid-cols-3 gap-8 text-left">
-                <div className="bg-slate-800/50 p-8 rounded-3xl border border-slate-700 hover:border-blue-500/50 transition-colors group">
-                    <div className="h-12 w-12 bg-blue-900/50 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                        <Users className="h-6 w-6 text-blue-400" />
+                <div className="bg-[#2E130C] p-8 rounded-3xl border-2 border-[#2E130C] shadow-[6px_6px_0px_0px_#2E130C] group hover:translate-y-[-2px] transition-transform">
+                    <div className="h-12 w-12 bg-[#D2E8FF] rounded-xl border-2 border-[#E2D9BC] flex items-center justify-center mb-6 text-[#2E130C]">
+                        <Users className="h-6 w-6" />
                     </div>
-                    <h3 className="text-xl font-bold text-white mb-3">Plus de solitude</h3>
-                    <p className="text-slate-400 leading-relaxed">
+                    <h3 className="text-xl font-titan text-[#E2D9BC] mb-3">Plus de solitude</h3>
+                    <p className="text-[#E2D9BC]/80 leading-relaxed font-poppins font-semibold">
                         Vous n'êtes plus un entrepreneur isolé, mais le membre d'une escouade qui s'entraide au quotidien.
                     </p>
                 </div>
 
-                <div className="bg-slate-800/50 p-8 rounded-3xl border border-slate-700 hover:border-purple-500/50 transition-colors group">
-                    <div className="h-12 w-12 bg-purple-900/50 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                        <Zap className="h-6 w-6 text-purple-400" />
+                <div className="bg-[#2E130C] p-8 rounded-3xl border-2 border-[#2E130C] shadow-[6px_6px_0px_0px_#2E130C] group hover:translate-y-[-2px] transition-transform">
+                    <div className="h-12 w-12 bg-[#B20B13] rounded-xl border-2 border-[#E2D9BC] flex items-center justify-center mb-6 text-[#E2D9BC]">
+                        <Zap className="h-6 w-6" />
                     </div>
-                    <h3 className="text-xl font-bold text-white mb-3">Plus d'impact</h3>
-                    <p className="text-slate-400 leading-relaxed">
+                    <h3 className="text-xl font-titan text-[#E2D9BC] mb-3">Plus d'impact</h3>
+                    <p className="text-[#E2D9BC]/80 leading-relaxed font-poppins font-semibold">
                         Chaque membre de votre sphère devient un ambassadeur qui parle de vous à son propre réseau.
                     </p>
                 </div>
 
-                <div className="bg-slate-800/50 p-8 rounded-3xl border border-slate-700 hover:border-emerald-500/50 transition-colors group">
-                    <div className="h-12 w-12 bg-emerald-900/50 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                        <TrendingUp className="h-6 w-6 text-emerald-400" />
+                <div className="bg-[#2E130C] p-8 rounded-3xl border-2 border-[#2E130C] shadow-[6px_6px_0px_0px_#2E130C] group hover:translate-y-[-2px] transition-transform">
+                    <div className="h-12 w-12 bg-[#E2D9BC] rounded-xl border-2 border-[#2E130C] flex items-center justify-center mb-6 text-[#2E130C]">
+                        <TrendingUp className="h-6 w-6" />
                     </div>
-                    <h3 className="text-xl font-bold text-white mb-3">Plus de revenus</h3>
-                    <p className="text-slate-400 leading-relaxed">
+                    <h3 className="text-xl font-titan text-[#E2D9BC] mb-3">Plus de revenus</h3>
+                    <p className="text-[#E2D9BC]/80 leading-relaxed font-poppins font-semibold">
                         Le but n'est pas de boire du café, mais de signer des contrats grâce à des recommandations qualifiées.
                     </p>
                 </div>
@@ -424,7 +615,7 @@ export default function HomePage() {
             <div className="mt-16">
                 <Button 
                   size="lg" 
-                  className="bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-full px-10 h-14 text-lg shadow-lg shadow-blue-900/50 transition-transform hover:scale-105"
+                  className="bg-[#D2E8FF] text-[#2E130C] hover:bg-white font-titan rounded-2xl px-10 h-14 text-lg border-4 border-[#2E130C] shadow-[4px_4px_0px_0px_#2E130C] transition-transform hover:scale-105"
                   onClick={() => document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' })}
                 >
                   Rejoindre ma sphère <ArrowRight className="ml-2 h-5 w-5" />
@@ -434,294 +625,348 @@ export default function HomePage() {
       </section>
 
       {/* --- 3b. NEW CONCRETE EXPLANATION --- */}
-      <section className="py-24 bg-slate-950 overflow-hidden relative">
-         {/* Background glow effects */}
-         <div className="absolute top-0 left-0 w-[500px] h-[500px] bg-blue-600/20 rounded-full blur-[120px] pointer-events-none" />
-         <div className="absolute bottom-0 right-0 w-[500px] h-[500px] bg-purple-600/20 rounded-full blur-[120px] pointer-events-none" />
-
+      <section className="py-24 bg-[#D2E8FF] overflow-hidden relative border-b-4 border-[#2E130C]">
          <div className="container mx-auto px-4 relative z-10">
             <div className="text-center max-w-4xl mx-auto mb-16 space-y-6">
-               <Badge className="bg-white/10 text-white border-white/20 px-4 py-1.5 text-sm font-bold uppercase tracking-widest backdrop-blur-sm shadow-lg">
+               <Badge className="bg-[#2E130C]/10 text-[#2E130C] border-2 border-[#2E130C]/20 px-4 py-1.5 text-sm font-titan uppercase tracking-widest backdrop-blur-sm">
                  🧠 Comment ça se passe concrètement
                </Badge>
-               <h2 className="text-4xl md:text-6xl font-black text-white leading-tight">
-                 Votre opportunité du jour <br/><span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">en 3 secondes.</span>
+               <h2 className="text-4xl md:text-6xl font-titan text-[#2E130C] leading-tight">
+                 Votre opportunité du jour <br/><span className="text-[#B20B13] underline decoration-wavy">en 3 secondes.</span>
                </h2>
-               <p className="text-xl md:text-2xl text-slate-400 leading-relaxed max-w-2xl mx-auto font-medium">
-                 Chaque matin, Popey vous propose une nouvelle opportunité business adaptée à votre profil. Découvrez votre match, comprenez son potentiel et passez à l’action immédiatement.
-               </p>
-               
-               
-            </div>
-
-            <div className="grid lg:grid-cols-2 gap-8 lg:gap-16 items-start max-w-6xl mx-auto">
-               
-               {/* Screen 1 - Mystery */}
-               <div className="flex flex-col gap-8 group">
-                  <div className="relative transform transition-transform duration-500 group-hover:-translate-y-2">
-                     <div className="absolute -inset-4 bg-gradient-to-r from-blue-600 to-purple-600 rounded-[3.5rem] opacity-20 blur-xl group-hover:opacity-30 transition-opacity duration-500"></div>
-                     <div className="bg-slate-900 border border-white/10 rounded-[3rem] p-4 backdrop-blur-sm relative z-10 shadow-2xl">
-                        <div className="scale-[0.85] origin-top">
-                            <MysteryCardPreview />
-                        </div>
-                     </div>
-                  </div>
-                  <div className="space-y-4 text-center lg:text-left px-4">
-                     <div className="inline-flex items-center justify-center h-12 w-12 rounded-2xl bg-blue-500/10 text-blue-400 border border-blue-500/20 mb-2 shadow-[0_0_15px_rgba(59,130,246,0.2)]">
-                        <span className="font-black text-xl">1</span>
-                     </div>
-                     <h3 className="text-2xl font-black text-white">Découvrez votre match du jour</h3>
-                     <p className="text-slate-400 text-lg leading-relaxed font-medium">
-                        Popey détecte automatiquement l’entrepreneur le plus pertinent pour vous. <br className="hidden md:block" />
-                        Avant même de révéler son identité, vous voyez le potentiel business, la compatibilité et ce que cette rencontre peut vous apporter.
-                     </p>
-                  </div>
-               </div>
-
-               {/* Screen 2 - Action */}
-               <div className="flex flex-col gap-8 group mt-12 lg:mt-0">
-                  <div className="relative transform transition-transform duration-500 group-hover:-translate-y-2">
-                     <div className="absolute -inset-4 bg-gradient-to-r from-emerald-600 to-blue-600 rounded-[3.5rem] opacity-20 blur-xl group-hover:opacity-30 transition-opacity duration-500"></div>
-                     <div className="bg-slate-900 border border-white/10 rounded-[3rem] p-4 backdrop-blur-sm relative z-10 shadow-2xl">
-                        <div className="scale-[0.85] origin-top">
-                            <MatchCardPreview />
-                        </div>
-                     </div>
-                  </div>
-                  <div className="space-y-4 text-center lg:text-left px-4">
-                     <div className="inline-flex items-center justify-center h-12 w-12 rounded-2xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 mb-2 shadow-[0_0_15px_rgba(16,185,129,0.2)]">
-                        <span className="font-black text-xl">2</span>
-                     </div>
-                     <h3 className="text-2xl font-black text-white">Passez à l’action en un clic</h3>
-                     <p className="text-slate-400 text-lg leading-relaxed font-medium">
-                        Le profil est révélé avec les informations essentielles et un créneau d’appel. <br className="hidden md:block" />
-                        Échangez 5 minutes, partagez vos réseaux et créez de nouvelles opportunités.
-                     </p>
-                  </div>
-               </div>
-
-               {/* Screen 3 - Joker Founder (NEW) */}
-               <div className="flex flex-col gap-8 group mt-12 lg:mt-0 lg:col-span-2 lg:flex-row lg:items-center lg:max-w-4xl lg:mx-auto">
-                  <div className="relative transform transition-transform duration-500 group-hover:-translate-y-2 lg:w-1/2">
-                     <div className="absolute -inset-4 bg-gradient-to-r from-amber-500 to-orange-600 rounded-[3.5rem] opacity-20 blur-xl group-hover:opacity-30 transition-opacity duration-500"></div>
-                     <div className="bg-slate-900 border border-amber-500/20 rounded-[3rem] p-4 backdrop-blur-sm relative z-10 shadow-2xl">
-                        <div className="scale-[0.85] origin-top">
-                            <FounderCardPreview type="rescue" />
-                        </div>
-                     </div>
-                  </div>
-                  <div className="space-y-4 text-center lg:text-left px-4 lg:w-1/2">
-                     <div className="inline-flex items-center justify-center h-12 w-12 rounded-2xl bg-amber-500/10 text-amber-400 border border-amber-500/20 mb-2 shadow-[0_0_15px_rgba(245,158,11,0.2)]">
-                        <span className="font-black text-xl">3</span>
-                     </div>
-                     <Badge className="ml-3 bg-amber-500/20 text-amber-400 border-amber-500/30">GARANTIE ANTI-ÉCHEC</Badge>
-                     <h3 className="text-2xl font-black text-white">Et si l'algorithme ne trouve personne ?</h3>
-                     <p className="text-slate-400 text-lg leading-relaxed font-medium">
-                        Pas de panique. Si aucun match n'est disponible, <strong className="text-white">le fondateur lui-même prend le relais.</strong>
-                        <br/><br/>
-                        Vous recevez une session de coaching express ou une mise en relation manuelle. <br/>
-                        <span className="text-amber-400 font-bold">Zéro journée perdue. Jamais.</span>
-                     </p>
-                  </div>
-               </div>
-
-            </div>
-
-            <div className="mt-20 text-center">
-               <Link href="/inscription/spheres">
-                 <Button 
-                   size="lg" 
-                   className="bg-white text-slate-900 hover:bg-slate-200 hover:text-blue-900 font-black rounded-full px-12 h-20 text-xl shadow-[0_0_50px_rgba(255,255,255,0.2)] transition-all hover:scale-105 hover:shadow-[0_0_80px_rgba(255,255,255,0.4)] ring-4 ring-white/10"
-                 >
-                   👉 Découvrir mon premier match
-                 </Button>
-               </Link>
-            </div>
-         </div>
-      </section>
-
-      {/* --- 3c. ALGORITHM FILTERS (NEW) --- */}
-      <section className="py-24 bg-slate-50 border-b border-slate-200">
-         <div className="container mx-auto px-4 max-w-6xl">
-            <div className="text-center max-w-3xl mx-auto mb-16">
-               <Badge className="bg-slate-900 text-white border-0 mb-4 uppercase tracking-widest px-3 py-1">L'Algorithme Popey</Badge>
-               <h2 className="text-3xl md:text-5xl font-black text-slate-900 mb-6">3 filtres pour garantir <span className="text-blue-600">la qualité</span></h2>
-               <p className="text-xl text-slate-600 leading-relaxed font-medium">
-                  Fini le hasard. Notre algorithme analyse chaque profil pour créer des connexions qui ont du sens.
+               <p className="text-xl md:text-2xl text-[#2E130C]/80 leading-relaxed max-w-2xl mx-auto font-poppins font-bold">
+                 Chaque matin, Popey vous propose une nouvelle opportunité business adaptée à votre profil.
                </p>
             </div>
 
-            <div className="grid md:grid-cols-2 gap-8">
-               {/* Filter 1 */}
-               <div className="md:col-span-2 bg-white p-8 rounded-3xl border border-slate-100 shadow-xl shadow-slate-200/50 hover:-translate-y-1 transition-transform duration-300">
-                  <div className="flex flex-col gap-6">
-                     <div className="flex items-center gap-4">
-                        <div className="h-14 w-14 bg-blue-100 rounded-2xl flex items-center justify-center text-blue-600">
-                           <Target className="h-7 w-7" />
-                        </div>
-                        <div>
-                          <h3 className="text-2xl font-bold text-slate-900">1. Complémentarité</h3>
-                          <p className="text-slate-500 font-medium text-sm">Choisissez votre sphère et découvrez vos futurs alliés.</p>
-                        </div>
-                     </div>
-
-                     {/* TABS HEADER */}
-                     <div className="flex flex-wrap gap-2 pb-2 border-b border-slate-100">
-                        {Object.values(SPHERES).map((sphere) => (
-                           <button
-                              key={sphere.id}
-                              onClick={() => setActiveSphere(sphere.id as keyof typeof SPHERES)}
-                              className={cn(
-                                 "px-4 py-2 rounded-full text-sm font-bold transition-all border",
-                                 activeSphere === sphere.id 
-                                    ? `bg-${sphere.color}-100 text-${sphere.color}-700 border-${sphere.color}-200 shadow-sm` 
-                                    : "bg-white text-slate-500 border-transparent hover:bg-slate-50"
-                              )}
-                           >
-                              {sphere.icon} {sphere.label.split(' &')[0]}
-                           </button>
-                        ))}
-                     </div>
-
-                     {/* ACTIVE SPHERE CONTENT */}
-                     <div className="bg-slate-50/50 rounded-2xl p-6 border border-slate-100 min-h-[300px]">
-                        <div className="flex items-start gap-4 mb-6">
-                           <div className={cn("p-3 rounded-xl bg-white shadow-sm", `text-${SPHERES[activeSphere].color}-600`)}>
-                              <Sparkles className="h-6 w-6" />
-                           </div>
-                           <div>
-                              <h4 className="font-bold text-slate-900 text-lg">
-                                 Sphère {SPHERES[activeSphere].label}
-                              </h4>
-                              <p className="text-slate-500 text-sm">
-                                 {SPHERES[activeSphere].description}
-                              </p>
-                           </div>
-                        </div>
-
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                           {SPHERES[activeSphere].jobs.slice(0, 16).map((job, i) => (
-                              <div key={i} className="bg-white px-3 py-2 rounded-lg border border-slate-100 text-xs font-bold text-slate-600 shadow-sm flex items-center gap-2 hover:border-blue-200 hover:text-blue-700 transition-colors cursor-default">
-                                 <div className={`h-1.5 w-1.5 rounded-full bg-${SPHERES[activeSphere].color}-400 shrink-0`} />
-                                 <span className="truncate">{job}</span>
+            <div className="max-w-6xl mx-auto mt-12">
+               <div className="flex flex-col md:flex-row gap-16 lg:gap-24 items-center min-h-[600px]">
+                  
+                  {/* LEFT COLUMN: 3D CARD FLIP */}
+                  <div className="w-full md:w-1/2 relative h-[600px] flex items-center justify-center perspective-[1000px]">
+                     <motion.div 
+                        className="relative w-full h-full flex items-center justify-center"
+                        animate={{ rotateY: activeStep === 1 ? 0 : 180 }}
+                        transition={{ duration: 0.6, type: "spring", stiffness: 260, damping: 20 }}
+                        style={{ transformStyle: "preserve-3d" }}
+                     >
+                        {/* FRONT (MYSTERY) */}
+                        <div 
+                          className="absolute inset-0 flex items-center justify-center backface-hidden"
+                          style={{ backfaceVisibility: "hidden" }}
+                        >
+                           <div className="bg-[#E2D9BC] border-4 border-[#2E130C] rounded-[2rem] p-4 shadow-[8px_8px_0px_0px_#7A0000] transform rotate-[-2deg] w-full max-w-sm">
+                              <div className="scale-[0.9] origin-center opacity-90 grayscale-[0.2]">
+                                  <MysteryCardPreview />
                               </div>
-                           ))}
-                           <div className="col-span-2 md:col-span-4 text-center mt-2">
-                              <p className="text-xs text-slate-400 italic font-medium">
-                                 💡 Astuce Popey : Un <strong className={`text-${SPHERES[activeSphere].color}-600`}>{SPHERES[activeSphere].jobs[0]}</strong> matche aussi très bien avec un <strong className={`text-${SPHERES[activeSphere].color}-600`}>{SPHERES[activeSphere].jobs[5]}</strong> !
-                              </p>
                            </div>
                         </div>
-                     </div>
-                  </div>
-               </div>
 
-               {/* Filter 2 */}
-               <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-xl shadow-slate-200/50 hover:-translate-y-1 transition-transform duration-300 md:col-span-1">
-                  <div className="h-14 w-14 bg-purple-100 rounded-2xl flex items-center justify-center mb-6 text-purple-600">
-                     <MapPin className="h-7 w-7" />
+                        {/* BACK (REVEALED) */}
+                        <div 
+                          className="absolute inset-0 flex items-center justify-center backface-hidden"
+                          style={{ backfaceVisibility: "hidden", transform: "rotateY(180deg)" }}
+                        >
+                           <div className="bg-[#D2E8FF] border-4 border-[#2E130C] rounded-[2rem] p-4 shadow-[8px_8px_0px_0px_#2E130C] transform rotate-[2deg] w-full max-w-[400px]">
+                              {/* Increased scale for visibility */}
+                              <div className="scale-[1.0] origin-center">
+                                  <MatchCardPreview />
+                              </div>
+                           </div>
+                        </div>
+                     </motion.div>
                   </div>
-                  <h3 className="text-2xl font-bold text-slate-900 mb-4">2. Proximité</h3>
-                  <p className="text-slate-600 mb-6 leading-relaxed">
-                     Pas de visio à l'autre bout du monde. Vous matchez avec des entrepreneurs de votre ville pour créer du lien réel.
-                  </p>
-                  <div className="bg-purple-50 rounded-xl p-4 border border-purple-100">
-                     <p className="text-xs font-bold text-purple-800 uppercase tracking-wide mb-2">Exemple Concret</p>
-                     <p className="text-sm text-purple-900 font-medium italic">
-                        "Vous êtes à Bordeaux ? Déjeunez avec un décideur local qui fréquente les mêmes réseaux que vous."
-                     </p>
-                  </div>
-               </div>
 
-               {/* Filter 3 */}
-               <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-xl shadow-slate-200/50 hover:-translate-y-1 transition-transform duration-300 md:col-span-1">
-                  <div className="h-14 w-14 bg-emerald-100 rounded-2xl flex items-center justify-center mb-6 text-emerald-600">
-                     <Handshake className="h-7 w-7" />
-                  </div>
-                  <h3 className="text-2xl font-bold text-slate-900 mb-4">3. Réciprocité</h3>
-                  <p className="text-slate-600 mb-6 leading-relaxed">
-                     Notre système unique de points filtre les "preneurs". Ici, vous ne rencontrez que ceux qui jouent le jeu.
-                  </p>
-                  <div className="bg-emerald-50 rounded-xl p-4 border border-emerald-100">
-                     <p className="text-xs font-bold text-emerald-800 uppercase tracking-wide mb-2">La Garantie</p>
-                     <p className="text-sm text-emerald-900 font-medium italic">
-                        "Un score de confiance de 4.9/5 assure que votre interlocuteur est là pour donner autant que recevoir."
-                     </p>
+                  {/* RIGHT COLUMN: TEXT CONTENT */}
+                  <div className="w-full md:w-1/2">
+                     <AnimatePresence mode="wait">
+                       {activeStep === 1 ? (
+                         <motion.div
+                           key="text-step1"
+                           initial={{ opacity: 0, x: 20 }}
+                           animate={{ opacity: 1, x: 0 }}
+                           exit={{ opacity: 0, x: -20 }}
+                           transition={{ duration: 0.3 }}
+                           className="space-y-6 text-center md:text-left"
+                         >
+                             <div className="inline-flex items-center justify-center h-12 w-12 rounded-2xl bg-[#E2D9BC] text-[#2E130C] border-2 border-[#2E130C] mb-2 shadow-[4px_4px_0px_0px_#2E130C]">
+                                <span className="font-titan text-xl">1</span>
+                             </div>
+                             <h3 className="text-3xl font-titan text-[#2E130C]">Découvrez votre match du jour</h3>
+                             <p className="text-[#2E130C]/80 text-lg leading-relaxed font-poppins font-bold">
+                                Popey détecte automatiquement l’entrepreneur le plus pertinent pour vous. 
+                                Avant même de révéler son identité, vous voyez le potentiel business, la compatibilité et ce que cette rencontre peut vous apporter.
+                             </p>
+                             <Button 
+                               onClick={() => setActiveStep(2)}
+                               className="bg-[#B20B13] hover:bg-[#7A0000] text-[#E2D9BC] font-titan rounded-xl px-8 h-14 text-lg border-2 border-[#2E130C] shadow-[4px_4px_0px_0px_#2E130C] hover:translate-y-[2px] w-full md:w-auto animate-pulse"
+                             >
+                               DÉCOUVRIR QUI C'EST 🔓
+                             </Button>
+                         </motion.div>
+                       ) : (
+                         <motion.div
+                           key="text-step2"
+                           initial={{ opacity: 0, x: 20 }}
+                           animate={{ opacity: 1, x: 0 }}
+                           exit={{ opacity: 0, x: -20 }}
+                           transition={{ duration: 0.3 }}
+                           className="space-y-6 text-center md:text-left"
+                         >
+                             <div className="inline-flex items-center justify-center h-12 w-12 rounded-2xl bg-[#B20B13] text-[#E2D9BC] border-2 border-[#2E130C] mb-2 shadow-[4px_4px_0px_0px_#E2D9BC]">
+                                <span className="font-titan text-xl">2</span>
+                             </div>
+                             <h3 className="text-3xl font-titan text-[#2E130C]">Passez à l’action en un clic</h3>
+                             <p className="text-[#2E130C]/80 text-lg leading-relaxed font-poppins font-bold">
+                                Le profil est révélé avec les informations essentielles et un créneau d’appel. 
+                                Échangez 5 minutes, créez de nouvelles opportunités (recommandations, avis, partages, clients...).
+                             </p>
+                             <div className="flex flex-col gap-3">
+                               <Link href="/inscription/spheres">
+                                 <Button 
+                                   className="bg-[#2E130C] text-[#E2D9BC] hover:bg-[#4a2c22] font-titan rounded-xl px-8 h-14 text-lg border-4 border-[#2E130C] shadow-[4px_4px_0px_0px_#7A0000] hover:translate-y-[2px] w-full md:w-auto"
+                                 >
+                                   Je veux mon match 👉
+                                 </Button>
+                               </Link>
+                               <Button 
+                                 variant="ghost" 
+                                 className="text-[#2E130C]/60 hover:text-[#2E130C] hover:bg-transparent font-poppins underline text-sm"
+                                 onClick={() => setActiveStep(1)}
+                               >
+                                 Retour au mystère
+                               </Button>
+                             </div>
+                         </motion.div>
+                       )}
+                     </AnimatePresence>
                   </div>
                </div>
             </div>
 
-            <div className="md:grid md:grid-cols-2 gap-8 mt-8 hidden">
-               {/* Spacer for layout if needed, or just let CSS Grid handle it */}
+         </div>
+      </section>
+
+      <SynergySection />
+
+      {/* --- 5. MARKETPLACE (ADDED) --- */}
+      <section className="py-24 bg-[#D2E8FF] text-[#2E130C] relative overflow-hidden border-b-4 border-[#2E130C]">
+        <div className="container mx-auto px-4 relative z-10">
+           <div className="text-center max-w-3xl mx-auto mb-16">
+              <Badge className="bg-[#2E130C] text-[#E2D9BC] border-2 border-[#2E130C] mb-6 uppercase tracking-widest px-3 py-1 font-titan">Accélérateur de Business</Badge>
+              <h2 className="text-3xl md:text-5xl font-titan mb-6 leading-tight">
+                  Pas de match aujourd'hui ? <br/>
+                  <span className="text-[#B20B13] underline decoration-wavy">Accédez au Marché Caché.</span>
+              </h2>
+              <p className="text-xl text-[#2E130C]/80 leading-relaxed font-poppins font-bold">
+                  Ne restez jamais bloqué. Si l'algorithme ne trouve pas de match parfait, puisez directement dans les opportunités partagées par la communauté.
+              </p>
+           </div>
+
+           <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto mb-16">
+               {/* Opportunity Card 1 */}
+               <div className="bg-white rounded-3xl p-6 border-4 border-[#2E130C] shadow-[6px_6px_0px_0px_#2E130C] hover:-translate-y-2 transition-transform">
+                   <div className="flex justify-between items-start mb-6">
+                       <div className="bg-[#D2E8FF] p-3 rounded-2xl border-2 border-[#2E130C]">
+                           <Briefcase className="h-8 w-8 text-[#2E130C]" />
+                       </div>
+                       <Badge className="bg-[#2E130C] text-[#E2D9BC] font-bold border-0 font-poppins">
+                           50 crédits
+                       </Badge>
+                   </div>
+                   <h3 className="text-xl font-titan text-[#2E130C] mb-2">Lead Qualifié - Immo</h3>
+                   <p className="text-[#2E130C]/70 text-sm mb-6 leading-relaxed font-poppins font-bold">
+                       &quot;Je cherche un architecte pour un projet de rénovation complète (120m²) à Bordeaux Centre. Budget validé.&quot;
+                   </p>
+                   <Button className="w-full bg-[#2E130C] hover:bg-[#B20B13] text-[#E2D9BC] font-titan rounded-xl h-12 transition-colors border-2 border-[#2E130C]">
+                       Débloquer le contact
+                   </Button>
+               </div>
+
+               {/* Opportunity Card 2 */}
+               <div className="bg-white rounded-3xl p-6 border-4 border-[#2E130C] shadow-[6px_6px_0px_0px_#B20B13] hover:-translate-y-2 transition-transform relative overflow-hidden transform rotate-1">
+                   <div className="absolute top-0 right-0 bg-[#B20B13] text-[#E2D9BC] text-[10px] font-bold px-3 py-1 rounded-bl-xl uppercase tracking-wider font-titan border-l-2 border-b-2 border-[#2E130C]">
+                       Exclusivité
+                   </div>
+                   <div className="flex justify-between items-start mb-6">
+                       <div className="bg-[#B20B13] p-3 rounded-2xl border-2 border-[#2E130C]">
+                           <Users className="h-8 w-8 text-[#E2D9BC]" />
+                       </div>
+                       <Badge className="bg-[#2E130C] text-[#E2D9BC] font-bold border-0 font-poppins">
+                           150 crédits
+                       </Badge>
+                   </div>
+                   <h3 className="text-xl font-titan text-[#2E130C] mb-2">Intro Décideur - BTP</h3>
+                   <p className="text-[#2E130C]/70 text-sm mb-6 leading-relaxed font-poppins font-bold">
+                       &quot;Je déjeune demain avec le directeur des achats d'un grand groupe de construction. Je peux faire une intro.&quot;
+                   </p>
+                   <Button className="w-full bg-[#B20B13] hover:bg-[#7A0000] text-[#E2D9BC] font-titan rounded-xl h-12 transition-colors border-2 border-[#2E130C]">
+                       Réserver l'intro
+                   </Button>
+               </div>
+
+               {/* Opportunity Card 3 */}
+               <div className="bg-white rounded-3xl p-6 border-4 border-[#2E130C] shadow-[6px_6px_0px_0px_#2E130C] hover:-translate-y-2 transition-transform">
+                   <div className="flex justify-between items-start mb-6">
+                       <div className="bg-[#E2D9BC] p-3 rounded-2xl border-2 border-[#2E130C]">
+                           <MessageCircle className="h-8 w-8 text-[#2E130C]" />
+                       </div>
+                       <Badge className="bg-[#2E130C] text-[#E2D9BC] font-bold border-0 font-poppins">
+                           30 crédits
+                       </Badge>
+                   </div>
+                   <h3 className="text-xl font-titan text-[#2E130C] mb-2">Visibilité - LinkedIn</h3>
+                   <p className="text-[#2E130C]/70 text-sm mb-6 leading-relaxed font-poppins font-bold">
+                       &quot;Je cherche un expert en marketing pour intervenir dans mon prochain live (5k abonnés). Sujet : Acquisition.&quot;
+                   </p>
+                   <Button className="w-full bg-[#2E130C] hover:bg-[#B20B13] text-[#E2D9BC] font-titan rounded-xl h-12 transition-colors border-2 border-[#2E130C]">
+                       Postuler
+                   </Button>
+               </div>
+           </div>
+        </div>
+      </section>
+
+      {/* --- 5b. TRUST SCORE SECTION (NEW) --- */}
+      <section className="py-24 bg-[#E2D9BC] border-b-4 border-[#2E130C] relative overflow-hidden">
+         <div className="container mx-auto px-4 relative z-10">
+            <div className="flex flex-col md:flex-row gap-16 items-center max-w-6xl mx-auto">
+               
+               {/* LEFT: VISUAL */}
+               <div className="w-full md:w-1/2 relative">
+                  <div className="bg-white rounded-[2.5rem] p-8 border-4 border-[#2E130C] shadow-[8px_8px_0px_0px_#2E130C] relative z-10 transform rotate-[-2deg]">
+                      <div className="text-center mb-8">
+                          <div className="inline-block relative">
+                             <div className="text-8xl font-titan text-[#B20B13] drop-shadow-sm">4.6</div>
+                             <div className="absolute -top-4 -right-8 bg-[#FFD700] text-[#2E130C] text-xs font-black uppercase px-2 py-1 rounded-full border-2 border-[#2E130C] rotate-12">Top 10%</div>
+                          </div>
+                          <div className="flex justify-center gap-2 mt-2 text-[#FFD700]">
+                             {[1,2,3,4,5].map(i => <Star key={i} className="h-8 w-8 fill-current stroke-[#2E130C] stroke-2" />)}
+                          </div>
+                          <p className="text-[#2E130C]/60 font-bold font-poppins uppercase tracking-widest mt-2">Score de Confiance</p>
+                      </div>
+                      
+                      <div className="space-y-4">
+                          <div className="flex items-center justify-between p-4 bg-[#D2E8FF]/30 rounded-2xl border-2 border-[#2E130C]/10">
+                              <div className="flex items-center gap-3">
+                                  <div className="bg-[#D2E8FF] p-2 rounded-xl border-2 border-[#2E130C] text-[#2E130C]"><CheckCircle2 className="h-5 w-5" /></div>
+                                  <span className="font-titan text-[#2E130C]">Ponctualité</span>
+                              </div>
+                              <span className="font-black text-[#2E130C]">100%</span>
+                          </div>
+                          <div className="flex items-center justify-between p-4 bg-[#E2D9BC]/30 rounded-2xl border-2 border-[#2E130C]/10">
+                              <div className="flex items-center gap-3">
+                                  <div className="bg-[#E2D9BC] p-2 rounded-xl border-2 border-[#2E130C] text-[#2E130C]"><Handshake className="h-5 w-5" /></div>
+                                  <span className="font-titan text-[#2E130C]">Fiabilité</span>
+                              </div>
+                              <span className="font-black text-[#2E130C]">4.8/5</span>
+                          </div>
+                      </div>
+                  </div>
+                  
+                  {/* Decorative element behind */}
+                  <div className="absolute -inset-4 bg-[#2E130C] rounded-[3rem] transform rotate-[3deg] opacity-10 -z-10"></div>
+               </div>
+
+               {/* RIGHT: CONTENT */}
+               <div className="w-full md:w-1/2 space-y-10">
+                  <div>
+                      <Badge className="bg-[#2E130C] text-[#E2D9BC] border-2 border-[#2E130C] mb-6 uppercase tracking-widest px-3 py-1 font-titan">Réputation</Badge>
+                      <h2 className="text-4xl md:text-5xl font-titan text-[#2E130C] mb-6 leading-tight">
+                          Votre réputation est votre actif le <span className="text-[#B20B13] underline decoration-wavy">plus précieux.</span>
+                      </h2>
+                      <p className="text-xl text-[#2E130C]/80 font-poppins font-bold">
+                          Fini les &quot;je te rappelle&quot; qui n'arrivent jamais. Sur Mon Réseau Local, tout est mesuré.
+                      </p>
+                  </div>
+
+                  <div className="space-y-8">
+                      <div className="flex gap-6">
+                          <div className="shrink-0 bg-[#B20B13] text-[#E2D9BC] h-14 w-14 rounded-2xl border-2 border-[#2E130C] flex items-center justify-center shadow-[4px_4px_0px_0px_#2E130C]">
+                              <Trophy className="h-7 w-7" />
+                          </div>
+                          <div>
+                              <h3 className="text-xl font-titan text-[#2E130C] mb-2">Hiérarchie de Qualité</h3>
+                              <p className="text-[#2E130C]/70 font-poppins font-bold leading-relaxed">
+                                  Ici, la fiabilité est récompensée. Plus vous jouez le jeu, plus l'algorithme vous matche avec les membres 'Elite'.
+                              </p>
+                          </div>
+                      </div>
+
+                      <div className="flex gap-6">
+                          <div className="shrink-0 bg-[#2E130C] text-[#E2D9BC] h-14 w-14 rounded-2xl border-2 border-[#E2D9BC] flex items-center justify-center shadow-[4px_4px_0px_0px_#B20B13]">
+                              <ShieldCheck className="h-7 w-7" />
+                          </div>
+                          <div>
+                              <h3 className="text-xl font-titan text-[#2E130C] mb-2">Accès Privilégié</h3>
+                              <p className="text-[#2E130C]/70 font-poppins font-bold leading-relaxed">
+                                  Un score de 4.5/5 vous donne accès aux décideurs les plus influents de la région.
+                              </p>
+                          </div>
+                      </div>
+                  </div>
+
+                  <div className="pt-4">
+                      <Link href="/inscription/spheres">
+                        <Button className="h-14 px-8 bg-transparent hover:bg-[#2E130C]/5 text-[#2E130C] font-titan rounded-xl text-lg border-4 border-[#2E130C] shadow-[4px_4px_0px_0px_#2E130C] hover:translate-y-[2px] transition-all">
+                            Augmenter mon score
+                        </Button>
+                      </Link>
+                  </div>
+               </div>
             </div>
          </div>
       </section>
 
-      {/* --- 4. GAMIFICATION REWARDS (NEW) --- */}
-      <section className="py-24 bg-slate-50">
+      {/* --- 4. GAMIFICATION REWARDS --- */}
+      <section className="py-24 bg-[#E2D9BC] border-b-4 border-[#2E130C]">
          <div className="container mx-auto px-4">
             
-            {/* 1️⃣ ROI MATH SECTION */}
-            <div className="max-w-4xl mx-auto bg-white rounded-3xl p-8 shadow-xl border border-blue-100 mb-20 text-center transform hover:scale-[1.01] transition-transform">
-                <div className="inline-block bg-green-100 text-green-700 font-bold px-4 py-1 rounded-full mb-4 uppercase tracking-wider text-sm">
+            {/* ROI MATH SECTION */}
+            <div className="max-w-4xl mx-auto bg-white rounded-3xl p-8 border-4 border-[#2E130C] shadow-[8px_8px_0px_0px_#2E130C] mb-20 text-center transform rotate-1">
+                <div className="inline-block bg-[#B20B13] text-[#E2D9BC] font-titan px-4 py-1 rounded-full mb-4 uppercase tracking-wider text-sm border-2 border-[#2E130C]">
                     Simulation Rentabilité
                 </div>
-                <h3 className="text-3xl md:text-4xl font-black text-slate-900 mb-6">
-                    Et si 5 minutes par jour valaient <span className="text-blue-600">3 000 € ?</span>
+                <h3 className="text-3xl md:text-4xl font-titan text-[#2E130C] mb-6">
+                    Et si 5 minutes valaient <span className="text-[#B20B13] underline decoration-wavy">3 000 € ?</span>
                 </h3>
                 
-                <div className="grid md:grid-cols-3 gap-8 items-center justify-center my-8">
+                <div className="grid md:grid-cols-3 gap-8 items-center justify-center my-8 font-poppins">
                     <div className="space-y-2">
-                        <div className="text-4xl font-black text-slate-300">20</div>
-                        <div className="text-sm font-bold text-slate-500 uppercase">Matchs / mois</div>
+                        <div className="text-5xl font-titan text-[#2E130C]">20</div>
+                        <div className="text-sm font-black text-[#2E130C]/60 uppercase">Matchs / mois</div>
                     </div>
-                    <div className="text-2xl font-black text-slate-200">×</div>
+                    <div className="text-4xl font-black text-[#B20B13]">×</div>
                     <div className="space-y-2">
-                        <div className="text-4xl font-black text-slate-300">150€</div>
-                        <div className="text-sm font-bold text-slate-500 uppercase">Valeur Moyenne / Opportunité</div>
-                        <div className="text-xs text-slate-400 italic font-medium max-w-[150px] mx-auto leading-tight">
-                            (Basé sur le coût moyen d'une mise en relation qualifiée à Bordeaux)
-                        </div>
+                        <div className="text-5xl font-titan text-[#2E130C]">150€</div>
+                        <div className="text-sm font-black text-[#2E130C]/60 uppercase">Valeur Moyenne</div>
                     </div>
                 </div>
 
-                <div className="bg-slate-50 rounded-2xl p-6 border border-slate-100 inline-block w-full max-w-lg">
-                    <div className="flex justify-between items-center mb-2">
-                        <span className="text-slate-600 font-medium">Coût de l'abonnement</span>
-                        <span className="font-bold text-slate-900">49 €</span>
-                    </div>
+                <div className="bg-[#E2D9BC] rounded-2xl p-6 border-2 border-[#2E130C] inline-block w-full max-w-lg">
                     <div className="flex justify-between items-center mb-4">
-                        <span className="text-slate-600 font-medium">Valeur générée estimée</span>
-                        <span className="font-bold text-green-600">+ 3 000 € / mois</span>
+                        <span className="text-[#2E130C] font-bold font-poppins">Valeur générée estimée</span>
+                        <span className="font-titan text-[#B20B13] text-xl">+ 3 000 € / mois</span>
                     </div>
-                    <div className="h-2 w-full bg-slate-200 rounded-full overflow-hidden">
-                        <div className="h-full bg-green-500 w-[98%]"></div>
-                    </div>
-                    <div className="flex justify-between items-center mt-2">
-                        <p className="text-xs text-slate-400 text-left font-medium max-w-[70%]">
-                            Note : Simulation basée sur un score de réciprocité moyen. Plus votre score monte, plus vous accédez aux opportunités à +10 pts.
-                        </p>
-                        <p className="text-xs text-slate-900 font-black bg-green-100 text-green-700 px-2 py-1 rounded-lg uppercase tracking-wider">ROI x60</p>
+                    <div className="h-4 w-full bg-white rounded-full overflow-hidden border-2 border-[#2E130C]">
+                        <div className="h-full bg-[#B20B13] w-[98%]"></div>
                     </div>
                 </div>
             </div>
 
             <div className="max-w-4xl mx-auto text-center mb-16">
-               <span className="text-blue-600 font-bold tracking-widest uppercase text-sm mb-2 block">Option recommandée</span>
-               <h2 className="text-3xl md:text-5xl font-black mb-6 text-slate-900">Ce que chaque échange peut réellement générer</h2>
-               <p className="text-xl text-slate-600 leading-relaxed max-w-2xl mx-auto font-medium">
-                 5 minutes suffisent pour débloquer des opportunités que vous n’auriez jamais obtenues seul.
-               </p>
+               <span className="text-[#B20B13] font-pacifico text-2xl mb-2 block">C'est pas de la magie, c'est du réseau !</span>
+               <h2 className="text-3xl md:text-5xl font-titan mb-6 text-[#2E130C]">Ce que chaque échange rapporte</h2>
             </div>
 
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto mb-12">
                {[
-                 { icon: "�", label: "Des Clients Directs", desc: "Transformez une conversation en mise en relation avec un prospect chaud.", pts: "+10 pts", color: "bg-blue-100 text-blue-700" },
-                 { icon: "🔑", label: "Des Accès Stratégiques", desc: "Faites-vous ouvrir la porte d'un décideur ou d'un partenaire clé.", pts: "+8 pts", color: "bg-purple-100 text-purple-700" },
-                 { icon: "📢", label: "Co-Créations & Visibilité", desc: "Lives, posts croisés ou webinaires : fusionnez vos audiences pour booster votre image.", pts: "+7 pts", color: "bg-pink-100 text-pink-700" },
-                 { icon: "🎟", label: "Accès Cercles Fermés", desc: "Soyez invité dans les clubs, dîners business et réseaux VIP de Bordeaux.", pts: "+6 pts", color: "bg-indigo-100 text-indigo-700" },
-                 { icon: "⭐", label: "Crédibilité & Preuve Sociale", desc: "Bétonnez votre réputation avec des avis Google et recommandations LinkedIn.", pts: "+4 pts", color: "bg-orange-100 text-orange-700" },
-                 { icon: "🤝", label: "Coups de Pouce & Entraide", desc: "Feedback, conseil d'expert ou partage d'infos utiles pour avancer plus vite.", pts: "+2 pts", color: "bg-emerald-100 text-emerald-700" },
+                 { icon: "💰", label: "Clients Directs", desc: "Transformez une conversation en mise en relation avec un prospect chaud.", pts: "+10 pts" },
+                 { icon: "🔑", label: "Accès Stratégiques", desc: "Faites-vous ouvrir la porte d'un décideur ou d'un partenaire clé.", pts: "+8 pts" },
+                 { icon: "📢", label: "Co-Créations", desc: "Lives, posts croisés ou webinaires : fusionnez vos audiences.", pts: "+7 pts" },
+                 { icon: "🎟", label: "Accès VIP", desc: "Soyez invité dans les clubs, dîners business et réseaux fermés.", pts: "+6 pts" },
+                 { icon: "⭐", label: "Crédibilité", desc: "Bétonnez votre réputation avec des avis Google et recommandations.", pts: "+4 pts" },
+                 { icon: "🤝", label: "Coups de Pouce", desc: "Feedback, conseil d'expert ou partage d'infos utiles.", pts: "+2 pts" },
                ].map((item, i) => (
                   <motion.div 
                     key={i}
@@ -729,18 +974,18 @@ export default function HomePage() {
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
                     transition={{ delay: i * 0.05 }}
-                    className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm flex flex-col gap-4 hover:shadow-xl transition-all group relative overflow-hidden"
+                    className="bg-white p-6 rounded-3xl border-2 border-[#2E130C] shadow-[4px_4px_0px_0px_#2E130C] hover:translate-y-[-2px] hover:shadow-[2px_2px_0px_0px_#2E130C] transition-all group relative overflow-hidden"
                   >
                      <div className="flex justify-between items-start">
-                        <div className="text-4xl">{item.icon}</div>
-                        <Badge className={cn("font-bold text-[10px] px-2 py-0.5 opacity-60 group-hover:opacity-100 transition-opacity", item.color)}>
+                        <div className="text-4xl mb-4">{item.icon}</div>
+                        <Badge className="font-titan text-xs px-2 py-1 bg-[#D2E8FF] text-[#2E130C] border border-[#2E130C]">
                            {item.pts}
                         </Badge>
                      </div>
                      
                      <div>
-                        <h3 className="font-bold text-slate-900 text-xl mb-2 group-hover:text-blue-600 transition-colors">{item.label}</h3>
-                        <p className="text-slate-600 text-sm leading-relaxed font-medium">
+                        <h3 className="font-titan text-[#2E130C] text-xl mb-2">{item.label}</h3>
+                        <p className="text-[#2E130C]/80 text-sm leading-relaxed font-poppins font-bold">
                            {item.desc}
                         </p>
                      </div>
@@ -751,7 +996,7 @@ export default function HomePage() {
             <div className="flex justify-center">
                 <Button 
                    size="lg" 
-                   className="bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-full px-8 h-12 shadow-lg shadow-blue-200 hover:scale-105 transition-transform"
+                   className="bg-[#B20B13] hover:bg-[#7A0000] text-[#E2D9BC] font-titan rounded-2xl px-8 h-14 border-4 border-[#2E130C] shadow-[6px_6px_0px_0px_#2E130C] hover:translate-y-[2px]"
                    onClick={() => document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' })}
                 >
                   👉 Je veux mes 5 minutes <ArrowRight className="ml-2 h-4 w-4" />
@@ -760,279 +1005,35 @@ export default function HomePage() {
          </div>
       </section>
 
-      {/* --- 5. MARKETPLACE (NEW) --- */}
-      <section className="py-24 bg-slate-900 text-white relative overflow-hidden">
-        {/* Background Effects */}
-        <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-10"></div>
-        <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-yellow-600/10 rounded-full blur-[120px] pointer-events-none"></div>
-        <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-orange-600/10 rounded-full blur-[120px] pointer-events-none"></div>
-
-        <div className="container mx-auto px-4 relative z-10">
-           <div className="text-center max-w-3xl mx-auto mb-16">
-              <Badge className="bg-yellow-500/20 text-yellow-300 border-yellow-500/30 mb-6 uppercase tracking-widest px-3 py-1">Accélérateur de Business</Badge>
-              <h2 className="text-3xl md:text-5xl font-black mb-6 leading-tight">
-                  Pas de match aujourd'hui ? <br/>
-                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-400">Accédez au Marché Caché.</span>
-              </h2>
-              <p className="text-xl text-slate-300 leading-relaxed font-medium">
-                  Ne restez jamais bloqué. Si l'algorithme ne trouve pas de match parfait, puisez directement dans les opportunités partagées par la communauté.
-              </p>
-           </div>
-
-           <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto mb-16">
-               {/* Opportunity Card 1 */}
-               <div className="bg-slate-800/50 rounded-3xl p-6 border border-yellow-500/20 hover:border-yellow-500/50 transition-all hover:-translate-y-2 group">
-                   <div className="flex justify-between items-start mb-6">
-                       <div className="bg-yellow-500/10 p-3 rounded-2xl">
-                           <Briefcase className="h-8 w-8 text-yellow-400" />
-                       </div>
-                       <Badge className="bg-yellow-500 text-slate-900 font-bold border-0">
-                           50 crédits
-                       </Badge>
-                   </div>
-                   <h3 className="text-xl font-bold text-white mb-2">Lead Qualifié - Immo</h3>
-                   <p className="text-slate-400 text-sm mb-6 leading-relaxed">
-                       "Je cherche un architecte pour un projet de rénovation complète (120m²) à Bordeaux Centre. Budget validé."
-                   </p>
-                   <div className="flex items-center gap-3 text-sm text-slate-500 font-bold uppercase tracking-wider mb-6">
-                       <div className="h-6 w-6 rounded-full bg-slate-700 border border-slate-600 flex items-center justify-center text-[10px] text-slate-300 font-bold">JL</div>
-                       Posté par Julien L.
-                   </div>
-                   <Button className="w-full bg-slate-700 hover:bg-yellow-500 hover:text-slate-900 text-white font-bold rounded-xl h-12 transition-colors">
-                       Débloquer le contact
-                   </Button>
-               </div>
-
-               {/* Opportunity Card 2 */}
-               <div className="bg-slate-800/50 rounded-3xl p-6 border border-yellow-500/20 hover:border-yellow-500/50 transition-all hover:-translate-y-2 group relative overflow-hidden">
-                   <div className="absolute top-0 right-0 bg-red-500 text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl uppercase tracking-wider">
-                       Exclusivité
-                   </div>
-                   <div className="flex justify-between items-start mb-6">
-                       <div className="bg-purple-500/10 p-3 rounded-2xl">
-                           <Users className="h-8 w-8 text-purple-400" />
-                       </div>
-                       <Badge className="bg-purple-500 text-white font-bold border-0">
-                           150 crédits
-                       </Badge>
-                   </div>
-                   <h3 className="text-xl font-bold text-white mb-2">Intro Décideur - BTP</h3>
-                   <p className="text-slate-400 text-sm mb-6 leading-relaxed">
-                       "Je déjeune demain avec le directeur des achats d'un grand groupe de construction. Je peux faire une intro."
-                   </p>
-                   <div className="flex items-center gap-3 text-sm text-slate-500 font-bold uppercase tracking-wider mb-6">
-                       <div className="h-6 w-6 rounded-full bg-slate-700 border border-slate-600 flex items-center justify-center text-[10px] text-slate-300 font-bold">MS</div>
-                       Posté par Marc S.
-                   </div>
-                   <Button className="w-full bg-slate-700 hover:bg-purple-500 hover:text-white text-white font-bold rounded-xl h-12 transition-colors">
-                       Réserver l'intro
-                   </Button>
-               </div>
-
-               {/* Opportunity Card 3 */}
-               <div className="bg-slate-800/50 rounded-3xl p-6 border border-yellow-500/20 hover:border-yellow-500/50 transition-all hover:-translate-y-2 group">
-                   <div className="flex justify-between items-start mb-6">
-                       <div className="bg-blue-500/10 p-3 rounded-2xl">
-                           <MessageCircle className="h-8 w-8 text-blue-400" />
-                       </div>
-                       <Badge className="bg-blue-500 text-white font-bold border-0">
-                           30 crédits
-                       </Badge>
-                   </div>
-                   <h3 className="text-xl font-bold text-white mb-2">Visibilité - LinkedIn</h3>
-                   <p className="text-slate-400 text-sm mb-6 leading-relaxed">
-                       "Je cherche un expert en marketing pour intervenir dans mon prochain live (5k abonnés). Sujet : Acquisition."
-                   </p>
-                   <div className="flex items-center gap-3 text-sm text-slate-500 font-bold uppercase tracking-wider mb-6">
-                       <div className="h-6 w-6 rounded-full bg-slate-700 border border-slate-600 flex items-center justify-center text-[10px] text-slate-300 font-bold">CL</div>
-                       Posté par Chloé L.
-                   </div>
-                   <Button className="w-full bg-slate-700 hover:bg-blue-500 hover:text-white text-white font-bold rounded-xl h-12 transition-colors">
-                       Postuler
-                   </Button>
-               </div>
-           </div>
-
-           <div className="text-center">
-               <p className="text-slate-400 mb-6 font-medium">
-                   Plus de 50 nouvelles opportunités postées chaque semaine par les membres.
-               </p>
-               <Link href="/inscription/spheres">
-                   <Button 
-                      size="lg" 
-                      className="bg-yellow-500 hover:bg-yellow-400 text-slate-900 font-black rounded-full px-10 h-14 text-lg shadow-lg shadow-yellow-500/20 transition-transform hover:scale-105"
-                    >
-                      Accéder au Marché <ArrowRight className="ml-2 h-5 w-5" />
-                   </Button>
-               </Link>
-           </div>
-        </div>
-      </section>
-
-      {/* --- 6. TRUST SCORE & RECIPROCITY --- */}
-      <section className="py-24 bg-slate-50">
-         <div className="container mx-auto px-4 max-w-6xl">
-            <div className="grid lg:grid-cols-2 gap-16 items-center">
-               <motion.div
-                 initial={{ opacity: 0, x: -50 }}
-                 whileInView={{ opacity: 1, x: 0 }}
-                 viewport={{ once: true }}
-                 transition={{ duration: 0.8 }}
-               >
-                  <div className="relative">
-                     {/* Big Animated Circle */}
-                     <div className="relative h-80 w-80 mx-auto lg:mx-0">
-                        <svg className="h-full w-full rotate-[-90deg]" viewBox="0 0 100 100">
-                           <circle className="text-slate-200 stroke-current" strokeWidth="8" cx="50" cy="50" r="40" fill="transparent"></circle>
-                           <motion.circle 
-                             initial={{ pathLength: 0 }}
-                             whileInView={{ pathLength: 0.92 }}
-                             transition={{ duration: 2, ease: "easeOut" }}
-                             className="text-blue-600 stroke-current" 
-                             strokeWidth="8" 
-                             strokeLinecap="round" 
-                             cx="50" cy="50" r="40" 
-                             fill="transparent"
-                           ></motion.circle>
-                        </svg>
-                        <div className="absolute inset-0 flex flex-col items-center justify-center">
-                           <span className="text-6xl font-black text-slate-900">4.6</span>
-                           <div className="flex gap-1 mt-2">
-                              {[1,2,3,4,5].map(i => (
-                                <Star key={i} className={cn("h-4 w-4", i <= 4 ? "text-orange-400 fill-orange-400" : "text-slate-300")} />
-                              ))}
-                           </div>
-                           <span className="text-sm font-bold text-slate-400 uppercase mt-2">Score de Confiance</span>
-                        </div>
-                     </div>
-                  </div>
-               </motion.div>
-
-               <motion.div
-                 initial={{ opacity: 0, x: 50 }}
-                 whileInView={{ opacity: 1, x: 0 }}
-                 viewport={{ once: true }}
-                 transition={{ duration: 0.8 }}
-                 className="space-y-8"
-               >
-                  <h2 className="text-4xl md:text-5xl font-black text-slate-900 leading-tight">
-                     Votre réputation est votre <span className="text-blue-600">actif le plus précieux.</span>
-                  </h2>
-                  <p className="text-xl text-slate-600 leading-relaxed">
-                     Fini les "je te rappelle" qui n'arrivent jamais. Sur Mon Réseau Local, tout est mesuré.
-                  </p>
-
-                  <div className="space-y-6">
-                     <div className="flex gap-4">
-                        <div className="h-12 w-12 bg-orange-100 rounded-xl flex items-center justify-center shrink-0">
-                           <Trophy className="h-6 w-6 text-orange-600" />
-                        </div>
-                        <div>
-                           <h4 className="text-xl font-bold text-slate-900">Hiérarchie de Qualité</h4>
-                           <p className="text-slate-500">Ici, la fiabilité est récompensée. Plus vous jouez le jeu, plus l'algorithme vous matche avec les membres 'Elite'.</p>
-                        </div>
-                     </div>
-                     <div className="flex gap-4">
-                        <div className="h-12 w-12 bg-green-100 rounded-xl flex items-center justify-center shrink-0">
-                           <ShieldCheck className="h-6 w-6 text-green-600" />
-                        </div>
-                        <div>
-                           <h4 className="text-xl font-bold text-slate-900">Accès Privilégié</h4>
-                           <p className="text-slate-500">Un score de 4.5/5 vous donne accès aux décideurs les plus influents de la région.</p>
-                        </div>
-                     </div>
-                  </div>
-                  
-                  <Button 
-                    size="lg" 
-                    className="bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-full px-8 h-12 shadow-lg shadow-blue-200"
-                    onClick={() => document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' })}
-                  >
-                    Augmenter mon score <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
-               </motion.div>
-            </div>
-         </div>
-      </section>
-
-      {/* --- 7. PROMISE & IMPACT SECTION (MERGED) --- */}
-      <section className="py-24 bg-blue-900 text-white relative overflow-hidden">
-        <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/graphy.png')]"></div>
-        
-        <div className="container mx-auto px-4 relative z-10">
-           <div className="text-center mb-16 max-w-3xl mx-auto">
-              <Badge className="bg-blue-800 text-blue-200 border-0 mb-6 uppercase tracking-widest px-3 py-1">Impact Réel</Badge>
-              <h2 className="text-3xl md:text-5xl font-black mb-6">Ce que vous pouvez réellement obtenir</h2>
-              <p className="text-blue-200 text-xl">Après 30 jours d'utilisation, la majorité des membres obtiennent :</p>
-           </div>
-
-           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
-                {[
-                    { val: "20-40", txt: "Nouveaux contacts qualifiés" },
-                    { val: "3+", txt: "Recommandations ciblées" },
-                    { val: "1", txt: "Opportunité business concrète" },
-                    { val: "100%", txt: "Visibilité locale" }
-                ].map((stat, i) => (
-                    <div key={i} className="bg-blue-800/30 border border-blue-700 rounded-2xl p-6 text-center">
-                        <div className="text-4xl font-black text-white mb-2">{stat.val}</div>
-                        <div className="text-blue-200 font-medium">{stat.txt}</div>
-                    </div>
-                ))}
-           </div>
-
-           <div className="bg-blue-800/50 rounded-3xl p-8 md:p-12 border border-blue-700/50 max-w-4xl mx-auto text-center">
-              <h3 className="text-2xl font-bold mb-4">Après 3 mois ?</h3>
-              <p className="text-lg text-blue-100 mb-8">
-                 Jusqu’à 60 entrepreneurs rencontrés, un flux régulier d’opportunités et une augmentation moyenne du chiffre d’affaires.
-              </p>
-              <div className="flex flex-col items-center gap-6">
-                  <div className="inline-block bg-white text-blue-900 font-bold px-6 py-3 rounded-full shadow-lg">
-                     Votre réseau devient votre principal moteur de croissance.
-                  </div>
-                  <Button 
-                    size="lg" 
-                    className="bg-blue-500 hover:bg-blue-400 text-white font-bold rounded-full px-8 h-12 shadow-lg shadow-blue-900/50"
-                    onClick={() => document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' })}
-                  >
-                    Je veux ces résultats <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
-              </div>
-           </div>
-        </div>
-      </section>
-
-      {/* --- 8. TESTIMONIALS --- */}
-      <section className="py-24 bg-white">
+      {/* --- 6. TESTIMONIALS (ADDED) --- */}
+      <section className="py-24 bg-[#D2E8FF] border-b-4 border-[#2E130C]">
          <div className="container mx-auto px-4">
             
-            {/* 2️⃣ STRONG PROOF SECTION */}
-            <div className="max-w-5xl mx-auto bg-slate-900 rounded-3xl p-8 md:p-12 mb-20 text-center relative overflow-hidden shadow-2xl">
-                <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600 rounded-full blur-[80px] opacity-20"></div>
-                <div className="absolute bottom-0 left-0 w-64 h-64 bg-purple-600 rounded-full blur-[80px] opacity-20"></div>
-                
-                <h3 className="text-2xl md:text-3xl font-black text-white mb-8 relative z-10">
-                    Ce mois-ci sur <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">Bordeaux</span> :
+            {/* STRONG PROOF SECTION */}
+            <div className="max-w-5xl mx-auto bg-[#2E130C] rounded-3xl p-8 md:p-12 mb-20 text-center relative overflow-hidden shadow-[8px_8px_0px_0px_#E2D9BC] border-4 border-[#E2D9BC]">
+                <h3 className="text-2xl md:text-3xl font-titan text-[#E2D9BC] mb-8 relative z-10">
+                    Ce mois-ci sur <span className="text-[#B20B13] underline decoration-wavy">Bordeaux</span> :
                 </h3>
                 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative z-10">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative z-10 font-poppins">
                     <div className="flex flex-col items-center">
-                        <div className="text-5xl font-black text-white mb-2">312</div>
-                        <div className="text-blue-300 font-bold uppercase text-sm tracking-widest">Mises en relation</div>
+                        <div className="text-5xl font-titan text-[#E2D9BC] mb-2">312</div>
+                        <div className="text-[#D2E8FF] font-bold uppercase text-sm tracking-widest">Mises en relation</div>
                     </div>
-                    <div className="flex flex-col items-center border-x border-white/10 px-4">
-                        <div className="text-5xl font-black text-white mb-2">472</div>
-                        <div className="text-purple-300 font-bold uppercase text-sm tracking-widest">Recommandations</div>
+                    <div className="flex flex-col items-center border-x-2 border-[#E2D9BC]/20 px-4">
+                        <div className="text-5xl font-titan text-[#E2D9BC] mb-2">472</div>
+                        <div className="text-[#D2E8FF] font-bold uppercase text-sm tracking-widest">Recommandations</div>
                     </div>
                     <div className="flex flex-col items-center">
-                        <div className="text-5xl font-black text-emerald-400 mb-2">47</div>
-                        <div className="text-emerald-300 font-bold uppercase text-sm tracking-widest">Deals conclus</div>
+                        <div className="text-5xl font-titan text-[#B20B13] mb-2">47</div>
+                        <div className="text-[#B20B13]/80 font-bold uppercase text-sm tracking-widest">Deals conclus</div>
                     </div>
                 </div>
             </div>
 
             <div className="text-center mb-16">
-               <h2 className="text-3xl md:text-4xl font-black text-slate-900 mb-4">Ils ont arrêté de prospecter dans le vide</h2>
-               <p className="text-slate-500 text-lg">Des résultats concrets, pas juste des discussions.</p>
+               <h2 className="text-3xl md:text-4xl font-titan text-[#2E130C] mb-4">Ils ont arrêté de prospecter dans le vide</h2>
+               <p className="text-[#2E130C]/60 text-lg font-poppins font-bold">Des résultats concrets, pas juste des discussions.</p>
             </div>
 
             <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto mb-16">
@@ -1061,107 +1062,59 @@ export default function HomePage() {
                     initial={{ opacity: 0, y: 20 }}
                     whileInView={{ opacity: 1, y: 0 }}
                     transition={{ delay: i * 0.1 }}
-                    className="bg-slate-50 p-8 rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl transition-shadow relative"
+                    className="bg-white p-8 rounded-3xl border-4 border-[#2E130C] shadow-[4px_4px_0px_0px_#2E130C] hover:translate-y-[-2px] hover:shadow-[2px_2px_0px_0px_#2E130C] transition-all relative"
                   >
-                     <div className="absolute top-8 right-8 text-blue-100"><MessageCircle className="h-8 w-8" /></div>
                      <div className="flex items-center gap-4 mb-6">
-                        <Avatar className="h-14 w-14 border-2 border-slate-100">
+                        <Avatar className="h-14 w-14 border-2 border-[#2E130C]">
                            <AvatarImage src={item.img} className="object-cover" />
                            <AvatarFallback>{item.name[0]}</AvatarFallback>
                         </Avatar>
                         <div>
-                           <div className="font-bold text-slate-900 text-lg">{item.name}</div>
-                           <div className="text-xs text-slate-500 font-bold uppercase">{item.role}</div>
+                           <div className="font-titan text-[#2E130C] text-lg">{item.name}</div>
+                           <div className="text-xs text-[#7A0000] font-bold uppercase font-poppins">{item.role}</div>
                         </div>
                      </div>
-                     <p className="text-slate-600 leading-relaxed italic">"{item.text}"</p>
+                     <p className="text-[#2E130C] leading-relaxed italic font-poppins font-semibold">"{item.text}"</p>
                   </motion.div>
                ))}
-            </div>
-
-            <div className="flex justify-center">
-                <Button 
-                   size="lg" 
-                   className="bg-slate-900 text-white hover:bg-slate-800 font-bold rounded-full px-8 h-12"
-                   onClick={() => document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' })}
-                >
-                  Rejoindre la communauté <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
             </div>
          </div>
       </section>
 
-      {/* --- 9. FOUNDER STORY (REDESIGNED) --- */}
-      <section className="py-24 bg-white border-y border-slate-100 relative overflow-hidden">
+      {/* --- 7. FOUNDER STORY (ADDED) --- */}
+      <section className="py-24 bg-[#E2D9BC] border-b-4 border-[#2E130C] relative overflow-hidden">
         <div className="container mx-auto px-4">
-            <div className="max-w-4xl mx-auto bg-slate-50 rounded-[3rem] p-8 md:p-12 lg:p-16 border border-slate-200 relative overflow-hidden shadow-xl shadow-slate-100/50">
-                {/* Background Decor */}
-                <div className="absolute top-0 right-0 -mt-20 -mr-20 h-80 w-80 bg-blue-100/40 rounded-full blur-3xl pointer-events-none"></div>
-                <div className="absolute bottom-0 left-0 -mb-20 -ml-20 h-80 w-80 bg-purple-100/40 rounded-full blur-3xl pointer-events-none"></div>
+            <div className="max-w-4xl mx-auto bg-white rounded-[3rem] p-8 md:p-12 lg:p-16 border-4 border-[#2E130C] relative overflow-hidden shadow-[12px_12px_0px_0px_#2E130C]">
                 
                 <div className="relative z-10">
                     <div className="flex flex-col items-center text-center mb-10">
-                        <div className="inline-flex items-center justify-center p-4 bg-white rounded-2xl shadow-sm mb-6 border border-slate-100">
-                            <Anchor className="h-8 w-8 text-blue-600" />
+                        <div className="inline-flex items-center justify-center p-4 bg-[#E2D9BC] rounded-2xl shadow-[4px_4px_0px_0px_#2E130C] mb-6 border-2 border-[#2E130C]">
+                            <Anchor className="h-8 w-8 text-[#2E130C]" />
                         </div>
-                        <h2 className="text-3xl md:text-5xl font-black text-slate-900 mb-6">Pourquoi Popey ?</h2>
-                        <div className="h-1 w-20 bg-blue-600 rounded-full"></div>
+                        <h2 className="text-3xl md:text-5xl font-titan text-[#2E130C] mb-6">Pourquoi Popey ?</h2>
                     </div>
                     
-                    <div className="space-y-10 text-lg text-slate-600 leading-relaxed max-w-3xl mx-auto">
+                    <div className="space-y-10 text-lg text-[#2E130C] leading-relaxed max-w-3xl mx-auto font-poppins font-semibold">
                         <div className="text-center">
                             <p className="mb-2">Pendant des années, nous avons observé la même chose :</p>
-                            <p className="text-2xl font-bold text-slate-900">Des entrepreneurs compétents... <span className="text-blue-600">Mais isolés.</span></p>
+                            <p className="text-2xl font-bold text-[#2E130C]">Des entrepreneurs compétents... <span className="text-[#B20B13] font-black">Mais isolés.</span></p>
                         </div>
 
-                        <div className="grid md:grid-cols-2 gap-4">
-                            <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex gap-4 items-center hover:shadow-md transition-shadow">
-                                <div className="h-10 w-10 bg-red-100 rounded-full flex items-center justify-center shrink-0">
-                                    <span className="text-red-500 font-bold text-xl">×</span>
-                                </div>
-                                <p className="font-medium text-slate-700">Certains avaient du talent mais <strong className="text-slate-900">pas de clients.</strong></p>
-                            </div>
-                            <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex gap-4 items-center hover:shadow-md transition-shadow">
-                                <div className="h-10 w-10 bg-red-100 rounded-full flex items-center justify-center shrink-0">
-                                    <span className="text-red-500 font-bold text-xl">×</span>
-                                </div>
-                                <p className="font-medium text-slate-700">D’autres avaient des clients mais <strong className="text-slate-900">pas de réseau.</strong></p>
-                            </div>
-                        </div>
-
-                        <div className="bg-slate-900 text-white p-8 md:p-10 rounded-3xl shadow-2xl shadow-slate-300 transform md:scale-105 transition-transform duration-300 relative overflow-hidden group">
-                            <div className="absolute inset-0 bg-blue-600/10 group-hover:bg-blue-600/20 transition-colors"></div>
+                        <div className="bg-[#2E130C] text-[#E2D9BC] p-8 md:p-10 rounded-3xl shadow-[8px_8px_0px_0px_#7A0000] border-4 border-[#E2D9BC] transform md:scale-105 transition-transform duration-300 relative overflow-hidden group rotate-[-1deg]">
                             <div className="relative z-10 text-center">
-                                <p className="text-sm font-bold text-blue-300 uppercase tracking-widest mb-3">La Réalité</p>
-                                <p className="text-xl md:text-2xl font-serif italic leading-relaxed">
-                                    "Le succès ne dépend pas seulement de ce que vous savez faire.<br className="hidden md:block"/> Il dépend surtout de <span className="text-blue-400 font-bold not-italic">qui vous connaissez</span>."
+                                <p className="text-sm font-bold text-[#E2D9BC]/60 uppercase tracking-widest mb-3">La Réalité</p>
+                                <p className="text-xl md:text-2xl font-pacifico leading-relaxed">
+                                    "Le succès ne dépend pas seulement de ce que vous savez faire.<br className="hidden md:block"/> Il dépend surtout de <span className="text-[#D2E8FF] not-italic font-titan">qui vous connaissez</span>."
                                 </p>
-                            </div>
-                        </div>
-
-                        <div className="text-center pt-4">
-                            <p className="font-bold text-slate-900 mb-6">Nous avons créé un système pour rendre l’entraide :</p>
-                            <div className="flex flex-wrap justify-center gap-3">
-                                {[
-                                    { text: "Simple", icon: CheckCircle2 },
-                                    { text: "Quotidienne", icon: Calendar },
-                                    { text: "Naturelle", icon: Heart },
-                                    { text: "Mesurable", icon: TrendingUp }
-                                ].map((item, i) => (
-                                    <Badge key={i} variant="secondary" className="pl-2 pr-4 py-2 text-sm bg-white border border-slate-200 text-slate-700 shadow-sm hover:bg-blue-50 transition-colors gap-2">
-                                        <item.icon className="h-4 w-4 text-blue-600" />
-                                        {item.text}
-                                    </Badge>
-                                ))}
                             </div>
                         </div>
                         
                         <div className="text-center pt-8">
-                             <p className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-2">Notre Solution</p>
-                             <p className="text-4xl font-black text-slate-900 mb-8">C’est devenu Popey.</p>
+                             <p className="text-sm font-bold text-[#2E130C]/60 uppercase tracking-widest mb-2">Notre Solution</p>
+                             <p className="text-4xl font-titan text-[#2E130C] mb-8">C’est devenu Popey.</p>
                              <Button 
                                 size="lg" 
-                                className="bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-full px-8 h-12 shadow-lg shadow-blue-200"
+                                className="bg-[#B20B13] hover:bg-[#7A0000] text-[#E2D9BC] font-titan rounded-full px-8 h-12 border-2 border-[#2E130C] shadow-[4px_4px_0px_0px_#2E130C] hover:translate-y-[2px]"
                                 onClick={() => document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' })}
                              >
                                Rejoindre Popey <ArrowRight className="ml-2 h-4 w-4" />
@@ -1173,144 +1126,49 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* --- 10. FAQ / OBJECTIONS (NEW) --- */}
-      <section className="py-20 bg-white">
-        <div className="container mx-auto px-4 max-w-3xl">
-            <h2 className="text-3xl font-black text-slate-900 text-center mb-12">Questions fréquentes</h2>
-            
-            <Accordion type="single" collapsible className="w-full">
-                <AccordionItem value="item-0">
-                    <AccordionTrigger className="text-lg font-bold text-slate-900">À qui ce service s'adresse ?</AccordionTrigger>
-                    <AccordionContent className="text-slate-600 text-base">
-                        Entrepreneurs, freelances, auto-entrepreneurs, coachs... toutes personnes qui cherchent à développer leurs réseaux humains et/ou sociaux, qui cherchent de nouveaux clients, opportunités.
-                    </AccordionContent>
-                </AccordionItem>
-                <AccordionItem value="item-1">
-                    <AccordionTrigger className="text-lg font-bold text-slate-900">Je n’ai pas le temps</AccordionTrigger>
-                    <AccordionContent className="text-slate-600 text-base">
-                        Les échanges durent seulement 5 à 10 minutes. Beaucoup de membres les font entre deux rendez-vous ou à la pause café. C'est conçu pour être ultra-efficace.
-                    </AccordionContent>
-                </AccordionItem>
-                <AccordionItem value="item-2">
-                    <AccordionTrigger className="text-lg font-bold text-slate-900">Et si les membres ne sont pas sérieux ?</AccordionTrigger>
-                    <AccordionContent className="text-slate-600 text-base">
-                        Le score de confiance rend chaque interaction transparente. Les membres fiables reçoivent plus d’opportunités, les autres sont naturellement filtrés.
-                    </AccordionContent>
-                </AccordionItem>
-                <AccordionItem value="item-3">
-                    <AccordionTrigger className="text-lg font-bold text-slate-900">Mon activité est spécifique</AccordionTrigger>
-                    <AccordionContent className="text-slate-600 text-base">
-                        Justement. Plus votre activité est spécifique, plus un réseau humain est efficace pour vous recommander aux bonnes personnes.
-                    </AccordionContent>
-                </AccordionItem>
-                <AccordionItem value="item-4">
-                    <AccordionTrigger className="text-lg font-bold text-slate-900">Et si je ne reçois rien ?</AccordionTrigger>
-                    <AccordionContent className="text-slate-600 text-base">
-                        Le système repose sur la réciprocité : plus vous aidez, plus vous recevez. Nous vous garantissons des rencontres, c'est à vous de créer le lien.
-                    </AccordionContent>
-                </AccordionItem>
-            </Accordion>
-        </div>
-      </section>
-
-      {/* --- 11. ZERO CONSTRAINT (MOVED) --- */}
-      <section className="py-16 bg-green-50/50 border-t border-green-100">
-        <div className="container mx-auto px-4 max-w-4xl text-center">
-            <Badge className="bg-green-100 text-green-700 border-green-200 mb-4 px-3 py-1 font-bold uppercase tracking-wider">Liberté Totale</Badge>
-            <h2 className="text-3xl font-black text-slate-900 mb-6">Zéro pression. Zéro contrainte.</h2>
-            <div className="grid md:grid-cols-2 gap-8 items-center text-left">
-                <div>
-                    <p className="text-lg text-slate-700 mb-4 font-medium">Vous gardez toujours le contrôle :</p>
-                    <ul className="space-y-3">
-                       <li className="flex items-center gap-3 font-medium text-slate-700">
-                          <CheckCircle2 className="h-5 w-5 text-green-600" /> Choisissez votre rythme
-                       </li>
-                       <li className="flex items-center gap-3 font-medium text-slate-700">
-                          <CheckCircle2 className="h-5 w-5 text-green-600" /> Reportez quand vous voulez
-                       </li>
-                       <li className="flex items-center gap-3 font-medium text-slate-700">
-                          <CheckCircle2 className="h-5 w-5 text-green-600" /> Faites une pause à tout moment
-                       </li>
-                       <li className="flex items-center gap-3 font-medium text-slate-700">
-                          <CheckCircle2 className="h-5 w-5 text-green-600" /> Aucun engagement
-                       </li>
-                    </ul>
-                </div>
-                <div className="bg-white p-6 rounded-2xl border border-green-100 shadow-sm">
-                    <p className="text-slate-600 italic">"Votre réseau doit rester un plaisir, pas une obligation. C'est pour ça que vous pouvez annuler ou pauser votre abonnement en 1 clic."</p>
-                </div>
-            </div>
-        </div>
-      </section>
-
-      {/* --- 12. VISION (NEW) --- */}
-      <section className="py-20 bg-white">
-        <div className="container mx-auto px-4 max-w-3xl text-center">
-            <h2 className="text-3xl font-black text-slate-900 mb-6">Imaginez votre activité dans 6 mois</h2>
-            <div className="space-y-4 text-xl text-slate-600">
-                <p>Un téléphone qui sonne.</p>
-                <p>Des recommandations régulières.</p>
-                <p>Des partenaires qui pensent à vous.</p>
-            </div>
-            <div className="flex justify-center gap-4 mt-8 font-bold text-slate-900">
-                <span className="flex items-center gap-2"><CheckCircle2 className="text-blue-600 h-5 w-5"/> Moins de stress</span>
-                <span className="flex items-center gap-2"><CheckCircle2 className="text-blue-600 h-5 w-5"/> Plus de stabilité</span>
-                <span className="flex items-center gap-2"><CheckCircle2 className="text-blue-600 h-5 w-5"/> Plus de plaisir</span>
-            </div>
-            <p className="mt-8 text-2xl font-black text-blue-600">C’est la puissance d’un réseau actif.</p>
-        </div>
-      </section>
-
       {/* --- 13. PRICING & FINAL CTA --- */}
-      <section id="pricing" className="py-24 bg-white relative overflow-hidden border-t border-slate-100">
+      <section id="pricing" className="py-24 bg-[#D2E8FF] relative overflow-hidden border-t-4 border-[#E2D9BC]">
          <div className="container mx-auto px-4 relative z-10">
-            <div className="max-w-4xl mx-auto bg-slate-900 rounded-[3rem] p-8 md:p-16 text-center text-white shadow-2xl relative overflow-hidden">
-               {/* Background Effects */}
-               <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600 rounded-full blur-[100px] opacity-30"></div>
-               <div className="absolute bottom-0 left-0 w-64 h-64 bg-purple-600 rounded-full blur-[100px] opacity-30"></div>
+            <div className="max-w-4xl mx-auto bg-[#E2D9BC] rounded-[3rem] p-8 md:p-16 text-center border-4 border-[#E2D9BC] shadow-2xl relative overflow-hidden">
                
-               <h2 className="text-4xl md:text-5xl font-black mb-6 relative z-10">
-                  Votre réseau commence <span className="text-blue-400">aujourd’hui.</span>
+               <h2 className="text-4xl md:text-5xl font-titan mb-6 relative z-10 text-[#2E130C]">
+                  Votre réseau commence <span className="text-[#B20B13] underline decoration-wavy">aujourd’hui.</span>
                </h2>
                
-               <div className="bg-white/10 backdrop-blur-md rounded-3xl p-8 max-w-lg mx-auto mb-8 border border-white/10 mt-12 text-left">
+               <div className="bg-white rounded-3xl p-8 max-w-lg mx-auto mb-8 border-4 border-[#2E130C] mt-12 text-left shadow-[8px_8px_0px_0px_#2E130C] rotate-1">
                   <div className="text-center mb-8">
-                      <div className="inline-block bg-blue-500/20 text-blue-300 border border-blue-500/30 px-6 py-2 rounded-full text-base font-bold uppercase tracking-widest mb-4">
+                      <div className="inline-block bg-[#D2E8FF] text-[#2E130C] border-2 border-[#2E130C] px-6 py-2 rounded-full text-base font-titan uppercase tracking-widest mb-4">
                           Essai gratuit
                       </div>
-                      <div className="text-3xl md:text-4xl font-black mb-2 leading-tight">1 jour = 1 opportunité concrète</div>
-                      <p className="text-slate-300 text-base md:text-lg mt-4 font-medium">
-                          Découvre immédiatement une opportunité réelle pour ton business et teste Popey Academy sans aucun risque.
+                      <div className="text-3xl md:text-4xl font-titan text-[#2E130C] mb-2 leading-tight">1 jour = 1 match</div>
+                      <p className="text-[#2E130C] text-base md:text-lg mt-4 font-poppins font-bold">
+                          Découvre immédiatement une opportunité réelle pour ton business.
                       </p>
                   </div>
 
-                  <ul className="space-y-4 mb-8">
+                  <ul className="space-y-4 mb-8 font-poppins font-bold text-[#2E130C]">
                      <li className="flex items-start gap-3 text-base md:text-lg">
-                        <CheckCircle2 className="h-6 w-6 text-green-400 shrink-0" /> 
+                        <CheckCircle2 className="h-6 w-6 text-[#B20B13] shrink-0" /> 
                         <span className="font-bold">1 opportunité garantie dès aujourd’hui</span>
                      </li>
                      <li className="flex items-start gap-3 text-base md:text-lg">
-                        <CheckCircle2 className="h-6 w-6 text-green-400 shrink-0" /> 
-                        <span>Accès complet au dashboard et à tous les outils</span>
+                        <CheckCircle2 className="h-6 w-6 text-[#B20B13] shrink-0" /> 
+                        <span>Accès complet au dashboard</span>
                      </li>
                      <li className="flex items-start gap-3 text-base md:text-lg">
-                        <CheckCircle2 className="h-6 w-6 text-green-400 shrink-0" /> 
-                        <span>Score de confiance pour chaque profil, pour des mises en relation fiables</span>
-                     </li>
-                     <li className="flex items-start gap-3 text-base md:text-lg">
-                        <CheckCircle2 className="h-6 w-6 text-green-400 shrink-0" /> 
-                        <span>Autonomie et contrôle total sur ton réseau</span>
+                        <CheckCircle2 className="h-6 w-6 text-[#B20B13] shrink-0" /> 
+                        <span>Score de confiance</span>
                      </li>
                   </ul>
                   
                   <Link href="/inscription/spheres">
-                    <Button className="w-full h-16 bg-white text-slate-900 hover:bg-slate-100 font-black rounded-xl text-xl shadow-xl shadow-white/10 transition-transform hover:scale-[1.02]">
+                    <Button className="w-full h-16 bg-[#B20B13] text-[#E2D9BC] hover:bg-[#7A0000] font-titan rounded-xl text-xl border-2 border-[#2E130C] shadow-[4px_4px_0px_0px_#2E130C] hover:translate-y-[2px]">
                       Commencer mon essai gratuit
                     </Button>
                   </Link>
                   
-                  <div className="text-sm text-slate-400 mt-6 text-center leading-relaxed">
-                      Après ce test, l’accès complet devient <span className="text-white font-bold">49 €/mois</span> pour profiter de toutes les opportunités et booster réellement ton réseau.
+                  <div className="text-sm text-[#2E130C]/60 mt-6 text-center leading-relaxed font-poppins font-bold">
+                      Après ce test, l’accès complet devient <span className="text-[#2E130C] font-black">49 €/mois</span>.
                   </div>
                </div>
             </div>
@@ -1318,46 +1176,38 @@ export default function HomePage() {
       </section>
 
       {/* FOOTER */}
-      <footer className="bg-white py-12 border-t border-slate-100 text-slate-900">
+      <footer className="bg-[#E2D9BC] py-12 border-t-4 border-[#2E130C] text-[#2E130C] font-poppins font-bold">
         <div className="container mx-auto px-4">
-            <div className="grid md:grid-cols-4 gap-8 mb-12">
+            <div className="grid md:grid-cols-3 gap-8 mb-12">
                 <div className="space-y-4">
                     <div className="flex items-center gap-2">
-                        <Anchor className="h-6 w-6 text-blue-600" />
-                        <span className="font-black uppercase tracking-widest">Popey Academy</span>
+                        <div className="bg-[#B20B13] text-[#E2D9BC] p-1 rounded-md border-2 border-[#2E130C]">
+                            <Anchor className="h-6 w-6" />
+                        </div>
+                        <span className="font-titan uppercase tracking-widest text-lg">Popey Academy</span>
                     </div>
-                    <p className="text-sm text-slate-500">
+                    <p className="text-sm text-[#2E130C]/80">
                         La première école qui transforme l'indécision en action.
-                        <br/>Force & Honneur.
+                        <br/><span className="font-pacifico text-[#B20B13] text-lg">Force & Honneur !</span>
                     </p>
                 </div>
                 <div>
-                    <h4 className="font-bold text-slate-900 uppercase mb-4 text-sm">Programmes</h4>
-                    <ul className="space-y-2 text-sm text-slate-500">
-                        <li><Link href="/emploi" className="hover:text-blue-600">Trouver sa voie</Link></li>
-                        <li><Link href="/entrepreneur" className="hover:text-blue-600">Lancer son activité</Link></li>
-                        <li><Link href="/mon-reseau-local/connexion" className="hover:text-blue-600">Réseau Local (Connexion)</Link></li>
+                    <h4 className="font-titan text-[#2E130C] uppercase mb-4 text-sm">Légal</h4>
+                    <ul className="space-y-2 text-sm text-[#2E130C]/80">
+                        <li><Link href="/legal/mentions" className="hover:text-[#B20B13]">Mentions Légales</Link></li>
+                        <li><Link href="/legal/terms" className="hover:text-[#B20B13]">CGV / CGU</Link></li>
                     </ul>
                 </div>
                 <div>
-                    <h4 className="font-bold text-slate-900 uppercase mb-4 text-sm">Légal</h4>
-                    <ul className="space-y-2 text-sm text-slate-500">
-                        <li><Link href="/legal/mentions" className="hover:text-blue-600">Mentions Légales</Link></li>
-                        <li><Link href="/legal/terms" className="hover:text-blue-600">CGV / CGU</Link></li>
-                        <li><Link href="/legal/privacy" className="hover:text-blue-600">Politique de Confidentialité</Link></li>
-                    </ul>
-                </div>
-                <div>
-                    <h4 className="font-bold text-slate-900 uppercase mb-4 text-sm">Contact</h4>
-                    <ul className="space-y-2 text-sm text-slate-500">
-                        <li>hello@popey.academy</li>
-                        <li>Paris, France</li>
-                        <li className="pt-4"><Link href="/login" className="text-slate-400 hover:text-blue-600 font-bold">Admin / Connexion Email</Link></li>
+                    <h4 className="font-titan text-[#2E130C] uppercase mb-4 text-sm">Contact</h4>
+                    <ul className="space-y-2 text-sm text-[#2E130C]/80">
+                        <li>contact@popey.academy</li>
+                        <li>Dax, France</li>
                     </ul>
                 </div>
             </div>
-            <div className="pt-8 border-t border-slate-100 text-center">
-                <p className="text-slate-400 text-xs">© 2026 Popey Academy. Tous droits réservés.</p>
+            <div className="pt-8 border-t-2 border-[#2E130C]/20 text-center">
+                <p className="text-[#2E130C]/60 text-xs">© 2026 Popey Academy. Tous droits réservés.</p>
             </div>
         </div>
       </footer>

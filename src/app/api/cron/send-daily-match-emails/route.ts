@@ -149,38 +149,40 @@ async function handleSendEmails(request: Request) {
         }
     });
 
-    // 6. Fetch Emails from Auth (Parallel)
+    // 6. Fetch Emails from Auth (Batched)
     if (usersNeedingEmail.size > 0) {
         log(`[CRON] Fetching emails for ${usersNeedingEmail.size} users from Auth...`);
-        const emailPromises = Array.from(usersNeedingEmail).map(async (id) => {
-            const { data, error } = await supabase.auth.admin.getUserById(id);
-            if (error) {
-                console.error(`[CRON] Failed to fetch auth user ${id}:`, error);
-                return { id, email: null };
-            }
-            return { id, email: data.user.email };
-        });
-
-        const emailResults = await Promise.all(emailPromises);
-        emailResults.forEach(({ id, email }) => {
-            if (email) {
-                const profile = profileMap.get(id) || { id };
-                profileMap.set(id, { ...profile, email });
-            }
-        });
+        const userIdsToFetch = Array.from(usersNeedingEmail);
+        const AUTH_BATCH_SIZE = 5;
+        
+        for (let i = 0; i < userIdsToFetch.length; i += AUTH_BATCH_SIZE) {
+             const batch = userIdsToFetch.slice(i, i + AUTH_BATCH_SIZE);
+             const batchPromises = batch.map(async (id) => {
+                const { data, error } = await supabase.auth.admin.getUserById(id);
+                if (error) {
+                    console.error(`[CRON] Failed to fetch auth user ${id}:`, error);
+                    return { id, email: null };
+                }
+                return { id, email: data.user.email };
+             });
+             
+             const results = await Promise.all(batchPromises);
+             results.forEach(({ id, email }) => {
+                if (email) {
+                    const profile = profileMap.get(id) || { id };
+                    profileMap.set(id, { ...profile, email });
+                }
+             });
+        }
     }
 
-    // 7. Prepare Emails with Batched Sending (To avoid timeouts)
+    // 7. Prepare Emails for Batch Sending (Resend Batch API)
     let emailsSent = 0;
     const errors: any[] = [];
     const fromEmail = process.env.EMAIL_FROM || 'Popey Academy <contact@popey.academy>';
     
-    // Batch size of 50 (Resend limit is usually 100/sec, but let's be safe and fast)
-    // We construct ALL email objects first, then send in batches if using batch API, 
-    // or parallelize promises if using single send.
-    // Given the timeout, we should use Promise.all with a concurrency limit.
-    
-    const allEmailTasks: (() => Promise<any>)[] = [];
+    // Construct Array of Email Options
+    const emailsToSend: any[] = [];
 
     for (const match of matches) {
         let user1 = profileMap.get(match.user1_id);
@@ -190,71 +192,76 @@ async function handleSendEmails(request: Request) {
             continue;
         }
 
-        // Task for User 1
-        allEmailTasks.push(async () => {
-            try {
-                const goalLabel = user2.current_goals?.[0] ? GOAL_LABELS[user2.current_goals[0]] : "Développer son activité";
-                await resend.emails.send({
-                    from: fromEmail,
-                    to: user1.email,
-                    subject: `⚓️ Votre match du jour : ${user2.display_name} !`,
-                    react: DailyMatchEmail({
-                        userName: user1.display_name,
-                        matchName: user2.display_name,
-                        matchJob: user2.trade || "Entrepreneur",
-                        matchCity: user2.city || "En ligne",
-                        matchAvatar: user2.avatar_url,
-                        matchGoal: goalLabel,
-                        matchSuperpower: user2.superpower,
-                        matchNeed: user2.current_need,
-                        dashboardUrl: `${process.env.NEXT_PUBLIC_APP_URL || 'https://popey.academy'}/mon-reseau-local/dashboard`
-                    })
-                });
-                return { success: true };
-            } catch (e: any) {
-                return { success: false, error: e.message };
-            }
+        // Email for User 1
+        const goalLabel1 = user2.current_goals?.[0] ? GOAL_LABELS[user2.current_goals[0]] : "Développer son activité";
+        emailsToSend.push({
+            from: fromEmail,
+            to: user1.email,
+            subject: `⚓️ Votre match du jour : ${user2.display_name} !`,
+            react: DailyMatchEmail({
+                userName: user1.display_name,
+                matchName: user2.display_name,
+                matchJob: user2.trade || "Entrepreneur",
+                matchCity: user2.city || "En ligne",
+                matchAvatar: user2.avatar_url,
+                matchGoal: goalLabel1,
+                matchSuperpower: user2.superpower,
+                matchNeed: user2.current_need,
+                dashboardUrl: `${process.env.NEXT_PUBLIC_APP_URL || 'https://popey.academy'}/mon-reseau-local/dashboard`
+            })
         });
 
-        // Task for User 2
-        allEmailTasks.push(async () => {
-            try {
-                const goalLabel = user1.current_goals?.[0] ? GOAL_LABELS[user1.current_goals[0]] : "Développer son activité";
-                await resend.emails.send({
-                    from: fromEmail,
-                    to: user2.email,
-                    subject: `⚓️ Votre match du jour : ${user1.display_name} !`,
-                    react: DailyMatchEmail({
-                        userName: user2.display_name,
-                        matchName: user1.display_name,
-                        matchJob: user1.trade || "Entrepreneur",
-                        matchCity: user1.city || "En ligne",
-                        matchAvatar: user1.avatar_url,
-                        matchGoal: goalLabel,
-                        matchSuperpower: user1.superpower,
-                        matchNeed: user1.current_need,
-                        dashboardUrl: `${process.env.NEXT_PUBLIC_APP_URL || 'https://popey.academy'}/mon-reseau-local/dashboard`
-                    })
-                });
-                return { success: true };
-            } catch (e: any) {
-                return { success: false, error: e.message };
-            }
+        // Email for User 2
+        const goalLabel2 = user1.current_goals?.[0] ? GOAL_LABELS[user1.current_goals[0]] : "Développer son activité";
+        emailsToSend.push({
+            from: fromEmail,
+            to: user2.email,
+            subject: `⚓️ Votre match du jour : ${user1.display_name} !`,
+            react: DailyMatchEmail({
+                userName: user2.display_name,
+                matchName: user1.display_name,
+                matchJob: user1.trade || "Entrepreneur",
+                matchCity: user1.city || "En ligne",
+                matchAvatar: user1.avatar_url,
+                matchGoal: goalLabel2,
+                matchSuperpower: user1.superpower,
+                matchNeed: user1.current_need,
+                dashboardUrl: `${process.env.NEXT_PUBLIC_APP_URL || 'https://popey.academy'}/mon-reseau-local/dashboard`
+            })
         });
     }
 
-    // Execute in batches of 10 to prevent rate limits but stay fast
-    const BATCH_SIZE = 10;
-    for (let i = 0; i < allEmailTasks.length; i += BATCH_SIZE) {
-        const batch = allEmailTasks.slice(i, i + BATCH_SIZE);
-        log(`[CRON] Sending batch ${i / BATCH_SIZE + 1} (${batch.length} emails)...`);
+    // Execute Batch Send (Resend limit is 100 emails per batch call)
+    const BATCH_SIZE = 100;
+    
+    if (emailsToSend.length > 0) {
+        log(`[CRON] Prepared ${emailsToSend.length} emails. Sending via Batch API...`);
         
-        const results = await Promise.all(batch.map(task => task()));
-        
-        results.forEach(r => {
-            if (r.success) emailsSent++;
-            else errors.push(r.error);
-        });
+        for (let i = 0; i < emailsToSend.length; i += BATCH_SIZE) {
+            const batch = emailsToSend.slice(i, i + BATCH_SIZE);
+            log(`[CRON] Sending batch ${Math.floor(i / BATCH_SIZE) + 1} (${batch.length} emails)...`);
+            
+            try {
+                const { data, error } = await resend.batch.send(batch);
+                
+                if (error) {
+                    console.error('[CRON] Batch send error:', error);
+                    errors.push(error);
+                } else {
+                    // data is an array of results for each email
+                    if (data) {
+                         // Check for individual errors in the batch response if needed
+                         // Usually data.data is an array of objects { id: '...' } or errors
+                         emailsSent += batch.length; // Assume success if no top-level error, or refine logic
+                    }
+                }
+            } catch (e: any) {
+                 console.error('[CRON] Batch execution exception:', e);
+                 errors.push(e.message);
+            }
+        }
+    } else {
+        log("[CRON] No valid emails to send (missing emails or profiles).");
     }
 
     log(`[CRON] Processed ${matches.length} matches. Sent ${emailsSent} emails. Errors: ${errors.length}`);
