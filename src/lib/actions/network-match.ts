@@ -302,25 +302,14 @@ export async function getDailyMatches() {
 
       if ((feedbackCount && feedbackCount > 0) || (analyticsCount && analyticsCount > 0)) {
           // Already completed.
-          // IMPORTANT: If we have already completed the founder match today, we MUST NOT return it again.
-          // However, if we return an empty array [], the frontend will show the "Waiting Card" (or Weekend Card if applicable).
-          // But if we have other sorted matches (future), we should return those instead.
-          
           if (sortedMatches.length > 0) {
              return sortedMatches.slice(0, 2);
           }
           return []; // This triggers "No matches" -> Weekend Card or Waiting Card
-      } else if (sortedMatches.length === 0) {
-          // Already completed the founder match today!
-          // Do not inject it. Return empty or next future match.
-          // return sortedMatches.length > 0 ? [sortedMatches[0]] : [];
-      } else if (sortedMatches.length === 0) {
-          // Already completed the founder match today!
-          // Do not inject it. Return empty or next future match.
-          // return sortedMatches.length > 0 ? [sortedMatches[0]] : [];
-      } else if (sortedMatches.length === 0) {
-          // Only inject if strictly NO match today AND no future match waiting
-          
+      }
+
+      // If NOT completed, and NO matches found -> Inject Founder Match
+      if (sortedMatches.length === 0) {
           const founderMatch = {
               id: 'founder-joker-' + todayParisStr,
               partnerId: 'popey-founder',
@@ -342,7 +331,6 @@ export async function getDailyMatches() {
               date: todayParisStr
           };
           
-          // If no match at all -> Show Founder Match TODAY (Rescue/Onboarding)
           return [founderMatch];
       }
   }
