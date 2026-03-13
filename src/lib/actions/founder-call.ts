@@ -13,6 +13,7 @@ export async function notifyFounderCall(type: 'onboarding' | 'rescue') {
     
     if (!user) return { success: false, error: "Non connecté" };
 
+    // 1. Log Analytics Event
     const { error } = await supabase
       .from("analytics_events")
       .insert({
@@ -26,6 +27,16 @@ export async function notifyFounderCall(type: 'onboarding' | 'rescue') {
       });
       
     if (error) throw error;
+
+    // 2. Create Match Feedback to mark "Daily Mission" as completed
+    // This ensures the Founder Card disappears after refresh
+    await supabase.from("match_feedback").insert({
+        giver_id: user.id,
+        receiver_id: 'popey-founder',
+        rating: 5, // Default max score for founder interaction
+        tag: `founder_${type}`, // 'founder_onboarding' or 'founder_rescue'
+        // match_id is null as this is a virtual match
+    });
     
     return { success: true };
 

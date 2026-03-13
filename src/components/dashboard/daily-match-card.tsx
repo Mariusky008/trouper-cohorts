@@ -663,9 +663,14 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
   const now = new Date();
   const isWeekend = now.getDay() === 6 || now.getDay() === 0;
 
+  // Calculate if tomorrow is weekend (for Friday evening / "Job Done" state)
+  const tomorrow = new Date(now);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const isTomorrowWeekend = tomorrow.getDay() === 6 || tomorrow.getDay() === 0;
+
   // Weekend State - Clean & Warm
   if (!matches || matches.length === 0) {
-      if (isWeekend) {
+      if (isWeekend || isTomorrowWeekend) {
           return <WeekendCard />;
       }
 
@@ -736,24 +741,6 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
   const isFounderMatch = match.partnerId === 'popey-founder' || match.name?.toLowerCase().includes("jean-philippe");
   const isRescue = match.tags?.includes('rescue');
 
-  if (isFounderMatch) {
-      const handleFounderCall = async () => {
-          const type = isRescue ? "rescue" : "onboarding";
-          try {
-              const result = await notifyFounderCall(type);
-              if (result.success) {
-                  toast.success("Demande envoyée ! 📞", { description: "Jean-Philippe a été notifié." });
-              } else {
-                  toast.error("Erreur lors de l'envoi", { description: result.error });
-              }
-          } catch (e) {
-              toast.error("Erreur de connexion");
-          }
-      };
-
-      return <FounderCardPreview type={isRescue ? "rescue" : "onboarding"} onConfirm={handleFounderCall} />;
-  }
-
   const nextMatch = matches.length > 1 ? matches[1] : {
       id: 'teaser-future',
       partnerId: 'teaser-next',
@@ -781,6 +768,25 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
       }
 
       return <MysteryCard onReveal={() => {}} match={nextMatch} locked={true} />;
+  }
+
+  if (isFounderMatch) {
+      const handleFounderCall = async () => {
+          const type = isRescue ? "rescue" : "onboarding";
+          try {
+              const result = await notifyFounderCall(type);
+              if (result.success) {
+                  toast.success("Demande envoyée ! 📞", { description: "Jean-Philippe a été notifié." });
+                  setStep('validated'); // Force validation state to trigger Weekend Card
+              } else {
+                  toast.error("Erreur lors de l'envoi", { description: result.error });
+              }
+          } catch (e) {
+              toast.error("Erreur de connexion");
+          }
+      };
+
+      return <FounderCardPreview type={isRescue ? "rescue" : "onboarding"} onConfirm={handleFounderCall} />;
   }
 
   // MATCH CARD (REVEALED) - Clean Light Design
