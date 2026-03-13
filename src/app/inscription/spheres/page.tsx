@@ -81,28 +81,28 @@ const MOCK_SLOTS: Record<SphereId, string[]> = {
     'Architecte d\'intérieur', 'Maître d\'œuvre', 'Cuisiniste', 'Électricien/Domotique', 
     'Paysagiste', 'Pisciniste', 'Notaire', 'Déménageur', 'Conciergerie Airbnb', 
     'Photographe Immo', 'Chasseur Immo', 'Avocat Fiscaliste', 'Assureur Habitation', 
-    'Menuisier', 'Expert Panneaux Solaires', 'Home Stager'
+    'Menuisier', 'Expert Panneaux Solaires', 'Autre métier'
   ],
   digital: [
     'Webdesigner', 'Expert SEO', 'Copywriter', 'Community Manager', 'Vidéaste Corporate', 
     'Agence Ads', 'Expert Tunnel de Vente', 'Coach Business', 'Expert Comptable', 
     'Recruteur', 'Consultant RH', 'Développeur Web', 'Expert Cybersécurité', 
     'Graphiste', 'Imprimeur', 'Consultant CRM', 'Expert No-Code', 
-    'Commercial Freelance', 'Growth Hacker', 'Community Builder'
+    'Commercial Freelance', 'Growth Hacker', 'Autre métier'
   ],
   sante: [
     'Coach Sportif', 'Nutritionniste', 'Ostéopathe', 'Prof de Yoga', 'Naturopathe', 
     'Magasin Bio', 'Coiffeur', 'Esthéticienne', 'Sophrologue', 'Psychologue', 
     'Wedding Planner', 'Traiteur', 'Photographe Famille', 'Coach de Vie', 
     'Hypnothérapeute', 'Masseuse Bien-être', 'Kinésiologue', 'Acupuncteur', 
-    'Personal Shopper', 'Éducateur Canin'
+    'Personal Shopper', 'Autre métier'
   ],
   commerce: [
     'Restaurateur', 'Caviste', 'Gérant Salle de Sport', 'Fleuriste', 'Chocolatier', 
     'Gérant de Gîte', 'Bijoutier', 'Opticien', 'Libraire', 'Gérant Coworking', 
     'Prêt-à-porter', 'Loueur de Voitures', 'Assureur Pro', 'Événementiel Local', 
     'Agent de Voyage', 'Courtier Énergie', 'Enseigniste', 'Service Nettoyage', 
-    'Torréfacteur', 'Coach Prise de Parole'
+    'Torréfacteur', 'Autre métier'
   ],
   conseil: [
     'Avocat Affaires', 'Avocat Droit du Travail', 'Conseil Propriété Intellectuelle', 
@@ -110,7 +110,7 @@ const MOCK_SLOTS: Record<SphereId, string[]> = {
     'Audit Cybersécurité', 'Commissaire aux comptes', 'Gestion de crise', 
     'Courtier Flotte Auto', 'Immo Entreprise', 'Formateur Qualiopi', 
     'Consultant Logistique', 'Graphologue', 'Huissier', 'Médiateur', 
-    'Expert Transmission Entreprise', 'Consultant IA', 'Agent d\'Artistes/Sportifs'
+    'Expert Transmission Entreprise', 'Consultant IA', 'Autre métier'
   ]
 };
 
@@ -129,6 +129,7 @@ export default function SpheresRegistrationPage() {
     phone: "",
     email: "",
     password: "",
+    trade: "",
     quickWin: ""
   });
   const [isLoading, setIsLoading] = useState(false);
@@ -149,7 +150,8 @@ export default function SpheresRegistrationPage() {
     setIsModalOpen(true);
     setFormData(prev => ({
         ...prev,
-        city: activeCity ? CITIES.find(c => c.id === activeCity)?.label || "" : ""
+        city: activeCity ? CITIES.find(c => c.id === activeCity)?.label || "" : "",
+        trade: slot === "Autre métier" ? "" : slot // Pre-fill trade if not "Autre métier"
     }));
   };
 
@@ -162,7 +164,8 @@ export default function SpheresRegistrationPage() {
         payload.append("password", formData.password);
         payload.append("fullName", formData.fullName);
         payload.append("city", formData.city);
-        payload.append("trade", selectedSlot || "");
+        // Use the form data trade which is editable
+        payload.append("trade", formData.trade);
         payload.append("phone", formData.phone);
         payload.append("sphere", activeSphere);
         payload.append("quickWin", formData.quickWin);
@@ -411,9 +414,10 @@ export default function SpheresRegistrationPage() {
                     <Label htmlFor="activity" className="text-xs font-black uppercase text-[#2E130C]/60 ml-1">Activité</Label>
                     <Input 
                         id="activity" 
-                        defaultValue={selectedSlot || ""} 
-                        className="bg-[#2E130C]/10 border-2 border-[#2E130C]/20 h-12 rounded-xl font-bold text-[#2E130C]" 
-                        readOnly
+                        placeholder="Votre métier..." 
+                        className="bg-white border-2 border-[#2E130C] h-12 rounded-xl focus-visible:ring-0 focus-visible:border-[#B20B13] placeholder:text-[#2E130C]/30 font-bold" 
+                        value={formData.trade}
+                        onChange={(e) => setFormData({...formData, trade: e.target.value})}
                     />
                 </div>
                 <div className="space-y-2">
