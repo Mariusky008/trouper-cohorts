@@ -170,34 +170,30 @@ async function handleSendEmails(request: Request) {
         });
     }
 
-    // 7. Prepare Emails
+    // 7. Prepare Emails with Batched Sending (To avoid timeouts)
     let emailsSent = 0;
-    const emailPromises: Promise<any>[] = [];
     const errors: any[] = [];
-
-    // Use verified domain sender
     const fromEmail = process.env.EMAIL_FROM || 'Popey Academy <contact@popey.academy>';
+    
+    // Batch size of 50 (Resend limit is usually 100/sec, but let's be safe and fast)
+    // We construct ALL email objects first, then send in batches if using batch API, 
+    // or parallelize promises if using single send.
+    // Given the timeout, we should use Promise.all with a concurrency limit.
+    
+    const allEmailTasks: (() => Promise<any>)[] = [];
 
     for (const match of matches) {
         let user1 = profileMap.get(match.user1_id);
         let user2 = profileMap.get(match.user2_id);
 
-        if (!user1 || !user2) {
-            console.warn(`[CRON] Skipping match ${match.id}: missing profiles`);
+        if (!user1 || !user2 || !user1.email || !user2.email) {
             continue;
         }
 
-        if (!user1.email || !user2.email) {
-             console.error(`[CRON] Skipping match ${match.id}: missing emails (U1: ${!!user1.email}, U2: ${!!user2.email})`);
-             errors.push(`Match ${match.id}: Missing emails`);
-             continue;
-        }
-
-        // Prepare email for User 1 (About User 2)
-        const sendToUser1 = async () => {
+        // Task for User 1
+        allEmailTasks.push(async () => {
             try {
                 const goalLabel = user2.current_goals?.[0] ? GOAL_LABELS[user2.current_goals[0]] : "Développer son activité";
-                
                 await resend.emails.send({
                     from: fromEmail,
                     to: user1.email,
@@ -214,18 +210,16 @@ async function handleSendEmails(request: Request) {
                         dashboardUrl: `${process.env.NEXT_PUBLIC_APP_URL || 'https://popey.academy'}/mon-reseau-local/dashboard`
                     })
                 });
-                return { success: true, userId: user1.id };
-            } catch (err: any) {
-                console.error(`[CRON] Failed to send to user1 (${user1.email}):`, err);
-                throw { userId: user1.id, error: err.message };
+                return { success: true };
+            } catch (e: any) {
+                return { success: false, error: e.message };
             }
-        };
+        });
 
-        // Prepare email for User 2 (About User 1)
-        const sendToUser2 = async () => {
+        // Task for User 2
+        allEmailTasks.push(async () => {
             try {
                 const goalLabel = user1.current_goals?.[0] ? GOAL_LABELS[user1.current_goals[0]] : "Développer son activité";
-
                 await resend.emails.send({
                     from: fromEmail,
                     to: user2.email,
@@ -242,27 +236,26 @@ async function handleSendEmails(request: Request) {
                         dashboardUrl: `${process.env.NEXT_PUBLIC_APP_URL || 'https://popey.academy'}/mon-reseau-local/dashboard`
                     })
                 });
-                return { success: true, userId: user2.id };
-            } catch (err: any) {
-                console.error(`[CRON] Failed to send to user2 (${user2.email}):`, err);
-                throw { userId: user2.id, error: err.message };
+                return { success: true };
+            } catch (e: any) {
+                return { success: false, error: e.message };
             }
-        };
-
-        emailPromises.push(sendToUser1());
-        emailPromises.push(sendToUser2());
+        });
     }
 
-    // 8. Wait for all emails
-    const results = await Promise.allSettled(emailPromises);
-    
-    results.forEach((result) => {
-        if (result.status === 'fulfilled') {
-            emailsSent++;
-        } else {
-            errors.push(result.reason);
-        }
-    });
+    // Execute in batches of 10 to prevent rate limits but stay fast
+    const BATCH_SIZE = 10;
+    for (let i = 0; i < allEmailTasks.length; i += BATCH_SIZE) {
+        const batch = allEmailTasks.slice(i, i + BATCH_SIZE);
+        log(`[CRON] Sending batch ${i / BATCH_SIZE + 1} (${batch.length} emails)...`);
+        
+        const results = await Promise.all(batch.map(task => task()));
+        
+        results.forEach(r => {
+            if (r.success) emailsSent++;
+            else errors.push(r.error);
+        });
+    }
 
     log(`[CRON] Processed ${matches.length} matches. Sent ${emailsSent} emails. Errors: ${errors.length}`);
 
