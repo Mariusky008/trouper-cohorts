@@ -194,6 +194,11 @@ export async function getDailyMatches() {
       // Inject hasFeedback status
       match.hasFeedback = hasFeedback;
       
+      // NEW CHECK: If match status is 'met', we also consider it validated
+      if (match.status === 'met') {
+          match.hasFeedback = true;
+      }
+      
       if (hasFeedback) {
           // console.log(`[DEBUG] Match ${match.id} has feedback. Status injected.`);
       }
