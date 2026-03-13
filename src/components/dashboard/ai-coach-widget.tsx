@@ -91,12 +91,12 @@ export function AICoachWidget({ dayContext }: AICoachWidgetProps) {
   }, [messages]);
 
   const containerClass = isExpanded 
-    ? "fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 md:p-8"
+    ? "fixed inset-0 z-50 flex items-center justify-center bg-[#2E130C]/40 backdrop-blur-sm p-4 md:p-8"
     : "relative h-full";
 
   const cardClass = isExpanded
-    ? "bg-slate-900 border border-slate-800 rounded-xl overflow-hidden flex flex-col w-full max-w-4xl h-full shadow-2xl relative animate-in fade-in zoom-in-95 duration-200"
-    : "bg-slate-900 border border-slate-800 rounded-xl overflow-hidden flex flex-col h-full shadow-2xl relative";
+    ? "bg-white border border-[#2E130C]/10 rounded-xl overflow-hidden flex flex-col w-full max-w-4xl h-full shadow-2xl relative animate-in fade-in zoom-in-95 duration-200"
+    : "bg-white border border-[#2E130C]/10 rounded-xl overflow-hidden flex flex-col h-full shadow-xl relative";
 
   return (
     <div className={containerClass}>
@@ -123,16 +123,16 @@ export function AICoachWidget({ dayContext }: AICoachWidgetProps) {
         </div>
 
         {/* Chat Area */}
-        <ScrollArea className="flex-1 p-4 bg-slate-950" ref={scrollRef}>
+        <ScrollArea className="flex-1 p-4 bg-[#F3F0E7]" ref={scrollRef}>
             <div className="space-y-4">
                 {/* Welcome Message */}
                 {messages.length === 0 && (
                     <div className="flex gap-3">
-                        <div className="h-8 w-8 rounded-full bg-orange-900/50 border border-orange-500/30 flex items-center justify-center shrink-0">
-                            <Bot className="h-4 w-4 text-orange-400" />
+                        <div className="h-8 w-8 rounded-full bg-orange-100 border border-orange-200 flex items-center justify-center shrink-0">
+                            <Bot className="h-4 w-4 text-orange-600" />
                         </div>
-                        <div className="bg-slate-900 border border-slate-800 p-3 rounded-2xl rounded-tl-none text-sm text-slate-300 shadow-sm max-w-[85%]">
-                            <p className="font-bold text-orange-400 mb-1 text-xs uppercase">Coach Popey</p>
+                        <div className="bg-white border border-[#2E130C]/5 p-3 rounded-2xl rounded-tl-none text-sm text-[#2E130C]/80 shadow-sm max-w-[85%]">
+                            <p className="font-bold text-orange-600 mb-1 text-xs uppercase">Coach Popey</p>
                             <p>Salut ! Prêt à attaquer la mission "{dayContext.mission}" ?<br/>
                             Envoie-moi ton brouillon ou pose-moi une question, je suis là pour sécuriser ton livrable.</p>
                         </div>
@@ -143,18 +143,18 @@ export function AICoachWidget({ dayContext }: AICoachWidgetProps) {
                     <div key={m.id} className={`flex gap-3 ${m.role === 'user' ? 'flex-row-reverse' : ''}`}>
                         <div className={`h-8 w-8 rounded-full flex items-center justify-center shrink-0 border ${
                             m.role === 'user' 
-                            ? 'bg-blue-900/50 border-blue-500/30' 
-                            : 'bg-orange-900/50 border-orange-500/30'
+                            ? 'bg-blue-100 border-blue-200' 
+                            : 'bg-orange-100 border-orange-200'
                         }`}>
-                            {m.role === 'user' ? <User className="h-4 w-4 text-blue-400" /> : <Bot className="h-4 w-4 text-orange-400" />}
+                            {m.role === 'user' ? <User className="h-4 w-4 text-blue-600" /> : <Bot className="h-4 w-4 text-orange-600" />}
                         </div>
                         
                         <div className={`p-3 rounded-2xl text-sm shadow-sm max-w-[85%] ${
                             m.role === 'user'
                             ? 'bg-blue-600 text-white rounded-tr-none'
-                            : 'bg-slate-900 border border-slate-800 text-slate-300 rounded-tl-none'
+                            : 'bg-white border border-[#2E130C]/5 text-[#2E130C]/80 rounded-tl-none'
                         }`}>
-                            {m.role !== 'user' && <p className="font-bold text-orange-400 mb-1 text-xs uppercase">Coach Popey</p>}
+                            {m.role !== 'user' && <p className="font-bold text-orange-600 mb-1 text-xs uppercase">Coach Popey</p>}
                             <p className="whitespace-pre-wrap leading-relaxed">{m.content}</p>
                         </div>
                     </div>
@@ -162,7 +162,7 @@ export function AICoachWidget({ dayContext }: AICoachWidgetProps) {
                 
                 {/* Error Message */}
                 {error && (
-                    <div className="bg-red-900/50 border border-red-500/50 p-3 rounded-lg text-xs text-red-200">
+                    <div className="bg-red-50 border border-red-200 p-3 rounded-lg text-xs text-red-600">
                         <p className="font-bold mb-1">Erreur de connexion :</p>
                         <p>{error.message || "Une erreur inconnue est survenue."}</p>
                     </div>
@@ -170,10 +170,10 @@ export function AICoachWidget({ dayContext }: AICoachWidgetProps) {
                 
                 {isLoading && (
                     <div className="flex gap-3">
-                        <div className="h-8 w-8 rounded-full bg-orange-900/50 border border-orange-500/30 flex items-center justify-center shrink-0">
-                            <Bot className="h-4 w-4 text-orange-400" />
+                        <div className="h-8 w-8 rounded-full bg-orange-100 border border-orange-200 flex items-center justify-center shrink-0">
+                            <Bot className="h-4 w-4 text-orange-600" />
                         </div>
-                        <div className="bg-slate-900 border border-slate-800 p-3 rounded-2xl rounded-tl-none text-sm text-slate-300">
+                        <div className="bg-white border border-[#2E130C]/5 p-3 rounded-2xl rounded-tl-none text-sm text-[#2E130C]/80">
                             <div className="flex gap-1 items-center h-4">
                                 <span className="w-1.5 h-1.5 bg-orange-500 rounded-full animate-bounce [animation-delay:-0.3s]"></span>
                                 <span className="w-1.5 h-1.5 bg-orange-500 rounded-full animate-bounce [animation-delay:-0.15s]"></span>
@@ -186,19 +186,19 @@ export function AICoachWidget({ dayContext }: AICoachWidgetProps) {
         </ScrollArea>
 
         {/* Input Area */}
-        <div className="p-3 bg-slate-900 border-t border-slate-800">
+        <div className="p-3 bg-white border-t border-[#2E130C]/5">
             <form onSubmit={handleSubmit} className="flex gap-2">
                 <Input 
                     value={input} 
                     onChange={(e) => setInput(e.target.value)} 
                     placeholder="Pose ta question ou colle ton texte..." 
-                    className="bg-slate-950 border-slate-800 text-slate-200 focus-visible:ring-orange-500"
+                    className="bg-slate-50 border-slate-200 text-[#2E130C] focus-visible:ring-orange-500 placeholder:text-slate-400"
                 />
                 <Button type="submit" size="icon" className="bg-orange-600 hover:bg-orange-500 text-white shrink-0" disabled={isLoading || !input.trim()}>
                     <Send className="h-4 w-4" />
                 </Button>
             </form>
-            <p className="text-[10px] text-slate-600 text-center mt-2">
+            <p className="text-[10px] text-slate-400 text-center mt-2">
                 L'IA peut faire des erreurs. Vérifiez toujours avant de publier.
             </p>
         </div>
