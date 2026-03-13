@@ -282,12 +282,8 @@ export default function SpheresRegistrationPage() {
         {!isConfirmed && (
             <div className="bg-white border-4 border-[#2E130C] rounded-2xl p-6 flex items-center gap-6 shadow-[6px_6px_0px_0px_#2E130C] transform rotate-1">
                 <div className="flex flex-col">
-                    <span className="text-xs font-black text-[#B20B13] uppercase tracking-widest mb-1">Places disponibles</span>
-                    <p className="text-3xl font-titan text-[#2E130C]">76 / 100</p>
-                </div>
-                <div className="h-10 w-1 bg-[#2E130C]/10 rounded-full" />
-                <div className="text-right">
-                    <p className="text-xs font-bold text-[#2E130C]/60 leading-tight">Prenez votre siège avant <br />qu'un concurrent ne le fasse.</p>
+                    <span className="text-xs font-black text-[#B20B13] uppercase tracking-widest mb-1">Status</span>
+                    <p className="text-xl font-titan text-[#2E130C]">Inscription Ouverte</p>
                 </div>
             </div>
         )}
