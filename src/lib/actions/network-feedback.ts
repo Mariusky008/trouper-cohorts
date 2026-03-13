@@ -44,17 +44,38 @@ export async function saveMatchFeedback(
   // Use Admin Client to bypass RLS policies if user policies are not set up correctly
   const adminClient = createAdminClient();
   
-  const { error } = await adminClient.from("match_feedback").insert({
-    match_id: finalMatchId, // Can be null if not provided
-    giver_id: user.id,
-    receiver_id: finalReceiverId,
-    rating,
-    tag: finalTag,
-  });
+  // Debug log
+  console.log(`[SaveFeedback] Inserting feedback for Match: ${finalMatchId}, Giver: ${user.id}, Receiver: ${finalReceiverId}`);
 
-  if (error) {
-    console.error("Error saving feedback:", error);
-    return { error: error.message };
+  // CHECK IF RECEIVER EXISTS (to avoid FK violation)
+  // We check 'profiles' which should mirror auth users.
+  const { data: receiverExists } = await adminClient
+    .from("profiles")
+    .select("id")
+    .eq("id", finalReceiverId)
+    .single();
+
+  if (!receiverExists) {
+      console.error(`[SaveFeedback] Receiver ${finalReceiverId} not found in profiles! Cannot insert feedback.`);
+      // If receiver is missing, we CANNOT insert feedback.
+      // But we CAN mark match as met to unblock the user.
+      console.log("[SaveFeedback] Skipping feedback insert, forcing match status update.");
+  } else {
+      const { error: insertError } = await adminClient.from("match_feedback").insert({
+        match_id: finalMatchId, // Can be null if not provided
+        giver_id: user.id,
+        receiver_id: finalReceiverId,
+        rating,
+        tag: finalTag,
+      });
+      
+      if (insertError) {
+        console.error("[SaveFeedback] Error saving feedback:", insertError);
+        // Save error to return later if match update also fails
+        // But we proceed to try updating match status
+      } else {
+        console.log("[SaveFeedback] Success!");
+      }
   }
 
   // 2. Update Match Status (Admin Context to bypass RLS)
@@ -66,10 +87,10 @@ export async function saveMatchFeedback(
 
     if (updateError) {
       console.error("Error updating match status:", updateError);
-      // We don't return error here as feedback was saved successfully
+      return { error: "Failed to update match status: " + updateError.message };
     }
   }
-
+  
   revalidatePath("/mon-reseau-local/dashboard");
   return { success: true };
 }

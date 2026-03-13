@@ -170,7 +170,10 @@ export async function getDailyMatches() {
   let userFeedbacks: any[] = [];
   
   if (partnerIds.length > 0) {
-      const { data: feedbacks } = await supabase
+      // Use Admin Client to ensure we can read feedbacks regardless of RLS
+      const supabaseAdmin = createAdminClient();
+      
+      const { data: feedbacks } = await supabaseAdmin
         .from('match_feedback')
         .select('receiver_id, created_at')
         .eq('giver_id', user.id)

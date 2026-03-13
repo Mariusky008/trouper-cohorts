@@ -15,70 +15,43 @@ import { Users, TrendingUp, Activity, UserPlus } from "lucide-react";
 import { DeleteCohortButton } from "@/components/admin/delete-cohort-button";
 
 import { DailyValidationsList } from "@/components/admin/daily-validations-list";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export const dynamic = 'force-dynamic';
 
 export default async function AdminCohortsPage() {
   const supabase = await createClient();
+  const adminClient = createAdminClient();
   
-  const [cohortsRes, preRegRes, membersRes] = await Promise.all([
-      supabase.from("cohorts").select("*").order("created_at", { ascending: false }),
-      supabase.from("pre_registrations").select("*", { count: 'exact', head: true }),
-      supabase.from("cohort_members").select("*", { count: 'exact', head: true })
+  const [cohortsRes] = await Promise.all([
+      supabase.from("cohorts").select("*").order("created_at", { ascending: false })
   ]);
 
   const cohorts = cohortsRes.data || [];
-  const preRegCount = preRegRes.count || 0;
-  const activeMembersCount = membersRes.count || 0;
-  const liveCohortsCount = cohorts.filter(c => c.status === 'live').length;
+  
+  // Fetch validations using Admin Client (Bypass RLS)
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const todayIso = today.toISOString();
+
+  const { data: validations } = await adminClient
+    .from('match_feedback')
+    .select(`
+        id,
+        created_at,
+        rating,
+        tag,
+        giver:giver_id(id, display_name, avatar_url, trade),
+        receiver:receiver_id(id, display_name, avatar_url)
+    `)
+    .gte('created_at', todayIso)
+    .order('created_at', { ascending: false });
 
   return (
-    <div className="space-y-8">
-      {/* KPI Cards */}
-      <div className="grid gap-4 md:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Inscrits (Leads)</CardTitle>
-            <UserPlus className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{preRegCount}</div>
-            <p className="text-xs text-muted-foreground">+12% depuis le mois dernier</p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Membres Actifs</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{activeMembersCount}</div>
-            <p className="text-xs text-muted-foreground">Dans {cohorts.length} équipages</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Équipages en Mer</CardTitle>
-            <Activity className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{liveCohortsCount}</div>
-            <p className="text-xs text-muted-foreground">Sur {cohorts.length} total</p>
-          </CardContent>
-        </Card>
-        
-         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Taux d&apos;Engagement</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">87%</div>
-            <p className="text-xs text-muted-foreground">Moyenne des missions validées</p>
-          </CardContent>
-        </Card>
+    <div className="space-y-8 p-8 max-w-7xl mx-auto">
+      <div>
+        <h1 className="text-3xl font-black tracking-tight">Admin Dashboard</h1>
+        <p className="text-muted-foreground">Vue d'ensemble des cohortes et de l'activité.</p>
       </div>
 
       {/* Mission Validations (Daily Wins) */}
@@ -88,7 +61,7 @@ export default async function AdminCohortsPage() {
             Missions Validées (Aujourd'hui)
         </h2>
         <div className="border rounded-lg bg-card shadow-sm p-0 overflow-hidden">
-            <DailyValidationsList />
+            <DailyValidationsList initialValidations={validations || []} />
         </div>
       </div>
 

@@ -564,7 +564,11 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
             tag = `${tag}:${selectedBadge}`;
         }
         
-        await saveMatchFeedback(currentMatch.partnerId, score, tag, currentMatch.id);
+        const result = await saveMatchFeedback(currentMatch.partnerId, score, tag, currentMatch.id);
+        if (result?.error) {
+            toast.error("Erreur validation: " + result.error);
+            return; // Stop here if save failed
+        }
     }
 
     // 2. Save Opportunity if exists
@@ -572,14 +576,22 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
         await handleCreateOpportunity(currentMatch.partnerId, currentMatch.name);
         // Ensure we mark as met even if no rating was given
         if (!rating) {
-             await saveMatchFeedback(currentMatch.partnerId, 0, "gift_only", currentMatch.id);
+             const result = await saveMatchFeedback(currentMatch.partnerId, 0, "gift_only", currentMatch.id);
+             if (result?.error) {
+                toast.error("Erreur validation: " + result.error);
+                return;
+             }
         }
     }
     
     // 3. Fallback: If neither rating nor opportunity, but call happened, we must close the match
     if (!rating && !oppType && currentMatch.partnerId) {
          // Default close with no specific rating (or neutral)
-         await saveMatchFeedback(currentMatch.partnerId, 3, "completed", currentMatch.id);
+         const result = await saveMatchFeedback(currentMatch.partnerId, 3, "completed", currentMatch.id);
+         if (result?.error) {
+            toast.error("Erreur validation: " + result.error);
+            return;
+         }
     }
 
     // 3. Finalize

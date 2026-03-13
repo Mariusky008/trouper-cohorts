@@ -14,47 +14,9 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { CheckCircle2, Clock } from "lucide-react";
 
-export function DailyValidationsList() {
-  const [validations, setValidations] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchValidations = async () => {
-      const supabase = createClient();
-      
-      // Get today's date at midnight
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const todayIso = today.toISOString();
-
-      // Fetch feedbacks created today
-      const { data, error } = await supabase
-        .from('match_feedback')
-        .select(`
-            id,
-            created_at,
-            rating,
-            tag,
-            giver:giver_id(id, display_name, avatar_url, trade),
-            receiver:receiver_id(id, display_name, avatar_url)
-        `)
-        .gte('created_at', todayIso)
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        console.error("Error fetching validations:", error);
-      } else {
-        setValidations(data || []);
-      }
-      setLoading(false);
-    };
-
-    fetchValidations();
-  }, []);
-
-  if (loading) {
-    return <div className="p-8 text-center text-muted-foreground">Chargement des données...</div>;
-  }
+export function DailyValidationsList({ initialValidations = [] }: { initialValidations?: any[] }) {
+  // If no initial data, show empty state immediately (Server Component handles fetching)
+  const validations = initialValidations;
 
   if (validations.length === 0) {
     return (
