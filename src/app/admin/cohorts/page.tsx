@@ -14,6 +14,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, TrendingUp, Activity, UserPlus } from "lucide-react";
 import { DeleteCohortButton } from "@/components/admin/delete-cohort-button";
 
+import { DailyValidationsList } from "@/components/admin/daily-validations-list";
+
 export const dynamic = 'force-dynamic';
 
 export default async function AdminCohortsPage() {
@@ -77,6 +79,17 @@ export default async function AdminCohortsPage() {
             <p className="text-xs text-muted-foreground">Moyenne des missions validées</p>
           </CardContent>
         </Card>
+      </div>
+
+      {/* Mission Validations (Daily Wins) */}
+      <div className="space-y-4">
+        <h2 className="text-xl font-bold tracking-tight flex items-center gap-2">
+            <TrendingUp className="h-5 w-5 text-green-600" />
+            Missions Validées (Aujourd'hui)
+        </h2>
+        <div className="border rounded-lg bg-card shadow-sm p-0 overflow-hidden">
+            <DailyValidationsList />
+        </div>
       </div>
 
       {/* Cohorts Table */}
