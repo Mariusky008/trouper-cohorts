@@ -18,6 +18,9 @@ export async function notifyFounderCall(type: 'onboarding' | 'rescue') {
     // Use Admin Client to ensure writes succeed regardless of RLS policies
     const supabaseAdmin = createAdminClient();
 
+    // Debug Log
+    console.log(`[FounderCall] Validating for User: ${user.id}`);
+
     // 1. Log Analytics Event (Using generic metadata structure)
     const { error } = await supabaseAdmin
       .from("analytics_events")
@@ -32,8 +35,10 @@ export async function notifyFounderCall(type: 'onboarding' | 'rescue') {
       });
       
     if (error) {
-        console.error("Analytics insert error:", error);
+        console.error("[FounderCall] Analytics insert error:", error);
         // Don't throw, proceed to feedback
+    } else {
+        console.log("[FounderCall] Analytics Logged Successfully");
     }
 
     // 2. Create Match Feedback to mark "Daily Mission" as completed
@@ -45,9 +50,11 @@ export async function notifyFounderCall(type: 'onboarding' | 'rescue') {
     });
 
     if (feedbackError) {
-        console.error("Error saving founder feedback:", feedbackError);
-        return { success: false, error: "Erreur lors de la validation" };
+        console.error("[FounderCall] Feedback Error:", feedbackError);
+        return { success: false, error: "Erreur lors de la validation: " + feedbackError.message };
     }
+    
+    console.log("[FounderCall] Feedback Saved Successfully");
 
     // 3. Revalidate Dashboard to update UI state immediately
     revalidatePath("/mon-reseau-local/dashboard");
