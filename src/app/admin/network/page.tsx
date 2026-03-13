@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Users, Zap, ShieldCheck, Calendar, Activity } from "lucide-react";
+import { Users, Zap, ShieldCheck, Calendar, Activity, TrendingUp } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
