@@ -256,9 +256,30 @@ import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { MousePointerClick, PhoneCall, MessageSquare, Gift, Star, User, Copy } from "lucide-react";
 
+import { DailyValidationsList } from "@/components/admin/daily-validations-list";
+
 export default async function AdminNetworkPage() {
   const stats = await getNetworkStats();
   const usersForDropdown = await getAllUsersForDropdown();
+  
+  // FETCH VALIDATIONS (Admin Client Bypass)
+  const supabaseAdmin = createAdminClient();
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const todayIso = today.toISOString();
+  
+  const { data: validations } = await supabaseAdmin
+    .from('match_feedback')
+    .select(`
+        id,
+        created_at,
+        rating,
+        tag,
+        giver:giver_id(id, display_name, avatar_url, trade),
+        receiver:receiver_id(id, display_name, avatar_url)
+    `)
+    .gte('created_at', todayIso)
+    .order('created_at', { ascending: false });
 
   const ANALYTICS_LABELS: Record<string, { label: string, icon: any, color: string }> = {
     'click_why_open': { label: 'Pourquoi ce match', icon: MessageSquare, color: 'text-yellow-500' },
@@ -327,6 +348,17 @@ export default async function AdminNetworkPage() {
             <p className="text-xs text-muted-foreground">Total échangé</p>
           </CardContent>
         </Card>
+      </div>
+      
+      {/* DAILY VALIDATIONS (Added here as requested) */}
+      <div className="space-y-4">
+        <h2 className="text-xl font-bold tracking-tight flex items-center gap-2 text-slate-900">
+            <TrendingUp className="h-5 w-5 text-green-600" />
+            Missions Validées (Aujourd'hui)
+        </h2>
+        <div className="border rounded-lg bg-white shadow-sm p-0 overflow-hidden">
+            <DailyValidationsList initialValidations={validations || []} />
+        </div>
       </div>
 
       {/* FOUNDER CALLS (JOKER) SECTION - ALWAYS VISIBLE */}
