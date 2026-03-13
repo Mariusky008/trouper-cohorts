@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { revalidatePath } from "next/cache";
 
 /**
@@ -14,40 +15,38 @@ export async function notifyFounderCall(type: 'onboarding' | 'rescue') {
     
     if (!user) return { success: false, error: "Non connecté" };
 
+    // Use Admin Client to ensure writes succeed regardless of RLS policies
+    const supabaseAdmin = createAdminClient();
+
     // 1. Log Analytics Event (Using generic metadata structure)
-    // IMPORTANT: If 'page' column doesn't exist yet in all environments, we fallback or handle it.
-    // However, since we just gave the SQL to create it, we assume it's there.
-    const { error } = await supabase
+    const { error } = await supabaseAdmin
       .from("analytics_events")
       .insert({
         user_id: user.id,
         event_type: 'founder_call_request',
-        // page: '/dashboard', // Removing 'page' column as it might not exist yet if user didn't run SQL successfully
         metadata: { 
             card_type: type,
             status: 'pending_call',
-            page: '/dashboard' // Put it in metadata instead to be safe
+            page: '/dashboard'
         }
       });
       
-    if (error) throw error;
+    if (error) {
+        console.error("Analytics insert error:", error);
+        // Don't throw, proceed to feedback
+    }
 
     // 2. Create Match Feedback to mark "Daily Mission" as completed
-    // This ensures the Founder Card disappears after refresh.
-    // NOTE: We use user.id as receiver_id to satisfy Foreign Key constraints (UUID),
-    // as 'popey-founder' is not a valid UUID. We distinguish this via the tag.
-    const { error: feedbackError } = await supabase.from("match_feedback").insert({
+    const { error: feedbackError } = await supabaseAdmin.from("match_feedback").insert({
         giver_id: user.id,
         receiver_id: user.id, // Self-reference to satisfy FK
         rating: 5, 
-        tag: `founder_${type}`, // 'founder_onboarding' or 'founder_rescue'
-        // match_id is null as this is a virtual match
+        tag: `founder_${type}`, 
     });
 
     if (feedbackError) {
         console.error("Error saving founder feedback:", feedbackError);
-        // We don't throw here to avoid breaking the UI flow if analytics worked,
-        // but it means the card might reappear.
+        return { success: false, error: "Erreur lors de la validation" };
     }
 
     // 3. Revalidate Dashboard to update UI state immediately
