@@ -292,8 +292,8 @@ export async function getDailyMatches() {
         .gte('created_at', safeTodaySearchTimestamp); 
         
       // Also check analytics_events for robustness
-      const supabaseAdmin = createAdminClient();
-      const { count: analyticsCount } = await supabaseAdmin
+      // We use the same 'supabase' client (user context) - requires RLS policy for SELECT
+      const { count: analyticsCount } = await supabase
         .from('analytics_events')
         .select('*', { count: 'exact', head: true })
         .eq('user_id', user.id)
