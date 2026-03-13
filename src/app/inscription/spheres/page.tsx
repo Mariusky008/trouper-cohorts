@@ -135,14 +135,14 @@ export default function SpheresRegistrationPage() {
   const router = useRouter();
   const supabase = createClient();
 
-  // Simulation de slots déjà pris (différents par ville pour le réalisme)
+  // Simulation de slots déjà pris (Aucun slot pris pour le moment)
   const lockedSlotsByCity: Record<CityId, string[]> = {
-      'bordeaux': ['Agent Immobilier', 'Courtier en prêt', 'Webdesigner', 'Coach Sportif'],
-      'bab': ['Notaire', 'Paysagiste', 'Avocat Affaires'],
-      'dax': ['Restaurateur', 'Plombier', 'Coiffeur']
+      'bordeaux': [],
+      'bab': [],
+      'dax': []
   };
 
-  const lockedSlots = activeCity ? (lockedSlotsByCity[activeCity] || []) : [];
+  const lockedSlots: string[] = [];
 
   const handleReserve = (slot: string) => {
     setSelectedSlot(slot);
