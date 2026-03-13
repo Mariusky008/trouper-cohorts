@@ -595,9 +595,17 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
     }
 
     // 3. Finalize
+    // FORCE UI UPDATE IMMEDIATELY
     setStep('validated');
     setIsValidationOpen(false);
     confetti({ particleCount: 200, spread: 100, origin: { y: 0.6 } });
+    
+    // Optimistic Update: Update local state to prevent flicker on refresh
+    // We modify the current matches array in memory if possible, or rely on revalidation
+    if (matches && matches.length > 0) {
+        matches[0].status = 'met';
+        matches[0].hasFeedback = true;
+    }
     
     if (callHappened !== false) {
         toast.success("Mission validée ! 🚀");
