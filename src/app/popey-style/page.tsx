@@ -141,22 +141,106 @@ const StickyCTA = () => {
 
 const SYNERGY_DATA = {
   health: [
-    { title: "Coach Sportif", match: 98, tags: ["Sport", "Santé"], desc: "Vos clients veulent des résultats physiques. Il s'occupe de l'entraînement, vous de l'assiette. Offre combinée = Ticket moyen x2.", color: "bg-green-100 text-green-800" },
-    { title: "Naturopathe", match: 92, tags: ["Bien-être", "Naturel"], desc: "Une approche complémentaire pour les troubles chroniques. Échangez vos patients qui stagnent.", color: "bg-emerald-100 text-emerald-800" },
-    { title: "Ostéopathe", match: 85, tags: ["Physique", "Soin"], desc: "Les douleurs articulaires freinent la perte de poids. Il débloque le corps, vous débloquez le métabolisme.", color: "bg-teal-100 text-teal-800" },
-    { title: "Psychologue", match: 78, tags: ["Mental", "TCA"], desc: "Pour les blocages émotionnels liés à l'alimentation. Indispensable pour les cas complexes.", color: "bg-cyan-100 text-cyan-800" },
+    { 
+      title: "Coach Sportif", 
+      match: 98, 
+      tags: ["Sport", "Santé"], 
+      role: "PRESCRIPTEUR",
+      roleDesc: "Il peut Vendre à votre place, il vous recommande. Il transfère sa crédibilité pour rassurer vos futurs clients.",
+      color: "bg-green-100 text-green-800" 
+    },
+    { 
+      title: "Naturopathe", 
+      match: 92, 
+      tags: ["Bien-être", "Naturel"], 
+      role: "JOKER",
+      roleDesc: "Il Complète votre offre. Associez-vous pour répondre à un besoin client que vous ne couvrez pas seul.",
+      color: "bg-emerald-100 text-emerald-800" 
+    },
+    { 
+      title: "Ostéopathe", 
+      match: 85, 
+      tags: ["Physique", "Soin"], 
+      role: "MENTOR",
+      roleDesc: "Il Débloque la situation. Il a une expertise technique immédiate pour résoudre votre problème.",
+      color: "bg-teal-100 text-teal-800" 
+    },
+    { 
+      title: "Psychologue", 
+      match: 78, 
+      tags: ["Mental", "TCA"], 
+      role: "VEILLEUR",
+      roleDesc: "Surveille votre marché. Il est vos yeux et vos oreilles sur le terrain pour détecter les opportunités et vous prévient dès que ça bouge.",
+      color: "bg-cyan-100 text-cyan-800" 
+    },
   ],
   realestate: [
-    { title: "Agent Immobilier", match: 99, tags: ["Immo", "Vente"], desc: "Il vend la maison, vous la dessinez/rénovez. Il est votre meilleur apporteur d'affaires.", color: "bg-blue-100 text-blue-800" },
-    { title: "Courtier en Prêt", match: 94, tags: ["Finance", "Budget"], desc: "Il valide le budget travaux de vos clients avant même que vous ne dessiniez les plans.", color: "bg-indigo-100 text-indigo-800" },
-    { title: "Paysagiste", match: 88, tags: ["Extérieur", "Design"], desc: "Vous faites l'intérieur, il sublime l'extérieur. Une prestation globale pour le client.", color: "bg-violet-100 text-violet-800" },
-    { title: "Notaire", match: 80, tags: ["Juridique", "Acte"], desc: "Il voit passer tous les actes de vente. Une source de leads qualifiés en amont.", color: "bg-purple-100 text-purple-800" },
+    { 
+      title: "Agent Immobilier", 
+      match: 99, 
+      tags: ["Immo", "Vente"], 
+      role: "INFILTRÉ",
+      roleDesc: "Il vous Donnera une info avant tout le monde. Soyez le premier sur le coup grâce à une info confidentielle.",
+      color: "bg-blue-100 text-blue-800" 
+    },
+    { 
+      title: "Courtier en Prêt", 
+      match: 94, 
+      tags: ["Finance", "Budget"], 
+      role: "PORTIER",
+      roleDesc: "Il vous ouvre des portes qui vous sont fermées. Il vous permettra d'accéder directement au décideur que vous n'arrivez pas à joindre.",
+      color: "bg-indigo-100 text-indigo-800" 
+    },
+    { 
+      title: "Paysagiste", 
+      match: 88, 
+      tags: ["Extérieur", "Design"], 
+      role: "AMPLIFICATEUR",
+      roleDesc: "Il Booste votre visibilité. Il diffuse votre message à sa communauté pour toucher plus de monde (sur linkedin, facebook, instagram..).",
+      color: "bg-violet-100 text-violet-800" 
+    },
+    { 
+      title: "Notaire", 
+      match: 80, 
+      tags: ["Juridique", "Acte"], 
+      role: "VEILLEUR",
+      roleDesc: "Surveille votre marché. Il est vos yeux et vos oreilles sur le terrain pour détecter les opportunités et vous prévient dès que ça bouge.",
+      color: "bg-purple-100 text-purple-800" 
+    },
   ],
   business: [
-    { title: "Copywriter", match: 96, tags: ["Vente", "Écrit"], desc: "Vous avez l'expertise, il a les mots pour la vendre. Transformez votre savoir en pages de vente qui convertissent.", color: "bg-orange-100 text-orange-800" },
-    { title: "Expert Pubs (Ads)", match: 91, tags: ["Trafic", "Leads"], desc: "Il amène le trafic, vous le convertissez. Le duo gagnant pour scaler n'importe quel business.", color: "bg-amber-100 text-amber-800" },
-    { title: "Closer / Commercial", match: 87, tags: ["Vente", "Phone"], desc: "Arrêtez de perdre du temps au téléphone. Il ferme vos deals à votre place.", color: "bg-yellow-100 text-yellow-800" },
-    { title: "Expert Automatisation", match: 82, tags: ["Tech", "Gain de temps"], desc: "Il connecte vos outils pour que vous ne fassiez plus jamais de tâches répétitives.", color: "bg-lime-100 text-lime-800" },
+    { 
+      title: "Copywriter", 
+      match: 96, 
+      tags: ["Vente", "Écrit"], 
+      role: "AMPLIFICATEUR",
+      roleDesc: "Il Booste votre visibilité. Il diffuse votre message à sa communauté pour toucher plus de monde (sur linkedin, facebook, instagram..).",
+      color: "bg-orange-100 text-orange-800" 
+    },
+    { 
+      title: "Expert Pubs (Ads)", 
+      match: 91, 
+      tags: ["Trafic", "Leads"], 
+      role: "VEILLEUR",
+      roleDesc: "Surveille votre marché. Il est vos yeux et vos oreilles sur le terrain pour détecter les opportunités et vous prévient dès que ça bouge.",
+      color: "bg-amber-100 text-amber-800" 
+    },
+    { 
+      title: "Closer / Commercial", 
+      match: 87, 
+      tags: ["Vente", "Phone"], 
+      role: "PRESCRIPTEUR",
+      roleDesc: "Il peut Vendre à votre place, il vous recommande. Il transfère sa crédibilité pour rassurer vos futurs clients.",
+      color: "bg-yellow-100 text-yellow-800" 
+    },
+    { 
+      title: "Expert Automatisation", 
+      match: 82, 
+      tags: ["Tech", "Gain de temps"], 
+      role: "MENTOR",
+      roleDesc: "Il Débloque la situation. Il a une expertise technique immédiate pour résoudre votre problème.",
+      color: "bg-lime-100 text-lime-800" 
+    },
   ]
 };
 
@@ -165,6 +249,7 @@ const SynergySection = () => {
   const [showResults, setShowResults] = useState(false);
   const [selectedSynergy, setSelectedSynergy] = useState<any>(null);
   const [loading, setLoading] = useState(false);
+  const detailsRef = useRef<HTMLDivElement>(null);
 
   // Default to "business" if no match, but try to match keywords
   const getSynergies = () => {
@@ -183,6 +268,13 @@ const SynergySection = () => {
       setLoading(false);
       setShowResults(true);
     }, 800); 
+  };
+
+  const handleSynergyClick = (synergy: any) => {
+    setSelectedSynergy(synergy);
+    setTimeout(() => {
+      detailsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }, 100);
   };
 
   const currentSynergies = getSynergies();
@@ -248,7 +340,7 @@ const SynergySection = () => {
                               ${selectedSynergy === synergy ? 'z-10' : 'hover:-translate-y-2'}
                               transition-all duration-200
                             `}
-                            onClick={() => setSelectedSynergy(synergy)}
+                            onClick={() => handleSynergyClick(synergy)}
                           >
                              <div className={`
                                bg-white rounded-3xl p-6 border-4 border-[#2E130C] shadow-[6px_6px_0px_0px_#2E130C] h-full flex flex-col items-center text-center transition-all
@@ -292,11 +384,12 @@ const SynergySection = () => {
                     <AnimatePresence mode="wait">
                       {selectedSynergy && (
                         <motion.div 
+                          ref={detailsRef}
                           key={selectedSynergy.title}
                           initial={{ opacity: 0, height: 0, y: 20 }}
                           animate={{ opacity: 1, height: "auto", y: 0 }}
                           exit={{ opacity: 0, height: 0, y: 20 }}
-                          className="overflow-hidden"
+                          className="overflow-hidden scroll-mt-32"
                         >
                            <div className="bg-[#2E130C] text-[#E2D9BC] p-8 md:p-10 rounded-[2.5rem] border-4 border-[#E2D9BC] shadow-[12px_12px_0px_0px_#B20B13] max-w-4xl mx-auto flex flex-col md:flex-row gap-8 items-center relative transform rotate-1 transition-transform hover:rotate-0">
                               <div className="shrink-0 text-center md:text-left bg-[#E2D9BC]/10 p-6 rounded-3xl border-2 border-[#E2D9BC]/20 backdrop-blur-sm">
@@ -307,9 +400,12 @@ const SynergySection = () => {
                               <div className="w-px h-32 bg-[#E2D9BC]/20 hidden md:block"></div>
                               
                               <div className="text-center md:text-left flex-1">
-                                 <h4 className="text-3xl font-titan mb-4 text-[#E2D9BC]">Pourquoi {selectedSynergy.title} ?</h4>
+                                 <h4 className="text-2xl font-titan mb-4 text-[#E2D9BC] flex items-center gap-2 justify-center md:justify-start">
+                                    <span className="bg-[#B20B13] text-[#E2D9BC] px-3 py-1 rounded-lg text-lg border border-[#E2D9BC]/30">{selectedSynergy.role}</span>
+                                    <span>{selectedSynergy.title}</span>
+                                 </h4>
                                  <p className="text-xl font-poppins font-semibold leading-relaxed text-[#E2D9BC]/90 italic">
-                                    "{selectedSynergy.desc}"
+                                    "{selectedSynergy.roleDesc}"
                                  </p>
                               </div>
                               
