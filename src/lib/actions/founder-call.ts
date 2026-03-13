@@ -20,7 +20,7 @@ export async function notifyFounderCall(type: 'onboarding' | 'rescue') {
       .insert({
         user_id: user.id,
         event_type: 'founder_call_request',
-        page_path: '/dashboard',
+        page: '/dashboard', // Fixed column name from 'page_path' to 'page' matching migration
         metadata: { 
             card_type: type,
             status: 'pending_call'
