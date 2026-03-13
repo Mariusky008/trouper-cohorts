@@ -14,16 +14,19 @@ export async function notifyFounderCall(type: 'onboarding' | 'rescue') {
     
     if (!user) return { success: false, error: "Non connecté" };
 
-    // 1. Log Analytics Event
+    // 1. Log Analytics Event (Using generic metadata structure)
+    // IMPORTANT: If 'page' column doesn't exist yet in all environments, we fallback or handle it.
+    // However, since we just gave the SQL to create it, we assume it's there.
     const { error } = await supabase
       .from("analytics_events")
       .insert({
         user_id: user.id,
         event_type: 'founder_call_request',
-        page: '/dashboard', // Fixed column name from 'page_path' to 'page' matching migration
+        // page: '/dashboard', // Removing 'page' column as it might not exist yet if user didn't run SQL successfully
         metadata: { 
             card_type: type,
-            status: 'pending_call'
+            status: 'pending_call',
+            page: '/dashboard' // Put it in metadata instead to be safe
         }
       });
       
