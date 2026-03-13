@@ -19,7 +19,6 @@ import { saveMatchFeedback } from "@/lib/actions/network-feedback";
 import { incrementUserPoints } from "@/lib/actions/gamification";
 import { trackEvent } from "@/lib/actions/analytics";
 import { updateMatchMission } from "@/lib/actions/match-mission";
-// import { FounderCardPreview } from "@/components/dashboard/design-system-preview";
 
 import { createClient } from "@/lib/supabase/client";
 
@@ -35,16 +34,16 @@ function FounderCardPreview({ type = "onboarding", onConfirm }: { type?: "onboar
 
     if (confirmed) {
         return (
-            <div className="relative w-full max-w-sm mx-auto h-[600px] rounded-[2.5rem] overflow-hidden shadow-2xl bg-[#0f172a] flex flex-col items-center justify-center text-center p-6 border border-emerald-500/30">
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-emerald-900/20 via-[#0f172a] to-[#0f172a]"></div>
+            <div className="relative w-full max-w-sm mx-auto h-[600px] rounded-[2.5rem] overflow-hidden shadow-2xl bg-white flex flex-col items-center justify-center text-center p-6 border border-[#2E130C]/10">
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-emerald-50 via-white to-white"></div>
                 <motion.div 
                     initial={{ scale: 0 }} animate={{ scale: 1 }} 
-                    className="w-24 h-24 bg-emerald-500 rounded-full flex items-center justify-center mb-6 shadow-[0_0_30px_rgba(16,185,129,0.4)]"
+                    className="w-24 h-24 bg-emerald-500 rounded-full flex items-center justify-center mb-6 shadow-xl"
                 >
                     <CheckCircle2 className="w-12 h-12 text-white" />
                 </motion.div>
-                <h3 className="text-3xl font-black text-white mb-2">Message Envoyé !</h3>
-                <p className="text-slate-400 max-w-[250px]">
+                <h3 className="text-3xl font-black text-[#2E130C] mb-2">Message Envoyé !</h3>
+                <p className="text-[#2E130C]/70 max-w-[250px]">
                     Jean-Philippe a reçu votre demande. <br/>Il vous contactera très vite.
                 </p>
             </div>
@@ -52,29 +51,29 @@ function FounderCardPreview({ type = "onboarding", onConfirm }: { type?: "onboar
     }
 
     return (
-        <div className="relative w-full max-w-sm mx-auto min-h-[600px] h-auto rounded-[2.5rem] overflow-hidden shadow-[0_20px_50px_-12px_rgba(0,0,0,0.5)] bg-gradient-to-b from-[#1e293b] to-[#0f172a] border border-white/10 flex flex-col items-center p-0 group">
+        <div className="relative w-full max-w-sm mx-auto min-h-[600px] h-auto rounded-[2.5rem] overflow-hidden shadow-2xl bg-white border border-[#2E130C]/10 flex flex-col items-center p-0 group">
             
             {/* Background Image/Effect */}
-            <div className="absolute inset-0 opacity-40">
-                <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#0f172a]/80 to-[#0f172a] z-10"></div>
+            <div className="absolute inset-0 opacity-100">
                 <Image 
                     src="/jeanphilipperoth.jpg" 
                     alt="Jean-Philippe Founder" 
                     fill 
                     className="object-cover object-top"
                 />
+                <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#2E130C]/50 to-[#2E130C]/90 z-10"></div>
             </div>
 
             {/* Content Container */}
-            <div className="relative z-20 flex flex-col h-full w-full justify-between p-6 pt-48 bg-gradient-to-b from-transparent via-[#0f172a]/90 to-[#0f172a]">
+            <div className="relative z-20 flex flex-col h-full w-full justify-between p-6 pt-48">
                 
                 {/* Header Badge */}
                 <div className="flex justify-center -mt-12 mb-4">
                     <Badge className={cn(
                         "px-4 py-1.5 text-xs font-bold uppercase tracking-widest shadow-lg border backdrop-blur-md",
                         isRescue 
-                            ? "bg-red-500/20 text-red-200 border-red-500/30" 
-                            : "bg-indigo-500/20 text-indigo-200 border-indigo-500/30"
+                            ? "bg-red-500 text-white border-red-600" 
+                            : "bg-indigo-500 text-white border-indigo-600"
                     )}>
                         {isRescue ? "🆘 JOKER DE SECOURS" : "👋 BIENVENUE AU CLUB"}
                     </Badge>
@@ -82,14 +81,14 @@ function FounderCardPreview({ type = "onboarding", onConfirm }: { type?: "onboar
 
                 {/* Title & Message */}
                 <div className="text-center space-y-4 mb-8">
-                    <h2 className="text-3xl font-black text-white leading-none">
+                    <h2 className="text-3xl font-black text-white leading-none drop-shadow-md">
                         Jean-Philippe <br/>
-                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400 text-xl">Fondateur Popey</span>
+                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-white to-slate-300 text-xl">Fondateur Popey</span>
                     </h2>
                     
-                    <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-4 text-left relative">
-                        <div className="absolute -top-3 -left-2 text-4xl opacity-20">❝</div>
-                        <p className="text-slate-200 text-sm font-medium leading-relaxed italic relative z-10">
+                    <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-4 text-left relative shadow-lg">
+                        <div className="absolute -top-3 -left-2 text-4xl text-white opacity-40">❝</div>
+                        <p className="text-white text-sm font-medium leading-relaxed italic relative z-10 drop-shadow-sm">
                             {isRescue 
                                 ? "Je vois que l'algo n'a pas trouvé de match parfait pour toi aujourd'hui. Pas de panique, je prends le relais ! Discutons 15 min de ton business."
                                 : "Ravi de te compter parmi nous ! Pour bien démarrer, je te propose un échange direct de 15 min pour t'aider à tirer le meilleur du réseau."
@@ -104,8 +103,8 @@ function FounderCardPreview({ type = "onboarding", onConfirm }: { type?: "onboar
                     className={cn(
                         "w-full h-14 font-black text-lg rounded-2xl shadow-xl transition-all hover:scale-[1.02] relative overflow-hidden group/btn",
                         isRescue 
-                            ? "bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-400 hover:to-orange-400 text-white shadow-red-900/20"
-                            : "bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-400 hover:to-purple-500 text-white shadow-indigo-900/20"
+                            ? "bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-400 hover:to-orange-400 text-white"
+                            : "bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-400 hover:to-purple-500 text-white"
                     )}
                 >
                     <div className="absolute inset-0 bg-white/20 translate-y-full group-hover/btn:translate-y-0 transition-transform duration-300"></div>
@@ -113,7 +112,7 @@ function FounderCardPreview({ type = "onboarding", onConfirm }: { type?: "onboar
                     <span className="relative z-10">ACCEPTER L'APPEL</span>
                 </Button>
 
-                <p className="text-[10px] text-slate-500 text-center mt-3 font-medium uppercase tracking-wide">
+                <p className="text-[10px] text-white/70 text-center mt-3 font-medium uppercase tracking-wide">
                     Disponible aujourd'hui • 09h - 18h
                 </p>
             </div>
@@ -133,57 +132,57 @@ interface DailyMatchCardProps {
 const MISSION_TYPES = [
     { 
         id: 'portier', 
-        label: 'Le Portier — "Ouvre-moi une porte"', 
+        label: 'Le Portier', 
         icon: Lock, 
-        desc: "Je cible une entreprise ou un décideur précis. Tu regardes ton LinkedIn/Répertoire et me fais une intro directe (Mail ou WhatsApp).", 
-        color: 'text-blue-400', 
-        bg: 'bg-blue-500/10', 
-        border: 'border-blue-500/20' 
+        desc: "Je cible une entreprise ou un décideur précis. Tu regardes ton LinkedIn/Répertoire et me fais une intro directe.", 
+        color: 'text-blue-600', 
+        bg: 'bg-blue-50', 
+        border: 'border-blue-200' 
     },
     { 
         id: 'amplificateur', 
-        label: 'L\'Amplificateur — "Propulse ma visibilité"', 
+        label: 'L\'Amplificateur', 
         icon: TrendingUp, 
-        desc: "Je viens de publier un post ou une offre. Soutien mutuel immédiat (Commentaire, partage ou tag de prospects).", 
-        color: 'text-purple-400', 
-        bg: 'bg-purple-500/10', 
-        border: 'border-purple-500/20' 
+        desc: "Je viens de publier un post ou une offre. Soutien mutuel immédiat (Commentaire, partage).", 
+        color: 'text-purple-600', 
+        bg: 'bg-purple-50', 
+        border: 'border-purple-200' 
     },
     { 
         id: 'prescripteur', 
-        label: 'Le Prescripteur — "Apporte-moi un deal"', 
+        label: 'Le Prescripteur', 
         icon: Handshake, 
         desc: "Je cherche un client chaud. On définit mon client idéal et tu identifies un prospect dans ton entourage.", 
-        color: 'text-emerald-400', 
-        bg: 'bg-emerald-500/10', 
-        border: 'border-emerald-500/20' 
+        color: 'text-emerald-600', 
+        bg: 'bg-emerald-50', 
+        border: 'border-emerald-200' 
     },
     { 
         id: 'recommandeur', 
-        label: 'Le Recommandeur — "Bétonne ma crédibilité"', 
+        label: 'Le Recommandeur', 
         icon: Star, 
-        desc: "Je manque de preuve sociale. Échange croisé d'un avis Google ou d'une recommandation LinkedIn détaillée.", 
-        color: 'text-yellow-400', 
-        bg: 'bg-yellow-500/10', 
-        border: 'border-yellow-500/20' 
+        desc: "Je manque de preuve sociale. Échange croisé d'un avis Google ou d'une recommandation LinkedIn.", 
+        color: 'text-yellow-600', 
+        bg: 'bg-yellow-50', 
+        border: 'border-yellow-200' 
     },
     { 
         id: 'infiltre', 
-        label: 'L\'Infiltré — "Intègre-moi dans ton cercle"', 
+        label: 'L\'Infiltré', 
         icon: Fingerprint, 
         desc: "Je veux entrer dans des réseaux fermés (BNI, Clubs). Tu m'invites comme 'Guest' ou me parraines.", 
-        color: 'text-red-400', 
-        bg: 'bg-red-500/10', 
-        border: 'border-red-500/20' 
+        color: 'text-red-600', 
+        bg: 'bg-red-50', 
+        border: 'border-red-200' 
     },
     { 
         id: 'joker', 
-        label: 'Le Joker — "L\'Opportuniste"', 
+        label: 'Le Joker', 
         icon: Zap, 
-        desc: "Tu as une idée précise hors cases. Tu proposes un échange de valeur unique (partenariat, troc, conseil expert).", 
-        color: 'text-pink-400', 
-        bg: 'bg-pink-500/10', 
-        border: 'border-pink-500/20' 
+        desc: "Tu as une idée précise hors cases. Tu proposes un échange de valeur unique.", 
+        color: 'text-pink-600', 
+        bg: 'bg-pink-50', 
+        border: 'border-pink-200' 
     }
 ];
 
@@ -207,141 +206,29 @@ const REPUTATION_BADGES = [
     { id: 'listener', label: 'L\'Écouteur', icon: '👂', desc: "Très bonne écoute" }
 ];
 
-// --- 1. WAITING CARD COMPONENT ---
-function WaitingCard({ countdown }: { countdown: string }) {
-  return (
-    <div className="relative w-full max-w-sm mx-auto h-[600px] rounded-[2.5rem] overflow-hidden shadow-2xl bg-[#0a0f1c] flex flex-col items-center justify-center text-center p-6 border border-white/10 group">
-      {/* Dynamic Background */}
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-indigo-500/20 via-[#0a0f1c] to-[#0a0f1c] animate-pulse-slow"></div>
-      
-      {/* Pulsing Radar Effect */}
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-        {[1, 2, 3].map((i) => (
-          <motion.div
-            key={i}
-            initial={{ opacity: 0.5, scale: 0.5 }}
-            animate={{ opacity: 0, scale: 1.5 }}
-            transition={{ 
-              duration: 3, 
-              repeat: Infinity, 
-              delay: i * 0.8,
-              ease: "easeOut"
-            }}
-            className="absolute border border-indigo-500/30 rounded-full w-64 h-64 shadow-[0_0_30px_rgba(99,102,241,0.2)]"
-          />
-        ))}
-        {/* Central Glowing Orb */}
-        <div className="relative w-32 h-32 rounded-full bg-gradient-to-br from-indigo-600 to-purple-600 blur-xl opacity-50 animate-pulse"></div>
-      </div>
-
-      {/* Content */}
-      <div className="relative z-10 space-y-8">
-        <motion.div 
-          animate={{ y: [0, -10, 0] }}
-          transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-          className="mx-auto w-24 h-24 rounded-full bg-black/50 border-2 border-indigo-500/50 flex items-center justify-center backdrop-blur-md shadow-[0_0_40px_rgba(99,102,241,0.4)]"
-        >
-           <Search className="w-10 h-10 text-indigo-400" />
-        </motion.div>
-
-        <div>
-          <h3 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-indigo-300 to-purple-300 mb-2">
-            Analyse en cours...
-          </h3>
-          <p className="text-slate-400 font-medium leading-relaxed max-w-[250px] mx-auto">
-            Notre IA scanne le réseau pour trouver <span className="text-white font-bold">LA personne</span> qui va booster votre business demain.
-          </p>
-        </div>
-
-        <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-4 w-full">
-           <div className="flex justify-between items-center text-sm mb-2">
-              <span className="text-slate-400">Prochain match dans</span>
-              <span className="text-indigo-400 font-bold font-mono">{countdown}</span>
-           </div>
-           <div className="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
-              <motion.div 
-                className="h-full bg-gradient-to-r from-indigo-500 to-purple-500" 
-                initial={{ width: "0%" }}
-                animate={{ width: "65%" }}
-                transition={{ duration: 1.5, ease: "circOut" }}
-              />
-           </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 // --- 2. MYSTERY CARD COMPONENT ---
 function MysteryCard({ onReveal, match, locked = false, children }: { onReveal: () => void, match: any, locked?: boolean, children?: React.ReactNode }) {
   // Generate stable "fake" stats based on partner ID to keep it consistent for the same user
   const seed = match.partnerId ? match.partnerId.split("").reduce((a: number, c: string) => a + c.charCodeAt(0), 0) : 0;
   
-  const potential = ["ÉLEVÉ", "TRÈS ÉLEVÉ", "EXPLOSIF"][seed % 3];
-  // Use real count if available, otherwise fallback to seed (for preview/legacy)
-  const collabs = match.collabsCount !== undefined ? match.collabsCount : (12 + (seed % 20));
-  const compatibility = 77 + (seed % 20); // 77 to 96
-  
-  // Dynamic benefits based on job/superpower if available, or generic
-    const getBenefits = () => {
-        // If we have a REAL superpower, use it as the first benefit
-        if (match.superpower && match.superpower.length > 5) {
-             return [
-                 match.superpower,
-                 "Partage d'expérience terrain",
-                 "Réseau local qualifié"
-             ];
-        }
-
-        const benefits = [
-            "Introduction stratégique (Décideurs)",
-            "Boost de visibilité LinkedIn",
-            "Partenariats locaux",
-            "Partage d'expérience",
-            "Opportunités de co-création",
-            "Mentorat mutuel"
-        ];
-        
-        // Add specific ones based on job
-        const job = (match.job || "").toLowerCase();
-        if (job.includes("commercial") || job.includes("vente")) benefits.unshift("Introduction stratégique (Décideurs)");
-        if (job.includes("marketing") || job.includes("com")) benefits.unshift("Boost de visibilité LinkedIn");
-        if (job.includes("tech") || job.includes("dev")) benefits.unshift("Expertise technique");
-        if (job.includes("immo")) benefits.unshift("Opportunités d'investissement");
-        
-        // Shuffle deterministically
-        const shuffled = benefits.sort((a, b) => {
-            const valA = a.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0);
-            const valB = b.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0);
-            return (valA % 10) - (valB % 10);
-        });
-        
-        return shuffled.slice(0, 3);
-    };
-
-    const benefits = getBenefits();
-    
-    // Logic for "Collabs" label
-    const collabsCount = match.collabsCount !== undefined ? match.collabsCount : (12 + (seed % 20));
-    const collabsLabel = collabsCount < 10 ? "DÉBUTANT" : `${collabsCount}`;
-
     return (
       <div 
           onClick={locked ? undefined : onReveal}
           className={cn(
-              "relative w-full max-w-sm mx-auto min-h-[600px] h-auto rounded-[2.5rem] overflow-hidden shadow-[0_20px_50px_-12px_rgba(0,0,0,0.5)] flex flex-col items-center justify-center text-center p-6 border transition-all pb-8",
-              // Use a lighter gradient to pop against the dark background
-              "bg-gradient-to-b from-[#1e293b] to-[#0f172a] border-white/20",
-              !locked && "cursor-pointer group hover:scale-[1.01] hover:border-white/30"
+              "relative w-full max-w-sm mx-auto min-h-[600px] h-auto rounded-[2.5rem] overflow-hidden shadow-2xl flex flex-col items-center justify-center text-center p-6 border transition-all pb-8",
+              "bg-white border-[#2E130C]/10",
+              !locked && "cursor-pointer group hover:scale-[1.01] hover:shadow-[0_20px_60px_-15px_rgba(0,0,0,0.15)]"
           )}
       >
-      {/* Animated Gradient Border - Show for BOTH states to keep it vibrant */}
+      {/* Background Pattern */}
+      <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-[0.03] z-0"></div>
+      
+      {/* Animated Gradient Border - Subtle now */}
       <div className={cn(
-          "absolute inset-0 bg-gradient-to-br from-emerald-500/30 via-blue-600/20 to-purple-600/30 transition-opacity duration-500",
-          locked ? "opacity-50" : "opacity-40 group-hover:opacity-60"
+          "absolute inset-0 bg-gradient-to-br from-emerald-100/50 via-blue-100/30 to-purple-100/50 transition-opacity duration-500 pointer-events-none",
+          locked ? "opacity-50" : "opacity-0 group-hover:opacity-100"
       )}></div>
       
-      <div className="absolute inset-[1px] bg-[#020617] rounded-[2.4rem] z-0"></div>
 
       {/* Content */}
       <div className="relative z-10 flex flex-col items-center h-full justify-between py-8 w-full">
@@ -349,11 +236,11 @@ function MysteryCard({ onReveal, match, locked = false, children }: { onReveal: 
         <div className="flex flex-col items-center w-full">
             {/* Header Badge */}
             {locked ? (
-                <Badge className="bg-indigo-500/10 text-indigo-300 border-indigo-500/20 px-3 py-1 mb-8 flex items-center gap-2 shadow-[0_0_15px_rgba(99,102,241,0.2)]">
+                <Badge className="bg-slate-100 text-slate-500 border-slate-200 px-3 py-1 mb-8 flex items-center gap-2 shadow-sm">
                     <Clock className="w-3 h-3" /> DISPONIBLE DEMAIN 06H
                 </Badge>
             ) : (
-                <Badge className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20 px-3 py-1 animate-pulse mb-8 shadow-[0_0_15px_rgba(16,185,129,0.2)]">
+                <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 px-3 py-1 animate-pulse mb-8 shadow-sm">
                     MATCH DÉTECTÉ ⚡️
                 </Badge>
             )}
@@ -362,37 +249,34 @@ function MysteryCard({ onReveal, match, locked = false, children }: { onReveal: 
             <div className="relative mb-8">
                 <motion.div 
                     animate={locked ? { 
-                        scale: [1, 1.1, 1],
-                        opacity: [0.7, 1, 0.7],
-                        borderColor: ["rgba(255,255,255,0.1)", "rgba(99,102,241,0.6)", "rgba(255,255,255,0.1)"],
-                        boxShadow: ["0 0 0px rgba(99,102,241,0)", "0 0 40px rgba(99,102,241,0.4)", "0 0 0px rgba(99,102,241,0)"]
+                        scale: [1, 1.05, 1],
+                        borderColor: ["rgba(0,0,0,0.05)", "rgba(0,0,0,0.1)", "rgba(0,0,0,0.05)"],
                     } : { scale: [1, 1.05, 1] }}
                     transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
                     className={cn(
                         "w-24 h-24 rounded-full border flex items-center justify-center backdrop-blur-sm relative z-10 shadow-lg",
-                        // Always vibrant borders and backgrounds
-                        "border-white/10 bg-white/5 shadow-[0_0_30px_rgba(16,185,129,0.1)]"
+                        "border-[#2E130C]/5 bg-white shadow-xl"
                     )}
                 >
-                    {locked ? <Lock className="w-10 h-10 text-indigo-300" /> : <Fingerprint className="w-12 h-12 text-white/70" />}
+                    {locked ? <Lock className="w-10 h-10 text-slate-300" /> : <Fingerprint className="w-12 h-12 text-[#2E130C]/20" />}
                     {!locked && <div className="absolute inset-0 rounded-full border-t-2 border-emerald-500 animate-spin"></div>}
                 </motion.div>
-                {/* Glow for both, maybe slightly different color for locked */}
+                {/* Glow */}
                 <div className={cn(
                     "absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-40 h-40 blur-[50px] rounded-full pointer-events-none",
-                    locked ? "bg-indigo-500/10" : "bg-emerald-500/20"
+                    locked ? "bg-slate-200/50" : "bg-emerald-200/50"
                 )}></div>
             </div>
 
             {/* 1. KEY INFO SIMPLIFIED */}
             <div className="w-full space-y-4 mb-6">
                  <div className="text-center">
-                     <p className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-1">PROFIL</p>
-                     <p className="text-xl font-black text-white">{match.name ? match.name.split(' ')[0] : "Membre"} <span className="text-slate-500 mx-2">•</span> {match.job || "Dirigeant"} <span className="text-slate-500 mx-2">•</span> {match.city || "France"}</p>
+                     <p className="text-sm font-bold text-[#2E130C]/40 uppercase tracking-widest mb-1">PROFIL</p>
+                     <p className="text-xl font-black text-[#2E130C]">{match.name ? match.name.split(' ')[0] : "Membre"} <span className="text-slate-300 mx-2">•</span> {match.job || "Dirigeant"} <span className="text-slate-300 mx-2">•</span> {match.city || "France"}</p>
                  </div>
                  
-                 <div className="flex flex-col items-center justify-center gap-2 bg-[#0f172a] rounded-xl p-4 border border-white/5 shadow-lg max-w-[80%] mx-auto">
-                     <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">POTENTIEL BUSINESS</span>
+                 <div className="flex flex-col items-center justify-center gap-2 bg-[#F3F0E7] rounded-xl p-4 border border-[#2E130C]/5 shadow-sm max-w-[80%] mx-auto">
+                     <span className="text-[10px] font-black text-[#2E130C]/50 uppercase tracking-widest">POTENTIEL BUSINESS</span>
                      <div className="flex gap-1">
                          {[1,2,3,4,5].map(i => (
                              <Star key={i} className="w-5 h-5 text-orange-400 fill-orange-400" />
@@ -406,22 +290,22 @@ function MysteryCard({ onReveal, match, locked = false, children }: { onReveal: 
         <div className="w-full space-y-3 mb-6">
             
             {/* IL RECHERCHE */}
-            <div className="bg-slate-900/40 rounded-2xl p-4 border border-white/5 backdrop-blur-sm relative overflow-hidden group/search">
-                <div className="absolute top-0 right-0 p-2 opacity-10 group-hover/search:opacity-20 transition-opacity">
-                    <Search className="w-12 h-12 text-blue-400" />
+            <div className="bg-white rounded-2xl p-4 border border-[#2E130C]/10 shadow-sm relative overflow-hidden group/search hover:border-blue-200 transition-colors">
+                <div className="absolute top-0 right-0 p-2 opacity-5 group-hover/search:opacity-10 transition-opacity">
+                    <Search className="w-12 h-12 text-blue-600" />
                 </div>
                 <div className="flex items-center gap-2 mb-3">
-                     <div className="p-1.5 rounded-lg bg-blue-500/20">
-                        <Search className="w-3.5 h-3.5 text-blue-400" />
+                     <div className="p-1.5 rounded-lg bg-blue-50">
+                        <Search className="w-3.5 h-3.5 text-blue-600" />
                      </div>
-                     <span className="text-[10px] font-black text-blue-200 uppercase tracking-wider">
+                     <span className="text-[10px] font-black text-blue-600/70 uppercase tracking-wider">
                          {match.name ? `Ce que ${match.name.split(' ')[0]} recherche` : "Ce qu'il recherche"}
                      </span>
                 </div>
                 <ul className="space-y-2 relative z-10 pl-1">
                     {/* Dynamic needs based on profile data or fallback */}
                     {(match.current_need ? [match.current_need] : ["Nouveaux clients", "Partenaires locaux"]).map((item: string, i: number) => (
-                        <li key={i} className="flex items-start gap-2 text-xs font-medium text-slate-300">
+                        <li key={i} className="flex items-start gap-2 text-xs font-medium text-[#2E130C]/80">
                             <span className="text-blue-500 font-bold text-lg leading-none">•</span>
                             <span className="leading-tight pt-0.5">{item}</span>
                         </li>
@@ -430,22 +314,22 @@ function MysteryCard({ onReveal, match, locked = false, children }: { onReveal: 
             </div>
 
             {/* IL PEUT AIDER */}
-            <div className="bg-slate-900/40 rounded-2xl p-4 border border-white/5 backdrop-blur-sm relative overflow-hidden group/help">
-                <div className="absolute top-0 right-0 p-2 opacity-10 group-hover/help:opacity-20 transition-opacity">
-                    <Gift className="w-12 h-12 text-emerald-400" />
+            <div className="bg-white rounded-2xl p-4 border border-[#2E130C]/10 shadow-sm relative overflow-hidden group/help hover:border-emerald-200 transition-colors">
+                <div className="absolute top-0 right-0 p-2 opacity-5 group-hover/help:opacity-10 transition-opacity">
+                    <Gift className="w-12 h-12 text-emerald-600" />
                 </div>
                 <div className="flex items-center gap-2 mb-3">
-                     <div className="p-1.5 rounded-lg bg-emerald-500/20">
-                        <Gift className="w-3.5 h-3.5 text-emerald-400" />
+                     <div className="p-1.5 rounded-lg bg-emerald-50">
+                        <Gift className="w-3.5 h-3.5 text-emerald-600" />
                      </div>
-                     <span className="text-[10px] font-black text-emerald-200 uppercase tracking-wider">
+                     <span className="text-[10px] font-black text-emerald-600/70 uppercase tracking-wider">
                          Ce qu'il peut vous offrir
                      </span>
                 </div>
                 <ul className="space-y-2 relative z-10 pl-1">
                      {/* Dynamic superpowers based on profile data or fallback */}
                     {(match.superpower ? [match.superpower] : ["Son expertise métier", "Son réseau local"]).map((item: string, i: number) => (
-                        <li key={i} className="flex items-start gap-2 text-xs font-medium text-slate-300">
+                        <li key={i} className="flex items-start gap-2 text-xs font-medium text-[#2E130C]/80">
                             <span className="text-emerald-500 font-bold text-lg leading-none">•</span>
                             <span className="leading-tight pt-0.5">{item}</span>
                         </li>
@@ -467,13 +351,13 @@ function MysteryCard({ onReveal, match, locked = false, children }: { onReveal: 
             className={cn(
                 "w-full h-14 font-black text-base rounded-2xl transition-all shadow-none",
                 locked 
-                    ? "bg-slate-800/50 text-slate-400 cursor-not-allowed border border-white/5" 
-                    : "bg-white text-black hover:scale-[1.02] shadow-[0_0_30px_rgba(255,255,255,0.15)] animate-bounce-subtle border-2 border-white/50"
+                    ? "bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200" 
+                    : "bg-[#2E130C] text-white hover:bg-[#2E130C]/90 hover:scale-[1.02] shadow-xl shadow-[#2E130C]/10 animate-bounce-subtle"
             )}
         >
             {locked ? (
                 <motion.span 
-                    animate={{ opacity: [0.4, 1, 0.4], scale: [0.98, 1.02, 0.98] }}
+                    animate={{ opacity: [0.6, 1, 0.6] }}
                     transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
                     className="flex items-center gap-2"
                 >
@@ -489,8 +373,6 @@ function MysteryCard({ onReveal, match, locked = false, children }: { onReveal: 
 export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserProfile }: DailyMatchCardProps) {
   // State
   const [revealed, setRevealed] = useState(false);
-  // State
-  // We initialize state based on props, BUT we also listen to props updates
   const [step, setStep] = useState<'initial' | 'called' | 'validated'>(() => {
       // Initialize based on props immediately
       if (matches && matches.length > 0) {
@@ -572,23 +454,9 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
   const [oppDetails, setOppDetails] = useState("");
   const [isSubmittingOpp, setIsSubmittingOpp] = useState(false);
 
-  // Dynamic micro-missions based on seed
   const getSmartMissionSuggestion = () => {
       const currentMatch = matches?.[0];
       if (!currentMatch || !currentUserProfile) return null;
-
-      // Logic: Compare profiles to suggest best mission
-      // 1. Amplificateur: If partner has high social followers (>1000) or user needs visibility
-      const partnerFollowers = parseInt(currentMatch.give_profile?.social_network?.followers?.split('-')[0] || "0");
-      if (partnerFollowers >= 1000) return 'amplificateur';
-
-      // 2. Portier: If user needs specific target and partner has relevant sector
-      // (Simplified: just check if partner is 'Connecteur' or has many collabs)
-      if (currentMatch.superpower?.toLowerCase().includes('réseau') || currentMatch.collabsCount > 20) return 'portier';
-
-      // 3. Recommandeur: If user needs credibility (check if 'recommender' field is filled in user profile? No, check partner's need)
-      // Actually, we suggest what WE can do for THEM or what THEY can do for US.
-      // Let's suggest based on MUTUAL benefit.
       
       return 'prescripteur'; // Default fallback
   };
@@ -621,68 +489,6 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
           origin: { y: 0.6 }
       });
   };
-
-  // Countdown Logic for Waiting State
-  const [waitingCountdown, setWaitingCountdown] = useState("00:00:00");
-  useEffect(() => {
-    const targetDate = new Date();
-    targetDate.setDate(targetDate.getDate() + 1);
-    targetDate.setHours(8, 0, 0, 0); // Tomorrow 08:00
-
-    const calculateCountdown = () => {
-        const now = new Date();
-        const diff = targetDate.getTime() - now.getTime();
-        if (diff <= 0) {
-            setWaitingCountdown("00:00:00");
-            return;
-        }
-        const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-        const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-        const s = Math.floor((diff % (1000 * 60)) / 1000);
-        setWaitingCountdown(
-            `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`
-        );
-    };
-
-    calculateCountdown();
-    const interval = setInterval(calculateCountdown, 1000);
-    return () => clearInterval(interval);
-  }, []); // Remove dependency on matches to ensure it runs even if match exists
-
-  // Match Timer Logic (Ephemeral Opportunity)
-  const [matchCountdown, setMatchCountdown] = useState("02:00:00");
-  useEffect(() => {
-     if (!matches || matches.length === 0) return;
-     
-     const calculateMatchTimer = () => {
-         const matchTime = matches[0]?.time || "09h – 11h";
-         // Extract start hour (e.g., 9)
-         const startHour = parseInt(matchTime.split('h')[0]);
-         const now = new Date();
-         const target = new Date();
-         target.setHours(startHour + 2, 0, 0, 0); // End of slot
-
-         // If slot is tomorrow (very early morning check), add day? 
-         // Assuming match is for today.
-         
-         const diff = target.getTime() - now.getTime();
-         
-         if (diff <= 0) {
-             setMatchCountdown("Terminé");
-         } else {
-             const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-             const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-             const s = Math.floor((diff % (1000 * 60)) / 1000);
-             setMatchCountdown(
-                `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`
-             );
-         }
-     };
-     
-     calculateMatchTimer();
-     const interval = setInterval(calculateMatchTimer, 1000);
-     return () => clearInterval(interval);
-  }, [matches]);
 
   // Actions Handlers
   const handleValidate = async () => {
@@ -731,14 +537,6 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
     }
   };
 
-  const handleRate = async (score: number, tag: string, partnerId: string) => {
-      if (score >= 4) confetti({ particleCount: 100, spread: 70, colors: ['#10b981', '#fbbf24'] });
-      toast.success("Feedback enregistré ! 📝", { description: `Vous avez qualifié l'échange de "${tag}"` });
-      // Pass match.id if available (we need to find it from matches array since we only have partnerId here)
-      const matchId = matches.find(m => m.partnerId === partnerId)?.id;
-      await saveMatchFeedback(partnerId, score, tag, matchId);
-  };
-
   const handleCreateOpportunity = async (partnerId: string, partnerName: string) => {
       if (!oppType || !oppDetails.trim()) {
           toast.error("Veuillez compléter tous les champs");
@@ -783,9 +581,6 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
         confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 } });
         confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } });
       }, 250);
-
-      // Points logic removed for strict economy
-      // toast.success("Points ajoutés ! 🏆");
   };
 
   const handleCopyPhone = (phone: string) => {
@@ -808,21 +603,18 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
     setMounted(true);
   }, []);
 
-  const now = new Date(); // Définir 'now' ici, au début de la logique de rendu
+  const now = new Date();
+  const isWeekend = now.getDay() === 6 || now.getDay() === 0;
 
-  // Check if today is weekend
-  const isWeekend = now.getDay() === 6 || now.getDay() === 0; // 6 = Saturday, 0 = Sunday
-
-  // If no matches, we show the Mystery Card in LOCKED state (Teaser) instead of the old WaitingCard.
-  // This ensures consistency: "There is always a next match coming".
+  // Weekend State - Clean & Warm
   if (!matches || matches.length === 0) {
       if (isWeekend) {
           return (
-            <div className="relative w-full max-w-sm mx-auto min-h-[600px] h-auto rounded-[2.5rem] overflow-hidden shadow-[0_20px_50px_-12px_rgba(234,179,8,0.3)] bg-gradient-to-b from-[#422006] to-[#0f172a] border border-yellow-500/30 flex flex-col items-center justify-center text-center p-6 pb-8 group">
-                <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10 z-0"></div>
+            <div className="relative w-full max-w-sm mx-auto min-h-[600px] h-auto rounded-[2.5rem] overflow-hidden shadow-2xl bg-white border border-yellow-200 flex flex-col items-center justify-center text-center p-6 pb-8 group">
+                <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-[0.03] z-0"></div>
                 
                 {/* Gold Glow */}
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-yellow-500/20 blur-[100px] rounded-full z-0"></div>
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-yellow-100/50 blur-[80px] rounded-full z-0"></div>
 
                 <div className="relative z-10 space-y-8 flex flex-col items-center">
                     
@@ -833,31 +625,24 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
                             transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
                             className="relative z-10"
                         >
-                            <div className="w-32 h-32 rounded-full bg-gradient-to-br from-yellow-300 to-yellow-600 flex items-center justify-center shadow-[0_0_50px_rgba(234,179,8,0.5)] border-4 border-yellow-200">
-                                <span className="text-6xl drop-shadow-md">⚓️</span>
+                            <div className="w-32 h-32 rounded-full bg-gradient-to-br from-yellow-100 to-yellow-300 flex items-center justify-center shadow-lg border-4 border-white">
+                                <span className="text-6xl drop-shadow-sm">⚓️</span>
                             </div>
                         </motion.div>
-                        
-                        {/* Ripple Effect behind Anchor */}
-                        <motion.div 
-                            animate={{ scale: [1, 1.5, 1], opacity: [0.3, 0, 0.3] }}
-                            transition={{ duration: 3, repeat: Infinity }}
-                            className="absolute inset-0 bg-yellow-500/30 rounded-full blur-xl -z-10"
-                        />
                     </div>
 
                     <div>
-                        <h2 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-200 to-yellow-500 mb-3 uppercase tracking-tight">
+                        <h2 className="text-3xl font-black text-[#2E130C] mb-3 uppercase tracking-tight">
                             Mode Popey Activé !
                         </h2>
-                        <p className="text-yellow-100/80 font-medium text-lg max-w-[280px] mx-auto leading-relaxed">
+                        <p className="text-[#2E130C]/70 font-medium text-lg max-w-[280px] mx-auto leading-relaxed">
                             C'est le week-end ! <br/>
                             Le navire reste au port.
                         </p>
                     </div>
 
-                    <div className="bg-yellow-950/40 border border-yellow-500/20 rounded-2xl p-6 w-full max-w-[300px]">
-                        <p className="text-yellow-200/90 text-sm font-medium italic">
+                    <div className="bg-[#F3F0E7] border border-[#2E130C]/5 rounded-2xl p-6 w-full max-w-[300px]">
+                        <p className="text-[#2E130C]/80 text-sm font-medium italic">
                             "Même les marins les plus aguerris ont besoin de repos. Reviens lundi pour de nouvelles aventures !" 🌊
                         </p>
                     </div>
@@ -865,29 +650,16 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
                     <div className="flex flex-col gap-3 w-full max-w-[280px]">
                         <Button 
                             asChild
-                            className="w-full h-12 bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-200 border border-yellow-500/30 rounded-xl font-bold transition-all"
+                            className="w-full h-12 bg-white hover:bg-slate-50 text-[#2E130C] border border-[#2E130C]/10 rounded-xl font-bold transition-all shadow-sm"
                         >
                             <Link href="/mon-reseau-local/dashboard/profile">
                                 <User className="w-4 h-4 mr-2" />
                                 Mettre à jour mon profil
                             </Link>
                         </Button>
-                        <Button 
-                            variant="ghost"
-                            className="w-full h-12 text-slate-400 hover:text-white hover:bg-white/5 rounded-xl font-medium text-xs"
-                            onClick={() => {
-                                toast.info("Conseil du week-end", {
-                                    description: "Profitez-en pour envoyer un message de remerciement à vos contacts de la semaine. La gratitude fidélise !",
-                                    duration: 8000,
-                                });
-                            }}
-                        >
-                            <MessageSquare className="w-3 h-3 mr-2" />
-                            L'astuce du week-end
-                        </Button>
                     </div>
 
-                    <Badge className="bg-yellow-500/20 text-yellow-300 border-yellow-500/30 px-4 py-1.5 uppercase tracking-widest font-bold animate-pulse">
+                    <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200 px-4 py-1.5 uppercase tracking-widest font-bold animate-pulse">
                         Rendez-vous Lundi 08h
                     </Badge>
                 </div>
@@ -911,41 +683,34 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
       />;
   }
 
-  // Prevent hydration mismatch for time-dependent rendering
+  // Prevent hydration mismatch
   if (!mounted) {
-      return <div className="w-full max-w-sm mx-auto h-[600px] rounded-[2.5rem] bg-[#0f172a] animate-pulse border border-white/5" />;
+      return <div className="w-full max-w-sm mx-auto h-[600px] rounded-[2.5rem] bg-white border border-[#2E130C]/10 animate-pulse" />;
   }
 
   const match = matches[0];
   const isCallOut = match.type === 'call_out';
 
-  // Check for slot mismatch (loose matching)
   const mySlots = match.mySlots || [];
   const partnerSlots = match.partnerSlots || [];
   const commonSlots = mySlots.filter((s: string) => partnerSlots.includes(s));
-  // Mismatch only if both have slots but no intersection
   const hasMismatch = mySlots.length > 0 && partnerSlots.length > 0 && commonSlots.length === 0;
 
-  // Check if match is in the future (Tomorrow or later)
-  // const now = new Date(); // Removed duplicate declaration
-  const today = new Date().toLocaleDateString('fr-CA', { timeZone: 'Europe/Paris' }); // YYYY-MM-DD
+  const today = new Date().toLocaleDateString('fr-CA', { timeZone: 'Europe/Paris' });
   const isFuture = match.date > today;
   
-  // If it's a future match, show Mystery Card in LOCKED state (Teaser) + Add to Calendar
+  // Future Match (Teaser)
   if (isFuture) {
-      // 1. Sur la carte "Preview Bloquée" (celle du lendemain) : C'est là que l'engagement se prend.
-      // "Je sais que j'ai un match demain à 9h, je le bloque tout de suite dans mon agenda pour être sûr d'être dispo."
       return (
           <MysteryCard onReveal={() => {}} match={match} locked={true}>
                <Button 
-                    className="w-full h-12 bg-white text-indigo-900 border border-indigo-100 rounded-xl font-black text-sm mb-3 flex items-center justify-center gap-2 transition-all hover:bg-indigo-50 hover:scale-[1.02] shadow-lg shadow-indigo-900/20 animate-pulse-slow group/cal"
+                    className="w-full h-12 bg-white text-indigo-900 border border-indigo-100 rounded-xl font-black text-sm mb-3 flex items-center justify-center gap-2 transition-all hover:bg-indigo-50 hover:scale-[1.02] shadow-lg shadow-indigo-900/5 animate-pulse-slow group/cal"
                     onClick={(e) => {
                         e.stopPropagation();
                         // Generate Google Calendar Link
                         const title = `Call Réseau avec ${match.name.split(' ')[0]} ⚡️`;
                         const details = "Rappel Popey : Échange de 15 min pour booster votre réseau. Objectif : Faire connaissance et explorer les synergies.";
                         const location = "Par téléphone";
-                        // Date logic: assume tomorrow 9am if no specific time, or use match.time if available (e.g. "09h - 09h15")
                         const startTime = new Date();
                         startTime.setDate(startTime.getDate() + 1);
                         startTime.setHours(9, 0, 0, 0);
@@ -965,18 +730,11 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
       );
   }
 
-  // --- SPECIAL FOUNDER MATCH (POPEY) ---
-  // If match.partnerId is 'popey-founder' or specific ID, show Founder Card
+  // Founder Match
   const isFounderMatch = match.partnerId === 'popey-founder' || match.name?.toLowerCase().includes("jean-philippe");
   const isRescue = match.tags?.includes('rescue');
 
   if (isFounderMatch) {
-      // Import FounderCardPreview dynamically or use it if available in scope. 
-      // Since it's in design-system-preview, we should ideally move it to a shared component.
-      // For now, let's assume we copy the FounderCardPreview logic here or import it.
-      // But wait, FounderCardPreview is exported from design-system-preview.tsx.
-      // Let's import it at the top of the file first.
-      
       const handleFounderCall = async () => {
           const type = isRescue ? "rescue" : "onboarding";
           try {
@@ -994,9 +752,6 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
       return <FounderCardPreview type={isRescue ? "rescue" : "onboarding"} onConfirm={handleFounderCall} />;
   }
 
-  // Determine the next match to tease
-  // If we have more than 1 match in the array, the second one is the future match.
-  // Otherwise, we create a generic placeholder.
   const nextMatch = matches.length > 1 ? matches[1] : {
       id: 'teaser-future',
       partnerId: 'teaser-next',
@@ -1012,50 +767,19 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
       return <MysteryCard onReveal={handleReveal} match={match} />;
   }
 
-  // IF VALIDATED -> SHOW NEXT MATCH LOCKED (TEASER)
+  // Validated State
   if (step === 'validated') {
       return <MysteryCard onReveal={() => {}} match={nextMatch} locked={true} />;
   }
 
-  // MATCH CARD (REVEALED)
+  // MATCH CARD (REVEALED) - Clean Light Design
   return (
-    <div className="relative w-full max-w-sm mx-auto min-h-[600px] h-auto rounded-[2.5rem] overflow-hidden shadow-[0_20px_50px_-12px_rgba(79,70,229,0.15)] bg-gradient-to-b from-[#1e1b4b] to-[#0f172a] border border-indigo-500/30 flex flex-col items-center justify-between text-center p-6 pb-8 group">
+    <div className="relative w-full max-w-sm mx-auto min-h-[600px] h-auto rounded-[2.5rem] overflow-hidden shadow-2xl bg-white border border-[#2E130C]/10 flex flex-col items-center justify-between text-center p-6 pb-8 group">
       
-      {/* Premium Background with Sparkles */}
-      <div className="absolute inset-0 bg-gradient-to-b from-indigo-900/10 via-[#0a0a0c] to-[#0a0a0c] z-0"></div>
-      <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-5 z-0"></div>
+      {/* Subtle Background */}
+      <div className="absolute inset-0 bg-[#F3F0E7] opacity-30 z-0"></div>
+      <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-[0.03] z-0"></div>
       
-      {/* Moving Particles / Fireflies */}
-      {[...Array(5)].map((_, i) => (
-        <motion.div
-          key={i}
-          className="absolute w-1 h-1 bg-indigo-400 rounded-full blur-[1px]"
-          initial={{ 
-            x: Math.random() * 300, 
-            y: Math.random() * 600, 
-            opacity: 0 
-          }}
-          animate={{ 
-            y: [null, Math.random() * -100],
-            opacity: [0, 1, 0],
-            scale: [0, 1.5, 0]
-          }}
-          transition={{ 
-            duration: 3 + Math.random() * 2,
-            repeat: Infinity,
-            delay: Math.random() * 2,
-            ease: "easeInOut"
-          }}
-        />
-      ))}
-
-      {/* Animated Glow */}
-      <motion.div 
-        animate={{ opacity: [0.3, 0.6, 0.3], scale: [1, 1.1, 1] }}
-        transition={{ duration: 4, repeat: Infinity }}
-        className="absolute top-0 left-0 right-0 h-40 bg-indigo-500/30 blur-[80px] rounded-full z-0"
-      />
-
       {/* Content */}
       <div className="relative z-10 w-full flex flex-col items-center h-full pt-4">
         
@@ -1063,9 +787,9 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
         <motion.div 
             initial={{ y: -20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            className="mb-4 bg-red-500/10 backdrop-blur-md text-white px-4 py-2 rounded-2xl flex flex-col items-center justify-center shadow-[0_0_20px_rgba(239,68,68,0.2)] text-center gap-1 border border-red-500/20 w-full max-w-[90%]"
+            className="mb-4 bg-red-50 text-red-600 px-4 py-2 rounded-2xl flex flex-col items-center justify-center shadow-sm text-center gap-1 border border-red-100 w-full max-w-[90%]"
         >
-            <div className="flex items-center gap-2 font-bold text-xs uppercase tracking-wider text-red-200">
+            <div className="flex items-center gap-2 font-bold text-xs uppercase tracking-wider text-red-700">
                 <Phone className="w-3 h-3 animate-bounce" />
                 {isCallOut ? `C'est à vous d'appeler` : `${match.name.split(' ')[0]} vous appelle`}
             </div>
@@ -1073,18 +797,18 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
             {hasMismatch ? (
                  <div className="flex flex-col items-center mt-1 animate-pulse">
                      <div className="flex items-center gap-2">
-                         <Clock className="w-3 h-3 text-orange-300" />
-                         <span className="font-mono font-bold text-xs text-orange-200">Créneaux différents ⚠️</span>
+                         <Clock className="w-3 h-3 text-orange-500" />
+                         <span className="font-mono font-bold text-xs text-orange-600">Créneaux différents ⚠️</span>
                      </div>
-                     <span className="text-[10px] text-orange-200/80 font-medium mt-0.5 leading-tight">
+                     <span className="text-[10px] text-orange-600/80 font-medium mt-0.5 leading-tight">
                         Lui : {partnerSlots[0]?.replace('h – ', 'h-')?.split(' ')[0]} • Vous : {mySlots[0]?.replace('h – ', 'h-')?.split(' ')[0]}
                      </span>
-                     <span className="text-[9px] text-white/60 mt-0.5">Appelez quand vous pouvez !</span>
+                     <span className="text-[9px] text-[#2E130C]/60 mt-0.5">Appelez quand vous pouvez !</span>
                  </div>
             ) : (
                 <div className="flex items-center gap-2">
-                     <Clock className="w-3 h-3 text-red-200" />
-                     <span className="font-mono font-bold text-xs text-white">{match.time}</span>
+                     <Clock className="w-3 h-3 text-red-600" />
+                     <span className="font-mono font-bold text-xs text-[#2E130C]">{match.time}</span>
                 </div>
             )}
         </motion.div>
@@ -1095,20 +819,17 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
             <motion.div 
                 animate={{ rotate: 360 }}
                 transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-                className="absolute -inset-4 rounded-full border border-indigo-500/20 border-dashed"
+                className="absolute -inset-4 rounded-full border border-slate-200 border-dashed"
             />
             {/* Middle Ring - Reverse Rotation */}
             <motion.div 
                 animate={{ rotate: -360 }}
                 transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
-                className="absolute -inset-2 rounded-full border border-blue-500/30 border-dotted"
+                className="absolute -inset-2 rounded-full border border-blue-200 border-dotted"
             />
             
-            {/* Glow behind avatar */}
-            <div className="absolute inset-0 bg-gradient-to-r from-indigo-300 to-blue-600 rounded-full blur-md opacity-60 animate-pulse-slow"></div>
-            
-            <div className="w-24 h-24 rounded-full p-[3px] bg-gradient-to-r from-indigo-300 via-blue-300 to-purple-600 shadow-2xl relative z-10">
-                <div className="w-full h-full rounded-full overflow-hidden border-4 border-[#0f0f12] relative bg-slate-800">
+            <div className="w-24 h-24 rounded-full p-[3px] bg-gradient-to-r from-slate-200 via-blue-200 to-purple-200 shadow-xl relative z-10">
+                <div className="w-full h-full rounded-full overflow-hidden border-4 border-white relative bg-slate-100">
                     {match.avatar ? (
                         <Image 
                             src={match.avatar} 
@@ -1118,28 +839,28 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
                         />
                     ) : (
                         <div className="w-full h-full flex items-center justify-center">
-                            <User className="h-10 w-10 text-slate-500" />
+                            <User className="h-10 w-10 text-slate-400" />
                         </div>
                     )}
                 </div>
             </div>
             
             {/* Status Indicator */}
-            <div className="absolute bottom-1 right-1 w-5 h-5 bg-[#0f0f12] rounded-full flex items-center justify-center z-20">
+            <div className="absolute bottom-1 right-1 w-5 h-5 bg-white rounded-full flex items-center justify-center z-20 shadow-sm">
                 <span className="absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75 animate-ping"></span>
-                <div className="relative w-3 h-3 bg-green-500 rounded-full border-2 border-[#0f0f12]"></div>
+                <div className="relative w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
             </div>
         </div>
 
         {/* Name & View Profile */}
         <div className="mb-4 flex flex-col items-center gap-2">
-            <h2 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-b from-white to-indigo-200 leading-none">
+            <h2 className="text-3xl font-black text-[#2E130C] leading-none">
                 {match.name.split(' ')[0]}
             </h2>
             <Button 
                 asChild
                 variant="outline" 
-                className="h-7 text-[10px] px-3 bg-indigo-500/10 border-indigo-500/30 text-indigo-300 hover:bg-indigo-500/20 hover:text-indigo-200 rounded-full uppercase font-bold tracking-wider transition-all hover:scale-105"
+                className="h-7 text-[10px] px-3 bg-slate-50 border-slate-200 text-slate-500 hover:bg-slate-100 hover:text-slate-800 rounded-full uppercase font-bold tracking-wider transition-all hover:scale-105"
                 onClick={() => trackEvent('click_profile', { partnerId: match.partnerId })}
             >
                 <Link href={`/mon-reseau-local/dashboard/profile/${match.partnerId}`}>
@@ -1150,7 +871,7 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
 
         {/* Quote */}
         <div className="mb-6 px-2 w-full">
-            <p className="text-slate-300 text-sm font-medium italic leading-relaxed">
+            <p className="text-[#2E130C]/70 text-sm font-medium italic leading-relaxed">
                 "Ce {match.job || 'partenaire'} peut vous ouvrir des opportunités auxquelles vous n’aviez pas accès hier."
             </p>
         </div>
@@ -1163,8 +884,8 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
                 className={cn(
                     "relative rounded-xl p-3 cursor-pointer transition-all text-left group/box border",
                     !selectedMission 
-                        ? "bg-indigo-500/10 border-indigo-500/50 hover:bg-indigo-500/20 hover:border-indigo-400 animate-pulse-slow shadow-[0_0_15px_rgba(99,102,241,0.15)]" 
-                        : "bg-indigo-500/10 border-indigo-500/20 hover:bg-indigo-500/20 hover:border-indigo-500/40"
+                        ? "bg-indigo-50 border-indigo-200 hover:bg-indigo-100 hover:border-indigo-300 animate-pulse-slow shadow-sm" 
+                        : "bg-white border-[#2E130C]/10 hover:bg-slate-50"
                 )}
             >
                 {!selectedMission && (
@@ -1173,11 +894,11 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
                     </span>
                 )}
                 <div className="flex items-center gap-1.5 mb-2">
-                    <Target className={cn("w-3.5 h-3.5", !selectedMission ? "text-indigo-300 animate-pulse" : "text-indigo-400")} />
-                    <span className="text-[9px] font-black text-indigo-300 uppercase tracking-wider">Mon Objectif</span>
+                    <Target className={cn("w-3.5 h-3.5", !selectedMission ? "text-indigo-500 animate-pulse" : "text-[#2E130C]/60")} />
+                    <span className="text-[9px] font-black text-[#2E130C]/60 uppercase tracking-wider">Mon Objectif</span>
                 </div>
                 <p className={cn("text-[11px] font-bold leading-tight line-clamp-2 transition-colors", 
-                    !selectedMission ? "text-indigo-200 underline decoration-indigo-500/50 decoration-wavy" : "text-white group-hover/box:text-indigo-100"
+                    !selectedMission ? "text-indigo-600 underline decoration-indigo-300 decoration-wavy" : "text-[#2E130C]"
                 )}>
                     {selectedMission 
                         ? MISSION_TYPES.find(m => m.id === selectedMission)?.label 
@@ -1191,8 +912,8 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
                 className={cn(
                     "rounded-xl p-3 text-left border cursor-pointer hover:scale-[1.02] transition-transform relative group/partner",
                     match.partner_mission 
-                        ? "bg-purple-500/10 border-purple-500/20 hover:bg-purple-500/20 hover:border-purple-500/40" 
-                        : "bg-orange-500/10 border-orange-500/20 border-dashed"
+                        ? "bg-purple-50 border-purple-200 hover:bg-purple-100 hover:border-purple-300" 
+                        : "bg-orange-50 border-orange-200 border-dashed"
                 )}
             >
                 {match.partner_mission && (
@@ -1201,10 +922,10 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
                     </div>
                 )}
                 <div className="flex items-center gap-1.5 mb-2">
-                    <Users className={cn("w-3.5 h-3.5", match.partner_mission ? "text-purple-400" : "text-orange-400")} />
-                    <span className={cn("text-[9px] font-black uppercase tracking-wider", match.partner_mission ? "text-purple-300" : "text-orange-300")}>Son Objectif</span>
+                    <Users className={cn("w-3.5 h-3.5", match.partner_mission ? "text-purple-500" : "text-orange-400")} />
+                    <span className={cn("text-[9px] font-black uppercase tracking-wider", match.partner_mission ? "text-purple-600" : "text-orange-500")}>Son Objectif</span>
                 </div>
-                <p className={cn("text-[11px] font-bold leading-tight line-clamp-2", match.partner_mission ? "text-white" : "text-orange-200/70 italic")}>
+                <p className={cn("text-[11px] font-bold leading-tight line-clamp-2", match.partner_mission ? "text-[#2E130C]" : "text-orange-600/70 italic")}>
                     {match.partner_mission 
                         ? (MISSION_TYPES.find(m => m.id === match.partner_mission)?.label || match.partner_mission)
                         : "N'a pas encore défini son objectif..."}
@@ -1224,9 +945,9 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
                             trackEvent('click_why_open', { partnerId: match.partnerId });
                         }}
                         variant="ghost" 
-                        className="w-full h-12 border border-white/10 bg-white/5 text-slate-300 hover:bg-white/10 hover:text-white rounded-xl font-bold transition-all hover:scale-[1.02]"
+                        className="w-full h-12 border border-[#2E130C]/10 bg-white text-[#2E130C]/70 hover:bg-[#2E130C]/5 hover:text-[#2E130C] rounded-xl font-bold transition-all hover:scale-[1.02]"
                     >
-                        <Zap className="w-4 h-4 mr-2 text-yellow-400" /> Pourquoi ce match ?
+                        <Zap className="w-4 h-4 mr-2 text-yellow-500" /> Pourquoi ce match ?
                     </Button>
 
                     <Button 
@@ -1234,7 +955,7 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
                             setIsPhoneOpen(true);
                             trackEvent('click_call_open', { partnerId: match.partnerId });
                         }}
-                        className="w-full h-14 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white font-black text-lg rounded-xl shadow-lg shadow-emerald-900/20 tracking-wide transition-all hover:scale-[1.02] relative overflow-hidden group/btn"
+                        className="w-full h-14 bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-500 hover:to-teal-600 text-white font-black text-lg rounded-xl shadow-lg shadow-emerald-900/10 tracking-wide transition-all hover:scale-[1.02] relative overflow-hidden group/btn"
                     >
                         <div className="absolute inset-0 bg-white/20 translate-y-full group-hover/btn:translate-y-0 transition-transform duration-300"></div>
                         <PhoneCall className="w-5 h-5 mr-2 relative z-10" /> <span className="relative z-10">APPELER</span>
@@ -1255,17 +976,17 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
                         }
                     }}>
                         <DialogTrigger asChild>
-                            <Button className="w-full h-20 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 text-white hover:scale-[1.02] transition-all shadow-xl border-2 border-indigo-400/50 relative z-10 flex flex-col items-center justify-center gap-1">
+                            <Button className="w-full h-20 rounded-2xl bg-[#2E130C] text-white hover:bg-[#2E130C]/90 hover:scale-[1.02] transition-all shadow-xl relative z-10 flex flex-col items-center justify-center gap-1">
                                 <CheckCircle2 className="h-6 w-6" />
                                 <span className="text-xs font-black uppercase tracking-wider">Terminer la mission</span>
                             </Button>
                         </DialogTrigger>
                         {/* VALIDATION WIZARD CONTENT (Re-inserted here) */}
-                        <DialogContent className="bg-[#0f172a] border-white/10 text-white sm:max-w-md rounded-2xl w-[95vw] min-h-[400px] flex flex-col justify-center transition-all duration-300">
+                        <DialogContent className="bg-white border-[#2E130C]/10 text-[#2E130C] sm:max-w-md rounded-2xl w-[95vw] min-h-[400px] flex flex-col justify-center transition-all duration-300">
                             {/* PROGRESS INDICATOR */}
-                            <div className="absolute top-0 left-0 right-0 h-1 bg-white/5">
+                            <div className="absolute top-0 left-0 right-0 h-1 bg-[#2E130C]/5">
                                 <motion.div 
-                                    className="h-full bg-gradient-to-r from-indigo-500 to-purple-500"
+                                    className="h-full bg-emerald-500"
                                     initial={{ width: "0%" }}
                                     animate={{ 
                                         width: popupView === 'step1_status' ? "33%" : popupView === 'step2_rating' ? "66%" : "100%" 
@@ -1276,7 +997,7 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
 
                             {/* HEADER */}
                             <DialogHeader className="mb-6 mt-4">
-                                <DialogTitle className="text-center text-3xl font-black bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
+                                <DialogTitle className="text-center text-3xl font-black text-[#2E130C]">
                                     {popupView === 'step1_status' ? "Bilan de la mission" : popupView === 'step2_rating' ? "Notez l'échange" : "Offrir une opportunité"}
                                 </DialogTitle>
                             </DialogHeader>
@@ -1284,8 +1005,8 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
                             {/* VIEW 1: STATUS CALL */}
                             {popupView === 'step1_status' && (
                                 <div className="flex flex-col gap-6 p-2">
-                                    <div className="bg-white/5 p-6 rounded-2xl border border-white/5 text-center space-y-6">
-                                        <Label className="text-slate-400 uppercase text-xs font-bold tracking-wider block">L'appel a-t-il eu lieu ?</Label>
+                                    <div className="bg-[#F3F0E7] p-6 rounded-2xl border border-[#2E130C]/5 text-center space-y-6">
+                                        <Label className="text-[#2E130C]/60 uppercase text-xs font-bold tracking-wider block">L'appel a-t-il eu lieu ?</Label>
                                         <div className="grid grid-cols-2 gap-4">
                                             <Button 
                                                 onClick={() => {
@@ -1293,7 +1014,7 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
                                                     setPopupView('step2_rating');
                                                 }} 
                                                 variant="outline"
-                                                className="h-24 flex flex-col gap-2 font-bold border-emerald-500/30 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 hover:scale-105 transition-all"
+                                                className="h-24 flex flex-col gap-2 font-bold border-emerald-500/30 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 hover:scale-105 transition-all"
                                             >
                                                 <PhoneCall className="w-8 h-8" />
                                                 <span className="text-lg">OUI ✅</span>
@@ -1303,7 +1024,7 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
                                                 variant="outline"
                                                 className={cn(
                                                     "h-24 flex flex-col gap-2 font-bold border-red-500/30 transition-all",
-                                                    callHappened === false ? "bg-red-500 text-white hover:bg-red-600" : "bg-red-500/10 text-red-400 hover:bg-red-500/20 hover:scale-105"
+                                                    callHappened === false ? "bg-red-500 text-white hover:bg-red-600" : "bg-red-50 text-red-500 hover:bg-red-100 hover:scale-105"
                                                 )}
                                             >
                                                 <Phone className="w-8 h-8 rotate-135" />
@@ -1313,7 +1034,7 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
                                     </div>
                                     {callHappened === false && (
                                         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-                                            <Button onClick={handleValidate} className="w-full h-14 text-lg font-black bg-white text-black hover:bg-slate-200 rounded-xl shadow-lg">
+                                            <Button onClick={handleValidate} className="w-full h-14 text-lg font-black bg-[#2E130C] text-white hover:bg-[#2E130C]/90 rounded-xl shadow-lg">
                                                 VALIDER L'ABSENCE
                                             </Button>
                                         </motion.div>
@@ -1330,31 +1051,31 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
                                             className={cn(
                                                 "flex-1 aspect-square rounded-2xl border flex flex-col items-center justify-center gap-3 transition-all group relative overflow-hidden",
                                                 rating === 'fire' 
-                                                    ? "bg-orange-500/20 border-orange-500 ring-2 ring-orange-500/50 scale-105" 
-                                                    : "bg-orange-500/10 border-orange-500/30 hover:bg-orange-500/20 hover:scale-105"
+                                                    ? "bg-orange-50 border-orange-500 ring-2 ring-orange-200 scale-105" 
+                                                    : "bg-white border-[#2E130C]/10 hover:bg-orange-50 hover:scale-105"
                                             )}
                                         >
                                             <span className="text-4xl group-hover:scale-125 transition-transform">🔥</span>
-                                            <span className="text-xs uppercase font-black text-orange-300">Top</span>
+                                            <span className="text-xs uppercase font-black text-orange-500">Top</span>
                                         </button>
                                         <button 
                                             onClick={() => setRating('good')}
                                             className={cn(
                                                 "flex-1 aspect-square rounded-2xl border flex flex-col items-center justify-center gap-3 transition-all group relative overflow-hidden",
                                                 rating === 'good' 
-                                                    ? "bg-blue-500/20 border-blue-500 ring-2 ring-blue-500/50 scale-105" 
-                                                    : "bg-blue-500/10 border-blue-500/30 hover:bg-blue-500/20 hover:scale-105"
+                                                    ? "bg-blue-50 border-blue-500 ring-2 ring-blue-200 scale-105" 
+                                                    : "bg-white border-[#2E130C]/10 hover:bg-blue-50 hover:scale-105"
                                             )}
                                         >
                                             <span className="text-4xl group-hover:scale-125 transition-transform">👍</span>
-                                            <span className="text-xs uppercase font-black text-blue-300">Bien</span>
+                                            <span className="text-xs uppercase font-black text-blue-500">Bien</span>
                                         </button>
                                         <button 
                                             onClick={() => { setRating('meh'); setSelectedBadge(null); setPopupView('step3_gift'); }}
-                                            className="flex-1 aspect-square rounded-2xl border flex flex-col items-center justify-center gap-3 transition-all bg-slate-500/10 border-slate-500/30 hover:bg-slate-500/20 hover:scale-105 group"
+                                            className="flex-1 aspect-square rounded-2xl border flex flex-col items-center justify-center gap-3 transition-all bg-white border-[#2E130C]/10 hover:bg-slate-50 hover:scale-105 group"
                                         >
                                             <span className="text-4xl group-hover:scale-125 transition-transform">😐</span>
-                                            <span className="text-xs uppercase font-black text-slate-300">Bof</span>
+                                            <span className="text-xs uppercase font-black text-slate-400">Bof</span>
                                         </button>
                                     </div>
 
@@ -1363,9 +1084,9 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
                                         <motion.div 
                                             initial={{ opacity: 0, height: 0 }}
                                             animate={{ opacity: 1, height: 'auto' }}
-                                            className="space-y-3 pt-2 border-t border-white/5"
+                                            className="space-y-3 pt-2 border-t border-[#2E130C]/5"
                                         >
-                                            <Label className="text-xs uppercase font-bold text-slate-400 text-center block">
+                                            <Label className="text-xs uppercase font-bold text-[#2E130C]/60 text-center block">
                                                 Pourquoi ? (Optionnel)
                                             </Label>
                                             <div className="grid grid-cols-2 gap-2">
@@ -1376,8 +1097,8 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
                                                         className={cn(
                                                             "flex items-center gap-2 p-2 rounded-lg border text-left transition-all",
                                                             selectedBadge === badge.id 
-                                                                ? "bg-indigo-500/30 border-indigo-400 text-white" 
-                                                                : "bg-white/5 border-white/5 text-slate-300 hover:bg-white/10"
+                                                                ? "bg-[#2E130C] border-[#2E130C] text-white" 
+                                                                : "bg-white border-[#2E130C]/10 text-[#2E130C]/80 hover:bg-slate-50"
                                                         )}
                                                     >
                                                         <span className="text-lg">{badge.icon}</span>
@@ -1390,7 +1111,7 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
                                             </div>
                                             <Button 
                                                 onClick={() => setPopupView('step3_gift')} 
-                                                className="w-full bg-white text-black hover:bg-slate-200 font-bold mt-2"
+                                                className="w-full bg-[#2E130C] text-white hover:bg-[#2E130C]/90 font-bold mt-2"
                                             >
                                                 Continuer <ChevronRight className="w-4 h-4 ml-1" />
                                             </Button>
@@ -1414,21 +1135,21 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
                                                     <button
                                                         key={type.id}
                                                         onClick={() => setOppType(type.id)}
-                                                        className="group relative flex items-center gap-3 p-3 rounded-xl border border-white/5 bg-white/5 hover:bg-white/10 hover:border-purple-500/50 hover:shadow-[0_0_15px_rgba(168,85,247,0.15)] transition-all text-left"
+                                                        className="group relative flex items-center gap-3 p-3 rounded-xl border border-[#2E130C]/10 bg-white hover:bg-slate-50 hover:border-purple-300 hover:shadow-sm transition-all text-left"
                                                     >
-                                                        <div className={cn("shrink-0 h-10 w-10 rounded-full flex items-center justify-center bg-black/20", type.color)}>
+                                                        <div className={cn("shrink-0 h-10 w-10 rounded-full flex items-center justify-center bg-slate-100", type.color)}>
                                                             <Icon className="w-5 h-5" />
                                                         </div>
                                                         <div className="flex-1">
-                                                            <div className="text-sm font-bold text-white group-hover:text-purple-300 transition-colors">
+                                                            <div className="text-sm font-bold text-[#2E130C] group-hover:text-purple-700 transition-colors">
                                                                 {type.label}
                                                             </div>
-                                                            <div className="text-[10px] text-slate-400 font-medium leading-tight">
+                                                            <div className="text-[10px] text-[#2E130C]/60 font-medium leading-tight">
                                                                 {type.cardLabel || type.description}
                                                             </div>
                                                         </div>
                                                         <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-                                                            <ChevronRight className="w-4 h-4 text-purple-400" />
+                                                            <ChevronRight className="w-4 h-4 text-purple-500" />
                                                         </div>
                                                     </button>
                                                 );
@@ -1439,25 +1160,25 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
                                             <motion.div 
                                                 initial={{ scale: 0.9, opacity: 0 }}
                                                 animate={{ scale: 1, opacity: 1 }}
-                                                className="flex items-center justify-between bg-purple-500/10 p-3 rounded-xl border border-purple-500/30"
+                                                className="flex items-center justify-between bg-purple-50 p-3 rounded-xl border border-purple-200"
                                             >
-                                                <span className="text-sm font-bold text-purple-300 flex items-center gap-2">
+                                                <span className="text-sm font-bold text-purple-700 flex items-center gap-2">
                                                     <Gift className="w-4 h-4" /> {OPPORTUNITY_TYPES.find(t => t.id === oppType)?.label}
                                                 </span>
-                                                <button onClick={() => setOppType(undefined)} className="text-xs text-slate-400 underline hover:text-white">Changer</button>
+                                                <button onClick={() => setOppType(undefined)} className="text-xs text-purple-600 underline hover:text-purple-800">Changer</button>
                                             </motion.div>
                                             
                                             <div className="space-y-2">
-                                                <Label className="text-xs text-slate-400 uppercase font-bold ml-1">Message (Optionnel)</Label>
+                                                <Label className="text-xs text-[#2E130C]/60 uppercase font-bold ml-1">Message (Optionnel)</Label>
                                                 <Textarea 
-                                                    className="w-full bg-black/30 border border-white/10 rounded-xl p-3 text-sm text-white min-h-[80px] focus:ring-1 focus:ring-purple-500 outline-none resize-none placeholder:text-slate-600"
+                                                    className="w-full bg-slate-50 border border-[#2E130C]/10 rounded-xl p-3 text-sm text-[#2E130C] min-h-[80px] focus:ring-1 focus:ring-purple-500 outline-none resize-none placeholder:text-slate-400"
                                                     placeholder="Ex: Je te mets en relation avec..."
                                                     value={oppDetails}
                                                     onChange={(e) => setOppDetails(e.target.value)}
                                                 />
                                             </div>
 
-                                            <Button onClick={handleValidate} className="w-full h-14 text-lg font-black bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-white rounded-xl shadow-lg shadow-emerald-900/20 transform transition-all hover:scale-[1.02]">
+                                            <Button onClick={handleValidate} className="w-full h-14 text-lg font-black bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-white rounded-xl shadow-lg shadow-emerald-900/10 transform transition-all hover:scale-[1.02]">
                                                 VALIDER & ENVOYER 🚀
                                             </Button>
                                         </div>
@@ -1476,13 +1197,13 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
         {/* HIDDEN DIALOGS (To ensure content is available) */}
         {/* Mission Dialog */}
         <Dialog open={isMissionOpen} onOpenChange={setIsMissionOpen}>
-            <DialogContent className="bg-[#0f172a] border-white/10 text-white sm:max-w-md rounded-2xl w-[90vw] max-h-[85vh] overflow-y-auto">
+            <DialogContent className="bg-white border-[#2E130C]/10 text-[#2E130C] sm:max-w-md rounded-2xl w-[90vw] max-h-[85vh] overflow-y-auto">
                 <DialogHeader>
-                    <DialogTitle className="flex items-center gap-2 text-xl font-black text-indigo-400">
+                    <DialogTitle className="flex items-center gap-2 text-xl font-black text-indigo-600">
                         <Target className="h-6 w-6" />
                         Menu de la Carte 🍽️
                     </DialogTitle>
-                    <DialogDescription className="text-slate-400">
+                    <DialogDescription className="text-[#2E130C]/60">
                         Ne partez pas sans objectif. Choisissez le thème de votre échange.
                     </DialogDescription>
                 </DialogHeader>
@@ -1508,9 +1229,9 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
                                 className={cn(
                                     "flex items-center gap-4 p-4 rounded-xl border transition-all text-left relative overflow-hidden group",
                                     isSelected 
-                                        ? "bg-indigo-600/20 border-indigo-500 shadow-[0_0_15px_rgba(99,102,241,0.3)]" 
-                                        : "bg-slate-900/50 border-white/5 hover:bg-slate-800",
-                                    isSuggested && !isSelected && "border-indigo-500/50"
+                                        ? "bg-indigo-50 border-indigo-500 shadow-sm" 
+                                        : "bg-white border-[#2E130C]/10 hover:bg-slate-50",
+                                    isSuggested && !isSelected && "border-indigo-200"
                                 )}
                             >
                                 <div className={cn("h-10 w-10 rounded-full flex items-center justify-center shrink-0", mission.bg)}>
@@ -1518,20 +1239,20 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
                                 </div>
                                 <div className="flex-1">
                                     <div className="flex items-center gap-2">
-                                        <span className={cn("font-bold text-sm", isSelected ? "text-indigo-300" : "text-white")}>
+                                        <span className={cn("font-bold text-sm", isSelected ? "text-indigo-700" : "text-[#2E130C]")}>
                                             {mission.label}
                                         </span>
                                         {isSuggested && (
-                                            <Badge className="bg-indigo-500/20 text-indigo-300 border-indigo-500/30 text-[9px] px-1.5 h-4">
+                                            <Badge className="bg-indigo-100 text-indigo-600 border-indigo-200 text-[9px] px-1.5 h-4">
                                                 Recommandé
                                             </Badge>
                                         )}
                                     </div>
-                                    <p className="text-xs text-slate-400 font-medium leading-tight mt-0.5">
+                                    <p className="text-xs text-[#2E130C]/60 font-medium leading-tight mt-0.5">
                                         "{mission.desc}"
                                     </p>
                                 </div>
-                                {isSelected && <div className="absolute right-4"><CheckCircle2 className="w-5 h-5 text-indigo-400" /></div>}
+                                {isSelected && <div className="absolute right-4"><CheckCircle2 className="w-5 h-5 text-indigo-600" /></div>}
                             </button>
                         );
                     })}
@@ -1541,9 +1262,9 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
 
         {/* Partner Mission Dialog */}
         <Dialog open={isPartnerMissionOpen} onOpenChange={setIsPartnerMissionOpen}>
-            <DialogContent className="bg-[#0f172a] border-white/10 text-white sm:max-w-md rounded-2xl w-[90vw]">
+            <DialogContent className="bg-white border-[#2E130C]/10 text-[#2E130C] sm:max-w-md rounded-2xl w-[90vw]">
                 <DialogHeader>
-                    <DialogTitle className="flex items-center gap-2 text-xl font-black text-purple-400">
+                    <DialogTitle className="flex items-center gap-2 text-xl font-black text-purple-600">
                         <Users className="h-6 w-6" />
                         Objectif de {match.name.split(' ')[0]}
                     </DialogTitle>
@@ -1551,43 +1272,43 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
                 <div className="py-6 space-y-6">
                     {match.partner_mission ? (
                         <>
-                            <div className="bg-purple-500/10 p-6 rounded-2xl border border-purple-500/30 text-center space-y-4">
-                                <div className="h-16 w-16 rounded-full bg-purple-500/20 flex items-center justify-center mx-auto">
+                            <div className="bg-purple-50 p-6 rounded-2xl border border-purple-200 text-center space-y-4">
+                                <div className="h-16 w-16 rounded-full bg-purple-100 flex items-center justify-center mx-auto">
                                     {(() => {
                                         const mission = MISSION_TYPES.find(m => m.id === match.partner_mission);
                                         const Icon = mission?.icon || Users;
-                                        return <Icon className="h-8 w-8 text-purple-400" />;
+                                        return <Icon className="h-8 w-8 text-purple-600" />;
                                     })()}
                                 </div>
                                 <div>
-                                    <h3 className="text-lg font-black text-white mb-2">
+                                    <h3 className="text-lg font-black text-[#2E130C] mb-2">
                                         {MISSION_TYPES.find(m => m.id === match.partner_mission)?.label || match.partner_mission}
                                     </h3>
-                                    <p className="text-sm text-purple-200/80 font-medium leading-relaxed">
+                                    <p className="text-sm text-[#2E130C]/70 font-medium leading-relaxed">
                                         "{MISSION_TYPES.find(m => m.id === match.partner_mission)?.desc || "Objectif personnalisé"}"
                                     </p>
                                 </div>
                             </div>
-                            <div className="bg-slate-900/50 p-4 rounded-xl border border-white/5">
-                                <p className="text-xs text-slate-400 text-center font-medium">
-                                    💡 <span className="text-white font-bold">Conseil :</span> Demandez-lui comment vous pouvez l'aider à atteindre cet objectif pendant l'appel. C'est le meilleur moyen de créer une relation forte.
+                            <div className="bg-slate-50 p-4 rounded-xl border border-[#2E130C]/5">
+                                <p className="text-xs text-[#2E130C]/60 text-center font-medium">
+                                    💡 <span className="text-[#2E130C] font-bold">Conseil :</span> Demandez-lui comment vous pouvez l'aider à atteindre cet objectif pendant l'appel. C'est le meilleur moyen de créer une relation forte.
                                 </p>
                             </div>
                         </>
                     ) : (
                         <div className="text-center py-8 space-y-4">
-                            <div className="h-20 w-20 rounded-full bg-slate-800 flex items-center justify-center mx-auto opacity-50">
-                                <Users className="h-10 w-10 text-slate-500" />
+                            <div className="h-20 w-20 rounded-full bg-slate-100 flex items-center justify-center mx-auto opacity-80">
+                                <Users className="h-10 w-10 text-slate-400" />
                             </div>
-                            <p className="text-slate-400 font-medium">
+                            <p className="text-[#2E130C]/60 font-medium">
                                 {match.name.split(' ')[0]} n'a pas encore défini son objectif pour cet échange.
                             </p>
-                            <p className="text-sm text-slate-500">
+                            <p className="text-sm text-[#2E130C]/50">
                                 Profitez-en pour lui demander ce qu'il recherche en début d'appel !
                             </p>
                         </div>
                     )}
-                    <Button onClick={() => setIsPartnerMissionOpen(false)} className="w-full bg-slate-800 hover:bg-slate-700 text-white font-bold">
+                    <Button onClick={() => setIsPartnerMissionOpen(false)} className="w-full bg-[#2E130C] hover:bg-[#2E130C]/90 text-white font-bold">
                         Fermer
                     </Button>
                 </div>
@@ -1596,21 +1317,21 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
 
         {/* Why Dialog Content (Reused) */}
         <Dialog open={isWhyVisible} onOpenChange={setIsWhyVisible}>
-            <DialogContent className="bg-[#0f172a] border-white/10 text-white sm:max-w-md rounded-2xl w-[90vw] p-0 overflow-hidden">
-                <div className="bg-gradient-to-br from-blue-600/20 to-purple-600/20 p-6">
+            <DialogContent className="bg-white border-[#2E130C]/10 text-[#2E130C] sm:max-w-md rounded-2xl w-[90vw] p-0 overflow-hidden">
+                <div className="bg-gradient-to-br from-blue-50 to-purple-50 p-6">
                     <DialogHeader>
                         <DialogTitle className="flex items-center gap-2 text-xl font-black">
-                            <Zap className="h-6 w-6 text-yellow-400 fill-yellow-400" />
+                            <Zap className="h-6 w-6 text-yellow-500 fill-yellow-500" />
                             Pourquoi ce match ?
                         </DialogTitle>
                     </DialogHeader>
                 </div>
                 <div className="p-6 space-y-6 max-h-[60vh] overflow-y-auto">
                     <div className="space-y-2">
-                        <h4 className="text-xs font-bold text-slate-500 uppercase flex items-center gap-2">
+                        <h4 className="text-xs font-bold text-[#2E130C]/50 uppercase flex items-center gap-2">
                             <Target className="h-4 w-4" /> Objectif du moment
                         </h4>
-                        <p className="text-lg font-bold text-white leading-tight">
+                        <p className="text-lg font-bold text-[#2E130C] leading-tight">
                             {match.current_goals && match.current_goals.length > 0 
                                 ? GOAL_LABELS[match.current_goals[0]] 
                                 : "Développer son activité"}
@@ -1618,36 +1339,36 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
                     </div>
                     {match.big_goal && (
                         <div className="space-y-2">
-                            <h4 className="text-xs font-bold text-slate-500 uppercase flex items-center gap-2">
+                            <h4 className="text-xs font-bold text-[#2E130C]/50 uppercase flex items-center gap-2">
                                 <Trophy className="h-4 w-4" /> Son Grand Défi
                             </h4>
-                            <div className="bg-slate-900/50 p-3 rounded-xl border border-white/5 text-sm text-slate-200 italic">
+                            <div className="bg-slate-50 p-3 rounded-xl border border-[#2E130C]/5 text-sm text-[#2E130C]/80 italic">
                                 "{match.big_goal}"
                             </div>
                         </div>
                     )}
                     <div className="grid grid-cols-1 gap-4 pt-2">
-                        <div className="bg-emerald-500/10 p-4 rounded-xl border border-emerald-500/20 space-y-2">
-                            <h4 className="text-xs font-bold text-emerald-400 uppercase flex items-center gap-2">
+                        <div className="bg-emerald-50 p-4 rounded-xl border border-emerald-100 space-y-2">
+                            <h4 className="text-xs font-bold text-emerald-600 uppercase flex items-center gap-2">
                                 <Gift className="h-4 w-4" /> Ce qu'il peut offrir
                             </h4>
-                            <p className="text-sm font-medium text-emerald-100">
+                            <p className="text-sm font-medium text-[#2E130C]/80">
                                 {match.superpower || "Son expérience et son réseau"}
                             </p>
                         </div>
-                        <div className="bg-blue-500/10 p-4 rounded-xl border border-blue-500/20 space-y-2">
-                            <h4 className="text-xs font-bold text-blue-400 uppercase flex items-center gap-2">
+                        <div className="bg-blue-50 p-4 rounded-xl border border-blue-100 space-y-2">
+                            <h4 className="text-xs font-bold text-blue-600 uppercase flex items-center gap-2">
                                 <Search className="h-4 w-4" /> Ce qu'il recherche
                             </h4>
-                            <p className="text-sm font-medium text-blue-100">
+                            <p className="text-sm font-medium text-[#2E130C]/80">
                                 {match.current_need || "Des opportunités de croissance"}
                             </p>
                         </div>
                     </div>
                 </div>
-                <div className="p-4 bg-slate-900 border-t border-white/5">
+                <div className="p-4 bg-slate-50 border-t border-[#2E130C]/5">
                     <Button 
-                        className="w-full bg-slate-800 hover:bg-slate-700 text-white font-bold" 
+                        className="w-full bg-[#2E130C] hover:bg-[#2E130C]/90 text-white font-bold" 
                         onClick={() => {
                             setIsWhyVisible(false);
                             trackEvent('click_why_close_ack', { partnerId: match.partnerId });
@@ -1666,30 +1387,30 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
                 setStep('called');
             }
         }}>
-            <DialogContent className="bg-[#0f172a] border-white/10 text-white sm:max-w-md rounded-2xl w-[90vw]">
+            <DialogContent className="bg-white border-[#2E130C]/10 text-[#2E130C] sm:max-w-md rounded-2xl w-[90vw]">
                 <DialogHeader>
                     <DialogTitle className="flex flex-col items-center gap-4 text-2xl font-black justify-center pt-4">
-                        <div className="h-20 w-20 rounded-full bg-emerald-500/20 flex items-center justify-center animate-pulse">
-                            <Phone className="h-10 w-10 text-emerald-400" />
+                        <div className="h-20 w-20 rounded-full bg-emerald-50 flex items-center justify-center animate-pulse">
+                            <Phone className="h-10 w-10 text-emerald-600" />
                         </div>
                         <span>C'est parti ! 🚀</span>
                     </DialogTitle>
-                    <DialogDescription className="text-center text-slate-400 text-base">
+                    <DialogDescription className="text-center text-[#2E130C]/60 text-base">
                         {isCallOut ? (
                             <>
-                                Voici le numéro de <span className="text-white font-bold">{match.name}</span>.
+                                Voici le numéro de <span className="text-[#2E130C] font-bold">{match.name}</span>.
                                 <br/>Appelez-le maintenant pour votre échange de 15 min.
                             </>
                         ) : (
                             <>
-                                Vous attendez l'appel de <span className="text-white font-bold">{match.name}</span>.
+                                Vous attendez l'appel de <span className="text-[#2E130C] font-bold">{match.name}</span>.
                                 <br/>Si à {match.time.split('h')[0]}h10 vous n'avez pas de nouvelles, appelez-le !
                             </>
                         )}
                     </DialogDescription>
                 </DialogHeader>
                 <div className="flex flex-col items-center gap-6 py-6">
-                    <div className="text-3xl sm:text-4xl font-black tracking-widest text-white bg-slate-900 px-6 py-4 rounded-xl border border-white/10 shadow-inner select-all">
+                    <div className="text-3xl sm:text-4xl font-black tracking-widest text-[#2E130C] bg-slate-50 px-6 py-4 rounded-xl border border-[#2E130C]/5 shadow-inner select-all">
                         {match.phone || "Non renseigné"}
                     </div>
                     <div className="grid grid-cols-2 gap-4 w-full">
@@ -1699,14 +1420,14 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
                                 trackEvent('click_copy_phone', { partnerId: match.partnerId });
                             }}
                             variant="outline"
-                            className="h-14 border-white/20 bg-transparent text-white hover:bg-white/10 hover:text-white text-lg font-bold gap-2"
+                            className="h-14 border-[#2E130C]/10 bg-transparent text-[#2E130C] hover:bg-[#2E130C]/5 text-lg font-bold gap-2"
                         >
                             <Copy className="h-5 w-5" />
                             Copier
                         </Button>
                         <Button 
                             asChild
-                            className="h-14 bg-emerald-500 hover:bg-emerald-400 text-white text-lg font-bold gap-2 shadow-lg shadow-emerald-500/20"
+                            className="h-14 bg-emerald-600 hover:bg-emerald-500 text-white text-lg font-bold gap-2 shadow-lg shadow-emerald-500/20"
                             onClick={() => {
                                 handleCallAction();
                                 trackEvent('click_call_action', { partnerId: match.partnerId });
@@ -1725,4 +1446,4 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
       </div>
     </div>
   );
-}
+}"
