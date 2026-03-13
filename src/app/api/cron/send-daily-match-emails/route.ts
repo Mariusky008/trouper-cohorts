@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
 import { Resend } from 'resend';
 import { DailyMatchEmail } from '@/emails/daily-match-email';
+import { generateMatches } from '@/lib/matching';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60; // Allow up to 60 seconds execution time
@@ -29,8 +30,14 @@ export async function POST(request: Request) {
 }
 
 async function handleSendEmails(request: Request) {
+  const logs: string[] = [];
+  const log = (msg: string) => {
+      console.log(msg);
+      logs.push(msg);
+  };
+
   try {
-    console.log("[CRON] Starting Daily Match Email Process...");
+    log("[CRON] Starting Daily Match Email Process...");
 
     // 1. Init Admin Client & Resend
     if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
@@ -61,24 +68,55 @@ async function handleSendEmails(request: Request) {
     
     const resend = new Resend(process.env.RESEND_API_KEY);
 
-    // 2. Get Today's Date
-    const today = new Date().toISOString().split('T')[0];
-    console.log(`[CRON] Target Date: ${today}`);
+    // 2. Get Target Date
+    // Check for ?date=YYYY-MM-DD param to force a specific date
+    const { searchParams } = new URL(request.url);
+    const dateParam = searchParams.get('date');
+    
+    let todayStr = new Date().toISOString().split('T')[0];
+    if (dateParam) {
+        todayStr = dateParam;
+        log(`[CRON] Using forced date from param: ${todayStr}`);
+    } else {
+        log(`[CRON] Target Date (UTC): ${todayStr}`);
+    }
 
-    // 3. Fetch Matches for Today
-    const { data: matches, error: matchError } = await supabase
+    // 3. Fetch Matches for Target Date
+    let { data: matches, error: matchError } = await supabase
         .from('network_matches')
         .select('*')
-        .eq('date', today);
+        .eq('date', todayStr);
 
     if (matchError) throw matchError;
     
+    // --- SELF-HEALING: If no matches found, attempt to generate them now ---
     if (!matches || matches.length === 0) {
-        console.log("[CRON] No matches found for today.");
-        return NextResponse.json({ message: 'No matches found for today', count: 0 });
+        log(`[CRON] No matches found for ${todayStr}. Attempting RESCUE GENERATION...`);
+        
+        const generationResult = await generateMatches(new Date(todayStr));
+        
+        if (generationResult.success && ((generationResult.matches_created && generationResult.matches_created > 0) || (generationResult.count && generationResult.count > 0))) {
+             log(`[CRON] Rescue Generation Successful! Created/Found ${generationResult.matches_created || generationResult.count} matches.`);
+             
+             // Re-fetch matches
+             const { data: newMatches, error: newMatchError } = await supabase
+                .from('network_matches')
+                .select('*')
+                .eq('date', todayStr);
+                
+             if (newMatchError) throw newMatchError;
+             matches = newMatches;
+        } else {
+             log(`[CRON] Rescue Generation result: ${generationResult.message || 'No matches created'}.`);
+        }
     }
 
-    console.log(`[CRON] Found ${matches.length} matches.`);
+    if (!matches || matches.length === 0) {
+        log("[CRON] Still no matches found. Stopping.");
+        return NextResponse.json({ message: 'No matches found/generated for today', logs }, { status: 200 });
+    }
+
+    log(`[CRON] Processing ${matches.length} matches.`);
 
     // 4. Fetch Profiles
     const userIds = new Set<string>();
@@ -107,7 +145,7 @@ async function handleSendEmails(request: Request) {
 
     // 6. Fetch Emails from Auth (Parallel)
     if (usersNeedingEmail.size > 0) {
-        console.log(`[CRON] Fetching emails for ${usersNeedingEmail.size} users from Auth...`);
+        log(`[CRON] Fetching emails for ${usersNeedingEmail.size} users from Auth...`);
         const emailPromises = Array.from(usersNeedingEmail).map(async (id) => {
             const { data, error } = await supabase.auth.admin.getUserById(id);
             if (error) {
@@ -220,20 +258,22 @@ async function handleSendEmails(request: Request) {
         }
     });
 
-    console.log(`[CRON] Processed ${matches.length} matches. Sent ${emailsSent} emails. Errors: ${errors.length}`);
+    log(`[CRON] Processed ${matches.length} matches. Sent ${emailsSent} emails. Errors: ${errors.length}`);
 
     return NextResponse.json({ 
         success: true, 
         matches_processed: matches.length,
         emails_sent: emailsSent,
-        errors: errors.length > 0 ? errors : undefined
+        errors: errors.length > 0 ? errors : undefined,
+        logs
     });
 
   } catch (error: any) {
     console.error('[CRON] Fatal Error:', error);
     return NextResponse.json({ 
         success: false, 
-        error: error.message 
+        error: error.message,
+        logs 
     }, { status: 500 });
   }
 }
