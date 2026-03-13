@@ -328,7 +328,7 @@ const SynergySection = () => {
                    transition={{ duration: 0.5 }}
                    className="max-w-6xl mx-auto"
                  >
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 mb-12">
+                    <div className="grid grid-cols-2 md:grid-cols-5 gap-4 md:gap-6 mb-12">
                        {currentSynergies.map((synergy: any, index: number) => (
                           <motion.div 
                             key={index}
@@ -378,6 +378,34 @@ const SynergySection = () => {
                              </div>
                           </motion.div>
                        ))}
+
+                       {/* 5th Blurred Card (Teaser) */}
+                       <motion.div 
+                          initial={{ opacity: 0, scale: 0.9 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          transition={{ delay: 0.5 }}
+                          className="cursor-not-allowed relative group"
+                       >
+                           <div className="bg-white/80 rounded-3xl p-6 border-4 border-[#2E130C]/30 shadow-[4px_4px_0px_0px_#2E130C]/20 h-full flex flex-col items-center text-center blur-[1px] opacity-70">
+                                <div className="h-20 w-20 rounded-full bg-white border-4 border-[#2E130C]/30 mb-4 flex items-center justify-center text-3xl shadow-sm">
+                                   <span className="font-titan text-[#2E130C]/30">?</span>
+                                </div>
+                                <h3 className="font-titan text-[#2E130C]/50 text-lg leading-tight mb-3 min-h-[3rem] flex items-center justify-center">Et bien d'autres...</h3>
+                                <Badge className="bg-[#2E130C]/20 text-[#2E130C]/50 border-0 mb-4 px-3 py-1 text-sm font-titan">
+                                   ??? Match
+                                </Badge>
+                                <div className="flex flex-wrap gap-2 justify-center mt-auto">
+                                   <span className="text-[10px] bg-white border-2 border-[#2E130C]/10 px-2 py-1 rounded-lg font-bold text-[#2E130C]/30 uppercase tracking-wide">???</span>
+                                   <span className="text-[10px] bg-white border-2 border-[#2E130C]/10 px-2 py-1 rounded-lg font-bold text-[#2E130C]/30 uppercase tracking-wide">???</span>
+                                </div>
+                           </div>
+                           {/* Overlay Text */}
+                           <div className="absolute inset-0 flex items-center justify-center z-20">
+                                <div className="bg-[#2E130C] text-[#E2D9BC] px-4 py-2 rounded-xl border-2 border-[#E2D9BC] shadow-lg font-titan text-sm transform rotate-[-3deg] whitespace-nowrap">
+                                    + 20 autres métiers
+                                </div>
+                           </div>
+                       </motion.div>
                     </div>
 
                     {/* Selected Synergy Detail View */}
