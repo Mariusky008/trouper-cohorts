@@ -283,17 +283,15 @@ export async function getDailyMatches() {
       const isRescue = hasCompletedFirstMatch; 
       
       // CHECK IF ALREADY COMPLETED (Feedback exists for today)
-      // Since the Founder Match is not in network_matches, we check if the user left a feedback for 'popey-founder' today.
-      // We use safeTodaySearchTimestamp to handle timezone offsets (UTC vs Paris)
+      // We look for a self-feedback (giver=receiver) which is the marker for Founder/Rescue mission completion
       const { count: feedbackCount } = await supabase
         .from('match_feedback')
         .select('*', { count: 'exact', head: true })
         .eq('giver_id', user.id)
-        .ilike('tag', 'founder_%') // Match any founder feedback (onboarding or rescue)
-        .gte('created_at', safeTodaySearchTimestamp); // Feedback created today (Paris Time adjusted)
+        .eq('receiver_id', user.id) // Self-feedback marker
+        .gte('created_at', safeTodaySearchTimestamp); 
         
-      // Also check analytics_events for robustness, in case match_feedback insert failed.
-      // We use ADMIN CLIENT to bypass potential RLS on analytics_events (users often can't read their own analytics).
+      // Also check analytics_events for robustness
       const supabaseAdmin = createAdminClient();
       const { count: analyticsCount } = await supabaseAdmin
         .from('analytics_events')
@@ -303,6 +301,8 @@ export async function getDailyMatches() {
         .gte('created_at', safeTodaySearchTimestamp);
 
       if ((feedbackCount && feedbackCount > 0) || (analyticsCount && analyticsCount > 0)) {
+          // Already completed.
+      } else if (sortedMatches.length === 0) {
           // Already completed the founder match today!
           // Do not inject it. Return empty or next future match.
           // return sortedMatches.length > 0 ? [sortedMatches[0]] : [];
