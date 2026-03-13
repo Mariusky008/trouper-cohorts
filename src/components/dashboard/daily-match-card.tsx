@@ -370,6 +370,63 @@ function MysteryCard({ onReveal, match, locked = false, children }: { onReveal: 
   );
 }
 
+const WeekendCard = () => (
+    <div className="relative w-full max-w-sm mx-auto min-h-[600px] h-auto rounded-[2.5rem] overflow-hidden shadow-2xl bg-white border border-yellow-200 flex flex-col items-center justify-center text-center p-6 pb-8 group">
+        <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-[0.03] z-0"></div>
+        
+        {/* Gold Glow */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-yellow-100/50 blur-[80px] rounded-full z-0"></div>
+
+        <div className="relative z-10 space-y-8 flex flex-col items-center">
+            
+            {/* Popey Themed Icon: Anchor */}
+            <div className="relative">
+                <motion.div 
+                    animate={{ y: [0, -10, 0] }}
+                    transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+                    className="relative z-10"
+                >
+                    <div className="w-32 h-32 rounded-full bg-gradient-to-br from-yellow-100 to-yellow-300 flex items-center justify-center shadow-lg border-4 border-white">
+                        <span className="text-6xl drop-shadow-sm">⚓️</span>
+                    </div>
+                </motion.div>
+            </div>
+
+            <div>
+                <h2 className="text-3xl font-black text-[#2E130C] mb-3 uppercase tracking-tight">
+                    Mode Popey Activé !
+                </h2>
+                <p className="text-[#2E130C]/70 font-medium text-lg max-w-[280px] mx-auto leading-relaxed">
+                    C'est le week-end ! <br/>
+                    Le navire reste au port.
+                </p>
+            </div>
+
+            <div className="bg-[#F3F0E7] border border-[#2E130C]/5 rounded-2xl p-6 w-full max-w-[300px]">
+                <p className="text-[#2E130C]/80 text-sm font-medium italic">
+                    "Même les marins les plus aguerris ont besoin de repos. Reviens lundi pour de nouvelles aventures !" 🌊
+                </p>
+            </div>
+
+            <div className="flex flex-col gap-3 w-full max-w-[280px]">
+                <Button 
+                    asChild
+                    className="w-full h-12 bg-white hover:bg-slate-50 text-[#2E130C] border border-[#2E130C]/10 rounded-xl font-bold transition-all shadow-sm"
+                >
+                    <Link href="/mon-reseau-local/dashboard/profile">
+                        <User className="w-4 h-4 mr-2" />
+                        Mettre à jour mon profil
+                    </Link>
+                </Button>
+            </div>
+
+            <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200 px-4 py-1.5 uppercase tracking-widest font-bold animate-pulse">
+                Rendez-vous Lundi 08h
+            </Badge>
+        </div>
+    </div>
+);
+
 export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserProfile }: DailyMatchCardProps) {
   // State
   const [revealed, setRevealed] = useState(false);
@@ -609,62 +666,7 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
   // Weekend State - Clean & Warm
   if (!matches || matches.length === 0) {
       if (isWeekend) {
-          return (
-            <div className="relative w-full max-w-sm mx-auto min-h-[600px] h-auto rounded-[2.5rem] overflow-hidden shadow-2xl bg-white border border-yellow-200 flex flex-col items-center justify-center text-center p-6 pb-8 group">
-                <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-[0.03] z-0"></div>
-                
-                {/* Gold Glow */}
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-yellow-100/50 blur-[80px] rounded-full z-0"></div>
-
-                <div className="relative z-10 space-y-8 flex flex-col items-center">
-                    
-                    {/* Popey Themed Icon: Anchor */}
-                    <div className="relative">
-                        <motion.div 
-                            animate={{ y: [0, -10, 0] }}
-                            transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-                            className="relative z-10"
-                        >
-                            <div className="w-32 h-32 rounded-full bg-gradient-to-br from-yellow-100 to-yellow-300 flex items-center justify-center shadow-lg border-4 border-white">
-                                <span className="text-6xl drop-shadow-sm">⚓️</span>
-                            </div>
-                        </motion.div>
-                    </div>
-
-                    <div>
-                        <h2 className="text-3xl font-black text-[#2E130C] mb-3 uppercase tracking-tight">
-                            Mode Popey Activé !
-                        </h2>
-                        <p className="text-[#2E130C]/70 font-medium text-lg max-w-[280px] mx-auto leading-relaxed">
-                            C'est le week-end ! <br/>
-                            Le navire reste au port.
-                        </p>
-                    </div>
-
-                    <div className="bg-[#F3F0E7] border border-[#2E130C]/5 rounded-2xl p-6 w-full max-w-[300px]">
-                        <p className="text-[#2E130C]/80 text-sm font-medium italic">
-                            "Même les marins les plus aguerris ont besoin de repos. Reviens lundi pour de nouvelles aventures !" 🌊
-                        </p>
-                    </div>
-
-                    <div className="flex flex-col gap-3 w-full max-w-[280px]">
-                        <Button 
-                            asChild
-                            className="w-full h-12 bg-white hover:bg-slate-50 text-[#2E130C] border border-[#2E130C]/10 rounded-xl font-bold transition-all shadow-sm"
-                        >
-                            <Link href="/mon-reseau-local/dashboard/profile">
-                                <User className="w-4 h-4 mr-2" />
-                                Mettre à jour mon profil
-                            </Link>
-                        </Button>
-                    </div>
-
-                    <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200 px-4 py-1.5 uppercase tracking-widest font-bold animate-pulse">
-                        Rendez-vous Lundi 08h
-                    </Badge>
-                </div>
-            </div>
-          );
+          return <WeekendCard />;
       }
 
       return <MysteryCard 
@@ -769,6 +771,15 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
 
   // Validated State
   if (step === 'validated') {
+      // Check if tomorrow is weekend
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      const isTomorrowWeekend = tomorrow.getDay() === 6 || tomorrow.getDay() === 0;
+
+      if (isTomorrowWeekend) {
+          return <WeekendCard />;
+      }
+
       return <MysteryCard onReveal={() => {}} match={nextMatch} locked={true} />;
   }
 
@@ -976,7 +987,7 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
                         }
                     }}>
                         <DialogTrigger asChild>
-                            <Button className="w-full h-20 rounded-2xl bg-[#2E130C] text-white hover:bg-[#2E130C]/90 hover:scale-[1.02] transition-all shadow-xl relative z-10 flex flex-col items-center justify-center gap-1">
+                            <Button className="w-full h-20 rounded-2xl bg-[#B20B13] text-white hover:bg-[#8B090F] hover:scale-[1.02] transition-all shadow-xl relative z-10 flex flex-col items-center justify-center gap-1">
                                 <CheckCircle2 className="h-6 w-6" />
                                 <span className="text-xs font-black uppercase tracking-wider">Terminer la mission</span>
                             </Button>

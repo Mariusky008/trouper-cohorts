@@ -155,6 +155,15 @@ export async function getDailyMatches() {
   };
   const currentParisHour = getParisHours();
 
+  // Calculate Safe Search Timestamp for "Today Paris"
+  // We want to catch feedbacks created "Today in Paris", which might be "Yesterday late UTC".
+  // Paris is UTC+1 or UTC+2. Midnight Paris is 22:00 or 23:00 UTC Previous Day.
+  // We take Today's Date (YYYY-MM-DD), treat as UTC 00:00, and subtract 4 hours (20:00 Previous Day) to be safe.
+  // This avoids missing early morning feedbacks while excluding yesterday's morning feedbacks.
+  const todayParisDateObj = new Date(todayParisStr); 
+  todayParisDateObj.setHours(todayParisDateObj.getHours() - 4);
+  const safeTodaySearchTimestamp = todayParisDateObj.toISOString();
+
   // Fetch Feedbacks to determine if current user has already validated
   const partnerIds = validMatches.map(m => m.partnerId);
   let userFeedbacks: any[] = [];
@@ -274,12 +283,13 @@ export async function getDailyMatches() {
       
       // CHECK IF ALREADY COMPLETED (Feedback exists for today)
       // Since the Founder Match is not in network_matches, we check if the user left a feedback for 'popey-founder' today.
+      // We use safeTodaySearchTimestamp to handle timezone offsets (UTC vs Paris)
       const { count: feedbackCount } = await supabase
         .from('match_feedback')
         .select('*', { count: 'exact', head: true })
         .eq('giver_id', user.id)
         .eq('receiver_id', 'popey-founder')
-        .gte('created_at', todayParisStr); // Feedback created today
+        .gte('created_at', safeTodaySearchTimestamp); // Feedback created today (Paris Time adjusted)
         
       if (feedbackCount && feedbackCount > 0) {
           // Already completed the founder match today!
