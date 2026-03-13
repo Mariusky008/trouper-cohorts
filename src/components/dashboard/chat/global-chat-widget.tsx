@@ -107,10 +107,10 @@ export function GlobalChatWidget({ currentUserId }: { currentUserId: string }) {
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           onClick={() => setIsOpen(!isOpen)}
-          className={`h-14 w-14 rounded-full shadow-xl flex items-center justify-center transition-all ${
+          className={`h-14 w-14 rounded-full shadow-xl flex items-center justify-center transition-all border-2 border-[#2E130C] ${
             isOpen 
-              ? "bg-slate-800 text-white" 
-              : "bg-blue-600 text-white hover:bg-blue-700"
+              ? "bg-[#2E130C] text-[#E2D9BC]" 
+              : "bg-[#B20B13] text-[#E2D9BC] hover:bg-[#7A0000]"
           }`}
         >
           {isOpen ? (
@@ -119,7 +119,7 @@ export function GlobalChatWidget({ currentUserId }: { currentUserId: string }) {
             <div className="relative">
               <MessageSquare className="h-6 w-6" />
               {unreadCount > 0 && (
-                <span className="absolute -top-2 -right-2 h-5 w-5 bg-red-500 rounded-full border-2 border-white flex items-center justify-center text-[10px] font-bold">
+                <span className="absolute -top-2 -right-2 h-5 w-5 bg-white text-[#B20B13] rounded-full border-2 border-[#2E130C] flex items-center justify-center text-[10px] font-black shadow-sm">
                   {unreadCount}
                 </span>
               )}
@@ -135,16 +135,16 @@ export function GlobalChatWidget({ currentUserId }: { currentUserId: string }) {
             initial={{ opacity: 0, y: 20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
-            className="fixed bottom-24 right-6 z-40 w-80 md:w-96 bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[600px]"
+            className="fixed bottom-24 right-6 z-40 w-80 md:w-96 bg-white rounded-2xl shadow-[4px_4px_0px_0px_#2E130C] border-2 border-[#2E130C] overflow-hidden flex flex-col max-h-[600px]"
           >
-            <div className="p-4 bg-slate-50 border-b border-slate-100 flex justify-between items-center">
-              <h3 className="font-bold text-slate-900">Vos Messages</h3>
-              <span className="text-xs text-slate-500">{conversations.length} conversations</span>
+            <div className="p-4 bg-[#F3F0E7] border-b-2 border-[#2E130C]/10 flex justify-between items-center">
+              <h3 className="font-black text-[#2E130C] font-titan tracking-wide">Vos Messages</h3>
+              <span className="text-xs font-bold text-[#2E130C]/60">{conversations.length} conv.</span>
             </div>
 
-            <div className="overflow-y-auto flex-1 p-2 space-y-1">
+            <div className="overflow-y-auto flex-1 p-2 space-y-1 bg-white">
               {conversations.length === 0 ? (
-                <div className="p-8 text-center text-slate-500 text-sm">
+                <div className="p-8 text-center text-[#2E130C]/60 text-sm font-medium">
                   Aucune conversation pour le moment.
                   <br/>Allez dans "Mes Mises en Relation" pour démarrer un chat !
                 </div>
@@ -153,19 +153,19 @@ export function GlobalChatWidget({ currentUserId }: { currentUserId: string }) {
                   <button
                     key={conv.partner.id}
                     onClick={() => handleOpenChat(conv.partner)}
-                    className="w-full p-3 flex items-center gap-3 hover:bg-slate-50 rounded-xl transition-colors text-left group"
+                    className="w-full p-3 flex items-center gap-3 hover:bg-[#F3F0E7] rounded-xl transition-colors text-left group border border-transparent hover:border-[#2E130C]/10"
                   >
                     <div className="relative">
-                      <Avatar className="h-10 w-10 border border-slate-100">
+                      <Avatar className="h-10 w-10 border-2 border-[#2E130C]/10">
                         <AvatarImage src={conv.partner.avatar} />
-                        <AvatarFallback>{conv.partner.name[0]}</AvatarFallback>
+                        <AvatarFallback className="bg-[#2E130C] text-[#E2D9BC] font-bold">{conv.partner.name[0]}</AvatarFallback>
                       </Avatar>
                       {/* Online indicator could go here */}
                     </div>
                     <div className="flex-1 overflow-hidden">
                       <div className="flex justify-between items-center mb-0.5">
-                        <span className="font-bold text-sm text-slate-900 truncate">{conv.partner.name}</span>
-                        <span className="text-[10px] text-slate-400">
+                        <span className="font-bold text-sm text-[#2E130C] truncate">{conv.partner.name}</span>
+                        <span className="text-[10px] text-[#2E130C]/40 font-bold uppercase">
                           {(() => {
                             try {
                               return format(new Date(conv.lastMessageDate || new Date()), 'd MMM', { locale: fr });
@@ -175,7 +175,7 @@ export function GlobalChatWidget({ currentUserId }: { currentUserId: string }) {
                           })()}
                         </span>
                       </div>
-                      <p className="text-xs text-slate-500 truncate group-hover:text-slate-700">
+                      <p className="text-xs text-[#2E130C]/60 truncate group-hover:text-[#2E130C] font-medium">
                         {conv.lastMessage}
                       </p>
                     </div>

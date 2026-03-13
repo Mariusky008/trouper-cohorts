@@ -4,8 +4,8 @@
   "description": "Cohortes de 14 jours pour devenir ultra visible localement.",
   "start_url": "/mon-reseau-local/dashboard",
   "display": "standalone",
-  "background_color": "#0f172a",
-  "theme_color": "#0f172a",
+  "background_color": "#E2D9BC",
+  "theme_color": "#B20B13",
   "icons": [
     {
       "src": "/icon.svg",

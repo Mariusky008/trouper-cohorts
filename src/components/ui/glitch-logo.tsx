@@ -19,8 +19,8 @@ export function GlitchLogo({
   return (
     <div className={cn("glitch-wrapper inline-block relative overflow-hidden rounded-2xl", className)}>
       <Image 
-        src="/logo-v2.png" 
-        alt="Troupers Logo" 
+        src="/icon.svg" 
+        alt="Popey Logo" 
         width={width} 
         height={height}
         sizes={sizes}

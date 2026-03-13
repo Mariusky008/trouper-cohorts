@@ -1446,4 +1446,4 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
       </div>
     </div>
   );
-}"
+}
