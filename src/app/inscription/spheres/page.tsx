@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { 
   Home, Globe, Heart, ShoppingBag, Scale, 
   Lock, CheckCircle2, ChevronRight, User, 
-  Rocket, Zap, MapPin, Sparkles, ArrowRight, ShieldCheck
+  Rocket, Zap, MapPin, Sparkles, ArrowRight, ShieldCheck, Users
 } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
