@@ -187,6 +187,10 @@ export default function SpheresRegistrationPage() {
         setMemberCount(prev => prev + 1);
         toast.success("Votre siège est réservé ! 🚀");
         
+        // Wait for session to be fully established before showing confirmation
+        // This helps prevent WebSocket errors on the next page
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
     } catch (error: any) {
         toast.error(error.message || "Erreur lors de l'inscription");
     } finally {
