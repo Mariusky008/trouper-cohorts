@@ -552,7 +552,23 @@ export default function SpheresRegistrationPage() {
                 >
                   ACCÉDER À MON DASHBOARD
                 </Button>
-                <Button variant="outline" className="h-16 flex-1 bg-white text-[#2E130C] border-4 border-[#2E130C] hover:bg-[#D2E8FF] font-titan rounded-2xl text-lg gap-3 shadow-[4px_4px_0px_0px_#2E130C] hover:translate-y-[2px]">
+                <Button 
+                  onClick={() => {
+                      const text = `Je viens de rejoindre le réseau local Popey sur la sphère ${SPHERES.find(s => s.id === activeSphere)?.name} ! Il reste quelques places, rejoins-nous : https://www.popey.academy/inscription/spheres`;
+                      if (navigator.share) {
+                          navigator.share({
+                              title: 'Rejoins mon réseau local Popey',
+                              text: text,
+                              url: 'https://www.popey.academy/inscription/spheres'
+                          }).catch(console.error);
+                      } else {
+                          navigator.clipboard.writeText(text);
+                          toast.success("Lien d'invitation copié !");
+                      }
+                  }}
+                  variant="outline" 
+                  className="h-16 flex-1 bg-white text-[#2E130C] border-4 border-[#2E130C] hover:bg-[#D2E8FF] font-titan rounded-2xl text-lg gap-3 shadow-[4px_4px_0px_0px_#2E130C] hover:translate-y-[2px]"
+                >
                   <Users className="w-5 h-5" /> INVITER MON RÉSEAU
                 </Button>
               </div>
