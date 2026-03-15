@@ -93,6 +93,8 @@ export async function deleteNetworkSearch(id: string) {
     
     if (!user) return { success: false, error: "Non authentifié" };
 
+    console.log(`Tentative de suppression de l'annonce ${id} par l'utilisateur ${user.id}`);
+
     const { error } = await supabase
         .from("network_requests")
         .delete()
@@ -100,9 +102,13 @@ export async function deleteNetworkSearch(id: string) {
         .eq("user_id", user.id); // Ensure ownership
 
     if (error) {
+        console.error("Erreur lors de la suppression de l'annonce:", error);
         return { success: false, error: error.message };
     }
 
+    console.log("Annonce supprimée avec succès.");
+
     revalidatePath("/mon-reseau-local/dashboard/offers");
+    revalidatePath("/mon-reseau-local/dashboard"); // Aussi rafraîchir le dashboard principal si affiché là
     return { success: true };
 }
