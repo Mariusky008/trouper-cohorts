@@ -2,7 +2,7 @@ import { WaitingCardPreview, MysteryCardPreview, MatchCardPreview, MatchCardFoun
 import { PremiumLockedCard } from "@/components/dashboard/premium-locked-card";
 
 export default function DesignPreviewPage() {
-  const stripePriceId = process.env.NEXT_PUBLIC_STRIPE_PRICE_ID || "";
+  const stripePriceId = "price_1TB9jwDfAHlQD3uITPZVQX5T";
   
   return (
     <div className="min-h-screen bg-slate-950 p-8">

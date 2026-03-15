@@ -10,7 +10,7 @@ import { useState } from "react";
 
 // This is the functional component for the "Pay-to-Reveal" strategy
 // It uses Server Actions to initiate Stripe Checkout
-export function PremiumLockedCard({ priceId }: { priceId: string }) {
+export function PremiumLockedCard({ priceId = "price_1TB9jwDfAHlQD3uITPZVQX5T" }: { priceId?: string }) {
   const [loading, setLoading] = useState(false);
 
   const handleCheckout = async () => {

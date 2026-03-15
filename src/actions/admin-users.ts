@@ -22,18 +22,14 @@ export async function deleteUserCompletely(preRegistrationId: string) {
     const authUserId = preReg?.user_id;
 
     if (authUserId) {
-        // Nettoyage des données liées au compte actif
-        await supabase.from("cohort_members").delete().eq("user_id", authUserId);
-        await supabase.from("cohort_pairs").delete().or(`user1_id.eq.${authUserId},user2_id.eq.${authUserId}`);
-        await supabase.from("missions").delete().eq("user_id", authUserId);
-        await supabase.from("proofs").delete().eq("user_id", authUserId); // Nettoyage Mur Victoires
-        await supabase.from("profiles").delete().eq("id", authUserId); // Profil public
-
         // SUPPRESSION AUTH (IRRÉVERSIBLE)
+        // La base de données est configurée en CASCADE, donc tout le reste (profiles, missions, etc.) sera supprimé automatiquement.
         const { error: authError } = await supabaseAdmin.auth.admin.deleteUser(authUserId);
+        
         if (authError) {
             console.error("Erreur suppression Auth:", authError);
-            // On continue quand même pour nettoyer le reste
+            // On retourne l'erreur pour comprendre ce qui bloque si ça échoue encore
+            return { error: `Erreur Auth: ${authError.message}` };
         }
     }
 
