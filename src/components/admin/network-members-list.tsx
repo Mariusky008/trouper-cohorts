@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Users, PhoneCall, Zap, MapPin, Briefcase } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import { DeleteUserButton } from "./delete-user-button";
 
 export function NetworkMembersList({ members }: any) {
   const [cityFilter, setCityFilter] = useState("all");
@@ -130,15 +131,18 @@ export function NetworkMembersList({ members }: any) {
                         <div className="mb-3"></div>
                     )}
 
-                    {/* Footer: Phone & Date */}
+                    {/* Footer: Phone & Date & Action */}
                     <div className="flex items-center justify-between border-t border-slate-100 pt-2 mt-2">
-                        <div className="flex items-center gap-2 font-mono font-bold text-slate-600 bg-slate-100 px-2 py-1 rounded text-xs">
-                            <PhoneCall className="h-3 w-3 text-slate-400" />
-                            {m.profile?.phone || "Non renseigné"}
+                        <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 font-mono font-bold text-slate-600 bg-slate-100 px-2 py-1 rounded text-xs">
+                                <PhoneCall className="h-3 w-3 text-slate-400" />
+                                {m.profile?.phone || "Non renseigné"}
+                            </div>
+                            <div className="text-[10px] text-slate-400 font-medium">
+                                Inscrit le {format(new Date(m.created_at), 'dd MMM yyyy', { locale: fr })}
+                            </div>
                         </div>
-                        <div className="text-[10px] text-slate-400 font-medium">
-                            Inscrit le {format(new Date(m.created_at), 'dd MMM yyyy', { locale: fr })}
-                        </div>
+                        <DeleteUserButton id={m.user_id} name={m.profile?.display_name || "Utilisateur"} />
                     </div>
                   </div>
                 </div>
