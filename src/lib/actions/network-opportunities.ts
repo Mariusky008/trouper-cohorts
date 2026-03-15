@@ -3,7 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin"; // Import admin client
 import { OpportunityType, OpportunityStatus } from "@/types/network";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, unstable_noStore as noStore } from "next/cache";
 
 // ... createOpportunity removed and moved to opportunity-creation.ts
 
@@ -55,6 +55,7 @@ export async function getPotentialOpportunitiesCount() {
 }
 
 export async function getOpportunities(filter: 'all' | 'received' | 'given' | 'public' = 'all') {
+  noStore(); // Disable cache for this function
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   
@@ -254,10 +255,15 @@ export async function deleteOpportunity(id: string) {
 
     if (!user) return { success: false, error: "Unauthorized" };
 
+    console.log(`Tentative suppression opportunité ${id} par ${user.id}`);
+
+    // Use Admin Client to ensure deletion works regardless of RLS quirks
+    const supabaseAdmin = createAdminClient();
+
     // Only the giver (author) can delete their own opportunity
-    const { error } = await supabase
+    const { error, count } = await supabaseAdmin
       .from("network_opportunities")
-      .delete()
+      .delete({ count: 'exact' })
       .eq('id', id)
       .eq('giver_id', user.id); // Ensure ownership
 
@@ -266,7 +272,15 @@ export async function deleteOpportunity(id: string) {
       return { success: false, error: error.message };
     }
 
+    if (count === 0) {
+        console.warn(`Suppression échouée: Opportunité ${id} introuvable ou non autorisée pour ${user.id}`);
+        return { success: false, error: "Opportunité introuvable ou vous n'êtes pas le propriétaire." };
+    }
+
+    console.log("Opportunité supprimée avec succès.");
+
     revalidatePath("/mon-reseau-local/dashboard/guide");
+    revalidatePath("/mon-reseau-local/dashboard");
     return { success: true };
   } catch (err) {
     console.error("Unexpected error in deleteOpportunity:", err);
