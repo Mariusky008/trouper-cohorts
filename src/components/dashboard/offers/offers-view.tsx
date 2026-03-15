@@ -15,6 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { createNetworkSearch, deleteNetworkSearch } from "@/lib/actions/network-searches";
+import { toggleOfferActive } from "@/lib/actions/offers";
 import { LockedOfferCard } from "./locked-offer-card";
 
 export function OffersView({ 
@@ -60,22 +61,33 @@ export function OffersView({
         }
     };
 
+    const handleDeactivateOffer = async () => {
+        if (confirm("Voulez-vous vraiment masquer votre offre ?")) {
+            const res = await toggleOfferActive(currentUserId, false);
+            if (res.success) {
+                toast.success("Votre offre est maintenant masquée.");
+            } else {
+                toast.error("Erreur lors de la désactivation.");
+            }
+        }
+    };
+
     return (
-        <div className="space-y-8">
+        <div className="space-y-8 px-4 md:px-0">
             <Tabs defaultValue="offers" className="w-full">
                 <div className="flex justify-center mb-8">
-                    <TabsList className="bg-stone-100 border border-stone-200 p-1 rounded-full h-auto">
+                    <TabsList className="bg-stone-100 border border-stone-200 p-1 rounded-3xl h-auto flex flex-wrap justify-center w-full sm:w-auto">
                         <TabsTrigger 
                             value="offers" 
-                            className="rounded-full px-6 py-2.5 text-sm font-bold text-stone-500 data-[state=active]:bg-[#B20B13] data-[state=active]:text-white transition-all"
+                            className="rounded-full px-4 py-2.5 text-sm font-bold text-stone-500 data-[state=active]:bg-[#B20B13] data-[state=active]:text-white transition-all flex-1 sm:flex-none"
                         >
                             <Percent className="h-4 w-4 mr-2" /> Offres Privilèges
                         </TabsTrigger>
                         <TabsTrigger 
                             value="searches" 
-                            className="rounded-full px-6 py-2.5 text-sm font-bold text-stone-500 data-[state=active]:bg-blue-600 data-[state=active]:text-white transition-all"
+                            className="rounded-full px-4 py-2.5 text-sm font-bold text-stone-500 data-[state=active]:bg-blue-600 data-[state=active]:text-white transition-all flex-1 sm:flex-none"
                         >
-                            <Search className="h-4 w-4 mr-2" /> Appels d'Offres / Recherches
+                            <Search className="h-4 w-4 mr-2" /> Appels d'Offres
                         </TabsTrigger>
                     </TabsList>
                 </div>
@@ -133,11 +145,19 @@ export function OffersView({
                                         </div>
                                     </div>
 
-                                    <div className="shrink-0 w-full md:w-auto mt-4 md:mt-0">
+                                    <div className="shrink-0 w-full md:w-auto mt-4 md:mt-0 flex flex-col gap-2">
                                         <Button asChild className="w-full md:w-auto bg-stone-100 hover:bg-stone-200 text-stone-700 border border-stone-200 font-bold rounded-xl h-12 px-6 transition-all">
                                             <Link href="/mon-reseau-local/dashboard/profile?edit=true&tab=offer">
                                                 <Pencil className="mr-2 h-4 w-4" /> Modifier
                                             </Link>
+                                        </Button>
+                                        <Button 
+                                            variant="ghost" 
+                                            size="sm" 
+                                            onClick={handleDeactivateOffer}
+                                            className="w-full text-red-500 hover:text-red-700 hover:bg-red-50 font-bold"
+                                        >
+                                            <Trash2 className="mr-2 h-3 w-3" /> Désactiver l'offre
                                         </Button>
                                     </div>
                                 </div>

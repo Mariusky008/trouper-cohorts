@@ -39,22 +39,22 @@ export function AddOpportunityDialog({
             if (open) checkEligibility();
         }}>
             <DialogTrigger asChild>
-                <Button className="bg-white text-black hover:bg-slate-200 font-bold">
+                <Button className="bg-[#2E130C] text-[#F0EAD6] hover:bg-[#2E130C]/90 font-bold border border-[#2E130C]/20 shadow-sm">
                     <Plus className="w-4 h-4 mr-2" />
                     Ajouter une opportunité
                 </Button>
             </DialogTrigger>
-            <DialogContent className="bg-[#0f172a] border-white/10 text-white sm:max-w-md max-h-[90vh] overflow-y-auto">
+            <DialogContent className="bg-[#F0EAD6] border-[#2E130C]/10 text-[#2E130C] sm:max-w-md max-h-[90vh] overflow-y-auto shadow-2xl">
                 <DialogHeader>
-                    <DialogTitle className="flex items-center gap-2 text-xl font-black">
-                        <Gift className="h-6 w-6 text-indigo-400" />
+                    <DialogTitle className="flex items-center gap-2 text-xl font-black text-[#2E130C]">
+                        <Gift className="h-6 w-6 text-[#B20B13]" />
                         Nouvelle Opportunité
                     </DialogTitle>
                 </DialogHeader>
 
                 {loading ? (
                     <div className="py-8 flex justify-center">
-                        <div className="animate-spin h-8 w-8 border-4 border-indigo-500 border-t-transparent rounded-full" />
+                        <div className="animate-spin h-8 w-8 border-4 border-[#B20B13] border-t-transparent rounded-full" />
                     </div>
                 ) : (
                     <OpportunityForm 

@@ -938,7 +938,7 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
 
       {/* --- SEPARATE OFFER MODAL --- */}
       <Dialog open={isOfferModalOpen} onOpenChange={setIsOfferModalOpen}>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent className="sm:max-w-[500px] max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-2xl font-black text-amber-600 flex items-center gap-2">
                 <Percent className="h-6 w-6" /> Mon Offre Club
