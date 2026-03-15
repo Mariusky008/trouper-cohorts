@@ -5,6 +5,8 @@ import { getNetworkSearches } from "@/lib/actions/network-searches";
 import { createClient } from "@/lib/supabase/server";
 import { OffersView } from "@/components/dashboard/offers/offers-view";
 
+export const dynamic = 'force-dynamic';
+
 export default async function OffersPage() {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
