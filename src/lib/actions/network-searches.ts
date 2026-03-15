@@ -50,6 +50,7 @@ export async function createNetworkSearch(data: FormData) {
 }
 
 export async function getNetworkSearches(): Promise<NetworkSearch[]> {
+    noStore(); // Disable cache for this function
     const supabase = await createClient();
     
     // Fetch requests and join with profiles
