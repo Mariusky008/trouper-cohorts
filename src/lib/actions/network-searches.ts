@@ -95,15 +95,20 @@ export async function deleteNetworkSearch(id: string) {
 
     console.log(`Tentative de suppression de l'annonce ${id} par l'utilisateur ${user.id}`);
 
-    const { error } = await supabase
+    const { error, count } = await supabase
         .from("network_requests")
-        .delete()
+        .delete({ count: 'exact' }) // Count deleted rows
         .eq("id", id)
         .eq("user_id", user.id); // Ensure ownership
 
     if (error) {
         console.error("Erreur lors de la suppression de l'annonce:", error);
         return { success: false, error: error.message };
+    }
+
+    if (count === 0) {
+        console.warn(`Tentative de suppression échouée: Annonce ${id} introuvable ou non autorisée pour ${user.id}`);
+        return { success: false, error: "Annonce introuvable ou vous n'êtes pas le propriétaire." };
     }
 
     console.log("Annonce supprimée avec succès.");
