@@ -26,11 +26,25 @@ import { ProfileCompletionModal } from "@/components/dashboard/profile-completio
 import { getPendingOpportunitiesCount } from "@/lib/actions/network-opportunities";
 import { GlobalChatWidget } from "@/components/dashboard/chat/global-chat-widget";
 import { PWAInstallPrompt } from "@/components/pwa-install-prompt";
+import { useNotifications } from "@/hooks/use-notifications"; // Import notifications hook
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const supabase = createClient();
   const pathname = usePathname();
+  
+  // Notifications
+  const { badges, markAsSeen } = useNotifications();
+
+  // Mark as seen when visiting pages
+  useEffect(() => {
+      if (pathname === "/mon-reseau-local/dashboard/guide") {
+          markAsSeen('market');
+      } else if (pathname === "/mon-reseau-local/dashboard/offers") {
+          markAsSeen('offers');
+      }
+  }, [pathname]);
+
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
   const [pendingCount, setPendingCount] = useState(0);
@@ -158,9 +172,22 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 >
                   <item.icon className={cn("h-4 w-4", isActive ? "text-[#B20B13]" : "text-[#2E130C]/60 group-hover:text-[#2E130C]")} />
                   <span className="text-sm font-bold">{item.label}</span>
+                  
+                  {/* Opportunités (Pending) */}
                   {item.label === "Opportunités" && pendingCount > 0 && (
                     <span className="bg-[#B20B13] text-[#E2D9BC] text-[9px] font-bold px-1.5 py-0.5 rounded-full border border-[#2E130C] shadow-[1px_1px_0px_0px_#2E130C]">{pendingCount}</span>
                   )}
+
+                  {/* Marché (New) */}
+                  {item.label === "Marché" && badges.market > 0 && (
+                    <span className="bg-[#B20B13] text-[#E2D9BC] text-[9px] font-bold px-1.5 py-0.5 rounded-full border border-[#2E130C] shadow-[1px_1px_0px_0px_#2E130C]">{badges.market}</span>
+                  )}
+
+                  {/* Offres (New) */}
+                  {item.label === "Offres" && badges.offers > 0 && (
+                    <span className="bg-[#B20B13] text-[#E2D9BC] text-[9px] font-bold px-1.5 py-0.5 rounded-full border border-[#2E130C] shadow-[1px_1px_0px_0px_#2E130C]">{badges.offers}</span>
+                  )}
+
                   {isActive && (
                     <motion.div
                       layoutId="activeTabBottom"
@@ -274,7 +301,19 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   <item.icon className={cn("h-5 w-5", pathname === item.href ? "text-[#B20B13]" : "text-[#2E130C]/60")} />
                 </div>
                 <span className="text-lg">{item.label}</span>
-                {pathname === item.href && <ChevronRight className="ml-auto h-5 w-5 text-[#B20B13]" />}
+                
+                {/* Mobile Badges */}
+                {item.label === "Opportunités" && pendingCount > 0 && (
+                    <span className="ml-auto bg-[#B20B13] text-[#E2D9BC] text-xs font-bold px-2 py-1 rounded-full">{pendingCount}</span>
+                )}
+                {item.label === "Marché" && badges.market > 0 && (
+                    <span className="ml-auto bg-[#B20B13] text-[#E2D9BC] text-xs font-bold px-2 py-1 rounded-full">{badges.market}</span>
+                )}
+                {item.label === "Offres" && badges.offers > 0 && (
+                    <span className="ml-auto bg-[#B20B13] text-[#E2D9BC] text-xs font-bold px-2 py-1 rounded-full">{badges.offers}</span>
+                )}
+
+                {pathname === item.href && !(item.label === "Opportunités" && pendingCount > 0) && !(item.label === "Marché" && badges.market > 0) && !(item.label === "Offres" && badges.offers > 0) && <ChevronRight className="ml-auto h-5 w-5 text-[#B20B13]" />}
               </Link>
             ))}
             
