@@ -1138,37 +1138,37 @@ export default function HomePage() {
                <div className="bg-white rounded-3xl p-8 max-w-lg mx-auto mb-8 border-4 border-[#2E130C] mt-12 text-left shadow-[8px_8px_0px_0px_#2E130C] rotate-1">
                   <div className="text-center mb-8">
                       <div className="inline-block bg-[#D2E8FF] text-[#2E130C] border-2 border-[#2E130C] px-6 py-2 rounded-full text-base font-titan uppercase tracking-widest mb-4">
-                          Essai gratuit
+                          Le Défi Immédiat
                       </div>
-                      <div className="text-3xl md:text-4xl font-titan text-[#2E130C] mb-2 leading-tight">1 jour = 1 match</div>
+                      <div className="text-3xl md:text-4xl font-titan text-[#2E130C] mb-2 leading-tight">1 Match. 1 Opportunité. Ce soir.</div>
                       <p className="text-[#2E130C] text-base md:text-lg mt-4 font-poppins font-bold">
-                          Découvre immédiatement une opportunité réelle pour ton business.
+                          Pas de blabla. Rejoins le cercle, obtiens ton premier contact qualifié dans les 24h, et juge par toi-même.
                       </p>
                   </div>
 
                   <ul className="space-y-4 mb-8 font-poppins font-bold text-[#2E130C]">
                      <li className="flex items-start gap-3 text-base md:text-lg">
-                        <CheckCircle2 className="h-6 w-6 text-[#B20B13] shrink-0" /> 
-                        <span className="font-bold">1 opportunité garantie dès aujourd’hui</span>
+                        <span className="text-2xl">🎯</span> 
+                        <span className="font-bold">Ton premier match ciblé dès l'inscription</span>
                      </li>
                      <li className="flex items-start gap-3 text-base md:text-lg">
-                        <CheckCircle2 className="h-6 w-6 text-[#B20B13] shrink-0" /> 
-                        <span>Accès complet au dashboard</span>
+                        <span className="text-2xl">🔓</span> 
+                        <span>Accès VIP au Marché des Offres</span>
                      </li>
                      <li className="flex items-start gap-3 text-base md:text-lg">
-                        <CheckCircle2 className="h-6 w-6 text-[#B20B13] shrink-0" /> 
-                        <span>Score de confiance</span>
+                        <span className="text-2xl">🤝</span> 
+                        <span>Zéro risque, juste du business</span>
                      </li>
                   </ul>
                   
                   <Link href="/inscription/spheres">
                     <Button className="w-full h-16 bg-[#B20B13] text-[#E2D9BC] hover:bg-[#7A0000] font-titan rounded-xl text-xl border-2 border-[#2E130C] shadow-[4px_4px_0px_0px_#2E130C] hover:translate-y-[2px]">
-                      Commencer mon essai gratuit
+                      Débloquer mon opportunité maintenant
                     </Button>
                   </Link>
                   
                   <div className="text-sm text-[#2E130C]/60 mt-6 text-center leading-relaxed font-poppins font-bold">
-                      Après ce test, l’accès complet devient <span className="text-[#2E130C] font-black">79 €/mois</span>.
+                      L'accès complet est à <span className="text-[#2E130C] font-black">79 €/mois</span>. Mais commence par nous tester.
                   </div>
                </div>
             </div>
