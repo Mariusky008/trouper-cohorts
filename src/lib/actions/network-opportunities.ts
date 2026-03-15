@@ -56,7 +56,7 @@ export async function getPotentialOpportunitiesCount() {
 
 export async function getOpportunities(filter: 'all' | 'received' | 'given' | 'public' = 'all') {
   noStore(); // Disable cache for this function
-  const supabase = await createClient();
+  const supabase = await createClient(); // Use standard client for reading to avoid issues with missing service role key
   const { data: { user } } = await supabase.auth.getUser();
   
   if (!user) return [];
@@ -67,18 +67,13 @@ export async function getOpportunities(filter: 'all' | 'received' | 'given' | 'p
   // So let's try using admin client ONLY for public view.
   
   let query;
-  let supabaseClient = supabase;
+  // let supabaseClient = supabase; // Removed potential admin client usage for reading
 
   if (filter === 'public') {
-      // Use Admin Client to ensure we can see ALL public opportunities regardless of RLS
-      // Note: This requires SUPABASE_SERVICE_ROLE_KEY to be set in environment variables.
-      // If not set, fallback to standard client.
-      if (process.env.SUPABASE_SERVICE_ROLE_KEY) {
-          const adminClient = createAdminClient();
-          supabaseClient = adminClient as any; 
-      }
+      // Use standard client. RLS should allow reading public opportunities.
+      // Removing admin client fallback to prevent 500 errors if env var is missing.
       
-      query = supabaseClient
+      query = supabase
         .from("network_opportunities")
         .select("*")
         .order("created_at", { ascending: false });
@@ -86,11 +81,9 @@ export async function getOpportunities(filter: 'all' | 'received' | 'given' | 'p
       // Public opportunities logic: 
       // - visibility = 'public'
       // - status = 'available' (not sold yet)
-      // - giver_id != user.id (don't show own listings - OPTIONAL, keep for now to avoid confusion)
       query = query
           .eq('visibility', 'public')
           .eq('status', 'available');
-          // .neq('giver_id', user.id); // For testing, allow seeing own
   } else {
       // Standard Private Logic
       query = supabase
