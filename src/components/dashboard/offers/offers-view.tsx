@@ -55,9 +55,22 @@ export function OffersView({
     };
 
     const handleDeleteSearch = async (id: string) => {
-        if (confirm("Supprimer cette annonce ?")) {
-            await deleteNetworkSearch(id);
-            toast.success("Annonce supprimée");
+        if (!confirm("Supprimer cette annonce ?")) return;
+
+        console.log("Tentative suppression client-side pour ID:", id);
+        
+        try {
+            const result = await deleteNetworkSearch(id);
+            console.log("Résultat suppression serveur:", result);
+
+            if (result.success) {
+                toast.success("Annonce supprimée");
+            } else {
+                toast.error("Erreur: " + (result.error || "Impossible de supprimer"));
+            }
+        } catch (err) {
+            console.error("Erreur inattendue suppression:", err);
+            toast.error("Erreur inattendue");
         }
     };
 
