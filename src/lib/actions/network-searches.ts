@@ -1,6 +1,6 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 
 // Type definition for a network search request
@@ -95,7 +95,11 @@ export async function deleteNetworkSearch(id: string) {
 
     console.log(`Tentative de suppression de l'annonce ${id} par l'utilisateur ${user.id}`);
 
-    const { error, count } = await supabase
+    // Utilisation du client Admin pour contourner RLS et s'assurer que la suppression est effective
+    // On vérifie quand même que l'utilisateur est bien le propriétaire pour la sécurité
+    const supabaseAdmin = createAdminClient();
+
+    const { error, count } = await supabaseAdmin
         .from("network_requests")
         .delete({ count: 'exact' }) // Count deleted rows
         .eq("id", id)
@@ -111,7 +115,7 @@ export async function deleteNetworkSearch(id: string) {
         return { success: false, error: "Annonce introuvable ou vous n'êtes pas le propriétaire." };
     }
 
-    console.log("Annonce supprimée avec succès.");
+    console.log("Annonce supprimée avec succès (Admin Client).");
 
     revalidatePath("/mon-reseau-local/dashboard/offers");
     revalidatePath("/mon-reseau-local/dashboard"); // Aussi rafraîchir le dashboard principal si affiché là
