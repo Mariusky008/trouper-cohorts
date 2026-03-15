@@ -1140,7 +1140,7 @@ export default function HomePage() {
                       <div className="inline-block bg-[#D2E8FF] text-[#2E130C] border-2 border-[#2E130C] px-6 py-2 rounded-full text-base font-titan uppercase tracking-widest mb-4">
                           Le Défi Immédiat
                       </div>
-                      <div className="text-3xl md:text-4xl font-titan text-[#2E130C] mb-2 leading-tight">1 Match. 1 Opportunité. Ce soir.</div>
+                      <div className="text-3xl md:text-4xl font-titan text-[#2E130C] mb-2 leading-tight">1 Jour, 1 Match. 1 Opportunité.</div>
                       <p className="text-[#2E130C] text-base md:text-lg mt-4 font-poppins font-bold">
                           Pas de blabla. Rejoins le cercle, obtiens ton premier contact qualifié dans les 24h, et juge par toi-même.
                       </p>
