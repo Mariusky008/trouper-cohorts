@@ -89,16 +89,16 @@ export function OffersView({
         <div className="space-y-8 px-4 md:px-0">
             <Tabs defaultValue="offers" className="w-full">
                 <div className="flex justify-center mb-8">
-                    <TabsList className="bg-stone-100 border border-stone-200 p-1 rounded-3xl h-auto flex flex-wrap justify-center w-full sm:w-auto">
+                    <TabsList className="bg-transparent border-0 p-0 h-auto flex flex-wrap justify-center w-full gap-2">
                         <TabsTrigger 
                             value="offers" 
-                            className="rounded-full px-4 py-2.5 text-sm font-bold text-stone-500 data-[state=active]:bg-[#B20B13] data-[state=active]:text-white transition-all flex-1 sm:flex-none"
+                            className="rounded-full px-6 py-3 text-sm font-bold text-stone-500 bg-white border border-stone-200 data-[state=active]:bg-[#B20B13] data-[state=active]:text-white data-[state=active]:border-[#B20B13] transition-all flex-1 sm:flex-none shadow-sm min-w-[160px]"
                         >
                             <Percent className="h-4 w-4 mr-2" /> Offres Privilèges
                         </TabsTrigger>
                         <TabsTrigger 
                             value="searches" 
-                            className="rounded-full px-4 py-2.5 text-sm font-bold text-stone-500 data-[state=active]:bg-blue-600 data-[state=active]:text-white transition-all flex-1 sm:flex-none"
+                            className="rounded-full px-6 py-3 text-sm font-bold text-stone-500 bg-white border border-stone-200 data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:border-blue-600 transition-all flex-1 sm:flex-none shadow-sm min-w-[160px]"
                         >
                             <Search className="h-4 w-4 mr-2" /> Appels d'Offres
                         </TabsTrigger>
@@ -341,11 +341,11 @@ export function OffersView({
                                         </Badge>
                                     </div>
 
-                                    {/* Delete Button (Owner Only) */}
+                                    {/* Delete Button (Owner Only) - Made more visible */}
                                     {search.user_id === currentUserId && (
                                         <button 
                                             onClick={() => handleDeleteSearch(search.id)}
-                                            className="absolute bottom-4 right-4 p-2 text-stone-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
+                                            className="absolute bottom-4 right-4 p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors z-10 bg-white border border-red-100 shadow-sm"
                                             title="Supprimer mon annonce"
                                         >
                                             <Trash2 className="h-4 w-4" />
