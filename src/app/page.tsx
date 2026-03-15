@@ -1168,7 +1168,7 @@ export default function HomePage() {
                   </Link>
                   
                   <div className="text-sm text-[#2E130C]/60 mt-6 text-center leading-relaxed font-poppins font-bold">
-                      Après ce test, l’accès complet devient <span className="text-[#2E130C] font-black">49 €/mois</span>.
+                      Après ce test, l’accès complet devient <span className="text-[#2E130C] font-black">79 €/mois</span>.
                   </div>
                </div>
             </div>
