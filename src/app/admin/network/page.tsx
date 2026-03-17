@@ -127,65 +127,17 @@ async function getNetworkStats() {
       .select('id, display_name, email, trade, city, phone, receive_profile')
       .in('id', userIds);
     
-    // If profiles query fails (e.g. missing column) or returns null, we try to fallback to Auth users
-    const authUsersMap = new Map();
-    const preRegistrationsMap = new Map();
-    
-    // Only fetch auth users if we have missing profiles
+    // Filter out users who have a network_setting but no longer exist in the profiles table
+    // or who have a missing profile, to avoid showing ghost accounts.
     const foundProfileIds = new Set(profiles?.map(p => p.id) || []);
-    const missingIds = userIds.filter(id => !foundProfileIds.has(id));
-
-    if (missingIds.length > 0) {
-       // Fetch users from Auth as fallback
-       for (const uid of missingIds) {
-          try {
-             const { data, error } = await supabaseAdmin.auth.admin.getUserById(uid);
-             if (data?.user) {
-                // Try to find matching pre-registration by email
-                let preReg = null;
-                if (data.user.email) {
-                    const { data: pr } = await supabaseAdmin
-                        .from('pre_registrations')
-                        .select('trade, department_code, phone')
-                        .eq('email', data.user.email)
-                        .maybeSingle(); // Use maybeSingle() instead of single() to avoid error if not found
-                    
-                    preReg = pr;
-                    if (preReg) {
-                        preRegistrationsMap.set(uid, preReg);
-                    }
-                }
-
-                authUsersMap.set(uid, {
-                   display_name: data.user.user_metadata?.full_name || data.user.email?.split('@')[0] || "Inconnu",
-                   email: data.user.email,
-                   trade: preReg?.trade || "Non renseigné",
-                   city: preReg?.department_code || "Non renseigné",
-                   phone: preReg?.phone || data.user.phone || "Sans tél"
-                });
-             }
-          } catch (e) {
-             console.error("Error fetching auth user fallback:", e);
-          }
-       }
-    }
+    
+    // We only keep members who actually have a profile in the database
+    const validMembers = recentMembers.filter(m => foundProfileIds.has(m.user_id));
 
     const profileMap = new Map(profiles?.map(p => [p.id, p]));
-    recentProfiles = recentMembers.map(m => {
+    recentProfiles = validMembers.map(m => {
       let profile = profileMap.get(m.user_id);
       
-      // Fallback if profile is missing in public table
-      if (!profile) {
-         profile = authUsersMap.get(m.user_id);
-         // Enhance fallback profile with pre-registration data if available
-         const preReg = preRegistrationsMap.get(m.user_id);
-         if (profile && preReg) {
-            profile.trade = preReg.trade || profile.trade;
-            profile.city = preReg.department_code || profile.city;
-            profile.phone = preReg.phone || profile.phone;
-         }
-      }
-
       return {
         ...m,
         profile: profile || { display_name: "Inconnu", trade: "Profil manquant", city: "", phone: "" }
