@@ -117,14 +117,14 @@ async function getNetworkStats() {
     .order('created_at', { ascending: false })
     .limit(100);
 
-  let recentProfiles: { user_id: string; created_at: string; status: string; profile: { display_name: string; trade: string; city: string; phone: string } }[] = [];
+  let recentProfiles: { user_id: string; created_at: string; status: string; profile: { display_name: string; trade: string; city: string; phone: string; bio?: string; avatar_url?: string; linkedin_url?: string; instagram_handle?: string; facebook_handle?: string; website_url?: string; receive_profile?: any } }[] = [];
   if (recentMembers && recentMembers.length > 0) {
     const userIds = recentMembers.map(m => m.user_id);
     
     // Use supabaseAdmin instead of supabase to bypass RLS policies and see all profiles
     const { data: profiles, error: profileError } = await supabaseAdmin
       .from('profiles')
-      .select('id, display_name, email, trade, city, phone, receive_profile')
+      .select('id, display_name, email, trade, city, phone, bio, avatar_url, linkedin_url, instagram_handle, facebook_handle, website_url, receive_profile')
       .in('id', userIds);
     
     // Filter out users who have a network_setting but no longer exist in the profiles table
