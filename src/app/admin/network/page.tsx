@@ -11,26 +11,38 @@ async function getNetworkStats() {
   const supabaseAdmin = createAdminClient();
 
   // 1. Matches Today & Upcoming
-  const today = new Date().toISOString().split('T')[0];
-  const tomorrow = new Date();
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  const tomorrowStr = tomorrow.toISOString().split('T')[0];
+  // Use explicit timezone format for Europe/Paris to avoid UTC offset bugs
+  const nowParis = new Date(new Date().toLocaleString("en-US", { timeZone: "Europe/Paris" }));
+  
+  // Format as YYYY-MM-DD
+  const year = nowParis.getFullYear();
+  const month = String(nowParis.getMonth() + 1).padStart(2, '0');
+  const day = String(nowParis.getDate()).padStart(2, '0');
+  const todayStr = `${year}-${month}-${day}`;
+  
+  // Tomorrow
+  const tomorrowParis = new Date(nowParis);
+  tomorrowParis.setDate(tomorrowParis.getDate() + 1);
+  const tYear = tomorrowParis.getFullYear();
+  const tMonth = String(tomorrowParis.getMonth() + 1).padStart(2, '0');
+  const tDay = String(tomorrowParis.getDate()).padStart(2, '0');
+  const tomorrowStr = `${tYear}-${tMonth}-${tDay}`;
 
   const { count: matchesCount } = await supabaseAdmin
     .from('network_matches')
     .select('*', { count: 'exact', head: true })
-    .eq('date', today);
+    .eq('date', todayStr);
 
   const { count: matchesUpcomingCount } = await supabaseAdmin
     .from('network_matches')
     .select('*', { count: 'exact', head: true })
-    .gte('date', today);
+    .eq('date', tomorrowStr); // Fix: Only count tomorrow's matches, not ALL future matches
 
   // Get details of upcoming matches (including today)
   const { data: upcomingMatches } = await supabaseAdmin
     .from('network_matches')
     .select('id, date, time, user1_id, user2_id')
-    .gte('date', today)
+    .gte('date', todayStr)
     .order('date', { ascending: true })
     .limit(100);
   
@@ -154,7 +166,7 @@ async function getNetworkStats() {
     .limit(500); // Reasonable limit
 
   // Filter for stats (only today's events for the counters)
-  const statsToday = eventsToday?.filter((e: any) => e.created_at >= today + 'T00:00:00').reduce((acc: any, curr: any) => {
+  const statsToday = eventsToday?.filter((e: any) => e.created_at >= todayStr + 'T00:00:00').reduce((acc: any, curr: any) => {
     const type = curr.event_type;
     acc[type] = (acc[type] || 0) + 1;
     return acc;
