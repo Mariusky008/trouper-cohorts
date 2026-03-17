@@ -7,11 +7,11 @@ import { QuestionThreadDialog } from "./question-thread-dialog";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { MessageSquare, ThumbsUp, MapPin } from "lucide-react";
+import { MessageSquare, MapPin } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
 
-export function CafeFeed({ initialQuestions, city, currentUser }: { initialQuestions: FlashQuestion[], city: string, currentUser: any }) {
+export function CafeFeed({ initialQuestions, city }: { initialQuestions: FlashQuestion[], city: string, currentUser?: unknown }) {
   const [selectedQuestion, setSelectedQuestion] = useState<string | null>(null);
 
   return (
@@ -80,7 +80,7 @@ export function CafeFeed({ initialQuestions, city, currentUser }: { initialQuest
                             {/* Future: Like button */}
                             {/* <Button variant="ghost" size="sm" className="h-8 px-2 text-stone-400 hover:text-pink-600 hover:bg-pink-50 gap-1.5 rounded-lg transition-colors">
                                 <ThumbsUp className="w-4 h-4" />
-                                <span className="font-bold text-xs">J'aime</span>
+                                <span className="font-bold text-xs">J&apos;aime</span>
                             </Button> */}
                         </div>
                     </div>

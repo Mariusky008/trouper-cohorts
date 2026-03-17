@@ -1,4 +1,4 @@
-import { getFlashQuestions } from "@/lib/actions/network-flash";
+import { getFlashQuestions, FlashQuestion } from "@/lib/actions/network-flash";
 import { getUserProfile } from "@/lib/actions/network-members";
 import { createClient } from "@/lib/supabase/server";
 import { CafeFeed } from "@/components/dashboard/cafe/cafe-feed";
@@ -13,7 +13,7 @@ export default async function CafePage() {
   const userProfile = await getUserProfile(user?.id);
   const city = userProfile?.city || "Mon Réseau";
 
-  let questions = [];
+  let questions: FlashQuestion[] = [];
   try {
     questions = await getFlashQuestions(city);
   } catch (e) {
@@ -30,7 +30,7 @@ export default async function CafePage() {
         <div>
             <h1 className="text-3xl font-black text-[#2E130C] tracking-tight">Le Café {city}</h1>
             <p className="text-stone-500 font-medium max-w-md mx-auto mt-2">
-                Posez vos questions, demandez de l'aide ou partagez une info locale. Ici, c'est l'entraide rapide et bienveillante.
+                Posez vos questions, demandez de l&apos;aide ou partagez une info locale. Ici, c&apos;est l&apos;entraide rapide et bienveillante.
             </p>
         </div>
       </div>
