@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { revalidatePath } from "next/cache";
 
 export async function updateMatchMission(matchId: string, missionId: string) {
@@ -25,12 +26,17 @@ export async function updateMatchMission(matchId: string, missionId: string) {
 
   const updateData = isUser1 ? { user1_mission: missionId } : { user2_mission: missionId };
 
-  const { error } = await supabase
+  // Use Admin Client to bypass RLS policies that might restrict updates
+  const supabaseAdmin = createAdminClient();
+  const { error } = await supabaseAdmin
     .from("network_matches")
     .update(updateData)
     .eq("id", matchId);
 
-  if (error) throw error;
+  if (error) {
+      console.error("Error updating mission:", error);
+      throw error;
+  }
 
   revalidatePath('/mon-reseau-local/dashboard');
   return { success: true };

@@ -501,8 +501,8 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
 
   // Sync state if props change (e.g. after revalidate)
   useEffect(() => {
-      if (matches[0]?.my_mission) {
-          setSelectedMission(matches[0].my_mission);
+      if (matches && matches.length > 0) {
+          setSelectedMission(matches[0].my_mission || null);
       }
   }, [matches]);
 
