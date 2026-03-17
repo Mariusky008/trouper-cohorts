@@ -147,9 +147,9 @@ export default function SpheresRegistrationPage() {
         // Important: Redirect to dashboard directly if confirmed to avoid them getting stuck on the confirmation screen
         router.push("/mon-reseau-local/dashboard");
         
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error("Registration caught error:", error);
-        toast.error(error.message || "Erreur lors de l'inscription");
+        toast.error(error instanceof Error ? error.message : "Erreur lors de l'inscription");
     } finally {
         setIsLoading(false);
     }
@@ -186,7 +186,7 @@ export default function SpheresRegistrationPage() {
                         Où exercez-vous ?
                     </h1>
                     <p className="text-[#2E130C]/70 text-xl font-bold font-poppins max-w-xl mx-auto">
-                        Choisissez votre zone d'influence pour voir les disponibilités.
+                        Choisissez votre zone d&apos;influence pour voir les disponibilités.
                     </p>
                 </div>
 
@@ -208,7 +208,7 @@ export default function SpheresRegistrationPage() {
                 </div>
                 
                 <p className="text-sm font-bold text-[#2E130C]/40 uppercase tracking-widest mt-8">
-                    * D'autres villes arrivent bientôt
+                    * D&apos;autres villes arrivent bientôt
                 </p>
             </motion.div>
         </div>
@@ -356,7 +356,7 @@ export default function SpheresRegistrationPage() {
                         <Zap className="w-4 h-4 fill-current" /> Bonus : Votre Besoin Urgent
                     </Label>
                     <p className="text-xs text-[#2E130C]/80 font-bold leading-tight mb-3">
-                        Quel métier complémentaire vous manque-t-il aujourd'hui pour faire plus de business ? (Facultatif, mais aide l'algo à vous trouver les meilleurs matchs).
+                        Quel métier complémentaire vous manque-t-il aujourd&apos;hui pour faire plus de business ? (Facultatif, mais aide l&apos;algo à vous trouver les meilleurs matchs).
                     </p>
                     <Input 
                         placeholder="Ex: Un notaire, un décorateur, un expert-comptable..." 
@@ -410,11 +410,11 @@ export default function SpheresRegistrationPage() {
               
               <div className="space-y-4">
                 <h2 className="text-5xl font-titan text-[#2E130C] leading-tight">
-                  BIENVENUE DANS L'ARÈNE !
+                  BIENVENUE DANS L&apos;ARÈNE !
                 </h2>
                 <p className="text-[#2E130C]/80 text-lg font-bold leading-relaxed max-w-lg mx-auto">
-                  Félicitations, vous avez sécurisé le siège <span className="text-[#B20B13] font-black uppercase underline decoration-wavy decoration-[#2E130C]">{selectedSlot}</span> de la Sphère <span className="text-[#2E130C] font-black">{SPHERES.find(s => s.id === activeSphere)?.name}</span>. <br />
-                  Vos concurrents bordelais ne peuvent plus entrer.
+                  Félicitations, vous avez sécurisé votre place dans le réseau de <span className="text-[#2E130C] font-black">{formData.city}</span>. <br />
+                  Vos concurrents directs ne peuvent plus entrer.
                 </p>
               </div>
 
@@ -435,7 +435,7 @@ export default function SpheresRegistrationPage() {
                   <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'linear-gradient(45deg, #000 25%, transparent 25%, transparent 50%, #000 50%, #000 75%, transparent 75%, transparent)', backgroundSize: '20px 20px' }}></div>
                 </div>
                 <p className="text-sm font-bold text-[#2E130C] italic">
-                  "{getGaugeMessage(memberCount)}"
+                  &quot;{getGaugeMessage(memberCount)}&quot;
                 </p>
                 <p className="text-xs text-[#2E130C]/50 font-bold uppercase tracking-wide">
                   Encore {20 - memberCount} partenaires à valider pour débloquer vos matchs quotidiens.
@@ -451,7 +451,7 @@ export default function SpheresRegistrationPage() {
                 </Button>
                 <Button 
                   onClick={() => {
-                      const text = `Je viens de rejoindre le réseau local Popey sur la sphère ${SPHERES.find(s => s.id === activeSphere)?.name} ! Il reste quelques places, rejoins-nous : https://www.popey.academy/inscription/spheres`;
+                      const text = `Je viens de rejoindre le réseau local Popey sur ${formData.city} ! Il reste quelques places, rejoins-nous : https://www.popey.academy/inscription/spheres`;
                       if (navigator.share) {
                           navigator.share({
                               title: 'Rejoins mon réseau local Popey',
