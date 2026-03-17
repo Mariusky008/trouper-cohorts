@@ -114,7 +114,12 @@ export function NetworkMembersList({ members }: any) {
                         </div>
                         <div className="flex items-center gap-1.5 text-xs text-slate-500 w-fit px-2 py-0.5">
                             <MapPin className="h-3.5 w-3.5 text-slate-400" />
-                            {m.profile?.city || "Ville non renseignée"}
+                            {m.profile?.city || "Zone non renseignée"}
+                            {m.profile?.receive_profile?.exact_city && (
+                                <span className="font-semibold text-slate-700 ml-1">
+                                    ({m.profile.receive_profile.exact_city})
+                                </span>
+                            )}
                         </div>
                     </div>
 

@@ -55,7 +55,8 @@ export default function SpheresRegistrationPage() {
   
   const [formData, setFormData] = useState({
     fullName: "",
-    city: "",
+    city: "", // Zone (ex: Le Grand Dax)
+    exactCity: "", // Ville exacte (ex: Tartas)
     phone: "",
     email: "",
     password: "",
@@ -78,6 +79,11 @@ export default function SpheresRegistrationPage() {
         toast.error("Veuillez renseigner votre activité.");
         return;
     }
+    
+    if (!formData.exactCity.trim()) {
+        toast.error("Veuillez renseigner votre ville exacte.");
+        return;
+    }
 
     setIsLoading(true);
     
@@ -91,6 +97,7 @@ export default function SpheresRegistrationPage() {
         payload.append("password", formData.password);
         payload.append("fullName", formData.fullName);
         payload.append("city", formData.city);
+        payload.append("exactCity", formData.exactCity);
         payload.append("trade", finalTrade);
         payload.append("phone", formData.phone);
         // We no longer have a sphere to append from the UI, but the backend might expect it.
@@ -235,15 +242,27 @@ export default function SpheresRegistrationPage() {
                     />
                 </div>
                 <div className="space-y-2">
-                    <Label htmlFor="city" className="text-xs font-black uppercase text-[#2E130C]/60 ml-1">Ville</Label>
+                    <Label htmlFor="city" className="text-xs font-black uppercase text-[#2E130C]/60 ml-1">Zone (Réseau)</Label>
                     <Input 
                     id="city" 
                     placeholder="Paris" 
-                    className="bg-white border-2 border-[#2E130C] h-12 rounded-xl focus-visible:ring-0 focus-visible:border-[#B20B13] placeholder:text-[#2E130C]/30 font-bold text-base bg-gray-50" 
+                    className="bg-white border-2 border-[#2E130C] h-12 rounded-xl focus-visible:ring-0 focus-visible:border-[#B20B13] placeholder:text-[#2E130C]/30 font-bold text-base bg-gray-50 text-slate-500" 
                     value={formData.city}
                     readOnly
                     />
                 </div>
+                </div>
+
+                {/* Row 1.5: Ville exacte */}
+                <div className="space-y-2">
+                    <Label htmlFor="exactCity" className="text-xs font-black uppercase text-[#2E130C]/60 ml-1">Votre Ville Exacte</Label>
+                    <Input 
+                        id="exactCity" 
+                        placeholder="Ex: Mont-de-Marsan, Tartas..." 
+                        className="bg-white border-2 border-[#2E130C] h-12 rounded-xl focus-visible:ring-0 focus-visible:border-[#B20B13] placeholder:text-[#2E130C]/30 font-bold text-base" 
+                        value={formData.exactCity}
+                        onChange={(e) => setFormData({...formData, exactCity: e.target.value})}
+                    />
                 </div>
 
                 {/* Row 2: Activité & Téléphone */}
@@ -308,19 +327,21 @@ export default function SpheresRegistrationPage() {
                 </div>
 
                 {/* Row 5: Quick Win Question */}
-                <div className="space-y-2 pt-6 border-t-2 border-[#2E130C]/10">
-                <Label className="text-xs font-black uppercase tracking-widest text-[#B20B13] ml-1 flex items-center gap-2">
-                    <Zap className="w-4 h-4 fill-current" /> Question Quick-Win
-                </Label>
-                <p className="text-sm text-[#2E130C]/70 font-bold ml-1 leading-tight mb-2">
-                    Quel métier complémentaire vous manque-t-il aujourd'hui pour faire plus de business ?
-                </p>
-                <Input 
-                    placeholder="Ex: Un notaire, un décorateur..." 
-                    className="bg-white border-2 border-[#2E130C] h-12 rounded-xl focus-visible:ring-0 focus-visible:border-[#B20B13] placeholder:text-[#2E130C]/30 font-bold text-base" 
-                    value={formData.quickWin}
-                    onChange={(e) => setFormData({...formData, quickWin: e.target.value})}
-                />
+                <div className="space-y-3 pt-6 border-t-2 border-[#2E130C]/10">
+                <div className="bg-[#D2E8FF] border-2 border-[#2E130C] rounded-xl p-4 shadow-[4px_4px_0px_0px_#2E130C]">
+                    <Label className="text-sm font-black uppercase tracking-widest text-[#B20B13] flex items-center gap-2 mb-1">
+                        <Zap className="w-4 h-4 fill-current" /> Bonus : Votre Besoin Urgent
+                    </Label>
+                    <p className="text-xs text-[#2E130C]/80 font-bold leading-tight mb-3">
+                        Quel métier complémentaire vous manque-t-il aujourd'hui pour faire plus de business ? (Facultatif, mais aide l'algo à vous trouver les meilleurs matchs).
+                    </p>
+                    <Input 
+                        placeholder="Ex: Un notaire, un décorateur, un expert-comptable..." 
+                        className="bg-white border-2 border-[#2E130C] h-12 rounded-lg focus-visible:ring-0 focus-visible:border-[#B20B13] placeholder:text-[#2E130C]/30 font-bold text-sm" 
+                        value={formData.quickWin}
+                        onChange={(e) => setFormData({...formData, quickWin: e.target.value})}
+                    />
+                </div>
                 </div>
             </div>
 

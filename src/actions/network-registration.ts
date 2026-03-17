@@ -8,7 +8,8 @@ export async function registerNetworkUser(formData: FormData) {
   const email = formData.get("email") as string;
   const password = formData.get("password") as string;
   const fullName = formData.get("fullName") as string;
-  const city = formData.get("city") as string;
+  const city = formData.get("city") as string; // Zone (Le Grand Dax)
+  const exactCity = formData.get("exactCity") as string; // Ville exacte
   const trade = formData.get("trade") as string;
   const phone = formData.get("phone") as string;
   
@@ -32,6 +33,10 @@ export async function registerNetworkUser(formData: FormData) {
   // Add sphere and quickWin to receive_profile (needs)
   if (quickWin) receiveProfile.quick_win_need = quickWin;
   if (sphere) receiveProfile.sphere_interest = sphere;
+  
+  // Store exactCity in receiveProfile as extra metadata if we want, or combine them
+  // Actually, we should store exactCity in receiveProfile to avoid changing DB schema for now
+  receiveProfile.exact_city = exactCity;
 
   // 1. Créer le compte Auth (Côté Serveur - Admin)
   const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
@@ -40,7 +45,8 @@ export async function registerNetworkUser(formData: FormData) {
     email_confirm: true,
     user_metadata: { 
       full_name: fullName,
-      city,
+      city, // This remains the Zone for matching
+      exact_city: exactCity,
       trade,
       sphere 
     }

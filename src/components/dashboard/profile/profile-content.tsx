@@ -130,7 +130,7 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
         // Step 1: Identity & Contact
         if (!formData.display_name.trim()) errors.display_name = "Le nom d'affichage est requis.";
         if (!formData.trade.trim()) errors.trade = "Le métier est requis.";
-        if (!formData.city.trim()) errors.city = "La ville est requise.";
+        if (!formData.exact_city.trim()) errors.exact_city = "La ville exacte est requise.";
         if (!formData.phone.trim()) errors.phone = "Le téléphone est requis.";
         if (!formData.bio.trim()) errors.bio = "La bio est requise.";
         if (!formData.avatar_url) errors.avatar_url = "Une photo de profil est requise.";
@@ -249,6 +249,7 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
       };
 
       const receiveProfile = {
+        exact_city: formData.exact_city,
         target_companies: formData.target_companies.split(',').map((s: string) => s.trim()).filter(Boolean),
         prescribers: formData.prescribers.split(',').map((s: string) => s.trim()).filter(Boolean),
         target_clubs: formData.target_clubs.split(',').map((s: string) => s.trim()).filter(Boolean),
@@ -355,14 +356,15 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
             )}
           </div>
           
-          <div className="flex-1 mb-2">
+           <div className="flex-1 mb-2">
              <h1 className="text-4xl font-black text-[#2E130C] drop-shadow-sm mb-3">{formData.display_name}</h1>
              <div className="flex flex-wrap gap-3 text-stone-600 font-bold">
                 <span className="flex items-center gap-1.5 bg-stone-100 px-3 py-1.5 rounded-xl text-sm border border-stone-200 hover:bg-stone-200 transition-colors">
                     <Briefcase className="h-3.5 w-3.5 text-[#B20B13]" /> {formData.trade || "Métier non renseigné"}
                 </span>
                 <span className="flex items-center gap-1.5 bg-stone-100 px-3 py-1.5 rounded-xl text-sm border border-stone-200 hover:bg-stone-200 transition-colors">
-                    <MapPin className="h-3.5 w-3.5 text-[#B20B13]" /> {formData.city || "Ville non renseignée"}
+                    <MapPin className="h-3.5 w-3.5 text-[#B20B13]" /> 
+                    {user.receive_profile?.exact_city || formData.city || "Ville non renseignée"}
                 </span>
                 <span className="flex items-center gap-1.5 bg-stone-100 px-3 py-1.5 rounded-xl text-sm border border-stone-200 hover:bg-stone-200 transition-colors">
                     <Phone className="h-3.5 w-3.5 text-[#B20B13]" /> {formData.phone || "Non renseigné"}
@@ -635,15 +637,15 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
                                 />
                             </div>
                             <div className="space-y-2">
-                                <Label>Ville {formErrors.city && <span className="text-red-500">*</span>}</Label>
+                                <Label>Ville exacte {formErrors.exact_city && <span className="text-red-500">*</span>}</Label>
                                 <Input 
-                                    value={formData.city} 
+                                    value={formData.exact_city} 
                                     onChange={e => {
-                                        setFormData({...formData, city: e.target.value});
-                                        if (e.target.value) setFormErrors({...formErrors, city: ""});
+                                        setFormData({...formData, exact_city: e.target.value});
+                                        if (e.target.value) setFormErrors({...formErrors, exact_city: ""});
                                     }} 
-                                    className={formErrors.city ? "border-red-500" : ""} 
-                                    placeholder="Ex: Bordeaux" 
+                                    className={formErrors.exact_city ? "border-red-500" : ""} 
+                                    placeholder="Ex: Mont-de-Marsan" 
                                 />
                             </div>
                         </div>
