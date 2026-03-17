@@ -2,26 +2,16 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { 
-  Home, Globe, Heart, ShoppingBag, Scale, 
-  Lock, CheckCircle2, ChevronRight, User, 
-  Rocket, Zap, MapPin, Sparkles, ArrowRight, ShieldCheck, Users
-} from "lucide-react";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { ChevronRight, MapPin, Rocket, Users, Zap, CheckCircle2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { 
-  Dialog, DialogContent, DialogHeader, 
-  DialogTitle, DialogDescription, DialogFooter 
-} from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { registerNetworkUser } from "@/actions/network-registration";
 import { useRouter } from "next/navigation";
-import { Loader2 } from "lucide-react";
 import { Titan_One, Pacifico, Poppins } from "next/font/google";
 
 // --- FONTS ---
@@ -44,7 +34,6 @@ const poppins = Poppins({
 });
 
 // --- TYPES ---
-type SphereId = 'habitat' | 'digital' | 'sante' | 'commerce' | 'conseil';
 type CityId = 'bab' | 'dax' | 'bordeaux';
 
 interface City {
@@ -58,68 +47,9 @@ const CITIES: City[] = [
     { id: 'bordeaux', label: 'Bordeaux' },
 ];
 
-interface Sphere {
-  id: SphereId;
-  name: string;
-  icon: any;
-  color: string;
-  bg: string;
-}
-
-// --- DATA MOCKS ---
-const SPHERES: Sphere[] = [
-  { id: 'habitat', name: 'Habitat & Patrimoine', icon: Home, color: 'text-[#2E130C]', bg: 'bg-[#D2E8FF]' },
-  { id: 'digital', name: 'Business & Digital', icon: Globe, color: 'text-[#E2D9BC]', bg: 'bg-[#2E130C]' },
-  { id: 'sante', name: 'Santé & Bien-être', icon: Heart, color: 'text-[#E2D9BC]', bg: 'bg-[#B20B13]' },
-  { id: 'commerce', name: 'Commerce & Local', icon: ShoppingBag, color: 'text-[#2E130C]', bg: 'bg-[#E2D9BC]' },
-  { id: 'conseil', name: 'Conseil & Droit', icon: Scale, color: 'text-[#2E130C]', bg: 'bg-white' },
-];
-
-const MOCK_SLOTS: Record<SphereId, string[]> = {
-  habitat: [
-    'Agent Immobilier', 'Courtier en prêt', 'Gestionnaire de patrimoine', 'Diagnostiqueur', 
-    'Architecte d\'intérieur', 'Maître d\'œuvre', 'Cuisiniste', 'Électricien/Domotique', 
-    'Paysagiste', 'Pisciniste', 'Notaire', 'Déménageur', 'Conciergerie Airbnb', 
-    'Photographe Immo', 'Chasseur Immo', 'Avocat Fiscaliste', 'Assureur Habitation', 
-    'Menuisier', 'Expert Panneaux Solaires', 'Autre métier'
-  ],
-  digital: [
-    'Webdesigner', 'Expert SEO', 'Copywriter', 'Community Manager', 'Vidéaste Corporate', 
-    'Agence Ads', 'Expert Tunnel de Vente', 'Coach Business', 'Expert Comptable', 
-    'Recruteur', 'Consultant RH', 'Développeur Web', 'Expert Cybersécurité', 
-    'Graphiste', 'Imprimeur', 'Consultant CRM', 'Expert No-Code', 
-    'Commercial Freelance', 'Growth Hacker', 'Autre métier'
-  ],
-  sante: [
-    'Coach Sportif', 'Nutritionniste', 'Ostéopathe', 'Prof de Yoga', 'Naturopathe', 
-    'Magasin Bio', 'Coiffeur', 'Esthéticienne', 'Sophrologue', 'Psychologue', 
-    'Wedding Planner', 'Traiteur', 'Photographe Famille', 'Coach de Vie', 
-    'Hypnothérapeute', 'Masseuse Bien-être', 'Kinésiologue', 'Acupuncteur', 
-    'Personal Shopper', 'Autre métier'
-  ],
-  commerce: [
-    'Restaurateur', 'Caviste', 'Gérant Salle de Sport', 'Fleuriste', 'Chocolatier', 
-    'Gérant de Gîte', 'Bijoutier', 'Opticien', 'Libraire', 'Gérant Coworking', 
-    'Prêt-à-porter', 'Loueur de Voitures', 'Assureur Pro', 'Événementiel Local', 
-    'Agent de Voyage', 'Courtier Énergie', 'Enseigniste', 'Service Nettoyage', 
-    'Torréfacteur', 'Autre métier'
-  ],
-  conseil: [
-    'Avocat Affaires', 'Avocat Droit du Travail', 'Conseil Propriété Intellectuelle', 
-    'Courtier Crédit Pro', 'Consultant RSE', 'Traducteur Business', 'Expert Levée de Fonds', 
-    'Audit Cybersécurité', 'Commissaire aux comptes', 'Gestion de crise', 
-    'Courtier Flotte Auto', 'Immo Entreprise', 'Formateur Qualiopi', 
-    'Consultant Logistique', 'Graphologue', 'Huissier', 'Médiateur', 
-    'Expert Transmission Entreprise', 'Consultant IA', 'Autre métier'
-  ]
-};
-
 // --- COMPONENT ---
 export default function SpheresRegistrationPage() {
   const [activeCity, setActiveCity] = useState<CityId | null>(null);
-  const [activeSphere, setActiveSphere] = useState<SphereId>('habitat');
-  const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [isConfirmed, setIsConfirmed] = useState(false);
   const [memberCount, setMemberCount] = useState(14); // Simulation
   
@@ -136,26 +66,18 @@ export default function SpheresRegistrationPage() {
   const router = useRouter();
   const supabase = createClient();
 
-  // Simulation de slots déjà pris (Aucun slot pris pour le moment)
-  const lockedSlotsByCity: Record<CityId, string[]> = {
-      'bordeaux': [],
-      'bab': [],
-      'dax': []
-  };
-
-  const lockedSlots: string[] = [];
-
-  const handleReserve = (slot: string) => {
-    setSelectedSlot(slot);
-    setIsModalOpen(true);
-    setFormData(prev => ({
-        ...prev,
-        city: activeCity ? CITIES.find(c => c.id === activeCity)?.label || "" : "",
-        trade: slot === "Autre métier" ? "" : slot // Pre-fill trade if not "Autre métier"
-    }));
+  const handleCitySelect = (cityId: CityId) => {
+    const cityLabel = CITIES.find(c => c.id === cityId)?.label || "";
+    setActiveCity(cityId);
+    setFormData(prev => ({ ...prev, city: cityLabel }));
   };
 
   const handleConfirm = async () => {
+    if (!formData.trade.trim()) {
+        toast.error("Veuillez renseigner votre activité.");
+        return;
+    }
+
     setIsLoading(true);
     
     try {
@@ -164,10 +86,11 @@ export default function SpheresRegistrationPage() {
         payload.append("password", formData.password);
         payload.append("fullName", formData.fullName);
         payload.append("city", formData.city);
-        // Use the form data trade which is editable
         payload.append("trade", formData.trade);
         payload.append("phone", formData.phone);
-        payload.append("sphere", activeSphere);
+        // We no longer have a sphere to append from the UI, but the backend might expect it.
+        // We'll set a default or let the backend handle matching based purely on trade.
+        payload.append("sphere", "Indéfinie"); 
         payload.append("quickWin", formData.quickWin);
 
         const result = await registerNetworkUser(payload);
@@ -182,10 +105,9 @@ export default function SpheresRegistrationPage() {
         
         if (loginError) throw loginError;
 
-        setIsModalOpen(false);
         setIsConfirmed(true);
         setMemberCount(prev => prev + 1);
-        toast.success("Votre siège est réservé ! 🚀");
+        toast.success("Votre inscription est confirmée ! 🚀");
         
         // Wait for session to be fully established before showing confirmation
         // This helps prevent WebSocket errors on the next page
@@ -237,7 +159,7 @@ export default function SpheresRegistrationPage() {
                     {CITIES.map((city) => (
                         <button
                             key={city.id}
-                            onClick={() => setActiveCity(city.id)}
+                            onClick={() => handleCitySelect(city.id)}
                             className="group relative h-56 rounded-[2rem] border-4 border-[#2E130C] bg-white hover:bg-[#D2E8FF] hover:-translate-y-2 transition-all duration-300 flex flex-col items-center justify-center gap-6 shadow-[8px_8px_0px_0px_#2E130C] hover:shadow-[12px_12px_0px_0px_#B20B13]"
                         >
                             <div className="w-20 h-20 rounded-2xl bg-[#E2D9BC] border-2 border-[#2E130C] flex items-center justify-center group-hover:bg-white transition-colors">
@@ -258,7 +180,7 @@ export default function SpheresRegistrationPage() {
       );
   }
 
-  // STEP 2: SPHERES & SLOTS
+  // STEP 2: REGISTRATION FORM
   return (
     <div className={cn(
         "min-h-screen bg-[#E2D9BC] text-[#2E130C] p-4 md:p-12 font-poppins selection:bg-[#B20B13] selection:text-[#E2D9BC]",
@@ -266,166 +188,77 @@ export default function SpheresRegistrationPage() {
     )}>
       
       {/* HEADER & CITY INFO */}
-      <header className="max-w-7xl mx-auto mb-12 flex flex-col md:flex-row md:items-end justify-between gap-6">
+      <header className="max-w-3xl mx-auto mb-8 flex flex-col gap-4">
+        <button 
+            onClick={() => setActiveCity(null)}
+            className="text-sm font-bold text-[#2E130C]/60 hover:text-[#B20B13] flex items-center gap-2 transition-colors uppercase tracking-wider w-fit"
+        >
+            <ChevronRight className="w-4 h-4 rotate-180" /> Changer de ville
+        </button>
         <div>
-            <button 
-                onClick={() => setActiveCity(null)}
-                className="text-sm font-bold text-[#2E130C]/60 hover:text-[#B20B13] mb-4 flex items-center gap-2 transition-colors uppercase tracking-wider"
-            >
-                <ChevronRight className="w-4 h-4 rotate-180" /> Changer de ville
-            </button>
             <h1 className="text-3xl md:text-5xl font-titan text-[#2E130C] mb-2 leading-tight">
                 {CITIES.find(c => c.id === activeCity)?.label}
             </h1>
             <p className="text-[#2E130C]/80 font-bold text-lg">
-                Vérifiez la disponibilité de votre métier.
+                Complétez votre profil pour rejoindre le réseau local.
             </p>
         </div>
-
-        {/* STATUS BAR */}
-        {!isConfirmed && (
-            <div className="bg-white border-4 border-[#2E130C] rounded-2xl p-6 flex items-center gap-6 shadow-[6px_6px_0px_0px_#2E130C] transform rotate-1">
-                <div className="flex flex-col">
-                    <span className="text-xs font-black text-[#B20B13] uppercase tracking-widest mb-1">Status</span>
-                    <p className="text-xl font-titan text-[#2E130C]">Inscription Ouverte</p>
-                </div>
-            </div>
-        )}
       </header>
 
-      {/* MAIN CONTENT */}
-      <main className="max-w-7xl mx-auto">
-        
-        <Tabs defaultValue="habitat" onValueChange={(v) => setActiveSphere(v as SphereId)} className="w-full">
-          <TabsList className="flex flex-nowrap md:flex-wrap overflow-x-auto md:overflow-visible justify-start md:justify-center gap-3 bg-transparent h-auto mb-8 pb-4 w-full px-1 md:px-0 scrollbar-hide -mx-4 md:mx-0 snap-x">
-            {SPHERES.map((sphere) => (
-              <TabsTrigger 
-                key={sphere.id} 
-                value={sphere.id}
-                className={cn(
-                  "shrink-0 px-4 py-3 md:px-6 rounded-xl border-4 transition-all duration-200 snap-center font-titan text-sm md:text-base",
-                  "bg-white border-[#2E130C]/20 text-[#2E130C]/60 hover:border-[#2E130C]/50",
-                  "data-[state=active]:bg-[#2E130C] data-[state=active]:text-[#E2D9BC] data-[state=active]:border-[#2E130C] data-[state=active]:shadow-[4px_4px_0px_0px_#B20B13] data-[state=active]:-translate-y-1"
-                )}
-              >
-                <sphere.icon className="w-4 h-4 mr-2" />
-                {sphere.name}
-              </TabsTrigger>
-            ))}
-          </TabsList>
+      {/* MAIN CONTENT: REGISTRATION FORM */}
+      <main className="max-w-3xl mx-auto">
+        <div className="bg-white border-4 border-[#2E130C] rounded-[2rem] md:rounded-[2.5rem] p-6 md:p-8 shadow-[8px_8px_0px_0px_#2E130C] md:shadow-[12px_12px_0px_0px_#2E130C]">
+            <div className="flex items-center justify-center mx-auto mb-6 w-16 h-16 rounded-2xl bg-[#B20B13] border-4 border-[#2E130C] shadow-[4px_4px_0px_0px_#2E130C] transform rotate-3">
+                <Rocket className="w-8 h-8 text-[#E2D9BC] animate-pulse" />
+            </div>
+            
+            <h2 className="text-2xl md:text-3xl font-titan text-center mb-8 leading-none">
+                Création de votre compte
+            </h2>
 
-          {SPHERES.map((sphere) => (
-            <TabsContent key={sphere.id} value={sphere.id} className="mt-0">
-              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-6">
-                {MOCK_SLOTS[sphere.id].map((job) => {
-                  const isLocked = lockedSlots.includes(job);
-                  return (
-                    <motion.div
-                      key={job}
-                      whileHover={!isLocked ? { scale: 1.02, y: -4 } : {}}
-                      className={cn(
-                        "relative group p-4 md:p-6 rounded-3xl border-4 transition-all duration-200 flex flex-col items-center justify-center text-center gap-3 md:gap-4 h-48 md:h-56",
-                        isLocked 
-                          ? "bg-[#2E130C]/5 border-[#2E130C]/10 opacity-60 cursor-not-allowed" 
-                          : "bg-white border-[#2E130C] cursor-pointer shadow-[6px_6px_0px_0px_#2E130C] hover:shadow-[8px_8px_0px_0px_#B20B13]"
-                      )}
-                      onClick={() => !isLocked && handleReserve(job)}
-                    >
-                      {isLocked ? (
-                        <>
-                          <div className="w-14 h-14 rounded-full bg-[#2E130C]/10 flex items-center justify-center relative grayscale">
-                            <User className="w-7 h-7 text-[#2E130C]/40" />
-                            <div className="absolute -bottom-1 -right-1 bg-[#B20B13] rounded-full p-1.5 border-2 border-white">
-                              <Lock className="w-3 h-3 text-white" />
-                            </div>
-                          </div>
-                          <div className="space-y-1">
-                            <p className="text-sm font-bold text-[#2E130C]/50 line-through">{job}</p>
-                            <span className="text-[10px] font-black uppercase tracking-widest text-[#B20B13] bg-[#B20B13]/10 px-2 py-1 rounded-md">Place prise</span>
-                          </div>
-                        </>
-                      ) : (
-                        <>
-                          <div className={cn("w-16 h-16 rounded-2xl border-2 border-[#2E130C] flex items-center justify-center transition-colors shadow-sm", sphere.bg)}>
-                            <sphere.icon className={cn("w-8 h-8", sphere.color)} />
-                          </div>
-                          <div className="space-y-2 w-full">
-                            <p className="text-sm font-bold text-[#2E130C] group-hover:text-[#B20B13] transition-colors line-clamp-2">{job}</p>
-                            <Button size="sm" className="w-full h-9 text-[10px] font-titan uppercase tracking-wide bg-[#2E130C] text-[#E2D9BC] hover:bg-[#B20B13] border-2 border-[#2E130C] rounded-lg shadow-sm">
-                              Réserver
-                            </Button>
-                          </div>
-                        </>
-                      )}
-                    </motion.div>
-                  );
-                })}
-              </div>
-            </TabsContent>
-          ))}
-        </Tabs>
-      </main>
-
-      {/* MODAL: RESERVATION TUNNEL */}
-      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="bg-[#E2D9BC] border-4 border-[#2E130C] text-[#2E130C] w-[95vw] sm:max-w-md rounded-[2rem] md:rounded-[2.5rem] p-0 overflow-hidden shadow-[8px_8px_0px_0px_#2E130C] md:shadow-[12px_12px_0px_0px_#2E130C] max-h-[90vh] flex flex-col">
-          <div className="p-5 md:p-8 overflow-y-auto">
-            <DialogHeader className="space-y-3 md:space-y-4">
-                <div className="w-12 h-12 md:w-16 md:h-16 rounded-2xl bg-[#B20B13] border-4 border-[#2E130C] flex items-center justify-center mx-auto mb-2 shadow-[4px_4px_0px_0px_#2E130C] transform rotate-3">
-                    <Rocket className="w-6 h-6 md:w-8 md:h-8 text-[#E2D9BC] animate-pulse" />
-                </div>
-                <DialogTitle className="text-2xl md:text-3xl font-titan text-center leading-none">
-                    Verrouillage : <br />
-                    <span className="text-[#B20B13] uppercase text-lg md:text-xl">{selectedSlot}</span>
-                </DialogTitle>
-                <DialogDescription className="text-center text-[#2E130C]/70 font-bold font-poppins text-sm md:text-base">
-                    Veuillez valider votre profil pour sécuriser votre exclusivité métier dans la sphère {SPHERES.find(s => s.id === activeSphere)?.name}.
-                </DialogDescription>
-            </DialogHeader>
-
-            <div className="space-y-4 py-4 md:py-6 font-poppins">
+            <div className="space-y-6 font-poppins">
                 {/* Row 1: Prénom Nom & Ville */}
-                <div className="grid grid-cols-2 gap-3 md:gap-4">
-                <div className="space-y-1 md:space-y-2">
-                    <Label htmlFor="fullname" className="text-[10px] md:text-xs font-black uppercase text-[#2E130C]/60 ml-1">Prénom Nom</Label>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                    <Label htmlFor="fullname" className="text-xs font-black uppercase text-[#2E130C]/60 ml-1">Prénom Nom</Label>
                     <Input 
                     id="fullname" 
                     placeholder="Jean Dupont" 
-                    className="bg-white border-2 border-[#2E130C] h-10 md:h-12 rounded-xl focus-visible:ring-0 focus-visible:border-[#B20B13] placeholder:text-[#2E130C]/30 font-bold text-sm md:text-base" 
+                    className="bg-white border-2 border-[#2E130C] h-12 rounded-xl focus-visible:ring-0 focus-visible:border-[#B20B13] placeholder:text-[#2E130C]/30 font-bold text-base" 
                     value={formData.fullName}
                     onChange={(e) => setFormData({...formData, fullName: e.target.value})}
                     />
                 </div>
-                <div className="space-y-1 md:space-y-2">
-                    <Label htmlFor="city" className="text-[10px] md:text-xs font-black uppercase text-[#2E130C]/60 ml-1">Ville</Label>
+                <div className="space-y-2">
+                    <Label htmlFor="city" className="text-xs font-black uppercase text-[#2E130C]/60 ml-1">Ville</Label>
                     <Input 
                     id="city" 
                     placeholder="Paris" 
-                    className="bg-white border-2 border-[#2E130C] h-10 md:h-12 rounded-xl focus-visible:ring-0 focus-visible:border-[#B20B13] placeholder:text-[#2E130C]/30 font-bold text-sm md:text-base" 
+                    className="bg-white border-2 border-[#2E130C] h-12 rounded-xl focus-visible:ring-0 focus-visible:border-[#B20B13] placeholder:text-[#2E130C]/30 font-bold text-base bg-gray-50" 
                     value={formData.city}
-                    onChange={(e) => setFormData({...formData, city: e.target.value})}
+                    readOnly
                     />
                 </div>
                 </div>
 
                 {/* Row 2: Activité & Téléphone */}
-                <div className="grid grid-cols-2 gap-3 md:gap-4">
-                <div className="space-y-1 md:space-y-2">
-                    <Label htmlFor="activity" className="text-[10px] md:text-xs font-black uppercase text-[#2E130C]/60 ml-1">Activité</Label>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                    <Label htmlFor="activity" className="text-xs font-black uppercase text-[#2E130C]/60 ml-1">Votre Activité</Label>
                     <Input 
                         id="activity" 
-                        placeholder="Votre métier..." 
-                        className="bg-white border-2 border-[#2E130C] h-10 md:h-12 rounded-xl focus-visible:ring-0 focus-visible:border-[#B20B13] placeholder:text-[#2E130C]/30 font-bold text-sm md:text-base" 
+                        placeholder="Ex: Nutritionniste, Copywriter..." 
+                        className="bg-white border-2 border-[#2E130C] h-12 rounded-xl focus-visible:ring-0 focus-visible:border-[#B20B13] placeholder:text-[#2E130C]/30 font-bold text-base" 
                         value={formData.trade}
                         onChange={(e) => setFormData({...formData, trade: e.target.value})}
                     />
                 </div>
-                <div className="space-y-1 md:space-y-2">
-                    <Label htmlFor="phone" className="text-[10px] md:text-xs font-black uppercase text-[#2E130C]/60 ml-1">Téléphone</Label>
+                <div className="space-y-2">
+                    <Label htmlFor="phone" className="text-xs font-black uppercase text-[#2E130C]/60 ml-1">Téléphone</Label>
                     <Input 
                     id="phone" 
                     placeholder="06..." 
-                    className="bg-white border-2 border-[#2E130C] h-10 md:h-12 rounded-xl focus-visible:ring-0 focus-visible:border-[#B20B13] placeholder:text-[#2E130C]/30 font-bold text-sm md:text-base" 
+                    className="bg-white border-2 border-[#2E130C] h-12 rounded-xl focus-visible:ring-0 focus-visible:border-[#B20B13] placeholder:text-[#2E130C]/30 font-bold text-base" 
                     value={formData.phone}
                     onChange={(e) => setFormData({...formData, phone: e.target.value})}
                     />
@@ -433,66 +266,65 @@ export default function SpheresRegistrationPage() {
                 </div>
                 
                 {/* Row 3: Email */}
-                <div className="space-y-1 md:space-y-2">
-                <Label htmlFor="email" className="text-[10px] md:text-xs font-black uppercase text-[#2E130C]/60 ml-1">Email</Label>
+                <div className="space-y-2">
+                <Label htmlFor="email" className="text-xs font-black uppercase text-[#2E130C]/60 ml-1">Email</Label>
                 <Input 
                     id="email" 
                     type="email" 
                     placeholder="vous@exemple.com" 
-                    className="bg-white border-2 border-[#2E130C] h-10 md:h-12 rounded-xl focus-visible:ring-0 focus-visible:border-[#B20B13] placeholder:text-[#2E130C]/30 font-bold text-sm md:text-base" 
+                    className="bg-white border-2 border-[#2E130C] h-12 rounded-xl focus-visible:ring-0 focus-visible:border-[#B20B13] placeholder:text-[#2E130C]/30 font-bold text-base" 
                     value={formData.email}
                     onChange={(e) => setFormData({...formData, email: e.target.value})}
                 />
                 </div>
 
                 {/* Row 4: Mot de passe */}
-                <div className="space-y-1 md:space-y-2">
-                <Label htmlFor="password" className="text-[10px] md:text-xs font-black uppercase text-[#2E130C]/60 ml-1">Mot de passe</Label>
+                <div className="space-y-2">
+                <Label htmlFor="password" className="text-xs font-black uppercase text-[#2E130C]/60 ml-1">Mot de passe</Label>
                 <Input 
                     id="password" 
                     type="password" 
-                    className="bg-white border-2 border-[#2E130C] h-10 md:h-12 rounded-xl focus-visible:ring-0 focus-visible:border-[#B20B13] font-bold text-sm md:text-base" 
+                    className="bg-white border-2 border-[#2E130C] h-12 rounded-xl focus-visible:ring-0 focus-visible:border-[#B20B13] font-bold text-base" 
                     value={formData.password}
                     onChange={(e) => setFormData({...formData, password: e.target.value})}
                 />
                 </div>
 
                 {/* Row 5: Quick Win Question */}
-                <div className="space-y-1 md:space-y-2 pt-3 md:pt-4 border-t-2 border-[#2E130C]/10">
-                <Label className="text-[10px] md:text-xs font-black uppercase tracking-widest text-[#B20B13] ml-1 flex items-center gap-2">
-                    <Zap className="w-3 h-3 fill-current" /> Question Quick-Win
+                <div className="space-y-2 pt-6 border-t-2 border-[#2E130C]/10">
+                <Label className="text-xs font-black uppercase tracking-widest text-[#B20B13] ml-1 flex items-center gap-2">
+                    <Zap className="w-4 h-4 fill-current" /> Question Quick-Win
                 </Label>
-                <p className="text-[9px] md:text-[10px] text-[#2E130C]/70 font-bold ml-1 leading-tight mb-1 md:mb-2">
+                <p className="text-sm text-[#2E130C]/70 font-bold ml-1 leading-tight mb-2">
                     Quel métier complémentaire vous manque-t-il aujourd'hui pour faire plus de business ?
                 </p>
                 <Input 
                     placeholder="Ex: Un notaire, un décorateur..." 
-                    className="bg-white border-2 border-[#2E130C] h-10 md:h-12 rounded-xl focus-visible:ring-0 focus-visible:border-[#B20B13] placeholder:text-[#2E130C]/30 font-bold text-sm md:text-base" 
+                    className="bg-white border-2 border-[#2E130C] h-12 rounded-xl focus-visible:ring-0 focus-visible:border-[#B20B13] placeholder:text-[#2E130C]/30 font-bold text-base" 
                     value={formData.quickWin}
                     onChange={(e) => setFormData({...formData, quickWin: e.target.value})}
                 />
                 </div>
             </div>
 
-            <div className="pt-2">
+            <div className="pt-8">
               <Button 
                 onClick={handleConfirm}
                 disabled={isLoading}
-                className="w-full h-14 md:h-16 bg-[#2E130C] text-[#E2D9BC] hover:bg-[#B20B13] text-base md:text-lg font-titan rounded-xl border-4 border-[#2E130C] shadow-[4px_4px_0px_0px_#2E130C] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_#2E130C] transition-all"
+                className="w-full h-16 bg-[#2E130C] text-[#E2D9BC] hover:bg-[#B20B13] text-lg font-titan rounded-xl border-4 border-[#2E130C] shadow-[4px_4px_0px_0px_#2E130C] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_#2E130C] transition-all"
               >
                 {isLoading ? (
                     <>
                         <Loader2 className="w-5 h-5 animate-spin mr-2" />
-                        CRÉATION...
+                        CRÉATION EN COURS...
                     </>
                 ) : (
-                    "VALIDER MON EXCLUSIVITÉ"
+                    "VALIDER MON INSCRIPTION"
                 )}
               </Button>
             </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+        </div>
+      </main>
 
       {/* CONFIRMATION OVERLAY */}
       <AnimatePresence>
