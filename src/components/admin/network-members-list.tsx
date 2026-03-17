@@ -89,14 +89,14 @@ export function NetworkMembersList({ members }: any) {
               <div key={m.user_id} className="p-4 hover:bg-slate-50 transition-colors group">
                 <div className="flex items-start gap-4">
                   {/* Sphere Initial Badge */}
-                  <div className={`h-12 w-12 rounded-xl flex items-center justify-center text-xl font-black shrink-0 shadow-sm border ${getSphereColor(m.profile?.receive_profile?.sphere_interest || '')}`}>
+                  <div className={`h-14 w-14 rounded-2xl flex items-center justify-center text-2xl font-black shrink-0 shadow-sm border-2 ${getSphereColor(m.profile?.receive_profile?.sphere_interest || '')}`}>
                     {m.profile?.display_name?.[0]?.toUpperCase() || "?"}
                   </div>
                   
                   <div className="flex-1 min-w-0">
                     {/* Header: Name & Sphere */}
                     <div className="flex justify-between items-start mb-1">
-                        <h3 className="font-bold text-slate-900 truncate text-base">
+                        <h3 className="font-bold text-slate-900 truncate text-lg pr-2">
                             {m.profile?.display_name || "Utilisateur Inconnu"}
                         </h3>
                         {m.profile?.receive_profile?.sphere_interest && (
@@ -107,38 +107,37 @@ export function NetworkMembersList({ members }: any) {
                     </div>
 
                     {/* Meta: City & Trade */}
-                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500 font-medium mb-2">
-                        <span className="flex items-center gap-1 text-slate-700">
-                            <MapPin className="h-3 w-3" /> {m.profile?.city || "Ville ?"}
-                        </span>
-                        <span className="text-slate-300">|</span>
-                        <span className="flex items-center gap-1">
-                            <Briefcase className="h-3 w-3" /> {m.profile?.trade || "Métier ?"}
-                        </span>
+                    <div className="flex flex-col gap-1.5 mb-3 mt-1">
+                        <div className="flex items-center gap-1.5 text-xs text-slate-600 font-medium bg-slate-50 w-fit px-2 py-1 rounded-md border border-slate-100">
+                            <Briefcase className="h-3.5 w-3.5 text-blue-500" />
+                            <span className="font-semibold text-slate-800">{m.profile?.trade || "Métier non renseigné"}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 text-xs text-slate-500 w-fit px-2 py-0.5">
+                            <MapPin className="h-3.5 w-3.5 text-slate-400" />
+                            {m.profile?.city || "Ville non renseignée"}
+                        </div>
                     </div>
 
                     {/* Quick Win / Needs */}
-                    {m.profile?.receive_profile?.quick_win_need ? (
-                        <div className="bg-amber-50/80 border border-amber-100 rounded-lg p-2.5 mb-3">
+                    {m.profile?.receive_profile?.quick_win_need && (
+                        <div className="bg-amber-50/80 border border-amber-100 rounded-lg p-2.5 mb-3 mt-1">
                             <div className="flex items-center gap-1.5 text-amber-800 font-bold uppercase tracking-wider text-[10px] mb-1">
                                 <Zap className="h-3 w-3 fill-amber-500 text-amber-500" /> Besoin Immédiat (Quick-Win)
                             </div>
-                            <p className="text-sm text-slate-800 italic leading-snug">
+                            <p className="text-xs text-slate-800 italic leading-snug">
                                 &ldquo;{m.profile.receive_profile.quick_win_need}&rdquo;
                             </p>
                         </div>
-                    ) : (
-                        <div className="mb-3"></div>
                     )}
 
                     {/* Footer: Phone & Date & Action */}
-                    <div className="flex items-center justify-between border-t border-slate-100 pt-2 mt-2">
-                        <div className="flex items-center gap-2">
-                            <div className="flex items-center gap-2 font-mono font-bold text-slate-600 bg-slate-100 px-2 py-1 rounded text-xs">
-                                <PhoneCall className="h-3 w-3 text-slate-400" />
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between border-t border-slate-100 pt-3 mt-1 gap-2 sm:gap-0">
+                        <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-2 font-mono font-bold text-slate-600 bg-slate-100 px-2.5 py-1.5 rounded-md text-xs border border-slate-200">
+                                <PhoneCall className="h-3.5 w-3.5 text-slate-500" />
                                 {m.profile?.phone || "Non renseigné"}
                             </div>
-                            <div className="text-[10px] text-slate-400 font-medium">
+                            <div className="text-[11px] text-slate-400 font-medium">
                                 Inscrit le {format(new Date(m.created_at), 'dd MMM yyyy', { locale: fr })}
                             </div>
                         </div>

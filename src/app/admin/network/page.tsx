@@ -390,10 +390,10 @@ export default async function AdminNetworkPage() {
           </CardContent>
       </Card>
 
-      <div className="grid lg:grid-cols-3 gap-8">
+      <div className="grid lg:grid-cols-2 gap-8">
         
         {/* LEFT COLUMN: ACTIONS & LOGS */}
-        <div className="lg:col-span-2 space-y-6">
+        <div className="space-y-6">
           
           {/* MANUAL MATCH BUILDER */}
           <MatchBuilder users={usersForDropdown} />
