@@ -60,6 +60,7 @@ export default function SpheresRegistrationPage() {
     email: "",
     password: "",
     trade: "",
+    secondaryTrades: "",
     quickWin: ""
   });
   const [isLoading, setIsLoading] = useState(false);
@@ -81,12 +82,16 @@ export default function SpheresRegistrationPage() {
     setIsLoading(true);
     
     try {
+        const finalTrade = formData.secondaryTrades.trim() 
+            ? `${formData.trade.trim()} & ${formData.secondaryTrades.trim()}`
+            : formData.trade.trim();
+
         const payload = new FormData();
         payload.append("email", formData.email);
         payload.append("password", formData.password);
         payload.append("fullName", formData.fullName);
         payload.append("city", formData.city);
-        payload.append("trade", formData.trade);
+        payload.append("trade", finalTrade);
         payload.append("phone", formData.phone);
         // We no longer have a sphere to append from the UI, but the backend might expect it.
         // We'll set a default or let the backend handle matching based purely on trade.
@@ -244,7 +249,7 @@ export default function SpheresRegistrationPage() {
                 {/* Row 2: Activité & Téléphone */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                    <Label htmlFor="activity" className="text-xs font-black uppercase text-[#2E130C]/60 ml-1">Votre Activité</Label>
+                    <Label htmlFor="activity" className="text-xs font-black uppercase text-[#2E130C]/60 ml-1">Activité Principale</Label>
                     <Input 
                         id="activity" 
                         placeholder="Ex: Nutritionniste, Copywriter..." 
@@ -253,6 +258,20 @@ export default function SpheresRegistrationPage() {
                         onChange={(e) => setFormData({...formData, trade: e.target.value})}
                     />
                 </div>
+                <div className="space-y-2">
+                    <Label htmlFor="secondaryTrades" className="text-xs font-black uppercase text-[#2E130C]/60 ml-1">Autres Activités (Optionnel)</Label>
+                    <Input 
+                        id="secondaryTrades" 
+                        placeholder="Ex: Investisseur immo, Coach..." 
+                        className="bg-white border-2 border-[#2E130C] h-12 rounded-xl focus-visible:ring-0 focus-visible:border-[#B20B13] placeholder:text-[#2E130C]/30 font-bold text-base" 
+                        value={formData.secondaryTrades}
+                        onChange={(e) => setFormData({...formData, secondaryTrades: e.target.value})}
+                    />
+                </div>
+                </div>
+                
+                {/* Row 3: Phone & Email */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                     <Label htmlFor="phone" className="text-xs font-black uppercase text-[#2E130C]/60 ml-1">Téléphone</Label>
                     <Input 
@@ -263,9 +282,6 @@ export default function SpheresRegistrationPage() {
                     onChange={(e) => setFormData({...formData, phone: e.target.value})}
                     />
                 </div>
-                </div>
-                
-                {/* Row 3: Email */}
                 <div className="space-y-2">
                 <Label htmlFor="email" className="text-xs font-black uppercase text-[#2E130C]/60 ml-1">Email</Label>
                 <Input 
@@ -276,6 +292,7 @@ export default function SpheresRegistrationPage() {
                     value={formData.email}
                     onChange={(e) => setFormData({...formData, email: e.target.value})}
                 />
+                </div>
                 </div>
 
                 {/* Row 4: Mot de passe */}
