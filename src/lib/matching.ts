@@ -154,12 +154,23 @@ export async function generateMatches(targetDate: Date) {
     // Fetch profiles for sphere and trade info
     const { data: profiles } = await supabase
         .from('profiles')
-        .select('id, trade, city, receive_profile')
+        .select('id, trade, city, receive_profile, avatar_url, bio')
         .in('id', userIds);
 
     const profileMap: Record<string, any> = {};
+    const incompleteProfileIds = new Set<string>();
+
     if (profiles) {
         profiles.forEach(p => {
+            // Check for profile completeness (Avatar or Bio required)
+            // We are lenient: if they have EITHER avatar OR bio, we consider them "active enough"
+            // Or maybe stricter: MUST have bio.
+            // Let's stick to: Must have a Bio AND Avatar to be matchable. 
+            // Avatar is less critical for the algo, but Bio is key for the match quality.
+            if ((!p.bio || p.bio.trim().length < 5) || !p.avatar_url) {
+                incompleteProfileIds.add(p.id);
+            }
+
             profileMap[p.id] = {
                 trade: p.trade?.toLowerCase() || '',
                 sphere: p.receive_profile?.sphere_interest || '',
@@ -167,7 +178,13 @@ export async function generateMatches(targetDate: Date) {
             };
         });
     }
-    
+
+    // Filter out incomplete profiles from the pool
+    // We modify the 'availabilities' array to remove them
+    // But we need to keep 'availabilities' intact for logging or just filter 'pool' later?
+    // Let's filter 'availabilities' right here before creating 'pool'
+    const validAvailabilities = availabilities.filter((a: any) => !incompleteProfileIds.has(a.user_id));
+
     // Build a map of "who has met whom"
     const metHistory: Record<string, Set<string>> = {};
     if (pastMatches) {
@@ -179,9 +196,9 @@ export async function generateMatches(targetDate: Date) {
             metHistory[m.user2_id].add(m.user1_id);
         });
     }
-
+    
     // 4b. Greedy Matching
-    const pool = availabilities.sort(() => 0.5 - Math.random());
+    const pool = validAvailabilities.sort(() => 0.5 - Math.random());
     const matches = [];
     const matchedUserIds = new Set<string>();
 
