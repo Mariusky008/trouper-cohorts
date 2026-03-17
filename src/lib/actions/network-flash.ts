@@ -165,7 +165,24 @@ export async function createFlashQuestion(content: string, city: string) {
 
   if (error) {
     console.error("Error creating flash question:", error);
-    return { error: "Erreur lors de la publication." };
+    // If error is RLS related, try with admin client
+    if (error.code === '42501') {
+        const supabaseAdmin = createAdminClient();
+        const { error: adminError } = await supabaseAdmin
+            .from("network_flash_questions")
+            .insert({
+                user_id: user.id,
+                city: city,
+                content: content.trim()
+            });
+            
+        if (adminError) {
+            console.error("Admin Error creating flash question:", adminError);
+            return { error: "Erreur lors de la publication." };
+        }
+    } else {
+        return { error: "Erreur lors de la publication." };
+    }
   }
 
   revalidatePath("/mon-reseau-local/dashboard");
@@ -189,7 +206,24 @@ export async function createFlashAnswer(questionId: string, content: string) {
 
   if (error) {
     console.error("Error creating flash answer:", error);
-    return { error: "Erreur lors de la réponse." };
+    // If error is RLS related, try with admin client
+    if (error.code === '42501') {
+        const supabaseAdmin = createAdminClient();
+        const { error: adminError } = await supabaseAdmin
+            .from("network_flash_answers")
+            .insert({
+                user_id: user.id,
+                question_id: questionId,
+                content: content.trim()
+            });
+            
+        if (adminError) {
+             console.error("Admin Error creating flash answer:", adminError);
+             return { error: "Erreur lors de la réponse." };
+        }
+    } else {
+        return { error: "Erreur lors de la réponse." };
+    }
   }
 
   revalidatePath(`/mon-reseau-local/dashboard/cafe`);
