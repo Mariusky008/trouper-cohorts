@@ -8,10 +8,41 @@ import { DebtsAndCreditsView } from "@/components/dashboard/trust/debts-and-cred
 
 export const dynamic = 'force-dynamic';
 
+interface Opportunity {
+  id: string;
+  type: string;
+  points: number;
+  date: string;
+  description: string;
+  partner: { display_name: string; avatar_url: string };
+  direction: 'received' | 'given';
+  status: 'pending' | 'validated' | 'rejected';
+}
+
+interface Debt {
+  id: string;
+  partner: string;
+  partnerId: string;
+  avatar?: string;
+  reason: string;
+  remainingPoints?: number;
+  daysLeft: number;
+  urgent: boolean;
+}
+
+interface Credit {
+  id: string;
+  partner: string;
+  avatar?: string;
+  reason: string;
+  remainingPoints: number;
+  date: string;
+}
+
 export default async function OpportunitiesPage() {
-  let opportunities: any[] = [];
-  let debts: any[] = [];
-  let credits: any[] = [];
+  let opportunities: Opportunity[] = [];
+  let debts: Debt[] = [];
+  let credits: Credit[] = [];
 
   try {
     const [opps, userDebts, userCredits] = await Promise.all([
@@ -19,9 +50,9 @@ export default async function OpportunitiesPage() {
         getDebts(),
         getCredits()
     ]);
-    opportunities = opps;
-    debts = userDebts;
-    credits = userCredits;
+    opportunities = opps as Opportunity[];
+    debts = userDebts as Debt[];
+    credits = userCredits as Credit[];
   } catch (e) {
     console.error(e);
   }
