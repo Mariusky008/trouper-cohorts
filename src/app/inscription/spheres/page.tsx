@@ -107,7 +107,17 @@ export default function SpheresRegistrationPage() {
 
         const result = await registerNetworkUser(payload);
         
-        if (result.error) throw new Error(result.error);
+        if (result.error) {
+            console.error("Server returned error:", result.error);
+            // Translate common Supabase Auth errors to French for better UX
+            if (result.error.includes("already registered") || result.error.includes("User already exists")) {
+                throw new Error("Cet email est déjà utilisé. Veuillez vous connecter ou utiliser un autre email.");
+            } else if (result.error.includes("Password should be at least")) {
+                throw new Error("Le mot de passe doit contenir au moins 6 caractères.");
+            } else {
+                throw new Error(result.error);
+            }
+        }
         
         // Auto login
         const { error: loginError } = await supabase.auth.signInWithPassword({
@@ -115,7 +125,16 @@ export default function SpheresRegistrationPage() {
             password: formData.password
         });
         
-        if (loginError) throw loginError;
+        if (loginError) {
+             console.error("Auto-login failed:", loginError);
+             // We don't throw here because the account WAS created. We just notify them to log in.
+             toast.success("Compte créé ! Veuillez vous connecter.");
+             router.push("/mon-reseau-local/connexion");
+             return;
+        }
+
+        // Force a session refresh to ensure cookies are set before redirect
+        await supabase.auth.refreshSession();
 
         setIsConfirmed(true);
         setMemberCount(prev => prev + 1);
@@ -125,7 +144,11 @@ export default function SpheresRegistrationPage() {
         // This helps prevent WebSocket errors on the next page
         await new Promise(resolve => setTimeout(resolve, 500));
         
+        // Important: Redirect to dashboard directly if confirmed to avoid them getting stuck on the confirmation screen
+        router.push("/mon-reseau-local/dashboard");
+        
     } catch (error: any) {
+        console.error("Registration caught error:", error);
         toast.error(error.message || "Erreur lors de l'inscription");
     } finally {
         setIsLoading(false);
