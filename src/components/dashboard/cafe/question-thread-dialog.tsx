@@ -44,7 +44,7 @@ export function QuestionThreadDialog({
 
   const handleReply = async () => {
     const replyContent = String(reply || "");
-    if (!replyContent.trim() || !questionId) return;
+    if (!replyContent || !questionId) return;
     
     setIsSending(true);
     try {
