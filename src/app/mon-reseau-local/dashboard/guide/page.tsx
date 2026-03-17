@@ -145,7 +145,12 @@ export default function MarketPage() {
             <AddOpportunityDialog 
                 forceMarketMode={true} 
                 onSuccess={handleAddSuccess}
+                buttonText="Je propose"
             />
+            <Button variant="outline" className="border-[#2E130C]/20 text-[#2E130C] font-bold" onClick={() => window.location.href = '/mon-reseau-local/dashboard/offers'}>
+                <Search className="w-4 h-4 mr-2" />
+                Je recherche
+            </Button>
         </div>
       </div>
 

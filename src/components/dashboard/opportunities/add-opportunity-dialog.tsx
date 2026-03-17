@@ -9,11 +9,13 @@ import { Plus, Gift } from "lucide-react";
 export function AddOpportunityDialog({ 
     preSelectedUser,
     forceMarketMode = false,
-    onSuccess
+    onSuccess,
+    buttonText = "Ajouter une opportunité"
 }: { 
     preSelectedUser?: { id: string, name: string, job: string, avatar?: string },
     forceMarketMode?: boolean,
-    onSuccess?: () => void
+    onSuccess?: () => void,
+    buttonText?: string
 }) {
     const [isOpen, setIsOpen] = useState(false);
     const [hasCompletedDailyCall, setHasCompletedDailyCall] = useState(false);
@@ -41,7 +43,7 @@ export function AddOpportunityDialog({
             <DialogTrigger asChild>
                 <Button className="bg-[#2E130C] text-[#F0EAD6] hover:bg-[#2E130C]/90 font-bold border border-[#2E130C]/20 shadow-sm">
                     <Plus className="w-4 h-4 mr-2" />
-                    Ajouter une opportunité
+                    {buttonText}
                 </Button>
             </DialogTrigger>
             <DialogContent className="bg-[#F0EAD6] border-[#2E130C]/10 text-[#2E130C] sm:max-w-md max-h-[90vh] overflow-y-auto shadow-2xl">
