@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { ChatBox } from "@/components/chat/chat-box";
 import { getConversation } from "@/lib/actions/network-messages";
 import { Loader2 } from "lucide-react";
-import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
+import { VisuallyHidden } from "@/components/ui/visually-hidden";
 
 interface Connection {
   id: string;

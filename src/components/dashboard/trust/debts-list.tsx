@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogTrigger, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
+import { VisuallyHidden } from "@/components/ui/visually-hidden";
 import { OpportunityForm } from "@/components/dashboard/opportunities/opportunity-form";
 import { CheckCircle2 } from "lucide-react";
 

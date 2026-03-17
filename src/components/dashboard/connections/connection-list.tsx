@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogTrigger, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { OpportunityForm } from "@/components/dashboard/opportunities/opportunity-form";
-import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
+import { VisuallyHidden } from "@/components/ui/visually-hidden";
 import { ChatDialog } from "./chat-dialog";
 import { ConnectionHistoryDialog } from "./connection-history-dialog";
 import { format } from "date-fns";
