@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { Users, ShoppingBag, Target, ArrowRight, MapPin, Search, Trash2, X, Loader2, AlertCircle, HeartHandshake } from "lucide-react";
+import { ShoppingBag, MapPin, Search, Trash2, Loader2, AlertCircle, HeartHandshake } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { OPPORTUNITY_TYPES } from "@/constants/opportunities";
