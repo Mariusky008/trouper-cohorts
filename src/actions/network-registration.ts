@@ -52,8 +52,14 @@ export async function registerNetworkUser(formData: FormData) {
     }
   });
 
-  if (authError) return { error: authError.message };
-  if (!authData.user) return { error: "Erreur création compte." };
+  if (authError) {
+      console.error("Auth creation error:", authError);
+      return { error: authError.message };
+  }
+  if (!authData.user) {
+      console.error("No user returned from Auth creation");
+      return { error: "Erreur création compte (Utilisateur non retourné)." };
+  }
 
   const userId = authData.user.id;
 

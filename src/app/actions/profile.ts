@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { revalidatePath } from "next/cache";
 
 export async function updateProfile(formData: FormData) {
@@ -82,7 +83,9 @@ export async function updateProfile(formData: FormData) {
       updates.avatar_url = avatarUrl;
   }
 
-  const { error } = await supabase
+  // Use admin client to bypass RLS issues for update
+  const supabaseAdmin = createAdminClient();
+  const { error } = await supabaseAdmin
     .from("profiles")
     .update(updates)
     .eq("id", user.id);

@@ -213,7 +213,9 @@ export async function updateUserProfile(data: { bio?: string; trade?: string; ci
 
   if (!user) throw new Error("Unauthorized");
 
-  const { error } = await supabase
+  // Use admin client to bypass RLS
+  const adminSupabase = createAdminClient();
+  const { error } = await adminSupabase
     .from("profiles")
     .update(data)
     .eq("id", user.id);
