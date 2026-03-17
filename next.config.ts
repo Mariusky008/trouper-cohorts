@@ -30,6 +30,30 @@ const config: NextConfig = {
   // turbopack: { // Turbopack does not support webpack plugins yet (like next-pwa)
   //   root: __dirname,
   // },
+  async redirects() {
+    return [
+      {
+        source: '/emploi',
+        destination: '/',
+        permanent: false,
+      },
+      {
+        source: '/mon-reseau-local/connexion',
+        destination: '/',
+        permanent: false,
+      },
+      {
+        source: '/connexion',
+        destination: '/',
+        permanent: false,
+      },
+      {
+        source: '/login',
+        destination: '/',
+        permanent: false,
+      }
+    ]
+  },
 };
 
 // export default config;
