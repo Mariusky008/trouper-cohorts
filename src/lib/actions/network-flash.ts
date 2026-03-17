@@ -178,10 +178,10 @@ export async function createFlashQuestion(content: string, city: string) {
             
         if (adminError) {
             console.error("Admin Error creating flash question:", adminError);
-            return { error: "Erreur lors de la publication." };
+            return { error: "Erreur (Admin): " + adminError.message };
         }
     } else {
-        return { error: "Erreur lors de la publication." };
+        return { error: "Erreur: " + error.message };
     }
   }
 
@@ -219,10 +219,10 @@ export async function createFlashAnswer(questionId: string, content: string) {
             
         if (adminError) {
              console.error("Admin Error creating flash answer:", adminError);
-             return { error: "Erreur lors de la réponse." };
+             return { error: "Erreur (Admin): " + adminError.message };
         }
     } else {
-        return { error: "Erreur lors de la réponse." };
+        return { error: "Erreur: " + error.message };
     }
   }
 
