@@ -20,11 +20,14 @@ import { Plus, Loader2 } from "lucide-react";
 
 export function NewQuestionDialog({ city }: { city: string }) {
   const [open, setOpen] = useState(false);
-  const [content, setContent] = useState("");
+  const [content, setContent] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async () => {
-    if (!content?.trim()) return;
+    if (!content) return;
+    if (typeof content !== 'string') return;
+    if (!content.trim()) return;
+    
     setIsSubmitting(true);
     try {
       const res = await createFlashQuestion(content, city);
@@ -69,7 +72,7 @@ export function NewQuestionDialog({ city }: { city: string }) {
           </div>
         </div>
         <DialogFooter>
-          <Button onClick={handleSubmit} disabled={!content?.trim() || isSubmitting} className="w-full bg-orange-600 hover:bg-orange-700 font-bold">
+          <Button onClick={handleSubmit} disabled={!content || !content.trim() || isSubmitting} className="w-full bg-orange-600 hover:bg-orange-700 font-bold">
             {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : "Publier"}
           </Button>
         </DialogFooter>
