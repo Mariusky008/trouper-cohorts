@@ -3,7 +3,9 @@ import { getDailyMatches } from "@/lib/actions/network-match";
 import { getTrustScore } from "@/lib/actions/network-trust";
 import { getNetworkSettings } from "@/lib/actions/network-settings";
 import { getPotentialOpportunitiesCount } from "@/lib/actions/network-opportunities";
+import { getFlashQuestions } from "@/lib/actions/network-flash"; // Import flash questions
 import { DailyMatchCard } from "@/components/dashboard/daily-match-card";
+import { CafeWidget } from "@/components/dashboard/cafe-widget"; // Import widget
 import { PlanningDialog } from "@/components/dashboard/planning-dialog";
 import { ReputationDialog } from "@/components/dashboard/reputation-dialog";
 import { Sparkles, Users, Calendar, Target, ShieldCheck, Zap, Percent, ArrowRight } from "lucide-react";
@@ -39,6 +41,17 @@ export default async function DashboardHome() {
     console.error(e);
   }
 
+  // 4. FLASH CAFE (Fetch after profile is loaded)
+  let latestQuestion = null;
+  if (currentUserProfile?.city) {
+      try {
+          const questions = await getFlashQuestions(currentUserProfile.city);
+          if (questions.length > 0) latestQuestion = questions[0];
+      } catch (e) {
+          console.error("Failed to load cafe widget:", e);
+      }
+  }
+
   return (
     <div className="space-y-8 pb-24 relative max-w-4xl mx-auto">
       
@@ -63,7 +76,10 @@ export default async function DashboardHome() {
          <DailyMatchCard matches={matches} userStreak={userStreak} userId={user?.id} currentUserProfile={currentUserProfile} />
       </div>
 
-      {/* 3. QUICK ACTIONS GRID (Planning & Reputation) */}
+      {/* 3. CAFE WIDGET (NEW) */}
+      <CafeWidget city={currentUserProfile?.city || "Mon Réseau"} latestQuestion={latestQuestion} />
+
+      {/* 4. QUICK ACTIONS GRID (Planning & Reputation) */}
       <div className="grid grid-cols-2 gap-4 md:gap-6 mt-8">
          <PlanningDialog settings={settings} potentialCount={potentialCount} />
          <ReputationDialog scoreData={trustScore} />

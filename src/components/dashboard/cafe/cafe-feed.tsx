@@ -1,0 +1,101 @@
+"use client";
+
+import { useState } from "react";
+import { FlashQuestion } from "@/lib/actions/network-flash";
+import { NewQuestionDialog } from "./new-question-dialog";
+import { QuestionThreadDialog } from "./question-thread-dialog";
+import { Card, CardContent } from "@/components/ui/card";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { MessageSquare, ThumbsUp, MapPin } from "lucide-react";
+import { formatDistanceToNow } from "date-fns";
+import { fr } from "date-fns/locale";
+
+export function CafeFeed({ initialQuestions, city, currentUser }: { initialQuestions: FlashQuestion[], city: string, currentUser: any }) {
+  const [selectedQuestion, setSelectedQuestion] = useState<string | null>(null);
+
+  return (
+    <div>
+      <div className="flex justify-between items-center mb-6 px-1">
+        <h2 className="font-bold text-stone-500 uppercase text-xs tracking-widest">
+            Discussions récentes ({initialQuestions.length})
+        </h2>
+        <NewQuestionDialog city={city} />
+      </div>
+
+      <div className="space-y-4">
+        {initialQuestions.length === 0 ? (
+            <div className="text-center py-12 bg-white rounded-3xl border border-stone-200 border-dashed">
+                <div className="h-16 w-16 bg-stone-100 rounded-full flex items-center justify-center mx-auto mb-4 text-stone-400">
+                    <MessageSquare className="h-8 w-8" />
+                </div>
+                <h3 className="text-lg font-bold text-[#2E130C] mb-2">Aucune discussion</h3>
+                <p className="text-stone-500 max-w-xs mx-auto mb-6">
+                    Soyez le premier à lancer une conversation dans le Café de {city} !
+                </p>
+                <NewQuestionDialog city={city} />
+            </div>
+        ) : (
+            initialQuestions.map((q) => (
+            <Card 
+                key={q.id} 
+                className="overflow-hidden hover:shadow-md transition-all cursor-pointer border-stone-200 group"
+                onClick={() => setSelectedQuestion(q.id)}
+            >
+                <CardContent className="p-5">
+                <div className="flex gap-4 items-start">
+                    <Avatar className="h-12 w-12 border-2 border-stone-100 group-hover:border-orange-200 transition-colors">
+                        <AvatarImage src={q.author.avatar_url || undefined} />
+                        <AvatarFallback className="bg-stone-100 text-stone-500 font-bold group-hover:bg-orange-100 group-hover:text-orange-600">
+                            {q.author.display_name?.[0]}
+                        </AvatarFallback>
+                    </Avatar>
+                    
+                    <div className="flex-1 min-w-0 space-y-2">
+                        <div className="flex justify-between items-start">
+                            <div>
+                                <h3 className="font-bold text-[#2E130C] text-base group-hover:text-orange-700 transition-colors">
+                                    {q.author.display_name}
+                                </h3>
+                                <p className="text-xs text-stone-400 font-medium flex items-center gap-1">
+                                    {q.author.trade || "Membre"} • {formatDistanceToNow(new Date(q.created_at), { addSuffix: true, locale: fr })}
+                                </p>
+                            </div>
+                            {q.city && (
+                                <span className="text-[10px] font-bold text-stone-400 bg-stone-100 px-2 py-0.5 rounded-full flex items-center gap-1">
+                                    <MapPin className="w-3 h-3" /> {q.city}
+                                </span>
+                            )}
+                        </div>
+
+                        <p className="text-stone-700 text-sm leading-relaxed font-medium">
+                            {q.content}
+                        </p>
+
+                        <div className="flex items-center gap-4 pt-2">
+                            <Button variant="ghost" size="sm" className="h-8 px-2 text-stone-500 hover:text-orange-600 hover:bg-orange-50 gap-1.5 -ml-2 rounded-lg transition-colors">
+                                <MessageSquare className="w-4 h-4" />
+                                <span className="font-bold text-xs">{q.answers_count > 0 ? `${q.answers_count} réponses` : "Répondre"}</span>
+                            </Button>
+                            {/* Future: Like button */}
+                            {/* <Button variant="ghost" size="sm" className="h-8 px-2 text-stone-400 hover:text-pink-600 hover:bg-pink-50 gap-1.5 rounded-lg transition-colors">
+                                <ThumbsUp className="w-4 h-4" />
+                                <span className="font-bold text-xs">J'aime</span>
+                            </Button> */}
+                        </div>
+                    </div>
+                </div>
+                </CardContent>
+            </Card>
+            ))
+        )}
+      </div>
+
+      <QuestionThreadDialog 
+        questionId={selectedQuestion} 
+        open={!!selectedQuestion} 
+        onOpenChange={(open) => !open && setSelectedQuestion(null)} 
+      />
+    </div>
+  );
+}
