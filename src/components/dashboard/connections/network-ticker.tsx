@@ -8,8 +8,15 @@ import { Gift, Handshake, Activity } from "lucide-react";
 export function NetworkTicker({ activities }: { activities: NetworkActivity[] }) {
   if (!activities || activities.length === 0) return null;
 
-  // Duplicate activities to create a seamless infinite loop
-  const duplicatedActivities = [...activities, ...activities, ...activities];
+  // Ensure we have enough items for a smooth scrolling effect
+  // If there are too few unique items, we duplicate them more times so the screen isn't empty, 
+  // but if we have many unique items, we just need to duplicate them enough to wrap around once.
+  let duplicatedActivities = [...activities];
+  while (duplicatedActivities.length < 15) {
+      duplicatedActivities = [...duplicatedActivities, ...activities];
+  }
+  // Add one more full set for the seamless CSS transition
+  duplicatedActivities = [...duplicatedActivities, ...activities];
 
   return (
     <div className="w-full mb-12">

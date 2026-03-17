@@ -29,12 +29,12 @@ export async function getNetworkActivity(): Promise<NetworkActivity[]> {
   const activities: NetworkActivity[] = [];
   const userIds = new Set<string>();
 
-  // 1. Recent Opportunities (Last 5)
+  // 1. Recent Opportunities (Fetch more to ensure we have variety after deduplication)
   const { data: opportunities } = await supabase
     .from("network_opportunities")
     .select("id, created_at, giver_id, receiver_id")
     .order('created_at', { ascending: false })
-    .limit(5);
+    .limit(20);
 
   if (opportunities) {
     opportunities.forEach((op: any) => {
@@ -43,13 +43,13 @@ export async function getNetworkActivity(): Promise<NetworkActivity[]> {
     });
   }
 
-  // 2. Recent Validated Calls (Met) (Last 5)
+  // 2. Recent Validated Calls (Met)
   const { data: matches } = await supabase
     .from("network_matches")
     .select("id, date, status, user1_id, user2_id")
     .eq('status', 'met')
     .order('date', { ascending: false })
-    .limit(5);
+    .limit(20);
 
   if (matches) {
     matches.forEach((m: any) => {
