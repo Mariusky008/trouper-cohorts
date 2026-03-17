@@ -24,7 +24,7 @@ export function NewQuestionDialog({ city }: { city: string }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async () => {
-    if (!content.trim()) return;
+    if (!content?.trim()) return;
     setIsSubmitting(true);
     try {
       const res = await createFlashQuestion(content, city);
@@ -53,7 +53,7 @@ export function NewQuestionDialog({ city }: { city: string }) {
         <DialogHeader>
           <DialogTitle>Poser une question au Café</DialogTitle>
           <DialogDescription>
-            Votre message sera visible par tous les membres de {city}. Soyez précis pour avoir de l'aide !
+            Votre message sera visible par tous les membres de {city}. Soyez précis pour avoir de l&apos;aide !
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
@@ -69,7 +69,7 @@ export function NewQuestionDialog({ city }: { city: string }) {
           </div>
         </div>
         <DialogFooter>
-          <Button onClick={handleSubmit} disabled={!content.trim() || isSubmitting} className="w-full bg-orange-600 hover:bg-orange-700 font-bold">
+          <Button onClick={handleSubmit} disabled={!content?.trim() || isSubmitting} className="w-full bg-orange-600 hover:bg-orange-700 font-bold">
             {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : "Publier"}
           </Button>
         </DialogFooter>

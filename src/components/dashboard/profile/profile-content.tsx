@@ -66,6 +66,7 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
     social_network_followers: user.give_profile?.social_network?.followers || "0-1000",
 
     // Receive Profile (Recevoir)
+    exact_city: user.receive_profile?.exact_city || user.city || "",
     target_companies: user.receive_profile?.target_companies?.join(", ") || "",
     prescribers: user.receive_profile?.prescribers?.join(", ") || "",
     target_clubs: user.receive_profile?.target_clubs?.join(", ") || "",
@@ -425,7 +426,7 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
                 {/* Case: Empty and NOT opted out */}
                 {!formData.linkedin && !formData.instagram && !formData.facebook && !formData.website && (
                     <div className="flex items-center gap-2 text-stone-400 bg-stone-50 px-4 py-2 rounded-xl border border-dashed border-stone-200 w-full hover:bg-stone-100 transition-colors cursor-pointer" onClick={() => setIsEditing(true)}>
-                        <span className="text-sm italic font-medium">Vous n'avez pas encore ajouté de réseaux sociaux.</span>
+                        <span className="text-sm italic font-medium">Vous n&apos;avez pas encore ajouté de réseaux sociaux.</span>
                         {!isReadOnly && (
                             <span className="text-[#B20B13] font-bold text-sm underline decoration-[#B20B13]/30 underline-offset-4 ml-2">
                                 Ajouter maintenant
@@ -458,7 +459,7 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
                        </h4>
                        <ul className="space-y-4">
                            <li className="text-sm">
-                               <span className="block text-emerald-600/60 font-bold text-xs mb-1">Secteurs d'influence</span>
+                               <span className="block text-emerald-600/60 font-bold text-xs mb-1">Secteurs d&apos;influence</span>
                                <span className="text-emerald-900 font-medium">{formData.influence_sectors || "Non renseigné"}</span>
                            </li>
                            <li className="text-sm">
@@ -489,11 +490,11 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
                                <span className="text-blue-900 font-medium">{formData.prescribers || "Non renseigné"}</span>
                            </li>
                            <li className="text-sm">
-                               <span className="block text-blue-600/60 font-bold text-xs mb-1 flex items-center gap-1"><Crown className="h-3 w-3" /> L'Infiltré (Clubs visés)</span>
+                               <span className="block text-blue-600/60 font-bold text-xs mb-1 flex items-center gap-1"><Crown className="h-3 w-3" /> L&apos;Infiltré (Clubs visés)</span>
                                <span className="text-blue-900 font-medium">{formData.target_clubs || "Non renseigné"}</span>
                            </li>
                            <li className="text-sm">
-                               <span className="block text-blue-600/60 font-bold text-xs mb-1 flex items-center gap-1"><Megaphone className="h-3 w-3" /> L'Amplificateur (Comm)</span>
+                               <span className="block text-blue-600/60 font-bold text-xs mb-1 flex items-center gap-1"><Megaphone className="h-3 w-3" /> L&apos;Amplificateur (Comm)</span>
                                <span className="text-blue-900 font-medium">{formData.comm_goal || "Non renseigné"}</span>
                            </li>
                        </ul>
@@ -613,7 +614,7 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
 
                     <div className="space-y-4">
                         <div className="space-y-2">
-                            <Label>Nom d'affichage {formErrors.display_name && <span className="text-red-500">*</span>}</Label>
+                            <Label>Nom d&apos;affichage {formErrors.display_name && <span className="text-red-500">*</span>}</Label>
                             <Input 
                                 value={formData.display_name} 
                                 onChange={e => {
@@ -747,8 +748,8 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
                         <div className="space-y-4">
                             <div className="space-y-2">
                                 <Label className="text-emerald-800 font-bold">
-                                    Secteurs d'influence {formErrors.influence_sectors && <span className="text-red-500">*</span>}
-                                </Label>
+                                        Secteurs d&apos;influence {formErrors.influence_sectors && <span className="text-red-500">*</span>}
+                                    </Label>
                                 <Input 
                                     value={formData.influence_sectors} 
                                     onChange={e => {
@@ -815,7 +816,7 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
                             </div>
                             <div>
                                 <h3 className="font-bold text-slate-800 text-lg leading-tight">Vos Besoins</h3>
-                                <p className="text-xs text-slate-500 font-medium">Pour que l'algorithme travaille pour vous.</p>
+                                <p className="text-xs text-slate-500 font-medium">Pour que l&apos;algorithme travaille pour vous.</p>
                             </div>
                         </div>
 
@@ -833,7 +834,7 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
                                     placeholder="Ex: DRH de Cdiscount, Mairie de Bordeaux..." 
                                     className={`bg-white ${formErrors.target_companies ? "border-red-300" : "border-blue-200"}`}
                                 />
-                                <p className="text-[10px] text-blue-600/70 italic">"Donne-moi le nom de 1,2,3 personnes ou entreprises avec qui tu rêves de prendre un café ce mois-ci."</p>
+                                <p className="text-[10px] text-blue-600/70 italic">&quot;Donne-moi le nom de 1,2,3 personnes ou entreprises avec qui tu rêves de prendre un café ce mois-ci.&quot;</p>
                             </div>
 
                             <div className="space-y-2">
@@ -849,29 +850,29 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
                                     placeholder="Ex: Agents immo, Experts comptables..." 
                                     className={`bg-white ${formErrors.prescribers ? "border-red-300" : "border-blue-200"}`}
                                 />
-                                <p className="text-[10px] text-blue-600/70 italic">"Quels sont les 3 métiers qui, s'ils vous recommandaient, feraient exploser votre chiffre d'affaires ?"</p>
+                                <p className="text-[10px] text-blue-600/70 italic">&quot;Quels sont les 3 métiers qui, s&apos;ils vous recommandaient, feraient exploser votre chiffre d&apos;affaires ?&quot;</p>
                             </div>
 
                             <div className="space-y-2">
-                                <Label className="text-blue-800 font-bold">L'Infiltré (Réseaux visés)</Label>
+                                <Label className="text-blue-800 font-bold">L&apos;Infiltré (Réseaux visés)</Label>
                                 <Input 
                                     value={formData.target_clubs} 
                                     onChange={e => setFormData({...formData, target_clubs: e.target.value})}
                                     placeholder="Ex: Club Med, Rotary..." 
                                     className="bg-white border-blue-200"
                                 />
-                                <p className="text-[10px] text-blue-600/70 italic">"Quel événement, groupe WhatsApp ou club privé aimerais-tu rejoindre ?"</p>
+                                <p className="text-[10px] text-blue-600/70 italic">&quot;Quel événement, groupe WhatsApp ou club privé aimerais-tu rejoindre ?&quot;</p>
                             </div>
                             
                             <div className="space-y-2">
-                                <Label className="text-blue-800 font-bold">L'Amplificateur (Comm)</Label>
+                                <Label className="text-blue-800 font-bold">L&apos;Amplificateur (Comm)</Label>
                                 <Input 
                                     value={formData.comm_goal} 
                                     onChange={e => setFormData({...formData, comm_goal: e.target.value})}
                                     placeholder="Ex: Lien vers ton post..." 
                                     className="bg-white border-blue-200"
                                 />
-                                <p className="text-[10px] text-blue-600/70 italic">"Donne-moi le lien de ton post LinkedIn ou Instagram le plus important de la semaine."</p>
+                                <p className="text-[10px] text-blue-600/70 italic">&quot;Donne-moi le lien de ton post LinkedIn ou Instagram le plus important de la semaine.&quot;</p>
                             </div>
 
                             <div className="space-y-2">
@@ -882,7 +883,7 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
                                     placeholder="Ex: Avis Google, LinkedIn..." 
                                     className="bg-white border-blue-200"
                                 />
-                                <p className="text-[10px] text-blue-600/70 italic">"De quel type de témoignage ou recommandation publique as-tu besoin pour rassurer tes futurs clients ?"</p>
+                                <p className="text-[10px] text-blue-600/70 italic">&quot;De quel type de témoignage ou recommandation publique as-tu besoin pour rassurer tes futurs clients ?&quot;</p>
                             </div>
                         </div>
                     </div>
@@ -959,7 +960,7 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
                             <p className="text-xs text-amber-700/80 mt-1 leading-relaxed">
                                 Votre offre est un privilège pour votre réseau proche.
                                 <br/>
-                                <span className="font-bold mt-1 block">Règle d'or : -20% minimum par rapport au prix public.</span>
+                                <span className="font-bold mt-1 block">Règle d&apos;or : -20% minimum par rapport au prix public.</span>
                             </p>
                         </div>
                     </div>
@@ -986,7 +987,7 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
 
                 <div className={!formData.offer_active ? "opacity-50 pointer-events-none transition-opacity space-y-4" : "transition-opacity space-y-4"}>
                     <div className="space-y-2">
-                        <Label>Titre de l'offre {formErrors.offer_title && <span className="text-red-500">*</span>}</Label>
+                        <Label>Titre de l&apos;offre {formErrors.offer_title && <span className="text-red-500">*</span>}</Label>
                         <Input 
                             value={formData.offer_title} 
                             onChange={e => {
@@ -1048,9 +1049,9 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsOfferModalOpen(false)}>Annuler</Button>
             <Button onClick={handleSaveOffer} disabled={loading} className="bg-amber-600 text-white hover:bg-amber-500 font-bold">
-                {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                Enregistrer l'offre
-            </Button>
+                    {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                    Enregistrer l&apos;offre
+                </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
