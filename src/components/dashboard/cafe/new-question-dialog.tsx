@@ -24,13 +24,13 @@ export function NewQuestionDialog({ city }: { city: string }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async () => {
-    if (!content) return;
-    if (typeof content !== 'string') return;
-    if (!content.trim()) return;
+    // Basic validation
+    const messageContent = String(content || "");
+    if (!messageContent.trim()) return;
     
     setIsSubmitting(true);
     try {
-      const res = await createFlashQuestion(content, city);
+      const res = await createFlashQuestion(messageContent, city);
       if (res.error) {
         toast.error(res.error);
       } else {
@@ -72,7 +72,7 @@ export function NewQuestionDialog({ city }: { city: string }) {
           </div>
         </div>
         <DialogFooter>
-          <Button onClick={handleSubmit} disabled={!content || !content.trim() || isSubmitting} className="w-full bg-orange-600 hover:bg-orange-700 font-bold">
+          <Button onClick={handleSubmit} disabled={!content || isSubmitting} className="w-full bg-orange-600 hover:bg-orange-700 font-bold">
             {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : "Publier"}
           </Button>
         </DialogFooter>
