@@ -43,7 +43,7 @@ export function QuestionThreadDialog({
   }, [open, questionId]);
 
   const handleReply = async () => {
-    const replyContent = String(reply || "");
+    const replyContent = reply ? String(reply) : "";
     if (!replyContent || !questionId) return;
     
     setIsSending(true);

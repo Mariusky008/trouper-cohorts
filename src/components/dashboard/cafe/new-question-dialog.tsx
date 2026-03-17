@@ -25,8 +25,8 @@ export function NewQuestionDialog({ city }: { city: string }) {
 
   const handleSubmit = async () => {
     // Basic validation
-    const messageContent = String(content || "");
-    if (!messageContent || typeof messageContent !== 'string') return;
+    const messageContent = content ? String(content) : "";
+    if (!messageContent) return;
     
     setIsSubmitting(true);
     try {
