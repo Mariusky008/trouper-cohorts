@@ -30,7 +30,7 @@ export function NewQuestionDialog({ city }: { city: string }) {
     
     setIsSubmitting(true);
     try {
-      const res = await createFlashQuestion(messageContent, city);
+      const res = await createFlashQuestion(messageContent, String(city || ""));
       if (res.error) {
         toast.error(res.error);
       } else {

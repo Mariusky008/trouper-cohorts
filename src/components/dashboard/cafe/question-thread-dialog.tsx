@@ -43,10 +43,12 @@ export function QuestionThreadDialog({
   }, [open, questionId]);
 
   const handleReply = async () => {
-    if (!reply?.trim() || !questionId) return;
+    const replyContent = String(reply || "");
+    if (!replyContent.trim() || !questionId) return;
+    
     setIsSending(true);
     try {
-        const res = await createFlashAnswer(questionId, reply);
+        const res = await createFlashAnswer(questionId, replyContent);
         if (res.error) {
             toast.error(res.error);
         } else {
@@ -142,7 +144,7 @@ export function QuestionThreadDialog({
                 size="icon" 
                 className="h-[60px] w-[60px] bg-orange-600 hover:bg-orange-700 shrink-0 rounded-xl"
                 onClick={handleReply}
-                disabled={!reply?.trim() || isSending}
+                disabled={!reply || isSending}
             >
                 {isSending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
             </Button>
