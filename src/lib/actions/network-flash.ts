@@ -160,7 +160,7 @@ export async function createFlashQuestion(content: string, city: string) {
     .insert({
       user_id: user.id,
       city: city, // Should be passed from the client or verified against user profile
-      content: (content || "").trim()
+      content: String(content || "").trim()
     });
 
   if (error) {
@@ -173,7 +173,7 @@ export async function createFlashQuestion(content: string, city: string) {
             .insert({
                 user_id: user.id,
                 city: city,
-                content: (content || "").trim()
+                content: String(content || "").trim()
             });
             
         if (adminError) {
@@ -201,7 +201,7 @@ export async function createFlashAnswer(questionId: string, content: string) {
     .insert({
       user_id: user.id,
       question_id: questionId,
-      content: (content || "").trim()
+      content: String(content || "").trim()
     });
 
   if (error) {
@@ -214,7 +214,7 @@ export async function createFlashAnswer(questionId: string, content: string) {
             .insert({
                 user_id: user.id,
                 question_id: questionId,
-                content: (content || "").trim()
+                content: String(content || "").trim()
             });
             
         if (adminError) {
