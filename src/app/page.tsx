@@ -1162,7 +1162,7 @@ export default function HomePage() {
                   </ul>
                   
                   <Link href="/inscription/spheres">
-                    <Button className="w-full h-16 bg-[#B20B13] text-[#E2D9BC] hover:bg-[#7A0000] font-titan rounded-xl text-xl border-2 border-[#2E130C] shadow-[4px_4px_0px_0px_#2E130C] hover:translate-y-[2px]">
+                    <Button className="w-full h-auto py-4 md:h-16 bg-[#B20B13] text-[#E2D9BC] hover:bg-[#7A0000] font-titan rounded-xl text-lg md:text-xl border-2 border-[#2E130C] shadow-[4px_4px_0px_0px_#2E130C] hover:translate-y-[2px] whitespace-normal text-center">
                       Débloquer mon opportunité maintenant
                     </Button>
                   </Link>
