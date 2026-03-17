@@ -36,7 +36,7 @@ export default async function CafePage() {
       </div>
 
       {/* FEED */}
-      <CafeFeed initialQuestions={questions} city={city} currentUser={userProfile} />
+      <CafeFeed initialQuestions={questions} city={city} />
     </div>
   );
 }
