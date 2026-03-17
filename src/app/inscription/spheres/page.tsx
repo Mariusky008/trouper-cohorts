@@ -368,40 +368,40 @@ export default function SpheresRegistrationPage() {
 
       {/* MODAL: RESERVATION TUNNEL */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="bg-[#E2D9BC] border-4 border-[#2E130C] text-[#2E130C] sm:max-w-md rounded-[2.5rem] p-0 overflow-hidden shadow-[12px_12px_0px_0px_#2E130C]">
-          <div className="p-8 pb-0">
-            <DialogHeader className="space-y-4">
-                <div className="w-16 h-16 rounded-2xl bg-[#B20B13] border-4 border-[#2E130C] flex items-center justify-center mx-auto mb-2 shadow-[4px_4px_0px_0px_#2E130C] transform rotate-3">
-                    <Rocket className="w-8 h-8 text-[#E2D9BC] animate-pulse" />
+        <DialogContent className="bg-[#E2D9BC] border-4 border-[#2E130C] text-[#2E130C] w-[95vw] sm:max-w-md rounded-[2rem] md:rounded-[2.5rem] p-0 overflow-hidden shadow-[8px_8px_0px_0px_#2E130C] md:shadow-[12px_12px_0px_0px_#2E130C] max-h-[90vh] flex flex-col">
+          <div className="p-5 md:p-8 overflow-y-auto">
+            <DialogHeader className="space-y-3 md:space-y-4">
+                <div className="w-12 h-12 md:w-16 md:h-16 rounded-2xl bg-[#B20B13] border-4 border-[#2E130C] flex items-center justify-center mx-auto mb-2 shadow-[4px_4px_0px_0px_#2E130C] transform rotate-3">
+                    <Rocket className="w-6 h-6 md:w-8 md:h-8 text-[#E2D9BC] animate-pulse" />
                 </div>
-                <DialogTitle className="text-3xl font-titan text-center leading-none">
+                <DialogTitle className="text-2xl md:text-3xl font-titan text-center leading-none">
                     Verrouillage : <br />
-                    <span className="text-[#B20B13] uppercase text-xl">{selectedSlot}</span>
+                    <span className="text-[#B20B13] uppercase text-lg md:text-xl">{selectedSlot}</span>
                 </DialogTitle>
-                <DialogDescription className="text-center text-[#2E130C]/70 font-bold font-poppins">
+                <DialogDescription className="text-center text-[#2E130C]/70 font-bold font-poppins text-sm md:text-base">
                     Veuillez valider votre profil pour sécuriser votre exclusivité métier dans la sphère {SPHERES.find(s => s.id === activeSphere)?.name}.
                 </DialogDescription>
             </DialogHeader>
 
-            <div className="space-y-4 py-6 font-poppins">
+            <div className="space-y-4 py-4 md:py-6 font-poppins">
                 {/* Row 1: Prénom Nom & Ville */}
-                <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                    <Label htmlFor="fullname" className="text-xs font-black uppercase text-[#2E130C]/60 ml-1">Prénom Nom</Label>
+                <div className="grid grid-cols-2 gap-3 md:gap-4">
+                <div className="space-y-1 md:space-y-2">
+                    <Label htmlFor="fullname" className="text-[10px] md:text-xs font-black uppercase text-[#2E130C]/60 ml-1">Prénom Nom</Label>
                     <Input 
                     id="fullname" 
                     placeholder="Jean Dupont" 
-                    className="bg-white border-2 border-[#2E130C] h-12 rounded-xl focus-visible:ring-0 focus-visible:border-[#B20B13] placeholder:text-[#2E130C]/30 font-bold" 
+                    className="bg-white border-2 border-[#2E130C] h-10 md:h-12 rounded-xl focus-visible:ring-0 focus-visible:border-[#B20B13] placeholder:text-[#2E130C]/30 font-bold text-sm md:text-base" 
                     value={formData.fullName}
                     onChange={(e) => setFormData({...formData, fullName: e.target.value})}
                     />
                 </div>
-                <div className="space-y-2">
-                    <Label htmlFor="city" className="text-xs font-black uppercase text-[#2E130C]/60 ml-1">Ville</Label>
+                <div className="space-y-1 md:space-y-2">
+                    <Label htmlFor="city" className="text-[10px] md:text-xs font-black uppercase text-[#2E130C]/60 ml-1">Ville</Label>
                     <Input 
                     id="city" 
                     placeholder="Paris" 
-                    className="bg-white border-2 border-[#2E130C] h-12 rounded-xl focus-visible:ring-0 focus-visible:border-[#B20B13] placeholder:text-[#2E130C]/30 font-bold" 
+                    className="bg-white border-2 border-[#2E130C] h-10 md:h-12 rounded-xl focus-visible:ring-0 focus-visible:border-[#B20B13] placeholder:text-[#2E130C]/30 font-bold text-sm md:text-base" 
                     value={formData.city}
                     onChange={(e) => setFormData({...formData, city: e.target.value})}
                     />
@@ -409,23 +409,23 @@ export default function SpheresRegistrationPage() {
                 </div>
 
                 {/* Row 2: Activité & Téléphone */}
-                <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                    <Label htmlFor="activity" className="text-xs font-black uppercase text-[#2E130C]/60 ml-1">Activité</Label>
+                <div className="grid grid-cols-2 gap-3 md:gap-4">
+                <div className="space-y-1 md:space-y-2">
+                    <Label htmlFor="activity" className="text-[10px] md:text-xs font-black uppercase text-[#2E130C]/60 ml-1">Activité</Label>
                     <Input 
                         id="activity" 
                         placeholder="Votre métier..." 
-                        className="bg-white border-2 border-[#2E130C] h-12 rounded-xl focus-visible:ring-0 focus-visible:border-[#B20B13] placeholder:text-[#2E130C]/30 font-bold" 
+                        className="bg-white border-2 border-[#2E130C] h-10 md:h-12 rounded-xl focus-visible:ring-0 focus-visible:border-[#B20B13] placeholder:text-[#2E130C]/30 font-bold text-sm md:text-base" 
                         value={formData.trade}
                         onChange={(e) => setFormData({...formData, trade: e.target.value})}
                     />
                 </div>
-                <div className="space-y-2">
-                    <Label htmlFor="phone" className="text-xs font-black uppercase text-[#2E130C]/60 ml-1">Téléphone</Label>
+                <div className="space-y-1 md:space-y-2">
+                    <Label htmlFor="phone" className="text-[10px] md:text-xs font-black uppercase text-[#2E130C]/60 ml-1">Téléphone</Label>
                     <Input 
                     id="phone" 
                     placeholder="06..." 
-                    className="bg-white border-2 border-[#2E130C] h-12 rounded-xl focus-visible:ring-0 focus-visible:border-[#B20B13] placeholder:text-[#2E130C]/30 font-bold" 
+                    className="bg-white border-2 border-[#2E130C] h-10 md:h-12 rounded-xl focus-visible:ring-0 focus-visible:border-[#B20B13] placeholder:text-[#2E130C]/30 font-bold text-sm md:text-base" 
                     value={formData.phone}
                     onChange={(e) => setFormData({...formData, phone: e.target.value})}
                     />
@@ -433,63 +433,63 @@ export default function SpheresRegistrationPage() {
                 </div>
                 
                 {/* Row 3: Email */}
-                <div className="space-y-2">
-                <Label htmlFor="email" className="text-xs font-black uppercase text-[#2E130C]/60 ml-1">Email</Label>
+                <div className="space-y-1 md:space-y-2">
+                <Label htmlFor="email" className="text-[10px] md:text-xs font-black uppercase text-[#2E130C]/60 ml-1">Email</Label>
                 <Input 
                     id="email" 
                     type="email" 
                     placeholder="vous@exemple.com" 
-                    className="bg-white border-2 border-[#2E130C] h-12 rounded-xl focus-visible:ring-0 focus-visible:border-[#B20B13] placeholder:text-[#2E130C]/30 font-bold" 
+                    className="bg-white border-2 border-[#2E130C] h-10 md:h-12 rounded-xl focus-visible:ring-0 focus-visible:border-[#B20B13] placeholder:text-[#2E130C]/30 font-bold text-sm md:text-base" 
                     value={formData.email}
                     onChange={(e) => setFormData({...formData, email: e.target.value})}
                 />
                 </div>
 
                 {/* Row 4: Mot de passe */}
-                <div className="space-y-2">
-                <Label htmlFor="password" className="text-xs font-black uppercase text-[#2E130C]/60 ml-1">Mot de passe</Label>
+                <div className="space-y-1 md:space-y-2">
+                <Label htmlFor="password" className="text-[10px] md:text-xs font-black uppercase text-[#2E130C]/60 ml-1">Mot de passe</Label>
                 <Input 
                     id="password" 
                     type="password" 
-                    className="bg-white border-2 border-[#2E130C] h-12 rounded-xl focus-visible:ring-0 focus-visible:border-[#B20B13] font-bold" 
+                    className="bg-white border-2 border-[#2E130C] h-10 md:h-12 rounded-xl focus-visible:ring-0 focus-visible:border-[#B20B13] font-bold text-sm md:text-base" 
                     value={formData.password}
                     onChange={(e) => setFormData({...formData, password: e.target.value})}
                 />
                 </div>
 
                 {/* Row 5: Quick Win Question */}
-                <div className="space-y-2 pt-4 border-t-2 border-[#2E130C]/10">
-                <Label className="text-xs font-black uppercase tracking-widest text-[#B20B13] ml-1 flex items-center gap-2">
+                <div className="space-y-1 md:space-y-2 pt-3 md:pt-4 border-t-2 border-[#2E130C]/10">
+                <Label className="text-[10px] md:text-xs font-black uppercase tracking-widest text-[#B20B13] ml-1 flex items-center gap-2">
                     <Zap className="w-3 h-3 fill-current" /> Question Quick-Win
                 </Label>
-                <p className="text-[10px] text-[#2E130C]/70 font-bold ml-1 leading-tight mb-2">
+                <p className="text-[9px] md:text-[10px] text-[#2E130C]/70 font-bold ml-1 leading-tight mb-1 md:mb-2">
                     Quel métier complémentaire vous manque-t-il aujourd'hui pour faire plus de business ?
                 </p>
                 <Input 
                     placeholder="Ex: Un notaire, un décorateur..." 
-                    className="bg-white border-2 border-[#2E130C] h-12 rounded-xl focus-visible:ring-0 focus-visible:border-[#B20B13] placeholder:text-[#2E130C]/30 font-bold" 
+                    className="bg-white border-2 border-[#2E130C] h-10 md:h-12 rounded-xl focus-visible:ring-0 focus-visible:border-[#B20B13] placeholder:text-[#2E130C]/30 font-bold text-sm md:text-base" 
                     value={formData.quickWin}
                     onChange={(e) => setFormData({...formData, quickWin: e.target.value})}
                 />
                 </div>
             </div>
-          </div>
 
-          <div className="p-8 pt-0">
-            <Button 
-              onClick={handleConfirm}
-              disabled={isLoading}
-              className="w-full h-16 bg-[#2E130C] text-[#E2D9BC] hover:bg-[#B20B13] text-lg font-titan rounded-xl border-4 border-[#2E130C] shadow-[4px_4px_0px_0px_#2E130C] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_#2E130C] transition-all"
-            >
-              {isLoading ? (
-                  <>
-                      <Loader2 className="w-5 h-5 animate-spin mr-2" />
-                      CRÉATION EN COURS...
-                  </>
-              ) : (
-                  "VALIDER MON EXCLUSIVITÉ"
-              )}
-            </Button>
+            <div className="pt-2">
+              <Button 
+                onClick={handleConfirm}
+                disabled={isLoading}
+                className="w-full h-14 md:h-16 bg-[#2E130C] text-[#E2D9BC] hover:bg-[#B20B13] text-base md:text-lg font-titan rounded-xl border-4 border-[#2E130C] shadow-[4px_4px_0px_0px_#2E130C] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_#2E130C] transition-all"
+              >
+                {isLoading ? (
+                    <>
+                        <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                        CRÉATION...
+                    </>
+                ) : (
+                    "VALIDER MON EXCLUSIVITÉ"
+                )}
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
