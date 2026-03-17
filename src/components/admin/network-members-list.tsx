@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Users, PhoneCall, Zap, MapPin, Briefcase } from "lucide-react";
+import { Users, PhoneCall, Zap, MapPin, Briefcase, AlertCircle, CheckCircle2 } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { DeleteUserButton } from "./delete-user-button";
@@ -48,6 +48,26 @@ export function NetworkMembersList({ members }: any) {
     }
   };
 
+  const checkProfileCompletion = (profile: any) => {
+      if (!profile) return { isComplete: false, missing: ["Profil entier"] };
+      
+      const missing = [];
+      if (!profile.display_name) missing.push("Nom");
+      if (!profile.trade) missing.push("Métier");
+      if (!profile.city) missing.push("Zone");
+      if (!profile.phone) missing.push("Téléphone");
+      if (!profile.bio) missing.push("Bio");
+      if (!profile.avatar_url) missing.push("Photo");
+      
+      const hasLink = !!profile.linkedin_url || !!profile.instagram_handle || !!profile.facebook_handle || !!profile.website_url;
+      if (!hasLink) missing.push("Lien réseau/site");
+
+      return {
+          isComplete: missing.length === 0,
+          missing
+      };
+  };
+
   return (
     <Card className="h-full border-slate-200 shadow-sm bg-white">
       <CardHeader className="bg-slate-50 border-b border-slate-100 pb-4">
@@ -85,7 +105,10 @@ export function NetworkMembersList({ members }: any) {
       <CardContent className="p-0">
         <div className="max-h-[800px] overflow-y-auto divide-y divide-slate-100">
           {filteredMembers.length > 0 ? (
-            filteredMembers.map((m: any) => (
+            filteredMembers.map((m: any) => {
+              const completion = checkProfileCompletion(m.profile);
+              
+              return (
               <div key={m.user_id} className="p-4 hover:bg-slate-50 transition-colors group">
                 <div className="flex items-start gap-4">
                   {/* Sphere Initial Badge */}
@@ -94,11 +117,29 @@ export function NetworkMembersList({ members }: any) {
                   </div>
                   
                   <div className="flex-1 min-w-0">
-                    {/* Header: Name & Sphere */}
+                    {/* Header: Name & Sphere & Status */}
                     <div className="flex justify-between items-start mb-1">
-                        <h3 className="font-bold text-slate-900 truncate text-lg pr-2">
-                            {m.profile?.display_name || "Utilisateur Inconnu"}
-                        </h3>
+                        <div className="flex flex-col">
+                            <div className="flex items-center gap-2">
+                                <h3 className="font-bold text-slate-900 truncate text-lg">
+                                    {m.profile?.display_name || "Utilisateur Inconnu"}
+                                </h3>
+                                {completion.isComplete ? (
+                                    <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200 gap-1 pr-2">
+                                        <CheckCircle2 className="w-3 h-3" /> Complet
+                                    </Badge>
+                                ) : (
+                                    <Badge variant="outline" className="bg-rose-50 text-rose-700 border-rose-200 gap-1 pr-2">
+                                        <AlertCircle className="w-3 h-3" /> Incomplet
+                                    </Badge>
+                                )}
+                            </div>
+                            {!completion.isComplete && (
+                                <span className="text-[10px] text-rose-600/80 font-medium mt-0.5">
+                                    Manque: {completion.missing.join(", ")}
+                                </span>
+                            )}
+                        </div>
                         {m.profile?.receive_profile?.sphere_interest && (
                             <Badge variant="outline" className={`capitalize text-[10px] h-5 px-2 border ${getSphereColor(m.profile?.receive_profile?.sphere_interest)} bg-opacity-20`}>
                                 {m.profile?.receive_profile?.sphere_interest}
@@ -151,7 +192,8 @@ export function NetworkMembersList({ members }: any) {
                   </div>
                 </div>
               </div>
-            ))
+              );
+            })
           ) : (
             <div className="flex flex-col items-center justify-center py-12 text-center text-slate-400">
               <Users className="h-12 w-12 text-slate-200 mb-2" />
