@@ -118,8 +118,22 @@ export async function getNetworkActivity(): Promise<NetworkActivity[]> {
       });
   }
 
-  // Sort by date desc and limit total
-  return activities
-    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-    .slice(0, 10);
+  // Sort by date desc
+  const sortedActivities = activities.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+  // Deduplicate pairs (e.g. if A and B matched, and A sent B an opportunity, only show the most recent interaction)
+  const uniquePairs = new Set<string>();
+  const deduplicatedActivities: NetworkActivity[] = [];
+
+  for (const act of sortedActivities) {
+      // Create a unique pair key regardless of order (A-B is same as B-A)
+      const pairKey = [act.actor1.name, act.actor2.name].sort().join('-');
+      if (!uniquePairs.has(pairKey)) {
+          uniquePairs.add(pairKey);
+          deduplicatedActivities.push(act);
+      }
+  }
+
+  // Ensure we always return an even number of items to make scrolling seamless if we duplicate it for the marquee
+  return deduplicatedActivities.slice(0, 10);
 }
