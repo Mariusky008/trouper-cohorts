@@ -63,7 +63,7 @@ export function DebtsAndCreditsView({ opportunities, debts, credits }: { opportu
                             </div>
                             <div>
                                 <h3 className="font-black text-xl text-white">Vos Crédits</h3>
-                                <p className="text-xs text-slate-400 font-bold uppercase tracking-wide">Ce qu'on vous doit</p>
+                                <p className="text-xs text-slate-400 font-bold uppercase tracking-wide">Ce qu&apos;on vous doit</p>
                             </div>
                         </div>
 
@@ -93,7 +93,7 @@ export function DebtsAndCreditsView({ opportunities, debts, credits }: { opportu
                                 <div className="h-12 w-12 bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-3 text-slate-500">
                                     <HeartHandshake className="h-6 w-6" />
                                 </div>
-                                <p className="text-slate-400 font-medium">Vous n'avez pas encore de "crédits" en attente.</p>
+                                <p className="text-slate-400 font-medium">Vous n&apos;avez pas encore de &quot;crédits&quot; en attente.</p>
                                 </div>
                             )}
                         </div>

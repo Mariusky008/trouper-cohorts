@@ -1,8 +1,7 @@
 import { AddOpportunityDialog } from "@/components/dashboard/opportunities/add-opportunity-dialog";
 import { OpportunitiesGuideDialog } from "@/components/dashboard/opportunities/opportunities-guide-dialog";
 import { getOpportunities } from "@/lib/actions/network-opportunities";
-import { OpportunityList } from "@/components/dashboard/opportunities/opportunity-list";
-import { Plus, Zap, HeartHandshake } from "lucide-react";
+import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getDebts, getCredits } from "@/lib/actions/network-trust";
 import { DebtsAndCreditsView } from "@/components/dashboard/trust/debts-and-credits-view";

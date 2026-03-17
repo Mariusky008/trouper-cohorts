@@ -10,12 +10,14 @@ export function AddOpportunityDialog({
     preSelectedUser,
     forceMarketMode = false,
     onSuccess,
-    buttonText = "Ajouter une opportunité"
+    buttonText = "Ajouter une opportunité",
+    children
 }: { 
     preSelectedUser?: { id: string, name: string, job: string, avatar?: string },
     forceMarketMode?: boolean,
     onSuccess?: () => void,
-    buttonText?: string
+    buttonText?: string,
+    children?: React.ReactNode
 }) {
     const [isOpen, setIsOpen] = useState(false);
     const [hasCompletedDailyCall, setHasCompletedDailyCall] = useState(false);
@@ -41,10 +43,12 @@ export function AddOpportunityDialog({
             if (open) checkEligibility();
         }}>
             <DialogTrigger asChild>
-                <Button className="bg-[#2E130C] text-[#F0EAD6] hover:bg-[#2E130C]/90 font-bold border border-[#2E130C]/20 shadow-sm">
-                    <Plus className="w-4 h-4 mr-2" />
-                    {buttonText}
-                </Button>
+                {children || (
+                    <Button className="bg-[#2E130C] text-[#F0EAD6] hover:bg-[#2E130C]/90 font-bold border border-[#2E130C]/20 shadow-sm">
+                        <Plus className="w-4 h-4 mr-2" />
+                        {buttonText}
+                    </Button>
+                )}
             </DialogTrigger>
             <DialogContent className="bg-[#F0EAD6] border-[#2E130C]/10 text-[#2E130C] sm:max-w-md max-h-[90vh] overflow-y-auto shadow-2xl">
                 <DialogHeader>
