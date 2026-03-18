@@ -33,7 +33,14 @@ export default async function DashboardHome() {
   try {
     matches = await getDailyMatches();
     trustScore = await getTrustScore();
-    settings = await getNetworkSettings();
+    
+    // Safety fallback for settings
+    try {
+        settings = await getNetworkSettings();
+    } catch (e) {
+        console.error("Failed to fetch settings:", e);
+    }
+    
     potentialCount = await getPotentialOpportunitiesCount();
     userStreak = await getUserStreak();
     currentUserProfile = await getUserProfile(user?.id);

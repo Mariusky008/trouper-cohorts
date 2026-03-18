@@ -61,7 +61,7 @@ export async function updateNetworkSettings(data: {
 
     if (error) {
       console.error("Supabase error updating settings:", error);
-      throw new Error(`Failed to update settings in Supabase: ${error.message}`);
+      return { success: false, error: error.message }; // Return error instead of throwing to prevent 500
     }
     
     // Using layout revalidation path to ensure all children components update properly
@@ -71,6 +71,6 @@ export async function updateNetworkSettings(data: {
     return { success: true };
   } catch (err: any) {
     console.error("Caught error in updateNetworkSettings:", err);
-    throw new Error(`Action failed: ${err.message}`);
+    return { success: false, error: err.message }; // Return error instead of throwing to prevent 500
   }
 }
