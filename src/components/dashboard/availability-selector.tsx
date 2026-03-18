@@ -78,7 +78,7 @@ export function AvailabilitySelector({ settings, potentialCount = 0, onSuccess }
     setLoading(true);
     try {
       // Save global network settings (days + default slots)
-      const settingsUpdate = await updateNetworkSettings({
+      await updateNetworkSettings({
           preferred_days: selectedDays,
           preferred_slots: selectedSlots,
           frequency_per_week: selectedDays.length
@@ -96,12 +96,10 @@ export function AvailabilitySelector({ settings, potentialCount = 0, onSuccess }
         description: "Vos paramètres de mise en relation sont à jour.",
       });
       
-      // Ensure onSuccess is called even if there's a slight delay
-      setTimeout(() => {
-          if (onSuccess) {
-              onSuccess();
-          }
-      }, 1000);
+      // Force onSuccess callback immediately without delay to ensure closing
+      if (onSuccess) {
+          onSuccess();
+      }
       
     } catch (error) {
       console.error("Save availability error:", error);
@@ -110,6 +108,8 @@ export function AvailabilitySelector({ settings, potentialCount = 0, onSuccess }
         description: "Impossible d'enregistrer vos disponibilités.",
         variant: "destructive",
       });
+      // Reset saved state on error so user can try again
+      setIsAvailabilitySaved(false);
     } finally {
       setLoading(false);
     }
