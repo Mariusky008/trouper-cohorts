@@ -30,6 +30,16 @@ export function AvailabilitySelector({ settings, potentialCount = 0, onSuccess }
   const [status, setStatus] = useState(settings?.status || 'active');
   const [isSettingsLoading, setIsSettingsLoading] = useState(false);
 
+  // Sync state with settings when settings change
+  useEffect(() => {
+      if (settings?.preferred_slots?.length > 0) {
+          setSelectedSlots(settings.preferred_slots);
+      }
+      if (settings?.preferred_days?.length > 0) {
+          setSelectedDays(settings.preferred_days);
+      }
+  }, [settings]);
+
   // Tomorrow's date YYYY-MM-DD
   const today = new Date();
   const tomorrow = new Date(today);
@@ -67,14 +77,15 @@ export function AvailabilitySelector({ settings, potentialCount = 0, onSuccess }
     setLoading(true);
     try {
       // Save global network settings (days + default slots)
-      await updateNetworkSettings({
+      const settingsUpdate = await updateNetworkSettings({
           preferred_days: selectedDays,
           preferred_slots: selectedSlots,
           frequency_per_week: selectedDays.length
       });
 
       // Optionally save explicit slots for tomorrow (retro-compatibility)
-      if (selectedDays.includes(tomorrow.toLocaleDateString('en-US', { weekday: 'short' }).toLowerCase())) {
+      const tomorrowDay = tomorrow.toLocaleDateString('en-US', { weekday: 'short' }).toLowerCase();
+      if (selectedDays.includes(tomorrowDay)) {
          await saveAvailability(dateStr, selectedSlots);
       }
       
@@ -89,6 +100,7 @@ export function AvailabilitySelector({ settings, potentialCount = 0, onSuccess }
           }, 1500);
       }
     } catch (error) {
+      console.error("Save availability error:", error);
       toast({
         title: "Erreur",
         description: "Impossible d'enregistrer vos disponibilités.",
