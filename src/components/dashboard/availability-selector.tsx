@@ -21,6 +21,7 @@ export function AvailabilitySelector({ settings, potentialCount = 0, onSuccess }
   const { toast } = useToast();
   
   // AVAILABILITY STATE
+  // Initialize with settings or defaults, but don't strictly bind to settings to allow local changes
   const [selectedSlots, setSelectedSlots] = useState<string[]>(settings?.preferred_slots || []);
   const [selectedDays, setSelectedDays] = useState<string[]>(settings?.preferred_days || ['mon', 'tue', 'wed', 'thu', 'fri']);
   const [isAvailabilitySaved, setIsAvailabilitySaved] = useState(false);
@@ -30,7 +31,7 @@ export function AvailabilitySelector({ settings, potentialCount = 0, onSuccess }
   const [status, setStatus] = useState(settings?.status || 'active');
   const [isSettingsLoading, setIsSettingsLoading] = useState(false);
 
-  // Sync state with settings when settings change
+  // Sync ONLY on initial mount to avoid resetting user clicks before save
   useEffect(() => {
       if (settings?.preferred_slots?.length > 0) {
           setSelectedSlots(settings.preferred_slots);
@@ -38,7 +39,7 @@ export function AvailabilitySelector({ settings, potentialCount = 0, onSuccess }
       if (settings?.preferred_days?.length > 0) {
           setSelectedDays(settings.preferred_days);
       }
-  }, [settings]);
+  }, [settings?.preferred_days, settings?.preferred_slots]);
 
   // Tomorrow's date YYYY-MM-DD
   const today = new Date();

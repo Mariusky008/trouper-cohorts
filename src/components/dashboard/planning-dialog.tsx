@@ -57,7 +57,11 @@ export function PlanningDialog({ settings, potentialCount }: PlanningDialogProps
             <AvailabilitySelector 
                 settings={settings} 
                 potentialCount={potentialCount} 
-                onSuccess={() => setOpen(false)} 
+                onSuccess={() => {
+                    setOpen(false);
+                    // Force refresh to update the admin page data and local dashboard state
+                    router.refresh();
+                }} 
             />
          </div>
       </DialogContent>
