@@ -34,21 +34,18 @@ export function AvailabilitySelector({ settings, potentialCount = 0, onSuccess }
   // Track local modifications to prevent server sync from overriding them
   const [hasLocallyModified, setHasLocallyModified] = useState(false);
 
+  // Sync ONLY on initial mount to avoid resetting user clicks before save
   useEffect(() => {
-      // If the user has made any local clicks, ignore ALL incoming settings updates from the server
-      if (hasLocallyModified) return;
+      // Don't override if user is already saving or has modified locally
+      if (loading || hasLocallyModified) return;
       
-      let changed = false;
       if (settings?.preferred_slots?.length > 0) {
           setSelectedSlots(settings.preferred_slots);
-          changed = true;
       }
       if (settings?.preferred_days?.length > 0) {
           setSelectedDays(settings.preferred_days);
-          changed = true;
       }
-      
-  }, [settings?.preferred_days, settings?.preferred_slots, hasLocallyModified]);
+  }, [settings, loading, hasLocallyModified]);
 
   // Tomorrow's date YYYY-MM-DD
   const today = new Date();
@@ -87,7 +84,7 @@ export function AvailabilitySelector({ settings, potentialCount = 0, onSuccess }
   const handleSaveAvailability = async () => {
     setLoading(true);
     try {
-      // Start save process without waiting for local state override
+      // Create copies to ensure stable reference during async operations
       const currentDays = [...selectedDays];
       const currentSlots = [...selectedSlots];
       
@@ -107,6 +104,10 @@ export function AvailabilitySelector({ settings, potentialCount = 0, onSuccess }
          await saveAvailability(dateStr, currentSlots);
       }
       
+      // Keep local state perfectly locked to what we just saved
+      setSelectedDays(currentDays);
+      setSelectedSlots(currentSlots);
+      
       toast({
         title: "Disponibilités enregistrées !",
         description: "Vos paramètres de mise en relation sont à jour.",
@@ -114,8 +115,6 @@ export function AvailabilitySelector({ settings, potentialCount = 0, onSuccess }
       
       // Force onSuccess callback immediately without delay to ensure closing
       if (onSuccess) {
-          // Reset the modification flag so it can sync next time it opens
-          setHasLocallyModified(false);
           onSuccess();
       }
       
