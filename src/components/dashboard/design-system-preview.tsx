@@ -90,12 +90,12 @@ export function WaitingCardPreview() {
       </div>
         {/* Dialogs (My Profile & Partner Profile) */}
       <Dialog open={isMyProfileOpen} onOpenChange={setIsMyProfileOpen}>
-          <DialogContent className="bg-white border-[#2E130C]/10 text-[#2E130C] sm:max-w-md rounded-2xl w-[90vw] max-h-[85vh] overflow-y-auto">
+          <DialogContent className="bg-white border-[#2E130C]/10 text-[#2E130C] sm:max-w-md rounded-2xl w-[90vw] max-h-[85vh] overflow-y-auto" aria-describedby="preview-my-profile-desc">
               <DialogHeader>
                         <DialogTitle className="flex items-center gap-2 text-xl font-black text-indigo-600">
                             <Target className="h-6 w-6" /> Mon Profil Réseau
                         </DialogTitle>
-                        <DialogDescription className="text-sm text-[#2E130C]/60" aria-describedby={undefined}>
+                        <DialogDescription id="preview-my-profile-desc" className="text-sm text-[#2E130C]/60">
                             Voici comment les autres membres voient vos besoins et ce que vous pouvez offrir.
                         </DialogDescription>
                     </DialogHeader>
@@ -133,7 +133,7 @@ export function WaitingCardPreview() {
                         <DialogTitle className="flex items-center gap-2 text-xl font-black text-purple-600">
                             <Search className="h-6 w-6" /> Profil de {matchName}
                         </DialogTitle>
-                        <DialogDescription className="text-sm text-[#2E130C]/60" aria-describedby={undefined}>
+                        <DialogDescription id="preview-partner-profile-desc" className="text-sm text-[#2E130C]/60">
                             Détail de ce que votre partenaire recherche et ce qu'il peut vous apporter.
                         </DialogDescription>
                     </DialogHeader>
@@ -1769,13 +1769,13 @@ export function MatchCardWhatsAppPreview() {
                                 <span className="relative z-10">CONTACTER VIA WHATSAPP</span>
                             </Button>
                         </DialogTrigger>
-                        <DialogContent className="bg-white border-[#2E130C]/10 text-[#2E130C] sm:max-w-md rounded-2xl w-[95vw]">
+                        <DialogContent className="bg-white border-[#2E130C]/10 text-[#2E130C] sm:max-w-md rounded-2xl w-[95vw]" aria-describedby="preview-whatsapp-desc">
                             <DialogHeader>
                                 <DialogTitle className="flex items-center gap-2 text-xl font-black">
                                     <MessageSquare className="h-6 w-6 text-[#25D366] fill-[#25D366]" />
                                     L'Entremetteur
                                 </DialogTitle>
-                                <DialogDescription className="text-[#2E130C]/60 text-sm" aria-describedby={undefined}>
+                                <DialogDescription id="preview-whatsapp-desc" className="text-[#2E130C]/60 text-sm">
                                     Brisons la glace. Voici un message prêt à être envoyé à {matchName} sur WhatsApp pour initier le contact sans friction.
                                 </DialogDescription>
                             </DialogHeader>

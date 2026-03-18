@@ -747,6 +747,12 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
   };
 
   // RENDER LOGIC
+  
+  // Prevent hydration mismatch - MUST BE FIRST
+  if (!mounted) {
+      return <div className="w-full max-w-sm mx-auto h-[600px] rounded-[2.5rem] bg-white border border-[#2E130C]/10 animate-pulse" />;
+  }
+
   const now = new Date();
   const isWeekend = now.getDay() === 6 || now.getDay() === 0;
 
