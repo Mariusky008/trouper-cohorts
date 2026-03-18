@@ -2,12 +2,13 @@
 
 import { motion } from "framer-motion";
 import { useState } from "react";
-import { User, Zap, Lock, Phone, Clock, Sparkles, Fingerprint, Search, Flame, Briefcase, Handshake, TrendingUp, Target, CheckCircle2, Users, Star, MessageSquare, Gift, PhoneCall } from "lucide-react";
+import { User, Zap, Lock, Phone, Clock, Sparkles, Fingerprint, Search, Flame, Briefcase, Handshake, TrendingUp, Target, CheckCircle2, Users, Star, MessageSquare, Gift, PhoneCall, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogTrigger, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import confetti from "canvas-confetti";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -1910,7 +1911,7 @@ export function MatchCardWhatsAppPreview() {
                                                 className="flex items-center justify-between bg-purple-50 p-3 rounded-xl border border-purple-200"
                                             >
                                                 <span className="text-sm font-bold text-purple-700 flex items-center gap-2">
-                                                    <Gift className="w-4 h-4" /> {OPPORTUNITY_TYPES.find(t => t.id === oppType)?.label}
+                                                    <Gift className="w-4 h-4" /> {OPPORTUNITY_TYPES.find((t: any) => t.id === oppType)?.label}
                                                 </span>
                                                 <button onClick={() => setOppType(undefined)} className="text-xs text-purple-600 underline hover:text-purple-800">Changer</button>
                                             </motion.div>
@@ -1921,7 +1922,7 @@ export function MatchCardWhatsAppPreview() {
                                                     className="w-full bg-slate-50 border border-[#2E130C]/10 rounded-xl p-3 text-sm text-[#2E130C] min-h-[80px] focus:ring-1 focus:ring-purple-500 outline-none resize-none placeholder:text-slate-400"
                                                     placeholder="Ex: Je te mets en relation avec..."
                                                     value={oppDetails}
-                                                    onChange={(e) => setOppDetails(e.target.value)}
+                                                    onChange={(e: any) => setOppDetails(e.target.value)}
                                                 />
                                             </div>
 
