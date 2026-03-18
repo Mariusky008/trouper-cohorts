@@ -64,9 +64,8 @@ export async function updateNetworkSettings(data: {
       return { success: false, error: error.message }; // Return error instead of throwing to prevent 500
     }
     
-    // Using layout revalidation path to ensure all children components update properly
-    revalidatePath("/mon-reseau-local", "layout");
-    revalidatePath("/admin", "layout");
+    // We don't use revalidatePath here anymore because it's causing Vercel 500 errors
+    // The client will handle the refresh via window.location.reload()
     
     return { success: true };
   } catch (err: any) {

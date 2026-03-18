@@ -62,8 +62,13 @@ export function PlanningDialog({ settings, potentialCount }: PlanningDialogProps
                 onSuccess={() => {
                     // 1. Fermer immédiatement la popup
                     setOpen(false);
-                    // 2. Refresh local state
-                    router.refresh();
+                    // 2. Refresh without throwing layout errors, using window.location for a hard refresh on mobile if needed
+                    // or just relying on the React state update since we don't need a hard server reload 
+                    // if the settings are passed down correctly.
+                    // For maximum stability on Vercel without throwing 500s:
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 300);
                 }} 
             />
          </div>
