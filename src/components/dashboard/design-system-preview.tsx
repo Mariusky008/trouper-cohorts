@@ -84,6 +84,83 @@ export function WaitingCardPreview() {
            </div>
         </div>
       </div>
+        {/* Dialogs (My Profile & Partner Profile) */}
+      <Dialog open={isMyProfileOpen} onOpenChange={setIsMyProfileOpen}>
+          <DialogContent className="bg-white border-[#2E130C]/10 text-[#2E130C] sm:max-w-md rounded-2xl w-[90vw] max-h-[85vh] overflow-y-auto">
+              <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2 text-xl font-black text-indigo-600">
+                      <Target className="h-6 w-6" /> Mon Profil Réseau
+                  </DialogTitle>
+                  <DialogDescription className="text-sm text-[#2E130C]/60">
+                      Voici comment les autres membres voient vos besoins et ce que vous pouvez offrir.
+                  </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                  <div className="bg-indigo-50 p-4 rounded-xl border border-indigo-100 space-y-2">
+                      <h4 className="text-xs font-bold text-indigo-600 uppercase flex items-center gap-2">
+                          <Target className="h-4 w-4" /> Mes Besoins (Ce que je cherche)
+                      </h4>
+                      <div className="space-y-2">
+                          <p className="text-sm font-medium text-[#2E130C]/80">
+                              <span className="font-bold">Objectif principal :</span> Développer mon activité
+                          </p>
+                          <p className="text-sm font-medium text-[#2E130C]/80">
+                              <span className="font-bold">Cibles :</span> Agences immobilières, courtiers
+                          </p>
+                      </div>
+                  </div>
+                  <div className="bg-emerald-50 p-4 rounded-xl border border-emerald-100 space-y-2">
+                      <h4 className="text-xs font-bold text-emerald-600 uppercase flex items-center gap-2">
+                          <Gift className="h-4 w-4" /> Mes Offres (Ce que je donne)
+                      </h4>
+                      <div className="space-y-2">
+                           <p className="text-sm font-medium text-[#2E130C]/80">
+                              <span className="font-bold">Superpouvoir :</span> Expert en stratégie d'acquisition
+                          </p>
+                      </div>
+                  </div>
+              </div>
+          </DialogContent>
+      </Dialog>
+
+      <Dialog open={isPartnerProfileOpen} onOpenChange={setIsPartnerProfileOpen}>
+          <DialogContent className="bg-white border-[#2E130C]/10 text-[#2E130C] sm:max-w-md rounded-2xl w-[90vw] max-h-[85vh] overflow-y-auto">
+              <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2 text-xl font-black text-purple-600">
+                      <Search className="h-6 w-6" /> Profil de {matchName}
+                  </DialogTitle>
+                  <DialogDescription className="text-sm text-[#2E130C]/60">
+                      Détail de ce que votre partenaire recherche et ce qu'il peut vous apporter.
+                  </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                   <div className="bg-purple-50 p-4 rounded-xl border border-purple-100 space-y-2">
+                      <h4 className="text-xs font-bold text-purple-600 uppercase flex items-center gap-2">
+                          <Search className="h-4 w-4" /> Ses Besoins
+                      </h4>
+                      <div className="space-y-2">
+                           <p className="text-sm font-medium text-[#2E130C]/80">
+                              <span className="font-bold">Objectif principal :</span> Trouver un associé technique
+                          </p>
+                          <p className="text-sm font-medium text-[#2E130C]/80">
+                              <span className="font-bold">Secteurs :</span> Tech, SaaS
+                          </p>
+                      </div>
+                  </div>
+                  <div className="bg-emerald-50 p-4 rounded-xl border border-emerald-100 space-y-2">
+                      <h4 className="text-xs font-bold text-emerald-600 uppercase flex items-center gap-2">
+                          <Gift className="h-4 w-4" /> Ses Offres
+                      </h4>
+                       <div className="space-y-2">
+                           <p className="text-sm font-medium text-[#2E130C]/80">
+                              <span className="font-bold">Superpouvoir :</span> Financement et levée de fonds
+                          </p>
+                      </div>
+                  </div>
+              </div>
+          </DialogContent>
+      </Dialog>
+
     </div>
   );
 }
@@ -1525,26 +1602,20 @@ export function MatchCardFounderStylePreview() {
 // --- 9. MATCH CARD (WHATSAPP ENTREMETTEUR) ---
 // Goal: Low friction peer-to-peer matching via pre-filled WhatsApp.
 export function MatchCardWhatsAppPreview() {
-  const [isMissionOpen, setIsMissionOpen] = useState(false);
-  const [isPartnerMissionOpen, setIsPartnerMissionOpen] = useState(false);
-  const [selectedMission, setSelectedMission] = useState<string | null>(null);
   const [isWhyVisible, setIsWhyVisible] = useState(false);
   const [isWhatsAppOpen, setIsWhatsAppOpen] = useState(false);
+  const [step, setStep] = useState<'initial' | 'contacted' | 'validated'>('initial');
+  const [isValidationOpen, setIsValidationOpen] = useState(false);
+  const [isMyProfileOpen, setIsMyProfileOpen] = useState(false);
+  const [isPartnerProfileOpen, setIsPartnerProfileOpen] = useState(false);
+  const [popupView, setPopupView] = useState<'step1_status' | 'step2_rating' | 'step3_gift'>('step1_status');
   
-  // Mock suggestion for preview
-  const suggestedMissionId = 'amplificateur';
-  const suggestedMission = MISSION_TYPES.find(m => m.id === suggestedMissionId);
-
   // Mock Data for the WhatsApp message
   const myName = "Alexandre";
   const matchName = "Jean-Paul";
   const matchJob = "Directeur Commercial";
 
   const whatsappMessage = `Salut ${matchName}, c'est ${myName} ! On a matché aujourd'hui sur Popey.Academy. J'ai vu que tu étais ${matchJob}, ça m'intéresse ! Dispo pour un appel rapide ou un vocal aujourd'hui ou demain ?`;
-
-  const [step, setStep] = useState<'initial' | 'contacted' | 'validated'>('initial');
-  const [isValidationOpen, setIsValidationOpen] = useState(false);
-  const [popupView, setPopupView] = useState<'step1_status' | 'step2_rating' | 'step3_gift'>('step1_status');
   const [callHappened, setCallHappened] = useState<boolean | null>(null);
   const [rating, setRating] = useState<'fire' | 'good' | 'meh' | null>(null);
   const [oppType, setOppType] = useState<string | undefined>(undefined);
@@ -1945,36 +2016,6 @@ export function MatchCardWhatsAppPreview() {
                   <Button className="w-full bg-[#2E130C] hover:bg-[#2E130C]/90 text-white font-bold h-12 rounded-xl" onClick={() => setIsWhyVisible(false)}>
                       Compris !
                   </Button>
-              </div>
-          </DialogContent>
-      </Dialog>
-
-      <Dialog open={isMissionOpen} onOpenChange={setIsMissionOpen}>
-          <DialogContent className="bg-white border-[#2E130C]/10 text-[#2E130C] sm:max-w-md rounded-2xl w-[90vw] max-h-[85vh] overflow-y-auto">
-              <DialogHeader>
-                  <DialogTitle className="flex items-center gap-2 text-xl font-black text-indigo-600">
-                      <Target className="h-6 w-6" /> Menu de la Carte
-                  </DialogTitle>
-              </DialogHeader>
-              <div className="grid gap-3 py-4">
-                  {MISSION_TYPES.map((mission) => (
-                      <button
-                          key={mission.id}
-                          onClick={() => { setSelectedMission(mission.id); setIsMissionOpen(false); }}
-                          className={cn(
-                              "flex items-center gap-4 p-4 rounded-xl border transition-all text-left group",
-                              mission.id === selectedMission ? "bg-indigo-50 border-indigo-500" : "bg-white border-[#2E130C]/10 hover:bg-slate-50"
-                          )}
-                      >
-                          <div className={cn("h-10 w-10 rounded-full flex items-center justify-center shrink-0", mission.bg)}>
-                              <mission.icon className={cn("h-5 w-5", mission.color)} />
-                          </div>
-                          <div className="flex-1">
-                              <span className={cn("font-bold text-sm", mission.id === selectedMission ? "text-indigo-700" : "text-[#2E130C]")}>{mission.label}</span>
-                              <p className="text-xs text-[#2E130C]/60 font-medium">{mission.desc}</p>
-                          </div>
-                      </button>
-                  ))}
               </div>
           </DialogContent>
       </Dialog>
