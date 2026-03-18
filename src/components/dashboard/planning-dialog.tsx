@@ -58,11 +58,12 @@ export function PlanningDialog({ settings, potentialCount }: PlanningDialogProps
                 settings={settings} 
                 potentialCount={potentialCount} 
                 onSuccess={() => {
+                    // 1. Fermer immédiatement la popup
                     setOpen(false);
-                    // Add a slight delay before refresh to allow the dialog closing animation to finish
+                    // 2. Rafraîchir les données en arrière-plan sans bloquer l'UI
                     setTimeout(() => {
                         router.refresh();
-                    }, 300);
+                    }, 100);
                 }} 
             />
          </div>

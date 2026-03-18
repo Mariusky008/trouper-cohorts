@@ -33,13 +33,16 @@ export function AvailabilitySelector({ settings, potentialCount = 0, onSuccess }
 
   // Sync ONLY on initial mount to avoid resetting user clicks before save
   useEffect(() => {
+      // Don't sync if we're currently loading/saving to prevent UI jitter
+      if (loading) return;
+      
       if (settings?.preferred_slots?.length > 0) {
           setSelectedSlots(settings.preferred_slots);
       }
       if (settings?.preferred_days?.length > 0) {
           setSelectedDays(settings.preferred_days);
       }
-  }, [settings?.preferred_days, settings?.preferred_slots]);
+  }, [settings?.preferred_days, settings?.preferred_slots, loading]);
 
   // Tomorrow's date YYYY-MM-DD
   const today = new Date();
@@ -77,8 +80,12 @@ export function AvailabilitySelector({ settings, potentialCount = 0, onSuccess }
   const handleSaveAvailability = async () => {
     setLoading(true);
     try {
+      // 1. Force state updates immediately for UX
+      setIsAvailabilitySaved(true);
+      
+      // 2. Start save process without waiting
       // Save global network settings (days + default slots)
-      await updateNetworkSettings({
+      const settingsUpdate = await updateNetworkSettings({
           preferred_days: selectedDays,
           preferred_slots: selectedSlots,
           frequency_per_week: selectedDays.length
@@ -90,15 +97,14 @@ export function AvailabilitySelector({ settings, potentialCount = 0, onSuccess }
          await saveAvailability(dateStr, selectedSlots);
       }
       
-      setIsAvailabilitySaved(true);
       toast({
         title: "Disponibilités enregistrées !",
         description: "Vos paramètres de mise en relation sont à jour.",
       });
       
-      // Delay onSuccess callback to allow seeing the success state before closing
+      // Force onSuccess callback immediately without delay to ensure closing
       if (onSuccess) {
-          setTimeout(() => onSuccess(), 1500);
+          onSuccess();
       }
       
     } catch (error) {
@@ -108,7 +114,6 @@ export function AvailabilitySelector({ settings, potentialCount = 0, onSuccess }
         description: "Impossible d'enregistrer vos disponibilités.",
         variant: "destructive",
       });
-      // Reset saved state on error so user can try again
       setIsAvailabilitySaved(false);
     } finally {
       setLoading(false);
