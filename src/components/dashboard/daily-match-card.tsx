@@ -432,18 +432,26 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
   const [revealed, setRevealed] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [step, setStep] = useState<'initial' | 'called' | 'validated'>('initial');
+  const [matchesState, setMatchesState] = useState(matches);
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
+  // Update matches state when props change
+  useEffect(() => {
+    if (matches) {
+        setMatchesState(matches);
+    }
+  }, [matches]);
+
   useEffect(() => {
     if (!mounted) return; // Don't run hydration-sensitive logic until mounted
     
     // Sync state if props change
-    console.log("[DailyMatchCard] Syncing step based on matches:", matches);
-    if (matches && matches.length > 0) {
-        const current = matches[0];
+    console.log("[DailyMatchCard] Syncing step based on matches:", matchesState);
+    if (matchesState && matchesState.length > 0) {
+        const current = matchesState[0];
         console.log("[DailyMatchCard] Current match:", current.id, "hasFeedback:", current.hasFeedback, "status:", current.status);
         if (current.hasFeedback === true || current.status === 'met') {
             console.log("[DailyMatchCard] Setting step to validated");
@@ -467,7 +475,7 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
             return prev;
         });
     }
-  }, [matches, mounted]);
+  }, [matchesState, mounted]);
 
   // Realtime Subscription for Sync across devices
   useEffect(() => {
@@ -739,7 +747,7 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
   const isTomorrowWeekend = tomorrow.getDay() === 6 || tomorrow.getDay() === 0;
 
   // Weekend State - Clean & Warm
-  if (!matches || matches.length === 0) {
+  if (!matchesState || matchesState.length === 0) {
       if (isWeekend || isTomorrowWeekend) {
           return <WeekendCard />;
       }
@@ -762,10 +770,10 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
 
   // Prevent hydration mismatch
   if (!mounted) {
-      return <div className="w-full max-w-sm mx-auto h-[600px] rounded-[2.5rem] bg-white border border-[#2E130C]/10 animate-pulse" />;
+      return null;
   }
 
-  const match = matches[0];
+  const match = matchesState[0];
   const isCallOut = match.type === 'call_out';
 
   const mySlots = match.mySlots || [];
