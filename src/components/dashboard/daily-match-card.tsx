@@ -430,9 +430,16 @@ const WeekendCard = () => (
 export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserProfile }: DailyMatchCardProps) {
   // State
   const [revealed, setRevealed] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const [step, setStep] = useState<'initial' | 'called' | 'validated'>('initial');
 
   useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!mounted) return; // Don't run hydration-sensitive logic until mounted
+    
     // Sync state if props change
     console.log("[DailyMatchCard] Syncing step based on matches:", matches);
     if (matches && matches.length > 0) {
@@ -445,15 +452,22 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
             // Check if step is already called to prevent resetting to initial if user is in the middle of validation
             setStep(prev => {
                 const nextStep = prev === 'called' ? 'called' : 'initial';
-                console.log(`[DailyMatchCard] Setting step to ${nextStep} (was ${prev})`);
+                if (prev !== nextStep) {
+                    console.log(`[DailyMatchCard] Setting step to ${nextStep} (was ${prev})`);
+                }
                 return nextStep;
             });
         }
     } else {
-        console.log("[DailyMatchCard] No matches, setting step to initial");
-        setStep('initial');
+        setStep(prev => {
+            if (prev !== 'initial') {
+                console.log("[DailyMatchCard] No matches, setting step to initial");
+                return 'initial';
+            }
+            return prev;
+        });
     }
-  }, [matches]);
+  }, [matches, mounted]);
 
   // Realtime Subscription for Sync across devices
   useEffect(() => {
@@ -716,11 +730,6 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
   };
 
   // RENDER LOGIC
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
   const now = new Date();
   const isWeekend = now.getDay() === 6 || now.getDay() === 0;
 
