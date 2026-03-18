@@ -96,7 +96,7 @@ export function AvailabilitySelector({ settings, potentialCount = 0, onSuccess }
       });
 
       if (!result || result.success === false) {
-          throw new Error("Failed to save settings to server");
+          throw new Error("Failed to save settings to server: " + (result?.error || "Unknown"));
       }
 
       // Optionally save explicit slots for tomorrow (retro-compatibility)
@@ -104,7 +104,7 @@ export function AvailabilitySelector({ settings, potentialCount = 0, onSuccess }
       if (currentDays.includes(tomorrowDay)) {
          const availResult = await saveAvailability(dateStr, currentSlots);
          if (!availResult || availResult.success === false) {
-             throw new Error("Failed to save tomorrow's availability");
+             throw new Error("Failed to save tomorrow's availability: " + (availResult?.error || "Unknown"));
          }
       }
       
