@@ -343,7 +343,7 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
         <div className="relative -mt-16 flex flex-col md:flex-row items-end gap-6 pb-4">
           <div className="relative group">
             <Avatar className="h-36 w-36 border-4 border-white shadow-xl rounded-3xl bg-white">
-              <AvatarImage src={formData.avatar_url} className="object-cover" />
+              <AvatarImage src={formData.avatar_url} className="object-cover object-top" />
               <AvatarFallback className="text-4xl font-black text-stone-400 bg-stone-100">
                 {formData.display_name?.[0]?.toUpperCase() || "?"}
               </AvatarFallback>
@@ -591,7 +591,7 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
                     <div className="flex flex-col items-center gap-4 mb-6">
                         <div className="relative group cursor-pointer" onClick={() => fileInputRef.current?.click()}>
                             <Avatar className={`h-24 w-24 border-4 ${formErrors.avatar_url ? 'border-red-500 animate-pulse' : 'border-slate-100'}`}>
-                                <AvatarImage src={formData.avatar_url} className="object-cover" />
+                                <AvatarImage src={formData.avatar_url} className="object-cover object-top" />
                                 <AvatarFallback>{formData.display_name?.[0]}</AvatarFallback>
                             </Avatar>
                             <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">

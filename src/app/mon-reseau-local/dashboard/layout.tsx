@@ -223,7 +223,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                         className="h-9 w-9 border-2 border-[#2E130C] cursor-pointer hover:shadow-[2px_2px_0px_0px_#B20B13] transition-all"
                         onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
                     >
-                      <AvatarImage src={avatarUrl} className="object-cover" />
+                      <AvatarImage src={avatarUrl} className="object-cover object-top" />
                       <AvatarFallback className="bg-[#2E130C] text-[#E2D9BC] text-xs border-2 border-[#2E130C]">{initials}</AvatarFallback>
                     </Avatar>
 
@@ -352,7 +352,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <div className="mt-auto border-t-2 border-[#2E130C]/10 pt-6">
                 <Link href="/mon-reseau-local/dashboard/profile" className="flex items-center gap-4 p-4 bg-white rounded-xl border-2 border-[#2E130C]/10 active:scale-95 transition-transform shadow-[2px_2px_0px_0px_#2E130C]">
                   <Avatar className="h-12 w-12 border-2 border-[#2E130C]">
-                    <AvatarImage src={avatarUrl} className="object-cover" />
+                    <AvatarImage src={avatarUrl} className="object-cover object-top" />
                     <AvatarFallback className="bg-[#2E130C] text-[#E2D9BC]">{initials}</AvatarFallback>
                   </Avatar>
                   <div>
