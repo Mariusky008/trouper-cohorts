@@ -62,6 +62,7 @@ export async function updateNetworkSettings(data: {
     throw new Error("Failed to update settings");
   }
 
-  revalidatePath("/mon-reseau-local/dashboard/settings");
+  revalidatePath("/mon-reseau-local/dashboard");
+  revalidatePath("/admin/network");
   return { success: true };
 }
