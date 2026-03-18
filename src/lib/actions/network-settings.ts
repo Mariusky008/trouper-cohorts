@@ -48,22 +48,27 @@ export async function updateNetworkSettings(data: {
 
   if (!user) throw new Error("Unauthorized");
 
-  const { error } = await supabase
-    .from("network_settings")
-    .upsert({
-      user_id: user.id,
-      ...data,
-      updated_at: new Date().toISOString()
-    }, {
-      onConflict: 'user_id'
-    });
+  try {
+    const { error } = await supabase
+      .from("network_settings")
+      .upsert({
+        user_id: user.id,
+        ...data,
+        updated_at: new Date().toISOString()
+      }, {
+        onConflict: 'user_id'
+      });
 
-  if (error) {
-    console.error("Error updating settings:", error);
-    throw new Error("Failed to update settings");
+    if (error) {
+      console.error("Supabase error updating settings:", error);
+      throw new Error(`Failed to update settings in Supabase: ${error.message}`);
+    }
+
+    revalidatePath("/mon-reseau-local/dashboard");
+    revalidatePath("/admin/network");
+    return { success: true };
+  } catch (err: any) {
+    console.error("Caught error in updateNetworkSettings:", err);
+    throw new Error(`Action failed: ${err.message}`);
   }
-
-  revalidatePath("/mon-reseau-local/dashboard");
-  revalidatePath("/admin/network");
-  return { success: true };
 }
