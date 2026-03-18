@@ -102,7 +102,10 @@ export function AvailabilitySelector({ settings, potentialCount = 0, onSuccess }
       // Optionally save explicit slots for tomorrow (retro-compatibility)
       const tomorrowDay = tomorrow.toLocaleDateString('en-US', { weekday: 'short' }).toLowerCase();
       if (currentDays.includes(tomorrowDay)) {
-         await saveAvailability(dateStr, currentSlots);
+         const availResult = await saveAvailability(dateStr, currentSlots);
+         if (!availResult || availResult.success === false) {
+             throw new Error("Failed to save tomorrow's availability");
+         }
       }
       
       // Force state updates immediately for UX only AFTER successful save
