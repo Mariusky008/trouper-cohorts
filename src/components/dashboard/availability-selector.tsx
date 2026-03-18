@@ -113,10 +113,12 @@ export function AvailabilitySelector({ settings, potentialCount = 0, onSuccess }
         description: "Vos paramètres de mise en relation sont à jour.",
       });
       
-      // Force onSuccess callback immediately without delay to ensure closing
-      if (onSuccess) {
-          onSuccess();
-      }
+      // Delay closing slightly so user can see the success state
+      setTimeout(() => {
+          if (onSuccess) {
+              onSuccess();
+          }
+      }, 500);
       
     } catch (error) {
       console.error("Save availability error:", error);
