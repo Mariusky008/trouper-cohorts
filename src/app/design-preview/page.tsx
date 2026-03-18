@@ -1,4 +1,4 @@
-import { WaitingCardPreview, MysteryCardPreview, MatchCardPreview, MatchCardFounderStylePreview, MysteryCardLockedPreview, FounderCardPreview, MissionValidationPreview } from "@/components/dashboard/design-system-preview";
+import { WaitingCardPreview, MysteryCardPreview, MatchCardPreview, MatchCardFounderStylePreview, MysteryCardLockedPreview, FounderCardPreview, MissionValidationPreview, MatchCardWhatsAppPreview } from "@/components/dashboard/design-system-preview";
 import { PremiumLockedCard } from "@/components/dashboard/premium-locked-card";
 
 export default function DesignPreviewPage() {
@@ -63,6 +63,16 @@ export default function DesignPreviewPage() {
             </h2>
             <p className="text-sm text-slate-400 mb-4">Alternative UX inspirée du Joker Fondateur.</p>
             <MatchCardFounderStylePreview />
+          </div>
+
+          {/* 3c. Match (WhatsApp Entremetteur) */}
+          <div className="space-y-6 w-full max-w-sm">
+            <h2 className="text-xl font-bold text-white flex items-center gap-2">
+              <span className="bg-[#25D366] w-2 h-8 rounded-full"></span>
+              3c. Match (WhatsApp)
+            </h2>
+            <p className="text-sm text-slate-400 mb-4">Stratégie "L'Entremetteur" avec message pré-rempli.</p>
+            <MatchCardWhatsAppPreview />
           </div>
 
           {/* 4. Founder Joker State (Onboarding) */}

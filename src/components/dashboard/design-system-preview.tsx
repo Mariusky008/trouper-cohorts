@@ -1521,6 +1521,204 @@ export function MatchCardFounderStylePreview() {
   );
 }
 
+// --- 9. MATCH CARD (WHATSAPP ENTREMETTEUR) ---
+// Goal: Low friction peer-to-peer matching via pre-filled WhatsApp.
+export function MatchCardWhatsAppPreview() {
+  const [isMissionOpen, setIsMissionOpen] = useState(false);
+  const [selectedMission, setSelectedMission] = useState<string | null>(null);
+  const [isWhyVisible, setIsWhyVisible] = useState(false);
+  const [isWhatsAppOpen, setIsWhatsAppOpen] = useState(false);
+  
+  // Mock suggestion for preview
+  const suggestedMissionId = 'amplificateur';
+  const suggestedMission = MISSION_TYPES.find(m => m.id === suggestedMissionId);
+
+  // Mock Data for the WhatsApp message
+  const myName = "Alexandre";
+  const matchName = "Jean-Paul";
+  const matchJob = "Directeur Commercial";
+  const proposedDay = "demain";
+
+  const whatsappMessage = `Salut ${matchName}, c'est ${myName} ! On a matché aujourd'hui sur Mon Réseau Local. J'ai vu que tu étais ${matchJob}, ça m'intéresse ! Dispo pour un appel rapide de 15 min ${proposedDay} ?`;
+
+  const handleWhatsAppRedirect = () => {
+    // In real app: window.open(`https://wa.me/${matchPhone}?text=${encodeURIComponent(whatsappMessage)}`, '_blank');
+    setIsWhatsAppOpen(false);
+    toast.success("Redirection vers WhatsApp...");
+  };
+
+  return (
+    <div className="relative w-full max-w-sm mx-auto h-[600px] rounded-[2.5rem] overflow-hidden shadow-2xl bg-[#0f172a] border border-slate-800 group">
+      {/* Background Image */}
+      <div className="absolute inset-0 z-0">
+        <img 
+            src="https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=800&q=80" 
+            alt="Match" 
+            className="w-full h-full object-cover opacity-60 transition-transform duration-700 group-hover:scale-105"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#0f172a] via-[#0f172a]/80 to-transparent"></div>
+      </div>
+
+      {/* Main Content - Bottom */}
+      <div className="absolute bottom-0 left-0 right-0 z-20 p-6 pt-24 bg-gradient-to-t from-[#0f172a] via-[#0f172a] to-transparent flex flex-col justify-end h-full">
+        
+        {/* Match Score */}
+        <div className="flex items-end gap-3 mb-2">
+            <h2 className="text-5xl font-black text-white tracking-tighter">{matchName}</h2>
+            <Button variant="outline" className="bg-emerald-500/20 border border-emerald-500/50 text-emerald-400 hover:bg-emerald-500/30 hover:text-emerald-300 px-3 py-1 rounded-lg text-xs font-black mb-1.5 flex items-center gap-1 h-auto transition-colors">
+                <User className="w-3 h-3" /> Voir profil
+            </Button>
+        </div>
+
+        <p className="text-slate-300 text-sm font-medium mb-6 line-clamp-2 leading-snug opacity-90">
+            "Ce directeur commercial peut vous ouvrir des opportunités auxquelles vous n’aviez pas accès hier."
+        </p>
+
+        {/* MISSION SELECTOR */}
+        <div className="bg-indigo-500/20 border border-indigo-500/30 rounded-xl p-3 mb-6 backdrop-blur-sm cursor-pointer hover:bg-indigo-500/30 transition-colors" onClick={() => setIsMissionOpen(true)}>
+            <div className="flex items-center justify-between mb-1">
+                <div className="flex items-center gap-2">
+                    <Target className="w-4 h-4 text-indigo-400" />
+                    <span className="text-[10px] font-black text-indigo-300 uppercase tracking-wider">Objectif de l'échange</span>
+                </div>
+                {selectedMission && <Badge className="text-[9px] h-4 bg-indigo-500 text-white">Choisi</Badge>}
+            </div>
+            <p className="text-white text-xs font-medium italic truncate">
+                {selectedMission 
+                    ? MISSION_TYPES.find(m => m.id === selectedMission)?.desc 
+                    : suggestedMission 
+                        ? `Suggestion : ${suggestedMission.label} (Cliquez)`
+                        : "Cliquez pour définir votre objectif 🎯"}
+            </p>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex flex-col gap-3 pb-2">
+            
+            <Button 
+                onClick={() => setIsWhyVisible(true)}
+                variant="ghost" 
+                className="w-full h-12 border border-white/10 bg-white/5 text-slate-300 hover:bg-white/10 hover:text-white rounded-xl font-bold transition-all hover:scale-[1.02]"
+            >
+                <Zap className="w-4 h-4 mr-2 text-yellow-400" /> Pourquoi ce match ?
+            </Button>
+
+            {/* MAIN WHATSAPP BUTTON */}
+            <Dialog open={isWhatsAppOpen} onOpenChange={setIsWhatsAppOpen}>
+                <DialogTrigger asChild>
+                    <Button 
+                        className="w-full h-14 bg-[#25D366] hover:bg-[#20bd5a] text-white font-black text-base rounded-xl shadow-lg shadow-[#25D366]/20 tracking-wide transition-all hover:scale-[1.02] relative overflow-hidden group/btn"
+                    >
+                        <MessageSquare className="w-5 h-5 mr-2 relative z-10 fill-current" />
+                        <span className="relative z-10">CONTACTER VIA WHATSAPP</span>
+                    </Button>
+                </DialogTrigger>
+                <DialogContent className="bg-[#0f172a] border-white/10 text-white sm:max-w-md rounded-2xl w-[95vw]">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2 text-xl font-black">
+                            <MessageSquare className="h-6 w-6 text-[#25D366] fill-[#25D366]" />
+                            L'Entremetteur
+                        </DialogTitle>
+                        <DialogDescription className="text-slate-400 text-sm">
+                            Brisons la glace. Voici un message prêt à être envoyé à {matchName} sur WhatsApp pour initier le contact sans friction.
+                        </DialogDescription>
+                    </DialogHeader>
+                    
+                    <div className="py-4 space-y-6">
+                        {/* Message Preview Box */}
+                        <div className="bg-[#1e293b] rounded-xl p-4 border border-[#334155] relative shadow-inner">
+                            <div className="absolute -top-3 left-4 bg-[#25D366] text-[#0f172a] text-[10px] font-black uppercase px-2 py-0.5 rounded-full tracking-wider">
+                                Message généré
+                            </div>
+                            <p className="text-slate-200 text-sm leading-relaxed whitespace-pre-wrap font-medium">
+                                "{whatsappMessage}"
+                            </p>
+                            <p className="text-xs text-slate-500 mt-3 italic">
+                                (Vous pourrez le modifier dans WhatsApp avant de l'envoyer)
+                            </p>
+                        </div>
+
+                        <div className="flex flex-col gap-3">
+                            <Button 
+                                onClick={handleWhatsAppRedirect}
+                                className="w-full h-14 bg-[#25D366] hover:bg-[#20bd5a] text-white font-black text-lg rounded-xl shadow-lg hover:scale-[1.02] transition-transform"
+                            >
+                                <MessageSquare className="w-5 h-5 mr-2 fill-current" />
+                                OUVRIR WHATSAPP
+                            </Button>
+                            <Button 
+                                variant="ghost" 
+                                onClick={() => setIsWhatsAppOpen(false)}
+                                className="w-full text-slate-400 hover:text-white"
+                            >
+                                Annuler
+                            </Button>
+                        </div>
+                    </div>
+                </DialogContent>
+            </Dialog>
+
+        </div>
+      </div>
+
+      {/* Dialogs (Why & Mission) */}
+      <Dialog open={isWhyVisible} onOpenChange={setIsWhyVisible}>
+          <DialogContent className="bg-[#0f172a] border-white/10 text-white sm:max-w-md rounded-2xl w-[90vw] p-0 overflow-hidden">
+              <div className="bg-gradient-to-br from-blue-600/20 to-purple-600/20 p-6">
+                  <DialogHeader>
+                      <DialogTitle className="flex items-center gap-2 text-xl font-black">
+                          <Zap className="h-6 w-6 text-yellow-400 fill-yellow-400" />
+                          Pourquoi ce match ?
+                      </DialogTitle>
+                  </DialogHeader>
+              </div>
+              <div className="p-6 space-y-6">
+                  <div className="bg-white/5 p-4 rounded-xl border border-white/10">
+                      <p className="text-slate-200 leading-relaxed text-sm">
+                          L'algorithme a détecté une complémentarité rare. {matchName} est {matchJob}, ce qui correspond parfaitement à vos objectifs actuels.
+                      </p>
+                  </div>
+                  <Button className="w-full bg-slate-800 hover:bg-slate-700 font-bold h-12 rounded-xl" onClick={() => setIsWhyVisible(false)}>
+                      Compris !
+                  </Button>
+              </div>
+          </DialogContent>
+      </Dialog>
+
+      <Dialog open={isMissionOpen} onOpenChange={setIsMissionOpen}>
+          <DialogContent className="bg-[#0f172a] border-white/10 text-white sm:max-w-md rounded-2xl w-[90vw] max-h-[85vh] overflow-y-auto">
+              <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2 text-xl font-black text-indigo-400">
+                      <Target className="h-6 w-6" /> Menu de la Carte
+                  </DialogTitle>
+              </DialogHeader>
+              <div className="grid gap-3 py-4">
+                  {MISSION_TYPES.map((mission) => (
+                      <button
+                          key={mission.id}
+                          onClick={() => { setSelectedMission(mission.id); setIsMissionOpen(false); }}
+                          className={cn(
+                              "flex items-center gap-4 p-4 rounded-xl border transition-all text-left group",
+                              mission.id === selectedMission ? "bg-indigo-600/20 border-indigo-500" : "bg-slate-900/50 border-white/5 hover:bg-slate-800"
+                          )}
+                      >
+                          <div className={cn("h-10 w-10 rounded-full flex items-center justify-center shrink-0", mission.bg)}>
+                              <mission.icon className={cn("h-5 w-5", mission.color)} />
+                          </div>
+                          <div className="flex-1">
+                              <span className="font-bold text-sm text-white">{mission.label}</span>
+                              <p className="text-xs text-slate-400">{mission.desc}</p>
+                          </div>
+                      </button>
+                  ))}
+              </div>
+          </DialogContent>
+      </Dialog>
+
+    </div>
+  );
+}
+
 function QuoteIcon(props: any) {
 
     return (
