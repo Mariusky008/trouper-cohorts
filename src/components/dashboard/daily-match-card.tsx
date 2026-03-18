@@ -434,8 +434,10 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
 
   useEffect(() => {
     // Sync state if props change
+    console.log("[DailyMatchCard] Syncing step based on matches:", matches);
     if (matches && matches.length > 0) {
         const current = matches[0];
+        console.log("[DailyMatchCard] Current match:", current.id, "hasFeedback:", current.hasFeedback, "status:", current.status);
         if (current.hasFeedback === true || current.status === 'met') {
             setStep('validated');
         } else {

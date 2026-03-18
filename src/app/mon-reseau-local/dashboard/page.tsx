@@ -32,6 +32,7 @@ export default async function DashboardHome() {
 
   try {
     matches = await getDailyMatches();
+    console.log("[Dashboard] Fetched matches:", matches);
     trustScore = await getTrustScore();
     
     // Safety fallback for settings
