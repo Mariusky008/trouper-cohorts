@@ -939,42 +939,142 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
         {/* Goals Grid (Direct Needs & Offers) */}
         <div className="grid grid-cols-2 gap-3 w-full mb-auto">
             {/* My Goal (Ce que je recherche) */}
-            <div 
-                onClick={() => setIsMyProfileOpen(true)}
-                className="bg-indigo-50 border-indigo-100 rounded-xl p-3 text-left border relative cursor-pointer hover:bg-indigo-100 transition-colors group/mygoal"
-            >
-                <div className="absolute top-2 right-2 opacity-0 group-hover/mygoal:opacity-100 transition-opacity">
-                    <Search className="w-3 h-3 text-indigo-400" />
-                </div>
-                <div className="flex items-center gap-1.5 mb-2">
-                    <Target className="w-3.5 h-3.5 text-indigo-500" />
-                    <span className="text-[9px] font-black text-indigo-700 uppercase tracking-wider">Ce que je cherche</span>
-                </div>
-                <p className="text-[11px] font-bold leading-tight line-clamp-3 text-[#2E130C]">
-                    {currentUserProfile?.current_goals && currentUserProfile.current_goals.length > 0
-                        ? GOAL_LABELS[currentUserProfile.current_goals[0]] || currentUserProfile.current_goals[0]
-                        : "Développer mon activité"}
-                </p>
-                <div className="mt-2 text-[9px] text-indigo-500 font-bold underline decoration-indigo-200">Voir mon profil détaillé</div>
-            </div>
+            <Dialog open={isMyProfileOpen} onOpenChange={setIsMyProfileOpen}>
+                <DialogTrigger asChild>
+                    <div 
+                        className="bg-indigo-50 border-indigo-100 rounded-xl p-3 text-left border relative cursor-pointer hover:bg-indigo-100 transition-colors group/mygoal"
+                    >
+                        <div className="absolute top-2 right-2 opacity-0 group-hover/mygoal:opacity-100 transition-opacity">
+                            <Search className="w-3 h-3 text-indigo-400" />
+                        </div>
+                        <div className="flex items-center gap-1.5 mb-2">
+                            <Target className="w-3.5 h-3.5 text-indigo-500" />
+                            <span className="text-[9px] font-black text-indigo-700 uppercase tracking-wider">Ce que je cherche</span>
+                        </div>
+                        <p className="text-[11px] font-bold leading-tight line-clamp-3 text-[#2E130C]">
+                            {currentUserProfile?.current_goals && currentUserProfile.current_goals.length > 0
+                                ? GOAL_LABELS[currentUserProfile.current_goals[0]] || currentUserProfile.current_goals[0]
+                                : "Développer mon activité"}
+                        </p>
+                        <div className="mt-2 text-[9px] text-indigo-500 font-bold underline decoration-indigo-200">Voir mon profil détaillé</div>
+                    </div>
+                </DialogTrigger>
+                <DialogContent className="bg-white border-[#2E130C]/10 text-[#2E130C] sm:max-w-md rounded-2xl w-[90vw] max-h-[85vh] overflow-y-auto">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2 text-xl font-black text-indigo-600">
+                            <Target className="h-6 w-6" /> Mon Profil Réseau
+                        </DialogTitle>
+                        <DialogDescription className="text-sm text-[#2E130C]/60">
+                            Voici comment les autres membres voient vos besoins et ce que vous pouvez offrir.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                        <div className="bg-indigo-50 p-4 rounded-xl border border-indigo-100 space-y-2">
+                            <h4 className="text-xs font-bold text-indigo-600 uppercase flex items-center gap-2">
+                                <Target className="h-4 w-4" /> Mes Besoins (Ce que je cherche)
+                            </h4>
+                            <div className="space-y-2">
+                                <p className="text-sm font-medium text-[#2E130C]/80">
+                                    <span className="font-bold">Objectif principal :</span> {currentUserProfile?.current_goals && currentUserProfile.current_goals.length > 0 ? GOAL_LABELS[currentUserProfile.current_goals[0]] || currentUserProfile.current_goals[0] : "Non défini"}
+                                </p>
+                                {currentUserProfile?.receive_profile?.comm_goal && (
+                                    <p className="text-sm font-medium text-[#2E130C]/80">
+                                        <span className="font-bold">Message :</span> {currentUserProfile.receive_profile.comm_goal}
+                                    </p>
+                                )}
+                                {currentUserProfile?.receive_profile?.target_companies && currentUserProfile.receive_profile.target_companies.length > 0 && (
+                                    <p className="text-sm font-medium text-[#2E130C]/80">
+                                        <span className="font-bold">Cibles :</span> {currentUserProfile.receive_profile.target_companies.join(', ')}
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+                        <div className="bg-emerald-50 p-4 rounded-xl border border-emerald-100 space-y-2">
+                            <h4 className="text-xs font-bold text-emerald-600 uppercase flex items-center gap-2">
+                                <Gift className="h-4 w-4" /> Mes Offres (Ce que je donne)
+                            </h4>
+                            <div className="space-y-2">
+                                <p className="text-sm font-medium text-[#2E130C]/80">
+                                    <span className="font-bold">Superpouvoir :</span> {currentUserProfile?.superpower || "Mon expertise"}
+                                </p>
+                                {currentUserProfile?.give_profile?.influence_sectors && currentUserProfile.give_profile.influence_sectors.length > 0 && (
+                                    <p className="text-sm font-medium text-[#2E130C]/80">
+                                        <span className="font-bold">Secteurs :</span> {currentUserProfile.give_profile.influence_sectors.join(', ')}
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                </DialogContent>
+            </Dialog>
 
             {/* His Goal (Ce qu'il recherche) */}
-            <div 
-                onClick={() => setIsPartnerProfileOpen(true)}
-                className="bg-purple-50 border-purple-100 rounded-xl p-3 text-left border relative cursor-pointer hover:bg-purple-100 transition-colors group/hisgoal"
-            >
-                <div className="absolute top-2 right-2 opacity-0 group-hover/hisgoal:opacity-100 transition-opacity">
-                    <Search className="w-3 h-3 text-purple-400" />
-                </div>
-                <div className="flex items-center gap-1.5 mb-2">
-                    <Search className="w-3.5 h-3.5 text-purple-500" />
-                    <span className="text-[9px] font-black uppercase tracking-wider text-purple-700">Ce qu'il cherche</span>
-                </div>
-                <p className="text-[11px] font-bold leading-tight line-clamp-3 text-[#2E130C]">
-                    {match.current_need || (match.current_goals && match.current_goals.length > 0 ? GOAL_LABELS[match.current_goals[0]] : "Développer son réseau")}
-                </p>
-                <div className="mt-2 text-[9px] text-purple-500 font-bold underline decoration-purple-200">Voir son profil détaillé</div>
-            </div>
+            <Dialog open={isPartnerProfileOpen} onOpenChange={setIsPartnerProfileOpen}>
+                <DialogTrigger asChild>
+                    <div 
+                        className="bg-purple-50 border-purple-100 rounded-xl p-3 text-left border relative cursor-pointer hover:bg-purple-100 transition-colors group/hisgoal"
+                    >
+                        <div className="absolute top-2 right-2 opacity-0 group-hover/hisgoal:opacity-100 transition-opacity">
+                            <Search className="w-3 h-3 text-purple-400" />
+                        </div>
+                        <div className="flex items-center gap-1.5 mb-2">
+                            <Search className="w-3.5 h-3.5 text-purple-500" />
+                            <span className="text-[9px] font-black uppercase tracking-wider text-purple-700">Ce qu'il cherche</span>
+                        </div>
+                        <p className="text-[11px] font-bold leading-tight line-clamp-3 text-[#2E130C]">
+                            {match.current_need || (match.current_goals && match.current_goals.length > 0 ? GOAL_LABELS[match.current_goals[0]] : "Développer son réseau")}
+                        </p>
+                        <div className="mt-2 text-[9px] text-purple-500 font-bold underline decoration-purple-200">Voir son profil détaillé</div>
+                    </div>
+                </DialogTrigger>
+                <DialogContent className="bg-white border-[#2E130C]/10 text-[#2E130C] sm:max-w-md rounded-2xl w-[90vw] max-h-[85vh] overflow-y-auto">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2 text-xl font-black text-purple-600">
+                            <Search className="h-6 w-6" /> Profil de {match.name.split(' ')[0]}
+                        </DialogTitle>
+                        <DialogDescription className="text-sm text-[#2E130C]/60">
+                            Détail de ce que votre partenaire recherche et ce qu'il peut vous apporter.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                        <div className="bg-purple-50 p-4 rounded-xl border border-purple-100 space-y-2">
+                            <h4 className="text-xs font-bold text-purple-600 uppercase flex items-center gap-2">
+                                <Search className="h-4 w-4" /> Ses Besoins
+                            </h4>
+                            <div className="space-y-2">
+                                <p className="text-sm font-medium text-[#2E130C]/80">
+                                    <span className="font-bold">Objectif principal :</span> {match.current_need || (match.current_goals && match.current_goals.length > 0 ? GOAL_LABELS[match.current_goals[0]] : "Non défini")}
+                                </p>
+                                {match.receive_profile?.comm_goal && (
+                                    <p className="text-sm font-medium text-[#2E130C]/80">
+                                        <span className="font-bold">Message :</span> {match.receive_profile.comm_goal}
+                                    </p>
+                                )}
+                                {match.receive_profile?.target_companies && match.receive_profile.target_companies.length > 0 && (
+                                    <p className="text-sm font-medium text-[#2E130C]/80">
+                                        <span className="font-bold">Cibles :</span> {match.receive_profile.target_companies.join(', ')}
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+                        <div className="bg-emerald-50 p-4 rounded-xl border border-emerald-100 space-y-2">
+                            <h4 className="text-xs font-bold text-emerald-600 uppercase flex items-center gap-2">
+                                <Gift className="h-4 w-4" /> Ses Offres
+                            </h4>
+                            <div className="space-y-2">
+                                <p className="text-sm font-medium text-[#2E130C]/80">
+                                    <span className="font-bold">Superpouvoir :</span> {match.superpower || "Son expertise"}
+                                </p>
+                                {match.give_profile?.influence_sectors && match.give_profile.influence_sectors.length > 0 && (
+                                    <p className="text-sm font-medium text-[#2E130C]/80">
+                                        <span className="font-bold">Secteurs :</span> {match.give_profile.influence_sectors.join(', ')}
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                </DialogContent>
+            </Dialog>
         </div>
 
         {/* Action Buttons */}
@@ -1288,166 +1388,6 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
         </div>
         
         {/* HIDDEN DIALOGS (To ensure content is available) */}
-
-        {/* Dialogs (My Profile & Partner Profile) */}
-      <Dialog open={isMyProfileOpen} onOpenChange={setIsMyProfileOpen}>
-          <DialogContent className="bg-white border-[#2E130C]/10 text-[#2E130C] sm:max-w-md rounded-2xl w-[90vw] max-h-[85vh] overflow-y-auto">
-              <DialogHeader>
-                  <DialogTitle className="flex items-center gap-2 text-xl font-black text-indigo-600">
-                      <Target className="h-6 w-6" /> Mon Profil Réseau
-                  </DialogTitle>
-                  <DialogDescription className="text-sm text-[#2E130C]/60">
-                      Voici comment les autres membres voient vos besoins et ce que vous pouvez offrir.
-                  </DialogDescription>
-              </DialogHeader>
-              <div className="space-y-4 py-4">
-                  <div className="bg-indigo-50 p-4 rounded-xl border border-indigo-100 space-y-2">
-                      <h4 className="text-xs font-bold text-indigo-600 uppercase flex items-center gap-2">
-                          <Target className="h-4 w-4" /> Mes Besoins (Ce que je cherche)
-                      </h4>
-                      <div className="space-y-2">
-                          <p className="text-sm font-medium text-[#2E130C]/80">
-                              <span className="font-bold">Objectif principal :</span> {currentUserProfile?.current_goals && currentUserProfile.current_goals.length > 0 ? GOAL_LABELS[currentUserProfile.current_goals[0]] || currentUserProfile.current_goals[0] : "Non défini"}
-                          </p>
-                          {currentUserProfile?.receive_profile?.comm_goal && (
-                              <p className="text-sm font-medium text-[#2E130C]/80">
-                                  <span className="font-bold">Message :</span> {currentUserProfile.receive_profile.comm_goal}
-                              </p>
-                          )}
-                           {currentUserProfile?.receive_profile?.target_companies && currentUserProfile.receive_profile.target_companies.length > 0 && (
-                              <p className="text-sm font-medium text-[#2E130C]/80">
-                                  <span className="font-bold">Cibles :</span> {currentUserProfile.receive_profile.target_companies.join(', ')}
-                              </p>
-                          )}
-                      </div>
-                  </div>
-                  <div className="bg-emerald-50 p-4 rounded-xl border border-emerald-100 space-y-2">
-                      <h4 className="text-xs font-bold text-emerald-600 uppercase flex items-center gap-2">
-                          <Gift className="h-4 w-4" /> Mes Offres (Ce que je donne)
-                      </h4>
-                      <div className="space-y-2">
-                           <p className="text-sm font-medium text-[#2E130C]/80">
-                              <span className="font-bold">Superpouvoir :</span> {currentUserProfile?.superpower || "Mon expertise"}
-                          </p>
-                          {currentUserProfile?.give_profile?.influence_sectors && currentUserProfile.give_profile.influence_sectors.length > 0 && (
-                              <p className="text-sm font-medium text-[#2E130C]/80">
-                                  <span className="font-bold">Secteurs :</span> {currentUserProfile.give_profile.influence_sectors.join(', ')}
-                              </p>
-                          )}
-                      </div>
-                  </div>
-              </div>
-          </DialogContent>
-      </Dialog>
-
-      <Dialog open={isPartnerProfileOpen} onOpenChange={setIsPartnerProfileOpen}>
-          <DialogContent className="bg-white border-[#2E130C]/10 text-[#2E130C] sm:max-w-md rounded-2xl w-[90vw] max-h-[85vh] overflow-y-auto">
-              <DialogHeader>
-                  <DialogTitle className="flex items-center gap-2 text-xl font-black text-purple-600">
-                      <Search className="h-6 w-6" /> Profil de {match.name.split(' ')[0]}
-                  </DialogTitle>
-                  <DialogDescription className="text-sm text-[#2E130C]/60">
-                      Détail de ce que votre partenaire recherche et ce qu'il peut vous apporter.
-                  </DialogDescription>
-              </DialogHeader>
-              <div className="space-y-4 py-4">
-                   <div className="bg-purple-50 p-4 rounded-xl border border-purple-100 space-y-2">
-                      <h4 className="text-xs font-bold text-purple-600 uppercase flex items-center gap-2">
-                          <Search className="h-4 w-4" /> Ses Besoins
-                      </h4>
-                      <div className="space-y-2">
-                           <p className="text-sm font-medium text-[#2E130C]/80">
-                              <span className="font-bold">Objectif principal :</span> {match.current_need || (match.current_goals && match.current_goals.length > 0 ? GOAL_LABELS[match.current_goals[0]] : "Non défini")}
-                          </p>
-                           {match.receive_profile?.comm_goal && (
-                              <p className="text-sm font-medium text-[#2E130C]/80">
-                                  <span className="font-bold">Message :</span> {match.receive_profile.comm_goal}
-                              </p>
-                          )}
-                          {match.receive_profile?.target_companies && match.receive_profile.target_companies.length > 0 && (
-                              <p className="text-sm font-medium text-[#2E130C]/80">
-                                  <span className="font-bold">Cibles :</span> {match.receive_profile.target_companies.join(', ')}
-                              </p>
-                          )}
-                      </div>
-                  </div>
-                  <div className="bg-emerald-50 p-4 rounded-xl border border-emerald-100 space-y-2">
-                      <h4 className="text-xs font-bold text-emerald-600 uppercase flex items-center gap-2">
-                          <Gift className="h-4 w-4" /> Ses Offres
-                      </h4>
-                       <div className="space-y-2">
-                           <p className="text-sm font-medium text-[#2E130C]/80">
-                              <span className="font-bold">Superpouvoir :</span> {match.superpower || "Son expertise"}
-                          </p>
-                           {match.give_profile?.influence_sectors && match.give_profile.influence_sectors.length > 0 && (
-                              <p className="text-sm font-medium text-[#2E130C]/80">
-                                  <span className="font-bold">Secteurs :</span> {match.give_profile.influence_sectors.join(', ')}
-                              </p>
-                          )}
-                      </div>
-                  </div>
-              </div>
-          </DialogContent>
-      </Dialog>
-      
-        {/* Phone Dialog Content (Reused) */}
-        <Dialog open={isWhatsAppOpen} onOpenChange={(open) => {
-            setIsWhatsAppOpen(open);
-            if (!open) {
-                setStep('called');
-            }
-        }}>
-            <DialogContent className="bg-white border-[#2E130C]/10 text-[#2E130C] sm:max-w-md rounded-2xl w-[90vw]">
-                <DialogHeader>
-                    <DialogTitle className="flex flex-col items-center gap-4 text-2xl font-black justify-center pt-4">
-                        <div className="h-20 w-20 rounded-full bg-[#25D366]/10 flex items-center justify-center animate-pulse">
-                            <MessageSquare className="h-10 w-10 text-[#25D366] fill-current" />
-                        </div>
-                        <span>L'Entremetteur</span>
-                    </DialogTitle>
-                    <DialogDescription className="text-center text-[#2E130C]/60 text-base">
-                        Brisons la glace. Voici un message prêt à être envoyé à <span className="text-[#2E130C] font-bold">{match.name.split(' ')[0]}</span> sur WhatsApp pour initier le contact sans friction.
-                    </DialogDescription>
-                </DialogHeader>
-                <div className="py-4 space-y-6">
-                    {/* Message Preview Box */}
-                    <div className="bg-[#F3F0E7] rounded-xl p-4 border border-[#2E130C]/10 relative shadow-inner">
-                        <div className="absolute -top-3 left-4 bg-[#25D366] text-white text-[10px] font-black uppercase px-2 py-0.5 rounded-full tracking-wider shadow-sm">
-                            Message généré
-                        </div>
-                        <p className="text-[#2E130C] text-sm leading-relaxed whitespace-pre-wrap font-medium">
-                            {`Salut ${match.name.split(' ')[0]}, c'est ${currentUserProfile?.first_name || currentUserProfile?.display_name?.split(' ')[0] || currentUserProfile?.name?.split(' ')[0] || "Jean-Philippe"} ! On a matché aujourd'hui sur Popey.Academy. J'ai vu que tu étais ${match.job || "dirigeant"}, ça m'intéresse ! Dispo pour un appel rapide ou un vocal aujourd'hui ou demain ?`}
-                            {currentUserProfile?.featured_link && (
-                                <span className="block mt-4">
-                                    Ps : si tu veux en savoir un peu plus sur moi voici mon lien : {currentUserProfile.featured_link}
-                                </span>
-                            )}
-                        </p>
-                        <p className="text-xs text-[#2E130C]/50 mt-3 italic">
-                            (Vous pourrez le modifier dans WhatsApp avant de l'envoyer)
-                        </p>
-                    </div>
-
-                    <div className="flex flex-col gap-3">
-                        <Button 
-                            onClick={handleWhatsAppRedirect}
-                            className="w-full h-14 bg-[#25D366] hover:bg-[#20bd5a] text-white font-black text-lg rounded-xl shadow-lg hover:scale-[1.02] transition-transform"
-                        >
-                            <MessageSquare className="w-5 h-5 mr-2 fill-current" />
-                            OUVRIR WHATSAPP
-                        </Button>
-                        <Button 
-                            variant="ghost" 
-                            onClick={() => setIsWhatsAppOpen(false)}
-                            className="w-full text-[#2E130C]/60 hover:text-[#2E130C]"
-                        >
-                            Annuler
-                        </Button>
-                    </div>
-                </div>
-            </DialogContent>
-        </Dialog>
-
       </div>
     </div>
   );

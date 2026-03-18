@@ -978,7 +978,7 @@ export function MissionValidationPreview() {
                                             {/* Gift Selector */}
                                             {!selectedOpportunity ? (
                                                 <div className="grid grid-cols-2 gap-2 max-h-[40vh] overflow-y-auto pr-1">
-                                                    {OPPORTUNITY_TYPES.map(type => (
+                                                    {OPPORTUNITY_TYPES.map((type: any) => (
                                                         <button
                                                             key={type.id}
                                                             onClick={() => setSelectedOpportunity(type.id)}
@@ -999,7 +999,7 @@ export function MissionValidationPreview() {
                                                         className="flex items-center justify-between bg-purple-500/10 p-3 rounded-xl border border-purple-500/30"
                                                     >
                                                         <span className="text-sm font-bold text-purple-300 flex items-center gap-2">
-                                                            <Gift className="w-4 h-4" /> {OPPORTUNITY_TYPES.find(t => t.id === selectedOpportunity)?.label}
+                                                            <Gift className="w-4 h-4" /> {OPPORTUNITY_TYPES.find((t: any) => t.id === selectedOpportunity)?.label}
                                                         </span>
                                                         <button onClick={() => setSelectedOpportunity(null)} className="text-xs text-slate-400 underline hover:text-white">Changer</button>
                                                     </motion.div>
@@ -1745,7 +1745,12 @@ export function MatchCardWhatsAppPreview() {
             {step === 'initial' && (
                 <>
                     {/* MAIN WHATSAPP BUTTON */}
-                    <Dialog open={isWhatsAppOpen} onOpenChange={setIsWhatsAppOpen}>
+                    <Dialog open={isWhatsAppOpen} onOpenChange={(open) => {
+                        setIsWhatsAppOpen(open);
+                        if (!open) {
+                            setStep('contacted');
+                        }
+                    }}>
                         <DialogTrigger asChild>
                             <Button 
                                 className="w-full h-14 bg-[#25D366] hover:bg-[#20bd5a] text-white font-black text-base rounded-xl shadow-lg shadow-[#25D366]/20 tracking-wide transition-all hover:scale-[1.02] relative overflow-hidden group/btn"
