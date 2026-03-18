@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/accordion";
 
 import { AuthDialog } from "@/components/auth-dialog";
-import { MysteryCardPreview, MatchCardPreview, FounderCardPreview } from "@/components/dashboard/design-system-preview";
+import { MysteryCardPreview, MatchCardPreview, MatchCardWhatsAppPreview, FounderCardPreview } from "@/components/dashboard/design-system-preview";
 import { Titan_One, Pacifico, Poppins } from "next/font/google";
 
 // --- FONTS ---
@@ -670,7 +670,7 @@ export default function HomePage() {
                            <div className="bg-[#D2E8FF] border-4 border-[#2E130C] rounded-[2rem] p-4 shadow-[8px_8px_0px_0px_#2E130C] transform rotate-[2deg] w-full max-w-[400px]">
                               {/* Increased scale for visibility */}
                               <div className="scale-[1.0] origin-center">
-                                  <MatchCardPreview />
+                                  <MatchCardWhatsAppPreview />
                               </div>
                            </div>
                         </div>
@@ -718,8 +718,7 @@ export default function HomePage() {
                              </div>
                              <h3 className="text-3xl font-titan text-[#2E130C]">Passez à l’action en un clic</h3>
                              <p className="text-[#2E130C]/80 text-lg leading-relaxed font-poppins font-bold">
-                                Le profil est révélé avec les informations essentielles et un créneau d’appel. 
-                                Échangez 5 minutes, créez de nouvelles opportunités (recommandations, avis, partages, clients...).
+                                Le profil est révélé. Cliquez sur le bouton WhatsApp pour voir le message pré-rempli et initier l'échange sans friction.
                              </p>
                              <div className="flex flex-col gap-3">
                                <Link href="/inscription/spheres">
