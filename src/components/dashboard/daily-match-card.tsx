@@ -747,7 +747,7 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
   const isTomorrowWeekend = tomorrow.getDay() === 6 || tomorrow.getDay() === 0;
 
   // Weekend State - Clean & Warm
-  if (!matchesState || matchesState.length === 0) {
+  if (!matches || matches.length === 0) {
       if (isWeekend || isTomorrowWeekend) {
           return <WeekendCard />;
       }
@@ -773,7 +773,7 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
       return null;
   }
 
-  const match = matchesState[0];
+  const match = matchesState && matchesState.length > 0 ? matchesState[0] : matches[0];
   const isCallOut = match.type === 'call_out';
 
   const mySlots = match.mySlots || [];
