@@ -88,21 +88,25 @@ export function AvailabilitySelector({ settings, potentialCount = 0, onSuccess }
       const currentDays = [...selectedDays];
       const currentSlots = [...selectedSlots];
       
-      // Force state updates immediately for UX
-      setIsAvailabilitySaved(true);
-      
       // Save global network settings (days + default slots)
-      await updateNetworkSettings({
+      const result = await updateNetworkSettings({
           preferred_days: currentDays,
           preferred_slots: currentSlots,
           frequency_per_week: currentDays.length
       });
+
+      if (!result?.success) {
+          throw new Error("Failed to save settings to server");
+      }
 
       // Optionally save explicit slots for tomorrow (retro-compatibility)
       const tomorrowDay = tomorrow.toLocaleDateString('en-US', { weekday: 'short' }).toLowerCase();
       if (currentDays.includes(tomorrowDay)) {
          await saveAvailability(dateStr, currentSlots);
       }
+      
+      // Force state updates immediately for UX only AFTER successful save
+      setIsAvailabilitySaved(true);
       
       // Keep local state perfectly locked to what we just saved
       setSelectedDays(currentDays);
