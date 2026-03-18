@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import { useState } from "react";
-import { User, Zap, Lock, Phone, Clock, Sparkles, Fingerprint, Search, Flame, Briefcase, Handshake, TrendingUp, Target, CheckCircle2, Users, Star, MessageSquare, Gift, PhoneCall, ChevronRight, ExternalLink } from "lucide-react";
+import { User, Zap, Lock, Phone, Clock, Sparkles, Fingerprint, Search, Flame, Briefcase, Handshake, TrendingUp, Target, CheckCircle2, Users, Star, MessageSquare, Gift, PhoneCall, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -90,15 +90,15 @@ export function WaitingCardPreview() {
       </div>
         {/* Dialogs (My Profile & Partner Profile) */}
       <Dialog open={isMyProfileOpen} onOpenChange={setIsMyProfileOpen}>
-          <DialogContent className="bg-white border-[#2E130C]/10 text-[#2E130C] sm:max-w-md rounded-2xl w-[90vw] max-h-[85vh] overflow-y-auto" aria-describedby="preview-my-profile-desc">
+          <DialogContent className="bg-white border-[#2E130C]/10 text-[#2E130C] sm:max-w-md rounded-2xl w-[90vw] max-h-[85vh] overflow-y-auto">
               <DialogHeader>
-                        <DialogTitle className="flex items-center gap-2 text-xl font-black text-indigo-600">
-                            <Target className="h-6 w-6" /> Mon Profil Réseau
-                        </DialogTitle>
-                        <DialogDescription id="preview-my-profile-desc" className="text-sm text-[#2E130C]/60">
-                            Voici comment les autres membres voient vos besoins et ce que vous pouvez offrir.
-                        </DialogDescription>
-                    </DialogHeader>
+                  <DialogTitle className="flex items-center gap-2 text-xl font-black text-indigo-600">
+                      <Target className="h-6 w-6" /> Mon Profil Réseau
+                  </DialogTitle>
+                  <DialogDescription className="text-sm text-[#2E130C]/60">
+                      Voici comment les autres membres voient vos besoins et ce que vous pouvez offrir.
+                  </DialogDescription>
+              </DialogHeader>
               <div className="space-y-4 py-4">
                   <div className="bg-indigo-50 p-4 rounded-xl border border-indigo-100 space-y-2">
                       <h4 className="text-xs font-bold text-indigo-600 uppercase flex items-center gap-2">
@@ -130,13 +130,13 @@ export function WaitingCardPreview() {
       <Dialog open={isPartnerProfileOpen} onOpenChange={setIsPartnerProfileOpen}>
           <DialogContent className="bg-white border-[#2E130C]/10 text-[#2E130C] sm:max-w-md rounded-2xl w-[90vw] max-h-[85vh] overflow-y-auto">
               <DialogHeader>
-                        <DialogTitle className="flex items-center gap-2 text-xl font-black text-purple-600">
-                            <Search className="h-6 w-6" /> Profil de {matchName}
-                        </DialogTitle>
-                        <DialogDescription id="preview-partner-profile-desc" className="text-sm text-[#2E130C]/60">
-                            Détail de ce que votre partenaire recherche et ce qu'il peut vous apporter.
-                        </DialogDescription>
-                    </DialogHeader>
+                  <DialogTitle className="flex items-center gap-2 text-xl font-black text-purple-600">
+                      <Search className="h-6 w-6" /> Profil de {matchName}
+                  </DialogTitle>
+                  <DialogDescription className="text-sm text-[#2E130C]/60">
+                      Détail de ce que votre partenaire recherche et ce qu'il peut vous apporter.
+                  </DialogDescription>
+              </DialogHeader>
               <div className="space-y-4 py-4">
                    <div className="bg-purple-50 p-4 rounded-xl border border-purple-100 space-y-2">
                       <h4 className="text-xs font-bold text-purple-600 uppercase flex items-center gap-2">
@@ -435,13 +435,13 @@ export function MatchCardPreview() {
             
             {/* 0. Mission Dialog */}
             <Dialog open={isMissionOpen} onOpenChange={setIsMissionOpen}>
-                <DialogContent className="bg-[#0f172a] border-white/10 text-white sm:max-w-md rounded-2xl w-[90vw] max-h-[85vh] overflow-y-auto" aria-describedby="mission-desc">
+                <DialogContent className="bg-[#0f172a] border-white/10 text-white sm:max-w-md rounded-2xl w-[90vw] max-h-[85vh] overflow-y-auto">
                     <DialogHeader>
                         <DialogTitle className="flex items-center gap-2 text-xl font-black text-indigo-400">
                             <Target className="h-6 w-6" />
                             Menu de la Carte 🍽️
                         </DialogTitle>
-                        <DialogDescription id="mission-desc" className="text-slate-400">
+                        <DialogDescription className="text-slate-400">
                             Ne partez pas sans objectif. Choisissez le thème de votre échange.
                         </DialogDescription>
                     </DialogHeader>
@@ -562,11 +562,7 @@ export function MatchCardPreview() {
                         </Button>
                     </div>
                 </DialogTrigger>
-                <DialogContent className="bg-[#0f172a] border-white/10 text-white sm:max-w-md rounded-2xl" aria-describedby="phone-desc">
-                    <DialogHeader className="sr-only">
-                        <DialogTitle>Appel en cours</DialogTitle>
-                        <DialogDescription id="phone-desc">Détails de l'appel téléphonique avec votre partenaire.</DialogDescription>
-                    </DialogHeader>
+                <DialogContent className="bg-[#0f172a] border-white/10 text-white sm:max-w-md rounded-2xl">
                     <div className="flex flex-col items-center gap-6 py-8">
                         <div className="h-20 w-20 rounded-full bg-emerald-500/20 flex items-center justify-center animate-pulse">
                             <Phone className="h-10 w-10 text-emerald-400" />
@@ -590,13 +586,13 @@ export function MatchCardPreview() {
                         <Gift className="h-6 w-6" />
                     </Button>
                 </DialogTrigger>
-                <DialogContent className="bg-[#0f172a] border-white/10 text-white sm:max-w-md rounded-2xl w-[95vw] max-h-[85vh] overflow-y-auto" aria-describedby="opportunity-desc">
+                <DialogContent className="bg-[#0f172a] border-white/10 text-white sm:max-w-md rounded-2xl w-[95vw] max-h-[85vh] overflow-y-auto">
                     <DialogHeader>
                         <DialogTitle className="flex items-center gap-2 text-xl font-black">
                             <Gift className="h-6 w-6 text-purple-400" />
                             Offrir une Opportunité
                         </DialogTitle>
-                        <DialogDescription id="opportunity-desc" className="text-slate-400">
+                        <DialogDescription className="text-slate-400">
                             Quelle valeur souhaitez-vous apporter à Jean-Paul ?
                         </DialogDescription>
                     </DialogHeader>
@@ -640,14 +636,11 @@ export function MatchCardPreview() {
                         <Star className="h-6 w-6 fill-current" />
                     </Button>
                 </DialogTrigger>
-                <DialogContent className="bg-[#0f172a] border-white/10 text-white sm:max-w-md rounded-2xl" aria-describedby="rating-desc">
+                <DialogContent className="bg-[#0f172a] border-white/10 text-white sm:max-w-md rounded-2xl">
                     <DialogHeader>
                         <DialogTitle className="flex items-center gap-2 text-xl font-black justify-center">
                             Comment s'est passé l'échange ?
                         </DialogTitle>
-                        <DialogDescription id="rating-desc" className="sr-only">
-                            Notez l'échange avec votre partenaire
-                        </DialogDescription>
                     </DialogHeader>
                     <div className="grid grid-cols-3 gap-3 py-6">
                         <Button onClick={() => { setIsRatingOpen(false); toast.success("Feedback enregistré ! 🔥"); }} className="h-24 flex flex-col bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
@@ -807,14 +800,14 @@ export function MissionValidationPreview() {
                                         <MessageSquare className="h-6 w-6 fill-current" />
                                     </Button>
                                 </DialogTrigger>
-                                <DialogContent className="bg-[#0f172a] border-white/10 text-white sm:max-w-md rounded-2xl w-[90vw] p-0 overflow-hidden" aria-describedby="why-desc">
+                                <DialogContent className="bg-[#0f172a] border-white/10 text-white sm:max-w-md rounded-2xl w-[90vw] p-0 overflow-hidden">
                                     <div className="bg-gradient-to-br from-blue-600/20 to-purple-600/20 p-6">
                                         <DialogHeader>
                                             <DialogTitle className="flex items-center gap-2 text-xl font-black">
                                                 <Zap className="h-6 w-6 text-yellow-400 fill-yellow-400" />
                                                 Pourquoi ce match ?
                                             </DialogTitle>
-                                            <DialogDescription id="why-desc" className="text-slate-300">
+                                            <DialogDescription className="text-slate-300">
                                                 Voici pourquoi l'algorithme vous a réunis aujourd'hui.
                                             </DialogDescription>
                                         </DialogHeader>
@@ -883,7 +876,7 @@ export function MissionValidationPreview() {
                                         </Button>
                                     </div>
                                 </DialogTrigger>
-                                <DialogContent className="bg-[#0f172a] border-white/10 text-white sm:max-w-md rounded-2xl w-[95vw] min-h-[400px] flex flex-col justify-center transition-all duration-300" aria-describedby="validation-preview-desc">
+                                <DialogContent className="bg-[#0f172a] border-white/10 text-white sm:max-w-md rounded-2xl w-[95vw] min-h-[400px] flex flex-col justify-center transition-all duration-300">
                                     
                                     {/* PROGRESS INDICATOR */}
                                     <div className="absolute top-0 left-0 right-0 h-1 bg-white/5">
@@ -902,9 +895,6 @@ export function MissionValidationPreview() {
                                         <DialogTitle className="text-center text-3xl font-black bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
                                             {popupView === 'step1_status' ? "Bilan de la mission" : popupView === 'step2_rating' ? "Notez l'échange" : "Offrir une opportunité"}
                                         </DialogTitle>
-                                        <DialogDescription id="validation-preview-desc" className="sr-only">
-                                            Validation de la mission de test
-                                        </DialogDescription>
                                     </DialogHeader>
                                     
                                     {/* VIEW 1: STATUS CALL */}
@@ -988,7 +978,7 @@ export function MissionValidationPreview() {
                                             {/* Gift Selector */}
                                             {!selectedOpportunity ? (
                                                 <div className="grid grid-cols-2 gap-2 max-h-[40vh] overflow-y-auto pr-1">
-                                                    {OPPORTUNITY_TYPES.map((type: any) => (
+                                                    {OPPORTUNITY_TYPES.map(type => (
                                                         <button
                                                             key={type.id}
                                                             onClick={() => setSelectedOpportunity(type.id)}
@@ -1009,7 +999,7 @@ export function MissionValidationPreview() {
                                                         className="flex items-center justify-between bg-purple-500/10 p-3 rounded-xl border border-purple-500/30"
                                                     >
                                                         <span className="text-sm font-bold text-purple-300 flex items-center gap-2">
-                                                            <Gift className="w-4 h-4" /> {OPPORTUNITY_TYPES.find((t: any) => t.id === selectedOpportunity)?.label}
+                                                            <Gift className="w-4 h-4" /> {OPPORTUNITY_TYPES.find(t => t.id === selectedOpportunity)?.label}
                                                         </span>
                                                         <button onClick={() => setSelectedOpportunity(null)} className="text-xs text-slate-400 underline hover:text-white">Changer</button>
                                                     </motion.div>
@@ -1629,7 +1619,7 @@ export function MatchCardWhatsAppPreview() {
   const matchName = "Jean-Paul";
   const matchJob = "Directeur Commercial";
 
-  const whatsappMessage = `Salut ${matchName}, c'est ${myName} ! On a matché aujourd'hui sur Popey.Academy. J'ai vu que tu étais ${matchJob}, ça m'intéresse ! Dispo pour un appel rapide ou un vocal aujourd'hui ou demain ?\n\nPs : si tu veux en savoir un peu plus sur moi voici mon lien : https://www.popey.academy`;
+  const whatsappMessage = `Salut ${matchName}, c'est ${myName} ! On a matché aujourd'hui sur Popey.Academy. J'ai vu que tu étais ${matchJob}, ça m'intéresse ! Dispo pour un appel rapide ou un vocal aujourd'hui ou demain ?`;
   const [callHappened, setCallHappened] = useState<boolean | null>(null);
   const [rating, setRating] = useState<'fire' | 'good' | 'meh' | null>(null);
   const [oppType, setOppType] = useState<string | undefined>(undefined);
@@ -1755,12 +1745,7 @@ export function MatchCardWhatsAppPreview() {
             {step === 'initial' && (
                 <>
                     {/* MAIN WHATSAPP BUTTON */}
-                    <Dialog open={isWhatsAppOpen} onOpenChange={(open) => {
-                        setIsWhatsAppOpen(open);
-                        if (!open) {
-                            setStep('contacted');
-                        }
-                    }}>
+                    <Dialog open={isWhatsAppOpen} onOpenChange={setIsWhatsAppOpen}>
                         <DialogTrigger asChild>
                             <Button 
                                 className="w-full h-14 bg-[#25D366] hover:bg-[#20bd5a] text-white font-black text-base rounded-xl shadow-lg shadow-[#25D366]/20 tracking-wide transition-all hover:scale-[1.02] relative overflow-hidden group/btn"
@@ -1769,13 +1754,13 @@ export function MatchCardWhatsAppPreview() {
                                 <span className="relative z-10">CONTACTER VIA WHATSAPP</span>
                             </Button>
                         </DialogTrigger>
-                        <DialogContent className="bg-white border-[#2E130C]/10 text-[#2E130C] sm:max-w-md rounded-2xl w-[95vw]" aria-describedby="preview-whatsapp-desc">
+                        <DialogContent className="bg-white border-[#2E130C]/10 text-[#2E130C] sm:max-w-md rounded-2xl w-[95vw]">
                             <DialogHeader>
                                 <DialogTitle className="flex items-center gap-2 text-xl font-black">
                                     <MessageSquare className="h-6 w-6 text-[#25D366] fill-[#25D366]" />
                                     L'Entremetteur
                                 </DialogTitle>
-                                <DialogDescription id="preview-whatsapp-desc" className="text-[#2E130C]/60 text-sm">
+                                <DialogDescription className="text-[#2E130C]/60 text-sm">
                                     Brisons la glace. Voici un message prêt à être envoyé à {matchName} sur WhatsApp pour initier le contact sans friction.
                                 </DialogDescription>
                             </DialogHeader>
@@ -1841,7 +1826,7 @@ export function MatchCardWhatsAppPreview() {
                             </Button>
                         </DialogTrigger>
                         
-                        <DialogContent className="bg-white border-[#2E130C]/10 text-[#2E130C] sm:max-w-md rounded-2xl w-[95vw] min-h-[400px] flex flex-col justify-center transition-all duration-300" aria-describedby="validation-desc">
+                        <DialogContent className="bg-white border-[#2E130C]/10 text-[#2E130C] sm:max-w-md rounded-2xl w-[95vw] min-h-[400px] flex flex-col justify-center transition-all duration-300">
                             {/* PROGRESS INDICATOR */}
                             <div className="absolute top-0 left-0 right-0 h-1 bg-[#2E130C]/5">
                                 <motion.div 
@@ -1859,9 +1844,6 @@ export function MatchCardWhatsAppPreview() {
                                 <DialogTitle className="text-center text-3xl font-black text-[#2E130C]">
                                     {popupView === 'step1_status' ? "Bilan de la mission" : popupView === 'step2_rating' ? "Notez l'échange" : "Offrir une opportunité"}
                                 </DialogTitle>
-                                <DialogDescription id="validation-desc" className="sr-only">
-                                    Validation de la mission du jour
-                                </DialogDescription>
                             </DialogHeader>
                             
                             {/* VIEW 1: STATUS CALL */}

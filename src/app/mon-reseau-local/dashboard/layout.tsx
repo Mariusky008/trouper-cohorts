@@ -142,7 +142,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   
   return (
     <div className="min-h-screen bg-[#E2D9BC] flex flex-col font-sans text-[#2E130C] selection:bg-[#B20B13] selection:text-[#E2D9BC]">
-      {/* <ProfileCompletionModal /> */}
+      <ProfileCompletionModal />
       
       {/* --- TOP NAVIGATION BAR (DESKTOP & MOBILE) --- */}
       <header className="fixed top-0 w-full bg-[#E2D9BC]/90 backdrop-blur-md border-b-2 border-[#2E130C]/10 z-30 h-16 px-4 lg:px-8 flex items-center justify-between shadow-sm">
@@ -384,10 +384,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       </main>
 
       {/* GLOBAL CHAT WIDGET */}
-      {/* {currentUserId && <GlobalChatWidget currentUserId={currentUserId} />} */}
+      {currentUserId && <GlobalChatWidget currentUserId={currentUserId} />}
       
       {/* PWA INSTALL PROMPT */}
-      {/* <PWAInstallPrompt /> */}
+      <PWAInstallPrompt />
 
     </div>
   );

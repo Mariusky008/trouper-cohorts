@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Clock, Star, Phone, MessageSquare, User, Zap, Trophy, Handshake, Gift, PhoneCall, Copy, Target, Search, Fingerprint, Briefcase, CheckCircle2, Users, Lock, Flame, TrendingUp, ChevronRight, ExternalLink } from "lucide-react";
+import { Clock, Star, Phone, MessageSquare, User, Zap, Trophy, Handshake, Gift, PhoneCall, Copy, Target, Search, Fingerprint, Briefcase, CheckCircle2, Users, Lock, Flame, TrendingUp, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
@@ -429,62 +429,28 @@ const WeekendCard = () => (
 
 export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserProfile }: DailyMatchCardProps) {
   // State
-  const [mounted, setMounted] = useState(false);
   const [revealed, setRevealed] = useState(false);
   const [step, setStep] = useState<'initial' | 'called' | 'validated'>(() => {
-    // Force sync step with matches prop on mount
-    if (matches && matches.length > 0) {
-        const current = matches[0];
-        if (current.hasFeedback === true || current.status === 'met') {
-            return 'validated';
-        }
-    }
-    return 'initial';
+      // Initialize based on props immediately
+      if (matches && matches.length > 0) {
+          const current = matches[0];
+          // Use stricter check
+          if (current.hasFeedback === true || current.status === 'met') {
+              return 'validated';
+          }
+      }
+      return 'initial';
   });
 
   useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  // Update step if matches change (e.g. after refresh)
-  useEffect(() => {
+    // Force sync step with matches prop on mount and update
     if (matches && matches.length > 0) {
         const current = matches[0];
         if (current.hasFeedback === true || current.status === 'met') {
             setStep('validated');
-        } else if (step === 'validated') {
-            // Only reset if we were validated but the new match isn't
-            setStep('initial');
         }
     }
-  }, [matches]);
-
-  // Use props directly, no derived state for matches to avoid hydration mismatch
-  const currentMatch = matches && matches.length > 0 ? matches[0] : null;
-
-  // Realtime Subscription for Sync across devices
-  useEffect(() => {
-    if (!currentMatch) return;
-
-    const supabase = createClient();
-    
-    const channel = supabase.channel(`match_${currentMatch.id}`)
-        .on(
-            'postgres_changes',
-            { event: 'UPDATE', schema: 'public', table: 'network_matches', filter: `id=eq.${currentMatch.id}` },
-            (payload) => {
-                const updatedMatch = payload.new as any;
-                if (updatedMatch.status === 'met' || updatedMatch.has_feedback) {
-                    setStep('validated');
-                }
-            }
-        )
-        .subscribe();
-
-    return () => {
-        supabase.removeChannel(channel);
-    };
-  }, [currentMatch]);
+  }, [matches, matches[0]?.hasFeedback, matches[0]?.status]);
 
   // Realtime Subscription for Sync across devices
   useEffect(() => {
@@ -600,11 +566,7 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
       // We try first_name first, then display_name, then fallback to splitting the name, then finally "Jean-Philippe" as fallback if profile is empty
       const myName = currentUserProfile?.first_name || currentUserProfile?.display_name?.split(' ')[0] || currentUserProfile?.name?.split(' ')[0] || "Jean-Philippe";
       
-      let whatsappMessage = `Salut ${matchName}, c'est ${myName} ! On a matché aujourd'hui sur Popey.Academy. J'ai vu que tu étais ${matchJob}, ça m'intéresse ! Dispo pour un appel rapide ou un vocal aujourd'hui ou demain ?`;
-      
-      if (currentUserProfile?.featured_link) {
-          whatsappMessage += `\n\nPs : si tu veux en savoir un peu plus sur moi voici mon lien : ${currentUserProfile.featured_link}`;
-      }
+      const whatsappMessage = `Salut ${matchName}, c'est ${myName} ! On a matché aujourd'hui sur Popey.Academy. J'ai vu que tu étais ${matchJob}, ça m'intéresse ! Dispo pour un appel rapide ou un vocal aujourd'hui ou demain ?`;
       
       const formattedPhone = formatPhoneForWhatsApp(matches[0]?.phone);
       
@@ -747,11 +709,10 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
   };
 
   // RENDER LOGIC
-  
-  // Prevent hydration mismatch - MUST BE FIRST
-  if (!mounted) {
-      return <div className="w-full max-w-sm mx-auto h-[600px] rounded-[2.5rem] bg-white border border-[#2E130C]/10 animate-pulse" />;
-  }
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const now = new Date();
   const isWeekend = now.getDay() === 6 || now.getDay() === 0;
@@ -762,7 +723,7 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
   const isTomorrowWeekend = tomorrow.getDay() === 6 || tomorrow.getDay() === 0;
 
   // Weekend State - Clean & Warm
-  if (!currentMatch) {
+  if (!matches || matches.length === 0) {
       if (isWeekend || isTomorrowWeekend) {
           return <WeekendCard />;
       }
@@ -788,7 +749,7 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
       return <div className="w-full max-w-sm mx-auto h-[600px] rounded-[2.5rem] bg-white border border-[#2E130C]/10 animate-pulse" />;
   }
 
-  const match = currentMatch;
+  const match = matches[0];
   const isCallOut = match.type === 'call_out';
 
   const mySlots = match.mySlots || [];
@@ -971,145 +932,45 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
             </p>
         </div>
 
-            {/* Goals Grid (Direct Needs & Offers) */}
+        {/* Goals Grid (Direct Needs & Offers) */}
         <div className="grid grid-cols-2 gap-3 w-full mb-auto">
             {/* My Goal (Ce que je recherche) */}
-            <Dialog open={isMyProfileOpen} onOpenChange={setIsMyProfileOpen}>
-                <DialogTrigger asChild>
-                    <div 
-                        className="bg-indigo-50 border-indigo-100 rounded-xl p-3 text-left border relative cursor-pointer hover:bg-indigo-100 transition-colors group/mygoal"
-                    >
-                        <div className="absolute top-2 right-2 opacity-0 group-hover/mygoal:opacity-100 transition-opacity">
-                            <Search className="w-3 h-3 text-indigo-400" />
-                        </div>
-                        <div className="flex items-center gap-1.5 mb-2">
-                            <Target className="w-3.5 h-3.5 text-indigo-500" />
-                            <span className="text-[9px] font-black text-indigo-700 uppercase tracking-wider">Ce que je cherche</span>
-                        </div>
-                        <p className="text-[11px] font-bold leading-tight line-clamp-3 text-[#2E130C]">
-                            {currentUserProfile?.current_goals && currentUserProfile.current_goals.length > 0
-                                ? GOAL_LABELS[currentUserProfile.current_goals[0]] || currentUserProfile.current_goals[0]
-                                : "Développer mon activité"}
-                        </p>
-                        <div className="mt-2 text-[9px] text-indigo-500 font-bold underline decoration-indigo-200">Voir mon profil détaillé</div>
-                    </div>
-                </DialogTrigger>
-                <DialogContent className="bg-white border-[#2E130C]/10 text-[#2E130C] sm:max-w-md rounded-2xl w-[90vw] max-h-[85vh] overflow-y-auto" aria-describedby="my-profile-desc">
-                    <DialogHeader>
-                        <DialogTitle className="flex items-center gap-2 text-xl font-black text-indigo-600">
-                            <Target className="h-6 w-6" /> Mon Profil Réseau
-                        </DialogTitle>
-                        <DialogDescription id="my-profile-desc" className="text-sm text-[#2E130C]/60">
-                            Voici comment les autres membres voient vos besoins et ce que vous pouvez offrir.
-                        </DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-4 py-4">
-                        <div className="bg-indigo-50 p-4 rounded-xl border border-indigo-100 space-y-2">
-                            <h4 className="text-xs font-bold text-indigo-600 uppercase flex items-center gap-2">
-                                <Target className="h-4 w-4" /> Mes Besoins (Ce que je cherche)
-                            </h4>
-                            <div className="space-y-2">
-                                <p className="text-sm font-medium text-[#2E130C]/80">
-                                    <span className="font-bold">Objectif principal :</span> {currentUserProfile?.current_goals && currentUserProfile.current_goals.length > 0 ? GOAL_LABELS[currentUserProfile.current_goals[0]] || currentUserProfile.current_goals[0] : "Non défini"}
-                                </p>
-                                {currentUserProfile?.receive_profile?.comm_goal && (
-                                    <p className="text-sm font-medium text-[#2E130C]/80">
-                                        <span className="font-bold">Message :</span> {currentUserProfile.receive_profile.comm_goal}
-                                    </p>
-                                )}
-                                {currentUserProfile?.receive_profile?.target_companies && currentUserProfile.receive_profile.target_companies.length > 0 && (
-                                    <p className="text-sm font-medium text-[#2E130C]/80">
-                                        <span className="font-bold">Cibles :</span> {currentUserProfile.receive_profile.target_companies.join(', ')}
-                                    </p>
-                                )}
-                            </div>
-                        </div>
-                        <div className="bg-emerald-50 p-4 rounded-xl border border-emerald-100 space-y-2">
-                            <h4 className="text-xs font-bold text-emerald-600 uppercase flex items-center gap-2">
-                                <Gift className="h-4 w-4" /> Mes Offres (Ce que je donne)
-                            </h4>
-                            <div className="space-y-2">
-                                <p className="text-sm font-medium text-[#2E130C]/80">
-                                    <span className="font-bold">Superpouvoir :</span> {currentUserProfile?.superpower || "Mon expertise"}
-                                </p>
-                                {currentUserProfile?.give_profile?.influence_sectors && currentUserProfile.give_profile.influence_sectors.length > 0 && (
-                                    <p className="text-sm font-medium text-[#2E130C]/80">
-                                        <span className="font-bold">Secteurs :</span> {currentUserProfile.give_profile.influence_sectors.join(', ')}
-                                    </p>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                </DialogContent>
-            </Dialog>
+            <div 
+                onClick={() => setIsMyProfileOpen(true)}
+                className="bg-indigo-50 border-indigo-100 rounded-xl p-3 text-left border relative cursor-pointer hover:bg-indigo-100 transition-colors group/mygoal"
+            >
+                <div className="absolute top-2 right-2 opacity-0 group-hover/mygoal:opacity-100 transition-opacity">
+                    <Search className="w-3 h-3 text-indigo-400" />
+                </div>
+                <div className="flex items-center gap-1.5 mb-2">
+                    <Target className="w-3.5 h-3.5 text-indigo-500" />
+                    <span className="text-[9px] font-black text-indigo-700 uppercase tracking-wider">Ce que je cherche</span>
+                </div>
+                <p className="text-[11px] font-bold leading-tight line-clamp-3 text-[#2E130C]">
+                    {currentUserProfile?.current_goals && currentUserProfile.current_goals.length > 0
+                        ? GOAL_LABELS[currentUserProfile.current_goals[0]] || currentUserProfile.current_goals[0]
+                        : "Développer mon activité"}
+                </p>
+                <div className="mt-2 text-[9px] text-indigo-500 font-bold underline decoration-indigo-200">Voir mon profil détaillé</div>
+            </div>
 
             {/* His Goal (Ce qu'il recherche) */}
-            <Dialog open={isPartnerProfileOpen} onOpenChange={setIsPartnerProfileOpen}>
-                <DialogTrigger asChild>
-                    <div 
-                        className="bg-purple-50 border-purple-100 rounded-xl p-3 text-left border relative cursor-pointer hover:bg-purple-100 transition-colors group/hisgoal"
-                    >
-                        <div className="absolute top-2 right-2 opacity-0 group-hover/hisgoal:opacity-100 transition-opacity">
-                            <Search className="w-3 h-3 text-purple-400" />
-                        </div>
-                        <div className="flex items-center gap-1.5 mb-2">
-                            <Search className="w-3.5 h-3.5 text-purple-500" />
-                            <span className="text-[9px] font-black uppercase tracking-wider text-purple-700">Ce qu'il cherche</span>
-                        </div>
-                        <p className="text-[11px] font-bold leading-tight line-clamp-3 text-[#2E130C]">
-                            {match.current_need || (match.current_goals && match.current_goals.length > 0 ? GOAL_LABELS[match.current_goals[0]] : "Développer son réseau")}
-                        </p>
-                        <div className="mt-2 text-[9px] text-purple-500 font-bold underline decoration-purple-200">Voir son profil détaillé</div>
-                    </div>
-                </DialogTrigger>
-                <DialogContent className="bg-white border-[#2E130C]/10 text-[#2E130C] sm:max-w-md rounded-2xl w-[90vw] max-h-[85vh] overflow-y-auto" aria-describedby="partner-profile-desc">
-                    <DialogHeader>
-                        <DialogTitle className="flex items-center gap-2 text-xl font-black text-purple-600">
-                            <Search className="h-6 w-6" /> Profil de {match.name.split(' ')[0]}
-                        </DialogTitle>
-                        <DialogDescription id="partner-profile-desc" className="text-sm text-[#2E130C]/60">
-                            Détail de ce que votre partenaire recherche et ce qu'il peut vous apporter.
-                        </DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-4 py-4">
-                        <div className="bg-purple-50 p-4 rounded-xl border border-purple-100 space-y-2">
-                            <h4 className="text-xs font-bold text-purple-600 uppercase flex items-center gap-2">
-                                <Search className="h-4 w-4" /> Ses Besoins
-                            </h4>
-                            <div className="space-y-2">
-                                <p className="text-sm font-medium text-[#2E130C]/80">
-                                    <span className="font-bold">Objectif principal :</span> {match.current_need || (match.current_goals && match.current_goals.length > 0 ? GOAL_LABELS[match.current_goals[0]] : "Non défini")}
-                                </p>
-                                {match.receive_profile?.comm_goal && (
-                                    <p className="text-sm font-medium text-[#2E130C]/80">
-                                        <span className="font-bold">Message :</span> {match.receive_profile.comm_goal}
-                                    </p>
-                                )}
-                                {match.receive_profile?.target_companies && match.receive_profile.target_companies.length > 0 && (
-                                    <p className="text-sm font-medium text-[#2E130C]/80">
-                                        <span className="font-bold">Cibles :</span> {match.receive_profile.target_companies.join(', ')}
-                                    </p>
-                                )}
-                            </div>
-                        </div>
-                        <div className="bg-emerald-50 p-4 rounded-xl border border-emerald-100 space-y-2">
-                            <h4 className="text-xs font-bold text-emerald-600 uppercase flex items-center gap-2">
-                                <Gift className="h-4 w-4" /> Ses Offres
-                            </h4>
-                            <div className="space-y-2">
-                                <p className="text-sm font-medium text-[#2E130C]/80">
-                                    <span className="font-bold">Superpouvoir :</span> {match.superpower || "Son expertise"}
-                                </p>
-                                {match.give_profile?.influence_sectors && match.give_profile.influence_sectors.length > 0 && (
-                                    <p className="text-sm font-medium text-[#2E130C]/80">
-                                        <span className="font-bold">Secteurs :</span> {match.give_profile.influence_sectors.join(', ')}
-                                    </p>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                </DialogContent>
-            </Dialog>
+            <div 
+                onClick={() => setIsPartnerProfileOpen(true)}
+                className="bg-purple-50 border-purple-100 rounded-xl p-3 text-left border relative cursor-pointer hover:bg-purple-100 transition-colors group/hisgoal"
+            >
+                <div className="absolute top-2 right-2 opacity-0 group-hover/hisgoal:opacity-100 transition-opacity">
+                    <Search className="w-3 h-3 text-purple-400" />
+                </div>
+                <div className="flex items-center gap-1.5 mb-2">
+                    <Search className="w-3.5 h-3.5 text-purple-500" />
+                    <span className="text-[9px] font-black uppercase tracking-wider text-purple-700">Ce qu'il cherche</span>
+                </div>
+                <p className="text-[11px] font-bold leading-tight line-clamp-3 text-[#2E130C]">
+                    {match.current_need || (match.current_goals && match.current_goals.length > 0 ? GOAL_LABELS[match.current_goals[0]] : "Développer son réseau")}
+                </p>
+                <div className="mt-2 text-[9px] text-purple-500 font-bold underline decoration-purple-200">Voir son profil détaillé</div>
+            </div>
         </div>
 
         {/* Action Buttons */}
@@ -1132,7 +993,7 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
                                 <span className="relative z-10">CONTACTER VIA WHATSAPP</span>
                             </Button>
                         </DialogTrigger>
-                        <DialogContent className="bg-white border-[#2E130C]/10 text-[#2E130C] sm:max-w-md rounded-2xl w-[90vw]" aria-describedby="whatsapp-desc">
+                        <DialogContent className="bg-white border-[#2E130C]/10 text-[#2E130C] sm:max-w-md rounded-2xl w-[90vw]">
                             <DialogHeader>
                                 <DialogTitle className="flex flex-col items-center gap-4 text-2xl font-black justify-center pt-4">
                                     <div className="h-20 w-20 rounded-full bg-[#25D366]/10 flex items-center justify-center animate-pulse">
@@ -1140,7 +1001,7 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
                                     </div>
                                     <span>L'Entremetteur</span>
                                 </DialogTitle>
-                                <DialogDescription id="whatsapp-desc" className="text-center text-[#2E130C]/60 text-base">
+                                <DialogDescription className="text-center text-[#2E130C]/60 text-base">
                                     Brisons la glace. Voici un message prêt à être envoyé à <span className="text-[#2E130C] font-bold">{match.name.split(' ')[0]}</span> sur WhatsApp pour initier le contact sans friction.
                                 </DialogDescription>
                             </DialogHeader>
@@ -1152,11 +1013,6 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
                                     </div>
                                     <p className="text-[#2E130C] text-sm leading-relaxed whitespace-pre-wrap font-medium">
                                         {`Salut ${match.name.split(' ')[0]}, c'est ${currentUserProfile?.first_name || currentUserProfile?.display_name?.split(' ')[0] || currentUserProfile?.name?.split(' ')[0] || "Jean-Philippe"} ! On a matché aujourd'hui sur Popey.Academy. J'ai vu que tu étais ${match.job || "dirigeant"}, ça m'intéresse ! Dispo pour un appel rapide ou un vocal aujourd'hui ou demain ?`}
-                                        {currentUserProfile?.featured_link && (
-                                            <span className="block mt-4">
-                                                Ps : si tu veux en savoir un peu plus sur moi voici mon lien : {currentUserProfile.featured_link}
-                                            </span>
-                                        )}
                                     </p>
                                     <p className="text-xs text-[#2E130C]/50 mt-3 italic">
                                         (Vous pourrez le modifier dans WhatsApp avant de l'envoyer)
@@ -1209,7 +1065,7 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
                             </Button>
                         </DialogTrigger>
                         {/* VALIDATION WIZARD CONTENT (Re-inserted here) */}
-                        <DialogContent className="bg-white border-[#2E130C]/10 text-[#2E130C] sm:max-w-md rounded-2xl w-[95vw] min-h-[400px] flex flex-col justify-center transition-all duration-300" aria-describedby="validation-desc">
+                        <DialogContent className="bg-white border-[#2E130C]/10 text-[#2E130C] sm:max-w-md rounded-2xl w-[95vw] min-h-[400px] flex flex-col justify-center transition-all duration-300">
                             {/* PROGRESS INDICATOR */}
                             <div className="absolute top-0 left-0 right-0 h-1 bg-[#2E130C]/5">
                                 <motion.div 
@@ -1227,9 +1083,6 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
                                 <DialogTitle className="text-center text-3xl font-black text-[#2E130C]">
                                     {popupView === 'step1_status' ? "Bilan de la mission" : popupView === 'step2_rating' ? "Notez l'échange" : "Offrir une opportunité"}
                                 </DialogTitle>
-                                <DialogDescription id="validation-desc" className="sr-only">
-                                    Validation de la mission du jour
-                                </DialogDescription>
                             </DialogHeader>
                             
                             {/* VIEW 1: STATUS CALL */}
@@ -1426,6 +1279,161 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
         </div>
         
         {/* HIDDEN DIALOGS (To ensure content is available) */}
+
+        {/* Dialogs (My Profile & Partner Profile) */}
+      <Dialog open={isMyProfileOpen} onOpenChange={setIsMyProfileOpen}>
+          <DialogContent className="bg-white border-[#2E130C]/10 text-[#2E130C] sm:max-w-md rounded-2xl w-[90vw] max-h-[85vh] overflow-y-auto">
+              <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2 text-xl font-black text-indigo-600">
+                      <Target className="h-6 w-6" /> Mon Profil Réseau
+                  </DialogTitle>
+                  <DialogDescription className="text-sm text-[#2E130C]/60">
+                      Voici comment les autres membres voient vos besoins et ce que vous pouvez offrir.
+                  </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                  <div className="bg-indigo-50 p-4 rounded-xl border border-indigo-100 space-y-2">
+                      <h4 className="text-xs font-bold text-indigo-600 uppercase flex items-center gap-2">
+                          <Target className="h-4 w-4" /> Mes Besoins (Ce que je cherche)
+                      </h4>
+                      <div className="space-y-2">
+                          <p className="text-sm font-medium text-[#2E130C]/80">
+                              <span className="font-bold">Objectif principal :</span> {currentUserProfile?.current_goals && currentUserProfile.current_goals.length > 0 ? GOAL_LABELS[currentUserProfile.current_goals[0]] || currentUserProfile.current_goals[0] : "Non défini"}
+                          </p>
+                          {currentUserProfile?.receive_profile?.comm_goal && (
+                              <p className="text-sm font-medium text-[#2E130C]/80">
+                                  <span className="font-bold">Message :</span> {currentUserProfile.receive_profile.comm_goal}
+                              </p>
+                          )}
+                           {currentUserProfile?.receive_profile?.target_companies && currentUserProfile.receive_profile.target_companies.length > 0 && (
+                              <p className="text-sm font-medium text-[#2E130C]/80">
+                                  <span className="font-bold">Cibles :</span> {currentUserProfile.receive_profile.target_companies.join(', ')}
+                              </p>
+                          )}
+                      </div>
+                  </div>
+                  <div className="bg-emerald-50 p-4 rounded-xl border border-emerald-100 space-y-2">
+                      <h4 className="text-xs font-bold text-emerald-600 uppercase flex items-center gap-2">
+                          <Gift className="h-4 w-4" /> Mes Offres (Ce que je donne)
+                      </h4>
+                      <div className="space-y-2">
+                           <p className="text-sm font-medium text-[#2E130C]/80">
+                              <span className="font-bold">Superpouvoir :</span> {currentUserProfile?.superpower || "Mon expertise"}
+                          </p>
+                          {currentUserProfile?.give_profile?.influence_sectors && currentUserProfile.give_profile.influence_sectors.length > 0 && (
+                              <p className="text-sm font-medium text-[#2E130C]/80">
+                                  <span className="font-bold">Secteurs :</span> {currentUserProfile.give_profile.influence_sectors.join(', ')}
+                              </p>
+                          )}
+                      </div>
+                  </div>
+              </div>
+          </DialogContent>
+      </Dialog>
+
+      <Dialog open={isPartnerProfileOpen} onOpenChange={setIsPartnerProfileOpen}>
+          <DialogContent className="bg-white border-[#2E130C]/10 text-[#2E130C] sm:max-w-md rounded-2xl w-[90vw] max-h-[85vh] overflow-y-auto">
+              <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2 text-xl font-black text-purple-600">
+                      <Search className="h-6 w-6" /> Profil de {match.name.split(' ')[0]}
+                  </DialogTitle>
+                  <DialogDescription className="text-sm text-[#2E130C]/60">
+                      Détail de ce que votre partenaire recherche et ce qu'il peut vous apporter.
+                  </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                   <div className="bg-purple-50 p-4 rounded-xl border border-purple-100 space-y-2">
+                      <h4 className="text-xs font-bold text-purple-600 uppercase flex items-center gap-2">
+                          <Search className="h-4 w-4" /> Ses Besoins
+                      </h4>
+                      <div className="space-y-2">
+                           <p className="text-sm font-medium text-[#2E130C]/80">
+                              <span className="font-bold">Objectif principal :</span> {match.current_need || (match.current_goals && match.current_goals.length > 0 ? GOAL_LABELS[match.current_goals[0]] : "Non défini")}
+                          </p>
+                           {match.receive_profile?.comm_goal && (
+                              <p className="text-sm font-medium text-[#2E130C]/80">
+                                  <span className="font-bold">Message :</span> {match.receive_profile.comm_goal}
+                              </p>
+                          )}
+                          {match.receive_profile?.target_companies && match.receive_profile.target_companies.length > 0 && (
+                              <p className="text-sm font-medium text-[#2E130C]/80">
+                                  <span className="font-bold">Cibles :</span> {match.receive_profile.target_companies.join(', ')}
+                              </p>
+                          )}
+                      </div>
+                  </div>
+                  <div className="bg-emerald-50 p-4 rounded-xl border border-emerald-100 space-y-2">
+                      <h4 className="text-xs font-bold text-emerald-600 uppercase flex items-center gap-2">
+                          <Gift className="h-4 w-4" /> Ses Offres
+                      </h4>
+                       <div className="space-y-2">
+                           <p className="text-sm font-medium text-[#2E130C]/80">
+                              <span className="font-bold">Superpouvoir :</span> {match.superpower || "Son expertise"}
+                          </p>
+                           {match.give_profile?.influence_sectors && match.give_profile.influence_sectors.length > 0 && (
+                              <p className="text-sm font-medium text-[#2E130C]/80">
+                                  <span className="font-bold">Secteurs :</span> {match.give_profile.influence_sectors.join(', ')}
+                              </p>
+                          )}
+                      </div>
+                  </div>
+              </div>
+          </DialogContent>
+      </Dialog>
+      
+        {/* Phone Dialog Content (Reused) */}
+        <Dialog open={isWhatsAppOpen} onOpenChange={(open) => {
+            setIsWhatsAppOpen(open);
+            if (!open) {
+                setStep('called');
+            }
+        }}>
+            <DialogContent className="bg-white border-[#2E130C]/10 text-[#2E130C] sm:max-w-md rounded-2xl w-[90vw]">
+                <DialogHeader>
+                    <DialogTitle className="flex flex-col items-center gap-4 text-2xl font-black justify-center pt-4">
+                        <div className="h-20 w-20 rounded-full bg-[#25D366]/10 flex items-center justify-center animate-pulse">
+                            <MessageSquare className="h-10 w-10 text-[#25D366] fill-current" />
+                        </div>
+                        <span>L'Entremetteur</span>
+                    </DialogTitle>
+                    <DialogDescription className="text-center text-[#2E130C]/60 text-base">
+                        Brisons la glace. Voici un message prêt à être envoyé à <span className="text-[#2E130C] font-bold">{match.name.split(' ')[0]}</span> sur WhatsApp pour initier le contact sans friction.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="py-4 space-y-6">
+                    {/* Message Preview Box */}
+                    <div className="bg-[#F3F0E7] rounded-xl p-4 border border-[#2E130C]/10 relative shadow-inner">
+                        <div className="absolute -top-3 left-4 bg-[#25D366] text-white text-[10px] font-black uppercase px-2 py-0.5 rounded-full tracking-wider shadow-sm">
+                            Message généré
+                        </div>
+                        <p className="text-[#2E130C] text-sm leading-relaxed whitespace-pre-wrap font-medium">
+                            {`Salut ${match.name.split(' ')[0]}, c'est ${currentUserProfile?.first_name || currentUserProfile?.display_name?.split(' ')[0] || currentUserProfile?.name?.split(' ')[0] || "Jean-Philippe"} ! On a matché aujourd'hui sur Popey.Academy. J'ai vu que tu étais ${match.job || "dirigeant"}, ça m'intéresse ! Dispo pour un appel rapide ou un vocal aujourd'hui ou demain ?`}
+                        </p>
+                        <p className="text-xs text-[#2E130C]/50 mt-3 italic">
+                            (Vous pourrez le modifier dans WhatsApp avant de l'envoyer)
+                        </p>
+                    </div>
+
+                    <div className="flex flex-col gap-3">
+                        <Button 
+                            onClick={handleWhatsAppRedirect}
+                            className="w-full h-14 bg-[#25D366] hover:bg-[#20bd5a] text-white font-black text-lg rounded-xl shadow-lg hover:scale-[1.02] transition-transform"
+                        >
+                            <MessageSquare className="w-5 h-5 mr-2 fill-current" />
+                            OUVRIR WHATSAPP
+                        </Button>
+                        <Button 
+                            variant="ghost" 
+                            onClick={() => setIsWhatsAppOpen(false)}
+                            className="w-full text-[#2E130C]/60 hover:text-[#2E130C]"
+                        >
+                            Annuler
+                        </Button>
+                    </div>
+                </div>
+            </DialogContent>
+        </Dialog>
+
       </div>
     </div>
   );
