@@ -250,7 +250,7 @@ export function AvailabilitySelector({ settings, potentialCount = 0, onSuccess }
               <div className="pt-6 border-t border-[#2E130C]/10">
                   <div className="flex items-center justify-between mb-4">
                       <h4 className="text-sm font-bold text-[#2E130C]/60 uppercase tracking-wide flex items-center gap-2">
-                        <Settings className="h-4 w-4" /> Votre Rythme Hebdo
+                        <Settings className="h-4 w-4" /> Jours de disponibilité
                       </h4>
                       <div className="bg-purple-50 px-2 py-0.5 rounded-md border border-purple-200 flex items-center gap-1">
                          <BarChart3 className="h-3 w-3 text-purple-600" />
@@ -259,22 +259,48 @@ export function AvailabilitySelector({ settings, potentialCount = 0, onSuccess }
                   </div>
                   
                   <div className="bg-slate-50 rounded-2xl p-4 border border-[#2E130C]/5">
-                      <div className="flex justify-between items-center mb-3">
-                        <span className="text-xs font-bold text-[#2E130C]/60 uppercase">Intensité</span>
-                        <span className="text-lg font-black text-blue-600">{frequency} <span className="text-xs text-[#2E130C]/50 font-medium">j/sem</span></span>
+                      <p className="text-sm text-[#2E130C]/60 font-medium mb-4">
+                          Sélectionnez les jours où vous souhaitez recevoir des matchs (du lundi au vendredi).
+                      </p>
+                      
+                      <div className="flex flex-wrap gap-2 mb-4">
+                          {[
+                              { id: 'mon', label: 'Lundi' },
+                              { id: 'tue', label: 'Mardi' },
+                              { id: 'wed', label: 'Mercredi' },
+                              { id: 'thu', label: 'Jeudi' },
+                              { id: 'fri', label: 'Vendredi' }
+                          ].map((day) => {
+                              const isSelected = (settings?.preferred_days || ['mon', 'tue', 'wed', 'thu', 'fri']).includes(day.id);
+                              return (
+                                  <button
+                                      key={day.id}
+                                      onClick={() => {
+                                          const currentDays = settings?.preferred_days || ['mon', 'tue', 'wed', 'thu', 'fri'];
+                                          let newDays;
+                                          if (isSelected) {
+                                              newDays = currentDays.filter((d: string) => d !== day.id);
+                                          } else {
+                                              newDays = [...currentDays, day.id];
+                                          }
+                                          handleUpdateSettings({ preferred_days: newDays, frequency_per_week: newDays.length });
+                                      }}
+                                      className={cn(
+                                          "px-4 py-2 rounded-xl text-sm font-bold border transition-all",
+                                          isSelected 
+                                              ? "bg-blue-600 text-white border-blue-600 shadow-md" 
+                                              : "bg-white text-[#2E130C]/60 border-[#2E130C]/10 hover:border-blue-300"
+                                      )}
+                                  >
+                                      {day.label}
+                                  </button>
+                              );
+                          })}
                       </div>
-                      <Slider 
-                          value={[frequency]} 
-                          min={1} 
-                          max={5} 
-                          step={1} 
-                          onValueChange={(vals) => setFrequency(vals[0])}
-                          onValueCommit={(vals) => handleUpdateSettings({ frequency_per_week: vals[0] })}
-                          className="cursor-pointer"
-                      />
-                      <div className="flex justify-between text-[10px] text-[#2E130C]/50 font-bold uppercase tracking-wider mt-2">
-                         <span>Cool (1j)</span>
-                         <span>Intense (5j)</span>
+                      
+                      <div className="flex justify-between items-center pt-2 border-t border-[#2E130C]/10">
+                        <span className="text-xs font-bold text-[#2E130C]/60 uppercase">Fréquence résultante</span>
+                        <span className="text-lg font-black text-blue-600">{(settings?.preferred_days || ['mon', 'tue', 'wed', 'thu', 'fri']).length} <span className="text-xs text-[#2E130C]/50 font-medium">j/sem</span></span>
                       </div>
                   </div>
               </div>
