@@ -63,9 +63,11 @@ export async function updateNetworkSettings(data: {
       console.error("Supabase error updating settings:", error);
       throw new Error(`Failed to update settings in Supabase: ${error.message}`);
     }
-
-    revalidatePath("/mon-reseau-local/dashboard");
-    revalidatePath("/admin/network");
+    
+    // Using layout revalidation path to ensure all children components update properly
+    revalidatePath("/mon-reseau-local", "layout");
+    revalidatePath("/admin", "layout");
+    
     return { success: true };
   } catch (err: any) {
     console.error("Caught error in updateNetworkSettings:", err);
