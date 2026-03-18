@@ -569,7 +569,7 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
           setIsEditing(open);
           if(!open) setCurrentStep(1); // Reset to step 1 on close
       }}>
-        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto" aria-describedby={undefined}>
           <DialogHeader>
             <DialogTitle className="text-2xl font-black flex items-center justify-between">
                 <span>Modifier mon profil</span>
@@ -971,7 +971,7 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
 
       {/* --- SEPARATE OFFER MODAL --- */}
       <Dialog open={isOfferModalOpen} onOpenChange={setIsOfferModalOpen}>
-        <DialogContent className="sm:max-w-[500px] max-h-[85vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-[500px] max-h-[85vh] overflow-y-auto" aria-describedby={undefined}>
           <DialogHeader>
             <DialogTitle className="text-2xl font-black text-amber-600 flex items-center gap-2">
                 <Percent className="h-6 w-6" /> Mon Offre Club
