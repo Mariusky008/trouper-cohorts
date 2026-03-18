@@ -717,6 +717,15 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
                                     className="h-10" 
                                 />
                                 <Input 
+                                    value={formData.facebook} 
+                                    onChange={e => {
+                                        setFormData({...formData, facebook: e.target.value});
+                                        if (e.target.value) setFormErrors({...formErrors, socials: ""});
+                                    }} 
+                                    placeholder="Facebook URL" 
+                                    className="h-10" 
+                                />
+                                <Input 
                                     value={formData.website} 
                                     onChange={e => {
                                         setFormData({...formData, website: e.target.value});
