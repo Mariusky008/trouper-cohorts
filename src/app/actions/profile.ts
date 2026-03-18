@@ -19,6 +19,7 @@ export async function updateProfile(formData: FormData) {
   const facebook = String(formData.get("facebook") || "").trim();
   const tiktok = String(formData.get("tiktok") || "").trim();
   const website = String(formData.get("website") || "").trim();
+  const featuredLink = String(formData.get("featured_link") || "").trim();
   const avatarUrl = formData.get("avatar_url");
 
   const trade = String(formData.get("trade") || "").trim();
@@ -68,6 +69,7 @@ export async function updateProfile(formData: FormData) {
       facebook_handle: facebook || null,
       tiktok_handle: tiktok || null,
       website_url: website || null,
+      featured_link: featuredLink || null,
       current_goals: currentGoals,
       onboarding_completed: isComplete,
       // Offer

@@ -160,17 +160,21 @@ export async function getConnections() {
 
 export async function getUserProfile(userId?: string) {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  let targetId = userId;
+  
+  if (!targetId) {
+      const { data: { user } } = await supabase.auth.getUser();
+      targetId = user?.id;
+  }
 
-  const targetId = userId || user?.id;
   if (!targetId) return null;
 
-  // 1. Fetch Profile
-  const { data: profile, error } = await supabase
-    .from("profiles")
-    .select("*")
-    .eq("id", targetId)
-    .single();
+  try {
+    const { data: profile, error } = await supabase
+      .from("profiles")
+      .select("id, first_name, display_name, avatar_url, trade, city, bio, phone, current_goals, superpower, current_need, big_goal, give_profile, receive_profile, featured_link, offer_title, offer_description, offer_price, offer_original_price, offer_active, linkedin_url, instagram_handle, facebook_handle, website_url")
+      .eq("id", targetId)
+      .single();
 
   if (error) {
     console.error("Error fetching profile:", error);
