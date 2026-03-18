@@ -493,7 +493,7 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
 
   // Dialog States
   const [isWhyVisible, setIsWhyVisible] = useState(false);
-  const [isPhoneOpen, setIsPhoneOpen] = useState(false);
+  const [isWhatsAppOpen, setIsWhatsAppOpen] = useState(false); // Replaced isPhoneOpen
   const [isValidationOpen, setIsValidationOpen] = useState(false);
   const [isMissionOpen, setIsMissionOpen] = useState(false);
   const [isPartnerMissionOpen, setIsPartnerMissionOpen] = useState(false);
@@ -545,6 +545,39 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
           spread: 70,
           origin: { y: 0.6 }
       });
+  };
+
+  // WhatsApp Formatter Helper
+  const formatPhoneForWhatsApp = (phone: string) => {
+      if (!phone) return "";
+      let cleaned = phone.replace(/\D/g, '');
+      if (cleaned.startsWith('0')) {
+          cleaned = '33' + cleaned.substring(1);
+      } else if (!cleaned.startsWith('33') && cleaned.length === 9) {
+          cleaned = '33' + cleaned;
+      }
+      return cleaned;
+  };
+
+  // WhatsApp Action
+  const handleWhatsAppRedirect = () => {
+      const matchName = matches[0]?.name?.split(' ')[0] || "partenaire";
+      const matchJob = matches[0]?.job || "dirigeant";
+      const myName = currentUserProfile?.name?.split(' ')[0] || currentUserProfile?.first_name || "un membre";
+      
+      const whatsappMessage = `Salut ${matchName}, c'est ${myName} ! On a matché aujourd'hui sur Mon Réseau Local. J'ai vu que tu étais ${matchJob}, ça m'intéresse ! Dispo pour un appel rapide ou un vocal aujourd'hui ?`;
+      
+      const formattedPhone = formatPhoneForWhatsApp(matches[0]?.phone);
+      
+      if (formattedPhone) {
+          window.open(`https://wa.me/${formattedPhone}?text=${encodeURIComponent(whatsappMessage)}`, '_blank');
+      } else {
+          toast.error("Numéro de téléphone invalide pour WhatsApp.");
+      }
+      
+      setIsWhatsAppOpen(false);
+      setStep('called'); // Transition to validation state
+      trackEvent('click_whatsapp_action', { partnerId: matches[0]?.partnerId });
   };
 
   // Actions Handlers
@@ -665,13 +698,13 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
       toast.success("Numéro copié ! 📋");
       triggerCallRewards();
       setStep('called');
-      setIsPhoneOpen(false);
+      setIsWhatsAppOpen(false);
   };
 
   const handleCallAction = () => {
       triggerCallRewards();
       setStep('called');
-      setIsPhoneOpen(false);
+      setIsWhatsAppOpen(false);
   };
 
   // RENDER LOGIC
@@ -824,30 +857,15 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
         <motion.div 
             initial={{ y: -20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            className="mb-4 bg-red-50 text-red-600 px-4 py-2 rounded-2xl flex flex-col items-center justify-center shadow-sm text-center gap-1 border border-red-100 w-full max-w-[90%]"
+            className="mb-4 bg-[#25D366]/10 text-[#25D366] px-4 py-2 rounded-2xl flex flex-col items-center justify-center shadow-sm text-center gap-1 border border-[#25D366]/20 w-full max-w-[90%]"
         >
-            <div className="flex items-center gap-2 font-bold text-xs uppercase tracking-wider text-red-700">
-                <Phone className="w-3 h-3 animate-bounce" />
-                {isCallOut ? `C'est à vous d'appeler` : `${match.name.split(' ')[0]} vous appelle`}
+            <div className="flex items-center gap-2 font-bold text-xs uppercase tracking-wider text-[#1DA851]">
+                <MessageSquare className="w-3 h-3 animate-pulse fill-current" />
+                C'est à vous d'envoyer le message
             </div>
-
-            {hasMismatch ? (
-                 <div className="flex flex-col items-center mt-1 animate-pulse">
-                     <div className="flex items-center gap-2">
-                         <Clock className="w-3 h-3 text-orange-500" />
-                         <span className="font-mono font-bold text-xs text-orange-600">Créneaux différents ⚠️</span>
-                     </div>
-                     <span className="text-[10px] text-orange-600/80 font-medium mt-0.5 leading-tight">
-                        Lui : {partnerSlots[0]?.replace('h – ', 'h-')?.split(' ')[0]} • Vous : {mySlots[0]?.replace('h – ', 'h-')?.split(' ')[0]}
-                     </span>
-                     <span className="text-[9px] text-[#2E130C]/60 mt-0.5">Appelez quand vous pouvez !</span>
-                 </div>
-            ) : (
-                <div className="flex items-center gap-2">
-                     <Clock className="w-3 h-3 text-red-600" />
-                     <span className="font-mono font-bold text-xs text-[#2E130C]">{match.time}</span>
-                </div>
-            )}
+            <div className="flex items-center gap-2">
+                 <span className="font-medium text-[10px] text-[#2E130C]/60 uppercase tracking-wider">Objectif : briser la glace aujourd'hui</span>
+            </div>
         </motion.div>
 
         {/* Avatar with Rotating Rings */}
@@ -989,19 +1007,26 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
 
                     <Button 
                         onClick={() => {
-                            setIsPhoneOpen(true);
-                            trackEvent('click_call_open', { partnerId: match.partnerId });
+                            setIsWhatsAppOpen(true);
+                            trackEvent('click_whatsapp_open', { partnerId: match.partnerId });
                         }}
-                        className="w-full h-14 bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-500 hover:to-teal-600 text-white font-black text-lg rounded-xl shadow-lg shadow-emerald-900/10 tracking-wide transition-all hover:scale-[1.02] relative overflow-hidden group/btn"
+                        className="w-full h-14 bg-[#25D366] hover:bg-[#20bd5a] text-white font-black text-base rounded-xl shadow-lg shadow-[#25D366]/20 tracking-wide transition-all hover:scale-[1.02] relative overflow-hidden group/btn"
                     >
-                        <div className="absolute inset-0 bg-white/20 translate-y-full group-hover/btn:translate-y-0 transition-transform duration-300"></div>
-                        <PhoneCall className="w-5 h-5 mr-2 relative z-10" /> <span className="relative z-10">APPELER</span>
+                        <MessageSquare className="w-5 h-5 mr-2 relative z-10 fill-current" />
+                        <span className="relative z-10">CONTACTER VIA WHATSAPP</span>
                     </Button>
                  </>
              )}
 
              {/* STEP CALLED: SHOW VALIDATION BUTTON */}
              {step === 'called' && (
+                <div className="flex flex-col gap-3 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                    <div className="bg-emerald-50 text-emerald-700 p-3 rounded-xl border border-emerald-200 text-sm font-medium text-center">
+                        ✅ Vous avez été redirigé vers WhatsApp. 
+                        <br/>
+                        <span className="text-xs opacity-80">Revenez ici une fois l'échange terminé pour valider.</span>
+                    </div>
+
                 <Dialog open={isValidationOpen} onOpenChange={(open) => {
                         setIsValidationOpen(open);
                         if (!open) {
@@ -1227,6 +1252,7 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
                             )}
                         </DialogContent>
                 </Dialog>
+                </div>
              )}
 
         </div>
@@ -1418,8 +1444,8 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
         </Dialog>
 
         {/* Phone Dialog Content (Reused) */}
-        <Dialog open={isPhoneOpen} onOpenChange={(open) => {
-            setIsPhoneOpen(open);
+        <Dialog open={isWhatsAppOpen} onOpenChange={(open) => {
+            setIsWhatsAppOpen(open);
             if (!open) {
                 setStep('called');
             }
@@ -1427,53 +1453,43 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
             <DialogContent className="bg-white border-[#2E130C]/10 text-[#2E130C] sm:max-w-md rounded-2xl w-[90vw]">
                 <DialogHeader>
                     <DialogTitle className="flex flex-col items-center gap-4 text-2xl font-black justify-center pt-4">
-                        <div className="h-20 w-20 rounded-full bg-emerald-50 flex items-center justify-center animate-pulse">
-                            <Phone className="h-10 w-10 text-emerald-600" />
+                        <div className="h-20 w-20 rounded-full bg-[#25D366]/10 flex items-center justify-center animate-pulse">
+                            <MessageSquare className="h-10 w-10 text-[#25D366] fill-current" />
                         </div>
-                        <span>C'est parti ! 🚀</span>
+                        <span>L'Entremetteur</span>
                     </DialogTitle>
                     <DialogDescription className="text-center text-[#2E130C]/60 text-base">
-                        {isCallOut ? (
-                            <>
-                                Voici le numéro de <span className="text-[#2E130C] font-bold">{match.name}</span>.
-                                <br/>Appelez-le maintenant pour votre échange de 15 min.
-                            </>
-                        ) : (
-                            <>
-                                Vous attendez l'appel de <span className="text-[#2E130C] font-bold">{match.name}</span>.
-                                <br/>Si à {match.time.split('h')[0]}h10 vous n'avez pas de nouvelles, appelez-le !
-                            </>
-                        )}
+                        Brisons la glace. Voici un message prêt à être envoyé à <span className="text-[#2E130C] font-bold">{match.name.split(' ')[0]}</span> sur WhatsApp pour initier le contact sans friction.
                     </DialogDescription>
                 </DialogHeader>
-                <div className="flex flex-col items-center gap-6 py-6">
-                    <div className="text-3xl sm:text-4xl font-black tracking-widest text-[#2E130C] bg-slate-50 px-6 py-4 rounded-xl border border-[#2E130C]/5 shadow-inner select-all">
-                        {match.phone || "Non renseigné"}
+                <div className="py-4 space-y-6">
+                    {/* Message Preview Box */}
+                    <div className="bg-[#F3F0E7] rounded-xl p-4 border border-[#2E130C]/10 relative shadow-inner">
+                        <div className="absolute -top-3 left-4 bg-[#25D366] text-white text-[10px] font-black uppercase px-2 py-0.5 rounded-full tracking-wider shadow-sm">
+                            Message généré
+                        </div>
+                        <p className="text-[#2E130C] text-sm leading-relaxed whitespace-pre-wrap font-medium">
+                            {`Salut ${match.name.split(' ')[0]}, c'est ${currentUserProfile?.name?.split(' ')[0] || currentUserProfile?.first_name || "un membre"} ! On a matché aujourd'hui sur Mon Réseau Local. J'ai vu que tu étais ${match.job || "dirigeant"}, ça m'intéresse ! Dispo pour un appel rapide ou un vocal aujourd'hui ?`}
+                        </p>
+                        <p className="text-xs text-[#2E130C]/50 mt-3 italic">
+                            (Vous pourrez le modifier dans WhatsApp avant de l'envoyer)
+                        </p>
                     </div>
-                    <div className="grid grid-cols-2 gap-4 w-full">
+
+                    <div className="flex flex-col gap-3">
                         <Button 
-                            onClick={() => {
-                                handleCopyPhone(match.phone);
-                                trackEvent('click_copy_phone', { partnerId: match.partnerId });
-                            }}
-                            variant="outline"
-                            className="h-14 border-[#2E130C]/10 bg-transparent text-[#2E130C] hover:bg-[#2E130C]/5 text-lg font-bold gap-2"
+                            onClick={handleWhatsAppRedirect}
+                            className="w-full h-14 bg-[#25D366] hover:bg-[#20bd5a] text-white font-black text-lg rounded-xl shadow-lg hover:scale-[1.02] transition-transform"
                         >
-                            <Copy className="h-5 w-5" />
-                            Copier
+                            <MessageSquare className="w-5 h-5 mr-2 fill-current" />
+                            OUVRIR WHATSAPP
                         </Button>
                         <Button 
-                            asChild
-                            className="h-14 bg-emerald-600 hover:bg-emerald-500 text-white text-lg font-bold gap-2 shadow-lg shadow-emerald-500/20"
-                            onClick={() => {
-                                handleCallAction();
-                                trackEvent('click_call_action', { partnerId: match.partnerId });
-                            }}
+                            variant="ghost" 
+                            onClick={() => setIsWhatsAppOpen(false)}
+                            className="w-full text-[#2E130C]/60 hover:text-[#2E130C]"
                         >
-                            <a href={`tel:${match.phone}`}>
-                                <PhoneCall className="h-5 w-5" />
-                                Appeler
-                            </a>
+                            Annuler
                         </Button>
                     </div>
                 </div>
