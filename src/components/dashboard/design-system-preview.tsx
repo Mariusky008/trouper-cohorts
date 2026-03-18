@@ -92,13 +92,13 @@ export function WaitingCardPreview() {
       <Dialog open={isMyProfileOpen} onOpenChange={setIsMyProfileOpen}>
           <DialogContent className="bg-white border-[#2E130C]/10 text-[#2E130C] sm:max-w-md rounded-2xl w-[90vw] max-h-[85vh] overflow-y-auto">
               <DialogHeader>
-                  <DialogTitle className="flex items-center gap-2 text-xl font-black text-indigo-600">
-                      <Target className="h-6 w-6" /> Mon Profil Réseau
-                  </DialogTitle>
-                  <DialogDescription className="text-sm text-[#2E130C]/60">
-                      Voici comment les autres membres voient vos besoins et ce que vous pouvez offrir.
-                  </DialogDescription>
-              </DialogHeader>
+                        <DialogTitle className="flex items-center gap-2 text-xl font-black text-indigo-600">
+                            <Target className="h-6 w-6" /> Mon Profil Réseau
+                        </DialogTitle>
+                        <DialogDescription className="text-sm text-[#2E130C]/60" aria-describedby={undefined}>
+                            Voici comment les autres membres voient vos besoins et ce que vous pouvez offrir.
+                        </DialogDescription>
+                    </DialogHeader>
               <div className="space-y-4 py-4">
                   <div className="bg-indigo-50 p-4 rounded-xl border border-indigo-100 space-y-2">
                       <h4 className="text-xs font-bold text-indigo-600 uppercase flex items-center gap-2">
@@ -130,13 +130,13 @@ export function WaitingCardPreview() {
       <Dialog open={isPartnerProfileOpen} onOpenChange={setIsPartnerProfileOpen}>
           <DialogContent className="bg-white border-[#2E130C]/10 text-[#2E130C] sm:max-w-md rounded-2xl w-[90vw] max-h-[85vh] overflow-y-auto">
               <DialogHeader>
-                  <DialogTitle className="flex items-center gap-2 text-xl font-black text-purple-600">
-                      <Search className="h-6 w-6" /> Profil de {matchName}
-                  </DialogTitle>
-                  <DialogDescription className="text-sm text-[#2E130C]/60">
-                      Détail de ce que votre partenaire recherche et ce qu'il peut vous apporter.
-                  </DialogDescription>
-              </DialogHeader>
+                        <DialogTitle className="flex items-center gap-2 text-xl font-black text-purple-600">
+                            <Search className="h-6 w-6" /> Profil de {matchName}
+                        </DialogTitle>
+                        <DialogDescription className="text-sm text-[#2E130C]/60" aria-describedby={undefined}>
+                            Détail de ce que votre partenaire recherche et ce qu'il peut vous apporter.
+                        </DialogDescription>
+                    </DialogHeader>
               <div className="space-y-4 py-4">
                    <div className="bg-purple-50 p-4 rounded-xl border border-purple-100 space-y-2">
                       <h4 className="text-xs font-bold text-purple-600 uppercase flex items-center gap-2">
@@ -1765,7 +1765,7 @@ export function MatchCardWhatsAppPreview() {
                                     <MessageSquare className="h-6 w-6 text-[#25D366] fill-[#25D366]" />
                                     L'Entremetteur
                                 </DialogTitle>
-                                <DialogDescription className="text-[#2E130C]/60 text-sm">
+                                <DialogDescription className="text-[#2E130C]/60 text-sm" aria-describedby={undefined}>
                                     Brisons la glace. Voici un message prêt à être envoyé à {matchName} sur WhatsApp pour initier le contact sans friction.
                                 </DialogDescription>
                             </DialogHeader>
@@ -1849,6 +1849,9 @@ export function MatchCardWhatsAppPreview() {
                                 <DialogTitle className="text-center text-3xl font-black text-[#2E130C]">
                                     {popupView === 'step1_status' ? "Bilan de la mission" : popupView === 'step2_rating' ? "Notez l'échange" : "Offrir une opportunité"}
                                 </DialogTitle>
+                                <DialogDescription className="sr-only" aria-describedby={undefined}>
+                                    Validation de la mission du jour
+                                </DialogDescription>
                             </DialogHeader>
                             
                             {/* VIEW 1: STATUS CALL */}
