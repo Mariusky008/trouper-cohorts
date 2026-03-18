@@ -1525,6 +1525,7 @@ export function MatchCardFounderStylePreview() {
 // Goal: Low friction peer-to-peer matching via pre-filled WhatsApp.
 export function MatchCardWhatsAppPreview() {
   const [isMissionOpen, setIsMissionOpen] = useState(false);
+  const [isPartnerMissionOpen, setIsPartnerMissionOpen] = useState(false);
   const [selectedMission, setSelectedMission] = useState<string | null>(null);
   const [isWhyVisible, setIsWhyVisible] = useState(false);
   const [isWhatsAppOpen, setIsWhatsAppOpen] = useState(false);
@@ -1537,9 +1538,8 @@ export function MatchCardWhatsAppPreview() {
   const myName = "Alexandre";
   const matchName = "Jean-Paul";
   const matchJob = "Directeur Commercial";
-  const proposedDay = "demain";
 
-  const whatsappMessage = `Salut ${matchName}, c'est ${myName} ! On a matché aujourd'hui sur Mon Réseau Local. J'ai vu que tu étais ${matchJob}, ça m'intéresse ! Dispo pour un appel rapide de 15 min ${proposedDay} ?`;
+  const whatsappMessage = `Salut ${matchName}, c'est ${myName} ! On a matché aujourd'hui sur Mon Réseau Local. J'ai vu que tu étais ${matchJob}, ça m'intéresse ! Dispo pour un appel rapide ou un vocal aujourd'hui ?`;
 
   const handleWhatsAppRedirect = () => {
     // In real app: window.open(`https://wa.me/${matchPhone}?text=${encodeURIComponent(whatsappMessage)}`, '_blank');
@@ -1548,59 +1548,137 @@ export function MatchCardWhatsAppPreview() {
   };
 
   return (
-    <div className="relative w-full max-w-sm mx-auto h-[600px] rounded-[2.5rem] overflow-hidden shadow-2xl bg-[#0f172a] border border-slate-800 group">
-      {/* Background Image */}
-      <div className="absolute inset-0 z-0">
-        <img 
-            src="https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=800&q=80" 
-            alt="Match" 
-            className="w-full h-full object-cover opacity-60 transition-transform duration-700 group-hover:scale-105"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#0f172a] via-[#0f172a]/80 to-transparent"></div>
-      </div>
+    <div className="relative w-full max-w-sm mx-auto min-h-[600px] h-auto rounded-[2.5rem] overflow-hidden shadow-2xl bg-white border border-[#2E130C]/10 flex flex-col items-center justify-between text-center p-6 pb-8 group">
+      
+      {/* Subtle Background */}
+      <div className="absolute inset-0 bg-[#F3F0E7] opacity-30 z-0"></div>
+      <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-[0.03] z-0"></div>
 
-      {/* Main Content - Bottom */}
-      <div className="absolute bottom-0 left-0 right-0 z-20 p-6 pt-24 bg-gradient-to-t from-[#0f172a] via-[#0f172a] to-transparent flex flex-col justify-end h-full">
+      {/* Content */}
+      <div className="relative z-10 w-full flex flex-col items-center h-full pt-4">
         
-        {/* Match Score */}
-        <div className="flex items-end gap-3 mb-2">
-            <h2 className="text-5xl font-black text-white tracking-tighter">{matchName}</h2>
-            <Button variant="outline" className="bg-emerald-500/20 border border-emerald-500/50 text-emerald-400 hover:bg-emerald-500/30 hover:text-emerald-300 px-3 py-1 rounded-lg text-xs font-black mb-1.5 flex items-center gap-1 h-auto transition-colors">
-                <User className="w-3 h-3" /> Voir profil
+        {/* FOMO Badge (Top) */}
+        <motion.div 
+            initial={{ y: -20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            className="mb-4 bg-red-50 text-red-600 px-4 py-2 rounded-2xl flex flex-col items-center justify-center shadow-sm text-center gap-1 border border-red-100 w-full max-w-[90%]"
+        >
+            <div className="flex items-center gap-2 font-bold text-xs uppercase tracking-wider text-red-700">
+                <Phone className="w-3 h-3 animate-bounce" />
+                C'est à vous d'appeler
+            </div>
+            <div className="flex items-center gap-2">
+                 <Clock className="w-3 h-3 text-red-600" />
+                 <span className="font-mono font-bold text-xs text-[#2E130C]">09h - 11h</span>
+            </div>
+        </motion.div>
+
+        {/* Avatar with Rotating Rings */}
+        <div className="relative mb-4">
+            <motion.div 
+                animate={{ rotate: 360 }}
+                transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+                className="absolute -inset-4 rounded-full border border-slate-200 border-dashed"
+            />
+            <motion.div 
+                animate={{ rotate: -360 }}
+                transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
+                className="absolute -inset-2 rounded-full border border-blue-200 border-dotted"
+            />
+            
+            <div className="w-24 h-24 rounded-full p-[3px] bg-gradient-to-r from-slate-200 via-blue-200 to-purple-200 shadow-xl relative z-10">
+                <div className="w-full h-full rounded-full overflow-hidden border-4 border-white relative bg-slate-100">
+                    <img 
+                        src="https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=800&q=80" 
+                        alt={matchName} 
+                        className="w-full h-full object-cover transform transition-transform hover:scale-110 duration-700"
+                    />
+                </div>
+            </div>
+            
+            <div className="absolute bottom-1 right-1 w-5 h-5 bg-white rounded-full flex items-center justify-center z-20 shadow-sm">
+                <span className="absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75 animate-ping"></span>
+                <div className="relative w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
+            </div>
+        </div>
+
+        {/* Name & View Profile */}
+        <div className="mb-4 flex flex-col items-center gap-2">
+            <h2 className="text-3xl font-black text-[#2E130C] leading-none">
+                {matchName}
+            </h2>
+            <Button 
+                variant="outline" 
+                className="h-7 text-[10px] px-3 bg-slate-50 border-slate-200 text-slate-500 hover:bg-slate-100 hover:text-slate-800 rounded-full uppercase font-bold tracking-wider transition-all hover:scale-105"
+            >
+                <User className="w-3 h-3 mr-1.5" /> Voir profil
             </Button>
         </div>
 
-        <p className="text-slate-300 text-sm font-medium mb-6 line-clamp-2 leading-snug opacity-90">
-            "Ce directeur commercial peut vous ouvrir des opportunités auxquelles vous n’aviez pas accès hier."
-        </p>
-
-        {/* MISSION SELECTOR */}
-        <div className="bg-indigo-500/20 border border-indigo-500/30 rounded-xl p-3 mb-6 backdrop-blur-sm cursor-pointer hover:bg-indigo-500/30 transition-colors" onClick={() => setIsMissionOpen(true)}>
-            <div className="flex items-center justify-between mb-1">
-                <div className="flex items-center gap-2">
-                    <Target className="w-4 h-4 text-indigo-400" />
-                    <span className="text-[10px] font-black text-indigo-300 uppercase tracking-wider">Objectif de l'échange</span>
-                </div>
-                {selectedMission && <Badge className="text-[9px] h-4 bg-indigo-500 text-white">Choisi</Badge>}
-            </div>
-            <p className="text-white text-xs font-medium italic truncate">
-                {selectedMission 
-                    ? MISSION_TYPES.find(m => m.id === selectedMission)?.desc 
-                    : suggestedMission 
-                        ? `Suggestion : ${suggestedMission.label} (Cliquez)`
-                        : "Cliquez pour définir votre objectif 🎯"}
+        {/* Quote */}
+        <div className="mb-6 px-2 w-full">
+            <p className="text-[#2E130C]/70 text-sm font-medium italic leading-relaxed">
+                "Ce directeur commercial peut vous ouvrir des opportunités auxquelles vous n’aviez pas accès hier."
             </p>
         </div>
 
+        {/* Goals Grid */}
+        <div className="grid grid-cols-2 gap-3 w-full mb-auto">
+            {/* My Goal */}
+            <div 
+                onClick={() => setIsMissionOpen(true)}
+                className={cn(
+                    "relative rounded-xl p-3 cursor-pointer transition-all text-left group/box border",
+                    !selectedMission 
+                        ? "bg-indigo-50 border-indigo-200 hover:bg-indigo-100 hover:border-indigo-300 animate-pulse-slow shadow-sm" 
+                        : "bg-white border-[#2E130C]/10 hover:bg-slate-50"
+                )}
+            >
+                {!selectedMission && (
+                    <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[9px] font-black px-2 py-0.5 rounded-full animate-bounce shadow-sm border border-red-400">
+                        À DÉFINIR ⚠️
+                    </span>
+                )}
+                <div className="flex items-center gap-1.5 mb-2">
+                    <Target className={cn("w-3.5 h-3.5", !selectedMission ? "text-indigo-500 animate-pulse" : "text-[#2E130C]/60")} />
+                    <span className="text-[9px] font-black text-[#2E130C]/60 uppercase tracking-wider">Mon Objectif</span>
+                </div>
+                <p className={cn("text-[11px] font-bold leading-tight line-clamp-2 transition-colors", 
+                    !selectedMission ? "text-indigo-600 underline decoration-indigo-300 decoration-wavy" : "text-[#2E130C]"
+                )}>
+                    {selectedMission 
+                        ? MISSION_TYPES.find(m => m.id === selectedMission)?.label 
+                        : "Cliquez ici pour définir votre objectif du jour !"}
+                </p>
+            </div>
+
+            {/* His Goal */}
+            <div 
+                onClick={() => setIsPartnerMissionOpen(true)}
+                className="bg-purple-50 border-purple-200 hover:bg-purple-100 hover:border-purple-300 rounded-xl p-3 text-left border cursor-pointer hover:scale-[1.02] transition-transform relative group/partner"
+            >
+                <div className="absolute top-2 right-2 opacity-0 group-hover/partner:opacity-100 transition-opacity">
+                    <Search className="w-3 h-3 text-purple-400" />
+                </div>
+                <div className="flex items-center gap-1.5 mb-2">
+                    <Users className="w-3.5 h-3.5 text-purple-500" />
+                    <span className="text-[9px] font-black uppercase tracking-wider text-purple-600">Son Objectif</span>
+                </div>
+                <p className="text-[11px] font-bold leading-tight line-clamp-2 text-[#2E130C]">
+                    Trouver un associé technique
+                </p>
+            </div>
+        </div>
+
         {/* Action Buttons */}
-        <div className="flex flex-col gap-3 pb-2">
+        <div className="flex flex-col gap-3 w-full mt-6">
             
             <Button 
                 onClick={() => setIsWhyVisible(true)}
                 variant="ghost" 
-                className="w-full h-12 border border-white/10 bg-white/5 text-slate-300 hover:bg-white/10 hover:text-white rounded-xl font-bold transition-all hover:scale-[1.02]"
+                className="w-full h-12 border border-[#2E130C]/10 bg-white text-[#2E130C]/70 hover:bg-[#2E130C]/5 hover:text-[#2E130C] rounded-xl font-bold transition-all hover:scale-[1.02]"
             >
-                <Zap className="w-4 h-4 mr-2 text-yellow-400" /> Pourquoi ce match ?
+                <Zap className="w-4 h-4 mr-2 text-yellow-500" /> Pourquoi ce match ?
             </Button>
 
             {/* MAIN WHATSAPP BUTTON */}
@@ -1613,27 +1691,27 @@ export function MatchCardWhatsAppPreview() {
                         <span className="relative z-10">CONTACTER VIA WHATSAPP</span>
                     </Button>
                 </DialogTrigger>
-                <DialogContent className="bg-[#0f172a] border-white/10 text-white sm:max-w-md rounded-2xl w-[95vw]">
+                <DialogContent className="bg-white border-[#2E130C]/10 text-[#2E130C] sm:max-w-md rounded-2xl w-[95vw]">
                     <DialogHeader>
                         <DialogTitle className="flex items-center gap-2 text-xl font-black">
                             <MessageSquare className="h-6 w-6 text-[#25D366] fill-[#25D366]" />
                             L'Entremetteur
                         </DialogTitle>
-                        <DialogDescription className="text-slate-400 text-sm">
+                        <DialogDescription className="text-[#2E130C]/60 text-sm">
                             Brisons la glace. Voici un message prêt à être envoyé à {matchName} sur WhatsApp pour initier le contact sans friction.
                         </DialogDescription>
                     </DialogHeader>
                     
                     <div className="py-4 space-y-6">
                         {/* Message Preview Box */}
-                        <div className="bg-[#1e293b] rounded-xl p-4 border border-[#334155] relative shadow-inner">
-                            <div className="absolute -top-3 left-4 bg-[#25D366] text-[#0f172a] text-[10px] font-black uppercase px-2 py-0.5 rounded-full tracking-wider">
+                        <div className="bg-[#F3F0E7] rounded-xl p-4 border border-[#2E130C]/10 relative shadow-inner">
+                            <div className="absolute -top-3 left-4 bg-[#25D366] text-white text-[10px] font-black uppercase px-2 py-0.5 rounded-full tracking-wider shadow-sm">
                                 Message généré
                             </div>
-                            <p className="text-slate-200 text-sm leading-relaxed whitespace-pre-wrap font-medium">
+                            <p className="text-[#2E130C] text-sm leading-relaxed whitespace-pre-wrap font-medium">
                                 "{whatsappMessage}"
                             </p>
-                            <p className="text-xs text-slate-500 mt-3 italic">
+                            <p className="text-xs text-[#2E130C]/50 mt-3 italic">
                                 (Vous pourrez le modifier dans WhatsApp avant de l'envoyer)
                             </p>
                         </div>
@@ -1649,7 +1727,7 @@ export function MatchCardWhatsAppPreview() {
                             <Button 
                                 variant="ghost" 
                                 onClick={() => setIsWhatsAppOpen(false)}
-                                className="w-full text-slate-400 hover:text-white"
+                                className="w-full text-[#2E130C]/60 hover:text-[#2E130C]"
                             >
                                 Annuler
                             </Button>
@@ -1663,22 +1741,22 @@ export function MatchCardWhatsAppPreview() {
 
       {/* Dialogs (Why & Mission) */}
       <Dialog open={isWhyVisible} onOpenChange={setIsWhyVisible}>
-          <DialogContent className="bg-[#0f172a] border-white/10 text-white sm:max-w-md rounded-2xl w-[90vw] p-0 overflow-hidden">
-              <div className="bg-gradient-to-br from-blue-600/20 to-purple-600/20 p-6">
+          <DialogContent className="bg-white border-[#2E130C]/10 text-[#2E130C] sm:max-w-md rounded-2xl w-[90vw] p-0 overflow-hidden">
+              <div className="bg-gradient-to-br from-blue-50 to-purple-50 p-6">
                   <DialogHeader>
                       <DialogTitle className="flex items-center gap-2 text-xl font-black">
-                          <Zap className="h-6 w-6 text-yellow-400 fill-yellow-400" />
+                          <Zap className="h-6 w-6 text-yellow-500 fill-yellow-500" />
                           Pourquoi ce match ?
                       </DialogTitle>
                   </DialogHeader>
               </div>
               <div className="p-6 space-y-6">
-                  <div className="bg-white/5 p-4 rounded-xl border border-white/10">
-                      <p className="text-slate-200 leading-relaxed text-sm">
+                  <div className="bg-[#F3F0E7] p-4 rounded-xl border border-[#2E130C]/5">
+                      <p className="text-[#2E130C]/80 leading-relaxed text-sm font-medium">
                           L'algorithme a détecté une complémentarité rare. {matchName} est {matchJob}, ce qui correspond parfaitement à vos objectifs actuels.
                       </p>
                   </div>
-                  <Button className="w-full bg-slate-800 hover:bg-slate-700 font-bold h-12 rounded-xl" onClick={() => setIsWhyVisible(false)}>
+                  <Button className="w-full bg-[#2E130C] hover:bg-[#2E130C]/90 text-white font-bold h-12 rounded-xl" onClick={() => setIsWhyVisible(false)}>
                       Compris !
                   </Button>
               </div>
@@ -1686,9 +1764,9 @@ export function MatchCardWhatsAppPreview() {
       </Dialog>
 
       <Dialog open={isMissionOpen} onOpenChange={setIsMissionOpen}>
-          <DialogContent className="bg-[#0f172a] border-white/10 text-white sm:max-w-md rounded-2xl w-[90vw] max-h-[85vh] overflow-y-auto">
+          <DialogContent className="bg-white border-[#2E130C]/10 text-[#2E130C] sm:max-w-md rounded-2xl w-[90vw] max-h-[85vh] overflow-y-auto">
               <DialogHeader>
-                  <DialogTitle className="flex items-center gap-2 text-xl font-black text-indigo-400">
+                  <DialogTitle className="flex items-center gap-2 text-xl font-black text-indigo-600">
                       <Target className="h-6 w-6" /> Menu de la Carte
                   </DialogTitle>
               </DialogHeader>
@@ -1699,15 +1777,15 @@ export function MatchCardWhatsAppPreview() {
                           onClick={() => { setSelectedMission(mission.id); setIsMissionOpen(false); }}
                           className={cn(
                               "flex items-center gap-4 p-4 rounded-xl border transition-all text-left group",
-                              mission.id === selectedMission ? "bg-indigo-600/20 border-indigo-500" : "bg-slate-900/50 border-white/5 hover:bg-slate-800"
+                              mission.id === selectedMission ? "bg-indigo-50 border-indigo-500" : "bg-white border-[#2E130C]/10 hover:bg-slate-50"
                           )}
                       >
                           <div className={cn("h-10 w-10 rounded-full flex items-center justify-center shrink-0", mission.bg)}>
                               <mission.icon className={cn("h-5 w-5", mission.color)} />
                           </div>
                           <div className="flex-1">
-                              <span className="font-bold text-sm text-white">{mission.label}</span>
-                              <p className="text-xs text-slate-400">{mission.desc}</p>
+                              <span className={cn("font-bold text-sm", mission.id === selectedMission ? "text-indigo-700" : "text-[#2E130C]")}>{mission.label}</span>
+                              <p className="text-xs text-[#2E130C]/60 font-medium">{mission.desc}</p>
                           </div>
                       </button>
                   ))}
