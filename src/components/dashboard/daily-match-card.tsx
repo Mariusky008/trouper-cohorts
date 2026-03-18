@@ -439,10 +439,19 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
         const current = matches[0];
         console.log("[DailyMatchCard] Current match:", current.id, "hasFeedback:", current.hasFeedback, "status:", current.status);
         if (current.hasFeedback === true || current.status === 'met') {
+            console.log("[DailyMatchCard] Setting step to validated");
             setStep('validated');
         } else {
-            setStep('initial');
+            // Check if step is already called to prevent resetting to initial if user is in the middle of validation
+            setStep(prev => {
+                const nextStep = prev === 'called' ? 'called' : 'initial';
+                console.log(`[DailyMatchCard] Setting step to ${nextStep} (was ${prev})`);
+                return nextStep;
+            });
         }
+    } else {
+        console.log("[DailyMatchCard] No matches, setting step to initial");
+        setStep('initial');
     }
   }, [matches]);
 
