@@ -31,13 +31,12 @@ export function AvailabilitySelector({ settings, potentialCount = 0, onSuccess }
   const [status, setStatus] = useState(settings?.status || 'active');
   const [isSettingsLoading, setIsSettingsLoading] = useState(false);
 
-  // Sync ONLY on initial mount to avoid resetting user clicks before save
-  // Use a ref or simple state to track if we've initialized
-  const [isInitialized, setIsInitialized] = useState(false);
+  // Track local modifications to prevent server sync from overriding them
+  const [hasLocallyModified, setHasLocallyModified] = useState(false);
 
   useEffect(() => {
-      // Prevent syncing back from settings after the user has started interacting
-      if (isInitialized) return;
+      // If the user has made any local clicks, ignore ALL incoming settings updates from the server
+      if (hasLocallyModified) return;
       
       let changed = false;
       if (settings?.preferred_slots?.length > 0) {
@@ -49,10 +48,7 @@ export function AvailabilitySelector({ settings, potentialCount = 0, onSuccess }
           changed = true;
       }
       
-      if (changed) {
-          setIsInitialized(true);
-      }
-  }, [settings?.preferred_days, settings?.preferred_slots, isInitialized]);
+  }, [settings?.preferred_days, settings?.preferred_slots, hasLocallyModified]);
 
   // Tomorrow's date YYYY-MM-DD
   const today = new Date();
@@ -80,6 +76,7 @@ export function AvailabilitySelector({ settings, potentialCount = 0, onSuccess }
   }, [dateStr]);
 
   const toggleSlot = (slot: string) => {
+    setHasLocallyModified(true);
     if (selectedSlots.includes(slot)) {
       setSelectedSlots(selectedSlots.filter(s => s !== slot));
     } else {
@@ -117,6 +114,8 @@ export function AvailabilitySelector({ settings, potentialCount = 0, onSuccess }
       
       // Force onSuccess callback immediately without delay to ensure closing
       if (onSuccess) {
+          // Reset the modification flag so it can sync next time it opens
+          setHasLocallyModified(false);
           onSuccess();
       }
       
@@ -287,6 +286,7 @@ export function AvailabilitySelector({ settings, potentialCount = 0, onSuccess }
                                   <button
                                       key={day.id}
                                       onClick={() => {
+                                          setHasLocallyModified(true);
                                           if (isSelected) {
                                               setSelectedDays(selectedDays.filter((d: string) => d !== day.id));
                                           } else {
