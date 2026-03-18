@@ -1,6 +1,7 @@
 import { getUserProfile } from "@/lib/actions/network-members";
 import { ProfileContent } from "@/components/dashboard/profile/profile-content";
 import { redirect } from "next/navigation";
+import { Suspense } from "react";
 
 export const dynamic = 'force-dynamic';
 
@@ -27,7 +28,9 @@ export default async function ProfilePage() {
 
   return (
     <div className="pb-24">
-      <ProfileContent user={user} />
+      <Suspense fallback={<div className="animate-pulse h-96 bg-stone-100 rounded-[2.5rem]"></div>}>
+        <ProfileContent user={user} />
+      </Suspense>
     </div>
   );
 }
