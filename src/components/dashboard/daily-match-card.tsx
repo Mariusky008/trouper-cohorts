@@ -432,10 +432,12 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
   const [mounted, setMounted] = useState(false);
   const [revealed, setRevealed] = useState(false);
   const [step, setStep] = useState<'initial' | 'called' | 'validated'>(() => {
-    // Determine initial state safely before first render
-    const initialMatch = matches && matches.length > 0 ? matches[0] : null;
-    if (initialMatch && (initialMatch.hasFeedback === true || initialMatch.status === 'met')) {
-        return 'validated';
+    // Force sync step with matches prop on mount
+    if (matches && matches.length > 0) {
+        const current = matches[0];
+        if (current.hasFeedback === true || current.status === 'met') {
+            return 'validated';
+        }
     }
     return 'initial';
   });
@@ -444,24 +446,25 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
     setMounted(true);
   }, []);
 
+  // Update step if matches change (e.g. after refresh)
+  useEffect(() => {
+    if (matches && matches.length > 0) {
+        const current = matches[0];
+        if (current.hasFeedback === true || current.status === 'met') {
+            setStep('validated');
+        } else if (step === 'validated') {
+            // Only reset if we were validated but the new match isn't
+            setStep('initial');
+        }
+    }
+  }, [matches]);
+
   // Use props directly, no derived state for matches to avoid hydration mismatch
   const currentMatch = matches && matches.length > 0 ? matches[0] : null;
 
-  // Update step status periodically (useful for polling)
-  useEffect(() => {
-    if (!mounted || !currentMatch) return;
-    
-    // Safety check - if we're already called or validated, don't revert to initial automatically
-    if (step !== 'initial') return;
-    
-    if (currentMatch.hasFeedback === true || currentMatch.status === 'met') {
-        setStep('validated');
-    }
-  }, [currentMatch?.hasFeedback, currentMatch?.status, mounted, step]);
-
   // Realtime Subscription for Sync across devices
   useEffect(() => {
-    if (!currentMatch || !mounted) return;
+    if (!currentMatch) return;
 
     const supabase = createClient();
     
@@ -776,7 +779,7 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
 
   // Prevent hydration mismatch
   if (!mounted) {
-      return null;
+      return <div className="w-full max-w-sm mx-auto h-[600px] rounded-[2.5rem] bg-white border border-[#2E130C]/10 animate-pulse" />;
   }
 
   const match = currentMatch;
