@@ -1642,47 +1642,24 @@ export function MatchCardWhatsAppPreview() {
         {/* Goals Grid */}
         <div className="grid grid-cols-2 gap-3 w-full mb-auto">
             {/* My Goal */}
-            <div 
-                onClick={() => setIsMissionOpen(true)}
-                className={cn(
-                    "relative rounded-xl p-3 cursor-pointer transition-all text-left group/box border",
-                    !selectedMission 
-                        ? "bg-indigo-50 border-indigo-200 hover:bg-indigo-100 hover:border-indigo-300 animate-pulse-slow shadow-sm" 
-                        : "bg-white border-[#2E130C]/10 hover:bg-slate-50"
-                )}
-            >
-                {!selectedMission && (
-                    <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[9px] font-black px-2 py-0.5 rounded-full animate-bounce shadow-sm border border-red-400">
-                        À DÉFINIR ⚠️
-                    </span>
-                )}
+            <div className="bg-indigo-50 border-indigo-100 rounded-xl p-3 text-left border relative">
                 <div className="flex items-center gap-1.5 mb-2">
-                    <Target className={cn("w-3.5 h-3.5", !selectedMission ? "text-indigo-500 animate-pulse" : "text-[#2E130C]/60")} />
-                    <span className="text-[9px] font-black text-[#2E130C]/60 uppercase tracking-wider">Mon Objectif</span>
+                    <Target className="w-3.5 h-3.5 text-indigo-500" />
+                    <span className="text-[9px] font-black text-indigo-700 uppercase tracking-wider">Ce que je cherche</span>
                 </div>
-                <p className={cn("text-[11px] font-bold leading-tight line-clamp-2 transition-colors", 
-                    !selectedMission ? "text-indigo-600 underline decoration-indigo-300 decoration-wavy" : "text-[#2E130C]"
-                )}>
-                    {selectedMission 
-                        ? MISSION_TYPES.find(m => m.id === selectedMission)?.label 
-                        : "Cliquez ici pour définir votre objectif du jour !"}
+                <p className="text-[11px] font-bold leading-tight line-clamp-3 text-[#2E130C]">
+                    Trouver de nouveaux clients B2B dans la région
                 </p>
             </div>
 
             {/* His Goal */}
-            <div 
-                onClick={() => setIsPartnerMissionOpen(true)}
-                className="bg-purple-50 border-purple-200 hover:bg-purple-100 hover:border-purple-300 rounded-xl p-3 text-left border cursor-pointer hover:scale-[1.02] transition-transform relative group/partner"
-            >
-                <div className="absolute top-2 right-2 opacity-0 group-hover/partner:opacity-100 transition-opacity">
-                    <Search className="w-3 h-3 text-purple-400" />
-                </div>
+            <div className="bg-purple-50 border-purple-100 rounded-xl p-3 text-left border relative">
                 <div className="flex items-center gap-1.5 mb-2">
-                    <Users className="w-3.5 h-3.5 text-purple-500" />
-                    <span className="text-[9px] font-black uppercase tracking-wider text-purple-600">Son Objectif</span>
+                    <Search className="w-3.5 h-3.5 text-purple-500" />
+                    <span className="text-[9px] font-black uppercase tracking-wider text-purple-700">Ce qu'il cherche</span>
                 </div>
-                <p className="text-[11px] font-bold leading-tight line-clamp-2 text-[#2E130C]">
-                    Trouver un associé technique
+                <p className="text-[11px] font-bold leading-tight line-clamp-3 text-[#2E130C]">
+                    Trouver un associé technique pour mon projet SaaS
                 </p>
             </div>
         </div>
@@ -1692,14 +1669,6 @@ export function MatchCardWhatsAppPreview() {
             
             {step === 'initial' && (
                 <>
-                    <Button 
-                        onClick={() => setIsWhyVisible(true)}
-                        variant="ghost" 
-                        className="w-full h-12 border border-[#2E130C]/10 bg-white text-[#2E130C]/70 hover:bg-[#2E130C]/5 hover:text-[#2E130C] rounded-xl font-bold transition-all hover:scale-[1.02]"
-                    >
-                        <Zap className="w-4 h-4 mr-2 text-yellow-500" /> Pourquoi ce match ?
-                    </Button>
-
                     {/* MAIN WHATSAPP BUTTON */}
                     <Dialog open={isWhatsAppOpen} onOpenChange={setIsWhatsAppOpen}>
                         <DialogTrigger asChild>

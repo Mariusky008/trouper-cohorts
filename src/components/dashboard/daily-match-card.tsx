@@ -798,10 +798,10 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
   const nextMatch = matches.length > 1 ? matches[1] : {
       id: 'teaser-future',
       partnerId: 'teaser-next',
-      name: 'Prochain Match',
-      job: 'Membre du Club',
-      city: 'Gironde', // Default or random
-      collabsCount: 15,
+      name: 'Un membre',
+      job: 'Entrepreneur',
+      city: 'Local', // Default or random
+      collabsCount: 1,
       score: 5.0,
       tags: ['Entrepreneur']
   };
@@ -925,66 +925,36 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
             </Button>
         </div>
 
-        {/* Quote */}
-        <div className="mb-6 px-2 w-full">
+        {/* Quote (Replaced with specific details) */}
+        <div className="mb-6 px-2 w-full text-center">
             <p className="text-[#2E130C]/70 text-sm font-medium italic leading-relaxed">
-                "Ce {match.job || 'partenaire'} peut vous ouvrir des opportunités auxquelles vous n’aviez pas accès hier."
+                Ce {match.job || 'partenaire'} peut vous ouvrir des opportunités inédites.
             </p>
         </div>
 
-        {/* Goals Grid */}
+        {/* Goals Grid (Direct Needs & Offers) */}
         <div className="grid grid-cols-2 gap-3 w-full mb-auto">
-            {/* My Goal */}
-            <div 
-                onClick={() => setIsMissionOpen(true)}
-                className={cn(
-                    "relative rounded-xl p-3 cursor-pointer transition-all text-left group/box border",
-                    !selectedMission 
-                        ? "bg-indigo-50 border-indigo-200 hover:bg-indigo-100 hover:border-indigo-300 animate-pulse-slow shadow-sm" 
-                        : "bg-white border-[#2E130C]/10 hover:bg-slate-50"
-                )}
-            >
-                {!selectedMission && (
-                    <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[9px] font-black px-2 py-0.5 rounded-full animate-bounce shadow-sm border border-red-400">
-                        À DÉFINIR ⚠️
-                    </span>
-                )}
+            {/* My Goal (Ce que je recherche) */}
+            <div className="bg-indigo-50 border-indigo-100 rounded-xl p-3 text-left border relative">
                 <div className="flex items-center gap-1.5 mb-2">
-                    <Target className={cn("w-3.5 h-3.5", !selectedMission ? "text-indigo-500 animate-pulse" : "text-[#2E130C]/60")} />
-                    <span className="text-[9px] font-black text-[#2E130C]/60 uppercase tracking-wider">Mon Objectif</span>
+                    <Target className="w-3.5 h-3.5 text-indigo-500" />
+                    <span className="text-[9px] font-black text-indigo-700 uppercase tracking-wider">Ce que je cherche</span>
                 </div>
-                <p className={cn("text-[11px] font-bold leading-tight line-clamp-2 transition-colors", 
-                    !selectedMission ? "text-indigo-600 underline decoration-indigo-300 decoration-wavy" : "text-[#2E130C]"
-                )}>
-                    {selectedMission 
-                        ? MISSION_TYPES.find(m => m.id === selectedMission)?.label 
-                        : "Cliquez ici pour définir votre objectif du jour !"}
+                <p className="text-[11px] font-bold leading-tight line-clamp-3 text-[#2E130C]">
+                    {currentUserProfile?.current_goals && currentUserProfile.current_goals.length > 0
+                        ? GOAL_LABELS[currentUserProfile.current_goals[0]] || currentUserProfile.current_goals[0]
+                        : "Développer mon activité"}
                 </p>
             </div>
 
-            {/* His Goal */}
-            <div 
-                onClick={() => setIsPartnerMissionOpen(true)}
-                className={cn(
-                    "rounded-xl p-3 text-left border cursor-pointer hover:scale-[1.02] transition-transform relative group/partner",
-                    match.partner_mission 
-                        ? "bg-purple-50 border-purple-200 hover:bg-purple-100 hover:border-purple-300" 
-                        : "bg-orange-50 border-orange-200 border-dashed"
-                )}
-            >
-                {match.partner_mission && (
-                    <div className="absolute top-2 right-2 opacity-0 group-hover/partner:opacity-100 transition-opacity">
-                        <Search className="w-3 h-3 text-purple-400" />
-                    </div>
-                )}
+            {/* His Goal (Ce qu'il recherche) */}
+            <div className="bg-purple-50 border-purple-100 rounded-xl p-3 text-left border relative">
                 <div className="flex items-center gap-1.5 mb-2">
-                    <Users className={cn("w-3.5 h-3.5", match.partner_mission ? "text-purple-500" : "text-orange-400")} />
-                    <span className={cn("text-[9px] font-black uppercase tracking-wider", match.partner_mission ? "text-purple-600" : "text-orange-500")}>Son Objectif</span>
+                    <Search className="w-3.5 h-3.5 text-purple-500" />
+                    <span className="text-[9px] font-black uppercase tracking-wider text-purple-700">Ce qu'il cherche</span>
                 </div>
-                <p className={cn("text-[11px] font-bold leading-tight line-clamp-2", match.partner_mission ? "text-[#2E130C]" : "text-orange-600/70 italic")}>
-                    {match.partner_mission 
-                        ? (MISSION_TYPES.find(m => m.id === match.partner_mission)?.label || match.partner_mission)
-                        : "N'a pas encore défini son objectif..."}
+                <p className="text-[11px] font-bold leading-tight line-clamp-3 text-[#2E130C]">
+                    {match.current_need || (match.current_goals && match.current_goals.length > 0 ? GOAL_LABELS[match.current_goals[0]] : "Développer son réseau")}
                 </p>
             </div>
         </div>
@@ -995,31 +965,67 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
              {/* STEP INITIAL: SHOW ACTION BUTTONS */}
              {step === 'initial' && (
                  <>
-                    <Button 
-                        onClick={() => {
-                            setIsWhyVisible(true);
-                            trackEvent('click_why_open', { partnerId: match.partnerId });
-                        }}
-                        variant="ghost" 
-                        className="w-full h-12 border border-[#2E130C]/10 bg-white text-[#2E130C]/70 hover:bg-[#2E130C]/5 hover:text-[#2E130C] rounded-xl font-bold transition-all hover:scale-[1.02]"
-                    >
-                        <Zap className="w-4 h-4 mr-2 text-yellow-500" /> Pourquoi ce match ?
-                    </Button>
+                    {/* MAIN WHATSAPP BUTTON */}
+                    <Dialog open={isWhatsAppOpen} onOpenChange={setIsWhatsAppOpen}>
+                        <DialogTrigger asChild>
+                            <Button 
+                                onClick={() => {
+                                    setIsWhatsAppOpen(true);
+                                    trackEvent('click_whatsapp_open', { partnerId: match.partnerId });
+                                }}
+                                className="w-full h-14 bg-[#25D366] hover:bg-[#20bd5a] text-white font-black text-base rounded-xl shadow-lg shadow-[#25D366]/20 tracking-wide transition-all hover:scale-[1.02] relative overflow-hidden group/btn"
+                            >
+                                <MessageSquare className="w-5 h-5 mr-2 relative z-10 fill-current" />
+                                <span className="relative z-10">CONTACTER VIA WHATSAPP</span>
+                            </Button>
+                        </DialogTrigger>
+                        <DialogContent className="bg-white border-[#2E130C]/10 text-[#2E130C] sm:max-w-md rounded-2xl w-[90vw]">
+                            <DialogHeader>
+                                <DialogTitle className="flex flex-col items-center gap-4 text-2xl font-black justify-center pt-4">
+                                    <div className="h-20 w-20 rounded-full bg-[#25D366]/10 flex items-center justify-center animate-pulse">
+                                        <MessageSquare className="h-10 w-10 text-[#25D366] fill-current" />
+                                    </div>
+                                    <span>L'Entremetteur</span>
+                                </DialogTitle>
+                                <DialogDescription className="text-center text-[#2E130C]/60 text-base">
+                                    Brisons la glace. Voici un message prêt à être envoyé à <span className="text-[#2E130C] font-bold">{match.name.split(' ')[0]}</span> sur WhatsApp pour initier le contact sans friction.
+                                </DialogDescription>
+                            </DialogHeader>
+                            <div className="py-4 space-y-6">
+                                {/* Message Preview Box */}
+                                <div className="bg-[#F3F0E7] rounded-xl p-4 border border-[#2E130C]/10 relative shadow-inner">
+                                    <div className="absolute -top-3 left-4 bg-[#25D366] text-white text-[10px] font-black uppercase px-2 py-0.5 rounded-full tracking-wider shadow-sm">
+                                        Message généré
+                                    </div>
+                                    <p className="text-[#2E130C] text-sm leading-relaxed whitespace-pre-wrap font-medium">
+                                        {`Salut ${match.name.split(' ')[0]}, c'est ${currentUserProfile?.first_name || currentUserProfile?.display_name?.split(' ')[0] || currentUserProfile?.name?.split(' ')[0] || "Jean-Philippe"} ! On a matché aujourd'hui sur Popey.Academy. J'ai vu que tu étais ${match.job || "dirigeant"}, ça m'intéresse ! Dispo pour un appel rapide ou un vocal aujourd'hui ou demain ?`}
+                                    </p>
+                                    <p className="text-xs text-[#2E130C]/50 mt-3 italic">
+                                        (Vous pourrez le modifier dans WhatsApp avant de l'envoyer)
+                                    </p>
+                                </div>
 
-                    <Button 
-                        onClick={() => {
-                            setIsWhatsAppOpen(true);
-                            trackEvent('click_whatsapp_open', { partnerId: match.partnerId });
-                        }}
-                        className="w-full h-14 bg-[#25D366] hover:bg-[#20bd5a] text-white font-black text-base rounded-xl shadow-lg shadow-[#25D366]/20 tracking-wide transition-all hover:scale-[1.02] relative overflow-hidden group/btn"
-                    >
-                        <MessageSquare className="w-5 h-5 mr-2 relative z-10 fill-current" />
-                        <span className="relative z-10">CONTACTER VIA WHATSAPP</span>
-                    </Button>
+                                <div className="flex flex-col gap-3">
+                                    <Button 
+                                        onClick={handleWhatsAppRedirect}
+                                        className="w-full h-14 bg-[#25D366] hover:bg-[#20bd5a] text-white font-black text-lg rounded-xl shadow-lg hover:scale-[1.02] transition-transform"
+                                    >
+                                        <MessageSquare className="w-5 h-5 mr-2 fill-current" />
+                                        OUVRIR WHATSAPP
+                                    </Button>
+                                    <Button 
+                                        variant="ghost" 
+                                        onClick={() => setIsWhatsAppOpen(false)}
+                                        className="w-full text-[#2E130C]/60 hover:text-[#2E130C]"
+                                    >
+                                        Annuler
+                                    </Button>
+                                </div>
+                            </div>
+                        </DialogContent>
+                    </Dialog>
                  </>
              )}
-
-             {/* STEP CALLED: SHOW VALIDATION BUTTON */}
              {step === 'called' && (
                 <div className="flex flex-col gap-3 animate-in fade-in slide-in-from-bottom-4 duration-500">
                     <div className="bg-emerald-50 text-emerald-700 p-3 rounded-xl border border-emerald-200 text-sm font-medium text-center">
