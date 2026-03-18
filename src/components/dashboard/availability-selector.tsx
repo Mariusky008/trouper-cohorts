@@ -21,12 +21,12 @@ export function AvailabilitySelector({ settings, potentialCount = 0, onSuccess }
   const { toast } = useToast();
   
   // AVAILABILITY STATE
-  const [selectedSlots, setSelectedSlots] = useState<string[]>([]);
+  const [selectedSlots, setSelectedSlots] = useState<string[]>(settings?.preferred_slots || []);
+  const [selectedDays, setSelectedDays] = useState<string[]>(settings?.preferred_days || ['mon', 'tue', 'wed', 'thu', 'fri']);
   const [isAvailabilitySaved, setIsAvailabilitySaved] = useState(false);
   const [loading, setLoading] = useState(false);
 
   // FREQUENCY STATE
-  const [frequency, setFrequency] = useState(settings?.frequency_per_week || 5);
   const [status, setStatus] = useState(settings?.status || 'active');
   const [isSettingsLoading, setIsSettingsLoading] = useState(false);
 
@@ -66,11 +66,22 @@ export function AvailabilitySelector({ settings, potentialCount = 0, onSuccess }
   const handleSaveAvailability = async () => {
     setLoading(true);
     try {
-      await saveAvailability(dateStr, selectedSlots);
+      // Save global network settings (days + default slots)
+      await updateNetworkSettings({
+          preferred_days: selectedDays,
+          preferred_slots: selectedSlots,
+          frequency_per_week: selectedDays.length
+      });
+
+      // Optionally save explicit slots for tomorrow (retro-compatibility)
+      if (selectedDays.includes(tomorrow.toLocaleDateString('en-US', { weekday: 'short' }).toLowerCase())) {
+         await saveAvailability(dateStr, selectedSlots);
+      }
+      
       setIsAvailabilitySaved(true);
       toast({
         title: "Disponibilités enregistrées !",
-        description: "Nous chercherons un partenaire pour demain.",
+        description: "Vos paramètres de mise en relation sont à jour.",
       });
       if (onSuccess) {
           setTimeout(() => {
@@ -96,7 +107,6 @@ export function AvailabilitySelector({ settings, potentialCount = 0, onSuccess }
       await updateNetworkSettings(updates);
       toast({ title: "Préférences mises à jour !" });
       if (updates.status) setStatus(updates.status);
-      if (updates.frequency_per_week) setFrequency(updates.frequency_per_week);
     } catch (e) {
       toast({ title: "Erreur", variant: "destructive" });
     } finally {
@@ -212,7 +222,7 @@ export function AvailabilitySelector({ settings, potentialCount = 0, onSuccess }
                           <Button 
                             onClick={handleSaveAvailability}
                             disabled={selectedSlots.length === 0 || loading}
-                            className="w-full h-12 text-base font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-lg shadow-blue-900/10 transition-all hover:scale-[1.01]"
+                            className="w-full h-12 text-base font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-lg shadow-blue-900/10 transition-all hover:scale-[1.01] hidden"
                           >
                             {loading ? "Enregistrement..." : (
                                 <>
@@ -247,7 +257,7 @@ export function AvailabilitySelector({ settings, potentialCount = 0, onSuccess }
               </div>
 
               {/* FREQUENCY SETTINGS (SIMPLIFIED) */}
-              <div className="pt-6 border-t border-[#2E130C]/10">
+              <div className="pt-6 border-t border-[#2E130C]/10 mb-8">
                   <div className="flex items-center justify-between mb-4">
                       <h4 className="text-sm font-bold text-[#2E130C]/60 uppercase tracking-wide flex items-center gap-2">
                         <Settings className="h-4 w-4" /> Jours de disponibilité
@@ -271,22 +281,19 @@ export function AvailabilitySelector({ settings, potentialCount = 0, onSuccess }
                               { id: 'thu', label: 'Jeudi' },
                               { id: 'fri', label: 'Vendredi' }
                           ].map((day) => {
-                              const isSelected = (settings?.preferred_days || ['mon', 'tue', 'wed', 'thu', 'fri']).includes(day.id);
+                              const isSelected = selectedDays.includes(day.id);
                               return (
                                   <button
                                       key={day.id}
                                       onClick={() => {
-                                          const currentDays = settings?.preferred_days || ['mon', 'tue', 'wed', 'thu', 'fri'];
-                                          let newDays;
                                           if (isSelected) {
-                                              newDays = currentDays.filter((d: string) => d !== day.id);
+                                              setSelectedDays(selectedDays.filter((d: string) => d !== day.id));
                                           } else {
-                                              newDays = [...currentDays, day.id];
+                                              setSelectedDays([...selectedDays, day.id]);
                                           }
-                                          handleUpdateSettings({ preferred_days: newDays, frequency_per_week: newDays.length });
                                       }}
                                       className={cn(
-                                          "px-4 py-2 rounded-xl text-sm font-bold border transition-all",
+                                          "px-4 py-2 rounded-xl text-sm font-bold border transition-all cursor-pointer",
                                           isSelected 
                                               ? "bg-blue-600 text-white border-blue-600 shadow-md" 
                                               : "bg-white text-[#2E130C]/60 border-[#2E130C]/10 hover:border-blue-300"
@@ -300,10 +307,25 @@ export function AvailabilitySelector({ settings, potentialCount = 0, onSuccess }
                       
                       <div className="flex justify-between items-center pt-2 border-t border-[#2E130C]/10">
                         <span className="text-xs font-bold text-[#2E130C]/60 uppercase">Fréquence résultante</span>
-                        <span className="text-lg font-black text-blue-600">{(settings?.preferred_days || ['mon', 'tue', 'wed', 'thu', 'fri']).length} <span className="text-xs text-[#2E130C]/50 font-medium">j/sem</span></span>
+                        <span className="text-lg font-black text-blue-600">{selectedDays.length} <span className="text-xs text-[#2E130C]/50 font-medium">j/sem</span></span>
                       </div>
                   </div>
               </div>
+
+              {/* SAVE BUTTON AT THE BOTTOM */}
+              {!isAvailabilitySaved && (
+                <Button 
+                  onClick={handleSaveAvailability}
+                  disabled={selectedSlots.length === 0 || selectedDays.length === 0 || loading}
+                  className="w-full h-14 text-lg font-black bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-lg shadow-blue-900/10 transition-all hover:scale-[1.01]"
+                >
+                  {loading ? "Enregistrement..." : (
+                      <>
+                          Valider mes disponibilités <ArrowRight className="ml-2 h-5 w-5" />
+                      </>
+                  )}
+                </Button>
+              )}
             </>
           )}
       </div>
