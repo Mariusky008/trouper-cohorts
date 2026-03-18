@@ -36,7 +36,29 @@ const GOAL_OPTIONS = [
     { id: "training", label: "Se former / Apprendre" }
 ];
 
-export function ProfileContent({ user, isReadOnly = false }: { user: any; isReadOnly?: boolean }) {
+export function ProfileContent(props: { user: any; isReadOnly?: boolean }) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+      return (
+          <div className="space-y-8 animate-pulse pt-16">
+              <div className="bg-stone-100 rounded-[2.5rem] h-64 w-full border border-stone-200" />
+              <div className="grid md:grid-cols-[2fr_1fr] gap-8">
+                  <div className="bg-stone-100 rounded-[2.5rem] h-96 w-full border border-stone-200" />
+                  <div className="bg-stone-100 rounded-[2.5rem] h-48 w-full border border-stone-200" />
+              </div>
+          </div>
+      );
+  }
+
+  return <ProfileForm {...props} />;
+}
+
+function ProfileForm({ user, isReadOnly = false }: { user: any; isReadOnly?: boolean }) {
   const { toast } = useToast();
   const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
@@ -102,12 +124,6 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
       !!user.bio && 
       !!user.avatar_url && 
       hasSocialsOrOptOut;
-
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   // Auto-open edit modal if query param "edit=true" is present
   useEffect(() => {
@@ -341,18 +357,6 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
           return { ...prev, current_goals: newGoals };
       });
   };
-
-  if (!mounted) {
-      return (
-          <div className="space-y-8 animate-pulse pt-16">
-              <div className="bg-stone-100 rounded-[2.5rem] h-64 w-full border border-stone-200" />
-              <div className="grid md:grid-cols-[2fr_1fr] gap-8">
-                  <div className="bg-stone-100 rounded-[2.5rem] h-96 w-full border border-stone-200" />
-                  <div className="bg-stone-100 rounded-[2.5rem] h-48 w-full border border-stone-200" />
-              </div>
-          </div>
-      );
-  }
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
