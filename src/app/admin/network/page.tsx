@@ -129,7 +129,14 @@ async function getNetworkStats() {
     .order('created_at', { ascending: false })
     .limit(100);
 
-  let recentProfiles: { user_id: string; created_at: string; status: string; profile: { display_name: string; trade: string; city: string; phone: string; bio?: string; avatar_url?: string; linkedin_url?: string; instagram_handle?: string; facebook_handle?: string; website_url?: string; receive_profile?: any } }[] = [];
+  // Get Network Settings for each profile to show their availability setup
+  const { data: networkSettings } = await supabaseAdmin
+    .from('network_settings')
+    .select('user_id, preferred_days, frequency_per_week');
+    
+  const settingsMap = new Map(networkSettings?.map(s => [s.user_id, s]));
+
+  let recentProfiles: { user_id: string; created_at: string; status: string; settings?: any; profile: { display_name: string; trade: string; city: string; phone: string; bio?: string; avatar_url?: string; linkedin_url?: string; instagram_handle?: string; facebook_handle?: string; website_url?: string; receive_profile?: any } }[] = [];
   if (recentMembers && recentMembers.length > 0) {
     const userIds = recentMembers.map(m => m.user_id);
     
@@ -152,6 +159,7 @@ async function getNetworkStats() {
       
       return {
         ...m,
+        settings: settingsMap.get(m.user_id),
         profile: profile || { display_name: "Inconnu", trade: "Profil manquant", city: "", phone: "" }
       };
     });

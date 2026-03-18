@@ -176,6 +176,36 @@ export function NetworkMembersList({ members }: any) {
                         </div>
                     )}
 
+                    {/* Member Availabilities info */}
+                    <div className="flex items-center gap-2 mb-3 mt-2 bg-blue-50/50 p-2 rounded-lg border border-blue-100/50">
+                        <div className="text-[10px] uppercase font-bold text-blue-800/70 tracking-wider">
+                            Disponibilités :
+                        </div>
+                        {m.settings?.preferred_days?.length > 0 ? (
+                            <div className="flex items-center gap-1.5">
+                                <span className="text-xs font-semibold text-blue-700">
+                                    {m.settings.preferred_days.map((d: string) => {
+                                        switch(d) {
+                                            case 'mon': return 'Lun';
+                                            case 'tue': return 'Mar';
+                                            case 'wed': return 'Mer';
+                                            case 'thu': return 'Jeu';
+                                            case 'fri': return 'Ven';
+                                            default: return d;
+                                        }
+                                    }).join(', ')}
+                                </span>
+                                <Badge variant="outline" className="text-[9px] h-4 px-1.5 bg-white border-blue-200 text-blue-600">
+                                    {m.settings.frequency_per_week || m.settings.preferred_days.length} j/sem
+                                </Badge>
+                            </div>
+                        ) : (
+                            <span className="text-xs text-slate-500 italic">
+                                Non configurées (Auto: tous les jours)
+                            </span>
+                        )}
+                    </div>
+
                     {/* Footer: Phone & Date & Action */}
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between border-t border-slate-100 pt-3 mt-1 gap-2 sm:gap-0">
                         <div className="flex items-center gap-3">

@@ -116,13 +116,17 @@ export async function generateMatches(targetDate: Date) {
             }
 
             // Check if user prefers this day
-            const preferredDays = Array.isArray(setting.preferred_days) ? setting.preferred_days : [];
+            // If preferred_days is empty or not set, we assume they are available everyday (auto fallback)
+            const preferredDays = Array.isArray(setting.preferred_days) && setting.preferred_days.length > 0 
+                ? setting.preferred_days 
+                : ['mon', 'tue', 'wed', 'thu', 'fri'];
             
             if (preferredDays.includes(targetDay)) {
                 // Map preferred slots to the format used in matching
-                const mappedSlots = (setting.preferred_slots || [])
-                    .map((s: string) => slotMapping[s])
-                    .filter(Boolean); 
+                // If preferred_slots is empty, fallback to 09h-11h
+                const mappedSlots = (setting.preferred_slots && setting.preferred_slots.length > 0)
+                    ? setting.preferred_slots.map((s: string) => slotMapping[s] || s).filter(Boolean)
+                    : ['09h – 11h']; 
                 
                 if (mappedSlots.length > 0) {
                     availabilities.push({
