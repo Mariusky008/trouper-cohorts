@@ -111,7 +111,7 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
               const url = new URL(window.location.href);
               url.searchParams.delete("edit");
               url.searchParams.delete("tab");
-              window.history.replaceState({}, "", url);
+              router.replace(url.pathname + url.search);
           }
       };
 
@@ -569,10 +569,8 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
                     Étape {currentStep} / 3
                 </span>
             </DialogTitle>
-            <DialogDescription>
-              {currentStep === 1 && "Commençons par les présentations."}
-              {currentStep === 2 && "Dites-nous ce que vous pouvez apporter au réseau."}
-              {currentStep === 3 && "Dites-nous ce que vous recherchez en retour."}
+            <DialogDescription aria-describedby={undefined}>
+              Remplissez les informations de votre profil.
             </DialogDescription>
           </DialogHeader>
           

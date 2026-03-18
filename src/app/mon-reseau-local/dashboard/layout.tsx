@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { 
@@ -142,7 +142,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   
   return (
     <div className="min-h-screen bg-[#E2D9BC] flex flex-col font-sans text-[#2E130C] selection:bg-[#B20B13] selection:text-[#E2D9BC]">
-      <ProfileCompletionModal />
+      <Suspense fallback={null}>
+        <ProfileCompletionModal />
+      </Suspense>
       
       {/* --- TOP NAVIGATION BAR (DESKTOP & MOBILE) --- */}
       <header className="fixed top-0 w-full bg-[#E2D9BC]/90 backdrop-blur-md border-b-2 border-[#2E130C]/10 z-30 h-16 px-4 lg:px-8 flex items-center justify-between shadow-sm">
@@ -384,7 +386,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       </main>
 
       {/* GLOBAL CHAT WIDGET */}
-      {currentUserId && <GlobalChatWidget currentUserId={currentUserId} />}
+      <Suspense fallback={null}>
+        {currentUserId && <GlobalChatWidget currentUserId={currentUserId} />}
+      </Suspense>
       
       {/* PWA INSTALL PROMPT */}
       <PWAInstallPrompt />
