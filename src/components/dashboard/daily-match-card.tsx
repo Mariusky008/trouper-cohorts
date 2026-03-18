@@ -959,12 +959,12 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
                         <div className="mt-2 text-[9px] text-indigo-500 font-bold underline decoration-indigo-200">Voir mon profil détaillé</div>
                     </div>
                 </DialogTrigger>
-                <DialogContent className="bg-white border-[#2E130C]/10 text-[#2E130C] sm:max-w-md rounded-2xl w-[90vw] max-h-[85vh] overflow-y-auto">
+                <DialogContent className="bg-white border-[#2E130C]/10 text-[#2E130C] sm:max-w-md rounded-2xl w-[90vw] max-h-[85vh] overflow-y-auto" aria-describedby="my-profile-desc">
                     <DialogHeader>
                         <DialogTitle className="flex items-center gap-2 text-xl font-black text-indigo-600">
                             <Target className="h-6 w-6" /> Mon Profil Réseau
                         </DialogTitle>
-                        <DialogDescription className="text-sm text-[#2E130C]/60" aria-describedby={undefined}>
+                        <DialogDescription id="my-profile-desc" className="text-sm text-[#2E130C]/60">
                             Voici comment les autres membres voient vos besoins et ce que vous pouvez offrir.
                         </DialogDescription>
                     </DialogHeader>
@@ -1027,12 +1027,12 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
                         <div className="mt-2 text-[9px] text-purple-500 font-bold underline decoration-purple-200">Voir son profil détaillé</div>
                     </div>
                 </DialogTrigger>
-                <DialogContent className="bg-white border-[#2E130C]/10 text-[#2E130C] sm:max-w-md rounded-2xl w-[90vw] max-h-[85vh] overflow-y-auto">
+                <DialogContent className="bg-white border-[#2E130C]/10 text-[#2E130C] sm:max-w-md rounded-2xl w-[90vw] max-h-[85vh] overflow-y-auto" aria-describedby="partner-profile-desc">
                     <DialogHeader>
                         <DialogTitle className="flex items-center gap-2 text-xl font-black text-purple-600">
                             <Search className="h-6 w-6" /> Profil de {match.name.split(' ')[0]}
                         </DialogTitle>
-                        <DialogDescription className="text-sm text-[#2E130C]/60" aria-describedby={undefined}>
+                        <DialogDescription id="partner-profile-desc" className="text-sm text-[#2E130C]/60">
                             Détail de ce que votre partenaire recherche et ce qu'il peut vous apporter.
                         </DialogDescription>
                     </DialogHeader>
@@ -1097,7 +1097,7 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
                                 <span className="relative z-10">CONTACTER VIA WHATSAPP</span>
                             </Button>
                         </DialogTrigger>
-                        <DialogContent className="bg-white border-[#2E130C]/10 text-[#2E130C] sm:max-w-md rounded-2xl w-[90vw]">
+                        <DialogContent className="bg-white border-[#2E130C]/10 text-[#2E130C] sm:max-w-md rounded-2xl w-[90vw]" aria-describedby="whatsapp-desc">
                             <DialogHeader>
                                 <DialogTitle className="flex flex-col items-center gap-4 text-2xl font-black justify-center pt-4">
                                     <div className="h-20 w-20 rounded-full bg-[#25D366]/10 flex items-center justify-center animate-pulse">
@@ -1105,7 +1105,7 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
                                     </div>
                                     <span>L'Entremetteur</span>
                                 </DialogTitle>
-                                <DialogDescription className="text-center text-[#2E130C]/60 text-base" aria-describedby={undefined}>
+                                <DialogDescription id="whatsapp-desc" className="text-center text-[#2E130C]/60 text-base">
                                     Brisons la glace. Voici un message prêt à être envoyé à <span className="text-[#2E130C] font-bold">{match.name.split(' ')[0]}</span> sur WhatsApp pour initier le contact sans friction.
                                 </DialogDescription>
                             </DialogHeader>
@@ -1174,7 +1174,7 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
                             </Button>
                         </DialogTrigger>
                         {/* VALIDATION WIZARD CONTENT (Re-inserted here) */}
-                        <DialogContent className="bg-white border-[#2E130C]/10 text-[#2E130C] sm:max-w-md rounded-2xl w-[95vw] min-h-[400px] flex flex-col justify-center transition-all duration-300">
+                        <DialogContent className="bg-white border-[#2E130C]/10 text-[#2E130C] sm:max-w-md rounded-2xl w-[95vw] min-h-[400px] flex flex-col justify-center transition-all duration-300" aria-describedby="validation-desc">
                             {/* PROGRESS INDICATOR */}
                             <div className="absolute top-0 left-0 right-0 h-1 bg-[#2E130C]/5">
                                 <motion.div 
@@ -1192,7 +1192,7 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
                                 <DialogTitle className="text-center text-3xl font-black text-[#2E130C]">
                                     {popupView === 'step1_status' ? "Bilan de la mission" : popupView === 'step2_rating' ? "Notez l'échange" : "Offrir une opportunité"}
                                 </DialogTitle>
-                                <DialogDescription className="sr-only" aria-describedby={undefined}>
+                                <DialogDescription id="validation-desc" className="sr-only">
                                     Validation de la mission du jour
                                 </DialogDescription>
                             </DialogHeader>
