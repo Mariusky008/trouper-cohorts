@@ -433,11 +433,13 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
   const [step, setStep] = useState<'initial' | 'called' | 'validated'>('initial');
 
   useEffect(() => {
-    // Force sync step with matches prop on mount and update
+    // Sync state if props change
     if (matches && matches.length > 0) {
         const current = matches[0];
         if (current.hasFeedback === true || current.status === 'met') {
             setStep('validated');
+        } else {
+            setStep('initial');
         }
     }
   }, [matches]);
