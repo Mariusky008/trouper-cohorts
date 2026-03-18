@@ -564,7 +564,7 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
            </div>
         </div>
 
-      {/* --- WIZARD PROFILE EDIT MODAL (3 STEPS) --- */}
+        {/* --- WIZARD PROFILE EDIT MODAL (3 STEPS) --- */}
       <Dialog open={isEditing} onOpenChange={(open) => {
           setIsEditing(open);
           if(!open) setCurrentStep(1); // Reset to step 1 on close
@@ -578,9 +578,7 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
                 </span>
             </DialogTitle>
             <DialogDescription aria-describedby={undefined}>
-              {currentStep === 1 && "Commençons par les présentations."}
-              {currentStep === 2 && "Dites-nous ce que vous pouvez apporter au réseau."}
-              {currentStep === 3 && "Dites-nous ce que vous recherchez en retour."}
+              Remplissez les informations de votre profil.
             </DialogDescription>
           </DialogHeader>
           
