@@ -569,7 +569,7 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
           setIsEditing(open);
           if(!open) setCurrentStep(1); // Reset to step 1 on close
       }}>
-        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto" aria-describedby={undefined}>
+        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-2xl font-black flex items-center justify-between">
                 <span>Modifier mon profil</span>
@@ -577,7 +577,7 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
                     Étape {currentStep} / 3
                 </span>
             </DialogTitle>
-            <DialogDescription aria-describedby={undefined}>
+            <DialogDescription className="sr-only">
               Remplissez les informations de votre profil.
             </DialogDescription>
           </DialogHeader>
@@ -971,12 +971,12 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
 
       {/* --- SEPARATE OFFER MODAL --- */}
       <Dialog open={isOfferModalOpen} onOpenChange={setIsOfferModalOpen}>
-        <DialogContent className="sm:max-w-[500px] max-h-[85vh] overflow-y-auto" aria-describedby={undefined}>
+        <DialogContent className="sm:max-w-[500px] max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-2xl font-black text-amber-600 flex items-center gap-2">
                 <Percent className="h-6 w-6" /> Mon Offre Club
             </DialogTitle>
-            <DialogDescription aria-describedby={undefined}>
+            <DialogDescription className="text-sm text-slate-500">
                 Proposez une offre exclusive (-20% min) visible uniquement par vos matchs.
             </DialogDescription>
           </DialogHeader>
