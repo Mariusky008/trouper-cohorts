@@ -59,8 +59,10 @@ export function PlanningDialog({ settings, potentialCount }: PlanningDialogProps
                 potentialCount={potentialCount} 
                 onSuccess={() => {
                     setOpen(false);
-                    // Force refresh to update the admin page data and local dashboard state
-                    router.refresh();
+                    // Add a slight delay before refresh to allow the dialog closing animation to finish
+                    setTimeout(() => {
+                        router.refresh();
+                    }, 300);
                 }} 
             />
          </div>

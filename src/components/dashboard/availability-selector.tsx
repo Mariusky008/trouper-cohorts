@@ -96,9 +96,9 @@ export function AvailabilitySelector({ settings, potentialCount = 0, onSuccess }
         description: "Vos paramètres de mise en relation sont à jour.",
       });
       
-      // Force onSuccess callback immediately without delay to ensure closing
+      // Delay onSuccess callback to allow seeing the success state before closing
       if (onSuccess) {
-          onSuccess();
+          setTimeout(() => onSuccess(), 1500);
       }
       
     } catch (error) {
