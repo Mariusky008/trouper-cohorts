@@ -429,53 +429,59 @@ const WeekendCard = () => (
 
 export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserProfile }: DailyMatchCardProps) {
   // State
-  const [revealed, setRevealed] = useState(false);
   const [mounted, setMounted] = useState(false);
-  const [step, setStep] = useState<'initial' | 'called' | 'validated'>('initial');
-  const [matchesState, setMatchesState] = useState(matches);
+  const [revealed, setRevealed] = useState(false);
+  const [step, setStep] = useState<'initial' | 'called' | 'validated'>(() => {
+    // Determine initial state safely before first render
+    const initialMatch = matches && matches.length > 0 ? matches[0] : null;
+    if (initialMatch && (initialMatch.hasFeedback === true || initialMatch.status === 'met')) {
+        return 'validated';
+    }
+    return 'initial';
+  });
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  // Update matches state when props change
-  useEffect(() => {
-    if (matches) {
-        setMatchesState(matches);
-    }
-  }, [matches]);
+  // Use props directly, no derived state for matches to avoid hydration mismatch
+  const currentMatch = matches && matches.length > 0 ? matches[0] : null;
 
+  // Update step status periodically (useful for polling)
   useEffect(() => {
-    if (!mounted) return; // Don't run hydration-sensitive logic until mounted
+    if (!mounted || !currentMatch) return;
     
-    // Sync state if props change
-    console.log("[DailyMatchCard] Syncing step based on matches:", matchesState);
-    if (matchesState && matchesState.length > 0) {
-        const current = matchesState[0];
-        console.log("[DailyMatchCard] Current match:", current.id, "hasFeedback:", current.hasFeedback, "status:", current.status);
-        if (current.hasFeedback === true || current.status === 'met') {
-            console.log("[DailyMatchCard] Setting step to validated");
-            setStep('validated');
-        } else {
-            // Check if step is already called to prevent resetting to initial if user is in the middle of validation
-            setStep(prev => {
-                const nextStep = prev === 'called' ? 'called' : 'initial';
-                if (prev !== nextStep) {
-                    console.log(`[DailyMatchCard] Setting step to ${nextStep} (was ${prev})`);
-                }
-                return nextStep;
-            });
-        }
-    } else {
-        setStep(prev => {
-            if (prev !== 'initial') {
-                console.log("[DailyMatchCard] No matches, setting step to initial");
-                return 'initial';
-            }
-            return prev;
-        });
+    // Safety check - if we're already called or validated, don't revert to initial automatically
+    if (step !== 'initial') return;
+    
+    if (currentMatch.hasFeedback === true || currentMatch.status === 'met') {
+        setStep('validated');
     }
-  }, [matchesState, mounted]);
+  }, [currentMatch?.hasFeedback, currentMatch?.status, mounted, step]);
+
+  // Realtime Subscription for Sync across devices
+  useEffect(() => {
+    if (!currentMatch || !mounted) return;
+
+    const supabase = createClient();
+    
+    const channel = supabase.channel(`match_${currentMatch.id}`)
+        .on(
+            'postgres_changes',
+            { event: 'UPDATE', schema: 'public', table: 'network_matches', filter: `id=eq.${currentMatch.id}` },
+            (payload) => {
+                const updatedMatch = payload.new as any;
+                if (updatedMatch.status === 'met' || updatedMatch.has_feedback) {
+                    setStep('validated');
+                }
+            }
+        )
+        .subscribe();
+
+    return () => {
+        supabase.removeChannel(channel);
+    };
+  }, [currentMatch]);
 
   // Realtime Subscription for Sync across devices
   useEffect(() => {
@@ -747,7 +753,7 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
   const isTomorrowWeekend = tomorrow.getDay() === 6 || tomorrow.getDay() === 0;
 
   // Weekend State - Clean & Warm
-  if (!matches || matches.length === 0) {
+  if (!currentMatch) {
       if (isWeekend || isTomorrowWeekend) {
           return <WeekendCard />;
       }
@@ -773,7 +779,7 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
       return null;
   }
 
-  const match = matchesState && matchesState.length > 0 ? matchesState[0] : matches[0];
+  const match = currentMatch;
   const isCallOut = match.type === 'call_out';
 
   const mySlots = match.mySlots || [];
@@ -956,7 +962,7 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
             </p>
         </div>
 
-        {/* Goals Grid (Direct Needs & Offers) */}
+            {/* Goals Grid (Direct Needs & Offers) */}
         <div className="grid grid-cols-2 gap-3 w-full mb-auto">
             {/* My Goal (Ce que je recherche) */}
             <Dialog open={isMyProfileOpen} onOpenChange={setIsMyProfileOpen}>
