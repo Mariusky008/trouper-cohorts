@@ -435,13 +435,13 @@ export function MatchCardPreview() {
             
             {/* 0. Mission Dialog */}
             <Dialog open={isMissionOpen} onOpenChange={setIsMissionOpen}>
-                <DialogContent className="bg-[#0f172a] border-white/10 text-white sm:max-w-md rounded-2xl w-[90vw] max-h-[85vh] overflow-y-auto">
+                <DialogContent className="bg-[#0f172a] border-white/10 text-white sm:max-w-md rounded-2xl w-[90vw] max-h-[85vh] overflow-y-auto" aria-describedby="mission-desc">
                     <DialogHeader>
                         <DialogTitle className="flex items-center gap-2 text-xl font-black text-indigo-400">
                             <Target className="h-6 w-6" />
                             Menu de la Carte 🍽️
                         </DialogTitle>
-                        <DialogDescription className="text-slate-400">
+                        <DialogDescription id="mission-desc" className="text-slate-400">
                             Ne partez pas sans objectif. Choisissez le thème de votre échange.
                         </DialogDescription>
                     </DialogHeader>
@@ -562,7 +562,11 @@ export function MatchCardPreview() {
                         </Button>
                     </div>
                 </DialogTrigger>
-                <DialogContent className="bg-[#0f172a] border-white/10 text-white sm:max-w-md rounded-2xl">
+                <DialogContent className="bg-[#0f172a] border-white/10 text-white sm:max-w-md rounded-2xl" aria-describedby="phone-desc">
+                    <DialogHeader className="sr-only">
+                        <DialogTitle>Appel en cours</DialogTitle>
+                        <DialogDescription id="phone-desc">Détails de l'appel téléphonique avec votre partenaire.</DialogDescription>
+                    </DialogHeader>
                     <div className="flex flex-col items-center gap-6 py-8">
                         <div className="h-20 w-20 rounded-full bg-emerald-500/20 flex items-center justify-center animate-pulse">
                             <Phone className="h-10 w-10 text-emerald-400" />
@@ -586,13 +590,13 @@ export function MatchCardPreview() {
                         <Gift className="h-6 w-6" />
                     </Button>
                 </DialogTrigger>
-                <DialogContent className="bg-[#0f172a] border-white/10 text-white sm:max-w-md rounded-2xl w-[95vw] max-h-[85vh] overflow-y-auto">
+                <DialogContent className="bg-[#0f172a] border-white/10 text-white sm:max-w-md rounded-2xl w-[95vw] max-h-[85vh] overflow-y-auto" aria-describedby="opportunity-desc">
                     <DialogHeader>
                         <DialogTitle className="flex items-center gap-2 text-xl font-black">
                             <Gift className="h-6 w-6 text-purple-400" />
                             Offrir une Opportunité
                         </DialogTitle>
-                        <DialogDescription className="text-slate-400">
+                        <DialogDescription id="opportunity-desc" className="text-slate-400">
                             Quelle valeur souhaitez-vous apporter à Jean-Paul ?
                         </DialogDescription>
                     </DialogHeader>
@@ -636,11 +640,14 @@ export function MatchCardPreview() {
                         <Star className="h-6 w-6 fill-current" />
                     </Button>
                 </DialogTrigger>
-                <DialogContent className="bg-[#0f172a] border-white/10 text-white sm:max-w-md rounded-2xl">
+                <DialogContent className="bg-[#0f172a] border-white/10 text-white sm:max-w-md rounded-2xl" aria-describedby="rating-desc">
                     <DialogHeader>
                         <DialogTitle className="flex items-center gap-2 text-xl font-black justify-center">
                             Comment s'est passé l'échange ?
                         </DialogTitle>
+                        <DialogDescription id="rating-desc" className="sr-only">
+                            Notez l'échange avec votre partenaire
+                        </DialogDescription>
                     </DialogHeader>
                     <div className="grid grid-cols-3 gap-3 py-6">
                         <Button onClick={() => { setIsRatingOpen(false); toast.success("Feedback enregistré ! 🔥"); }} className="h-24 flex flex-col bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
@@ -800,14 +807,14 @@ export function MissionValidationPreview() {
                                         <MessageSquare className="h-6 w-6 fill-current" />
                                     </Button>
                                 </DialogTrigger>
-                                <DialogContent className="bg-[#0f172a] border-white/10 text-white sm:max-w-md rounded-2xl w-[90vw] p-0 overflow-hidden">
+                                <DialogContent className="bg-[#0f172a] border-white/10 text-white sm:max-w-md rounded-2xl w-[90vw] p-0 overflow-hidden" aria-describedby="why-desc">
                                     <div className="bg-gradient-to-br from-blue-600/20 to-purple-600/20 p-6">
                                         <DialogHeader>
                                             <DialogTitle className="flex items-center gap-2 text-xl font-black">
                                                 <Zap className="h-6 w-6 text-yellow-400 fill-yellow-400" />
                                                 Pourquoi ce match ?
                                             </DialogTitle>
-                                            <DialogDescription className="text-slate-300">
+                                            <DialogDescription id="why-desc" className="text-slate-300">
                                                 Voici pourquoi l'algorithme vous a réunis aujourd'hui.
                                             </DialogDescription>
                                         </DialogHeader>
@@ -876,7 +883,7 @@ export function MissionValidationPreview() {
                                         </Button>
                                     </div>
                                 </DialogTrigger>
-                                <DialogContent className="bg-[#0f172a] border-white/10 text-white sm:max-w-md rounded-2xl w-[95vw] min-h-[400px] flex flex-col justify-center transition-all duration-300">
+                                <DialogContent className="bg-[#0f172a] border-white/10 text-white sm:max-w-md rounded-2xl w-[95vw] min-h-[400px] flex flex-col justify-center transition-all duration-300" aria-describedby="validation-preview-desc">
                                     
                                     {/* PROGRESS INDICATOR */}
                                     <div className="absolute top-0 left-0 right-0 h-1 bg-white/5">
@@ -895,6 +902,9 @@ export function MissionValidationPreview() {
                                         <DialogTitle className="text-center text-3xl font-black bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
                                             {popupView === 'step1_status' ? "Bilan de la mission" : popupView === 'step2_rating' ? "Notez l'échange" : "Offrir une opportunité"}
                                         </DialogTitle>
+                                        <DialogDescription id="validation-preview-desc" className="sr-only">
+                                            Validation de la mission de test
+                                        </DialogDescription>
                                     </DialogHeader>
                                     
                                     {/* VIEW 1: STATUS CALL */}
@@ -1831,7 +1841,7 @@ export function MatchCardWhatsAppPreview() {
                             </Button>
                         </DialogTrigger>
                         
-                        <DialogContent className="bg-white border-[#2E130C]/10 text-[#2E130C] sm:max-w-md rounded-2xl w-[95vw] min-h-[400px] flex flex-col justify-center transition-all duration-300">
+                        <DialogContent className="bg-white border-[#2E130C]/10 text-[#2E130C] sm:max-w-md rounded-2xl w-[95vw] min-h-[400px] flex flex-col justify-center transition-all duration-300" aria-describedby="validation-desc">
                             {/* PROGRESS INDICATOR */}
                             <div className="absolute top-0 left-0 right-0 h-1 bg-[#2E130C]/5">
                                 <motion.div 
@@ -1849,7 +1859,7 @@ export function MatchCardWhatsAppPreview() {
                                 <DialogTitle className="text-center text-3xl font-black text-[#2E130C]">
                                     {popupView === 'step1_status' ? "Bilan de la mission" : popupView === 'step2_rating' ? "Notez l'échange" : "Offrir une opportunité"}
                                 </DialogTitle>
-                                <DialogDescription className="sr-only" aria-describedby={undefined}>
+                                <DialogDescription id="validation-desc" className="sr-only">
                                     Validation de la mission du jour
                                 </DialogDescription>
                             </DialogHeader>

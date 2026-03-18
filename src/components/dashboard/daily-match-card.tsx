@@ -430,17 +430,7 @@ const WeekendCard = () => (
 export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserProfile }: DailyMatchCardProps) {
   // State
   const [revealed, setRevealed] = useState(false);
-  const [step, setStep] = useState<'initial' | 'called' | 'validated'>(() => {
-      // Initialize based on props immediately
-      if (matches && matches.length > 0) {
-          const current = matches[0];
-          // Use stricter check
-          if (current.hasFeedback === true || current.status === 'met') {
-              return 'validated';
-          }
-      }
-      return 'initial';
-  });
+  const [step, setStep] = useState<'initial' | 'called' | 'validated'>('initial');
 
   useEffect(() => {
     // Force sync step with matches prop on mount and update
@@ -450,7 +440,7 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
             setStep('validated');
         }
     }
-  }, [matches, matches[0]?.hasFeedback, matches[0]?.status]);
+  }, [matches]);
 
   // Realtime Subscription for Sync across devices
   useEffect(() => {
