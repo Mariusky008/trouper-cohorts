@@ -1541,10 +1541,27 @@ export function MatchCardWhatsAppPreview() {
 
   const whatsappMessage = `Salut ${matchName}, c'est ${myName} ! On a matché aujourd'hui sur Mon Réseau Local. J'ai vu que tu étais ${matchJob}, ça m'intéresse ! Dispo pour un appel rapide ou un vocal aujourd'hui ?`;
 
+  const [step, setStep] = useState<'initial' | 'contacted' | 'validated'>('initial');
+  const [isValidationOpen, setIsValidationOpen] = useState(false);
+  const [popupView, setPopupView] = useState<'step1_status' | 'step2_rating' | 'step3_gift'>('step1_status');
+  const [callHappened, setCallHappened] = useState<boolean | null>(null);
+  const [rating, setRating] = useState<'fire' | 'good' | 'meh' | null>(null);
+  const [oppType, setOppType] = useState<string | undefined>(undefined);
+  const [oppDetails, setOppDetails] = useState("");
+
   const handleWhatsAppRedirect = () => {
     // In real app: window.open(`https://wa.me/${matchPhone}?text=${encodeURIComponent(whatsappMessage)}`, '_blank');
     setIsWhatsAppOpen(false);
     toast.success("Redirection vers WhatsApp...");
+    // Change step to 'contacted' to show the validation button
+    setStep('contacted');
+  };
+
+  const handleValidate = () => {
+    setStep('validated');
+    setIsValidationOpen(false);
+    confetti({ particleCount: 200, spread: 100, origin: { y: 0.6 } });
+    toast.success("Mission validée ! 🚀");
   };
 
   return (
@@ -1561,15 +1578,14 @@ export function MatchCardWhatsAppPreview() {
         <motion.div 
             initial={{ y: -20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            className="mb-4 bg-red-50 text-red-600 px-4 py-2 rounded-2xl flex flex-col items-center justify-center shadow-sm text-center gap-1 border border-red-100 w-full max-w-[90%]"
+            className="mb-4 bg-[#25D366]/10 text-[#25D366] px-4 py-2 rounded-2xl flex flex-col items-center justify-center shadow-sm text-center gap-1 border border-[#25D366]/20 w-full max-w-[90%]"
         >
-            <div className="flex items-center gap-2 font-bold text-xs uppercase tracking-wider text-red-700">
-                <Phone className="w-3 h-3 animate-bounce" />
-                C'est à vous d'appeler
+            <div className="flex items-center gap-2 font-bold text-xs uppercase tracking-wider text-[#1DA851]">
+                <MessageSquare className="w-3 h-3 animate-pulse fill-current" />
+                C'est à vous d'envoyer le message
             </div>
             <div className="flex items-center gap-2">
-                 <Clock className="w-3 h-3 text-red-600" />
-                 <span className="font-mono font-bold text-xs text-[#2E130C]">09h - 11h</span>
+                 <span className="font-medium text-[10px] text-[#2E130C]/60 uppercase tracking-wider">Objectif : briser la glace aujourd'hui</span>
             </div>
         </motion.div>
 
@@ -1673,68 +1689,268 @@ export function MatchCardWhatsAppPreview() {
         {/* Action Buttons */}
         <div className="flex flex-col gap-3 w-full mt-6">
             
-            <Button 
-                onClick={() => setIsWhyVisible(true)}
-                variant="ghost" 
-                className="w-full h-12 border border-[#2E130C]/10 bg-white text-[#2E130C]/70 hover:bg-[#2E130C]/5 hover:text-[#2E130C] rounded-xl font-bold transition-all hover:scale-[1.02]"
-            >
-                <Zap className="w-4 h-4 mr-2 text-yellow-500" /> Pourquoi ce match ?
-            </Button>
-
-            {/* MAIN WHATSAPP BUTTON */}
-            <Dialog open={isWhatsAppOpen} onOpenChange={setIsWhatsAppOpen}>
-                <DialogTrigger asChild>
+            {step === 'initial' && (
+                <>
                     <Button 
-                        className="w-full h-14 bg-[#25D366] hover:bg-[#20bd5a] text-white font-black text-base rounded-xl shadow-lg shadow-[#25D366]/20 tracking-wide transition-all hover:scale-[1.02] relative overflow-hidden group/btn"
+                        onClick={() => setIsWhyVisible(true)}
+                        variant="ghost" 
+                        className="w-full h-12 border border-[#2E130C]/10 bg-white text-[#2E130C]/70 hover:bg-[#2E130C]/5 hover:text-[#2E130C] rounded-xl font-bold transition-all hover:scale-[1.02]"
                     >
-                        <MessageSquare className="w-5 h-5 mr-2 relative z-10 fill-current" />
-                        <span className="relative z-10">CONTACTER VIA WHATSAPP</span>
+                        <Zap className="w-4 h-4 mr-2 text-yellow-500" /> Pourquoi ce match ?
                     </Button>
-                </DialogTrigger>
-                <DialogContent className="bg-white border-[#2E130C]/10 text-[#2E130C] sm:max-w-md rounded-2xl w-[95vw]">
-                    <DialogHeader>
-                        <DialogTitle className="flex items-center gap-2 text-xl font-black">
-                            <MessageSquare className="h-6 w-6 text-[#25D366] fill-[#25D366]" />
-                            L'Entremetteur
-                        </DialogTitle>
-                        <DialogDescription className="text-[#2E130C]/60 text-sm">
-                            Brisons la glace. Voici un message prêt à être envoyé à {matchName} sur WhatsApp pour initier le contact sans friction.
-                        </DialogDescription>
-                    </DialogHeader>
-                    
-                    <div className="py-4 space-y-6">
-                        {/* Message Preview Box */}
-                        <div className="bg-[#F3F0E7] rounded-xl p-4 border border-[#2E130C]/10 relative shadow-inner">
-                            <div className="absolute -top-3 left-4 bg-[#25D366] text-white text-[10px] font-black uppercase px-2 py-0.5 rounded-full tracking-wider shadow-sm">
-                                Message généré
-                            </div>
-                            <p className="text-[#2E130C] text-sm leading-relaxed whitespace-pre-wrap font-medium">
-                                "{whatsappMessage}"
-                            </p>
-                            <p className="text-xs text-[#2E130C]/50 mt-3 italic">
-                                (Vous pourrez le modifier dans WhatsApp avant de l'envoyer)
-                            </p>
-                        </div>
 
-                        <div className="flex flex-col gap-3">
+                    {/* MAIN WHATSAPP BUTTON */}
+                    <Dialog open={isWhatsAppOpen} onOpenChange={setIsWhatsAppOpen}>
+                        <DialogTrigger asChild>
                             <Button 
-                                onClick={handleWhatsAppRedirect}
-                                className="w-full h-14 bg-[#25D366] hover:bg-[#20bd5a] text-white font-black text-lg rounded-xl shadow-lg hover:scale-[1.02] transition-transform"
+                                className="w-full h-14 bg-[#25D366] hover:bg-[#20bd5a] text-white font-black text-base rounded-xl shadow-lg shadow-[#25D366]/20 tracking-wide transition-all hover:scale-[1.02] relative overflow-hidden group/btn"
                             >
-                                <MessageSquare className="w-5 h-5 mr-2 fill-current" />
-                                OUVRIR WHATSAPP
+                                <MessageSquare className="w-5 h-5 mr-2 relative z-10 fill-current" />
+                                <span className="relative z-10">CONTACTER VIA WHATSAPP</span>
                             </Button>
-                            <Button 
-                                variant="ghost" 
-                                onClick={() => setIsWhatsAppOpen(false)}
-                                className="w-full text-[#2E130C]/60 hover:text-[#2E130C]"
-                            >
-                                Annuler
-                            </Button>
-                        </div>
+                        </DialogTrigger>
+                        <DialogContent className="bg-white border-[#2E130C]/10 text-[#2E130C] sm:max-w-md rounded-2xl w-[95vw]">
+                            <DialogHeader>
+                                <DialogTitle className="flex items-center gap-2 text-xl font-black">
+                                    <MessageSquare className="h-6 w-6 text-[#25D366] fill-[#25D366]" />
+                                    L'Entremetteur
+                                </DialogTitle>
+                                <DialogDescription className="text-[#2E130C]/60 text-sm">
+                                    Brisons la glace. Voici un message prêt à être envoyé à {matchName} sur WhatsApp pour initier le contact sans friction.
+                                </DialogDescription>
+                            </DialogHeader>
+                            
+                            <div className="py-4 space-y-6">
+                                {/* Message Preview Box */}
+                                <div className="bg-[#F3F0E7] rounded-xl p-4 border border-[#2E130C]/10 relative shadow-inner">
+                                    <div className="absolute -top-3 left-4 bg-[#25D366] text-white text-[10px] font-black uppercase px-2 py-0.5 rounded-full tracking-wider shadow-sm">
+                                        Message généré
+                                    </div>
+                                    <p className="text-[#2E130C] text-sm leading-relaxed whitespace-pre-wrap font-medium">
+                                        "{whatsappMessage}"
+                                    </p>
+                                    <p className="text-xs text-[#2E130C]/50 mt-3 italic">
+                                        (Vous pourrez le modifier dans WhatsApp avant de l'envoyer)
+                                    </p>
+                                </div>
+
+                                <div className="flex flex-col gap-3">
+                                    <Button 
+                                        onClick={handleWhatsAppRedirect}
+                                        className="w-full h-14 bg-[#25D366] hover:bg-[#20bd5a] text-white font-black text-lg rounded-xl shadow-lg hover:scale-[1.02] transition-transform"
+                                    >
+                                        <MessageSquare className="w-5 h-5 mr-2 fill-current" />
+                                        OUVRIR WHATSAPP
+                                    </Button>
+                                    <Button 
+                                        variant="ghost" 
+                                        onClick={() => setIsWhatsAppOpen(false)}
+                                        className="w-full text-[#2E130C]/60 hover:text-[#2E130C]"
+                                    >
+                                        Annuler
+                                    </Button>
+                                </div>
+                            </div>
+                        </DialogContent>
+                    </Dialog>
+                </>
+            )}
+
+            {step === 'contacted' && (
+                <div className="flex flex-col gap-3 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                    <div className="bg-emerald-50 text-emerald-700 p-3 rounded-xl border border-emerald-200 text-sm font-medium text-center">
+                        ✅ Vous avez été redirigé vers WhatsApp. 
+                        <br/>
+                        <span className="text-xs opacity-80">Revenez ici une fois l'échange terminé pour valider.</span>
                     </div>
-                </DialogContent>
-            </Dialog>
+                    
+                    <Dialog open={isValidationOpen} onOpenChange={(open) => {
+                        setIsValidationOpen(open);
+                        if (!open) {
+                            setPopupView('step1_status');
+                            setCallHappened(null);
+                            setRating(null);
+                            setOppType(undefined);
+                            setOppDetails("");
+                        }
+                    }}>
+                        <DialogTrigger asChild>
+                            <Button className="w-full h-16 rounded-xl bg-[#B20B13] text-white hover:bg-[#8B090F] hover:scale-[1.02] transition-all shadow-xl flex items-center justify-center gap-2">
+                                <CheckCircle2 className="h-5 w-5" />
+                                <span className="font-black uppercase tracking-wider">Terminer la mission</span>
+                            </Button>
+                        </DialogTrigger>
+                        
+                        <DialogContent className="bg-white border-[#2E130C]/10 text-[#2E130C] sm:max-w-md rounded-2xl w-[95vw] min-h-[400px] flex flex-col justify-center transition-all duration-300">
+                            {/* PROGRESS INDICATOR */}
+                            <div className="absolute top-0 left-0 right-0 h-1 bg-[#2E130C]/5">
+                                <motion.div 
+                                    className="h-full bg-emerald-500"
+                                    initial={{ width: "0%" }}
+                                    animate={{ 
+                                        width: popupView === 'step1_status' ? "33%" : popupView === 'step2_rating' ? "66%" : "100%" 
+                                    }}
+                                    transition={{ duration: 0.5 }}
+                                />
+                            </div>
+
+                            {/* HEADER */}
+                            <DialogHeader className="mb-6 mt-4">
+                                <DialogTitle className="text-center text-3xl font-black text-[#2E130C]">
+                                    {popupView === 'step1_status' ? "Bilan de la mission" : popupView === 'step2_rating' ? "Notez l'échange" : "Offrir une opportunité"}
+                                </DialogTitle>
+                            </DialogHeader>
+                            
+                            {/* VIEW 1: STATUS CALL */}
+                            {popupView === 'step1_status' && (
+                                <div className="flex flex-col gap-6 p-2">
+                                    <div className="bg-[#F3F0E7] p-6 rounded-2xl border border-[#2E130C]/5 text-center space-y-6">
+                                        <Label className="text-[#2E130C]/60 uppercase text-xs font-bold tracking-wider block">Avez-vous réussi à échanger ?</Label>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <Button 
+                                                onClick={() => {
+                                                    setCallHappened(true);
+                                                    setPopupView('step2_rating');
+                                                }} 
+                                                variant="outline"
+                                                className="h-24 flex flex-col gap-2 font-bold border-emerald-500/30 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 hover:scale-105 transition-all"
+                                            >
+                                                <PhoneCall className="w-8 h-8" />
+                                                <span className="text-lg">OUI ✅</span>
+                                            </Button>
+                                            <Button 
+                                                onClick={() => setCallHappened(false)} 
+                                                variant="outline"
+                                                className={cn(
+                                                    "h-24 flex flex-col gap-2 font-bold border-red-500/30 transition-all",
+                                                    callHappened === false ? "bg-red-500 text-white hover:bg-red-600" : "bg-red-50 text-red-500 hover:bg-red-100 hover:scale-105"
+                                                )}
+                                            >
+                                                <Phone className="w-8 h-8 rotate-135" />
+                                                <span className="text-lg">NON ❌</span>
+                                            </Button>
+                                        </div>
+                                    </div>
+                                    {callHappened === false && (
+                                        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+                                            <Button onClick={handleValidate} className="w-full h-14 text-lg font-black bg-[#2E130C] text-white hover:bg-[#2E130C]/90 rounded-xl shadow-lg">
+                                                VALIDER L'ABSENCE
+                                            </Button>
+                                        </motion.div>
+                                    )}
+                                </div>
+                            )}
+
+                            {/* VIEW 2: RATE */}
+                            {popupView === 'step2_rating' && (
+                                <div className="space-y-6 p-4">
+                                    <div className="flex justify-between gap-3">
+                                        <button 
+                                            onClick={() => { setRating('fire'); setPopupView('step3_gift'); }}
+                                            className="flex-1 aspect-square rounded-2xl border flex flex-col items-center justify-center gap-3 transition-all bg-white border-[#2E130C]/10 hover:bg-orange-50 hover:scale-105 group"
+                                        >
+                                            <span className="text-4xl group-hover:scale-125 transition-transform">🔥</span>
+                                            <span className="text-xs uppercase font-black text-orange-500">Top</span>
+                                        </button>
+                                        <button 
+                                            onClick={() => { setRating('good'); setPopupView('step3_gift'); }}
+                                            className="flex-1 aspect-square rounded-2xl border flex flex-col items-center justify-center gap-3 transition-all bg-white border-[#2E130C]/10 hover:bg-blue-50 hover:scale-105 group"
+                                        >
+                                            <span className="text-4xl group-hover:scale-125 transition-transform">👍</span>
+                                            <span className="text-xs uppercase font-black text-blue-500">Bien</span>
+                                        </button>
+                                        <button 
+                                            onClick={() => { setRating('meh'); setPopupView('step3_gift'); }}
+                                            className="flex-1 aspect-square rounded-2xl border flex flex-col items-center justify-center gap-3 transition-all bg-white border-[#2E130C]/10 hover:bg-slate-50 hover:scale-105 group"
+                                        >
+                                            <span className="text-4xl group-hover:scale-125 transition-transform">😐</span>
+                                            <span className="text-xs uppercase font-black text-slate-400">Bof</span>
+                                        </button>
+                                    </div>
+                                    <Button variant="ghost" onClick={() => setPopupView('step1_status')} className="w-full text-slate-500">Retour</Button>
+                                </div>
+                            )}
+
+                            {/* VIEW 3: GIFT & MESSAGE */}
+                            {popupView === 'step3_gift' && (
+                                <div className="space-y-4 p-2">
+                                    {!oppType ? (
+                                        <div className="grid grid-cols-1 gap-2 max-h-[50vh] overflow-y-auto pr-1">
+                                            {OPPORTUNITY_TYPES.map((type) => {
+                                                const Icon = type.icon;
+                                                return (
+                                                    <button
+                                                        key={type.id}
+                                                        onClick={() => setOppType(type.id)}
+                                                        className="group relative flex items-center gap-3 p-3 rounded-xl border border-[#2E130C]/10 bg-white hover:bg-slate-50 hover:border-purple-300 hover:shadow-sm transition-all text-left"
+                                                    >
+                                                        <div className={cn("shrink-0 h-10 w-10 rounded-full flex items-center justify-center bg-slate-100", type.color)}>
+                                                            <Icon className="w-5 h-5" />
+                                                        </div>
+                                                        <div className="flex-1">
+                                                            <div className="text-sm font-bold text-[#2E130C] group-hover:text-purple-700 transition-colors">
+                                                                {type.label}
+                                                            </div>
+                                                            <div className="text-[10px] text-[#2E130C]/60 font-medium leading-tight">
+                                                                {type.cardLabel || type.description}
+                                                            </div>
+                                                        </div>
+                                                        <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                                                            <ChevronRight className="w-4 h-4 text-purple-500" />
+                                                        </div>
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                    ) : (
+                                        <div className="space-y-4">
+                                            <motion.div 
+                                                initial={{ scale: 0.9, opacity: 0 }}
+                                                animate={{ scale: 1, opacity: 1 }}
+                                                className="flex items-center justify-between bg-purple-50 p-3 rounded-xl border border-purple-200"
+                                            >
+                                                <span className="text-sm font-bold text-purple-700 flex items-center gap-2">
+                                                    <Gift className="w-4 h-4" /> {OPPORTUNITY_TYPES.find(t => t.id === oppType)?.label}
+                                                </span>
+                                                <button onClick={() => setOppType(undefined)} className="text-xs text-purple-600 underline hover:text-purple-800">Changer</button>
+                                            </motion.div>
+                                            
+                                            <div className="space-y-2">
+                                                <Label className="text-xs text-[#2E130C]/60 uppercase font-bold ml-1">Message (Optionnel)</Label>
+                                                <Textarea 
+                                                    className="w-full bg-slate-50 border border-[#2E130C]/10 rounded-xl p-3 text-sm text-[#2E130C] min-h-[80px] focus:ring-1 focus:ring-purple-500 outline-none resize-none placeholder:text-slate-400"
+                                                    placeholder="Ex: Je te mets en relation avec..."
+                                                    value={oppDetails}
+                                                    onChange={(e) => setOppDetails(e.target.value)}
+                                                />
+                                            </div>
+
+                                            <Button onClick={handleValidate} className="w-full h-14 text-lg font-black bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-white rounded-xl shadow-lg shadow-emerald-900/10 transform transition-all hover:scale-[1.02]">
+                                                VALIDER & ENVOYER 🚀
+                                            </Button>
+                                        </div>
+                                    )}
+                                    {!oppType && (
+                                            <Button variant="ghost" onClick={() => setPopupView('step2_rating')} className="w-full text-slate-500">Retour</Button>
+                                    )}
+                                </div>
+                            )}
+                        </DialogContent>
+                    </Dialog>
+                </div>
+            )}
+            
+            {step === 'validated' && (
+                <div className="bg-emerald-50 p-6 rounded-2xl border border-emerald-200 text-center space-y-4 animate-in fade-in zoom-in duration-500">
+                    <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-2">
+                        <CheckCircle2 className="w-8 h-8 text-emerald-600" />
+                    </div>
+                    <h3 className="text-2xl font-black text-[#2E130C]">Mission Validée !</h3>
+                    <p className="text-sm text-[#2E130C]/70 font-medium">
+                        Bravo, vous avez passé à l'action. Rendez-vous demain pour une nouvelle opportunité.
+                    </p>
+                </div>
+            )}
 
         </div>
       </div>
