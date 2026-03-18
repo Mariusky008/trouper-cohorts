@@ -564,7 +564,7 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
       const matchName = matches[0]?.name?.split(' ')[0] || "partenaire";
       const matchJob = matches[0]?.job || "dirigeant";
       // We try display_name first, then first_name, then fallback to splitting the name, then finally "Alexandre" as fallback if profile is empty
-      const myName = currentUserProfile?.display_name?.split(' ')[0] || currentUserProfile?.first_name || currentUserProfile?.name?.split(' ')[0] || "Alexandre";
+      const myName = currentUserProfile?.first_name || currentUserProfile?.display_name?.split(' ')[0] || currentUserProfile?.name?.split(' ')[0] || "Alexandre";
       
       const whatsappMessage = `Salut ${matchName}, c'est ${myName} ! On a matché aujourd'hui sur Popey.Academy. J'ai vu que tu étais ${matchJob}, ça m'intéresse ! Dispo pour un appel rapide ou un vocal aujourd'hui ou demain ?`;
       
@@ -1470,7 +1470,7 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
                             Message généré
                         </div>
                         <p className="text-[#2E130C] text-sm leading-relaxed whitespace-pre-wrap font-medium">
-                            {`Salut ${match.name.split(' ')[0]}, c'est ${currentUserProfile?.display_name?.split(' ')[0] || currentUserProfile?.first_name || currentUserProfile?.name?.split(' ')[0] || "Alexandre"} ! On a matché aujourd'hui sur Popey.Academy. J'ai vu que tu étais ${match.job || "dirigeant"}, ça m'intéresse ! Dispo pour un appel rapide ou un vocal aujourd'hui ou demain ?`}
+                            {`Salut ${match.name.split(' ')[0]}, c'est ${currentUserProfile?.first_name || currentUserProfile?.display_name?.split(' ')[0] || currentUserProfile?.name?.split(' ')[0] || "Alexandre"} ! On a matché aujourd'hui sur Popey.Academy. J'ai vu que tu étais ${match.job || "dirigeant"}, ça m'intéresse ! Dispo pour un appel rapide ou un vocal aujourd'hui ou demain ?`}
                         </p>
                         <p className="text-xs text-[#2E130C]/50 mt-3 italic">
                             (Vous pourrez le modifier dans WhatsApp avant de l'envoyer)
