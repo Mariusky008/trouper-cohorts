@@ -563,9 +563,10 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
   const handleWhatsAppRedirect = () => {
       const matchName = matches[0]?.name?.split(' ')[0] || "partenaire";
       const matchJob = matches[0]?.job || "dirigeant";
-      const myName = currentUserProfile?.name?.split(' ')[0] || currentUserProfile?.first_name || "un membre";
+      // We try first_name, then fallback to splitting the name, then finally "un membre"
+      const myName = currentUserProfile?.first_name || currentUserProfile?.name?.split(' ')[0] || "un membre";
       
-      const whatsappMessage = `Salut ${matchName}, c'est ${myName} ! On a matché aujourd'hui sur Mon Réseau Local. J'ai vu que tu étais ${matchJob}, ça m'intéresse ! Dispo pour un appel rapide ou un vocal aujourd'hui ?`;
+      const whatsappMessage = `Salut ${matchName}, c'est ${myName} ! On a matché aujourd'hui sur Popey.Academy. J'ai vu que tu étais ${matchJob}, ça m'intéresse ! Dispo pour un appel rapide ou un vocal aujourd'hui ou demain ?`;
       
       const formattedPhone = formatPhoneForWhatsApp(matches[0]?.phone);
       
@@ -1469,7 +1470,7 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
                             Message généré
                         </div>
                         <p className="text-[#2E130C] text-sm leading-relaxed whitespace-pre-wrap font-medium">
-                            {`Salut ${match.name.split(' ')[0]}, c'est ${currentUserProfile?.name?.split(' ')[0] || currentUserProfile?.first_name || "un membre"} ! On a matché aujourd'hui sur Mon Réseau Local. J'ai vu que tu étais ${match.job || "dirigeant"}, ça m'intéresse ! Dispo pour un appel rapide ou un vocal aujourd'hui ?`}
+                            {`Salut ${match.name.split(' ')[0]}, c'est ${currentUserProfile?.first_name || currentUserProfile?.name?.split(' ')[0] || "un membre"} ! On a matché aujourd'hui sur Popey.Academy. J'ai vu que tu étais ${match.job || "dirigeant"}, ça m'intéresse ! Dispo pour un appel rapide ou un vocal aujourd'hui ou demain ?`}
                         </p>
                         <p className="text-xs text-[#2E130C]/50 mt-3 italic">
                             (Vous pourrez le modifier dans WhatsApp avant de l'envoyer)

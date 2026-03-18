@@ -1540,7 +1540,7 @@ export function MatchCardWhatsAppPreview() {
   const matchName = "Jean-Paul";
   const matchJob = "Directeur Commercial";
 
-  const whatsappMessage = `Salut ${matchName}, c'est ${myName} ! On a matché aujourd'hui sur Mon Réseau Local. J'ai vu que tu étais ${matchJob}, ça m'intéresse ! Dispo pour un appel rapide ou un vocal aujourd'hui ?`;
+  const whatsappMessage = `Salut ${matchName}, c'est ${myName} ! On a matché aujourd'hui sur Popey.Academy. J'ai vu que tu étais ${matchJob}, ça m'intéresse ! Dispo pour un appel rapide ou un vocal aujourd'hui ou demain ?`;
 
   const [step, setStep] = useState<'initial' | 'contacted' | 'validated'>('initial');
   const [isValidationOpen, setIsValidationOpen] = useState(false);
