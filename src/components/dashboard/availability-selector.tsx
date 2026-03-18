@@ -95,7 +95,7 @@ export function AvailabilitySelector({ settings, potentialCount = 0, onSuccess }
           frequency_per_week: currentDays.length
       });
 
-      if (!result?.success) {
+      if (!result || result.success === false) {
           throw new Error("Failed to save settings to server");
       }
 

@@ -43,12 +43,15 @@ export async function updateNetworkSettings(data: {
   preferred_slots?: string[];
   status?: string;
 }) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-
-  if (!user) throw new Error("Unauthorized");
-
   try {
+    const supabase = await createClient();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      console.error("Auth error in updateNetworkSettings:", authError);
+      return { success: false, error: "Unauthorized" };
+    }
+
     const { error } = await supabase
       .from("network_settings")
       .upsert({
@@ -61,15 +64,12 @@ export async function updateNetworkSettings(data: {
 
     if (error) {
       console.error("Supabase error updating settings:", error);
-      return { success: false, error: error.message }; // Return error instead of throwing to prevent 500
+      return { success: false, error: error.message };
     }
-    
-    // We don't use revalidatePath here anymore because it's causing Vercel 500 errors
-    // The client will handle the refresh via window.location.reload()
     
     return { success: true };
   } catch (err: any) {
     console.error("Caught error in updateNetworkSettings:", err);
-    return { success: false, error: err.message }; // Return error instead of throwing to prevent 500
+    return { success: false, error: err.message || "Unknown error" };
   }
 }
