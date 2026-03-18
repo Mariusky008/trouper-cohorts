@@ -577,7 +577,7 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
                     Étape {currentStep} / 3
                 </span>
             </DialogTitle>
-            <DialogDescription>
+            <DialogDescription aria-describedby={undefined}>
               {currentStep === 1 && "Commençons par les présentations."}
               {currentStep === 2 && "Dites-nous ce que vous pouvez apporter au réseau."}
               {currentStep === 3 && "Dites-nous ce que vous recherchez en retour."}
@@ -978,7 +978,7 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
             <DialogTitle className="text-2xl font-black text-amber-600 flex items-center gap-2">
                 <Percent className="h-6 w-6" /> Mon Offre Club
             </DialogTitle>
-            <DialogDescription>
+            <DialogDescription aria-describedby={undefined}>
                 Proposez une offre exclusive (-20% min) visible uniquement par vos matchs.
             </DialogDescription>
           </DialogHeader>
