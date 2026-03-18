@@ -54,8 +54,9 @@ export async function updateNetworkSettings(data: {
       user_id: user.id,
       ...data,
       updated_at: new Date().toISOString()
-    })
-    .eq("user_id", user.id);
+    }, {
+      onConflict: 'user_id'
+    });
 
   if (error) {
     console.error("Error updating settings:", error);
