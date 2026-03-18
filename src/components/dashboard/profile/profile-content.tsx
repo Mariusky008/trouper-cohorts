@@ -78,7 +78,6 @@ function ProfileForm({ user, isReadOnly = false }: { user: any; isReadOnly?: boo
     instagram: user.instagram_handle || "",
     facebook: user.facebook_handle || "",
     website: user.website_url || "",
-    featured_link: user.featured_link || "",
     avatar_url: user.avatar_url || "",
     current_goals: user.current_goals || [] as string[],
     
@@ -289,13 +288,13 @@ function ProfileForm({ user, isReadOnly = false }: { user: any; isReadOnly?: boo
           data.append("instagram", "");
           data.append("facebook", "");
           data.append("website", "");
-          data.append("featured_link", "");
+          // data.append("featured_link", "");
       } else {
           data.append("linkedin", formData.linkedin);
           data.append("instagram", formData.instagram);
           data.append("facebook", formData.facebook);
           data.append("website", formData.website);
-          data.append("featured_link", formData.featured_link);
+          // data.append("featured_link", formData.featured_link);
       }
 
       data.append("avatar_url", formData.avatar_url);
@@ -440,11 +439,11 @@ function ProfileForm({ user, isReadOnly = false }: { user: any; isReadOnly?: boo
                         <Globe className="h-4 w-4" /> Site Web
                     </a>
                 )}
-                {formData.featured_link && (
+                {/* {formData.featured_link && (
                     <a href={formData.featured_link} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-4 py-2 bg-yellow-50 text-yellow-700 border border-yellow-200 rounded-xl hover:bg-yellow-100 transition-colors font-bold text-sm shadow-sm">
                         <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" /> Lien mis en avant
                     </a>
-                )}
+                )} */}
                 
                 {/* Case: No socials declared explicitly */}
                 {formData.linkedin === "https://none" && (
@@ -764,7 +763,7 @@ function ProfileForm({ user, isReadOnly = false }: { user: any; isReadOnly?: boo
                                 />
                             </div>
                             
-                            <div className="space-y-2 mt-4 pt-4 border-t border-[#2E130C]/10">
+                            {/* <div className="space-y-2 mt-4 pt-4 border-t border-[#2E130C]/10">
                                 <Label className="text-sm font-bold text-[#2E130C] flex items-center gap-2">
                                     <Star className="w-4 h-4 text-yellow-500" /> Lien mis en avant
                                 </Label>
@@ -777,7 +776,7 @@ function ProfileForm({ user, isReadOnly = false }: { user: any; isReadOnly?: boo
                                     placeholder="https://votre-lien-important.com" 
                                     className="h-10 border-yellow-500/30 focus-visible:ring-yellow-500/50" 
                                 />
-                            </div>
+                            </div> */}
                         </div>
                     </div>
                  </div>
