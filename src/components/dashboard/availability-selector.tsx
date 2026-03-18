@@ -32,17 +32,27 @@ export function AvailabilitySelector({ settings, potentialCount = 0, onSuccess }
   const [isSettingsLoading, setIsSettingsLoading] = useState(false);
 
   // Sync ONLY on initial mount to avoid resetting user clicks before save
+  // Use a ref or simple state to track if we've initialized
+  const [isInitialized, setIsInitialized] = useState(false);
+
   useEffect(() => {
-      // Don't sync if we're currently loading/saving to prevent UI jitter
-      if (loading) return;
+      // Prevent syncing back from settings after the user has started interacting
+      if (isInitialized) return;
       
+      let changed = false;
       if (settings?.preferred_slots?.length > 0) {
           setSelectedSlots(settings.preferred_slots);
+          changed = true;
       }
       if (settings?.preferred_days?.length > 0) {
           setSelectedDays(settings.preferred_days);
+          changed = true;
       }
-  }, [settings?.preferred_days, settings?.preferred_slots, loading]);
+      
+      if (changed) {
+          setIsInitialized(true);
+      }
+  }, [settings?.preferred_days, settings?.preferred_slots, isInitialized]);
 
   // Tomorrow's date YYYY-MM-DD
   const today = new Date();
@@ -80,21 +90,24 @@ export function AvailabilitySelector({ settings, potentialCount = 0, onSuccess }
   const handleSaveAvailability = async () => {
     setLoading(true);
     try {
-      // 1. Force state updates immediately for UX
+      // Start save process without waiting for local state override
+      const currentDays = [...selectedDays];
+      const currentSlots = [...selectedSlots];
+      
+      // Force state updates immediately for UX
       setIsAvailabilitySaved(true);
       
-      // 2. Start save process without waiting
       // Save global network settings (days + default slots)
-      const settingsUpdate = await updateNetworkSettings({
-          preferred_days: selectedDays,
-          preferred_slots: selectedSlots,
-          frequency_per_week: selectedDays.length
+      await updateNetworkSettings({
+          preferred_days: currentDays,
+          preferred_slots: currentSlots,
+          frequency_per_week: currentDays.length
       });
 
       // Optionally save explicit slots for tomorrow (retro-compatibility)
       const tomorrowDay = tomorrow.toLocaleDateString('en-US', { weekday: 'short' }).toLowerCase();
-      if (selectedDays.includes(tomorrowDay)) {
-         await saveAvailability(dateStr, selectedSlots);
+      if (currentDays.includes(tomorrowDay)) {
+         await saveAvailability(dateStr, currentSlots);
       }
       
       toast({
