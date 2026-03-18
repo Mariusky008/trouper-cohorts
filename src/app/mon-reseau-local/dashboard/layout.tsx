@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { 
@@ -27,6 +27,7 @@ import { getPendingOpportunitiesCount } from "@/lib/actions/network-opportunitie
 import { GlobalChatWidget } from "@/components/dashboard/chat/global-chat-widget";
 import { PWAInstallPrompt } from "@/components/pwa-install-prompt";
 import { useNotifications } from "@/hooks/use-notifications"; // Import notifications hook
+import { Suspense } from "react";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();

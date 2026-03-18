@@ -27,7 +27,7 @@ export default async function ProfilePage() {
 
   return (
     <div className="pb-24">
-      <h1>Test Profile</h1>
+      <ProfileContent user={user} />
     </div>
   );
 }

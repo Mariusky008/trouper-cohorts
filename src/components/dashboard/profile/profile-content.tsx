@@ -56,6 +56,7 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
     instagram: user.instagram_handle || "",
     facebook: user.facebook_handle || "",
     website: user.website_url || "",
+    featured_link: user.featured_link || "",
     avatar_url: user.avatar_url || "",
     current_goals: user.current_goals || [] as string[],
     
@@ -111,7 +112,7 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
               const url = new URL(window.location.href);
               url.searchParams.delete("edit");
               url.searchParams.delete("tab");
-              router.replace(url.pathname + url.search);
+              window.history.replaceState({}, "", url);
           }
       };
 
@@ -266,11 +267,13 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
           data.append("instagram", "");
           data.append("facebook", "");
           data.append("website", "");
+          data.append("featured_link", "");
       } else {
           data.append("linkedin", formData.linkedin);
           data.append("instagram", formData.instagram);
           data.append("facebook", formData.facebook);
           data.append("website", formData.website);
+          data.append("featured_link", formData.featured_link);
       }
 
       data.append("avatar_url", formData.avatar_url);
@@ -413,6 +416,11 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
                 {formData.website && (
                     <a href={formData.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-4 py-2 bg-stone-100 text-stone-600 border border-stone-200 rounded-xl hover:bg-stone-200 transition-colors font-bold text-sm">
                         <Globe className="h-4 w-4" /> Site Web
+                    </a>
+                )}
+                {formData.featured_link && (
+                    <a href={formData.featured_link} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-4 py-2 bg-yellow-50 text-yellow-700 border border-yellow-200 rounded-xl hover:bg-yellow-100 transition-colors font-bold text-sm shadow-sm">
+                        <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" /> Lien mis en avant
                     </a>
                 )}
                 
@@ -569,8 +577,10 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
                     Étape {currentStep} / 3
                 </span>
             </DialogTitle>
-            <DialogDescription aria-describedby={undefined}>
-              Remplissez les informations de votre profil.
+            <DialogDescription>
+              {currentStep === 1 && "Commençons par les présentations."}
+              {currentStep === 2 && "Dites-nous ce que vous pouvez apporter au réseau."}
+              {currentStep === 3 && "Dites-nous ce que vous recherchez en retour."}
             </DialogDescription>
           </DialogHeader>
           
@@ -731,6 +741,21 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
                                     }} 
                                     placeholder="Site Web" 
                                     className="h-10" 
+                                />
+                            </div>
+                            
+                            <div className="space-y-2 mt-4 pt-4 border-t border-[#2E130C]/10">
+                                <Label className="text-sm font-bold text-[#2E130C] flex items-center gap-2">
+                                    <Star className="w-4 h-4 text-yellow-500" /> Lien mis en avant
+                                </Label>
+                                <p className="text-xs text-[#2E130C]/60 mb-2">
+                                    Ce lien sera envoyé automatiquement à vos matchs sur WhatsApp (ex: votre dernier post, un calendrier, un projet précis).
+                                </p>
+                                <Input 
+                                    value={formData.featured_link} 
+                                    onChange={e => setFormData({...formData, featured_link: e.target.value})} 
+                                    placeholder="https://votre-lien-important.com" 
+                                    className="h-10 border-yellow-500/30 focus-visible:ring-yellow-500/50" 
                                 />
                             </div>
                         </div>

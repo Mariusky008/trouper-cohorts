@@ -27,8 +27,7 @@ const MISSION_TYPES = [
 export function WaitingCardPreview() {
   const [isMyProfileOpen, setIsMyProfileOpen] = useState(false);
   const [isPartnerProfileOpen, setIsPartnerProfileOpen] = useState(false);
-  const matchName = "Jean-Paul";
-
+  const matchName = "Thomas";
   return (
     <div className="relative w-full max-w-sm mx-auto h-[600px] rounded-[2.5rem] overflow-hidden shadow-2xl bg-[#0a0f1c] flex flex-col items-center justify-center text-center p-6 border border-white/10 group">
       {/* Dynamic Background */}
