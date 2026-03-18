@@ -95,11 +95,14 @@ export function AvailabilitySelector({ settings, potentialCount = 0, onSuccess }
         title: "Disponibilités enregistrées !",
         description: "Vos paramètres de mise en relation sont à jour.",
       });
-      if (onSuccess) {
-          setTimeout(() => {
+      
+      // Ensure onSuccess is called even if there's a slight delay
+      setTimeout(() => {
+          if (onSuccess) {
               onSuccess();
-          }, 1500);
-      }
+          }
+      }, 1000);
+      
     } catch (error) {
       console.error("Save availability error:", error);
       toast({

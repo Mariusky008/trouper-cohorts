@@ -52,8 +52,8 @@ export function PlanningDialog({ settings, potentialCount }: PlanningDialogProps
             </div>
         </div>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-xl bg-white border-[#2E130C]/10 p-0 overflow-hidden text-[#2E130C]">
-         <div className="p-6">
+      <DialogContent className="sm:max-w-xl bg-white border-[#2E130C]/10 p-0 overflow-hidden text-[#2E130C] max-h-[90vh] overflow-y-auto">
+         <div className="p-4 sm:p-6 pb-20 sm:pb-6">
             <AvailabilitySelector 
                 settings={settings} 
                 potentialCount={potentialCount} 
