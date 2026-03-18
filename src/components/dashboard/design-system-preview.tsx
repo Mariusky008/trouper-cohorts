@@ -25,6 +25,10 @@ const MISSION_TYPES = [
 // --- 1. WAITING CARD (Post-registration / Next Day) ---
 // Goal: "Wahoo", colorful, anticipation for tomorrow.
 export function WaitingCardPreview() {
+  const [isMyProfileOpen, setIsMyProfileOpen] = useState(false);
+  const [isPartnerProfileOpen, setIsPartnerProfileOpen] = useState(false);
+  const matchName = "Jean-Paul";
+
   return (
     <div className="relative w-full max-w-sm mx-auto h-[600px] rounded-[2.5rem] overflow-hidden shadow-2xl bg-[#0a0f1c] flex flex-col items-center justify-center text-center p-6 border border-white/10 group">
       {/* Dynamic Background */}
@@ -1615,7 +1619,7 @@ export function MatchCardWhatsAppPreview() {
   const matchName = "Jean-Paul";
   const matchJob = "Directeur Commercial";
 
-  const whatsappMessage = `Salut ${matchName}, c'est ${myName} ! On a matché aujourd'hui sur Popey.Academy. J'ai vu que tu étais ${matchJob}, ça m'intéresse ! Dispo pour un appel rapide ou un vocal aujourd'hui ou demain ?`;
+  const whatsappMessage = `Salut ${matchName}, c'est ${myName} ! On a matché aujourd'hui sur Popey.Academy. J'ai vu que tu étais ${matchJob}, ça m'intéresse ! Dispo pour un appel rapide ou un vocal aujourd'hui ou demain ?\n\nPs : si tu veux en savoir un peu plus sur moi voici mon lien : https://www.popey.academy`;
   const [callHappened, setCallHappened] = useState<boolean | null>(null);
   const [rating, setRating] = useState<'fire' | 'good' | 'meh' | null>(null);
   const [oppType, setOppType] = useState<string | undefined>(undefined);

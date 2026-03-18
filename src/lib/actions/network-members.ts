@@ -169,12 +169,11 @@ export async function getUserProfile(userId?: string) {
 
   if (!targetId) return null;
 
-  try {
-    const { data: profile, error } = await supabase
-      .from("profiles")
-      .select("id, first_name, display_name, avatar_url, trade, city, bio, phone, current_goals, superpower, current_need, big_goal, give_profile, receive_profile, featured_link, offer_title, offer_description, offer_price, offer_original_price, offer_active, linkedin_url, instagram_handle, facebook_handle, website_url")
-      .eq("id", targetId)
-      .single();
+  const { data: profile, error } = await supabase
+    .from("profiles")
+    .select("id, first_name, display_name, avatar_url, trade, city, bio, phone, current_goals, superpower, current_need, big_goal, give_profile, receive_profile, featured_link, offer_title, offer_description, offer_price, offer_original_price, offer_active, linkedin_url, instagram_handle, facebook_handle, website_url, created_at")
+    .eq("id", targetId)
+    .single();
 
   if (error) {
     console.error("Error fetching profile:", error);
