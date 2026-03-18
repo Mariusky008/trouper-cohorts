@@ -185,75 +185,42 @@ export function AvailabilitySelector({ settings, potentialCount = 0, onSuccess }
                     <Clock className="h-4 w-4" /> Vos Créneaux Libres
                   </h4>
                   
-                  <AnimatePresence mode="wait">
-                      {!isAvailabilitySaved ? (
-                        <motion.div 
-                            key="selector"
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            className="space-y-4"
-                        >
-                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                            {["09h – 11h", "12h – 14h", "17h – 19h"].map((slot) => {
-                              const isSelected = selectedSlots.includes(slot);
-                              return (
-                                <div 
-                                  key={slot}
-                                  onClick={() => toggleSlot(slot)}
-                                  className={cn(
-                                    "flex flex-col items-center justify-center p-3 rounded-2xl border-2 cursor-pointer transition-all duration-200 h-20 relative overflow-hidden group",
-                                    isSelected 
-                                      ? "border-blue-500 bg-blue-50 text-blue-600 shadow-sm" 
-                                      : "border-[#2E130C]/10 bg-white text-[#2E130C]/60 hover:border-blue-300 hover:text-blue-600"
-                                  )}
-                                >
-                                  {isSelected && (
-                                      <div className="absolute top-1 right-1 text-blue-500">
-                                          <CheckCircle2 className="h-4 w-4" />
-                                      </div>
-                                  )}
-                                  <span className={cn("font-black text-base", isSelected ? "text-blue-700" : "text-[#2E130C]/70")}>{slot}</span>
-                                </div>
-                              );
-                            })}
-                          </div>
-                          
-                          <Button 
-                            onClick={handleSaveAvailability}
-                            disabled={selectedSlots.length === 0 || loading}
-                            className="w-full h-12 text-base font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-lg shadow-blue-900/10 transition-all hover:scale-[1.01] hidden"
+                      <AnimatePresence mode="wait">
+                          <motion.div 
+                              key="selector"
+                              initial={{ opacity: 0 }}
+                              animate={{ opacity: 1 }}
+                              exit={{ opacity: 0 }}
+                              className="space-y-4"
                           >
-                            {loading ? "Enregistrement..." : (
-                                <>
-                                    Valider ces créneaux <ArrowRight className="ml-2 h-4 w-4" />
-                                </>
-                            )}
-                          </Button>
-                        </motion.div>
-                      ) : (
-                         <motion.div 
-                            key="success"
-                            initial={{ scale: 0.95, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            className="bg-emerald-50 rounded-2xl p-5 text-center border border-emerald-200"
-                         >
-                            <div className="flex items-center justify-center gap-2 text-emerald-600 font-bold mb-3">
-                                <CheckCircle2 className="h-5 w-5" /> Disponibilités enregistrées
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                              {["09h – 11h", "12h – 14h", "17h – 19h"].map((slot) => {
+                                const isSelected = selectedSlots.includes(slot);
+                                return (
+                                  <div 
+                                    key={slot}
+                                    onClick={() => toggleSlot(slot)}
+                                    className={cn(
+                                      "flex flex-col items-center justify-center p-3 rounded-2xl border-2 cursor-pointer transition-all duration-200 h-20 relative overflow-hidden group",
+                                      isSelected 
+                                        ? "border-blue-500 bg-blue-50 text-blue-600 shadow-sm" 
+                                        : "border-[#2E130C]/10 bg-white text-[#2E130C]/60 hover:border-blue-300 hover:text-blue-600"
+                                    )}
+                                  >
+                                    {isSelected && (
+                                        <div className="absolute top-1 right-1 text-blue-500">
+                                            <CheckCircle2 className="h-4 w-4" />
+                                        </div>
+                                    )}
+                                    <span className={cn("font-black text-base", isSelected ? "text-blue-700" : "text-[#2E130C]/70")}>{slot}</span>
+                                  </div>
+                                );
+                              })}
                             </div>
-                            <div className="flex flex-wrap gap-2 justify-center mb-4">
-                               {selectedSlots.map(s => (
-                                   <Badge key={s} className="bg-emerald-100 text-emerald-700 hover:bg-emerald-200 border border-emerald-200 px-3 py-1 text-xs">
-                                       {s}
-                                   </Badge>
-                               ))}
-                            </div>
-                            <Button variant="link" size="sm" onClick={() => setIsAvailabilitySaved(false)} className="text-emerald-600 hover:text-emerald-700 h-auto p-0 font-bold text-xs underline">
-                              Modifier
-                            </Button>
-                         </motion.div>
-                      )}
-                  </AnimatePresence>
+                            
+
+                          </motion.div>
+                      </AnimatePresence>
               </div>
 
               {/* FREQUENCY SETTINGS (SIMPLIFIED) */}
@@ -313,19 +280,26 @@ export function AvailabilitySelector({ settings, potentialCount = 0, onSuccess }
               </div>
 
               {/* SAVE BUTTON AT THE BOTTOM */}
-              {!isAvailabilitySaved && (
-                <Button 
-                  onClick={handleSaveAvailability}
-                  disabled={selectedSlots.length === 0 || selectedDays.length === 0 || loading}
-                  className="w-full h-14 text-lg font-black bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-lg shadow-blue-900/10 transition-all hover:scale-[1.01]"
-                >
-                  {loading ? "Enregistrement..." : (
-                      <>
-                          Valider mes disponibilités <ArrowRight className="ml-2 h-5 w-5" />
-                      </>
-                  )}
-                </Button>
-              )}
+              <Button 
+                onClick={handleSaveAvailability}
+                disabled={selectedSlots.length === 0 || selectedDays.length === 0 || loading}
+                className={cn(
+                    "w-full h-14 text-lg font-black text-white rounded-xl shadow-lg transition-all hover:scale-[1.01]",
+                    isAvailabilitySaved 
+                        ? "bg-emerald-500 hover:bg-emerald-600 shadow-emerald-900/10" 
+                        : "bg-blue-600 hover:bg-blue-700 shadow-blue-900/10"
+                )}
+              >
+                {loading ? "Enregistrement..." : isAvailabilitySaved ? (
+                    <>
+                        <CheckCircle2 className="mr-2 h-5 w-5" /> Enregistré ! (Fermeture...)
+                    </>
+                ) : (
+                    <>
+                        Valider mes disponibilités <ArrowRight className="ml-2 h-5 w-5" />
+                    </>
+                )}
+              </Button>
             </>
           )}
       </div>
