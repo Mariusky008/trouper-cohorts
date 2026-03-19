@@ -784,6 +784,7 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
   const [isValidationOpen, setIsValidationOpen] = useState(false);
   const [isMyProfileOpen, setIsMyProfileOpen] = useState(false);
   const [isPartnerProfileOpen, setIsPartnerProfileOpen] = useState(false);
+  const [isSuggestedMissionOpen, setIsSuggestedMissionOpen] = useState(false);
   const [selectedMission, setSelectedMission] = useState<string | null>(matches[0]?.my_mission || null);
 
   // Sync state if props change (e.g. after revalidate)
@@ -1299,15 +1300,44 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
             </div>
         </div>
 
-        <div className="w-full mt-4 p-3 rounded-xl border border-amber-200 bg-amber-50 text-left shadow-sm">
-            <div className="flex items-center gap-2 mb-1">
-                <Zap className="w-4 h-4 text-amber-600" />
-                <span className="text-[10px] font-black uppercase tracking-widest text-amber-700">Mission suggérée aujourd&apos;hui</span>
-            </div>
-            <p className="text-sm font-black text-[#2E130C] leading-tight">{suggestedPairMission.title}</p>
-            <p className="text-xs text-[#2E130C]/75 mt-1 leading-relaxed">{suggestedPairMission.action}</p>
-            <p className="text-[11px] text-amber-700/90 mt-2 font-semibold">{suggestedPairMission.wow}</p>
-        </div>
+        <Dialog open={isSuggestedMissionOpen} onOpenChange={setIsSuggestedMissionOpen}>
+            <DialogTrigger asChild>
+                <Button
+                    variant="outline"
+                    onClick={() => trackEvent('click_suggested_mission_open', { partnerId: match.partnerId, missionId: suggestedPairMission.id })}
+                    className="w-full mt-4 h-11 rounded-xl border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100 hover:text-amber-800 font-black text-xs uppercase tracking-wider"
+                >
+                    <Zap className="w-4 h-4 mr-2" />
+                    Voir la mission suggérée
+                </Button>
+            </DialogTrigger>
+            <DialogContent className="bg-white border-[#2E130C]/10 text-[#2E130C] sm:max-w-md rounded-2xl w-[90vw]">
+                <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2 text-xl font-black text-amber-700">
+                        <Zap className="w-5 h-5" />
+                        Mission suggérée aujourd&apos;hui
+                    </DialogTitle>
+                    <DialogDescription className="text-sm text-[#2E130C]/60">
+                        Proposition personnalisée selon vos deux profils.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-3 py-2">
+                    <div className="rounded-xl border border-amber-200 bg-amber-50 p-3">
+                        <p className="text-sm font-black text-[#2E130C] leading-tight">{suggestedPairMission.title}</p>
+                        <p className="text-xs text-[#2E130C]/80 mt-2 leading-relaxed">{suggestedPairMission.action}</p>
+                    </div>
+                    <p className="text-xs font-semibold text-amber-700">{suggestedPairMission.wow}</p>
+                </div>
+                <DialogFooter>
+                    <Button
+                        onClick={() => setIsSuggestedMissionOpen(false)}
+                        className="w-full bg-[#2E130C] text-white hover:bg-[#2E130C]/90"
+                    >
+                        Compris
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
 
         {/* Action Buttons */}
         <div className="flex flex-col gap-3 w-full mt-6">
