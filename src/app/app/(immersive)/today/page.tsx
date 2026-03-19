@@ -22,11 +22,16 @@ export default async function TodayPage({
 }) {
   const supabase = await createClient();
   const sp = await searchParams;
+  const headersList = await headers();
 
   const codeParam = typeof sp?.code === "string" ? sp.code : Array.isArray(sp?.code) ? sp.code[0] : undefined;
   const tokenHashParam = typeof sp?.token_hash === "string" ? sp.token_hash : Array.isArray(sp?.token_hash) ? sp.token_hash[0] : undefined;
   const typeParam = typeof sp?.type === "string" ? sp.type : Array.isArray(sp?.type) ? sp.type[0] : undefined;
-  const referer = (await headers()).get("referer") || "";
+  const referer = headersList.get("referer") || "";
+  const host = headersList.get("host") || "";
+  const protocol = headersList.get("x-forwarded-proto") || "https";
+  const currentOrigin = host ? `${protocol}://${host}` : "";
+  const isInternalReferer = !!(referer && currentOrigin && referer.startsWith(currentOrigin));
 
   if (codeParam || tokenHashParam) {
     const callbackParams = new URLSearchParams();
@@ -64,6 +69,9 @@ export default async function TodayPage({
   }
 
   if (!membershipRes.data) {
+     if (!isInternalReferer) {
+      redirect("/update-password");
+     }
      // Redirection vers démo si pas de cohorte (logique existante)
      async function joinDemoCohort() {
       "use server";
