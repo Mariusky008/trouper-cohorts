@@ -39,7 +39,7 @@ const GOAL_OPTIONS = [
 export function ProfileContent({ user, isReadOnly = false }: { user: any; isReadOnly?: boolean }) {
   const { toast } = useToast();
   const router = useRouter();
-  const supabase = createClient();
+  // const supabase = createClient();
   const [isEditing, setIsEditing] = useState(false);
   const [isOfferModalOpen, setIsOfferModalOpen] = useState(false);
   
@@ -187,6 +187,7 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
       const file = event.target.files?.[0];
       if (!file) return;
 
+      const supabase = createClient();
       const fileExt = file.name.split('.').pop();
       const fileName = `${user.id}-${Math.random()}.${fileExt}`;
       const filePath = `${fileName}`;
