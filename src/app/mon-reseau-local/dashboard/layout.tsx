@@ -23,9 +23,8 @@ const NAV_ITEMS = [
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { getPendingOpportunitiesCount } from "@/lib/actions/network-opportunities";
-import { GlobalChatWidget } from "@/components/dashboard/chat/global-chat-widget";
 import { PWAInstallPrompt } from "@/components/pwa-install-prompt";
-import { Suspense } from "react";
+import { useNotifications } from "@/hooks/use-notifications";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -46,9 +45,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 function DashboardLayoutFull({ children, pathname }: { children: React.ReactNode; pathname: string }) {
   const router = useRouter();
   const supabase = createClient();
-  
-  const badges = { market: 0, offers: 0 };
-  const markAsSeen = (_t: string) => {};
+  const { badges, markAsSeen } = useNotifications();
 
   // Mark as seen when visiting pages
   useEffect(() => {
@@ -73,17 +70,13 @@ function DashboardLayoutFull({ children, pathname }: { children: React.ReactNode
     setIsProfileDropdownOpen(false);
   }, [pathname]);
 
-  const [isAuthorized, setIsAuthorized] = useState(true); 
-
-  // Combined fetch and verification effect
   useEffect(() => {
     const initDashboard = async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return; // Middleware handles auth redirect mostly
+      if (!user) return;
 
       setCurrentUserId(user.id);
       
-      // 1. Fetch Profile
       const { data: profile } = await supabase
         .from('profiles')
         .select('*')
@@ -94,30 +87,14 @@ function DashboardLayoutFull({ children, pathname }: { children: React.ReactNode
         setUserProfile(profile);
         setPoints(profile.points || 0);
 
-        // 2. Check Completion (Non-blocking usually, unless critical)
-        const isComplete = 
-          !!profile.display_name && 
-          !!profile.trade && 
-          !!profile.city && 
-          !!profile.phone && 
-          !!profile.bio &&
-          !!profile.avatar_url && // Strict check for avatar now
-          (!!profile.linkedin_url || !!profile.instagram_handle || !!profile.facebook_handle || !!profile.website_url);
-
-        setIsAuthorized(true);
       }
 
-      // 3. Pending Opportunities (Parallel fetch could be better but this is fine)
       const count = await getPendingOpportunitiesCount();
       setPendingCount(count);
     };
 
     initDashboard();
-  }, [pathname]); // Re-run on route change is okay, but ideally we cache profile. 
-  // For now, this consolidates the double-fetch issue.
-
-  // Removed separate strict verifyAccess effect
-  // Removed separate fetchData effect
+  }, [pathname]);
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
@@ -127,21 +104,10 @@ function DashboardLayoutFull({ children, pathname }: { children: React.ReactNode
   const displayName = userProfile?.display_name || "Membre";
   const avatarUrl = userProfile?.avatar_url;
   const initials = displayName.substring(0, 2).toUpperCase();
-  const trustScore = userProfile?.trust_score || 5.0; // Assuming trust_score is in profile or separate, for now default
-  // Actually trust score is usually in a separate table or view, but let's use a safe default or fetch if needed.
-  // For MVP let's keep it simple or fetch it properly if we want.
-  // The user input only complained about the NAME "Jean Dupont".
+  const trustScore = userProfile?.trust_score || 5.0;
 
   return (
     <div className="min-h-screen bg-[#E2D9BC] flex flex-col font-sans text-[#2E130C] selection:bg-[#B20B13] selection:text-[#E2D9BC]">
-      {!isAuthorized && (
-        <div className="fixed inset-0 z-[9999] bg-slate-50 flex items-center justify-center">
-           <div className="text-[#2E130C]/60 font-medium">Chargement...</div>
-        </div>
-      )}
-      
-      
-      
       {/* --- TOP NAVIGATION BAR (DESKTOP & MOBILE) --- */}
       <header className="fixed top-0 w-full bg-[#E2D9BC]/90 backdrop-blur-md border-b-2 border-[#2E130C]/10 z-30 h-16 px-4 lg:px-8 flex items-center justify-between shadow-sm">
          {/* LEFT: LOGO */}
@@ -381,11 +347,6 @@ function DashboardLayoutFull({ children, pathname }: { children: React.ReactNode
         </div>
       </main>
 
-      {/* GLOBAL CHAT WIDGET (Temporarily disabled for debugging) */}
-      <Suspense fallback={null}>
-        {/* currentUserId && <GlobalChatWidget currentUserId={currentUserId} /> */}
-      </Suspense>
-      
       {/* PWA INSTALL PROMPT */}
       <PWAInstallPrompt />
 
