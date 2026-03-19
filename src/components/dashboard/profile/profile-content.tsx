@@ -340,6 +340,16 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
       });
   };
 
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return <div className="p-8 text-center text-[#2E130C]/60 font-medium">Chargement...</div>;
+  }
+
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
       
