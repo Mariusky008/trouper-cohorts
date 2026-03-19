@@ -303,10 +303,24 @@ const buildWhatsAppMessage = ({
 }): string => {
     const intro = `Salut ${matchName}, c'est ${myName} ! On a matché aujourd'hui sur Popey.Academy. J'ai vu que tu étais ${matchJob}, ça m'intéresse ! Dispo pour un appel rapide ou un vocal aujourd'hui ou demain ?`;
     const missionLine = suggestedMissionText ? `\n\nMission qu'on peut faire aujourd'hui : ${suggestedMissionText}` : "";
-    const linkLine = featuredLink ? `\n\nLien principal que je veux te montrer : ${featuredLink}` : "";
-    const fullMessage = `${intro}${missionLine}${linkLine}`;
+    const trimmedLink = featuredLink.length > 320 ? `${featuredLink.slice(0, 317)}...` : featuredLink;
+    const linkLine = trimmedLink ? `\n\nLien principal que je veux te montrer : ${trimmedLink}` : "";
+    const textWithoutLink = `${intro}${missionLine}`;
+    const fullMessage = `${textWithoutLink}${linkLine}`;
     const maxLength = 1000;
-    return fullMessage.length > maxLength ? fullMessage.slice(0, maxLength) : fullMessage;
+    if (fullMessage.length <= maxLength) return fullMessage;
+
+    if (!linkLine) {
+        return textWithoutLink.slice(0, maxLength);
+    }
+
+    const reservedForLink = linkLine.length;
+    if (reservedForLink >= maxLength - 20) {
+        return `${textWithoutLink.slice(0, 20)}${linkLine.slice(0, maxLength - 20)}`;
+    }
+
+    const availableForText = maxLength - reservedForLink;
+    return `${textWithoutLink.slice(0, availableForText)}${linkLine}`;
 };
 
 type PairMissionSuggestion = {
@@ -436,6 +450,19 @@ const computeMissionSuggestion = (
 const getMissionProgressKey = (userId?: string, matchId?: string): string | null => {
     if (!userId || !matchId) return null;
     return `daily_mission_progress_${userId}_${matchId}`;
+};
+
+const getSelfFirstName = (profile: any): string => {
+    const displayName = String(profile?.display_name || "").trim();
+    if (displayName.length > 0) return displayName.split(/\s+/)[0];
+
+    const firstName = String(profile?.first_name || "").trim();
+    if (firstName.length > 0) return firstName.split(/\s+/)[0];
+
+    const legacyName = String(profile?.name || "").trim();
+    if (legacyName.length > 0) return legacyName.split(/\s+/)[0];
+
+    return "Moi";
 };
 
 const REPUTATION_BADGES = [
@@ -823,7 +850,7 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
   const handleWhatsAppRedirect = () => {
       const matchName = matches[0]?.name?.split(' ')[0] || "partenaire";
       const matchJob = matches[0]?.job || "dirigeant";
-      const myName = currentUserProfile?.first_name || currentUserProfile?.display_name?.split(' ')[0] || currentUserProfile?.name?.split(' ')[0] || "Jean-Philippe";
+      const myName = getSelfFirstName(currentUserProfile);
       const featuredLink = normalizeHttpUrl(currentUserProfile?.featured_link);
       const whatsappMessage = buildWhatsAppMessage({
           matchName,
@@ -1047,7 +1074,7 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
   const featuredLinkForWhatsApp = normalizeHttpUrl(currentUserProfile?.featured_link);
   const whatsappPreviewMessage = buildWhatsAppMessage({
       matchName: match.name.split(' ')[0],
-      myName: currentUserProfile?.first_name || currentUserProfile?.display_name?.split(' ')[0] || currentUserProfile?.name?.split(' ')[0] || "Jean-Philippe",
+      myName: getSelfFirstName(currentUserProfile),
       matchJob: match.job || "dirigeant",
       featuredLink: featuredLinkForWhatsApp,
       suggestedMissionText: suggestedPairMission.whatsappText

@@ -175,7 +175,7 @@ export async function getDailyMatches() {
       
       const { data: feedbacks } = await supabaseAdmin
         .from('match_feedback')
-        .select('receiver_id, created_at')
+        .select('receiver_id, match_id, created_at')
         .eq('giver_id', user.id)
         .in('receiver_id', partnerIds)
         .gte('created_at', searchDate); // Fetch feedbacks from yesterday onwards
@@ -188,7 +188,8 @@ export async function getDailyMatches() {
       // We rely on the SQL query filtering (created_at >= yesterday)
       // We removed the strict JS date comparison to avoid timezone issues (e.g. UTC vs Paris midnight)
       const hasFeedback = userFeedbacks.some(f => 
-          f.receiver_id === match.partnerId
+          (f.match_id && f.match_id === match.id) ||
+          (!f.match_id && f.receiver_id === match.partnerId)
       );
       
       // Inject hasFeedback status

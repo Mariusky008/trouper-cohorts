@@ -116,11 +116,17 @@ export async function getConnections() {
     feedbacks.forEach((f: any) => feedbackMap.set(f.receiver_id, { rating: f.rating, tag: f.tag }));
   }
 
+  const todayParisStr = new Date().toLocaleDateString('fr-CA', { timeZone: 'Europe/Paris' });
+
   // Transform matches into a list of unique connections
   const connectionsMap = new Map();
 
   if (matches) {
     for (const match of matches) {
+      if (match.date > todayParisStr) {
+        continue;
+      }
+
       const isUser1 = match.user1_id === user.id;
       // When using simple alias, Supabase returns a single object if 1:1 or 1:M where M=1, but let's cast to any to avoid TS issues for now as we know the structure
       const user1 = match.user1 as any;
@@ -171,7 +177,7 @@ export async function getUserProfile(userId?: string) {
 
   const { data: profile, error } = await supabase
     .from("profiles")
-    .select("id, first_name, display_name, avatar_url, trade, city, bio, phone, current_goals, superpower, current_need, big_goal, give_profile, receive_profile, featured_link, offer_title, offer_description, offer_price, offer_original_price, offer_active, linkedin_url, instagram_handle, facebook_handle, website_url, created_at")
+    .select("*")
     .eq("id", targetId)
     .single();
 
