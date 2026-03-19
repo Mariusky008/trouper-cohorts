@@ -39,6 +39,7 @@ const GOAL_OPTIONS = [
 export function ProfileContent({ user, isReadOnly = false }: { user: any; isReadOnly?: boolean }) {
   const { toast } = useToast();
   const router = useRouter();
+  const supabase = createClient();
   const [isEditing, setIsEditing] = useState(false);
   const [isOfferModalOpen, setIsOfferModalOpen] = useState(false);
   
@@ -126,8 +127,6 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
           return () => window.removeEventListener("trigger-profile-edit", handleCustomEvent);
       }
   }, []);
-
-  const supabase = createClient();
 
   const validateStep = (step: number) => {
     const errors: Record<string, string> = {};
