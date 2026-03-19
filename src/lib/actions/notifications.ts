@@ -64,7 +64,7 @@ export async function sendNotification(
 }
 
 export async function getNotificationCounts() {
-  noStore();
+  // noStore();
   const supabase = await createClient();
   
   // 1. Market Opportunities Count

@@ -36,6 +36,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   
   // Notifications
   const { badges, markAsSeen } = useNotifications();
+  // const badges = { market: 0, offers: 0 };
+  // const markAsSeen = (t: string) => {};
+  // const badges = { market: 0, offers: 0 };
+  // const markAsSeen = (t: string) => {};
 
   // Mark as seen when visiting pages
   useEffect(() => {
@@ -118,8 +122,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
 
   // Loading state block must be AFTER all hooks
-  // OPTIMIZED: Only show this if we are actively blocking access.
-  // Since we default isAuthorized to true, this won't show on initial load unless we explicitly set it to false.
   if (!isAuthorized) {
       return (
           <div className="min-h-screen bg-slate-50 flex items-center justify-center">

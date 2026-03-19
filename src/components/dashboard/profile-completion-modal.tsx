@@ -61,6 +61,7 @@ export function ProfileCompletionModal() {
         showCloseButton={false}
         onPointerDownOutside={(e) => e.preventDefault()}
         onEscapeKeyDown={(e) => e.preventDefault()}
+        aria-describedby={undefined}
       >
         <div className="flex flex-col items-center text-center py-6 space-y-6">
             <div className="h-20 w-20 bg-blue-50 rounded-full flex items-center justify-center animate-bounce">

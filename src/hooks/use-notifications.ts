@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { getNotificationCounts } from "@/lib/actions/notifications";
+import { createClient } from "@/lib/supabase/client";
 
 export function useNotifications() {
   const [counts, setCounts] = useState({ market: 0, offers: 0 });
@@ -10,7 +10,25 @@ export function useNotifications() {
   useEffect(() => {
     async function load() {
       try {
-        const serverCounts = await getNotificationCounts();
+        const supabase = createClient();
+        
+        // Fetch market count
+        const { count: marketCount } = await supabase
+          .from("network_opportunities")
+          .select("*", { count: 'exact', head: true })
+          .eq('visibility', 'public')
+          .eq('status', 'available');
+
+        // Fetch offers count
+        const { count: searchesCount } = await supabase
+          .from("network_requests")
+          .select("*", { count: 'exact', head: true });
+
+        const serverCounts = { 
+          market: marketCount || 0, 
+          offers: searchesCount || 0 
+        };
+        
         setCounts(serverCounts);
 
         // Calculate badges
