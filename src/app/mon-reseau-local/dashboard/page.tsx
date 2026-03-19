@@ -89,7 +89,13 @@ export default async function DashboardHome() {
 
       {/* 2. FOCUS PRINCIPAL - MISSION DU JOUR */}
       <div className="relative z-20">
-         <DailyMatchCard matches={matches} userStreak={userStreak} userId={user?.id} currentUserProfile={currentUserProfile} />
+         <DailyMatchCard
+           matches={matches}
+           userStreak={userStreak}
+           userId={user?.id}
+           currentUserProfile={currentUserProfile}
+           currentUserAuthFirstName={user?.user_metadata?.first_name}
+         />
       </div>
 
       {/* 3. CAFE WIDGET (NEW) */}

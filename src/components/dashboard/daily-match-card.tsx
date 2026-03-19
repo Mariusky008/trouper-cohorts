@@ -127,6 +127,7 @@ interface DailyMatchCardProps {
   userStreak?: number;
   userId?: string;
   currentUserProfile?: any;
+  currentUserAuthFirstName?: string;
 }
 
 const MISSION_TYPES = [
@@ -452,12 +453,18 @@ const getMissionProgressKey = (userId?: string, matchId?: string): string | null
     return `daily_mission_progress_${userId}_${matchId}`;
 };
 
-const getSelfFirstName = (profile: any): string => {
-    const displayName = String(profile?.display_name || "").trim();
-    if (displayName.length > 0) return displayName.split(/\s+/)[0];
+const getSelfFirstName = (profile: any, authFirstName?: string, userId?: string): string => {
+    const authName = String(authFirstName || "").trim();
+    if (authName.length > 0) return authName.split(/\s+/)[0];
+
+    const profileId = String(profile?.id || "").trim();
+    if (userId && profileId && profileId !== userId) return "Moi";
 
     const firstName = String(profile?.first_name || "").trim();
     if (firstName.length > 0) return firstName.split(/\s+/)[0];
+
+    const displayName = String(profile?.display_name || "").trim();
+    if (displayName.length > 0) return displayName.split(/\s+/)[0];
 
     const legacyName = String(profile?.name || "").trim();
     if (legacyName.length > 0) return legacyName.split(/\s+/)[0];
@@ -701,7 +708,7 @@ const WeekendCard = () => (
     </div>
 );
 
-export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserProfile }: DailyMatchCardProps) {
+export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserProfile, currentUserAuthFirstName }: DailyMatchCardProps) {
   const currentMatchId = matches?.[0]?.id;
   const missionProgressKey = getMissionProgressKey(userId, currentMatchId);
 
@@ -859,7 +866,7 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
   const handleWhatsAppRedirect = () => {
       const matchName = matches[0]?.name?.split(' ')[0] || "partenaire";
       const matchJob = matches[0]?.job || "dirigeant";
-      const myName = getSelfFirstName(currentUserProfile);
+      const myName = getSelfFirstName(currentUserProfile, currentUserAuthFirstName, userId);
       const featuredLink = getPopeyShortLink(currentUserProfile);
       const whatsappMessage = buildWhatsAppMessage({
           matchName,
@@ -1083,7 +1090,7 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
   const featuredLinkForWhatsApp = getPopeyShortLink(currentUserProfile);
   const whatsappPreviewMessage = buildWhatsAppMessage({
       matchName: match.name.split(' ')[0],
-      myName: getSelfFirstName(currentUserProfile),
+      myName: getSelfFirstName(currentUserProfile, currentUserAuthFirstName, userId),
       matchJob: match.job || "dirigeant",
       featuredLink: featuredLinkForWhatsApp,
       suggestedMissionText: suggestedPairMission.whatsappText
