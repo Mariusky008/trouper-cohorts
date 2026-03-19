@@ -465,6 +465,14 @@ const getSelfFirstName = (profile: any): string => {
     return "Moi";
 };
 
+const getPopeyShortLink = (profile: any): string => {
+    const featuredLink = normalizeHttpUrl(profile?.featured_link);
+    const profileId = String(profile?.id || "").trim();
+    if (!featuredLink || !profileId) return "";
+    const baseUrl = (process.env.NEXT_PUBLIC_APP_URL || "https://popey.academy").replace(/\/+$/, "");
+    return `${baseUrl}/r/${profileId}`;
+};
+
 const REPUTATION_BADGES = [
     { id: 'connector', label: 'Le Connecteur', icon: '🤝', desc: "M'a ouvert son réseau" },
     { id: 'expert', label: 'L\'Expert', icon: '🧠', desc: "M'a appris quelque chose" },
@@ -852,7 +860,7 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
       const matchName = matches[0]?.name?.split(' ')[0] || "partenaire";
       const matchJob = matches[0]?.job || "dirigeant";
       const myName = getSelfFirstName(currentUserProfile);
-      const featuredLink = normalizeHttpUrl(currentUserProfile?.featured_link);
+      const featuredLink = getPopeyShortLink(currentUserProfile);
       const whatsappMessage = buildWhatsAppMessage({
           matchName,
           myName,
@@ -1072,7 +1080,7 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
   const myOfferHeadline = currentUserProfile?.superpower || getProfileText(currentUserProfile?.give_profile?.influence_sectors) || "Mon expertise";
   const partnerOfferHeadline = match.superpower || getProfileText(match.give_profile?.influence_sectors) || "Son expertise";
   const suggestedPairMission = computeMissionSuggestion(currentUserProfile, match);
-  const featuredLinkForWhatsApp = normalizeHttpUrl(currentUserProfile?.featured_link);
+  const featuredLinkForWhatsApp = getPopeyShortLink(currentUserProfile);
   const whatsappPreviewMessage = buildWhatsAppMessage({
       matchName: match.name.split(' ')[0],
       myName: getSelfFirstName(currentUserProfile),
@@ -1408,12 +1416,6 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
              )}
              {step === 'called' && (
                 <div className="flex flex-col gap-3 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                    <div className="bg-emerald-50 text-emerald-700 p-3 rounded-xl border border-emerald-200 text-sm font-medium text-center">
-                        ✅ Vous avez été redirigé vers WhatsApp. 
-                        <br/>
-                        <span className="text-xs opacity-80">Revenez ici une fois l'échange terminé pour valider.</span>
-                    </div>
-
                 <Dialog open={isValidationOpen} onOpenChange={(open) => {
                         setIsValidationOpen(open);
                         if (!open) {
