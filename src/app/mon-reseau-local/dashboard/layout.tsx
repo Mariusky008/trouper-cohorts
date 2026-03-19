@@ -120,17 +120,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   // Removed separate strict verifyAccess effect
   // Removed separate fetchData effect
 
-
-  // Loading state block must be AFTER all hooks
-  if (!isAuthorized) {
-      return (
-          <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-              {/* Render children hidden to prevent Next.js AppRouter from losing its tree state which causes Error 310 */}
-              <div style={{ display: 'none' }}>{children}</div>
-          </div>
-      );
-  }
-
   const handleSignOut = async () => {
     await supabase.auth.signOut();
     router.push("/");
@@ -146,6 +135,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   
   return (
     <div className="min-h-screen bg-[#E2D9BC] flex flex-col font-sans text-[#2E130C] selection:bg-[#B20B13] selection:text-[#E2D9BC]">
+      {!isAuthorized && (
+        <div className="fixed inset-0 z-[9999] bg-slate-50 flex items-center justify-center">
+           <div className="text-[#2E130C]/60 font-medium">Chargement...</div>
+        </div>
+      )}
+      
       <Suspense fallback={null}>
         <ProfileCompletionModal />
       </Suspense>
