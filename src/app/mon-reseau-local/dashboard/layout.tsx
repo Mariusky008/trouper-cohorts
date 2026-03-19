@@ -22,7 +22,6 @@ const NAV_ITEMS = [
 
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
-import { ProfileCompletionModal } from "@/components/dashboard/profile-completion-modal";
 import { getPendingOpportunitiesCount } from "@/lib/actions/network-opportunities";
 import { GlobalChatWidget } from "@/components/dashboard/chat/global-chat-widget";
 import { PWAInstallPrompt } from "@/components/pwa-install-prompt";
@@ -139,11 +138,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
       )}
       
-      {pathname !== "/mon-reseau-local/dashboard/profile" && (
-        <Suspense fallback={null}>
-          <ProfileCompletionModal />
-        </Suspense>
-      )}
+      
       
       {/* --- TOP NAVIGATION BAR (DESKTOP & MOBILE) --- */}
       <header className="fixed top-0 w-full bg-[#E2D9BC]/90 backdrop-blur-md border-b-2 border-[#2E130C]/10 z-30 h-16 px-4 lg:px-8 flex items-center justify-between shadow-sm">
