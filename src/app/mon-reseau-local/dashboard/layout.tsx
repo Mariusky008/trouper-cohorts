@@ -28,9 +28,24 @@ import { PWAInstallPrompt } from "@/components/pwa-install-prompt";
 import { Suspense } from "react";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+  const isProfileRoute = pathname === "/mon-reseau-local/dashboard/profile";
+  if (isProfileRoute) {
+    return (
+      <div className="min-h-screen bg-[#E2D9BC] font-sans text-[#2E130C]">
+        <main className="min-h-screen pt-20">
+          <div className="container mx-auto p-4 md:p-8 max-w-7xl">{children}</div>
+        </main>
+      </div>
+    );
+  }
+
+  return <DashboardLayoutFull pathname={pathname}>{children}</DashboardLayoutFull>;
+}
+
+function DashboardLayoutFull({ children, pathname }: { children: React.ReactNode; pathname: string }) {
   const router = useRouter();
   const supabase = createClient();
-  const pathname = usePathname();
   
   const badges = { market: 0, offers: 0 };
   const markAsSeen = (_t: string) => {};
@@ -117,17 +132,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   // For MVP let's keep it simple or fetch it properly if we want.
   // The user input only complained about the NAME "Jean Dupont".
 
-  const isProfileRoute = pathname === "/mon-reseau-local/dashboard/profile";
-  if (isProfileRoute) {
-    return (
-      <div className="min-h-screen bg-[#E2D9BC] font-sans text-[#2E130C]">
-        <main className="min-h-screen pt-20">
-          <div className="container mx-auto p-4 md:p-8 max-w-7xl">{children}</div>
-        </main>
-      </div>
-    );
-  }
-  
   return (
     <div className="min-h-screen bg-[#E2D9BC] flex flex-col font-sans text-[#2E130C] selection:bg-[#B20B13] selection:text-[#E2D9BC]">
       {!isAuthorized && (
