@@ -106,21 +106,25 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
   // Auto-open edit modal if query param "edit=true" is present
   useEffect(() => {
       const checkEditParam = () => {
-          const params = new URLSearchParams(window.location.search);
-          if (params.get("edit") === "true") {
-              setIsEditing(true);
-              const url = new URL(window.location.href);
-              url.searchParams.delete("edit");
-              url.searchParams.delete("tab");
-              window.history.replaceState({}, "", url);
+          if (typeof window !== "undefined") {
+              const params = new URLSearchParams(window.location.search);
+              if (params.get("edit") === "true") {
+                  setIsEditing(true);
+                  const url = new URL(window.location.href);
+                  url.searchParams.delete("edit");
+                  url.searchParams.delete("tab");
+                  window.history.replaceState({}, "", url);
+              }
           }
       };
 
       checkEditParam();
 
       const handleCustomEvent = () => setIsEditing(true);
-      window.addEventListener("trigger-profile-edit", handleCustomEvent);
-      return () => window.removeEventListener("trigger-profile-edit", handleCustomEvent);
+      if (typeof window !== "undefined") {
+          window.addEventListener("trigger-profile-edit", handleCustomEvent);
+          return () => window.removeEventListener("trigger-profile-edit", handleCustomEvent);
+      }
   }, []);
 
   const supabase = createClient();

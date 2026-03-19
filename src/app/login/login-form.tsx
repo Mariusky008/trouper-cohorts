@@ -14,7 +14,7 @@ interface LoginFormProps {
 }
 
 export function LoginForm({ defaultEmail = "", isNetworkLogin = false }: LoginFormProps) {
-  const supabase = useMemo(() => createClient(), []);
+  const supabase = createClient();
   const router = useRouter();
   const [email, setEmail] = useState(defaultEmail);
   const [password, setPassword] = useState("");
