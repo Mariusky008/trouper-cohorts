@@ -22,6 +22,32 @@ export function LoginForm({ defaultEmail = "", isNetworkLogin = false }: LoginFo
   const [isPasswordMode, setIsPasswordMode] = useState(isNetworkLogin);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  async function onForgotPassword() {
+    if (!email) {
+      toast.error("Email requis", {
+        description: "Entrez votre email pour recevoir le lien de réinitialisation.",
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/auth/callback`,
+      });
+      if (error) throw error;
+      toast.success("Email de réinitialisation envoyé", {
+        description: "Cliquez sur le lien reçu pour définir un nouveau mot de passe.",
+      });
+    } catch (e: any) {
+      toast.error("Impossible d'envoyer l'email", {
+        description: e.message || "Veuillez réessayer.",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
   async function onSubmit(event: React.FormEvent) {
     event.preventDefault();
     setIsSubmitting(true);
@@ -50,8 +76,15 @@ export function LoginForm({ defaultEmail = "", isNetworkLogin = false }: LoginFo
       }
     } catch (e: any) {
       console.error(e);
+      const rawMessage = String(e?.message || "");
+      const isBadCredentials =
+        /invalid login credentials/i.test(rawMessage) ||
+        /invalid credentials/i.test(rawMessage) ||
+        /email not confirmed/i.test(rawMessage);
       toast.error("Connexion impossible", {
-        description: e.message || "Vérifie tes identifiants et réessaie.",
+        description: isBadCredentials
+          ? "Email ou mot de passe incorrect. Vérifiez vos identifiants ou utilisez “Mot de passe oublié”."
+          : e.message || "Vérifie tes identifiants et réessaie.",
       });
     } finally {
       setIsSubmitting(false);
@@ -83,6 +116,14 @@ export function LoginForm({ defaultEmail = "", isNetworkLogin = false }: LoginFo
             onChange={(e) => setPassword(e.target.value)}
             placeholder="••••••••"
           />
+          <button
+            type="button"
+            onClick={onForgotPassword}
+            disabled={isSubmitting}
+            className="text-xs text-muted-foreground underline hover:text-primary transition-colors disabled:opacity-60"
+          >
+            Mot de passe oublié ?
+          </button>
         </div>
       )}
 

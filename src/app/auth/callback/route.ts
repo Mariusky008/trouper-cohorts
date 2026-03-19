@@ -31,5 +31,9 @@ export async function GET(request: Request) {
     return NextResponse.redirect(new URL(`/login?error=${encodeURIComponent(error.message)}`, url.origin));
   }
 
+  if (type === "recovery") {
+    return NextResponse.redirect(new URL("/update-password", url.origin));
+  }
+
   return NextResponse.redirect(new URL("/app/today", url.origin));
 }
