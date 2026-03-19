@@ -21,6 +21,18 @@ export default async function TodayPage({
 }) {
   const supabase = await createClient();
   const sp = await searchParams;
+
+  const codeParam = typeof sp?.code === "string" ? sp.code : Array.isArray(sp?.code) ? sp.code[0] : undefined;
+  const tokenHashParam = typeof sp?.token_hash === "string" ? sp.token_hash : Array.isArray(sp?.token_hash) ? sp.token_hash[0] : undefined;
+  const typeParam = typeof sp?.type === "string" ? sp.type : Array.isArray(sp?.type) ? sp.type[0] : undefined;
+
+  if (codeParam || tokenHashParam) {
+    const callbackParams = new URLSearchParams();
+    if (codeParam) callbackParams.set("code", codeParam);
+    if (tokenHashParam) callbackParams.set("token_hash", tokenHashParam);
+    if (typeParam) callbackParams.set("type", typeParam);
+    redirect(`/auth/callback?${callbackParams.toString()}`);
+  }
   
   const {
     data: { user },
