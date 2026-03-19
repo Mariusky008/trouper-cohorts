@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { ProfileContent } from "@/components/dashboard/profile/profile-content";
 
 export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
@@ -22,7 +23,7 @@ export default function ProfilePage() {
 
         const { data, error } = await supabase
           .from("profiles")
-          .select("display_name, trade, city, bio, phone, avatar_url")
+          .select("id, first_name, display_name, avatar_url, trade, city, bio, phone, current_goals, superpower, current_need, big_goal, give_profile, receive_profile, featured_link, offer_title, offer_description, offer_price, offer_original_price, offer_active, linkedin_url, instagram_handle, facebook_handle, website_url, created_at")
           .eq("id", user.id)
           .single();
 
@@ -32,7 +33,34 @@ export default function ProfilePage() {
           return;
         }
 
-        setProfile(data);
+        const { data: trustScore } = await supabase
+          .from("trust_scores")
+          .select("score, opportunities_given, opportunities_received")
+          .eq("user_id", user.id)
+          .single();
+
+        const given = trustScore?.opportunities_given || 0;
+        const received = trustScore?.opportunities_received || 0;
+        const reciprocity = received > 0 ? Math.min(100, Math.round((given / received) * 100)) : 100;
+
+        const hydratedProfile = {
+          ...data,
+          current_goals: Array.isArray(data.current_goals) ? data.current_goals : [],
+          display_name: data.display_name || "",
+          trade: data.trade || "",
+          city: data.city || "",
+          phone: data.phone || "",
+          bio: data.bio || "",
+          avatar_url: data.avatar_url || "",
+          score: typeof trustScore?.score === "number" ? trustScore.score : 5.0,
+          stats: {
+            opportunities: given + received,
+            reciprocity: `${reciprocity}%`,
+            seniority: "Récemment",
+          },
+        };
+
+        setProfile(hydratedProfile);
         setLoading(false);
       } catch {
         setError("Impossible de charger le profil.");
@@ -72,12 +100,7 @@ export default function ProfilePage() {
 
   return (
     <div className="pb-24">
-      <div className="space-y-4 rounded-2xl border border-stone-200 bg-white p-6">
-        <h1 className="text-2xl font-black text-[#2E130C]">{profile.display_name || "Membre"}</h1>
-        <p className="text-sm text-[#2E130C]/70">{profile.trade || "Métier non renseigné"}</p>
-        <p className="text-sm text-[#2E130C]/70">{profile.city || "Ville non renseignée"}</p>
-        <p className="text-sm text-[#2E130C]/70 whitespace-pre-wrap">{profile.bio || "Bio non renseignée"}</p>
-      </div>
+      <ProfileContent user={profile} />
     </div>
   );
 }
