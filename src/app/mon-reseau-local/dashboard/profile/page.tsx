@@ -1,7 +1,6 @@
 import { getUserProfile } from "@/lib/actions/network-members";
 import { ProfileContent } from "@/components/dashboard/profile/profile-content";
 import { redirect } from "next/navigation";
-import { Suspense } from "react";
 
 export const dynamic = 'force-dynamic';
 
@@ -26,11 +25,11 @@ export default async function ProfilePage() {
     score: typeof rawUser.score === 'number' ? rawUser.score : 5.0
   };
 
+  const safeUser = JSON.parse(JSON.stringify(user));
+
   return (
     <div className="pb-24">
-      <Suspense fallback={<div className="p-8 text-center text-[#2E130C]/60 font-medium">Chargement du profil...</div>}>
-        <ProfileContent user={user} />
-      </Suspense>
+      <ProfileContent user={safeUser} />
     </div>
   );
 }
