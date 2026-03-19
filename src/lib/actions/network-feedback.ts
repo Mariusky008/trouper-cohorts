@@ -172,6 +172,11 @@ export async function completeMatchMission({
     return saveMatchFeedback(receiverId, legacy.rating, legacy.tag, matchId);
   }
 
+  const fallbackToLegacy = async (targetReceiverId: string) => {
+    const legacy = mapLegacyFeedback(callHappened, missionResult);
+    return saveMatchFeedback(targetReceiverId, legacy.rating, legacy.tag, matchId);
+  };
+
   const adminClient = createAdminClient();
 
   const { data: match, error: matchError } = await adminClient
@@ -209,7 +214,7 @@ export async function completeMatchMission({
   );
 
   if (reviewError) {
-    return { error: "Impossible de sauvegarder la validation de mission" };
+    return fallbackToLegacy(finalReceiverId);
   }
 
   const selfOutcome = mapOutcomeFromMission(callHappened, missionResult);
@@ -236,7 +241,7 @@ export async function completeMatchMission({
   );
 
   if (selfOutcomeError) {
-    return { error: "Impossible de finaliser votre mission" };
+    return fallbackToLegacy(finalReceiverId);
   }
 
   if (callHappened && (missionResult === "completed" || missionResult === "super_completed")) {
@@ -249,13 +254,16 @@ export async function completeMatchMission({
       .maybeSingle();
 
     if (!existingPeerOutcome?.id) {
-      await adminClient.from("network_match_outcomes").insert({
+      const { error: peerAutoError } = await adminClient.from("network_match_outcomes").insert({
         match_id: matchId,
         user_id: finalReceiverId,
         final_status: peerOutcome,
         validation_source: "peer_auto",
         validated_at: new Date().toISOString(),
       });
+      if (peerAutoError) {
+        return fallbackToLegacy(finalReceiverId);
+      }
     }
   }
 
@@ -269,24 +277,33 @@ export async function completeMatchMission({
     .maybeSingle();
 
   if (existingLegacy?.id) {
-    await adminClient
+    const { error: legacyUpdateError } = await adminClient
       .from("match_feedback")
       .update({ rating: legacy.rating, tag: legacy.tag })
       .eq("id", existingLegacy.id);
+    if (legacyUpdateError) {
+      return fallbackToLegacy(finalReceiverId);
+    }
   } else {
-    await adminClient.from("match_feedback").insert({
+    const { error: legacyInsertError } = await adminClient.from("match_feedback").insert({
       match_id: matchId,
       giver_id: user.id,
       receiver_id: finalReceiverId,
       rating: legacy.rating,
       tag: legacy.tag,
     });
+    if (legacyInsertError) {
+      return fallbackToLegacy(finalReceiverId);
+    }
   }
 
-  await adminClient
+  const { error: statusError } = await adminClient
     .from("network_matches")
     .update({ status: callHappened ? "met" : "missed" })
     .eq("id", matchId);
+  if (statusError) {
+    return fallbackToLegacy(finalReceiverId);
+  }
 
   revalidateMissionPaths(user.id, finalReceiverId);
   return { success: true };
@@ -308,15 +325,21 @@ export async function autoValidateMissionOutcomesForDate(targetDate: string) {
   let confirmedCount = 0;
 
   for (const match of matches || []) {
-    const { data: reviews } = await adminClient
+    const { data: reviews, error: reviewsError } = await adminClient
       .from("network_match_reviews")
       .select("reviewer_id, reviewed_id, call_happened, mission_result")
       .eq("match_id", match.id);
+    if (reviewsError) {
+      return { success: true, insertedCount, confirmedCount, skipped: true };
+    }
 
-    const { data: outcomes } = await adminClient
+    const { data: outcomes, error: outcomesError } = await adminClient
       .from("network_match_outcomes")
       .select("id, user_id, validation_source, final_status")
       .eq("match_id", match.id);
+    if (outcomesError) {
+      return { success: true, insertedCount, confirmedCount, skipped: true };
+    }
 
     const outcomeByUser = new Map((outcomes || []).map((item: any) => [item.user_id, item]));
     const reviewByPair = new Map(
