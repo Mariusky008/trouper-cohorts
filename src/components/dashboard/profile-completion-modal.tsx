@@ -38,9 +38,7 @@ export function ProfileCompletionModal() {
     if (pathname === "/mon-reseau-local/dashboard/profile") {
         setIsOpen(false);
         // Trigger edit mode via event or query param
-        const url = new URL(window.location.href);
-        url.searchParams.set("edit", "true");
-        window.history.pushState({}, "", url);
+        router.push("/mon-reseau-local/dashboard/profile?edit=true", { scroll: false });
         // Dispatch custom event for immediate reaction without reload
         window.dispatchEvent(new Event("trigger-profile-edit"));
     } else {

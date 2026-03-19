@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { 
     Briefcase, ShieldCheck, Award, Pencil, Save, X, Phone, 
     Linkedin, Instagram, Facebook, Globe, Upload, Loader2,
@@ -39,6 +39,7 @@ const GOAL_OPTIONS = [
 export function ProfileContent({ user, isReadOnly = false }: { user: any; isReadOnly?: boolean }) {
   const { toast } = useToast();
   const router = useRouter();
+  const searchParams = useSearchParams();
   // const supabase = createClient();
   const [isEditing, setIsEditing] = useState(false);
   const [isOfferModalOpen, setIsOfferModalOpen] = useState(false);
@@ -107,15 +108,19 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
   // Auto-open edit modal if query param "edit=true" is present
   useEffect(() => {
       const checkEditParam = () => {
-          if (typeof window !== "undefined") {
-              const params = new URLSearchParams(window.location.search);
-              if (params.get("edit") === "true") {
-                  setIsEditing(true);
-                  const url = new URL(window.location.href);
-                  url.searchParams.delete("edit");
-                  url.searchParams.delete("tab");
-                  window.history.replaceState({}, "", url);
-              }
+          if (searchParams.get("edit") === "true") {
+              setIsEditing(true);
+              
+              // Clean up the URL without causing a full navigation
+              const newSearchParams = new URLSearchParams(searchParams.toString());
+              newSearchParams.delete("edit");
+              newSearchParams.delete("tab");
+              
+              const newUrl = newSearchParams.toString() 
+                ? `${window.location.pathname}?${newSearchParams.toString()}` 
+                : window.location.pathname;
+                
+              router.replace(newUrl, { scroll: false });
           }
       };
 
@@ -126,7 +131,7 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
           window.addEventListener("trigger-profile-edit", handleCustomEvent);
           return () => window.removeEventListener("trigger-profile-edit", handleCustomEvent);
       }
-  }, []);
+  }, [searchParams, router]);
 
   const validateStep = (step: number) => {
     const errors: Record<string, string> = {};
