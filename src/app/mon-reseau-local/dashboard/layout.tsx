@@ -25,7 +25,6 @@ import { useRouter } from "next/navigation";
 import { getPendingOpportunitiesCount } from "@/lib/actions/network-opportunities";
 import { GlobalChatWidget } from "@/components/dashboard/chat/global-chat-widget";
 import { PWAInstallPrompt } from "@/components/pwa-install-prompt";
-import { useNotifications } from "@/hooks/use-notifications"; // Import notifications hook
 import { Suspense } from "react";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -33,12 +32,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const supabase = createClient();
   const pathname = usePathname();
   
-  // Notifications
-  const { badges, markAsSeen } = useNotifications();
-  // const badges = { market: 0, offers: 0 };
-  // const markAsSeen = (t: string) => {};
-  // const badges = { market: 0, offers: 0 };
-  // const markAsSeen = (t: string) => {};
+  const badges = { market: 0, offers: 0 };
+  const markAsSeen = (_t: string) => {};
 
   // Mark as seen when visiting pages
   useEffect(() => {
@@ -94,15 +89,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           !!profile.avatar_url && // Strict check for avatar now
           (!!profile.linkedin_url || !!profile.instagram_handle || !!profile.facebook_handle || !!profile.website_url);
 
-        // Only redirect if incomplete and trying to access other pages
-        if (!isComplete && pathname !== "/mon-reseau-local/dashboard/profile" && pathname !== "/mon-reseau-local/dashboard/settings") {
-            if (pathname !== "/mon-reseau-local/dashboard/profile") {
-                router.replace("/mon-reseau-local/dashboard/profile");
-            }
-            setIsAuthorized(false);
-        } else {
-            setIsAuthorized(true);
-        }
+        setIsAuthorized(true);
       }
 
       // 3. Pending Opportunities (Parallel fetch could be better but this is fine)
