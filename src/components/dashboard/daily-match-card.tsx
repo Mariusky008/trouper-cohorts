@@ -1273,7 +1273,10 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
         <div className="grid grid-cols-2 gap-3 w-full mb-auto">
             {/* My Goal (Ce que je recherche) */}
             <div 
-                onClick={() => setIsMyProfileOpen(true)}
+                onClick={() => {
+                    setIsMyProfileOpen(true);
+                    trackEvent('click_my_need_open', { partnerId: match.partnerId });
+                }}
                 className="bg-indigo-50 border-indigo-100 rounded-xl p-3 text-left border relative cursor-pointer hover:bg-indigo-100 transition-colors group/mygoal"
             >
                 <div className="absolute top-2 right-2 opacity-0 group-hover/mygoal:opacity-100 transition-opacity">
@@ -1291,7 +1294,10 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
 
             {/* His Goal (Ce qu'il recherche) */}
             <div 
-                onClick={() => setIsPartnerProfileOpen(true)}
+                onClick={() => {
+                    setIsPartnerProfileOpen(true);
+                    trackEvent('click_partner_need_open', { partnerId: match.partnerId });
+                }}
                 className="bg-purple-50 border-purple-100 rounded-xl p-3 text-left border relative cursor-pointer hover:bg-purple-100 transition-colors group/hisgoal"
             >
                 <div className="absolute top-2 right-2 opacity-0 group-hover/hisgoal:opacity-100 transition-opacity">
@@ -1427,7 +1433,10 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
                         }
                     }}>
                         <DialogTrigger asChild>
-                            <Button className="w-full h-20 rounded-2xl bg-[#B20B13] text-white hover:bg-[#8B090F] hover:scale-[1.02] transition-all shadow-xl relative z-10 flex flex-col items-center justify-center gap-1">
+                            <Button
+                                onClick={() => trackEvent('click_finish_mission_open', { partnerId: match.partnerId })}
+                                className="w-full h-20 rounded-2xl bg-[#B20B13] text-white hover:bg-[#8B090F] hover:scale-[1.02] transition-all shadow-xl relative z-10 flex flex-col items-center justify-center gap-1"
+                            >
                                 <CheckCircle2 className="h-6 w-6" />
                                 <span className="text-xs font-black uppercase tracking-wider">Terminer la mission</span>
                             </Button>
@@ -1461,6 +1470,7 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
                                         <div className="grid grid-cols-2 gap-4">
                                             <Button 
                                                 onClick={() => {
+                                                    trackEvent('click_call_happened_yes', { partnerId: match.partnerId });
                                                     setCallHappened(true);
                                                     setPopupView('step2_rating');
                                                 }} 
@@ -1471,7 +1481,10 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
                                                 <span className="text-lg">OUI ✅</span>
                                             </Button>
                                             <Button 
-                                                onClick={() => setCallHappened(false)} 
+                                                onClick={() => {
+                                                    trackEvent('click_call_happened_no', { partnerId: match.partnerId });
+                                                    setCallHappened(false);
+                                                }} 
                                                 variant="outline"
                                                 className={cn(
                                                     "h-24 flex flex-col gap-2 font-bold border-red-500/30 transition-all",

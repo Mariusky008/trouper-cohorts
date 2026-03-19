@@ -226,7 +226,7 @@ import { ManualMatchLauncher } from "@/components/admin/manual-match-launcher";
 import { NetworkMembersList } from "@/components/admin/network-members-list";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
-import { MousePointerClick, PhoneCall, MessageSquare, Gift, Star, User, Copy } from "lucide-react";
+import { MousePointerClick, PhoneCall, MessageSquare, User, Target, Search, CheckCircle2, Phone } from "lucide-react";
 
 import { DailyValidationsList } from "@/components/admin/daily-validations-list";
 
@@ -253,14 +253,16 @@ export default async function AdminNetworkPage() {
     .gte('created_at', todayIso)
     .order('created_at', { ascending: false });
 
-  const ANALYTICS_LABELS: Record<string, { label: string, icon: any, color: string }> = {
-    'click_why_open': { label: 'Pourquoi ce match', icon: MessageSquare, color: 'text-yellow-500' },
-    'click_call_open': { label: 'Bouton Appel (Ouvrir)', icon: PhoneCall, color: 'text-emerald-500' },
-    'click_call_action': { label: 'Clic Numéro (Appeler)', icon: PhoneCall, color: 'text-emerald-700' },
-    'click_copy_phone': { label: 'Copie Numéro', icon: Copy, color: 'text-slate-500' },
-    'click_profile': { label: 'Voir Profil', icon: User, color: 'text-blue-500' },
-    'click_gift_open': { label: 'Cadeau', icon: Gift, color: 'text-purple-500' },
-    'click_rate_open': { label: 'Noter', icon: Star, color: 'text-orange-500' },
+  const ANALYTICS_LABELS: Record<string, { label: string, icon: any, color: string, aliases?: string[] }> = {
+    'click_whatsapp_open': { label: 'Bouton WhatsApp', icon: MessageSquare, color: 'text-green-500', aliases: ['click_call_open'] },
+    'click_whatsapp_action': { label: 'Ouvrir WhatsApp', icon: PhoneCall, color: 'text-emerald-600', aliases: ['click_call_action'] },
+    'click_profile': { label: 'Bouton Profil', icon: User, color: 'text-blue-500' },
+    'click_partner_need_open': { label: 'Ce qu’il recherche', icon: Search, color: 'text-purple-500' },
+    'click_my_need_open': { label: 'Ce que je recherche', icon: Target, color: 'text-indigo-500' },
+    'click_finish_mission_open': { label: 'Fin de mission', icon: CheckCircle2, color: 'text-red-500', aliases: ['click_rate_open'] },
+    'click_call_happened_yes': { label: 'Appel eu lieu: OUI', icon: PhoneCall, color: 'text-emerald-700' },
+    'click_call_happened_no': { label: 'Appel eu lieu: NON', icon: Phone, color: 'text-red-500' },
+    'click_suggested_mission_open': { label: 'Mission suggérée', icon: MessageSquare, color: 'text-amber-600' },
   };
 
   return (
@@ -428,7 +430,9 @@ export default async function AdminNetworkPage() {
             <CardContent>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                 {Object.entries(ANALYTICS_LABELS).map(([key, config]) => {
-                  const count = (stats.analyticsToday as any)[key] || 0;
+                  const aliases = config.aliases || [];
+                  const aliasCount = aliases.reduce((sum, alias) => sum + (((stats.analyticsToday as any)[alias]) || 0), 0);
+                  const count = ((stats.analyticsToday as any)[key] || 0) + aliasCount;
                   const Icon = config.icon;
                   return (
                     <div key={key} className="flex flex-col items-center justify-center p-3 bg-slate-50 rounded-xl border border-slate-100 hover:bg-slate-100 transition-colors">
