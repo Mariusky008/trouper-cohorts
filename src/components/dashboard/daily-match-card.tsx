@@ -15,7 +15,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { createOpportunity } from "@/lib/actions/opportunity-creation";
 import { notifyFounderCall } from "@/lib/actions/founder-call";
-import { saveMatchFeedback } from "@/lib/actions/network-feedback";
+import { completeMatchMission } from "@/lib/actions/network-feedback";
 import { incrementUserPoints } from "@/lib/actions/gamification";
 import { trackEvent } from "@/lib/actions/analytics";
 import { updateMatchMission } from "@/lib/actions/match-mission";
@@ -480,13 +480,6 @@ const getPopeyShortLink = (profile: any): string => {
     return `${baseUrl}/r/${profileId}`;
 };
 
-const REPUTATION_BADGES = [
-    { id: 'connector', label: 'Le Connecteur', icon: '🤝', desc: "M'a ouvert son réseau" },
-    { id: 'expert', label: 'L\'Expert', icon: '🧠', desc: "M'a appris quelque chose" },
-    { id: 'energizer', label: 'L\'Énergiseur', icon: '⚡', desc: "Super motivant" },
-    { id: 'listener', label: 'L\'Écouteur', icon: '👂', desc: "Très bonne écoute" }
-];
-
 // --- 2. MYSTERY CARD COMPONENT ---
 function MysteryCard({ onReveal, match, locked = false, children }: { onReveal: () => void, match: any, locked?: boolean, children?: React.ReactNode }) {
   // Generate stable "fake" stats based on partner ID to keep it consistent for the same user
@@ -787,11 +780,10 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
       };
   }, [userId, matches, missionProgressKey]);
 
-  const [popupView, setPopupView] = useState<'step1_status' | 'step2_rating' | 'step3_gift'>('step1_status');
+  const [popupView, setPopupView] = useState<'step1_status' | 'step2_mission' | 'step3_gift'>('step1_status');
   const [callHappened, setCallHappened] = useState<boolean | null>(null);
   const [callMade, setCallMade] = useState(false);
-  const [rating, setRating] = useState<'fire' | 'good' | 'meh' | null>(null);
-  const [selectedBadge, setSelectedBadge] = useState<string | null>(null);
+  const [partnerMissionResult, setPartnerMissionResult] = useState<'completed' | 'super_completed' | 'not_completed' | null>(null);
 
   // Dialog States
   const [isWhyVisible, setIsWhyVisible] = useState(false);
@@ -896,50 +888,37 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
     const currentMatch = matches[0];
     if (!currentMatch) return;
 
-    // 1. Save Rating if exists
-    if (rating && currentMatch.partnerId) {
-        let score = 3;
-        let tag = "bof";
-        if (rating === 'fire') { score = 5; tag = "top"; }
-        if (rating === 'good') { score = 4; tag = "bien"; }
-        
-        // Append badge to tag if selected (e.g. "top:connector")
-        if (selectedBadge) {
-            tag = `${tag}:${selectedBadge}`;
-        }
-        
-        const result = await saveMatchFeedback(currentMatch.partnerId, score, tag, currentMatch.id);
-        if (result?.error) {
-            toast.error("Erreur validation: " + result.error);
-            return; // Stop here if save failed
-        }
+    if (callHappened === null) {
+        toast.error("Indique d'abord si l'appel a eu lieu.");
+        return;
     }
 
-    // 2. Save Opportunity if exists
-    if (oppType && currentMatch.partnerId) {
-        await handleCreateOpportunity(currentMatch.partnerId, currentMatch.name);
-        // Ensure we mark as met even if no rating was given
-        if (!rating) {
-             const result = await saveMatchFeedback(currentMatch.partnerId, 0, "gift_only", currentMatch.id);
-             if (result?.error) {
-                toast.error("Erreur validation: " + result.error);
-                return;
-             }
-        }
+    if (callHappened && !partnerMissionResult) {
+        toast.error("Précise le niveau de réalisation de mission.");
+        return;
     }
-    
-    // 3. Fallback: If neither rating nor opportunity, but call happened, we must close the match
-    if (!rating && !oppType && currentMatch.partnerId) {
-         // Default close with no specific rating (or neutral)
-         const result = await saveMatchFeedback(currentMatch.partnerId, 3, "completed", currentMatch.id);
-         if (result?.error) {
-            toast.error("Erreur validation: " + result.error);
+
+    if (oppType) {
+        const opportunityResult = await handleCreateOpportunity(currentMatch.partnerId, currentMatch.name);
+        if (!opportunityResult) {
             return;
-         }
+        }
     }
 
-    // 3. Finalize
-    // FORCE UI UPDATE IMMEDIATELY
+    const result = await completeMatchMission({
+        matchId: currentMatch.id,
+        receiverId: currentMatch.partnerId,
+        callHappened,
+        missionResult: partnerMissionResult || "not_completed",
+        opportunityType: oppType,
+        opportunityDetails: oppDetails.trim() || undefined,
+    });
+
+    if (result?.error) {
+        toast.error("Erreur validation: " + result.error);
+        return;
+    }
+
     setStep('validated');
     if (missionProgressKey) {
         localStorage.removeItem(missionProgressKey);
@@ -950,7 +929,7 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
     // Optimistic Update: Update local state to prevent flicker on refresh
     // We modify the current matches array in memory if possible, or rely on revalidation
     if (matches && matches.length > 0) {
-        matches[0].status = 'met';
+        matches[0].status = callHappened ? 'met' : 'missed';
         matches[0].hasFeedback = true;
     }
     
@@ -964,7 +943,7 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
   const handleCreateOpportunity = async (partnerId: string, partnerName: string) => {
       if (!oppType || !oppDetails.trim()) {
           toast.error("Veuillez compléter tous les champs");
-          return;
+          return false;
       }
       setIsSubmittingOpp(true);
       try {
@@ -980,11 +959,14 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
               toast.success(`Opportunité envoyée à ${partnerName} ! 🎁`);
               setOppDetails("");
               confetti({ particleCount: 150, spread: 60, origin: { y: 0.7 } });
+              return true;
           } else {
               toast.error(result.error || "Erreur lors de l'envoi");
+              return false;
           }
       } catch (e) {
           toast.error("Erreur inattendue");
+          return false;
       } finally {
           setIsSubmittingOpp(false);
       }
@@ -1432,9 +1414,9 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
                 <Dialog open={isValidationOpen} onOpenChange={(open) => {
                         setIsValidationOpen(open);
                         if (!open) {
-                            setPopupView('step1_status'); // Reset view on close
+                            setPopupView('step1_status');
                             setCallHappened(null);
-                            setRating(null);
+                            setPartnerMissionResult(null);
                             setOppType(undefined);
                             setOppDetails("");
                         }
@@ -1456,7 +1438,7 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
                                     className="h-full bg-emerald-500"
                                     initial={{ width: "0%" }}
                                     animate={{ 
-                                        width: popupView === 'step1_status' ? "33%" : popupView === 'step2_rating' ? "66%" : "100%" 
+                                        width: popupView === 'step1_status' ? "33%" : popupView === 'step2_mission' ? "66%" : "100%" 
                                     }}
                                     transition={{ duration: 0.5 }}
                                 />
@@ -1465,7 +1447,7 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
                             {/* HEADER */}
                             <DialogHeader className="mb-6 mt-4">
                                 <DialogTitle className="text-center text-3xl font-black text-[#2E130C]">
-                                    {popupView === 'step1_status' ? "Bilan de la mission" : popupView === 'step2_rating' ? "Notez l'échange" : "Offrir une opportunité"}
+                                    {popupView === 'step1_status' ? "Bilan de la mission" : popupView === 'step2_mission' ? "Évaluation de mission" : "Offrir une opportunité"}
                                 </DialogTitle>
                             </DialogHeader>
                             
@@ -1479,7 +1461,7 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
                                                 onClick={() => {
                                                     trackEvent('click_call_happened_yes', { partnerId: match.partnerId });
                                                     setCallHappened(true);
-                                                    setPopupView('step2_rating');
+                                                    setPopupView('step2_mission');
                                                 }} 
                                                 variant="outline"
                                                 className="h-24 flex flex-col gap-2 font-bold border-emerald-500/30 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 hover:scale-105 transition-all"
@@ -1513,85 +1495,61 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
                                 </div>
                             )}
 
-                            {/* VIEW 2: RATE */}
-                            {popupView === 'step2_rating' && (
+                            {popupView === 'step2_mission' && (
                                 <div className="space-y-6 p-4">
-                                    <div className="flex justify-between gap-3">
-                                        <button 
-                                            onClick={() => setRating('fire')}
+                                    <div className="grid grid-cols-1 gap-3">
+                                        <Button
+                                            type="button"
+                                            onClick={() => setPartnerMissionResult('super_completed')}
+                                            variant="outline"
                                             className={cn(
-                                                "flex-1 aspect-square rounded-2xl border flex flex-col items-center justify-center gap-3 transition-all group relative overflow-hidden",
-                                                rating === 'fire' 
-                                                    ? "bg-orange-50 border-orange-500 ring-2 ring-orange-200 scale-105" 
-                                                    : "bg-white border-[#2E130C]/10 hover:bg-orange-50 hover:scale-105"
+                                                "h-20 justify-start text-left px-5 border-emerald-300 bg-emerald-50 hover:bg-emerald-100",
+                                                partnerMissionResult === 'super_completed' && "ring-2 ring-emerald-300 border-emerald-500"
                                             )}
                                         >
-                                            <span className="text-4xl group-hover:scale-125 transition-transform">🔥</span>
-                                            <span className="text-xs uppercase font-black text-orange-500">Top</span>
-                                        </button>
-                                        <button 
-                                            onClick={() => setRating('good')}
-                                            className={cn(
-                                                "flex-1 aspect-square rounded-2xl border flex flex-col items-center justify-center gap-3 transition-all group relative overflow-hidden",
-                                                rating === 'good' 
-                                                    ? "bg-blue-50 border-blue-500 ring-2 ring-blue-200 scale-105" 
-                                                    : "bg-white border-[#2E130C]/10 hover:bg-blue-50 hover:scale-105"
-                                            )}
-                                        >
-                                            <span className="text-4xl group-hover:scale-125 transition-transform">👍</span>
-                                            <span className="text-xs uppercase font-black text-blue-500">Bien</span>
-                                        </button>
-                                        <button 
-                                            onClick={() => { setRating('meh'); setSelectedBadge(null); setPopupView('step3_gift'); }}
-                                            className="flex-1 aspect-square rounded-2xl border flex flex-col items-center justify-center gap-3 transition-all bg-white border-[#2E130C]/10 hover:bg-slate-50 hover:scale-105 group"
-                                        >
-                                            <span className="text-4xl group-hover:scale-125 transition-transform">😐</span>
-                                            <span className="text-xs uppercase font-black text-slate-400">Bof</span>
-                                        </button>
-                                    </div>
-
-                                    {/* BADGE SELECTION (Only if Good or Fire) */}
-                                    {(rating === 'fire' || rating === 'good') && (
-                                        <motion.div 
-                                            initial={{ opacity: 0, height: 0 }}
-                                            animate={{ opacity: 1, height: 'auto' }}
-                                            className="space-y-3 pt-2 border-t border-[#2E130C]/5"
-                                        >
-                                            <Label className="text-xs uppercase font-bold text-[#2E130C]/60 text-center block">
-                                                Pourquoi ? (Optionnel)
-                                            </Label>
-                                            <div className="grid grid-cols-2 gap-2">
-                                                {REPUTATION_BADGES.map((badge) => (
-                                                    <button
-                                                        key={badge.id}
-                                                        onClick={() => setSelectedBadge(badge.id)}
-                                                        className={cn(
-                                                            "flex items-center gap-2 p-2 rounded-lg border text-left transition-all",
-                                                            selectedBadge === badge.id 
-                                                                ? "bg-[#2E130C] border-[#2E130C] text-white" 
-                                                                : "bg-white border-[#2E130C]/10 text-[#2E130C]/80 hover:bg-slate-50"
-                                                        )}
-                                                    >
-                                                        <span className="text-lg">{badge.icon}</span>
-                                                        <div className="flex flex-col">
-                                                            <span className="text-[10px] font-bold uppercase">{badge.label}</span>
-                                                            <span className="text-[9px] opacity-70 leading-none">{badge.desc}</span>
-                                                        </div>
-                                                    </button>
-                                                ))}
+                                            <div className="flex flex-col items-start gap-1">
+                                                <span className="font-black text-emerald-700">Il a super bien rempli sa mission</span>
+                                                <span className="text-xs text-emerald-700/80">Résultat excellent et action concrète</span>
                                             </div>
-                                            <Button 
-                                                onClick={() => setPopupView('step3_gift')} 
-                                                className="w-full bg-[#2E130C] text-white hover:bg-[#2E130C]/90 font-bold mt-2"
-                                            >
-                                                Continuer <ChevronRight className="w-4 h-4 ml-1" />
-                                            </Button>
-                                        </motion.div>
-                                    )}
-
-                                    {!rating && (
-                                        <Button variant="ghost" onClick={() => setPopupView('step1_status')} className="w-full text-slate-500">Retour</Button>
-                                    )}
+                                        </Button>
+                                        <Button
+                                            type="button"
+                                            onClick={() => setPartnerMissionResult('completed')}
+                                            variant="outline"
+                                            className={cn(
+                                                "h-20 justify-start text-left px-5 border-blue-300 bg-blue-50 hover:bg-blue-100",
+                                                partnerMissionResult === 'completed' && "ring-2 ring-blue-300 border-blue-500"
+                                            )}
+                                        >
+                                            <div className="flex flex-col items-start gap-1">
+                                                <span className="font-black text-blue-700">Il a rempli sa mission</span>
+                                                <span className="text-xs text-blue-700/80">Mission faite correctement</span>
+                                            </div>
+                                        </Button>
+                                        <Button
+                                            type="button"
+                                            onClick={() => setPartnerMissionResult('not_completed')}
+                                            variant="outline"
+                                            className={cn(
+                                                "h-20 justify-start text-left px-5 border-rose-300 bg-rose-50 hover:bg-rose-100",
+                                                partnerMissionResult === 'not_completed' && "ring-2 ring-rose-300 border-rose-500"
+                                            )}
+                                        >
+                                            <div className="flex flex-col items-start gap-1">
+                                                <span className="font-black text-rose-700">Il n&apos;a pas rempli sa mission</span>
+                                                <span className="text-xs text-rose-700/80">Mission non réalisée</span>
+                                            </div>
+                                        </Button>
+                                    </div>
+                                    <Button
+                                        type="button"
+                                        disabled={!partnerMissionResult}
+                                        onClick={() => setPopupView('step3_gift')}
+                                        className="w-full bg-[#2E130C] text-white hover:bg-[#2E130C]/90 font-bold mt-2 disabled:opacity-50"
+                                    >
+                                        Continuer <ChevronRight className="w-4 h-4 ml-1" />
+                                    </Button>
+                                    <Button variant="ghost" onClick={() => setPopupView('step1_status')} className="w-full text-slate-500">Retour</Button>
                                 </div>
                             )}
 
@@ -1655,7 +1613,7 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
                                         </div>
                                     )}
                                     {!oppType && (
-                                            <Button variant="ghost" onClick={() => setPopupView('step2_rating')} className="w-full text-slate-500">Retour</Button>
+                                            <Button variant="ghost" onClick={() => setPopupView('step2_mission')} className="w-full text-slate-500">Retour</Button>
                                     )}
                                 </div>
                             )}

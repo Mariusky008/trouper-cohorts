@@ -26,7 +26,7 @@ export default async function PublicProfilePage({ params }: PageProps) {
     phone: rawUser.phone || "",
     bio: rawUser.bio || "",
     avatar_url: rawUser.avatar_url || "",
-    stats: rawUser.stats || { opportunities: 0, reciprocity: "100%", seniority: "Récemment" },
+    stats: rawUser.stats || { opportunities: 0, reciprocity: "100%", seniority: "Récemment", total_calls: 0, missions_realisees: 0, missions_super_realisees: 0, missions_refusees: 0, appels_absence: 0 },
     score: typeof rawUser.score === 'number' ? rawUser.score : 5.0
   };
 

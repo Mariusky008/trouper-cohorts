@@ -39,6 +39,12 @@ export default function ProfilePage() {
           .eq("user_id", user.id)
           .single();
 
+        const { data: missionStats } = await supabase
+          .from("user_mission_stats")
+          .select("total_calls, missions_realisees, missions_super_realisees, missions_refusees, appels_absence")
+          .eq("user_id", user.id)
+          .maybeSingle();
+
         const given = trustScore?.opportunities_given || 0;
         const received = trustScore?.opportunities_received || 0;
         const reciprocity = received > 0 ? Math.min(100, Math.round((given / received) * 100)) : 100;
@@ -57,6 +63,11 @@ export default function ProfilePage() {
             opportunities: given + received,
             reciprocity: `${reciprocity}%`,
             seniority: "Récemment",
+            total_calls: missionStats?.total_calls || 0,
+            missions_realisees: missionStats?.missions_realisees || 0,
+            missions_super_realisees: missionStats?.missions_super_realisees || 0,
+            missions_refusees: missionStats?.missions_refusees || 0,
+            appels_absence: missionStats?.appels_absence || 0,
           },
         };
 

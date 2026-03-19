@@ -569,16 +569,24 @@ function ProfileContentInner({ user, isReadOnly = false }: { user: any; isReadOn
               
               <div className="space-y-4 pt-4 border-t border-stone-200">
                  <div className="flex items-center justify-between text-sm">
-                   <span className="text-stone-500 font-bold">Opportunités générées</span>
-                   <span className="font-bold text-[#2E130C] bg-stone-100 px-3 py-1 rounded-lg border border-stone-200">{user.stats?.opportunities || 0}</span>
+                   <span className="text-stone-500 font-bold">Appels</span>
+                   <span className="font-bold text-[#2E130C] bg-stone-100 px-3 py-1 rounded-lg border border-stone-200">{user.stats?.total_calls || 0}</span>
                  </div>
                  <div className="flex items-center justify-between text-sm">
-                   <span className="text-stone-500 font-bold">Taux de réciprocité</span>
-                   <span className="font-bold text-emerald-600 bg-emerald-50 px-3 py-1 rounded-lg border border-emerald-100">{user.stats?.reciprocity || "100%"}</span>
+                   <span className="text-stone-500 font-bold">Missions réalisées</span>
+                   <span className="font-bold text-emerald-700 bg-emerald-50 px-3 py-1 rounded-lg border border-emerald-100">{user.stats?.missions_realisees || 0}</span>
                  </div>
                  <div className="flex items-center justify-between text-sm">
-                   <span className="text-stone-500 font-bold">Membre depuis</span>
-                   <span className="font-bold text-[#2E130C]">{user.stats?.seniority || "Récemment"}</span>
+                   <span className="text-stone-500 font-bold">Missions refusées</span>
+                   <span className="font-bold text-rose-700 bg-rose-50 px-3 py-1 rounded-lg border border-rose-100">{user.stats?.missions_refusees || 0}</span>
+                 </div>
+                 <div className="flex items-center justify-between text-sm">
+                   <span className="text-stone-500 font-bold">Appels en absence</span>
+                   <span className="font-bold text-amber-700 bg-amber-50 px-3 py-1 rounded-lg border border-amber-100">{user.stats?.appels_absence || 0}</span>
+                 </div>
+                 <div className="flex items-center justify-between text-sm">
+                   <span className="text-stone-500 font-bold">Missions super réalisées</span>
+                   <span className="font-bold text-indigo-700 bg-indigo-50 px-3 py-1 rounded-lg border border-indigo-100">{user.stats?.missions_super_realisees || 0}</span>
                  </div>
               </div>
 

@@ -193,6 +193,12 @@ export async function getUserProfile(userId?: string) {
     .eq("user_id", targetId)
     .single();
 
+  const { data: missionStats } = await supabase
+    .from("user_mission_stats")
+    .select("total_calls, missions_realisees, missions_super_realisees, missions_refusees, appels_absence")
+    .eq("user_id", targetId)
+    .maybeSingle();
+
   const given = trustScore?.opportunities_given || 0;
   const received = trustScore?.opportunities_received || 0;
   
@@ -211,7 +217,12 @@ export async function getUserProfile(userId?: string) {
     stats: {
       opportunities: given + received,
       reciprocity: `${reciprocity}%`,
-      seniority: format(new Date(profile.created_at || new Date()), 'MMMM yyyy', { locale: fr })
+      seniority: format(new Date(profile.created_at || new Date()), 'MMMM yyyy', { locale: fr }),
+      total_calls: missionStats?.total_calls || 0,
+      missions_realisees: missionStats?.missions_realisees || 0,
+      missions_super_realisees: missionStats?.missions_super_realisees || 0,
+      missions_refusees: missionStats?.missions_refusees || 0,
+      appels_absence: missionStats?.appels_absence || 0,
     }
   };
 }
