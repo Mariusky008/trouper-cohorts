@@ -2036,71 +2036,107 @@ export function GoldMatchCardPreview() {
   const resetCard = () => setState('proposal');
 
   return (
-    <div className="relative w-full max-w-sm mx-auto min-h-[600px] h-auto rounded-[2.5rem] overflow-hidden shadow-2xl bg-[#0D0A04] border border-yellow-300/25 flex flex-col items-center justify-between text-center p-6 pb-8 group">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(251,191,36,0.22),_transparent_45%)] z-0"></div>
+    <div className="relative w-full max-w-sm mx-auto min-h-[600px] h-auto rounded-[2.5rem] overflow-hidden shadow-2xl bg-[#0A0712] border border-fuchsia-300/20 flex flex-col items-center justify-between text-center p-6 pb-8 group">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(217,70,239,0.25),_transparent_48%)] z-0"></div>
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom,_rgba(251,191,36,0.22),_transparent_45%)] z-0"></div>
       <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-[0.03] z-0"></div>
 
       <div className="relative z-10 w-full flex flex-col items-center h-full pt-4">
-        <Badge className="mb-4 bg-yellow-400/15 text-yellow-300 border-yellow-300/30 px-4 py-1.5 font-black uppercase tracking-widest">
+        <motion.div
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-4 bg-gradient-to-r from-fuchsia-500/20 to-amber-300/20 text-fuchsia-100 border border-fuchsia-300/30 px-4 py-1.5 rounded-full font-black uppercase tracking-[0.18em] text-[10px] flex items-center gap-2"
+        >
+          <Sparkles className="w-3.5 h-3.5 text-amber-300" />
           Gold Match
-        </Badge>
+        </motion.div>
 
-        <div className="w-24 h-24 rounded-full p-[3px] bg-gradient-to-r from-yellow-300 via-amber-400 to-yellow-200 shadow-xl">
-          <div className="w-full h-full rounded-full bg-[#1A1206] border-4 border-[#3B2A0E] flex items-center justify-center">
-            <Sparkles className="w-10 h-10 text-yellow-300" />
+        <motion.div
+          animate={{ rotate: [0, 6, -6, 0] }}
+          transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
+          className="w-24 h-24 rounded-full p-[3px] bg-gradient-to-r from-fuchsia-400 via-amber-300 to-fuchsia-300 shadow-xl"
+        >
+          <div className="w-full h-full rounded-full bg-[#140B1F] border-4 border-fuchsia-200/20 flex items-center justify-center">
+            <Flame className="w-10 h-10 text-amber-300" />
+          </div>
+        </motion.div>
+
+        <div className="mt-4 text-center">
+          <h2 className="text-2xl font-black text-white leading-tight">Offre Duo Acquisition</h2>
+          <p className="text-xs text-fuchsia-100/80 mt-1 uppercase tracking-wider font-bold">Digital Marketer × Copywriter</p>
+        </div>
+
+        <div className="w-full mt-4 rounded-2xl border border-fuchsia-300/20 bg-[#1A0D29]/90 p-3">
+          <div className="grid grid-cols-3 gap-2">
+            <Button variant="outline" onClick={() => setIsWhyOpen(true)} className="h-10 bg-[#211136] border-fuchsia-300/30 text-white hover:bg-[#2D1847] text-[10px] font-black uppercase">
+              Pourquoi
+            </Button>
+            <Button variant="outline" onClick={() => setIsOfferOpen(true)} className="h-10 bg-[#211136] border-fuchsia-300/30 text-white hover:bg-[#2D1847] text-[10px] font-black uppercase">
+              Offre
+            </Button>
+            <Button variant="outline" onClick={() => setIsActionOpen(true)} className="h-10 bg-[#211136] border-fuchsia-300/30 text-white hover:bg-[#2D1847] text-[10px] font-black uppercase">
+              Action
+            </Button>
           </div>
         </div>
 
-        <div className="mt-4 text-center">
-          <h2 className="text-2xl font-black text-yellow-100 leading-tight">Pack Visibilité Resto</h2>
-          <p className="text-xs text-yellow-100/70 mt-1 uppercase tracking-wider font-bold">Community Manager × Photographe Local</p>
-        </div>
-
-        <div className="grid grid-cols-3 gap-2 w-full mt-5">
-          <Button variant="outline" onClick={() => setIsWhyOpen(true)} className="h-10 bg-[#1A1206] border-yellow-300/30 text-yellow-100 hover:bg-[#251909] text-[10px] font-black uppercase">
-            Pourquoi
-          </Button>
-          <Button variant="outline" onClick={() => setIsOfferOpen(true)} className="h-10 bg-[#1A1206] border-yellow-300/30 text-yellow-100 hover:bg-[#251909] text-[10px] font-black uppercase">
-            Offre
-          </Button>
-          <Button variant="outline" onClick={() => setIsActionOpen(true)} className="h-10 bg-[#1A1206] border-yellow-300/30 text-yellow-100 hover:bg-[#251909] text-[10px] font-black uppercase">
-            Action
-          </Button>
-        </div>
-
-        <div className="w-full mt-4 bg-[#1A1206]/85 rounded-2xl border border-yellow-300/20 p-4 text-left">
+        <div className="w-full mt-4 bg-[#160B24]/90 rounded-2xl border border-fuchsia-300/20 p-4 text-left">
           {state === 'proposal' && (
-            <p className="text-sm text-yellow-50/85 leading-relaxed font-medium">
-              L&apos;IA détecte une opportunité concrète à vendre localement en 48h. 
-              <span className="text-yellow-200 font-black"> Validation d&apos;intérêt réciproque</span> avant mise en relation.
-            </p>
+            <div className="space-y-2">
+              <p className="text-sm text-fuchsia-50/90 leading-relaxed font-semibold">
+                Pack concret proposé par l&apos;IA: <span className="text-amber-200 font-black">Audit express + 3 ads + 3 pages de vente courtes</span> pour TPE locales.
+              </p>
+              <p className="text-xs text-fuchsia-100/70">
+                Vous ne contactez l&apos;autre membre que s&apos;il valide aussi.
+              </p>
+            </div>
           )}
           {state === 'waiting' && (
-            <p className="text-sm text-yellow-50/85 leading-relaxed font-medium">
-              Vous avez validé l&apos;offre. En attente de la réponse de l&apos;autre membre pour déclencher WhatsApp.
+            <p className="text-sm text-fuchsia-50/90 leading-relaxed font-medium">
+              Top, vous avez validé. On attend la réponse de l&apos;autre membre. Si lui aussi valide, vous passez automatiquement en mode collaboration.
             </p>
           )}
           {state === 'matched' && (
-            <p className="text-sm text-emerald-200 leading-relaxed font-bold">
-              Double validation confirmée. Vous êtes tous les deux partants pour lancer l&apos;offre.
-            </p>
+            <div className="space-y-2">
+              <p className="text-sm text-emerald-200 leading-relaxed font-black">
+                Double validation confirmée ✨
+              </p>
+              <p className="text-xs text-emerald-100/80">
+                Vous lancez une offre commune avec cadre clair, livrables précis et plan d&apos;attaque.
+              </p>
+            </div>
           )}
           {state === 'declined' && (
             <p className="text-sm text-amber-200 leading-relaxed font-medium">
-              Vous avez passé cette opportunité. Popey vous proposera une autre piste mieux alignée.
+              Refus enregistré sans impact. Popey vous proposera une autre opportunité plus alignée.
             </p>
           )}
         </div>
 
-        <div className="flex flex-col gap-3 w-full mt-6">
+        <div className="w-full mt-3 grid grid-cols-3 gap-2">
+          <div className="rounded-xl border border-fuchsia-300/20 bg-[#160B24]/80 p-2 text-center">
+            <div className="text-[9px] uppercase tracking-wider text-fuchsia-100/60 font-bold">Durée</div>
+            <div className="text-xs font-black text-white">7 jours</div>
+          </div>
+          <div className="rounded-xl border border-fuchsia-300/20 bg-[#160B24]/80 p-2 text-center">
+            <div className="text-[9px] uppercase tracking-wider text-fuchsia-100/60 font-bold">Cible</div>
+            <div className="text-xs font-black text-white">PME locales</div>
+          </div>
+          <div className="rounded-xl border border-fuchsia-300/20 bg-[#160B24]/80 p-2 text-center">
+            <div className="text-[9px] uppercase tracking-wider text-fuchsia-100/60 font-bold">Ticket</div>
+            <div className="text-xs font-black text-white">690€</div>
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-3 w-full mt-5">
           {state === 'proposal' && (
             <>
-              <Button onClick={() => setState('waiting')} className="w-full h-14 bg-gradient-to-r from-yellow-400 to-amber-500 text-[#2E130C] hover:from-yellow-300 hover:to-amber-400 font-black text-base rounded-xl shadow-lg">
+              <Button onClick={() => setState('waiting')} className="w-full h-14 bg-gradient-to-r from-fuchsia-500 to-amber-400 text-white hover:from-fuchsia-400 hover:to-amber-300 font-black text-base rounded-xl shadow-lg shadow-fuchsia-900/30">
                 <Handshake className="w-5 h-5 mr-2" />
-                Je suis intéressé
+                Valider l&apos;idée de collaboration
               </Button>
-              <Button variant="outline" onClick={() => setState('declined')} className="w-full h-12 border-yellow-300/30 bg-[#1A1206] text-yellow-100 hover:bg-[#251909] font-bold rounded-xl">
-                Passer pour aujourd&apos;hui
+              <Button variant="outline" onClick={() => setState('declined')} className="w-full h-12 border-fuchsia-300/30 bg-[#160B24] text-fuchsia-100 hover:bg-[#211136] font-bold rounded-xl">
+                Passer aujourd&apos;hui
               </Button>
             </>
           )}
@@ -2109,14 +2145,14 @@ export function GoldMatchCardPreview() {
             <>
               <div className="grid grid-cols-2 gap-2">
                 <Button onClick={() => setState('matched')} className="h-11 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs uppercase">
-                  Simuler: intéressé
+                  L&apos;autre valide
                 </Button>
                 <Button onClick={() => setState('declined')} className="h-11 bg-red-600 hover:bg-red-500 text-white font-black text-xs uppercase">
-                  Simuler: refus
+                  L&apos;autre refuse
                 </Button>
               </div>
-              <Button variant="ghost" onClick={resetCard} className="w-full text-yellow-100/70 hover:text-yellow-100 hover:bg-white/5">
-                Réinitialiser le test
+              <Button variant="ghost" onClick={resetCard} className="w-full text-fuchsia-100/70 hover:text-fuchsia-100 hover:bg-white/5">
+                Réinitialiser le scénario
               </Button>
             </>
           )}
@@ -2127,18 +2163,16 @@ export function GoldMatchCardPreview() {
                 <MessageSquare className="w-5 h-5 mr-2 fill-current" />
                 Ouvrir WhatsApp (double opt-in)
               </Button>
-              <Button variant="ghost" onClick={resetCard} className="w-full text-yellow-100/70 hover:text-yellow-100 hover:bg-white/5">
+              <Button variant="ghost" onClick={resetCard} className="w-full text-fuchsia-100/70 hover:text-fuchsia-100 hover:bg-white/5">
                 Rejouer le scénario
               </Button>
             </>
           )}
 
           {state === 'declined' && (
-            <>
-              <Button onClick={resetCard} className="w-full h-12 bg-[#2E130C] hover:bg-[#2E130C]/90 text-white font-black rounded-xl">
-                Voir une autre proposition
-              </Button>
-            </>
+            <Button onClick={resetCard} className="w-full h-12 bg-[#2E130C] hover:bg-[#2E130C]/90 text-white font-black rounded-xl">
+              Voir une autre proposition
+            </Button>
           )}
         </div>
       </div>
@@ -2154,8 +2188,16 @@ export function GoldMatchCardPreview() {
               Complémentarité détectée sur vos compétences et vos cibles locales.
             </DialogDescription>
           </DialogHeader>
-          <div className="rounded-xl bg-amber-50 border border-amber-200 p-4 text-sm text-[#2E130C]/80">
-            Vous apportez la visibilité social media, l&apos;autre membre apporte la production photo. Ensemble, vous pouvez vendre un pack simple et immédiat aux restaurateurs de la ville.
+          <div className="space-y-3 text-sm">
+            <div className="rounded-xl bg-amber-50 border border-amber-200 p-4 text-[#2E130C]/85">
+              Le Digital Marketer sait attirer du trafic qualifié avec Meta/Google Ads.
+            </div>
+            <div className="rounded-xl bg-fuchsia-50 border border-fuchsia-200 p-4 text-[#2E130C]/85">
+              Le Copywriter transforme ce trafic en demandes de devis avec des textes qui convertissent.
+            </div>
+            <div className="rounded-xl bg-emerald-50 border border-emerald-200 p-4 text-[#2E130C]/85 font-semibold">
+              Ensemble, vous vendez un système complet: acquisition + conversion.
+            </div>
           </div>
         </DialogContent>
       </Dialog>
@@ -2168,10 +2210,18 @@ export function GoldMatchCardPreview() {
               Offre hybride proposée
             </DialogTitle>
           </DialogHeader>
-          <div className="space-y-2 text-sm">
-            <p className="font-bold text-[#2E130C]">Nom: Pack Visibilité Resto 7 jours</p>
-            <p className="text-[#2E130C]/80">Valeur: + trafic local + contenu pro + publication sponsorisée.</p>
-            <p className="text-[#2E130C]/80">Ticket cible: 390€ à 690€.</p>
+          <div className="space-y-3 text-sm">
+            <p className="font-bold text-[#2E130C]">Nom: Pack Starter Leads 7 jours</p>
+            <div className="rounded-xl bg-slate-50 border border-slate-200 p-3">
+              <p className="font-semibold text-[#2E130C] mb-1">Ce que le client reçoit exactement:</p>
+              <ul className="space-y-1 text-[#2E130C]/80">
+                <li>• 1 mini audit marketing de la présence actuelle</li>
+                <li>• 3 publicités prêtes à lancer (Meta ou Google)</li>
+                <li>• 3 textes d&apos;annonces + 1 script de relance WhatsApp</li>
+                <li>• 1 landing page courte orientée prise de RDV</li>
+              </ul>
+            </div>
+            <p className="text-[#2E130C]/80"><span className="font-semibold text-[#2E130C]">Ticket test:</span> 690€ (objectif: 1er cas client en 7 jours).</p>
           </div>
         </DialogContent>
       </Dialog>
@@ -2185,8 +2235,12 @@ export function GoldMatchCardPreview() {
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
-            <div className="rounded-xl bg-slate-50 border border-slate-200 p-3 text-sm text-[#2E130C]/80">
-              Script 5 minutes: ciblez 3 restos, proposez le pack test, verrouillez un premier RDV.
+            <div className="rounded-xl bg-slate-50 border border-slate-200 p-3 text-sm text-[#2E130C]/85 space-y-2">
+              <p className="font-semibold text-[#2E130C]">Plan ultra concret:</p>
+              <p>1) Le marketer liste 5 prospects locaux (LinkedIn + Google Maps).</p>
+              <p>2) Le copywriter rédige un message d&apos;approche de 4 lignes.</p>
+              <p>3) Vous envoyez 5 messages aujourd&apos;hui, puis vous proposez un appel de 15 min.</p>
+              <p>4) Objectif: décrocher 1 RDV de vente sous 24h.</p>
             </div>
             <Button className="w-full bg-[#2E130C] hover:bg-[#2E130C]/90 text-white">
               <Users className="w-4 h-4 mr-2" />

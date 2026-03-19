@@ -120,7 +120,7 @@ export default function DesignPreviewPage() {
               <span className="bg-yellow-400 w-2 h-8 rounded-full"></span>
               8. Gold Match (Test)
             </h2>
-            <p className="text-sm text-slate-400 mb-4">Validation d&apos;intérêt réciproque avant mise en relation.</p>
+            <p className="text-sm text-slate-400 mb-4">Exemple ultra concret Digital Marketer × Copywriter avec offre et plan d&apos;action explicites.</p>
             <GoldMatchCardPreview />
           </div>
 
