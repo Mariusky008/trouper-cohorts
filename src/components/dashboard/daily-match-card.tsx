@@ -306,6 +306,11 @@ const buildWhatsAppMessage = ({
     return fullMessage.length > maxLength ? fullMessage.slice(0, maxLength) : fullMessage;
 };
 
+const getMissionProgressKey = (userId?: string, matchId?: string): string | null => {
+    if (!userId || !matchId) return null;
+    return `daily_mission_progress_${userId}_${matchId}`;
+};
+
 const REPUTATION_BADGES = [
     { id: 'connector', label: 'Le Connecteur', icon: '🤝', desc: "M'a ouvert son réseau" },
     { id: 'expert', label: 'L\'Expert', icon: '🧠', desc: "M'a appris quelque chose" },
@@ -535,6 +540,9 @@ const WeekendCard = () => (
 );
 
 export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserProfile }: DailyMatchCardProps) {
+  const currentMatchId = matches?.[0]?.id;
+  const missionProgressKey = getMissionProgressKey(userId, currentMatchId);
+
   // State
   const [revealed, setRevealed] = useState(false);
   const [step, setStep] = useState<'initial' | 'called' | 'validated'>(() => {
@@ -550,14 +558,29 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
   });
 
   useEffect(() => {
-    // Force sync step with matches prop on mount and update
-    if (matches && matches.length > 0) {
-        const current = matches[0];
-        if (current.hasFeedback === true || current.status === 'met') {
-            setStep('validated');
+    if (!matches || matches.length === 0) return;
+
+    const current = matches[0];
+    const isValidated = current.hasFeedback === true || current.status === 'met';
+
+    if (isValidated) {
+        setStep('validated');
+        if (missionProgressKey) {
+            localStorage.removeItem(missionProgressKey);
+        }
+        return;
+    }
+
+    if (missionProgressKey) {
+        const persistedProgress = localStorage.getItem(missionProgressKey);
+        if (persistedProgress === 'called') {
+            setStep('called');
+            return;
         }
     }
-  }, [matches, matches[0]?.hasFeedback, matches[0]?.status]);
+
+    setStep('initial');
+  }, [matches, missionProgressKey, matches[0]?.hasFeedback, matches[0]?.status]);
 
   // Realtime Subscription for Sync across devices
   useEffect(() => {
@@ -581,6 +604,9 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
                   
                   if (newRecord.receiver_id === currentPartnerId) {
                       setStep('validated');
+                      if (missionProgressKey) {
+                          localStorage.removeItem(missionProgressKey);
+                      }
                       toast.success("Mission validée sur un autre appareil ! 🔄");
                   }
               }
@@ -590,7 +616,7 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
       return () => {
           supabase.removeChannel(channel);
       };
-  }, [userId, matches]);
+  }, [userId, matches, missionProgressKey]);
 
   const [popupView, setPopupView] = useState<'step1_status' | 'step2_rating' | 'step3_gift'>('step1_status');
   const [callHappened, setCallHappened] = useState<boolean | null>(null);
@@ -677,14 +703,16 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
       const formattedPhone = formatPhoneForWhatsApp(matches[0]?.phone);
       
       if (formattedPhone) {
+          if (missionProgressKey) {
+              localStorage.setItem(missionProgressKey, 'called');
+          }
           window.open(`https://api.whatsapp.com/send?phone=${formattedPhone}&text=${encodeURIComponent(whatsappMessage)}`, '_blank');
+          setIsWhatsAppOpen(false);
+          setStep('called');
+          trackEvent('click_whatsapp_action', { partnerId: matches[0]?.partnerId });
       } else {
           toast.error("Numéro de téléphone invalide pour WhatsApp.");
       }
-      
-      setIsWhatsAppOpen(false);
-      setStep('called'); // Transition to validation state
-      trackEvent('click_whatsapp_action', { partnerId: matches[0]?.partnerId });
   };
 
   // Actions Handlers
@@ -737,6 +765,9 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
     // 3. Finalize
     // FORCE UI UPDATE IMMEDIATELY
     setStep('validated');
+    if (missionProgressKey) {
+        localStorage.removeItem(missionProgressKey);
+    }
     setIsValidationOpen(false);
     confetti({ particleCount: 200, spread: 100, origin: { y: 0.6 } });
     
