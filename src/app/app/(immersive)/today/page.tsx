@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { CockpitDark } from "@/components/dashboard/cockpit-dark";
 import { getMyBuddies } from "@/lib/data/buddy";
@@ -25,6 +26,7 @@ export default async function TodayPage({
   const codeParam = typeof sp?.code === "string" ? sp.code : Array.isArray(sp?.code) ? sp.code[0] : undefined;
   const tokenHashParam = typeof sp?.token_hash === "string" ? sp.token_hash : Array.isArray(sp?.token_hash) ? sp.token_hash[0] : undefined;
   const typeParam = typeof sp?.type === "string" ? sp.type : Array.isArray(sp?.type) ? sp.type[0] : undefined;
+  const referer = (await headers()).get("referer") || "";
 
   if (codeParam || tokenHashParam) {
     const callbackParams = new URLSearchParams();
@@ -32,6 +34,10 @@ export default async function TodayPage({
     if (tokenHashParam) callbackParams.set("token_hash", tokenHashParam);
     if (typeParam) callbackParams.set("type", typeParam);
     redirect(`/auth/callback?${callbackParams.toString()}`);
+  }
+
+  if (/auth\/v1\/verify/i.test(referer) && /type=recovery/i.test(referer)) {
+    redirect("/update-password");
   }
   
   const {
