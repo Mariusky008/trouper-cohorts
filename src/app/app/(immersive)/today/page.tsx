@@ -5,7 +5,6 @@ import { CockpitDark } from "@/components/dashboard/cockpit-dark";
 import { getMyBuddies } from "@/lib/data/buddy";
 import { getBuddyHistory } from "@/actions/buddy";
 import { AlertCircle, Trophy } from "lucide-react";
-import { Button } from "@/components/ui/button";
 
 function computeDayIndex(startDate: string | null) {
   if (!startDate) return null;
@@ -28,10 +27,6 @@ export default async function TodayPage({
   const tokenHashParam = typeof sp?.token_hash === "string" ? sp.token_hash : Array.isArray(sp?.token_hash) ? sp.token_hash[0] : undefined;
   const typeParam = typeof sp?.type === "string" ? sp.type : Array.isArray(sp?.type) ? sp.type[0] : undefined;
   const referer = headersList.get("referer") || "";
-  const host = headersList.get("host") || "";
-  const protocol = headersList.get("x-forwarded-proto") || "https";
-  const currentOrigin = host ? `${protocol}://${host}` : "";
-  const isInternalReferer = !!(referer && currentOrigin && referer.startsWith(currentOrigin));
 
   if (codeParam || tokenHashParam) {
     const callbackParams = new URLSearchParams();
@@ -69,47 +64,7 @@ export default async function TodayPage({
   }
 
   if (!membershipRes.data) {
-     if (!isInternalReferer) {
-      redirect("/update-password");
-     }
-     // Redirection vers démo si pas de cohorte (logique existante)
-     async function joinDemoCohort() {
-      "use server";
-      const supabase = await createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) redirect("/");
-
-      const cohortRes = await supabase.from("cohorts").select("id").eq("slug", "demo-coach").maybeSingle();
-      if (!cohortRes.data?.id) redirect("/app/today");
-
-      await supabase.from("cohort_members").insert({
-        cohort_id: cohortRes.data.id,
-        user_id: user.id,
-        member_role: "participant",
-        department_code: null,
-      });
-
-      redirect("/app/today");
-    }
-
-    return (
-      <div className="flex flex-col items-center justify-center h-[60vh] space-y-6 max-w-md mx-auto text-center px-4">
-        <div className="h-16 w-16 bg-primary/10 rounded-full flex items-center justify-center">
-          <Trophy className="h-8 w-8 text-primary" />
-        </div>
-        <div className="space-y-2">
-          <h2 className="text-2xl font-bold tracking-tight">Bienvenue soldat !</h2>
-          <p className="text-muted-foreground">
-            Aucune cohorte active trouvée. Rejoins la cohorte de démo.
-          </p>
-        </div>
-        <form action={joinDemoCohort} className="w-full">
-          <Button type="submit" size="lg" className="w-full rounded-full font-semibold">
-            Rejoindre la cohorte Démo
-          </Button>
-        </form>
-      </div>
-    );
+    redirect("/update-password");
   }
 
   const cohortRes = await supabase
