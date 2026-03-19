@@ -199,6 +199,81 @@ const GOAL_LABELS: Record<string, string> = {
     training: "Formation"
 };
 
+const getProfileText = (value: unknown): string => {
+    if (Array.isArray(value)) {
+        return value
+            .map((item: unknown) => String(item || "").trim())
+            .filter(Boolean)
+            .join(", ");
+    }
+
+    if (typeof value === "string") {
+        return value.trim();
+    }
+
+    return "";
+};
+
+const getPrimaryNeedLabel = (
+    receiveProfile: { target_companies?: unknown; prescribers?: unknown; target_clubs?: unknown; comm_goal?: unknown } | null | undefined,
+    currentNeed: string | null | undefined,
+    currentGoals: string[] | null | undefined,
+    fallback: string
+): string => {
+    const detailedNeed = [
+        getProfileText(receiveProfile?.target_companies),
+        getProfileText(receiveProfile?.prescribers),
+        getProfileText(receiveProfile?.target_clubs),
+        getProfileText(receiveProfile?.comm_goal)
+    ].find(Boolean);
+
+    if (detailedNeed) return detailedNeed;
+    if (currentNeed && currentNeed.trim().length > 0) return currentNeed;
+
+    if (currentGoals && currentGoals.length > 0) {
+        const goal = currentGoals[0];
+        return GOAL_LABELS[goal] || goal;
+    }
+
+    return fallback;
+};
+
+const getNeedBullets = (
+    receiveProfile: { target_companies?: unknown; prescribers?: unknown; target_clubs?: unknown; comm_goal?: unknown } | null | undefined,
+    currentNeed: string | null | undefined,
+    fallback: string[]
+): string[] => {
+    const detailedNeeds = [
+        { label: "Le Portier", value: getProfileText(receiveProfile?.target_companies) },
+        { label: "Le Prescripteur", value: getProfileText(receiveProfile?.prescribers) },
+        { label: "L'Infiltré", value: getProfileText(receiveProfile?.target_clubs) },
+        { label: "L'Amplificateur", value: getProfileText(receiveProfile?.comm_goal) }
+    ]
+        .filter((item) => item.value.length > 0)
+        .map((item) => `${item.label}: ${item.value}`);
+
+    if (detailedNeeds.length > 0) return detailedNeeds;
+    if (currentNeed && currentNeed.trim().length > 0) return [`Objectif: ${currentNeed}`];
+    return fallback;
+};
+
+const getOfferBullets = (
+    giveProfile: { influence_sectors?: unknown; clubs?: unknown } | null | undefined,
+    superpower: string | null | undefined,
+    fallback: string[]
+): string[] => {
+    const giveDetails = [
+        { label: "Superpouvoir", value: getProfileText(superpower) },
+        { label: "Secteurs", value: getProfileText(giveProfile?.influence_sectors) },
+        { label: "Réseaux", value: getProfileText(giveProfile?.clubs) }
+    ]
+        .filter((item) => item.value.length > 0)
+        .map((item) => `${item.label}: ${item.value}`);
+
+    if (giveDetails.length > 0) return giveDetails;
+    return fallback;
+};
+
 const REPUTATION_BADGES = [
     { id: 'connector', label: 'Le Connecteur', icon: '🤝', desc: "M'a ouvert son réseau" },
     { id: 'expert', label: 'L\'Expert', icon: '🧠', desc: "M'a appris quelque chose" },
@@ -304,7 +379,7 @@ function MysteryCard({ onReveal, match, locked = false, children }: { onReveal: 
                 </div>
                 <ul className="space-y-2 relative z-10 pl-1">
                     {/* Dynamic needs based on profile data or fallback */}
-                    {(match.current_need ? [match.current_need] : ["Nouveaux clients", "Partenaires locaux"]).map((item: string, i: number) => (
+                    {getNeedBullets(match.receive_profile, match.current_need, ["Nouveaux clients", "Partenaires locaux"]).map((item: string, i: number) => (
                         <li key={i} className="flex items-start gap-2 text-xs font-medium text-[#2E130C]/80">
                             <span className="text-blue-500 font-bold text-lg leading-none">•</span>
                             <span className="leading-tight pt-0.5">{item}</span>
@@ -328,7 +403,7 @@ function MysteryCard({ onReveal, match, locked = false, children }: { onReveal: 
                 </div>
                 <ul className="space-y-2 relative z-10 pl-1">
                      {/* Dynamic superpowers based on profile data or fallback */}
-                    {(match.superpower ? [match.superpower] : ["Son expertise métier", "Son réseau local"]).map((item: string, i: number) => (
+                    {getOfferBullets(match.give_profile, match.superpower, ["Son expertise métier", "Son réseau local"]).map((item: string, i: number) => (
                         <li key={i} className="flex items-start gap-2 text-xs font-medium text-[#2E130C]/80">
                             <span className="text-emerald-500 font-bold text-lg leading-none">•</span>
                             <span className="leading-tight pt-0.5">{item}</span>
@@ -755,6 +830,28 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
 
   const match = matches[0];
   const isCallOut = match.type === 'call_out';
+  const myPrimaryNeedLabel = getPrimaryNeedLabel(
+      currentUserProfile?.receive_profile,
+      currentUserProfile?.current_need,
+      currentUserProfile?.current_goals,
+      "Développer mon activité"
+  );
+  const partnerPrimaryNeedLabel = getPrimaryNeedLabel(
+      match.receive_profile,
+      match.current_need,
+      match.current_goals,
+      "Développer son réseau"
+  );
+  const myPortier = getProfileText(currentUserProfile?.receive_profile?.target_companies) || "Non renseigné";
+  const myPrescripteur = getProfileText(currentUserProfile?.receive_profile?.prescribers) || "Non renseigné";
+  const myInfiltre = getProfileText(currentUserProfile?.receive_profile?.target_clubs) || "Non renseigné";
+  const myAmplificateur = getProfileText(currentUserProfile?.receive_profile?.comm_goal) || "Non renseigné";
+  const partnerPortier = getProfileText(match.receive_profile?.target_companies) || "Non renseigné";
+  const partnerPrescripteur = getProfileText(match.receive_profile?.prescribers) || "Non renseigné";
+  const partnerInfiltre = getProfileText(match.receive_profile?.target_clubs) || "Non renseigné";
+  const partnerAmplificateur = getProfileText(match.receive_profile?.comm_goal) || "Non renseigné";
+  const myOfferHeadline = currentUserProfile?.superpower || getProfileText(currentUserProfile?.give_profile?.influence_sectors) || "Mon expertise";
+  const partnerOfferHeadline = match.superpower || getProfileText(match.give_profile?.influence_sectors) || "Son expertise";
 
   const mySlots = match.mySlots || [];
   const partnerSlots = match.partnerSlots || [];
@@ -951,9 +1048,7 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
                     <span className="text-[9px] font-black text-indigo-700 uppercase tracking-wider">Ce que je cherche</span>
                 </div>
                 <p className="text-[11px] font-bold leading-tight line-clamp-3 text-[#2E130C]">
-                    {currentUserProfile?.current_goals && currentUserProfile.current_goals.length > 0
-                        ? GOAL_LABELS[currentUserProfile.current_goals[0]] || currentUserProfile.current_goals[0]
-                        : "Développer mon activité"}
+                    {myPrimaryNeedLabel}
                 </p>
                 <div className="mt-2 text-[9px] text-indigo-500 font-bold underline decoration-indigo-200">Voir mon profil détaillé</div>
             </div>
@@ -971,7 +1066,7 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
                     <span className="text-[9px] font-black uppercase tracking-wider text-purple-700">Ce qu'il cherche</span>
                 </div>
                 <p className="text-[11px] font-bold leading-tight line-clamp-3 text-[#2E130C]">
-                    {match.current_need || (match.current_goals && match.current_goals.length > 0 ? GOAL_LABELS[match.current_goals[0]] : "Développer son réseau")}
+                    {partnerPrimaryNeedLabel}
                 </p>
                 <div className="mt-2 text-[9px] text-purple-500 font-bold underline decoration-purple-200">Voir son profil détaillé</div>
             </div>
@@ -1307,18 +1402,20 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
                       </h4>
                       <div className="space-y-2">
                           <p className="text-sm font-medium text-[#2E130C]/80">
-                              <span className="font-bold">Objectif principal :</span> {currentUserProfile?.current_goals && currentUserProfile.current_goals.length > 0 ? GOAL_LABELS[currentUserProfile.current_goals[0]] || currentUserProfile.current_goals[0] : "Non défini"}
+                              <span className="font-bold">Objectif principal :</span> {myPrimaryNeedLabel}
                           </p>
-                          {currentUserProfile?.receive_profile?.comm_goal && (
-                              <p className="text-sm font-medium text-[#2E130C]/80">
-                                  <span className="font-bold">Message :</span> {currentUserProfile.receive_profile.comm_goal}
-                              </p>
-                          )}
-                           {currentUserProfile?.receive_profile?.target_companies && currentUserProfile.receive_profile.target_companies.length > 0 && (
-                              <p className="text-sm font-medium text-[#2E130C]/80">
-                                  <span className="font-bold">Cibles :</span> {currentUserProfile.receive_profile.target_companies.join(', ')}
-                              </p>
-                          )}
+                          <p className="text-sm font-medium text-[#2E130C]/80">
+                              <span className="font-bold">Le Portier (Cibles) :</span> {myPortier}
+                          </p>
+                          <p className="text-sm font-medium text-[#2E130C]/80">
+                              <span className="font-bold">Le Prescripteur :</span> {myPrescripteur}
+                          </p>
+                          <p className="text-sm font-medium text-[#2E130C]/80">
+                              <span className="font-bold">L&apos;Infiltré (Clubs visés) :</span> {myInfiltre}
+                          </p>
+                          <p className="text-sm font-medium text-[#2E130C]/80">
+                              <span className="font-bold">L&apos;Amplificateur (Comm) :</span> {myAmplificateur}
+                          </p>
                       </div>
                   </div>
                   <div className="bg-emerald-50 p-4 rounded-xl border border-emerald-100 space-y-2">
@@ -1327,7 +1424,7 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
                       </h4>
                       <div className="space-y-2">
                            <p className="text-sm font-medium text-[#2E130C]/80">
-                              <span className="font-bold">Superpouvoir :</span> {currentUserProfile?.superpower || "Mon expertise"}
+                              <span className="font-bold">Superpouvoir :</span> {myOfferHeadline}
                           </p>
                           {currentUserProfile?.give_profile?.influence_sectors && currentUserProfile.give_profile.influence_sectors.length > 0 && (
                               <p className="text-sm font-medium text-[#2E130C]/80">
@@ -1357,18 +1454,20 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
                       </h4>
                       <div className="space-y-2">
                            <p className="text-sm font-medium text-[#2E130C]/80">
-                              <span className="font-bold">Objectif principal :</span> {match.current_need || (match.current_goals && match.current_goals.length > 0 ? GOAL_LABELS[match.current_goals[0]] : "Non défini")}
+                              <span className="font-bold">Objectif principal :</span> {partnerPrimaryNeedLabel}
                           </p>
-                           {match.receive_profile?.comm_goal && (
-                              <p className="text-sm font-medium text-[#2E130C]/80">
-                                  <span className="font-bold">Message :</span> {match.receive_profile.comm_goal}
-                              </p>
-                          )}
-                          {match.receive_profile?.target_companies && match.receive_profile.target_companies.length > 0 && (
-                              <p className="text-sm font-medium text-[#2E130C]/80">
-                                  <span className="font-bold">Cibles :</span> {match.receive_profile.target_companies.join(', ')}
-                              </p>
-                          )}
+                          <p className="text-sm font-medium text-[#2E130C]/80">
+                              <span className="font-bold">Le Portier (Cibles) :</span> {partnerPortier}
+                          </p>
+                          <p className="text-sm font-medium text-[#2E130C]/80">
+                              <span className="font-bold">Le Prescripteur :</span> {partnerPrescripteur}
+                          </p>
+                          <p className="text-sm font-medium text-[#2E130C]/80">
+                              <span className="font-bold">L&apos;Infiltré (Clubs visés) :</span> {partnerInfiltre}
+                          </p>
+                          <p className="text-sm font-medium text-[#2E130C]/80">
+                              <span className="font-bold">L&apos;Amplificateur (Comm) :</span> {partnerAmplificateur}
+                          </p>
                       </div>
                   </div>
                   <div className="bg-emerald-50 p-4 rounded-xl border border-emerald-100 space-y-2">
@@ -1377,7 +1476,7 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
                       </h4>
                        <div className="space-y-2">
                            <p className="text-sm font-medium text-[#2E130C]/80">
-                              <span className="font-bold">Superpouvoir :</span> {match.superpower || "Son expertise"}
+                              <span className="font-bold">Superpouvoir :</span> {partnerOfferHeadline}
                           </p>
                            {match.give_profile?.influence_sectors && match.give_profile.influence_sectors.length > 0 && (
                               <p className="text-sm font-medium text-[#2E130C]/80">
