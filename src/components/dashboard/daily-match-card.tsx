@@ -274,6 +274,38 @@ const getOfferBullets = (
     return fallback;
 };
 
+const normalizeHttpUrl = (value: unknown): string => {
+    const raw = String(value || "").trim();
+    if (!raw) return "";
+    const withProtocol = /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
+
+    try {
+        const parsed = new URL(withProtocol);
+        if (!["http:", "https:"].includes(parsed.protocol)) return "";
+        return parsed.toString();
+    } catch {
+        return "";
+    }
+};
+
+const buildWhatsAppMessage = ({
+    matchName,
+    myName,
+    matchJob,
+    featuredLink
+}: {
+    matchName: string;
+    myName: string;
+    matchJob: string;
+    featuredLink: string;
+}): string => {
+    const intro = `Salut ${matchName}, c'est ${myName} ! On a matché aujourd'hui sur Popey.Academy. J'ai vu que tu étais ${matchJob}, ça m'intéresse ! Dispo pour un appel rapide ou un vocal aujourd'hui ou demain ?`;
+    const linkLine = featuredLink ? `\n\nLien principal que je veux te montrer : ${featuredLink}` : "";
+    const fullMessage = `${intro}${linkLine}`;
+    const maxLength = 1000;
+    return fullMessage.length > maxLength ? fullMessage.slice(0, maxLength) : fullMessage;
+};
+
 const REPUTATION_BADGES = [
     { id: 'connector', label: 'Le Connecteur', icon: '🤝', desc: "M'a ouvert son réseau" },
     { id: 'expert', label: 'L\'Expert', icon: '🧠', desc: "M'a appris quelque chose" },
@@ -638,19 +670,14 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
   const handleWhatsAppRedirect = () => {
       const matchName = matches[0]?.name?.split(' ')[0] || "partenaire";
       const matchJob = matches[0]?.job || "dirigeant";
-      // We try first_name first, then display_name, then fallback to splitting the name, then finally "Jean-Philippe" as fallback if profile is empty
       const myName = currentUserProfile?.first_name || currentUserProfile?.display_name?.split(' ')[0] || currentUserProfile?.name?.split(' ')[0] || "Jean-Philippe";
-      
-      let whatsappMessage = `Salut ${matchName}, c'est ${myName} ! On a matché aujourd'hui sur Popey.Academy. J'ai vu que tu étais ${matchJob}, ça m'intéresse ! Dispo pour un appel rapide ou un vocal aujourd'hui ou demain ?`;
-      
-      if (currentUserProfile?.featured_link) {
-          whatsappMessage += `\n\nPs : si tu veux en savoir un peu plus sur moi voici mon lien : ${currentUserProfile.featured_link}`;
-      }
+      const featuredLink = normalizeHttpUrl(currentUserProfile?.featured_link);
+      const whatsappMessage = buildWhatsAppMessage({ matchName, myName, matchJob, featuredLink });
       
       const formattedPhone = formatPhoneForWhatsApp(matches[0]?.phone);
       
       if (formattedPhone) {
-          window.open(`https://wa.me/${formattedPhone}?text=${encodeURIComponent(whatsappMessage)}`, '_blank');
+          window.open(`https://api.whatsapp.com/send?phone=${formattedPhone}&text=${encodeURIComponent(whatsappMessage)}`, '_blank');
       } else {
           toast.error("Numéro de téléphone invalide pour WhatsApp.");
       }
@@ -852,6 +879,13 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
   const partnerAmplificateur = getProfileText(match.receive_profile?.comm_goal) || "Non renseigné";
   const myOfferHeadline = currentUserProfile?.superpower || getProfileText(currentUserProfile?.give_profile?.influence_sectors) || "Mon expertise";
   const partnerOfferHeadline = match.superpower || getProfileText(match.give_profile?.influence_sectors) || "Son expertise";
+  const featuredLinkForWhatsApp = normalizeHttpUrl(currentUserProfile?.featured_link);
+  const whatsappPreviewMessage = buildWhatsAppMessage({
+      matchName: match.name.split(' ')[0],
+      myName: currentUserProfile?.first_name || currentUserProfile?.display_name?.split(' ')[0] || currentUserProfile?.name?.split(' ')[0] || "Jean-Philippe",
+      matchJob: match.job || "dirigeant",
+      featuredLink: featuredLinkForWhatsApp
+  });
 
   const mySlots = match.mySlots || [];
   const partnerSlots = match.partnerSlots || [];
@@ -1111,12 +1145,7 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
                                         Message généré
                                     </div>
                                     <p className="text-[#2E130C] text-sm leading-relaxed whitespace-pre-wrap font-medium">
-                                        {`Salut ${match.name.split(' ')[0]}, c'est ${currentUserProfile?.first_name || currentUserProfile?.display_name?.split(' ')[0] || currentUserProfile?.name?.split(' ')[0] || "Jean-Philippe"} ! On a matché aujourd'hui sur Popey.Academy. J'ai vu que tu étais ${match.job || "dirigeant"}, ça m'intéresse ! Dispo pour un appel rapide ou un vocal aujourd'hui ou demain ?`}
-                                        {currentUserProfile?.featured_link && (
-                                            <span className="block mt-4">
-                                                Ps : si tu veux en savoir un peu plus sur moi voici mon lien : {currentUserProfile.featured_link}
-                                            </span>
-                                        )}
+                                        {whatsappPreviewMessage}
                                     </p>
                                     <p className="text-xs text-[#2E130C]/50 mt-3 italic">
                                         (Vous pourrez le modifier dans WhatsApp avant de l'envoyer)
@@ -1515,12 +1544,7 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
                             Message généré
                         </div>
                         <p className="text-[#2E130C] text-sm leading-relaxed whitespace-pre-wrap font-medium">
-                            {`Salut ${match.name.split(' ')[0]}, c'est ${currentUserProfile?.first_name || currentUserProfile?.display_name?.split(' ')[0] || currentUserProfile?.name?.split(' ')[0] || "Jean-Philippe"} ! On a matché aujourd'hui sur Popey.Academy. J'ai vu que tu étais ${match.job || "dirigeant"}, ça m'intéresse ! Dispo pour un appel rapide ou un vocal aujourd'hui ou demain ?`}
-                            {currentUserProfile?.featured_link && (
-                                <span className="block mt-4">
-                                    Ps : si tu veux en savoir un peu plus sur moi voici mon lien : {currentUserProfile.featured_link}
-                                </span>
-                            )}
+                            {whatsappPreviewMessage}
                         </p>
                         <p className="text-xs text-[#2E130C]/50 mt-3 italic">
                             (Vous pourrez le modifier dans WhatsApp avant de l'envoyer)

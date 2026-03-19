@@ -445,6 +445,31 @@ function ProfileContentInner({ user, isReadOnly = false }: { user: any; isReadOn
                 )}
             </div>
         </div>
+
+        <div className="mt-6">
+            <div className="bg-yellow-50 border border-yellow-200 rounded-2xl p-4 shadow-sm">
+                <div className="flex items-center gap-2 mb-2">
+                    <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
+                    <p className="text-xs font-black uppercase tracking-widest text-yellow-700">
+                        Lien principal promu sur WhatsApp
+                    </p>
+                </div>
+                {formData.featured_link ? (
+                    <a
+                        href={formData.featured_link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="block bg-white border border-yellow-300 rounded-xl px-3 py-3 text-sm font-bold text-[#2E130C] hover:bg-yellow-100/40 transition-colors break-all"
+                    >
+                        {formData.featured_link}
+                    </a>
+                ) : (
+                    <div className="bg-white border border-dashed border-yellow-300 rounded-xl px-3 py-3 text-sm font-medium text-[#2E130C]/60">
+                        Aucun lien principal défini pour vos messages WhatsApp.
+                    </div>
+                )}
+            </div>
+        </div>
       </div>
 
       <div className="grid md:grid-cols-[2fr_1fr] gap-8">
