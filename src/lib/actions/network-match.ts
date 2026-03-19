@@ -20,8 +20,8 @@ export async function getDailyMatches() {
     .from("network_matches")
     .select(`
       *,
-      user1:user1_id(id, display_name, avatar_url, trade, phone, superpower, current_need, big_goal),
-      user2:user2_id(id, display_name, avatar_url, trade, phone, superpower, current_need, big_goal)
+      user1:user1_id(id, display_name, avatar_url, trade, city, bio, phone, current_goals, superpower, current_need, big_goal, give_profile, receive_profile),
+      user2:user2_id(id, display_name, avatar_url, trade, city, bio, phone, current_goals, superpower, current_need, big_goal, give_profile, receive_profile)
     `)
     .gte("date", searchDate) // Fetch from yesterday onwards
     .or(`user1_id.eq.${user.id},user2_id.eq.${user.id}`)
