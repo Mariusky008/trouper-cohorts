@@ -125,7 +125,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   if (!isAuthorized) {
       return (
           <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-              {/* Optional: Add a timeout or just show nothing if redirect is fast */}
+              {/* Render children hidden to prevent Next.js AppRouter from losing its tree state which causes Error 310 */}
+              <div style={{ display: 'none' }}>{children}</div>
           </div>
       );
   }
