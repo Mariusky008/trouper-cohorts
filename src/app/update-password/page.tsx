@@ -40,7 +40,7 @@ export default function UpdatePasswordPage() {
       toast.success("Mot de passe mis à jour", {
         description: "Vous pouvez maintenant vous connecter avec votre nouveau mot de passe.",
       });
-      router.push("/login");
+      router.push("/");
     } catch (e: any) {
       toast.error("Impossible de mettre à jour le mot de passe", {
         description: e.message || "Veuillez réouvrir le lien de réinitialisation.",
@@ -54,7 +54,7 @@ export default function UpdatePasswordPage() {
     <div className="min-h-screen flex flex-col items-center justify-center px-4 bg-muted/30">
       <div className="absolute top-4 left-4 md:top-8 md:left-8">
         <Button variant="ghost" asChild>
-          <Link href="/login">← Retour</Link>
+          <Link href="/">← Retour</Link>
         </Button>
       </div>
 
