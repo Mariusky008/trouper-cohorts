@@ -384,9 +384,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
       </main>
 
-      {/* GLOBAL CHAT WIDGET */}
+      {/* GLOBAL CHAT WIDGET (Temporarily disabled for debugging) */}
       <Suspense fallback={null}>
-        {currentUserId && <GlobalChatWidget currentUserId={currentUserId} />}
+        {/* currentUserId && <GlobalChatWidget currentUserId={currentUserId} /> */}
       </Suspense>
       
       {/* PWA INSTALL PROMPT */}

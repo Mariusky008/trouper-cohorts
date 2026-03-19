@@ -1,6 +1,15 @@
-const fs = require('fs');
-const content = fs.readFileSync('.next/static/chunks/8928-c2768d2c8a13e787.js', 'utf8');
+const puppeteer = require('puppeteer');
 
-// The error is at char 128313
-const snippet = content.substring(128200, 128500);
-console.log(snippet);
+(async () => {
+  const browser = await puppeteer.launch({ args: ['--no-sandbox'] });
+  const page = await browser.newPage();
+  
+  // Set the error listener to capture EXACTLY what is crashing
+  page.on('pageerror', error => console.log('PAGE ERROR STACK:\n', error.stack));
+  
+  console.log("Navigating to dashboard...");
+  // We navigate to localhost:3000 to see what the prod build does
+  await page.goto('http://localhost:3000/mon-reseau-local/dashboard/profile', { waitUntil: 'networkidle0' });
+  
+  await browser.close();
+})();
