@@ -30,23 +30,32 @@ export default async function DashboardHome() {
   let userStreak = 0;
   let currentUserProfile = null;
 
-  try {
-    matches = await getDailyMatches();
-    trustScore = await getTrustScore();
-    
-    // Safety fallback for settings
-    try {
-        settings = await getNetworkSettings();
-    } catch (e) {
-        console.error("Failed to fetch settings:", e);
-    }
-    
-    potentialCount = await getPotentialOpportunitiesCount();
-    userStreak = await getUserStreak();
-    currentUserProfile = await getUserProfile(user?.id);
-  } catch (e) {
-    console.error(e);
-  }
+  const [matchesResult, trustScoreResult, settingsResult, potentialCountResult, userStreakResult, currentUserProfileResult] = await Promise.allSettled([
+    getDailyMatches(),
+    getTrustScore(),
+    getNetworkSettings(),
+    getPotentialOpportunitiesCount(),
+    getUserStreak(),
+    getUserProfile(user?.id)
+  ]);
+
+  if (matchesResult.status === "fulfilled") matches = matchesResult.value;
+  else console.error(matchesResult.reason);
+
+  if (trustScoreResult.status === "fulfilled") trustScore = trustScoreResult.value;
+  else console.error(trustScoreResult.reason);
+
+  if (settingsResult.status === "fulfilled") settings = settingsResult.value;
+  else console.error(settingsResult.reason);
+
+  if (potentialCountResult.status === "fulfilled") potentialCount = potentialCountResult.value;
+  else console.error(potentialCountResult.reason);
+
+  if (userStreakResult.status === "fulfilled") userStreak = userStreakResult.value;
+  else console.error(userStreakResult.reason);
+
+  if (currentUserProfileResult.status === "fulfilled") currentUserProfile = currentUserProfileResult.value;
+  else console.error(currentUserProfileResult.reason);
 
   // 4. FLASH CAFE (Fetch after profile is loaded)
   let latestQuestion = null;
