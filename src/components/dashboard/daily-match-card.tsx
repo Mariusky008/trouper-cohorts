@@ -292,18 +292,145 @@ const buildWhatsAppMessage = ({
     matchName,
     myName,
     matchJob,
-    featuredLink
+    featuredLink,
+    suggestedMissionText
 }: {
     matchName: string;
     myName: string;
     matchJob: string;
     featuredLink: string;
+    suggestedMissionText: string;
 }): string => {
     const intro = `Salut ${matchName}, c'est ${myName} ! On a matché aujourd'hui sur Popey.Academy. J'ai vu que tu étais ${matchJob}, ça m'intéresse ! Dispo pour un appel rapide ou un vocal aujourd'hui ou demain ?`;
+    const missionLine = suggestedMissionText ? `\n\nMission qu'on peut faire aujourd'hui : ${suggestedMissionText}` : "";
     const linkLine = featuredLink ? `\n\nLien principal que je veux te montrer : ${featuredLink}` : "";
-    const fullMessage = `${intro}${linkLine}`;
+    const fullMessage = `${intro}${missionLine}${linkLine}`;
     const maxLength = 1000;
     return fullMessage.length > maxLength ? fullMessage.slice(0, maxLength) : fullMessage;
+};
+
+type PairMissionSuggestion = {
+    id: string;
+    title: string;
+    action: string;
+    wow: string;
+    whatsappText: string;
+};
+
+const getNormalizedText = (value: unknown): string =>
+    String(value || "")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase();
+
+const includesKeyword = (text: string, keywords: string[]): boolean =>
+    keywords.some((keyword) => text.includes(keyword));
+
+const computeMissionSuggestion = (
+    currentUserProfile: any,
+    match: any
+): PairMissionSuggestion => {
+    const myText = getNormalizedText([
+        currentUserProfile?.trade,
+        currentUserProfile?.superpower,
+        currentUserProfile?.current_need,
+        getProfileText(currentUserProfile?.give_profile?.influence_sectors),
+        getProfileText(currentUserProfile?.give_profile?.clubs),
+        getProfileText(currentUserProfile?.receive_profile?.target_companies),
+        getProfileText(currentUserProfile?.receive_profile?.prescribers),
+        getProfileText(currentUserProfile?.receive_profile?.target_clubs),
+        getProfileText(currentUserProfile?.receive_profile?.comm_goal)
+    ].join(" "));
+
+    const partnerText = getNormalizedText([
+        match?.job,
+        match?.superpower,
+        match?.current_need,
+        getProfileText(match?.give_profile?.influence_sectors),
+        getProfileText(match?.give_profile?.clubs),
+        getProfileText(match?.receive_profile?.target_companies),
+        getProfileText(match?.receive_profile?.prescribers),
+        getProfileText(match?.receive_profile?.target_clubs),
+        getProfileText(match?.receive_profile?.comm_goal)
+    ].join(" "));
+
+    const pairText = `${myText} ${partnerText}`;
+    const isDigitalPair = includesKeyword(pairText, ["digital", "web", "seo", "ads", "marketing", "communication", "community manager", "cm"]);
+    const hasVisibilityNeed = includesKeyword(pairText, ["visibilite", "linkedin", "instagram", "facebook", "tiktok", "reseaux sociaux", "audience", "comm"]);
+    const hasNetworkStrength = includesKeyword(pairText, ["bni", "club", "reseau", "intro", "prescripteur", "cibles"]);
+    const hasProjectSignal = includesKeyword(pairText, ["offre", "projet", "lancement", "formation", "service", "produit"]);
+    const bothLocal = Boolean(currentUserProfile?.city) && Boolean(match?.city);
+
+    const suggestions: Array<{ mission: PairMissionSuggestion; score: number }> = [
+        {
+            mission: {
+                id: "audit_visibilite",
+                title: "Le Check-up Visibilité",
+                action: "Regardez chacun le LinkedIn ou la fiche pro de l'autre 2 minutes et donnez un conseil concret d'amélioration.",
+                wow: "Un regard expert immédiat qui améliore la conversion.",
+                whatsappText: "Check-up visibilité: on regarde nos profils 2 minutes et on se donne un conseil concret chacun."
+            },
+            score: (isDigitalPair ? 5 : 1) + (hasVisibilityNeed ? 2 : 0)
+        },
+        {
+            mission: {
+                id: "passeport_reseau",
+                title: "Le Passeport Réseau",
+                action: "Chacun cite une personne clé à rencontrer et s'engage à faire une intro message aujourd'hui.",
+                wow: "Un prospect froid devient une opportunité chaude.",
+                whatsappText: "Passeport réseau: on se promet chacun une mise en relation ciblée aujourd'hui."
+            },
+            score: (hasNetworkStrength ? 5 : 2)
+        },
+        {
+            mission: {
+                id: "micro_interview_story",
+                title: "La Micro-Interview Story",
+                action: "Partagez une story de votre échange en taguant l'autre avec son expertise principale.",
+                wow: "Visibilité croisée immédiate sur deux audiences.",
+                whatsappText: "Micro-interview story: on fait une story croisée après l'échange pour se donner de la visibilité."
+            },
+            score: (bothLocal ? 4 : 2) + (hasVisibilityNeed ? 1 : 0)
+        },
+        {
+            mission: {
+                id: "sondage_marche",
+                title: "Le Sondage de Marché",
+                action: "L'un pitch son offre en 2 minutes, l'autre joue le client sceptique et pose 3 questions utiles.",
+                wow: "Pitch clarifié et objections traitées tout de suite.",
+                whatsappText: "Sondage de marché: 2 minutes de pitch puis 3 questions client sceptique pour améliorer l'offre."
+            },
+            score: (hasProjectSignal ? 4 : 2)
+        },
+        {
+            mission: {
+                id: "recommandation_confiance",
+                title: "La Recommandation de Confiance",
+                action: "Si le feeling est bon, laissez-vous une recommandation LinkedIn ou avis professionnel après l'appel.",
+                wow: "Réputation renforcée durablement.",
+                whatsappText: "Recommandation confiance: si le feeling est bon, on se laisse un avis pro après l'appel."
+            },
+            score: (hasVisibilityNeed ? 4 : 2)
+        },
+        {
+            mission: {
+                id: "brainstorming_express",
+                title: "Le Brainstorming Express",
+                action: "Le premier expose son blocage, l'autre propose en 3 minutes une solution hors cadre.",
+                wow: "Déblocage rapide grâce à un regard neuf.",
+                whatsappText: "Brainstorming express: on se challenge sur un blocage avec une idée hors cadre en 3 minutes."
+            },
+            score: 2
+        }
+    ];
+
+    const sorted = suggestions.sort((a, b) => b.score - a.score);
+    const topScore = sorted[0]?.score ?? 0;
+    const topCandidates = sorted.filter((item) => item.score >= topScore - 1);
+    const seedText = `${currentUserProfile?.id || ""}-${match?.partnerId || ""}-${match?.id || ""}`;
+    const seed = seedText.split("").reduce((sum: number, char: string) => sum + char.charCodeAt(0), 0);
+    const index = topCandidates.length > 0 ? seed % topCandidates.length : 0;
+    return (topCandidates[index] || sorted[0]).mission;
 };
 
 const getMissionProgressKey = (userId?: string, matchId?: string): string | null => {
@@ -698,7 +825,13 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
       const matchJob = matches[0]?.job || "dirigeant";
       const myName = currentUserProfile?.first_name || currentUserProfile?.display_name?.split(' ')[0] || currentUserProfile?.name?.split(' ')[0] || "Jean-Philippe";
       const featuredLink = normalizeHttpUrl(currentUserProfile?.featured_link);
-      const whatsappMessage = buildWhatsAppMessage({ matchName, myName, matchJob, featuredLink });
+      const whatsappMessage = buildWhatsAppMessage({
+          matchName,
+          myName,
+          matchJob,
+          featuredLink,
+          suggestedMissionText: suggestedPairMission.whatsappText
+      });
       
       const formattedPhone = formatPhoneForWhatsApp(matches[0]?.phone);
       
@@ -910,12 +1043,14 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
   const partnerAmplificateur = getProfileText(match.receive_profile?.comm_goal) || "Non renseigné";
   const myOfferHeadline = currentUserProfile?.superpower || getProfileText(currentUserProfile?.give_profile?.influence_sectors) || "Mon expertise";
   const partnerOfferHeadline = match.superpower || getProfileText(match.give_profile?.influence_sectors) || "Son expertise";
+  const suggestedPairMission = computeMissionSuggestion(currentUserProfile, match);
   const featuredLinkForWhatsApp = normalizeHttpUrl(currentUserProfile?.featured_link);
   const whatsappPreviewMessage = buildWhatsAppMessage({
       matchName: match.name.split(' ')[0],
       myName: currentUserProfile?.first_name || currentUserProfile?.display_name?.split(' ')[0] || currentUserProfile?.name?.split(' ')[0] || "Jean-Philippe",
       matchJob: match.job || "dirigeant",
-      featuredLink: featuredLinkForWhatsApp
+      featuredLink: featuredLinkForWhatsApp,
+      suggestedMissionText: suggestedPairMission.whatsappText
   });
 
   const mySlots = match.mySlots || [];
@@ -1135,6 +1270,16 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
                 </p>
                 <div className="mt-2 text-[9px] text-purple-500 font-bold underline decoration-purple-200">Voir son profil détaillé</div>
             </div>
+        </div>
+
+        <div className="w-full mt-4 p-3 rounded-xl border border-amber-200 bg-amber-50 text-left shadow-sm">
+            <div className="flex items-center gap-2 mb-1">
+                <Zap className="w-4 h-4 text-amber-600" />
+                <span className="text-[10px] font-black uppercase tracking-widest text-amber-700">Mission suggérée aujourd&apos;hui</span>
+            </div>
+            <p className="text-sm font-black text-[#2E130C] leading-tight">{suggestedPairMission.title}</p>
+            <p className="text-xs text-[#2E130C]/75 mt-1 leading-relaxed">{suggestedPairMission.action}</p>
+            <p className="text-[11px] text-amber-700/90 mt-2 font-semibold">{suggestedPairMission.wow}</p>
         </div>
 
         {/* Action Buttons */}
