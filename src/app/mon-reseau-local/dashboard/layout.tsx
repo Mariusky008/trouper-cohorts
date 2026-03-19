@@ -28,17 +28,6 @@ import { useNotifications } from "@/hooks/use-notifications";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const isProfileRoute = pathname === "/mon-reseau-local/dashboard/profile";
-  if (isProfileRoute) {
-    return (
-      <div className="min-h-screen bg-[#E2D9BC] font-sans text-[#2E130C]">
-        <main className="min-h-screen pt-20">
-          <div className="container mx-auto p-4 md:p-8 max-w-7xl">{children}</div>
-        </main>
-      </div>
-    );
-  }
-
   return <DashboardLayoutFull pathname={pathname}>{children}</DashboardLayoutFull>;
 }
 
