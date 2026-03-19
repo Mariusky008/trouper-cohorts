@@ -37,6 +37,20 @@ const GOAL_OPTIONS = [
 ];
 
 export function ProfileContent({ user, isReadOnly = false }: { user: any; isReadOnly?: boolean }) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return <div className="p-8 text-center text-[#2E130C]/60 font-medium">Chargement...</div>;
+  }
+
+  return <ProfileContentInner user={user} isReadOnly={isReadOnly} />;
+}
+
+function ProfileContentInner({ user, isReadOnly = false }: { user: any; isReadOnly?: boolean }) {
   const { toast } = useToast();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -344,16 +358,6 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
           return { ...prev, current_goals: newGoals };
       });
   };
-
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  if (!mounted) {
-    return <div className="p-8 text-center text-[#2E130C]/60 font-medium">Chargement...</div>;
-  }
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
