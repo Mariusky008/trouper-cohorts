@@ -2027,6 +2027,179 @@ export function MatchCardWhatsAppPreview() {
   );
 }
 
+export function GoldMatchCardPreview() {
+  const [state, setState] = useState<'proposal' | 'waiting' | 'matched' | 'declined'>('proposal');
+  const [isWhyOpen, setIsWhyOpen] = useState(false);
+  const [isOfferOpen, setIsOfferOpen] = useState(false);
+  const [isActionOpen, setIsActionOpen] = useState(false);
+
+  const resetCard = () => setState('proposal');
+
+  return (
+    <div className="relative w-full max-w-sm mx-auto min-h-[600px] h-auto rounded-[2.5rem] overflow-hidden shadow-2xl bg-[#0D0A04] border border-yellow-300/25 flex flex-col items-center justify-between text-center p-6 pb-8 group">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(251,191,36,0.22),_transparent_45%)] z-0"></div>
+      <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-[0.03] z-0"></div>
+
+      <div className="relative z-10 w-full flex flex-col items-center h-full pt-4">
+        <Badge className="mb-4 bg-yellow-400/15 text-yellow-300 border-yellow-300/30 px-4 py-1.5 font-black uppercase tracking-widest">
+          Gold Match
+        </Badge>
+
+        <div className="w-24 h-24 rounded-full p-[3px] bg-gradient-to-r from-yellow-300 via-amber-400 to-yellow-200 shadow-xl">
+          <div className="w-full h-full rounded-full bg-[#1A1206] border-4 border-[#3B2A0E] flex items-center justify-center">
+            <Sparkles className="w-10 h-10 text-yellow-300" />
+          </div>
+        </div>
+
+        <div className="mt-4 text-center">
+          <h2 className="text-2xl font-black text-yellow-100 leading-tight">Pack Visibilité Resto</h2>
+          <p className="text-xs text-yellow-100/70 mt-1 uppercase tracking-wider font-bold">Community Manager × Photographe Local</p>
+        </div>
+
+        <div className="grid grid-cols-3 gap-2 w-full mt-5">
+          <Button variant="outline" onClick={() => setIsWhyOpen(true)} className="h-10 bg-[#1A1206] border-yellow-300/30 text-yellow-100 hover:bg-[#251909] text-[10px] font-black uppercase">
+            Pourquoi
+          </Button>
+          <Button variant="outline" onClick={() => setIsOfferOpen(true)} className="h-10 bg-[#1A1206] border-yellow-300/30 text-yellow-100 hover:bg-[#251909] text-[10px] font-black uppercase">
+            Offre
+          </Button>
+          <Button variant="outline" onClick={() => setIsActionOpen(true)} className="h-10 bg-[#1A1206] border-yellow-300/30 text-yellow-100 hover:bg-[#251909] text-[10px] font-black uppercase">
+            Action
+          </Button>
+        </div>
+
+        <div className="w-full mt-4 bg-[#1A1206]/85 rounded-2xl border border-yellow-300/20 p-4 text-left">
+          {state === 'proposal' && (
+            <p className="text-sm text-yellow-50/85 leading-relaxed font-medium">
+              L&apos;IA détecte une opportunité concrète à vendre localement en 48h. 
+              <span className="text-yellow-200 font-black"> Validation d&apos;intérêt réciproque</span> avant mise en relation.
+            </p>
+          )}
+          {state === 'waiting' && (
+            <p className="text-sm text-yellow-50/85 leading-relaxed font-medium">
+              Vous avez validé l&apos;offre. En attente de la réponse de l&apos;autre membre pour déclencher WhatsApp.
+            </p>
+          )}
+          {state === 'matched' && (
+            <p className="text-sm text-emerald-200 leading-relaxed font-bold">
+              Double validation confirmée. Vous êtes tous les deux partants pour lancer l&apos;offre.
+            </p>
+          )}
+          {state === 'declined' && (
+            <p className="text-sm text-amber-200 leading-relaxed font-medium">
+              Vous avez passé cette opportunité. Popey vous proposera une autre piste mieux alignée.
+            </p>
+          )}
+        </div>
+
+        <div className="flex flex-col gap-3 w-full mt-6">
+          {state === 'proposal' && (
+            <>
+              <Button onClick={() => setState('waiting')} className="w-full h-14 bg-gradient-to-r from-yellow-400 to-amber-500 text-[#2E130C] hover:from-yellow-300 hover:to-amber-400 font-black text-base rounded-xl shadow-lg">
+                <Handshake className="w-5 h-5 mr-2" />
+                Je suis intéressé
+              </Button>
+              <Button variant="outline" onClick={() => setState('declined')} className="w-full h-12 border-yellow-300/30 bg-[#1A1206] text-yellow-100 hover:bg-[#251909] font-bold rounded-xl">
+                Passer pour aujourd&apos;hui
+              </Button>
+            </>
+          )}
+
+          {state === 'waiting' && (
+            <>
+              <div className="grid grid-cols-2 gap-2">
+                <Button onClick={() => setState('matched')} className="h-11 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs uppercase">
+                  Simuler: intéressé
+                </Button>
+                <Button onClick={() => setState('declined')} className="h-11 bg-red-600 hover:bg-red-500 text-white font-black text-xs uppercase">
+                  Simuler: refus
+                </Button>
+              </div>
+              <Button variant="ghost" onClick={resetCard} className="w-full text-yellow-100/70 hover:text-yellow-100 hover:bg-white/5">
+                Réinitialiser le test
+              </Button>
+            </>
+          )}
+
+          {state === 'matched' && (
+            <>
+              <Button className="w-full h-14 bg-[#25D366] hover:bg-[#20bd5a] text-white font-black text-base rounded-xl shadow-lg">
+                <MessageSquare className="w-5 h-5 mr-2 fill-current" />
+                Ouvrir WhatsApp (double opt-in)
+              </Button>
+              <Button variant="ghost" onClick={resetCard} className="w-full text-yellow-100/70 hover:text-yellow-100 hover:bg-white/5">
+                Rejouer le scénario
+              </Button>
+            </>
+          )}
+
+          {state === 'declined' && (
+            <>
+              <Button onClick={resetCard} className="w-full h-12 bg-[#2E130C] hover:bg-[#2E130C]/90 text-white font-black rounded-xl">
+                Voir une autre proposition
+              </Button>
+            </>
+          )}
+        </div>
+      </div>
+
+      <Dialog open={isWhyOpen} onOpenChange={setIsWhyOpen}>
+        <DialogContent className="bg-white border-[#2E130C]/10 text-[#2E130C] sm:max-w-md rounded-2xl w-[90vw]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-xl font-black text-amber-700">
+              <Sparkles className="h-5 w-5" />
+              Pourquoi vous deux
+            </DialogTitle>
+            <DialogDescription className="text-sm text-[#2E130C]/60">
+              Complémentarité détectée sur vos compétences et vos cibles locales.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="rounded-xl bg-amber-50 border border-amber-200 p-4 text-sm text-[#2E130C]/80">
+            Vous apportez la visibilité social media, l&apos;autre membre apporte la production photo. Ensemble, vous pouvez vendre un pack simple et immédiat aux restaurateurs de la ville.
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isOfferOpen} onOpenChange={setIsOfferOpen}>
+        <DialogContent className="bg-white border-[#2E130C]/10 text-[#2E130C] sm:max-w-md rounded-2xl w-[90vw]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-xl font-black text-amber-700">
+              <Briefcase className="h-5 w-5" />
+              Offre hybride proposée
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2 text-sm">
+            <p className="font-bold text-[#2E130C]">Nom: Pack Visibilité Resto 7 jours</p>
+            <p className="text-[#2E130C]/80">Valeur: + trafic local + contenu pro + publication sponsorisée.</p>
+            <p className="text-[#2E130C]/80">Ticket cible: 390€ à 690€.</p>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isActionOpen} onOpenChange={setIsActionOpen}>
+        <DialogContent className="bg-white border-[#2E130C]/10 text-[#2E130C] sm:max-w-md rounded-2xl w-[90vw]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-xl font-black text-amber-700">
+              <Target className="h-5 w-5" />
+              Action concrète en 24h
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="rounded-xl bg-slate-50 border border-slate-200 p-3 text-sm text-[#2E130C]/80">
+              Script 5 minutes: ciblez 3 restos, proposez le pack test, verrouillez un premier RDV.
+            </div>
+            <Button className="w-full bg-[#2E130C] hover:bg-[#2E130C]/90 text-white">
+              <Users className="w-4 h-4 mr-2" />
+              Valider l&apos;offre de collaboration
+              <ChevronRight className="w-4 h-4 ml-2" />
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
 function QuoteIcon(props: any) {
 
     return (

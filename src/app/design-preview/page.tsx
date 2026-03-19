@@ -1,4 +1,4 @@
-import { WaitingCardPreview, MysteryCardPreview, MatchCardPreview, MatchCardFounderStylePreview, MysteryCardLockedPreview, FounderCardPreview, MissionValidationPreview, MatchCardWhatsAppPreview } from "@/components/dashboard/design-system-preview";
+import { WaitingCardPreview, MysteryCardPreview, MatchCardPreview, MatchCardFounderStylePreview, MysteryCardLockedPreview, FounderCardPreview, MissionValidationPreview, MatchCardWhatsAppPreview, GoldMatchCardPreview } from "@/components/dashboard/design-system-preview";
 import { PremiumLockedCard } from "@/components/dashboard/premium-locked-card";
 
 export default function DesignPreviewPage() {
@@ -113,6 +113,15 @@ export default function DesignPreviewPage() {
             </h2>
             <p className="text-sm text-slate-400 mb-4">Flow de fin de mission et récompense.</p>
             <MissionValidationPreview />
+          </div>
+
+          <div className="space-y-6 w-full max-w-sm">
+            <h2 className="text-xl font-bold text-white flex items-center gap-2">
+              <span className="bg-yellow-400 w-2 h-8 rounded-full"></span>
+              8. Gold Match (Test)
+            </h2>
+            <p className="text-sm text-slate-400 mb-4">Validation d&apos;intérêt réciproque avant mise en relation.</p>
+            <GoldMatchCardPreview />
           </div>
 
         </div>
