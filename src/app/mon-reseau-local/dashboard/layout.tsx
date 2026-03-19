@@ -97,10 +97,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
         // Only redirect if incomplete and trying to access other pages
         if (!isComplete && pathname !== "/mon-reseau-local/dashboard/profile" && pathname !== "/mon-reseau-local/dashboard/settings") {
-            // Force redirect to profile with edit mode trigger
-            // We use a query param 'edit=true' which ProfileContent listens to
             if (pathname !== "/mon-reseau-local/dashboard/profile") {
-                router.replace("/mon-reseau-local/dashboard/profile?edit=true");
+                router.replace("/mon-reseau-local/dashboard/profile");
             }
             setIsAuthorized(false);
         } else {

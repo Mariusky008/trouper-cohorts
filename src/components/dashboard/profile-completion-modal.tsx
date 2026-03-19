@@ -34,17 +34,13 @@ export function ProfileCompletionModal() {
   }, [pathname]); // Re-run check on navigation
 
   const handleAction = () => {
-    // If we are already on profile page, pass a query param to trigger edit mode
+    // If we are already on profile page, trigger edit mode directly
     if (pathname === "/mon-reseau-local/dashboard/profile") {
         setIsOpen(false);
-        // Trigger edit mode via event or query param
-        router.push("/mon-reseau-local/dashboard/profile?edit=true", { scroll: false });
-        // Dispatch custom event for immediate reaction without reload
         window.dispatchEvent(new Event("trigger-profile-edit"));
     } else {
-        // If elsewhere, redirect with edit param
         setIsOpen(false);
-        router.push("/mon-reseau-local/dashboard/profile?edit=true");
+        router.push("/mon-reseau-local/dashboard/profile");
     }
   };
 

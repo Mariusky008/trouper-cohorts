@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { 
     Briefcase, ShieldCheck, Award, Pencil, Save, X, Phone, 
     Linkedin, Instagram, Facebook, Globe, Upload, Loader2,
@@ -53,7 +53,6 @@ export function ProfileContent({ user, isReadOnly = false }: { user: any; isRead
 function ProfileContentInner({ user, isReadOnly = false }: { user: any; isReadOnly?: boolean }) {
   const { toast } = useToast();
   const router = useRouter();
-  const searchParams = useSearchParams();
   // const supabase = createClient();
   const [isEditing, setIsEditing] = useState(false);
   const [isOfferModalOpen, setIsOfferModalOpen] = useState(false);
@@ -119,33 +118,12 @@ function ProfileContentInner({ user, isReadOnly = false }: { user: any; isReadOn
       !!user.avatar_url && 
       hasSocialsOrOptOut;
 
-  // Auto-open edit modal if query param "edit=true" is present
+  // Auto-open edit modal via custom event
   useEffect(() => {
-      const checkEditParam = () => {
-          if (searchParams.get("edit") === "true") {
-              setIsEditing(true);
-              
-              // Clean up the URL without causing a full navigation
-              const newSearchParams = new URLSearchParams(searchParams.toString());
-              newSearchParams.delete("edit");
-              newSearchParams.delete("tab");
-              
-              const newUrl = newSearchParams.toString() 
-                ? `${window.location.pathname}?${newSearchParams.toString()}` 
-                : window.location.pathname;
-                
-              router.replace(newUrl, { scroll: false });
-          }
-      };
-
-      checkEditParam();
-
       const handleCustomEvent = () => setIsEditing(true);
-      if (typeof window !== "undefined") {
-          window.addEventListener("trigger-profile-edit", handleCustomEvent);
-          return () => window.removeEventListener("trigger-profile-edit", handleCustomEvent);
-      }
-  }, [searchParams, router]);
+      window.addEventListener("trigger-profile-edit", handleCustomEvent);
+      return () => window.removeEventListener("trigger-profile-edit", handleCustomEvent);
+  }, []);
 
   const validateStep = (step: number) => {
     const errors: Record<string, string> = {};
