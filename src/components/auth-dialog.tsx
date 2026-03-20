@@ -84,7 +84,7 @@ export function AuthDialog({ mode = "login", trigger, defaultOpen = false }: Aut
     setIsLoading(true);
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/auth/callback`,
+        redirectTo: `${window.location.origin}/update-password`,
       });
       if (error) throw error;
       const message = "Email de réinitialisation envoyé. Vérifiez votre boîte mail.";

@@ -239,46 +239,55 @@ function DashboardLayoutFull({ children, pathname }: { children: React.ReactNode
         </div>
       </main>
 
-      <div className="lg:hidden fixed bottom-3 left-1/2 -translate-x-1/2 z-40 w-[calc(100%-1.25rem)] max-w-md">
-        <div className="rounded-3xl border-2 border-[#2E130C]/20 bg-[#2E130C] text-[#E2D9BC] shadow-2xl px-3 py-2">
+      <div className="lg:hidden fixed bottom-[max(0.75rem,env(safe-area-inset-bottom))] left-1/2 -translate-x-1/2 z-40 w-[calc(100%-1.25rem)] max-w-md">
+        <div className="rounded-3xl border border-white/20 bg-gradient-to-b from-[#2E130C] to-[#1F0D08] text-[#E2D9BC] shadow-[0_20px_60px_rgba(46,19,12,0.45)] backdrop-blur-xl px-3 py-2">
           <div className="grid grid-cols-5 items-center">
             {MOBILE_BOTTOM_ITEMS.map((item) => {
               const isActive = pathname === item.href;
               return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={cn(
-                    "relative flex flex-col items-center justify-center gap-1 py-2 rounded-2xl transition-all",
-                    isActive ? "bg-white/15" : "hover:bg-white/10"
-                  )}
-                >
-                  <item.icon className="h-5 w-5" />
-                  <span className="text-[10px] font-bold leading-none">{item.label}</span>
-                  {item.label === "Opportunités" && pendingCount > 0 && (
-                    <span className="absolute top-1 right-4 bg-[#B20B13] text-[#E2D9BC] text-[9px] font-bold px-1.5 py-0.5 rounded-full">{pendingCount}</span>
-                  )}
-                  {item.label === "Marché" && badges.market > 0 && (
-                    <span className="absolute top-1 right-4 bg-[#B20B13] text-[#E2D9BC] text-[9px] font-bold px-1.5 py-0.5 rounded-full">{badges.market}</span>
-                  )}
-                  {item.label === "Offres" && badges.offers > 0 && (
-                    <span className="absolute top-1 right-4 bg-[#B20B13] text-[#E2D9BC] text-[9px] font-bold px-1.5 py-0.5 rounded-full">{badges.offers}</span>
-                  )}
-                </Link>
+                <motion.div key={item.href} whileTap={{ scale: 0.94 }} className="relative">
+                  <Link
+                    href={item.href}
+                    className="relative flex flex-col items-center justify-center gap-1 py-2.5 rounded-2xl transition-all overflow-hidden"
+                  >
+                    {isActive && (
+                      <motion.div
+                        layoutId="mobileBottomActive"
+                        className="absolute inset-0.5 rounded-2xl bg-white/14 border border-white/20"
+                        transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                      />
+                    )}
+                    <item.icon className={cn("h-5 w-5 relative z-10", isActive ? "text-white" : "text-[#E2D9BC]/75")} />
+                    <span className={cn("text-[10px] font-bold leading-none relative z-10", isActive ? "text-white" : "text-[#E2D9BC]/75")}>{item.label}</span>
+                    {item.label === "Opportunités" && pendingCount > 0 && (
+                      <span className="absolute top-1 right-4 bg-[#B20B13] text-[#E2D9BC] text-[9px] font-bold px-1.5 py-0.5 rounded-full border border-white/15 z-20">{pendingCount}</span>
+                    )}
+                    {item.label === "Marché" && badges.market > 0 && (
+                      <span className="absolute top-1 right-4 bg-[#B20B13] text-[#E2D9BC] text-[9px] font-bold px-1.5 py-0.5 rounded-full border border-white/15 z-20">{badges.market}</span>
+                    )}
+                    {item.label === "Offres" && badges.offers > 0 && (
+                      <span className="absolute top-1 right-4 bg-[#B20B13] text-[#E2D9BC] text-[9px] font-bold px-1.5 py-0.5 rounded-full border border-white/15 z-20">{badges.offers}</span>
+                    )}
+                  </Link>
+                </motion.div>
               );
             })}
 
             <div className="relative flex justify-center">
-              <button
+              <motion.button
+                whileTap={{ scale: 0.94 }}
                 onClick={() => setIsMobileProfileMenuOpen((v) => !v)}
-                className="flex flex-col items-center justify-center gap-1 py-2 rounded-2xl w-full active:scale-95 transition-transform"
+                className={cn(
+                  "relative flex flex-col items-center justify-center gap-1 py-2.5 rounded-2xl w-full transition-transform overflow-hidden",
+                  ["/mon-reseau-local/dashboard/profile", "/mon-reseau-local/dashboard/settings", "/mon-reseau-local/dashboard/connections"].includes(pathname) && "bg-white/14 border border-white/20"
+                )}
               >
-                <Avatar className="h-6 w-6 border border-[#E2D9BC]/40">
+                <Avatar className="h-6 w-6 border border-[#E2D9BC]/40 relative z-10">
                   <AvatarImage src={avatarUrl} className="object-cover object-top" />
                   <AvatarFallback className="bg-white/20 text-[#E2D9BC] text-[10px]">{initials}</AvatarFallback>
                 </Avatar>
-                <span className="text-[10px] font-bold leading-none">Profil</span>
-              </button>
+                <span className={cn("text-[10px] font-bold leading-none relative z-10", ["/mon-reseau-local/dashboard/profile", "/mon-reseau-local/dashboard/settings", "/mon-reseau-local/dashboard/connections"].includes(pathname) ? "text-white" : "text-[#E2D9BC]/75")}>Profil</span>
+              </motion.button>
               <AnimatePresence>
                 {isMobileProfileMenuOpen && (
                   <motion.div

@@ -33,7 +33,7 @@ export function LoginForm({ defaultEmail = "", isNetworkLogin = false }: LoginFo
     setIsSubmitting(true);
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/auth/callback`,
+        redirectTo: `${window.location.origin}/update-password`,
       });
       if (error) throw error;
       toast.success("Email de réinitialisation envoyé", {
