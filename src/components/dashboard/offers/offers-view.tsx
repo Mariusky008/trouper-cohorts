@@ -298,7 +298,13 @@ export function OffersView({
                     </div>
 
                     {productDeck.length === 0 && (
-                        <div className="text-center py-10 text-stone-500 font-medium">Plus aucune offre à traiter pour ce tour.</div>
+                        <div className="max-w-3xl mx-auto rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 text-center">
+                            <p className="text-sm font-black text-[#2E130C]">Ta carte perso ne se swipe pas</p>
+                            <p className="text-xs text-[#2E130C]/75 mt-1">
+                                Le mode swipe s’applique uniquement aux offres d’autres membres débloquées par vos matchs.
+                                Dès qu’une offre partenaire est disponible, elle apparaît ici en pile Tinder.
+                            </p>
+                        </div>
                     )}
 
                     <div className="relative h-[680px] max-w-sm mx-auto">
