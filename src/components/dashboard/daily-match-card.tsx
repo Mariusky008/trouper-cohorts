@@ -776,10 +776,17 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
       };
   }, [userId, matches, missionProgressKey]);
 
-  const [popupView, setPopupView] = useState<'step1_status' | 'step2_mission'>('step1_status');
+  const [popupView, setPopupView] = useState<'step1_status' | 'step2_mission' | 'step3_recap'>('step1_status');
   const [callHappened, setCallHappened] = useState<boolean | null>(null);
   const [callMade, setCallMade] = useState(false);
   const [partnerMissionResult, setPartnerMissionResult] = useState<'completed' | 'super_completed' | 'not_completed' | null>(null);
+  const [recapStats, setRecapStats] = useState<{
+    total_calls: number;
+    missions_realisees: number;
+    missions_refusees: number;
+    appels_absence: number;
+    score: number;
+  } | null>(null);
 
   // Dialog States
   const [isWhyVisible, setIsWhyVisible] = useState(false);
@@ -901,11 +908,34 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
         return;
     }
 
+    if (userId) {
+        const supabase = createClient();
+        const [{ data: missionStats }, { data: trustScore }] = await Promise.all([
+            supabase
+                .from("user_mission_stats")
+                .select("total_calls, missions_realisees, missions_refusees, appels_absence")
+                .eq("user_id", userId)
+                .maybeSingle(),
+            supabase
+                .from("trust_scores")
+                .select("score")
+                .eq("user_id", userId)
+                .maybeSingle(),
+        ]);
+        setRecapStats({
+            total_calls: missionStats?.total_calls || currentUserProfile?.stats?.total_calls || 0,
+            missions_realisees: missionStats?.missions_realisees || currentUserProfile?.stats?.missions_realisees || 0,
+            missions_refusees: missionStats?.missions_refusees || currentUserProfile?.stats?.missions_refusees || 0,
+            appels_absence: missionStats?.appels_absence || currentUserProfile?.stats?.appels_absence || 0,
+            score: trustScore?.score || currentUserProfile?.score || 5,
+        });
+    }
+
     setStep('validated');
     if (missionProgressKey) {
         localStorage.removeItem(missionProgressKey);
     }
-    setIsValidationOpen(false);
+    setPopupView('step3_recap');
     confetti({ particleCount: 200, spread: 100, origin: { y: 0.6 } });
     
     // Optimistic Update: Update local state to prevent flicker on refresh
@@ -1367,6 +1397,7 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
                             setPopupView('step1_status');
                             setCallHappened(null);
                             setPartnerMissionResult(null);
+                            setRecapStats(null);
                         }
                     }}>
                         <DialogTrigger asChild>
@@ -1386,7 +1417,7 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
                                     className="h-full bg-emerald-500"
                                     initial={{ width: "0%" }}
                                     animate={{ 
-                                        width: popupView === 'step1_status' ? "50%" : "100%" 
+                                        width: popupView === 'step1_status' ? "33%" : popupView === 'step2_mission' ? "66%" : "100%" 
                                     }}
                                     transition={{ duration: 0.5 }}
                                 />
@@ -1395,7 +1426,7 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
                             {/* HEADER */}
                             <DialogHeader className="mb-6 mt-4">
                                 <DialogTitle className="text-center text-3xl font-black text-[#2E130C]">
-                                    {popupView === 'step1_status' ? "Bilan de la mission" : "Évaluation de mission"}
+                                    {popupView === 'step1_status' ? "Bilan de la mission" : popupView === 'step2_mission' ? "Évaluation de mission" : "Ton récapitulatif"}
                                 </DialogTitle>
                             </DialogHeader>
                             
@@ -1498,6 +1529,40 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
                                         Valider la mission
                                     </Button>
                                     <Button variant="ghost" onClick={() => setPopupView('step1_status')} className="w-full text-slate-500">Retour</Button>
+                                </div>
+                            )}
+
+                            {popupView === 'step3_recap' && (
+                                <div className="space-y-4 p-2">
+                                    <div className="rounded-2xl border border-[#2E130C]/10 bg-[#F3F0E7] p-4 space-y-3">
+                                        <div className="flex items-center justify-between text-sm">
+                                            <span className="font-bold text-[#2E130C]/70">Nombre d&apos;appels</span>
+                                            <span className="font-black text-[#2E130C]">{recapStats?.total_calls ?? currentUserProfile?.stats?.total_calls ?? 0}</span>
+                                        </div>
+                                        <div className="flex items-center justify-between text-sm">
+                                            <span className="font-bold text-[#2E130C]/70">Missions accomplies</span>
+                                            <span className="font-black text-emerald-700">{recapStats?.missions_realisees ?? currentUserProfile?.stats?.missions_realisees ?? 0}</span>
+                                        </div>
+                                        <div className="flex items-center justify-between text-sm">
+                                            <span className="font-bold text-[#2E130C]/70">Missions refusées</span>
+                                            <span className="font-black text-rose-700">{recapStats?.missions_refusees ?? currentUserProfile?.stats?.missions_refusees ?? 0}</span>
+                                        </div>
+                                        <div className="flex items-center justify-between text-sm">
+                                            <span className="font-bold text-[#2E130C]/70">Appels en absence</span>
+                                            <span className="font-black text-amber-700">{recapStats?.appels_absence ?? currentUserProfile?.stats?.appels_absence ?? 0}</span>
+                                        </div>
+                                    </div>
+                                    <div className="rounded-2xl border border-[#B20B13]/20 bg-[#B20B13]/5 p-4 text-center">
+                                        <div className="text-xs uppercase tracking-wider font-bold text-[#B20B13]/70">Score de confiance</div>
+                                        <div className="text-3xl font-black text-[#B20B13]">{(recapStats?.score ?? currentUserProfile?.score ?? 5).toFixed(1)}/5</div>
+                                    </div>
+                                    <Button
+                                        type="button"
+                                        onClick={() => setIsValidationOpen(false)}
+                                        className="w-full bg-[#2E130C] text-white hover:bg-[#2E130C]/90 font-bold"
+                                    >
+                                        Continuer
+                                    </Button>
                                 </div>
                             )}
                         </DialogContent>

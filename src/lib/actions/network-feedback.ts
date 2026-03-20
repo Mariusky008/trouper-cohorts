@@ -217,31 +217,33 @@ export async function completeMatchMission({
     return fallbackToLegacy(finalReceiverId);
   }
 
-  const selfOutcome = mapOutcomeFromMission(callHappened, missionResult);
-  const { data: existingSelfOutcome } = await adminClient
-    .from("network_match_outcomes")
-    .select("validation_source")
-    .eq("match_id", matchId)
-    .eq("user_id", user.id)
-    .maybeSingle();
+  if (!callHappened) {
+    const selfOutcome = mapOutcomeFromMission(false, "not_completed");
+    const { data: existingSelfOutcome } = await adminClient
+      .from("network_match_outcomes")
+      .select("validation_source")
+      .eq("match_id", matchId)
+      .eq("user_id", user.id)
+      .maybeSingle();
 
-  const selfSource: ValidationSource =
-    existingSelfOutcome?.validation_source === "peer_auto" ? "peer_confirmed" : "self";
+    const selfSource: ValidationSource =
+      existingSelfOutcome?.validation_source === "peer_auto" ? "peer_confirmed" : "self";
 
-  const { error: selfOutcomeError } = await adminClient.from("network_match_outcomes").upsert(
-    {
-      match_id: matchId,
-      user_id: user.id,
-      final_status: selfOutcome,
-      validation_source: selfSource,
-      validated_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    },
-    { onConflict: "match_id,user_id" }
-  );
+    const { error: selfOutcomeError } = await adminClient.from("network_match_outcomes").upsert(
+      {
+        match_id: matchId,
+        user_id: user.id,
+        final_status: selfOutcome,
+        validation_source: selfSource,
+        validated_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "match_id,user_id" }
+    );
 
-  if (selfOutcomeError) {
-    return fallbackToLegacy(finalReceiverId);
+    if (selfOutcomeError) {
+      return fallbackToLegacy(finalReceiverId);
+    }
   }
 
   if (callHappened && (missionResult === "completed" || missionResult === "super_completed")) {
