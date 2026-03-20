@@ -30,12 +30,14 @@ export default async function AdminCohortsPage() {
   const cohorts = cohortsRes.data || [];
   
   // Fetch validations using Admin Client (Bypass RLS)
-  const now = new Date();
-  const parisNow = new Date(now.toLocaleString("en-US", { timeZone: "Europe/Paris" }));
-  const startParis = new Date(parisNow);
-  startParis.setHours(0, 0, 0, 0);
-  const endParis = new Date(startParis);
-  endParis.setDate(endParis.getDate() + 1);
+  const parisDayFormatter = new Intl.DateTimeFormat("fr-CA", {
+    timeZone: "Europe/Paris",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  });
+  const todayParisKey = parisDayFormatter.format(new Date());
+  const getParisDayKey = (value: string | null | undefined) => (value ? parisDayFormatter.format(new Date(value)) : "");
 
   let validations: any[] = [];
   const { data: reviewValidations, error: reviewError } = await adminClient
@@ -48,9 +50,8 @@ export default async function AdminCohortsPage() {
         reviewer:reviewer_id(id, display_name, avatar_url, trade),
         reviewed:reviewed_id(id, display_name, avatar_url)
     `)
-    .gte("created_at", startParis.toISOString())
-    .lt("created_at", endParis.toISOString())
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .limit(300);
 
   if (reviewError) {
     const { data: legacyValidations } = await adminClient
@@ -63,12 +64,11 @@ export default async function AdminCohortsPage() {
           giver:giver_id(id, display_name, avatar_url, trade),
           receiver:receiver_id(id, display_name, avatar_url)
       `)
-      .gte("created_at", startParis.toISOString())
-      .lt("created_at", endParis.toISOString())
-      .order("created_at", { ascending: false });
-    validations = legacyValidations || [];
+      .order("created_at", { ascending: false })
+      .limit(300);
+    validations = (legacyValidations || []).filter((v: any) => getParisDayKey(v.created_at) === todayParisKey);
   } else {
-    validations = reviewValidations || [];
+    validations = (reviewValidations || []).filter((v: any) => getParisDayKey(v.created_at) === todayParisKey);
   }
 
   const { data: serviceValidations } = await adminClient
@@ -82,11 +82,12 @@ export default async function AdminCohortsPage() {
       beneficiary:beneficiary_id(id, display_name, avatar_url)
     `)
     .eq("status", "confirmed")
-    .gte("confirmed_at", startParis.toISOString())
-    .lt("confirmed_at", endParis.toISOString())
-    .order("confirmed_at", { ascending: false });
+    .order("confirmed_at", { ascending: false })
+    .limit(300);
 
-  const normalizedServiceValidations = (serviceValidations || []).map((item: any) => ({
+  const normalizedServiceValidations = (serviceValidations || [])
+    .filter((item: any) => getParisDayKey(item.confirmed_at) === todayParisKey)
+    .map((item: any) => ({
     id: `service-${item.id}`,
     created_at: item.confirmed_at,
     source: "service",
