@@ -2434,6 +2434,7 @@ export function GoldMatchCardPreview() {
 
 export function OfferTinderCardPreview() {
   const [status, setStatus] = useState<"new" | "interested" | "refused">("new");
+  const [isInfoOpen, setIsInfoOpen] = useState(false);
   const whatsappMessage = "Hello, ton offre sur Popey m'intéresse. On peut en parler rapidement aujourd'hui ?";
 
   return (
@@ -2452,12 +2453,23 @@ export function OfferTinderCardPreview() {
       <div className="relative rounded-[2.4rem] overflow-hidden shadow-2xl bg-[#16081D] border border-fuchsia-300/35">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(217,70,239,0.45),transparent_45%)]" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom,rgba(251,191,36,0.35),transparent_42%)]" />
+        <motion.div
+          animate={{ x: ["-120%", "130%"] }}
+          transition={{ duration: 2.8, repeat: Infinity, ease: "linear" }}
+          className="absolute -top-24 h-[220%] w-24 rotate-12 bg-white/10 blur-2xl"
+        />
         <div className="relative z-10 p-5 space-y-4 text-[#2E130C]">
           <div className="flex items-center justify-between">
             <Badge className="bg-fuchsia-500/20 text-fuchsia-100 border border-fuchsia-300/40 uppercase tracking-wider text-[10px] font-black">
               Offre Cadeau
             </Badge>
-            <span className="text-[10px] uppercase tracking-wider font-bold text-amber-200">🔥 Limited</span>
+            <motion.span
+              animate={{ scale: [1, 1.08, 1] }}
+              transition={{ duration: 1.4, repeat: Infinity }}
+              className="text-[10px] uppercase tracking-wider font-bold text-amber-200"
+            >
+              🔥 Limited
+            </motion.span>
           </div>
 
           <div className="rounded-2xl border border-fuchsia-300/25 bg-white/10 backdrop-blur-md p-4 flex flex-col items-center text-center gap-2">
@@ -2481,18 +2493,22 @@ export function OfferTinderCardPreview() {
             <p className="text-xs text-amber-100 mt-2 font-bold">Prix flash 24h: 290€ <span className="line-through opacity-70 ml-1">490€</span></p>
           </div>
 
-          <div className="grid grid-cols-3 gap-2">
-            <div className="rounded-xl border border-white/20 bg-white/10 p-2 text-center">
-              <div className="text-[9px] uppercase tracking-wider text-fuchsia-100/75 font-bold">Durée</div>
-              <div className="text-xs font-black text-white">7 jours</div>
+          <div className="rounded-2xl border border-white/20 bg-white/10 backdrop-blur-md p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <p className="text-[10px] uppercase tracking-[0.2em] font-black text-fuchsia-100">Ce que vous achetez</p>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setIsInfoOpen(true)}
+                className="h-7 px-3 bg-[#2A1237] border-fuchsia-300/40 text-fuchsia-100 hover:bg-[#341748] text-[10px] font-black uppercase"
+              >
+                En savoir +
+              </Button>
             </div>
-            <div className="rounded-xl border border-white/20 bg-white/10 p-2 text-center">
-              <div className="text-[9px] uppercase tracking-wider text-fuchsia-100/75 font-bold">Cible</div>
-              <div className="text-xs font-black text-white">TPE</div>
-            </div>
-            <div className="rounded-xl border border-white/20 bg-white/10 p-2 text-center">
-              <div className="text-[9px] uppercase tracking-wider text-fuchsia-100/75 font-bold">Ticket</div>
-              <div className="text-xs font-black text-white">290€</div>
+            <div className="space-y-2 text-left">
+              <p className="text-xs text-white font-semibold">✅ Audit express de ton acquisition locale</p>
+              <p className="text-xs text-white font-semibold">✅ 3 scripts de messages prêts à envoyer</p>
+              <p className="text-xs text-white font-semibold">✅ Plan d’action concret sur 30 jours</p>
             </div>
           </div>
 
@@ -2534,6 +2550,37 @@ export function OfferTinderCardPreview() {
           )}
         </div>
       </div>
+
+      <Dialog open={isInfoOpen} onOpenChange={setIsInfoOpen}>
+        <DialogContent className="bg-white border-[#2E130C]/10 text-[#2E130C] sm:max-w-md rounded-2xl w-[92vw]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-xl font-black text-fuchsia-700">
+              <Gift className="h-5 w-5" />
+              Détail du pack visibilité
+            </DialogTitle>
+            <DialogDescription className="text-sm text-[#2E130C]/60">
+              Tout ce qui est inclus dans l’offre avant achat.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 text-sm">
+            <div className="rounded-xl bg-fuchsia-50 border border-fuchsia-200 p-3">
+              <p className="font-bold text-[#2E130C]">1) Audit express (30 min)</p>
+              <p className="text-[#2E130C]/80">Analyse de votre présence digitale + axes prioritaires à corriger.</p>
+            </div>
+            <div className="rounded-xl bg-amber-50 border border-amber-200 p-3">
+              <p className="font-bold text-[#2E130C]">2) Scripts prêts à l’emploi</p>
+              <p className="text-[#2E130C]/80">3 messages WhatsApp + 1 modèle de relance pour déclencher des réponses.</p>
+            </div>
+            <div className="rounded-xl bg-emerald-50 border border-emerald-200 p-3">
+              <p className="font-bold text-[#2E130C]">3) Plan d’action 30 jours</p>
+              <p className="text-[#2E130C]/80">Roadmap simple et priorisée pour générer des leads localement.</p>
+            </div>
+            <div className="rounded-xl bg-slate-50 border border-slate-200 p-3">
+              <p className="text-[#2E130C] font-semibold">Prix flash: 290€ au lieu de 490€ · Bonus inclus 🎁</p>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
