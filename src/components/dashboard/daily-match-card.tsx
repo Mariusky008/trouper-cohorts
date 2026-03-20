@@ -12,8 +12,6 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { createOpportunity } from "@/lib/actions/opportunity-creation";
 import { notifyFounderCall } from "@/lib/actions/founder-call";
 import { completeMatchMission } from "@/lib/actions/network-feedback";
 import { incrementUserPoints } from "@/lib/actions/gamification";
@@ -119,8 +117,6 @@ function FounderCardPreview({ type = "onboarding", onConfirm }: { type?: "onboar
         </div>
     );
 }
-
-import { OPPORTUNITY_TYPES } from "@/constants/opportunities";
 
 interface DailyMatchCardProps {
   matches: any[];
@@ -780,7 +776,7 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
       };
   }, [userId, matches, missionProgressKey]);
 
-  const [popupView, setPopupView] = useState<'step1_status' | 'step2_mission' | 'step3_gift'>('step1_status');
+  const [popupView, setPopupView] = useState<'step1_status' | 'step2_mission'>('step1_status');
   const [callHappened, setCallHappened] = useState<boolean | null>(null);
   const [callMade, setCallMade] = useState(false);
   const [partnerMissionResult, setPartnerMissionResult] = useState<'completed' | 'super_completed' | 'not_completed' | null>(null);
@@ -800,11 +796,6 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
           setSelectedMission(matches[0].my_mission || null);
       }
   }, [matches]);
-
-  // Opportunity Logic
-  const [oppType, setOppType] = useState<string | undefined>(undefined);
-  const [oppDetails, setOppDetails] = useState("");
-  const [isSubmittingOpp, setIsSubmittingOpp] = useState(false);
 
   const getSmartMissionSuggestion = () => {
       const currentMatch = matches?.[0];
@@ -898,20 +889,11 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
         return;
     }
 
-    if (oppType) {
-        const opportunityResult = await handleCreateOpportunity(currentMatch.partnerId, currentMatch.name);
-        if (!opportunityResult) {
-            return;
-        }
-    }
-
     const result = await completeMatchMission({
         matchId: currentMatch.id,
         receiverId: currentMatch.partnerId,
         callHappened,
         missionResult: partnerMissionResult || "not_completed",
-        opportunityType: oppType,
-        opportunityDetails: oppDetails.trim() || undefined,
     });
 
     if (result?.error) {
@@ -938,38 +920,6 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
     } else {
         toast.success("Absence validée");
     }
-  };
-
-  const handleCreateOpportunity = async (partnerId: string, partnerName: string) => {
-      if (!oppType || !oppDetails.trim()) {
-          toast.error("Veuillez compléter tous les champs");
-          return false;
-      }
-      setIsSubmittingOpp(true);
-      try {
-          const selectedTypeObj = OPPORTUNITY_TYPES.find(t => t.id === oppType);
-          const points = selectedTypeObj?.points || 10;
-          const result = await createOpportunity({
-              receiverId: partnerId,
-              type: oppType,
-              points: points,
-              details: oppDetails
-          });
-          if (result.success) {
-              toast.success(`Opportunité envoyée à ${partnerName} ! 🎁`);
-              setOppDetails("");
-              confetti({ particleCount: 150, spread: 60, origin: { y: 0.7 } });
-              return true;
-          } else {
-              toast.error(result.error || "Erreur lors de l'envoi");
-              return false;
-          }
-      } catch (e) {
-          toast.error("Erreur inattendue");
-          return false;
-      } finally {
-          setIsSubmittingOpp(false);
-      }
   };
 
   const triggerCallRewards = async () => {
@@ -1417,8 +1367,6 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
                             setPopupView('step1_status');
                             setCallHappened(null);
                             setPartnerMissionResult(null);
-                            setOppType(undefined);
-                            setOppDetails("");
                         }
                     }}>
                         <DialogTrigger asChild>
@@ -1438,7 +1386,7 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
                                     className="h-full bg-emerald-500"
                                     initial={{ width: "0%" }}
                                     animate={{ 
-                                        width: popupView === 'step1_status' ? "33%" : popupView === 'step2_mission' ? "66%" : "100%" 
+                                        width: popupView === 'step1_status' ? "50%" : "100%" 
                                     }}
                                     transition={{ duration: 0.5 }}
                                 />
@@ -1447,7 +1395,7 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
                             {/* HEADER */}
                             <DialogHeader className="mb-6 mt-4">
                                 <DialogTitle className="text-center text-3xl font-black text-[#2E130C]">
-                                    {popupView === 'step1_status' ? "Bilan de la mission" : popupView === 'step2_mission' ? "Évaluation de mission" : "Offrir une opportunité"}
+                                    {popupView === 'step1_status' ? "Bilan de la mission" : "Évaluation de mission"}
                                 </DialogTitle>
                             </DialogHeader>
                             
@@ -1544,77 +1492,12 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
                                     <Button
                                         type="button"
                                         disabled={!partnerMissionResult}
-                                        onClick={() => setPopupView('step3_gift')}
+                                        onClick={handleValidate}
                                         className="w-full bg-[#2E130C] text-white hover:bg-[#2E130C]/90 font-bold mt-2 disabled:opacity-50"
                                     >
-                                        Continuer <ChevronRight className="w-4 h-4 ml-1" />
+                                        Valider la mission
                                     </Button>
                                     <Button variant="ghost" onClick={() => setPopupView('step1_status')} className="w-full text-slate-500">Retour</Button>
-                                </div>
-                            )}
-
-                            {/* VIEW 3: GIFT & MESSAGE */}
-                            {popupView === 'step3_gift' && (
-                                <div className="space-y-4 p-2">
-                                    {!oppType ? (
-                                        <div className="grid grid-cols-1 gap-2 max-h-[50vh] overflow-y-auto pr-1">
-                                            {OPPORTUNITY_TYPES.map((type) => {
-                                                const Icon = type.icon;
-                                                return (
-                                                    <button
-                                                        key={type.id}
-                                                        onClick={() => setOppType(type.id)}
-                                                        className="group relative flex items-center gap-3 p-3 rounded-xl border border-[#2E130C]/10 bg-white hover:bg-slate-50 hover:border-purple-300 hover:shadow-sm transition-all text-left"
-                                                    >
-                                                        <div className={cn("shrink-0 h-10 w-10 rounded-full flex items-center justify-center bg-slate-100", type.color)}>
-                                                            <Icon className="w-5 h-5" />
-                                                        </div>
-                                                        <div className="flex-1">
-                                                            <div className="text-sm font-bold text-[#2E130C] group-hover:text-purple-700 transition-colors">
-                                                                {type.label}
-                                                            </div>
-                                                            <div className="text-[10px] text-[#2E130C]/60 font-medium leading-tight">
-                                                                {type.cardLabel || type.description}
-                                                            </div>
-                                                        </div>
-                                                        <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-                                                            <ChevronRight className="w-4 h-4 text-purple-500" />
-                                                        </div>
-                                                    </button>
-                                                );
-                                            })}
-                                        </div>
-                                    ) : (
-                                        <div className="space-y-4">
-                                            <motion.div 
-                                                initial={{ scale: 0.9, opacity: 0 }}
-                                                animate={{ scale: 1, opacity: 1 }}
-                                                className="flex items-center justify-between bg-purple-50 p-3 rounded-xl border border-purple-200"
-                                            >
-                                                <span className="text-sm font-bold text-purple-700 flex items-center gap-2">
-                                                    <Gift className="w-4 h-4" /> {OPPORTUNITY_TYPES.find(t => t.id === oppType)?.label}
-                                                </span>
-                                                <button onClick={() => setOppType(undefined)} className="text-xs text-purple-600 underline hover:text-purple-800">Changer</button>
-                                            </motion.div>
-                                            
-                                            <div className="space-y-2">
-                                                <Label className="text-xs text-[#2E130C]/60 uppercase font-bold ml-1">Message (Optionnel)</Label>
-                                                <Textarea 
-                                                    className="w-full bg-slate-50 border border-[#2E130C]/10 rounded-xl p-3 text-sm text-[#2E130C] min-h-[80px] focus:ring-1 focus:ring-purple-500 outline-none resize-none placeholder:text-slate-400"
-                                                    placeholder="Ex: Je te mets en relation avec..."
-                                                    value={oppDetails}
-                                                    onChange={(e) => setOppDetails(e.target.value)}
-                                                />
-                                            </div>
-
-                                            <Button onClick={handleValidate} className="w-full h-14 text-lg font-black bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-white rounded-xl shadow-lg shadow-emerald-900/10 transform transition-all hover:scale-[1.02]">
-                                                VALIDER & ENVOYER 🚀
-                                            </Button>
-                                        </div>
-                                    )}
-                                    {!oppType && (
-                                            <Button variant="ghost" onClick={() => setPopupView('step2_mission')} className="w-full text-slate-500">Retour</Button>
-                                    )}
                                 </div>
                             )}
                         </DialogContent>
