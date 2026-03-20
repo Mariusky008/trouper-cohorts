@@ -4,7 +4,7 @@ import { revalidatePath, unstable_noStore as noStore } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
-type ServiceMissionFilter = "all" | "new" | "in_progress" | "to_confirm" | "history";
+type ServiceMissionFilter = "all" | "new" | "in_progress" | "to_confirm" | "history" | "refused";
 
 const ACTIVE_STATUSES = ["new", "interested", "in_progress", "done_pending_confirmation", "snoozed"];
 
@@ -322,6 +322,37 @@ export async function snoozeMission(missionId: string, days = 7) {
   return { success: true };
 }
 
+export async function rejectMissionByHelper(missionId: string) {
+  const supabase = await createClient();
+  const supabaseAdmin = createAdminClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: "Unauthorized" };
+
+  const { data: mission } = await supabaseAdmin
+    .from("service_missions")
+    .select("rejection_count")
+    .eq("id", missionId)
+    .eq("helper_id", user.id)
+    .maybeSingle();
+
+  const rejectionCount = (mission?.rejection_count || 0) + 1;
+  const { error } = await supabaseAdmin
+    .from("service_missions")
+    .update({
+      status: "rejected",
+      rejection_count: rejectionCount,
+      snoozed_until: null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", missionId)
+    .eq("helper_id", user.id);
+
+  if (error) return { success: false, error: error.message };
+
+  revalidatePath("/mon-reseau-local/dashboard/opportunities");
+  return { success: true };
+}
+
 export async function markMissionDone(missionId: string) {
   const supabase = await createClient();
   const supabaseAdmin = createAdminClient();
@@ -486,6 +517,7 @@ export async function getServiceMissionsFeed(filter: ServiceMissionFilter = "all
   if (filter === "in_progress") statuses = ["interested", "in_progress"];
   if (filter === "to_confirm") statuses = ["done_pending_confirmation"];
   if (filter === "history") statuses = ["confirmed", "rejected", "archived"];
+  if (filter === "refused") statuses = ["rejected"];
 
   let query = supabaseAdmin
     .from("service_missions")

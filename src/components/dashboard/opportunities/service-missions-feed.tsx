@@ -7,8 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
-import { CheckCircle2, Clock, ExternalLink, MessageCircle, PauseCircle, ShieldCheck, ThumbsUp, XCircle } from "lucide-react";
-import { confirmServiceReceived, markMissionDone, markMissionInterested, rejectServiceReceived, snoozeMission } from "@/lib/actions/service-missions";
+import { CheckCircle2, Clock, ExternalLink, MessageCircle, PauseCircle, ShieldCheck, Sparkles, ThumbsUp, XCircle } from "lucide-react";
+import { confirmServiceReceived, markMissionDone, markMissionInterested, rejectMissionByHelper, rejectServiceReceived } from "@/lib/actions/service-missions";
 
 type Mission = any;
 type IncomingMission = any;
@@ -19,6 +19,7 @@ const FILTERS = [
   { id: "in_progress", label: "En cours" },
   { id: "to_confirm", label: "À confirmer" },
   { id: "history", label: "Historique" },
+  { id: "refused", label: "Refusé" },
 ];
 
 export function ServiceMissionsFeed({
@@ -37,12 +38,35 @@ export function ServiceMissionsFeed({
   const [loadingId, setLoadingId] = useState<string | null>(null);
 
   const filteredMissions = useMemo(() => {
-    if (activeFilter === "all") return missions;
+    if (activeFilter === "all") return missions.filter((m) => !["rejected", "archived"].includes(m.status));
     if (activeFilter === "new") return missions.filter((m) => ["new", "snoozed"].includes(m.status));
     if (activeFilter === "in_progress") return missions.filter((m) => ["interested", "in_progress"].includes(m.status));
     if (activeFilter === "to_confirm") return missions.filter((m) => m.status === "done_pending_confirmation");
-    return missions.filter((m) => ["confirmed", "rejected", "archived"].includes(m.status));
+    if (activeFilter === "history") return missions.filter((m) => ["confirmed", "archived"].includes(m.status));
+    return missions.filter((m) => m.status === "rejected");
   }, [missions, activeFilter]);
+
+  const mixedMissions = useMemo(() => {
+    if (activeFilter === "history" || activeFilter === "refused") return filteredMissions;
+    const groups = new Map<string, Mission[]>();
+    filteredMissions.forEach((mission) => {
+      const key = mission.beneficiary?.id || mission.beneficiary_id || "unknown";
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key)!.push(mission);
+    });
+    const mixed: Mission[] = [];
+    let hasItems = true;
+    while (hasItems) {
+      hasItems = false;
+      groups.forEach((arr) => {
+        if (arr.length > 0) {
+          mixed.push(arr.shift() as Mission);
+          hasItems = true;
+        }
+      });
+    }
+    return mixed;
+  }, [filteredMissions, activeFilter]);
 
   const setMissionStatus = (id: string, updates: Record<string, any>) => {
     setMissions((prev) => prev.map((m) => (m.id === id ? { ...m, ...updates } : m)));
@@ -77,19 +101,19 @@ export function ServiceMissionsFeed({
     openActionLink(mission);
   };
 
-  const handleSnooze = async (missionId: string) => {
+  const handleReject = async (missionId: string) => {
     if (isVirtualMission(missionId)) {
-      setMissionStatus(missionId, { status: "snoozed" });
+      setMissionStatus(missionId, { status: "rejected" });
       return;
     }
     setLoadingId(missionId);
-    const result = await snoozeMission(missionId, 7);
+    const result = await rejectMissionByHelper(missionId);
     setLoadingId(null);
     if (!result.success) {
       toast({ title: "Erreur", description: result.error, variant: "destructive" });
       return;
     }
-    setMissionStatus(missionId, { status: "snoozed" });
+    setMissionStatus(missionId, { status: "rejected" });
   };
 
   const handleDone = async (missionId: string) => {
@@ -203,22 +227,31 @@ export function ServiceMissionsFeed({
       </div>
 
       <div className="space-y-4">
-        <div className="rounded-2xl border border-[#B20B13]/20 bg-[#B20B13]/10 p-3 max-w-sm mx-auto">
-          <p className="text-xs font-black text-[#B20B13]">Chaque service que vous rendez est un service qu&apos;on vous doit.</p>
-          <p className="text-[11px] text-[#2E130C]/80 mt-1">C&apos;est comme ça que vous avancerez beaucoup plus vite.</p>
+        <div className="rounded-2xl border border-[#2E130C]/15 bg-gradient-to-r from-[#FFF8F2] to-[#F3F0E7] p-4 max-w-4xl mx-auto">
+          <div className="flex items-start gap-3">
+            <div className="h-9 w-9 rounded-xl bg-[#B20B13]/10 text-[#B20B13] flex items-center justify-center shrink-0">
+              <Sparkles className="h-4 w-4" />
+            </div>
+            <div>
+              <p className="text-sm font-black text-[#2E130C]">Le cercle vertueux du réseau</p>
+              <p className="text-xs text-[#2E130C]/75 mt-1">
+                Plus tu aides rapidement les bonnes personnes, plus ton réseau te rend la pareille avec des introductions et opportunités concrètes.
+              </p>
+            </div>
+          </div>
         </div>
 
-        {filteredMissions.length === 0 && (
+        {mixedMissions.length === 0 && (
           <div className="text-center py-12 text-[#2E130C]/40 italic">Aucune mission de service pour ce filtre.</div>
         )}
 
-        {filteredMissions.map((mission, index) => (
+        {mixedMissions.map((mission, index) => (
           <motion.div
             key={mission.id}
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.03 }}
-            className="relative w-full max-w-sm mx-auto min-h-[560px]"
+            className="relative w-full max-w-4xl mx-auto min-h-[560px]"
           >
             <motion.div
               animate={{ x: [18, 16, 18], rotate: [-2, -1.5, -2] }}
@@ -279,7 +312,7 @@ export function ServiceMissionsFeed({
                     <div className="grid grid-cols-2 gap-3">
                       <Button
                         variant="outline"
-                        onClick={() => handleSnooze(mission.id)}
+                        onClick={() => handleReject(mission.id)}
                         disabled={loadingId === mission.id}
                         className="h-11 border-[#B20B13]/30 bg-[#B20B13]/5 text-[#B20B13] hover:bg-[#B20B13]/10 font-black uppercase text-[11px]"
                       >
@@ -351,8 +384,17 @@ export function ServiceMissionsFeed({
                   )}
 
                   {mission.status === "rejected" && (
-                    <div className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-rose-700 text-sm font-semibold flex items-center gap-2">
-                      <XCircle className="h-4 w-4" /> Service rejeté
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-rose-700 text-sm font-semibold flex items-center gap-2">
+                        <XCircle className="h-4 w-4" /> Service refusé
+                      </div>
+                      <Button
+                        onClick={() => handleInterested(mission)}
+                        disabled={loadingId === mission.id}
+                        className="h-11 bg-[#2E130C] hover:bg-[#2E130C]/90 text-white font-black uppercase text-[11px]"
+                      >
+                        Reprendre
+                      </Button>
                     </div>
                   )}
                 </div>
