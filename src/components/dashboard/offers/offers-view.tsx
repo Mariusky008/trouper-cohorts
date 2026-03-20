@@ -216,66 +216,49 @@ export function OffersView({
                 <TabsContent value="offers" className="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
                     <div className="px-4">
                         {currentUserOffer ? (
-                            <div className="relative bg-white border border-amber-200 rounded-[2.5rem] p-8 shadow-xl shadow-amber-900/5 mb-12 overflow-hidden group">
-                                <div className="absolute top-0 right-0 w-[300px] h-[300px] bg-amber-100/50 rounded-full blur-[80px] -z-10 pointer-events-none" />
-                                
-                                <div className="flex flex-col md:flex-row gap-8 items-start">
-                                    <div className="relative shrink-0 mx-auto md:mx-0">
-                                        <Avatar className="h-32 w-32 border-4 border-white shadow-xl">
-                                            <AvatarImage src={currentUserOffer.avatar_url} className="object-cover" />
-                                            <AvatarFallback>{currentUserOffer.display_name[0]}</AvatarFallback>
-                                        </Avatar>
-                                        <div className="absolute -bottom-3 -right-3 bg-amber-500 text-white font-black text-sm px-3 py-1.5 rounded-full shadow-lg border-2 border-white rotate-3">
-                                            -{currentUserOffer.offer_original_price > 0 ? Math.round(((currentUserOffer.offer_original_price - currentUserOffer.offer_price) / currentUserOffer.offer_original_price) * 100) : 0}%
+                            <div className="max-w-sm mx-auto mb-12">
+                                <div className="relative rounded-[2.4rem] overflow-hidden shadow-2xl bg-[#16081D] border border-fuchsia-300/35">
+                                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(217,70,239,0.45),transparent_45%)]" />
+                                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom,rgba(251,191,36,0.35),transparent_42%)]" />
+                                    <div className="relative z-10 p-5 space-y-4 text-white">
+                                        <div className="flex items-center justify-between">
+                                            <Badge className="bg-fuchsia-500/20 text-fuchsia-100 border border-fuchsia-300/40 uppercase tracking-wider text-[10px] font-black">Ma vitrine</Badge>
+                                            <Badge className="bg-amber-300 text-[#2E130C] border-0 text-[10px] font-black">Non swipable</Badge>
                                         </div>
-                                    </div>
-
-                                    <div className="flex-1 space-y-4 text-center md:text-left">
-                                        <div>
-                                            <div className="flex items-center justify-center md:justify-start gap-3 mb-2">
-                                                <Badge className="bg-amber-100 text-amber-700 border-amber-200 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide">
-                                                    Votre Offre Active
-                                                </Badge>
-                                                <span className="flex items-center gap-1.5 text-xs font-bold text-emerald-600 bg-emerald-100 px-2 py-0.5 rounded-full">
-                                                    <span className="relative flex h-2 w-2">
-                                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                                                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                                                    </span>
-                                                    En ligne
-                                                </span>
-                                            </div>
-                                            <h2 className="text-3xl font-black text-[#2E130C] leading-tight mb-2">
-                                                {currentUserOffer.offer_title}
-                                            </h2>
-                                            <p className="text-stone-500 font-medium leading-relaxed max-w-2xl line-clamp-2">
-                                                {currentUserOffer.offer_description}
-                                            </p>
-                                        </div>
-
-                                        <div className="flex items-end justify-center md:justify-start gap-4 pt-2">
+                                        <div className="rounded-2xl border border-fuchsia-300/25 bg-white/10 backdrop-blur-md p-4 flex items-center gap-3">
+                                            <Avatar className="h-14 w-14 border-2 border-amber-300/70">
+                                                <AvatarImage src={currentUserOffer.avatar_url} className="object-cover object-top" />
+                                                <AvatarFallback>{currentUserOffer.display_name?.[0] || "?"}</AvatarFallback>
+                                            </Avatar>
                                             <div>
-                                                <p className="text-sm text-stone-400 font-bold line-through mb-0.5">Prix Public : {currentUserOffer.offer_original_price}€</p>
-                                                <div className="text-4xl font-black text-amber-600 flex items-baseline gap-1">
-                                                    {currentUserOffer.offer_price}€ <span className="text-sm font-bold text-amber-600/60 uppercase">Club</span>
-                                                </div>
+                                                <p className="font-black text-base leading-none">{currentUserOffer.display_name}</p>
+                                                <p className="text-xs text-fuchsia-100/90 mt-1">{currentUserOffer.trade} · {currentUserOffer.city}</p>
                                             </div>
                                         </div>
-                                    </div>
-
-                                    <div className="shrink-0 w-full md:w-auto mt-4 md:mt-0 flex flex-col gap-2">
-                                        <Button asChild className="w-full md:w-auto bg-stone-100 hover:bg-stone-200 text-stone-700 border border-stone-200 font-bold rounded-xl h-12 px-6 transition-all">
-                                            <Link href="/mon-reseau-local/dashboard/profile?edit=true&tab=offer">
-                                                <Pencil className="mr-2 h-4 w-4" /> Modifier
-                                            </Link>
-                                        </Button>
-                                        <Button 
-                                            variant="ghost" 
-                                            size="sm" 
-                                            onClick={handleDeactivateOffer}
-                                            className="w-full text-red-500 hover:text-red-700 hover:bg-red-50 font-bold"
-                                        >
-                                            <Trash2 className="mr-2 h-3 w-3" /> Désactiver l'offre
-                                        </Button>
+                                        <div className="rounded-2xl border border-amber-300/35 bg-gradient-to-r from-amber-300/20 to-fuchsia-400/15 p-4">
+                                            <p className="text-[10px] uppercase tracking-widest font-bold text-amber-200 mb-1">Votre offre active</p>
+                                            <h3 className="font-black text-lg leading-tight">{currentUserOffer.offer_title}</h3>
+                                            <p className="text-xs text-fuchsia-100/90 mt-2 line-clamp-3">{currentUserOffer.offer_description}</p>
+                                            <p className="text-xs text-amber-100 mt-2 font-bold">Prix club: {currentUserOffer.offer_price}€ <span className="line-through opacity-70 ml-1">{currentUserOffer.offer_original_price}€</span></p>
+                                        </div>
+                                        <div className="rounded-xl border border-white/20 bg-white/10 backdrop-blur-md p-3">
+                                            <p className="text-[11px] font-black text-fuchsia-100 uppercase tracking-wider">Carte propriétaire: modifiable uniquement par vous</p>
+                                        </div>
+                                        <div className="grid grid-cols-1 gap-2">
+                                            <Button asChild className="w-full bg-white/90 hover:bg-white text-[#2E130C] font-black rounded-xl h-11">
+                                                <Link href="/mon-reseau-local/dashboard/profile?edit=true&tab=offer">
+                                                    <Pencil className="mr-2 h-4 w-4" /> Modifier mon offre
+                                                </Link>
+                                            </Button>
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={handleDeactivateOffer}
+                                                className="w-full border-rose-300/60 bg-rose-400/10 text-rose-100 hover:bg-rose-400/20 font-bold h-10"
+                                            >
+                                                <Trash2 className="mr-2 h-3.5 w-3.5" /> Désactiver l'offre
+                                            </Button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
