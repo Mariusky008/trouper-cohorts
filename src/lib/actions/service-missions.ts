@@ -2,6 +2,7 @@
 
 import { revalidatePath, unstable_noStore as noStore } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 type ServiceMissionFilter = "all" | "new" | "in_progress" | "to_confirm" | "history";
 
@@ -122,12 +123,13 @@ function buildMissionCandidates(profile: any) {
 
 export async function generateServiceMissionsForPair(helperId: string, beneficiaryId: string, sourceMatchId?: string | null) {
   const supabase = await createClient();
+  const supabaseAdmin = createAdminClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user || user.id !== helperId) {
     return { success: false, error: "Unauthorized" };
   }
 
-  const { data: beneficiaryProfile } = await supabase
+  const { data: beneficiaryProfile } = await supabaseAdmin
     .from("profiles")
     .select("id, display_name, receive_profile, linkedin_url, website_url, current_need")
     .eq("id", beneficiaryId)
@@ -141,7 +143,7 @@ export async function generateServiceMissionsForPair(helperId: string, beneficia
   let inserted = 0;
 
   for (const candidate of candidates) {
-    const { data: existing } = await supabase
+    const { data: existing } = await supabaseAdmin
       .from("service_missions")
       .select("id")
       .eq("helper_id", helperId)
@@ -152,7 +154,7 @@ export async function generateServiceMissionsForPair(helperId: string, beneficia
 
     if (existing && existing.length > 0) continue;
 
-    const { error } = await supabase.from("service_missions").insert({
+    const { error } = await supabaseAdmin.from("service_missions").insert({
       helper_id: helperId,
       beneficiary_id: beneficiaryId,
       source_match_id: sourceMatchId || null,
@@ -176,10 +178,11 @@ export async function generateServiceMissionsForPair(helperId: string, beneficia
 
 export async function generateServiceMissionsFromRecentContacts(limit = 20) {
   const supabase = await createClient();
+  const supabaseAdmin = createAdminClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { success: false, error: "Unauthorized" };
 
-  const { data: matches } = await supabase
+  const { data: matches } = await supabaseAdmin
     .from("network_matches")
     .select("id, user1_id, user2_id, date")
     .or(`user1_id.eq.${user.id},user2_id.eq.${user.id}`)
@@ -198,7 +201,7 @@ export async function generateServiceMissionsFromRecentContacts(limit = 20) {
     }
   });
 
-  const { data: reviews } = await supabase
+  const { data: reviews } = await supabaseAdmin
     .from("network_match_reviews")
     .select("reviewer_id, reviewed_id, created_at")
     .or(`reviewer_id.eq.${user.id},reviewed_id.eq.${user.id}`)
@@ -213,7 +216,7 @@ export async function generateServiceMissionsFromRecentContacts(limit = 20) {
     }
   });
 
-  const { data: opportunities } = await supabase
+  const { data: opportunities } = await supabaseAdmin
     .from("network_opportunities")
     .select("giver_id, receiver_id, created_at")
     .or(`giver_id.eq.${user.id},receiver_id.eq.${user.id}`)
@@ -227,6 +230,29 @@ export async function generateServiceMissionsFromRecentContacts(limit = 20) {
       partnerPairs.set(String(partnerId), { partnerId, sourceMatchId: null, sourceDate: opp.created_at });
     }
   });
+
+  const { data: outcomes } = await supabaseAdmin
+    .from("network_match_outcomes")
+    .select("match_id, user_id, validated_at")
+    .eq("user_id", user.id)
+    .order("validated_at", { ascending: false })
+    .limit(limit);
+
+  const outcomeMatchIds = Array.from(new Set((outcomes || []).map((o: any) => o.match_id).filter(Boolean)));
+  if (outcomeMatchIds.length > 0) {
+    const { data: outcomeMatches } = await supabaseAdmin
+      .from("network_matches")
+      .select("id, user1_id, user2_id, date")
+      .in("id", outcomeMatchIds);
+
+    (outcomeMatches || []).forEach((match: any) => {
+      const partnerId = match.user1_id === user.id ? match.user2_id : match.user1_id;
+      if (!partnerId || partnerId === user.id) return;
+      if (!partnerPairs.has(String(partnerId))) {
+        partnerPairs.set(String(partnerId), { partnerId, sourceMatchId: match.id, sourceDate: match.date });
+      }
+    });
+  }
 
   const sortedPartners = Array.from(partnerPairs.values())
     .sort((a, b) => new Date(b.sourceDate).getTime() - new Date(a.sourceDate).getTime())
@@ -245,10 +271,11 @@ export async function generateServiceMissionsFromRecentContacts(limit = 20) {
 
 export async function markMissionInterested(missionId: string) {
   const supabase = await createClient();
+  const supabaseAdmin = createAdminClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { success: false, error: "Unauthorized" };
 
-  const { error } = await supabase
+  const { error } = await supabaseAdmin
     .from("service_missions")
     .update({ status: "interested", updated_at: new Date().toISOString(), snoozed_until: null })
     .eq("id", missionId)
@@ -262,10 +289,11 @@ export async function markMissionInterested(missionId: string) {
 
 export async function snoozeMission(missionId: string, days = 7) {
   const supabase = await createClient();
+  const supabaseAdmin = createAdminClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { success: false, error: "Unauthorized" };
 
-  const { data: mission } = await supabase
+  const { data: mission } = await supabaseAdmin
     .from("service_missions")
     .select("rejection_count")
     .eq("id", missionId)
@@ -277,7 +305,7 @@ export async function snoozeMission(missionId: string, days = 7) {
   const rejectionCount = (mission?.rejection_count || 0) + 1;
   const nextStatus = rejectionCount >= 3 ? "archived" : "snoozed";
 
-  const { error } = await supabase
+  const { error } = await supabaseAdmin
     .from("service_missions")
     .update({
       status: nextStatus,
@@ -296,10 +324,11 @@ export async function snoozeMission(missionId: string, days = 7) {
 
 export async function markMissionDone(missionId: string) {
   const supabase = await createClient();
+  const supabaseAdmin = createAdminClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { success: false, error: "Unauthorized" };
 
-  const { error } = await supabase
+  const { error } = await supabaseAdmin
     .from("service_missions")
     .update({
       status: "done_pending_confirmation",
@@ -317,10 +346,11 @@ export async function markMissionDone(missionId: string) {
 
 export async function confirmServiceReceived(missionId: string) {
   const supabase = await createClient();
+  const supabaseAdmin = createAdminClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { success: false, error: "Unauthorized" };
 
-  const { error } = await supabase
+  const { error } = await supabaseAdmin
     .from("service_missions")
     .update({
       status: "confirmed",
@@ -339,10 +369,11 @@ export async function confirmServiceReceived(missionId: string) {
 
 export async function rejectServiceReceived(missionId: string) {
   const supabase = await createClient();
+  const supabaseAdmin = createAdminClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { success: false, error: "Unauthorized" };
 
-  const { error } = await supabase
+  const { error } = await supabaseAdmin
     .from("service_missions")
     .update({
       status: "rejected",
@@ -360,6 +391,7 @@ export async function rejectServiceReceived(missionId: string) {
 export async function getServiceMissionsFeed(filter: ServiceMissionFilter = "all") {
   noStore();
   const supabase = await createClient();
+  const supabaseAdmin = createAdminClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return [];
 
@@ -371,7 +403,7 @@ export async function getServiceMissionsFeed(filter: ServiceMissionFilter = "all
   if (filter === "to_confirm") statuses = ["done_pending_confirmation"];
   if (filter === "history") statuses = ["confirmed", "rejected", "archived"];
 
-  let query = supabase
+  let query = supabaseAdmin
     .from("service_missions")
     .select(`
       id,
@@ -402,7 +434,10 @@ export async function getServiceMissionsFeed(filter: ServiceMissionFilter = "all
   if (statuses) query = query.in("status", statuses);
 
   const { data, error } = await query;
-  if (error || !data) return [];
+  if (error || !data) {
+    console.error("getServiceMissionsFeed error:", error);
+    return [];
+  }
 
   const statusRank: Record<string, number> = {
     new: 0,
@@ -430,6 +465,7 @@ export async function getServiceMissionsFeed(filter: ServiceMissionFilter = "all
 export async function getUserServiceStats(userId?: string) {
   noStore();
   const supabase = await createClient();
+  const supabaseAdmin = createAdminClient();
   let targetId = userId;
   if (!targetId) {
     const { data: { user } } = await supabase.auth.getUser();
@@ -437,7 +473,7 @@ export async function getUserServiceStats(userId?: string) {
   }
   if (!targetId) return { services_rendered: 0, services_received: 0, service_balance: 0 };
 
-  const { data } = await supabase
+  const { data } = await supabaseAdmin
     .from("user_service_stats")
     .select("services_rendered, services_received, service_balance")
     .eq("user_id", targetId)
@@ -453,10 +489,11 @@ export async function getUserServiceStats(userId?: string) {
 export async function getIncomingServiceConfirmations() {
   noStore();
   const supabase = await createClient();
+  const supabaseAdmin = createAdminClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return [];
 
-  const { data, error } = await supabase
+  const { data, error } = await supabaseAdmin
     .from("service_missions")
     .select(`
       id,
