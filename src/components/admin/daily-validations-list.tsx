@@ -39,8 +39,9 @@ export function DailyValidationsList({ initialValidations = [] }: { initialValid
       </TableHeader>
       <TableBody>
         {validations.map((v) => {
+            const isServiceValidation = v.source === "service";
             const isNewReview = !!v.reviewer;
-            const member = isNewReview ? v.reviewer : v.giver;
+            const member = isServiceValidation ? v.helper : isNewReview ? v.reviewer : v.giver;
             const missionLabel = isNewReview
               ? v.call_happened === false
                 ? "Absence"
@@ -49,6 +50,8 @@ export function DailyValidationsList({ initialValidations = [] }: { initialValid
                 : v.mission_result === "completed"
                 ? "Mission réalisée"
                 : "Mission non réalisée"
+              : isServiceValidation
+              ? "Service confirmé"
               : v.tag?.startsWith("founder_")
               ? v.tag === "founder_rescue"
                 ? "🆘 Rescue"
@@ -58,6 +61,8 @@ export function DailyValidationsList({ initialValidations = [] }: { initialValid
               ? v.call_happened === false
                 ? "Appel non effectué"
                 : `Évaluation partenaire: ${missionLabel}`
+              : isServiceValidation
+              ? `${v.title || v.mission_type || "Mission de service"} · reçu par ${v.beneficiary?.display_name || "membre"}`
               : `${v.rating}/5 (${v.tag})`;
             
             return (

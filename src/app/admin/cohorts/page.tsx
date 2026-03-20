@@ -71,6 +71,35 @@ export default async function AdminCohortsPage() {
     validations = reviewValidations || [];
   }
 
+  const { data: serviceValidations } = await adminClient
+    .from("service_missions")
+    .select(`
+      id,
+      title,
+      mission_type,
+      confirmed_at,
+      helper:helper_id(id, display_name, avatar_url, trade),
+      beneficiary:beneficiary_id(id, display_name, avatar_url)
+    `)
+    .eq("status", "confirmed")
+    .gte("confirmed_at", startParis.toISOString())
+    .lt("confirmed_at", endParis.toISOString())
+    .order("confirmed_at", { ascending: false });
+
+  const normalizedServiceValidations = (serviceValidations || []).map((item: any) => ({
+    id: `service-${item.id}`,
+    created_at: item.confirmed_at,
+    source: "service",
+    title: item.title,
+    mission_type: item.mission_type,
+    helper: item.helper,
+    beneficiary: item.beneficiary,
+  }));
+
+  validations = [...validations, ...normalizedServiceValidations].sort(
+    (a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+  );
+
   return (
     <div className="space-y-8 p-8 max-w-7xl mx-auto">
       <div>

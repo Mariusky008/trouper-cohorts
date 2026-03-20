@@ -288,6 +288,35 @@ export default async function AdminNetworkPage() {
     validations = reviewValidations || [];
   }
 
+  const { data: serviceValidations } = await supabaseAdmin
+    .from("service_missions")
+    .select(`
+      id,
+      title,
+      mission_type,
+      confirmed_at,
+      helper:helper_id(id, display_name, avatar_url, trade),
+      beneficiary:beneficiary_id(id, display_name, avatar_url)
+    `)
+    .eq("status", "confirmed")
+    .gte("confirmed_at", startParis.toISOString())
+    .lt("confirmed_at", endParis.toISOString())
+    .order("confirmed_at", { ascending: false });
+
+  const normalizedServiceValidations = (serviceValidations || []).map((item: any) => ({
+    id: `service-${item.id}`,
+    created_at: item.confirmed_at,
+    source: "service",
+    title: item.title,
+    mission_type: item.mission_type,
+    helper: item.helper,
+    beneficiary: item.beneficiary,
+  }));
+
+  validations = [...validations, ...normalizedServiceValidations].sort(
+    (a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+  );
+
   const ANALYTICS_LABELS: Record<string, { label: string, icon: any, color: string, aliases?: string[] }> = {
     'click_whatsapp_open': { label: 'Bouton WhatsApp', icon: MessageSquare, color: 'text-green-500', aliases: ['click_call_open'] },
     'click_whatsapp_action': { label: 'Ouvrir WhatsApp', icon: PhoneCall, color: 'text-emerald-600', aliases: ['click_call_action'] },
