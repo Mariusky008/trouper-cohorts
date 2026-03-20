@@ -51,7 +51,9 @@ export function DailyValidationsList({ initialValidations = [] }: { initialValid
                 ? "Mission réalisée"
                 : "Mission non réalisée"
               : isServiceValidation
-              ? "Service confirmé"
+              ? v.service_status === "done_pending_confirmation"
+                ? "Service en attente"
+                : "Service confirmé"
               : v.tag?.startsWith("founder_")
               ? v.tag === "founder_rescue"
                 ? "🆘 Rescue"
@@ -62,7 +64,7 @@ export function DailyValidationsList({ initialValidations = [] }: { initialValid
                 ? "Appel non effectué"
                 : `Évaluation partenaire: ${missionLabel}`
               : isServiceValidation
-              ? `${v.title || v.mission_type || "Mission de service"} · reçu par ${v.beneficiary?.display_name || "membre"}`
+              ? `${v.title || v.mission_type || "Mission de service"} · ${v.service_status === "done_pending_confirmation" ? "en attente de confirmation" : `reçu par ${v.beneficiary?.display_name || "membre"}`}`
               : `${v.rating}/5 (${v.tag})`;
             
             return (

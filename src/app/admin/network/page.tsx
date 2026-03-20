@@ -294,25 +294,35 @@ export default async function AdminNetworkPage() {
       id,
       title,
       mission_type,
+      status,
+      completed_at,
       confirmed_at,
+      updated_at,
       helper:helper_id(id, display_name, avatar_url, trade),
       beneficiary:beneficiary_id(id, display_name, avatar_url)
     `)
-    .eq("status", "confirmed")
-    .order("confirmed_at", { ascending: false })
+    .in("status", ["confirmed", "done_pending_confirmation"])
+    .order("updated_at", { ascending: false })
     .limit(300);
 
   const normalizedServiceValidations = (serviceValidations || [])
-    .filter((item: any) => getParisDayKey(item.confirmed_at) === todayParisKey)
+    .map((item: any) => {
+      const activityAt = item.confirmed_at || item.completed_at || item.updated_at;
+      return {
+        id: `service-${item.id}`,
+        created_at: activityAt,
+        source: "service",
+        service_status: item.status,
+        title: item.title,
+        mission_type: item.mission_type,
+        helper: item.helper,
+        beneficiary: item.beneficiary,
+      };
+    })
+    .filter((item: any) => getParisDayKey(item.created_at) === todayParisKey)
     .map((item: any) => ({
-    id: `service-${item.id}`,
-    created_at: item.confirmed_at,
-    source: "service",
-    title: item.title,
-    mission_type: item.mission_type,
-    helper: item.helper,
-    beneficiary: item.beneficiary,
-  }));
+      ...item,
+    }));
 
   validations = [...validations, ...normalizedServiceValidations].sort(
     (a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
