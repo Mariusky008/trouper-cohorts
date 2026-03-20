@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -36,6 +36,15 @@ export function ServiceMissionsFeed({
   const [incoming, setIncoming] = useState<IncomingMission[]>(incomingConfirmations);
   const [activeFilter, setActiveFilter] = useState("all");
   const [loadingId, setLoadingId] = useState<string | null>(null);
+  const [isDesktop, setIsDesktop] = useState(false);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(min-width: 1024px)");
+    const sync = () => setIsDesktop(mediaQuery.matches);
+    sync();
+    mediaQuery.addEventListener("change", sync);
+    return () => mediaQuery.removeEventListener("change", sync);
+  }, []);
 
   const filteredMissions = useMemo(() => {
     if (activeFilter === "all") return missions.filter((m) => !["rejected", "archived"].includes(m.status));
@@ -67,6 +76,7 @@ export function ServiceMissionsFeed({
     }
     return mixed;
   }, [filteredMissions, activeFilter]);
+  const useTinderStack = isDesktop && !["history", "refused"].includes(activeFilter);
 
   const setMissionStatus = (id: string, updates: Record<string, any>) => {
     setMissions((prev) => prev.map((m) => (m.id === id ? { ...m, ...updates } : m)));
@@ -251,7 +261,20 @@ export function ServiceMissionsFeed({
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.03 }}
-            className="relative w-full max-w-4xl mx-auto min-h-[560px]"
+            className={cn(
+              "relative w-full max-w-sm mx-auto min-h-[560px]",
+              useTinderStack && index > 0 && "pointer-events-none"
+            )}
+            style={
+              useTinderStack
+                ? {
+                    zIndex: Math.max(1, 100 - index),
+                    marginTop: index === 0 ? 0 : -470,
+                    transform: `scale(${Math.max(0.88, 1 - index * 0.03)}) translateX(${Math.min(index * 8, 28)}px)`,
+                    opacity: index > 5 ? 0 : 1,
+                  }
+                : undefined
+            }
           >
             <motion.div
               animate={{ x: [18, 16, 18], rotate: [-2, -1.5, -2] }}
