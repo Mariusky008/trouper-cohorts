@@ -1,4 +1,4 @@
-import { WaitingCardPreview, MysteryCardPreview, MatchCardPreview, MatchCardFounderStylePreview, MysteryCardLockedPreview, FounderCardPreview, MissionValidationPreview, MatchCardWhatsAppPreview, GoldMatchCardPreview, ServiceMissionOpportunityCardPreview } from "@/components/dashboard/design-system-preview";
+import { WaitingCardPreview, MysteryCardPreview, MatchCardPreview, MatchCardFounderStylePreview, MysteryCardLockedPreview, FounderCardPreview, MissionValidationPreview, MatchCardWhatsAppPreview, GoldMatchCardPreview, ServiceMissionIntroWhatsAppCardPreview, ServiceMissionSocialActionCardPreview, ServiceMissionManualActionCardPreview } from "@/components/dashboard/design-system-preview";
 import { PremiumLockedCard } from "@/components/dashboard/premium-locked-card";
 
 export default function DesignPreviewPage() {
@@ -126,20 +126,29 @@ export default function DesignPreviewPage() {
 
           <div className="space-y-6 w-full max-w-sm">
             <h2 className="text-xl font-bold text-white flex items-center gap-2">
-              <span className="bg-cyan-400 w-2 h-8 rounded-full"></span>
-              9. Carte Mission Opportunité
+              <span className="bg-[#25D366] w-2 h-8 rounded-full"></span>
+              9a. Mission Intro WhatsApp
             </h2>
-            <p className="text-sm text-slate-400 mb-4">Prototype UX de la nouvelle carte “service rendu / service reçu” avec CTA Intéressé/Pas intéressé.</p>
-            <ServiceMissionOpportunityCardPreview />
-            <div className="rounded-2xl border border-slate-700 bg-slate-900/60 p-4">
-              <p className="text-xs uppercase tracking-wider font-black text-slate-300 mb-2">Processus (hors carte)</p>
-              <div className="flex flex-wrap gap-2">
-                <span className="text-[11px] px-2 py-1 rounded-full bg-slate-800 text-slate-200">1) Intéressé</span>
-                <span className="text-[11px] px-2 py-1 rounded-full bg-slate-800 text-slate-200">2) Action réalisée</span>
-                <span className="text-[11px] px-2 py-1 rounded-full bg-slate-800 text-slate-200">3) Mission terminée</span>
-                <span className="text-[11px] px-2 py-1 rounded-full bg-slate-800 text-slate-200">4) Confirmation bénéficiaire</span>
-              </div>
-            </div>
+            <p className="text-sm text-slate-400 mb-4">Carte dédiée aux mises en relation avec ouverture WhatsApp et message prérempli.</p>
+            <ServiceMissionIntroWhatsAppCardPreview />
+          </div>
+
+          <div className="space-y-6 w-full max-w-sm">
+            <h2 className="text-xl font-bold text-white flex items-center gap-2">
+              <span className="bg-[#0A66C2] w-2 h-8 rounded-full"></span>
+              9b. Mission Action Sociale
+            </h2>
+            <p className="text-sm text-slate-400 mb-4">Carte dédiée aux actions réseau social avec bouton d’ouverture du lien.</p>
+            <ServiceMissionSocialActionCardPreview />
+          </div>
+
+          <div className="space-y-6 w-full max-w-sm">
+            <h2 className="text-xl font-bold text-white flex items-center gap-2">
+              <span className="bg-amber-500 w-2 h-8 rounded-full"></span>
+              9c. Mission Relationnelle
+            </h2>
+            <p className="text-sm text-slate-400 mb-4">Carte dédiée aux actions terrain sans lien externe (club, email, recommandation).</p>
+            <ServiceMissionManualActionCardPreview />
           </div>
 
         </div>

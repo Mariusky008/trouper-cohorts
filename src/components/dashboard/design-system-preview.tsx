@@ -22,9 +22,11 @@ const MISSION_TYPES = [
     { id: 'infiltre', label: 'Infiltré', icon: Fingerprint, desc: "Parraine-moi dans ton club/réseau", color: 'text-red-400', bg: 'bg-red-500/10', border: 'border-red-500/20' }
 ];
 
-export function ServiceMissionOpportunityCardPreview() {
-  const [status, setStatus] = useState<"new" | "interested" | "pending_confirmation" | "confirmed" | "snoozed">("new");
-
+function ServiceCardShell({
+  children,
+}: {
+  children: any;
+}) {
   return (
     <div className="relative w-full max-w-sm mx-auto min-h-[640px]">
       <motion.div
@@ -37,100 +39,168 @@ export function ServiceMissionOpportunityCardPreview() {
         transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut" }}
         className="absolute inset-y-4 left-0 w-[94%] rounded-[2.2rem] bg-[#F8F4EB] border border-[#2E130C]/10"
       />
-
-      <motion.div
-        key={status}
-        initial={{ opacity: 0, y: 10, scale: 0.985 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        className="relative rounded-[2.4rem] overflow-hidden shadow-2xl bg-[#FFFDF8] border border-[#2E130C]/15"
-      >
+      <div className="relative rounded-[2.4rem] overflow-hidden shadow-2xl bg-[#FFFDF8] border border-[#2E130C]/15">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(178,11,19,0.12),transparent_45%)]" />
         <div className="relative z-10 p-5 space-y-4 text-[#2E130C]">
           <div className="rounded-2xl border border-[#B20B13]/15 bg-[#B20B13]/5 p-3 text-center">
-            <p className="text-xs font-black text-[#B20B13]">
-              Chaque service que vous rendez est un service qu&apos;on vous doit.
-            </p>
-            <p className="text-[11px] text-[#2E130C]/70 mt-1">
-              C&apos;est comme ça que vous avancerez beaucoup plus vite.
-            </p>
+            <p className="text-xs font-black text-[#B20B13]">Chaque service que vous rendez est un service qu&apos;on vous doit.</p>
+            <p className="text-[11px] text-[#2E130C]/70 mt-1">C&apos;est comme ça que vous avancerez beaucoup plus vite.</p>
           </div>
-
-          <div className="flex items-center justify-between">
-            <Badge className="bg-[#2E130C]/10 text-[#2E130C] border border-[#2E130C]/20 uppercase tracking-wider text-[10px] font-black">
-              Mission opportunité
-            </Badge>
-            <span className="text-[10px] uppercase tracking-wider font-bold text-[#2E130C]/60">Pile #1</span>
-          </div>
-
-          <div className="rounded-2xl border border-[#2E130C]/10 bg-[#F3F0E7] p-4 flex flex-col items-center text-center gap-2">
-            <Avatar className="h-20 w-20 border-2 border-[#B20B13]/20">
-              <AvatarImage src="/jeanphilipperoth.jpg" className="object-cover object-top" />
-              <AvatarFallback>JD</AvatarFallback>
-            </Avatar>
-            <div className="min-w-0">
-              <p className="font-black text-base leading-none">Jean Dupont</p>
-              <p className="text-xs text-[#2E130C]/70 mt-1">Designer · Bordeaux</p>
-              <p className="text-[11px] text-[#B20B13] mt-1 font-semibold">Besoin: Prescripteur (commerçants/designers/graphistes)</p>
-            </div>
-          </div>
-
-          <div className="rounded-2xl border border-[#2E130C]/15 bg-white p-4">
-            <p className="text-[10px] uppercase tracking-widest font-bold text-[#B20B13] mb-1">Mission du jour</p>
-            <h3 className="font-black text-lg leading-tight">Fais 1 introduction WhatsApp à Jean avec un commerçant pertinent de ton réseau</h3>
-            <p className="text-xs text-[#2E130C]/70 mt-2">Message conseillé: “Salut X, je te présente Jean, vous devriez parler visibilité locale.”</p>
-          </div>
-
-          {status === "new" && (
-            <div className="grid grid-cols-2 gap-3">
-              <Button
-                variant="outline"
-                onClick={() => setStatus("snoozed")}
-                className="h-11 border-[#B20B13]/30 bg-[#B20B13]/5 text-[#B20B13] hover:bg-[#B20B13]/10 font-black uppercase text-[11px]"
-              >
-                Pas intéressé
-              </Button>
-              <Button
-                onClick={() => setStatus("interested")}
-                className="h-11 bg-[#2E130C] hover:bg-[#2E130C]/90 text-white font-black uppercase text-[11px] shadow-lg"
-              >
-                Intéressé
-              </Button>
-            </div>
-          )}
-
-          {status === "snoozed" && (
-            <div className="rounded-2xl border border-amber-300/40 bg-amber-50 p-4 space-y-3">
-              <p className="text-sm font-bold text-amber-700">Mission déplacée en bas de pile.</p>
-              <Button onClick={() => setStatus("new")} className="w-full h-10 bg-[#2E130C] hover:bg-[#2E130C]/90 text-white font-black uppercase text-[11px]">Remettre en priorité</Button>
-            </div>
-          )}
-
-          {status === "interested" && (
-            <div className="rounded-2xl border border-emerald-300/40 bg-emerald-50 p-4 space-y-3">
-              <p className="text-sm font-bold text-emerald-700">Top, mission prise. Fais l’introduction puis valide.</p>
-              <Button onClick={() => setStatus("pending_confirmation")} className="w-full h-11 bg-emerald-600 hover:bg-emerald-500 text-white font-black uppercase text-[11px]">Mission terminée</Button>
-            </div>
-          )}
-
-          {status === "pending_confirmation" && (
-            <div className="rounded-2xl border border-indigo-300/40 bg-indigo-50 p-4 space-y-3">
-              <p className="text-sm font-bold text-indigo-700">Service envoyé. En attente de confirmation par Jean.</p>
-              <div className="grid grid-cols-2 gap-2">
-                <Button onClick={() => setStatus("confirmed")} className="h-10 bg-indigo-500 hover:bg-indigo-400 text-white font-black uppercase text-[11px]">Simuler confirmé</Button>
-                <Button onClick={() => setStatus("new")} variant="outline" className="h-10 border-indigo-300/50 text-indigo-700 hover:bg-indigo-100 font-black uppercase text-[11px]">Retour pile</Button>
-              </div>
-            </div>
-          )}
-
-          {status === "confirmed" && (
-            <div className="rounded-2xl border border-emerald-300/40 bg-emerald-50 p-4 space-y-2">
-              <p className="text-sm font-bold text-emerald-700">✅ Confirmé. Ce service comptera dans “rendu/reçu”.</p>
-              <Button onClick={() => setStatus("new")} variant="outline" className="w-full h-10 border-emerald-300/50 text-emerald-700 hover:bg-emerald-100 font-black uppercase text-[11px]">Rejouer le flow</Button>
-            </div>
-          )}
+          {children}
         </div>
-      </motion.div>
+      </div>
     </div>
+  );
+}
+
+function ServiceCardHeader({ label, badge }: { label: string; badge: string }) {
+  return (
+    <>
+      <div className="flex items-center justify-between">
+        <Badge className="bg-[#2E130C]/10 text-[#2E130C] border border-[#2E130C]/20 uppercase tracking-wider text-[10px] font-black">
+          {badge}
+        </Badge>
+        <span className="text-[10px] uppercase tracking-wider font-bold text-[#2E130C]/60">{label}</span>
+      </div>
+      <div className="rounded-2xl border border-[#2E130C]/10 bg-[#F3F0E7] p-4 flex flex-col items-center text-center gap-2">
+        <Avatar className="h-20 w-20 border-2 border-[#B20B13]/20">
+          <AvatarImage src="/jeanphilipperoth.jpg" className="object-cover object-top" />
+          <AvatarFallback>JD</AvatarFallback>
+        </Avatar>
+        <div className="min-w-0">
+          <p className="font-black text-base leading-none">Jean Dupont</p>
+          <p className="text-xs text-[#2E130C]/70 mt-1">Designer · Bordeaux</p>
+        </div>
+      </div>
+    </>
+  );
+}
+
+export function ServiceMissionIntroWhatsAppCardPreview() {
+  const [status, setStatus] = useState<"new" | "pending_confirmation" | "confirmed">("new");
+  const whatsappMessage = "Salut Marc, je te présente Jean Dupont. Vous devriez parler visibilité locale, je pense qu'il y a un vrai fit business entre vous.";
+
+  return (
+    <ServiceCardShell>
+      <ServiceCardHeader label="Type 1" badge="Mise en relation" />
+      <div className="rounded-2xl border border-[#2E130C]/15 bg-white p-4">
+        <p className="text-[10px] uppercase tracking-widest font-bold text-[#B20B13] mb-1">Mission WhatsApp</p>
+        <h3 className="font-black text-lg leading-tight">Fais une intro à Jean avec 1 commerçant de ton réseau</h3>
+        <p className="text-xs text-[#2E130C]/70 mt-2">Le bouton ouvre WhatsApp avec un message prérempli.</p>
+      </div>
+      {status === "new" && (
+        <div className="grid grid-cols-2 gap-3">
+          <Button
+            variant="outline"
+            className="h-11 border-[#B20B13]/30 bg-[#B20B13]/5 text-[#B20B13] hover:bg-[#B20B13]/10 font-black uppercase text-[11px]"
+          >
+            Pas intéressé
+          </Button>
+          <Button
+            onClick={() => {
+              window.open(`https://wa.me/?text=${encodeURIComponent(whatsappMessage)}`, "_blank");
+              setStatus("pending_confirmation");
+            }}
+            className="h-11 bg-[#25D366] hover:bg-[#25D366]/90 text-white font-black uppercase text-[11px] shadow-lg"
+          >
+            Ouvrir WhatsApp
+          </Button>
+        </div>
+      )}
+      {status === "pending_confirmation" && (
+        <div className="rounded-2xl border border-indigo-300/40 bg-indigo-50 p-4 space-y-3">
+          <p className="text-sm font-bold text-indigo-700">Intro envoyée. En attente de confirmation.</p>
+          <Button onClick={() => setStatus("confirmed")} className="w-full h-10 bg-indigo-500 hover:bg-indigo-400 text-white font-black uppercase text-[11px]">Simuler confirmé</Button>
+        </div>
+      )}
+      {status === "confirmed" && (
+        <div className="rounded-2xl border border-emerald-300/40 bg-emerald-50 p-4">
+          <p className="text-sm font-bold text-emerald-700">✅ Service confirmé</p>
+        </div>
+      )}
+    </ServiceCardShell>
+  );
+}
+
+export function ServiceMissionSocialActionCardPreview() {
+  const [status, setStatus] = useState<"new" | "done">("new");
+  const socialLink = "https://www.linkedin.com/";
+
+  return (
+    <ServiceCardShell>
+      <ServiceCardHeader label="Type 2" badge="Action sociale" />
+      <div className="rounded-2xl border border-[#2E130C]/15 bg-white p-4">
+        <p className="text-[10px] uppercase tracking-widest font-bold text-[#B20B13] mb-1">Mission Réseau social</p>
+        <h3 className="font-black text-lg leading-tight">Va sur son post LinkedIn et laisse un commentaire utile</h3>
+        <p className="text-xs text-[#2E130C]/70 mt-2">Objectif: aider sa visibilité avec une interaction qualitative.</p>
+      </div>
+      {status === "new" && (
+        <div className="grid grid-cols-2 gap-3">
+          <Button variant="outline" className="h-11 border-[#B20B13]/30 bg-[#B20B13]/5 text-[#B20B13] hover:bg-[#B20B13]/10 font-black uppercase text-[11px]">
+            Passer
+          </Button>
+          <Button
+            onClick={() => window.open(socialLink, "_blank")}
+            className="h-11 bg-[#0A66C2] hover:bg-[#0A66C2]/90 text-white font-black uppercase text-[11px] shadow-lg"
+          >
+            Ouvrir LinkedIn
+          </Button>
+        </div>
+      )}
+      <Button
+        onClick={() => setStatus("done")}
+        className="w-full h-10 bg-[#2E130C] hover:bg-[#2E130C]/90 text-white font-black uppercase text-[11px]"
+      >
+        Mission terminée
+      </Button>
+      {status === "done" && (
+        <div className="rounded-2xl border border-emerald-300/40 bg-emerald-50 p-4">
+          <p className="text-sm font-bold text-emerald-700">✅ Action sociale validée</p>
+        </div>
+      )}
+    </ServiceCardShell>
+  );
+}
+
+export function ServiceMissionManualActionCardPreview() {
+  const [status, setStatus] = useState<"new" | "in_progress" | "done">("new");
+
+  return (
+    <ServiceCardShell>
+      <ServiceCardHeader label="Type 3" badge="Action relationnelle" />
+      <div className="rounded-2xl border border-[#2E130C]/15 bg-white p-4">
+        <p className="text-[10px] uppercase tracking-widest font-bold text-[#B20B13] mb-1">Mission Terrain</p>
+        <h3 className="font-black text-lg leading-tight">Présente Jean à ton club Rotary lors de votre prochaine rencontre</h3>
+        <p className="text-xs text-[#2E130C]/70 mt-2">Sans lien externe: action relationnelle offline ou email direct.</p>
+      </div>
+      {status === "new" && (
+        <div className="grid grid-cols-2 gap-3">
+          <Button
+            variant="outline"
+            className="h-11 border-[#B20B13]/30 bg-[#B20B13]/5 text-[#B20B13] hover:bg-[#B20B13]/10 font-black uppercase text-[11px]"
+          >
+            Pas maintenant
+          </Button>
+          <Button
+            onClick={() => setStatus("in_progress")}
+            className="h-11 bg-[#2E130C] hover:bg-[#2E130C]/90 text-white font-black uppercase text-[11px]"
+          >
+            Je m&apos;en charge
+          </Button>
+        </div>
+      )}
+      {status === "in_progress" && (
+        <div className="rounded-2xl border border-amber-300/40 bg-amber-50 p-4 space-y-3">
+          <p className="text-sm font-bold text-amber-700">Mission en cours. Reviens valider quand c&apos;est fait.</p>
+          <Button onClick={() => setStatus("done")} className="w-full h-10 bg-emerald-600 hover:bg-emerald-500 text-white font-black uppercase text-[11px]">Mission terminée</Button>
+        </div>
+      )}
+      {status === "done" && (
+        <div className="rounded-2xl border border-emerald-300/40 bg-emerald-50 p-4">
+          <p className="text-sm font-bold text-emerald-700">✅ Service relationnel déclaré terminé</p>
+        </div>
+      )}
+    </ServiceCardShell>
   );
 }
 
