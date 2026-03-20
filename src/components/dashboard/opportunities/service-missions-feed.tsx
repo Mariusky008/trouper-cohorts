@@ -36,15 +36,18 @@ export function ServiceMissionsFeed({
   const [incoming, setIncoming] = useState<IncomingMission[]>(incomingConfirmations);
   const [activeFilter, setActiveFilter] = useState("all");
   const [loadingId, setLoadingId] = useState<string | null>(null);
-  const [isDesktop, setIsDesktop] = useState(false);
+  const [swipeLeftId, setSwipeLeftId] = useState<string | null>(null);
 
   useEffect(() => {
-    const mediaQuery = window.matchMedia("(min-width: 1024px)");
-    const sync = () => setIsDesktop(mediaQuery.matches);
-    sync();
-    mediaQuery.addEventListener("change", sync);
-    return () => mediaQuery.removeEventListener("change", sync);
+    const saved = window.localStorage.getItem("service-missions-filter");
+    if (saved && FILTERS.some((f) => f.id === saved)) {
+      setActiveFilter(saved);
+    }
   }, []);
+
+  useEffect(() => {
+    window.localStorage.setItem("service-missions-filter", activeFilter);
+  }, [activeFilter]);
 
   const filteredMissions = useMemo(() => {
     if (activeFilter === "all") return missions.filter((m) => !["rejected", "archived"].includes(m.status));
@@ -76,7 +79,8 @@ export function ServiceMissionsFeed({
     }
     return mixed;
   }, [filteredMissions, activeFilter]);
-  const useTinderStack = isDesktop && !["history", "refused"].includes(activeFilter);
+  const useTinderStack = !["history", "refused"].includes(activeFilter);
+  const stackMissions = useTinderStack ? mixedMissions.slice(0, 5) : mixedMissions;
 
   const setMissionStatus = (id: string, updates: Record<string, any>) => {
     setMissions((prev) => prev.map((m) => (m.id === id ? { ...m, ...updates } : m)));
@@ -112,13 +116,18 @@ export function ServiceMissionsFeed({
   };
 
   const handleReject = async (missionId: string) => {
+    setSwipeLeftId(missionId);
+    await new Promise((resolve) => setTimeout(resolve, 220));
+
     if (isVirtualMission(missionId)) {
       setMissionStatus(missionId, { status: "rejected" });
+      setSwipeLeftId(null);
       return;
     }
     setLoadingId(missionId);
     const result = await rejectMissionByHelper(missionId);
     setLoadingId(null);
+    setSwipeLeftId(null);
     if (!result.success) {
       toast({ title: "Erreur", description: result.error, variant: "destructive" });
       return;
@@ -251,30 +260,31 @@ export function ServiceMissionsFeed({
           </div>
         </div>
 
-        {mixedMissions.length === 0 && (
+        {stackMissions.length === 0 && (
           <div className="text-center py-12 text-[#2E130C]/40 italic">Aucune mission de service pour ce filtre.</div>
         )}
 
-        {mixedMissions.map((mission, index) => (
+        <div className={cn(useTinderStack && "relative h-[640px] max-w-sm mx-auto")}>
+        {stackMissions.map((mission, index) => {
+          const isTopCard = !useTinderStack || index === 0;
+          return (
           <motion.div
             key={mission.id}
             initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
+            animate={
+              swipeLeftId === mission.id
+                ? { x: -420, rotate: -14, opacity: 0 }
+                : useTinderStack
+                ? { opacity: index > 3 ? 0 : 1, y: index * 10, scale: Math.max(0.9, 1 - index * 0.035), x: index * 6 }
+                : { opacity: 1, y: 0, scale: 1, x: 0 }
+            }
             transition={{ delay: index * 0.03 }}
             className={cn(
               "relative w-full max-w-sm mx-auto min-h-[560px]",
+              useTinderStack && "absolute inset-x-0 top-0",
               useTinderStack && index > 0 && "pointer-events-none"
             )}
-            style={
-              useTinderStack
-                ? {
-                    zIndex: Math.max(1, 100 - index),
-                    marginTop: index === 0 ? 0 : -470,
-                    transform: `scale(${Math.max(0.88, 1 - index * 0.03)}) translateX(${Math.min(index * 8, 28)}px)`,
-                    opacity: index > 5 ? 0 : 1,
-                  }
-                : undefined
-            }
+            style={useTinderStack ? { zIndex: Math.max(1, 100 - index) } : undefined}
           >
             <motion.div
               animate={{ x: [18, 16, 18], rotate: [-2, -1.5, -2] }}
@@ -318,11 +328,11 @@ export function ServiceMissionsFeed({
                   <p className="text-xs text-[#2E130C]/70 mt-2">{mission.description}</p>
                 </div>
 
-                {mission.expected_gain && (
+                {isTopCard && mission.expected_gain && (
                   <div className="text-xs text-[#B20B13] font-semibold">{mission.expected_gain}</div>
                 )}
 
-                <div className="flex items-center gap-2 text-xs text-[#2E130C]/55">
+                <div className={cn("flex items-center gap-2 text-xs text-[#2E130C]/55", !isTopCard && "opacity-0 h-0 overflow-hidden")}>
                   <Clock className="h-3.5 w-3.5" />
                   {new Date(mission.created_at).toLocaleDateString("fr-FR")}
                   {mission.snoozed_until && mission.status === "snoozed" && (
@@ -330,7 +340,7 @@ export function ServiceMissionsFeed({
                   )}
                 </div>
 
-                <div className="pt-1">
+                <div className={cn("pt-1", !isTopCard && "opacity-0 h-0 overflow-hidden")}>
                   {mission.status === "new" && (
                     <div className="grid grid-cols-2 gap-3">
                       <Button
@@ -424,7 +434,8 @@ export function ServiceMissionsFeed({
               </div>
             </div>
           </motion.div>
-        ))}
+        )})}
+        </div>
       </div>
     </div>
   );
