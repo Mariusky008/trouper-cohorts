@@ -105,6 +105,15 @@ async function getNetworkStats() {
   const { count: oppsCount } = await supabaseAdmin
     .from('network_opportunities')
     .select('*', { count: 'exact', head: true });
+
+  const { count: serviceMissionsCount } = await supabaseAdmin
+    .from('service_missions')
+    .select('*', { count: 'exact', head: true });
+
+  const { count: serviceConfirmedCount } = await supabaseAdmin
+    .from('service_missions')
+    .select('*', { count: 'exact', head: true })
+    .eq('status', 'confirmed');
     
   // 3. Members Active (with settings)
   const { count: membersCount } = await supabaseAdmin
@@ -212,6 +221,8 @@ async function getNetworkStats() {
     availabilitiesNext: availabilitiesCount || 0,
     upcomingMatchesList: enrichedUpcomingMatches || [],
     opportunities: oppsCount || 0,
+    serviceMissions: serviceMissionsCount || 0,
+    servicesConfirmed: serviceConfirmedCount || 0,
     activeMembers: membersCount || 0,
     avgTrustScore: avgScore,
     recentMembers: recentProfiles, // This variable name is slightly misleading now if we load ALL, but let's keep it for now.
@@ -302,7 +313,7 @@ export default async function AdminNetworkPage() {
       </div>
 
       {/* KPI CARDS */}
-      <div className="grid md:grid-cols-4 gap-4">
+      <div className="grid md:grid-cols-6 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Matchs Prévus</CardTitle>
@@ -344,6 +355,28 @@ export default async function AdminNetworkPage() {
           <CardContent>
             <div className="text-2xl font-bold">{stats.opportunities}</div>
             <p className="text-xs text-muted-foreground">Total échangé</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Missions Service</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.serviceMissions}</div>
+            <p className="text-xs text-muted-foreground">Missions générées</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Services Confirmés</CardTitle>
+            <TrendingUp className="h-4 w-4 text-emerald-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-emerald-700">{stats.servicesConfirmed}</div>
+            <p className="text-xs text-muted-foreground">Rendus + reçus validés</p>
           </CardContent>
         </Card>
       </div>

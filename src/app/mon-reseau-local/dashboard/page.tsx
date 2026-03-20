@@ -4,6 +4,7 @@ import { getTrustScore } from "@/lib/actions/network-trust";
 import { getNetworkSettings } from "@/lib/actions/network-settings";
 import { getPotentialOpportunitiesCount } from "@/lib/actions/network-opportunities";
 import { getFlashQuestions } from "@/lib/actions/network-flash"; // Import flash questions
+import { getUserServiceStats } from "@/lib/actions/service-missions";
 import { DailyMatchCard } from "@/components/dashboard/daily-match-card";
 import { CafeWidget } from "@/components/dashboard/cafe-widget"; // Import widget
 import { PlanningDialog } from "@/components/dashboard/planning-dialog";
@@ -29,14 +30,16 @@ export default async function DashboardHome() {
   let potentialCount = 0;
   let userStreak = 0;
   let currentUserProfile = null;
+  let serviceStats = { services_rendered: 0, services_received: 0, service_balance: 0 };
 
-  const [matchesResult, trustScoreResult, settingsResult, potentialCountResult, userStreakResult, currentUserProfileResult] = await Promise.allSettled([
+  const [matchesResult, trustScoreResult, settingsResult, potentialCountResult, userStreakResult, currentUserProfileResult, serviceStatsResult] = await Promise.allSettled([
     getDailyMatches(),
     getTrustScore(),
     getNetworkSettings(),
     getPotentialOpportunitiesCount(),
     getUserStreak(),
-    getUserProfile(user?.id)
+    getUserProfile(user?.id),
+    getUserServiceStats(user?.id)
   ]);
 
   if (matchesResult.status === "fulfilled") matches = matchesResult.value;
@@ -56,6 +59,9 @@ export default async function DashboardHome() {
 
   if (currentUserProfileResult.status === "fulfilled") currentUserProfile = currentUserProfileResult.value;
   else console.error(currentUserProfileResult.reason);
+
+  if (serviceStatsResult.status === "fulfilled") serviceStats = serviceStatsResult.value;
+  else console.error(serviceStatsResult.reason);
 
   // 4. FLASH CAFE (Fetch after profile is loaded)
   let latestQuestion = null;
@@ -105,6 +111,17 @@ export default async function DashboardHome() {
       <div className="grid grid-cols-2 gap-4 md:gap-6 mt-8">
          <PlanningDialog settings={settings} potentialCount={potentialCount} />
          <ReputationDialog scoreData={trustScore} />
+      </div>
+
+      <div className="grid grid-cols-2 gap-4 md:gap-6">
+        <div className="bg-white rounded-2xl border border-[#2E130C]/10 p-5 shadow-sm">
+          <div className="text-[11px] uppercase tracking-widest text-[#2E130C]/60 font-bold">Services rendus</div>
+          <div className="text-3xl font-black text-[#2E130C] mt-1">{serviceStats.services_rendered}</div>
+        </div>
+        <div className="bg-white rounded-2xl border border-[#2E130C]/10 p-5 shadow-sm">
+          <div className="text-[11px] uppercase tracking-widest text-[#2E130C]/60 font-bold">Services reçus</div>
+          <div className="text-3xl font-black text-emerald-700 mt-1">{serviceStats.services_received}</div>
+        </div>
       </div>
 
     </div>
