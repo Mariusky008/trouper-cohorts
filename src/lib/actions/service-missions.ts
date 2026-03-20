@@ -397,6 +397,90 @@ export async function getServiceMissionsFeed(filter: ServiceMissionFilter = "all
 
   await generateServiceMissionsFromRecentContacts();
 
+  const buildVirtualFeed = async () => {
+    const partnerPairs = new Map<string, { partnerId: string; sourceMatchId: string | null; sourceDate: string }>();
+
+    const { data: matches } = await supabaseAdmin
+      .from("network_matches")
+      .select("id, user1_id, user2_id, date")
+      .or(`user1_id.eq.${user.id},user2_id.eq.${user.id}`)
+      .order("date", { ascending: false })
+      .limit(30);
+
+    (matches || []).forEach((match: any) => {
+      const partnerId = match.user1_id === user.id ? match.user2_id : match.user1_id;
+      if (!partnerId || partnerId === user.id) return;
+      partnerPairs.set(String(partnerId), { partnerId, sourceMatchId: match.id, sourceDate: match.date });
+    });
+
+    const { data: reviews } = await supabaseAdmin
+      .from("network_match_reviews")
+      .select("reviewer_id, reviewed_id, created_at")
+      .or(`reviewer_id.eq.${user.id},reviewed_id.eq.${user.id}`)
+      .order("created_at", { ascending: false })
+      .limit(30);
+
+    (reviews || []).forEach((review: any) => {
+      const partnerId = review.reviewer_id === user.id ? review.reviewed_id : review.reviewer_id;
+      if (!partnerId || partnerId === user.id) return;
+      if (!partnerPairs.has(String(partnerId))) {
+        partnerPairs.set(String(partnerId), { partnerId, sourceMatchId: null, sourceDate: review.created_at });
+      }
+    });
+
+    if (partnerPairs.size === 0) return [];
+
+    const partnerIds = Array.from(partnerPairs.values()).map((p) => p.partnerId);
+    const { data: profiles } = await supabaseAdmin
+      .from("profiles")
+      .select("id, display_name, receive_profile, linkedin_url, website_url, current_need, avatar_url, trade")
+      .in("id", partnerIds);
+
+    const profileMap = new Map((profiles || []).map((p: any) => [p.id, p]));
+    const feed: any[] = [];
+
+    Array.from(partnerPairs.values())
+      .sort((a, b) => new Date(b.sourceDate).getTime() - new Date(a.sourceDate).getTime())
+      .forEach((pair) => {
+        const partnerProfile = profileMap.get(pair.partnerId);
+        if (!partnerProfile) return;
+        const candidates = buildMissionCandidates(partnerProfile).slice(0, 2);
+        candidates.forEach((candidate, idx) => {
+          feed.push({
+            id: `virtual-${pair.partnerId}-${candidate.mission_type}-${idx}`,
+            helper_id: user.id,
+            beneficiary_id: pair.partnerId,
+            mission_type: candidate.mission_type,
+            title: candidate.title,
+            description: candidate.description,
+            expected_gain: candidate.expected_gain,
+            priority_score: candidate.priority_score,
+            action_channel: candidate.action_channel,
+            external_link: candidate.external_link || null,
+            suggested_message: candidate.suggested_message || null,
+            status: "new",
+            snoozed_until: null,
+            rejection_count: 0,
+            meta: { ...candidate.meta, virtual: true },
+            created_at: pair.sourceDate,
+            updated_at: pair.sourceDate,
+            completed_at: null,
+            confirmed_at: null,
+            beneficiary: {
+              id: partnerProfile.id,
+              display_name: partnerProfile.display_name,
+              avatar_url: partnerProfile.avatar_url,
+              trade: partnerProfile.trade,
+              linkedin_url: partnerProfile.linkedin_url,
+            },
+            source_match: pair.sourceMatchId ? { id: pair.sourceMatchId, date: pair.sourceDate, created_at: pair.sourceDate } : null,
+          });
+        });
+      });
+
+    return feed;
+  };
+
   let statuses: string[] | null = null;
   if (filter === "new") statuses = ["new", "snoozed"];
   if (filter === "in_progress") statuses = ["interested", "in_progress"];
@@ -436,7 +520,11 @@ export async function getServiceMissionsFeed(filter: ServiceMissionFilter = "all
   const { data, error } = await query;
   if (error || !data) {
     console.error("getServiceMissionsFeed error:", error);
-    return [];
+    return await buildVirtualFeed();
+  }
+
+  if (data.length === 0) {
+    return await buildVirtualFeed();
   }
 
   const statusRank: Record<string, number> = {

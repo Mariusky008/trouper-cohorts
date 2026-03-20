@@ -47,6 +47,7 @@ export function ServiceMissionsFeed({
   const setMissionStatus = (id: string, updates: Record<string, any>) => {
     setMissions((prev) => prev.map((m) => (m.id === id ? { ...m, ...updates } : m)));
   };
+  const isVirtualMission = (missionId: string) => missionId.startsWith("virtual-");
 
   const openActionLink = (mission: Mission) => {
     if (mission.action_channel === "whatsapp") {
@@ -60,6 +61,11 @@ export function ServiceMissionsFeed({
   };
 
   const handleInterested = async (mission: Mission) => {
+    if (isVirtualMission(mission.id)) {
+      setMissionStatus(mission.id, { status: "interested", snoozed_until: null });
+      openActionLink(mission);
+      return;
+    }
     setLoadingId(mission.id);
     const result = await markMissionInterested(mission.id);
     setLoadingId(null);
@@ -72,6 +78,10 @@ export function ServiceMissionsFeed({
   };
 
   const handleSnooze = async (missionId: string) => {
+    if (isVirtualMission(missionId)) {
+      setMissionStatus(missionId, { status: "snoozed" });
+      return;
+    }
     setLoadingId(missionId);
     const result = await snoozeMission(missionId, 7);
     setLoadingId(null);
@@ -83,6 +93,10 @@ export function ServiceMissionsFeed({
   };
 
   const handleDone = async (missionId: string) => {
+    if (isVirtualMission(missionId)) {
+      setMissionStatus(missionId, { status: "done_pending_confirmation" });
+      return;
+    }
     setLoadingId(missionId);
     const result = await markMissionDone(missionId);
     setLoadingId(null);
