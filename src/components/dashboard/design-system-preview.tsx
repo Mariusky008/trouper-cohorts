@@ -42,10 +42,6 @@ function ServiceCardShell({
       <div className="relative rounded-[2.4rem] overflow-hidden shadow-2xl bg-[#FFFDF8] border border-[#2E130C]/15">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(178,11,19,0.12),transparent_45%)]" />
         <div className="relative z-10 p-5 space-y-4 text-[#2E130C]">
-          <div className="rounded-2xl border border-[#B20B13]/15 bg-[#B20B13]/5 p-3 text-center">
-            <p className="text-xs font-black text-[#B20B13]">Chaque service que vous rendez est un service qu&apos;on vous doit.</p>
-            <p className="text-[11px] text-[#2E130C]/70 mt-1">C&apos;est comme ça que vous avancerez beaucoup plus vite.</p>
-          </div>
           {children}
         </div>
       </div>

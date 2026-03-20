@@ -129,6 +129,10 @@ export default function DesignPreviewPage() {
               <span className="bg-[#25D366] w-2 h-8 rounded-full"></span>
               9a. Mission Intro WhatsApp
             </h2>
+            <div className="rounded-2xl border border-[#B20B13]/20 bg-[#B20B13]/10 p-3">
+              <p className="text-xs font-black text-[#F8C6C9]">Chaque service que vous rendez est un service qu&apos;on vous doit.</p>
+              <p className="text-[11px] text-slate-200 mt-1">C&apos;est comme ça que vous avancerez beaucoup plus vite.</p>
+            </div>
             <p className="text-sm text-slate-400 mb-4">Carte dédiée aux mises en relation avec ouverture WhatsApp et message prérempli.</p>
             <ServiceMissionIntroWhatsAppCardPreview />
           </div>
