@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { 
   Home, Users, Zap, ShieldCheck, User, Settings, 
-  Menu, Bell, LogOut, ChevronRight, BookOpen, Anchor, Trophy, Percent, ShoppingBag 
+  LogOut, Anchor, Trophy, Percent, ShoppingBag 
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -15,6 +15,13 @@ import { motion, AnimatePresence } from "framer-motion";
 const NAV_ITEMS = [
   { label: "Accueil", href: "/mon-reseau-local/dashboard", icon: Home },
   { label: "Relations", href: "/mon-reseau-local/dashboard/connections", icon: Users },
+  { label: "Opportunités", href: "/mon-reseau-local/dashboard/opportunities", icon: Zap },
+  { label: "Offres", href: "/mon-reseau-local/dashboard/offers", icon: Percent },
+  { label: "Marché", href: "/mon-reseau-local/dashboard/guide", icon: ShoppingBag },
+];
+
+const MOBILE_BOTTOM_ITEMS = [
+  { label: "Accueil", href: "/mon-reseau-local/dashboard", icon: Home },
   { label: "Opportunités", href: "/mon-reseau-local/dashboard/opportunities", icon: Zap },
   { label: "Offres", href: "/mon-reseau-local/dashboard/offers", icon: Percent },
   { label: "Marché", href: "/mon-reseau-local/dashboard/guide", icon: ShoppingBag },
@@ -45,7 +52,7 @@ function DashboardLayoutFull({ children, pathname }: { children: React.ReactNode
       }
   }, [pathname]);
 
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isMobileProfileMenuOpen, setIsMobileProfileMenuOpen] = useState(false);
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
   const [pendingCount, setPendingCount] = useState(0);
 
@@ -55,7 +62,7 @@ function DashboardLayoutFull({ children, pathname }: { children: React.ReactNode
 
   // Close mobile menu on route change
   useEffect(() => {
-    setIsMobileMenuOpen(false);
+    setIsMobileProfileMenuOpen(false);
     setIsProfileDropdownOpen(false);
   }, [pathname]);
 
@@ -218,123 +225,91 @@ function DashboardLayoutFull({ children, pathname }: { children: React.ReactNode
                     <Trophy className="h-3.5 w-3.5 text-[#B20B13]" />
                     <span className="text-xs font-black text-[#2E130C]">{points.toLocaleString()}</span>
                 </div>
-                
-                <Button size="icon" variant="ghost" className="relative hover:bg-[#2E130C]/5">
-                  <Bell className="h-5 w-5 text-[#2E130C]/60" />
-                  <span className="absolute top-2 right-2 h-2 w-2 bg-[#B20B13] rounded-full border border-[#E2D9BC]"></span>
-                </Button>
-                <Button size="icon" variant="ghost" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="hover:bg-[#2E130C]/5">
-                  <Menu className="h-6 w-6 text-[#2E130C]" />
-                </Button>
             </div>
          </div>
       </header>
 
-      {/* --- MOBILE MENU OVERLAY --- */}
-      <AnimatePresence>
-        {isMobileMenuOpen && (
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="fixed inset-0 top-16 bg-[#E2D9BC] z-50 p-4 flex flex-col gap-2 lg:hidden border-t-2 border-[#2E130C]/10"
-          >
-            {NAV_ITEMS.map((item) => (
-              <Link 
-                key={item.href} 
-                href={item.href}
-                className={cn(
-                  "flex items-center gap-4 p-4 rounded-xl transition-colors font-titan tracking-wide",
-                  pathname === item.href 
-                    ? "bg-[#B20B13]/10 text-[#B20B13] border border-[#B20B13]/20" 
-                    : "text-[#2E130C]/60 hover:bg-[#2E130C]/5"
-                )}
-              >
-                <div className={cn("p-2 rounded-lg", pathname === item.href ? "bg-[#B20B13]/20 shadow-sm" : "bg-[#2E130C]/5")}>
-                  <item.icon className={cn("h-5 w-5", pathname === item.href ? "text-[#B20B13]" : "text-[#2E130C]/60")} />
-                </div>
-                <span className="text-lg">{item.label}</span>
-                
-                {/* Mobile Badges */}
-                {item.label === "Opportunités" && pendingCount > 0 && (
-                    <span className="ml-auto bg-[#B20B13] text-[#E2D9BC] text-xs font-bold px-2 py-1 rounded-full">{pendingCount}</span>
-                )}
-                {item.label === "Marché" && badges.market > 0 && (
-                    <span className="ml-auto bg-[#B20B13] text-[#E2D9BC] text-xs font-bold px-2 py-1 rounded-full">{badges.market}</span>
-                )}
-                {item.label === "Offres" && badges.offers > 0 && (
-                    <span className="ml-auto bg-[#B20B13] text-[#E2D9BC] text-xs font-bold px-2 py-1 rounded-full">{badges.offers}</span>
-                )}
-
-                {pathname === item.href && !(item.label === "Opportunités" && pendingCount > 0) && !(item.label === "Marché" && badges.market > 0) && !(item.label === "Offres" && badges.offers > 0) && <ChevronRight className="ml-auto h-5 w-5 text-[#B20B13]" />}
-              </Link>
-            ))}
-            
-            {/* LINK TO PROFILE EXPLICIT */}
-            <Link 
-                href="/mon-reseau-local/dashboard/profile"
-                className={cn(
-                  "flex items-center gap-4 p-4 rounded-xl transition-colors mt-2 font-titan tracking-wide",
-                  pathname === "/mon-reseau-local/dashboard/profile" 
-                    ? "bg-[#B20B13]/10 text-[#B20B13] border border-[#B20B13]/20" 
-                    : "text-[#2E130C]/60 hover:bg-[#2E130C]/5"
-                )}
-              >
-                <div className={cn("p-2 rounded-lg", pathname === "/mon-reseau-local/dashboard/profile" ? "bg-[#B20B13]/20 shadow-sm" : "bg-[#2E130C]/5")}>
-                  <User className={cn("h-5 w-5", pathname === "/mon-reseau-local/dashboard/profile" ? "text-[#B20B13]" : "text-[#2E130C]/60")} />
-                </div>
-                <span className="text-lg">Mon Profil</span>
-            </Link>
-
-            {/* LINK TO SETTINGS EXPLICIT */}
-            <Link 
-                href="/mon-reseau-local/dashboard/settings"
-                className={cn(
-                  "flex items-center gap-4 p-4 rounded-xl transition-colors font-titan tracking-wide",
-                  pathname === "/mon-reseau-local/dashboard/settings" 
-                    ? "bg-[#B20B13]/10 text-[#B20B13] border border-[#B20B13]/20" 
-                    : "text-[#2E130C]/60 hover:bg-[#2E130C]/5"
-                )}
-              >
-                <div className={cn("p-2 rounded-lg", pathname === "/mon-reseau-local/dashboard/settings" ? "bg-[#B20B13]/20 shadow-sm" : "bg-[#2E130C]/5")}>
-                  <Settings className={cn("h-5 w-5", pathname === "/mon-reseau-local/dashboard/settings" ? "text-[#B20B13]" : "text-[#2E130C]/60")} />
-                </div>
-                <span className="text-lg">Paramètres</span>
-            </Link>
-
-            <div className="mt-auto border-t-2 border-[#2E130C]/10 pt-6">
-                <Link href="/mon-reseau-local/dashboard/profile" className="flex items-center gap-4 p-4 bg-white rounded-xl border-2 border-[#2E130C]/10 active:scale-95 transition-transform shadow-[2px_2px_0px_0px_#2E130C]">
-                  <Avatar className="h-12 w-12 border-2 border-[#2E130C]">
-                    <AvatarImage src={avatarUrl} className="object-cover object-top" />
-                    <AvatarFallback className="bg-[#2E130C] text-[#E2D9BC]">{initials}</AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <div className="font-titan text-lg text-[#2E130C]">{displayName}</div>
-                    <div className="text-[#2E130C]/60 font-bold text-sm">{userProfile?.trade || "Membre"} • {userProfile?.city || "Réseau"}</div>
-                  </div>
-                  <ChevronRight className="ml-auto h-5 w-5 text-[#2E130C]/40" />
-                </Link>
-                <Button 
-                  variant="destructive" 
-                  className="w-full mt-4 h-12 rounded-xl font-bold bg-[#B20B13]/10 hover:bg-[#B20B13]/20 text-[#B20B13] border border-[#B20B13]/20"
-                  onClick={handleSignOut}
-                >
-                  <LogOut className="mr-2 h-4 w-4" /> Se déconnecter
-                </Button>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
       {/* --- MAIN CONTENT --- */}
       <main className={cn(
         "flex-1 min-h-screen transition-all duration-300 ease-in-out",
-        "pt-20" // Space for fixed header
+        "pt-20 pb-28 lg:pb-0"
       )}>
         <div className="container mx-auto p-4 md:p-8 max-w-7xl">
           {children}
         </div>
       </main>
+
+      <div className="lg:hidden fixed bottom-3 left-1/2 -translate-x-1/2 z-40 w-[calc(100%-1.25rem)] max-w-md">
+        <div className="rounded-3xl border-2 border-[#2E130C]/20 bg-[#2E130C] text-[#E2D9BC] shadow-2xl px-3 py-2">
+          <div className="grid grid-cols-5 items-center">
+            {MOBILE_BOTTOM_ITEMS.map((item) => {
+              const isActive = pathname === item.href;
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={cn(
+                    "relative flex flex-col items-center justify-center gap-1 py-2 rounded-2xl transition-all",
+                    isActive ? "bg-white/15" : "hover:bg-white/10"
+                  )}
+                >
+                  <item.icon className="h-5 w-5" />
+                  <span className="text-[10px] font-bold leading-none">{item.label}</span>
+                  {item.label === "Opportunités" && pendingCount > 0 && (
+                    <span className="absolute top-1 right-4 bg-[#B20B13] text-[#E2D9BC] text-[9px] font-bold px-1.5 py-0.5 rounded-full">{pendingCount}</span>
+                  )}
+                  {item.label === "Marché" && badges.market > 0 && (
+                    <span className="absolute top-1 right-4 bg-[#B20B13] text-[#E2D9BC] text-[9px] font-bold px-1.5 py-0.5 rounded-full">{badges.market}</span>
+                  )}
+                  {item.label === "Offres" && badges.offers > 0 && (
+                    <span className="absolute top-1 right-4 bg-[#B20B13] text-[#E2D9BC] text-[9px] font-bold px-1.5 py-0.5 rounded-full">{badges.offers}</span>
+                  )}
+                </Link>
+              );
+            })}
+
+            <div className="relative flex justify-center">
+              <button
+                onClick={() => setIsMobileProfileMenuOpen((v) => !v)}
+                className="flex flex-col items-center justify-center gap-1 py-2 rounded-2xl w-full active:scale-95 transition-transform"
+              >
+                <Avatar className="h-6 w-6 border border-[#E2D9BC]/40">
+                  <AvatarImage src={avatarUrl} className="object-cover object-top" />
+                  <AvatarFallback className="bg-white/20 text-[#E2D9BC] text-[10px]">{initials}</AvatarFallback>
+                </Avatar>
+                <span className="text-[10px] font-bold leading-none">Profil</span>
+              </button>
+              <AnimatePresence>
+                {isMobileProfileMenuOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 8, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 8, scale: 0.95 }}
+                    className="absolute bottom-14 right-0 w-56 bg-white text-[#2E130C] border-2 border-[#2E130C]/15 rounded-xl shadow-[4px_4px_0px_0px_#2E130C] p-1"
+                  >
+                    <Link href="/mon-reseau-local/dashboard/profile" className="flex items-center gap-2 px-3 py-2 text-sm font-bold hover:bg-[#2E130C]/5 rounded-lg">
+                      <User className="h-4 w-4" /> Mon profil
+                    </Link>
+                    <Link href="/mon-reseau-local/dashboard/settings" className="flex items-center gap-2 px-3 py-2 text-sm font-bold hover:bg-[#2E130C]/5 rounded-lg">
+                      <Settings className="h-4 w-4" /> Paramètres
+                    </Link>
+                    <Link href="/mon-reseau-local/dashboard/connections" className="flex items-center gap-2 px-3 py-2 text-sm font-bold hover:bg-[#2E130C]/5 rounded-lg">
+                      <Users className="h-4 w-4" /> Relations
+                    </Link>
+                    <div className="h-px bg-[#2E130C]/10 my-1" />
+                    <button
+                      onClick={handleSignOut}
+                      className="w-full flex items-center gap-2 px-3 py-2 text-sm font-bold text-[#B20B13] hover:bg-[#B20B13]/10 rounded-lg text-left"
+                    >
+                      <LogOut className="h-4 w-4" /> Se déconnecter
+                    </button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          </div>
+        </div>
+      </div>
 
       {/* PWA INSTALL PROMPT */}
       <PWAInstallPrompt />
