@@ -62,39 +62,40 @@ ALTER TABLE public.user_service_stats ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "Users can view related service missions" ON public.service_missions;
 CREATE POLICY "Users can view related service missions" ON public.service_missions
-    FOR SELECT USING (auth.uid() = helper_id OR auth.uid() = beneficiary_id OR public.is_admin(auth.uid()));
+    FOR SELECT USING (auth.uid() = helper_id OR auth.uid() = beneficiary_id OR public.is_admin());
 
 DROP POLICY IF EXISTS "Helpers can create service missions" ON public.service_missions;
 CREATE POLICY "Helpers can create service missions" ON public.service_missions
-    FOR INSERT WITH CHECK (auth.uid() = helper_id OR public.is_admin(auth.uid()));
+    FOR INSERT WITH CHECK (auth.uid() = helper_id OR public.is_admin());
 
 DROP POLICY IF EXISTS "Related users can update service missions" ON public.service_missions;
 CREATE POLICY "Related users can update service missions" ON public.service_missions
-    FOR UPDATE USING (auth.uid() = helper_id OR auth.uid() = beneficiary_id OR public.is_admin(auth.uid()));
+    FOR UPDATE USING (auth.uid() = helper_id OR auth.uid() = beneficiary_id OR public.is_admin());
 
 DROP POLICY IF EXISTS "Helpers can delete own service missions" ON public.service_missions;
 CREATE POLICY "Helpers can delete own service missions" ON public.service_missions
-    FOR DELETE USING (auth.uid() = helper_id OR public.is_admin(auth.uid()));
+    FOR DELETE USING (auth.uid() = helper_id OR public.is_admin());
 
 DROP POLICY IF EXISTS "Users can view related service ledger" ON public.service_ledger;
 CREATE POLICY "Users can view related service ledger" ON public.service_ledger
-    FOR SELECT USING (auth.uid() = from_user_id OR auth.uid() = to_user_id OR public.is_admin(auth.uid()));
+    FOR SELECT USING (auth.uid() = from_user_id OR auth.uid() = to_user_id OR public.is_admin());
 
 DROP POLICY IF EXISTS "Related users can write service ledger" ON public.service_ledger;
 CREATE POLICY "Related users can write service ledger" ON public.service_ledger
-    FOR INSERT WITH CHECK (auth.uid() = from_user_id OR auth.uid() = to_user_id OR public.is_admin(auth.uid()));
+    FOR INSERT WITH CHECK (auth.uid() = from_user_id OR auth.uid() = to_user_id OR public.is_admin());
 
 DROP POLICY IF EXISTS "Related users can update service ledger" ON public.service_ledger;
 CREATE POLICY "Related users can update service ledger" ON public.service_ledger
-    FOR UPDATE USING (auth.uid() = from_user_id OR auth.uid() = to_user_id OR public.is_admin(auth.uid()));
+    FOR UPDATE USING (auth.uid() = from_user_id OR auth.uid() = to_user_id OR public.is_admin());
 
 DROP POLICY IF EXISTS "Users can view own service stats" ON public.user_service_stats;
 CREATE POLICY "Users can view own service stats" ON public.user_service_stats
-    FOR SELECT USING (auth.uid() = user_id OR public.is_admin(auth.uid()));
+    FOR SELECT USING (auth.uid() = user_id OR public.is_admin());
 
 DROP POLICY IF EXISTS "Admins can manage service stats" ON public.user_service_stats;
 CREATE POLICY "Admins can manage service stats" ON public.user_service_stats
-    FOR ALL USING (public.is_admin(auth.uid()));
+    FOR ALL USING (public.is_admin())
+    WITH CHECK (public.is_admin());
 
 CREATE OR REPLACE FUNCTION public.refresh_user_service_stats(p_user_id UUID)
 RETURNS VOID
