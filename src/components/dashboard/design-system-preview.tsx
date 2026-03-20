@@ -22,6 +22,100 @@ const MISSION_TYPES = [
     { id: 'infiltre', label: 'Infiltré', icon: Fingerprint, desc: "Parraine-moi dans ton club/réseau", color: 'text-red-400', bg: 'bg-red-500/10', border: 'border-red-500/20' }
 ];
 
+export function ServiceMissionOpportunityCardPreview() {
+  const [status, setStatus] = useState<"idle" | "interested" | "done" | "snoozed">("idle");
+
+  const steps = [
+    "Identifier un commerçant pertinent dans ton réseau local",
+    "Envoyer une intro WhatsApp entre vous deux",
+    "Confirmer ici quand l’intro est faite",
+  ];
+
+  return (
+    <div className="relative w-full max-w-sm mx-auto min-h-[620px] rounded-[2.5rem] overflow-hidden shadow-2xl bg-[#0E1220] border border-white/10">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(56,189,248,0.25),transparent_45%)]" />
+      <div className="relative z-10 p-5 space-y-4">
+        <div className="flex items-center justify-between">
+          <Badge className="bg-cyan-500/20 text-cyan-100 border border-cyan-300/30 uppercase tracking-wider text-[10px] font-black">
+            Mission opportunité
+          </Badge>
+          <span className="text-[10px] uppercase tracking-wider font-bold text-slate-300">Nouveau</span>
+        </div>
+
+        <div className="rounded-2xl border border-white/10 bg-white/5 p-3 flex items-center gap-3">
+          <Avatar className="h-12 w-12 border border-white/20">
+            <AvatarImage src="/jeanphilipperoth.jpg" className="object-cover object-top" />
+            <AvatarFallback>JD</AvatarFallback>
+          </Avatar>
+          <div className="min-w-0">
+            <p className="text-white font-black leading-none">Jean Dupont</p>
+            <p className="text-xs text-slate-300 mt-1">Designer · Bordeaux</p>
+            <p className="text-[11px] text-cyan-200 mt-1">Besoin détecté: Le Prescripteur</p>
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-cyan-300/20 bg-cyan-500/10 p-4">
+          <p className="text-[10px] uppercase tracking-widest font-bold text-cyan-100/80 mb-1">Mission à faire</p>
+          <h3 className="text-white font-black text-lg leading-tight">Trouver 1 commerçant qualifié pour Jean et faire l’introduction aujourd’hui</h3>
+          <p className="text-xs text-slate-200/90 mt-2">Exemple concret: boulanger premium, caviste, concept store, franchise locale.</p>
+        </div>
+
+        <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+          <p className="text-[10px] uppercase tracking-widest font-bold text-slate-300 mb-2">Processus</p>
+          <div className="space-y-2">
+            {steps.map((step, index) => (
+              <div key={step} className="flex items-start gap-2">
+                <div className="h-5 w-5 mt-0.5 rounded-full bg-white/10 border border-white/20 text-[10px] text-white font-black flex items-center justify-center">{index + 1}</div>
+                <p className="text-xs text-slate-200 leading-relaxed">{step}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {status === "idle" && (
+          <div className="grid grid-cols-2 gap-3">
+            <Button
+              variant="outline"
+              onClick={() => setStatus("snoozed")}
+              className="h-11 border-rose-300/40 bg-rose-500/10 text-rose-100 hover:bg-rose-500/20 font-black uppercase text-[11px]"
+            >
+              Pas intéressé
+            </Button>
+            <Button
+              onClick={() => setStatus("interested")}
+              className="h-11 bg-emerald-500 hover:bg-emerald-400 text-white font-black uppercase text-[11px]"
+            >
+              Intéressé
+            </Button>
+          </div>
+        )}
+
+        {status === "snoozed" && (
+          <div className="rounded-2xl border border-amber-300/30 bg-amber-500/10 p-4 space-y-3">
+            <p className="text-sm font-bold text-amber-100">Mission remise en bas de pile pour plus tard.</p>
+            <Button onClick={() => setStatus("idle")} className="w-full h-10 bg-[#2E130C] hover:bg-[#2E130C]/90 text-white font-black uppercase text-[11px]">Remettre en haut</Button>
+          </div>
+        )}
+
+        {status === "interested" && (
+          <div className="rounded-2xl border border-emerald-300/30 bg-emerald-500/10 p-4 space-y-3">
+            <p className="text-sm font-bold text-emerald-100">Top. Tu t’es engagé sur cette mission.</p>
+            <Button onClick={() => setStatus("done")} className="w-full h-11 bg-cyan-500 hover:bg-cyan-400 text-white font-black uppercase text-[11px]">Mission terminée</Button>
+          </div>
+        )}
+
+        {status === "done" && (
+          <div className="rounded-2xl border border-indigo-300/30 bg-indigo-500/10 p-4 space-y-2">
+            <p className="text-sm font-bold text-indigo-100">Parfait. Jean reçoit une notification.</p>
+            <p className="text-xs text-indigo-100/90">Il devra confirmer le service reçu, puis ce sera compté dans “services rendus / services reçus”.</p>
+            <Button onClick={() => setStatus("idle")} variant="outline" className="w-full h-10 border-indigo-300/40 text-indigo-100 hover:bg-indigo-500/20 font-black uppercase text-[11px]">Rejouer le flow</Button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // --- 1. WAITING CARD (Post-registration / Next Day) ---
 // Goal: "Wahoo", colorful, anticipation for tomorrow.
 export function WaitingCardPreview() {
