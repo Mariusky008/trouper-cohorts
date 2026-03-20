@@ -36,6 +36,7 @@ export function OffersView({
     const [searchCategory, setSearchCategory] = useState("other");
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [swipeLeftId, setSwipeLeftId] = useState<string | null>(null);
+    const [swipeRightId, setSwipeRightId] = useState<string | null>(null);
     const [refusedOfferIds, setRefusedOfferIds] = useState<string[]>([]);
     const [refusedSearchIds, setRefusedSearchIds] = useState<string[]>([]);
     const [consumedOfferIds, setConsumedOfferIds] = useState<string[]>([]);
@@ -104,13 +105,23 @@ export function OffersView({
         }
     };
 
+    const isRecentHours = (value: string, hours: number) => Date.now() - new Date(value).getTime() <= hours * 3600 * 1000;
+    const offerPriorityScore = (offer: any) => discountPct(offer) * 3 + (isRecentHours(offer.match_date, 48) ? 35 : 0);
+    const searchPriorityScore = (search: any) => (isRecentHours(search.created_at, 24) ? 40 : isRecentHours(search.created_at, 72) ? 20 : 0) + (search.category === "service" ? 10 : 0);
+
     const productDeck = useMemo(
-        () => (unlockedOffers || []).filter((o) => !refusedOfferIds.includes(o.user_id) && !consumedOfferIds.includes(o.user_id)),
+        () =>
+            (unlockedOffers || [])
+                .filter((o) => !refusedOfferIds.includes(o.user_id) && !consumedOfferIds.includes(o.user_id))
+                .sort((a, b) => offerPriorityScore(b) - offerPriorityScore(a)),
         [unlockedOffers, refusedOfferIds, consumedOfferIds]
     );
 
     const callsDeck = useMemo(
-        () => (searches || []).filter((s) => !refusedSearchIds.includes(s.id) && !consumedSearchIds.includes(s.id) && s.user_id !== currentUserId),
+        () =>
+            (searches || [])
+                .filter((s) => !refusedSearchIds.includes(s.id) && !consumedSearchIds.includes(s.id) && s.user_id !== currentUserId)
+                .sort((a, b) => searchPriorityScore(b) - searchPriorityScore(a)),
         [searches, refusedSearchIds, consumedSearchIds, currentUserId]
     );
 
@@ -134,8 +145,11 @@ export function OffersView({
         `Salut ${search.user_display_name}, je viens de voir ton appel d'offre "${search.title}" sur Popey. Je peux peut-être t'aider, on échange ?`;
 
     const handleOfferInterested = async (offer: any) => {
+        setSwipeRightId(`offer-${offer.user_id}`);
+        await new Promise((resolve) => setTimeout(resolve, 180));
         window.open(`https://wa.me/?text=${encodeURIComponent(whatsappOfferMessage(offer))}`, "_blank");
         setConsumedOfferIds((prev) => [...prev, offer.user_id]);
+        setSwipeRightId(null);
     };
 
     const handleOfferRefuse = async (offer: any) => {
@@ -146,8 +160,11 @@ export function OffersView({
     };
 
     const handleSearchInterested = async (search: any) => {
+        setSwipeRightId(`search-${search.id}`);
+        await new Promise((resolve) => setTimeout(resolve, 180));
         window.open(`https://wa.me/?text=${encodeURIComponent(whatsappSearchMessage(search))}`, "_blank");
         setConsumedSearchIds((prev) => [...prev, search.id]);
+        setSwipeRightId(null);
     };
 
     const handleSearchRefuse = async (search: any) => {
@@ -159,6 +176,16 @@ export function OffersView({
 
     const restoreRefusedOffer = (id: string) => setRefusedOfferIds((prev) => prev.filter((x) => x !== id));
     const restoreRefusedSearch = (id: string) => setRefusedSearchIds((prev) => prev.filter((x) => x !== id));
+    const offerBadge = (offer: any) => {
+        if (discountPct(offer) >= 40) return "Flash";
+        if (isRecentHours(offer.match_date, 48)) return "Nouveau";
+        return "Premium";
+    };
+    const searchBadge = (search: any) => {
+        if (isRecentHours(search.created_at, 24)) return "Urgent";
+        if (search.category === "service") return "Prioritaire";
+        return "Actif";
+    };
 
     return (
         <div className="space-y-8 px-4 md:px-0 pb-12">
@@ -281,11 +308,21 @@ export function OffersView({
                                 animate={
                                     swipeLeftId === `offer-${offer.user_id}`
                                         ? { x: -420, rotate: -12, opacity: 0 }
+                                        : swipeRightId === `offer-${offer.user_id}`
+                                        ? { x: 420, rotate: 12, opacity: 0 }
                                         : { y: index * 12, scale: Math.max(0.9, 1 - index * 0.04), x: index * 6, opacity: index > 3 ? 0 : 1 }
                                 }
                                 transition={{ duration: 0.25 }}
                                 className="absolute inset-x-0 top-0"
                                 style={{ zIndex: 100 - index, pointerEvents: index === 0 ? "auto" : "none" }}
+                                drag={index === 0 ? "x" : false}
+                                dragConstraints={{ left: 0, right: 0 }}
+                                dragElastic={0.6}
+                                onDragEnd={(_, info) => {
+                                    if (index !== 0) return;
+                                    if (info.offset.x <= -120) handleOfferRefuse(offer);
+                                    if (info.offset.x >= 120) handleOfferInterested(offer);
+                                }}
                             >
                                 <div className="relative rounded-[2.4rem] overflow-hidden shadow-2xl bg-[#16081D] border border-fuchsia-300/35">
                                     <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(217,70,239,0.45),transparent_45%)]" />
@@ -298,7 +335,10 @@ export function OffersView({
                                     <div className="relative z-10 p-5 space-y-4 text-white">
                                         <div className="flex items-center justify-between">
                                             <Badge className="bg-fuchsia-500/20 text-fuchsia-100 border border-fuchsia-300/40 uppercase tracking-wider text-[10px] font-black">Offre produit/service</Badge>
-                                            <Badge className="bg-amber-300 text-[#2E130C] border-0 text-[10px] font-black">-{discountPct(offer)}%</Badge>
+                                            <div className="flex items-center gap-2">
+                                                <Badge className="bg-white/15 text-white border-white/20 text-[10px] font-black">{offerBadge(offer)}</Badge>
+                                                <Badge className="bg-amber-300 text-[#2E130C] border-0 text-[10px] font-black">-{discountPct(offer)}%</Badge>
+                                            </div>
                                         </div>
                                         <div className="rounded-2xl border border-fuchsia-300/25 bg-white/10 backdrop-blur-md p-4 flex items-center gap-3">
                                             <Avatar className="h-14 w-14 border-2 border-amber-300/70">
@@ -428,11 +468,21 @@ export function OffersView({
                                 animate={
                                     swipeLeftId === `search-${search.id}`
                                         ? { x: -420, rotate: -12, opacity: 0 }
+                                        : swipeRightId === `search-${search.id}`
+                                        ? { x: 420, rotate: 12, opacity: 0 }
                                         : { y: index * 12, scale: Math.max(0.9, 1 - index * 0.04), x: index * 6, opacity: index > 3 ? 0 : 1 }
                                 }
                                 transition={{ duration: 0.25 }}
                                 className="absolute inset-x-0 top-0"
                                 style={{ zIndex: 100 - index, pointerEvents: index === 0 ? "auto" : "none" }}
+                                drag={index === 0 ? "x" : false}
+                                dragConstraints={{ left: 0, right: 0 }}
+                                dragElastic={0.6}
+                                onDragEnd={(_, info) => {
+                                    if (index !== 0) return;
+                                    if (info.offset.x <= -120) handleSearchRefuse(search);
+                                    if (info.offset.x >= 120) handleSearchInterested(search);
+                                }}
                             >
                                 <div className="relative rounded-[2.4rem] overflow-hidden shadow-2xl bg-[#071228] border border-blue-300/35">
                                     <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(59,130,246,0.42),transparent_45%)]" />
@@ -440,7 +490,10 @@ export function OffersView({
                                     <div className="relative z-10 p-5 space-y-4 text-white">
                                         <div className="flex items-center justify-between">
                                             <Badge className="bg-blue-500/20 text-blue-100 border border-blue-300/40 uppercase tracking-wider text-[10px] font-black">Appel d’offre</Badge>
-                                            <Badge className="bg-white/15 text-white border-white/20 text-[10px] uppercase">{search.category}</Badge>
+                                            <div className="flex items-center gap-2">
+                                                <Badge className="bg-white/15 text-white border-white/20 text-[10px] uppercase">{searchBadge(search)}</Badge>
+                                                <Badge className="bg-white/15 text-white border-white/20 text-[10px] uppercase">{search.category}</Badge>
+                                            </div>
                                         </div>
                                         <div className="rounded-2xl border border-blue-300/25 bg-white/10 backdrop-blur-md p-4 flex items-center gap-3">
                                             <Avatar className="h-14 w-14 border-2 border-blue-200/70">
