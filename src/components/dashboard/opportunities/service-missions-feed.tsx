@@ -203,6 +203,11 @@ export function ServiceMissionsFeed({
       </div>
 
       <div className="space-y-4">
+        <div className="rounded-2xl border border-[#B20B13]/20 bg-[#B20B13]/10 p-3 max-w-sm mx-auto">
+          <p className="text-xs font-black text-[#B20B13]">Chaque service que vous rendez est un service qu&apos;on vous doit.</p>
+          <p className="text-[11px] text-[#2E130C]/80 mt-1">C&apos;est comme ça que vous avancerez beaucoup plus vite.</p>
+        </div>
+
         {filteredMissions.length === 0 && (
           <div className="text-center py-12 text-[#2E130C]/40 italic">Aucune mission de service pour ce filtre.</div>
         )}
@@ -213,116 +218,145 @@ export function ServiceMissionsFeed({
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.03 }}
-            className="bg-white rounded-2xl border border-[#2E130C]/10 p-5 shadow-sm"
+            className="relative w-full max-w-sm mx-auto min-h-[560px]"
           >
-            <div className="flex items-start justify-between gap-3">
-              <div className="flex items-center gap-3">
-                <Avatar className="h-11 w-11 border border-[#2E130C]/10">
-                  <AvatarImage src={mission.beneficiary?.avatar_url} />
-                  <AvatarFallback>{mission.beneficiary?.display_name?.[0] || "?"}</AvatarFallback>
-                </Avatar>
-                <div>
-                  <div className="font-black text-[#2E130C]">{mission.title}</div>
-                  <div className="text-xs text-[#2E130C]/70">
-                    Pour {mission.beneficiary?.display_name || "Membre"} · {mission.beneficiary?.trade || "Membre"}
+            <motion.div
+              animate={{ x: [18, 16, 18], rotate: [-2, -1.5, -2] }}
+              transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+              className="absolute inset-y-7 right-0 w-[94%] rounded-[2.2rem] bg-[#E8E0D3] border border-[#2E130C]/10"
+            />
+            <motion.div
+              animate={{ x: [-14, -12, -14], rotate: [1.8, 1.4, 1.8] }}
+              transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut" }}
+              className="absolute inset-y-4 left-0 w-[94%] rounded-[2.2rem] bg-[#F8F4EB] border border-[#2E130C]/10"
+            />
+
+            <div className="relative rounded-[2.4rem] overflow-hidden shadow-2xl bg-[#FFFDF8] border border-[#2E130C]/15">
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(178,11,19,0.12),transparent_45%)]" />
+              <div className="relative z-10 p-5 space-y-4 text-[#2E130C]">
+                <div className="flex items-center justify-between">
+                  <Badge className="bg-[#2E130C]/10 text-[#2E130C] border border-[#2E130C]/20 uppercase tracking-wider text-[10px] font-black">
+                    {mission.action_channel === "whatsapp" ? "Mise en relation" : mission.action_channel === "social_link" ? "Action sociale" : "Action relationnelle"}
+                  </Badge>
+                  <span className="text-[10px] uppercase tracking-wider font-bold text-[#2E130C]/60">
+                    {mission.action_channel === "whatsapp" ? "Type 1" : mission.action_channel === "social_link" ? "Type 2" : "Type 3"}
+                  </span>
+                </div>
+
+                <div className="rounded-2xl border border-[#2E130C]/10 bg-[#F3F0E7] p-4 flex flex-col items-center text-center gap-2">
+                  <Avatar className="h-20 w-20 border-2 border-[#B20B13]/20">
+                    <AvatarImage src={mission.beneficiary?.avatar_url} className="object-cover object-top" />
+                    <AvatarFallback>{mission.beneficiary?.display_name?.[0] || "?"}</AvatarFallback>
+                  </Avatar>
+                  <div className="min-w-0">
+                    <p className="font-black text-base leading-none">{mission.beneficiary?.display_name || "Membre"}</p>
+                    <p className="text-xs text-[#2E130C]/70 mt-1">{mission.beneficiary?.trade || "Membre"}</p>
                   </div>
                 </div>
+
+                <div className="rounded-2xl border border-[#2E130C]/15 bg-white p-4">
+                  <p className="text-[10px] uppercase tracking-widest font-bold text-[#B20B13] mb-1">
+                    {mission.action_channel === "whatsapp" ? "Mission WhatsApp" : mission.action_channel === "social_link" ? "Mission Réseau social" : "Mission Terrain"}
+                  </p>
+                  <h3 className="font-black text-lg leading-tight">{mission.title}</h3>
+                  <p className="text-xs text-[#2E130C]/70 mt-2">{mission.description}</p>
+                </div>
+
+                {mission.expected_gain && (
+                  <div className="text-xs text-[#B20B13] font-semibold">{mission.expected_gain}</div>
+                )}
+
+                <div className="flex items-center gap-2 text-xs text-[#2E130C]/55">
+                  <Clock className="h-3.5 w-3.5" />
+                  {new Date(mission.created_at).toLocaleDateString("fr-FR")}
+                  {mission.snoozed_until && mission.status === "snoozed" && (
+                    <span>· Reprise le {new Date(mission.snoozed_until).toLocaleDateString("fr-FR")}</span>
+                  )}
+                </div>
+
+                <div className="pt-1">
+                  {mission.status === "new" && (
+                    <div className="grid grid-cols-2 gap-3">
+                      <Button
+                        variant="outline"
+                        onClick={() => handleSnooze(mission.id)}
+                        disabled={loadingId === mission.id}
+                        className="h-11 border-[#B20B13]/30 bg-[#B20B13]/5 text-[#B20B13] hover:bg-[#B20B13]/10 font-black uppercase text-[11px]"
+                      >
+                        <PauseCircle className="h-4 w-4 mr-1" /> Pas intéressé
+                      </Button>
+                      <Button
+                        onClick={() => handleInterested(mission)}
+                        disabled={loadingId === mission.id}
+                        className={cn(
+                          "h-11 text-white font-black uppercase text-[11px] shadow-lg",
+                          mission.action_channel === "whatsapp"
+                            ? "bg-[#25D366] hover:bg-[#25D366]/90"
+                            : mission.action_channel === "social_link"
+                            ? "bg-[#0A66C2] hover:bg-[#0A66C2]/90"
+                            : "bg-[#2E130C] hover:bg-[#2E130C]/90"
+                        )}
+                      >
+                        {mission.action_channel === "whatsapp" && <MessageCircle className="h-4 w-4 mr-1" />}
+                        {mission.action_channel === "social_link" && <ExternalLink className="h-4 w-4 mr-1" />}
+                        {mission.action_channel === "whatsapp" ? "Ouvrir WhatsApp" : mission.action_channel === "social_link" ? "Ouvrir le lien" : "Je m'en charge"}
+                      </Button>
+                    </div>
+                  )}
+
+                  {mission.status === "snoozed" && (
+                    <div className="grid grid-cols-2 gap-2">
+                      <Button variant="outline" className="border-amber-200 text-amber-700 bg-amber-50 h-11">
+                        Mission en pause
+                      </Button>
+                      <Button
+                        onClick={() => handleInterested(mission)}
+                        disabled={loadingId === mission.id}
+                        className="h-11 bg-[#2E130C] hover:bg-[#2E130C]/90 text-white font-black uppercase text-[11px]"
+                      >
+                        Remettre en tête
+                      </Button>
+                    </div>
+                  )}
+
+                  {(mission.status === "interested" || mission.status === "in_progress") && (
+                    <div className="grid grid-cols-2 gap-2">
+                      <Button
+                        variant="outline"
+                        onClick={() => openActionLink(mission)}
+                        className="h-11 border-[#2E130C]/20 text-[#2E130C]"
+                      >
+                        {mission.action_channel === "whatsapp" ? "Ouvrir WhatsApp" : mission.action_channel === "social_link" ? "Ouvrir le lien" : "Voir mission"}
+                      </Button>
+                      <Button
+                        onClick={() => handleDone(mission.id)}
+                        disabled={loadingId === mission.id}
+                        className="h-11 bg-emerald-600 hover:bg-emerald-500 text-white font-black uppercase text-[11px]"
+                      >
+                        <CheckCircle2 className="h-4 w-4 mr-1" /> Mission terminée
+                      </Button>
+                    </div>
+                  )}
+
+                  {mission.status === "done_pending_confirmation" && (
+                    <div className="rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-2 text-indigo-700 text-sm font-semibold flex items-center gap-2">
+                      <Clock className="h-4 w-4" /> En attente de confirmation
+                    </div>
+                  )}
+
+                  {mission.status === "confirmed" && (
+                    <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-emerald-700 text-sm font-semibold flex items-center gap-2">
+                      <ThumbsUp className="h-4 w-4" /> Service confirmé
+                    </div>
+                  )}
+
+                  {mission.status === "rejected" && (
+                    <div className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-rose-700 text-sm font-semibold flex items-center gap-2">
+                      <XCircle className="h-4 w-4" /> Service rejeté
+                    </div>
+                  )}
+                </div>
               </div>
-              <Badge variant="outline" className="border-[#2E130C]/20 text-[#2E130C]/70 uppercase text-[10px]">
-                {mission.mission_type}
-              </Badge>
-            </div>
-
-            <div className="mt-3 rounded-xl bg-[#F3F0E7] border border-[#2E130C]/5 p-3 text-sm text-[#2E130C]/85">
-              {mission.description}
-            </div>
-
-            {mission.expected_gain && (
-              <div className="mt-2 text-xs text-[#B20B13] font-semibold">{mission.expected_gain}</div>
-            )}
-
-            <div className="mt-3 flex items-center gap-2 text-xs text-[#2E130C]/55">
-              <Clock className="h-3.5 w-3.5" />
-              {new Date(mission.created_at).toLocaleDateString("fr-FR")}
-              {mission.snoozed_until && mission.status === "snoozed" && (
-                <span>· Reprise le {new Date(mission.snoozed_until).toLocaleDateString("fr-FR")}</span>
-              )}
-            </div>
-
-            <div className="mt-4">
-              {mission.status === "new" && (
-                <div className="grid grid-cols-2 gap-2">
-                  <Button
-                    variant="outline"
-                    onClick={() => handleSnooze(mission.id)}
-                    disabled={loadingId === mission.id}
-                    className="border-rose-200 text-rose-700 hover:bg-rose-50"
-                  >
-                    <PauseCircle className="h-4 w-4 mr-1" /> Pas intéressé
-                  </Button>
-                  <Button
-                    onClick={() => handleInterested(mission)}
-                    disabled={loadingId === mission.id}
-                    className="bg-[#2E130C] hover:bg-[#2E130C]/90 text-white"
-                  >
-                    {mission.action_channel === "whatsapp" && <MessageCircle className="h-4 w-4 mr-1" />}
-                    {mission.action_channel === "social_link" && <ExternalLink className="h-4 w-4 mr-1" />}
-                    Intéressé
-                  </Button>
-                </div>
-              )}
-
-              {mission.status === "snoozed" && (
-                <div className="grid grid-cols-2 gap-2">
-                  <Button variant="outline" className="border-amber-200 text-amber-700 bg-amber-50">
-                    Mission en pause
-                  </Button>
-                  <Button
-                    onClick={() => handleInterested(mission)}
-                    disabled={loadingId === mission.id}
-                    className="bg-[#2E130C] hover:bg-[#2E130C]/90 text-white"
-                  >
-                    Remettre en tête
-                  </Button>
-                </div>
-              )}
-
-              {(mission.status === "interested" || mission.status === "in_progress") && (
-                <div className="grid grid-cols-2 gap-2">
-                  <Button
-                    variant="outline"
-                    onClick={() => openActionLink(mission)}
-                    className="border-[#2E130C]/20 text-[#2E130C]"
-                  >
-                    {mission.action_channel === "whatsapp" ? "Ouvrir WhatsApp" : mission.action_channel === "social_link" ? "Ouvrir le lien" : "Voir mission"}
-                  </Button>
-                  <Button
-                    onClick={() => handleDone(mission.id)}
-                    disabled={loadingId === mission.id}
-                    className="bg-emerald-600 hover:bg-emerald-500 text-white"
-                  >
-                    <CheckCircle2 className="h-4 w-4 mr-1" /> Mission terminée
-                  </Button>
-                </div>
-              )}
-
-              {mission.status === "done_pending_confirmation" && (
-                <div className="rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-2 text-indigo-700 text-sm font-semibold flex items-center gap-2">
-                  <Clock className="h-4 w-4" /> En attente de confirmation
-                </div>
-              )}
-
-              {mission.status === "confirmed" && (
-                <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-emerald-700 text-sm font-semibold flex items-center gap-2">
-                  <ThumbsUp className="h-4 w-4" /> Service confirmé
-                </div>
-              )}
-
-              {mission.status === "rejected" && (
-                <div className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-rose-700 text-sm font-semibold flex items-center gap-2">
-                  <XCircle className="h-4 w-4" /> Service rejeté
-                </div>
-              )}
             </div>
           </motion.div>
         ))}
