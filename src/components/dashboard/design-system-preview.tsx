@@ -2439,56 +2439,65 @@ export function OfferTinderCardPreview() {
   return (
     <div className="relative w-full max-w-sm mx-auto min-h-[640px]">
       <motion.div
-        animate={{ x: [14, 12, 14], rotate: [-1.4, -1, -1.4] }}
-        transition={{ duration: 3.4, repeat: Infinity, ease: "easeInOut" }}
-        className="absolute inset-y-7 right-0 w-[94%] rounded-[2.2rem] bg-[#E8E0D3] border border-[#2E130C]/10"
+        animate={{ x: [14, 10, 14], rotate: [-1.8, -1.1, -1.8] }}
+        transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+        className="absolute inset-y-7 right-0 w-[94%] rounded-[2.2rem] bg-gradient-to-b from-[#FFEBB8] to-[#F8C88C] border border-[#F59E0B]/35"
       />
       <motion.div
-        animate={{ x: [-12, -10, -12], rotate: [1.2, 0.8, 1.2] }}
-        transition={{ duration: 3.1, repeat: Infinity, ease: "easeInOut" }}
-        className="absolute inset-y-4 left-0 w-[94%] rounded-[2.2rem] bg-[#F8F4EB] border border-[#2E130C]/10"
+        animate={{ x: [-12, -8, -12], rotate: [1.4, 0.9, 1.4] }}
+        transition={{ duration: 2.8, repeat: Infinity, ease: "easeInOut" }}
+        className="absolute inset-y-4 left-0 w-[94%] rounded-[2.2rem] bg-gradient-to-b from-[#FFE6F5] to-[#FCD6A7] border border-[#D946EF]/25"
       />
 
-      <div className="relative rounded-[2.4rem] overflow-hidden shadow-2xl bg-[#FFFDF8] border border-[#2E130C]/15">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(178,11,19,0.14),transparent_45%)]" />
+      <div className="relative rounded-[2.4rem] overflow-hidden shadow-2xl bg-[#16081D] border border-fuchsia-300/35">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(217,70,239,0.45),transparent_45%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom,rgba(251,191,36,0.35),transparent_42%)]" />
         <div className="relative z-10 p-5 space-y-4 text-[#2E130C]">
           <div className="flex items-center justify-between">
-            <Badge className="bg-[#2E130C]/10 text-[#2E130C] border border-[#2E130C]/20 uppercase tracking-wider text-[10px] font-black">
-              Offre business
+            <Badge className="bg-fuchsia-500/20 text-fuchsia-100 border border-fuchsia-300/40 uppercase tracking-wider text-[10px] font-black">
+              Offre Cadeau
             </Badge>
-            <span className="text-[10px] uppercase tracking-wider font-bold text-[#2E130C]/60">Type offre</span>
+            <span className="text-[10px] uppercase tracking-wider font-bold text-amber-200">🔥 Limited</span>
           </div>
 
-          <div className="rounded-2xl border border-[#2E130C]/10 bg-[#F3F0E7] p-4 flex flex-col items-center text-center gap-2">
-            <Avatar className="h-20 w-20 border-2 border-[#B20B13]/20">
+          <div className="rounded-2xl border border-fuchsia-300/25 bg-white/10 backdrop-blur-md p-4 flex flex-col items-center text-center gap-2">
+            <Avatar className="h-20 w-20 border-2 border-amber-300/70">
               <AvatarImage src="/jeanphilipperoth.jpg" className="object-cover object-top" />
               <AvatarFallback>JM</AvatarFallback>
             </Avatar>
             <div>
-              <p className="font-black text-base leading-none">Julie Martin</p>
-              <p className="text-xs text-[#2E130C]/70 mt-1">Community Manager · Bordeaux</p>
+              <p className="font-black text-base leading-none text-white">Julie Martin</p>
+              <p className="text-xs text-fuchsia-100/90 mt-1">Community Manager · Bordeaux</p>
             </div>
           </div>
 
-          <div className="rounded-2xl border border-[#2E130C]/15 bg-white p-4">
-            <p className="text-[10px] uppercase tracking-widest font-bold text-[#B20B13] mb-1">Offre du moment</p>
-            <h3 className="font-black text-lg leading-tight">Pack visibilité locale pour indépendants</h3>
-            <p className="text-xs text-[#2E130C]/70 mt-2">Audit rapide + optimisation fiche Google + plan de contenu 30 jours.</p>
+          <div className="rounded-2xl border border-amber-300/35 bg-gradient-to-r from-amber-300/20 to-fuchsia-400/15 p-4">
+            <div className="flex items-center justify-between">
+              <p className="text-[10px] uppercase tracking-widest font-bold text-amber-200 mb-1">Offre du moment</p>
+              <Badge className="bg-amber-300 text-[#2E130C] border-0 text-[10px] font-black">-40%</Badge>
+            </div>
+            <h3 className="font-black text-lg leading-tight text-white">Pack visibilité locale pour indépendants</h3>
+            <p className="text-xs text-fuchsia-100/90 mt-2">Audit rapide + optimisation fiche Google + plan de contenu 30 jours.</p>
+            <p className="text-xs text-amber-100 mt-2 font-bold">Prix flash 24h: 290€ <span className="line-through opacity-70 ml-1">490€</span></p>
           </div>
 
           <div className="grid grid-cols-3 gap-2">
-            <div className="rounded-xl border border-[#2E130C]/10 bg-[#F3F0E7] p-2 text-center">
-              <div className="text-[9px] uppercase tracking-wider text-[#2E130C]/60 font-bold">Durée</div>
-              <div className="text-xs font-black">7 jours</div>
+            <div className="rounded-xl border border-white/20 bg-white/10 p-2 text-center">
+              <div className="text-[9px] uppercase tracking-wider text-fuchsia-100/75 font-bold">Durée</div>
+              <div className="text-xs font-black text-white">7 jours</div>
             </div>
-            <div className="rounded-xl border border-[#2E130C]/10 bg-[#F3F0E7] p-2 text-center">
-              <div className="text-[9px] uppercase tracking-wider text-[#2E130C]/60 font-bold">Cible</div>
-              <div className="text-xs font-black">TPE</div>
+            <div className="rounded-xl border border-white/20 bg-white/10 p-2 text-center">
+              <div className="text-[9px] uppercase tracking-wider text-fuchsia-100/75 font-bold">Cible</div>
+              <div className="text-xs font-black text-white">TPE</div>
             </div>
-            <div className="rounded-xl border border-[#2E130C]/10 bg-[#F3F0E7] p-2 text-center">
-              <div className="text-[9px] uppercase tracking-wider text-[#2E130C]/60 font-bold">Ticket</div>
-              <div className="text-xs font-black">290€</div>
+            <div className="rounded-xl border border-white/20 bg-white/10 p-2 text-center">
+              <div className="text-[9px] uppercase tracking-wider text-fuchsia-100/75 font-bold">Ticket</div>
+              <div className="text-xs font-black text-white">290€</div>
             </div>
+          </div>
+
+          <div className="rounded-xl border border-amber-300/35 bg-amber-200/15 px-3 py-2 text-center">
+            <p className="text-[11px] font-black text-amber-100 uppercase tracking-wider">🎁 Bonus offert: Script WhatsApp + Checklist 10 prospects</p>
           </div>
 
           {status === "new" && (
@@ -2496,7 +2505,7 @@ export function OfferTinderCardPreview() {
               <Button
                 variant="outline"
                 onClick={() => setStatus("refused")}
-                className="h-11 border-[#B20B13]/30 bg-[#B20B13]/5 text-[#B20B13] hover:bg-[#B20B13]/10 font-black uppercase text-[11px]"
+                className="h-11 border-rose-300/50 bg-rose-400/10 text-rose-100 hover:bg-rose-400/20 font-black uppercase text-[11px]"
               >
                 Pas intéressé
               </Button>
@@ -2505,7 +2514,7 @@ export function OfferTinderCardPreview() {
                   setStatus("interested");
                   window.open(`https://wa.me/?text=${encodeURIComponent(whatsappMessage)}`, "_blank");
                 }}
-                className="h-11 bg-[#25D366] hover:bg-[#25D366]/90 text-white font-black uppercase text-[11px] shadow-lg"
+                className="h-11 bg-gradient-to-r from-[#25D366] to-[#1BCB5A] hover:from-[#25D366]/90 hover:to-[#1BCB5A]/90 text-white font-black uppercase text-[11px] shadow-lg shadow-emerald-900/40"
               >
                 Je suis intéressé
               </Button>
@@ -2513,14 +2522,14 @@ export function OfferTinderCardPreview() {
           )}
 
           {status === "interested" && (
-            <div className="rounded-2xl border border-emerald-300/40 bg-emerald-50 p-4">
-              <p className="text-sm font-bold text-emerald-700">✅ Intérêt envoyé sur WhatsApp</p>
+            <div className="rounded-2xl border border-emerald-300/40 bg-emerald-400/15 p-4">
+              <p className="text-sm font-bold text-emerald-100">✅ Intérêt envoyé sur WhatsApp</p>
             </div>
           )}
 
           {status === "refused" && (
-            <div className="rounded-2xl border border-amber-300/40 bg-amber-50 p-4">
-              <p className="text-sm font-bold text-amber-700">Offre ignorée pour le moment</p>
+            <div className="rounded-2xl border border-amber-300/40 bg-amber-400/15 p-4">
+              <p className="text-sm font-bold text-amber-100">Offre ignorée pour le moment</p>
             </div>
           )}
         </div>
