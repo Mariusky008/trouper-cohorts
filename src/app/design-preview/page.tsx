@@ -131,6 +131,15 @@ export default function DesignPreviewPage() {
             </h2>
             <p className="text-sm text-slate-400 mb-4">Prototype UX de la nouvelle carte “service rendu / service reçu” avec CTA Intéressé/Pas intéressé.</p>
             <ServiceMissionOpportunityCardPreview />
+            <div className="rounded-2xl border border-slate-700 bg-slate-900/60 p-4">
+              <p className="text-xs uppercase tracking-wider font-black text-slate-300 mb-2">Processus (hors carte)</p>
+              <div className="flex flex-wrap gap-2">
+                <span className="text-[11px] px-2 py-1 rounded-full bg-slate-800 text-slate-200">1) Intéressé</span>
+                <span className="text-[11px] px-2 py-1 rounded-full bg-slate-800 text-slate-200">2) Action réalisée</span>
+                <span className="text-[11px] px-2 py-1 rounded-full bg-slate-800 text-slate-200">3) Mission terminée</span>
+                <span className="text-[11px] px-2 py-1 rounded-full bg-slate-800 text-slate-200">4) Confirmation bénéficiaire</span>
+              </div>
+            </div>
           </div>
 
         </div>
