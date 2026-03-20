@@ -23,95 +23,112 @@ const MISSION_TYPES = [
 ];
 
 export function ServiceMissionOpportunityCardPreview() {
-  const [status, setStatus] = useState<"idle" | "interested" | "done" | "snoozed">("idle");
-
-  const steps = [
-    "Identifier un commerçant pertinent dans ton réseau local",
-    "Envoyer une intro WhatsApp entre vous deux",
-    "Confirmer ici quand l’intro est faite",
-  ];
+  const [status, setStatus] = useState<"new" | "interested" | "pending_confirmation" | "confirmed" | "snoozed">("new");
 
   return (
-    <div className="relative w-full max-w-sm mx-auto min-h-[620px] rounded-[2.5rem] overflow-hidden shadow-2xl bg-[#0E1220] border border-white/10">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(56,189,248,0.25),transparent_45%)]" />
-      <div className="relative z-10 p-5 space-y-4">
-        <div className="flex items-center justify-between">
-          <Badge className="bg-cyan-500/20 text-cyan-100 border border-cyan-300/30 uppercase tracking-wider text-[10px] font-black">
-            Mission opportunité
-          </Badge>
-          <span className="text-[10px] uppercase tracking-wider font-bold text-slate-300">Nouveau</span>
-        </div>
+    <div className="relative w-full max-w-sm mx-auto min-h-[640px]">
+      <motion.div
+        animate={{ y: [8, 10, 8], rotate: [-1.5, -1.2, -1.5] }}
+        transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+        className="absolute inset-x-5 top-6 h-[90%] rounded-[2.2rem] bg-[#151D31]/70 border border-white/5"
+      />
+      <motion.div
+        animate={{ y: [4, 6, 4], rotate: [1.2, 1.5, 1.2] }}
+        transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut" }}
+        className="absolute inset-x-3 top-3 h-[93%] rounded-[2.2rem] bg-[#1A2440]/80 border border-white/10"
+      />
 
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-3 flex items-center gap-3">
-          <Avatar className="h-12 w-12 border border-white/20">
-            <AvatarImage src="/jeanphilipperoth.jpg" className="object-cover object-top" />
-            <AvatarFallback>JD</AvatarFallback>
-          </Avatar>
-          <div className="min-w-0">
-            <p className="text-white font-black leading-none">Jean Dupont</p>
-            <p className="text-xs text-slate-300 mt-1">Designer · Bordeaux</p>
-            <p className="text-[11px] text-cyan-200 mt-1">Besoin détecté: Le Prescripteur</p>
+      <motion.div
+        key={status}
+        initial={{ opacity: 0, y: 10, scale: 0.985 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        className="relative rounded-[2.4rem] overflow-hidden shadow-2xl bg-[#0C1222] border border-cyan-300/20"
+      >
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(56,189,248,0.22),transparent_45%)]" />
+        <div className="relative z-10 p-5 space-y-4">
+          <div className="flex items-center justify-between">
+            <Badge className="bg-cyan-500/20 text-cyan-100 border border-cyan-300/30 uppercase tracking-wider text-[10px] font-black">
+              Mission opportunité
+            </Badge>
+            <span className="text-[10px] uppercase tracking-wider font-bold text-slate-300">Pile #1</span>
           </div>
-        </div>
 
-        <div className="rounded-2xl border border-cyan-300/20 bg-cyan-500/10 p-4">
-          <p className="text-[10px] uppercase tracking-widest font-bold text-cyan-100/80 mb-1">Mission à faire</p>
-          <h3 className="text-white font-black text-lg leading-tight">Trouver 1 commerçant qualifié pour Jean et faire l’introduction aujourd’hui</h3>
-          <p className="text-xs text-slate-200/90 mt-2">Exemple concret: boulanger premium, caviste, concept store, franchise locale.</p>
-        </div>
+          <div className="rounded-2xl border border-white/10 bg-white/5 p-3 flex items-center gap-3">
+            <Avatar className="h-14 w-14 border-2 border-cyan-300/40">
+              <AvatarImage src="/jeanphilipperoth.jpg" className="object-cover object-top" />
+              <AvatarFallback>JD</AvatarFallback>
+            </Avatar>
+            <div className="min-w-0">
+              <p className="text-white font-black text-base leading-none">Jean Dupont</p>
+              <p className="text-xs text-slate-300 mt-1">Designer · Bordeaux</p>
+              <p className="text-[11px] text-cyan-200 mt-1">Besoin: Prescripteur (commerçants/designers/graphistes)</p>
+            </div>
+          </div>
 
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-          <p className="text-[10px] uppercase tracking-widest font-bold text-slate-300 mb-2">Processus</p>
-          <div className="space-y-2">
-            {steps.map((step, index) => (
-              <div key={step} className="flex items-start gap-2">
-                <div className="h-5 w-5 mt-0.5 rounded-full bg-white/10 border border-white/20 text-[10px] text-white font-black flex items-center justify-center">{index + 1}</div>
-                <p className="text-xs text-slate-200 leading-relaxed">{step}</p>
+          <div className="rounded-2xl border border-cyan-300/25 bg-cyan-500/10 p-4">
+            <p className="text-[10px] uppercase tracking-widest font-bold text-cyan-100/80 mb-1">Mission très concrète</p>
+            <h3 className="text-white font-black text-lg leading-tight">Envoie-lui 1 intro WhatsApp vers un commerçant pertinent de ton réseau aujourd’hui</h3>
+            <p className="text-xs text-slate-200/90 mt-2">Tu peux copier ce format: “Salut X, je te présente Jean. Vous devriez parler visibilité locale.”</p>
+          </div>
+
+          <div className="rounded-2xl border border-white/10 bg-white/5 p-4 space-y-2">
+            <p className="text-[10px] uppercase tracking-widest font-bold text-slate-300">Comment ça marche</p>
+            <p className="text-xs text-slate-200">1) Clique “Intéressé”</p>
+            <p className="text-xs text-slate-200">2) Fais l’introduction</p>
+            <p className="text-xs text-slate-200">3) Clique “Mission terminée”</p>
+            <p className="text-xs text-slate-200">4) Jean confirme le service reçu</p>
+          </div>
+
+          {status === "new" && (
+            <div className="grid grid-cols-2 gap-3">
+              <Button
+                variant="outline"
+                onClick={() => setStatus("snoozed")}
+                className="h-11 border-rose-300/40 bg-rose-500/10 text-rose-100 hover:bg-rose-500/20 font-black uppercase text-[11px]"
+              >
+                Pas intéressé
+              </Button>
+              <Button
+                onClick={() => setStatus("interested")}
+                className="h-11 bg-emerald-500 hover:bg-emerald-400 text-white font-black uppercase text-[11px] shadow-lg shadow-emerald-900/40"
+              >
+                Intéressé
+              </Button>
+            </div>
+          )}
+
+          {status === "snoozed" && (
+            <div className="rounded-2xl border border-amber-300/30 bg-amber-500/10 p-4 space-y-3">
+              <p className="text-sm font-bold text-amber-100">Mission déplacée en bas de pile.</p>
+              <Button onClick={() => setStatus("new")} className="w-full h-10 bg-[#2E130C] hover:bg-[#2E130C]/90 text-white font-black uppercase text-[11px]">Remettre en priorité</Button>
+            </div>
+          )}
+
+          {status === "interested" && (
+            <div className="rounded-2xl border border-emerald-300/30 bg-emerald-500/10 p-4 space-y-3">
+              <p className="text-sm font-bold text-emerald-100">Top, mission prise. Fais l’introduction puis valide.</p>
+              <Button onClick={() => setStatus("pending_confirmation")} className="w-full h-11 bg-cyan-500 hover:bg-cyan-400 text-white font-black uppercase text-[11px]">Mission terminée</Button>
+            </div>
+          )}
+
+          {status === "pending_confirmation" && (
+            <div className="rounded-2xl border border-indigo-300/30 bg-indigo-500/10 p-4 space-y-3">
+              <p className="text-sm font-bold text-indigo-100">Service envoyé. En attente de confirmation par Jean.</p>
+              <div className="grid grid-cols-2 gap-2">
+                <Button onClick={() => setStatus("confirmed")} className="h-10 bg-indigo-500 hover:bg-indigo-400 text-white font-black uppercase text-[11px]">Simuler confirmé</Button>
+                <Button onClick={() => setStatus("new")} variant="outline" className="h-10 border-indigo-300/40 text-indigo-100 hover:bg-indigo-500/20 font-black uppercase text-[11px]">Retour pile</Button>
               </div>
-            ))}
-          </div>
+            </div>
+          )}
+
+          {status === "confirmed" && (
+            <div className="rounded-2xl border border-emerald-300/30 bg-emerald-500/10 p-4 space-y-2">
+              <p className="text-sm font-bold text-emerald-100">✅ Confirmé. Ce service comptera dans “rendu/reçu”.</p>
+              <Button onClick={() => setStatus("new")} variant="outline" className="w-full h-10 border-emerald-300/40 text-emerald-100 hover:bg-emerald-500/20 font-black uppercase text-[11px]">Rejouer le flow</Button>
+            </div>
+          )}
         </div>
-
-        {status === "idle" && (
-          <div className="grid grid-cols-2 gap-3">
-            <Button
-              variant="outline"
-              onClick={() => setStatus("snoozed")}
-              className="h-11 border-rose-300/40 bg-rose-500/10 text-rose-100 hover:bg-rose-500/20 font-black uppercase text-[11px]"
-            >
-              Pas intéressé
-            </Button>
-            <Button
-              onClick={() => setStatus("interested")}
-              className="h-11 bg-emerald-500 hover:bg-emerald-400 text-white font-black uppercase text-[11px]"
-            >
-              Intéressé
-            </Button>
-          </div>
-        )}
-
-        {status === "snoozed" && (
-          <div className="rounded-2xl border border-amber-300/30 bg-amber-500/10 p-4 space-y-3">
-            <p className="text-sm font-bold text-amber-100">Mission remise en bas de pile pour plus tard.</p>
-            <Button onClick={() => setStatus("idle")} className="w-full h-10 bg-[#2E130C] hover:bg-[#2E130C]/90 text-white font-black uppercase text-[11px]">Remettre en haut</Button>
-          </div>
-        )}
-
-        {status === "interested" && (
-          <div className="rounded-2xl border border-emerald-300/30 bg-emerald-500/10 p-4 space-y-3">
-            <p className="text-sm font-bold text-emerald-100">Top. Tu t’es engagé sur cette mission.</p>
-            <Button onClick={() => setStatus("done")} className="w-full h-11 bg-cyan-500 hover:bg-cyan-400 text-white font-black uppercase text-[11px]">Mission terminée</Button>
-          </div>
-        )}
-
-        {status === "done" && (
-          <div className="rounded-2xl border border-indigo-300/30 bg-indigo-500/10 p-4 space-y-2">
-            <p className="text-sm font-bold text-indigo-100">Parfait. Jean reçoit une notification.</p>
-            <p className="text-xs text-indigo-100/90">Il devra confirmer le service reçu, puis ce sera compté dans “services rendus / services reçus”.</p>
-            <Button onClick={() => setStatus("idle")} variant="outline" className="w-full h-10 border-indigo-300/40 text-indigo-100 hover:bg-indigo-500/20 font-black uppercase text-[11px]">Rejouer le flow</Button>
-          </div>
-        )}
-      </div>
+      </motion.div>
     </div>
   );
 }
