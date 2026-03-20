@@ -236,22 +236,46 @@ export default async function AdminNetworkPage() {
   
   // FETCH VALIDATIONS (Admin Client Bypass)
   const supabaseAdmin = createAdminClient();
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const todayIso = today.toISOString();
-  
-  const { data: validations } = await supabaseAdmin
-    .from('match_feedback')
+  const now = new Date();
+  const parisNow = new Date(now.toLocaleString("en-US", { timeZone: "Europe/Paris" }));
+  const startParis = new Date(parisNow);
+  startParis.setHours(0, 0, 0, 0);
+  const endParis = new Date(startParis);
+  endParis.setDate(endParis.getDate() + 1);
+
+  let validations: any[] = [];
+  const { data: reviewValidations, error: reviewError } = await supabaseAdmin
+    .from("network_match_reviews")
     .select(`
         id,
         created_at,
-        rating,
-        tag,
-        giver:giver_id(id, display_name, avatar_url, trade),
-        receiver:receiver_id(id, display_name, avatar_url)
+        call_happened,
+        mission_result,
+        reviewer:reviewer_id(id, display_name, avatar_url, trade),
+        reviewed:reviewed_id(id, display_name, avatar_url)
     `)
-    .gte('created_at', todayIso)
-    .order('created_at', { ascending: false });
+    .gte("created_at", startParis.toISOString())
+    .lt("created_at", endParis.toISOString())
+    .order("created_at", { ascending: false });
+
+  if (reviewError) {
+    const { data: legacyValidations } = await supabaseAdmin
+      .from("match_feedback")
+      .select(`
+          id,
+          created_at,
+          rating,
+          tag,
+          giver:giver_id(id, display_name, avatar_url, trade),
+          receiver:receiver_id(id, display_name, avatar_url)
+      `)
+      .gte("created_at", startParis.toISOString())
+      .lt("created_at", endParis.toISOString())
+      .order("created_at", { ascending: false });
+    validations = legacyValidations || [];
+  } else {
+    validations = reviewValidations || [];
+  }
 
   const ANALYTICS_LABELS: Record<string, { label: string, icon: any, color: string, aliases?: string[] }> = {
     'click_whatsapp_open': { label: 'Bouton WhatsApp', icon: MessageSquare, color: 'text-green-500', aliases: ['click_call_open'] },

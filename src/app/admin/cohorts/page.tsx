@@ -30,22 +30,46 @@ export default async function AdminCohortsPage() {
   const cohorts = cohortsRes.data || [];
   
   // Fetch validations using Admin Client (Bypass RLS)
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const todayIso = today.toISOString();
+  const now = new Date();
+  const parisNow = new Date(now.toLocaleString("en-US", { timeZone: "Europe/Paris" }));
+  const startParis = new Date(parisNow);
+  startParis.setHours(0, 0, 0, 0);
+  const endParis = new Date(startParis);
+  endParis.setDate(endParis.getDate() + 1);
 
-  const { data: validations } = await adminClient
-    .from('match_feedback')
+  let validations: any[] = [];
+  const { data: reviewValidations, error: reviewError } = await adminClient
+    .from("network_match_reviews")
     .select(`
         id,
         created_at,
-        rating,
-        tag,
-        giver:giver_id(id, display_name, avatar_url, trade),
-        receiver:receiver_id(id, display_name, avatar_url)
+        call_happened,
+        mission_result,
+        reviewer:reviewer_id(id, display_name, avatar_url, trade),
+        reviewed:reviewed_id(id, display_name, avatar_url)
     `)
-    .gte('created_at', todayIso)
-    .order('created_at', { ascending: false });
+    .gte("created_at", startParis.toISOString())
+    .lt("created_at", endParis.toISOString())
+    .order("created_at", { ascending: false });
+
+  if (reviewError) {
+    const { data: legacyValidations } = await adminClient
+      .from("match_feedback")
+      .select(`
+          id,
+          created_at,
+          rating,
+          tag,
+          giver:giver_id(id, display_name, avatar_url, trade),
+          receiver:receiver_id(id, display_name, avatar_url)
+      `)
+      .gte("created_at", startParis.toISOString())
+      .lt("created_at", endParis.toISOString())
+      .order("created_at", { ascending: false });
+    validations = legacyValidations || [];
+  } else {
+    validations = reviewValidations || [];
+  }
 
   return (
     <div className="space-y-8 p-8 max-w-7xl mx-auto">
