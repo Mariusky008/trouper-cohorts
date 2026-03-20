@@ -2432,6 +2432,103 @@ export function GoldMatchCardPreview() {
   );
 }
 
+export function OfferTinderCardPreview() {
+  const [status, setStatus] = useState<"new" | "interested" | "refused">("new");
+  const whatsappMessage = "Hello, ton offre sur Popey m'intéresse. On peut en parler rapidement aujourd'hui ?";
+
+  return (
+    <div className="relative w-full max-w-sm mx-auto min-h-[640px]">
+      <motion.div
+        animate={{ x: [14, 12, 14], rotate: [-1.4, -1, -1.4] }}
+        transition={{ duration: 3.4, repeat: Infinity, ease: "easeInOut" }}
+        className="absolute inset-y-7 right-0 w-[94%] rounded-[2.2rem] bg-[#E8E0D3] border border-[#2E130C]/10"
+      />
+      <motion.div
+        animate={{ x: [-12, -10, -12], rotate: [1.2, 0.8, 1.2] }}
+        transition={{ duration: 3.1, repeat: Infinity, ease: "easeInOut" }}
+        className="absolute inset-y-4 left-0 w-[94%] rounded-[2.2rem] bg-[#F8F4EB] border border-[#2E130C]/10"
+      />
+
+      <div className="relative rounded-[2.4rem] overflow-hidden shadow-2xl bg-[#FFFDF8] border border-[#2E130C]/15">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(178,11,19,0.14),transparent_45%)]" />
+        <div className="relative z-10 p-5 space-y-4 text-[#2E130C]">
+          <div className="flex items-center justify-between">
+            <Badge className="bg-[#2E130C]/10 text-[#2E130C] border border-[#2E130C]/20 uppercase tracking-wider text-[10px] font-black">
+              Offre business
+            </Badge>
+            <span className="text-[10px] uppercase tracking-wider font-bold text-[#2E130C]/60">Type offre</span>
+          </div>
+
+          <div className="rounded-2xl border border-[#2E130C]/10 bg-[#F3F0E7] p-4 flex flex-col items-center text-center gap-2">
+            <Avatar className="h-20 w-20 border-2 border-[#B20B13]/20">
+              <AvatarImage src="/jeanphilipperoth.jpg" className="object-cover object-top" />
+              <AvatarFallback>JM</AvatarFallback>
+            </Avatar>
+            <div>
+              <p className="font-black text-base leading-none">Julie Martin</p>
+              <p className="text-xs text-[#2E130C]/70 mt-1">Community Manager · Bordeaux</p>
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-[#2E130C]/15 bg-white p-4">
+            <p className="text-[10px] uppercase tracking-widest font-bold text-[#B20B13] mb-1">Offre du moment</p>
+            <h3 className="font-black text-lg leading-tight">Pack visibilité locale pour indépendants</h3>
+            <p className="text-xs text-[#2E130C]/70 mt-2">Audit rapide + optimisation fiche Google + plan de contenu 30 jours.</p>
+          </div>
+
+          <div className="grid grid-cols-3 gap-2">
+            <div className="rounded-xl border border-[#2E130C]/10 bg-[#F3F0E7] p-2 text-center">
+              <div className="text-[9px] uppercase tracking-wider text-[#2E130C]/60 font-bold">Durée</div>
+              <div className="text-xs font-black">7 jours</div>
+            </div>
+            <div className="rounded-xl border border-[#2E130C]/10 bg-[#F3F0E7] p-2 text-center">
+              <div className="text-[9px] uppercase tracking-wider text-[#2E130C]/60 font-bold">Cible</div>
+              <div className="text-xs font-black">TPE</div>
+            </div>
+            <div className="rounded-xl border border-[#2E130C]/10 bg-[#F3F0E7] p-2 text-center">
+              <div className="text-[9px] uppercase tracking-wider text-[#2E130C]/60 font-bold">Ticket</div>
+              <div className="text-xs font-black">290€</div>
+            </div>
+          </div>
+
+          {status === "new" && (
+            <div className="grid grid-cols-2 gap-3">
+              <Button
+                variant="outline"
+                onClick={() => setStatus("refused")}
+                className="h-11 border-[#B20B13]/30 bg-[#B20B13]/5 text-[#B20B13] hover:bg-[#B20B13]/10 font-black uppercase text-[11px]"
+              >
+                Pas intéressé
+              </Button>
+              <Button
+                onClick={() => {
+                  setStatus("interested");
+                  window.open(`https://wa.me/?text=${encodeURIComponent(whatsappMessage)}`, "_blank");
+                }}
+                className="h-11 bg-[#25D366] hover:bg-[#25D366]/90 text-white font-black uppercase text-[11px] shadow-lg"
+              >
+                Je suis intéressé
+              </Button>
+            </div>
+          )}
+
+          {status === "interested" && (
+            <div className="rounded-2xl border border-emerald-300/40 bg-emerald-50 p-4">
+              <p className="text-sm font-bold text-emerald-700">✅ Intérêt envoyé sur WhatsApp</p>
+            </div>
+          )}
+
+          {status === "refused" && (
+            <div className="rounded-2xl border border-amber-300/40 bg-amber-50 p-4">
+              <p className="text-sm font-bold text-amber-700">Offre ignorée pour le moment</p>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function QuoteIcon(props: any) {
 
     return (
