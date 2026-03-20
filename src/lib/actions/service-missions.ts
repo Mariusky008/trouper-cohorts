@@ -105,6 +105,18 @@ function buildMissionCandidates(profile: any) {
     });
   }
 
+  if (candidates.length === 0) {
+    candidates.push({
+      mission_type: "service_general",
+      title: `Coup de pouce pour ${firstName}`,
+      description: `Prends 10 minutes pour aider ${firstName} sur son besoin du moment${profile?.current_need ? `: ${profile.current_need}` : ""}.`,
+      expected_gain: "Service rendu concret",
+      priority_score: 70,
+      action_channel: "manual",
+      meta: { source: "fallback", current_need: profile?.current_need || null },
+    });
+  }
+
   return candidates.slice(0, 6);
 }
 
@@ -117,7 +129,7 @@ export async function generateServiceMissionsForPair(helperId: string, beneficia
 
   const { data: beneficiaryProfile } = await supabase
     .from("profiles")
-    .select("id, display_name, receive_profile, linkedin_url, website_url")
+    .select("id, display_name, receive_profile, linkedin_url, website_url, current_need")
     .eq("id", beneficiaryId)
     .maybeSingle();
 
@@ -174,12 +186,57 @@ export async function generateServiceMissionsFromRecentContacts(limit = 20) {
     .order("date", { ascending: false })
     .limit(limit);
 
-  if (!matches || matches.length === 0) return { success: true, generated: 0 };
+  const partnerPairs = new Map<string, { partnerId: string; sourceMatchId: string | null; sourceDate: string }>();
+
+  (matches || []).forEach((match: any) => {
+    const partnerId = match.user1_id === user.id ? match.user2_id : match.user1_id;
+    if (!partnerId || partnerId === user.id) return;
+    const key = String(partnerId);
+    const current = partnerPairs.get(key);
+    if (!current || new Date(match.date).getTime() > new Date(current.sourceDate).getTime()) {
+      partnerPairs.set(key, { partnerId, sourceMatchId: match.id, sourceDate: match.date });
+    }
+  });
+
+  const { data: reviews } = await supabase
+    .from("network_match_reviews")
+    .select("reviewer_id, reviewed_id, created_at")
+    .or(`reviewer_id.eq.${user.id},reviewed_id.eq.${user.id}`)
+    .order("created_at", { ascending: false })
+    .limit(limit);
+
+  (reviews || []).forEach((review: any) => {
+    const partnerId = review.reviewer_id === user.id ? review.reviewed_id : review.reviewer_id;
+    if (!partnerId || partnerId === user.id) return;
+    if (!partnerPairs.has(String(partnerId))) {
+      partnerPairs.set(String(partnerId), { partnerId, sourceMatchId: null, sourceDate: review.created_at });
+    }
+  });
+
+  const { data: opportunities } = await supabase
+    .from("network_opportunities")
+    .select("giver_id, receiver_id, created_at")
+    .or(`giver_id.eq.${user.id},receiver_id.eq.${user.id}`)
+    .order("created_at", { ascending: false })
+    .limit(limit);
+
+  (opportunities || []).forEach((opp: any) => {
+    const partnerId = opp.giver_id === user.id ? opp.receiver_id : opp.giver_id;
+    if (!partnerId || partnerId === user.id) return;
+    if (!partnerPairs.has(String(partnerId))) {
+      partnerPairs.set(String(partnerId), { partnerId, sourceMatchId: null, sourceDate: opp.created_at });
+    }
+  });
+
+  const sortedPartners = Array.from(partnerPairs.values())
+    .sort((a, b) => new Date(b.sourceDate).getTime() - new Date(a.sourceDate).getTime())
+    .slice(0, limit);
+
+  if (sortedPartners.length === 0) return { success: true, generated: 0 };
 
   let generated = 0;
-  for (const match of matches) {
-    const partnerId = match.user1_id === user.id ? match.user2_id : match.user1_id;
-    const result = await generateServiceMissionsForPair(user.id, partnerId, match.id);
+  for (const pair of sortedPartners) {
+    const result = await generateServiceMissionsForPair(user.id, pair.partnerId, pair.sourceMatchId);
     if (result.success) generated += result.inserted || 0;
   }
 
