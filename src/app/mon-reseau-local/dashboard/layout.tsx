@@ -240,7 +240,7 @@ function DashboardLayoutFull({ children, pathname }: { children: React.ReactNode
       </main>
 
       <div className="lg:hidden fixed bottom-[max(0.75rem,env(safe-area-inset-bottom))] left-1/2 -translate-x-1/2 z-40 w-[calc(100%-1.25rem)] max-w-md">
-        <div className="rounded-3xl border border-white/20 bg-gradient-to-b from-[#2E130C] to-[#1F0D08] text-[#E2D9BC] shadow-[0_20px_60px_rgba(46,19,12,0.45)] backdrop-blur-xl px-3 py-2">
+        <div className="rounded-3xl border border-[#2E130C]/12 bg-gradient-to-b from-[#EFE7D8]/88 to-[#DED2BC]/88 text-[#2E130C] shadow-[0_20px_60px_rgba(46,19,12,0.18)] backdrop-blur-xl px-3 py-2">
           <div className="grid grid-cols-5 items-center">
             {MOBILE_BOTTOM_ITEMS.map((item) => {
               const isActive = pathname === item.href;
@@ -253,12 +253,12 @@ function DashboardLayoutFull({ children, pathname }: { children: React.ReactNode
                     {isActive && (
                       <motion.div
                         layoutId="mobileBottomActive"
-                        className="absolute inset-0.5 rounded-2xl bg-white/14 border border-white/20"
+                        className="absolute inset-0.5 rounded-2xl bg-[#2E130C]/10 border border-[#2E130C]/10"
                         transition={{ type: "spring", stiffness: 380, damping: 30 }}
                       />
                     )}
-                    <item.icon className={cn("h-5 w-5 relative z-10", isActive ? "text-white" : "text-[#E2D9BC]/75")} />
-                    <span className={cn("text-[10px] font-bold leading-none relative z-10", isActive ? "text-white" : "text-[#E2D9BC]/75")}>{item.label}</span>
+                    <item.icon className={cn("h-5 w-5 relative z-10", isActive ? "text-[#2E130C]" : "text-[#2E130C]/65")} />
+                    <span className={cn("text-[10px] font-bold leading-none relative z-10", isActive ? "text-[#2E130C]" : "text-[#2E130C]/65")}>{item.label}</span>
                     {item.label === "Opportunités" && pendingCount > 0 && (
                       <span className="absolute top-1 right-4 bg-[#B20B13] text-[#E2D9BC] text-[9px] font-bold px-1.5 py-0.5 rounded-full border border-white/15 z-20">{pendingCount}</span>
                     )}
@@ -279,14 +279,14 @@ function DashboardLayoutFull({ children, pathname }: { children: React.ReactNode
                 onClick={() => setIsMobileProfileMenuOpen((v) => !v)}
                 className={cn(
                   "relative flex flex-col items-center justify-center gap-1 py-2.5 rounded-2xl w-full transition-transform overflow-hidden",
-                  ["/mon-reseau-local/dashboard/profile", "/mon-reseau-local/dashboard/settings", "/mon-reseau-local/dashboard/connections"].includes(pathname) && "bg-white/14 border border-white/20"
+                  ["/mon-reseau-local/dashboard/profile", "/mon-reseau-local/dashboard/settings", "/mon-reseau-local/dashboard/connections"].includes(pathname) && "bg-[#2E130C]/10 border border-[#2E130C]/10"
                 )}
               >
-                <Avatar className="h-6 w-6 border border-[#E2D9BC]/40 relative z-10">
+                <Avatar className="h-6 w-6 border border-[#2E130C]/20 relative z-10">
                   <AvatarImage src={avatarUrl} className="object-cover object-top" />
-                  <AvatarFallback className="bg-white/20 text-[#E2D9BC] text-[10px]">{initials}</AvatarFallback>
+                  <AvatarFallback className="bg-[#2E130C]/15 text-[#2E130C] text-[10px]">{initials}</AvatarFallback>
                 </Avatar>
-                <span className={cn("text-[10px] font-bold leading-none relative z-10", ["/mon-reseau-local/dashboard/profile", "/mon-reseau-local/dashboard/settings", "/mon-reseau-local/dashboard/connections"].includes(pathname) ? "text-white" : "text-[#E2D9BC]/75")}>Profil</span>
+                <span className={cn("text-[10px] font-bold leading-none relative z-10", ["/mon-reseau-local/dashboard/profile", "/mon-reseau-local/dashboard/settings", "/mon-reseau-local/dashboard/connections"].includes(pathname) ? "text-[#2E130C]" : "text-[#2E130C]/65")}>Profil</span>
               </motion.button>
               <AnimatePresence>
                 {isMobileProfileMenuOpen && (
