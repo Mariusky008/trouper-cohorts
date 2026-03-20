@@ -302,8 +302,8 @@ const buildWhatsAppMessage = ({
     featuredLink: string;
     suggestedMissionText: string;
 }): string => {
-    const intro = `Salut ${matchName}, c'est ${myName} ! On a matché aujourd'hui sur Popey.Academy. J'ai vu que tu étais ${matchJob}, ça m'intéresse ! Dispo pour un appel rapide ou un vocal aujourd'hui ou demain ?`;
-    const missionLine = suggestedMissionText ? `\n\nMission qu'on peut faire aujourd'hui : ${suggestedMissionText}` : "";
+    const intro = `Salut ${matchName}, c'est ${myName} ! On a matché aujourd'hui sur Popey.Academy. Dispo pour un appel rapide ou un vocal dans la journée ?`;
+    const missionLine = suggestedMissionText ? `\n\nPopey nous propose sa mission du jour :\n${suggestedMissionText}` : "";
     const trimmedLink = featuredLink.length > 320 ? `${featuredLink.slice(0, 317)}...` : featuredLink;
     const linkLine = trimmedLink ? `\n\nLien principal que je veux te montrer : ${trimmedLink}` : "";
     const textWithoutLink = `${intro}${missionLine}`;
@@ -383,7 +383,7 @@ const computeMissionSuggestion = (
                 title: "Le Check-up Visibilité",
                 action: "Regardez chacun le LinkedIn ou la fiche pro de l'autre 2 minutes et donnez un conseil concret d'amélioration.",
                 wow: "Un regard expert immédiat qui améliore la conversion.",
-                whatsappText: "Check-up visibilité: on regarde nos profils 2 minutes et on se donne un conseil concret chacun."
+                whatsappText: "Check-up visibilité:\nOn regarde nos profils 2 minutes et on se donne un conseil concret chacun, un commentaire sur un post ou une reco client."
             },
             score: (isDigitalPair ? 5 : 1) + (hasVisibilityNeed ? 2 : 0)
         },
@@ -1371,7 +1371,7 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
                                     <span>L'Entremetteur</span>
                                 </DialogTitle>
                                 <DialogDescription className="text-center text-[#2E130C]/60 text-base">
-                                    Brisons la glace. Voici un message prêt à être envoyé à <span className="text-[#2E130C] font-bold">{match.name.split(' ')[0]}</span> sur WhatsApp pour initier le contact sans friction.
+                                    Brisons la glace. Voici un message prêt à être envoyé à <span className="text-[#2E130C] font-bold">{match.name.split(' ')[0]}</span> sur WhatsApp pour initier le contact.
                                 </DialogDescription>
                             </DialogHeader>
                             <div className="py-4 space-y-6">
@@ -1747,7 +1747,7 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
                         <span>L'Entremetteur</span>
                     </DialogTitle>
                     <DialogDescription className="text-center text-[#2E130C]/60 text-base">
-                        Brisons la glace. Voici un message prêt à être envoyé à <span className="text-[#2E130C] font-bold">{match.name.split(' ')[0]}</span> sur WhatsApp pour initier le contact sans friction.
+                        Brisons la glace. Voici un message prêt à être envoyé à <span className="text-[#2E130C] font-bold">{match.name.split(' ')[0]}</span> sur WhatsApp pour initier le contact.
                     </DialogDescription>
                 </DialogHeader>
                 <div className="py-4 space-y-6">
