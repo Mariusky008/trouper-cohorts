@@ -83,8 +83,6 @@ export function ServiceMissionsFeed({
   const useTinderStack = !["history", "refused"].includes(activeFilter);
   const stackMissions = useTinderStack ? mixedMissions.slice(0, 5) : mixedMissions;
   const getTrustScore = (mission: Mission) => Number(mission?.beneficiary?.trust_score || 5);
-  const getReturnScore = (mission: Mission) => Math.min(10, Math.max(1, getTrustScore(mission) * 2));
-  const getReturnBadge = (score: number) => (score >= 8 ? "Gain fort" : score >= 6.5 ? "Gain solide" : "Gain progressif");
   const getBonusPoints = (mission: Mission) => {
     return getMissionPointsByChannel(mission.action_channel || "manual");
   };
@@ -325,9 +323,15 @@ export function ServiceMissionsFeed({
                     <p className="font-black text-base leading-none">{mission.beneficiary?.display_name || "Membre"}</p>
                     <p className="text-xs text-[#2E130C]/70 mt-1">{mission.beneficiary?.trade || "Membre"}</p>
                   </div>
-                  <div className="inline-flex items-center gap-2 text-[11px] font-black px-3 py-1 rounded-full bg-white border border-[#2E130C]/10">
-                    <ShieldCheck className="h-3.5 w-3.5 text-[#2E130C]" />
-                    Confiance {getTrustScore(mission).toFixed(1)}/5
+                  <div className="grid grid-cols-2 gap-2 w-full">
+                    <div className="rounded-xl border border-[#2E130C]/10 bg-white px-3 py-2 text-left">
+                      <p className="text-[10px] uppercase tracking-wide text-[#2E130C]/55 font-bold">Services rendus</p>
+                      <p className="text-base font-black text-[#2E130C]">{Number(mission.beneficiary?.services_rendered || 0)}</p>
+                    </div>
+                    <div className="rounded-xl border border-[#2E130C]/10 bg-white px-3 py-2 text-left">
+                      <p className="text-[10px] uppercase tracking-wide text-[#2E130C]/55 font-bold">Services reçus</p>
+                      <p className="text-base font-black text-[#2E130C]">{Number(mission.beneficiary?.services_received || 0)}</p>
+                    </div>
                   </div>
                   {Number(mission.beneficiary?.whatsapp_response_delay_hours || 0) > 0 && (
                     <div className="inline-flex items-center gap-2 text-[11px] font-black px-3 py-1 rounded-full bg-white border border-[#2E130C]/10">
@@ -353,8 +357,8 @@ export function ServiceMissionsFeed({
                     </div>
                     <div className="grid grid-cols-2 gap-2">
                       <div className="rounded-xl border border-[#2E130C]/10 bg-white px-3 py-2">
-                        <p className="text-[10px] uppercase tracking-wide text-[#2E130C]/55 font-bold">Score retour</p>
-                        <p className="text-sm font-black text-[#2E130C]">{getReturnScore(mission).toFixed(1)}/10 · {getReturnBadge(getReturnScore(mission))}</p>
+                        <p className="text-[10px] uppercase tracking-wide text-[#2E130C]/55 font-bold">Confiance</p>
+                        <p className="text-sm font-black text-[#2E130C]">{getTrustScore(mission).toFixed(1)}/5</p>
                       </div>
                       <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2">
                         <p className="text-[10px] uppercase tracking-wide text-emerald-700 font-bold">Bonus points</p>
@@ -365,12 +369,13 @@ export function ServiceMissionsFeed({
                   </div>
                 )}
 
-                <div className={cn("flex items-center gap-2 text-xs text-[#2E130C]/55", !isTopCard && "opacity-0 h-0 overflow-hidden")}>
-                  <Clock className="h-3.5 w-3.5" />
-                  {new Date(mission.created_at).toLocaleDateString("fr-FR")}
-                  {mission.snoozed_until && mission.status === "snoozed" && (
-                    <span>· Reprise le {new Date(mission.snoozed_until).toLocaleDateString("fr-FR")}</span>
-                  )}
+                <div className={cn("rounded-xl border border-[#2E130C]/10 bg-[#FFF8F8] px-3 py-2", !isTopCard && "opacity-0 h-0 overflow-hidden")}>
+                  <p className="text-[10px] uppercase tracking-wide text-[#B20B13] font-black">Temps estimé de réponse WhatsApp</p>
+                  <p className="text-sm font-black text-[#2E130C]">
+                    {Number(mission.beneficiary?.whatsapp_response_delay_hours || 0) > 0
+                      ? `${Number(mission.beneficiary?.whatsapp_response_delay_hours)} h`
+                      : "Non renseigné"}
+                  </p>
                 </div>
 
                 <div className={cn("pt-1", !isTopCard && "opacity-0 h-0 overflow-hidden")}>

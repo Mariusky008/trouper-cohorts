@@ -510,11 +510,11 @@ export async function getServiceMissionsFeed(filter: ServiceMissionFilter = "all
 
     const { data: trustScores } = await supabaseAdmin
       .from("trust_scores")
-      .select("user_id, score")
+      .select("user_id, score, opportunities_given, opportunities_received")
       .in("user_id", partnerIds);
 
     const profileMap = new Map((profiles || []).map((p: any) => [p.id, p]));
-    const trustMap = new Map((trustScores || []).map((t: any) => [t.user_id, t.score]));
+    const trustMap = new Map((trustScores || []).map((t: any) => [t.user_id, t]));
     const feed: any[] = [];
 
     Array.from(partnerPairs.values())
@@ -551,7 +551,9 @@ export async function getServiceMissionsFeed(filter: ServiceMissionFilter = "all
               trade: partnerProfile.trade,
               linkedin_url: partnerProfile.linkedin_url,
               whatsapp_response_delay_hours: Number(partnerProfile.receive_profile?.whatsapp_response_delay_hours || 0),
-              trust_score: trustMap.get(partnerProfile.id) ?? 5.0,
+              trust_score: trustMap.get(partnerProfile.id)?.score ?? 5.0,
+              services_rendered: trustMap.get(partnerProfile.id)?.opportunities_given ?? 0,
+              services_received: trustMap.get(partnerProfile.id)?.opportunities_received ?? 0,
             },
             source_match: pair.sourceMatchId ? { id: pair.sourceMatchId, date: pair.sourceDate, created_at: pair.sourceDate } : null,
           });
@@ -619,18 +621,20 @@ export async function getServiceMissionsFeed(filter: ServiceMissionFilter = "all
   const { data: trustScores } = beneficiaryIds.length
     ? await supabaseAdmin
         .from("trust_scores")
-        .select("user_id, score")
+        .select("user_id, score, opportunities_given, opportunities_received")
         .in("user_id", beneficiaryIds)
     : { data: [] as any[] };
 
-  const trustMap = new Map((trustScores || []).map((t: any) => [t.user_id, t.score]));
+  const trustMap = new Map((trustScores || []).map((t: any) => [t.user_id, t]));
   const enrichedData = (data || []).map((mission: any) => ({
     ...mission,
     beneficiary: mission.beneficiary
       ? {
           ...mission.beneficiary,
           whatsapp_response_delay_hours: Number(mission.beneficiary.receive_profile?.whatsapp_response_delay_hours || 0),
-          trust_score: trustMap.get(mission.beneficiary.id) ?? 5.0,
+          trust_score: trustMap.get(mission.beneficiary.id)?.score ?? 5.0,
+          services_rendered: trustMap.get(mission.beneficiary.id)?.opportunities_given ?? 0,
+          services_received: trustMap.get(mission.beneficiary.id)?.opportunities_received ?? 0,
         }
       : mission.beneficiary,
   }));
