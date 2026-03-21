@@ -233,7 +233,7 @@ function DashboardLayoutFull({ children, pathname }: { children: React.ReactNode
                     <Trophy className="h-3.5 w-3.5 text-[#B20B13]" />
                     <span className="text-xs font-black text-[#2E130C]">{points.toLocaleString()}</span>
                 </div>
-                <PointsTierDialog points={points} className={cn("hidden sm:flex", tier.accentClass)} />
+                <PointsTierDialog points={points} className={cn("flex", tier.accentClass)} />
             </div>
          </div>
       </header>
