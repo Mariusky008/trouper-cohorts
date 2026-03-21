@@ -477,9 +477,9 @@ export function OffersView({
                     </div>
                 </TabsContent>
 
-                <TabsContent value="searches" className="space-y-8 mt-3 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <TabsContent value="searches" className="space-y-6 mt-3 animate-in fade-in slide-in-from-bottom-4 duration-500">
                     <div className="max-w-3xl mx-auto flex items-center justify-between gap-3">
-                        <p className="text-sm font-black text-[#2E130C]">Appels d’offres ({mySearches.length})</p>
+                        <p className="text-sm font-black text-[#2E130C]">Mes appels publiés ({mySearches.length})</p>
                         <Dialog open={isSearchDialogOpen} onOpenChange={setIsSearchDialogOpen}>
                             <DialogTrigger asChild>
                                 <Button size="sm" className="bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl shadow-lg shadow-blue-900/20 h-9 px-4">
@@ -537,40 +537,6 @@ export function OffersView({
                         </Dialog>
                     </div>
 
-                    {mySearches.length > 0 && (
-                        <div className="max-w-3xl mx-auto space-y-3">
-                            <p className="text-sm font-black text-[#2E130C]">Mes appels publiés</p>
-                            <div className="grid gap-3">
-                                {mySearches.map((search) => (
-                                    <div key={`mine-${search.id}`} className="rounded-2xl border border-blue-100 bg-white p-4">
-                                        <div className="flex items-start justify-between gap-3">
-                                            <div className="min-w-0">
-                                                <p className="text-sm font-black text-[#2E130C]">{search.title}</p>
-                                                <p className="text-xs text-stone-500 mt-1">{new Date(search.created_at).toLocaleDateString("fr-FR")} · {search.category}</p>
-                                            </div>
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                onClick={() => handleDeleteSearch(search.id)}
-                                                className="border-rose-300/60 bg-rose-50 text-rose-700 hover:bg-rose-100 shrink-0"
-                                            >
-                                                <Trash2 className="h-3.5 w-3.5 mr-1" />
-                                                Supprimer
-                                            </Button>
-                                        </div>
-                                        <p className="text-xs text-stone-600 mt-2 line-clamp-2">{search.description}</p>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-
-                    {callsDeck.length === 0 && (
-                        <div className="text-center py-10 text-stone-500 font-medium">
-                            {mySearches.length > 0 ? "Aucun appel d’offre partenaire en attente pour toi." : "Aucun appel d’offre en attente pour toi."}
-                        </div>
-                    )}
-
                     <div className="relative h-[660px] max-w-sm mx-auto">
                         {callsDeckDisplay.slice(0, 5).map((search, index) => (
                             <motion.div
@@ -595,45 +561,57 @@ export function OffersView({
                                     if (info.offset.x >= 120) handleSearchInterested(search);
                                 }}
                             >
-                                <div className="relative rounded-[2.4rem] overflow-hidden shadow-2xl bg-[#071228] border border-blue-300/35">
-                                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(59,130,246,0.42),transparent_45%)]" />
-                                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom,rgba(139,92,246,0.35),transparent_42%)]" />
+                                <div className="relative rounded-[2.4rem] overflow-hidden shadow-2xl bg-[#16081D] border border-fuchsia-300/35">
+                                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(217,70,239,0.45),transparent_45%)]" />
+                                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom,rgba(251,191,36,0.35),transparent_42%)]" />
                                     <div className="relative z-10 p-5 space-y-4 text-white">
                                         <div className="flex items-center justify-between">
-                                            <Badge className="bg-blue-500/20 text-blue-100 border border-blue-300/40 uppercase tracking-wider text-[10px] font-black">Appel d’offre</Badge>
+                                            <Badge className="bg-fuchsia-500/20 text-fuchsia-100 border border-fuchsia-300/40 uppercase tracking-wider text-[10px] font-black">Appel d’offre</Badge>
                                             <div className="flex items-center gap-2">
                                                 {search.__isOwn && <Badge className="bg-amber-300 text-[#2E130C] border-0 text-[10px] font-black">Mon appel</Badge>}
                                                 <Badge className="bg-white/15 text-white border-white/20 text-[10px] uppercase">{searchBadge(search)}</Badge>
                                                 <Badge className="bg-white/15 text-white border-white/20 text-[10px] uppercase">{search.category}</Badge>
                                             </div>
                                         </div>
-                                        <div className="rounded-2xl border border-blue-300/25 bg-white/10 backdrop-blur-md p-4 flex items-center gap-3">
-                                            <Avatar className="h-14 w-14 border-2 border-blue-200/70">
+                                        <div className="rounded-2xl border border-fuchsia-300/25 bg-white/10 backdrop-blur-md p-4 flex items-center gap-3">
+                                            <Avatar className="h-14 w-14 border-2 border-amber-300/70">
                                                 <AvatarImage src={search.user_avatar_url} className="object-cover object-top" />
                                                 <AvatarFallback>{search.user_display_name?.[0] || "?"}</AvatarFallback>
                                             </Avatar>
                                             <div>
                                                 <p className="font-black text-base leading-none">{search.user_display_name}</p>
-                                                <p className="text-xs text-blue-100/90 mt-1">{search.user_trade || "Membre"} · {search.user_city || "Réseau"}</p>
+                                                <p className="text-xs text-fuchsia-100/90 mt-1">{search.user_trade || "Membre"} · {search.user_city || "Réseau"}</p>
                                             </div>
                                         </div>
-                                        <div className="rounded-2xl border border-blue-300/35 bg-gradient-to-r from-blue-300/15 to-violet-400/15 p-4">
-                                            <p className="text-[10px] uppercase tracking-widest font-bold text-blue-200 mb-1">Besoin concret</p>
+                                        <div className="rounded-2xl border border-amber-300/35 bg-gradient-to-r from-amber-300/20 to-fuchsia-400/15 p-4">
+                                            <p className="text-[10px] uppercase tracking-widest font-bold text-amber-200 mb-1">Besoin concret</p>
                                             <h3 className="font-black text-lg leading-tight">{search.title}</h3>
-                                            <p className="text-xs text-blue-100/90 mt-2 line-clamp-4 whitespace-pre-wrap">{search.description}</p>
+                                            <p className="text-xs text-fuchsia-100/90 mt-2 line-clamp-2 whitespace-pre-wrap">{search.description}</p>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-2">
+                                            <Button size="sm" variant="outline" onClick={() => setInfoSearch(search)} className="h-9 bg-[#2A1237] border-fuchsia-300/40 text-fuchsia-100 hover:bg-[#341748] text-[10px] font-black uppercase">Voir détails</Button>
+                                            {!search.__isOwn ? (
+                                                <Button onClick={() => handleSearchInterested(search)} className="h-9 bg-gradient-to-r from-[#25D366] to-[#1BCB5A] hover:from-[#25D366]/90 hover:to-[#1BCB5A]/90 text-white font-black uppercase text-[10px]">
+                                                    <MessageCircle className="h-3.5 w-3.5 mr-1" /> WhatsApp
+                                                </Button>
+                                            ) : (
+                                                <div className="rounded-xl border border-white/20 bg-white/10 px-3 py-2 flex items-center justify-center">
+                                                    <span className="text-[10px] font-black uppercase text-white/80">Mon appel</span>
+                                                </div>
+                                            )}
                                         </div>
                                         <div className="rounded-xl border border-white/20 bg-white/10 px-3 py-2 flex items-center justify-between">
-                                            <div className="flex items-center gap-2 text-blue-100/90 text-xs font-semibold">
+                                            <div className="flex items-center gap-2 text-fuchsia-100/90 text-xs font-semibold">
                                                 <Clock3 className="h-3.5 w-3.5" />
                                                 {new Date(search.created_at).toLocaleDateString("fr-FR")}
                                             </div>
-                                            <Button size="sm" variant="outline" onClick={() => setInfoSearch(search)} className="h-7 px-3 bg-[#0C1D3D] border-blue-300/40 text-blue-100 hover:bg-[#132a56] text-[10px] font-black uppercase">En savoir +</Button>
+                                            <span className="text-[10px] uppercase font-black text-white/70">{search.category}</span>
                                         </div>
                                         <div className="grid grid-cols-2 gap-3">
                                             {search.__isOwn ? (
                                                 <>
                                                     <Button variant="outline" onClick={() => handleDeleteSearch(search.id)} className="h-11 border-rose-300/50 bg-rose-400/10 text-rose-100 hover:bg-rose-400/20 font-black uppercase text-[11px]">Supprimer</Button>
-                                                    <Button onClick={() => setInfoSearch(search)} className="h-11 bg-white/15 border border-white/20 text-white hover:bg-white/25 font-black uppercase text-[11px]">Voir détails</Button>
+                                                    <Button onClick={() => setInfoSearch(search)} className="h-11 bg-white/15 border border-white/20 text-white hover:bg-white/25 font-black uppercase text-[11px]">Modifier</Button>
                                                 </>
                                             ) : (
                                                 <>
