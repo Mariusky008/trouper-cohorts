@@ -40,6 +40,7 @@ export async function registerNetworkUser(formData: FormData) {
   // Add sphere and quickWin to receive_profile (needs)
   if (quickWin) receiveProfile.quick_win_need = quickWin;
   if (sphere) receiveProfile.sphere_interest = sphere;
+  receiveProfile.whatsapp_response_delay_hours = whatsappResponseDelayHours;
   
   // Store exactCity in receiveProfile as extra metadata if we want, or combine them
   // Actually, we should store exactCity in receiveProfile to avoid changing DB schema for now
@@ -78,7 +79,6 @@ export async function registerNetworkUser(formData: FormData) {
     city,
     trade,
     phone,
-    whatsapp_response_delay_hours: whatsappResponseDelayHours,
     give_profile: giveProfile,
     receive_profile: receiveProfile,
     role: 'member'

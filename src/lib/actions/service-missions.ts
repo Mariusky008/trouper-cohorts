@@ -505,7 +505,7 @@ export async function getServiceMissionsFeed(filter: ServiceMissionFilter = "all
     const partnerIds = Array.from(partnerPairs.values()).map((p) => p.partnerId);
     const { data: profiles } = await supabaseAdmin
       .from("profiles")
-      .select("id, display_name, receive_profile, linkedin_url, website_url, current_need, avatar_url, trade, whatsapp_response_delay_hours")
+      .select("id, display_name, receive_profile, linkedin_url, website_url, current_need, avatar_url, trade")
       .in("id", partnerIds);
 
     const { data: trustScores } = await supabaseAdmin
@@ -550,7 +550,7 @@ export async function getServiceMissionsFeed(filter: ServiceMissionFilter = "all
               avatar_url: partnerProfile.avatar_url,
               trade: partnerProfile.trade,
               linkedin_url: partnerProfile.linkedin_url,
-              whatsapp_response_delay_hours: partnerProfile.whatsapp_response_delay_hours,
+              whatsapp_response_delay_hours: Number(partnerProfile.receive_profile?.whatsapp_response_delay_hours || 0),
               trust_score: trustMap.get(partnerProfile.id) ?? 5.0,
             },
             source_match: pair.sourceMatchId ? { id: pair.sourceMatchId, date: pair.sourceDate, created_at: pair.sourceDate } : null,
@@ -590,7 +590,7 @@ export async function getServiceMissionsFeed(filter: ServiceMissionFilter = "all
       updated_at,
       completed_at,
       confirmed_at,
-      beneficiary:beneficiary_id(id, display_name, avatar_url, trade, linkedin_url, whatsapp_response_delay_hours),
+      beneficiary:beneficiary_id(id, display_name, avatar_url, trade, linkedin_url, receive_profile),
       source_match:source_match_id(id, date, created_at)
     `)
     .eq("helper_id", user.id)
@@ -629,6 +629,7 @@ export async function getServiceMissionsFeed(filter: ServiceMissionFilter = "all
     beneficiary: mission.beneficiary
       ? {
           ...mission.beneficiary,
+          whatsapp_response_delay_hours: Number(mission.beneficiary.receive_profile?.whatsapp_response_delay_hours || 0),
           trust_score: trustMap.get(mission.beneficiary.id) ?? 5.0,
         }
       : mission.beneficiary,
