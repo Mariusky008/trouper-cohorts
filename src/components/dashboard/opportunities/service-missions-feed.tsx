@@ -387,7 +387,9 @@ export function ServiceMissionsFeed({
                     {mission.action_channel === "whatsapp" ? "Mise en relation" : mission.action_channel === "social_link" ? "Action sociale" : "Action relationnelle"}
                   </Badge>
                   <span className="text-[10px] uppercase tracking-wider font-bold text-[#2E130C]/60">
-                    {mission.action_channel === "whatsapp" ? "Type 1" : mission.action_channel === "social_link" ? "Type 2" : "Type 3"}
+                    {Number(mission.beneficiary?.whatsapp_response_delay_hours || 0) > 0
+                      ? `Réponse ~${Number(mission.beneficiary?.whatsapp_response_delay_hours)}h`
+                      : "Réponse non renseignée"}
                   </span>
                 </div>
 
@@ -440,24 +442,14 @@ export function ServiceMissionsFeed({
                       <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2">
                         <p className="text-[10px] uppercase tracking-wide text-emerald-700 font-bold">Bonus points</p>
                         <p className="text-sm font-black text-emerald-700">+{getBonusPoints(mission)} pts</p>
-                        <p className="text-[10px] text-emerald-700/80 font-semibold">crédités après confirmation</p>
                       </div>
                     </div>
                   </div>
                 )}
 
-                <div className={cn("rounded-xl border border-[#2E130C]/10 bg-[#FFF8F8] px-3 py-2", !isTopCard && "opacity-0 h-0 overflow-hidden")}>
-                  <p className="text-[10px] uppercase tracking-wide text-[#B20B13] font-black">Temps estimé de réponse WhatsApp</p>
-                  <p className="text-sm font-black text-[#2E130C]">
-                    {Number(mission.beneficiary?.whatsapp_response_delay_hours || 0) > 0
-                      ? `${Number(mission.beneficiary?.whatsapp_response_delay_hours)} h`
-                      : "Non renseigné"}
-                  </p>
-                </div>
-
                 <div className={cn("pt-1", !isTopCard && "opacity-0 h-0 overflow-hidden")}>
                   {mission.status === "new" && (
-                    <div className="hidden lg:grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-2 gap-3">
                       <Button
                         variant="outline"
                         onClick={() => handleReject(mission.id)}
@@ -486,7 +478,7 @@ export function ServiceMissionsFeed({
                   )}
 
                   {mission.status === "snoozed" && (
-                    <div className="hidden lg:grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-2 gap-2">
                       <Button variant="outline" className="border-amber-200 text-amber-700 bg-amber-50 h-11">
                         Mission en pause
                       </Button>
@@ -501,7 +493,7 @@ export function ServiceMissionsFeed({
                   )}
 
                   {(mission.status === "interested" || mission.status === "in_progress") && (
-                    <div className="hidden lg:grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-2 gap-2">
                       <Button
                         variant="outline"
                         onClick={() => openActionLink(mission)}
@@ -532,7 +524,7 @@ export function ServiceMissionsFeed({
                   )}
 
                   {mission.status === "rejected" && (
-                    <div className="hidden lg:grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-2 gap-2">
                       <div className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-rose-700 text-sm font-semibold flex items-center gap-2">
                         <XCircle className="h-4 w-4" /> Service refusé
                       </div>
@@ -552,43 +544,6 @@ export function ServiceMissionsFeed({
         )})}
         </div>
       </div>
-
-      {useTinderStack && stackMissions[0] && (
-        <div className="lg:hidden fixed left-1/2 -translate-x-1/2 z-40 w-[calc(100%-0.9rem)] max-w-sm bottom-[calc(env(safe-area-inset-bottom)+7.2rem)]">
-          <div className="rounded-2xl border-2 border-[#2E130C]/25 bg-[#FFF8ED] shadow-[0_18px_42px_rgba(46,19,12,0.30)] px-2 py-2 grid grid-cols-2 gap-2">
-            <Button
-              variant="outline"
-              onClick={() => handleReject(stackMissions[0].id)}
-              disabled={loadingId === stackMissions[0].id || stackMissions[0].status === "done_pending_confirmation" || stackMissions[0].status === "confirmed"}
-              className="h-11 border-[#B20B13]/30 bg-[#B20B13]/5 text-[#B20B13] hover:bg-[#B20B13]/10 font-black uppercase text-[11px]"
-            >
-              <PauseCircle className="h-4 w-4 mr-1" /> Pas intéressé
-            </Button>
-            <Button
-              onClick={() => handlePrimaryQuickAction(stackMissions[0])}
-              disabled={loadingId === stackMissions[0].id || stackMissions[0].status === "done_pending_confirmation" || stackMissions[0].status === "confirmed"}
-              className={cn(
-                "h-11 text-white font-black uppercase text-[11px] shadow-lg",
-                stackMissions[0].status === "interested" || stackMissions[0].status === "in_progress"
-                  ? "bg-[#2E130C] hover:bg-[#2E130C]/90"
-                  : stackMissions[0].action_channel === "whatsapp"
-                  ? "bg-[#25D366] hover:bg-[#25D366]/90"
-                  : stackMissions[0].action_channel === "social_link"
-                  ? "bg-[#0A66C2] hover:bg-[#0A66C2]/90"
-                  : "bg-[#2E130C] hover:bg-[#2E130C]/90"
-              )}
-            >
-              {(stackMissions[0].status === "interested" || stackMissions[0].status === "in_progress") ? (
-                <>Contacter</>
-              ) : stackMissions[0].action_channel === "social_link" ? (
-                <><ExternalLink className="h-4 w-4 mr-1" />Ouvrir</>
-              ) : (
-                <><MessageCircle className="h-4 w-4 mr-1" />Action</>
-              )}
-            </Button>
-          </div>
-        </div>
-      )}
 
       <Dialog open={isStatsOpen} onOpenChange={setIsStatsOpen}>
         <DialogContent className="bg-white border-[#2E130C]/15 text-[#2E130C] sm:max-w-sm rounded-2xl w-[92vw]">
