@@ -3,6 +3,7 @@
 import { revalidatePath, unstable_noStore as noStore } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { getMissionPointsByChannel, getResponseSpeedBonus } from "@/lib/points-tiers";
 
 type ServiceMissionFilter = "all" | "new" | "in_progress" | "to_confirm" | "history" | "refused";
 
@@ -381,20 +382,60 @@ export async function confirmServiceReceived(missionId: string) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { success: false, error: "Unauthorized" };
 
+  const { data: mission, error: missionError } = await supabaseAdmin
+    .from("service_missions")
+    .select("id, helper_id, action_channel, completed_at, status")
+    .eq("id", missionId)
+    .eq("beneficiary_id", user.id)
+    .maybeSingle();
+
+  if (missionError || !mission) {
+    return { success: false, error: "Mission introuvable" };
+  }
+
+  if (mission.status !== "done_pending_confirmation") {
+    return { success: false, error: "Mission déjà traitée" };
+  }
+
+  const confirmedAt = new Date().toISOString();
+
   const { error } = await supabaseAdmin
     .from("service_missions")
     .update({
       status: "confirmed",
-      confirmed_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
+      confirmed_at: confirmedAt,
+      updated_at: confirmedAt,
     })
     .eq("id", missionId)
     .eq("beneficiary_id", user.id);
 
   if (error) return { success: false, error: error.message };
 
+  const missionPoints = getMissionPointsByChannel(mission.action_channel || "manual");
+  const speedBonus = getResponseSpeedBonus(mission.completed_at, confirmedAt);
+  const totalPoints = missionPoints + speedBonus;
+
+  const { error: pointsError } = await supabaseAdmin.rpc("increment_points", {
+    user_id: mission.helper_id,
+    amount: totalPoints,
+  });
+
+  if (pointsError) {
+    const { data: helperProfile } = await supabaseAdmin
+      .from("profiles")
+      .select("points")
+      .eq("id", mission.helper_id)
+      .maybeSingle();
+    const currentPoints = helperProfile?.points || 0;
+    await supabaseAdmin
+      .from("profiles")
+      .update({ points: currentPoints + totalPoints })
+      .eq("id", mission.helper_id);
+  }
+
   revalidatePath("/mon-reseau-local/dashboard/opportunities");
   revalidatePath("/mon-reseau-local/dashboard");
+  revalidatePath("/mon-reseau-local/dashboard/profile");
   return { success: true };
 }
 

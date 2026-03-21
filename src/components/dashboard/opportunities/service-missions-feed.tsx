@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { CheckCircle2, Clock, ExternalLink, MessageCircle, PauseCircle, ShieldCheck, Sparkles, ThumbsUp, XCircle } from "lucide-react";
 import { confirmServiceReceived, markMissionDone, markMissionInterested, rejectMissionByHelper, rejectServiceReceived } from "@/lib/actions/service-missions";
+import { getMissionPointsByChannel } from "@/lib/points-tiers";
 
 type Mission = any;
 type IncomingMission = any;
@@ -85,9 +86,7 @@ export function ServiceMissionsFeed({
   const getReturnScore = (mission: Mission) => Math.min(10, Math.max(1, getTrustScore(mission) * 2));
   const getReturnBadge = (score: number) => (score >= 8 ? "Gain fort" : score >= 6.5 ? "Gain solide" : "Gain progressif");
   const getBonusPoints = (mission: Mission) => {
-    if (mission.action_channel === "whatsapp") return 40;
-    if (mission.action_channel === "social_link") return 25;
-    return 30;
+    return getMissionPointsByChannel(mission.action_channel || "manual");
   };
 
   const setMissionStatus = (id: string, updates: Record<string, any>) => {
@@ -354,6 +353,7 @@ export function ServiceMissionsFeed({
                       <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2">
                         <p className="text-[10px] uppercase tracking-wide text-emerald-700 font-bold">Bonus points</p>
                         <p className="text-sm font-black text-emerald-700">+{getBonusPoints(mission)} pts</p>
+                        <p className="text-[10px] text-emerald-700/80 font-semibold">crédités après confirmation</p>
                       </div>
                     </div>
                   </div>

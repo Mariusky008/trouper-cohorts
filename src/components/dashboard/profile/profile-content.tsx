@@ -19,6 +19,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { createClient } from "@/lib/supabase/client";
 import { updateProfile } from "@/app/actions/profile";
+import { getPointsTier } from "@/lib/points-tiers";
 import {
     Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter
 } from "@/components/ui/dialog";
@@ -100,6 +101,8 @@ function ProfileContentInner({ user, isReadOnly = false }: { user: any; isReadOn
   const [noSocials, setNoSocials] = useState(user.linkedin_url === "https://none");
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [currentStep, setCurrentStep] = useState(1);
+  const points = user.points || 0;
+  const { tier, nextTier } = getPointsTier(points);
 
   // Helper to check if profile was already complete before this edit
   const hasSocialsOrOptOut = 
@@ -565,6 +568,26 @@ function ProfileContentInner({ user, isReadOnly = false }: { user: any; isReadOn
                   <span className="font-black text-3xl text-[#2E130C]">{user.score}/5</span>
                 </div>
                 <Progress value={(user.score / 5) * 100} className="h-3 bg-stone-100" indicatorClassName="bg-gradient-to-r from-[#B20B13] to-[#8B090F]" />
+              </div>
+
+              <div className="rounded-2xl border border-stone-200 bg-stone-50 p-4">
+                <div className="flex items-center justify-between gap-3 mb-2">
+                  <span className="font-bold text-[#2E130C]">Statut points</span>
+                  <Badge className={tier.accentClass}>{tier.label}</Badge>
+                </div>
+                <p className="text-xs text-stone-600 font-semibold">{points} points</p>
+                {nextTier && (
+                  <p className="text-xs text-stone-500 mt-1">
+                    Encore {Math.max(0, nextTier.minPoints - points)} points pour atteindre {nextTier.label}.
+                  </p>
+                )}
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {tier.rights.map((right) => (
+                    <Badge key={right} className="bg-white border border-stone-200 text-stone-700 text-[10px] font-bold">
+                      {right}
+                    </Badge>
+                  ))}
+                </div>
               </div>
               
               <div className="space-y-4 pt-4 border-t border-stone-200">

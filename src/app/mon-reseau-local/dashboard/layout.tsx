@@ -32,6 +32,7 @@ import { useRouter } from "next/navigation";
 import { getPendingOpportunitiesCount } from "@/lib/actions/network-opportunities";
 import { PWAInstallPrompt } from "@/components/pwa-install-prompt";
 import { useNotifications } from "@/hooks/use-notifications";
+import { getPointsTier } from "@/lib/points-tiers";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -101,6 +102,7 @@ function DashboardLayoutFull({ children, pathname }: { children: React.ReactNode
   const avatarUrl = userProfile?.avatar_url;
   const initials = displayName.substring(0, 2).toUpperCase();
   const trustScore = userProfile?.trust_score || 5.0;
+  const { tier } = getPointsTier(points);
 
   return (
     <div className="min-h-screen bg-[#E2D9BC] flex flex-col font-sans text-[#2E130C] selection:bg-[#B20B13] selection:text-[#E2D9BC]">
@@ -171,6 +173,9 @@ function DashboardLayoutFull({ children, pathname }: { children: React.ReactNode
                         <span className="text-sm font-black text-[#2E130C]">{points.toLocaleString()}</span>
                     </div>
                 </div>
+                <div className={cn("hidden xl:flex items-center border px-2 py-1 rounded-md text-[10px] font-black uppercase", tier.accentClass)}>
+                  {tier.label}
+                </div>
 
                 <div className="text-right hidden xl:block">
                     <div className="text-xs font-bold text-[#2E130C] font-titan tracking-wide">{displayName}</div>
@@ -224,6 +229,9 @@ function DashboardLayoutFull({ children, pathname }: { children: React.ReactNode
                 <div className="bg-white border-2 border-[#2E130C]/10 px-2 py-1 rounded-lg flex items-center gap-1.5 shadow-[2px_2px_0px_0px_#2E130C] mr-1">
                     <Trophy className="h-3.5 w-3.5 text-[#B20B13]" />
                     <span className="text-xs font-black text-[#2E130C]">{points.toLocaleString()}</span>
+                </div>
+                <div className={cn("hidden sm:flex items-center border px-2 py-1 rounded-md text-[10px] font-black uppercase", tier.accentClass)}>
+                  {tier.label}
                 </div>
             </div>
          </div>
