@@ -17,6 +17,7 @@ import { toast } from "sonner";
 import { createNetworkSearch, deleteNetworkSearch } from "@/lib/actions/network-searches";
 import { toggleOfferActive } from "@/lib/actions/offers";
 import { LockedOfferCard } from "./locked-offer-card";
+import { useRouter } from "next/navigation";
 
 export function OffersView({ 
     unlockedOffers, 
@@ -31,6 +32,7 @@ export function OffersView({
     searches: any[],
     currentUserId: string
 }) {
+    const router = useRouter();
     const [activeTab, setActiveTab] = useState("offers");
     const [isSearchDialogOpen, setIsSearchDialogOpen] = useState(false);
     const [searchCategory, setSearchCategory] = useState("other");
@@ -68,6 +70,9 @@ export function OffersView({
         if (result.success) {
             toast.success("Votre recherche a été publiée !");
             setIsSearchDialogOpen(false);
+            (e.currentTarget as HTMLFormElement).reset();
+            setSearchCategory("other");
+            router.refresh();
         } else {
             toast.error("Erreur : " + result.error);
         }
@@ -85,6 +90,7 @@ export function OffersView({
 
             if (result.success) {
                 toast.success("Annonce supprimée");
+                router.refresh();
             } else {
                 toast.error("Erreur: " + (result.error || "Impossible de supprimer"));
             }
@@ -133,6 +139,11 @@ export function OffersView({
     const refusedSearches = useMemo(
         () => (searches || []).filter((s) => refusedSearchIds.includes(s.id)),
         [searches, refusedSearchIds]
+    );
+
+    const mySearches = useMemo(
+        () => (searches || []).filter((s) => s.user_id === currentUserId),
+        [searches, currentUserId]
     );
 
     const discountPct = (offer: any) =>
@@ -448,8 +459,38 @@ export function OffersView({
                         </div>
                     </div>
 
+                    {mySearches.length > 0 && (
+                        <div className="max-w-3xl mx-auto space-y-3">
+                            <p className="text-sm font-black text-[#2E130C]">Mes appels publiés</p>
+                            <div className="grid gap-3">
+                                {mySearches.map((search) => (
+                                    <div key={`mine-${search.id}`} className="rounded-2xl border border-blue-100 bg-white p-4">
+                                        <div className="flex items-start justify-between gap-3">
+                                            <div className="min-w-0">
+                                                <p className="text-sm font-black text-[#2E130C]">{search.title}</p>
+                                                <p className="text-xs text-stone-500 mt-1">{new Date(search.created_at).toLocaleDateString("fr-FR")} · {search.category}</p>
+                                            </div>
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => handleDeleteSearch(search.id)}
+                                                className="border-rose-300/60 bg-rose-50 text-rose-700 hover:bg-rose-100 shrink-0"
+                                            >
+                                                <Trash2 className="h-3.5 w-3.5 mr-1" />
+                                                Supprimer
+                                            </Button>
+                                        </div>
+                                        <p className="text-xs text-stone-600 mt-2 line-clamp-2">{search.description}</p>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
                     {callsDeck.length === 0 && (
-                        <div className="text-center py-10 text-stone-500 font-medium">Aucun appel d’offre en attente pour toi.</div>
+                        <div className="text-center py-10 text-stone-500 font-medium">
+                            {mySearches.length > 0 ? "Aucun appel d’offre partenaire en attente pour toi." : "Aucun appel d’offre en attente pour toi."}
+                        </div>
                     )}
 
                     <div className="relative h-[660px] max-w-sm mx-auto">
