@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { 
   Home, Users, Zap, ShieldCheck, User, Settings, 
-  LogOut, Anchor, Trophy, Percent, ShoppingBag 
+  LogOut, Anchor, Trophy, Percent, ShoppingBag, Coffee
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -16,7 +16,7 @@ const NAV_ITEMS = [
   { label: "Accueil", href: "/mon-reseau-local/dashboard", icon: Home },
   { label: "Opportunités", href: "/mon-reseau-local/dashboard/opportunities", icon: Zap },
   { label: "Offres", href: "/mon-reseau-local/dashboard/offers", icon: Percent },
-  { label: "Marché", href: "/mon-reseau-local/dashboard/guide", icon: ShoppingBag },
+  { label: "Café", href: "/mon-reseau-local/dashboard/cafe", icon: Coffee },
   { label: "Relations", href: "/mon-reseau-local/dashboard/connections", icon: Users },
 ];
 
@@ -24,7 +24,7 @@ const MOBILE_BOTTOM_ITEMS = [
   { label: "Accueil", href: "/mon-reseau-local/dashboard", icon: Home },
   { label: "Opportunités", href: "/mon-reseau-local/dashboard/opportunities", icon: Zap },
   { label: "Offres", href: "/mon-reseau-local/dashboard/offers", icon: Percent },
-  { label: "Marché", href: "/mon-reseau-local/dashboard/guide", icon: ShoppingBag },
+  { label: "Café", href: "/mon-reseau-local/dashboard/cafe", icon: Coffee },
 ];
 
 import { createClient } from "@/lib/supabase/client";
@@ -48,7 +48,7 @@ function DashboardLayoutFull({ children, pathname }: { children: React.ReactNode
 
   // Mark as seen when visiting pages
   useEffect(() => {
-      if (pathname === "/mon-reseau-local/dashboard/guide") {
+      if (pathname === "/mon-reseau-local/dashboard/cafe") {
           markAsSeen('market');
       } else if (pathname === "/mon-reseau-local/dashboard/offers") {
           markAsSeen('offers');
@@ -142,8 +142,8 @@ function DashboardLayoutFull({ children, pathname }: { children: React.ReactNode
                     <span className="bg-[#B20B13] text-[#E2D9BC] text-[9px] font-bold px-1.5 py-0.5 rounded-full border border-[#2E130C] shadow-[1px_1px_0px_0px_#2E130C]">{pendingCount}</span>
                   )}
 
-                  {/* Marché (New) */}
-                  {item.label === "Marché" && badges.market > 0 && (
+                  {/* Café (New) */}
+                  {item.label === "Café" && badges.market > 0 && (
                     <span className="bg-[#B20B13] text-[#E2D9BC] text-[9px] font-bold px-1.5 py-0.5 rounded-full border border-[#2E130C] shadow-[1px_1px_0px_0px_#2E130C]">{badges.market}</span>
                   )}
 
@@ -210,6 +210,9 @@ function DashboardLayoutFull({ children, pathname }: { children: React.ReactNode
                                 <Link href="/mon-reseau-local/dashboard/settings" className="flex items-center gap-2 px-3 py-2 text-sm text-[#2E130C]/80 hover:text-[#2E130C] hover:bg-[#2E130C]/5 rounded-lg transition-colors font-bold">
                                     <Settings className="h-4 w-4" /> Paramètres
                                 </Link>
+                                <Link href="/mon-reseau-local/dashboard/guide" className="flex items-center gap-2 px-3 py-2 text-sm text-[#2E130C]/80 hover:text-[#2E130C] hover:bg-[#2E130C]/5 rounded-lg transition-colors font-bold">
+                                    <ShoppingBag className="h-4 w-4" /> Marché
+                                </Link>
                                 <div className="h-0.5 bg-[#2E130C]/10 my-1" />
                                 <button 
                                     onClick={handleSignOut}
@@ -269,7 +272,7 @@ function DashboardLayoutFull({ children, pathname }: { children: React.ReactNode
                     {item.label === "Opportunités" && pendingCount > 0 && (
                       <span className="absolute top-1 right-4 bg-[#B20B13] text-[#E2D9BC] text-[9px] font-bold px-1.5 py-0.5 rounded-full border border-white/15 z-20">{pendingCount}</span>
                     )}
-                    {item.label === "Marché" && badges.market > 0 && (
+                    {item.label === "Café" && badges.market > 0 && (
                       <span className="absolute top-1 right-4 bg-[#B20B13] text-[#E2D9BC] text-[9px] font-bold px-1.5 py-0.5 rounded-full border border-white/15 z-20">{badges.market}</span>
                     )}
                     {item.label === "Offres" && badges.offers > 0 && (
@@ -308,6 +311,9 @@ function DashboardLayoutFull({ children, pathname }: { children: React.ReactNode
                     </Link>
                     <Link href="/mon-reseau-local/dashboard/settings" className="flex items-center gap-2 px-3 py-2 text-sm font-bold hover:bg-[#2E130C]/5 rounded-lg">
                       <Settings className="h-4 w-4" /> Paramètres
+                    </Link>
+                    <Link href="/mon-reseau-local/dashboard/guide" className="flex items-center gap-2 px-3 py-2 text-sm font-bold hover:bg-[#2E130C]/5 rounded-lg">
+                      <ShoppingBag className="h-4 w-4" /> Marché
                     </Link>
                     <Link href="/mon-reseau-local/dashboard/connections" className="flex items-center gap-2 px-3 py-2 text-sm font-bold hover:bg-[#2E130C]/5 rounded-lg">
                       <Users className="h-4 w-4" /> Relations

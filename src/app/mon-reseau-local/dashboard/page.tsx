@@ -71,7 +71,7 @@ export default async function DashboardHome() {
     <div className="space-y-8 pb-24 relative max-w-4xl mx-auto">
       
       {/* 1. HERO HEADER (STYLE "APP/TODAY") */}
-      <div className="relative pt-8 pb-8 overflow-hidden">
+      <div className="relative pt-8 pb-8 overflow-hidden hidden lg:block">
          {/* Background Glow */}
          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-[#B20B13]/10 rounded-full blur-[100px] -z-10 pointer-events-none" />
          
@@ -87,7 +87,7 @@ export default async function DashboardHome() {
       </div>
 
       {/* 2. FOCUS PRINCIPAL - MISSION DU JOUR */}
-      <div className="relative z-20">
+      <div className="relative z-20 min-h-[calc(100dvh-9.5rem)] lg:min-h-0 flex items-center justify-center lg:block">
          <DailyMatchCard
            matches={matches}
            userStreak={userStreak}
@@ -98,10 +98,12 @@ export default async function DashboardHome() {
       </div>
 
       {/* 3. CAFE WIDGET (NEW) */}
-      <CafeWidget city={currentUserProfile?.city || "Mon Réseau"} latestQuestion={latestQuestion} />
+      <div className="hidden lg:block">
+        <CafeWidget city={currentUserProfile?.city || "Mon Réseau"} latestQuestion={latestQuestion} />
+      </div>
 
       {/* 4. QUICK ACTIONS GRID (Planning & Reputation) */}
-      <div className="grid grid-cols-2 gap-4 md:gap-6 mt-8">
+      <div className="hidden lg:grid grid-cols-2 gap-4 md:gap-6 mt-8">
          <PlanningDialog settings={settings} potentialCount={potentialCount} />
          <ReputationDialog scoreData={trustScore} />
       </div>
