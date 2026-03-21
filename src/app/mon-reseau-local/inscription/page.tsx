@@ -70,6 +70,24 @@ export default function RegistrationWizard() {
   const handleSubmit = async () => {
     setIsLoading(true);
     try {
+      if (!formData.firstName.trim() || !formData.lastName.trim()) {
+        throw new Error("Le prénom et le nom sont obligatoires.");
+      }
+      if (!formData.trade.trim()) {
+        throw new Error("Le métier est obligatoire.");
+      }
+      if (!formData.city.trim()) {
+        throw new Error("La ville est obligatoire.");
+      }
+      if (!formData.phone.trim()) {
+        throw new Error("Le téléphone est obligatoire.");
+      }
+      if (!formData.email.trim()) {
+        throw new Error("L'email est obligatoire.");
+      }
+      if (!formData.password.trim() || formData.password.trim().length < 6) {
+        throw new Error("Le mot de passe doit contenir au moins 6 caractères.");
+      }
       if (!["1", "3", "6", "12"].includes(formData.whatsappResponseDelayHours)) {
         throw new Error("Le délai moyen de réponse WhatsApp est obligatoire.");
       }
@@ -181,36 +199,39 @@ export default function RegistrationWizard() {
                             <h2 className="text-2xl font-black text-slate-900">Qui êtes-vous ?</h2>
                             <p className="text-slate-500">Commençons par les présentations.</p>
                         </div>
+                        <div className="rounded-lg border border-blue-200 bg-blue-50 p-3 text-xs font-bold text-blue-800">
+                            Les champs marqués * sont obligatoires.
+                        </div>
 
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
-                                <Label>Prénom</Label>
+                                <Label>Prénom *</Label>
                                 <Input placeholder="Jean" value={formData.firstName} onChange={e => updateForm("firstName", e.target.value)} />
                             </div>
                             <div className="space-y-2">
-                                <Label>Nom</Label>
+                                <Label>Nom *</Label>
                                 <Input placeholder="Dupont" value={formData.lastName} onChange={e => updateForm("lastName", e.target.value)} />
                             </div>
                         </div>
 
                         <div className="space-y-2">
-                            <Label>Votre activité (Métier)</Label>
+                            <Label>Votre activité (Métier) *</Label>
                             <Input placeholder="Ex: Architecte d'intérieur, Coach sportif..." value={formData.trade} onChange={e => updateForm("trade", e.target.value)} />
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
-                                <Label>Ville</Label>
+                                <Label>Ville *</Label>
                                 <Input placeholder="Bordeaux" value={formData.city} onChange={e => updateForm("city", e.target.value)} />
                             </div>
                             <div className="space-y-2">
-                                <Label>Téléphone</Label>
+                                <Label>Téléphone *</Label>
                                 <Input placeholder="06 12 34 56 78" value={formData.phone} onChange={e => updateForm("phone", e.target.value)} />
                             </div>
                         </div>
 
                         <div className="space-y-2">
-                            <Label>Estimez votre temps moyen de réponse WhatsApp</Label>
+                            <Label>Estimez votre temps moyen de réponse WhatsApp *</Label>
                             <select
                                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
                                 value={formData.whatsappResponseDelayHours}
@@ -225,11 +246,11 @@ export default function RegistrationWizard() {
                         </div>
 
                         <div className="space-y-2 pt-4 border-t border-slate-100">
-                            <Label>Email (Connexion)</Label>
+                            <Label>Email (Connexion) *</Label>
                             <Input type="email" placeholder="jean@exemple.com" value={formData.email} onChange={e => updateForm("email", e.target.value)} />
                         </div>
                         <div className="space-y-2">
-                            <Label>Mot de passe</Label>
+                            <Label>Mot de passe *</Label>
                             <Input type="password" value={formData.password} onChange={e => updateForm("password", e.target.value)} />
                         </div>
                     </motion.div>

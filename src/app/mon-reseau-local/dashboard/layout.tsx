@@ -34,6 +34,7 @@ import { PWAInstallPrompt } from "@/components/pwa-install-prompt";
 import { useNotifications } from "@/hooks/use-notifications";
 import { getPointsTier } from "@/lib/points-tiers";
 import { PointsTierDialog } from "@/components/dashboard/points-tier-dialog";
+import { ProfileCompletionModal } from "@/components/dashboard/profile-completion-modal";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -243,6 +244,7 @@ function DashboardLayoutFull({ children, pathname }: { children: React.ReactNode
           {children}
         </div>
       </main>
+      <ProfileCompletionModal />
 
       <div className="lg:hidden fixed bottom-[max(0.75rem,env(safe-area-inset-bottom))] left-1/2 -translate-x-1/2 z-40 w-[calc(100%-1.25rem)] max-w-md">
         <div className="rounded-3xl border border-[#2E130C]/12 bg-gradient-to-b from-[#EFE7D8]/88 to-[#DED2BC]/88 text-[#2E130C] shadow-[0_20px_60px_rgba(46,19,12,0.18)] backdrop-blur-xl px-3 py-2">

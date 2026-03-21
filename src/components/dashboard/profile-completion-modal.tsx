@@ -10,6 +10,7 @@ import { useRouter, usePathname } from "next/navigation";
 export function ProfileCompletionModal() {
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [missingFields, setMissingFields] = useState<string[]>([]);
   const router = useRouter();
   const pathname = usePathname();
 
@@ -19,6 +20,7 @@ export function ProfileCompletionModal() {
         const result = await checkProfileCompletion();
         // Show modal if not complete, even on profile page (as a reminder/guide)
         if (!result.complete) {
+          setMissingFields(result.missingFields || []);
           setIsOpen(true);
         } else {
           setIsOpen(false);
@@ -68,8 +70,8 @@ export function ProfileCompletionModal() {
                 </DialogTitle>
                 <DialogDescription className="text-base text-slate-600 max-w-sm mx-auto">
                     {isProfilePage 
-                        ? "Il vous manque encore quelques informations pour activer votre compte. Remplissez les champs manquants ci-dessous."
-                        : "Pour accéder au réseau et recevoir vos premiers matchs, vous devez compléter intégralement votre profil."
+                        ? "Il vous manque encore quelques informations. Complétez-les maintenant pour activer votre expérience."
+                        : "Quelques informations obligatoires manquent. Complétez-les maintenant pour ne rien rater."
                     }
                 </DialogDescription>
             </div>
@@ -77,15 +79,14 @@ export function ProfileCompletionModal() {
             <div className="bg-slate-50 p-4 rounded-xl text-left w-full border border-slate-100">
                 <h4 className="font-bold text-sm text-slate-900 mb-2 uppercase tracking-wide">Informations requises :</h4>
                 <ul className="space-y-2 text-sm text-slate-600">
-                    <li className="flex items-center gap-2">✅ Photo de profil</li>
-                    <li className="flex items-center gap-2">✅ Bio & Offre</li>
-                    <li className="flex items-center gap-2">✅ Réseaux sociaux (ou cocher "Je n'en ai pas")</li>
-                    <li className="flex items-center gap-2">✅ Objectifs actuels</li>
+                    {(missingFields.length > 0 ? missingFields : ["Photo de profil", "Bio", "Objectifs actuels"]).map((field) => (
+                      <li key={field} className="flex items-center gap-2">⚠️ {field}</li>
+                    ))}
                 </ul>
             </div>
 
             <Button onClick={handleAction} className="w-full h-12 text-lg font-bold bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-200 rounded-xl">
-                {isProfilePage ? "OK, je complète" : "Aller sur mon profil"} <ArrowRight className="ml-2 h-5 w-5" />
+                {isProfilePage ? "Je complète maintenant" : "Compléter mon profil"} <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
         </div>
       </DialogContent>

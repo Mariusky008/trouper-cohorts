@@ -84,6 +84,7 @@ function ProfileContentInner({ user, isReadOnly = false }: { user: any; isReadOn
 
     // Receive Profile (Recevoir)
     exact_city: user.receive_profile?.exact_city || user.city || "",
+    whatsapp_response_delay_hours: String(user.receive_profile?.whatsapp_response_delay_hours || ""),
     target_companies: user.receive_profile?.target_companies?.join(", ") || "",
     prescribers: user.receive_profile?.prescribers?.join(", ") || "",
     target_clubs: user.receive_profile?.target_clubs?.join(", ") || "",
@@ -137,6 +138,7 @@ function ProfileContentInner({ user, isReadOnly = false }: { user: any; isReadOn
         if (!formData.trade.trim()) errors.trade = "Le métier est requis.";
         if (!formData.exact_city.trim()) errors.exact_city = "La ville exacte est requise.";
         if (!formData.phone.trim()) errors.phone = "Le téléphone est requis.";
+        if (!["1", "3", "6", "12"].includes(formData.whatsapp_response_delay_hours || "")) errors.whatsapp_response_delay_hours = "Le délai moyen de réponse WhatsApp est requis.";
         if (!formData.bio.trim()) errors.bio = "La bio est requise.";
         if (!formData.avatar_url) errors.avatar_url = "Une photo de profil est requise.";
         
@@ -256,6 +258,7 @@ function ProfileContentInner({ user, isReadOnly = false }: { user: any; isReadOn
 
       const receiveProfile = {
         exact_city: formData.exact_city,
+        whatsapp_response_delay_hours: Number(formData.whatsapp_response_delay_hours || 0),
         target_companies: formData.target_companies.split(',').map((s: string) => s.trim()).filter(Boolean),
         prescribers: formData.prescribers.split(',').map((s: string) => s.trim()).filter(Boolean),
         target_clubs: formData.target_clubs.split(',').map((s: string) => s.trim()).filter(Boolean),
@@ -713,6 +716,25 @@ function ProfileContentInner({ user, isReadOnly = false }: { user: any; isReadOn
                                     className={formErrors.exact_city ? "border-red-500" : ""} 
                                     placeholder="Ex: Mont-de-Marsan" 
                                 />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Délai WhatsApp {formErrors.whatsapp_response_delay_hours && <span className="text-red-500">*</span>}</Label>
+                                <select
+                                    className={`flex h-10 w-full rounded-md border bg-background px-3 py-2 text-sm ring-offset-background ${formErrors.whatsapp_response_delay_hours ? "border-red-500" : "border-input"}`}
+                                    value={formData.whatsapp_response_delay_hours}
+                                    onChange={e => {
+                                        setFormData({...formData, whatsapp_response_delay_hours: e.target.value});
+                                        if (["1", "3", "6", "12"].includes(e.target.value)) {
+                                            setFormErrors({...formErrors, whatsapp_response_delay_hours: ""});
+                                        }
+                                    }}
+                                >
+                                    <option value="">Choisir</option>
+                                    <option value="1">1h</option>
+                                    <option value="3">3h</option>
+                                    <option value="6">6h</option>
+                                    <option value="12">12h</option>
+                                </select>
                             </div>
                         </div>
                         <div className="space-y-2">

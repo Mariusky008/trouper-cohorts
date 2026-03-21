@@ -76,6 +76,26 @@ export default function SpheresRegistrationPage() {
   };
 
   const handleConfirm = async () => {
+    if (!formData.fullName.trim()) {
+        toast.error("Veuillez renseigner votre prénom et nom.");
+        return;
+    }
+
+    if (!formData.email.trim()) {
+        toast.error("Veuillez renseigner votre email.");
+        return;
+    }
+
+    if (!formData.password.trim() || formData.password.trim().length < 6) {
+        toast.error("Veuillez saisir un mot de passe d'au moins 6 caractères.");
+        return;
+    }
+
+    if (!formData.phone.trim()) {
+        toast.error("Veuillez renseigner votre téléphone.");
+        return;
+    }
+
     if (!formData.trade.trim()) {
         toast.error("Veuillez renseigner votre activité.");
         return;
@@ -259,10 +279,13 @@ export default function SpheresRegistrationPage() {
             </h2>
 
             <div className="space-y-6 font-poppins">
+                <div className="rounded-xl border border-[#B20B13]/20 bg-[#FFF5F5] p-3 text-xs font-bold text-[#B20B13]">
+                    Les champs marqués * sont obligatoires pour finaliser l&apos;inscription.
+                </div>
                 {/* Row 1: Prénom Nom & Ville */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                    <Label htmlFor="fullname" className="text-xs font-black uppercase text-[#2E130C]/60 ml-1">Prénom Nom</Label>
+                    <Label htmlFor="fullname" className="text-xs font-black uppercase text-[#2E130C]/60 ml-1">Prénom Nom *</Label>
                     <Input 
                     id="fullname" 
                     placeholder="Jean Dupont" 
@@ -285,7 +308,7 @@ export default function SpheresRegistrationPage() {
 
                 {/* Row 1.5: Ville exacte */}
                 <div className="space-y-2">
-                    <Label htmlFor="exactCity" className="text-xs font-black uppercase text-[#2E130C]/60 ml-1">Votre Ville Exacte</Label>
+                    <Label htmlFor="exactCity" className="text-xs font-black uppercase text-[#2E130C]/60 ml-1">Votre Ville Exacte *</Label>
                     <Input 
                         id="exactCity" 
                         placeholder="Ex: Mont-de-Marsan, Tartas..." 
@@ -298,7 +321,7 @@ export default function SpheresRegistrationPage() {
                 {/* Row 2: Activité & Téléphone */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                    <Label htmlFor="activity" className="text-xs font-black uppercase text-[#2E130C]/60 ml-1">Activité Principale</Label>
+                    <Label htmlFor="activity" className="text-xs font-black uppercase text-[#2E130C]/60 ml-1">Activité Principale *</Label>
                     <Input 
                         id="activity" 
                         placeholder="Ex: Nutritionniste, Copywriter..." 
@@ -322,7 +345,7 @@ export default function SpheresRegistrationPage() {
                 {/* Row 3: Phone & Email */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                    <Label htmlFor="phone" className="text-xs font-black uppercase text-[#2E130C]/60 ml-1">Téléphone</Label>
+                    <Label htmlFor="phone" className="text-xs font-black uppercase text-[#2E130C]/60 ml-1">Téléphone *</Label>
                     <Input 
                     id="phone" 
                     placeholder="06..." 
@@ -332,7 +355,7 @@ export default function SpheresRegistrationPage() {
                     />
                 </div>
                 <div className="space-y-2">
-                <Label htmlFor="email" className="text-xs font-black uppercase text-[#2E130C]/60 ml-1">Email</Label>
+                <Label htmlFor="email" className="text-xs font-black uppercase text-[#2E130C]/60 ml-1">Email *</Label>
                 <Input 
                     id="email" 
                     type="email" 
@@ -346,7 +369,7 @@ export default function SpheresRegistrationPage() {
 
                 <div className="space-y-2">
                     <Label htmlFor="whatsappDelay" className="text-xs font-black uppercase text-[#2E130C]/60 ml-1">
-                        Estimez votre temps moyen de réponse WhatsApp
+                        Estimez votre temps moyen de réponse WhatsApp *
                     </Label>
                     <select
                         id="whatsappDelay"
@@ -365,7 +388,7 @@ export default function SpheresRegistrationPage() {
 
                 {/* Row 4: Mot de passe */}
                 <div className="space-y-2">
-                <Label htmlFor="password" className="text-xs font-black uppercase text-[#2E130C]/60 ml-1">Mot de passe</Label>
+                <Label htmlFor="password" className="text-xs font-black uppercase text-[#2E130C]/60 ml-1">Mot de passe *</Label>
                 <Input 
                     id="password" 
                     type="password" 
