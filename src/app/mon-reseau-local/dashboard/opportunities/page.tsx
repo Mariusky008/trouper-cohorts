@@ -23,8 +23,8 @@ export default async function OpportunitiesPage() {
   }
 
   return (
-    <div className="space-y-8 pb-24">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div className="space-y-4 lg:space-y-8 pb-24">
+      <div className="hidden lg:flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-black text-white tracking-tight">Missions de service</h1>
           <p className="text-slate-400 font-medium">Rendez un service concret, obtenez un service en retour.</p>

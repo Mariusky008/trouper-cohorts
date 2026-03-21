@@ -5,9 +5,10 @@ import { motion } from "framer-motion";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
-import { CheckCircle2, Clock, ExternalLink, MessageCircle, PauseCircle, ShieldCheck, ThumbsUp, XCircle } from "lucide-react";
+import { CheckCircle2, Clock, ExternalLink, MessageCircle, PauseCircle, ShieldCheck, SlidersHorizontal, ThumbsUp, XCircle } from "lucide-react";
 import { confirmServiceReceived, markMissionDone, markMissionInterested, rejectMissionByHelper, rejectServiceReceived } from "@/lib/actions/service-missions";
 import { getMissionPointsByChannel } from "@/lib/points-tiers";
 
@@ -38,6 +39,9 @@ export function ServiceMissionsFeed({
   const [activeFilter, setActiveFilter] = useState("all");
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [swipeLeftId, setSwipeLeftId] = useState<string | null>(null);
+  const [isStatsOpen, setIsStatsOpen] = useState(false);
+  const [detailMission, setDetailMission] = useState<Mission | null>(null);
+  const [isIncomingOpen, setIsIncomingOpen] = useState(false);
   const REJECTED_VIRTUAL_KEY = "service-missions-rejected-virtual-v1";
 
   useEffect(() => {
@@ -220,8 +224,18 @@ export function ServiceMissionsFeed({
   };
 
   return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-2 gap-3">
+    <div className="space-y-4 lg:space-y-6">
+      <div className="lg:hidden flex items-center justify-between gap-3">
+        <div>
+          <p className="text-xl font-black text-[#2E130C]">Opportunités</p>
+          <p className="text-xs text-[#2E130C]/60 font-semibold">{filteredMissions.length} missions dans ce filtre</p>
+        </div>
+        <Button variant="outline" onClick={() => setIsStatsOpen(true)} className="rounded-xl border-[#2E130C]/20 text-[#2E130C]">
+          <SlidersHorizontal className="h-4 w-4 mr-1" /> Stats
+        </Button>
+      </div>
+
+      <div className="hidden lg:grid grid-cols-2 gap-3">
         <div className="bg-white p-4 rounded-2xl border border-[#2E130C]/10">
           <div className="text-[10px] uppercase font-bold text-[#2E130C]/60">Services rendus</div>
           <div className="text-2xl font-black text-[#2E130C]">{stats.services_rendered}</div>
@@ -237,6 +251,12 @@ export function ServiceMissionsFeed({
           <div className="flex items-center gap-2 text-indigo-800 font-black">
             <ShieldCheck className="h-4 w-4" /> Services à confirmer
           </div>
+          <div className="lg:hidden">
+            <Button size="sm" onClick={() => setIsIncomingOpen(true)} className="bg-indigo-700 hover:bg-indigo-600 text-white font-black">
+              Voir les confirmations ({incoming.length})
+            </Button>
+          </div>
+          <div className="hidden lg:block space-y-3">
           {incoming.map((mission) => (
             <div key={mission.id} className="rounded-xl border border-indigo-100 bg-indigo-50 p-3 flex items-center justify-between gap-3">
               <div>
@@ -266,6 +286,7 @@ export function ServiceMissionsFeed({
               </div>
             </div>
           ))}
+          </div>
         </div>
       )}
 
@@ -278,6 +299,7 @@ export function ServiceMissionsFeed({
             onClick={() => setActiveFilter(filter.id)}
             className={cn(
               "rounded-full font-bold",
+              ["history", "refused"].includes(filter.id) && "hidden lg:inline-flex",
               activeFilter === filter.id ? "bg-[#2E130C] text-white hover:bg-[#2E130C]/90" : "text-[#2E130C]/70 border-[#2E130C]/20"
             )}
           >
@@ -286,12 +308,12 @@ export function ServiceMissionsFeed({
         ))}
       </div>
 
-      <div className="space-y-5 pt-1">
+      <div className="space-y-4 lg:space-y-5 pt-1">
         {stackMissions.length === 0 && (
           <div className="text-center py-12 text-[#2E130C]/40 italic">Aucune mission de service pour ce filtre.</div>
         )}
 
-        <div className={cn(useTinderStack && "relative h-[640px] max-w-sm mx-auto")}>
+        <div className={cn(useTinderStack && "relative h-[calc(100dvh-15.5rem)] lg:h-[640px] max-w-sm mx-auto")}>
         {stackMissions.map((mission, index) => {
           const isTopCard = !useTinderStack || index === 0;
           return (
@@ -401,6 +423,11 @@ export function ServiceMissionsFeed({
                 </div>
 
                 <div className={cn("pt-1", !isTopCard && "opacity-0 h-0 overflow-hidden")}>
+                  <div className="mb-2">
+                    <Button variant="outline" onClick={() => setDetailMission(mission)} className="w-full h-9 border-[#2E130C]/20 text-[#2E130C] font-bold">
+                      Voir détails
+                    </Button>
+                  </div>
                   {mission.status === "new" && (
                     <div className="grid grid-cols-2 gap-3">
                       <Button
@@ -497,6 +524,84 @@ export function ServiceMissionsFeed({
         )})}
         </div>
       </div>
+
+      <Dialog open={isStatsOpen} onOpenChange={setIsStatsOpen}>
+        <DialogContent className="bg-white border-[#2E130C]/15 text-[#2E130C] sm:max-w-sm rounded-2xl w-[92vw]">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-black">Mes stats service</DialogTitle>
+            <DialogDescription className="text-[#2E130C]/60">Vue rapide des services rendus et reçus.</DialogDescription>
+          </DialogHeader>
+          <div className="grid grid-cols-2 gap-3 mt-2">
+            <div className="bg-[#F8F4EB] p-4 rounded-xl border border-[#2E130C]/10">
+              <div className="text-[10px] uppercase font-bold text-[#2E130C]/60">Services rendus</div>
+              <div className="text-2xl font-black text-[#2E130C]">{stats.services_rendered}</div>
+            </div>
+            <div className="bg-[#F8F4EB] p-4 rounded-xl border border-[#2E130C]/10">
+              <div className="text-[10px] uppercase font-bold text-[#2E130C]/60">Services reçus</div>
+              <div className="text-2xl font-black text-emerald-700">{stats.services_received}</div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isIncomingOpen} onOpenChange={setIsIncomingOpen}>
+        <DialogContent className="bg-white border-indigo-200 text-[#2E130C] sm:max-w-lg rounded-2xl w-[94vw]">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-black text-indigo-800">Services à confirmer</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2 max-h-[55vh] overflow-y-auto pr-1">
+            {incoming.map((mission) => (
+              <div key={`incoming-mobile-${mission.id}`} className="rounded-xl border border-indigo-100 bg-indigo-50 p-3 flex items-center justify-between gap-3">
+                <div>
+                  <div className="text-sm font-bold text-[#2E130C]">{mission.title}</div>
+                  <div className="text-xs text-[#2E130C]/70">Réalisé par {mission.helper?.display_name || "un membre"}</div>
+                </div>
+                <div className="flex gap-2">
+                  <Button size="sm" variant="outline" onClick={() => handleRejectIncoming(mission.id)} disabled={loadingId === mission.id} className="border-rose-200 text-rose-700 hover:bg-rose-50">Refuser</Button>
+                  <Button size="sm" onClick={() => handleConfirmIncoming(mission.id)} disabled={loadingId === mission.id} className="bg-emerald-600 hover:bg-emerald-500 text-white">Confirmer</Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!detailMission} onOpenChange={(open) => !open && setDetailMission(null)}>
+        <DialogContent className="bg-white border-[#2E130C]/15 text-[#2E130C] sm:max-w-md rounded-2xl w-[92vw]">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-black">Détails mission</DialogTitle>
+          </DialogHeader>
+          {detailMission && (
+            <div className="space-y-3 text-sm">
+              <div className="rounded-xl border border-[#2E130C]/10 bg-[#F8F4EB] p-3">
+                <p className="text-[10px] uppercase tracking-wider font-bold text-[#B20B13] mb-1">
+                  {detailMission.action_channel === "whatsapp" ? "Mission WhatsApp" : detailMission.action_channel === "social_link" ? "Mission Réseau social" : "Mission relationnelle"}
+                </p>
+                <p className="font-black text-[#2E130C]">{detailMission.title}</p>
+                <p className="text-[#2E130C]/75 mt-1">{detailMission.description}</p>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="rounded-xl border border-[#2E130C]/10 bg-white px-3 py-2">
+                  <p className="text-[10px] uppercase text-[#2E130C]/60 font-bold">Confiance</p>
+                  <p className="font-black">{getTrustScore(detailMission).toFixed(1)}/5</p>
+                </div>
+                <div className="rounded-xl border border-[#2E130C]/10 bg-white px-3 py-2">
+                  <p className="text-[10px] uppercase text-[#2E130C]/60 font-bold">Bonus</p>
+                  <p className="font-black text-emerald-700">+{getBonusPoints(detailMission)} pts</p>
+                </div>
+              </div>
+              <div className="rounded-xl border border-[#2E130C]/10 bg-white px-3 py-2">
+                <p className="text-[10px] uppercase text-[#2E130C]/60 font-bold">Temps de réponse WhatsApp</p>
+                <p className="font-black">
+                  {Number(detailMission.beneficiary?.whatsapp_response_delay_hours || 0) > 0
+                    ? `${Number(detailMission.beneficiary?.whatsapp_response_delay_hours)} h`
+                    : "Non renseigné"}
+                </p>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
