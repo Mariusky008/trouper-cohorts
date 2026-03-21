@@ -53,7 +53,7 @@ export function getPointsTier(points: number) {
 
 export function getMissionPointsByChannel(actionChannel: string) {
   if (actionChannel === "whatsapp") return 40;
-  if (actionChannel === "social_link") return 25;
+  if (actionChannel === "social_link") return 10;
   return 30;
 }
 

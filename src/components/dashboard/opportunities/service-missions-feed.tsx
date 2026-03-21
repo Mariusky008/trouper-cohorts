@@ -106,11 +106,34 @@ export function ServiceMissionsFeed({
     setMissions((prev) => prev.map((m) => (m.id === id ? { ...m, ...updates } : m)));
   };
   const isVirtualMission = (missionId: string) => missionId.startsWith("virtual-");
+  const formatPhoneForWhatsApp = (phone?: string | null) => {
+    if (!phone) return "";
+    let cleaned = phone.replace(/[^\d+]/g, "");
+    if (cleaned.startsWith("00")) cleaned = `+${cleaned.slice(2)}`;
+    if (cleaned.startsWith("0")) cleaned = `+33${cleaned.slice(1)}`;
+    if (!cleaned.startsWith("+")) cleaned = `+${cleaned}`;
+    const final = cleaned.replace(/[^\d]/g, "");
+    return final.length >= 8 ? final : "";
+  };
 
   const openActionLink = (mission: Mission) => {
+    const firstName = mission.beneficiary?.display_name?.split(" ")?.[0] || "toi";
+    const followupText = mission.suggested_message || `Salut ${firstName}, je suis en train d'avancer sur la mission "${mission.title}". Je te tiens au courant.`;
+    const formattedPhone = formatPhoneForWhatsApp(mission.beneficiary?.phone);
     if (mission.action_channel === "whatsapp") {
-      const msg = mission.suggested_message || `Salut, je te fais une intro pour ${mission.beneficiary?.display_name || "ton contact"}.`;
-      window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, "_blank");
+      if (formattedPhone) {
+        window.open(`https://wa.me/${formattedPhone}?text=${encodeURIComponent(followupText)}`, "_blank");
+      } else {
+        window.open(`https://wa.me/?text=${encodeURIComponent(followupText)}`, "_blank");
+      }
+      return;
+    }
+    if (mission.action_channel === "manual") {
+      if (formattedPhone) {
+        window.open(`https://wa.me/${formattedPhone}?text=${encodeURIComponent(followupText)}`, "_blank");
+      } else {
+        window.open(`https://wa.me/?text=${encodeURIComponent(followupText)}`, "_blank");
+      }
       return;
     }
     if (mission.external_link) {
@@ -416,7 +439,7 @@ export function ServiceMissionsFeed({
                         onClick={() => openActionLink(mission)}
                         className="h-11 border-[#2E130C]/20 text-[#2E130C]"
                       >
-                        {mission.action_channel === "whatsapp" ? "Ouvrir WhatsApp" : mission.action_channel === "social_link" ? "Ouvrir le lien" : "Voir mission"}
+                        {mission.action_channel === "social_link" ? "Ouvrir le lien" : "Contacter sur WhatsApp"}
                       </Button>
                       <Button
                         onClick={() => handleDone(mission.id)}

@@ -530,7 +530,7 @@ export async function getServiceMissionsFeed(filter: ServiceMissionFilter = "all
     const partnerIds = Array.from(partnerPairs.values()).map((p) => p.partnerId);
     const { data: profiles } = await supabaseAdmin
       .from("profiles")
-      .select("id, display_name, receive_profile, linkedin_url, website_url, current_need, avatar_url, trade")
+      .select("id, display_name, receive_profile, linkedin_url, website_url, current_need, avatar_url, trade, phone")
       .in("id", partnerIds);
 
     const { data: trustScores } = await supabaseAdmin
@@ -574,6 +574,7 @@ export async function getServiceMissionsFeed(filter: ServiceMissionFilter = "all
               display_name: partnerProfile.display_name,
               avatar_url: partnerProfile.avatar_url,
               trade: partnerProfile.trade,
+              phone: partnerProfile.phone,
               linkedin_url: partnerProfile.linkedin_url,
               whatsapp_response_delay_hours: Number(partnerProfile.receive_profile?.whatsapp_response_delay_hours || 0),
               trust_score: trustMap.get(partnerProfile.id)?.score ?? 5.0,
@@ -617,7 +618,7 @@ export async function getServiceMissionsFeed(filter: ServiceMissionFilter = "all
       updated_at,
       completed_at,
       confirmed_at,
-      beneficiary:beneficiary_id(id, display_name, avatar_url, trade, linkedin_url, receive_profile),
+      beneficiary:beneficiary_id(id, display_name, avatar_url, trade, linkedin_url, receive_profile, phone),
       source_match:source_match_id(id, date, created_at)
     `)
     .eq("helper_id", user.id)
