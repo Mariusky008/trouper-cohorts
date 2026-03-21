@@ -1,23 +1,20 @@
 import { ServiceMissionsFeed } from "@/components/dashboard/opportunities/service-missions-feed";
-import { generateServiceMissionsFromRecentContacts, getIncomingServiceConfirmations, getServiceMissionsFeed, getUserServiceStats } from "@/lib/actions/service-missions";
+import { generateServiceMissionsFromRecentContacts, getIncomingServiceConfirmations, getServiceMissionsFeed } from "@/lib/actions/service-missions";
 
 export const dynamic = 'force-dynamic';
 
 export default async function OpportunitiesPage() {
   let missions: any[] = [];
   let incomingConfirmations: any[] = [];
-  let serviceStats = { services_rendered: 0, services_received: 0, service_balance: 0 };
 
   try {
     await generateServiceMissionsFromRecentContacts();
-    const [feed, incoming, stats] = await Promise.all([
+    const [feed, incoming] = await Promise.all([
         getServiceMissionsFeed("all"),
-        getIncomingServiceConfirmations(),
-        getUserServiceStats()
+        getIncomingServiceConfirmations()
     ]);
     missions = feed;
     incomingConfirmations = incoming;
-    serviceStats = stats;
   } catch (e) {
     console.error(e);
   }
@@ -33,7 +30,6 @@ export default async function OpportunitiesPage() {
       <ServiceMissionsFeed
         initialMissions={missions}
         incomingConfirmations={incomingConfirmations}
-        stats={serviceStats}
       />
     </div>
   );

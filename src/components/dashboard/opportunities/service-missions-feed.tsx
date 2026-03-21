@@ -26,11 +26,9 @@ const FILTERS = [
 export function ServiceMissionsFeed({
   initialMissions,
   incomingConfirmations,
-  stats,
 }: {
   initialMissions: Mission[];
   incomingConfirmations: IncomingMission[];
-  stats: { services_rendered: number; services_received: number; service_balance: number };
 }) {
   const { toast } = useToast();
   const [missions, setMissions] = useState<Mission[]>(initialMissions);
@@ -38,6 +36,7 @@ export function ServiceMissionsFeed({
   const [activeFilter, setActiveFilter] = useState("all");
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [swipeLeftId, setSwipeLeftId] = useState<string | null>(null);
+  const REJECTED_VIRTUAL_KEY = "service-missions-rejected-virtual-v1";
 
   useEffect(() => {
     const saved = window.localStorage.getItem("service-missions-filter");
@@ -49,6 +48,22 @@ export function ServiceMissionsFeed({
   useEffect(() => {
     window.localStorage.setItem("service-missions-filter", activeFilter);
   }, [activeFilter]);
+
+  useEffect(() => {
+    const raw = window.localStorage.getItem(REJECTED_VIRTUAL_KEY);
+    if (!raw) return;
+    const ids = new Set(JSON.parse(raw) as string[]);
+    if (!ids.size) return;
+    setMissions((prev) => prev.map((m) => (ids.has(m.id) ? { ...m, status: "rejected" } : m)));
+  }, []);
+
+  const saveRejectedVirtual = (missionId: string, add: boolean) => {
+    const raw = window.localStorage.getItem(REJECTED_VIRTUAL_KEY);
+    const ids = new Set<string>(raw ? JSON.parse(raw) : []);
+    if (add) ids.add(missionId);
+    else ids.delete(missionId);
+    window.localStorage.setItem(REJECTED_VIRTUAL_KEY, JSON.stringify(Array.from(ids)));
+  };
 
   const filteredMissions = useMemo(() => {
     if (activeFilter === "all") return missions.filter((m) => !["rejected", "archived"].includes(m.status));
@@ -106,6 +121,7 @@ export function ServiceMissionsFeed({
   const handleInterested = async (mission: Mission) => {
     if (isVirtualMission(mission.id)) {
       setMissionStatus(mission.id, { status: "interested", snoozed_until: null });
+      saveRejectedVirtual(mission.id, false);
       openActionLink(mission);
       return;
     }
@@ -126,6 +142,7 @@ export function ServiceMissionsFeed({
 
     if (isVirtualMission(missionId)) {
       setMissionStatus(missionId, { status: "rejected" });
+      saveRejectedVirtual(missionId, true);
       setSwipeLeftId(null);
       return;
     }
@@ -179,23 +196,6 @@ export function ServiceMissionsFeed({
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-3 gap-3">
-        <div className="bg-white p-4 rounded-2xl border border-[#2E130C]/10">
-          <div className="text-[10px] uppercase font-bold text-[#2E130C]/60">Services rendus</div>
-          <div className="text-2xl font-black text-[#2E130C]">{stats.services_rendered}</div>
-        </div>
-        <div className="bg-white p-4 rounded-2xl border border-[#2E130C]/10">
-          <div className="text-[10px] uppercase font-bold text-[#2E130C]/60">Services reçus</div>
-          <div className="text-2xl font-black text-emerald-700">{stats.services_received}</div>
-        </div>
-        <div className="bg-white p-4 rounded-2xl border border-[#2E130C]/10">
-          <div className="text-[10px] uppercase font-bold text-[#2E130C]/60">Balance</div>
-          <div className={cn("text-2xl font-black", stats.service_balance >= 0 ? "text-blue-700" : "text-rose-700")}>
-            {stats.service_balance > 0 ? "+" : ""}{stats.service_balance}
-          </div>
-        </div>
-      </div>
-
       {incoming.length > 0 && (
         <div className="bg-white rounded-2xl border border-indigo-200 p-4 space-y-3">
           <div className="flex items-center gap-2 text-indigo-800 font-black">

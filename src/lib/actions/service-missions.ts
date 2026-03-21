@@ -122,6 +122,31 @@ function buildMissionCandidates(profile: any) {
   return candidates.slice(0, 6);
 }
 
+function selectDiversifiedCandidates(candidates: any[], limit = 2) {
+  if (!candidates.length) return [];
+  const selected: any[] = [];
+  const used = new Set<string>();
+
+  const pick = (predicate: (c: any) => boolean) => {
+    const item = candidates.find((c) => !used.has(c.mission_type) && predicate(c));
+    if (!item) return;
+    selected.push(item);
+    used.add(item.mission_type);
+  };
+
+  pick((c) => c.action_channel === "whatsapp");
+  pick((c) => c.action_channel !== "whatsapp");
+
+  for (const candidate of candidates) {
+    if (selected.length >= limit) break;
+    if (used.has(candidate.mission_type)) continue;
+    selected.push(candidate);
+    used.add(candidate.mission_type);
+  }
+
+  return selected.slice(0, limit);
+}
+
 export async function generateServiceMissionsForPair(helperId: string, beneficiaryId: string, sourceMatchId?: string | null) {
   const supabase = await createClient();
   const supabaseAdmin = createAdminClient();
@@ -522,7 +547,7 @@ export async function getServiceMissionsFeed(filter: ServiceMissionFilter = "all
       .forEach((pair) => {
         const partnerProfile = profileMap.get(pair.partnerId);
         if (!partnerProfile) return;
-        const candidates = buildMissionCandidates(partnerProfile).slice(0, 2);
+        const candidates = selectDiversifiedCandidates(buildMissionCandidates(partnerProfile), 2);
         candidates.forEach((candidate, idx) => {
           feed.push({
             id: `virtual-${pair.partnerId}-${candidate.mission_type}-${idx}`,
