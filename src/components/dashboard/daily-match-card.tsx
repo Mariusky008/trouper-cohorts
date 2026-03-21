@@ -1048,6 +1048,7 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
   const partnerAmplificateur = getProfileText(match.receive_profile?.comm_goal) || "Non renseigné";
   const myOfferHeadline = currentUserProfile?.superpower || getProfileText(currentUserProfile?.give_profile?.influence_sectors) || "Mon expertise";
   const partnerOfferHeadline = match.superpower || getProfileText(match.give_profile?.influence_sectors) || "Son expertise";
+  const partnerResponseDelayHours = Number(match.whatsapp_response_delay_hours || 0);
   const suggestedPairMission = computeMissionSuggestion(currentUserProfile, match);
   const featuredLinkForWhatsApp = getPopeyShortLink(currentUserProfile);
   const whatsappPreviewMessage = buildWhatsAppMessage({
@@ -1236,6 +1237,12 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
             <p className="text-[#2E130C]/70 text-sm font-medium italic leading-relaxed">
                 Ce {match.job || 'partenaire'} peut vous ouvrir des opportunités inédites.
             </p>
+            {partnerResponseDelayHours > 0 && (
+                <div className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-[#2E130C]/15 bg-white px-3 py-1 text-[11px] font-black text-[#2E130C]">
+                    <Clock className="h-3.5 w-3.5 text-[#B20B13]" />
+                    Réponse WhatsApp ~{partnerResponseDelayHours}h
+                </div>
+            )}
         </div>
 
         {/* Goals Grid (Direct Needs & Offers) */}

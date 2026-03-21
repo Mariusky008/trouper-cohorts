@@ -62,7 +62,8 @@ export default function SpheresRegistrationPage() {
     password: "",
     trade: "",
     secondaryTrades: "",
-    quickWin: ""
+    quickWin: "",
+    whatsappResponseDelayHours: ""
   });
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
@@ -85,6 +86,11 @@ export default function SpheresRegistrationPage() {
         return;
     }
 
+    if (!["1", "3", "6", "12"].includes(formData.whatsappResponseDelayHours)) {
+        toast.error("Veuillez estimer votre temps moyen de réponse WhatsApp.");
+        return;
+    }
+
     setIsLoading(true);
     
     try {
@@ -104,6 +110,7 @@ export default function SpheresRegistrationPage() {
         // We'll set a default or let the backend handle matching based purely on trade.
         payload.append("sphere", "Indéfinie"); 
         payload.append("quickWin", formData.quickWin);
+        payload.append("whatsappResponseDelayHours", formData.whatsappResponseDelayHours);
 
         const result = await registerNetworkUser(payload);
         
@@ -335,6 +342,25 @@ export default function SpheresRegistrationPage() {
                     onChange={(e) => setFormData({...formData, email: e.target.value})}
                 />
                 </div>
+                </div>
+
+                <div className="space-y-2">
+                    <Label htmlFor="whatsappDelay" className="text-xs font-black uppercase text-[#2E130C]/60 ml-1">
+                        Estimez votre temps moyen de réponse WhatsApp
+                    </Label>
+                    <select
+                        id="whatsappDelay"
+                        className="w-full bg-white border-2 border-[#2E130C] h-12 rounded-xl px-3 font-bold text-base focus:outline-none focus:border-[#B20B13]"
+                        value={formData.whatsappResponseDelayHours}
+                        onChange={(e) => setFormData({ ...formData, whatsappResponseDelayHours: e.target.value })}
+                        required
+                    >
+                        <option value="">Choisir un délai</option>
+                        <option value="1">1h</option>
+                        <option value="3">3h</option>
+                        <option value="6">6h</option>
+                        <option value="12">12h</option>
+                    </select>
                 </div>
 
                 {/* Row 4: Mot de passe */}

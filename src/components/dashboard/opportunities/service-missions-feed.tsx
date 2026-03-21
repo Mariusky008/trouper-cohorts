@@ -329,6 +329,12 @@ export function ServiceMissionsFeed({
                     <ShieldCheck className="h-3.5 w-3.5 text-[#2E130C]" />
                     Confiance {getTrustScore(mission).toFixed(1)}/5
                   </div>
+                  {Number(mission.beneficiary?.whatsapp_response_delay_hours || 0) > 0 && (
+                    <div className="inline-flex items-center gap-2 text-[11px] font-black px-3 py-1 rounded-full bg-white border border-[#2E130C]/10">
+                      <Clock className="h-3.5 w-3.5 text-[#B20B13]" />
+                      Réponse WhatsApp ~{Number(mission.beneficiary?.whatsapp_response_delay_hours)}h
+                    </div>
+                  )}
                 </div>
 
                 <div className="rounded-2xl border border-[#2E130C]/15 bg-white p-4">

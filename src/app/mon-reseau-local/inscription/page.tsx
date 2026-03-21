@@ -39,6 +39,7 @@ export default function RegistrationWizard() {
     phone: "",
     city: "",
     trade: "",
+    whatsappResponseDelayHours: "",
     
     // Step 2: Give (Terrain de Chasse)
     influenceSectors: "", // Comma separated
@@ -69,6 +70,10 @@ export default function RegistrationWizard() {
   const handleSubmit = async () => {
     setIsLoading(true);
     try {
+      if (!["1", "3", "6", "12"].includes(formData.whatsappResponseDelayHours)) {
+        throw new Error("Le délai moyen de réponse WhatsApp est obligatoire.");
+      }
+
       // 1. Prepare structured data
       const giveProfile = {
         influence_sectors: formData.influenceSectors.split(',').map(s => s.trim()).filter(Boolean),
@@ -94,6 +99,7 @@ export default function RegistrationWizard() {
       serverData.append("city", formData.city);
       serverData.append("trade", formData.trade);
       serverData.append("phone", formData.phone);
+      serverData.append("whatsappResponseDelayHours", formData.whatsappResponseDelayHours);
       
       // Pass JSON strings for the new columns
       serverData.append("give_profile", JSON.stringify(giveProfile));
@@ -201,6 +207,21 @@ export default function RegistrationWizard() {
                                 <Label>Téléphone</Label>
                                 <Input placeholder="06 12 34 56 78" value={formData.phone} onChange={e => updateForm("phone", e.target.value)} />
                             </div>
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label>Estimez votre temps moyen de réponse WhatsApp</Label>
+                            <select
+                                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
+                                value={formData.whatsappResponseDelayHours}
+                                onChange={e => updateForm("whatsappResponseDelayHours", e.target.value)}
+                            >
+                                <option value="">Choisir un délai</option>
+                                <option value="1">1h</option>
+                                <option value="3">3h</option>
+                                <option value="6">6h</option>
+                                <option value="12">12h</option>
+                            </select>
                         </div>
 
                         <div className="space-y-2 pt-4 border-t border-slate-100">

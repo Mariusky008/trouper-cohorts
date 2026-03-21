@@ -20,8 +20,8 @@ export async function getDailyMatches() {
     .from("network_matches")
     .select(`
       *,
-      user1:user1_id(id, display_name, avatar_url, trade, city, bio, phone, current_goals, superpower, current_need, big_goal, give_profile, receive_profile),
-      user2:user2_id(id, display_name, avatar_url, trade, city, bio, phone, current_goals, superpower, current_need, big_goal, give_profile, receive_profile)
+      user1:user1_id(id, display_name, avatar_url, trade, city, bio, phone, whatsapp_response_delay_hours, current_goals, superpower, current_need, big_goal, give_profile, receive_profile),
+      user2:user2_id(id, display_name, avatar_url, trade, city, bio, phone, whatsapp_response_delay_hours, current_goals, superpower, current_need, big_goal, give_profile, receive_profile)
     `)
     .gte("date", searchDate) // Fetch from yesterday onwards
     .or(`user1_id.eq.${user.id},user2_id.eq.${user.id}`)
@@ -64,7 +64,7 @@ export async function getDailyMatches() {
       if (!partnerData) {
           const { data: p } = await supabase
             .from("profiles")
-            .select("id, display_name, avatar_url, trade, city, bio, phone, current_goals, superpower, current_need, big_goal, give_profile, receive_profile")
+            .select("id, display_name, avatar_url, trade, city, bio, phone, whatsapp_response_delay_hours, current_goals, superpower, current_need, big_goal, give_profile, receive_profile")
             .eq("id", partnerId)
             .single();
           partnerData = p;
@@ -108,6 +108,7 @@ export async function getDailyMatches() {
         partnerSlots: partnerSlots,
         type: isUser1 ? 'call_out' : 'call_in',
         phone: partnerData.phone,
+        whatsapp_response_delay_hours: partnerData.whatsapp_response_delay_hours,
         avatar: partnerData.avatar_url,
         tags: [partnerData.trade || "Entrepreneur"],
         current_goals: partnerData.current_goals || [],

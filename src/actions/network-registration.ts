@@ -12,6 +12,7 @@ export async function registerNetworkUser(formData: FormData) {
   const exactCity = formData.get("exactCity") as string; // Ville exacte
   const trade = formData.get("trade") as string;
   const phone = formData.get("phone") as string;
+  const whatsappResponseDelayHoursRaw = String(formData.get("whatsappResponseDelayHours") || "").trim();
   
   // New fields for Spheres flow
   const sphere = formData.get("sphere") as string;
@@ -22,6 +23,12 @@ export async function registerNetworkUser(formData: FormData) {
 
   let giveProfile = {};
   let receiveProfile: any = {};
+  const allowedResponseDelays = [1, 3, 6, 12];
+  const whatsappResponseDelayHours = Number(whatsappResponseDelayHoursRaw);
+
+  if (!allowedResponseDelays.includes(whatsappResponseDelayHours)) {
+    return { error: "Le délai moyen de réponse WhatsApp est obligatoire." };
+  }
 
   try {
     if (giveProfileStr) giveProfile = JSON.parse(giveProfileStr);
@@ -71,6 +78,7 @@ export async function registerNetworkUser(formData: FormData) {
     city,
     trade,
     phone,
+    whatsapp_response_delay_hours: whatsappResponseDelayHours,
     give_profile: giveProfile,
     receive_profile: receiveProfile,
     role: 'member'
