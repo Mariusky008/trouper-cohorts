@@ -467,7 +467,13 @@ export async function getServiceMissionsFeed(filter: ServiceMissionFilter = "all
       .select("id, display_name, receive_profile, linkedin_url, website_url, current_need, avatar_url, trade")
       .in("id", partnerIds);
 
+    const { data: trustScores } = await supabaseAdmin
+      .from("trust_scores")
+      .select("user_id, score")
+      .in("user_id", partnerIds);
+
     const profileMap = new Map((profiles || []).map((p: any) => [p.id, p]));
+    const trustMap = new Map((trustScores || []).map((t: any) => [t.user_id, t.score]));
     const feed: any[] = [];
 
     Array.from(partnerPairs.values())
@@ -503,6 +509,7 @@ export async function getServiceMissionsFeed(filter: ServiceMissionFilter = "all
               avatar_url: partnerProfile.avatar_url,
               trade: partnerProfile.trade,
               linkedin_url: partnerProfile.linkedin_url,
+              trust_score: trustMap.get(partnerProfile.id) ?? 5.0,
             },
             source_match: pair.sourceMatchId ? { id: pair.sourceMatchId, date: pair.sourceDate, created_at: pair.sourceDate } : null,
           });
@@ -559,6 +566,32 @@ export async function getServiceMissionsFeed(filter: ServiceMissionFilter = "all
     return await buildVirtualFeed();
   }
 
+  const beneficiaryIds = Array.from(
+    new Set(
+      (data || [])
+        .map((mission: any) => mission.beneficiary?.id)
+        .filter(Boolean)
+    )
+  );
+
+  const { data: trustScores } = beneficiaryIds.length
+    ? await supabaseAdmin
+        .from("trust_scores")
+        .select("user_id, score")
+        .in("user_id", beneficiaryIds)
+    : { data: [] as any[] };
+
+  const trustMap = new Map((trustScores || []).map((t: any) => [t.user_id, t.score]));
+  const enrichedData = (data || []).map((mission: any) => ({
+    ...mission,
+    beneficiary: mission.beneficiary
+      ? {
+          ...mission.beneficiary,
+          trust_score: trustMap.get(mission.beneficiary.id) ?? 5.0,
+        }
+      : mission.beneficiary,
+  }));
+
   const statusRank: Record<string, number> = {
     new: 0,
     interested: 1,
@@ -570,7 +603,7 @@ export async function getServiceMissionsFeed(filter: ServiceMissionFilter = "all
     archived: 7,
   };
 
-  return [...data].sort((a: any, b: any) => {
+  return [...enrichedData].sort((a: any, b: any) => {
     const aDate = a.source_match?.date ? new Date(a.source_match.date).getTime() : 0;
     const bDate = b.source_match?.date ? new Date(b.source_match.date).getTime() : 0;
     if (bDate !== aDate) return bDate - aDate;

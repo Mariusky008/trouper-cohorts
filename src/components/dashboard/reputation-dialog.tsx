@@ -11,6 +11,7 @@ interface ReputationDialogProps {
 
 export function ReputationDialog({ scoreData }: ReputationDialogProps) {
   const score = scoreData?.score || 5.0;
+  const mention = score >= 4.6 ? "Excellent" : score >= 4.0 ? "Très bon" : score >= 3.2 ? "Solide" : "À renforcer";
   
   return (
     <Dialog>
@@ -24,12 +25,12 @@ export function ReputationDialog({ scoreData }: ReputationDialogProps) {
             </div>
             
             <h3 className="font-bold text-[#2E130C] text-lg mb-1">Ma Réputation</h3>
-            <p className="text-sm text-[#2E130C]/60 mb-3">Voir mon impact</p>
+            <p className="text-sm text-[#2E130C]/60 mb-3">Confiance mission + réactivité</p>
             
             <div className="flex items-center gap-2 text-xs font-bold text-emerald-600 bg-emerald-50 p-2 rounded-lg border border-emerald-100">
                 <Trophy className="h-3.5 w-3.5" />
                 <span>
-                    {score}/5 Excellent
+                    {score.toFixed(1)}/5 {mention}
                 </span>
             </div>
         </div>

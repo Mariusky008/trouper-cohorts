@@ -81,6 +81,14 @@ export function ServiceMissionsFeed({
   }, [filteredMissions, activeFilter]);
   const useTinderStack = !["history", "refused"].includes(activeFilter);
   const stackMissions = useTinderStack ? mixedMissions.slice(0, 5) : mixedMissions;
+  const getTrustScore = (mission: Mission) => Number(mission?.beneficiary?.trust_score || 5);
+  const getReturnScore = (mission: Mission) => Math.min(10, Math.max(1, getTrustScore(mission) * 2));
+  const getReturnBadge = (score: number) => (score >= 8 ? "Gain fort" : score >= 6.5 ? "Gain solide" : "Gain progressif");
+  const getBonusPoints = (mission: Mission) => {
+    if (mission.action_channel === "whatsapp") return 40;
+    if (mission.action_channel === "social_link") return 25;
+    return 30;
+  };
 
   const setMissionStatus = (id: string, updates: Record<string, any>) => {
     setMissions((prev) => prev.map((m) => (m.id === id ? { ...m, ...updates } : m)));
@@ -318,6 +326,10 @@ export function ServiceMissionsFeed({
                     <p className="font-black text-base leading-none">{mission.beneficiary?.display_name || "Membre"}</p>
                     <p className="text-xs text-[#2E130C]/70 mt-1">{mission.beneficiary?.trade || "Membre"}</p>
                   </div>
+                  <div className="inline-flex items-center gap-2 text-[11px] font-black px-3 py-1 rounded-full bg-white border border-[#2E130C]/10">
+                    <ShieldCheck className="h-3.5 w-3.5 text-[#2E130C]" />
+                    Confiance {getTrustScore(mission).toFixed(1)}/5
+                  </div>
                 </div>
 
                 <div className="rounded-2xl border border-[#2E130C]/15 bg-white p-4">
@@ -329,7 +341,22 @@ export function ServiceMissionsFeed({
                 </div>
 
                 {isTopCard && mission.expected_gain && (
-                  <div className="text-xs text-[#B20B13] font-semibold">{mission.expected_gain}</div>
+                  <div className="space-y-2">
+                    <div className="rounded-xl border border-[#B20B13]/20 bg-[#FFF5F5] px-3 py-2">
+                      <p className="text-[10px] uppercase tracking-widest text-[#B20B13] font-black">Ce que tu gagnes</p>
+                      <p className="text-xs text-[#2E130C] font-semibold mt-1">{mission.expected_gain}</p>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="rounded-xl border border-[#2E130C]/10 bg-white px-3 py-2">
+                        <p className="text-[10px] uppercase tracking-wide text-[#2E130C]/55 font-bold">Score retour</p>
+                        <p className="text-sm font-black text-[#2E130C]">{getReturnScore(mission).toFixed(1)}/10 · {getReturnBadge(getReturnScore(mission))}</p>
+                      </div>
+                      <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2">
+                        <p className="text-[10px] uppercase tracking-wide text-emerald-700 font-bold">Bonus points</p>
+                        <p className="text-sm font-black text-emerald-700">+{getBonusPoints(mission)} pts</p>
+                      </div>
+                    </div>
+                  </div>
                 )}
 
                 <div className={cn("flex items-center gap-2 text-xs text-[#2E130C]/55", !isTopCard && "opacity-0 h-0 overflow-hidden")}>

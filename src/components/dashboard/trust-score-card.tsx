@@ -12,6 +12,9 @@ interface TrustScoreProps {
     opportunities_received: number;
     debt_level: number;
     points_balance?: number;
+    mission_quality_score?: number;
+    response_speed_score?: number;
+    response_hours_avg?: number | null;
   } | null;
 }
 
@@ -22,14 +25,17 @@ export function TrustScoreCard({ scoreData }: TrustScoreProps) {
   const given = scoreData?.opportunities_given ?? 0;
   const debts = scoreData?.debt_level ?? 0;
   const balance = scoreData?.points_balance ?? 0;
+  const missionQuality = scoreData?.mission_quality_score ?? score;
+  const responseSpeed = scoreData?.response_speed_score ?? score;
+  const responseHours = scoreData?.response_hours_avg;
 
   // Calculate progression (arbitrary logic for MVP: 10 given opps = Level Up)
   const progress = Math.min(100, (given / 10) * 100);
 
   const stats = [
     { label: "Score", value: `${score.toFixed(1)}`, icon: Star, color: "text-orange-600", bg: "bg-orange-50", border: "border-orange-200" },
-    { label: "Dettes (Jours)", value: debts.toString(), icon: AlertCircle, color: "text-red-600", bg: "bg-red-50", border: "border-red-200" },
-    { label: "Points Balance", value: (balance > 0 ? `-${balance}` : `+${Math.abs(balance)}`), icon: TrendingUp, color: balance > 0 ? "text-red-600" : "text-emerald-600", bg: balance > 0 ? "bg-red-50" : "bg-emerald-50", border: balance > 0 ? "border-red-200" : "border-emerald-200" },
+    { label: "Qualité mission", value: missionQuality.toFixed(1), icon: ShieldCheck, color: "text-fuchsia-600", bg: "bg-fuchsia-50", border: "border-fuchsia-200" },
+    { label: "Réactivité", value: responseSpeed.toFixed(1), icon: TrendingUp, color: "text-emerald-600", bg: "bg-emerald-50", border: "border-emerald-200" },
     { label: "Données", value: given.toString(), icon: ThumbsUp, color: "text-blue-600", bg: "bg-blue-50", border: "border-blue-200" },
   ];
 
@@ -42,8 +48,8 @@ export function TrustScoreCard({ scoreData }: TrustScoreProps) {
     >
        <div className="flex items-center justify-between mb-6">
         <div>
-          <h3 className="font-black text-xl text-[#2E130C]">Votre Impact</h3>
-          <p className="text-stone-500 text-sm">Résumé de votre activité.</p>
+          <h3 className="font-black text-xl text-[#2E130C]">Score Confiance V2</h3>
+          <p className="text-stone-500 text-sm">Basé sur missions terminées + temps de réponse.</p>
         </div>
         <div className="h-10 w-10 bg-orange-100 rounded-full flex items-center justify-center text-orange-600 border border-orange-200">
           <ShieldCheck className="h-5 w-5" />
@@ -68,6 +74,9 @@ export function TrustScoreCard({ scoreData }: TrustScoreProps) {
       </div>
       
       <div className="mt-6 pt-6 border-t border-stone-200">
+        <div className="rounded-xl border border-stone-200 bg-stone-50 px-3 py-2 mb-3 text-xs font-semibold text-[#2E130C]/75">
+          Temps de réponse moyen: {responseHours ? `${responseHours.toFixed(1)}h` : "données en cours"}
+        </div>
         <div className="flex items-center justify-between text-sm mb-2">
            <span className="font-bold text-stone-600">Niveau "Connecteur"</span>
            <span className="font-bold text-blue-700 bg-blue-100 border border-blue-200 px-2 py-0.5 rounded-md">{Math.round(progress)}%</span>

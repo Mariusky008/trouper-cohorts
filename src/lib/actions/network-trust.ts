@@ -64,7 +64,10 @@ export async function getTrustScore() {
     opportunities_given: givenCount || 0,
     opportunities_received: receivedCount || 0,
     debt_level: Math.max(0, debtCount || 0), // Count of old unreturned favors
-    points_balance: pointsBalance // New field for detailed balance
+    points_balance: pointsBalance, // New field for detailed balance
+    mission_quality_score: scoreData?.mission_quality_score ?? scoreData?.score ?? 5.0,
+    response_speed_score: scoreData?.response_speed_score ?? scoreData?.score ?? 5.0,
+    response_hours_avg: scoreData?.response_hours_avg ?? null,
   };
 }
 
