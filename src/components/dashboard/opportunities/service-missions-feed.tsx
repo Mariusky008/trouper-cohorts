@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
-import { CheckCircle2, Clock, ExternalLink, MessageCircle, PauseCircle, ShieldCheck, Sparkles, ThumbsUp, XCircle } from "lucide-react";
+import { CheckCircle2, Clock, ExternalLink, MessageCircle, PauseCircle, ShieldCheck, ThumbsUp, XCircle } from "lucide-react";
 import { confirmServiceReceived, markMissionDone, markMissionInterested, rejectMissionByHelper, rejectServiceReceived } from "@/lib/actions/service-missions";
 import { getMissionPointsByChannel } from "@/lib/points-tiers";
 
@@ -251,20 +251,6 @@ export function ServiceMissionsFeed({
       </div>
 
       <div className="space-y-5 pt-1">
-        <div className="rounded-2xl border border-[#2E130C]/15 bg-gradient-to-r from-[#FFF8F2] to-[#F3F0E7] p-4 max-w-4xl mx-auto">
-          <div className="flex items-start gap-3">
-            <div className="h-9 w-9 rounded-xl bg-[#B20B13]/10 text-[#B20B13] flex items-center justify-center shrink-0">
-              <Sparkles className="h-4 w-4" />
-            </div>
-            <div>
-              <p className="text-sm font-black text-[#2E130C]">Le cercle vertueux du réseau</p>
-              <p className="text-xs text-[#2E130C]/75 mt-1">
-                Plus tu aides rapidement les bonnes personnes, plus ton réseau te rend la pareille avec des introductions et opportunités concrètes.
-              </p>
-            </div>
-          </div>
-        </div>
-
         {stackMissions.length === 0 && (
           <div className="text-center py-12 text-[#2E130C]/40 italic">Aucune mission de service pour ce filtre.</div>
         )}
