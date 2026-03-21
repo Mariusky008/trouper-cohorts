@@ -41,7 +41,6 @@ export function ServiceMissionsFeed({
   const [swipeLeftId, setSwipeLeftId] = useState<string | null>(null);
   const [swipeRightId, setSwipeRightId] = useState<string | null>(null);
   const [isStatsOpen, setIsStatsOpen] = useState(false);
-  const [detailMission, setDetailMission] = useState<Mission | null>(null);
   const [isIncomingOpen, setIsIncomingOpen] = useState(false);
   const REJECTED_VIRTUAL_KEY = "service-missions-rejected-virtual-v1";
 
@@ -334,7 +333,7 @@ export function ServiceMissionsFeed({
           <div className="text-center py-12 text-[#2E130C]/40 italic">Aucune mission de service pour ce filtre.</div>
         )}
 
-        <div className={cn(useTinderStack && "relative h-[calc(100dvh-19rem)] lg:h-[640px] max-w-sm mx-auto")}>
+        <div className={cn(useTinderStack && "relative h-[calc(100dvh-21rem)] lg:h-[640px] max-w-sm mx-auto")}>
         {stackMissions.map((mission, index) => {
           const isTopCard = !useTinderStack || index === 0;
           return (
@@ -457,11 +456,6 @@ export function ServiceMissionsFeed({
                 </div>
 
                 <div className={cn("pt-1", !isTopCard && "opacity-0 h-0 overflow-hidden")}>
-                  <div className="mb-2">
-                    <Button variant="outline" onClick={() => setDetailMission(mission)} className="w-full h-9 border-[#2E130C]/20 text-[#2E130C] font-bold">
-                      Voir détails
-                    </Button>
-                  </div>
                   {mission.status === "new" && (
                     <div className="hidden lg:grid grid-cols-2 gap-3">
                       <Button
@@ -560,8 +554,8 @@ export function ServiceMissionsFeed({
       </div>
 
       {useTinderStack && stackMissions[0] && (
-        <div className="lg:hidden fixed left-1/2 -translate-x-1/2 z-30 w-[calc(100%-1.25rem)] max-w-sm bottom-[calc(env(safe-area-inset-bottom)+5.8rem)]">
-          <div className="rounded-2xl border border-[#2E130C]/12 bg-[#F7F2E8]/90 backdrop-blur-md shadow-[0_14px_34px_rgba(46,19,12,0.22)] p-2 grid grid-cols-2 gap-2">
+        <div className="lg:hidden fixed left-1/2 -translate-x-1/2 z-40 w-[calc(100%-0.9rem)] max-w-sm bottom-[calc(env(safe-area-inset-bottom)+7.2rem)]">
+          <div className="rounded-2xl border-2 border-[#2E130C]/25 bg-[#FFF8ED] shadow-[0_18px_42px_rgba(46,19,12,0.30)] px-2 py-2 grid grid-cols-2 gap-2">
             <Button
               variant="outline"
               onClick={() => handleReject(stackMissions[0].id)}
@@ -637,42 +631,6 @@ export function ServiceMissionsFeed({
         </DialogContent>
       </Dialog>
 
-      <Dialog open={!!detailMission} onOpenChange={(open) => !open && setDetailMission(null)}>
-        <DialogContent className="bg-white border-[#2E130C]/15 text-[#2E130C] sm:max-w-md rounded-2xl w-[92vw]">
-          <DialogHeader>
-            <DialogTitle className="text-xl font-black">Détails mission</DialogTitle>
-          </DialogHeader>
-          {detailMission && (
-            <div className="space-y-3 text-sm">
-              <div className="rounded-xl border border-[#2E130C]/10 bg-[#F8F4EB] p-3">
-                <p className="text-[10px] uppercase tracking-wider font-bold text-[#B20B13] mb-1">
-                  {detailMission.action_channel === "whatsapp" ? "Mission WhatsApp" : detailMission.action_channel === "social_link" ? "Mission Réseau social" : "Mission relationnelle"}
-                </p>
-                <p className="font-black text-[#2E130C]">{detailMission.title}</p>
-                <p className="text-[#2E130C]/75 mt-1">{detailMission.description}</p>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <div className="rounded-xl border border-[#2E130C]/10 bg-white px-3 py-2">
-                  <p className="text-[10px] uppercase text-[#2E130C]/60 font-bold">Confiance</p>
-                  <p className="font-black">{getTrustScore(detailMission).toFixed(1)}/5</p>
-                </div>
-                <div className="rounded-xl border border-[#2E130C]/10 bg-white px-3 py-2">
-                  <p className="text-[10px] uppercase text-[#2E130C]/60 font-bold">Bonus</p>
-                  <p className="font-black text-emerald-700">+{getBonusPoints(detailMission)} pts</p>
-                </div>
-              </div>
-              <div className="rounded-xl border border-[#2E130C]/10 bg-white px-3 py-2">
-                <p className="text-[10px] uppercase text-[#2E130C]/60 font-bold">Temps de réponse WhatsApp</p>
-                <p className="font-black">
-                  {Number(detailMission.beneficiary?.whatsapp_response_delay_hours || 0) > 0
-                    ? `${Number(detailMission.beneficiary?.whatsapp_response_delay_hours)} h`
-                    : "Non renseigné"}
-                </p>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
