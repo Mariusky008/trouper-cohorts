@@ -33,6 +33,7 @@ import { getPendingOpportunitiesCount } from "@/lib/actions/network-opportunitie
 import { PWAInstallPrompt } from "@/components/pwa-install-prompt";
 import { useNotifications } from "@/hooks/use-notifications";
 import { getPointsTier } from "@/lib/points-tiers";
+import { PointsTierDialog } from "@/components/dashboard/points-tier-dialog";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -173,9 +174,7 @@ function DashboardLayoutFull({ children, pathname }: { children: React.ReactNode
                         <span className="text-sm font-black text-[#2E130C]">{points.toLocaleString()}</span>
                     </div>
                 </div>
-                <div className={cn("hidden xl:flex items-center border px-2 py-1 rounded-md text-[10px] font-black uppercase", tier.accentClass)}>
-                  {tier.label}
-                </div>
+                <PointsTierDialog points={points} className={cn("hidden xl:flex", tier.accentClass)} />
 
                 <div className="text-right hidden xl:block">
                     <div className="text-xs font-bold text-[#2E130C] font-titan tracking-wide">{displayName}</div>
@@ -230,9 +229,7 @@ function DashboardLayoutFull({ children, pathname }: { children: React.ReactNode
                     <Trophy className="h-3.5 w-3.5 text-[#B20B13]" />
                     <span className="text-xs font-black text-[#2E130C]">{points.toLocaleString()}</span>
                 </div>
-                <div className={cn("hidden sm:flex items-center border px-2 py-1 rounded-md text-[10px] font-black uppercase", tier.accentClass)}>
-                  {tier.label}
-                </div>
+                <PointsTierDialog points={points} className={cn("hidden sm:flex", tier.accentClass)} />
             </div>
          </div>
       </header>
