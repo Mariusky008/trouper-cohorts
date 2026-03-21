@@ -776,10 +776,11 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
       };
   }, [userId, matches, missionProgressKey]);
 
-  const [popupView, setPopupView] = useState<'step1_status' | 'step2_mission' | 'step3_recap'>('step1_status');
+  const [popupView, setPopupView] = useState<'step1_status' | 'step2_mission' | 'step3_exchange_outcome' | 'step4_recap'>('step1_status');
   const [callHappened, setCallHappened] = useState<boolean | null>(null);
   const [callMade, setCallMade] = useState(false);
   const [partnerMissionResult, setPartnerMissionResult] = useState<'completed' | 'super_completed' | 'not_completed' | null>(null);
+  const [exchangeOutcome, setExchangeOutcome] = useState<'none' | 'good_contact' | 'future_exchange' | 'useful_intro' | 'potential_client' | 'real_business_opportunity' | 'collaboration_started' | null>(null);
   const [recapStats, setRecapStats] = useState<{
     total_calls: number;
     missions_realisees: number;
@@ -796,6 +797,15 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
   const [isPartnerProfileOpen, setIsPartnerProfileOpen] = useState(false);
   const [isSuggestedMissionOpen, setIsSuggestedMissionOpen] = useState(false);
   const [selectedMission, setSelectedMission] = useState<string | null>(matches[0]?.my_mission || null);
+  const exchangeOutcomeOptions = [
+    { value: 'none', label: 'Aucun résultat pour le moment' },
+    { value: 'good_contact', label: 'Un bon contact' },
+    { value: 'future_exchange', label: 'Un futur échange prévu' },
+    { value: 'useful_intro', label: 'Une mise en relation utile' },
+    { value: 'potential_client', label: 'Un client potentiel' },
+    { value: 'real_business_opportunity', label: 'Une vraie opportunité business' },
+    { value: 'collaboration_started', label: 'Une collaboration lancée' },
+  ] as const;
 
   // Sync state if props change (e.g. after revalidate)
   useEffect(() => {
@@ -895,12 +905,17 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
         toast.error("Précise le niveau de réalisation de mission.");
         return;
     }
+    if (callHappened && !exchangeOutcome) {
+        toast.error("Choisis ce que cet échange a généré.");
+        return;
+    }
 
     const result = await completeMatchMission({
         matchId: currentMatch.id,
         receiverId: currentMatch.partnerId,
         callHappened,
         missionResult: partnerMissionResult || "not_completed",
+        opportunityType: exchangeOutcome || undefined,
     });
 
     if (result?.error) {
@@ -935,7 +950,7 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
     if (missionProgressKey) {
         localStorage.removeItem(missionProgressKey);
     }
-    setPopupView('step3_recap');
+    setPopupView('step4_recap');
     confetti({ particleCount: 200, spread: 100, origin: { y: 0.6 } });
     
     // Optimistic Update: Update local state to prevent flicker on refresh
@@ -1404,6 +1419,7 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
                             setPopupView('step1_status');
                             setCallHappened(null);
                             setPartnerMissionResult(null);
+                            setExchangeOutcome(null);
                             setRecapStats(null);
                         }
                     }}>
@@ -1433,7 +1449,13 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
                             {/* HEADER */}
                             <DialogHeader className="mb-6 mt-4">
                                 <DialogTitle className="text-center text-3xl font-black text-[#2E130C]">
-                                    {popupView === 'step1_status' ? "Bilan de la mission" : popupView === 'step2_mission' ? "Évaluation de mission" : "Ton récapitulatif"}
+                                    {popupView === 'step1_status'
+                                      ? "Bilan de la mission"
+                                      : popupView === 'step2_mission'
+                                      ? "Évaluation de mission"
+                                      : popupView === 'step3_exchange_outcome'
+                                      ? "Impact de l'échange"
+                                      : "Ton récapitulatif"}
                                 </DialogTitle>
                             </DialogHeader>
                             
@@ -1530,16 +1552,49 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
                                     <Button
                                         type="button"
                                         disabled={!partnerMissionResult}
-                                        onClick={handleValidate}
+                                        onClick={() => setPopupView('step3_exchange_outcome')}
                                         className="w-full bg-[#2E130C] text-white hover:bg-[#2E130C]/90 font-bold mt-2 disabled:opacity-50"
                                     >
-                                        Valider la mission
+                                        Continuer
                                     </Button>
                                     <Button variant="ghost" onClick={() => setPopupView('step1_status')} className="w-full text-slate-500">Retour</Button>
                                 </div>
                             )}
 
-                            {popupView === 'step3_recap' && (
+                            {popupView === 'step3_exchange_outcome' && (
+                                <div className="space-y-5 p-2">
+                                    <div className="rounded-2xl border border-[#2E130C]/10 bg-[#F3F0E7] p-4">
+                                        <div className="text-xs uppercase tracking-wider font-bold text-[#2E130C]/60 mb-3">Qu&apos;est-ce que cet échange a généré ?</div>
+                                        <div className="grid grid-cols-1 gap-2">
+                                            {exchangeOutcomeOptions.map((option) => (
+                                                <Button
+                                                    key={option.value}
+                                                    type="button"
+                                                    variant="outline"
+                                                    onClick={() => setExchangeOutcome(option.value)}
+                                                    className={cn(
+                                                        "h-12 justify-start text-left px-4 border-[#2E130C]/15 bg-white hover:bg-[#2E130C]/5",
+                                                        exchangeOutcome === option.value && "ring-2 ring-[#B20B13]/30 border-[#B20B13]/50 bg-[#B20B13]/5"
+                                                    )}
+                                                >
+                                                    <span className="font-bold text-[#2E130C]">{option.label}</span>
+                                                </Button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <Button
+                                        type="button"
+                                        disabled={!exchangeOutcome}
+                                        onClick={handleValidate}
+                                        className="w-full bg-[#2E130C] text-white hover:bg-[#2E130C]/90 font-bold disabled:opacity-50"
+                                    >
+                                        Voir mon récapitulatif
+                                    </Button>
+                                    <Button variant="ghost" onClick={() => setPopupView('step2_mission')} className="w-full text-slate-500">Retour</Button>
+                                </div>
+                            )}
+
+                            {popupView === 'step4_recap' && (
                                 <div className="space-y-4 p-2">
                                     <div className="rounded-2xl border border-[#2E130C]/10 bg-[#F3F0E7] p-4 space-y-3">
                                         <div className="flex items-center justify-between text-sm">
