@@ -190,30 +190,32 @@ export function OffersView({
     return (
         <div className="space-y-8 px-4 md:px-0 pb-12">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <div className="flex justify-center mb-8">
-                    <TabsList className="bg-transparent border-0 p-0 h-auto flex flex-wrap justify-center w-full gap-2">
+                <div className="max-w-3xl mx-auto mb-6 space-y-3">
+                    <TabsList className="bg-transparent border-0 p-0 h-auto grid grid-cols-2 w-full gap-2">
                         <TabsTrigger 
                             value="offers" 
-                            className="rounded-full px-6 py-3 text-sm font-bold text-stone-500 bg-white border border-stone-200 data-[state=active]:bg-[#B20B13] data-[state=active]:text-white data-[state=active]:border-[#B20B13] transition-all flex-1 sm:flex-none shadow-sm min-w-[160px]"
+                            className="rounded-full px-4 py-3 text-sm font-bold text-stone-500 bg-white border border-stone-200 data-[state=active]:bg-[#B20B13] data-[state=active]:text-white data-[state=active]:border-[#B20B13] transition-all shadow-sm min-w-0"
                         >
                             <Percent className="h-4 w-4 mr-2" /> Offres Privilèges
                         </TabsTrigger>
                         <TabsTrigger 
                             value="searches" 
-                            className="rounded-full px-6 py-3 text-sm font-bold text-stone-500 bg-white border border-stone-200 data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:border-blue-600 transition-all flex-1 sm:flex-none shadow-sm min-w-[160px]"
+                            className="rounded-full px-4 py-3 text-sm font-bold text-stone-500 bg-white border border-stone-200 data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:border-blue-600 transition-all shadow-sm min-w-0"
                         >
                             <Search className="h-4 w-4 mr-2" /> Appels d'Offres
                         </TabsTrigger>
+                    </TabsList>
+                    <TabsList className="bg-transparent border-0 p-0 h-auto grid grid-cols-1 w-full">
                         <TabsTrigger 
                             value="refused" 
-                            className="rounded-full px-6 py-3 text-sm font-bold text-stone-500 bg-white border border-stone-200 data-[state=active]:bg-stone-700 data-[state=active]:text-white data-[state=active]:border-stone-700 transition-all flex-1 sm:flex-none shadow-sm min-w-[160px]"
+                            className="rounded-full px-4 py-2.5 text-sm font-bold text-stone-500 bg-white border border-stone-200 data-[state=active]:bg-stone-700 data-[state=active]:text-white data-[state=active]:border-stone-700 transition-all shadow-sm min-w-0"
                         >
                             Refusées
                         </TabsTrigger>
                     </TabsList>
                 </div>
 
-                <TabsContent value="offers" className="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <TabsContent value="offers" className="space-y-12 mt-3 animate-in fade-in slide-in-from-bottom-4 duration-500">
                     <div className="px-4">
                         {currentUserOffer ? (
                             <div className="max-w-sm mx-auto mb-12">
@@ -375,7 +377,7 @@ export function OffersView({
                     </div>
                 </TabsContent>
 
-                <TabsContent value="searches" className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <TabsContent value="searches" className="space-y-8 mt-3 animate-in fade-in slide-in-from-bottom-4 duration-500">
                     <div className="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-100 rounded-3xl p-8 text-center relative overflow-hidden">
                         <div className="absolute inset-0 bg-grid-black/5 [mask-image:linear-gradient(0deg,white,rgba(255,255,255,0.6))]" />
                         <div className="relative z-10">
@@ -517,7 +519,7 @@ export function OffersView({
                     </div>
                 </TabsContent>
 
-                <TabsContent value="refused" className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <TabsContent value="refused" className="space-y-6 mt-3 animate-in fade-in slide-in-from-bottom-4 duration-500">
                     <div className="rounded-2xl border border-stone-200 bg-white px-4 py-3 max-w-3xl mx-auto">
                         <p className="text-sm font-black text-[#2E130C]">Refusées (récupérables)</p>
                         <p className="text-xs text-[#2E130C]/70">Tu peux remettre une carte dans le flux à tout moment.</p>

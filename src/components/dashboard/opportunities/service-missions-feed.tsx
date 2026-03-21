@@ -228,7 +228,7 @@ export function ServiceMissionsFeed({
         </div>
       )}
 
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-2 pb-2">
         {FILTERS.map((filter) => (
           <Button
             key={filter.id}
@@ -245,7 +245,7 @@ export function ServiceMissionsFeed({
         ))}
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-5 pt-1">
         <div className="rounded-2xl border border-[#2E130C]/15 bg-gradient-to-r from-[#FFF8F2] to-[#F3F0E7] p-4 max-w-4xl mx-auto">
           <div className="flex items-start gap-3">
             <div className="h-9 w-9 rounded-xl bg-[#B20B13]/10 text-[#B20B13] flex items-center justify-center shrink-0">
