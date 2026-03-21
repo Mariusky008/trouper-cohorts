@@ -104,6 +104,17 @@ function ProfileContentInner({ user, isReadOnly = false }: { user: any; isReadOn
   const [currentStep, setCurrentStep] = useState(1);
   const points = user.points || 0;
   const { tier, nextTier } = getPointsTier(points);
+  const requiredFieldLabels: Record<string, string> = {
+    display_name: "Nom d'affichage",
+    trade: "Métier / Activité",
+    exact_city: "Ville exacte",
+    whatsapp_response_delay_hours: "Délai WhatsApp",
+    phone: "Téléphone",
+    bio: "Bio",
+    avatar_url: "Photo de profil",
+    socials: "Réseau social ou site web",
+    current_goals: "Objectif actuel",
+  };
 
   // Helper to check if profile was already complete before this edit
   const hasSocialsOrOptOut = 
@@ -653,6 +664,18 @@ function ProfileContentInner({ user, isReadOnly = false }: { user: any; isReadOn
           </div>
 
           <div className="py-2">
+             {Object.keys(formErrors).length > 0 && (
+                <div className="mb-4 rounded-xl border-2 border-red-600 bg-red-50 px-4 py-3">
+                    <p className="text-sm font-black text-red-700 uppercase tracking-wide">Champs obligatoires manquants</p>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                        {Object.keys(formErrors).filter((key) => !!formErrors[key]).map((key) => (
+                            <span key={key} className="text-xs font-black text-red-700 bg-white border border-red-300 rounded-full px-2 py-1">
+                                {requiredFieldLabels[key] || key}
+                            </span>
+                        ))}
+                    </div>
+                </div>
+             )}
              {/* STEP 1: IDENTITY */}
              {currentStep === 1 && (
                  <div className="space-y-6 animate-in slide-in-from-right-4 duration-300">
@@ -689,7 +712,7 @@ function ProfileContentInner({ user, isReadOnly = false }: { user: any; isReadOn
                                     setFormData({...formData, display_name: e.target.value});
                                     if (e.target.value) setFormErrors({...formErrors, display_name: ""});
                                 }} 
-                                className={formErrors.display_name ? "border-red-500" : ""} 
+                                className={formErrors.display_name ? "border-2 border-red-600 bg-red-50 ring-2 ring-red-200" : ""} 
                             />
                         </div>
                         <div className="grid grid-cols-2 gap-4">
@@ -701,7 +724,7 @@ function ProfileContentInner({ user, isReadOnly = false }: { user: any; isReadOn
                                         setFormData({...formData, trade: e.target.value});
                                         if (e.target.value) setFormErrors({...formErrors, trade: ""});
                                     }} 
-                                    className={formErrors.trade ? "border-red-500" : ""} 
+                                    className={formErrors.trade ? "border-2 border-red-600 bg-red-50 ring-2 ring-red-200" : ""} 
                                     placeholder="Ex: Architecte" 
                                 />
                             </div>
@@ -713,14 +736,14 @@ function ProfileContentInner({ user, isReadOnly = false }: { user: any; isReadOn
                                         setFormData({...formData, exact_city: e.target.value});
                                         if (e.target.value) setFormErrors({...formErrors, exact_city: ""});
                                     }} 
-                                    className={formErrors.exact_city ? "border-red-500" : ""} 
+                                    className={formErrors.exact_city ? "border-2 border-red-600 bg-red-50 ring-2 ring-red-200" : ""} 
                                     placeholder="Ex: Mont-de-Marsan" 
                                 />
                             </div>
                             <div className="space-y-2">
                                 <Label>Délai WhatsApp {formErrors.whatsapp_response_delay_hours && <span className="text-red-500">*</span>}</Label>
                                 <select
-                                    className={`flex h-10 w-full rounded-md border bg-background px-3 py-2 text-sm ring-offset-background ${formErrors.whatsapp_response_delay_hours ? "border-red-500" : "border-input"}`}
+                                    className={`flex h-10 w-full rounded-md border bg-background px-3 py-2 text-sm ring-offset-background ${formErrors.whatsapp_response_delay_hours ? "border-2 border-red-600 bg-red-50 ring-2 ring-red-200" : "border-input"}`}
                                     value={formData.whatsapp_response_delay_hours}
                                     onChange={e => {
                                         setFormData({...formData, whatsapp_response_delay_hours: e.target.value});
@@ -745,7 +768,7 @@ function ProfileContentInner({ user, isReadOnly = false }: { user: any; isReadOn
                                     setFormData({...formData, phone: e.target.value});
                                     if (e.target.value) setFormErrors({...formErrors, phone: ""});
                                 }} 
-                                className={formErrors.phone ? "border-red-500" : ""} 
+                                className={formErrors.phone ? "border-2 border-red-600 bg-red-50 ring-2 ring-red-200" : ""} 
                                 placeholder="06..." 
                             />
                         </div>
@@ -757,18 +780,18 @@ function ProfileContentInner({ user, isReadOnly = false }: { user: any; isReadOn
                                     setFormData({...formData, bio: e.target.value});
                                     if (e.target.value) setFormErrors({...formErrors, bio: ""});
                                 }} 
-                                className={`min-h-[100px] ${formErrors.bio ? "border-red-500" : ""}`}
+                                className={`min-h-[100px] ${formErrors.bio ? "border-2 border-red-600 bg-red-50 ring-2 ring-red-200" : ""}`}
                                 placeholder="Décrivez votre activité et ce que vous recherchez..." 
                             />
                         </div>
 
                         {/* SOCIALS - MOVED TO STEP 1 */}
-                        <div className="space-y-4 pt-4 border-t border-slate-100">
+                        <div className={`space-y-4 pt-4 border-t ${formErrors.socials ? "border-red-300" : "border-slate-100"}`}>
                             <Label className="font-bold flex items-center gap-2">
                                 Vos Réseaux Sociaux <span className="text-xs font-normal text-slate-500">(Au moins un requis)</span>
                             </Label>
                             
-                            <div className="bg-slate-50 p-3 rounded-xl border flex items-center gap-3">
+                            <div className={`p-3 rounded-xl border flex items-center gap-3 ${formErrors.socials ? "bg-red-50 border-red-300" : "bg-slate-50"}`}>
                                 <Checkbox 
                                     id="no-socials" 
                                     checked={noSocials} 
@@ -999,13 +1022,13 @@ function ProfileContentInner({ user, isReadOnly = false }: { user: any; isReadOn
                         </div>
                     </div>
 
-                    <div className="space-y-3 pt-4 border-t border-slate-100">
+                    <div className={`space-y-3 pt-4 border-t ${formErrors.current_goals ? "border-red-300" : "border-slate-100"}`}>
                         <Label className={`text-base font-bold ${formErrors.current_goals ? "text-red-500" : ""}`}>
                             Ce que je recherche en ce moment {formErrors.current_goals && "*"}
                         </Label>
                         <div className="grid grid-cols-1 gap-2">
                             {GOAL_OPTIONS.map((goal) => (
-                                <div key={goal.id} className="flex items-center space-x-3 p-3 rounded-xl border border-slate-100 hover:bg-slate-50 transition-colors bg-white">
+                                <div key={goal.id} className={`flex items-center space-x-3 p-3 rounded-xl border hover:bg-slate-50 transition-colors bg-white ${formErrors.current_goals ? "border-red-200" : "border-slate-100"}`}>
                                     <Checkbox 
                                         id={goal.id} 
                                         checked={(formData.current_goals || []).includes(goal.id)}
