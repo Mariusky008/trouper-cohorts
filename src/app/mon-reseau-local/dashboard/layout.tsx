@@ -105,11 +105,15 @@ function DashboardLayoutFull({ children, pathname }: { children: React.ReactNode
   const initials = displayName.substring(0, 2).toUpperCase();
   const trustScore = userProfile?.trust_score || 5.0;
   const { tier } = getPointsTier(points);
+  const isHomeDashboard = pathname === "/mon-reseau-local/dashboard";
 
   return (
     <div className="min-h-screen bg-[#E2D9BC] flex flex-col font-sans text-[#2E130C] selection:bg-[#B20B13] selection:text-[#E2D9BC]">
       {/* --- TOP NAVIGATION BAR (DESKTOP & MOBILE) --- */}
-      <header className="fixed top-0 w-full bg-[#E2D9BC]/90 backdrop-blur-md border-b-2 border-[#2E130C]/10 z-30 h-16 px-4 lg:px-8 flex items-center justify-between shadow-sm">
+      <header className={cn(
+        "fixed top-0 w-full bg-[#E2D9BC]/85 backdrop-blur-lg border-b-2 border-[#2E130C]/10 z-30 px-3 lg:px-8 flex items-center justify-between shadow-sm",
+        isHomeDashboard ? "h-14 lg:h-16" : "h-16"
+      )}>
          {/* LEFT: LOGO */}
          <div className="flex items-center gap-3">
             <Link href="/mon-reseau-local/dashboard" className="flex items-center gap-2">
@@ -241,16 +245,16 @@ function DashboardLayoutFull({ children, pathname }: { children: React.ReactNode
       {/* --- MAIN CONTENT --- */}
       <main className={cn(
         "flex-1 min-h-screen transition-all duration-300 ease-in-out",
-        "pt-20 pb-28 lg:pb-0"
+        isHomeDashboard ? "pt-16 lg:pt-20 pb-28 lg:pb-0" : "pt-20 pb-28 lg:pb-0"
       )}>
-        <div className="container mx-auto p-4 md:p-8 max-w-7xl">
+        <div className={cn("mx-auto max-w-7xl", isHomeDashboard ? "px-0 md:p-8" : "p-4 md:p-8")}>
           {children}
         </div>
       </main>
       <ProfileCompletionModal />
 
       <div className="lg:hidden fixed bottom-[max(0.75rem,env(safe-area-inset-bottom))] left-1/2 -translate-x-1/2 z-40 w-[calc(100%-1.25rem)] max-w-md">
-        <div className="rounded-3xl border border-[#2E130C]/12 bg-gradient-to-b from-[#EFE7D8]/88 to-[#DED2BC]/88 text-[#2E130C] shadow-[0_20px_60px_rgba(46,19,12,0.18)] backdrop-blur-xl px-3 py-2">
+        <div className="rounded-3xl border border-[#2E130C]/10 bg-[#EBDDC2]/55 text-[#2E130C] shadow-[0_24px_70px_rgba(46,19,12,0.26)] backdrop-blur-2xl px-3 py-2">
           <div className="grid grid-cols-5 items-center">
             {MOBILE_BOTTOM_ITEMS.map((item) => {
               const isActive = pathname === item.href;

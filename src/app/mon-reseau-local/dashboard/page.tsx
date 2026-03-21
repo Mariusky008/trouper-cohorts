@@ -68,7 +68,7 @@ export default async function DashboardHome() {
   }
 
   return (
-    <div className="space-y-8 pb-24 relative max-w-4xl mx-auto">
+    <div className="space-y-8 pb-24 relative max-w-4xl mx-auto px-2 lg:px-0">
       
       {/* 1. HERO HEADER (STYLE "APP/TODAY") */}
       <div className="relative pt-8 pb-8 overflow-hidden hidden lg:block">
@@ -87,7 +87,7 @@ export default async function DashboardHome() {
       </div>
 
       {/* 2. FOCUS PRINCIPAL - MISSION DU JOUR */}
-      <div className="relative z-20 min-h-[calc(100dvh-9.5rem)] lg:min-h-0 flex items-center justify-center lg:block">
+      <div className="relative z-20 min-h-[calc(100dvh-8.5rem)] lg:min-h-0 flex items-center justify-center lg:block">
          <DailyMatchCard
            matches={matches}
            userStreak={userStreak}
