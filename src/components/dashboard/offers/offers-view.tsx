@@ -16,6 +16,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { createNetworkSearch, deleteNetworkSearch } from "@/lib/actions/network-searches";
 import { toggleOfferActive } from "@/lib/actions/offers";
+import { createNetworkOffer, deleteNetworkOffer } from "@/lib/actions/network-offers";
 import { LockedOfferCard } from "./locked-offer-card";
 import { useRouter } from "next/navigation";
 
@@ -23,20 +24,24 @@ export function OffersView({
     unlockedOffers, 
     lockedCount, 
     currentUserOffer,
+    currentUserOffers,
     searches,
     currentUserId 
 }: { 
     unlockedOffers: any[], 
     lockedCount: number, 
     currentUserOffer: any,
+    currentUserOffers: any[],
     searches: any[],
     currentUserId: string
 }) {
     const router = useRouter();
     const [activeTab, setActiveTab] = useState("offers");
     const [isSearchDialogOpen, setIsSearchDialogOpen] = useState(false);
+    const [isOfferDialogOpen, setIsOfferDialogOpen] = useState(false);
     const [searchCategory, setSearchCategory] = useState("other");
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isSubmittingOffer, setIsSubmittingOffer] = useState(false);
     const [swipeLeftId, setSwipeLeftId] = useState<string | null>(null);
     const [swipeRightId, setSwipeRightId] = useState<string | null>(null);
     const [refusedOfferIds, setRefusedOfferIds] = useState<string[]>([]);
@@ -100,6 +105,34 @@ export function OffersView({
         }
     };
 
+    const handleCreateOffer = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        setIsSubmittingOffer(true);
+        const formData = new FormData(e.currentTarget);
+        const result = await createNetworkOffer(formData);
+        if (result.success) {
+            toast.success("Votre offre a été publiée !");
+            setIsOfferDialogOpen(false);
+            (e.currentTarget as HTMLFormElement).reset();
+            router.refresh();
+        } else {
+            toast.error("Erreur : " + result.error);
+        }
+        setIsSubmittingOffer(false);
+    };
+
+    const handleDeleteOffer = async (offerId: string) => {
+        if (!offerId) return;
+        if (!confirm("Supprimer cette offre ?")) return;
+        const result = await deleteNetworkOffer(offerId);
+        if (result.success) {
+            toast.success("Offre supprimée");
+            router.refresh();
+        } else {
+            toast.error("Erreur : " + result.error);
+        }
+    };
+
     const handleDeactivateOffer = async () => {
         if (confirm("Voulez-vous vraiment masquer votre offre ?")) {
             const res = await toggleOfferActive(currentUserId, false);
@@ -144,6 +177,13 @@ export function OffersView({
     const mySearches = useMemo(
         () => (searches || []).filter((s) => s.user_id === currentUserId),
         [searches, currentUserId]
+    );
+    const callsDeckDisplay = useMemo(
+        () => {
+            if (callsDeck.length > 0) return callsDeck.map((s) => ({ ...s, __isOwn: false }));
+            return mySearches.map((s) => ({ ...s, __isOwn: true }));
+        },
+        [callsDeck, mySearches]
     );
 
     const discountPct = (offer: any) =>
@@ -288,6 +328,71 @@ export function OffersView({
                         )}
                     </div>
 
+                    <div className="max-w-3xl mx-auto space-y-3">
+                        <div className="flex items-center justify-between gap-3">
+                            <p className="text-sm font-black text-[#2E130C]">Mes offres publiées ({currentUserOffers?.length || 0})</p>
+                            <Dialog open={isOfferDialogOpen} onOpenChange={setIsOfferDialogOpen}>
+                                <DialogTrigger asChild>
+                                    <Button className="bg-[#2E130C] hover:bg-[#2E130C]/90 text-white h-9 rounded-xl font-black text-xs">
+                                        Ajouter une offre
+                                    </Button>
+                                </DialogTrigger>
+                                <DialogContent className="sm:max-w-[520px] bg-white text-[#2E130C] border-stone-200">
+                                    <DialogHeader>
+                                        <DialogTitle className="text-xl font-bold">Nouvelle offre</DialogTitle>
+                                        <DialogDescription className="text-stone-500">Ajoutez une offre supplémentaire visible dans le réseau.</DialogDescription>
+                                    </DialogHeader>
+                                    <form onSubmit={handleCreateOffer} className="space-y-4 py-2">
+                                        <div className="space-y-2">
+                                            <Label>Titre</Label>
+                                            <Input name="title" required placeholder="Ex: Audit SEO complet" />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label>Description</Label>
+                                            <Textarea name="description" required className="min-h-[110px]" placeholder="Décrivez votre offre en clair..." />
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <div className="space-y-2">
+                                                <Label>Prix club (€)</Label>
+                                                <Input name="price" type="number" min="1" required />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label>Prix public (€)</Label>
+                                                <Input name="original_price" type="number" min="1" required />
+                                            </div>
+                                        </div>
+                                        <DialogFooter>
+                                            <Button type="submit" disabled={isSubmittingOffer} className="w-full bg-[#2E130C] hover:bg-[#2E130C]/90 text-white">
+                                                {isSubmittingOffer ? "Publication..." : "Publier l’offre"}
+                                            </Button>
+                                        </DialogFooter>
+                                    </form>
+                                </DialogContent>
+                            </Dialog>
+                        </div>
+                        <div className="grid gap-2">
+                            {(currentUserOffers || []).map((offer) => (
+                                <div key={offer.offer_id || `${offer.user_id}-${offer.offer_title}`} className="rounded-2xl border border-[#2E130C]/10 bg-white p-3">
+                                    <div className="flex items-start justify-between gap-2">
+                                        <div className="min-w-0">
+                                            <p className="text-sm font-black text-[#2E130C] truncate">{offer.offer_title}</p>
+                                            <p className="text-xs text-stone-500 mt-1">{offer.offer_price}€ · <span className="line-through">{offer.offer_original_price}€</span></p>
+                                        </div>
+                                        {offer.offer_id && String(offer.offer_id).startsWith("legacy-") ? (
+                                            <Button asChild size="sm" variant="outline" className="shrink-0">
+                                                <Link href="/mon-reseau-local/dashboard/profile?edit=true&tab=offer">Modifier</Link>
+                                            </Button>
+                                        ) : (
+                                            <Button size="sm" variant="outline" onClick={() => offer.offer_id && handleDeleteOffer(offer.offer_id)} className="shrink-0 border-rose-300 text-rose-700">
+                                                Supprimer
+                                            </Button>
+                                        )}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
                     <div className="relative h-[680px] max-w-sm mx-auto">
                         {productDeck.slice(0, 5).map((offer, index) => (
                             <motion.div
@@ -340,15 +445,14 @@ export function OffersView({
                                         <div className="rounded-2xl border border-amber-300/35 bg-gradient-to-r from-amber-300/20 to-fuchsia-400/15 p-4">
                                             <p className="text-[10px] uppercase tracking-widest font-bold text-amber-200 mb-1">Offre du moment</p>
                                             <h3 className="font-black text-lg leading-tight">{offer.offer_title}</h3>
-                                            <p className="text-xs text-fuchsia-100/90 mt-2 line-clamp-3">{offer.offer_description}</p>
+                                            <p className="text-xs text-fuchsia-100/90 mt-2 line-clamp-2">{offer.offer_description}</p>
                                             <p className="text-xs text-amber-100 mt-2 font-bold">Prix club: {offer.offer_price}€ <span className="line-through opacity-70 ml-1">{offer.offer_original_price}€</span></p>
                                         </div>
-                                        <div className="rounded-xl border border-white/20 bg-white/10 backdrop-blur-md p-3 space-y-2">
-                                            <div className="flex items-center justify-between">
-                                                <p className="text-[10px] uppercase tracking-[0.2em] font-black text-fuchsia-100">Valeur concrète</p>
-                                                <Button size="sm" variant="outline" onClick={() => setInfoOffer(offer)} className="h-7 px-3 bg-[#2A1237] border-fuchsia-300/40 text-fuchsia-100 hover:bg-[#341748] text-[10px] font-black uppercase">En savoir +</Button>
-                                            </div>
-                                            <p className="text-xs text-white/90">Une offre prête à consommer avec bénéfice immédiat. Idéal pour créer une première victoire réseau.</p>
+                                        <div className="grid grid-cols-2 gap-2">
+                                            <Button size="sm" variant="outline" onClick={() => setInfoOffer(offer)} className="h-9 bg-[#2A1237] border-fuchsia-300/40 text-fuchsia-100 hover:bg-[#341748] text-[10px] font-black uppercase">Voir détails</Button>
+                                            <Button asChild size="sm" variant="outline" className="h-9 bg-[#2A1237] border-fuchsia-300/40 text-fuchsia-100 hover:bg-[#341748] text-[10px] font-black uppercase">
+                                                <Link href={`/mon-reseau-local/dashboard/profile/${offer.user_id}`}>Voir profil</Link>
+                                            </Button>
                                         </div>
                                         <div className="grid grid-cols-2 gap-3">
                                             <Button variant="outline" onClick={() => handleOfferRefuse(offer)} className="h-11 border-rose-300/50 bg-rose-400/10 text-rose-100 hover:bg-rose-400/20 font-black uppercase text-[11px]">Pas intéressé</Button>
@@ -374,24 +478,14 @@ export function OffersView({
                 </TabsContent>
 
                 <TabsContent value="searches" className="space-y-8 mt-3 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                    <div className="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-100 rounded-3xl p-8 text-center relative overflow-hidden">
-                        <div className="absolute inset-0 bg-grid-black/5 [mask-image:linear-gradient(0deg,white,rgba(255,255,255,0.6))]" />
-                        <div className="relative z-10">
-                            <h2 className="text-2xl md:text-3xl font-black text-[#2E130C] mb-3">
-                                Un besoin spécifique ? <span className="text-blue-600">Lancez un appel !</span>
-                            </h2>
-                            <p className="text-stone-600 max-w-xl mx-auto mb-6 text-lg">
-                                "Je cherche un expert-comptable...", "Je cherche un lieu pour un séminaire..."
-                                <br/>
-                                <span className="text-sm opacity-80">Votre réseau est là pour vous aider.</span>
-                            </p>
-                            
-                            <Dialog open={isSearchDialogOpen} onOpenChange={setIsSearchDialogOpen}>
-                                <DialogTrigger asChild>
-                                    <Button size="lg" className="bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl shadow-lg shadow-blue-900/20 h-12 px-8">
-                                        <Megaphone className="mr-2 h-5 w-5" /> Publier une Recherche
-                                    </Button>
-                                </DialogTrigger>
+                    <div className="max-w-3xl mx-auto flex items-center justify-between gap-3">
+                        <p className="text-sm font-black text-[#2E130C]">Appels d’offres ({mySearches.length})</p>
+                        <Dialog open={isSearchDialogOpen} onOpenChange={setIsSearchDialogOpen}>
+                            <DialogTrigger asChild>
+                                <Button size="sm" className="bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl shadow-lg shadow-blue-900/20 h-9 px-4">
+                                    <Megaphone className="mr-2 h-4 w-4" /> Publier une Recherche
+                                </Button>
+                            </DialogTrigger>
                                 <DialogContent className="sm:max-w-[500px] bg-white text-[#2E130C] border-stone-200">
                                     <DialogHeader>
                                         <DialogTitle className="flex items-center gap-2 text-xl font-bold">
@@ -440,8 +534,7 @@ export function OffersView({
                                         </DialogFooter>
                                     </form>
                                 </DialogContent>
-                            </Dialog>
-                        </div>
+                        </Dialog>
                     </div>
 
                     {mySearches.length > 0 && (
@@ -479,7 +572,7 @@ export function OffersView({
                     )}
 
                     <div className="relative h-[660px] max-w-sm mx-auto">
-                        {callsDeck.slice(0, 5).map((search, index) => (
+                        {callsDeckDisplay.slice(0, 5).map((search, index) => (
                             <motion.div
                                 key={search.id}
                                 animate={
@@ -497,6 +590,7 @@ export function OffersView({
                                 dragElastic={0.6}
                                 onDragEnd={(_, info) => {
                                     if (index !== 0) return;
+                                    if (search.__isOwn) return;
                                     if (info.offset.x <= -120) handleSearchRefuse(search);
                                     if (info.offset.x >= 120) handleSearchInterested(search);
                                 }}
@@ -508,6 +602,7 @@ export function OffersView({
                                         <div className="flex items-center justify-between">
                                             <Badge className="bg-blue-500/20 text-blue-100 border border-blue-300/40 uppercase tracking-wider text-[10px] font-black">Appel d’offre</Badge>
                                             <div className="flex items-center gap-2">
+                                                {search.__isOwn && <Badge className="bg-amber-300 text-[#2E130C] border-0 text-[10px] font-black">Mon appel</Badge>}
                                                 <Badge className="bg-white/15 text-white border-white/20 text-[10px] uppercase">{searchBadge(search)}</Badge>
                                                 <Badge className="bg-white/15 text-white border-white/20 text-[10px] uppercase">{search.category}</Badge>
                                             </div>
@@ -535,8 +630,17 @@ export function OffersView({
                                             <Button size="sm" variant="outline" onClick={() => setInfoSearch(search)} className="h-7 px-3 bg-[#0C1D3D] border-blue-300/40 text-blue-100 hover:bg-[#132a56] text-[10px] font-black uppercase">En savoir +</Button>
                                         </div>
                                         <div className="grid grid-cols-2 gap-3">
-                                            <Button variant="outline" onClick={() => handleSearchRefuse(search)} className="h-11 border-rose-300/50 bg-rose-400/10 text-rose-100 hover:bg-rose-400/20 font-black uppercase text-[11px]">Pas intéressé</Button>
-                                            <Button onClick={() => handleSearchInterested(search)} className="h-11 bg-gradient-to-r from-[#25D366] to-[#1BCB5A] hover:from-[#25D366]/90 hover:to-[#1BCB5A]/90 text-white font-black uppercase text-[11px] shadow-lg shadow-emerald-900/40"><MessageCircle className="h-4 w-4 mr-1" />Je peux aider</Button>
+                                            {search.__isOwn ? (
+                                                <>
+                                                    <Button variant="outline" onClick={() => handleDeleteSearch(search.id)} className="h-11 border-rose-300/50 bg-rose-400/10 text-rose-100 hover:bg-rose-400/20 font-black uppercase text-[11px]">Supprimer</Button>
+                                                    <Button onClick={() => setInfoSearch(search)} className="h-11 bg-white/15 border border-white/20 text-white hover:bg-white/25 font-black uppercase text-[11px]">Voir détails</Button>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <Button variant="outline" onClick={() => handleSearchRefuse(search)} className="h-11 border-rose-300/50 bg-rose-400/10 text-rose-100 hover:bg-rose-400/20 font-black uppercase text-[11px]">Pas intéressé</Button>
+                                                    <Button onClick={() => handleSearchInterested(search)} className="h-11 bg-gradient-to-r from-[#25D366] to-[#1BCB5A] hover:from-[#25D366]/90 hover:to-[#1BCB5A]/90 text-white font-black uppercase text-[11px] shadow-lg shadow-emerald-900/40"><MessageCircle className="h-4 w-4 mr-1" />Je peux aider</Button>
+                                                </>
+                                            )}
                                         </div>
                                     </div>
                                 </div>

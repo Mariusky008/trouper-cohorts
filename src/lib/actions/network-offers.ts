@@ -1,8 +1,11 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { revalidatePath } from "next/cache";
 
 export interface NetworkOffer {
+    offer_id?: string;
     user_id: string;
     display_name: string;
     avatar_url: string;
@@ -17,6 +20,7 @@ export interface NetworkOffer {
 
 export async function getUnlockedOffers(): Promise<NetworkOffer[]> {
     const supabase = await createClient();
+    const supabaseAdmin = createAdminClient();
     const { data: { user } } = await supabase.auth.getUser();
     
     if (!user) return [];
@@ -34,20 +38,33 @@ export async function getUnlockedOffers(): Promise<NetworkOffer[]> {
         m.user1_id === user.id ? m.user2_id : m.user1_id
     );
 
-    // 3. Get profiles with active offers
-    const { data: offers } = await supabase
+    // 3. Get legacy profile offers
+    const { data: profileOffers } = await supabase
         .from("profiles")
         .select("id, display_name, avatar_url, trade, city, offer_title, offer_description, offer_price, offer_original_price")
         .in("id", partnerIds)
         .eq("offer_active", true)
         .not("offer_title", "is", null);
 
-    if (!offers) return [];
+    // 4. Get multi-offers table offers
+    const { data: tableOffers } = await supabaseAdmin
+        .from("network_offers")
+        .select(`
+            id,
+            user_id,
+            title,
+            description,
+            price,
+            original_price,
+            profiles:user_id(display_name, avatar_url, trade, city)
+        `)
+        .in("user_id", partnerIds)
+        .eq("is_active", true);
 
-    // 4. Map back to include match date (to sort by most recent unlock)
-    return offers.map(offer => {
+    const legacy = (profileOffers || []).map((offer: any) => {
         const match = matches.find(m => m.user1_id === offer.id || m.user2_id === offer.id);
         return {
+            offer_id: `legacy-${offer.id}`,
             user_id: offer.id,
             display_name: offer.display_name,
             avatar_url: offer.avatar_url,
@@ -59,7 +76,27 @@ export async function getUnlockedOffers(): Promise<NetworkOffer[]> {
             offer_original_price: offer.offer_original_price,
             match_date: match?.created_at || new Date().toISOString()
         };
-    }).sort((a, b) => new Date(b.match_date).getTime() - new Date(a.match_date).getTime());
+    });
+
+    const advanced = (tableOffers || []).map((offer: any) => {
+        const match = matches.find(m => m.user1_id === offer.user_id || m.user2_id === offer.user_id);
+        return {
+            offer_id: offer.id,
+            user_id: offer.user_id,
+            display_name: offer.profiles?.display_name || "Membre",
+            avatar_url: offer.profiles?.avatar_url || "",
+            trade: offer.profiles?.trade || "",
+            city: offer.profiles?.city || "",
+            offer_title: offer.title,
+            offer_description: offer.description,
+            offer_price: offer.price,
+            offer_original_price: offer.original_price,
+            match_date: match?.created_at || new Date().toISOString()
+        };
+    });
+
+    return [...legacy, ...advanced]
+        .sort((a, b) => new Date(b.match_date).getTime() - new Date(a.match_date).getTime());
 }
 
 export async function getCurrentUserOffer(): Promise<NetworkOffer | null> {
@@ -88,6 +125,93 @@ export async function getCurrentUserOffer(): Promise<NetworkOffer | null> {
         offer_original_price: profile.offer_original_price,
         match_date: new Date().toISOString()
     };
+}
+
+export async function getCurrentUserOffers(): Promise<NetworkOffer[]> {
+    const supabase = await createClient();
+    const supabaseAdmin = createAdminClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return [];
+
+    const legacy = await getCurrentUserOffer();
+    const { data: extraOffers } = await supabaseAdmin
+        .from("network_offers")
+        .select(`
+            id,
+            user_id,
+            title,
+            description,
+            price,
+            original_price,
+            profiles:user_id(display_name, avatar_url, trade, city)
+        `)
+        .eq("user_id", user.id)
+        .eq("is_active", true)
+        .order("created_at", { ascending: false });
+
+    const mapped = (extraOffers || []).map((offer: any) => ({
+        offer_id: offer.id,
+        user_id: offer.user_id,
+        display_name: offer.profiles?.display_name || "Moi",
+        avatar_url: offer.profiles?.avatar_url || "",
+        trade: offer.profiles?.trade || "",
+        city: offer.profiles?.city || "",
+        offer_title: offer.title,
+        offer_description: offer.description,
+        offer_price: offer.price,
+        offer_original_price: offer.original_price,
+        match_date: new Date().toISOString(),
+    }));
+
+    return [legacy, ...mapped].filter(Boolean) as NetworkOffer[];
+}
+
+export async function createNetworkOffer(formData: FormData) {
+    const supabase = await createClient();
+    const supabaseAdmin = createAdminClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { success: false, error: "Non authentifié" };
+
+    const title = String(formData.get("title") || "").trim();
+    const description = String(formData.get("description") || "").trim();
+    const price = Number(formData.get("price") || 0);
+    const originalPrice = Number(formData.get("original_price") || 0);
+
+    if (!title || !description || price <= 0 || originalPrice <= 0) {
+        return { success: false, error: "Tous les champs sont requis." };
+    }
+
+    const { error } = await supabaseAdmin.from("network_offers").insert({
+        user_id: user.id,
+        title,
+        description,
+        price,
+        original_price: originalPrice,
+        is_active: true,
+    });
+
+    if (error) return { success: false, error: error.message };
+
+    revalidatePath("/mon-reseau-local/dashboard/offers");
+    return { success: true };
+}
+
+export async function deleteNetworkOffer(offerId: string) {
+    const supabase = await createClient();
+    const supabaseAdmin = createAdminClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { success: false, error: "Non authentifié" };
+
+    const { error } = await supabaseAdmin
+        .from("network_offers")
+        .delete()
+        .eq("id", offerId)
+        .eq("user_id", user.id);
+
+    if (error) return { success: false, error: error.message };
+
+    revalidatePath("/mon-reseau-local/dashboard/offers");
+    return { success: true };
 }
 
 export async function getLockedOffersCount(): Promise<number> {

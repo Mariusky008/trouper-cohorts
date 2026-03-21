@@ -1,6 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import { Percent } from "lucide-react";
-import { getUnlockedOffers, getLockedOffersCount, getCurrentUserOffer } from "@/lib/actions/network-offers";
+import { getUnlockedOffers, getLockedOffersCount, getCurrentUserOffer, getCurrentUserOffers } from "@/lib/actions/network-offers";
 import { getNetworkSearches } from "@/lib/actions/network-searches";
 import { createClient } from "@/lib/supabase/server";
 import { OffersView } from "@/components/dashboard/offers/offers-view";
@@ -14,6 +14,7 @@ export default async function OffersPage() {
     const unlockedOffers = await getUnlockedOffers();
     const lockedCount = await getLockedOffersCount();
     const currentUserOffer = await getCurrentUserOffer();
+    const currentUserOffers = await getCurrentUserOffers();
     const searches = await getNetworkSearches();
 
     return (
@@ -44,6 +45,7 @@ export default async function OffersPage() {
                 unlockedOffers={unlockedOffers} 
                 lockedCount={lockedCount} 
                 currentUserOffer={currentUserOffer} 
+                currentUserOffers={currentUserOffers}
                 searches={searches}
                 currentUserId={user?.id || ""}
             />
