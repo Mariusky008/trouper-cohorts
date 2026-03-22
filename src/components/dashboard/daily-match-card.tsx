@@ -480,12 +480,16 @@ const getPopeyShortLink = (profile: any): string => {
 function MysteryCard({ onReveal, match, locked = false, children }: { onReveal: () => void, match: any, locked?: boolean, children?: React.ReactNode }) {
   // Generate stable "fake" stats based on partner ID to keep it consistent for the same user
   const seed = match.partnerId ? match.partnerId.split("").reduce((a: number, c: string) => a + c.charCodeAt(0), 0) : 0;
+  const needBullets = getNeedBullets(match.receive_profile, match.current_need, ["Nouveaux clients", "Partenaires locaux"]);
+  const offerBullets = getOfferBullets(match.give_profile, match.superpower, ["Son expertise métier", "Son réseau local"]);
+  const visibleNeeds = locked ? needBullets.slice(0, 2) : needBullets;
+  const visibleOffers = locked ? offerBullets.slice(0, 2) : offerBullets;
   
     return (
       <div 
           onClick={locked ? undefined : onReveal}
           className={cn(
-              "relative w-full max-w-sm mx-auto min-h-[600px] h-auto rounded-[2.5rem] overflow-hidden shadow-2xl flex flex-col items-center justify-center text-center p-6 border transition-all pb-8",
+              "relative w-full max-w-sm mx-auto min-h-[520px] sm:min-h-[600px] h-auto rounded-[2.5rem] overflow-hidden shadow-2xl flex flex-col items-center justify-center text-center p-4 sm:p-6 border transition-all pb-5 sm:pb-8",
               "bg-white border-[#2E130C]/10",
               !locked && "cursor-pointer group hover:scale-[1.01] hover:shadow-[0_20px_60px_-15px_rgba(0,0,0,0.15)]"
           )}
@@ -501,16 +505,16 @@ function MysteryCard({ onReveal, match, locked = false, children }: { onReveal: 
       
 
       {/* Content */}
-      <div className="relative z-10 flex flex-col items-center h-full justify-between py-8 w-full">
+      <div className="relative z-10 flex flex-col items-center h-full justify-between py-4 sm:py-8 w-full">
         
         <div className="flex flex-col items-center w-full">
             {/* Header Badge */}
             {locked ? (
-                <Badge className="bg-slate-100 text-slate-500 border-slate-200 px-3 py-1 mb-8 flex items-center gap-2 shadow-sm">
+                <Badge className="bg-slate-100 text-slate-500 border-slate-200 px-3 py-1 mb-4 sm:mb-8 flex items-center gap-2 shadow-sm">
                     <Clock className="w-3 h-3" /> DISPONIBLE DEMAIN 06H
                 </Badge>
             ) : (
-                <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 px-3 py-1 animate-pulse mb-8 shadow-sm">
+                <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 px-3 py-1 animate-pulse mb-4 sm:mb-8 shadow-sm">
                     MATCH DÉTECTÉ ⚡️
                 </Badge>
             )}
@@ -524,11 +528,11 @@ function MysteryCard({ onReveal, match, locked = false, children }: { onReveal: 
                     } : { scale: [1, 1.05, 1] }}
                     transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
                     className={cn(
-                        "w-24 h-24 rounded-full border flex items-center justify-center backdrop-blur-sm relative z-10 shadow-lg",
+                "w-20 h-20 sm:w-24 sm:h-24 rounded-full border flex items-center justify-center backdrop-blur-sm relative z-10 shadow-lg",
                         "border-[#2E130C]/5 bg-white shadow-xl"
                     )}
                 >
-                    {locked ? <Lock className="w-10 h-10 text-slate-300" /> : <Fingerprint className="w-12 h-12 text-[#2E130C]/20" />}
+                    {locked ? <Lock className="w-8 h-8 sm:w-10 sm:h-10 text-slate-300" /> : <Fingerprint className="w-9 h-9 sm:w-12 sm:h-12 text-[#2E130C]/20" />}
                     {!locked && <div className="absolute inset-0 rounded-full border-t-2 border-emerald-500 animate-spin"></div>}
                 </motion.div>
                 {/* Glow */}
@@ -539,13 +543,13 @@ function MysteryCard({ onReveal, match, locked = false, children }: { onReveal: 
             </div>
 
             {/* 1. KEY INFO SIMPLIFIED */}
-            <div className="w-full space-y-4 mb-6">
+            <div className="w-full space-y-3 sm:space-y-4 mb-4 sm:mb-6">
                  <div className="text-center">
                      <p className="text-sm font-bold text-[#2E130C]/40 uppercase tracking-widest mb-1">PROFIL</p>
-                     <p className="text-xl font-black text-[#2E130C]">{match.name ? match.name.split(' ')[0] : "Membre"} <span className="text-slate-300 mx-2">•</span> {match.job || "Dirigeant"} <span className="text-slate-300 mx-2">•</span> {match.city || "France"}</p>
+                     <p className="text-lg sm:text-xl font-black text-[#2E130C] leading-tight">{match.name ? match.name.split(' ')[0] : "Membre"} <span className="text-slate-300 mx-2">•</span> {match.job || "Dirigeant"} <span className="text-slate-300 mx-2">•</span> {match.city || "France"}</p>
                  </div>
                  
-                 <div className="flex flex-col items-center justify-center gap-2 bg-[#F3F0E7] rounded-xl p-4 border border-[#2E130C]/5 shadow-sm max-w-[80%] mx-auto">
+                 <div className="flex flex-col items-center justify-center gap-2 bg-[#F3F0E7] rounded-xl p-3 sm:p-4 border border-[#2E130C]/5 shadow-sm max-w-[84%] mx-auto">
                      <span className="text-[10px] font-black text-[#2E130C]/50 uppercase tracking-widest">POTENTIEL BUSINESS</span>
                      <div className="flex gap-1">
                          {[1,2,3,4,5].map(i => (
@@ -557,10 +561,10 @@ function MysteryCard({ onReveal, match, locked = false, children }: { onReveal: 
         </div>
 
         {/* 2. CONCRETE BENEFITS (NEW DESIGN: Il recherche / Il aide) */}
-        <div className="w-full space-y-3 mb-6">
+        <div className="w-full space-y-3 mb-4 sm:mb-6">
             
             {/* IL RECHERCHE */}
-            <div className="bg-white rounded-2xl p-4 border border-[#2E130C]/10 shadow-sm relative overflow-hidden group/search hover:border-blue-200 transition-colors">
+            <div className="bg-white rounded-2xl p-3 sm:p-4 border border-[#2E130C]/10 shadow-sm relative overflow-hidden group/search hover:border-blue-200 transition-colors">
                 <div className="absolute top-0 right-0 p-2 opacity-5 group-hover/search:opacity-10 transition-opacity">
                     <Search className="w-12 h-12 text-blue-600" />
                 </div>
@@ -572,9 +576,8 @@ function MysteryCard({ onReveal, match, locked = false, children }: { onReveal: 
                          {match.name ? `Ce que ${match.name.split(' ')[0]} recherche` : "Ce qu'il recherche"}
                      </span>
                 </div>
-                <ul className="space-y-2 relative z-10 pl-1">
-                    {/* Dynamic needs based on profile data or fallback */}
-                    {getNeedBullets(match.receive_profile, match.current_need, ["Nouveaux clients", "Partenaires locaux"]).map((item: string, i: number) => (
+                <ul className="space-y-1.5 sm:space-y-2 relative z-10 pl-1">
+                    {visibleNeeds.map((item: string, i: number) => (
                         <li key={i} className="flex items-start gap-2 text-xs font-medium text-[#2E130C]/80">
                             <span className="text-blue-500 font-bold text-lg leading-none">•</span>
                             <span className="leading-tight pt-0.5">{item}</span>
@@ -584,7 +587,7 @@ function MysteryCard({ onReveal, match, locked = false, children }: { onReveal: 
             </div>
 
             {/* IL PEUT AIDER */}
-            <div className="bg-white rounded-2xl p-4 border border-[#2E130C]/10 shadow-sm relative overflow-hidden group/help hover:border-emerald-200 transition-colors">
+            <div className="bg-white rounded-2xl p-3 sm:p-4 border border-[#2E130C]/10 shadow-sm relative overflow-hidden group/help hover:border-emerald-200 transition-colors">
                 <div className="absolute top-0 right-0 p-2 opacity-5 group-hover/help:opacity-10 transition-opacity">
                     <Gift className="w-12 h-12 text-emerald-600" />
                 </div>
@@ -596,9 +599,8 @@ function MysteryCard({ onReveal, match, locked = false, children }: { onReveal: 
                          Ce qu'il peut vous offrir
                      </span>
                 </div>
-                <ul className="space-y-2 relative z-10 pl-1">
-                     {/* Dynamic superpowers based on profile data or fallback */}
-                    {getOfferBullets(match.give_profile, match.superpower, ["Son expertise métier", "Son réseau local"]).map((item: string, i: number) => (
+                <ul className="space-y-1.5 sm:space-y-2 relative z-10 pl-1">
+                    {visibleOffers.map((item: string, i: number) => (
                         <li key={i} className="flex items-start gap-2 text-xs font-medium text-[#2E130C]/80">
                             <span className="text-emerald-500 font-bold text-lg leading-none">•</span>
                             <span className="leading-tight pt-0.5">{item}</span>
@@ -619,7 +621,7 @@ function MysteryCard({ onReveal, match, locked = false, children }: { onReveal: 
         <Button 
             disabled={locked}
             className={cn(
-                "w-full h-14 font-black text-base rounded-2xl transition-all shadow-none",
+                "w-full h-12 sm:h-14 font-black text-sm sm:text-base rounded-2xl transition-all shadow-none",
                 locked 
                     ? "bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200" 
                     : "bg-[#2E130C] text-white hover:bg-[#2E130C]/90 hover:scale-[1.02] shadow-xl shadow-[#2E130C]/10 animate-bounce-subtle"
