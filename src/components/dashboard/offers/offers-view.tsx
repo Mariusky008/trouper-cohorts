@@ -17,6 +17,7 @@ import { toast } from "sonner";
 import { createNetworkSearch, deleteNetworkSearch } from "@/lib/actions/network-searches";
 import { toggleOfferActive } from "@/lib/actions/offers";
 import { createNetworkOffer, deleteNetworkOffer } from "@/lib/actions/network-offers";
+import { saveDuoDecision } from "@/lib/actions/duo-alliances";
 import { LockedOfferCard } from "./locked-offer-card";
 import { useRouter } from "next/navigation";
 
@@ -26,14 +27,16 @@ export function OffersView({
     currentUserOffer,
     currentUserOffers,
     searches,
-    currentUserId 
+    currentUserId,
+    initialDuoStates
 }: { 
     unlockedOffers: any[], 
     lockedCount: number, 
     currentUserOffer: any,
     currentUserOffers: any[],
     searches: any[],
-    currentUserId: string
+    currentUserId: string,
+    initialDuoStates: Record<string, { myDecision?: "validate" | "later" | "reject"; partnerDecision?: "validate" | "later" | "reject" }>
 }) {
     const router = useRouter();
     const [activeTab, setActiveTab] = useState("duos");
@@ -52,8 +55,7 @@ export function OffersView({
     const [consumedSearchIds, setConsumedSearchIds] = useState<string[]>([]);
     const [infoOffer, setInfoOffer] = useState<any | null>(null);
     const [infoSearch, setInfoSearch] = useState<any | null>(null);
-    const [duoDecisions, setDuoDecisions] = useState<Record<string, "validate" | "later" | "reject">>({});
-    const DUO_DECISIONS_KEY = "duo-alliances-decisions-v1";
+    const [duoStates, setDuoStates] = useState(initialDuoStates || {});
     const [isIntroOpen, setIsIntroOpen] = useState(false);
     const OFFERS_INTRO_SEEN_KEY = "offers-intro-seen-v1";
 
@@ -68,12 +70,6 @@ export function OffersView({
     useEffect(() => {
         window.localStorage.setItem("offers-tab", activeTab);
     }, [activeTab]);
-
-    useEffect(() => {
-        const raw = window.localStorage.getItem(DUO_DECISIONS_KEY);
-        if (!raw) return;
-        setDuoDecisions(JSON.parse(raw));
-    }, []);
 
     useEffect(() => {
         const seen = window.localStorage.getItem(OFFERS_INTRO_SEEN_KEY);
@@ -238,16 +234,17 @@ export function OffersView({
                 ];
                 return {
                     ...offer,
-                    duoId: `duo-${offer.user_id}`,
+                    duoId: [currentUserId, offer.user_id].sort().join("__"),
+                    partnerId: offer.user_id,
                     score,
                     idea: ideas[Math.abs(String(offer.user_id).split("").reduce((a, c) => a + c.charCodeAt(0), 0)) % ideas.length],
                     reasons,
                 };
             });
-    }, [offersDeckDisplay, ownOfferSource]);
+    }, [offersDeckDisplay, ownOfferSource, currentUserId]);
     const visibleDuoCards = useMemo(
-        () => duoCards.filter((d: any) => duoDecisions[d.duoId] !== "reject"),
-        [duoCards, duoDecisions]
+        () => duoCards.filter((d: any) => duoStates[d.duoId]?.myDecision !== "reject"),
+        [duoCards, duoStates]
     );
 
     const discountPct = (offer: any) =>
@@ -297,10 +294,12 @@ export function OffersView({
     const openDuoDiscussion = (offer: any, idea: string) => {
         window.open(`https://wa.me/?text=${encodeURIComponent(duoMessage(offer, idea))}`, "_blank");
     };
-    const decideDuo = (duoId: string, decision: "validate" | "later" | "reject") => {
-        const next = { ...duoDecisions, [duoId]: decision };
-        setDuoDecisions(next);
-        window.localStorage.setItem(DUO_DECISIONS_KEY, JSON.stringify(next));
+    const decideDuo = async (duoId: string, partnerId: string, decision: "validate" | "later" | "reject") => {
+        setDuoStates((prev) => ({ ...prev, [duoId]: { ...(prev[duoId] || {}), myDecision: decision } }));
+        const result = await saveDuoDecision(partnerId, decision);
+        if (!result.success) {
+            toast.error("Erreur sauvegarde duo : " + result.error);
+        }
     };
 
     const handleCloseIntro = () => {
@@ -311,8 +310,8 @@ export function OffersView({
     const handleStartFirstOffer = () => {
         window.localStorage.setItem(OFFERS_INTRO_SEEN_KEY, "1");
         setIsIntroOpen(false);
-        setActiveTab("offers");
-        setIsOfferDialogOpen(true);
+        setActiveTab("needs");
+        setIsSearchDialogOpen(true);
     };
 
     const restoreRefusedOffer = (id: string) => setRefusedOfferIds((prev) => prev.filter((x) => x !== id));
@@ -567,8 +566,8 @@ export function OffersView({
                                 dragElastic={0.6}
                                 onDragEnd={(_, info) => {
                                     if (index !== 0) return;
-                                    if (info.offset.x <= -120) decideDuo(offer.duoId, "reject");
-                                    if (info.offset.x >= 120) decideDuo(offer.duoId, "validate");
+                                    if (info.offset.x <= -120) void decideDuo(offer.duoId, offer.partnerId, "reject");
+                                    if (info.offset.x >= 120) void decideDuo(offer.duoId, offer.partnerId, "validate");
                                 }}
                             >
                                 <div className="relative h-full rounded-t-none rounded-b-[2.4rem] lg:rounded-[2.4rem] overflow-hidden shadow-2xl bg-[#FFFDF8] border border-[#2E130C]/15">
@@ -612,21 +611,25 @@ export function OffersView({
                                             <p className="text-xs text-[#2E130C] mt-1">Toi: {ownOfferSource?.trade || "Expertise locale"} · {offer.display_name}: {offer.trade || "Expertise complémentaire"}</p>
                                         </div>
                                         <div className="grid grid-cols-1 gap-2">
-                                            <Button onClick={() => decideDuo(offer.duoId, "validate")} size="sm" className="h-10 bg-[#2E130C] hover:bg-[#2E130C]/90 text-white text-[11px] font-black uppercase">
+                                            <Button onClick={() => void decideDuo(offer.duoId, offer.partnerId, "validate")} size="sm" className="h-10 bg-[#2E130C] hover:bg-[#2E130C]/90 text-white text-[11px] font-black uppercase">
                                                 Je valide l’idée
                                             </Button>
                                             <div className="grid grid-cols-2 gap-2">
-                                                <Button variant="outline" onClick={() => decideDuo(offer.duoId, "later")} size="sm" className="h-9 border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100 text-[10px] font-black uppercase">
+                                                <Button variant="outline" onClick={() => void decideDuo(offer.duoId, offer.partnerId, "later")} size="sm" className="h-9 border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100 text-[10px] font-black uppercase">
                                                     À revoir
                                                 </Button>
-                                                <Button variant="outline" onClick={() => decideDuo(offer.duoId, "reject")} size="sm" className="h-9 border-rose-300 text-rose-700 hover:bg-rose-50 text-[10px] font-black uppercase">
+                                                <Button variant="outline" onClick={() => void decideDuo(offer.duoId, offer.partnerId, "reject")} size="sm" className="h-9 border-rose-300 text-rose-700 hover:bg-rose-50 text-[10px] font-black uppercase">
                                                     Pas pour moi
                                                 </Button>
                                             </div>
                                         </div>
-                                        {duoDecisions[offer.duoId] === "validate" && (
+                                        {duoStates[offer.duoId]?.myDecision === "validate" && (
                                             <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 space-y-2">
-                                                <p className="text-xs font-black text-emerald-800">En attente de validation de {offer.display_name}</p>
+                                                <p className="text-xs font-black text-emerald-800">
+                                                    {duoStates[offer.duoId]?.partnerDecision === "validate"
+                                                        ? "Duo activé (2/2 validations)"
+                                                        : `En attente de validation de ${offer.display_name}`}
+                                                </p>
                                                 <Button onClick={() => openDuoDiscussion(offer, offer.idea)} className="w-full h-9 bg-[#25D366] hover:bg-[#25D366]/90 text-white font-black uppercase text-[10px]">
                                                     <MessageCircle className="h-3.5 w-3.5 mr-1" /> Démarrer la discussion
                                                 </Button>
@@ -941,7 +944,7 @@ export function OffersView({
             <Dialog open={isIntroOpen} onOpenChange={(open) => !open && handleCloseIntro()}>
                 <DialogContent className="bg-white border-[#2E130C]/15 text-[#2E130C] sm:max-w-md rounded-2xl w-[92vw]">
                     <DialogHeader>
-                        <DialogTitle className="text-xl font-black">Bienvenue sur Offres</DialogTitle>
+                        <DialogTitle className="text-xl font-black">Bienvenue sur Alliances</DialogTitle>
                         <DialogDescription className="text-sm text-[#2E130C]/70 leading-relaxed">
                             Cette page vous permet de proposer vos services avec un pourcentage en rabais à la communauté.
                             <br />
@@ -949,7 +952,7 @@ export function OffersView({
                         </DialogDescription>
                     </DialogHeader>
                     <Button onClick={handleStartFirstOffer} className="w-full h-11 bg-[#2E130C] hover:bg-[#2E130C]/90 text-white font-black rounded-xl">
-                        Je crée ma première offre
+                        Je publie mon premier besoin
                     </Button>
                 </DialogContent>
             </Dialog>
