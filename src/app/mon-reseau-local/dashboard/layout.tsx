@@ -63,6 +63,7 @@ function DashboardLayoutFull({ children, pathname }: { children: React.ReactNode
   const [pendingCount, setPendingCount] = useState(0);
   const [isMobileViewport, setIsMobileViewport] = useState(false);
   const [isMobileHeaderCompact, setIsMobileHeaderCompact] = useState(false);
+  const hideMobileTopHeader = isOpportunitiesDashboard && isMobileViewport;
 
   const [userProfile, setUserProfile] = useState<any>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
@@ -137,7 +138,8 @@ function DashboardLayoutFull({ children, pathname }: { children: React.ReactNode
     <div className="min-h-screen bg-[#E2D9BC] flex flex-col font-sans text-[#2E130C] selection:bg-[#B20B13] selection:text-[#E2D9BC]">
       {/* --- TOP NAVIGATION BAR (DESKTOP & MOBILE) --- */}
       <header className={cn(
-        "fixed top-0 w-full z-30 px-3 lg:px-8 flex items-center justify-between transition-all duration-300",
+        "fixed top-0 w-full z-30 px-3 lg:px-8 items-center justify-between transition-all duration-300",
+        hideMobileTopHeader ? "hidden lg:flex" : "flex",
         isImmersiveMobilePage && isMobileViewport
           ? "bg-gradient-to-b from-black/50 via-black/20 to-transparent border-b-0 shadow-none backdrop-blur-0"
           : "bg-[#E2D9BC]/85 backdrop-blur-lg border-b-2 border-[#2E130C]/10 shadow-sm",

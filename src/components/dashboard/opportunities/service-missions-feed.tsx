@@ -256,13 +256,10 @@ export function ServiceMissionsFeed({
   };
 
   return (
-    <div className="space-y-4 lg:space-y-6 pt-[calc(env(safe-area-inset-top)+3.55rem)] lg:pt-0">
+    <div className="space-y-4 lg:space-y-6 pt-[calc(env(safe-area-inset-top)+0.5rem)] lg:pt-0">
       <div className="lg:hidden sticky top-[calc(env(safe-area-inset-top)+0.35rem)] z-30 -mx-1 px-1 py-2 rounded-2xl bg-[#E2D9BC]/55 backdrop-blur-xl border border-[#2E130C]/10 shadow-[0_10px_30px_rgba(46,19,12,0.12)]">
         <div className="flex items-center justify-between gap-3 px-2">
-          <div>
-            <p className="text-xl font-black text-[#2E130C]">Opportunités</p>
-            <p className="text-xs text-[#2E130C]/60 font-semibold">{filteredMissions.length} missions dans ce filtre</p>
-          </div>
+          <p className="text-xs text-[#2E130C]/70 font-black uppercase tracking-wider">{filteredMissions.length} missions dans ce filtre</p>
           <Button variant="outline" onClick={() => setIsStatsOpen(true)} className="rounded-xl border-[#2E130C]/20 bg-[#E2D9BC]/75 text-[#2E130C]">
             <SlidersHorizontal className="h-4 w-4 mr-1" /> Stats
           </Button>
@@ -366,7 +363,7 @@ export function ServiceMissionsFeed({
           <div className="text-center py-12 text-[#2E130C]/40 italic">Aucune mission de service pour ce filtre.</div>
         )}
 
-        <div className={cn(useTinderStack && "relative max-w-sm mx-auto min-h-[calc(100dvh-13.2rem)] lg:h-[900px]")}>
+        <div className={cn(useTinderStack && "relative max-w-none lg:max-w-sm mx-auto min-h-[calc(100dvh-11.7rem)] lg:h-[900px]")}>
         {stackMissions.map((mission, index) => {
           const isTopCard = !useTinderStack || index === 0;
           return (
@@ -384,7 +381,7 @@ export function ServiceMissionsFeed({
             }
             transition={{ delay: index * 0.03 }}
             className={cn(
-              "relative w-full max-w-sm mx-auto min-h-[calc(100dvh-13.2rem)] lg:min-h-0",
+              "relative w-full max-w-none lg:max-w-sm mx-auto min-h-[calc(100dvh-11.7rem)] lg:min-h-0",
               useTinderStack && "lg:absolute lg:inset-x-0 lg:top-0",
               useTinderStack && index > 0 && "hidden lg:block lg:pointer-events-none"
             )}
@@ -412,7 +409,7 @@ export function ServiceMissionsFeed({
               className="absolute inset-y-4 left-0 w-[94%] rounded-[2.2rem] bg-[#F8F4EB] border border-[#2E130C]/10"
             />
 
-            <div className="relative rounded-[2.4rem] overflow-hidden shadow-2xl bg-[#FFFDF8] border border-[#2E130C]/15">
+            <div className="relative rounded-t-[1.2rem] rounded-b-[2.4rem] lg:rounded-[2.4rem] overflow-hidden shadow-2xl bg-[#FFFDF8] border border-[#2E130C]/15">
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(178,11,19,0.12),transparent_45%)]" />
               <div className="relative z-10 p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] lg:pb-5 space-y-4 text-[#2E130C]">
                 <div className="flex items-center justify-between">
