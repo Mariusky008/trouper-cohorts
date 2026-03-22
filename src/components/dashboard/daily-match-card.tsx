@@ -699,6 +699,34 @@ const WeekendCard = () => (
     </div>
 );
 
+const NoMatchMotivationCard = () => (
+    <div className="relative w-full max-w-sm mx-auto min-h-[520px] sm:min-h-[600px] h-auto rounded-[2.5rem] overflow-hidden shadow-2xl bg-white border border-[#2E130C]/10 flex flex-col items-center justify-center text-center p-6 pb-8">
+        <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-[0.03] z-0"></div>
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-blue-100/40 blur-[80px] rounded-full z-0"></div>
+        <div className="relative z-10 flex flex-col items-center gap-6 w-full">
+            <div className="w-24 h-24 rounded-full bg-gradient-to-br from-blue-100 to-emerald-100 flex items-center justify-center shadow-lg border-4 border-white">
+                <span className="text-5xl">🧭</span>
+            </div>
+            <div className="space-y-2">
+                <h2 className="text-3xl font-black text-[#2E130C] uppercase tracking-tight">Aucun match demain</h2>
+                <p className="text-[#2E130C]/70 font-medium text-base leading-relaxed max-w-[290px] mx-auto">
+                    Profitez-en pour souffler un peu. Et si vous voulez avancer vite, allez dans Opportunités pour rendre service à quelqu’un qui vous le rendra rapidement.
+                </p>
+            </div>
+            <div className="w-full max-w-[290px] grid grid-cols-1 gap-3">
+                <Button asChild className="w-full h-12 bg-[#2E130C] hover:bg-[#2E130C]/90 text-white font-black rounded-xl">
+                    <Link href="/mon-reseau-local/dashboard/opportunities">
+                        <Zap className="w-4 h-4 mr-2" /> Aller aux opportunités
+                    </Link>
+                </Button>
+                <Button asChild variant="outline" className="w-full h-11 border-[#2E130C]/20 text-[#2E130C] font-bold rounded-xl bg-white hover:bg-[#2E130C]/5">
+                    <Link href="/mon-reseau-local/dashboard/profile">Mettre à jour mon profil</Link>
+                </Button>
+            </div>
+        </div>
+    </div>
+);
+
 export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserProfile, currentUserAuthFirstName }: DailyMatchCardProps) {
   const currentMatchId = matches?.[0]?.id;
   const missionProgressKey = getMissionProgressKey(userId, currentMatchId);
@@ -716,9 +744,11 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
       }
       return 'initial';
   });
+  const [pendingRecap, setPendingRecap] = useState(false);
 
   useEffect(() => {
     if (!matches || matches.length === 0) return;
+    if (pendingRecap) return;
 
     const current = matches[0];
     const isValidated = current.hasFeedback === true || current.status === 'met';
@@ -740,7 +770,7 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
     }
 
     setStep('initial');
-  }, [matches, missionProgressKey, matches[0]?.hasFeedback, matches[0]?.status]);
+  }, [matches, missionProgressKey, matches[0]?.hasFeedback, matches[0]?.status, pendingRecap]);
 
   // Realtime Subscription for Sync across devices
   useEffect(() => {
@@ -762,6 +792,7 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
                   // payload.new is typed as any usually, so we cast or assume
                   const newRecord = payload.new as any;
                   
+                  if (pendingRecap) return;
                   if (newRecord.receiver_id === currentPartnerId) {
                       setStep('validated');
                       if (missionProgressKey) {
@@ -776,7 +807,7 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
       return () => {
           supabase.removeChannel(channel);
       };
-  }, [userId, matches, missionProgressKey]);
+  }, [userId, matches, missionProgressKey, pendingRecap]);
 
   const [popupView, setPopupView] = useState<'step1_status' | 'step2_mission' | 'step3_exchange_outcome' | 'step4_recap'>('step1_status');
   const [callHappened, setCallHappened] = useState<boolean | null>(null);
@@ -911,6 +942,7 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
         toast.error("Choisis ce que cet échange a généré.");
         return;
     }
+    setPendingRecap(true);
 
     const result = await completeMatchMission({
         matchId: currentMatch.id,
@@ -948,7 +980,6 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
         });
     }
 
-    setStep('validated');
     if (missionProgressKey) {
         localStorage.removeItem(missionProgressKey);
     }
@@ -1020,20 +1051,7 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
           return <WeekendCard />;
       }
 
-      return <MysteryCard 
-          onReveal={() => {}} 
-          match={{
-            id: 'teaser-future',
-            partnerId: 'teaser-next',
-            name: 'Prochain Match',
-            job: 'Membre du Club',
-            city: 'Gironde', // Default or random
-            collabsCount: 15,
-            score: 5.0,
-            tags: ['Entrepreneur']
-          }} 
-          locked={true} 
-      />;
+      return <NoMatchMotivationCard />;
   }
 
   // Prevent hydration mismatch
@@ -1143,6 +1161,9 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
 
       if (isTomorrowWeekend) {
           return <WeekendCard />;
+      }
+      if (matches.length <= 1) {
+          return <NoMatchMotivationCard />;
       }
 
       return <MysteryCard onReveal={() => {}} match={nextMatch} locked={true} />;
@@ -1418,6 +1439,10 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
                 <Dialog open={isValidationOpen} onOpenChange={(open) => {
                         setIsValidationOpen(open);
                         if (!open) {
+                            if (pendingRecap) {
+                                setPendingRecap(false);
+                                setStep('validated');
+                            }
                             setPopupView('step1_status');
                             setCallHappened(null);
                             setPartnerMissionResult(null);
@@ -1622,7 +1647,11 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
                                     </div>
                                     <Button
                                         type="button"
-                                        onClick={() => setIsValidationOpen(false)}
+                                        onClick={() => {
+                                            setPendingRecap(false);
+                                            setStep('validated');
+                                            setIsValidationOpen(false);
+                                        }}
                                         className="w-full bg-[#2E130C] text-white hover:bg-[#2E130C]/90 font-bold"
                                     >
                                         Continuer
