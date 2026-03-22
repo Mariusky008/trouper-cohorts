@@ -333,7 +333,7 @@ export function ServiceMissionsFeed({
           <div className="text-center py-12 text-[#2E130C]/40 italic">Aucune mission de service pour ce filtre.</div>
         )}
 
-        <div className={cn(useTinderStack && "relative h-[calc(100dvh-26rem)] lg:h-[640px] max-w-sm mx-auto")}>
+        <div className={cn(useTinderStack && "relative max-w-sm mx-auto lg:h-[900px]")}>
         {stackMissions.map((mission, index) => {
           const isTopCard = !useTinderStack || index === 0;
           return (
@@ -351,9 +351,9 @@ export function ServiceMissionsFeed({
             }
             transition={{ delay: index * 0.03 }}
             className={cn(
-              "relative w-full max-w-sm mx-auto h-full",
-              useTinderStack && "absolute inset-x-0 top-0",
-              useTinderStack && index > 0 && "pointer-events-none"
+              "relative w-full max-w-sm mx-auto",
+              useTinderStack && "lg:absolute lg:inset-x-0 lg:top-0",
+              useTinderStack && index > 0 && "hidden lg:block lg:pointer-events-none"
             )}
             style={useTinderStack ? { zIndex: Math.max(1, 100 - index) } : undefined}
             drag={useTinderStack && isTopCard ? "x" : false}
@@ -379,9 +379,9 @@ export function ServiceMissionsFeed({
               className="absolute inset-y-4 left-0 w-[94%] rounded-[2.2rem] bg-[#F8F4EB] border border-[#2E130C]/10"
             />
 
-            <div className="relative h-full rounded-[2.4rem] overflow-hidden shadow-2xl bg-[#FFFDF8] border border-[#2E130C]/15">
+            <div className="relative rounded-[2.4rem] overflow-hidden shadow-2xl bg-[#FFFDF8] border border-[#2E130C]/15">
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(178,11,19,0.12),transparent_45%)]" />
-              <div className="relative z-10 h-full overflow-y-auto p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] space-y-4 text-[#2E130C]">
+              <div className="relative z-10 p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] lg:pb-5 space-y-4 text-[#2E130C]">
                 <div className="flex items-center justify-between">
                   <Badge className="bg-[#2E130C]/10 text-[#2E130C] border border-[#2E130C]/20 uppercase tracking-wider text-[10px] font-black">
                     {mission.action_channel === "whatsapp" ? "Mise en relation" : mission.action_channel === "social_link" ? "Action sociale" : "Action relationnelle"}
