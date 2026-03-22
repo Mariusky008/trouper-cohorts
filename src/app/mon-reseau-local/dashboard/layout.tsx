@@ -128,14 +128,17 @@ function DashboardLayoutFull({ children, pathname }: { children: React.ReactNode
   const { tier } = getPointsTier(points);
   const mobileHeaderHeight = isHomeDashboard ? (isMobileHeaderCompact ? "3.15rem" : "3.55rem") : "4rem";
   const mobileMainTopPadding = isHomeDashboard
-    ? (isMobileHeaderCompact ? "calc(3.15rem + env(safe-area-inset-top) + 0.2rem)" : "calc(3.55rem + env(safe-area-inset-top) + 0.25rem)")
+    ? "0px"
     : "calc(4rem + env(safe-area-inset-top) + 0.35rem)";
 
   return (
     <div className="min-h-screen bg-[#E2D9BC] flex flex-col font-sans text-[#2E130C] selection:bg-[#B20B13] selection:text-[#E2D9BC]">
       {/* --- TOP NAVIGATION BAR (DESKTOP & MOBILE) --- */}
       <header className={cn(
-        "fixed top-0 w-full bg-[#E2D9BC]/85 backdrop-blur-lg border-b-2 border-[#2E130C]/10 z-30 px-3 lg:px-8 flex items-center justify-between shadow-sm transition-all duration-300",
+        "fixed top-0 w-full z-30 px-3 lg:px-8 flex items-center justify-between transition-all duration-300",
+        isHomeDashboard && isMobileViewport
+          ? "bg-gradient-to-b from-black/50 via-black/20 to-transparent border-b-0 shadow-none backdrop-blur-0"
+          : "bg-[#E2D9BC]/85 backdrop-blur-lg border-b-2 border-[#2E130C]/10 shadow-sm",
         isHomeDashboard ? "lg:h-16" : "lg:h-16"
       )}
       style={{

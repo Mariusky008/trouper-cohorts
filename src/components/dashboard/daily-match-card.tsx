@@ -32,7 +32,7 @@ function FounderCardPreview({ type = "onboarding", onConfirm }: { type?: "onboar
 
     if (confirmed) {
         return (
-            <div className="relative w-full max-w-sm mx-auto h-[600px] rounded-[2.5rem] overflow-hidden shadow-2xl bg-white flex flex-col items-center justify-center text-center p-6 border border-[#2E130C]/10">
+            <div className="relative w-full max-w-none lg:max-w-sm mx-auto h-[calc(100dvh-7.1rem)] lg:h-[600px] rounded-none lg:rounded-[2.5rem] overflow-hidden shadow-2xl bg-white flex flex-col items-center justify-center text-center p-6 border border-[#2E130C]/10">
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-emerald-50 via-white to-white"></div>
                 <motion.div 
                     initial={{ scale: 0 }} animate={{ scale: 1 }} 
@@ -49,7 +49,7 @@ function FounderCardPreview({ type = "onboarding", onConfirm }: { type?: "onboar
     }
 
     return (
-        <div className="relative w-full max-w-sm mx-auto min-h-[600px] h-auto rounded-[2.5rem] overflow-hidden shadow-2xl bg-white border border-[#2E130C]/10 flex flex-col items-center p-0 group">
+        <div className="relative w-full max-w-none lg:max-w-sm mx-auto min-h-[calc(100dvh-7.1rem)] lg:min-h-[600px] h-auto rounded-none lg:rounded-[2.5rem] overflow-hidden shadow-2xl bg-white border border-[#2E130C]/10 flex flex-col items-center p-0 group">
             
             {/* Background Image/Effect */}
             <div className="absolute inset-0 opacity-100">
@@ -489,7 +489,7 @@ function MysteryCard({ onReveal, match, locked = false, children }: { onReveal: 
       <div 
           onClick={locked ? undefined : onReveal}
           className={cn(
-              "relative w-full max-w-sm mx-auto min-h-[520px] sm:min-h-[600px] h-auto rounded-[2.5rem] overflow-hidden shadow-2xl flex flex-col items-center justify-center text-center p-4 sm:p-6 border transition-all pb-5 sm:pb-8",
+              "relative w-full max-w-none lg:max-w-sm mx-auto min-h-[calc(100dvh-7.1rem)] lg:min-h-[600px] h-auto rounded-none lg:rounded-[2.5rem] overflow-hidden shadow-2xl flex flex-col items-center justify-center text-center p-4 sm:p-6 border transition-all pb-5 sm:pb-8",
               "bg-white border-[#2E130C]/10",
               !locked && "cursor-pointer group hover:scale-[1.01] hover:shadow-[0_20px_60px_-15px_rgba(0,0,0,0.15)]"
           )}
@@ -643,7 +643,7 @@ function MysteryCard({ onReveal, match, locked = false, children }: { onReveal: 
 }
 
 const WeekendCard = () => (
-    <div className="relative w-full max-w-sm mx-auto min-h-[600px] h-auto rounded-[2.5rem] overflow-hidden shadow-2xl bg-white border border-yellow-200 flex flex-col items-center justify-center text-center p-6 pb-8 group">
+    <div className="relative w-full max-w-none lg:max-w-sm mx-auto min-h-[calc(100dvh-7.1rem)] lg:min-h-[600px] h-auto rounded-none lg:rounded-[2.5rem] overflow-hidden shadow-2xl bg-white border border-yellow-200 flex flex-col items-center justify-center text-center p-6 pb-8 group">
         <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-[0.03] z-0"></div>
         
         {/* Gold Glow */}
@@ -700,7 +700,7 @@ const WeekendCard = () => (
 );
 
 const NoMatchMotivationCard = () => (
-    <div className="relative w-full max-w-sm mx-auto min-h-[520px] sm:min-h-[600px] h-auto rounded-[2.5rem] overflow-hidden shadow-2xl bg-white border border-[#2E130C]/10 flex flex-col items-center justify-center text-center p-6 pb-8">
+    <div className="relative w-full max-w-none lg:max-w-sm mx-auto min-h-[calc(100dvh-7.1rem)] lg:min-h-[600px] h-auto rounded-none lg:rounded-[2.5rem] overflow-hidden shadow-2xl bg-white border border-[#2E130C]/10 flex flex-col items-center justify-center text-center p-6 pb-8">
         <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-[0.03] z-0"></div>
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-blue-100/40 blur-[80px] rounded-full z-0"></div>
         <div className="relative z-10 flex flex-col items-center gap-6 w-full">
@@ -1056,7 +1056,7 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
 
   // Prevent hydration mismatch
   if (!mounted) {
-      return <div className="w-full max-w-sm mx-auto h-[600px] rounded-[2.5rem] bg-white border border-[#2E130C]/10 animate-pulse" />;
+      return <div className="w-full max-w-none lg:max-w-sm mx-auto h-[calc(100dvh-7.1rem)] lg:h-[600px] rounded-none lg:rounded-[2.5rem] bg-white border border-[#2E130C]/10 animate-pulse" />;
   }
 
   const match = matches[0];
@@ -1190,7 +1190,7 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
 
   // MATCH CARD (REVEALED) - Clean Light Design
   return (
-    <div className="relative w-full max-w-sm mx-auto min-h-[600px] h-auto rounded-[2.5rem] overflow-hidden shadow-2xl bg-white border border-[#2E130C]/10 flex flex-col items-center justify-between text-center p-6 pb-8 group">
+    <div className="relative w-full max-w-none lg:max-w-sm mx-auto min-h-[calc(100dvh-7.1rem)] lg:min-h-[600px] h-auto rounded-none lg:rounded-[2.5rem] overflow-hidden shadow-2xl bg-white border border-[#2E130C]/10 flex flex-col items-center justify-between text-center p-6 pb-8 group">
       
       {/* Subtle Background */}
       <div className="absolute inset-0 bg-[#F3F0E7] opacity-30 z-0"></div>
