@@ -32,7 +32,7 @@ function FounderCardPreview({ type = "onboarding", onConfirm }: { type?: "onboar
 
     if (confirmed) {
         return (
-            <div className="relative w-full max-w-none lg:max-w-sm mx-auto h-[calc(100dvh-7.1rem)] lg:h-[600px] rounded-none lg:rounded-[2.5rem] overflow-hidden shadow-2xl bg-white flex flex-col items-center justify-center text-center p-6 border border-[#2E130C]/10">
+            <div className="relative w-full max-w-none lg:max-w-sm mx-auto h-[calc(100dvh-7.1rem)] lg:h-[600px] rounded-t-none rounded-b-[2.6rem] lg:rounded-[2.5rem] overflow-hidden shadow-2xl bg-white flex flex-col items-center justify-center text-center p-6 border border-[#2E130C]/10">
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-emerald-50 via-white to-white"></div>
                 <motion.div 
                     initial={{ scale: 0 }} animate={{ scale: 1 }} 
@@ -49,7 +49,7 @@ function FounderCardPreview({ type = "onboarding", onConfirm }: { type?: "onboar
     }
 
     return (
-        <div className="relative w-full max-w-none lg:max-w-sm mx-auto min-h-[calc(100dvh-7.1rem)] lg:min-h-[600px] h-auto rounded-none lg:rounded-[2.5rem] overflow-hidden shadow-2xl bg-white border border-[#2E130C]/10 flex flex-col items-center p-0 group">
+        <div className="relative w-full max-w-none lg:max-w-sm mx-auto min-h-[calc(100dvh-7.1rem)] lg:min-h-[600px] h-auto rounded-t-none rounded-b-[2.6rem] lg:rounded-[2.5rem] overflow-hidden shadow-2xl bg-white border border-[#2E130C]/10 flex flex-col items-center p-0 group">
             
             {/* Background Image/Effect */}
             <div className="absolute inset-0 opacity-100">
@@ -489,7 +489,7 @@ function MysteryCard({ onReveal, match, locked = false, children }: { onReveal: 
       <div 
           onClick={locked ? undefined : onReveal}
           className={cn(
-              "relative w-full max-w-none lg:max-w-sm mx-auto min-h-[calc(100dvh-7.1rem)] lg:min-h-[600px] h-auto rounded-none lg:rounded-[2.5rem] overflow-hidden shadow-2xl flex flex-col items-center justify-center text-center p-4 sm:p-6 border transition-all pb-5 sm:pb-8",
+              "relative w-full max-w-none lg:max-w-sm mx-auto min-h-[calc(100dvh-7.1rem)] lg:min-h-[600px] h-auto rounded-t-none rounded-b-[2.6rem] lg:rounded-[2.5rem] overflow-hidden shadow-2xl flex flex-col items-center justify-center text-center p-4 sm:p-6 border transition-all pb-5 sm:pb-8",
               "bg-white border-[#2E130C]/10",
               !locked && "cursor-pointer group hover:scale-[1.01] hover:shadow-[0_20px_60px_-15px_rgba(0,0,0,0.15)]"
           )}
@@ -643,7 +643,7 @@ function MysteryCard({ onReveal, match, locked = false, children }: { onReveal: 
 }
 
 const WeekendCard = () => (
-    <div className="relative w-full max-w-none lg:max-w-sm mx-auto min-h-[calc(100dvh-7.1rem)] lg:min-h-[600px] h-auto rounded-none lg:rounded-[2.5rem] overflow-hidden shadow-2xl bg-white border border-yellow-200 flex flex-col items-center justify-center text-center p-6 pb-8 group">
+    <div className="relative w-full max-w-none lg:max-w-sm mx-auto min-h-[calc(100dvh-7.1rem)] lg:min-h-[600px] h-auto rounded-t-none rounded-b-[2.6rem] lg:rounded-[2.5rem] overflow-hidden shadow-2xl bg-white border border-yellow-200 flex flex-col items-center justify-center text-center p-6 pb-8 group">
         <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-[0.03] z-0"></div>
         
         {/* Gold Glow */}
@@ -700,26 +700,40 @@ const WeekendCard = () => (
 );
 
 const NoMatchMotivationCard = () => (
-    <div className="relative w-full max-w-none lg:max-w-sm mx-auto min-h-[calc(100dvh-7.1rem)] lg:min-h-[600px] h-auto rounded-none lg:rounded-[2.5rem] overflow-hidden shadow-2xl bg-white border border-[#2E130C]/10 flex flex-col items-center justify-center text-center p-6 pb-8">
-        <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-[0.03] z-0"></div>
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-blue-100/40 blur-[80px] rounded-full z-0"></div>
+    <div className="relative w-full max-w-none lg:max-w-sm mx-auto min-h-[calc(100dvh-7.1rem)] lg:min-h-[600px] h-auto rounded-t-none rounded-b-[2.6rem] lg:rounded-[2.5rem] overflow-hidden shadow-2xl bg-gradient-to-b from-[#FFF8EE] via-[#F9F1E0] to-[#EFE2C8] border border-[#2E130C]/10 flex flex-col items-center justify-center text-center p-6 pb-8">
+        <motion.div animate={{ x: [0, 8, 0], y: [0, -10, 0] }} transition={{ duration: 7, repeat: Infinity, ease: "easeInOut" }} className="absolute -top-16 -right-10 h-48 w-48 rounded-full bg-[#B20B13]/12 blur-3xl" />
+        <motion.div animate={{ x: [0, -8, 0], y: [0, 10, 0] }} transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }} className="absolute -bottom-16 -left-10 h-52 w-52 rounded-full bg-[#25D366]/10 blur-3xl" />
+        <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-[0.04] z-0"></div>
         <div className="relative z-10 flex flex-col items-center gap-6 w-full">
-            <div className="w-24 h-24 rounded-full bg-gradient-to-br from-blue-100 to-emerald-100 flex items-center justify-center shadow-lg border-4 border-white">
+            <Badge className="bg-white/85 text-[#B20B13] border border-[#B20B13]/20 px-3 py-1 uppercase text-[10px] tracking-widest font-black shadow-sm">
+                Pause stratégique
+            </Badge>
+            <div className="w-24 h-24 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center shadow-xl border-4 border-white">
                 <span className="text-5xl">🧭</span>
             </div>
-            <div className="space-y-2">
+            <div className="space-y-3">
                 <h2 className="text-3xl font-black text-[#2E130C] uppercase tracking-tight">Aucun match demain</h2>
-                <p className="text-[#2E130C]/70 font-medium text-base leading-relaxed max-w-[290px] mx-auto">
-                    Profitez-en pour souffler un peu. Et si vous voulez avancer vite, allez dans Opportunités pour rendre service à quelqu’un qui vous le rendra rapidement.
+                <p className="text-[#2E130C]/75 font-medium text-base leading-relaxed max-w-[300px] mx-auto">
+                    Profitez-en pour vous détendre. Et pour créer du momentum, allez dans Opportunités : en aidant quelqu’un aujourd’hui, vous activez souvent un retour très rapide.
                 </p>
             </div>
-            <div className="w-full max-w-[290px] grid grid-cols-1 gap-3">
-                <Button asChild className="w-full h-12 bg-[#2E130C] hover:bg-[#2E130C]/90 text-white font-black rounded-xl">
+            <div className="grid grid-cols-2 gap-2 w-full max-w-[300px]">
+                <div className="rounded-xl border border-[#2E130C]/12 bg-white/75 px-3 py-2">
+                    <p className="text-[10px] uppercase font-black tracking-wider text-[#2E130C]/60">Impact réseau</p>
+                    <p className="text-sm font-black text-[#2E130C]">Aide ↔ Retour</p>
+                </div>
+                <div className="rounded-xl border border-[#2E130C]/12 bg-white/75 px-3 py-2">
+                    <p className="text-[10px] uppercase font-black tracking-wider text-[#2E130C]/60">Demain 6h</p>
+                    <p className="text-sm font-black text-[#2E130C]">Nouveaux matchs</p>
+                </div>
+            </div>
+            <div className="w-full max-w-[300px] grid grid-cols-1 gap-3">
+                <Button asChild className="w-full h-12 bg-gradient-to-r from-[#2E130C] to-[#4A2418] hover:from-[#2E130C]/95 hover:to-[#4A2418]/95 text-white font-black rounded-xl shadow-lg">
                     <Link href="/mon-reseau-local/dashboard/opportunities">
                         <Zap className="w-4 h-4 mr-2" /> Aller aux opportunités
                     </Link>
                 </Button>
-                <Button asChild variant="outline" className="w-full h-11 border-[#2E130C]/20 text-[#2E130C] font-bold rounded-xl bg-white hover:bg-[#2E130C]/5">
+                <Button asChild variant="outline" className="w-full h-11 border-[#2E130C]/20 text-[#2E130C] font-bold rounded-xl bg-white/85 hover:bg-white">
                     <Link href="/mon-reseau-local/dashboard/profile">Mettre à jour mon profil</Link>
                 </Button>
             </div>
@@ -1056,7 +1070,7 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
 
   // Prevent hydration mismatch
   if (!mounted) {
-      return <div className="w-full max-w-none lg:max-w-sm mx-auto h-[calc(100dvh-7.1rem)] lg:h-[600px] rounded-none lg:rounded-[2.5rem] bg-white border border-[#2E130C]/10 animate-pulse" />;
+      return <div className="w-full max-w-none lg:max-w-sm mx-auto h-[calc(100dvh-7.1rem)] lg:h-[600px] rounded-t-none rounded-b-[2.6rem] lg:rounded-[2.5rem] bg-white border border-[#2E130C]/10 animate-pulse" />;
   }
 
   const match = matches[0];
@@ -1190,7 +1204,7 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
 
   // MATCH CARD (REVEALED) - Clean Light Design
   return (
-    <div className="relative w-full max-w-none lg:max-w-sm mx-auto min-h-[calc(100dvh-7.1rem)] lg:min-h-[600px] h-auto rounded-none lg:rounded-[2.5rem] overflow-hidden shadow-2xl bg-white border border-[#2E130C]/10 flex flex-col items-center justify-between text-center p-6 pb-8 group">
+    <div className="relative w-full max-w-none lg:max-w-sm mx-auto min-h-[calc(100dvh-7.1rem)] lg:min-h-[600px] h-auto rounded-t-none rounded-b-[2.6rem] lg:rounded-[2.5rem] overflow-hidden shadow-2xl bg-white border border-[#2E130C]/10 flex flex-col items-center justify-between text-center p-6 pb-8 group">
       
       {/* Subtle Background */}
       <div className="absolute inset-0 bg-[#F3F0E7] opacity-30 z-0"></div>
