@@ -91,13 +91,14 @@ export async function getDuoCandidates() {
   const admin = createAdminClient();
   const { data: profiles } = await admin
     .from("profiles")
-    .select("id,display_name,avatar_url,trade,city")
+    .select("id,display_name,avatar_url,phone,trade,city")
     .in("id", partnerIds);
 
   return (profiles || []).map((profile: any) => ({
     user_id: profile.id,
     display_name: profile.display_name || "Membre",
     avatar_url: profile.avatar_url || "",
+    phone: profile.phone || "",
     trade: profile.trade || "Expert",
     city: profile.city || "Réseau",
     offer_title: "",

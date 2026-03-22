@@ -291,10 +291,24 @@ export function OffersView({
     const openWhatsappOfferPreview = (offer: any) => {
         window.open(`https://wa.me/?text=${encodeURIComponent(whatsappOfferMessage(offer))}`, "_blank");
     };
+    const formatPhoneForWhatsApp = (phone?: string | null) => {
+        if (!phone) return "";
+        let cleaned = phone.replace(/[^\d+]/g, "");
+        if (cleaned.startsWith("00")) cleaned = `+${cleaned.slice(2)}`;
+        if (cleaned.startsWith("0")) cleaned = `+33${cleaned.slice(1)}`;
+        if (!cleaned.startsWith("+")) cleaned = `+${cleaned}`;
+        const final = cleaned.replace(/[^\d]/g, "");
+        return final.length >= 8 ? final : "";
+    };
     const duoMessage = (offer: any, idea: string) =>
         `Salut ${offer.display_name}, l'IA Popey nous propose un duo business sur "${idea}". On regarde ensemble si on peut le lancer ?`;
     const openDuoDiscussion = (offer: any, idea: string) => {
-        window.open(`https://wa.me/?text=${encodeURIComponent(duoMessage(offer, idea))}`, "_blank");
+        const formattedPhone = formatPhoneForWhatsApp(offer.phone);
+        if (!formattedPhone) {
+            toast.error("Numéro WhatsApp indisponible pour ce membre.");
+            return;
+        }
+        window.open(`https://api.whatsapp.com/send?phone=${formattedPhone}&text=${encodeURIComponent(duoMessage(offer, idea))}`, "_blank");
     };
     const decideDuo = async (duoId: string, partnerId: string, decision: "validate" | "later" | "reject") => {
         setDuoStates((prev) => ({ ...prev, [duoId]: { ...(prev[duoId] || {}), myDecision: decision } }));

@@ -9,6 +9,7 @@ export interface NetworkOffer {
     user_id: string;
     display_name: string;
     avatar_url: string;
+    phone?: string;
     trade: string;
     city: string;
     offer_title: string;
@@ -41,7 +42,7 @@ export async function getUnlockedOffers(): Promise<NetworkOffer[]> {
     // 3. Get legacy profile offers
     const { data: profileOffers } = await supabase
         .from("profiles")
-        .select("id, display_name, avatar_url, trade, city, offer_title, offer_description, offer_price, offer_original_price")
+        .select("id, display_name, avatar_url, phone, trade, city, offer_title, offer_description, offer_price, offer_original_price")
         .in("id", partnerIds)
         .eq("offer_active", true)
         .not("offer_title", "is", null);
@@ -56,7 +57,7 @@ export async function getUnlockedOffers(): Promise<NetworkOffer[]> {
             description,
             price,
             original_price,
-            profiles:user_id(display_name, avatar_url, trade, city)
+            profiles:user_id(display_name, avatar_url, phone, trade, city)
         `)
         .in("user_id", partnerIds)
         .eq("is_active", true);
@@ -68,6 +69,7 @@ export async function getUnlockedOffers(): Promise<NetworkOffer[]> {
             user_id: offer.id,
             display_name: offer.display_name,
             avatar_url: offer.avatar_url,
+            phone: offer.phone,
             trade: offer.trade,
             city: offer.city,
             offer_title: offer.offer_title,
@@ -85,6 +87,7 @@ export async function getUnlockedOffers(): Promise<NetworkOffer[]> {
             user_id: offer.user_id,
             display_name: offer.profiles?.display_name || "Membre",
             avatar_url: offer.profiles?.avatar_url || "",
+            phone: offer.profiles?.phone || "",
             trade: offer.profiles?.trade || "",
             city: offer.profiles?.city || "",
             offer_title: offer.title,
