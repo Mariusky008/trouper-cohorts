@@ -452,7 +452,7 @@ export function OffersView({
                         </div>
                     </div>
 
-                    <div className="relative h-[calc(100dvh-11.6rem)] lg:h-[680px] max-w-sm mx-auto">
+                    <div className="relative h-[calc(100dvh-16.9rem)] lg:h-[680px] max-w-sm mx-auto">
                         {offersDeckDisplay.length === 0 && (
                             <div className="absolute inset-0 grid place-items-center text-center px-6">
                                 <p className="text-sm font-bold text-[#2E130C]/70">Aucune offre partenaire en attente pour le moment.</p>
@@ -469,7 +469,7 @@ export function OffersView({
                                         : { y: index * 12, scale: Math.max(0.9, 1 - index * 0.04), x: index * 6, opacity: index > 3 ? 0 : 1 }
                                 }
                                 transition={{ duration: 0.25 }}
-                                className="absolute inset-x-0 top-0"
+                                className="absolute inset-0"
                                 style={{ zIndex: 100 - index, pointerEvents: index === 0 ? "auto" : "none" }}
                                 drag={index === 0 ? "x" : false}
                                 dragConstraints={{ left: 0, right: 0 }}
@@ -481,7 +481,7 @@ export function OffersView({
                                     if (info.offset.x >= 120) handleOfferInterested(offer);
                                 }}
                             >
-                                <div className="relative rounded-[2.4rem] overflow-hidden shadow-xl bg-[#FFFDF8] border border-[#2E130C]/12">
+                                <div className="relative h-full rounded-[2.4rem] overflow-hidden shadow-xl bg-[#FFFDF8] border border-[#2E130C]/12">
                                     <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(59,130,246,0.09),transparent_45%)]" />
                                     <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom,rgba(251,191,36,0.10),transparent_42%)]" />
                                     <motion.div
@@ -489,7 +489,7 @@ export function OffersView({
                                         transition={{ duration: 2.8, repeat: Infinity, ease: "linear" }}
                                         className="absolute -top-24 h-[220%] w-24 rotate-12 bg-white/35 blur-2xl"
                                     />
-                                    <div className="relative z-10 p-5 space-y-4 text-[#2E130C]">
+                                    <div className="relative z-10 h-full overflow-y-auto p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] space-y-4 text-[#2E130C]">
                                         <div className="flex items-center justify-between">
                                             <Badge className="bg-blue-50 text-blue-700 border border-blue-200 uppercase tracking-wider text-[10px] font-black">Offre produit/service</Badge>
                                             <div className="flex items-center gap-2">
@@ -625,7 +625,7 @@ export function OffersView({
                         </Dialog>
                     </div>
 
-                    <div className="relative h-[calc(100dvh-11.6rem)] lg:h-[660px] max-w-sm mx-auto">
+                    <div className="relative h-[calc(100dvh-16.9rem)] lg:h-[660px] max-w-sm mx-auto">
                         {callsDeckDisplay.slice(0, 5).map((search, index) => (
                             <motion.div
                                 key={search.id}
@@ -637,7 +637,7 @@ export function OffersView({
                                         : { y: index * 12, scale: Math.max(0.9, 1 - index * 0.04), x: index * 6, opacity: index > 3 ? 0 : 1 }
                                 }
                                 transition={{ duration: 0.25 }}
-                                className="absolute inset-x-0 top-0"
+                                className="absolute inset-0"
                                 style={{ zIndex: 100 - index, pointerEvents: index === 0 ? "auto" : "none" }}
                                 drag={index === 0 ? "x" : false}
                                 dragConstraints={{ left: 0, right: 0 }}
@@ -649,10 +649,10 @@ export function OffersView({
                                     if (info.offset.x >= 120) handleSearchInterested(search);
                                 }}
                             >
-                                <div className="relative rounded-[2.4rem] overflow-hidden shadow-xl bg-[#FFFDF8] border border-[#2E130C]/12">
+                                <div className="relative h-full rounded-[2.4rem] overflow-hidden shadow-xl bg-[#FFFDF8] border border-[#2E130C]/12">
                                     <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(59,130,246,0.09),transparent_45%)]" />
                                     <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom,rgba(251,191,36,0.10),transparent_42%)]" />
-                                    <div className="relative z-10 p-5 space-y-4 text-[#2E130C]">
+                                    <div className="relative z-10 h-full overflow-y-auto p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] space-y-4 text-[#2E130C]">
                                         <div className="flex items-center justify-between">
                                             <Badge className="bg-blue-50 text-blue-700 border border-blue-200 uppercase tracking-wider text-[10px] font-black">Appel d’offre</Badge>
                                             <div className="flex items-center gap-2">
