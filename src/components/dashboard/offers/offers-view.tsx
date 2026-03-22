@@ -946,13 +946,13 @@ export function OffersView({
                     <DialogHeader>
                         <DialogTitle className="text-xl font-black">Bienvenue sur Alliances</DialogTitle>
                         <DialogDescription className="text-sm text-[#2E130C]/70 leading-relaxed">
-                            Cette page vous permet de proposer vos services avec un pourcentage en rabais à la communauté.
+                            Cette page vous aide à lancer des duos business suggérés par l’IA avec des membres compatibles.
                             <br />
-                            Vous pouvez aussi profiter des offres et des demandes publiées par les autres membres.
+                            Vous pouvez valider une alliance, la revoir plus tard, ou publier un besoin business si vous voulez passer à l’action rapidement.
                         </DialogDescription>
                     </DialogHeader>
                     <Button onClick={handleStartFirstOffer} className="w-full h-11 bg-[#2E130C] hover:bg-[#2E130C]/90 text-white font-black rounded-xl">
-                        Je publie mon premier besoin
+                        Découvrir mes duos IA
                     </Button>
                 </DialogContent>
             </Dialog>

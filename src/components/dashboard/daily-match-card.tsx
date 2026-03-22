@@ -712,20 +712,14 @@ const NoMatchMotivationCard = () => (
                 <span className="text-5xl">🧭</span>
             </div>
             <div className="space-y-3">
-                <h2 className="text-3xl font-black text-[#2E130C] uppercase tracking-tight">Aucun match demain — activez votre réseau autrement.</h2>
+                <h2 className="text-[#2E130C] uppercase tracking-tight leading-none">
+                    <span className="block text-3xl font-black">Aucun match</span>
+                    <span className="block text-3xl font-black mt-1">demain</span>
+                </h2>
+                <p className="text-[#2E130C]/70 font-black text-sm">Activez votre réseau autrement.</p>
                 <p className="text-[#2E130C]/75 font-medium text-base leading-relaxed max-w-[300px] mx-auto">
                     Pas de rendez-vous demain ? C’est le bon moment pour activer une opportunité en attente, publier une offre ciblée et améliorer votre profil pour recevoir de meilleurs matchs.
                 </p>
-            </div>
-            <div className="grid grid-cols-2 gap-2 w-full max-w-[300px]">
-                <div className="rounded-xl border border-[#2E130C]/12 bg-white/75 px-3 py-2">
-                    <p className="text-[10px] uppercase font-black tracking-wider text-[#2E130C]/60">Impact réseau</p>
-                    <p className="text-sm font-black text-[#2E130C]">Aide ↔ Retour</p>
-                </div>
-                <div className="rounded-xl border border-[#2E130C]/12 bg-white/75 px-3 py-2">
-                    <p className="text-[10px] uppercase font-black tracking-wider text-[#2E130C]/60">Demain 6h</p>
-                    <p className="text-sm font-black text-[#2E130C]">Nouveaux matchs</p>
-                </div>
             </div>
             <div className="w-full max-w-[300px] grid grid-cols-1 gap-3">
                 <Button asChild className="w-full h-12 bg-gradient-to-r from-[#2E130C] to-[#4A2418] hover:from-[#2E130C]/95 hover:to-[#4A2418]/95 text-white font-black rounded-xl shadow-lg">
