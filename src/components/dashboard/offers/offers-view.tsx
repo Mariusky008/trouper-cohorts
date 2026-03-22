@@ -212,6 +212,8 @@ export function OffersView({
         },
         [productDeck, currentUserOffers]
     );
+    const discountPct = (offer: any) =>
+        offer.offer_original_price > 0 ? Math.round(((offer.offer_original_price - offer.offer_price) / offer.offer_original_price) * 100) : 0;
     const duoCards = useMemo(() => {
         const partnerOffers = offersDeckDisplay.filter((offer: any) => !offer.__isOwn);
         const source = partnerOffers.length > 0 ? partnerOffers : (duoCandidates || []);
@@ -249,9 +251,6 @@ export function OffersView({
         () => duoCards.filter((d: any) => duoStates[d.duoId]?.myDecision !== "reject"),
         [duoCards, duoStates]
     );
-
-    const discountPct = (offer: any) =>
-        offer.offer_original_price > 0 ? Math.round(((offer.offer_original_price - offer.offer_price) / offer.offer_original_price) * 100) : 0;
 
     const whatsappOfferMessage = (offer: any) =>
         `Salut ${offer.display_name}, ton offre "${offer.offer_title}" sur Popey m'intéresse. On peut en discuter aujourd'hui ?`;
