@@ -213,9 +213,8 @@ export function OffersView({
         [productDeck, currentUserOffers]
     );
     const duoCards = useMemo(() => {
-        const source = offersDeckDisplay.length > 0
-            ? offersDeckDisplay.filter((offer: any) => !offer.__isOwn)
-            : (duoCandidates || []);
+        const partnerOffers = offersDeckDisplay.filter((offer: any) => !offer.__isOwn);
+        const source = partnerOffers.length > 0 ? partnerOffers : (duoCandidates || []);
         if (!source.length) return [];
         return source
             .map((offer: any) => {
