@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Pencil, Percent, Search, Megaphone, Trash2, ArrowRight, MessageCircle, Sparkles, Gift, Clock3 } from "lucide-react";
+import { Pencil, Percent, Search, Megaphone, Trash2, ArrowRight, MessageCircle, Sparkles, Gift, Clock3, PlusCircle } from "lucide-react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
