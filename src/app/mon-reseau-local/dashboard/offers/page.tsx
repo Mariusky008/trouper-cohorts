@@ -18,9 +18,9 @@ export default async function OffersPage() {
     const searches = await getNetworkSearches();
 
     return (
-        <div className="space-y-12 pb-24 relative max-w-6xl mx-auto">
+        <div className="space-y-4 lg:space-y-12 pb-24 relative max-w-6xl mx-auto">
              {/* HEADER */}
-            <div className="relative pt-8 pb-12 overflow-hidden">
+            <div className="relative pt-8 pb-12 overflow-hidden hidden lg:block">
                 <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-[#E2D9BC]/30 rounded-full blur-[100px] -z-10 pointer-events-none" />
                 
                 <div className="text-center space-y-6">

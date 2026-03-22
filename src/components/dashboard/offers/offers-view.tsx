@@ -39,6 +39,8 @@ export function OffersView({
     const [activeTab, setActiveTab] = useState("offers");
     const [isSearchDialogOpen, setIsSearchDialogOpen] = useState(false);
     const [isOfferDialogOpen, setIsOfferDialogOpen] = useState(false);
+    const [isMyOffersOpen, setIsMyOffersOpen] = useState(false);
+    const [isMySearchesOpen, setIsMySearchesOpen] = useState(false);
     const [searchCategory, setSearchCategory] = useState("other");
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isSubmittingOffer, setIsSubmittingOffer] = useState(false);
@@ -239,9 +241,9 @@ export function OffersView({
     };
 
     return (
-        <div className="space-y-8 px-4 md:px-0 pb-12">
+        <div className="space-y-4 lg:space-y-8 px-2 lg:px-4 md:px-0 pb-12">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <div className="max-w-3xl mx-auto mb-6 space-y-3">
+                <div className="max-w-3xl mx-auto mb-4 lg:mb-6 space-y-3 sticky top-[calc(env(safe-area-inset-top)+3.6rem)] lg:static z-20 bg-[#E2D9BC]/75 backdrop-blur-md lg:bg-transparent lg:backdrop-blur-0 py-2">
                     <TabsList className="bg-transparent border-0 p-0 h-auto grid grid-cols-2 w-full gap-2">
                         <TabsTrigger 
                             value="offers" 
@@ -256,7 +258,7 @@ export function OffersView({
                             <Search className="h-4 w-4 mr-2" /> Appels d'Offres
                         </TabsTrigger>
                     </TabsList>
-                    <TabsList className="bg-transparent border-0 p-0 h-auto grid grid-cols-1 w-full">
+                    <TabsList className="hidden lg:grid bg-transparent border-0 p-0 h-auto grid-cols-1 w-full">
                         <TabsTrigger 
                             value="refused" 
                             className="rounded-full px-4 py-2.5 text-sm font-bold text-stone-500 bg-white border border-stone-200 data-[state=active]:bg-stone-700 data-[state=active]:text-white data-[state=active]:border-stone-700 transition-all shadow-sm min-w-0"
@@ -266,10 +268,10 @@ export function OffersView({
                     </TabsList>
                 </div>
 
-                <TabsContent value="offers" className="space-y-12 mt-3 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                    <div className="px-4">
+                <TabsContent value="offers" className="space-y-4 lg:space-y-12 mt-2 lg:mt-3 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                    <div className="px-2 lg:px-4">
                         {currentUserOffer ? (
-                            <div className="max-w-sm mx-auto mb-12">
+                            <div className="max-w-sm mx-auto mb-12 hidden lg:block">
                                 <div className="relative rounded-[2.4rem] overflow-hidden shadow-2xl bg-[#16081D] border border-fuchsia-300/35">
                                     <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(217,70,239,0.45),transparent_45%)]" />
                                     <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom,rgba(251,191,36,0.35),transparent_42%)]" />
@@ -316,7 +318,7 @@ export function OffersView({
                                 </div>
                             </div>
                         ) : (
-                            <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-3xl p-8 text-center mb-12">
+                            <div className="hidden lg:block bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-3xl p-8 text-center mb-12">
                                 <h3 className="text-xl font-bold text-[#2E130C] mb-2">Vous n'avez pas encore d'offre active</h3>
                                 <p className="text-stone-500 mb-6 max-w-lg mx-auto font-medium">Créez votre offre exclusive pour gagner en visibilité auprès de vos futurs matchs.</p>
                                 <Button asChild className="bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl shadow-lg shadow-amber-900/20 h-12 px-8 text-lg">
@@ -330,7 +332,14 @@ export function OffersView({
 
                     <div className="max-w-3xl mx-auto space-y-3">
                         <div className="flex items-center justify-between gap-3">
-                            <p className="text-sm font-black text-[#2E130C]">Mes offres publiées ({currentUserOffers?.length || 0})</p>
+                            <p className="text-sm font-black text-[#2E130C] hidden lg:block">Mes offres publiées ({currentUserOffers?.length || 0})</p>
+                            <Button
+                                variant="outline"
+                                onClick={() => setIsMyOffersOpen(true)}
+                                className="lg:hidden h-9 rounded-xl border-[#2E130C]/20 text-[#2E130C] font-black text-xs"
+                            >
+                                Mes offres ({currentUserOffers?.length || 0})
+                            </Button>
                             <Dialog open={isOfferDialogOpen} onOpenChange={setIsOfferDialogOpen}>
                                 <DialogTrigger asChild>
                                     <Button className="bg-[#2E130C] hover:bg-[#2E130C]/90 text-white h-9 rounded-xl font-black text-xs">
@@ -370,7 +379,7 @@ export function OffersView({
                                 </DialogContent>
                             </Dialog>
                         </div>
-                        <div className="grid gap-2">
+                        <div className="hidden lg:grid gap-2">
                             {(currentUserOffers || []).map((offer) => (
                                 <div key={offer.offer_id || `${offer.user_id}-${offer.offer_title}`} className="rounded-2xl border border-[#2E130C]/10 bg-white p-3">
                                     <div className="flex items-start justify-between gap-2">
@@ -393,7 +402,7 @@ export function OffersView({
                         </div>
                     </div>
 
-                    <div className="relative h-[680px] max-w-sm mx-auto">
+                    <div className="relative h-[calc(100dvh-14.8rem)] lg:h-[680px] max-w-sm mx-auto">
                         {productDeck.slice(0, 5).map((offer, index) => (
                             <motion.div
                                 key={offer.user_id}
@@ -464,7 +473,7 @@ export function OffersView({
                         ))}
                     </div>
 
-                    <div className="grid md:grid-cols-2 gap-4 pt-2">
+                    <div className="hidden lg:grid md:grid-cols-2 gap-4 pt-2">
                         {[
                             { title: "Audit SEO & Visibilité", price: "720€", original: "900€" },
                             { title: "Pack Photos Pro", price: "240€", original: "300€" },
@@ -472,14 +481,21 @@ export function OffersView({
                             <LockedOfferCard key={i} title={dummy.title} price={dummy.price} original={dummy.original} />
                         ))}
                     </div>
-                    <div className="text-center mt-8">
+                    <div className="hidden lg:block text-center mt-8">
                         <p className="text-stone-500 font-medium">+ {lockedCount > 0 ? lockedCount : "150"} autres offres premium vous attendent.</p>
                     </div>
                 </TabsContent>
 
-                <TabsContent value="searches" className="space-y-6 mt-3 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <TabsContent value="searches" className="space-y-4 lg:space-y-6 mt-2 lg:mt-3 animate-in fade-in slide-in-from-bottom-4 duration-500">
                     <div className="max-w-3xl mx-auto flex items-center justify-between gap-3">
-                        <p className="text-sm font-black text-[#2E130C]">Mes appels publiés ({mySearches.length})</p>
+                        <p className="text-sm font-black text-[#2E130C] hidden lg:block">Mes appels publiés ({mySearches.length})</p>
+                        <Button
+                            variant="outline"
+                            onClick={() => setIsMySearchesOpen(true)}
+                            className="lg:hidden h-9 rounded-xl border-[#2E130C]/20 text-[#2E130C] font-black text-xs"
+                        >
+                            Mes appels ({mySearches.length})
+                        </Button>
                         <Dialog open={isSearchDialogOpen} onOpenChange={setIsSearchDialogOpen}>
                             <DialogTrigger asChild>
                                 <Button size="sm" className="bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl shadow-lg shadow-blue-900/20 h-9 px-4">
@@ -537,7 +553,7 @@ export function OffersView({
                         </Dialog>
                     </div>
 
-                    <div className="relative h-[660px] max-w-sm mx-auto">
+                    <div className="relative h-[calc(100dvh-14.8rem)] lg:h-[660px] max-w-sm mx-auto">
                         {callsDeckDisplay.slice(0, 5).map((search, index) => (
                             <motion.div
                                 key={search.id}
@@ -655,6 +671,58 @@ export function OffersView({
                     )}
                 </TabsContent>
             </Tabs>
+
+            <Dialog open={isMyOffersOpen} onOpenChange={setIsMyOffersOpen}>
+                <DialogContent className="bg-white border-[#2E130C]/10 text-[#2E130C] sm:max-w-md rounded-2xl w-[92vw]">
+                    <DialogHeader>
+                        <DialogTitle className="text-xl font-black">Mes offres publiées</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-2 max-h-[55vh] overflow-y-auto pr-1">
+                        {(currentUserOffers || []).map((offer) => (
+                            <div key={`my-offer-${offer.offer_id || `${offer.user_id}-${offer.offer_title}`}`} className="rounded-xl border border-[#2E130C]/10 bg-white p-3">
+                                <div className="flex items-start justify-between gap-2">
+                                    <div className="min-w-0">
+                                        <p className="text-sm font-black text-[#2E130C] truncate">{offer.offer_title}</p>
+                                        <p className="text-xs text-stone-500 mt-1">{offer.offer_price}€ · <span className="line-through">{offer.offer_original_price}€</span></p>
+                                    </div>
+                                    {offer.offer_id && String(offer.offer_id).startsWith("legacy-") ? (
+                                        <Button asChild size="sm" variant="outline" className="shrink-0">
+                                            <Link href="/mon-reseau-local/dashboard/profile?edit=true&tab=offer">Modifier</Link>
+                                        </Button>
+                                    ) : (
+                                        <Button size="sm" variant="outline" onClick={() => offer.offer_id && handleDeleteOffer(offer.offer_id)} className="shrink-0 border-rose-300 text-rose-700">
+                                            Supprimer
+                                        </Button>
+                                    )}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={isMySearchesOpen} onOpenChange={setIsMySearchesOpen}>
+                <DialogContent className="bg-white border-[#2E130C]/10 text-[#2E130C] sm:max-w-md rounded-2xl w-[92vw]">
+                    <DialogHeader>
+                        <DialogTitle className="text-xl font-black">Mes appels publiés</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-2 max-h-[55vh] overflow-y-auto pr-1">
+                        {mySearches.map((search) => (
+                            <div key={`my-search-${search.id}`} className="rounded-xl border border-[#2E130C]/10 bg-white p-3">
+                                <div className="flex items-start justify-between gap-2">
+                                    <div className="min-w-0">
+                                        <p className="text-sm font-black text-[#2E130C]">{search.title}</p>
+                                        <p className="text-xs text-stone-500 mt-1">{new Date(search.created_at).toLocaleDateString("fr-FR")} · {search.category}</p>
+                                    </div>
+                                    <Button size="sm" variant="outline" onClick={() => handleDeleteSearch(search.id)} className="shrink-0 border-rose-300 text-rose-700">
+                                        Supprimer
+                                    </Button>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </DialogContent>
+            </Dialog>
 
             <Dialog open={!!infoOffer} onOpenChange={(open) => !open && setInfoOffer(null)}>
                 <DialogContent className="bg-white border-[#2E130C]/10 text-[#2E130C] sm:max-w-md rounded-2xl w-[92vw]">
