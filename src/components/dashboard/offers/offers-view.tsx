@@ -252,9 +252,9 @@ export function OffersView({
     };
 
     return (
-        <div className="space-y-4 lg:space-y-8 px-0 lg:px-4 md:px-0 pb-12 pt-[calc(env(safe-area-inset-top)+0.5rem)] lg:pt-0">
+        <div className="space-y-4 lg:space-y-8 px-0 lg:px-4 md:px-0 pb-12 pt-[calc(env(safe-area-inset-top)+0.8rem)] lg:pt-0">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <div className="max-w-3xl mx-auto mb-4 lg:mb-6 space-y-2 sticky top-[calc(env(safe-area-inset-top)+0.35rem)] lg:static z-20 bg-[#E2D9BC]/55 backdrop-blur-xl border border-[#2E130C]/10 lg:border-0 rounded-2xl lg:rounded-none shadow-[0_10px_30px_rgba(46,19,12,0.12)] lg:shadow-none py-2 px-2 lg:px-0">
+                <div className="max-w-3xl mx-auto mb-6 lg:mb-6 space-y-3 sticky top-[calc(env(safe-area-inset-top)+0.35rem)] lg:static z-20 bg-[#E2D9BC]/55 backdrop-blur-xl border border-[#2E130C]/10 lg:border-0 rounded-2xl lg:rounded-none shadow-[0_10px_30px_rgba(46,19,12,0.12)] lg:shadow-none py-3 px-2 lg:px-0">
                     <p className="lg:hidden text-xs text-[#2E130C]/70 font-black uppercase tracking-wider px-1">
                         {activeTab === "offers" ? `${offersDeckDisplay.length} offres dans ce filtre` : `${callsDeckDisplay.length} appels dans ce filtre`}
                     </p>
@@ -267,7 +267,7 @@ export function OffersView({
                         </TabsTrigger>
                         <TabsTrigger 
                             value="searches" 
-                            className="rounded-full px-4 py-3 text-sm font-bold text-stone-500 bg-white border border-stone-200 data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:border-blue-600 transition-all shadow-sm min-w-0"
+                            className="rounded-full px-4 py-3 text-sm font-bold text-stone-500 bg-white border border-stone-200 data-[state=active]:bg-[#7A5A45] data-[state=active]:text-white data-[state=active]:border-[#7A5A45] transition-all shadow-sm min-w-0"
                         >
                             <Search className="h-4 w-4 mr-2" /> Appels d'Offres
                         </TabsTrigger>
@@ -280,13 +280,13 @@ export function OffersView({
                             Refusées
                         </TabsTrigger>
                     </TabsList>
-                    <div className="lg:hidden">
+                    <div className="lg:hidden pt-0.5">
                         {activeTab === "offers" ? (
                             <Button onClick={() => setIsOfferDialogOpen(true)} className="w-full h-10 bg-[#2E130C] hover:bg-[#2E130C]/90 text-white font-black rounded-xl text-sm">
                                 <PlusCircle className="h-4 w-4 mr-2" /> Ajouter une offre
                             </Button>
                         ) : (
-                            <Button onClick={() => setIsSearchDialogOpen(true)} className="w-full h-10 bg-blue-600 hover:bg-blue-500 text-white font-black rounded-xl text-sm">
+                            <Button onClick={() => setIsSearchDialogOpen(true)} className="w-full h-10 bg-[#7A5A45] hover:bg-[#7A5A45]/90 text-white font-black rounded-xl text-sm">
                                 <Megaphone className="h-4 w-4 mr-2" /> Publier une recherche
                             </Button>
                         )}
@@ -459,7 +459,7 @@ export function OffersView({
                         </div>
                     </div>
 
-                    <div className="relative h-[calc(100dvh-11.9rem)] lg:h-[680px] max-w-none lg:max-w-sm mx-auto">
+                    <div className="relative h-[calc(100dvh-14.4rem)] lg:h-[680px] max-w-none lg:max-w-sm mx-auto">
                         {offersDeckDisplay.length === 0 && (
                             <div className="absolute inset-0 grid place-items-center text-center px-6">
                                 <p className="text-sm font-bold text-[#2E130C]/70">Aucune offre partenaire en attente pour le moment.</p>
@@ -497,9 +497,9 @@ export function OffersView({
                                         transition={{ duration: 2.8, repeat: Infinity, ease: "linear" }}
                                         className="absolute -top-24 h-[220%] w-24 rotate-12 bg-white/35 blur-2xl"
                                     />
-                                    <div className="relative z-10 h-full overflow-y-auto p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] space-y-4 text-[#2E130C]">
+                                    <div className="relative z-10 h-full overflow-y-auto p-5 pb-[calc(0.55rem+env(safe-area-inset-bottom))] space-y-4 text-[#2E130C]">
                                         <div className="flex items-center justify-between">
-                                            <Badge className="bg-blue-50 text-blue-700 border border-blue-200 uppercase tracking-wider text-[10px] font-black">Offre produit/service</Badge>
+                                            <Badge className="bg-[#F8F2E6] text-[#B20B13] border border-[#B20B13]/20 uppercase tracking-wider text-[10px] font-black">Offre produit/service</Badge>
                                             <div className="flex items-center gap-2">
                                                 {offer.__isOwn && <Badge className="bg-amber-200 text-[#2E130C] border-0 text-[10px] font-black">Mon offre</Badge>}
                                                 <Badge className="bg-white text-[#2E130C] border-[#2E130C]/15 text-[10px] font-black">{offerBadge(offer)}</Badge>
@@ -516,8 +516,8 @@ export function OffersView({
                                                 <p className="text-xs text-[#2E130C]/70 mt-1">{offer.trade} · {offer.city}</p>
                                             </div>
                                         </div>
-                                        <div className="rounded-2xl border border-blue-200 bg-gradient-to-r from-blue-50 to-amber-50 p-4 min-h-[178px]">
-                                            <p className="text-[10px] uppercase tracking-widest font-bold text-blue-700 mb-1">Offre du moment</p>
+                                        <div className="rounded-2xl border border-[#B20B13]/15 bg-gradient-to-r from-[#FFF8EE] to-[#F8F2E6] p-4 min-h-[164px]">
+                                            <p className="text-[10px] uppercase tracking-widest font-bold text-[#B20B13] mb-1">Offre du moment</p>
                                             <h3 className="font-black text-lg leading-tight">{offer.offer_title}</h3>
                                             <p className="text-xs text-[#2E130C]/80 mt-2 line-clamp-4">{offer.offer_description}</p>
                                             <p className="text-xs text-[#2E130C] mt-2 font-bold">Prix club: {offer.offer_price}€ <span className="line-through opacity-70 ml-1">{offer.offer_original_price}€</span></p>
@@ -571,7 +571,7 @@ export function OffersView({
                         <p className="text-sm font-black text-[#2E130C] hidden lg:block">Mes appels publiés ({mySearches.length})</p>
                         <Dialog open={isSearchDialogOpen} onOpenChange={setIsSearchDialogOpen}>
                             <DialogTrigger asChild>
-                                <Button size="sm" className="hidden lg:inline-flex bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl shadow-lg shadow-blue-900/20 h-9 px-4">
+                                <Button size="sm" className="hidden lg:inline-flex bg-[#7A5A45] hover:bg-[#7A5A45]/90 text-white font-bold rounded-xl shadow-lg shadow-[#2E130C]/20 h-9 px-4">
                                     <Megaphone className="mr-2 h-4 w-4" /> Publier une Recherche
                                 </Button>
                             </DialogTrigger>
@@ -626,7 +626,7 @@ export function OffersView({
                         </Dialog>
                     </div>
 
-                    <div className="relative h-[calc(100dvh-11.9rem)] lg:h-[660px] max-w-none lg:max-w-sm mx-auto">
+                    <div className="relative h-[calc(100dvh-14.4rem)] lg:h-[660px] max-w-none lg:max-w-sm mx-auto">
                         {callsDeckDisplay.slice(0, 5).map((search, index) => (
                             <motion.div
                                 key={search.id}
@@ -653,9 +653,9 @@ export function OffersView({
                                 <div className="relative h-full rounded-t-none rounded-b-[2.4rem] lg:rounded-[2.4rem] overflow-hidden shadow-2xl bg-[#FFFDF8] border border-[#2E130C]/15">
                                     <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(59,130,246,0.09),transparent_45%)]" />
                                     <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom,rgba(251,191,36,0.10),transparent_42%)]" />
-                                    <div className="relative z-10 h-full overflow-y-auto p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] space-y-4 text-[#2E130C]">
+                                    <div className="relative z-10 h-full overflow-y-auto p-5 pb-[calc(0.55rem+env(safe-area-inset-bottom))] space-y-4 text-[#2E130C]">
                                         <div className="flex items-center justify-between">
-                                            <Badge className="bg-blue-50 text-blue-700 border border-blue-200 uppercase tracking-wider text-[10px] font-black">Appel d’offre</Badge>
+                                            <Badge className="bg-[#F8F2E6] text-[#7A5A45] border border-[#7A5A45]/20 uppercase tracking-wider text-[10px] font-black">Appel d’offre</Badge>
                                             <div className="flex items-center gap-2">
                                                 {search.__isOwn && <Badge className="bg-amber-300 text-[#2E130C] border-0 text-[10px] font-black">Mon appel</Badge>}
                                                 <Badge className="bg-white text-[#2E130C] border-[#2E130C]/15 text-[10px] uppercase">{searchBadge(search)}</Badge>
@@ -672,8 +672,8 @@ export function OffersView({
                                                 <p className="text-xs text-[#2E130C]/70 mt-1">{search.user_trade || "Membre"} · {search.user_city || "Réseau"}</p>
                                             </div>
                                         </div>
-                                        <div className="rounded-2xl border border-blue-200 bg-gradient-to-r from-blue-50 to-amber-50 p-4 min-h-[178px]">
-                                            <p className="text-[10px] uppercase tracking-widest font-bold text-blue-700 mb-1">Besoin concret</p>
+                                        <div className="rounded-2xl border border-[#7A5A45]/15 bg-gradient-to-r from-[#FFF8EE] to-[#F5EFE2] p-4 min-h-[164px]">
+                                            <p className="text-[10px] uppercase tracking-widest font-bold text-[#7A5A45] mb-1">Besoin concret</p>
                                             <h3 className="font-black text-lg leading-tight">{search.title}</h3>
                                             <p className="text-xs text-[#2E130C]/80 mt-2 line-clamp-4 whitespace-pre-wrap">{search.description}</p>
                                         </div>
