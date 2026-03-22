@@ -45,6 +45,7 @@ function DashboardLayoutFull({ children, pathname }: { children: React.ReactNode
   const router = useRouter();
   const supabase = createClient();
   const { badges, markAsSeen } = useNotifications();
+  const isHomeDashboard = pathname === "/mon-reseau-local/dashboard";
 
   // Mark as seen when visiting pages
   useEffect(() => {
@@ -58,6 +59,8 @@ function DashboardLayoutFull({ children, pathname }: { children: React.ReactNode
   const [isMobileProfileMenuOpen, setIsMobileProfileMenuOpen] = useState(false);
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
   const [pendingCount, setPendingCount] = useState(0);
+  const [isMobileViewport, setIsMobileViewport] = useState(false);
+  const [isMobileHeaderCompact, setIsMobileHeaderCompact] = useState(false);
 
   const [userProfile, setUserProfile] = useState<any>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
@@ -68,6 +71,24 @@ function DashboardLayoutFull({ children, pathname }: { children: React.ReactNode
     setIsMobileProfileMenuOpen(false);
     setIsProfileDropdownOpen(false);
   }, [pathname]);
+
+  useEffect(() => {
+    const updateViewport = () => setIsMobileViewport(window.innerWidth < 1024);
+    updateViewport();
+    window.addEventListener("resize", updateViewport);
+    return () => window.removeEventListener("resize", updateViewport);
+  }, []);
+
+  useEffect(() => {
+    if (!isMobileViewport || !isHomeDashboard) {
+      setIsMobileHeaderCompact(false);
+      return;
+    }
+    const onScroll = () => setIsMobileHeaderCompact(window.scrollY > 18);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, [isMobileViewport, isHomeDashboard]);
 
   useEffect(() => {
     const initDashboard = async () => {
@@ -105,20 +126,30 @@ function DashboardLayoutFull({ children, pathname }: { children: React.ReactNode
   const initials = displayName.substring(0, 2).toUpperCase();
   const trustScore = userProfile?.trust_score || 5.0;
   const { tier } = getPointsTier(points);
-  const isHomeDashboard = pathname === "/mon-reseau-local/dashboard";
+  const mobileHeaderHeight = isHomeDashboard ? (isMobileHeaderCompact ? "3.15rem" : "3.55rem") : "4rem";
+  const mobileMainTopPadding = isHomeDashboard
+    ? (isMobileHeaderCompact ? "calc(3.15rem + env(safe-area-inset-top) + 0.2rem)" : "calc(3.55rem + env(safe-area-inset-top) + 0.25rem)")
+    : "calc(4rem + env(safe-area-inset-top) + 0.35rem)";
 
   return (
     <div className="min-h-screen bg-[#E2D9BC] flex flex-col font-sans text-[#2E130C] selection:bg-[#B20B13] selection:text-[#E2D9BC]">
       {/* --- TOP NAVIGATION BAR (DESKTOP & MOBILE) --- */}
       <header className={cn(
-        "fixed top-0 w-full bg-[#E2D9BC]/85 backdrop-blur-lg border-b-2 border-[#2E130C]/10 z-30 px-3 lg:px-8 flex items-center justify-between shadow-sm",
-        isHomeDashboard ? "h-14 lg:h-16" : "h-16"
-      )}>
+        "fixed top-0 w-full bg-[#E2D9BC]/85 backdrop-blur-lg border-b-2 border-[#2E130C]/10 z-30 px-3 lg:px-8 flex items-center justify-between shadow-sm transition-all duration-300",
+        isHomeDashboard ? "lg:h-16" : "lg:h-16"
+      )}
+      style={{
+        paddingTop: "env(safe-area-inset-top)",
+        height: isMobileViewport ? `calc(${mobileHeaderHeight} + env(safe-area-inset-top))` : undefined,
+      }}>
          {/* LEFT: LOGO */}
          <div className="flex items-center gap-3">
             <Link href="/mon-reseau-local/dashboard" className="flex items-center gap-2">
-              <div className="h-8 w-8 bg-[#B20B13] rounded-lg flex items-center justify-center text-[#E2D9BC] border-2 border-[#2E130C] shadow-[2px_2px_0px_0px_#2E130C]">
-                <Anchor className="h-5 w-5" />
+              <div className={cn(
+                "bg-[#B20B13] rounded-lg flex items-center justify-center text-[#E2D9BC] border-2 border-[#2E130C] shadow-[2px_2px_0px_0px_#2E130C] transition-all duration-300",
+                isHomeDashboard && isMobileHeaderCompact ? "h-7 w-7" : "h-8 w-8"
+              )}>
+                <Anchor className={cn("transition-all duration-300", isHomeDashboard && isMobileHeaderCompact ? "h-4 w-4" : "h-5 w-5")} />
               </div>
             </Link>
          </div>
@@ -244,9 +275,11 @@ function DashboardLayoutFull({ children, pathname }: { children: React.ReactNode
 
       {/* --- MAIN CONTENT --- */}
       <main className={cn(
-        "flex-1 min-h-screen transition-all duration-300 ease-in-out",
-        isHomeDashboard ? "pt-16 lg:pt-20 pb-28 lg:pb-0" : "pt-20 pb-28 lg:pb-0"
-      )}>
+        "flex-1 min-h-screen transition-all duration-300 ease-in-out pb-28 lg:pb-0 lg:pt-20"
+      )}
+      style={{
+        paddingTop: isMobileViewport ? mobileMainTopPadding : undefined,
+      }}>
         <div className={cn("mx-auto max-w-7xl", isHomeDashboard ? "px-0 md:p-8" : "p-4 md:p-8")}>
           {children}
         </div>
