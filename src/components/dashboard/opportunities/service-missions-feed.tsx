@@ -401,28 +401,16 @@ export function ServiceMissionsFeed({
             <motion.div
               animate={{ x: [18, 16, 18], rotate: [-2, -1.5, -2] }}
               transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-              className="absolute inset-y-7 right-0 w-[94%] rounded-[2.2rem] bg-[#E8E0D3] border border-[#2E130C]/10"
+              className="hidden lg:block absolute inset-y-7 right-0 w-[94%] rounded-[2.2rem] bg-[#E8E0D3] border border-[#2E130C]/10"
             />
             <motion.div
               animate={{ x: [-14, -12, -14], rotate: [1.8, 1.4, 1.8] }}
               transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut" }}
-              className="absolute inset-y-4 left-0 w-[94%] rounded-[2.2rem] bg-[#F8F4EB] border border-[#2E130C]/10"
+              className="hidden lg:block absolute inset-y-4 left-0 w-[94%] rounded-[2.2rem] bg-[#F8F4EB] border border-[#2E130C]/10"
             />
 
-            <div className="relative rounded-t-[1.2rem] rounded-b-[2.4rem] lg:rounded-[2.4rem] overflow-hidden shadow-2xl bg-[#FFFDF8] border border-[#2E130C]/15">
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(178,11,19,0.12),transparent_45%)]" />
+            <div className="relative rounded-t-none rounded-b-[2.4rem] lg:rounded-[2.4rem] overflow-hidden shadow-2xl bg-[#E2D9BC] border border-[#2E130C]/10 lg:border-[#2E130C]/15">
               <div className="relative z-10 p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] lg:pb-5 space-y-4 text-[#2E130C]">
-                <div className="flex items-center justify-between">
-                  <Badge className="bg-[#2E130C]/10 text-[#2E130C] border border-[#2E130C]/20 uppercase tracking-wider text-[10px] font-black">
-                    {mission.action_channel === "whatsapp" ? "Mise en relation" : mission.action_channel === "social_link" ? "Action sociale" : "Action relationnelle"}
-                  </Badge>
-                  <span className="text-[10px] uppercase tracking-wider font-bold text-[#2E130C]/60">
-                    {Number(mission.beneficiary?.whatsapp_response_delay_hours || 0) > 0
-                      ? `Réponse ~${Number(mission.beneficiary?.whatsapp_response_delay_hours)}h`
-                      : "Réponse non renseignée"}
-                  </span>
-                </div>
-
                 <div className="rounded-2xl border border-[#2E130C]/10 bg-[#F3F0E7] p-4 flex flex-col items-center text-center gap-2">
                   <Avatar className="h-20 w-20 border-2 border-[#B20B13]/20">
                     <AvatarImage src={mission.beneficiary?.avatar_url} className="object-cover object-top" />
@@ -431,6 +419,11 @@ export function ServiceMissionsFeed({
                   <div className="min-w-0">
                     <p className="font-black text-base leading-none">{mission.beneficiary?.display_name || "Membre"}</p>
                     <p className="text-xs text-[#2E130C]/70 mt-1">{mission.beneficiary?.trade || "Membre"}</p>
+                    <p className="text-[10px] uppercase tracking-wider font-bold text-[#2E130C]/60 mt-2">
+                      {Number(mission.beneficiary?.whatsapp_response_delay_hours || 0) > 0
+                        ? `Réponse WhatsApp ~${Number(mission.beneficiary?.whatsapp_response_delay_hours)}h`
+                        : "Réponse WhatsApp non renseignée"}
+                    </p>
                   </div>
                   <div className="grid grid-cols-2 gap-2 w-full">
                     <div className="rounded-xl border border-[#2E130C]/10 bg-white px-3 py-2 text-left">
