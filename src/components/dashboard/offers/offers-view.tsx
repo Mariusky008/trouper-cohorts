@@ -559,7 +559,7 @@ export function OffersView({
                         </div>
                     </div>
 
-                    <div className="relative h-[calc(100dvh-17.8rem)] lg:h-[680px] max-w-none lg:max-w-sm mx-auto">
+                    <div className="relative h-[calc(100dvh-14.6rem)] lg:h-[680px] max-w-none lg:max-w-sm mx-auto">
                         {visibleDuoCards.length === 0 && (
                             <div className="absolute inset-0 grid place-items-center text-center px-6">
                                 <div className="space-y-3">
@@ -597,7 +597,7 @@ export function OffersView({
                                         transition={{ duration: 2.8, repeat: Infinity, ease: "linear" }}
                                         className="absolute -top-24 h-[220%] w-24 rotate-12 bg-white/35 blur-2xl"
                                     />
-                                    <div className="relative z-10 h-full overflow-y-auto p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] space-y-3 text-[#2E130C]">
+                                    <div className="relative z-10 h-full overflow-y-auto p-4 pb-[calc(0.45rem+env(safe-area-inset-bottom))] space-y-2.5 text-[#2E130C]">
                                         <div className="flex items-center justify-between">
                                             <Badge className="bg-[#F8F2E6] text-[#B20B13] border border-[#B20B13]/20 uppercase tracking-wider text-[10px] font-black">Offre duo suggérée</Badge>
                                             <div className="flex items-center gap-2">
@@ -615,7 +615,7 @@ export function OffersView({
                                                 <p className="text-xs text-[#2E130C]/70 mt-1">{offer.trade} · {offer.city}</p>
                                             </div>
                                         </div>
-                                        <div className="rounded-2xl border border-[#B20B13]/15 bg-gradient-to-r from-[#FFF8EE] to-[#F8F2E6] p-3 min-h-[150px]">
+                                        <div className="rounded-2xl border border-[#B20B13]/15 bg-gradient-to-r from-[#FFF8EE] to-[#F8F2E6] p-3 min-h-[120px]">
                                             <p className="text-[10px] uppercase tracking-widest font-bold text-[#B20B13] mb-1">Idée d’alliance</p>
                                             <h3 className="font-black text-lg leading-tight">{offer.offerName}</h3>
                                             <p className="text-xs text-[#2E130C]/85 mt-2">{offer.shortDescription}</p>
