@@ -46,6 +46,8 @@ function DashboardLayoutFull({ children, pathname }: { children: React.ReactNode
   const supabase = createClient();
   const { badges, markAsSeen } = useNotifications();
   const isHomeDashboard = pathname === "/mon-reseau-local/dashboard";
+  const isOpportunitiesDashboard = pathname === "/mon-reseau-local/dashboard/opportunities";
+  const isImmersiveMobilePage = isHomeDashboard || isOpportunitiesDashboard;
 
   // Mark as seen when visiting pages
   useEffect(() => {
@@ -127,7 +129,7 @@ function DashboardLayoutFull({ children, pathname }: { children: React.ReactNode
   const trustScore = userProfile?.trust_score || 5.0;
   const { tier } = getPointsTier(points);
   const mobileHeaderHeight = isHomeDashboard ? (isMobileHeaderCompact ? "3.15rem" : "3.55rem") : "4rem";
-  const mobileMainTopPadding = isHomeDashboard
+  const mobileMainTopPadding = isImmersiveMobilePage
     ? "0px"
     : "calc(4rem + env(safe-area-inset-top) + 0.35rem)";
 
@@ -136,7 +138,7 @@ function DashboardLayoutFull({ children, pathname }: { children: React.ReactNode
       {/* --- TOP NAVIGATION BAR (DESKTOP & MOBILE) --- */}
       <header className={cn(
         "fixed top-0 w-full z-30 px-3 lg:px-8 flex items-center justify-between transition-all duration-300",
-        isHomeDashboard && isMobileViewport
+        isImmersiveMobilePage && isMobileViewport
           ? "bg-gradient-to-b from-black/50 via-black/20 to-transparent border-b-0 shadow-none backdrop-blur-0"
           : "bg-[#E2D9BC]/85 backdrop-blur-lg border-b-2 border-[#2E130C]/10 shadow-sm",
         isHomeDashboard ? "lg:h-16" : "lg:h-16"
@@ -283,7 +285,7 @@ function DashboardLayoutFull({ children, pathname }: { children: React.ReactNode
       style={{
         paddingTop: isMobileViewport ? mobileMainTopPadding : undefined,
       }}>
-        <div className={cn("mx-auto max-w-7xl", isHomeDashboard ? "px-0 md:p-8" : "p-4 md:p-8")}>
+        <div className={cn("mx-auto max-w-7xl", isImmersiveMobilePage ? "px-0 md:p-8" : "p-4 md:p-8")}>
           {children}
         </div>
       </main>

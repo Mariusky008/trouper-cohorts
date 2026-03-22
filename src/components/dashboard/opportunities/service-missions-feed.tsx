@@ -256,15 +256,36 @@ export function ServiceMissionsFeed({
   };
 
   return (
-    <div className="space-y-4 lg:space-y-6">
-      <div className="lg:hidden flex items-center justify-between gap-3">
-        <div>
-          <p className="text-xl font-black text-[#2E130C]">Opportunités</p>
-          <p className="text-xs text-[#2E130C]/60 font-semibold">{filteredMissions.length} missions dans ce filtre</p>
+    <div className="space-y-4 lg:space-y-6 pt-[calc(env(safe-area-inset-top)+3.55rem)] lg:pt-0">
+      <div className="lg:hidden sticky top-[calc(env(safe-area-inset-top)+0.35rem)] z-30 -mx-1 px-1 py-2 rounded-2xl bg-[#E2D9BC]/55 backdrop-blur-xl border border-[#2E130C]/10 shadow-[0_10px_30px_rgba(46,19,12,0.12)]">
+        <div className="flex items-center justify-between gap-3 px-2">
+          <div>
+            <p className="text-xl font-black text-[#2E130C]">Opportunités</p>
+            <p className="text-xs text-[#2E130C]/60 font-semibold">{filteredMissions.length} missions dans ce filtre</p>
+          </div>
+          <Button variant="outline" onClick={() => setIsStatsOpen(true)} className="rounded-xl border-[#2E130C]/20 bg-[#E2D9BC]/75 text-[#2E130C]">
+            <SlidersHorizontal className="h-4 w-4 mr-1" /> Stats
+          </Button>
         </div>
-        <Button variant="outline" onClick={() => setIsStatsOpen(true)} className="rounded-xl border-[#2E130C]/20 text-[#2E130C]">
-          <SlidersHorizontal className="h-4 w-4 mr-1" /> Stats
-        </Button>
+        <div className="flex flex-wrap gap-2 px-2 pt-2">
+          {FILTERS.map((filter) => (
+            <Button
+              key={`mobile-${filter.id}`}
+              size="sm"
+              variant={activeFilter === filter.id ? "default" : "outline"}
+              onClick={() => setActiveFilter(filter.id)}
+              className={cn(
+                "rounded-full font-bold",
+                ["history", "refused"].includes(filter.id) && "hidden",
+                activeFilter === filter.id
+                  ? "bg-[#2E130C] text-white hover:bg-[#2E130C]/90"
+                  : "text-[#2E130C]/70 border-[#2E130C]/20 bg-[#E2D9BC]/70"
+              )}
+            >
+              {filter.label}
+            </Button>
+          ))}
+        </div>
       </div>
 
       <div className="hidden lg:grid grid-cols-2 gap-3">
@@ -322,7 +343,7 @@ export function ServiceMissionsFeed({
         </div>
       )}
 
-      <div className="flex flex-wrap gap-2 pb-2">
+      <div className="hidden lg:flex flex-wrap gap-2 pb-2">
         {FILTERS.map((filter) => (
           <Button
             key={filter.id}
@@ -345,7 +366,7 @@ export function ServiceMissionsFeed({
           <div className="text-center py-12 text-[#2E130C]/40 italic">Aucune mission de service pour ce filtre.</div>
         )}
 
-        <div className={cn(useTinderStack && "relative max-w-sm mx-auto lg:h-[900px]")}>
+        <div className={cn(useTinderStack && "relative max-w-sm mx-auto min-h-[calc(100dvh-13.2rem)] lg:h-[900px]")}>
         {stackMissions.map((mission, index) => {
           const isTopCard = !useTinderStack || index === 0;
           return (
@@ -363,7 +384,7 @@ export function ServiceMissionsFeed({
             }
             transition={{ delay: index * 0.03 }}
             className={cn(
-              "relative w-full max-w-sm mx-auto",
+              "relative w-full max-w-sm mx-auto min-h-[calc(100dvh-13.2rem)] lg:min-h-0",
               useTinderStack && "lg:absolute lg:inset-x-0 lg:top-0",
               useTinderStack && index > 0 && "hidden lg:block lg:pointer-events-none"
             )}
