@@ -361,14 +361,11 @@ export function OffersView({
                             <Megaphone className="h-4 w-4 mr-2" /> Besoins business
                         </TabsTrigger>
                     </TabsList>
-                    <TabsList className="hidden lg:grid bg-transparent border-0 p-0 h-auto grid-cols-1 w-full">
-                        <TabsTrigger 
-                            value="refused" 
-                            className="rounded-full px-4 py-2.5 text-sm font-bold text-stone-500 bg-white border border-stone-200 data-[state=active]:bg-stone-700 data-[state=active]:text-white data-[state=active]:border-stone-700 transition-all shadow-sm min-w-0"
-                        >
-                            Refusées
-                        </TabsTrigger>
-                    </TabsList>
+                    <div className="hidden lg:flex justify-end">
+                        <Button onClick={() => setIsSearchDialogOpen(true)} className="h-10 bg-[#7A5A45] hover:bg-[#7A5A45]/90 text-white font-black rounded-xl text-sm px-4">
+                            <Megaphone className="h-4 w-4 mr-2" /> Publier une Recherche
+                        </Button>
+                    </div>
                     <div className="lg:hidden pt-0.5">
                         {activeTab !== "duos" && (
                             <Button onClick={() => setIsSearchDialogOpen(true)} className="w-full h-10 bg-[#7A5A45] hover:bg-[#7A5A45]/90 text-white font-black rounded-xl text-sm">
@@ -630,22 +627,11 @@ export function OffersView({
                         ))}
                     </div>
 
-                    <div className="hidden lg:grid md:grid-cols-2 gap-4 pt-2 hidden">
-                        {[
-                            { title: "Audit SEO & Visibilité", price: "720€", original: "900€" },
-                            { title: "Pack Photos Pro", price: "240€", original: "300€" },
-                        ].map((dummy, i) => (
-                            <LockedOfferCard key={i} title={dummy.title} price={dummy.price} original={dummy.original} />
-                        ))}
-                    </div>
-                    <div className="hidden lg:block text-center mt-8 hidden">
-                        <p className="text-stone-500 font-medium">+ {lockedCount > 0 ? lockedCount : "150"} autres offres premium vous attendent.</p>
-                    </div>
                 </TabsContent>
 
                 <TabsContent value="needs" className="space-y-4 lg:space-y-6 mt-2 lg:mt-3 animate-in fade-in slide-in-from-bottom-4 duration-500">
                     <div className="max-w-3xl mx-auto flex items-center justify-between gap-3">
-                        <p className="text-sm font-black text-[#2E130C] hidden lg:block">Besoins business du réseau ({callsDeckDisplay.length})</p>
+                        <p className="hidden lg:block" />
                         <Dialog open={isSearchDialogOpen} onOpenChange={setIsSearchDialogOpen}>
                             <DialogTrigger asChild>
                                 <Button size="sm" className="hidden lg:inline-flex bg-[#7A5A45] hover:bg-[#7A5A45]/90 text-white font-bold rounded-xl shadow-lg shadow-[#2E130C]/20 h-9 px-4">
@@ -790,34 +776,6 @@ export function OffersView({
                             </motion.div>
                         ))}
                     </div>
-                </TabsContent>
-
-                <TabsContent value="refused" className="space-y-6 mt-3 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                    <div className="rounded-2xl border border-stone-200 bg-white px-4 py-3 max-w-3xl mx-auto">
-                        <p className="text-sm font-black text-[#2E130C]">Refusées (récupérables)</p>
-                        <p className="text-xs text-[#2E130C]/70">Tu peux remettre une carte dans le flux à tout moment.</p>
-                    </div>
-
-                    <div className="grid md:grid-cols-2 gap-4">
-                        {refusedOffers.map((offer) => (
-                            <div key={`ref-offer-${offer.user_id}`} className="bg-white rounded-2xl border border-stone-200 p-4 space-y-3">
-                                <p className="text-sm font-black text-[#2E130C]">{offer.offer_title}</p>
-                                <p className="text-xs text-stone-500">{offer.display_name}</p>
-                                <Button onClick={() => restoreRefusedOffer(offer.user_id)} className="w-full bg-[#2E130C] hover:bg-[#2E130C]/90 text-white">Remettre dans les offres</Button>
-                            </div>
-                        ))}
-                        {refusedSearches.map((search) => (
-                            <div key={`ref-search-${search.id}`} className="bg-white rounded-2xl border border-stone-200 p-4 space-y-3">
-                                <p className="text-sm font-black text-[#2E130C]">{search.title}</p>
-                                <p className="text-xs text-stone-500">{search.user_display_name}</p>
-                                <Button onClick={() => restoreRefusedSearch(search.id)} className="w-full bg-[#2E130C] hover:bg-[#2E130C]/90 text-white">Remettre dans les appels</Button>
-                            </div>
-                        ))}
-                    </div>
-
-                    {refusedOffers.length === 0 && refusedSearches.length === 0 && (
-                        <div className="text-center py-10 text-stone-500 font-medium">Aucune carte refusée pour le moment.</div>
-                    )}
                 </TabsContent>
             </Tabs>
 
