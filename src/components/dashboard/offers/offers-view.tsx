@@ -252,9 +252,12 @@ export function OffersView({
     };
 
     return (
-        <div className="space-y-4 lg:space-y-8 px-2 lg:px-4 md:px-0 pb-12">
+        <div className="space-y-4 lg:space-y-8 px-0 lg:px-4 md:px-0 pb-12 pt-[calc(env(safe-area-inset-top)+0.5rem)] lg:pt-0">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <div className="max-w-3xl mx-auto mb-4 lg:mb-6 space-y-3 sticky top-[calc(env(safe-area-inset-top)+3.6rem)] lg:static z-20 bg-[#E2D9BC]/75 backdrop-blur-md lg:bg-transparent lg:backdrop-blur-0 py-2">
+                <div className="max-w-3xl mx-auto mb-4 lg:mb-6 space-y-2 sticky top-[calc(env(safe-area-inset-top)+0.35rem)] lg:static z-20 bg-[#E2D9BC]/55 backdrop-blur-xl border border-[#2E130C]/10 lg:border-0 rounded-2xl lg:rounded-none shadow-[0_10px_30px_rgba(46,19,12,0.12)] lg:shadow-none py-2 px-2 lg:px-0">
+                    <p className="lg:hidden text-xs text-[#2E130C]/70 font-black uppercase tracking-wider px-1">
+                        {activeTab === "offers" ? `${offersDeckDisplay.length} offres dans ce filtre` : `${callsDeckDisplay.length} appels dans ce filtre`}
+                    </p>
                     <TabsList className="bg-transparent border-0 p-0 h-auto grid grid-cols-2 w-full gap-2">
                         <TabsTrigger 
                             value="offers" 
@@ -342,7 +345,7 @@ export function OffersView({
                     </div>
 
                     {ownOfferSource && (
-                        <div className="max-w-sm mx-auto lg:hidden">
+                        <div className="max-w-sm mx-auto lg:hidden hidden">
                             <div className="relative rounded-[2.4rem] overflow-hidden shadow-xl bg-[#FFFDF8] border border-[#2E130C]/12">
                                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(59,130,246,0.09),transparent_45%)]" />
                                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom,rgba(251,191,36,0.10),transparent_42%)]" />
@@ -452,7 +455,7 @@ export function OffersView({
                         </div>
                     </div>
 
-                    <div className="relative h-[calc(100dvh-16.9rem)] lg:h-[680px] max-w-sm mx-auto">
+                    <div className="relative h-[calc(100dvh-11.9rem)] lg:h-[680px] max-w-none lg:max-w-sm mx-auto">
                         {offersDeckDisplay.length === 0 && (
                             <div className="absolute inset-0 grid place-items-center text-center px-6">
                                 <p className="text-sm font-bold text-[#2E130C]/70">Aucune offre partenaire en attente pour le moment.</p>
@@ -481,7 +484,7 @@ export function OffersView({
                                     if (info.offset.x >= 120) handleOfferInterested(offer);
                                 }}
                             >
-                                <div className="relative h-full rounded-[2.4rem] overflow-hidden shadow-xl bg-[#FFFDF8] border border-[#2E130C]/12">
+                                <div className="relative h-full rounded-t-none rounded-b-[2.4rem] lg:rounded-[2.4rem] overflow-hidden shadow-xl bg-[#E2D9BC] border border-[#2E130C]/10">
                                     <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(59,130,246,0.09),transparent_45%)]" />
                                     <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom,rgba(251,191,36,0.10),transparent_42%)]" />
                                     <motion.div
@@ -625,7 +628,7 @@ export function OffersView({
                         </Dialog>
                     </div>
 
-                    <div className="relative h-[calc(100dvh-16.9rem)] lg:h-[660px] max-w-sm mx-auto">
+                    <div className="relative h-[calc(100dvh-11.9rem)] lg:h-[660px] max-w-none lg:max-w-sm mx-auto">
                         {callsDeckDisplay.slice(0, 5).map((search, index) => (
                             <motion.div
                                 key={search.id}
@@ -649,7 +652,7 @@ export function OffersView({
                                     if (info.offset.x >= 120) handleSearchInterested(search);
                                 }}
                             >
-                                <div className="relative h-full rounded-[2.4rem] overflow-hidden shadow-xl bg-[#FFFDF8] border border-[#2E130C]/12">
+                                <div className="relative h-full rounded-t-none rounded-b-[2.4rem] lg:rounded-[2.4rem] overflow-hidden shadow-xl bg-[#E2D9BC] border border-[#2E130C]/10">
                                     <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(59,130,246,0.09),transparent_45%)]" />
                                     <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom,rgba(251,191,36,0.10),transparent_42%)]" />
                                     <div className="relative z-10 h-full overflow-y-auto p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] space-y-4 text-[#2E130C]">

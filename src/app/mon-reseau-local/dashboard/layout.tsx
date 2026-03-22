@@ -47,7 +47,8 @@ function DashboardLayoutFull({ children, pathname }: { children: React.ReactNode
   const { badges, markAsSeen } = useNotifications();
   const isHomeDashboard = pathname === "/mon-reseau-local/dashboard";
   const isOpportunitiesDashboard = pathname === "/mon-reseau-local/dashboard/opportunities";
-  const isImmersiveMobilePage = isHomeDashboard || isOpportunitiesDashboard;
+  const isOffersDashboard = pathname === "/mon-reseau-local/dashboard/offers";
+  const isImmersiveMobilePage = isHomeDashboard || isOpportunitiesDashboard || isOffersDashboard;
 
   // Mark as seen when visiting pages
   useEffect(() => {
@@ -63,7 +64,7 @@ function DashboardLayoutFull({ children, pathname }: { children: React.ReactNode
   const [pendingCount, setPendingCount] = useState(0);
   const [isMobileViewport, setIsMobileViewport] = useState(false);
   const [isMobileHeaderCompact, setIsMobileHeaderCompact] = useState(false);
-  const hideMobileTopHeader = isOpportunitiesDashboard && isMobileViewport;
+  const hideMobileTopHeader = (isOpportunitiesDashboard || isOffersDashboard) && isMobileViewport;
 
   const [userProfile, setUserProfile] = useState<any>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
