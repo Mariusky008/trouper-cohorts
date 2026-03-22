@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Users, Zap, Calendar, Activity, TrendingUp } from "lucide-react";
+import { Users, Zap, Calendar, Activity, TrendingUp, Sparkles } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -182,6 +182,21 @@ async function getNetworkStats() {
     .order('created_at', { ascending: false }) // Newest first
     .limit(500); // Reasonable limit
 
+  const { data: duoVotes } = await supabaseAdmin
+    .from("network_duo_votes")
+    .select("duo_key, decision");
+  const duoTotalVotes = duoVotes?.length || 0;
+  const duoValidate = (duoVotes || []).filter((v: any) => v.decision === "validate").length;
+  const duoLater = (duoVotes || []).filter((v: any) => v.decision === "later").length;
+  const duoReject = (duoVotes || []).filter((v: any) => v.decision === "reject").length;
+  const duoValidateCounts = new Map<string, number>();
+  (duoVotes || []).forEach((vote: any) => {
+    if (vote.decision !== "validate") return;
+    duoValidateCounts.set(vote.duo_key, (duoValidateCounts.get(vote.duo_key) || 0) + 1);
+  });
+  const duoActivated = Array.from(duoValidateCounts.values()).filter((count) => count >= 2).length;
+  const duoActivationRate = duoTotalVotes > 0 ? ((duoActivated / Math.max(1, duoValidateCounts.size)) * 100).toFixed(0) : "0";
+
   // Filter for stats (only today's events for the counters)
   const statsToday = eventsToday?.filter((e: any) => e.created_at >= todayStr + 'T00:00:00').reduce((acc: any, curr: any) => {
     const type = curr.event_type;
@@ -227,7 +242,15 @@ async function getNetworkStats() {
     avgTrustScore: avgScore,
     recentMembers: recentProfiles, // This variable name is slightly misleading now if we load ALL, but let's keep it for now.
     analyticsToday: statsToday,
-    founderCalls: enrichedFounderCalls
+    founderCalls: enrichedFounderCalls,
+    duoAnalytics: {
+      totalVotes: duoTotalVotes,
+      validate: duoValidate,
+      later: duoLater,
+      reject: duoReject,
+      activated: duoActivated,
+      activationRate: duoActivationRate,
+    }
   };
 }
 
@@ -541,6 +564,42 @@ export default async function AdminNetworkPage() {
                     </div>
                   );
                 })}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-l-4 border-l-violet-500 bg-violet-50/40">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-violet-900">
+                <Sparkles className="h-5 w-5 text-violet-600" /> Duo IA (Global)
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                <div className="rounded-xl border border-violet-100 bg-white p-3">
+                  <p className="text-[10px] uppercase font-bold text-violet-500">Votes</p>
+                  <p className="text-2xl font-black text-violet-900">{stats.duoAnalytics.totalVotes}</p>
+                </div>
+                <div className="rounded-xl border border-emerald-100 bg-white p-3">
+                  <p className="text-[10px] uppercase font-bold text-emerald-600">Valider</p>
+                  <p className="text-2xl font-black text-emerald-700">{stats.duoAnalytics.validate}</p>
+                </div>
+                <div className="rounded-xl border border-amber-100 bg-white p-3">
+                  <p className="text-[10px] uppercase font-bold text-amber-600">À revoir</p>
+                  <p className="text-2xl font-black text-amber-700">{stats.duoAnalytics.later}</p>
+                </div>
+                <div className="rounded-xl border border-rose-100 bg-white p-3">
+                  <p className="text-[10px] uppercase font-bold text-rose-600">Refus</p>
+                  <p className="text-2xl font-black text-rose-700">{stats.duoAnalytics.reject}</p>
+                </div>
+                <div className="rounded-xl border border-violet-100 bg-white p-3">
+                  <p className="text-[10px] uppercase font-bold text-violet-500">Duos 2/2</p>
+                  <p className="text-2xl font-black text-violet-900">{stats.duoAnalytics.activated}</p>
+                </div>
+                <div className="rounded-xl border border-slate-200 bg-white p-3">
+                  <p className="text-[10px] uppercase font-bold text-slate-500">Taux 2/2</p>
+                  <p className="text-2xl font-black text-slate-900">{stats.duoAnalytics.activationRate}%</p>
+                </div>
               </div>
             </CardContent>
           </Card>
