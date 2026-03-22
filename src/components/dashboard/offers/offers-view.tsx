@@ -280,6 +280,17 @@ export function OffersView({
                             Refusées
                         </TabsTrigger>
                     </TabsList>
+                    <div className="lg:hidden">
+                        {activeTab === "offers" ? (
+                            <Button onClick={() => setIsOfferDialogOpen(true)} className="w-full h-10 bg-[#2E130C] hover:bg-[#2E130C]/90 text-white font-black rounded-xl text-sm">
+                                <PlusCircle className="h-4 w-4 mr-2" /> Ajouter une offre
+                            </Button>
+                        ) : (
+                            <Button onClick={() => setIsSearchDialogOpen(true)} className="w-full h-10 bg-blue-600 hover:bg-blue-500 text-white font-black rounded-xl text-sm">
+                                <Megaphone className="h-4 w-4 mr-2" /> Publier une recherche
+                            </Button>
+                        )}
+                    </div>
                 </div>
 
                 <TabsContent value="offers" className="space-y-4 lg:space-y-12 mt-2 lg:mt-3 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -386,16 +397,9 @@ export function OffersView({
                     <div className="max-w-3xl mx-auto space-y-3">
                         <div className="flex items-center justify-between gap-3">
                             <p className="text-sm font-black text-[#2E130C] hidden lg:block">Mes offres publiées ({currentUserOffers?.length || 0})</p>
-                            <Button
-                                variant="outline"
-                                onClick={() => setIsMyOffersOpen(true)}
-                                className="lg:hidden h-9 rounded-xl border-[#2E130C]/20 text-[#2E130C] font-black text-xs"
-                            >
-                                Mes offres ({currentUserOffers?.length || 0})
-                            </Button>
                             <Dialog open={isOfferDialogOpen} onOpenChange={setIsOfferDialogOpen}>
                                 <DialogTrigger asChild>
-                                    <Button className="bg-[#2E130C] hover:bg-[#2E130C]/90 text-white h-9 rounded-xl font-black text-xs">
+                                    <Button className="hidden lg:inline-flex bg-[#2E130C] hover:bg-[#2E130C]/90 text-white h-9 rounded-xl font-black text-xs">
                                         Ajouter une offre
                                     </Button>
                                 </DialogTrigger>
@@ -484,7 +488,8 @@ export function OffersView({
                                     if (info.offset.x >= 120) handleOfferInterested(offer);
                                 }}
                             >
-                                <div className="relative h-full rounded-t-none rounded-b-[2.4rem] lg:rounded-[2.4rem] overflow-hidden shadow-xl bg-[#E2D9BC] border border-[#2E130C]/10">
+                                <div className="relative h-full rounded-t-none rounded-b-[2.4rem] lg:rounded-[2.4rem] overflow-hidden shadow-2xl bg-[#FFFDF8] border border-[#2E130C]/15">
+                                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(59,130,246,0.07),transparent_45%)]" />
                                     <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(59,130,246,0.09),transparent_45%)]" />
                                     <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom,rgba(251,191,36,0.10),transparent_42%)]" />
                                     <motion.div
@@ -564,16 +569,9 @@ export function OffersView({
                 <TabsContent value="searches" className="space-y-4 lg:space-y-6 mt-2 lg:mt-3 animate-in fade-in slide-in-from-bottom-4 duration-500">
                     <div className="max-w-3xl mx-auto flex items-center justify-between gap-3">
                         <p className="text-sm font-black text-[#2E130C] hidden lg:block">Mes appels publiés ({mySearches.length})</p>
-                        <Button
-                            variant="outline"
-                            onClick={() => setIsMySearchesOpen(true)}
-                            className="lg:hidden h-9 rounded-xl border-[#2E130C]/20 text-[#2E130C] font-black text-xs"
-                        >
-                            Mes appels ({mySearches.length})
-                        </Button>
                         <Dialog open={isSearchDialogOpen} onOpenChange={setIsSearchDialogOpen}>
                             <DialogTrigger asChild>
-                                <Button size="sm" className="bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl shadow-lg shadow-blue-900/20 h-9 px-4">
+                                <Button size="sm" className="hidden lg:inline-flex bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl shadow-lg shadow-blue-900/20 h-9 px-4">
                                     <Megaphone className="mr-2 h-4 w-4" /> Publier une Recherche
                                 </Button>
                             </DialogTrigger>
@@ -652,7 +650,7 @@ export function OffersView({
                                     if (info.offset.x >= 120) handleSearchInterested(search);
                                 }}
                             >
-                                <div className="relative h-full rounded-t-none rounded-b-[2.4rem] lg:rounded-[2.4rem] overflow-hidden shadow-xl bg-[#E2D9BC] border border-[#2E130C]/10">
+                                <div className="relative h-full rounded-t-none rounded-b-[2.4rem] lg:rounded-[2.4rem] overflow-hidden shadow-2xl bg-[#FFFDF8] border border-[#2E130C]/15">
                                     <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(59,130,246,0.09),transparent_45%)]" />
                                     <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom,rgba(251,191,36,0.10),transparent_42%)]" />
                                     <div className="relative z-10 h-full overflow-y-auto p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] space-y-4 text-[#2E130C]">
