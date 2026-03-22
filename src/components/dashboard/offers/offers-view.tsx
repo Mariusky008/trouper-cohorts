@@ -254,7 +254,15 @@ export function OffersView({
                 };
             });
     }, [offersDeckDisplay, ownOfferSource, currentUserId, duoCandidates]);
-    const visibleDuoCards = useMemo(() => duoCards, [duoCards]);
+    const visibleDuoCards = useMemo(
+        () =>
+            duoCards.filter(
+                (card: any) =>
+                    duoProgress[card.duoId]?.stage !== "completed" &&
+                    duoStates[card.duoId]?.myDecision !== "reject"
+            ),
+        [duoCards, duoProgress, duoStates]
+    );
 
     const whatsappSearchMessage = (search: any) =>
         `Salut ${search.user_display_name}, je viens de voir ton appel d'offre "${search.title}" sur Popey. Je peux peut-être t'aider, on échange ?`;
