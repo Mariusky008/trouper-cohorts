@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Pencil, Percent, Search, Megaphone, Trash2, ArrowRight, MessageCircle, Sparkles, Gift, Clock3 } from "lucide-react";
+import { Pencil, Search, Megaphone, Trash2, ArrowRight, MessageCircle, Sparkles, Gift, Clock3 } from "lucide-react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -18,12 +18,11 @@ import { createNetworkSearch, deleteNetworkSearch } from "@/lib/actions/network-
 import { toggleOfferActive } from "@/lib/actions/offers";
 import { createNetworkOffer, deleteNetworkOffer } from "@/lib/actions/network-offers";
 import { saveDuoDecision } from "@/lib/actions/duo-alliances";
-import { LockedOfferCard } from "./locked-offer-card";
 import { useRouter } from "next/navigation";
 
 export function OffersView({ 
     unlockedOffers, 
-    lockedCount, 
+    lockedCount: _lockedCount, 
     currentUserOffer,
     currentUserOffers,
     searches,
@@ -51,15 +50,20 @@ export function OffersView({
     const [isSubmittingOffer, setIsSubmittingOffer] = useState(false);
     const [swipeLeftId, setSwipeLeftId] = useState<string | null>(null);
     const [swipeRightId, setSwipeRightId] = useState<string | null>(null);
-    const [refusedOfferIds, setRefusedOfferIds] = useState<string[]>([]);
+    const [refusedOfferIds] = useState<string[]>([]);
     const [refusedSearchIds, setRefusedSearchIds] = useState<string[]>([]);
-    const [consumedOfferIds, setConsumedOfferIds] = useState<string[]>([]);
+    const [consumedOfferIds] = useState<string[]>([]);
     const [consumedSearchIds, setConsumedSearchIds] = useState<string[]>([]);
     const [infoOffer, setInfoOffer] = useState<any | null>(null);
     const [infoSearch, setInfoSearch] = useState<any | null>(null);
     const [duoStates, setDuoStates] = useState(initialDuoStates || {});
+    const [duoProgress, setDuoProgress] = useState<Record<string, { stage: "validated" | "contacted" | "completed"; outcome?: string }>>({});
+    const [isDuoMissionOpen, setIsDuoMissionOpen] = useState(false);
+    const [activeDuoMission, setActiveDuoMission] = useState<any | null>(null);
+    const [selectedDuoOutcome, setSelectedDuoOutcome] = useState<string>("");
     const [isIntroOpen, setIsIntroOpen] = useState(false);
     const OFFERS_INTRO_SEEN_KEY = "offers-intro-seen-v1";
+    const DUO_PROGRESS_KEY = "duo-alliances-progress-v1";
 
     useEffect(() => {
         const saved = window.localStorage.getItem("offers-tab");
@@ -76,6 +80,12 @@ export function OffersView({
     useEffect(() => {
         const seen = window.localStorage.getItem(OFFERS_INTRO_SEEN_KEY);
         if (!seen) setIsIntroOpen(true);
+    }, []);
+
+    useEffect(() => {
+        const raw = window.localStorage.getItem(DUO_PROGRESS_KEY);
+        if (!raw) return;
+        setDuoProgress(JSON.parse(raw));
     }, []);
 
     const handleCreateSearch = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -180,16 +190,6 @@ export function OffersView({
         [searches, refusedSearchIds, consumedSearchIds, currentUserId]
     );
 
-    const refusedOffers = useMemo(
-        () => (unlockedOffers || []).filter((o) => refusedOfferIds.includes(o.user_id)),
-        [unlockedOffers, refusedOfferIds]
-    );
-
-    const refusedSearches = useMemo(
-        () => (searches || []).filter((s) => refusedSearchIds.includes(s.id)),
-        [searches, refusedSearchIds]
-    );
-
     const mySearches = useMemo(
         () => (searches || []).filter((s) => s.user_id === currentUserId),
         [searches, currentUserId]
@@ -220,6 +220,8 @@ export function OffersView({
         if (!source.length) return [];
         return source
             .map((offer: any) => {
+                const myTrade = ownOfferSource?.trade || "Développement web";
+                const partnerTrade = offer.trade || "Expertise métier";
                 const score = Math.min(
                     94,
                     55 +
@@ -227,11 +229,11 @@ export function OffersView({
                     (offer.trade && ownOfferSource?.trade && offer.trade !== ownOfferSource.trade ? 13 : 7) +
                     Math.min(12, discountPct(offer))
                 );
-                const ideas = [
-                    "Pack Acquisition locale + Crédibilité métier",
-                    "Pack Visibilité + Conversion business",
-                    "Pack Croissance + Recommandation croisée",
-                ];
+                const offerName = `Pack ${myTrade} + ${partnerTrade}`;
+                const shortDescription = `Une offre commune qui combine ${myTrade.toLowerCase()} et ${partnerTrade.toLowerCase()} pour accélérer la conversion client.`;
+                const clientBenefit = "Le client obtient une solution complète avec un seul duo, plus rapide et plus crédible.";
+                const expertiseCombo = `Toi: ${myTrade} · ${offer.display_name}: ${partnerTrade}`;
+                const suggestedPrice = score >= 80 ? "1 500€" : score >= 70 ? "1 200€" : "900€";
                 const reasons = [
                     "Vos services sont complémentaires",
                     "Vos cibles peuvent se recouper",
@@ -242,33 +244,20 @@ export function OffersView({
                     duoId: [currentUserId, offer.user_id].sort().join("__"),
                     partnerId: offer.user_id,
                     score,
-                    idea: ideas[Math.abs(String(offer.user_id).split("").reduce((a, c) => a + c.charCodeAt(0), 0)) % ideas.length],
+                    offerName,
+                    shortDescription,
+                    clientBenefit,
+                    expertiseCombo,
+                    suggestedPrice,
+                    idea: offerName,
                     reasons,
                 };
             });
     }, [offersDeckDisplay, ownOfferSource, currentUserId, duoCandidates]);
     const visibleDuoCards = useMemo(() => duoCards, [duoCards]);
 
-    const whatsappOfferMessage = (offer: any) =>
-        `Salut ${offer.display_name}, ton offre "${offer.offer_title}" sur Popey m'intéresse. On peut en discuter aujourd'hui ?`;
-
     const whatsappSearchMessage = (search: any) =>
         `Salut ${search.user_display_name}, je viens de voir ton appel d'offre "${search.title}" sur Popey. Je peux peut-être t'aider, on échange ?`;
-
-    const handleOfferInterested = async (offer: any) => {
-        setSwipeRightId(`offer-${offer.user_id}`);
-        await new Promise((resolve) => setTimeout(resolve, 180));
-        window.open(`https://wa.me/?text=${encodeURIComponent(whatsappOfferMessage(offer))}`, "_blank");
-        setConsumedOfferIds((prev) => [...prev, offer.user_id]);
-        setSwipeRightId(null);
-    };
-
-    const handleOfferRefuse = async (offer: any) => {
-        setSwipeLeftId(`offer-${offer.user_id}`);
-        await new Promise((resolve) => setTimeout(resolve, 180));
-        setRefusedOfferIds((prev) => [...prev, offer.user_id]);
-        setSwipeLeftId(null);
-    };
 
     const handleSearchInterested = async (search: any) => {
         setSwipeRightId(`search-${search.id}`);
@@ -285,9 +274,6 @@ export function OffersView({
         setSwipeLeftId(null);
     };
 
-    const openWhatsappOfferPreview = (offer: any) => {
-        window.open(`https://wa.me/?text=${encodeURIComponent(whatsappOfferMessage(offer))}`, "_blank");
-    };
     const formatPhoneForWhatsApp = (phone?: string | null) => {
         if (!phone) return "";
         let cleaned = phone.replace(/[^\d+]/g, "");
@@ -299,12 +285,20 @@ export function OffersView({
     };
     const duoMessage = (offer: any, idea: string) =>
         `Salut ${offer.display_name}, l'IA Popey nous propose un duo business sur "${idea}". On regarde ensemble si on peut le lancer ?`;
+    const setDuoProgressState = (duoId: string, nextState: { stage: "validated" | "contacted" | "completed"; outcome?: string }) => {
+        setDuoProgress((prev) => {
+            const next = { ...prev, [duoId]: nextState };
+            window.localStorage.setItem(DUO_PROGRESS_KEY, JSON.stringify(next));
+            return next;
+        });
+    };
     const openDuoDiscussion = (offer: any, idea: string) => {
         const formattedPhone = formatPhoneForWhatsApp(offer.phone);
         if (!formattedPhone) {
             toast.error("Numéro WhatsApp indisponible pour ce membre.");
             return;
         }
+        setDuoProgressState(offer.duoId, { stage: "contacted" });
         window.open(`https://api.whatsapp.com/send?phone=${formattedPhone}&text=${encodeURIComponent(duoMessage(offer, idea))}`, "_blank");
     };
     const decideDuo = async (duoId: string, partnerId: string, decision: "validate" | "later" | "reject") => {
@@ -312,7 +306,25 @@ export function OffersView({
         const result = await saveDuoDecision(partnerId, decision);
         if (!result.success) {
             toast.error("Erreur sauvegarde duo : " + result.error);
+            return;
         }
+        if (decision === "validate") setDuoProgressState(duoId, { stage: "validated" });
+    };
+    const duoMissionOutcomes = [
+        { id: "continue_together", title: "On veut continuer ensemble", subtitle: "Le duo est validé" },
+        { id: "tested_not_ready", title: "On a fait un test mais pas de suite pour l’instant", subtitle: "Duo intéressant mais pas mûr" },
+        { id: "not_a_fit", title: "Ce n’était pas un bon fit", subtitle: "Pas compatible" },
+        { id: "offer_created", title: "On a créé quelque chose / une offre ensemble", subtitle: "Jackpot" },
+        { id: "need_help", title: "On a besoin d’aide pour aller plus loin", subtitle: "Très intelligent" },
+    ];
+    const handleSubmitDuoMission = () => {
+        if (!activeDuoMission?.duoId || !selectedDuoOutcome) {
+            toast.error("Choisissez un résultat de mission.");
+            return;
+        }
+        setDuoProgressState(activeDuoMission.duoId, { stage: "completed", outcome: selectedDuoOutcome });
+        setIsDuoMissionOpen(false);
+        toast.success("Résultat duo enregistré.");
     };
 
     const handleCloseIntro = () => {
@@ -327,8 +339,6 @@ export function OffersView({
         setIsSearchDialogOpen(true);
     };
 
-    const restoreRefusedOffer = (id: string) => setRefusedOfferIds((prev) => prev.filter((x) => x !== id));
-    const restoreRefusedSearch = (id: string) => setRefusedSearchIds((prev) => prev.filter((x) => x !== id));
     const offerBadge = (offer: any) => {
         if (discountPct(offer) >= 40) return "Flash";
         if (isRecentHours(offer.match_date, 48)) return "Nouveau";
@@ -599,7 +609,8 @@ export function OffersView({
                                         </div>
                                         <div className="rounded-2xl border border-[#B20B13]/15 bg-gradient-to-r from-[#FFF8EE] to-[#F8F2E6] p-3 min-h-[150px]">
                                             <p className="text-[10px] uppercase tracking-widest font-bold text-[#B20B13] mb-1">Idée d’alliance</p>
-                                            <h3 className="font-black text-lg leading-tight">{offer.idea}</h3>
+                                            <h3 className="font-black text-lg leading-tight">{offer.offerName}</h3>
+                                            <p className="text-xs text-[#2E130C]/85 mt-2">{offer.shortDescription}</p>
                                             <div className="mt-2 space-y-1">
                                                 {offer.reasons.map((reason: string, idx: number) => (
                                                     <p key={`${offer.duoId}-${idx}`} className="text-xs text-[#2E130C]/80">• {reason}</p>
@@ -607,17 +618,39 @@ export function OffersView({
                                             </div>
                                         </div>
                                         <div className="rounded-xl border border-[#2E130C]/10 bg-white p-3">
-                                            <p className="text-[10px] uppercase tracking-widest text-[#2E130C]/60 font-black">Ce que chacun apporte</p>
-                                            <p className="text-xs text-[#2E130C] mt-1">Toi: {ownOfferSource?.trade || "Expertise locale"} · {offer.display_name}: {offer.trade || "Expertise complémentaire"}</p>
+                                            <p className="text-[10px] uppercase tracking-widest text-[#2E130C]/60 font-black">Bénéfice client</p>
+                                            <p className="text-xs text-[#2E130C] mt-1">{offer.clientBenefit}</p>
+                                        </div>
+                                        <div className="rounded-xl border border-[#2E130C]/10 bg-white p-3">
+                                            <p className="text-[10px] uppercase tracking-widest text-[#2E130C]/60 font-black">Combinaison des expertises</p>
+                                            <p className="text-xs text-[#2E130C] mt-1">{offer.expertiseCombo}</p>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-2">
+                                            <div className="rounded-xl border border-[#2E130C]/10 bg-white p-3">
+                                                <p className="text-[10px] uppercase tracking-widest text-[#2E130C]/60 font-black">Prix conseillé</p>
+                                                <p className="text-sm font-black text-[#2E130C] mt-1">{offer.suggestedPrice}</p>
+                                            </div>
+                                            <div className="rounded-xl border border-[#2E130C]/10 bg-white p-3">
+                                                <p className="text-[10px] uppercase tracking-widest text-[#2E130C]/60 font-black">Format</p>
+                                                <p className="text-sm font-black text-[#2E130C] mt-1">Pack duo</p>
+                                            </div>
                                         </div>
                                         <div className="grid grid-cols-1 gap-2">
-                                            {duoStates[offer.duoId]?.myDecision === "validate" ? (
-                                                <Button onClick={() => openDuoDiscussion(offer, offer.idea)} className="h-10 bg-[#25D366] hover:bg-[#25D366]/90 text-white font-black uppercase text-[11px]">
-                                                    <MessageCircle className="h-3.5 w-3.5 mr-1" /> Ouvrir WhatsApp
-                                                </Button>
-                                            ) : (
+                                            {duoStates[offer.duoId]?.myDecision !== "validate" ? (
                                                 <Button onClick={() => void decideDuo(offer.duoId, offer.partnerId, "validate")} size="sm" className="h-10 bg-[#2E130C] hover:bg-[#2E130C]/90 text-white text-[11px] font-black uppercase">
                                                     Je valide l’idée
+                                                </Button>
+                                            ) : duoProgress[offer.duoId]?.stage === "contacted" ? (
+                                                <Button onClick={() => { setActiveDuoMission(offer); setSelectedDuoOutcome(duoProgress[offer.duoId]?.outcome || ""); setIsDuoMissionOpen(true); }} className="h-10 bg-[#2E130C] hover:bg-[#2E130C]/90 text-white font-black uppercase text-[11px]">
+                                                    Terminer la mission
+                                                </Button>
+                                            ) : duoProgress[offer.duoId]?.stage === "completed" ? (
+                                                <Button variant="outline" onClick={() => { setActiveDuoMission(offer); setSelectedDuoOutcome(duoProgress[offer.duoId]?.outcome || ""); setIsDuoMissionOpen(true); }} className="h-10 border-emerald-300 bg-emerald-50 text-emerald-800 font-black uppercase text-[11px]">
+                                                    Mission terminée
+                                                </Button>
+                                            ) : (
+                                                <Button onClick={() => openDuoDiscussion(offer, offer.offerName)} className="h-10 bg-[#25D366] hover:bg-[#25D366]/90 text-white font-black uppercase text-[11px]">
+                                                    <MessageCircle className="h-3.5 w-3.5 mr-1" /> Ouvrir WhatsApp
                                                 </Button>
                                             )}
                                         </div>
@@ -879,6 +912,39 @@ export function OffersView({
                             </Button>
                         </div>
                     )}
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={isDuoMissionOpen} onOpenChange={setIsDuoMissionOpen}>
+                <DialogContent className="bg-white border-[#2E130C]/10 text-[#2E130C] sm:max-w-lg rounded-2xl w-[94vw]">
+                    <DialogHeader>
+                        <DialogTitle className="text-xl font-black">Alors, ce duo… ça a donné quoi ?</DialogTitle>
+                        <DialogDescription className="text-sm text-[#2E130C]/65">
+                            Sélectionnez le résultat le plus proche de votre échange.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-2">
+                        {duoMissionOutcomes.map((outcome) => (
+                            <button
+                                key={outcome.id}
+                                type="button"
+                                onClick={() => setSelectedDuoOutcome(outcome.id)}
+                                className={`w-full text-left rounded-xl border px-3 py-3 transition ${
+                                    selectedDuoOutcome === outcome.id
+                                        ? "border-[#2E130C] bg-[#F8F2E6]"
+                                        : "border-[#2E130C]/15 bg-white hover:bg-[#F8F2E6]/40"
+                                }`}
+                            >
+                                <p className="text-sm font-black text-[#2E130C]">{outcome.title}</p>
+                                <p className="text-xs text-[#2E130C]/70 mt-1">👉 {outcome.subtitle}</p>
+                            </button>
+                        ))}
+                    </div>
+                    <DialogFooter>
+                        <Button onClick={handleSubmitDuoMission} className="w-full h-11 bg-[#2E130C] hover:bg-[#2E130C]/90 text-white font-black">
+                            Enregistrer le résultat
+                        </Button>
+                    </DialogFooter>
                 </DialogContent>
             </Dialog>
 
