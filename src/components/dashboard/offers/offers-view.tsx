@@ -238,6 +238,10 @@ export function OffersView({
         setSwipeLeftId(null);
     };
 
+    const openWhatsappOfferPreview = (offer: any) => {
+        window.open(`https://wa.me/?text=${encodeURIComponent(whatsappOfferMessage(offer))}`, "_blank");
+    };
+
     const restoreRefusedOffer = (id: string) => setRefusedOfferIds((prev) => prev.filter((x) => x !== id));
     const restoreRefusedSearch = (id: string) => setRefusedSearchIds((prev) => prev.filter((x) => x !== id));
     const offerBadge = (offer: any) => {
@@ -497,7 +501,7 @@ export function OffersView({
                                         transition={{ duration: 2.8, repeat: Infinity, ease: "linear" }}
                                         className="absolute -top-24 h-[220%] w-24 rotate-12 bg-white/35 blur-2xl"
                                     />
-                                    <div className="relative z-10 h-full overflow-y-auto p-5 pb-[calc(0.55rem+env(safe-area-inset-bottom))] space-y-4 text-[#2E130C]">
+                                    <div className="relative z-10 h-full overflow-y-auto p-4 pb-[calc(0.45rem+env(safe-area-inset-bottom))] space-y-3 text-[#2E130C]">
                                         <div className="flex items-center justify-between">
                                             <Badge className="bg-[#F8F2E6] text-[#B20B13] border border-[#B20B13]/20 uppercase tracking-wider text-[10px] font-black">Offre produit/service</Badge>
                                             <div className="flex items-center gap-2">
@@ -506,7 +510,7 @@ export function OffersView({
                                                 {!offer.__isOwn && <Badge className="bg-amber-300 text-[#2E130C] border-0 text-[10px] font-black">-{discountPct(offer)}%</Badge>}
                                             </div>
                                         </div>
-                                        <div className="rounded-2xl border border-[#2E130C]/10 bg-white p-4 flex items-center gap-3">
+                                        <div className="rounded-2xl border border-[#2E130C]/10 bg-white p-3 flex items-center gap-3">
                                             <Avatar className="h-14 w-14 border-2 border-blue-100">
                                                 <AvatarImage src={offer.avatar_url} className="object-cover object-top" />
                                                 <AvatarFallback>{offer.display_name?.[0] || "?"}</AvatarFallback>
@@ -516,7 +520,7 @@ export function OffersView({
                                                 <p className="text-xs text-[#2E130C]/70 mt-1">{offer.trade} · {offer.city}</p>
                                             </div>
                                         </div>
-                                        <div className="rounded-2xl border border-[#B20B13]/15 bg-gradient-to-r from-[#FFF8EE] to-[#F8F2E6] p-4 min-h-[164px]">
+                                        <div className="rounded-2xl border border-[#B20B13]/15 bg-gradient-to-r from-[#FFF8EE] to-[#F8F2E6] p-3 min-h-[150px]">
                                             <p className="text-[10px] uppercase tracking-widest font-bold text-[#B20B13] mb-1">Offre du moment</p>
                                             <h3 className="font-black text-lg leading-tight">{offer.offer_title}</h3>
                                             <p className="text-xs text-[#2E130C]/80 mt-2 line-clamp-4">{offer.offer_description}</p>
@@ -525,8 +529,8 @@ export function OffersView({
                                         <div className="grid grid-cols-2 gap-2">
                                             <Button size="sm" variant="outline" onClick={() => setInfoOffer(offer)} className="h-9 bg-white border-[#2E130C]/20 text-[#2E130C] hover:bg-[#2E130C]/5 text-[10px] font-black uppercase">Voir détails</Button>
                                             {offer.__isOwn ? (
-                                                <Button asChild size="sm" className="h-9 bg-[#2E130C] hover:bg-[#2E130C]/90 text-white text-[10px] font-black uppercase">
-                                                    <Link href="/mon-reseau-local/dashboard/profile?edit=true&tab=offer">Modifier</Link>
+                                                <Button onClick={() => openWhatsappOfferPreview(offer)} size="sm" className="h-9 bg-gradient-to-r from-[#25D366] to-[#1BCB5A] hover:from-[#25D366]/90 hover:to-[#1BCB5A]/90 text-white text-[10px] font-black uppercase">
+                                                    <MessageCircle className="h-3.5 w-3.5 mr-1" /> Contact WhatsApp
                                                 </Button>
                                             ) : (
                                                 <Button asChild size="sm" variant="outline" className="h-9 bg-white border-[#2E130C]/20 text-[#2E130C] hover:bg-[#2E130C]/5 text-[10px] font-black uppercase">
@@ -538,7 +542,7 @@ export function OffersView({
                                             {offer.__isOwn ? (
                                                 <>
                                                     <Button variant="outline" onClick={() => offer.offer_id && handleDeleteOffer(offer.offer_id)} className="h-11 border-rose-300 text-rose-700 hover:bg-rose-50 font-black uppercase text-[11px] bg-white">Supprimer</Button>
-                                                    <Button asChild className="h-11 bg-[#2E130C] hover:bg-[#2E130C]/90 text-white font-black uppercase text-[11px]"><Link href="/mon-reseau-local/dashboard/profile?edit=true&tab=offer">Gérer</Link></Button>
+                                                    <Button asChild className="h-11 bg-[#2E130C] hover:bg-[#2E130C]/90 text-white font-black uppercase text-[11px]"><Link href="/mon-reseau-local/dashboard/profile?edit=true&tab=offer">Modifier</Link></Button>
                                                 </>
                                             ) : (
                                                 <>
@@ -653,7 +657,7 @@ export function OffersView({
                                 <div className="relative h-full rounded-t-none rounded-b-[2.4rem] lg:rounded-[2.4rem] overflow-hidden shadow-2xl bg-[#FFFDF8] border border-[#2E130C]/15">
                                     <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(59,130,246,0.09),transparent_45%)]" />
                                     <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom,rgba(251,191,36,0.10),transparent_42%)]" />
-                                    <div className="relative z-10 h-full overflow-y-auto p-5 pb-[calc(0.55rem+env(safe-area-inset-bottom))] space-y-4 text-[#2E130C]">
+                                    <div className="relative z-10 h-full overflow-y-auto p-4 pb-[calc(0.45rem+env(safe-area-inset-bottom))] space-y-3 text-[#2E130C]">
                                         <div className="flex items-center justify-between">
                                             <Badge className="bg-[#F8F2E6] text-[#7A5A45] border border-[#7A5A45]/20 uppercase tracking-wider text-[10px] font-black">Appel d’offre</Badge>
                                             <div className="flex items-center gap-2">
@@ -662,7 +666,7 @@ export function OffersView({
                                                 <Badge className="bg-white text-[#2E130C] border-[#2E130C]/15 text-[10px] uppercase">{search.category}</Badge>
                                             </div>
                                         </div>
-                                        <div className="rounded-2xl border border-[#2E130C]/10 bg-white p-4 flex items-center gap-3">
+                                        <div className="rounded-2xl border border-[#2E130C]/10 bg-white p-3 flex items-center gap-3">
                                             <Avatar className="h-14 w-14 border-2 border-blue-100">
                                                 <AvatarImage src={search.user_avatar_url} className="object-cover object-top" />
                                                 <AvatarFallback>{search.user_display_name?.[0] || "?"}</AvatarFallback>
@@ -672,7 +676,7 @@ export function OffersView({
                                                 <p className="text-xs text-[#2E130C]/70 mt-1">{search.user_trade || "Membre"} · {search.user_city || "Réseau"}</p>
                                             </div>
                                         </div>
-                                        <div className="rounded-2xl border border-[#7A5A45]/15 bg-gradient-to-r from-[#FFF8EE] to-[#F5EFE2] p-4 min-h-[164px]">
+                                        <div className="rounded-2xl border border-[#7A5A45]/15 bg-gradient-to-r from-[#FFF8EE] to-[#F5EFE2] p-3 min-h-[150px]">
                                             <p className="text-[10px] uppercase tracking-widest font-bold text-[#7A5A45] mb-1">Besoin concret</p>
                                             <h3 className="font-black text-lg leading-tight">{search.title}</h3>
                                             <p className="text-xs text-[#2E130C]/80 mt-2 line-clamp-4 whitespace-pre-wrap">{search.description}</p>
