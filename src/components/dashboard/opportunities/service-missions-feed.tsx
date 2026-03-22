@@ -42,7 +42,9 @@ export function ServiceMissionsFeed({
   const [swipeRightId, setSwipeRightId] = useState<string | null>(null);
   const [isStatsOpen, setIsStatsOpen] = useState(false);
   const [isIncomingOpen, setIsIncomingOpen] = useState(false);
+  const [isIntroOpen, setIsIntroOpen] = useState(false);
   const REJECTED_VIRTUAL_KEY = "service-missions-rejected-virtual-v1";
+  const INTRO_SEEN_KEY = "opportunities-intro-seen-v1";
 
   useEffect(() => {
     const saved = window.localStorage.getItem("service-missions-filter");
@@ -63,12 +65,22 @@ export function ServiceMissionsFeed({
     setMissions((prev) => prev.map((m) => (ids.has(m.id) ? { ...m, status: "rejected" } : m)));
   }, []);
 
+  useEffect(() => {
+    const seen = window.localStorage.getItem(INTRO_SEEN_KEY);
+    if (!seen) setIsIntroOpen(true);
+  }, []);
+
   const saveRejectedVirtual = (missionId: string, add: boolean) => {
     const raw = window.localStorage.getItem(REJECTED_VIRTUAL_KEY);
     const ids = new Set<string>(raw ? JSON.parse(raw) : []);
     if (add) ids.add(missionId);
     else ids.delete(missionId);
     window.localStorage.setItem(REJECTED_VIRTUAL_KEY, JSON.stringify(Array.from(ids)));
+  };
+
+  const handleCloseIntro = () => {
+    window.localStorage.setItem(INTRO_SEEN_KEY, "1");
+    setIsIntroOpen(false);
   };
 
   const filteredMissions = useMemo(() => {
@@ -583,6 +595,26 @@ export function ServiceMissionsFeed({
               </div>
             ))}
           </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isIntroOpen} onOpenChange={(open) => !open && handleCloseIntro()}>
+        <DialogContent className="bg-white border-[#2E130C]/15 text-[#2E130C] sm:max-w-md rounded-2xl w-[92vw]">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-black">Bienvenue sur Opportunités</DialogTitle>
+            <DialogDescription className="text-sm text-[#2E130C]/70 leading-relaxed">
+              Cette page vous permet de créer des opportunités en rendant service aux autres.
+              <br />
+              Plus vous aidez, plus vous augmentez vos chances de recevoir de l’aide et de nouvelles opportunités.
+              <br />
+              Pour commencer, il vous suffit de matcher avec des personnes en synergie avec votre activité (les matchs apparaissent sur votre accueil à partir de 6h).
+              <br />
+              Au fil de vos matchs, des opportunités apparaîtront progressivement sur cette page.
+            </DialogDescription>
+          </DialogHeader>
+          <Button onClick={handleCloseIntro} className="w-full h-11 bg-[#2E130C] hover:bg-[#2E130C]/90 text-white font-black rounded-xl">
+            C’est parti ?
+          </Button>
         </DialogContent>
       </Dialog>
 
