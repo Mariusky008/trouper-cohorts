@@ -28,7 +28,8 @@ export function OffersView({
     currentUserOffers,
     searches,
     currentUserId,
-    initialDuoStates
+    initialDuoStates,
+    duoCandidates
 }: { 
     unlockedOffers: any[], 
     lockedCount: number, 
@@ -36,7 +37,8 @@ export function OffersView({
     currentUserOffers: any[],
     searches: any[],
     currentUserId: string,
-    initialDuoStates: Record<string, { myDecision?: "validate" | "later" | "reject"; partnerDecision?: "validate" | "later" | "reject" }>
+    initialDuoStates: Record<string, { myDecision?: "validate" | "later" | "reject"; partnerDecision?: "validate" | "later" | "reject" }>,
+    duoCandidates: any[]
 }) {
     const router = useRouter();
     const [activeTab, setActiveTab] = useState("duos");
@@ -211,9 +213,11 @@ export function OffersView({
         [productDeck, currentUserOffers]
     );
     const duoCards = useMemo(() => {
-        if (!offersDeckDisplay.length) return [];
-        return offersDeckDisplay
-            .filter((offer: any) => !offer.__isOwn)
+        const source = offersDeckDisplay.length > 0
+            ? offersDeckDisplay.filter((offer: any) => !offer.__isOwn)
+            : (duoCandidates || []);
+        if (!source.length) return [];
+        return source
             .map((offer: any) => {
                 const score = Math.min(
                     94,
@@ -241,7 +245,7 @@ export function OffersView({
                     reasons,
                 };
             });
-    }, [offersDeckDisplay, ownOfferSource, currentUserId]);
+    }, [offersDeckDisplay, ownOfferSource, currentUserId, duoCandidates]);
     const visibleDuoCards = useMemo(
         () => duoCards.filter((d: any) => duoStates[d.duoId]?.myDecision !== "reject"),
         [duoCards, duoStates]

@@ -78,3 +78,33 @@ export async function saveDuoDecision(partnerId: string, decision: DuoDecision) 
   revalidatePath("/mon-reseau-local/dashboard/offers");
   return { success: true, duoKey };
 }
+
+export async function getDuoCandidates() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return [];
+
+  const matched = await getMatchedPartnerIds(user.id);
+  const partnerIds = Array.from(matched).filter((id) => id !== user.id);
+  if (!partnerIds.length) return [];
+
+  const admin = createAdminClient();
+  const { data: profiles } = await admin
+    .from("profiles")
+    .select("id,display_name,avatar_url,trade,city")
+    .in("id", partnerIds);
+
+  return (profiles || []).map((profile: any) => ({
+    user_id: profile.id,
+    display_name: profile.display_name || "Membre",
+    avatar_url: profile.avatar_url || "",
+    trade: profile.trade || "Expert",
+    city: profile.city || "Réseau",
+    offer_title: "",
+    offer_description: "",
+    offer_price: 0,
+    offer_original_price: 0,
+    match_date: new Date().toISOString(),
+    __fromFallback: true,
+  }));
+}

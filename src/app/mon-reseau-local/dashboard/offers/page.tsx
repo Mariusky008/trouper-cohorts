@@ -2,7 +2,7 @@ import { Badge } from "@/components/ui/badge";
 import { Sparkles } from "lucide-react";
 import { getUnlockedOffers, getLockedOffersCount, getCurrentUserOffer, getCurrentUserOffers } from "@/lib/actions/network-offers";
 import { getNetworkSearches } from "@/lib/actions/network-searches";
-import { getMyDuoStates } from "@/lib/actions/duo-alliances";
+import { getDuoCandidates, getMyDuoStates } from "@/lib/actions/duo-alliances";
 import { createClient } from "@/lib/supabase/server";
 import { OffersView } from "@/components/dashboard/offers/offers-view";
 
@@ -17,7 +17,11 @@ export default async function OffersPage() {
     const currentUserOffer = await getCurrentUserOffer();
     const currentUserOffers = await getCurrentUserOffers();
     const searches = await getNetworkSearches();
-    const partnerIds = Array.from(new Set((unlockedOffers || []).map((offer: any) => offer.user_id).filter(Boolean)));
+    const duoCandidates = await getDuoCandidates();
+    const partnerIds = Array.from(new Set([
+        ...(unlockedOffers || []).map((offer: any) => offer.user_id),
+        ...(duoCandidates || []).map((candidate: any) => candidate.user_id),
+    ].filter(Boolean)));
     const initialDuoStates = await getMyDuoStates(partnerIds);
 
     return (
@@ -52,6 +56,7 @@ export default async function OffersPage() {
                 searches={searches}
                 currentUserId={user?.id || ""}
                 initialDuoStates={initialDuoStates}
+                duoCandidates={duoCandidates}
             />
         </div>
     );
