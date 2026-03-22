@@ -36,7 +36,7 @@ export function OffersView({
     currentUserId: string
 }) {
     const router = useRouter();
-    const [activeTab, setActiveTab] = useState("offers");
+    const [activeTab, setActiveTab] = useState("duos");
     const [isSearchDialogOpen, setIsSearchDialogOpen] = useState(false);
     const [isOfferDialogOpen, setIsOfferDialogOpen] = useState(false);
     const [isMyOffersOpen, setIsMyOffersOpen] = useState(false);
@@ -52,19 +52,28 @@ export function OffersView({
     const [consumedSearchIds, setConsumedSearchIds] = useState<string[]>([]);
     const [infoOffer, setInfoOffer] = useState<any | null>(null);
     const [infoSearch, setInfoSearch] = useState<any | null>(null);
+    const [duoDecisions, setDuoDecisions] = useState<Record<string, "validate" | "later" | "reject">>({});
+    const DUO_DECISIONS_KEY = "duo-alliances-decisions-v1";
     const [isIntroOpen, setIsIntroOpen] = useState(false);
     const OFFERS_INTRO_SEEN_KEY = "offers-intro-seen-v1";
 
     useEffect(() => {
         const saved = window.localStorage.getItem("offers-tab");
-        if (saved && ["offers", "searches", "refused"].includes(saved)) {
-            setActiveTab(saved);
-        }
+        if (!saved) return;
+        if (saved === "offers") setActiveTab("duos");
+        else if (saved === "searches") setActiveTab("needs");
+        else if (["duos", "needs"].includes(saved)) setActiveTab(saved);
     }, []);
 
     useEffect(() => {
         window.localStorage.setItem("offers-tab", activeTab);
     }, [activeTab]);
+
+    useEffect(() => {
+        const raw = window.localStorage.getItem(DUO_DECISIONS_KEY);
+        if (!raw) return;
+        setDuoDecisions(JSON.parse(raw));
+    }, []);
 
     useEffect(() => {
         const seen = window.localStorage.getItem(OFFERS_INTRO_SEEN_KEY);
@@ -205,6 +214,41 @@ export function OffersView({
         },
         [productDeck, currentUserOffers]
     );
+    const duoCards = useMemo(() => {
+        if (!offersDeckDisplay.length) return [];
+        return offersDeckDisplay
+            .filter((offer: any) => !offer.__isOwn)
+            .map((offer: any) => {
+                const score = Math.min(
+                    94,
+                    55 +
+                    (offer.city && ownOfferSource?.city && offer.city === ownOfferSource.city ? 16 : 0) +
+                    (offer.trade && ownOfferSource?.trade && offer.trade !== ownOfferSource.trade ? 13 : 7) +
+                    Math.min(12, discountPct(offer))
+                );
+                const ideas = [
+                    "Pack Acquisition locale + Crédibilité métier",
+                    "Pack Visibilité + Conversion business",
+                    "Pack Croissance + Recommandation croisée",
+                ];
+                const reasons = [
+                    "Vos services sont complémentaires",
+                    "Vos cibles peuvent se recouper",
+                    "Vous pouvez augmenter le panier moyen ensemble",
+                ];
+                return {
+                    ...offer,
+                    duoId: `duo-${offer.user_id}`,
+                    score,
+                    idea: ideas[Math.abs(String(offer.user_id).split("").reduce((a, c) => a + c.charCodeAt(0), 0)) % ideas.length],
+                    reasons,
+                };
+            });
+    }, [offersDeckDisplay, ownOfferSource]);
+    const visibleDuoCards = useMemo(
+        () => duoCards.filter((d: any) => duoDecisions[d.duoId] !== "reject"),
+        [duoCards, duoDecisions]
+    );
 
     const discountPct = (offer: any) =>
         offer.offer_original_price > 0 ? Math.round(((offer.offer_original_price - offer.offer_price) / offer.offer_original_price) * 100) : 0;
@@ -248,6 +292,16 @@ export function OffersView({
     const openWhatsappOfferPreview = (offer: any) => {
         window.open(`https://wa.me/?text=${encodeURIComponent(whatsappOfferMessage(offer))}`, "_blank");
     };
+    const duoMessage = (offer: any, idea: string) =>
+        `Salut ${offer.display_name}, l'IA Popey nous propose un duo business sur "${idea}". On regarde ensemble si on peut le lancer ?`;
+    const openDuoDiscussion = (offer: any, idea: string) => {
+        window.open(`https://wa.me/?text=${encodeURIComponent(duoMessage(offer, idea))}`, "_blank");
+    };
+    const decideDuo = (duoId: string, decision: "validate" | "later" | "reject") => {
+        const next = { ...duoDecisions, [duoId]: decision };
+        setDuoDecisions(next);
+        window.localStorage.setItem(DUO_DECISIONS_KEY, JSON.stringify(next));
+    };
 
     const handleCloseIntro = () => {
         window.localStorage.setItem(OFFERS_INTRO_SEEN_KEY, "1");
@@ -279,20 +333,20 @@ export function OffersView({
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                 <div className="max-w-3xl mx-auto mb-6 lg:mb-6 space-y-3 sticky top-[calc(env(safe-area-inset-top)+0.35rem)] lg:static z-20 bg-[#E2D9BC]/55 backdrop-blur-xl border border-[#2E130C]/10 lg:border-0 rounded-2xl lg:rounded-none shadow-[0_10px_30px_rgba(46,19,12,0.12)] lg:shadow-none py-3 px-2 lg:px-0">
                     <p className="lg:hidden text-xs text-[#2E130C]/70 font-black uppercase tracking-wider px-1">
-                        {activeTab === "offers" ? `${offersDeckDisplay.length} offres dans ce filtre` : `${callsDeckDisplay.length} appels dans ce filtre`}
+                        {activeTab === "duos" ? `${visibleDuoCards.length} duos IA disponibles` : `${callsDeckDisplay.length} besoins dans ce filtre`}
                     </p>
                     <TabsList className="bg-transparent border-0 p-0 h-auto grid grid-cols-2 w-full gap-2">
                         <TabsTrigger 
-                            value="offers" 
+                            value="duos" 
                             className="rounded-full px-4 py-3 text-sm font-bold text-stone-500 bg-white border border-stone-200 data-[state=active]:bg-[#B20B13] data-[state=active]:text-white data-[state=active]:border-[#B20B13] transition-all shadow-sm min-w-0"
                         >
-                            <Percent className="h-4 w-4 mr-2" /> Offres Privilèges
+                            <Sparkles className="h-4 w-4 mr-2" /> Duo IA
                         </TabsTrigger>
                         <TabsTrigger 
-                            value="searches" 
+                            value="needs" 
                             className="rounded-full px-4 py-3 text-sm font-bold text-stone-500 bg-white border border-stone-200 data-[state=active]:bg-[#7A5A45] data-[state=active]:text-white data-[state=active]:border-[#7A5A45] transition-all shadow-sm min-w-0"
                         >
-                            <Search className="h-4 w-4 mr-2" /> Appels d'Offres
+                            <Megaphone className="h-4 w-4 mr-2" /> Besoins business
                         </TabsTrigger>
                     </TabsList>
                     <TabsList className="hidden lg:grid bg-transparent border-0 p-0 h-auto grid-cols-1 w-full">
@@ -304,9 +358,11 @@ export function OffersView({
                         </TabsTrigger>
                     </TabsList>
                     <div className="lg:hidden pt-0.5">
-                        {activeTab === "offers" ? (
-                            <Button onClick={() => setIsOfferDialogOpen(true)} className="w-full h-10 bg-[#2E130C] hover:bg-[#2E130C]/90 text-white font-black rounded-xl text-sm">
-                                <PlusCircle className="h-4 w-4 mr-2" /> Ajouter une offre
+                        {activeTab === "duos" ? (
+                            <Button asChild className="w-full h-10 bg-[#2E130C] hover:bg-[#2E130C]/90 text-white font-black rounded-xl text-sm">
+                                <Link href="/mon-reseau-local/dashboard/cafe">
+                                    <PlusCircle className="h-4 w-4 mr-2" /> Aller au Café
+                                </Link>
                             </Button>
                         ) : (
                             <Button onClick={() => setIsSearchDialogOpen(true)} className="w-full h-10 bg-[#7A5A45] hover:bg-[#7A5A45]/90 text-white font-black rounded-xl text-sm">
@@ -316,8 +372,8 @@ export function OffersView({
                     </div>
                 </div>
 
-                <TabsContent value="offers" className="space-y-4 lg:space-y-12 mt-2 lg:mt-3 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                    <div className="px-2 lg:px-4">
+                <TabsContent value="duos" className="space-y-4 lg:space-y-12 mt-2 lg:mt-3 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                    <div className="hidden">
                         {currentUserOffer ? (
                             <div className="max-w-sm mx-auto mb-12 hidden lg:block">
                                 <div className="relative rounded-[2.4rem] overflow-hidden shadow-2xl bg-[#16081D] border border-fuchsia-300/35">
@@ -417,7 +473,7 @@ export function OffersView({
                         </div>
                     )}
 
-                    <div className="max-w-3xl mx-auto space-y-3">
+                    <div className="hidden">
                         <div className="flex items-center justify-between gap-3">
                             <p className="text-sm font-black text-[#2E130C] hidden lg:block">Mes offres publiées ({currentUserOffers?.length || 0})</p>
                             <Dialog open={isOfferDialogOpen} onOpenChange={setIsOfferDialogOpen}>
@@ -483,12 +539,17 @@ export function OffersView({
                     </div>
 
                     <div className="relative h-[calc(100dvh-14.4rem)] lg:h-[680px] max-w-none lg:max-w-sm mx-auto">
-                        {offersDeckDisplay.length === 0 && (
+                        {visibleDuoCards.length === 0 && (
                             <div className="absolute inset-0 grid place-items-center text-center px-6">
-                                <p className="text-sm font-bold text-[#2E130C]/70">Aucune offre partenaire en attente pour le moment.</p>
+                                <div className="space-y-3">
+                                    <p className="text-sm font-bold text-[#2E130C]/70">Aucun duo IA très pertinent pour le moment.</p>
+                                    <Button asChild variant="outline" className="border-[#2E130C]/20 text-[#2E130C]">
+                                        <Link href="/mon-reseau-local/dashboard/cafe">Publier un besoin dans Café</Link>
+                                    </Button>
+                                </div>
                             </div>
                         )}
-                        {offersDeckDisplay.slice(0, 5).map((offer, index) => (
+                        {visibleDuoCards.slice(0, 5).map((offer: any, index: number) => (
                             <motion.div
                                 key={offer.user_id || offer.offer_id || `${offer.offer_title}-${index}`}
                                 animate={
@@ -506,9 +567,8 @@ export function OffersView({
                                 dragElastic={0.6}
                                 onDragEnd={(_, info) => {
                                     if (index !== 0) return;
-                                    if (offer.__isOwn) return;
-                                    if (info.offset.x <= -120) handleOfferRefuse(offer);
-                                    if (info.offset.x >= 120) handleOfferInterested(offer);
+                                    if (info.offset.x <= -120) decideDuo(offer.duoId, "reject");
+                                    if (info.offset.x >= 120) decideDuo(offer.duoId, "validate");
                                 }}
                             >
                                 <div className="relative h-full rounded-t-none rounded-b-[2.4rem] lg:rounded-[2.4rem] overflow-hidden shadow-2xl bg-[#FFFDF8] border border-[#2E130C]/15">
@@ -522,11 +582,10 @@ export function OffersView({
                                     />
                                     <div className="relative z-10 h-full overflow-y-auto p-4 pb-[calc(0.45rem+env(safe-area-inset-bottom))] space-y-3 text-[#2E130C]">
                                         <div className="flex items-center justify-between">
-                                            <Badge className="bg-[#F8F2E6] text-[#B20B13] border border-[#B20B13]/20 uppercase tracking-wider text-[10px] font-black">Offre produit/service</Badge>
+                                            <Badge className="bg-[#F8F2E6] text-[#B20B13] border border-[#B20B13]/20 uppercase tracking-wider text-[10px] font-black">Offre duo suggérée</Badge>
                                             <div className="flex items-center gap-2">
-                                                {offer.__isOwn && <Badge className="bg-amber-200 text-[#2E130C] border-0 text-[10px] font-black">Mon offre</Badge>}
-                                                <Badge className="bg-white text-[#2E130C] border-[#2E130C]/15 text-[10px] font-black">{offerBadge(offer)}</Badge>
-                                                {!offer.__isOwn && <Badge className="bg-amber-300 text-[#2E130C] border-0 text-[10px] font-black">-{discountPct(offer)}%</Badge>}
+                                                <Badge className="bg-white text-[#2E130C] border-[#2E130C]/15 text-[10px] font-black">Score duo {offer.score}</Badge>
+                                                <Badge className="bg-amber-300 text-[#2E130C] border-0 text-[10px] font-black">{offerBadge(offer)}</Badge>
                                             </div>
                                         </div>
                                         <div className="rounded-2xl border border-[#2E130C]/10 bg-white p-3 flex items-center gap-3">
@@ -540,43 +599,46 @@ export function OffersView({
                                             </div>
                                         </div>
                                         <div className="rounded-2xl border border-[#B20B13]/15 bg-gradient-to-r from-[#FFF8EE] to-[#F8F2E6] p-3 min-h-[150px]">
-                                            <p className="text-[10px] uppercase tracking-widest font-bold text-[#B20B13] mb-1">Offre du moment</p>
-                                            <h3 className="font-black text-lg leading-tight">{offer.offer_title}</h3>
-                                            <p className="text-xs text-[#2E130C]/80 mt-2 line-clamp-4">{offer.offer_description}</p>
-                                            <p className="text-xs text-[#2E130C] mt-2 font-bold">Prix club: {offer.offer_price}€ <span className="line-through opacity-70 ml-1">{offer.offer_original_price}€</span></p>
+                                            <p className="text-[10px] uppercase tracking-widest font-bold text-[#B20B13] mb-1">Idée d’alliance</p>
+                                            <h3 className="font-black text-lg leading-tight">{offer.idea}</h3>
+                                            <div className="mt-2 space-y-1">
+                                                {offer.reasons.map((reason: string, idx: number) => (
+                                                    <p key={`${offer.duoId}-${idx}`} className="text-xs text-[#2E130C]/80">• {reason}</p>
+                                                ))}
+                                            </div>
                                         </div>
-                                        <div className="grid grid-cols-2 gap-2">
-                                            <Button size="sm" variant="outline" onClick={() => setInfoOffer(offer)} className="h-9 bg-white border-[#2E130C]/20 text-[#2E130C] hover:bg-[#2E130C]/5 text-[10px] font-black uppercase">Voir détails</Button>
-                                            {offer.__isOwn ? (
-                                                <Button onClick={() => openWhatsappOfferPreview(offer)} size="sm" className="h-9 bg-gradient-to-r from-[#25D366] to-[#1BCB5A] hover:from-[#25D366]/90 hover:to-[#1BCB5A]/90 text-white text-[10px] font-black uppercase">
-                                                    <MessageCircle className="h-3.5 w-3.5 mr-1" /> Contact WhatsApp
+                                        <div className="rounded-xl border border-[#2E130C]/10 bg-white p-3">
+                                            <p className="text-[10px] uppercase tracking-widest text-[#2E130C]/60 font-black">Ce que chacun apporte</p>
+                                            <p className="text-xs text-[#2E130C] mt-1">Toi: {ownOfferSource?.trade || "Expertise locale"} · {offer.display_name}: {offer.trade || "Expertise complémentaire"}</p>
+                                        </div>
+                                        <div className="grid grid-cols-1 gap-2">
+                                            <Button onClick={() => decideDuo(offer.duoId, "validate")} size="sm" className="h-10 bg-[#2E130C] hover:bg-[#2E130C]/90 text-white text-[11px] font-black uppercase">
+                                                Je valide l’idée
+                                            </Button>
+                                            <div className="grid grid-cols-2 gap-2">
+                                                <Button variant="outline" onClick={() => decideDuo(offer.duoId, "later")} size="sm" className="h-9 border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100 text-[10px] font-black uppercase">
+                                                    À revoir
                                                 </Button>
-                                            ) : (
-                                                <Button asChild size="sm" variant="outline" className="h-9 bg-white border-[#2E130C]/20 text-[#2E130C] hover:bg-[#2E130C]/5 text-[10px] font-black uppercase">
-                                                    <Link href={`/mon-reseau-local/dashboard/profile/${offer.user_id}`}>Voir profil</Link>
+                                                <Button variant="outline" onClick={() => decideDuo(offer.duoId, "reject")} size="sm" className="h-9 border-rose-300 text-rose-700 hover:bg-rose-50 text-[10px] font-black uppercase">
+                                                    Pas pour moi
                                                 </Button>
-                                            )}
+                                            </div>
                                         </div>
-                                        <div className="grid grid-cols-2 gap-3">
-                                            {offer.__isOwn ? (
-                                                <>
-                                                    <Button variant="outline" onClick={() => offer.offer_id && handleDeleteOffer(offer.offer_id)} className="h-11 border-rose-300 text-rose-700 hover:bg-rose-50 font-black uppercase text-[11px] bg-white">Supprimer</Button>
-                                                    <Button asChild className="h-11 bg-[#2E130C] hover:bg-[#2E130C]/90 text-white font-black uppercase text-[11px]"><Link href="/mon-reseau-local/dashboard/profile?edit=true&tab=offer">Modifier</Link></Button>
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <Button variant="outline" onClick={() => handleOfferRefuse(offer)} className="h-11 border-rose-300 text-rose-700 hover:bg-rose-50 font-black uppercase text-[11px] bg-white">Pas intéressé</Button>
-                                                    <Button onClick={() => handleOfferInterested(offer)} className="h-11 bg-gradient-to-r from-[#25D366] to-[#1BCB5A] hover:from-[#25D366]/90 hover:to-[#1BCB5A]/90 text-white font-black uppercase text-[11px] shadow-lg shadow-emerald-900/20"><MessageCircle className="h-4 w-4 mr-1" />Je suis intéressé</Button>
-                                                </>
-                                            )}
-                                        </div>
+                                        {duoDecisions[offer.duoId] === "validate" && (
+                                            <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 space-y-2">
+                                                <p className="text-xs font-black text-emerald-800">En attente de validation de {offer.display_name}</p>
+                                                <Button onClick={() => openDuoDiscussion(offer, offer.idea)} className="w-full h-9 bg-[#25D366] hover:bg-[#25D366]/90 text-white font-black uppercase text-[10px]">
+                                                    <MessageCircle className="h-3.5 w-3.5 mr-1" /> Démarrer la discussion
+                                                </Button>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             </motion.div>
                         ))}
                     </div>
 
-                    <div className="hidden lg:grid md:grid-cols-2 gap-4 pt-2">
+                    <div className="hidden lg:grid md:grid-cols-2 gap-4 pt-2 hidden">
                         {[
                             { title: "Audit SEO & Visibilité", price: "720€", original: "900€" },
                             { title: "Pack Photos Pro", price: "240€", original: "300€" },
@@ -584,14 +646,14 @@ export function OffersView({
                             <LockedOfferCard key={i} title={dummy.title} price={dummy.price} original={dummy.original} />
                         ))}
                     </div>
-                    <div className="hidden lg:block text-center mt-8">
+                    <div className="hidden lg:block text-center mt-8 hidden">
                         <p className="text-stone-500 font-medium">+ {lockedCount > 0 ? lockedCount : "150"} autres offres premium vous attendent.</p>
                     </div>
                 </TabsContent>
 
-                <TabsContent value="searches" className="space-y-4 lg:space-y-6 mt-2 lg:mt-3 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <TabsContent value="needs" className="space-y-4 lg:space-y-6 mt-2 lg:mt-3 animate-in fade-in slide-in-from-bottom-4 duration-500">
                     <div className="max-w-3xl mx-auto flex items-center justify-between gap-3">
-                        <p className="text-sm font-black text-[#2E130C] hidden lg:block">Mes appels publiés ({mySearches.length})</p>
+                        <p className="text-sm font-black text-[#2E130C] hidden lg:block">Besoins business du réseau ({callsDeckDisplay.length})</p>
                         <Dialog open={isSearchDialogOpen} onOpenChange={setIsSearchDialogOpen}>
                             <DialogTrigger asChild>
                                 <Button size="sm" className="hidden lg:inline-flex bg-[#7A5A45] hover:bg-[#7A5A45]/90 text-white font-bold rounded-xl shadow-lg shadow-[#2E130C]/20 h-9 px-4">
@@ -647,6 +709,11 @@ export function OffersView({
                                     </form>
                                 </DialogContent>
                         </Dialog>
+                    </div>
+                    <div className="max-w-3xl mx-auto">
+                        <Button asChild variant="outline" className="w-full lg:w-auto border-[#2E130C]/20 text-[#2E130C]">
+                            <Link href="/mon-reseau-local/dashboard/cafe">Besoin libre ? Ouvrir Café</Link>
+                        </Button>
                     </div>
 
                     <div className="relative h-[calc(100dvh-14.4rem)] lg:h-[660px] max-w-none lg:max-w-sm mx-auto">

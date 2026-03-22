@@ -1,5 +1,5 @@
 import { Badge } from "@/components/ui/badge";
-import { Percent } from "lucide-react";
+import { Sparkles } from "lucide-react";
 import { getUnlockedOffers, getLockedOffersCount, getCurrentUserOffer, getCurrentUserOffers } from "@/lib/actions/network-offers";
 import { getNetworkSearches } from "@/lib/actions/network-searches";
 import { createClient } from "@/lib/supabase/server";
@@ -25,17 +25,17 @@ export default async function OffersPage() {
                 
                 <div className="text-center space-y-6">
                     <Badge className="bg-[#E2D9BC]/50 text-[#2E130C] border-[#E2D9BC] px-4 py-1.5 text-xs font-bold uppercase tracking-widest shadow-sm">
-                    <Percent className="h-3 w-3 mr-2" /> Offres Privilèges
+                    <Sparkles className="h-3 w-3 mr-2" /> Alliances
                     </Badge>
                     
                     <h1 className="text-4xl md:text-5xl font-black text-[#2E130C] tracking-tighter leading-none">
-                    Mes Offres <span className="text-[#B20B13]">& Recherches.</span>
+                    Duos IA <span className="text-[#B20B13]">& Besoins Business.</span>
                     </h1>
                     
                     <p className="text-lg text-stone-500 font-medium max-w-2xl mx-auto leading-relaxed">
-                    Découvrez les services exclusifs et répondez aux appels d'offres du réseau.
+                    Activez des alliances rentables suggérées par l’IA et publiez vos besoins business.
                     <br/>
-                    <span className="text-[#2E130C] font-bold">L'entraide est la clé du business.</span>
+                    <span className="text-[#2E130C] font-bold">Ici, l’objectif est de générer du revenu commun.</span>
                     </p>
                 </div>
             </div>
