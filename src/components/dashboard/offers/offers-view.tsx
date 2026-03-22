@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Pencil, Percent, Search, Megaphone, Trash2, ArrowRight, MessageCircle, Sparkles, Gift, Clock3, PlusCircle } from "lucide-react";
+import { Pencil, Percent, Search, Megaphone, Trash2, ArrowRight, MessageCircle, Sparkles, Gift, Clock3 } from "lucide-react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -247,10 +247,7 @@ export function OffersView({
                 };
             });
     }, [offersDeckDisplay, ownOfferSource, currentUserId, duoCandidates]);
-    const visibleDuoCards = useMemo(
-        () => duoCards.filter((d: any) => duoStates[d.duoId]?.myDecision !== "reject"),
-        [duoCards, duoStates]
-    );
+    const visibleDuoCards = useMemo(() => duoCards, [duoCards]);
 
     const whatsappOfferMessage = (offer: any) =>
         `Salut ${offer.display_name}, ton offre "${offer.offer_title}" sur Popey m'intéresse. On peut en discuter aujourd'hui ?`;
@@ -373,13 +370,7 @@ export function OffersView({
                         </TabsTrigger>
                     </TabsList>
                     <div className="lg:hidden pt-0.5">
-                        {activeTab === "duos" ? (
-                            <Button asChild className="w-full h-10 bg-[#2E130C] hover:bg-[#2E130C]/90 text-white font-black rounded-xl text-sm">
-                                <Link href="/mon-reseau-local/dashboard/cafe">
-                                    <PlusCircle className="h-4 w-4 mr-2" /> Aller au Café
-                                </Link>
-                            </Button>
-                        ) : (
+                        {activeTab !== "duos" && (
                             <Button onClick={() => setIsSearchDialogOpen(true)} className="w-full h-10 bg-[#7A5A45] hover:bg-[#7A5A45]/90 text-white font-black rounded-xl text-sm">
                                 <Megaphone className="h-4 w-4 mr-2" /> Publier une recherche
                             </Button>
@@ -553,14 +544,11 @@ export function OffersView({
                         </div>
                     </div>
 
-                    <div className="relative h-[calc(100dvh-14.4rem)] lg:h-[680px] max-w-none lg:max-w-sm mx-auto">
+                    <div className="relative h-[calc(100dvh-17.8rem)] lg:h-[680px] max-w-none lg:max-w-sm mx-auto">
                         {visibleDuoCards.length === 0 && (
                             <div className="absolute inset-0 grid place-items-center text-center px-6">
                                 <div className="space-y-3">
                                     <p className="text-sm font-bold text-[#2E130C]/70">Aucun duo IA très pertinent pour le moment.</p>
-                                    <Button asChild variant="outline" className="border-[#2E130C]/20 text-[#2E130C]">
-                                        <Link href="/mon-reseau-local/dashboard/cafe">Publier un besoin dans Café</Link>
-                                    </Button>
                                 </div>
                             </div>
                         )}
@@ -582,7 +570,6 @@ export function OffersView({
                                 dragElastic={0.6}
                                 onDragEnd={(_, info) => {
                                     if (index !== 0) return;
-                                    if (info.offset.x <= -120) void decideDuo(offer.duoId, offer.partnerId, "reject");
                                     if (info.offset.x >= 120) void decideDuo(offer.duoId, offer.partnerId, "validate");
                                 }}
                             >
@@ -595,7 +582,7 @@ export function OffersView({
                                         transition={{ duration: 2.8, repeat: Infinity, ease: "linear" }}
                                         className="absolute -top-24 h-[220%] w-24 rotate-12 bg-white/35 blur-2xl"
                                     />
-                                    <div className="relative z-10 h-full overflow-y-auto p-4 pb-[calc(0.45rem+env(safe-area-inset-bottom))] space-y-3 text-[#2E130C]">
+                                    <div className="relative z-10 h-full overflow-y-auto p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] space-y-3 text-[#2E130C]">
                                         <div className="flex items-center justify-between">
                                             <Badge className="bg-[#F8F2E6] text-[#B20B13] border border-[#B20B13]/20 uppercase tracking-wider text-[10px] font-black">Offre duo suggérée</Badge>
                                             <div className="flex items-center gap-2">
@@ -627,30 +614,16 @@ export function OffersView({
                                             <p className="text-xs text-[#2E130C] mt-1">Toi: {ownOfferSource?.trade || "Expertise locale"} · {offer.display_name}: {offer.trade || "Expertise complémentaire"}</p>
                                         </div>
                                         <div className="grid grid-cols-1 gap-2">
-                                            <Button onClick={() => void decideDuo(offer.duoId, offer.partnerId, "validate")} size="sm" className="h-10 bg-[#2E130C] hover:bg-[#2E130C]/90 text-white text-[11px] font-black uppercase">
-                                                Je valide l’idée
-                                            </Button>
-                                            <div className="grid grid-cols-2 gap-2">
-                                                <Button variant="outline" onClick={() => void decideDuo(offer.duoId, offer.partnerId, "later")} size="sm" className="h-9 border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100 text-[10px] font-black uppercase">
-                                                    À revoir
+                                            {duoStates[offer.duoId]?.myDecision === "validate" ? (
+                                                <Button onClick={() => openDuoDiscussion(offer, offer.idea)} className="h-10 bg-[#25D366] hover:bg-[#25D366]/90 text-white font-black uppercase text-[11px]">
+                                                    <MessageCircle className="h-3.5 w-3.5 mr-1" /> Ouvrir WhatsApp
                                                 </Button>
-                                                <Button variant="outline" onClick={() => void decideDuo(offer.duoId, offer.partnerId, "reject")} size="sm" className="h-9 border-rose-300 text-rose-700 hover:bg-rose-50 text-[10px] font-black uppercase">
-                                                    Pas pour moi
+                                            ) : (
+                                                <Button onClick={() => void decideDuo(offer.duoId, offer.partnerId, "validate")} size="sm" className="h-10 bg-[#2E130C] hover:bg-[#2E130C]/90 text-white text-[11px] font-black uppercase">
+                                                    Je valide l’idée
                                                 </Button>
-                                            </div>
+                                            )}
                                         </div>
-                                        {duoStates[offer.duoId]?.myDecision === "validate" && (
-                                            <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 space-y-2">
-                                                <p className="text-xs font-black text-emerald-800">
-                                                    {duoStates[offer.duoId]?.partnerDecision === "validate"
-                                                        ? "Duo activé (2/2 validations)"
-                                                        : `En attente de validation de ${offer.display_name}`}
-                                                </p>
-                                                <Button onClick={() => openDuoDiscussion(offer, offer.idea)} className="w-full h-9 bg-[#25D366] hover:bg-[#25D366]/90 text-white font-black uppercase text-[10px]">
-                                                    <MessageCircle className="h-3.5 w-3.5 mr-1" /> Démarrer la discussion
-                                                </Button>
-                                            </div>
-                                        )}
                                     </div>
                                 </div>
                             </motion.div>
@@ -729,13 +702,7 @@ export function OffersView({
                                 </DialogContent>
                         </Dialog>
                     </div>
-                    <div className="max-w-3xl mx-auto">
-                        <Button asChild variant="outline" className="w-full lg:w-auto border-[#2E130C]/20 text-[#2E130C]">
-                            <Link href="/mon-reseau-local/dashboard/cafe">Besoin libre ? Ouvrir Café</Link>
-                        </Button>
-                    </div>
-
-                    <div className="relative h-[calc(100dvh-14.4rem)] lg:h-[660px] max-w-none lg:max-w-sm mx-auto">
+                    <div className="relative h-[calc(100dvh-17.8rem)] lg:h-[660px] max-w-none lg:max-w-sm mx-auto">
                         {callsDeckDisplay.slice(0, 5).map((search, index) => (
                             <motion.div
                                 key={search.id}
@@ -762,7 +729,7 @@ export function OffersView({
                                 <div className="relative h-full rounded-t-none rounded-b-[2.4rem] lg:rounded-[2.4rem] overflow-hidden shadow-2xl bg-[#FFFDF8] border border-[#2E130C]/15">
                                     <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(59,130,246,0.09),transparent_45%)]" />
                                     <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom,rgba(251,191,36,0.10),transparent_42%)]" />
-                                    <div className="relative z-10 h-full overflow-y-auto p-4 pb-[calc(0.45rem+env(safe-area-inset-bottom))] space-y-3 text-[#2E130C]">
+                                    <div className="relative z-10 h-full overflow-y-auto p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] space-y-3 text-[#2E130C]">
                                         <div className="flex items-center justify-between">
                                             <Badge className="bg-[#F8F2E6] text-[#7A5A45] border border-[#7A5A45]/20 uppercase tracking-wider text-[10px] font-black">Appel d’offre</Badge>
                                             <div className="flex items-center gap-2">
