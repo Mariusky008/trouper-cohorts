@@ -712,9 +712,9 @@ const NoMatchMotivationCard = () => (
                 <span className="text-5xl">🧭</span>
             </div>
             <div className="space-y-3">
-                <h2 className="text-3xl font-black text-[#2E130C] uppercase tracking-tight">Aucun match demain</h2>
+                <h2 className="text-3xl font-black text-[#2E130C] uppercase tracking-tight">Aucun match demain — activez votre réseau autrement.</h2>
                 <p className="text-[#2E130C]/75 font-medium text-base leading-relaxed max-w-[300px] mx-auto">
-                    Profitez-en pour vous détendre. Et pour créer du momentum, allez dans Opportunités : en aidant quelqu’un aujourd’hui, vous activez souvent un retour très rapide.
+                    Pas de rendez-vous demain ? C’est le bon moment pour activer une opportunité en attente, publier une offre ciblée et améliorer votre profil pour recevoir de meilleurs matchs.
                 </p>
             </div>
             <div className="grid grid-cols-2 gap-2 w-full max-w-[300px]">
@@ -730,11 +730,14 @@ const NoMatchMotivationCard = () => (
             <div className="w-full max-w-[300px] grid grid-cols-1 gap-3">
                 <Button asChild className="w-full h-12 bg-gradient-to-r from-[#2E130C] to-[#4A2418] hover:from-[#2E130C]/95 hover:to-[#4A2418]/95 text-white font-black rounded-xl shadow-lg">
                     <Link href="/mon-reseau-local/dashboard/opportunities">
-                        <Zap className="w-4 h-4 mr-2" /> Aller aux opportunités
+                        <Zap className="w-4 h-4 mr-2" /> Activer une opportunité
                     </Link>
                 </Button>
+                <Button asChild className="w-full h-11 bg-[#7A5A45] hover:bg-[#7A5A45]/90 text-white font-black rounded-xl">
+                    <Link href="/mon-reseau-local/dashboard/offers">Publier une offre ciblée</Link>
+                </Button>
                 <Button asChild variant="outline" className="w-full h-11 border-[#2E130C]/20 text-[#2E130C] font-bold rounded-xl bg-white/85 hover:bg-white">
-                    <Link href="/mon-reseau-local/dashboard/profile">Mettre à jour mon profil</Link>
+                    <Link href="/mon-reseau-local/dashboard/profile">Améliorer mon profil</Link>
                 </Button>
             </div>
         </div>

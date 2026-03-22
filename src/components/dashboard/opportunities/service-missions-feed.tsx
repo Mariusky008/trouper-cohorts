@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { CheckCircle2, Clock, ExternalLink, MessageCircle, PauseCircle, ShieldCheck, SlidersHorizontal, ThumbsUp, XCircle } from "lucide-react";
-import { confirmServiceReceived, markMissionDone, markMissionInterested, rejectMissionByHelper, rejectServiceReceived } from "@/lib/actions/service-missions";
+import { confirmServiceReceived, markMissionDone, markMissionInterested, rejectMissionByHelper, rejectServiceReceived, snoozeMission } from "@/lib/actions/service-missions";
 import { getMissionPointsByChannel } from "@/lib/points-tiers";
 
 type Mission = any;
@@ -85,8 +85,8 @@ export function ServiceMissionsFeed({
 
   const filteredMissions = useMemo(() => {
     if (activeFilter === "all") return missions.filter((m) => !["rejected", "archived"].includes(m.status));
-    if (activeFilter === "new") return missions.filter((m) => ["new", "snoozed"].includes(m.status));
-    if (activeFilter === "in_progress") return missions.filter((m) => ["interested", "in_progress"].includes(m.status));
+    if (activeFilter === "new") return missions.filter((m) => m.status === "new");
+    if (activeFilter === "in_progress") return missions.filter((m) => ["interested", "in_progress", "snoozed"].includes(m.status));
     if (activeFilter === "to_confirm") return missions.filter((m) => m.status === "done_pending_confirmation");
     if (activeFilter === "history") return missions.filter((m) => ["confirmed", "archived"].includes(m.status));
     return missions.filter((m) => m.status === "rejected");
@@ -118,6 +118,17 @@ export function ServiceMissionsFeed({
   const getTrustScore = (mission: Mission) => Number(mission?.beneficiary?.trust_score || 5);
   const getBonusPoints = (mission: Mission) => {
     return getMissionPointsByChannel(mission.action_channel || "manual");
+  };
+  const getConcreteGains = (mission: Mission) => {
+    const gains = [
+      "Accès à un prospect qualifié",
+      "Introduction vers votre cible idéale",
+      "Possibilité de recommandation croisée",
+      "Opportunité de visibilité locale",
+      "Potentiel de partenariat commercial",
+    ];
+    if (mission.expected_gain) gains.unshift(mission.expected_gain);
+    return gains.slice(0, 3);
   };
 
   const setMissionStatus = (id: string, updates: Record<string, any>) => {
@@ -211,6 +222,21 @@ export function ServiceMissionsFeed({
       return;
     }
     setMissionStatus(missionId, { status: "done_pending_confirmation" });
+  };
+
+  const handleLater = async (missionId: string) => {
+    if (isVirtualMission(missionId)) {
+      setMissionStatus(missionId, { status: "snoozed" });
+      return;
+    }
+    setLoadingId(missionId);
+    const result = await snoozeMission(missionId, 7);
+    setLoadingId(null);
+    if (!result.success) {
+      toast({ title: "Erreur", description: result.error, variant: "destructive" });
+      return;
+    }
+    setMissionStatus(missionId, { status: "snoozed" });
   };
 
   const handleSwipeInterested = async (mission: Mission) => {
@@ -451,11 +477,15 @@ export function ServiceMissionsFeed({
                   <p className="text-xs text-[#2E130C]/70 mt-2">{mission.description}</p>
                 </div>
 
-                {isTopCard && mission.expected_gain && (
+                {isTopCard && (
                   <div className="space-y-2">
                     <div className="rounded-xl border border-[#B20B13]/20 bg-[#FFF5F5] px-3 py-2">
                       <p className="text-[10px] uppercase tracking-widest text-[#B20B13] font-black">Ce que tu gagnes</p>
-                      <p className="text-xs text-[#2E130C] font-semibold mt-1">{mission.expected_gain}</p>
+                      <div className="mt-1 space-y-1">
+                        {getConcreteGains(mission).map((gain, idx) => (
+                          <p key={`${mission.id}-${idx}`} className="text-xs text-[#2E130C] font-semibold">• {gain}</p>
+                        ))}
+                      </div>
                     </div>
                     <div className="grid grid-cols-2 gap-2">
                       <div className="rounded-xl border border-[#2E130C]/10 bg-white px-3 py-2">
@@ -472,15 +502,7 @@ export function ServiceMissionsFeed({
 
                 <div className={cn("pt-1", !isTopCard && "opacity-0 h-0 overflow-hidden")}>
                   {mission.status === "new" && (
-                    <div className="grid grid-cols-2 gap-3">
-                      <Button
-                        variant="outline"
-                        onClick={() => handleReject(mission.id)}
-                        disabled={loadingId === mission.id}
-                        className="h-11 border-[#B20B13]/30 bg-[#B20B13]/5 text-[#B20B13] hover:bg-[#B20B13]/10 font-black uppercase text-[11px]"
-                      >
-                        <PauseCircle className="h-4 w-4 mr-1" /> Pas intéressé
-                      </Button>
+                    <div className="grid grid-cols-1 gap-2">
                       <Button
                         onClick={() => handleInterested(mission)}
                         disabled={loadingId === mission.id}
@@ -495,7 +517,23 @@ export function ServiceMissionsFeed({
                       >
                         {mission.action_channel === "whatsapp" && <MessageCircle className="h-4 w-4 mr-1" />}
                         {mission.action_channel === "social_link" && <ExternalLink className="h-4 w-4 mr-1" />}
-                        {mission.action_channel === "whatsapp" ? "Ouvrir WhatsApp" : mission.action_channel === "social_link" ? "Ouvrir le lien" : "Je m'en charge"}
+                        J’active
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => handleLater(mission.id)}
+                        disabled={loadingId === mission.id}
+                        className="h-11 border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100 font-black uppercase text-[11px]"
+                      >
+                        <PauseCircle className="h-4 w-4 mr-1" /> Plus tard
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => handleReject(mission.id)}
+                        disabled={loadingId === mission.id}
+                        className="h-11 border-[#B20B13]/30 bg-[#B20B13]/5 text-[#B20B13] hover:bg-[#B20B13]/10 font-black uppercase text-[11px]"
+                      >
+                        Pas pertinent
                       </Button>
                     </div>
                   )}
@@ -503,7 +541,7 @@ export function ServiceMissionsFeed({
                   {mission.status === "snoozed" && (
                     <div className="grid grid-cols-2 gap-2">
                       <Button variant="outline" className="border-amber-200 text-amber-700 bg-amber-50 h-11">
-                        Mission en pause
+                        Plus tard
                       </Button>
                       <Button
                         onClick={() => handleInterested(mission)}
