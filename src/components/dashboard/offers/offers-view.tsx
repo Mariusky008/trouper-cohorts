@@ -52,6 +52,8 @@ export function OffersView({
     const [consumedSearchIds, setConsumedSearchIds] = useState<string[]>([]);
     const [infoOffer, setInfoOffer] = useState<any | null>(null);
     const [infoSearch, setInfoSearch] = useState<any | null>(null);
+    const [isIntroOpen, setIsIntroOpen] = useState(false);
+    const OFFERS_INTRO_SEEN_KEY = "offers-intro-seen-v1";
 
     useEffect(() => {
         const saved = window.localStorage.getItem("offers-tab");
@@ -63,6 +65,11 @@ export function OffersView({
     useEffect(() => {
         window.localStorage.setItem("offers-tab", activeTab);
     }, [activeTab]);
+
+    useEffect(() => {
+        const seen = window.localStorage.getItem(OFFERS_INTRO_SEEN_KEY);
+        if (!seen) setIsIntroOpen(true);
+    }, []);
 
     const handleCreateSearch = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
@@ -240,6 +247,18 @@ export function OffersView({
 
     const openWhatsappOfferPreview = (offer: any) => {
         window.open(`https://wa.me/?text=${encodeURIComponent(whatsappOfferMessage(offer))}`, "_blank");
+    };
+
+    const handleCloseIntro = () => {
+        window.localStorage.setItem(OFFERS_INTRO_SEEN_KEY, "1");
+        setIsIntroOpen(false);
+    };
+
+    const handleStartFirstOffer = () => {
+        window.localStorage.setItem(OFFERS_INTRO_SEEN_KEY, "1");
+        setIsIntroOpen(false);
+        setActiveTab("offers");
+        setIsOfferDialogOpen(true);
     };
 
     const restoreRefusedOffer = (id: string) => setRefusedOfferIds((prev) => prev.filter((x) => x !== id));
@@ -849,6 +868,22 @@ export function OffersView({
                             </Button>
                         </div>
                     )}
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={isIntroOpen} onOpenChange={(open) => !open && handleCloseIntro()}>
+                <DialogContent className="bg-white border-[#2E130C]/15 text-[#2E130C] sm:max-w-md rounded-2xl w-[92vw]">
+                    <DialogHeader>
+                        <DialogTitle className="text-xl font-black">Bienvenue sur Offres</DialogTitle>
+                        <DialogDescription className="text-sm text-[#2E130C]/70 leading-relaxed">
+                            Cette page vous permet de proposer vos services avec un pourcentage en rabais à la communauté.
+                            <br />
+                            Vous pouvez aussi profiter des offres et des demandes publiées par les autres membres.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <Button onClick={handleStartFirstOffer} className="w-full h-11 bg-[#2E130C] hover:bg-[#2E130C]/90 text-white font-black rounded-xl">
+                        Je crée ma première offre
+                    </Button>
                 </DialogContent>
             </Dialog>
         </div>
