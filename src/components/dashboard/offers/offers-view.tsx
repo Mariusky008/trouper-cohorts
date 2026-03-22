@@ -187,6 +187,17 @@ export function OffersView({
         },
         [callsDeck, mySearches]
     );
+    const ownOfferSource = useMemo(
+        () => currentUserOffer || (currentUserOffers && currentUserOffers.length > 0 ? currentUserOffers[0] : null),
+        [currentUserOffer, currentUserOffers]
+    );
+    const offersDeckDisplay = useMemo(
+        () => {
+            if (productDeck.length > 0) return productDeck.map((o) => ({ ...o, __isOwn: false }));
+            return (currentUserOffers || []).map((o) => ({ ...o, __isOwn: true }));
+        },
+        [productDeck, currentUserOffers]
+    );
 
     const discountPct = (offer: any) =>
         offer.offer_original_price > 0 ? Math.round(((offer.offer_original_price - offer.offer_price) / offer.offer_original_price) * 100) : 0;
@@ -330,37 +341,37 @@ export function OffersView({
                         )}
                     </div>
 
-                    {currentUserOffer && (
+                    {ownOfferSource && (
                         <div className="max-w-sm mx-auto lg:hidden">
-                            <div className="relative rounded-[2.4rem] overflow-hidden shadow-2xl bg-[#071228] border border-blue-300/35">
-                                <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(59,130,246,0.42),transparent_45%)]" />
-                                <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom,rgba(139,92,246,0.30),transparent_42%)]" />
-                                <div className="relative z-10 p-5 space-y-4 text-white">
+                            <div className="relative rounded-[2.4rem] overflow-hidden shadow-xl bg-[#FFFDF8] border border-[#2E130C]/12">
+                                <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(59,130,246,0.09),transparent_45%)]" />
+                                <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom,rgba(251,191,36,0.10),transparent_42%)]" />
+                                <div className="relative z-10 p-5 space-y-4 text-[#2E130C]">
                                     <div className="flex items-center justify-between">
-                                        <Badge className="bg-blue-500/20 text-blue-100 border border-blue-300/40 uppercase tracking-wider text-[10px] font-black">Ma vitrine</Badge>
+                                        <Badge className="bg-blue-50 text-blue-700 border border-blue-200 uppercase tracking-wider text-[10px] font-black">Ma vitrine</Badge>
                                         <Badge className="bg-amber-300 text-[#2E130C] border-0 text-[10px] font-black">Mon offre</Badge>
                                     </div>
-                                    <div className="rounded-2xl border border-blue-300/25 bg-white/10 backdrop-blur-md p-4 flex items-center gap-3">
-                                        <Avatar className="h-14 w-14 border-2 border-blue-200/70">
-                                            <AvatarImage src={currentUserOffer.avatar_url} className="object-cover object-top" />
-                                            <AvatarFallback>{currentUserOffer.display_name?.[0] || "?"}</AvatarFallback>
+                                    <div className="rounded-2xl border border-[#2E130C]/10 bg-white p-4 flex items-center gap-3">
+                                        <Avatar className="h-14 w-14 border-2 border-blue-100">
+                                            <AvatarImage src={ownOfferSource.avatar_url} className="object-cover object-top" />
+                                            <AvatarFallback>{ownOfferSource.display_name?.[0] || "?"}</AvatarFallback>
                                         </Avatar>
                                         <div>
-                                            <p className="font-black text-base leading-none">{currentUserOffer.display_name}</p>
-                                            <p className="text-xs text-blue-100/90 mt-1">{currentUserOffer.trade} · {currentUserOffer.city}</p>
+                                            <p className="font-black text-base leading-none">{ownOfferSource.display_name || "Moi"}</p>
+                                            <p className="text-xs text-[#2E130C]/70 mt-1">{ownOfferSource.trade || "Membre"} · {ownOfferSource.city || "Réseau"}</p>
                                         </div>
                                     </div>
-                                    <div className="rounded-2xl border border-blue-300/35 bg-gradient-to-r from-blue-300/15 to-violet-400/15 p-4">
-                                        <p className="text-[10px] uppercase tracking-widest font-bold text-blue-200 mb-1">Votre offre active</p>
-                                        <h3 className="font-black text-lg leading-tight">{currentUserOffer.offer_title}</h3>
-                                        <p className="text-xs text-blue-100/90 mt-2 line-clamp-2">{currentUserOffer.offer_description}</p>
-                                        <p className="text-xs text-blue-100 mt-2 font-bold">Prix club: {currentUserOffer.offer_price}€ <span className="line-through opacity-70 ml-1">{currentUserOffer.offer_original_price}€</span></p>
+                                    <div className="rounded-2xl border border-blue-200 bg-gradient-to-r from-blue-50 to-amber-50 p-4">
+                                        <p className="text-[10px] uppercase tracking-widest font-bold text-blue-700 mb-1">Votre offre active</p>
+                                        <h3 className="font-black text-lg leading-tight">{ownOfferSource.offer_title}</h3>
+                                        <p className="text-xs text-[#2E130C]/80 mt-2 line-clamp-3">{ownOfferSource.offer_description}</p>
+                                        <p className="text-xs text-[#2E130C] mt-2 font-bold">Prix club: {ownOfferSource.offer_price}€ <span className="line-through opacity-70 ml-1">{ownOfferSource.offer_original_price}€</span></p>
                                     </div>
                                     <div className="grid grid-cols-2 gap-3">
-                                        <Button asChild className="h-11 bg-white/90 hover:bg-white text-[#2E130C] font-black uppercase text-[11px]">
+                                        <Button asChild className="h-11 bg-[#2E130C] hover:bg-[#2E130C]/90 text-white font-black uppercase text-[11px]">
                                             <Link href="/mon-reseau-local/dashboard/profile?edit=true&tab=offer">Modifier</Link>
                                         </Button>
-                                        <Button variant="outline" onClick={handleDeactivateOffer} className="h-11 border-rose-300/50 bg-rose-400/10 text-rose-100 hover:bg-rose-400/20 font-black uppercase text-[11px]">
+                                        <Button variant="outline" onClick={handleDeactivateOffer} className="h-11 border-rose-300 text-rose-700 hover:bg-rose-50 font-black uppercase text-[11px] bg-white">
                                             Masquer
                                         </Button>
                                     </div>
@@ -441,19 +452,19 @@ export function OffersView({
                         </div>
                     </div>
 
-                    <div className="relative h-[calc(100dvh-14.8rem)] lg:h-[680px] max-w-sm mx-auto">
-                        {productDeck.length === 0 && (
+                    <div className="relative h-[calc(100dvh-11.6rem)] lg:h-[680px] max-w-sm mx-auto">
+                        {offersDeckDisplay.length === 0 && (
                             <div className="absolute inset-0 grid place-items-center text-center px-6">
                                 <p className="text-sm font-bold text-[#2E130C]/70">Aucune offre partenaire en attente pour le moment.</p>
                             </div>
                         )}
-                        {productDeck.slice(0, 5).map((offer, index) => (
+                        {offersDeckDisplay.slice(0, 5).map((offer, index) => (
                             <motion.div
-                                key={offer.user_id}
+                                key={offer.user_id || offer.offer_id || `${offer.offer_title}-${index}`}
                                 animate={
-                                    swipeLeftId === `offer-${offer.user_id}`
+                                    swipeLeftId === `offer-${offer.user_id || offer.offer_id}`
                                         ? { x: -420, rotate: -12, opacity: 0 }
-                                        : swipeRightId === `offer-${offer.user_id}`
+                                        : swipeRightId === `offer-${offer.user_id || offer.offer_id}`
                                         ? { x: 420, rotate: 12, opacity: 0 }
                                         : { y: index * 12, scale: Math.max(0.9, 1 - index * 0.04), x: index * 6, opacity: index > 3 ? 0 : 1 }
                                 }
@@ -465,51 +476,68 @@ export function OffersView({
                                 dragElastic={0.6}
                                 onDragEnd={(_, info) => {
                                     if (index !== 0) return;
+                                    if (offer.__isOwn) return;
                                     if (info.offset.x <= -120) handleOfferRefuse(offer);
                                     if (info.offset.x >= 120) handleOfferInterested(offer);
                                 }}
                             >
-                                <div className="relative rounded-[2.4rem] overflow-hidden shadow-2xl bg-[#071228] border border-blue-300/35">
-                                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(59,130,246,0.42),transparent_45%)]" />
-                                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom,rgba(139,92,246,0.30),transparent_42%)]" />
+                                <div className="relative rounded-[2.4rem] overflow-hidden shadow-xl bg-[#FFFDF8] border border-[#2E130C]/12">
+                                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(59,130,246,0.09),transparent_45%)]" />
+                                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom,rgba(251,191,36,0.10),transparent_42%)]" />
                                     <motion.div
                                         animate={{ x: ["-120%", "130%"] }}
                                         transition={{ duration: 2.8, repeat: Infinity, ease: "linear" }}
-                                        className="absolute -top-24 h-[220%] w-24 rotate-12 bg-white/10 blur-2xl"
+                                        className="absolute -top-24 h-[220%] w-24 rotate-12 bg-white/35 blur-2xl"
                                     />
-                                    <div className="relative z-10 p-5 space-y-4 text-white">
+                                    <div className="relative z-10 p-5 space-y-4 text-[#2E130C]">
                                         <div className="flex items-center justify-between">
-                                            <Badge className="bg-blue-500/20 text-blue-100 border border-blue-300/40 uppercase tracking-wider text-[10px] font-black">Offre produit/service</Badge>
+                                            <Badge className="bg-blue-50 text-blue-700 border border-blue-200 uppercase tracking-wider text-[10px] font-black">Offre produit/service</Badge>
                                             <div className="flex items-center gap-2">
-                                                <Badge className="bg-white/15 text-white border-white/20 text-[10px] font-black">{offerBadge(offer)}</Badge>
-                                                <Badge className="bg-amber-300 text-[#2E130C] border-0 text-[10px] font-black">-{discountPct(offer)}%</Badge>
+                                                {offer.__isOwn && <Badge className="bg-amber-200 text-[#2E130C] border-0 text-[10px] font-black">Mon offre</Badge>}
+                                                <Badge className="bg-white text-[#2E130C] border-[#2E130C]/15 text-[10px] font-black">{offerBadge(offer)}</Badge>
+                                                {!offer.__isOwn && <Badge className="bg-amber-300 text-[#2E130C] border-0 text-[10px] font-black">-{discountPct(offer)}%</Badge>}
                                             </div>
                                         </div>
-                                        <div className="rounded-2xl border border-blue-300/25 bg-white/10 backdrop-blur-md p-4 flex items-center gap-3">
-                                            <Avatar className="h-14 w-14 border-2 border-blue-200/70">
+                                        <div className="rounded-2xl border border-[#2E130C]/10 bg-white p-4 flex items-center gap-3">
+                                            <Avatar className="h-14 w-14 border-2 border-blue-100">
                                                 <AvatarImage src={offer.avatar_url} className="object-cover object-top" />
                                                 <AvatarFallback>{offer.display_name?.[0] || "?"}</AvatarFallback>
                                             </Avatar>
                                             <div>
                                                 <p className="font-black text-base leading-none">{offer.display_name}</p>
-                                                <p className="text-xs text-blue-100/90 mt-1">{offer.trade} · {offer.city}</p>
+                                                <p className="text-xs text-[#2E130C]/70 mt-1">{offer.trade} · {offer.city}</p>
                                             </div>
                                         </div>
-                                        <div className="rounded-2xl border border-blue-300/35 bg-gradient-to-r from-blue-300/15 to-violet-400/15 p-4">
-                                            <p className="text-[10px] uppercase tracking-widest font-bold text-blue-200 mb-1">Offre du moment</p>
+                                        <div className="rounded-2xl border border-blue-200 bg-gradient-to-r from-blue-50 to-amber-50 p-4 min-h-[178px]">
+                                            <p className="text-[10px] uppercase tracking-widest font-bold text-blue-700 mb-1">Offre du moment</p>
                                             <h3 className="font-black text-lg leading-tight">{offer.offer_title}</h3>
-                                            <p className="text-xs text-blue-100/90 mt-2 line-clamp-2">{offer.offer_description}</p>
-                                            <p className="text-xs text-blue-100 mt-2 font-bold">Prix club: {offer.offer_price}€ <span className="line-through opacity-70 ml-1">{offer.offer_original_price}€</span></p>
+                                            <p className="text-xs text-[#2E130C]/80 mt-2 line-clamp-4">{offer.offer_description}</p>
+                                            <p className="text-xs text-[#2E130C] mt-2 font-bold">Prix club: {offer.offer_price}€ <span className="line-through opacity-70 ml-1">{offer.offer_original_price}€</span></p>
                                         </div>
                                         <div className="grid grid-cols-2 gap-2">
-                                            <Button size="sm" variant="outline" onClick={() => setInfoOffer(offer)} className="h-9 bg-[#0C1D3D] border-blue-300/40 text-blue-100 hover:bg-[#132a56] text-[10px] font-black uppercase">Voir détails</Button>
-                                            <Button asChild size="sm" variant="outline" className="h-9 bg-[#0C1D3D] border-blue-300/40 text-blue-100 hover:bg-[#132a56] text-[10px] font-black uppercase">
-                                                <Link href={`/mon-reseau-local/dashboard/profile/${offer.user_id}`}>Voir profil</Link>
-                                            </Button>
+                                            <Button size="sm" variant="outline" onClick={() => setInfoOffer(offer)} className="h-9 bg-white border-[#2E130C]/20 text-[#2E130C] hover:bg-[#2E130C]/5 text-[10px] font-black uppercase">Voir détails</Button>
+                                            {offer.__isOwn ? (
+                                                <Button asChild size="sm" className="h-9 bg-[#2E130C] hover:bg-[#2E130C]/90 text-white text-[10px] font-black uppercase">
+                                                    <Link href="/mon-reseau-local/dashboard/profile?edit=true&tab=offer">Modifier</Link>
+                                                </Button>
+                                            ) : (
+                                                <Button asChild size="sm" variant="outline" className="h-9 bg-white border-[#2E130C]/20 text-[#2E130C] hover:bg-[#2E130C]/5 text-[10px] font-black uppercase">
+                                                    <Link href={`/mon-reseau-local/dashboard/profile/${offer.user_id}`}>Voir profil</Link>
+                                                </Button>
+                                            )}
                                         </div>
                                         <div className="grid grid-cols-2 gap-3">
-                                            <Button variant="outline" onClick={() => handleOfferRefuse(offer)} className="h-11 border-rose-300/50 bg-rose-400/10 text-rose-100 hover:bg-rose-400/20 font-black uppercase text-[11px]">Pas intéressé</Button>
-                                            <Button onClick={() => handleOfferInterested(offer)} className="h-11 bg-gradient-to-r from-[#25D366] to-[#1BCB5A] hover:from-[#25D366]/90 hover:to-[#1BCB5A]/90 text-white font-black uppercase text-[11px] shadow-lg shadow-emerald-900/40"><MessageCircle className="h-4 w-4 mr-1" />Je suis intéressé</Button>
+                                            {offer.__isOwn ? (
+                                                <>
+                                                    <Button variant="outline" onClick={() => offer.offer_id && handleDeleteOffer(offer.offer_id)} className="h-11 border-rose-300 text-rose-700 hover:bg-rose-50 font-black uppercase text-[11px] bg-white">Supprimer</Button>
+                                                    <Button asChild className="h-11 bg-[#2E130C] hover:bg-[#2E130C]/90 text-white font-black uppercase text-[11px]"><Link href="/mon-reseau-local/dashboard/profile?edit=true&tab=offer">Gérer</Link></Button>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <Button variant="outline" onClick={() => handleOfferRefuse(offer)} className="h-11 border-rose-300 text-rose-700 hover:bg-rose-50 font-black uppercase text-[11px] bg-white">Pas intéressé</Button>
+                                                    <Button onClick={() => handleOfferInterested(offer)} className="h-11 bg-gradient-to-r from-[#25D366] to-[#1BCB5A] hover:from-[#25D366]/90 hover:to-[#1BCB5A]/90 text-white font-black uppercase text-[11px] shadow-lg shadow-emerald-900/20"><MessageCircle className="h-4 w-4 mr-1" />Je suis intéressé</Button>
+                                                </>
+                                            )}
                                         </div>
                                     </div>
                                 </div>
@@ -597,7 +625,7 @@ export function OffersView({
                         </Dialog>
                     </div>
 
-                    <div className="relative h-[calc(100dvh-14.8rem)] lg:h-[660px] max-w-sm mx-auto">
+                    <div className="relative h-[calc(100dvh-11.6rem)] lg:h-[660px] max-w-sm mx-auto">
                         {callsDeckDisplay.slice(0, 5).map((search, index) => (
                             <motion.div
                                 key={search.id}
@@ -621,57 +649,57 @@ export function OffersView({
                                     if (info.offset.x >= 120) handleSearchInterested(search);
                                 }}
                             >
-                                <div className="relative rounded-[2.4rem] overflow-hidden shadow-2xl bg-[#071228] border border-blue-300/35">
-                                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(59,130,246,0.42),transparent_45%)]" />
-                                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom,rgba(139,92,246,0.30),transparent_42%)]" />
-                                    <div className="relative z-10 p-5 space-y-4 text-white">
+                                <div className="relative rounded-[2.4rem] overflow-hidden shadow-xl bg-[#FFFDF8] border border-[#2E130C]/12">
+                                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(59,130,246,0.09),transparent_45%)]" />
+                                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom,rgba(251,191,36,0.10),transparent_42%)]" />
+                                    <div className="relative z-10 p-5 space-y-4 text-[#2E130C]">
                                         <div className="flex items-center justify-between">
-                                            <Badge className="bg-blue-500/20 text-blue-100 border border-blue-300/40 uppercase tracking-wider text-[10px] font-black">Appel d’offre</Badge>
+                                            <Badge className="bg-blue-50 text-blue-700 border border-blue-200 uppercase tracking-wider text-[10px] font-black">Appel d’offre</Badge>
                                             <div className="flex items-center gap-2">
                                                 {search.__isOwn && <Badge className="bg-amber-300 text-[#2E130C] border-0 text-[10px] font-black">Mon appel</Badge>}
-                                                <Badge className="bg-white/15 text-white border-white/20 text-[10px] uppercase">{searchBadge(search)}</Badge>
-                                                <Badge className="bg-white/15 text-white border-white/20 text-[10px] uppercase">{search.category}</Badge>
+                                                <Badge className="bg-white text-[#2E130C] border-[#2E130C]/15 text-[10px] uppercase">{searchBadge(search)}</Badge>
+                                                <Badge className="bg-white text-[#2E130C] border-[#2E130C]/15 text-[10px] uppercase">{search.category}</Badge>
                                             </div>
                                         </div>
-                                        <div className="rounded-2xl border border-blue-300/25 bg-white/10 backdrop-blur-md p-4 flex items-center gap-3">
-                                            <Avatar className="h-14 w-14 border-2 border-blue-200/70">
+                                        <div className="rounded-2xl border border-[#2E130C]/10 bg-white p-4 flex items-center gap-3">
+                                            <Avatar className="h-14 w-14 border-2 border-blue-100">
                                                 <AvatarImage src={search.user_avatar_url} className="object-cover object-top" />
                                                 <AvatarFallback>{search.user_display_name?.[0] || "?"}</AvatarFallback>
                                             </Avatar>
                                             <div>
                                                 <p className="font-black text-base leading-none">{search.user_display_name}</p>
-                                                <p className="text-xs text-blue-100/90 mt-1">{search.user_trade || "Membre"} · {search.user_city || "Réseau"}</p>
+                                                <p className="text-xs text-[#2E130C]/70 mt-1">{search.user_trade || "Membre"} · {search.user_city || "Réseau"}</p>
                                             </div>
                                         </div>
-                                        <div className="rounded-2xl border border-blue-300/35 bg-gradient-to-r from-blue-300/15 to-violet-400/15 p-4">
-                                            <p className="text-[10px] uppercase tracking-widest font-bold text-blue-200 mb-1">Besoin concret</p>
+                                        <div className="rounded-2xl border border-blue-200 bg-gradient-to-r from-blue-50 to-amber-50 p-4 min-h-[178px]">
+                                            <p className="text-[10px] uppercase tracking-widest font-bold text-blue-700 mb-1">Besoin concret</p>
                                             <h3 className="font-black text-lg leading-tight">{search.title}</h3>
-                                            <p className="text-xs text-blue-100/90 mt-2 line-clamp-2 whitespace-pre-wrap">{search.description}</p>
+                                            <p className="text-xs text-[#2E130C]/80 mt-2 line-clamp-4 whitespace-pre-wrap">{search.description}</p>
                                         </div>
                                         <div className="grid grid-cols-2 gap-2">
-                                            <Button size="sm" variant="outline" onClick={() => setInfoSearch(search)} className="h-9 bg-[#0C1D3D] border-blue-300/40 text-blue-100 hover:bg-[#132a56] text-[10px] font-black uppercase">Voir détails</Button>
+                                            <Button size="sm" variant="outline" onClick={() => setInfoSearch(search)} className="h-9 bg-white border-[#2E130C]/20 text-[#2E130C] hover:bg-[#2E130C]/5 text-[10px] font-black uppercase">Voir détails</Button>
                                             {!search.__isOwn ? (
                                                 <Button onClick={() => handleSearchInterested(search)} className="h-9 bg-gradient-to-r from-[#25D366] to-[#1BCB5A] hover:from-[#25D366]/90 hover:to-[#1BCB5A]/90 text-white font-black uppercase text-[10px]">
                                                     <MessageCircle className="h-3.5 w-3.5 mr-1" /> WhatsApp
                                                 </Button>
                                             ) : (
-                                                <div className="rounded-xl border border-white/20 bg-white/10 px-3 py-2 flex items-center justify-center">
-                                                    <span className="text-[10px] font-black uppercase text-white/80">Mon appel</span>
-                                                </div>
+                                                <Button asChild size="sm" className="h-9 bg-[#2E130C] hover:bg-[#2E130C]/90 text-white font-black uppercase text-[10px]">
+                                                    <Link href="/mon-reseau-local/dashboard/offers">Gérer</Link>
+                                                </Button>
                                             )}
                                         </div>
-                                        <div className="rounded-xl border border-white/20 bg-white/10 px-3 py-2 flex items-center justify-between">
-                                            <div className="flex items-center gap-2 text-fuchsia-100/90 text-xs font-semibold">
+                                        <div className="rounded-xl border border-[#2E130C]/10 bg-white px-3 py-2 flex items-center justify-between">
+                                            <div className="flex items-center gap-2 text-[#2E130C]/70 text-xs font-semibold">
                                                 <Clock3 className="h-3.5 w-3.5" />
                                                 {new Date(search.created_at).toLocaleDateString("fr-FR")}
                                             </div>
-                                            <span className="text-[10px] uppercase font-black text-white/70">{search.category}</span>
+                                            <span className="text-[10px] uppercase font-black text-[#2E130C]/70">{search.category}</span>
                                         </div>
                                         <div className="grid grid-cols-2 gap-3">
                                             {search.__isOwn ? (
                                                 <>
-                                                    <Button variant="outline" onClick={() => handleDeleteSearch(search.id)} className="h-11 border-rose-300/50 bg-rose-400/10 text-rose-100 hover:bg-rose-400/20 font-black uppercase text-[11px]">Supprimer</Button>
-                                                    <Button onClick={() => setInfoSearch(search)} className="h-11 bg-white/15 border border-white/20 text-white hover:bg-white/25 font-black uppercase text-[11px]">Modifier</Button>
+                                                    <Button variant="outline" onClick={() => handleDeleteSearch(search.id)} className="h-11 border-rose-300 text-rose-700 hover:bg-rose-50 font-black uppercase text-[11px] bg-white">Supprimer</Button>
+                                                    <Button onClick={() => setInfoSearch(search)} className="h-11 bg-[#2E130C] text-white hover:bg-[#2E130C]/90 font-black uppercase text-[11px]">Modifier</Button>
                                                 </>
                                             ) : (
                                                 <>
