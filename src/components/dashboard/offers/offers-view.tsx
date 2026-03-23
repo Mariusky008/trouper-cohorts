@@ -645,9 +645,19 @@ export function OffersView({
                                         </div>
                                         <div className="grid grid-cols-1 gap-2">
                                             {duoStates[offer.duoId]?.myDecision !== "validate" ? (
-                                                <Button onClick={() => void decideDuo(offer.duoId, offer.partnerId, "validate")} size="sm" className="h-10 bg-[#2E130C] hover:bg-[#2E130C]/90 text-white text-[11px] font-black uppercase">
-                                                    Je valide l’idée
-                                                </Button>
+                                                <>
+                                                    <Button onClick={() => void decideDuo(offer.duoId, offer.partnerId, "validate")} size="sm" className="h-10 bg-[#2E130C] hover:bg-[#2E130C]/90 text-white text-[11px] font-black uppercase">
+                                                        Je valide l’idée
+                                                    </Button>
+                                                    <div className="grid grid-cols-2 gap-2">
+                                                        <Button variant="outline" onClick={() => void decideDuo(offer.duoId, offer.partnerId, "later")} size="sm" className="h-9 border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100 text-[10px] font-black uppercase">
+                                                            Plus tard
+                                                        </Button>
+                                                        <Button variant="outline" onClick={() => void decideDuo(offer.duoId, offer.partnerId, "reject")} size="sm" className="h-9 border-rose-300 text-rose-700 hover:bg-rose-50 text-[10px] font-black uppercase">
+                                                            Pas pertinent
+                                                        </Button>
+                                                    </div>
+                                                </>
                                             ) : duoProgress[offer.duoId]?.stage === "contacted" ? (
                                                 <Button onClick={() => { setActiveDuoMission(offer); setSelectedDuoOutcome(duoProgress[offer.duoId]?.outcome || ""); setIsDuoMissionOpen(true); }} className="h-10 bg-[#2E130C] hover:bg-[#2E130C]/90 text-white font-black uppercase text-[11px]">
                                                     Terminer la mission
