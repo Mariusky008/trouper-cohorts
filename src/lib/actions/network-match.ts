@@ -205,7 +205,7 @@ export async function getDailyMatches() {
           // console.log(`[DEBUG] Match ${match.id} has feedback. Status injected.`);
       }
 
-      if (match.date > todayParisStr) return false;
+      if (match.date > todayParisStr) return true;
       
       // If date is past, hide it
       if (match.date < todayParisStr) return false;
