@@ -3,13 +3,14 @@
 import { useState, useEffect } from "react";
 import { Bell, BellOff, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { saveSubscription } from "@/lib/actions/push-subscription";
+import { removeSubscription, saveSubscription, sendTestPushToCurrentUser } from "@/lib/actions/push-subscription";
 import { toast } from "sonner";
 
 export function PushManager() {
   const [isSupported, setIsSupported] = useState(false);
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [testLoading, setTestLoading] = useState(false);
 
   useEffect(() => {
     // Check support
@@ -43,7 +44,7 @@ export function PushManager() {
   const subscribe = async () => {
     setLoading(true);
     try {
-      const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || "BOgNNnfAD5tq4QdsJhDaDKUetmSJXgpgZLPh2F5qDIWN25bBatd3MuUNENRBeeW0O8L322dkFFTuslZCyf_tBeQ";
+      const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
       
       if (!vapidKey) throw new Error("Clé VAPID manquante");
 
@@ -76,14 +77,19 @@ export function PushManager() {
         applicationServerKey: urlBase64ToUint8Array(vapidKey),
       });
 
-      // Save to backend
-      await saveSubscription(subscription);
+      const subscriptionJson = subscription.toJSON();
+      await saveSubscription({
+        endpoint: subscriptionJson.endpoint,
+        expirationTime: subscriptionJson.expirationTime ?? null,
+        keys: subscriptionJson.keys ?? {},
+      });
       
       setIsSubscribed(true);
       toast.success("Notifications activées !");
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Failed to subscribe:", error);
-      toast.error(`Erreur: ${error.message || "Impossible d'activer"}`);
+      const message = error instanceof Error ? error.message : "Impossible d'activer";
+      toast.error(`Erreur: ${message}`);
     } finally {
       setLoading(false);
     }
@@ -95,6 +101,7 @@ export function PushManager() {
       const registration = await navigator.serviceWorker.ready;
       const subscription = await registration.pushManager.getSubscription();
       if (subscription) {
+        await removeSubscription(subscription.endpoint);
         await subscription.unsubscribe();
         setIsSubscribed(false);
         toast.info("Notifications désactivées.");
@@ -103,6 +110,19 @@ export function PushManager() {
       console.error("Error unsubscribing:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const sendTest = async () => {
+    setTestLoading(true);
+    try {
+      await sendTestPushToCurrentUser();
+      toast.success("Notification test envoyée.");
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Échec du test push";
+      toast.error(message);
+    } finally {
+      setTestLoading(false);
     }
   };
 
@@ -138,24 +158,35 @@ export function PushManager() {
   }
 
   return (
-    <Button
-      variant={isSubscribed ? "outline" : "default"}
-      className={`w-full justify-start gap-3 ${
-          isSubscribed 
-            ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 hover:text-emerald-300" 
-            : "bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-900/20"
-      }`}
-      onClick={isSubscribed ? unsubscribe : subscribe}
-    >
-      {isSubscribed ? (
-        <>
-          <Bell className="h-4 w-4" /> Notifications actives
-        </>
-      ) : (
-        <>
-          <BellOff className="h-4 w-4" /> Activer les notifications
-        </>
-      )}
-    </Button>
+    <div className="space-y-2">
+      <Button
+        variant={isSubscribed ? "outline" : "default"}
+        className={`w-full justify-start gap-3 ${
+            isSubscribed 
+              ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 hover:text-emerald-300" 
+              : "bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-900/20"
+        }`}
+        onClick={isSubscribed ? unsubscribe : subscribe}
+      >
+        {isSubscribed ? (
+          <>
+            <Bell className="h-4 w-4" /> Notifications actives
+          </>
+        ) : (
+          <>
+            <BellOff className="h-4 w-4" /> Activer les notifications
+          </>
+        )}
+      </Button>
+      <Button
+        variant="outline"
+        className="w-full justify-start gap-3 border-white/10"
+        onClick={sendTest}
+        disabled={!isSubscribed || testLoading}
+      >
+        {testLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Bell className="h-4 w-4" />}
+        {isSubscribed ? "Envoyer une notification test" : "Activer les notifications pour tester"}
+      </Button>
+    </div>
   );
 }

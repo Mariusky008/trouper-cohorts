@@ -22,8 +22,6 @@ export async function getConversation(partnerId: string) {
   return messages || [];
 }
 
-// import { sendNotification } from "./notifications"; // REMOVED to avoid bundling web-push
-
 export async function sendMessage(partnerId: string, content: string) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -44,9 +42,7 @@ export async function sendMessage(partnerId: string, content: string) {
     return { success: false, error: error.message };
   }
 
-  // Send Push Notification via Internal API
   try {
-    // Get sender name for the notification
     const { data: senderProfile } = await supabase
       .from("profiles")
       .select("display_name")
@@ -54,11 +50,13 @@ export async function sendMessage(partnerId: string, content: string) {
       .single();
       
     const senderName = senderProfile?.display_name || "Un membre";
-    
-    // Construct absolute URL for internal fetch
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+    const internalSecret = process.env.CRON_SECRET;
 
-    // Trigger internal notification API
+    if (!internalSecret) {
+      return { success: true };
+    }
+
     fetch(`${appUrl}/api/internal/send-notification`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -66,14 +64,13 @@ export async function sendMessage(partnerId: string, content: string) {
             userId: partnerId,
             title: `Nouveau message de ${senderName}`,
             message: content.length > 50 ? content.substring(0, 50) + "..." : content,
-            url: `/mon-reseau-local/dashboard/chat/${user.id}`,
-            secret: process.env.CRON_SECRET || "internal-popey-secret"
+            url: "/mon-reseau-local/dashboard/connections",
+            secret: internalSecret
         })
     }).catch(e => console.error("Async notification trigger failed:", e));
 
   } catch (e) {
     console.error("Failed to trigger push notification:", e);
-    // Don't block the response, just log error
   }
 
   return { success: true };

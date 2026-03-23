@@ -2,69 +2,119 @@
 
 import webpush from "web-push";
 import { createClient } from "@/lib/supabase/server";
-import { unstable_noStore as noStore } from "next/cache";
 
-// Configure VAPID
-if (process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
+if (process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY && process.env.NEXT_PUBLIC_APP_EMAIL) {
   webpush.setVapidDetails(
-    `mailto:${process.env.NEXT_PUBLIC_APP_EMAIL || "contact@popey.academy"}`,
+    `mailto:${process.env.NEXT_PUBLIC_APP_EMAIL}`,
     process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
     process.env.VAPID_PRIVATE_KEY
   );
 }
+
+type PushSubscriptionRow = {
+  id: string;
+  subscription: webpush.PushSubscription;
+};
+
+type SendNotificationResult = {
+  success: boolean;
+  skipped?: boolean;
+  sent?: number;
+  total?: number;
+  error?: string;
+};
 
 export async function sendNotification(
   userId: string,
   title: string,
   message: string,
   url: string = "/mon-reseau-local/dashboard"
-) {
+): Promise<SendNotificationResult> {
   try {
+    if (!process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || !process.env.VAPID_PRIVATE_KEY || !process.env.NEXT_PUBLIC_APP_EMAIL) {
+      return { success: false, error: "Missing VAPID configuration" };
+    }
+
     const supabase = await createClient();
 
-    // 1. Get user's push subscriptions
+    const { data: settings } = await supabase
+      .from("network_settings")
+      .select("notifications")
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    if (settings && settings.notifications === false) {
+      return { success: true, skipped: true };
+    }
+
     const { data: subscriptions } = await supabase
       .from("push_subscriptions")
-      .select("*")
+      .select("id, subscription")
       .eq("user_id", userId);
 
     if (!subscriptions || subscriptions.length === 0) {
-      return { success: false, error: "No subscriptions found" };
+      return { success: true, skipped: true, sent: 0, total: 0 };
     }
 
-    // 2. Prepare payload
     const payload = JSON.stringify({
       title,
       body: message,
-      icon: "/icons/icon-192x192.png",
-      badge: "/icons/badge-72x72.png",
+      icon: "/icon.svg",
+      badge: "/icon.svg",
       url: url,
     });
 
-    // 3. Send to all subscriptions
-    const promises = subscriptions.map(async (sub) => {
+    const typedSubscriptions = subscriptions as PushSubscriptionRow[];
+    const promises = typedSubscriptions.map(async (sub) => {
       try {
         await webpush.sendNotification(sub.subscription, payload);
         return { success: true };
-      } catch (error: any) {
-        if (error.statusCode === 410 || error.statusCode === 404) {
-          // Subscription expired or gone, delete it
+      } catch (error: unknown) {
+        if (
+          typeof error === "object" &&
+          error !== null &&
+          "statusCode" in error &&
+          (error.statusCode === 410 || error.statusCode === 404)
+        ) {
           await supabase.from("push_subscriptions").delete().eq("id", sub.id);
         }
-        return { success: false, error };
+        return { success: false };
       }
     });
 
-    await Promise.all(promises);
-    return { success: true };
-  } catch (error) {
+    const results = await Promise.all(promises);
+    const sent = results.filter((result) => result.success).length;
+    return { success: sent > 0, sent, total: typedSubscriptions.length };
+  } catch (error: unknown) {
     console.error("Error sending notification:", error);
-    return { success: false, error };
+    const messageError = error instanceof Error ? error.message : "Unknown error";
+    return { success: false, error: messageError };
   }
 }
 
+export async function sendBulkNotification(
+  userIds: string[],
+  title: string,
+  message: string,
+  url: string = "/mon-reseau-local/dashboard"
+) {
+  const uniqueUserIds = Array.from(new Set(userIds.filter((id) => Boolean(id))));
+  const results = await Promise.all(
+    uniqueUserIds.map((userId) => sendNotification(userId, title, message, url))
+  );
+
+  const sent = results.reduce((acc, result) => acc + (result.sent || 0), 0);
+  const successfulUsers = results.filter((result) => result.success).length;
+
+  return {
+    success: successfulUsers > 0,
+    targetedUsers: uniqueUserIds.length,
+    successfulUsers,
+    sent,
+  };
+}
+
 export async function getNotificationCounts() {
-  // noStore();
   const supabase = await createClient();
   
   // 1. Market Opportunities Count
