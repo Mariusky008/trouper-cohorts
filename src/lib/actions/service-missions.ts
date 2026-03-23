@@ -207,11 +207,18 @@ export async function generateServiceMissionsFromRecentContacts(limit = 20) {
   const supabaseAdmin = createAdminClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { success: false, error: "Unauthorized" };
+  const todayParis = new Intl.DateTimeFormat("fr-CA", {
+    timeZone: "Europe/Paris",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
 
   const { data: matches } = await supabaseAdmin
     .from("network_matches")
     .select("id, user1_id, user2_id, date")
     .or(`user1_id.eq.${user.id},user2_id.eq.${user.id}`)
+    .lte("date", todayParis)
     .order("date", { ascending: false })
     .limit(limit);
 
@@ -495,12 +502,19 @@ export async function getServiceMissionsFeed(filter: ServiceMissionFilter = "all
   await generateServiceMissionsFromRecentContacts();
 
   const buildVirtualFeed = async () => {
+    const todayParis = new Intl.DateTimeFormat("fr-CA", {
+      timeZone: "Europe/Paris",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(new Date());
     const partnerPairs = new Map<string, { partnerId: string; sourceMatchId: string | null; sourceDate: string }>();
 
     const { data: matches } = await supabaseAdmin
       .from("network_matches")
       .select("id, user1_id, user2_id, date")
       .or(`user1_id.eq.${user.id},user2_id.eq.${user.id}`)
+      .lte("date", todayParis)
       .order("date", { ascending: false })
       .limit(30);
 

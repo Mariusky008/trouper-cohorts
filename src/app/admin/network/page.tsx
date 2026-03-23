@@ -27,6 +27,12 @@ async function getNetworkStats() {
   const tMonth = String(tomorrowParis.getMonth() + 1).padStart(2, '0');
   const tDay = String(tomorrowParis.getDate()).padStart(2, '0');
   const tomorrowStr = `${tYear}-${tMonth}-${tDay}`;
+  const parisDayFormatter = new Intl.DateTimeFormat("fr-CA", {
+    timeZone: "Europe/Paris",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  });
 
   const { count: matchesCount } = await supabaseAdmin
     .from('network_matches')
@@ -182,6 +188,39 @@ async function getNetworkStats() {
     .order('created_at', { ascending: false }) // Newest first
     .limit(500); // Reasonable limit
 
+  const visitorsWindowStart = new Date();
+  visitorsWindowStart.setDate(visitorsWindowStart.getDate() - 6);
+  const { data: visitorEvents } = await supabaseAdmin
+    .from("analytics_events")
+    .select("user_id, created_at")
+    .gte("created_at", visitorsWindowStart.toISOString())
+    .order("created_at", { ascending: false })
+    .limit(5000);
+
+  const dailyUniqueMap = new Map<string, Set<string>>();
+  (visitorEvents || []).forEach((event: any) => {
+    if (!event?.created_at || !event?.user_id) return;
+    const dayKey = parisDayFormatter.format(new Date(event.created_at));
+    if (!dailyUniqueMap.has(dayKey)) dailyUniqueMap.set(dayKey, new Set<string>());
+    dailyUniqueMap.get(dayKey)?.add(event.user_id);
+  });
+
+  const uniqueVisitorsByDay = Array.from({ length: 7 }, (_, idx) => {
+    const date = new Date(nowParis);
+    date.setDate(date.getDate() - (6 - idx));
+    const key = parisDayFormatter.format(date);
+    const count = dailyUniqueMap.get(key)?.size || 0;
+    const [yearValue, monthValue, dayValue] = key.split("-");
+    return {
+      key,
+      label: `${dayValue}/${monthValue}`,
+      count,
+      isToday: key === todayStr,
+      timestamp: `${yearValue}-${monthValue}-${dayValue}`,
+    };
+  });
+  const uniqueVisitorsToday = uniqueVisitorsByDay.find((day) => day.key === todayStr)?.count || 0;
+
   const { data: duoVotes } = await supabaseAdmin
     .from("network_duo_votes")
     .select("duo_key, decision");
@@ -253,6 +292,8 @@ async function getNetworkStats() {
     avgTrustScore: avgScore,
     recentMembers: recentProfiles, // This variable name is slightly misleading now if we load ALL, but let's keep it for now.
     analyticsToday: statsToday,
+    uniqueVisitorsToday,
+    uniqueVisitorsByDay,
     founderCalls: enrichedFounderCalls,
     duoAnalytics: {
       totalVotes: duoTotalVotes,
@@ -422,12 +463,12 @@ export default async function AdminNetworkPage() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Membres Actifs</CardTitle>
+            <CardTitle className="text-sm font-medium">Visiteurs Uniques</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.activeMembers}</div>
-            <p className="text-xs text-muted-foreground">Participants au matching</p>
+            <div className="text-2xl font-bold">{stats.uniqueVisitorsToday}</div>
+            <p className="text-xs text-muted-foreground">Aujourd’hui (événements app)</p>
           </CardContent>
         </Card>
 
@@ -461,6 +502,17 @@ export default async function AdminNetworkPage() {
           <CardContent>
             <div className="text-2xl font-bold text-emerald-700">{stats.servicesConfirmed}</div>
             <p className="text-xs text-muted-foreground">Rendus + reçus validés</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Membres Actifs</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.activeMembers}</div>
+            <p className="text-xs text-muted-foreground">Participants au matching</p>
           </CardContent>
         </Card>
       </div>
@@ -585,6 +637,28 @@ export default async function AdminNetworkPage() {
                     </div>
                   );
                 })}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Users className="h-5 w-5 text-purple-600" /> Visiteurs uniques par jour
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                {stats.uniqueVisitorsByDay.map((day: any) => (
+                  <div key={day.key} className="flex items-center justify-between rounded-lg border border-slate-100 bg-slate-50 px-3 py-2">
+                    <span className={`text-xs font-bold ${day.isToday ? "text-purple-700" : "text-slate-500"}`}>
+                      {day.isToday ? `${day.label} (aujourd’hui)` : day.label}
+                    </span>
+                    <span className={`text-sm font-black ${day.isToday ? "text-purple-700" : "text-slate-900"}`}>
+                      {day.count}
+                    </span>
+                  </div>
+                ))}
               </div>
             </CardContent>
           </Card>

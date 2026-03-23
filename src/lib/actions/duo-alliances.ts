@@ -11,10 +11,17 @@ const getDuoKey = (a: string, b: string) => [a, b].sort().join("__");
 
 async function getMatchedPartnerIds(userId: string) {
   const supabase = await createClient();
+  const todayParis = new Intl.DateTimeFormat("fr-CA", {
+    timeZone: "Europe/Paris",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
   const { data: matches } = await supabase
     .from("network_matches")
-    .select("user1_id,user2_id")
-    .or(`user1_id.eq.${userId},user2_id.eq.${userId}`);
+    .select("user1_id,user2_id,date")
+    .or(`user1_id.eq.${userId},user2_id.eq.${userId}`)
+    .lte("date", todayParis);
 
   const ids = new Set<string>();
   (matches || []).forEach((m: any) => ids.add(m.user1_id === userId ? m.user2_id : m.user1_id));

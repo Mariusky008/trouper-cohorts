@@ -205,8 +205,7 @@ export async function getDailyMatches() {
           // console.log(`[DEBUG] Match ${match.id} has feedback. Status injected.`);
       }
 
-      // If date is in future, keep it
-      if (match.date > todayParisStr) return true;
+      if (match.date > todayParisStr) return false;
       
       // If date is past, hide it
       if (match.date < todayParisStr) return false;
@@ -368,7 +367,7 @@ export async function getDailyMatches() {
   // 1. The current active match (Today)
   // 2. The next upcoming match (Tomorrow)
   
-  return sortedMatches.slice(0, 2);
+  return sortedMatches.slice(0, 1);
 }
 
 import { revalidatePath } from "next/cache";

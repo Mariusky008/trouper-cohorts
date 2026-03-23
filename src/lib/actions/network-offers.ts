@@ -25,12 +25,18 @@ export async function getUnlockedOffers(): Promise<NetworkOffer[]> {
     const { data: { user } } = await supabase.auth.getUser();
     
     if (!user) return [];
+    const todayParis = new Intl.DateTimeFormat("fr-CA", {
+        timeZone: "Europe/Paris",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+    }).format(new Date());
 
-    // 1. Get all matches for current user
     const { data: matches } = await supabase
         .from("network_matches")
-        .select("user1_id, user2_id, created_at")
-        .or(`user1_id.eq.${user.id},user2_id.eq.${user.id}`);
+        .select("user1_id, user2_id, date, created_at")
+        .or(`user1_id.eq.${user.id},user2_id.eq.${user.id}`)
+        .lte("date", todayParis);
 
     if (!matches || matches.length === 0) return [];
 
