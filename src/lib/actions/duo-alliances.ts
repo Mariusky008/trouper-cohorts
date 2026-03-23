@@ -5,6 +5,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { revalidatePath } from "next/cache";
 
 type DuoDecision = "validate" | "later" | "reject";
+type DuoMissionOutcome = "continue_together" | "tested_not_ready" | "not_a_fit" | "offer_created" | "need_help";
 
 const getDuoKey = (a: string, b: string) => [a, b].sort().join("__");
 
@@ -76,6 +77,38 @@ export async function saveDuoDecision(partnerId: string, decision: DuoDecision) 
   if (error) return { success: false, error: error.message };
 
   revalidatePath("/mon-reseau-local/dashboard/offers");
+  return { success: true, duoKey };
+}
+
+export async function saveDuoMissionOutcome(partnerId: string, outcome: DuoMissionOutcome) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: "Unauthorized" };
+
+  const matched = await getMatchedPartnerIds(user.id);
+  if (!matched.has(partnerId)) return { success: false, error: "Partenaire non éligible" };
+
+  const [userA, userB] = [user.id, partnerId].sort();
+  const duoKey = getDuoKey(user.id, partnerId);
+  const admin = createAdminClient();
+  const { error } = await admin
+    .from("network_duo_missions")
+    .upsert(
+      {
+        duo_key: duoKey,
+        user_a: userA,
+        user_b: userB,
+        member_id: user.id,
+        other_member_id: partnerId,
+        outcome,
+      },
+      { onConflict: "duo_key,member_id" }
+    );
+
+  if (error) return { success: false, error: error.message };
+
+  revalidatePath("/mon-reseau-local/dashboard/offers");
+  revalidatePath("/admin/network");
   return { success: true, duoKey };
 }
 

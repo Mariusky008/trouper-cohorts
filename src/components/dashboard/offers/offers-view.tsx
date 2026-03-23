@@ -17,7 +17,7 @@ import { toast } from "sonner";
 import { createNetworkSearch, deleteNetworkSearch } from "@/lib/actions/network-searches";
 import { toggleOfferActive } from "@/lib/actions/offers";
 import { createNetworkOffer, deleteNetworkOffer } from "@/lib/actions/network-offers";
-import { saveDuoDecision } from "@/lib/actions/duo-alliances";
+import { saveDuoDecision, saveDuoMissionOutcome } from "@/lib/actions/duo-alliances";
 import { useRouter } from "next/navigation";
 
 export function OffersView({ 
@@ -60,7 +60,8 @@ export function OffersView({
     const [duoProgress, setDuoProgress] = useState<Record<string, { stage: "validated" | "contacted" | "completed"; outcome?: string }>>({});
     const [isDuoMissionOpen, setIsDuoMissionOpen] = useState(false);
     const [activeDuoMission, setActiveDuoMission] = useState<any | null>(null);
-    const [selectedDuoOutcome, setSelectedDuoOutcome] = useState<string>("");
+    const [selectedDuoOutcome, setSelectedDuoOutcome] = useState<"" | "continue_together" | "tested_not_ready" | "not_a_fit" | "offer_created" | "need_help">("");
+    const [isSavingDuoMission, setIsSavingDuoMission] = useState(false);
     const [isIntroOpen, setIsIntroOpen] = useState(false);
     const OFFERS_INTRO_SEEN_KEY = "offers-intro-seen-v1";
     const DUO_PROGRESS_KEY = "duo-alliances-progress-v1";
@@ -324,14 +325,26 @@ export function OffersView({
         { id: "not_a_fit", title: "Ce n’était pas un bon fit", subtitle: "Pas compatible" },
         { id: "offer_created", title: "On a créé quelque chose / une offre ensemble", subtitle: "Jackpot" },
         { id: "need_help", title: "On a besoin d’aide pour aller plus loin", subtitle: "Très intelligent" },
-    ];
-    const handleSubmitDuoMission = () => {
+    ] as const;
+    const getSafeDuoOutcome = (value?: string): "" | "continue_together" | "tested_not_ready" | "not_a_fit" | "offer_created" | "need_help" =>
+        duoMissionOutcomes.some((outcome) => outcome.id === value)
+            ? (value as "continue_together" | "tested_not_ready" | "not_a_fit" | "offer_created" | "need_help")
+            : "";
+    const handleSubmitDuoMission = async () => {
         if (!activeDuoMission?.duoId || !selectedDuoOutcome) {
             toast.error("Choisissez un résultat de mission.");
             return;
         }
+        setIsSavingDuoMission(true);
+        const result = await saveDuoMissionOutcome(activeDuoMission.partnerId, selectedDuoOutcome);
+        if (!result.success) {
+            toast.error("Erreur sauvegarde mission : " + result.error);
+            setIsSavingDuoMission(false);
+            return;
+        }
         setDuoProgressState(activeDuoMission.duoId, { stage: "completed", outcome: selectedDuoOutcome });
         setIsDuoMissionOpen(false);
+        setIsSavingDuoMission(false);
         toast.success("Résultat duo enregistré.");
     };
 
@@ -659,11 +672,11 @@ export function OffersView({
                                                     </div>
                                                 </>
                                             ) : duoProgress[offer.duoId]?.stage === "contacted" ? (
-                                                <Button onClick={() => { setActiveDuoMission(offer); setSelectedDuoOutcome(duoProgress[offer.duoId]?.outcome || ""); setIsDuoMissionOpen(true); }} className="h-10 bg-[#2E130C] hover:bg-[#2E130C]/90 text-white font-black uppercase text-[11px]">
+                                                <Button onClick={() => { setActiveDuoMission(offer); setSelectedDuoOutcome(getSafeDuoOutcome(duoProgress[offer.duoId]?.outcome)); setIsDuoMissionOpen(true); }} className="h-10 bg-[#2E130C] hover:bg-[#2E130C]/90 text-white font-black uppercase text-[11px]">
                                                     Terminer la mission
                                                 </Button>
                                             ) : duoProgress[offer.duoId]?.stage === "completed" ? (
-                                                <Button variant="outline" onClick={() => { setActiveDuoMission(offer); setSelectedDuoOutcome(duoProgress[offer.duoId]?.outcome || ""); setIsDuoMissionOpen(true); }} className="h-10 border-emerald-300 bg-emerald-50 text-emerald-800 font-black uppercase text-[11px]">
+                                                <Button variant="outline" onClick={() => { setActiveDuoMission(offer); setSelectedDuoOutcome(getSafeDuoOutcome(duoProgress[offer.duoId]?.outcome)); setIsDuoMissionOpen(true); }} className="h-10 border-emerald-300 bg-emerald-50 text-emerald-800 font-black uppercase text-[11px]">
                                                     Mission terminée
                                                 </Button>
                                             ) : (
@@ -959,8 +972,8 @@ export function OffersView({
                         ))}
                     </div>
                     <DialogFooter>
-                        <Button onClick={handleSubmitDuoMission} className="w-full h-11 bg-[#2E130C] hover:bg-[#2E130C]/90 text-white font-black">
-                            Enregistrer le résultat
+                        <Button onClick={() => void handleSubmitDuoMission()} disabled={isSavingDuoMission} className="w-full h-11 bg-[#2E130C] hover:bg-[#2E130C]/90 text-white font-black">
+                            {isSavingDuoMission ? "Enregistrement..." : "Enregistrer le résultat"}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

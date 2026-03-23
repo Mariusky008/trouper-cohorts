@@ -196,6 +196,17 @@ async function getNetworkStats() {
   });
   const duoActivated = Array.from(duoValidateCounts.values()).filter((count) => count >= 2).length;
   const duoActivationRate = duoTotalVotes > 0 ? ((duoActivated / Math.max(1, duoValidateCounts.size)) * 100).toFixed(0) : "0";
+  const { data: duoMissions } = await supabaseAdmin
+    .from("network_duo_missions")
+    .select("outcome");
+  const duoOutcomeContinue = (duoMissions || []).filter((m: any) => m.outcome === "continue_together").length;
+  const duoOutcomeNotReady = (duoMissions || []).filter((m: any) => m.outcome === "tested_not_ready").length;
+  const duoOutcomeNotFit = (duoMissions || []).filter((m: any) => m.outcome === "not_a_fit").length;
+  const duoOutcomeOffer = (duoMissions || []).filter((m: any) => m.outcome === "offer_created").length;
+  const duoOutcomeNeedHelp = (duoMissions || []).filter((m: any) => m.outcome === "need_help").length;
+  const duoMissionTotal = duoOutcomeContinue + duoOutcomeNotReady + duoOutcomeNotFit + duoOutcomeOffer + duoOutcomeNeedHelp;
+  const duoCompletionRate = duoValidate > 0 ? Math.round((duoMissionTotal / duoValidate) * 100) : 0;
+  const duoJackpotRate = duoMissionTotal > 0 ? Math.round((duoOutcomeOffer / duoMissionTotal) * 100) : 0;
 
   // Filter for stats (only today's events for the counters)
   const statsToday = eventsToday?.filter((e: any) => e.created_at >= todayStr + 'T00:00:00').reduce((acc: any, curr: any) => {
@@ -250,6 +261,16 @@ async function getNetworkStats() {
       reject: duoReject,
       activated: duoActivated,
       activationRate: duoActivationRate,
+      missionTotal: duoMissionTotal,
+      completionRate: duoCompletionRate,
+      jackpotRate: duoJackpotRate,
+      outcomes: {
+        continueTogether: duoOutcomeContinue,
+        testedNotReady: duoOutcomeNotReady,
+        notAFit: duoOutcomeNotFit,
+        offerCreated: duoOutcomeOffer,
+        needHelp: duoOutcomeNeedHelp,
+      }
     }
   };
 }
@@ -599,6 +620,40 @@ export default async function AdminNetworkPage() {
                 <div className="rounded-xl border border-slate-200 bg-white p-3">
                   <p className="text-[10px] uppercase font-bold text-slate-500">Taux 2/2</p>
                   <p className="text-2xl font-black text-slate-900">{stats.duoAnalytics.activationRate}%</p>
+                </div>
+                <div className="rounded-xl border border-blue-100 bg-white p-3">
+                  <p className="text-[10px] uppercase font-bold text-blue-600">Missions duo</p>
+                  <p className="text-2xl font-black text-blue-700">{stats.duoAnalytics.missionTotal}</p>
+                </div>
+                <div className="rounded-xl border border-slate-200 bg-white p-3">
+                  <p className="text-[10px] uppercase font-bold text-slate-500">Taux de clôture</p>
+                  <p className="text-2xl font-black text-slate-900">{stats.duoAnalytics.completionRate}%</p>
+                </div>
+                <div className="rounded-xl border border-emerald-100 bg-white p-3">
+                  <p className="text-[10px] uppercase font-bold text-emerald-600">Taux jackpot</p>
+                  <p className="text-2xl font-black text-emerald-700">{stats.duoAnalytics.jackpotRate}%</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-3">
+                <div className="rounded-xl border border-emerald-100 bg-white p-2.5">
+                  <p className="text-[11px] font-black text-emerald-700">On veut continuer ensemble</p>
+                  <p className="text-xl font-black text-emerald-700">{stats.duoAnalytics.outcomes.continueTogether}</p>
+                </div>
+                <div className="rounded-xl border border-amber-100 bg-white p-2.5">
+                  <p className="text-[11px] font-black text-amber-700">Test sans suite</p>
+                  <p className="text-xl font-black text-amber-700">{stats.duoAnalytics.outcomes.testedNotReady}</p>
+                </div>
+                <div className="rounded-xl border border-rose-100 bg-white p-2.5">
+                  <p className="text-[11px] font-black text-rose-700">Pas compatible</p>
+                  <p className="text-xl font-black text-rose-700">{stats.duoAnalytics.outcomes.notAFit}</p>
+                </div>
+                <div className="rounded-xl border border-fuchsia-100 bg-white p-2.5">
+                  <p className="text-[11px] font-black text-fuchsia-700">Jackpot</p>
+                  <p className="text-xl font-black text-fuchsia-700">{stats.duoAnalytics.outcomes.offerCreated}</p>
+                </div>
+                <div className="rounded-xl border border-indigo-100 bg-white p-2.5 sm:col-span-2">
+                  <p className="text-[11px] font-black text-indigo-700">Besoin d’aide pour aller plus loin</p>
+                  <p className="text-xl font-black text-indigo-700">{stats.duoAnalytics.outcomes.needHelp}</p>
                 </div>
               </div>
             </CardContent>
