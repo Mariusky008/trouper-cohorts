@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { headers } from "next/headers";
 
 type PushSubscriptionJSON = {
@@ -11,6 +12,7 @@ type PushSubscriptionJSON = {
 
 export async function saveSubscription(subscription: PushSubscriptionJSON) {
   const supabase = await createClient();
+  const supabaseAdmin = createAdminClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -30,7 +32,7 @@ export async function saveSubscription(subscription: PushSubscriptionJSON) {
   const headerStore = await headers();
   const userAgent = headerStore.get("user-agent") || "unknown";
 
-  const { error } = await supabase.from("push_subscriptions").upsert({
+  const { error } = await supabaseAdmin.from("push_subscriptions").upsert({
     user_id: user.id,
     subscription: subscription,
     user_agent: userAgent,
