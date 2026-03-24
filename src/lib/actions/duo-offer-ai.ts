@@ -17,6 +17,14 @@ type DuoOfferIdea = {
   angles: string[];
 };
 
+type DuoProfileInput = {
+  user_id?: string;
+  trade?: string | null;
+  offer_title?: string | null;
+  offer_description?: string | null;
+  city?: string | null;
+};
+
 const normalizeText = (value: unknown, fallback: string) => {
   if (typeof value !== "string") return fallback;
   const cleaned = value.trim();
@@ -85,6 +93,44 @@ async function generateOneIdea(openai: OpenAI, payload: {
           ],
         }),
       },
+      {
+        role: "assistant",
+        content: JSON.stringify({
+          nom_offre: "Pack Vitrine qui Convertit",
+          valeur_ajoutee: "Le client obtient une image pro ET des textes qui vendent, sans gérer deux prestataires.",
+          description_projet: "Photographe + Copywriter créent une page vitrine locale prête à publier en 5 jours.",
+          format_offre: "Sprint 5 jours",
+          script_appel: {
+            min_1_2: "Rappel rapide des forces de chacun et du résultat visé pour le client.",
+            min_3_4: "Choisir un client test local précis et répartir les tâches livrables.",
+            min_5: "Décider Go/No-Go et fixer un message commercial envoyé dans la journée.",
+          },
+          angles: [
+            "Un seul interlocuteur pour un résultat complet",
+            "Délai court et livrable concret",
+            "Impact direct sur la conversion locale",
+          ],
+        }),
+      },
+      {
+        role: "assistant",
+        content: JSON.stringify({
+          nom_offre: "Audit Visibilité & Closing",
+          valeur_ajoutee: "Le client sait exactement quoi corriger et comment signer plus vite.",
+          description_projet: "Consultant SEO + closer B2B livrent un diagnostic actionnable et un script de vente sur-mesure.",
+          format_offre: "Audit express",
+          script_appel: {
+            min_1_2: "Aligner la promesse de l’offre et l’objectif cash pour le client cible.",
+            min_3_4: "Identifier un prospect local prioritaire et le plan de contact immédiat.",
+            min_5: "Valider le test terrain sur 7 jours avec métrique simple.",
+          },
+          angles: [
+            "Mesure claire avant/après",
+            "Action commerciale immédiate",
+            "Complémentarité acquisition + conversion",
+          ],
+        }),
+      },
     ],
   });
 
@@ -94,8 +140,8 @@ async function generateOneIdea(openai: OpenAI, payload: {
 }
 
 export async function generateDuoOfferIdeas(params: {
-  currentUserOffer: any;
-  duoCandidates: any[];
+  currentUserOffer: DuoProfileInput | null;
+  duoCandidates: DuoProfileInput[];
 }) {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) return {};
@@ -110,7 +156,7 @@ export async function generateDuoOfferIdeas(params: {
 
   const candidates = (params.duoCandidates || []).slice(0, 4);
   const ideas = await Promise.all(
-    candidates.map(async (candidate: any) => {
+    candidates.map(async (candidate) => {
       try {
         const idea = await generateOneIdea(openai, {
           city: candidate?.city || city,

@@ -314,6 +314,11 @@ export function OffersView({
         });
     };
     const openDuoDiscussion = (offer: any, idea: string) => {
+        const state = duoStates[offer.duoId];
+        if (state?.myDecision !== "validate" || state?.partnerDecision !== "validate") {
+            toast.error("Le duo doit être validé par vous deux avant WhatsApp.");
+            return;
+        }
         const formattedPhone = formatPhoneForWhatsApp(offer.phone);
         if (!formattedPhone) {
             toast.error("Numéro WhatsApp indisponible pour ce membre.");
@@ -691,6 +696,10 @@ export function OffersView({
                                                         </Button>
                                                     </div>
                                                 </>
+                                            ) : duoStates[offer.duoId]?.partnerDecision !== "validate" ? (
+                                                <Button variant="outline" disabled className="h-10 border-[#2E130C]/20 bg-white text-[#2E130C]/70 font-black uppercase text-[11px]">
+                                                    En attente de validation de {offer.display_name}
+                                                </Button>
                                             ) : duoProgress[offer.duoId]?.stage === "contacted" ? (
                                                 <Button onClick={() => { setActiveDuoMission(offer); setSelectedDuoOutcome(getSafeDuoOutcome(duoProgress[offer.duoId]?.outcome)); setIsDuoMissionOpen(true); }} className="h-10 bg-[#2E130C] hover:bg-[#2E130C]/90 text-white font-black uppercase text-[11px]">
                                                     Terminer la mission
