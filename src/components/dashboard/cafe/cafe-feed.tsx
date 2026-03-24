@@ -7,9 +7,10 @@ import { QuestionThreadDialog } from "./question-thread-dialog";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { MessageSquare, MapPin } from "lucide-react";
+import { MessageSquare, MapPin, Sparkles } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
+import Link from "next/link";
 
 export function CafeFeed({ initialQuestions, city }: { initialQuestions: FlashQuestion[], city: string, currentUser?: unknown }) {
   const [selectedQuestion, setSelectedQuestion] = useState<string | null>(null);
@@ -18,7 +19,7 @@ export function CafeFeed({ initialQuestions, city }: { initialQuestions: FlashQu
     <div>
       <div className="flex justify-between items-center mb-6 px-1">
         <h2 className="font-bold text-stone-500 uppercase text-xs tracking-widest">
-            Discussions récentes ({initialQuestions.length})
+            Appels locaux ({initialQuestions.length})
         </h2>
         <NewQuestionDialog city={city} />
       </div>
@@ -29,9 +30,9 @@ export function CafeFeed({ initialQuestions, city }: { initialQuestions: FlashQu
                 <div className="h-16 w-16 bg-stone-100 rounded-full flex items-center justify-center mx-auto mb-4 text-stone-400">
                     <MessageSquare className="h-8 w-8" />
                 </div>
-                <h3 className="text-lg font-bold text-[#2E130C] mb-2">Aucune discussion</h3>
+                <h3 className="text-lg font-bold text-[#2E130C] mb-2">Aucun appel pour l&apos;instant</h3>
                 <p className="text-stone-500 max-w-xs mx-auto mb-6">
-                    Soyez le premier à lancer une conversation dans le Café de {city} !
+                    Lancez le premier appel à co-création du Café de {city}.
                 </p>
                 <NewQuestionDialog city={city} />
             </div>
@@ -67,6 +68,17 @@ export function CafeFeed({ initialQuestions, city }: { initialQuestions: FlashQu
                                 </span>
                             )}
                         </div>
+                        {q.post_type === "co_creation" && (
+                            <div className="rounded-xl border border-orange-200 bg-orange-50/70 p-3 space-y-1">
+                                <p className="text-[10px] font-black uppercase tracking-wider text-orange-700 flex items-center gap-1">
+                                    <Sparkles className="w-3 h-3" /> Appel à Duo
+                                </p>
+                                <p className="text-sm font-black text-[#2E130C]">{q.idea_title || "Idée business locale"}</p>
+                                <p className="text-xs text-stone-700">Client cible: {q.target_client || "Non précisé"}</p>
+                                <p className="text-xs text-stone-700">Profil recherché: {q.looking_for || "Non précisé"}</p>
+                                <p className="text-xs text-stone-700">Objectif 7 jours: {q.expected_outcome || "Non précisé"}</p>
+                            </div>
+                        )}
 
                         <p className="text-stone-700 text-sm leading-relaxed font-medium">
                             {q.content}
@@ -75,8 +87,13 @@ export function CafeFeed({ initialQuestions, city }: { initialQuestions: FlashQu
                         <div className="flex items-center gap-4 pt-2">
                             <Button variant="ghost" size="sm" className="h-8 px-2 text-stone-500 hover:text-orange-600 hover:bg-orange-50 gap-1.5 -ml-2 rounded-lg transition-colors">
                                 <MessageSquare className="w-4 h-4" />
-                                <span className="font-bold text-xs">{q.answers_count > 0 ? `${q.answers_count} réponses` : "Répondre"}</span>
+                                <span className="font-bold text-xs">{q.answers_count > 0 ? `${q.answers_count} réponses` : q.post_type === "co_creation" ? "Proposer mon profil" : "Répondre"}</span>
                             </Button>
+                            {q.post_type === "co_creation" && (
+                                <Button asChild variant="outline" size="sm" className="h-8 rounded-lg border-orange-200 text-orange-700 hover:bg-orange-50">
+                                    <Link href="/mon-reseau-local/dashboard/offers">Lancer Duo IA</Link>
+                                </Button>
+                            )}
                             {/* Future: Like button */}
                             {/* <Button variant="ghost" size="sm" className="h-8 px-2 text-stone-400 hover:text-pink-600 hover:bg-pink-50 gap-1.5 rounded-lg transition-colors">
                                 <ThumbsUp className="w-4 h-4" />

@@ -15,6 +15,7 @@ import { getFlashQuestionDetails, createFlashAnswer, FlashQuestion } from "@/lib
 import { formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
 import { toast } from "sonner";
+import Link from "next/link";
 
 export function QuestionThreadDialog({ 
   questionId, 
@@ -58,7 +59,7 @@ export function QuestionThreadDialog({
             const updated = await getFlashQuestionDetails(questionId);
             setData(updated);
         }
-    } catch (e) {
+    } catch {
         toast.error("Erreur inconnue");
     } finally {
         setIsSending(false);
@@ -69,7 +70,7 @@ export function QuestionThreadDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[600px] max-h-[80vh] flex flex-col p-0 gap-0 overflow-hidden">
         <DialogHeader className="p-6 pb-2 border-b border-stone-100 bg-stone-50/50">
-          <DialogTitle>Discussion</DialogTitle>
+          <DialogTitle>{data?.post_type === "co_creation" ? "Appel à Co-Création" : "Discussion"}</DialogTitle>
         </DialogHeader>
         
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
@@ -91,6 +92,19 @@ export function QuestionThreadDialog({
                             <div className="bg-orange-50/50 p-4 rounded-2xl rounded-tl-none border border-orange-100 text-[#2E130C] text-sm leading-relaxed font-medium">
                                 {data.content}
                             </div>
+                            {data.post_type === "co_creation" && (
+                                <div className="rounded-xl border border-orange-200 bg-orange-50 p-3 text-xs text-stone-700 space-y-1">
+                                    <p><span className="font-black text-[#2E130C]">Idée:</span> {data.idea_title || "Non précisée"}</p>
+                                    <p><span className="font-black text-[#2E130C]">Client cible:</span> {data.target_client || "Non précisé"}</p>
+                                    <p><span className="font-black text-[#2E130C]">Profil recherché:</span> {data.looking_for || "Non précisé"}</p>
+                                    <p><span className="font-black text-[#2E130C]">Objectif:</span> {data.expected_outcome || "Non précisé"}</p>
+                                </div>
+                            )}
+                            {data.post_type === "co_creation" && (
+                                <Button asChild variant="outline" size="sm" className="w-fit border-orange-200 text-orange-700 hover:bg-orange-50">
+                                    <Link href="/mon-reseau-local/dashboard/offers">Continuer dans Duo IA</Link>
+                                </Button>
+                            )}
                         </div>
                     </div>
 
@@ -129,7 +143,7 @@ export function QuestionThreadDialog({
         {/* FOOTER INPUT */}
         <div className="p-4 bg-white border-t border-stone-100 flex gap-2 items-end">
             <Textarea 
-                placeholder="Écrire une réponse..." 
+                placeholder={data?.post_type === "co_creation" ? "Présente ton profil et ta proposition de contribution..." : "Écrire une réponse..."} 
                 className="min-h-[60px] max-h-[120px] resize-none border-stone-200 focus-visible:ring-orange-500/20"
                 value={reply}
                 onChange={e => setReply(e.target.value)}

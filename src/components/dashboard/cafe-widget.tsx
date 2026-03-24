@@ -2,7 +2,7 @@
 
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { MessageSquare, ArrowRight, MapPin, Plus } from "lucide-react";
+import { MessageSquare, ArrowRight, MapPin, Plus, Sparkles } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import Link from "next/link";
 import { FlashQuestion } from "@/lib/actions/network-flash";
@@ -17,9 +17,9 @@ export function CafeWidget({ city, latestQuestion }: { city: string, latestQuest
       <div className="flex items-center justify-between mb-4 px-1">
         <div className="flex items-center gap-2">
             <div className="bg-orange-100 p-1.5 rounded-lg">
-                <MessageSquare className="w-4 h-4 text-orange-600" />
+                <Sparkles className="w-4 h-4 text-orange-600" />
             </div>
-            <h3 className="font-black text-lg text-[#2E130C]">Café {city}</h3>
+            <h3 className="font-black text-lg text-[#2E130C]">Café Co-Création {city}</h3>
         </div>
         <Link href="/mon-reseau-local/dashboard/cafe">
             <Button variant="ghost" size="sm" className="text-orange-600 hover:text-orange-700 hover:bg-orange-50 font-bold text-xs">
@@ -51,6 +51,11 @@ export function CafeWidget({ city, latestQuestion }: { city: string, latestQuest
                             <p className="font-bold text-[#2E130C] text-sm line-clamp-2 leading-relaxed mb-2">
                                 {latestQuestion.content}
                             </p>
+                            {latestQuestion.post_type === "co_creation" && (
+                                <span className="inline-flex text-[10px] font-black text-orange-700 bg-orange-100 px-2 py-0.5 rounded-full mb-2">
+                                    Appel à duo
+                                </span>
+                            )}
                             <div className="flex items-center gap-3">
                                 <span className="text-[10px] font-bold text-orange-600 bg-orange-100 px-2 py-0.5 rounded-full flex items-center gap-1">
                                     <MessageSquare className="w-3 h-3" />
@@ -69,11 +74,11 @@ export function CafeWidget({ city, latestQuestion }: { city: string, latestQuest
                         <MessageSquare className="h-6 w-6 text-orange-500" />
                     </div>
                     <p className="text-stone-600 font-medium text-sm max-w-[250px]">
-                        Le café est vide ce matin ! Soyez le premier à poser une question à votre réseau local.
+                        Lancez le premier appel à duo local et trouvez votre profil complémentaire.
                     </p>
                     <Link href="/mon-reseau-local/dashboard/cafe">
                         <Button size="sm" className="bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-xl mt-2">
-                            <Plus className="w-4 h-4 mr-1" /> Poser une question
+                            <Plus className="w-4 h-4 mr-1" /> Publier un appel
                         </Button>
                     </Link>
                 </div>

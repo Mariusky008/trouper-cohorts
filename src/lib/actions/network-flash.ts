@@ -9,6 +9,12 @@ export type FlashQuestion = {
   user_id: string;
   city: string;
   content: string;
+  post_type: "question" | "co_creation";
+  idea_title: string | null;
+  target_client: string | null;
+  looking_for: string | null;
+  expected_outcome: string | null;
+  status: "open" | "duo_formed" | "test_running" | "validated";
   created_at: string;
   author: {
     display_name: string;
@@ -32,6 +38,16 @@ export type FlashAnswer = {
   };
 };
 
+const normalizeLegacyQuestion = (question: { id: string; user_id: string; city: string; content: string; created_at: string }) => ({
+  ...question,
+  post_type: "question" as const,
+  idea_title: null,
+  target_client: null,
+  looking_for: null,
+  expected_outcome: null,
+  status: "open" as const,
+});
+
 export async function getFlashQuestions(city: string): Promise<FlashQuestion[]> {
   const supabase = await createClient();
   
@@ -43,6 +59,12 @@ export async function getFlashQuestions(city: string): Promise<FlashQuestion[]> 
       user_id, 
       city, 
       content, 
+      post_type,
+      idea_title,
+      target_client,
+      looking_for,
+      expected_outcome,
+      status,
       created_at
     `)
     .eq("city", city)
@@ -50,18 +72,36 @@ export async function getFlashQuestions(city: string): Promise<FlashQuestion[]> 
     .limit(20);
 
   if (error) {
-    console.error("Error fetching flash questions:", error);
-    return [];
+    const { data: legacyQuestions, error: legacyError } = await supabase
+      .from("network_flash_questions")
+      .select("id,user_id,city,content,created_at")
+      .eq("city", city)
+      .order("created_at", { ascending: false })
+      .limit(20);
+    if (legacyError) {
+      console.error("Error fetching flash questions:", legacyError);
+      return [];
+    }
+    return await enrichQuestions((legacyQuestions || []).map(normalizeLegacyQuestion));
   }
 
   if (!questions || questions.length === 0) return [];
+  return await enrichQuestions(questions);
+}
 
-  // 2. Fetch Authors & Answer Counts
-  // We need to do this manually or via joins if relations are set up. 
-  // Since we just created the table, relations might not be auto-detected by the client types yet, 
-  // but we can try to join if we set up foreign keys correctly (which we did).
-  // However, RLS might block seeing profiles if not careful. Let's use Admin for enrichment to be safe/fast.
-  
+async function enrichQuestions(questions: Array<{
+  id: string;
+  user_id: string;
+  city: string;
+  content: string;
+  post_type: "question" | "co_creation";
+  idea_title: string | null;
+  target_client: string | null;
+  looking_for: string | null;
+  expected_outcome: string | null;
+  status: "open" | "duo_formed" | "test_running" | "validated";
+  created_at: string;
+}>): Promise<FlashQuestion[]> {
   const supabaseAdmin = createAdminClient();
   const userIds = new Set(questions.map(q => q.user_id));
   const questionIds = questions.map(q => q.id);
@@ -73,7 +113,7 @@ export async function getFlashQuestions(city: string): Promise<FlashQuestion[]> 
     .in("question_id", questionIds);
     
   const countMap = new Map<string, number>();
-  answersCounts?.forEach((a: any) => {
+  answersCounts?.forEach((a: { question_id: string }) => {
     countMap.set(a.question_id, (countMap.get(a.question_id) || 0) + 1);
   });
 
@@ -84,7 +124,7 @@ export async function getFlashQuestions(city: string): Promise<FlashQuestion[]> 
     .in("id", Array.from(userIds));
     
   const profileMap = new Map();
-  profiles?.forEach((p: any) => profileMap.set(p.id, p));
+  profiles?.forEach((p: { id: string; display_name: string; avatar_url: string | null; trade: string | null }) => profileMap.set(p.id, p));
 
   // 3. Assemble
   return questions.map(q => {
@@ -107,13 +147,22 @@ export async function getFlashQuestionDetails(questionId: string): Promise<Flash
     .eq("id", questionId)
     .single();
 
-  if (error || !question) return null;
+  let normalizedQuestion = question as FlashQuestion | null;
+  if (error || !question) {
+    const { data: legacyQuestion, error: legacyError } = await supabase
+      .from("network_flash_questions")
+      .select("id,user_id,city,content,created_at")
+      .eq("id", questionId)
+      .single();
+    if (legacyError || !legacyQuestion) return null;
+    normalizedQuestion = normalizeLegacyQuestion(legacyQuestion) as unknown as FlashQuestion;
+  }
 
   // Get Author
   const { data: author } = await supabaseAdmin
     .from("profiles")
     .select("display_name, avatar_url, trade")
-    .eq("id", question.user_id)
+    .eq("id", normalizedQuestion.user_id)
     .single();
 
   // Get Answers
@@ -133,7 +182,7 @@ export async function getFlashQuestionDetails(questionId: string): Promise<Flash
         .in("id", answerUserIds);
     
     const answerProfileMap = new Map();
-    answerProfiles?.forEach((p: any) => answerProfileMap.set(p.id, p));
+    answerProfiles?.forEach((p: { id: string; display_name: string; avatar_url: string | null; trade: string | null }) => answerProfileMap.set(p.id, p));
 
     enrichedAnswers = answers.map(a => ({
         ...a,
@@ -143,6 +192,7 @@ export async function getFlashQuestionDetails(questionId: string): Promise<Flash
 
   return {
     ...question,
+    ...normalizedQuestion,
     author: author || { display_name: "Membre", avatar_url: null, trade: "" },
     answers_count: answers?.length || 0,
     answers: enrichedAnswers
@@ -182,6 +232,59 @@ export async function createFlashQuestion(content: string, city: string) {
         }
     } else {
         return { error: "Erreur: " + error.message };
+    }
+  }
+
+  revalidatePath("/mon-reseau-local/dashboard");
+  revalidatePath("/mon-reseau-local/dashboard/cafe");
+  return { success: true };
+}
+
+export async function createFlashCoCreationPost(payload: {
+  city: string;
+  ideaTitle: string;
+  content: string;
+  targetClient: string;
+  lookingFor: string;
+  expectedOutcome: string;
+}) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) return { error: "Non connecté" };
+
+  const record = {
+    user_id: user.id,
+    city: String(payload.city || "").trim(),
+    post_type: "co_creation",
+    idea_title: String(payload.ideaTitle || "").trim(),
+    content: String(payload.content || "").trim(),
+    target_client: String(payload.targetClient || "").trim(),
+    looking_for: String(payload.lookingFor || "").trim(),
+    expected_outcome: String(payload.expectedOutcome || "").trim(),
+    status: "open",
+  };
+
+  const { error } = await supabase
+    .from("network_flash_questions")
+    .insert(record);
+
+  if (error) {
+    console.error("Error creating co-creation post:", error);
+    if (error.code === "42501") {
+      const supabaseAdmin = createAdminClient();
+      const { error: adminError } = await supabaseAdmin
+        .from("network_flash_questions")
+        .insert(record);
+      if (adminError) {
+        console.error("Admin error creating co-creation post:", adminError);
+        return { error: "Erreur (Admin): " + adminError.message };
+      }
+    } else {
+      const fallbackContent = `APPEL CO-CRÉATION\nIdée: ${record.idea_title}\nClient cible: ${record.target_client}\nProfil recherché: ${record.looking_for}\nObjectif: ${record.expected_outcome}\n---\n${record.content}`;
+      const fallback = await createFlashQuestion(fallbackContent, record.city);
+      if (fallback.error) return { error: "Erreur: " + error.message };
+      return { success: true };
     }
   }
 
