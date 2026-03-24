@@ -1,19 +1,42 @@
 "use client";
 
 import { useState } from "react";
-import { FlashQuestion } from "@/lib/actions/network-flash";
+import { FlashQuestion, suggestCoCreationCandidates } from "@/lib/actions/network-flash";
 import { NewQuestionDialog } from "./new-question-dialog";
 import { QuestionThreadDialog } from "./question-thread-dialog";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { MessageSquare, MapPin, Sparkles } from "lucide-react";
+import { Loader2, MessageSquare, MapPin, Sparkles } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
 import Link from "next/link";
 
 export function CafeFeed({ initialQuestions, city }: { initialQuestions: FlashQuestion[], city: string, currentUser?: unknown }) {
   const [selectedQuestion, setSelectedQuestion] = useState<string | null>(null);
+  const [loadingMatchesFor, setLoadingMatchesFor] = useState<string | null>(null);
+  const [duoSuggestions, setDuoSuggestions] = useState<Record<string, Array<{
+    user_id: string;
+    display_name: string;
+    avatar_url: string;
+    trade: string;
+    city: string;
+    offer_title: string;
+    offer_description: string;
+    score: number;
+    reasons: string[];
+  }>>>({});
+
+  const handleSuggestDuo = async (questionId: string) => {
+    setLoadingMatchesFor(questionId);
+    const result = await suggestCoCreationCandidates(questionId);
+    setLoadingMatchesFor(null);
+    if (result.error || !result.candidates) {
+      setDuoSuggestions((prev) => ({ ...prev, [questionId]: [] }));
+      return;
+    }
+    setDuoSuggestions((prev) => ({ ...prev, [questionId]: result.candidates }));
+  };
 
   return (
     <div>
@@ -94,12 +117,63 @@ export function CafeFeed({ initialQuestions, city }: { initialQuestions: FlashQu
                                     <Link href="/mon-reseau-local/dashboard/offers">Lancer Duo IA</Link>
                                 </Button>
                             )}
+                            {q.post_type === "co_creation" && (
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    className="h-8 rounded-lg border-orange-200 text-orange-700 hover:bg-orange-50"
+                                    onClick={(event) => {
+                                      event.stopPropagation();
+                                      void handleSuggestDuo(q.id);
+                                    }}
+                                    disabled={loadingMatchesFor === q.id}
+                                >
+                                    {loadingMatchesFor === q.id ? (
+                                      <Loader2 className="w-4 h-4 animate-spin" />
+                                    ) : (
+                                      "Match me with best Duo candidate"
+                                    )}
+                                </Button>
+                            )}
                             {/* Future: Like button */}
                             {/* <Button variant="ghost" size="sm" className="h-8 px-2 text-stone-400 hover:text-pink-600 hover:bg-pink-50 gap-1.5 rounded-lg transition-colors">
                                 <ThumbsUp className="w-4 h-4" />
                                 <span className="font-bold text-xs">J&apos;aime</span>
                             </Button> */}
                         </div>
+                        {q.post_type === "co_creation" && duoSuggestions[q.id] && (
+                            <div className="rounded-xl border border-orange-200 bg-white p-3 space-y-2">
+                                <p className="text-[10px] font-black uppercase tracking-wider text-orange-700">Top 3 candidats suggérés</p>
+                                {duoSuggestions[q.id].length === 0 ? (
+                                    <p className="text-xs text-stone-500">Aucun candidat disponible pour le moment.</p>
+                                ) : (
+                                    duoSuggestions[q.id].map((candidate) => (
+                                        <div key={`${q.id}-${candidate.user_id}`} className="rounded-lg border border-stone-200 p-2">
+                                            <div className="flex items-center justify-between gap-2">
+                                                <div className="flex items-center gap-2 min-w-0">
+                                                    <Avatar className="h-7 w-7 border border-stone-200">
+                                                        <AvatarImage src={candidate.avatar_url || undefined} />
+                                                        <AvatarFallback className="bg-stone-100 text-stone-600 text-[10px]">
+                                                            {candidate.display_name?.[0]}
+                                                        </AvatarFallback>
+                                                    </Avatar>
+                                                    <div className="min-w-0">
+                                                        <p className="text-xs font-bold text-[#2E130C] truncate">{candidate.display_name}</p>
+                                                        <p className="text-[10px] text-stone-500 truncate">{candidate.trade} • {candidate.city || "Réseau local"}</p>
+                                                    </div>
+                                                </div>
+                                                <span className="text-[10px] font-black text-orange-700 bg-orange-100 px-2 py-0.5 rounded-full">
+                                                    {candidate.score}%
+                                                </span>
+                                            </div>
+                                            <p className="text-[11px] font-medium text-stone-700 mt-1 line-clamp-1">{candidate.offer_title}</p>
+                                            <p className="text-[10px] text-stone-500 mt-1">{candidate.reasons.join(" • ")}</p>
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+                        )}
                     </div>
                 </div>
                 </CardContent>

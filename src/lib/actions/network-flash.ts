@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { revalidatePath } from "next/cache";
+import { getUnlockedOffers, type NetworkOffer } from "@/lib/actions/network-offers";
 
 export type FlashQuestion = {
   id: string;
@@ -38,6 +39,18 @@ export type FlashAnswer = {
   };
 };
 
+export type DuoCandidateSuggestion = {
+  user_id: string;
+  display_name: string;
+  avatar_url: string;
+  trade: string;
+  city: string;
+  offer_title: string;
+  offer_description: string;
+  score: number;
+  reasons: string[];
+};
+
 const normalizeLegacyQuestion = (question: { id: string; user_id: string; city: string; content: string; created_at: string }) => ({
   ...question,
   post_type: "question" as const,
@@ -47,6 +60,83 @@ const normalizeLegacyQuestion = (question: { id: string; user_id: string; city: 
   expected_outcome: null,
   status: "open" as const,
 });
+
+const tokenize = (value: string) =>
+  value
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9\s]/g, " ")
+    .split(/\s+/)
+    .filter((token) => token.length >= 3);
+
+const scoreCandidateForCoCreation = (
+  offer: NetworkOffer,
+  question: FlashQuestion,
+  trustScore: number
+) => {
+  const reasons: string[] = [];
+  const lookingFor = String(question.looking_for || "").toLowerCase();
+  const offerTrade = String(offer.trade || "").toLowerCase();
+  const offerText = `${offer.offer_title || ""} ${offer.offer_description || ""} ${offer.trade || ""}`.toLowerCase();
+  const postText = `${question.idea_title || ""} ${question.content || ""} ${question.target_client || ""} ${question.looking_for || ""}`.toLowerCase();
+  const postTokens = new Set(tokenize(postText));
+  const offerTokens = new Set(tokenize(offerText));
+
+  let score = 55;
+  if (offer.city && question.city && offer.city === question.city) {
+    score += 16;
+    reasons.push("Même ville, exécution plus rapide");
+  }
+
+  if (
+    lookingFor &&
+    offerTrade &&
+    (offerTrade.includes(lookingFor) || lookingFor.includes(offerTrade))
+  ) {
+    score += 13;
+    reasons.push("Profil recherché fortement aligné");
+  } else if (offerTrade) {
+    score += 7;
+    reasons.push("Complémentarité métier potentielle");
+  }
+
+  let overlap = 0;
+  postTokens.forEach((token) => {
+    if (offerTokens.has(token)) overlap += 1;
+  });
+  if (overlap > 0) {
+    const overlapBonus = Math.min(12, overlap * 3);
+    score += overlapBonus;
+    reasons.push("Offre alignée avec l'idée locale");
+  }
+
+  if (offer.offer_original_price > 0 && offer.offer_price > 0) {
+    const discountPercent = Math.max(
+      0,
+      Math.min(
+        100,
+        Math.round(
+          ((offer.offer_original_price - offer.offer_price) / offer.offer_original_price) * 100
+        )
+      )
+    );
+    if (discountPercent > 0) {
+      score += Math.min(12, Math.round(discountPercent / 5));
+      reasons.push("Valeur perçue élevée de l'offre");
+    }
+  }
+
+  if (trustScore > 0) {
+    score += Math.min(8, Math.round((trustScore / 10) * 8));
+    reasons.push("Historique fiable dans le réseau");
+  }
+
+  return {
+    score: Math.min(94, Math.round(score)),
+    reasons: reasons.slice(0, 3),
+  };
+};
 
 export async function getFlashQuestions(city: string): Promise<FlashQuestion[]> {
   const supabase = await createClient();
@@ -157,6 +247,7 @@ export async function getFlashQuestionDetails(questionId: string): Promise<Flash
     if (legacyError || !legacyQuestion) return null;
     normalizedQuestion = normalizeLegacyQuestion(legacyQuestion) as unknown as FlashQuestion;
   }
+  if (!normalizedQuestion) return null;
 
   // Get Author
   const { data: author } = await supabaseAdmin
@@ -291,6 +382,55 @@ export async function createFlashCoCreationPost(payload: {
   revalidatePath("/mon-reseau-local/dashboard");
   revalidatePath("/mon-reseau-local/dashboard/cafe");
   return { success: true };
+}
+
+export async function suggestCoCreationCandidates(questionId: string) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Non connecté", candidates: [] as DuoCandidateSuggestion[] };
+
+  const question = await getFlashQuestionDetails(questionId);
+  if (!question || question.post_type !== "co_creation") {
+    return { error: "Post co-création introuvable", candidates: [] as DuoCandidateSuggestion[] };
+  }
+
+  const offers = await getUnlockedOffers();
+  const candidateOffers = offers.filter((offer) => offer.user_id !== question.user_id);
+  if (candidateOffers.length === 0) {
+    return { error: "Aucun candidat Duo disponible pour le moment", candidates: [] as DuoCandidateSuggestion[] };
+  }
+
+  const supabaseAdmin = createAdminClient();
+  const candidateIds = Array.from(new Set(candidateOffers.map((offer) => offer.user_id)));
+  const { data: trustScores } = await supabaseAdmin
+    .from("trust_scores")
+    .select("user_id, score")
+    .in("user_id", candidateIds);
+
+  const trustMap = new Map<string, number>();
+  (trustScores || []).forEach((row: { user_id: string; score: number | null }) => {
+    trustMap.set(row.user_id, row.score || 0);
+  });
+
+  const ranked = candidateOffers
+    .map((offer) => {
+      const scored = scoreCandidateForCoCreation(offer, question, trustMap.get(offer.user_id) || 0);
+      return {
+        user_id: offer.user_id,
+        display_name: offer.display_name || "Membre",
+        avatar_url: offer.avatar_url || "",
+        trade: offer.trade || "Membre",
+        city: offer.city || "",
+        offer_title: offer.offer_title || "",
+        offer_description: offer.offer_description || "",
+        score: scored.score,
+        reasons: scored.reasons,
+      } as DuoCandidateSuggestion;
+    })
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 3);
+
+  return { candidates: ranked };
 }
 
 export async function createFlashAnswer(questionId: string, content: string) {
