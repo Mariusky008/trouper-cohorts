@@ -108,7 +108,7 @@ export function NewQuestionDialog({ city }: { city: string }) {
             </>
           )}
           <div className="grid gap-2">
-            <Label htmlFor="question" className="font-bold">{mode === "co_creation" ? "Description de l&apos;appel à duo" : "Votre question / besoin"}</Label>
+            <Label htmlFor="question" className="font-bold">{mode === "co_creation" ? "Description de l'appel à duo" : "Votre question / besoin"}</Label>
             <Textarea
               id="question"
               placeholder={mode === "co_creation" ? "Ex: Je cherche un profil complémentaire pour vendre une offre hybride locale dès cette semaine." : "Ex: Qui connaît un bon imprimeur sur Dax ?"}
