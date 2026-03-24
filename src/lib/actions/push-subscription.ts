@@ -78,6 +78,8 @@ export async function removeSubscription(endpoint: string) {
 
 export async function sendTestPushToCurrentUser() {
   const supabase = await createClient();
+  const headerStore = await headers();
+  const userAgent = headerStore.get("user-agent") || "unknown";
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -103,6 +105,7 @@ export async function sendTestPushToCurrentUser() {
       title: "Test push Popey ✅",
       message: "Si vous voyez ceci, les notifications fonctionnent.",
       url: "/mon-reseau-local/dashboard/settings",
+      targetUserAgent: userAgent,
       secret,
     }),
   });
@@ -114,6 +117,13 @@ export async function sendTestPushToCurrentUser() {
 
   if (!payload?.success) {
     throw new Error(payload?.error || "Push non envoyé");
+  }
+
+  if (payload?.skipped || !payload?.sent) {
+    if (payload?.reason === "notifications_disabled") {
+      throw new Error("Les notifications sont désactivées dans vos paramètres.");
+    }
+    throw new Error("Aucun appareil iPhone actif trouvé. Réactivez les notifications sur ce téléphone.");
   }
 
   return { success: true };

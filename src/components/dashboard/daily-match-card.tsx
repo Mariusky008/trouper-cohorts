@@ -17,6 +17,7 @@ import { completeMatchMission } from "@/lib/actions/network-feedback";
 import { incrementUserPoints } from "@/lib/actions/gamification";
 import { trackEvent } from "@/lib/actions/analytics";
 import { updateMatchMission } from "@/lib/actions/match-mission";
+import { getMatchContactState } from "@/lib/actions/network-match";
 
 import { createClient } from "@/lib/supabase/client";
 
@@ -783,6 +784,35 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
     setStep('initial');
   }, [matches, missionProgressKey, matches[0]?.hasFeedback, matches[0]?.status, pendingRecap]);
 
+  useEffect(() => {
+    if (!matches || matches.length === 0) return;
+    if (step !== "initial") return;
+    const matchId = matches[0]?.id;
+    if (!matchId) return;
+
+    let isActive = true;
+    const syncContactState = async () => {
+      const state = await getMatchContactState(matchId);
+      if (!isActive) return;
+      if (state.initiatedByEither) {
+        if (missionProgressKey) {
+          localStorage.setItem(missionProgressKey, "called");
+        }
+        setStep("called");
+      }
+    };
+
+    void syncContactState();
+    const intervalId = window.setInterval(() => {
+      void syncContactState();
+    }, 12000);
+
+    return () => {
+      isActive = false;
+      window.clearInterval(intervalId);
+    };
+  }, [matches, step, missionProgressKey]);
+
   // Realtime Subscription for Sync across devices
   useEffect(() => {
       if (!userId) return;
@@ -1218,10 +1248,10 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
         >
             <div className="flex items-center gap-2 font-bold text-xs uppercase tracking-wider text-[#1DA851]">
                 <MessageSquare className="w-3 h-3 animate-pulse fill-current" />
-                C'est à vous d'envoyer le message
+                Soyez le premier à envoyer votre WhatsApp
             </div>
             <div className="flex items-center gap-2">
-                 <span className="font-medium text-[10px] text-[#2E130C]/60 uppercase tracking-wider">Objectif : briser la glace aujourd'hui</span>
+                 <span className="font-medium text-[10px] text-[#2E130C]/60 uppercase tracking-wider">Objectif : briser la glace</span>
             </div>
         </motion.div>
 
@@ -1395,7 +1425,7 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
                                 className="w-full h-14 bg-[#25D366] hover:bg-[#20bd5a] text-white font-black text-base rounded-xl shadow-lg shadow-[#25D366]/20 tracking-wide transition-all hover:scale-[1.02] relative overflow-hidden group/btn"
                             >
                                 <MessageSquare className="w-5 h-5 mr-2 relative z-10 fill-current" />
-                                <span className="relative z-10">CONTACTER VIA WHATSAPP</span>
+                                <span className="relative z-10">SOYEZ LE PREMIER SUR WHATSAPP</span>
                             </Button>
                         </DialogTrigger>
                         <DialogContent className="bg-white border-[#2E130C]/10 text-[#2E130C] sm:max-w-md rounded-2xl w-[90vw]">

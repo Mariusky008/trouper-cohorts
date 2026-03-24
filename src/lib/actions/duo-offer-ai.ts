@@ -1,0 +1,137 @@
+"use server";
+
+import { OpenAI } from "openai";
+
+type DuoScript = {
+  min_1_2: string;
+  min_3_4: string;
+  min_5: string;
+};
+
+type DuoOfferIdea = {
+  nom_offre: string;
+  valeur_ajoutee: string;
+  description_projet: string;
+  format_offre: string;
+  script_appel: DuoScript;
+  angles: string[];
+};
+
+const normalizeText = (value: unknown, fallback: string) => {
+  if (typeof value !== "string") return fallback;
+  const cleaned = value.trim();
+  return cleaned.length > 0 ? cleaned : fallback;
+};
+
+const normalizeScript = (value: unknown): DuoScript => {
+  const source = typeof value === "object" && value ? (value as Record<string, unknown>) : {};
+  return {
+    min_1_2: normalizeText(source.min_1_2, "Présentation rapide et angle commun."),
+    min_3_4: normalizeText(source.min_3_4, "Choisir un client cible prioritaire et un test terrain."),
+    min_5: normalizeText(source.min_5, "Décider Go/No-Go et fixer l’action dans 24h."),
+  };
+};
+
+const normalizeAngles = (value: unknown): string[] => {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((item) => (typeof item === "string" ? item.trim() : ""))
+    .filter((item) => item.length > 0)
+    .slice(0, 3);
+};
+
+const parseIdea = (content: string): DuoOfferIdea => {
+  const parsed = JSON.parse(content) as Record<string, unknown>;
+  return {
+    nom_offre: normalizeText(parsed.nom_offre, "Pack Duo Business"),
+    valeur_ajoutee: normalizeText(parsed.valeur_ajoutee, "Une offre commune plus rapide à vendre qu’une offre séparée."),
+    description_projet: normalizeText(
+      parsed.description_projet,
+      "Offre hybride prête à tester immédiatement sur un client local."
+    ),
+    format_offre: normalizeText(parsed.format_offre, "Pack duo"),
+    script_appel: normalizeScript(parsed.script_appel),
+    angles: normalizeAngles(parsed.angles),
+  };
+};
+
+async function generateOneIdea(openai: OpenAI, payload: {
+  city: string;
+  userA: { metier: string; competences: string; cible: string };
+  userB: { metier: string; competences: string; cible: string };
+}): Promise<DuoOfferIdea | null> {
+  const completion = await openai.chat.completions.create({
+    model: "gpt-4o-mini",
+    temperature: 0.7,
+    response_format: { type: "json_object" },
+    messages: [
+      {
+        role: "system",
+        content:
+          "Tu es un Senior Business Strategist et Growth Hacker local. Style direct, cash, pragmatique. Évite le jargon. Propose une offre réalisable immédiatement.",
+      },
+      {
+        role: "user",
+        content: JSON.stringify({
+          instruction:
+            "Crée une offre commune ultra-pertinente pour ces deux professionnels et réponds uniquement en JSON avec: nom_offre, valeur_ajoutee, description_projet, format_offre, script_appel{min_1_2,min_3_4,min_5}, angles(array max 3).",
+          contexte_geographique: payload.city,
+          utilisateur_A: payload.userA,
+          utilisateur_B: payload.userB,
+          contraintes: [
+            "Identifier un pain point commun",
+            "Combiner les 2 expertises dans une offre hybride",
+            "Orienté action immédiate",
+          ],
+        }),
+      },
+    ],
+  });
+
+  const content = completion.choices?.[0]?.message?.content;
+  if (!content) return null;
+  return parseIdea(content);
+}
+
+export async function generateDuoOfferIdeas(params: {
+  currentUserOffer: any;
+  duoCandidates: any[];
+}) {
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) return {};
+
+  const openai = new OpenAI({ apiKey });
+  const city = params.currentUserOffer?.city || "Dax, Landes";
+  const userA = {
+    metier: params.currentUserOffer?.trade || "Entrepreneur",
+    competences: params.currentUserOffer?.offer_title || params.currentUserOffer?.offer_description || "Accompagnement business",
+    cible: params.currentUserOffer?.city ? `PME locales à ${params.currentUserOffer.city}` : "PME locales",
+  };
+
+  const candidates = (params.duoCandidates || []).slice(0, 4);
+  const ideas = await Promise.all(
+    candidates.map(async (candidate: any) => {
+      try {
+        const idea = await generateOneIdea(openai, {
+          city: candidate?.city || city,
+          userA,
+          userB: {
+            metier: candidate?.trade || "Expert métier",
+            competences: candidate?.offer_title || candidate?.offer_description || "Expertise opérationnelle",
+            cible: candidate?.city ? `Clients à ${candidate.city}` : "Clients locaux",
+          },
+        });
+        if (!idea) return null;
+        return { partnerId: candidate.user_id, idea };
+      } catch {
+        return null;
+      }
+    })
+  );
+
+  return ideas.reduce((acc: Record<string, DuoOfferIdea>, item) => {
+    if (!item?.partnerId || !item.idea) return acc;
+    acc[item.partnerId] = item.idea;
+    return acc;
+  }, {});
+}

@@ -3,6 +3,7 @@ import { Sparkles } from "lucide-react";
 import { getUnlockedOffers, getLockedOffersCount, getCurrentUserOffer, getCurrentUserOffers } from "@/lib/actions/network-offers";
 import { getNetworkSearches } from "@/lib/actions/network-searches";
 import { getDuoCandidates, getMyDuoStates } from "@/lib/actions/duo-alliances";
+import { generateDuoOfferIdeas } from "@/lib/actions/duo-offer-ai";
 import { createClient } from "@/lib/supabase/server";
 import { OffersView } from "@/components/dashboard/offers/offers-view";
 
@@ -18,6 +19,19 @@ export default async function OffersPage() {
     const currentUserOffers = await getCurrentUserOffers();
     const searches = await getNetworkSearches();
     const duoCandidates = await getDuoCandidates();
+    const candidateMap = new Map<string, any>();
+    (unlockedOffers || []).forEach((offer: any) => {
+        if (!offer?.user_id || offer.user_id === user?.id) return;
+        if (!candidateMap.has(offer.user_id)) candidateMap.set(offer.user_id, offer);
+    });
+    (duoCandidates || []).forEach((candidate: any) => {
+        if (!candidate?.user_id || candidate.user_id === user?.id) return;
+        if (!candidateMap.has(candidate.user_id)) candidateMap.set(candidate.user_id, candidate);
+    });
+    const aiDuoIdeas = await generateDuoOfferIdeas({
+        currentUserOffer: currentUserOffer || (currentUserOffers && currentUserOffers.length > 0 ? currentUserOffers[0] : null),
+        duoCandidates: Array.from(candidateMap.values()),
+    });
     const partnerIds = Array.from(new Set([
         ...(unlockedOffers || []).map((offer: any) => offer.user_id),
         ...(duoCandidates || []).map((candidate: any) => candidate.user_id),
@@ -57,6 +71,7 @@ export default async function OffersPage() {
                 currentUserId={user?.id || ""}
                 initialDuoStates={initialDuoStates}
                 duoCandidates={duoCandidates}
+                aiDuoIdeas={aiDuoIdeas}
             />
         </div>
     );

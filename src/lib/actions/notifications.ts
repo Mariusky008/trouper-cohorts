@@ -21,6 +21,7 @@ type SendNotificationResult = {
   skipped?: boolean;
   sent?: number;
   total?: number;
+  reason?: string;
   error?: string;
 };
 
@@ -28,7 +29,8 @@ export async function sendNotification(
   userId: string,
   title: string,
   message: string,
-  url: string = "/mon-reseau-local/dashboard"
+  url: string = "/mon-reseau-local/dashboard",
+  options?: { targetUserAgent?: string }
 ): Promise<SendNotificationResult> {
   try {
     if (!process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || !process.env.VAPID_PRIVATE_KEY || !process.env.NEXT_PUBLIC_APP_EMAIL) {
@@ -44,16 +46,22 @@ export async function sendNotification(
       .maybeSingle();
 
     if (settings && settings.notifications === false) {
-      return { success: true, skipped: true };
+      return { success: true, skipped: true, reason: "notifications_disabled" };
     }
 
-    const { data: subscriptions } = await supabase
+    let subscriptionsQuery = supabase
       .from("push_subscriptions")
       .select("id, subscription")
       .eq("user_id", userId);
 
+    if (options?.targetUserAgent) {
+      subscriptionsQuery = subscriptionsQuery.eq("user_agent", options.targetUserAgent);
+    }
+
+    const { data: subscriptions } = await subscriptionsQuery;
+
     if (!subscriptions || subscriptions.length === 0) {
-      return { success: true, skipped: true, sent: 0, total: 0 };
+      return { success: true, skipped: true, sent: 0, total: 0, reason: "no_subscription" };
     }
 
     const payload = JSON.stringify({

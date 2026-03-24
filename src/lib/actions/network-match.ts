@@ -370,6 +370,51 @@ export async function getDailyMatches() {
   return sortedMatches.slice(0, 1);
 }
 
+export async function getMatchContactState(matchId: string) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user || !matchId) {
+    return { initiatedByEither: false, initiatedByMe: false };
+  }
+
+  const supabaseAdmin = createAdminClient();
+  const { data: match } = await supabaseAdmin
+    .from("network_matches")
+    .select("id,user1_id,user2_id,date")
+    .eq("id", matchId)
+    .or(`user1_id.eq.${user.id},user2_id.eq.${user.id}`)
+    .maybeSingle();
+
+  if (!match) {
+    return { initiatedByEither: false, initiatedByMe: false };
+  }
+
+  const partnerId = match.user1_id === user.id ? match.user2_id : match.user1_id;
+  const contactWindowStart = `${match.date}T00:00:00`;
+  const { data: events } = await supabaseAdmin
+    .from("analytics_events")
+    .select("user_id,metadata")
+    .eq("event_type", "click_whatsapp_action")
+    .in("user_id", [user.id, partnerId])
+    .gte("created_at", contactWindowStart)
+    .order("created_at", { ascending: false })
+    .limit(20);
+
+  const initiatedByMe = (events || []).some((event: { user_id: string; metadata?: Record<string, unknown> | null }) => {
+    const target = typeof event.metadata?.partnerId === "string" ? event.metadata.partnerId : "";
+    return event.user_id === user.id && target === partnerId;
+  });
+  const initiatedByPartner = (events || []).some((event: { user_id: string; metadata?: Record<string, unknown> | null }) => {
+    const target = typeof event.metadata?.partnerId === "string" ? event.metadata.partnerId : "";
+    return event.user_id === partnerId && target === user.id;
+  });
+
+  return {
+    initiatedByEither: initiatedByMe || initiatedByPartner,
+    initiatedByMe,
+  };
+}
+
 import { revalidatePath } from "next/cache";
 
 

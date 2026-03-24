@@ -28,7 +28,8 @@ export function OffersView({
     searches,
     currentUserId,
     initialDuoStates,
-    duoCandidates
+    duoCandidates,
+    aiDuoIdeas
 }: { 
     unlockedOffers: any[], 
     lockedCount: number, 
@@ -37,7 +38,15 @@ export function OffersView({
     searches: any[],
     currentUserId: string,
     initialDuoStates: Record<string, { myDecision?: "validate" | "later" | "reject"; partnerDecision?: "validate" | "later" | "reject" }>,
-    duoCandidates: any[]
+    duoCandidates: any[],
+    aiDuoIdeas: Record<string, {
+        nom_offre: string;
+        valeur_ajoutee: string;
+        description_projet: string;
+        format_offre: string;
+        script_appel: { min_1_2: string; min_3_4: string; min_5: string };
+        angles: string[];
+    }>
 }) {
     const router = useRouter();
     const [activeTab, setActiveTab] = useState("duos");
@@ -223,6 +232,7 @@ export function OffersView({
             .map((offer: any) => {
                 const myTrade = ownOfferSource?.trade || "Développement web";
                 const partnerTrade = offer.trade || "Expertise métier";
+                const aiIdea = aiDuoIdeas?.[offer.user_id];
                 const score = Math.min(
                     94,
                     55 +
@@ -230,12 +240,12 @@ export function OffersView({
                     (offer.trade && ownOfferSource?.trade && offer.trade !== ownOfferSource.trade ? 13 : 7) +
                     Math.min(12, discountPct(offer))
                 );
-                const offerName = `Pack ${myTrade} + ${partnerTrade}`;
-                const shortDescription = `Une offre commune qui combine ${myTrade.toLowerCase()} et ${partnerTrade.toLowerCase()} pour accélérer la conversion client.`;
-                const clientBenefit = "Le client obtient une solution complète avec un seul duo, plus rapide et plus crédible.";
+                const offerName = aiIdea?.nom_offre || `Pack ${myTrade} + ${partnerTrade}`;
+                const shortDescription = aiIdea?.description_projet || `Une offre commune qui combine ${myTrade.toLowerCase()} et ${partnerTrade.toLowerCase()} pour accélérer la conversion client.`;
+                const clientBenefit = aiIdea?.valeur_ajoutee || "Le client obtient une solution complète avec un seul duo, plus rapide et plus crédible.";
                 const expertiseCombo = `Toi: ${myTrade} · ${offer.display_name}: ${partnerTrade}`;
                 const suggestedPrice = score >= 80 ? "1 500€" : score >= 70 ? "1 200€" : "900€";
-                const reasons = [
+                const reasons = aiIdea?.angles?.length ? aiIdea.angles : [
                     "Vos services sont complémentaires",
                     "Vos cibles peuvent se recouper",
                     "Vous pouvez augmenter le panier moyen ensemble",
@@ -250,11 +260,13 @@ export function OffersView({
                     clientBenefit,
                     expertiseCombo,
                     suggestedPrice,
+                    formatLabel: aiIdea?.format_offre || "Pack duo",
+                    callScript: aiIdea?.script_appel,
                     idea: offerName,
                     reasons,
                 };
             });
-    }, [offersDeckDisplay, ownOfferSource, currentUserId, duoCandidates]);
+    }, [offersDeckDisplay, ownOfferSource, currentUserId, duoCandidates, aiDuoIdeas]);
     const visibleDuoCards = useMemo(
         () =>
             duoCards.filter(
@@ -653,9 +665,17 @@ export function OffersView({
                                             </div>
                                             <div className="rounded-xl border border-[#2E130C]/10 bg-white p-3">
                                                 <p className="text-[10px] uppercase tracking-widest text-[#2E130C]/60 font-black">Format</p>
-                                                <p className="text-sm font-black text-[#2E130C] mt-1">Pack duo</p>
+                                                <p className="text-sm font-black text-[#2E130C] mt-1">{offer.formatLabel}</p>
                                             </div>
                                         </div>
+                                        {offer.callScript && (
+                                            <div className="rounded-xl border border-[#2E130C]/10 bg-white p-3 space-y-1.5">
+                                                <p className="text-[10px] uppercase tracking-widest text-[#2E130C]/60 font-black">Script 5 min</p>
+                                                <p className="text-xs text-[#2E130C]"><span className="font-black">1-2:</span> {offer.callScript.min_1_2}</p>
+                                                <p className="text-xs text-[#2E130C]"><span className="font-black">3-4:</span> {offer.callScript.min_3_4}</p>
+                                                <p className="text-xs text-[#2E130C]"><span className="font-black">5:</span> {offer.callScript.min_5}</p>
+                                            </div>
+                                        )}
                                         <div className="grid grid-cols-1 gap-2">
                                             {duoStates[offer.duoId]?.myDecision !== "validate" ? (
                                                 <>

@@ -12,6 +12,7 @@ export async function POST(request: NextRequest) {
       title?: string;
       message?: string;
       url?: string;
+      targetUserAgent?: string;
       secret?: string;
     };
 
@@ -32,7 +33,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Missing userId" }, { status: 400 });
     }
 
-    const result = await sendNotification(userId, title, message, url);
+    const result = await sendNotification(userId, title, message, url, {
+      targetUserAgent: body?.targetUserAgent,
+    });
     return NextResponse.json(result);
   } catch (error) {
     console.error("Internal Notification Error:", error);
