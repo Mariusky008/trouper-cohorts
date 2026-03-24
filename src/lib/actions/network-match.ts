@@ -390,6 +390,28 @@ export async function getMatchContactState(matchId: string) {
   }
 
   const partnerId = match.user1_id === user.id ? match.user2_id : match.user1_id;
+  const { data: missionActions } = await supabaseAdmin
+    .from("analytics_events")
+    .select("metadata")
+    .eq("event_type", "daily_mission_whatsapp_opened")
+    .eq("user_id", user.id)
+    .order("created_at", { ascending: false })
+    .limit(20);
+
+  const missionActionForMatch = (missionActions || []).find((event: { metadata?: Record<string, unknown> | null }) => {
+    const eventMatchId = typeof event.metadata?.matchId === "string" ? event.metadata.matchId : "";
+    return eventMatchId === matchId;
+  });
+
+  if (missionActionForMatch) {
+    const initiatedBy = typeof missionActionForMatch.metadata?.initiatedBy === "string" ? missionActionForMatch.metadata.initiatedBy : "";
+    const initiatedByMe = initiatedBy === user.id;
+    return {
+      initiatedByEither: true,
+      initiatedByMe,
+    };
+  }
+
   const contactWindowStart = `${match.date}T00:00:00`;
   const { data: events } = await supabaseAdmin
     .from("analytics_events")

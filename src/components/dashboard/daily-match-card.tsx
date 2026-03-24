@@ -18,6 +18,7 @@ import { incrementUserPoints } from "@/lib/actions/gamification";
 import { trackEvent } from "@/lib/actions/analytics";
 import { updateMatchMission } from "@/lib/actions/match-mission";
 import { getMatchContactState } from "@/lib/actions/network-match";
+import { logWhatsAppMissionAction } from "@/lib/actions/network-mission-actions";
 
 import { createClient } from "@/lib/supabase/client";
 
@@ -813,6 +814,42 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
     };
   }, [matches, step, missionProgressKey]);
 
+  useEffect(() => {
+      if (!userId || !matches || matches.length === 0) return;
+      if (step !== "initial") return;
+
+      const currentMatchId = matches[0]?.id;
+      if (!currentMatchId) return;
+
+      const supabase = createClient();
+      const channel = supabase
+          .channel(`daily-mission-actions-${userId}-${currentMatchId}`)
+          .on(
+              "postgres_changes",
+              {
+                  event: "INSERT",
+                  schema: "public",
+                  table: "analytics_events",
+                  filter: `user_id=eq.${userId}`,
+              },
+              (payload) => {
+                  const row = payload.new as { event_type?: string; metadata?: Record<string, unknown> | null };
+                  if (row?.event_type !== "daily_mission_whatsapp_opened") return;
+                  const eventMatchId = typeof row.metadata?.matchId === "string" ? row.metadata.matchId : "";
+                  if (eventMatchId !== currentMatchId) return;
+                  if (missionProgressKey) {
+                      localStorage.setItem(missionProgressKey, "called");
+                  }
+                  setStep("called");
+              }
+          )
+          .subscribe();
+
+      return () => {
+          supabase.removeChannel(channel);
+      };
+  }, [userId, matches, step, missionProgressKey]);
+
   // Realtime Subscription for Sync across devices
   useEffect(() => {
       if (!userId) return;
@@ -960,6 +997,7 @@ export function DailyMatchCard({ matches, userStreak = 0, userId, currentUserPro
           setIsWhatsAppOpen(false);
           setStep('called');
           trackEvent('click_whatsapp_action', { partnerId: matches[0]?.partnerId });
+          void logWhatsAppMissionAction(matches[0]?.id, matches[0]?.partnerId);
       } else {
           toast.error("Numéro de téléphone invalide pour WhatsApp.");
       }
