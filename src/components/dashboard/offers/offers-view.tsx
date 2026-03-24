@@ -19,6 +19,7 @@ import { toggleOfferActive } from "@/lib/actions/offers";
 import { createNetworkOffer, deleteNetworkOffer } from "@/lib/actions/network-offers";
 import { saveDuoDecision, saveDuoMissionOutcome } from "@/lib/actions/duo-alliances";
 import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
 
 export function OffersView({ 
     unlockedOffers, 
@@ -276,6 +277,40 @@ export function OffersView({
             ),
         [duoCards, duoProgress, duoStates]
     );
+    const duoKeys = useMemo(() => duoCards.map((card: any) => card.duoId), [duoCards]);
+
+    useEffect(() => {
+        if (!currentUserId || duoKeys.length === 0) return;
+        const supabase = createClient();
+        const channel = supabase
+            .channel(`duo-votes-${currentUserId}`)
+            .on(
+                "postgres_changes",
+                {
+                    event: "*",
+                    schema: "public",
+                    table: "network_duo_votes",
+                    filter: `other_member_id=eq.${currentUserId}`,
+                },
+                (payload) => {
+                    const row = payload.new as { duo_key?: string; member_id?: string; decision?: "validate" | "later" | "reject" };
+                    if (!row?.duo_key || !row?.decision || !duoKeys.includes(row.duo_key)) return;
+                    const duoKey = row.duo_key;
+                    setDuoStates((prev) => {
+                        const current = prev[duoKey] || {};
+                        const next = row.member_id === currentUserId
+                            ? { ...current, myDecision: row.decision }
+                            : { ...current, partnerDecision: row.decision };
+                        return { ...prev, [duoKey]: next };
+                    });
+                }
+            )
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
+    }, [currentUserId, duoKeys]);
 
     const whatsappSearchMessage = (search: any) =>
         `Salut ${search.user_display_name}, je viens de voir ton appel d'offre "${search.title}" sur Popey. Je peux peut-être t'aider, on échange ?`;
