@@ -1160,32 +1160,40 @@ export default function HomePage() {
               </div>
             </div>
 
-            <div className="grid lg:grid-cols-2 xl:grid-cols-4 gap-6 mb-10">
+            <div className="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+              <h3 className="text-2xl md:text-3xl font-titan text-[#2E130C]">Comparatif pilier par pilier</h3>
+              <div className="inline-flex items-center gap-2 text-xs md:text-sm font-black uppercase tracking-widest font-poppins">
+                <span className="px-3 py-1 rounded-full border-2 border-[#2E130C] bg-white text-[#2E130C]">Mode App</span>
+                <span className="px-3 py-1 rounded-full border-2 border-[#2E130C] bg-[#2E130C] text-[#E2D9BC]">Mode Commando</span>
+              </div>
+            </div>
+
+            <div className="grid lg:grid-cols-2 gap-6 mb-10">
               {[
                 {
                   icon: Compass,
                   title: "Zéro gestion, 100% Action",
-                  app: "L’App : vous trouvez vos matchs et brisez la glace seul.",
-                  commando: "Le Commando : on sélectionne le partenaire, on crée le groupe de travail et on fixe les objectifs.",
+                  app: "Vous trouvez vos matchs et brisez la glace seul.",
+                  commando: "On sélectionne le partenaire, on crée le groupe de travail et on fixe les objectifs.",
                 },
                 {
                   icon: Handshake,
                   title: "Ingénierie de l’Offre Duo",
-                  app: "L’App : vous discutez et cherchez des synergies.",
-                  commando: "Le Commando : un stratège construit l’offre commune, les scripts et les visuels pour signer plus vite.",
+                  app: "Vous discutez et cherchez des synergies.",
+                  commando: "Un stratège construit l’offre commune, les scripts et les visuels pour signer plus vite.",
                 },
                 {
                   icon: TrendingUp,
                   title: "Coaching de performance",
-                  app: "L’App : vous avancez à votre rythme.",
-                  commando: "Le Commando : mission quotidienne sur WhatsApp avec suivi d’un directeur commercial privé.",
+                  app: "Vous avancez à votre rythme.",
+                  commando: "Mission quotidienne sur WhatsApp avec suivi d’un directeur commercial privé.",
                 },
                 {
                   icon: Users,
                   title: "Accès à votre Squad de Croissance",
-                  app: "L’App : vous réseautez au coup par coup, un match après l'autre.",
+                  app: "Vous réseautez au coup par coup, un match après l'autre.",
                   commando:
-                    "Le Commando : vous intégrez immédiatement un QG WhatsApp de 20 métiers complémentaires à votre activité. Un écosystème fermé où chaque chantier ou contrat détecté par l'un profite aux 19 autres. C’est votre force de frappe locale permanente.",
+                    "Vous intégrez immédiatement un QG WhatsApp de 20 métiers complémentaires à votre activité. Un écosystème fermé où chaque chantier ou contrat détecté par l'un profite aux 19 autres. C’est votre force de frappe locale permanente.",
                 },
               ].map((item, index) => (
                 <motion.div
@@ -1200,9 +1208,15 @@ export default function HomePage() {
                     <item.icon className="h-6 w-6" />
                   </div>
                   <h3 className="text-xl font-titan text-[#2E130C] mb-4">{item.title}</h3>
-                  <div className="space-y-3 text-sm md:text-base leading-relaxed font-poppins font-semibold">
-                    <p className="text-[#2E130C]/80">{item.app}</p>
-                    <p className="text-[#7A0000]">{item.commando}</p>
+                  <div className="space-y-4 text-sm md:text-base leading-relaxed font-poppins font-semibold">
+                    <div className="rounded-2xl border-2 border-[#2E130C] bg-[#D2E8FF]/50 p-4">
+                      <p className="text-[11px] md:text-xs uppercase tracking-widest font-black text-[#2E130C] mb-2">Mode App</p>
+                      <p className="text-[#2E130C]/80">{item.app}</p>
+                    </div>
+                    <div className="rounded-2xl border-2 border-[#2E130C] bg-[#2E130C] p-4">
+                      <p className="text-[11px] md:text-xs uppercase tracking-widest font-black text-[#E2D9BC] mb-2">Mode Commando</p>
+                      <p className="text-[#D2E8FF]">{item.commando}</p>
+                    </div>
                   </div>
                 </motion.div>
               ))}
