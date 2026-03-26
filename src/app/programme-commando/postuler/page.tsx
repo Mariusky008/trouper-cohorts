@@ -9,6 +9,27 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
+const validateForm = (form: {
+  fullName: string;
+  email: string;
+  phone: string;
+  businessName: string;
+  city: string;
+  activity: string;
+  objective: string;
+  availability: string;
+}) => {
+  if (form.fullName.trim().length < 3) return "Nom complet requis";
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) return "Email invalide";
+  if (form.phone.trim().length < 8) return "Téléphone invalide";
+  if (form.businessName.trim().length < 2) return "Nom d'activité requis";
+  if (form.city.trim().length < 2) return "Ville requise";
+  if (form.activity.trim().length < 2) return "Activité requise";
+  if (form.objective.trim().length < 10) return "Objectif trop court";
+  if (form.availability.trim().length < 2) return "Disponibilité requise";
+  return "";
+};
+
 export default function CommandoApplyPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -29,6 +50,11 @@ export default function CommandoApplyPage() {
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    const validationError = validateForm(form);
+    if (validationError) {
+      toast.error(validationError);
+      return;
+    }
     setLoading(true);
     const response = await fetch("/api/commando/apply", {
       method: "POST",
