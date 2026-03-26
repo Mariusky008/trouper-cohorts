@@ -14,7 +14,7 @@ const commandApplicationSchema = z.object({
   city: z.string().min(2, "Ville requise"),
   activity: z.string().min(2, "Activité requise"),
   objective: z.string().min(10, "Objectif trop court"),
-  availability: z.string().min(2, "Disponibilité requise"),
+  availability: z.string().min(1, "Disponibilité requise"),
 });
 
 export async function createCommandoApplication(payload: z.infer<typeof commandApplicationSchema>) {

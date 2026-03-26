@@ -10,6 +10,7 @@ export async function registerNetworkUser(formData: FormData) {
   const fullName = formData.get("fullName") as string;
   const city = formData.get("city") as string; // Zone (Le Grand Dax)
   const exactCity = formData.get("exactCity") as string; // Ville exacte
+  const meetingPlace = formData.get("meetingPlace") as string;
   const trade = formData.get("trade") as string;
   const phone = formData.get("phone") as string;
   const whatsappResponseDelayHoursRaw = String(formData.get("whatsappResponseDelayHours") || "").trim();
@@ -25,6 +26,10 @@ export async function registerNetworkUser(formData: FormData) {
   let receiveProfile: any = {};
   const allowedResponseDelays = [1, 3, 6, 12];
   const whatsappResponseDelayHours = Number(whatsappResponseDelayHoursRaw);
+
+  if (!meetingPlace?.trim()) {
+    return { error: "Le lieu de rencontre est obligatoire." };
+  }
 
   if (!allowedResponseDelays.includes(whatsappResponseDelayHours)) {
     return { error: "Le délai moyen de réponse WhatsApp est obligatoire." };
@@ -45,6 +50,7 @@ export async function registerNetworkUser(formData: FormData) {
   // Store exactCity in receiveProfile as extra metadata if we want, or combine them
   // Actually, we should store exactCity in receiveProfile to avoid changing DB schema for now
   receiveProfile.exact_city = exactCity;
+  receiveProfile.meeting_place = meetingPlace;
 
   // 1. Créer le compte Auth (Côté Serveur - Admin)
   const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
@@ -55,6 +61,7 @@ export async function registerNetworkUser(formData: FormData) {
       full_name: fullName,
       city, // This remains the Zone for matching
       exact_city: exactCity,
+      meeting_place: meetingPlace,
       trade,
       sphere 
     }

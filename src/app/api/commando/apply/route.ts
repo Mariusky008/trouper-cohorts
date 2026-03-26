@@ -12,7 +12,7 @@ const commandApplicationSchema = z.object({
   city: z.string().trim().min(2, "Ville requise"),
   activity: z.string().trim().min(2, "Activité requise"),
   objective: z.string().trim().min(10, "Objectif trop court"),
-  availability: z.string().trim().min(2, "Disponibilité requise"),
+  availability: z.string().trim().min(1, "Disponibilité requise"),
 });
 
 export async function POST(request: Request) {

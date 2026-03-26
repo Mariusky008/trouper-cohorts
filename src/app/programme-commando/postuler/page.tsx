@@ -26,7 +26,7 @@ const validateForm = (form: {
   if (form.city.trim().length < 2) return "Ville requise";
   if (form.activity.trim().length < 2) return "Activité requise";
   if (form.objective.trim().length < 10) return "Objectif trop court";
-  if (form.availability.trim().length < 2) return "Disponibilité requise";
+  if (form.availability.trim().length < 1) return "Disponibilité requise";
   return "";
 };
 

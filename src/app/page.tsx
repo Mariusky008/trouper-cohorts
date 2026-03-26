@@ -164,7 +164,7 @@ const StickyCTA = () => {
                  />
                  
                  <div className={cn("flex items-center gap-4")}>
-                    <Link href="/inscription/spheres">
+                   <Link href="#pricing">
                       <Button size="sm" className="bg-[#B20B13] hover:bg-[#7A0000] text-[#E2D9BC] font-titan rounded-full px-6 border-2 border-[#2E130C] shadow-[2px_2px_0px_0px_#2E130C] hover:translate-y-[1px] hover:shadow-[1px_1px_0px_0px_#2E130C] transition-all">
                         Commencer
                       </Button>
@@ -528,9 +528,7 @@ export default function HomePage() {
               transition={{ duration: 0.8 }}
               className="space-y-8"
             >
-              <div className="inline-block">
-                <div className="text-lg md:text-xl font-pacifico text-[#B20B13] mt-2">Ne restez plus seul face à votre business !</div>
-              </div>
+              
               
               <h1 className="text-5xl md:text-6xl lg:text-7xl font-titan text-[#2E130C] leading-[1.05] tracking-tight drop-shadow-sm">
                 <span className="text-[#B20B13] underline decoration-wavy decoration-[#2E130C]/20">5 minutes</span> par jour pour trouver vos prochains clients.
@@ -541,7 +539,7 @@ export default function HomePage() {
               </p>
               
               <div className="flex flex-col sm:flex-row gap-4 justify-center pt-6">
-                <Link href="/inscription/spheres">
+                <Link href="#pricing">
                   <Button size="lg" className="h-16 px-10 bg-[#B20B13] hover:bg-[#7A0000] text-[#E2D9BC] font-titan text-xl rounded-2xl border-4 border-[#2E130C] shadow-[6px_6px_0px_0px_#2E130C] hover:translate-y-[2px] hover:shadow-[4px_4px_0px_0px_#2E130C] transition-all duration-200">
                     Commencer maintenant
                     <ArrowRight className="ml-2 h-6 w-6" />

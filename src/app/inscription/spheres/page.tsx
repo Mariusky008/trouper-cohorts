@@ -57,6 +57,7 @@ export default function SpheresRegistrationPage() {
     fullName: "",
     city: "", // Zone (ex: Le Grand Dax)
     exactCity: "", // Ville exacte (ex: Tartas)
+    meetingPlace: "",
     phone: "",
     email: "",
     password: "",
@@ -106,6 +107,11 @@ export default function SpheresRegistrationPage() {
         return;
     }
 
+    if (!formData.meetingPlace.trim()) {
+        toast.error("Veuillez renseigner votre lieu de rencontre.");
+        return;
+    }
+
     if (!["1", "3", "6", "12"].includes(formData.whatsappResponseDelayHours)) {
         toast.error("Veuillez estimer votre temps moyen de réponse WhatsApp.");
         return;
@@ -124,6 +130,7 @@ export default function SpheresRegistrationPage() {
         payload.append("fullName", formData.fullName);
         payload.append("city", formData.city);
         payload.append("exactCity", formData.exactCity);
+        payload.append("meetingPlace", formData.meetingPlace);
         payload.append("trade", finalTrade);
         payload.append("phone", formData.phone);
         // We no longer have a sphere to append from the UI, but the backend might expect it.
@@ -315,6 +322,17 @@ export default function SpheresRegistrationPage() {
                         className="bg-white border-2 border-[#2E130C] h-12 rounded-xl focus-visible:ring-0 focus-visible:border-[#B20B13] placeholder:text-[#2E130C]/30 font-bold text-base" 
                         value={formData.exactCity}
                         onChange={(e) => setFormData({...formData, exactCity: e.target.value})}
+                    />
+                </div>
+
+                <div className="space-y-2">
+                    <Label htmlFor="meetingPlace" className="text-xs font-black uppercase text-[#2E130C]/60 ml-1">Lieu de rencontre habituel *</Label>
+                    <Input
+                        id="meetingPlace"
+                        placeholder="Ex: Centre-ville, coworking, café, secteur..."
+                        className="bg-white border-2 border-[#2E130C] h-12 rounded-xl focus-visible:ring-0 focus-visible:border-[#B20B13] placeholder:text-[#2E130C]/30 font-bold text-base"
+                        value={formData.meetingPlace}
+                        onChange={(e) => setFormData({ ...formData, meetingPlace: e.target.value })}
                     />
                 </div>
 
