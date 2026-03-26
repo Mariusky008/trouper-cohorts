@@ -6,7 +6,7 @@ import Link from "next/link";
 import { 
   Users, Calendar, Phone, CheckCircle2, 
   ArrowRight, ShieldCheck, Zap, Briefcase, 
-  Target, TrendingUp, Star, Heart, MapPin, Handshake, Sparkles, Anchor, MessageCircle, Trophy
+  Target, TrendingUp, Star, Heart, MapPin, Handshake, Sparkles, Anchor, MessageCircle, Trophy, Compass
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -42,6 +42,8 @@ const poppins = Poppins({
   subsets: ["latin"],
   variable: "--font-poppins",
 });
+
+const COMMANDO_APPLICATION_URL = "https://tally.so/r/3N1zYk";
 
 // --- COLORS (Tailwind Arbitrary Values Mapping) ---
 // Beige: bg-[#E2D9BC]
@@ -1080,6 +1082,107 @@ export default function HomePage() {
          </div>
       </section>
 
+      <section className="py-24 bg-[#0B1020] border-b-4 border-[#E6C15A] relative overflow-hidden">
+        <div className="container mx-auto px-4">
+          <div className="max-w-6xl mx-auto rounded-[2.5rem] border-4 border-[#39FF14] bg-[#0F172A] p-8 md:p-12 shadow-[10px_10px_0px_0px_#E6C15A] relative">
+            <div className="absolute top-0 right-0 bg-[#E6C15A] text-[#0B1020] text-[10px] md:text-xs font-black uppercase tracking-wider px-4 py-2 rounded-bl-2xl border-l-2 border-b-2 border-[#39FF14] font-poppins">
+              RECOMMANDÉ : 6 mois pour transformer votre business
+            </div>
+
+            <div className="text-center mb-12">
+              <h2 className="text-3xl md:text-5xl font-titan text-white mb-4 leading-tight">
+                Vous n&apos;avez pas le temps de gérer votre réseau ? Laissez-nous piloter votre croissance.
+              </h2>
+              <p className="text-[#D2E8FF] text-lg md:text-xl font-poppins font-bold max-w-3xl mx-auto">
+                L&apos;application Popey est votre boussole. L&apos;accompagnement Commando est votre moteur.
+              </p>
+            </div>
+
+            <div className="grid lg:grid-cols-3 gap-6 mb-10">
+              {[
+                {
+                  icon: Compass,
+                  title: "Zéro gestion, 100% Action",
+                  app: "L'App : Vous trouvez vos matchs et brisez la glace seul.",
+                  commando: "Le Commando : On s'occupe de tout. On sélectionne votre partenaire, on crée le groupe de travail, et on fixe vos objectifs. Vous n'avez qu'à vous présenter au rendez-vous.",
+                },
+                {
+                  icon: Handshake,
+                  title: "L'Ingénierie de l'Offre \"Duo\"",
+                  app: "L'App : Vous discutez et cherchez des synergies.",
+                  commando: "Le Commando : Notre stratège analyse vos deux business et rédige pour vous une Offre Commune Irrésistible. On vous donne les scripts, les visuels et la méthode pour signer des contrats ensemble dès le premier mois.",
+                },
+                {
+                  icon: TrendingUp,
+                  title: "Le Coaching de Performance Quotidien",
+                  app: "L'App : Vous avancez à votre rythme.",
+                  commando: "Le Commando : Un coach dédié vous suit sur WhatsApp. Chaque matin, vous recevez votre mission du jour. Pas de place pour la procrastination, on vous pousse jusqu'au résultat.",
+                },
+              ].map((item, index) => (
+                <motion.div
+                  key={item.title}
+                  initial={{ opacity: 0, y: 16 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: index * 0.08 }}
+                  className="rounded-3xl border-2 border-[#E6C15A] bg-[#111827] p-6 text-left shadow-[4px_4px_0px_0px_#39FF14]"
+                >
+                  <div className="inline-flex p-3 rounded-2xl border-2 border-[#39FF14] bg-[#0B1020] text-[#39FF14] mb-4">
+                    <item.icon className="h-6 w-6" />
+                  </div>
+                  <h3 className="text-xl font-titan text-white mb-4">{item.title}</h3>
+                  <div className="space-y-3 text-sm md:text-base leading-relaxed font-poppins font-semibold">
+                    <p className="text-[#D2E8FF]">{item.app}</p>
+                    <p className="text-[#E2D9BC]">{item.commando}</p>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+
+            <div className="rounded-3xl border-2 border-[#E6C15A] bg-[#0B1020] p-4 md:p-6 mb-10 shadow-[6px_6px_0px_0px_#39FF14]">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left min-w-[760px]">
+                  <thead>
+                    <tr className="border-b border-[#E6C15A]/40">
+                      <th className="py-3 pr-4 text-xs uppercase tracking-widest font-poppins font-black text-[#E6C15A]">Fonctionnalité</th>
+                      <th className="py-3 px-4 text-xs uppercase tracking-widest font-poppins font-black text-[#D2E8FF]">Application (79€/m)</th>
+                      <th className="py-3 pl-4 text-xs uppercase tracking-widest font-poppins font-black text-[#39FF14]">Accompagnement (149€/m)</th>
+                    </tr>
+                  </thead>
+                  <tbody className="font-poppins font-bold text-sm md:text-base text-white">
+                    {[
+                      ["Matching Algorithmique", "✅", "✅"],
+                      ["Accès Marché Caché", "✅", "✅"],
+                      ["Matching Manuel Stratégique", "❌", "OUI (Prioritaire)"],
+                      ["Création d'Offres Duo & Scripts", "❌", "OUI (Sur-mesure)"],
+                      ["Suivi Humain Quotidien", "❌", "OUI (WhatsApp dédié)"],
+                      ["Objectif de Résultat", "Autonomie", "Transformation 6 mois"],
+                    ].map((row) => (
+                      <tr key={row[0]} className="border-b last:border-b-0 border-white/10">
+                        <td className="py-3 pr-4 text-[#E2D9BC]">{row[0]}</td>
+                        <td className="py-3 px-4 text-[#D2E8FF]">{row[1]}</td>
+                        <td className="py-3 pl-4 text-[#39FF14]">{row[2]}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div className="text-center">
+              <Link href={COMMANDO_APPLICATION_URL} target="_blank" rel="noopener noreferrer">
+                <Button size="lg" className="bg-[#39FF14] hover:bg-[#2CE50F] text-[#0B1020] font-titan rounded-2xl px-8 h-14 border-4 border-[#E6C15A] shadow-[6px_6px_0px_0px_#E6C15A] hover:translate-y-[2px]">
+                  Postuler au Programme Commando (Places limitées)
+                </Button>
+              </Link>
+              <p className="mt-4 text-[#D2E8FF] font-poppins font-bold text-sm md:text-base">
+                Seulement 100 places disponibles à Dax pour garantir un matching de haute qualité.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* --- 7. FOUNDER STORY (ADDED) --- */}
       <section className="py-24 bg-[#E2D9BC] border-b-4 border-[#2E130C] relative overflow-hidden">
         <div className="container mx-auto px-4">
@@ -1166,8 +1269,46 @@ export default function HomePage() {
                     </Button>
                   </Link>
                   
-                  <div className="text-sm text-[#2E130C]/60 mt-6 text-center leading-relaxed font-poppins font-bold">
-                      L'accès complet est à <span className="text-[#2E130C] font-black">79 €/mois</span>. Mais commence par nous tester.
+                  <div className="grid md:grid-cols-2 gap-4 mt-8">
+                    <div className="rounded-2xl border-2 border-[#2E130C] bg-[#D2E8FF] p-5 text-left relative">
+                      <div className="inline-flex items-center gap-2 mb-3 text-[#2E130C]">
+                        <Compass className="h-4 w-4" />
+                        <p className="text-xs uppercase tracking-widest font-black font-poppins">Option 1 : Autonomie Digitale</p>
+                      </div>
+                      <p className="text-3xl font-titan text-[#2E130C] mb-4">79 € / mois</p>
+                      <ul className="space-y-2 text-sm text-[#2E130C] font-poppins font-bold mb-5">
+                        <li>• Matchs quotidiens via l&apos;App</li>
+                        <li>• Accès au Marché Caché</li>
+                        <li>• Score de confiance</li>
+                      </ul>
+                      <Link href="/inscription/spheres">
+                        <Button className="w-full bg-[#2E130C] hover:bg-[#7A0000] text-[#E2D9BC] font-titan rounded-xl border-2 border-[#2E130C]">
+                          Commencer
+                        </Button>
+                      </Link>
+                    </div>
+
+                    <div className="rounded-2xl border-2 border-[#E6C15A] bg-[#0F172A] p-5 text-left relative overflow-hidden">
+                      <div className="absolute -top-1 right-0 bg-[#39FF14] text-[#0B1020] text-[10px] font-black uppercase px-3 py-1 rounded-bl-xl border-l-2 border-b-2 border-[#E6C15A] font-poppins">
+                        RECOMMANDÉ : 6 mois
+                      </div>
+                      <div className="inline-flex items-center gap-2 mb-3 text-[#E6C15A]">
+                        <Handshake className="h-4 w-4" />
+                        <p className="text-xs uppercase tracking-widest font-black font-poppins">Option 2 : Accompagnement Commando</p>
+                      </div>
+                      <p className="text-3xl font-titan text-white mb-4">149 € / mois</p>
+                      <ul className="space-y-2 text-sm text-[#D2E8FF] font-poppins font-bold mb-5">
+                        <li className="flex items-start gap-2"><TrendingUp className="h-4 w-4 mt-0.5 text-[#39FF14]" /> <span>Inclus : Accès complet à l&apos;App</span></li>
+                        <li>• + Matching manuel par nos experts</li>
+                        <li>• + Création d&apos;offres Duo & Stratégie</li>
+                        <li>• + Suivi humain quotidien pendant 6 mois</li>
+                      </ul>
+                      <Link href={COMMANDO_APPLICATION_URL} target="_blank" rel="noopener noreferrer">
+                        <Button className="w-full bg-[#39FF14] hover:bg-[#2CE50F] text-[#0B1020] font-titan rounded-xl border-2 border-[#E6C15A]">
+                          Postuler au Programme
+                        </Button>
+                      </Link>
+                    </div>
                   </div>
                </div>
             </div>
