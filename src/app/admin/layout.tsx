@@ -78,6 +78,9 @@ export default async function AdminLayout({
             <Link href="/admin/network" className="hover:underline text-purple-600">
               Réseau
             </Link>
+            <Link href="/admin/commando" className="hover:underline text-amber-700">
+              Commando
+            </Link>
             <Link href="/admin/settings" className="hover:underline">
               Équipe
             </Link>

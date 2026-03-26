@@ -4,7 +4,7 @@ import { z } from "zod";
 import { stripe } from "@/lib/stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
 
-const COMMANDO_MONTHLY_PRICE_ID = process.env.STRIPE_COMMANDO_PRICE_ID || "price_1TB9jwDfAHlQD3uITPZVQX5T";
+const COMMANDO_MONTHLY_PRICE_ID = process.env.STRIPE_COMMANDO_PRICE_ID || "price_1TF9BQDfAHlQD3uIfW5gBnDJ";
 
 const commandApplicationSchema = z.object({
   fullName: z.string().min(3, "Nom complet requis"),
