@@ -40,7 +40,13 @@ export default function CommandoApplyPage() {
     const result = await response.json();
     setLoading(false);
     if (result.error || !result.applicationId) {
-      toast.error(result.error || "Impossible d'enregistrer votre candidature.");
+      const firstFieldError =
+        result.fieldErrors &&
+        Object.values(result.fieldErrors).find(
+          (messages) => Array.isArray(messages) && messages.length > 0
+        );
+      const details = Array.isArray(firstFieldError) ? firstFieldError[0] : "";
+      toast.error(details || result.error || "Impossible d'enregistrer votre candidature.");
       return;
     }
     router.push(`/programme-commando/paiement?applicationId=${result.applicationId}`);
@@ -75,7 +81,7 @@ export default function CommandoApplyPage() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="phone" className="font-bold text-[#2E130C]">Téléphone</Label>
-              <Input id="phone" value={form.phone} onChange={(event) => update("phone", event.target.value)} required />
+              <Input id="phone" type="tel" minLength={8} value={form.phone} onChange={(event) => update("phone", event.target.value)} required />
             </div>
           </div>
 
@@ -97,7 +103,7 @@ export default function CommandoApplyPage() {
 
           <div className="space-y-2">
             <Label htmlFor="objective" className="font-bold text-[#2E130C]">Objectif principal sur 6 mois</Label>
-            <Textarea id="objective" className="min-h-24" value={form.objective} onChange={(event) => update("objective", event.target.value)} required />
+            <Textarea id="objective" className="min-h-24" minLength={10} value={form.objective} onChange={(event) => update("objective", event.target.value)} required />
           </div>
 
           <Button type="submit" disabled={loading} className="w-full h-12 bg-[#B20B13] hover:bg-[#7A0000] text-[#E2D9BC] font-black text-base border-2 border-[#2E130C]">

@@ -5,24 +5,34 @@ import { createAdminClient } from "@/lib/supabase/admin";
 export const dynamic = "force-dynamic";
 
 const commandApplicationSchema = z.object({
-  fullName: z.string().min(3, "Nom complet requis"),
-  email: z.string().email("Email invalide"),
-  phone: z.string().min(8, "Téléphone invalide"),
-  businessName: z.string().min(2, "Nom d'activité requis"),
-  city: z.string().min(2, "Ville requise"),
-  activity: z.string().min(2, "Activité requise"),
-  objective: z.string().min(10, "Objectif trop court"),
-  availability: z.string().min(2, "Disponibilité requise"),
+  fullName: z.string().trim().min(3, "Nom complet requis"),
+  email: z.string().trim().email("Email invalide"),
+  phone: z.string().trim().min(8, "Téléphone invalide"),
+  businessName: z.string().trim().min(2, "Nom d'activité requis"),
+  city: z.string().trim().min(2, "Ville requise"),
+  activity: z.string().trim().min(2, "Activité requise"),
+  objective: z.string().trim().min(10, "Objectif trop court"),
+  availability: z.string().trim().min(2, "Disponibilité requise"),
 });
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const parsed = commandApplicationSchema.safeParse(body);
+    const parsed = commandApplicationSchema.safeParse({
+      fullName: body?.fullName ?? "",
+      email: body?.email ?? "",
+      phone: body?.phone ?? "",
+      businessName: body?.businessName ?? "",
+      city: body?.city ?? "",
+      activity: body?.activity ?? "",
+      objective: body?.objective ?? "",
+      availability: body?.availability ?? "",
+    });
 
     if (!parsed.success) {
+      const fieldErrors = parsed.error.flatten().fieldErrors;
       return NextResponse.json(
-        { error: "Formulaire incomplet ou invalide." },
+        { error: "Formulaire incomplet ou invalide.", fieldErrors },
         { status: 400 }
       );
     }
