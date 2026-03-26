@@ -43,7 +43,46 @@ const poppins = Poppins({
   variable: "--font-poppins",
 });
 
-const COMMANDO_APPLICATION_URL = "https://tally.so/r/3N1zYk";
+const COMMANDO_APPLICATION_URL = "/programme-commando/postuler";
+
+const CASE_STUDIES = [
+  {
+    name: "Sérénité Patrimoine",
+    sector: "Immo + Domotique",
+    profiles: [
+      "Profil A : Installateur Domotique / Alarmes (Dax)",
+      "Profil B : Agent Immobilier en gestion locative",
+    ],
+    weekly: [
+      "S1 — Offre Duo : Pack Propriétaire Absent (gestion + sécurité connectée)",
+      "S2 — Visibilité : vidéo expertise croisée sur la valeur du bien",
+      "S3 — Confiance : intro directe des top clients propriétaires",
+      "S4 — Résultat : 6 000€ domotique + 3 000€/an récurrent côté immo",
+    ],
+    investment: "149€",
+    revenue: "6 000€",
+    time: "5 min/jour + 1 RDV hebdomadaire",
+    summary: "Le client final achète la paix d'esprit : bien géré et protégé par une seule équipe locale.",
+  },
+  {
+    name: "Bio-Hacking Énergie",
+    sector: "Sport + Nutrition",
+    profiles: [
+      "Profil A : Coach Sportif entrepreneurs",
+      "Profil B : Restaurateur Healthy / Meal Prep",
+    ],
+    weekly: [
+      "S1 — Offre Duo : Programme 21 jours Reset Métabolique",
+      "S2 — Visibilité : live “cuisine + sport” orienté productivité",
+      "S3 — Confiance : invitations croisées dans chaque commande / séance",
+      "S4 — Résultat : 4 500€ coach + 5 400€/mois récurrent restaurateur",
+    ],
+    investment: "149€",
+    revenue: "9 900€",
+    time: "5 min/jour + 1 RDV hebdomadaire",
+    summary: "Le duo vend une transformation d'énergie business, pas juste des séances ou des repas.",
+  },
+];
 
 // --- COLORS (Tailwind Arbitrary Values Mapping) ---
 // Beige: bg-[#E2D9BC]
@@ -460,6 +499,8 @@ const SynergySection = () => {
 
 export default function HomePage() {
   const [activeStep, setActiveStep] = useState(1);
+  const [showCaseStudies, setShowCaseStudies] = useState(false);
+  const [activeCaseStudy, setActiveCaseStudy] = useState(0);
 
   return (
     <div className={cn(
@@ -1193,7 +1234,7 @@ export default function HomePage() {
             </div>
 
             <div className="text-center">
-              <Link href={COMMANDO_APPLICATION_URL} target="_blank" rel="noopener noreferrer">
+              <Link href={COMMANDO_APPLICATION_URL}>
                 <Button size="lg" className="bg-[#B20B13] hover:bg-[#7A0000] text-[#E2D9BC] font-titan rounded-2xl px-8 h-14 border-4 border-[#2E130C] shadow-[6px_6px_0px_0px_#2E130C] hover:translate-y-[2px]">
                   Postuler au Programme Commando (Places limitées)
                 </Button>
@@ -1201,7 +1242,93 @@ export default function HomePage() {
               <p className="mt-4 text-[#2E130C]/80 font-poppins font-bold text-sm md:text-base">
                 Seulement 100 places disponibles à Dax pour garantir un matching de haute qualité.
               </p>
+              <div className="mt-6">
+                <Button
+                  type="button"
+                  onClick={() => setShowCaseStudies((current) => !current)}
+                  className="h-11 px-5 bg-[#D2E8FF] text-[#2E130C] hover:bg-white border-2 border-[#2E130C] shadow-[3px_3px_0px_0px_#2E130C] rounded-xl font-titan"
+                >
+                  {showCaseStudies ? "Masquer les études de cas" : "Voir les études de cas"}
+                </Button>
+              </div>
             </div>
+
+            {showCaseStudies && (
+              <div className="mt-10 rounded-3xl border-4 border-[#2E130C] bg-white p-6 md:p-8 shadow-[8px_8px_0px_0px_#2E130C]">
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+                  <div>
+                    <Badge className="bg-[#B20B13] text-[#E2D9BC] border-2 border-[#2E130C] uppercase tracking-widest font-titan">La force de l&apos;alliance</Badge>
+                    <p className="mt-2 text-[#2E130C] font-poppins font-bold">
+                      D&apos;un côté 1 500€ de CA isolé, de l&apos;autre 10 000€ de CA en escouade. Choisissez votre camp.
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="border-2 border-[#2E130C] text-[#2E130C] font-titan"
+                      onClick={() => setActiveCaseStudy((current) => (current === 0 ? CASE_STUDIES.length - 1 : current - 1))}
+                    >
+                      Précédent
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="border-2 border-[#2E130C] text-[#2E130C] font-titan"
+                      onClick={() => setActiveCaseStudy((current) => (current === CASE_STUDIES.length - 1 ? 0 : current + 1))}
+                    >
+                      Suivant
+                    </Button>
+                  </div>
+                </div>
+
+                <motion.div
+                  key={CASE_STUDIES[activeCaseStudy].name}
+                  initial={{ opacity: 0, y: 14 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="rounded-2xl border-2 border-[#2E130C] bg-[#E2D9BC] p-5 md:p-6"
+                >
+                  <div className="flex flex-wrap items-center gap-2 mb-3">
+                    <Badge className="bg-[#2E130C] text-[#E2D9BC] border-0 font-poppins">{CASE_STUDIES[activeCaseStudy].sector}</Badge>
+                    <Badge className="bg-[#D2E8FF] text-[#2E130C] border-2 border-[#2E130C] font-poppins">🚀 L&apos;EXEMPLE CHOC : {CASE_STUDIES[activeCaseStudy].name}</Badge>
+                  </div>
+
+                  <div className="space-y-1 mb-4 text-[#2E130C] font-poppins font-semibold">
+                    {CASE_STUDIES[activeCaseStudy].profiles.map((profile) => (
+                      <p key={profile}>{profile}</p>
+                    ))}
+                  </div>
+
+                  <div className="grid md:grid-cols-3 gap-3 mb-5">
+                    <div className="rounded-xl border-2 border-[#2E130C] bg-white p-3">
+                      <p className="text-xs uppercase tracking-widest font-black text-[#7A0000] font-poppins">Investissement</p>
+                      <p className="text-2xl font-titan text-[#2E130C]">{CASE_STUDIES[activeCaseStudy].investment}</p>
+                    </div>
+                    <div className="rounded-xl border-2 border-[#2E130C] bg-white p-3">
+                      <p className="text-xs uppercase tracking-widest font-black text-[#7A0000] font-poppins">CA Généré</p>
+                      <p className="text-2xl font-titan text-[#2E130C]">{CASE_STUDIES[activeCaseStudy].revenue}</p>
+                    </div>
+                    <div className="rounded-xl border-2 border-[#2E130C] bg-white p-3">
+                      <p className="text-xs uppercase tracking-widest font-black text-[#7A0000] font-poppins">Temps passé</p>
+                      <p className="text-base font-black text-[#2E130C] font-poppins">{CASE_STUDIES[activeCaseStudy].time}</p>
+                    </div>
+                  </div>
+
+                  <ul className="space-y-2 mb-4">
+                    {CASE_STUDIES[activeCaseStudy].weekly.map((step) => (
+                      <li key={step} className="text-sm md:text-base text-[#2E130C] font-poppins font-bold">
+                        • {step}
+                      </li>
+                    ))}
+                  </ul>
+
+                  <p className="text-[#2E130C]/90 text-sm md:text-base font-poppins font-bold">
+                    {CASE_STUDIES[activeCaseStudy].summary}
+                  </p>
+                </motion.div>
+              </div>
+            )}
           </div>
         </div>
       </section>
@@ -1326,7 +1453,7 @@ export default function HomePage() {
                         <li>• + Création d&apos;offres Duo & Stratégie</li>
                         <li>• + Suivi humain quotidien pendant 6 mois</li>
                       </ul>
-                      <Link href={COMMANDO_APPLICATION_URL} target="_blank" rel="noopener noreferrer">
+                      <Link href={COMMANDO_APPLICATION_URL}>
                         <Button className="w-full bg-[#B20B13] hover:bg-[#7A0000] text-[#E2D9BC] font-titan rounded-xl border-2 border-[#2E130C]">
                           Postuler au Programme
                         </Button>
