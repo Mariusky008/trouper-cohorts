@@ -1174,26 +1174,25 @@ export default function HomePage() {
                   icon: Compass,
                   title: "Zéro gestion, 100% Action",
                   app: "Vous trouvez vos matchs et brisez la glace seul.",
-                  commando: "On sélectionne le partenaire, on crée le groupe de travail et on fixe les objectifs.",
+                  commando: "On s'occupe de tout, vous signez.",
                 },
                 {
                   icon: Handshake,
                   title: "Ingénierie de l’Offre Duo",
                   app: "Vous discutez et cherchez des synergies.",
-                  commando: "Un stratège construit l’offre commune, les scripts et les visuels pour signer plus vite.",
+                  commando: "Une offre irrésistible créée pour vous.",
                 },
                 {
                   icon: TrendingUp,
                   title: "Coaching de performance",
                   app: "Vous avancez à votre rythme.",
-                  commando: "Mission quotidienne sur WhatsApp avec suivi d’un directeur commercial privé.",
+                  commando: "Un Directeur Commercial dans votre poche.",
                 },
                 {
                   icon: Users,
-                  title: "Accès à votre Squad de Croissance",
+                  title: "Accès Squad de Croissance",
                   app: "Vous réseautez au coup par coup, un match après l'autre.",
-                  commando:
-                    "Vous intégrez immédiatement un QG WhatsApp de 20 métiers complémentaires à votre activité. Un écosystème fermé où chaque chantier ou contrat détecté par l'un profite aux 19 autres. C’est votre force de frappe locale permanente.",
+                  commando: "Votre Cercle Privé de 20 apporteurs d'affaires.",
                 },
               ].map((item, index) => (
                 <motion.div
