@@ -32,8 +32,8 @@ export async function POST(request: Request) {
     if (!parsed.success) {
       const fieldErrors = parsed.error.flatten().fieldErrors;
       return NextResponse.json(
-        { error: "Formulaire incomplet ou invalide.", fieldErrors },
-        { status: 400 }
+        { success: false, error: "Formulaire incomplet ou invalide.", fieldErrors },
+        { status: 200 }
       );
     }
 
