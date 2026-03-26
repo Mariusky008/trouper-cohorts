@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { createCommandoApplication } from "@/lib/actions/commando";
 
 export default function CommandoApplyPage() {
   const router = useRouter();
@@ -31,7 +30,14 @@ export default function CommandoApplyPage() {
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setLoading(true);
-    const result = await createCommandoApplication(form);
+    const response = await fetch("/api/commando/apply", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(form),
+    });
+    const result = await response.json();
     setLoading(false);
     if (result.error || !result.applicationId) {
       toast.error(result.error || "Impossible d'enregistrer votre candidature.");

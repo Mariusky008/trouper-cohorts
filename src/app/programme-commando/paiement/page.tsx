@@ -5,7 +5,6 @@ import { useSearchParams } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { createCommandoCheckoutSession } from "@/lib/actions/commando";
 
 export default function CommandoPaymentPage() {
   const searchParams = useSearchParams();
@@ -19,7 +18,14 @@ export default function CommandoPaymentPage() {
       return;
     }
     setLoading(true);
-    const result = await createCommandoCheckoutSession(applicationId);
+    const response = await fetch("/api/commando/checkout", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ applicationId }),
+    });
+    const result = await response.json();
     setLoading(false);
     if (result.error || !result.url) {
       toast.error(result.error || "Impossible de lancer le paiement.");

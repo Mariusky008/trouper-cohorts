@@ -1240,7 +1240,7 @@ export default function HomePage() {
                 </Button>
               </Link>
               <p className="mt-4 text-[#2E130C]/80 font-poppins font-bold text-sm md:text-base">
-                Seulement 100 places disponibles à Dax pour garantir un matching de haute qualité.
+                Seulement 100 places disponibles par ville pour garantir un matching de haute qualité.
               </p>
               <div className="mt-6">
                 <Button
