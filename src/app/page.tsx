@@ -1172,27 +1172,28 @@ export default function HomePage() {
               {[
                 {
                   icon: Compass,
-                  title: "Zéro gestion, 100% Action",
+                  title: "On s'occupe de tout, vous signez.",
                   app: "Vous trouvez vos matchs et brisez la glace seul.",
-                  commando: "On s'occupe de tout, vous signez.",
+                  commando: "On sélectionne le partenaire, on crée le groupe de travail et on fixe les objectifs.",
                 },
                 {
                   icon: Handshake,
-                  title: "Ingénierie de l’Offre Duo",
+                  title: "Une offre irrésistible créée pour vous.",
                   app: "Vous discutez et cherchez des synergies.",
-                  commando: "Une offre irrésistible créée pour vous.",
+                  commando: "Un stratège construit l’offre commune, les scripts et les visuels pour signer plus vite.",
                 },
                 {
                   icon: TrendingUp,
-                  title: "Coaching de performance",
+                  title: "Un Directeur Commercial dans votre poche.",
                   app: "Vous avancez à votre rythme.",
-                  commando: "Un Directeur Commercial dans votre poche.",
+                  commando: "Mission quotidienne sur WhatsApp avec suivi d’un directeur commercial privé.",
                 },
                 {
                   icon: Users,
-                  title: "Accès Squad de Croissance",
+                  title: "Votre Cercle Privé de 20 apporteurs d'affaires.",
                   app: "Vous réseautez au coup par coup, un match après l'autre.",
-                  commando: "Votre Cercle Privé de 20 apporteurs d'affaires.",
+                  commando:
+                    "Vous intégrez immédiatement un QG WhatsApp de 20 métiers complémentaires à votre activité. Un écosystème fermé où chaque chantier ou contrat détecté par l'un profite aux 19 autres. C’est votre force de frappe locale permanente.",
                 },
               ].map((item, index) => (
                 <motion.div
