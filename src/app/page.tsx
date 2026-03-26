@@ -1160,7 +1160,7 @@ export default function HomePage() {
               </div>
             </div>
 
-            <div className="grid lg:grid-cols-3 gap-6 mb-10">
+            <div className="grid lg:grid-cols-2 xl:grid-cols-4 gap-6 mb-10">
               {[
                 {
                   icon: Compass,
@@ -1179,6 +1179,13 @@ export default function HomePage() {
                   title: "Coaching de performance",
                   app: "L’App : vous avancez à votre rythme.",
                   commando: "Le Commando : mission quotidienne sur WhatsApp avec suivi d’un directeur commercial privé.",
+                },
+                {
+                  icon: Users,
+                  title: "Accès à votre Squad de Croissance",
+                  app: "L’App : vous réseautez au coup par coup, un match après l'autre.",
+                  commando:
+                    "Le Commando : vous intégrez immédiatement un QG WhatsApp de 20 métiers complémentaires à votre activité. Un écosystème fermé où chaque chantier ou contrat détecté par l'un profite aux 19 autres. C’est votre force de frappe locale permanente.",
                 },
               ].map((item, index) => (
                 <motion.div
@@ -1217,6 +1224,8 @@ export default function HomePage() {
                       ["Accès Marché Caché", "✅", "✅"],
                       ["Matching Manuel Stratégique", "❌", "OUI (Prioritaire)"],
                       ["Création d'Offres Duo & Scripts", "❌", "OUI (Sur-mesure)"],
+                      ['Accès "Squad de Croissance"', "❌ (Matchs solos)", "OUI (Cercle de 20 experts)"],
+                      ["Partage d'Opportunités Directes", "❌", "OUI (Flux permanent)"],
                       ["Suivi Humain Quotidien", "❌", "OUI (WhatsApp dédié)"],
                       ["Objectif de Résultat", "Autonomie", "Transformation 6 mois"],
                     ].map((row) => (
@@ -1232,6 +1241,11 @@ export default function HomePage() {
             </div>
 
             <div className="text-center">
+              <div className="max-w-4xl mx-auto mb-6 rounded-2xl border-2 border-[#2E130C] bg-[#D2E8FF] p-5 text-left shadow-[4px_4px_0px_0px_#2E130C]">
+                <p className="text-[#2E130C] font-poppins font-bold text-sm md:text-base leading-relaxed">
+                  Ne payez plus pour apprendre, payez pour être à la table où se partagent les contrats. En rejoignant le Programme Commando, vous n&apos;obtenez pas juste des conseils, vous obtenez une place réservée dans une escouade de 20 professionnels qui travaillent activement pour votre carnet de commandes.
+                </p>
+              </div>
               <Link href={COMMANDO_APPLICATION_URL}>
                 <Button size="lg" className="bg-[#B20B13] hover:bg-[#7A0000] text-[#E2D9BC] font-titan rounded-2xl px-8 h-14 border-4 border-[#2E130C] shadow-[6px_6px_0px_0px_#2E130C] hover:translate-y-[2px]">
                   Postuler au Programme Commando (Places limitées)
