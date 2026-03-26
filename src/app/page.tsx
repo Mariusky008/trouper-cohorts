@@ -1214,11 +1214,17 @@ export default function HomePage() {
                   <div className="space-y-4 text-sm md:text-base leading-relaxed font-poppins font-semibold">
                     <div className="rounded-2xl border-2 border-[#2E130C] bg-[#D2E8FF]/50 p-4">
                       <p className="text-[11px] md:text-xs uppercase tracking-widest font-black text-[#2E130C] mb-2">Mode App</p>
-                      <p className="text-[#2E130C]/80">{item.app}</p>
+                      <p className="text-[#2E130C]/80 flex items-start gap-2">
+                        <span className="text-[#2E130C]/40 mt-0.5">◯</span>
+                        <span>{item.app}</span>
+                      </p>
                     </div>
                     <div className="rounded-2xl border-2 border-[#2E130C] bg-[#2E130C] p-4">
                       <p className="text-[11px] md:text-xs uppercase tracking-widest font-black text-[#E2D9BC] mb-2">Mode Commando</p>
-                      <p className="text-[#D2E8FF]">{item.commando}</p>
+                      <p className="text-[#D2E8FF] font-black flex items-start gap-2">
+                        <CheckCircle2 className="h-4 w-4 text-[#22c55e] mt-0.5 shrink-0" />
+                        <span>{item.commando}</span>
+                      </p>
                     </div>
                   </div>
                 </motion.div>
