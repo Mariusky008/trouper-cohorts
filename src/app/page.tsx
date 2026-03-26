@@ -1173,27 +1173,30 @@ export default function HomePage() {
                 {
                   icon: Compass,
                   title: "On s'occupe de tout, vous signez.",
-                  app: "Vous trouvez vos matchs et brisez la glace seul.",
-                  commando: "On sélectionne le partenaire, on crée le groupe de travail et on fixe les objectifs.",
+                  app: "L'algorithme détecte vos opportunités. Vous gérez vos prises de contact en autonomie.",
+                  commando:
+                    "On ne vous donne pas juste un nom. On sélectionne votre partenaire, on crée votre groupe de travail et on fixe vos objectifs. Vous n'aurez plus qu'à vous présenter l'un à l'autre.",
                 },
                 {
                   icon: Handshake,
                   title: "Une offre irrésistible créée pour vous.",
-                  app: "Vous discutez et cherchez des synergies.",
-                  commando: "Un stratège construit l’offre commune, les scripts et les visuels pour signer plus vite.",
+                  app: "Vous échangez avec vos matchs pour tenter de créer des synergies.",
+                  commando:
+                    "Notre stratège rédige votre \"Pack Duo\", vos scripts de vente et crée vos visuels. Vous arrivez sur le marché avec une offre imbattable, déjà prête.",
                 },
                 {
                   icon: TrendingUp,
                   title: "Un Directeur Commercial dans votre poche.",
-                  app: "Vous avancez à votre rythme.",
-                  commando: "Mission quotidienne sur WhatsApp avec suivi d’un directeur commercial privé.",
+                  app: "Vous progressez seul, selon votre motivation et votre emploi du temps.",
+                  commando:
+                    "Un suivi humain quotidien sur WhatsApp. Votre directeur commercial privé vous donne votre mission chaque matin et s'assure que vos devis sont envoyés.",
                 },
                 {
                   icon: Users,
                   title: "Votre Cercle Privé de 20 apporteurs d'affaires.",
-                  app: "Vous réseautez au coup par coup, un match après l'autre.",
+                  app: "Vous rencontrez des entrepreneurs un par un, au fil des matchs.",
                   commando:
-                    "Vous intégrez immédiatement un QG WhatsApp de 20 métiers complémentaires à votre activité. Un écosystème fermé où chaque chantier ou contrat détecté par l'un profite aux 19 autres. C’est votre force de frappe locale permanente.",
+                    "Vous verrouillez votre place dans un QG de 20 métiers complémentaires. C’est un écosystème fermé : chaque chantier ou contrat détecté par l'un profite aux 19 autres.",
                 },
               ].map((item, index) => (
                 <motion.div
