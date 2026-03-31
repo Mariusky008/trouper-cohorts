@@ -25,40 +25,6 @@ const poppins = Poppins({
 
 const sections = [
   {
-    id: "miroir",
-    title: "SECTION 2 — LE MIROIR DE L'ÉCHEC",
-    heading: "Vous êtes compétent. Alors pourquoi votre réseau ne vous rapporte presque rien ?",
-    paragraphs: [
-      "Combien de cafés réseau ont fini en promesses polies et en zéro client réel ?",
-      "Combien de “on s'envoie des clients” se transforment en silence radio ?",
-      "Combien de fois avez-vous hésité à demander une commission, de peur de passer pour opportuniste ?",
-      "Ce n'est pas votre talent qui bloque. C'est l'absence de structure.",
-      "Un indépendant en solo vend son expertise. Deux experts bien orchestrés vendent une décision évidente.",
-      "Seul, votre prospect doute ; en duo, il se sent protégé et passe à l'action.",
-    ],
-    bullets: [
-      "Solo : une promesse perçue comme risquée.",
-      "Duo structuré : une solution perçue comme complète.",
-      "Solo : vous cherchez des leads froids.",
-      "Duo : vous activez des audiences déjà confiantes.",
-    ],
-    image: "https://images.unsplash.com/photo-1521737604893-d14cc237f11d?q=80&w=1600&auto=format&fit=crop",
-  },
-  {
-    id: "gap",
-    title: "SECTION 3 — L'ÉQUATION DU GAP",
-    heading: "Le manque à gagner n'est pas abstrait. Il est chiffrable.",
-    paragraphs: [
-      "Situation idéale : 5 000€ / mois de CA additionnel via votre réseau.",
-      "Réalité actuelle : 500€ / mois irréguliers, souvent non pilotés.",
-      "Écart : 4 500€ / mois.",
-      "Sur 12 mois : 54 000€ laissés sur la table.",
-      "Le prix d'une Porsche qui reste au garage, payé avec vos opportunités perdues.",
-      "Popey ne crée pas un besoin artificiel : Popey récupère une partie de l'argent qui vous échappe déjà.",
-    ],
-    image: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?q=80&w=1600&auto=format&fit=crop",
-  },
-  {
     id: "method",
     title: "SECTION 4 — MOIS 1 : L'ACCÉLÉRATEUR DE SYNERGIE (149€)",
     heading: "Un plan d'exécution hebdomadaire, inspiré d'un binôme réel Archi + Cuisiniste.",
@@ -164,51 +130,49 @@ const heritageSphereClusters = [
     title: "Cluster 1 — Transaction & Finance (Les portes d'entrée)",
     purpose: "Ceux qui savent en premier quand l'argent arrive.",
     roles: [
-      { id: "chasseur-luxe", name: "Chasseur Immobilier de Luxe", binomes: ["Architecte d'Intérieur", "Cuisiniste Haut de Gamme", "Conciergerie Privée"], deal: 22000 },
-      { id: "courtier-private", name: "Courtier en Prêt Immobilier Private Banking", binomes: ["Avocat Fiscaliste", "Maître d'Œuvre", "CGP"], deal: 18000 },
-      { id: "cgp", name: "Conseiller en Gestion de Patrimoine (CGP)", binomes: ["Avocat Fiscaliste", "Art Advisor", "Spécialiste Cave à Vin"], deal: 30000 },
-      { id: "avocat-fiscaliste", name: "Avocat Fiscaliste", binomes: ["CGP", "Assureur Objets de Valeur", "Chasseur Immobilier de Luxe"], deal: 25000 },
-      { id: "assureur-valeur", name: "Assureur Objets de Valeur", binomes: ["Galeriste / Art Advisor", "Antiquaire", "Conciergerie Privée"], deal: 15000 },
+      { id: "chasseur-luxe", name: "Chasseur Immobilier de Luxe", binomes: ["Architecte d'Intérieur", "Cuisiniste Haut de Gamme", "Conciergerie Privée"], deal: 22000, dealType: "mission de chasse immobilière premium" },
+      { id: "courtier-private", name: "Courtier en Prêt Immobilier Private Banking", binomes: ["Avocat Fiscaliste", "Maître d'Œuvre", "CGP"], deal: 18000, dealType: "montage de financement haut de gamme" },
+      { id: "cgp", name: "Conseiller en Gestion de Patrimoine (CGP)", binomes: ["Avocat Fiscaliste", "Art Advisor", "Spécialiste Cave à Vin"], deal: 30000, dealType: "mandat d'allocation patrimoniale" },
+      { id: "avocat-fiscaliste", name: "Avocat Fiscaliste", binomes: ["CGP", "Assureur Objets de Valeur", "Chasseur Immobilier de Luxe"], deal: 25000, dealType: "audit et structuration fiscale" },
+      { id: "assureur-valeur", name: "Assureur Objets de Valeur", binomes: ["Galeriste / Art Advisor", "Antiquaire", "Conciergerie Privée"], deal: 15000, dealType: "contrat d'assurance objets de valeur" },
     ],
   },
   {
     title: "Cluster 2 — Métamorphose du Lieu (Le gros budget)",
     purpose: "Là où le client dépense 20% à 50% de la valeur du bien.",
     roles: [
-      { id: "architecte-interieur", name: "Architecte d'Intérieur", binomes: ["Cuisiniste Haut de Gamme", "Maître d'Œuvre", "Concepteur Lumière"], deal: 28000 },
-      { id: "maitre-oeuvre", name: "Maître d'Œuvre / Contractant Général", binomes: ["Architecte d'Intérieur", "Expert Domotique & Sécurité", "Paysagiste Concepteur"], deal: 32000 },
-      { id: "paysagiste", name: "Paysagiste Concepteur / Piscine de prestige", binomes: ["Maître d'Œuvre", "Concepteur Lumière", "Chef à Domicile"], deal: 17000 },
-      { id: "cuisiniste", name: "Cuisiniste Haut de Gamme", binomes: ["Architecte d'Intérieur", "Ébéniste / Menuisier d'Art", "Chef à Domicile"], deal: 24000 },
-      { id: "domotique", name: "Expert en Domotique & Sécurité", binomes: ["Maître d'Œuvre", "Concepteur Lumière", "Conciergerie Privée"], deal: 19000 },
+      { id: "architecte-interieur", name: "Architecte d'Intérieur", binomes: ["Cuisiniste Haut de Gamme", "Maître d'Œuvre", "Concepteur Lumière"], deal: 28000, dealType: "mission de conception intérieure complète" },
+      { id: "maitre-oeuvre", name: "Maître d'Œuvre / Contractant Général", binomes: ["Architecte d'Intérieur", "Expert Domotique & Sécurité", "Paysagiste Concepteur"], deal: 32000, dealType: "pilotage global de rénovation" },
+      { id: "paysagiste", name: "Paysagiste Concepteur / Piscine de prestige", binomes: ["Maître d'Œuvre", "Concepteur Lumière", "Chef à Domicile"], deal: 17000, dealType: "projet extérieur et piscine prestige" },
+      { id: "cuisiniste", name: "Cuisiniste Haut de Gamme", binomes: ["Architecte d'Intérieur", "Ébéniste / Menuisier d'Art", "Chef à Domicile"], deal: 24000, dealType: "cuisine sur mesure premium" },
+      { id: "domotique", name: "Expert en Domotique & Sécurité", binomes: ["Maître d'Œuvre", "Concepteur Lumière", "Conciergerie Privée"], deal: 19000, dealType: "installation domotique et sécurité" },
     ],
   },
   {
     title: "Cluster 3 — Équipement & Esthétique (Le raffinement)",
     purpose: "Le sur-mesure, l'exclusif, la valeur perçue.",
     roles: [
-      { id: "ebeniste", name: "Ébéniste / Menuisier d'Art", binomes: ["Architecte d'Intérieur", "Antiquaire", "Cuisiniste Haut de Gamme"], deal: 14000 },
-      { id: "art-advisor", name: "Galeriste / Art Advisor", binomes: ["Assureur Objets de Valeur", "Antiquaire", "CGP"], deal: 26000 },
-      { id: "hifi-home-cinema", name: "Spécialiste Hi-Fi & Home Cinéma", binomes: ["Concepteur Lumière", "Domotique & Sécurité", "Conciergerie Privée"], deal: 12000 },
-      { id: "lighting-designer", name: "Concepteur Lumière (Lighting Designer)", binomes: ["Architecte d'Intérieur", "Spécialiste Hi-Fi & Home Cinéma", "Paysagiste Concepteur"], deal: 11000 },
-      { id: "antiquaire", name: "Antiquaire / Expert Mobilier Design", binomes: ["Art Advisor", "Ébéniste", "Assureur Objets de Valeur"], deal: 21000 },
+      { id: "ebeniste", name: "Ébéniste / Menuisier d'Art", binomes: ["Architecte d'Intérieur", "Antiquaire", "Cuisiniste Haut de Gamme"], deal: 14000, dealType: "mobilier sur mesure en atelier d'art" },
+      { id: "art-advisor", name: "Galeriste / Art Advisor", binomes: ["Assureur Objets de Valeur", "Antiquaire", "CGP"], deal: 26000, dealType: "accompagnement d'acquisition d'œuvres" },
+      { id: "hifi-home-cinema", name: "Spécialiste Hi-Fi & Home Cinéma", binomes: ["Concepteur Lumière", "Domotique & Sécurité", "Conciergerie Privée"], deal: 12000, dealType: "installation home cinéma sur mesure" },
+      { id: "lighting-designer", name: "Concepteur Lumière (Lighting Designer)", binomes: ["Architecte d'Intérieur", "Spécialiste Hi-Fi & Home Cinéma", "Paysagiste Concepteur"], deal: 11000, dealType: "design lumière intérieur/extérieur" },
+      { id: "antiquaire", name: "Antiquaire / Expert Mobilier Design", binomes: ["Art Advisor", "Ébéniste", "Assureur Objets de Valeur"], deal: 21000, dealType: "sélection de mobilier design de collection" },
     ],
   },
   {
     title: "Cluster 4 — Intendance & Prestige (Le récurrent)",
     purpose: "Ceux qui gèrent le quotidien et multiplient les opportunités.",
     roles: [
-      { id: "conciergerie", name: "Conciergerie Privée", binomes: ["Chef à Domicile", "Domotique & Sécurité", "Spécialiste Cave à Vin"], deal: 16000 },
-      { id: "chef-domicile", name: "Chef à Domicile", binomes: ["Conciergerie Privée", "Cuisiniste Haut de Gamme", "Spécialiste Cave à Vin"], deal: 9000 },
-      { id: "demenageur-premium", name: "Déménageur Premium / Garde-meuble sécurisé", binomes: ["Home Organizer", "Conciergerie Privée", "Assureur Objets de Valeur"], deal: 8000 },
-      { id: "home-organizer", name: "Home Organizer", binomes: ["Conciergerie Privée", "Ébéniste / Menuisier d'Art", "Architecte d'Intérieur"], deal: 7000 },
-      { id: "sommelier", name: "Spécialiste Cave à Vin / Sommelier privé", binomes: ["Chef à Domicile", "CGP", "Conciergerie Privée"], deal: 13000 },
+      { id: "conciergerie", name: "Conciergerie Privée", binomes: ["Chef à Domicile", "Domotique & Sécurité", "Spécialiste Cave à Vin"], deal: 16000, dealType: "forfait annuel d'intendance premium" },
+      { id: "chef-domicile", name: "Chef à Domicile", binomes: ["Conciergerie Privée", "Cuisiniste Haut de Gamme", "Spécialiste Cave à Vin"], deal: 9000, dealType: "pack réceptions privées à domicile" },
+      { id: "demenageur-premium", name: "Déménageur Premium / Garde-meuble sécurisé", binomes: ["Home Organizer", "Conciergerie Privée", "Assureur Objets de Valeur"], deal: 8000, dealType: "déménagement sécurisé haut de gamme" },
+      { id: "home-organizer", name: "Home Organizer", binomes: ["Conciergerie Privée", "Ébéniste / Menuisier d'Art", "Architecte d'Intérieur"], deal: 7000, dealType: "organisation complète d'espaces résidentiels" },
+      { id: "sommelier", name: "Spécialiste Cave à Vin / Sommelier privé", binomes: ["Chef à Domicile", "CGP", "Conciergerie Privée"], deal: 13000, dealType: "création et gestion de cave privée" },
     ],
   },
 ];
 
 export default function PopeyHumanTestPage() {
-  const miroirSection = sections.find((section) => section.id === "miroir");
-  const gapSection = sections.find((section) => section.id === "gap");
   const methodSection = sections.find((section) => section.id === "method");
   const allHeritageRoles = useMemo(() => heritageSphereClusters.flatMap((cluster) => cluster.roles), []);
   const [selectedRoleId, setSelectedRoleId] = useState(allHeritageRoles[0]?.id ?? "");
@@ -375,9 +339,9 @@ export default function PopeyHumanTestPage() {
           <div className="mt-10 max-w-5xl mx-auto">
             <div className="grid sm:grid-cols-3 gap-4">
               {[
-                { label: "Mois 1", value: "149€", desc: "Preuve de concept guidée." },
-                { label: "Mois 2+", value: "490€", desc: "Sphère des 20 en scale." },
-                { label: "Objectif", value: "CA +", desc: "Réseau structuré et traçable." },
+                { label: "Dès Mois 1", value: "+1 800€ visés", desc: "Premiers closings avec un binôme complémentaire." },
+                { label: "Après 90 jours", value: "3 flux actifs", desc: "Mois 1, Mois 2, Mois 3 synchronisés et traçables." },
+                { label: "Cap 12 mois", value: "CA additionnel", desc: "Réseau structuré orienté opportunités récurrentes." },
               ].map((card) => (
                 <div key={card.label} className="bg-white rounded-3xl border-4 border-[#2E130C] p-5 shadow-[8px_8px_0px_0px_#2E130C]">
                   <p className="text-[11px] uppercase tracking-widest font-black text-[#B20B13]">{card.label}</p>
@@ -429,20 +393,12 @@ export default function PopeyHumanTestPage() {
                 </div>
               </div>
             </div>
-            <div className="mt-8 grid md:grid-cols-2 gap-4">
-              {(miroirSection?.paragraphs ?? []).slice(0, 4).map((item) => (
-                <div key={item} className="rounded-2xl border-2 border-[#2E130C] bg-white p-5 shadow-[6px_6px_0px_0px_#2E130C]">
-                  <p className="font-bold leading-relaxed">{item}</p>
-                </div>
-              ))}
+            <div className="mt-5 rounded-2xl border-2 border-[#2E130C] bg-white p-4 shadow-[6px_6px_0px_0px_#2E130C]">
+              <p className="text-xs uppercase tracking-widest font-black text-[#B20B13]">Lecture rapide</p>
+              <p className="mt-1 text-sm font-bold">
+                Votre objectif est clair : combler {deltaRevenue.toLocaleString("fr-FR")}€ / mois. La suite de la page vous montre, métier par métier, comment y arriver concrètement.
+              </p>
             </div>
-            {gapSection && (
-              <div className="mt-5 rounded-2xl border-2 border-[#2E130C] bg-[#2E130C] text-[#E2D9BC] p-4">
-                <p className="text-xs uppercase tracking-widest font-black text-[#D2E8FF]">{gapSection.title}</p>
-                <p className="mt-2 font-titan text-2xl">{deltaYearly.toLocaleString("fr-FR")}€ laissés sur la table / an</p>
-                <p className="mt-1 text-sm font-bold text-[#E2D9BC]/90">Le manque à gagner est concret quand le réseau reste informel.</p>
-              </div>
-            )}
           </div>
         </div>
       </section>
@@ -502,22 +458,33 @@ export default function PopeyHumanTestPage() {
                 {selectedStage === "m1" && (
                   <div className="mt-3 space-y-2 text-sm font-bold text-[#E2D9BC]/90">
                     <p>Mois 1 — Binôme idéal : {selectedRole?.binomes[0]}</p>
-                    <p>• S1 : offre duo claire et prix d&apos;appel.</p>
-                    <p>• S2 : activation d&apos;audience croisée.</p>
-                    <p>• S3 : appels duo + qualification.</p>
-                    <p>• S4 : premiers closings + preuve ROI.</p>
+                    <p>Objectif simple : sortir une première offre vendable en 30 jours.</p>
+                    <p>• Étape 1 : vous clarifiez qui fait quoi dans le binôme et le résultat client promis.</p>
+                    <p>• Étape 2 : vous créez une offre d&apos;entrée facile à acheter (prix lisible, bénéfice clair).</p>
+                    <p>• Étape 3 : vous activez vos contacts chauds avec un message prêt à copier/coller.</p>
+                    <p>• Étape 4 : vous prenez des rendez-vous duo, puis vous closez vos premiers clients.</p>
+                    <p>Résultat attendu : preuve terrain, premier cash, et méthode réplicable.</p>
                   </div>
                 )}
                 {selectedStage === "m2" && (
                   <div className="mt-3 space-y-2 text-sm font-bold text-[#E2D9BC]/90">
                     <p>Mois 2 — Nouveau binôme : {selectedRole?.binomes[1]}</p>
-                    <p>Déploiement accéléré sur un second métier complémentaire, sans re-construire toute l&apos;infrastructure.</p>
+                    <p>Objectif simple : doubler vos opportunités sans repartir de zéro.</p>
+                    <p>• Vous gardez le même système Mois 1, mais vous l&apos;adaptez à ce 2e binôme.</p>
+                    <p>• Vous lancez une nouvelle mini-offre conjointe avec une promesse ultra claire.</p>
+                    <p>• Vous réactivez clients et prospects déjà intéressés avec une 2e porte d&apos;entrée.</p>
+                    <p>• Vous cumulez 2 flux actifs : binôme 1 + binôme 2.</p>
+                    <p>Résultat attendu : plus de rendez-vous qualifiés et montée en cadence.</p>
                   </div>
                 )}
                 {selectedStage === "m3" && (
                   <div className="mt-3 space-y-2 text-sm font-bold text-[#E2D9BC]/90">
                     <p>Mois 3 — Nouveau binôme : {selectedRole?.binomes[2]}</p>
-                    <p>Ouverture complète de la pompe à recommandation avec les 19 autres partenaires de la sphère.</p>
+                    <p>Objectif simple : transformer votre réseau en machine à recommandations.</p>
+                    <p>• Vous activez le 3e binôme pour ouvrir un 3e point d&apos;entrée commercial.</p>
+                    <p>• Vous branchez vos offres aux 19 partenaires pour créer un circuit d&apos;affaires continu.</p>
+                    <p>• Chaque recommandation est traçable, avec commission claire pour chaque partie.</p>
+                    <p>Résultat attendu : flux récurrent d&apos;opportunités et effet cumulatif mois après mois.</p>
                   </div>
                 )}
                 <div className="mt-4 rounded-xl border-2 border-[#E2D9BC]/40 bg-[#E2D9BC]/10 p-3">
@@ -535,38 +502,52 @@ export default function PopeyHumanTestPage() {
 
               <div className="rounded-2xl border-2 border-[#2E130C] bg-white p-5 shadow-[6px_6px_0px_0px_#2E130C]">
                 <p className="text-xs uppercase tracking-widest font-black text-[#B20B13]">Pompe à recommandation</p>
-                <p className="mt-2 text-sm font-bold">19 partenaires potentiels autour de {selectedRole?.name}.</p>
-                <div className="mt-3 grid sm:grid-cols-2 gap-2 max-h-56 overflow-y-auto pr-1">
-                  {partnerProfiles.map((partner) => (
-                    <button
-                      key={partner.id}
-                      type="button"
-                      onClick={() => setSelectedPartnerId(partner.id)}
-                      className={cn(
-                        "rounded-xl border-2 border-[#2E130C] p-2 text-left",
-                        selectedPartner?.id === partner.id ? "bg-[#B20B13] text-[#E2D9BC]" : "bg-[#E2D9BC]",
-                      )}
-                    >
-                      <p className="text-xs font-black">{partner.firstName}</p>
-                      <p className="text-[11px] font-bold">{partner.name}</p>
-                    </button>
-                  ))}
-                </div>
-                <div className="mt-4 rounded-xl border-2 border-[#2E130C] bg-[#D2E8FF] p-3">
-                  <p className="text-xs uppercase tracking-widest font-black text-[#B20B13]">{selectedPartner?.firstName} — {selectedPartner?.name}</p>
-                  <p className="mt-2 text-sm font-bold">
-                    Si vous lui apportez une affaire à {selectedPartner?.deal.toLocaleString("fr-FR")}€, vous gagnez {((selectedPartner?.deal ?? 0) * 0.1).toLocaleString("fr-FR")}€.
-                  </p>
-                  <p className="mt-1 text-sm font-bold">
-                    Si {selectedPartner?.firstName} vous apporte une affaire à {selectedRole?.deal.toLocaleString("fr-FR")}€, il/elle gagne {(selectedRole?.deal * 0.1).toLocaleString("fr-FR")}€.
-                  </p>
-                  <p className="mt-1 text-sm font-bold">
-                    Pour combler votre delta ({deltaRevenue.toLocaleString("fr-FR")}€), il faut environ {referralsNeeded} recommandations de ce type.
-                  </p>
-                  <button className="mt-3 rounded-lg border-2 border-[#2E130C] bg-white px-3 py-1.5 text-xs font-black uppercase">
-                    Lui apporter une affaire
-                  </button>
-                </div>
+                {selectedStage !== "m3" ? (
+                  <div className="mt-3 rounded-xl border-2 border-dashed border-[#2E130C] bg-[#E2D9BC] p-8 text-center">
+                    <p className="font-titan text-2xl text-[#B20B13]">Votre pompe à reco arrive en Mois 3</p>
+                    <p className="mt-2 text-sm font-bold">
+                      Concentrez-vous d&apos;abord sur la preuve de concept (Mois 1) puis la duplication (Mois 2).
+                    </p>
+                  </div>
+                ) : (
+                  <>
+                    <p className="mt-2 text-sm font-bold">19 partenaires potentiels autour de {selectedRole?.name}.</p>
+                    <div className="mt-3 grid sm:grid-cols-2 gap-2 max-h-56 overflow-y-auto pr-1">
+                      {partnerProfiles.map((partner) => (
+                        <button
+                          key={partner.id}
+                          type="button"
+                          onClick={() => setSelectedPartnerId(partner.id)}
+                          className={cn(
+                            "rounded-xl border-2 border-[#2E130C] p-2 text-left",
+                            selectedPartner?.id === partner.id ? "bg-[#B20B13] text-[#E2D9BC]" : "bg-[#E2D9BC]",
+                          )}
+                        >
+                          <p className="text-xs font-black">{partner.firstName}</p>
+                          <p className="text-[11px] font-bold">{partner.name}</p>
+                        </button>
+                      ))}
+                    </div>
+                    <div className="mt-4 rounded-xl border-2 border-[#2E130C] bg-[#D2E8FF] p-3">
+                      <p className="text-xs uppercase tracking-widest font-black text-[#B20B13]">{selectedPartner?.firstName} — {selectedPartner?.name}</p>
+                      <p className="mt-2 text-sm font-bold">
+                        Cas concret : vous recommandez à {selectedPartner?.firstName} un client pour une {selectedPartner?.dealType} à {selectedPartner?.deal.toLocaleString("fr-FR")}€.
+                      </p>
+                      <p className="mt-1 text-sm font-bold">
+                        Votre commission d&apos;apport (10%) : {((selectedPartner?.deal ?? 0) * 0.1).toLocaleString("fr-FR")}€.
+                      </p>
+                      <p className="mt-1 text-sm font-bold">
+                        En retour, si {selectedPartner?.firstName} vous recommande un client pour une {selectedRole?.dealType} à {selectedRole?.deal.toLocaleString("fr-FR")}€, sa commission est de {(selectedRole?.deal * 0.1).toLocaleString("fr-FR")}€.
+                      </p>
+                      <p className="mt-1 text-sm font-bold">
+                        Pour atteindre votre delta ({deltaRevenue.toLocaleString("fr-FR")}€), il faut environ {referralsNeeded} recommandations de ce niveau.
+                      </p>
+                      <button className="mt-3 rounded-lg border-2 border-[#2E130C] bg-white px-3 py-1.5 text-xs font-black uppercase">
+                        Lui apporter une affaire
+                      </button>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           </div>
