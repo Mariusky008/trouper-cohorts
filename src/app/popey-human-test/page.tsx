@@ -195,63 +195,108 @@ const wellnessClusters = [
 ];
 
 export default function PopeyHumanTestPage() {
+  const miroirSection = sections.find((section) => section.id === "miroir");
+  const gapSection = sections.find((section) => section.id === "gap");
+  const methodSection = sections.find((section) => section.id === "method");
+  const sphereSection = sections.find((section) => section.id === "sphere");
+
+  const promiseBlocks = [
+    "Comprendre pourquoi un prospect décide ou bloque.",
+    "Identifier les leviers qui déclenchent l'action.",
+    "Guider la décision sans forcer ni sur-vendre.",
+    "Retrouver une vente claire, fluide et maîtrisée.",
+  ];
+
+  const faqItems = [
+    {
+      q: "Est-ce que Popey peut vraiment augmenter mon CA ?",
+      a: "Oui, parce que le système est structuré, traçable et orienté résultats. Vous ne dépendez plus d'actions isolées, vous activez un flux organisé.",
+    },
+    {
+      q: "Je suis déjà expérimenté, c'est utile pour moi ?",
+      a: "Oui. Le but n'est pas d'apprendre la théorie, mais d'optimiser votre posture, vos synergies et votre capacité à convertir des opportunités en revenus.",
+    },
+    {
+      q: "En combien de temps je vois des premiers résultats ?",
+      a: "Le Mois 1 sert de preuve de concept : visibilité, prises de contact qualifiées, premiers closings et pipeline à forte valeur.",
+    },
+  ];
+
   return (
     <main className={cn("min-h-screen bg-[#E2D9BC] text-[#2E130C] overflow-hidden", titanOne.variable, pacifico.variable, poppins.variable, "font-poppins")}>
-      <section className="relative py-20 border-b-4 border-[#2E130C]">
+      <section className="relative py-20 md:py-24 border-b-4 border-[#2E130C]">
         <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ backgroundImage: "radial-gradient(#2E130C 1px, transparent 1px)", backgroundSize: "20px 20px" }} />
         <div className="container mx-auto px-4 relative z-10">
-          <div className="max-w-6xl mx-auto grid lg:grid-cols-2 gap-8 items-center">
-            <div>
-              <p className="inline-block text-xs uppercase tracking-widest font-black bg-[#D2E8FF] border-2 border-[#2E130C] rounded-full px-4 py-2">
-                Page test — Vision Popey Academy 100% humaine
-              </p>
-              <h1 className="mt-6 text-4xl md:text-6xl font-titan leading-tight">
-                Cessez de quémander des clients.
-                <br />
-                <span className="text-[#B20B13] underline decoration-wavy">Commencez à orchestrer des actifs.</span>
-              </h1>
-              <p className="mt-6 text-lg md:text-2xl font-bold max-w-2xl">
-                Comment transformer un simple partenariat en une machine à 40 000€ de CA additionnel par an grâce à Popey Academy.
-              </p>
-              <div className="mt-8 flex flex-wrap gap-3">
-                {["Méthode testée", "Structure claire", "Résultats traçables"].map((item) => (
-                  <span key={item} className="rounded-full border-2 border-[#2E130C] bg-white px-4 py-2 text-xs font-black uppercase tracking-wider">
-                    {item}
-                  </span>
-                ))}
-              </div>
-            </div>
-            <div className="grid sm:grid-cols-3 gap-4">
+          <div className="max-w-6xl mx-auto text-center">
+            <p className="inline-block text-xs uppercase tracking-widest font-black bg-[#D2E8FF] border-2 border-[#2E130C] rounded-full px-4 py-2">
+              Popey Academy — Système de synergies monétisables
+            </p>
+            <h1 className="mt-8 text-4xl md:text-6xl lg:text-7xl font-titan leading-[1.05]">
+              Cessez de quémander des clients.
+              <br />
+              <span className="text-[#B20B13]">Commencez à orchestrer des actifs.</span>
+            </h1>
+            <p className="mt-6 text-lg md:text-2xl font-bold max-w-4xl mx-auto">
+              Comment transformer un simple partenariat en machine à 40 000€ de CA additionnel par an grâce à Popey Academy.
+            </p>
+          </div>
+          <div className="mt-10 max-w-6xl mx-auto grid lg:grid-cols-5 gap-6 items-center">
+            <div className="lg:col-span-3 grid sm:grid-cols-3 gap-4">
               {[
-                { label: "Mois 1", value: "149€", desc: "Frais d'entrée et preuve de concept." },
-                { label: "Mois 2+", value: "490€", desc: "Accès à la Sphère des 20." },
-                { label: "Promesse", value: "Popey", desc: "Réseau monétisable." },
+                { label: "Mois 1", value: "149€", desc: "Preuve de concept guidée." },
+                { label: "Mois 2+", value: "490€", desc: "Sphère des 20 en scale." },
+                { label: "Objectif", value: "CA +", desc: "Réseau structuré et traçable." },
               ].map((card) => (
-                <div key={card.label} className="bg-white rounded-3xl border-4 border-[#2E130C] p-5 shadow-[8px_8px_0px_0px_#2E130C] hover:-translate-y-1 transition-transform">
+                <div key={card.label} className="bg-white rounded-3xl border-4 border-[#2E130C] p-5 shadow-[8px_8px_0px_0px_#2E130C]">
                   <p className="text-[11px] uppercase tracking-widest font-black text-[#B20B13]">{card.label}</p>
                   <p className="text-3xl font-titan mt-2">{card.value}</p>
                   <p className="font-bold mt-2 text-sm text-[#2E130C]/80">{card.desc}</p>
                 </div>
               ))}
             </div>
+            <div className="lg:col-span-2 rounded-3xl overflow-hidden border-4 border-[#2E130C] shadow-[8px_8px_0px_0px_#2E130C] bg-white">
+              <img src="/jeanphilipperoth.jpg" alt="Jean-Philippe Roth" className="w-full h-[290px] object-cover" />
+            </div>
           </div>
         </div>
       </section>
 
-      <section className="sticky top-0 z-20 border-b-2 border-[#2E130C] bg-[#E2D9BC]/95 backdrop-blur">
-        <div className="container mx-auto px-4 py-3">
-          <div className="max-w-6xl mx-auto flex flex-wrap gap-2">
-            {[
-              { id: "vision", label: "Vision" },
-              { id: "fondateur", label: "Fondateur" },
-              { id: "method", label: "Mois 1" },
-              { id: "sphere", label: "Sphères" },
-              { id: "cta", label: "Audit" },
-            ].map((item) => (
-              <a key={item.id} href={`#${item.id}`} className="rounded-full border-2 border-[#2E130C] bg-white px-4 py-1.5 text-xs font-black uppercase tracking-wider hover:bg-[#D2E8FF] transition-colors">
-                {item.label}
-              </a>
-            ))}
+      <section className="py-16 border-b-4 border-[#2E130C] bg-[#D2E8FF]">
+        <div className="container mx-auto px-4">
+          <div className="max-w-6xl mx-auto">
+            <p className="text-xs uppercase tracking-widest font-black text-[#B20B13]">Le problème</p>
+            <h2 className="mt-3 text-3xl md:text-5xl font-titan">Vous avez la compétence, mais votre réseau ne convertit pas assez.</h2>
+            <div className="mt-8 grid md:grid-cols-2 gap-4">
+              {(miroirSection?.paragraphs ?? []).slice(0, 4).map((item) => (
+                <div key={item} className="rounded-2xl border-2 border-[#2E130C] bg-white p-5 shadow-[6px_6px_0px_0px_#2E130C]">
+                  <p className="font-bold leading-relaxed">{item}</p>
+                </div>
+              ))}
+            </div>
+            {gapSection && (
+              <div className="mt-5 rounded-2xl border-2 border-[#2E130C] bg-[#2E130C] text-[#E2D9BC] p-4">
+                <p className="text-xs uppercase tracking-widest font-black text-[#D2E8FF]">{gapSection.title}</p>
+                <p className="mt-2 font-titan text-2xl">54 000€ laissés sur la table / an</p>
+                <p className="mt-1 text-sm font-bold text-[#E2D9BC]/90">Le manque à gagner est concret quand le réseau reste informel.</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </section>
+
+      <section className="py-16 border-b-4 border-[#2E130C]">
+        <div className="container mx-auto px-4">
+          <div className="max-w-6xl mx-auto">
+            <p className="text-xs uppercase tracking-widest font-black text-[#B20B13]">La promesse</p>
+            <h2 className="mt-3 text-3xl md:text-5xl font-titan">Un cadre clair pour piloter la décision et accélérer le CA.</h2>
+            <div className="mt-8 grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {promiseBlocks.map((item, idx) => (
+                <div key={item} className="rounded-2xl border-2 border-[#2E130C] bg-white p-5 shadow-[6px_6px_0px_0px_#2E130C]">
+                  <p className="text-xs uppercase tracking-widest font-black text-[#B20B13]">{`0${idx + 1}`}</p>
+                  <p className="mt-2 font-bold leading-relaxed">{item}</p>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </section>
@@ -281,7 +326,7 @@ export default function PopeyHumanTestPage() {
         </div>
       </section>
 
-      <section id="fondateur" className="py-16 border-b-4 border-[#2E130C]">
+      <section id="fondateur" className="py-16 border-b-4 border-[#2E130C] bg-[#D2E8FF]">
         <div className="container mx-auto px-4">
           <div className="max-w-6xl mx-auto grid lg:grid-cols-3 gap-8">
             <div className="bg-white rounded-3xl border-4 border-[#2E130C] p-6 shadow-[8px_8px_0px_0px_#2E130C] h-fit">
@@ -324,101 +369,124 @@ export default function PopeyHumanTestPage() {
         </div>
       </section>
 
-      {sections.map((section) => (
-        <section key={section.id} id={section.id} className="py-16 border-b-4 border-[#2E130C]">
+      <section className="py-16 border-b-4 border-[#2E130C]">
+        <div className="container mx-auto px-4">
+          <div className="max-w-6xl mx-auto">
+            <p className="text-xs uppercase tracking-widest font-black text-[#B20B13]">Le process</p>
+            <h2 className="mt-3 text-3xl md:text-5xl font-titan">Une méthode structurée pour exécuter, pas improviser.</h2>
+            <div className="mt-8 grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {[
+                { num: "01", label: "Posture", text: "Vous passez de l'aléatoire au pilotage de vos synergies." },
+                { num: "02", label: "Compréhension", text: "Vous savez où se crée la valeur dans le duo et dans la sphère." },
+                { num: "03", label: "Structure", text: "Vous transformez l'offre en tunnel clair avec scripts et actifs." },
+                { num: "04", label: "Mise en pratique", text: "Activation terrain, prises de contact, qualification, suivi." },
+                { num: "05", label: "Feedback", text: "Mesure des actions, ajustements rapides, décisions orientées ROI." },
+                { num: "06", label: "Durabilité", text: "Répétition du modèle et passage au scale avec la Sphère des 20." },
+              ].map((step) => (
+                <div key={step.num} className="rounded-2xl border-2 border-[#2E130C] bg-white p-5 shadow-[6px_6px_0px_0px_#2E130C]">
+                  <p className="text-xs uppercase tracking-widest font-black text-[#B20B13]">{step.num}</p>
+                  <p className="mt-2 font-titan text-2xl">{step.label}</p>
+                  <p className="mt-2 font-bold text-sm leading-relaxed">{step.text}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {methodSection && (
+        <section id="method" className="py-16 border-b-4 border-[#2E130C] bg-[#D2E8FF]">
           <div className="container mx-auto px-4">
-            <div className="max-w-6xl mx-auto space-y-6">
-              <div className="bg-white rounded-3xl border-4 border-[#2E130C] p-8 shadow-[8px_8px_0px_0px_#2E130C]">
-                <p className="text-xs uppercase tracking-widest font-black text-[#B20B13]">{section.title}</p>
-                <h2 className="mt-4 text-3xl md:text-5xl font-titan leading-tight">{section.heading}</h2>
-                <div className="mt-6 grid gap-3 md:grid-cols-2">
-                  {section.paragraphs.map((paragraph) => (
-                    <p key={paragraph} className="font-bold leading-relaxed text-[#2E130C]/90">{paragraph}</p>
-                  ))}
-                </div>
-
-                {section.id === "method" && (
-                  <>
-                    <div className="mt-6 grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                      {methodTimeline.map((item) => (
-                        <div key={item.step} className={cn("rounded-2xl border-2 border-[#2E130C] p-4 hover:-translate-y-1 transition-transform", item.color)}>
-                          <div className="flex items-center justify-between gap-3">
-                            <span className="text-xs font-black uppercase tracking-widest text-[#B20B13]">{item.step}</span>
-                            <span className="text-[11px] font-black bg-white border border-[#2E130C] rounded-full px-2 py-1">{item.metrics}</span>
-                          </div>
-                          <p className="mt-2 font-titan text-xl leading-tight">{item.title}</p>
-                          <p className="mt-2 text-sm font-bold text-[#2E130C]/90">{item.detail}</p>
-                        </div>
-                      ))}
+            <div className="max-w-6xl mx-auto bg-white rounded-3xl border-4 border-[#2E130C] p-8 shadow-[8px_8px_0px_0px_#2E130C]">
+              <p className="text-xs uppercase tracking-widest font-black text-[#B20B13]">{methodSection.title}</p>
+              <h2 className="mt-4 text-3xl md:text-5xl font-titan leading-tight">{methodSection.heading}</h2>
+              <div className="mt-6 grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                {methodTimeline.map((item) => (
+                  <div key={item.step} className={cn("rounded-2xl border-2 border-[#2E130C] p-4", item.color)}>
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-xs font-black uppercase tracking-widest text-[#B20B13]">{item.step}</span>
+                      <span className="text-[11px] font-black bg-white border border-[#2E130C] rounded-full px-2 py-1">{item.metrics}</span>
                     </div>
-                    <div className="mt-4 rounded-2xl border-2 border-[#2E130C] bg-[#2E130C] text-[#E2D9BC] p-4">
-                      <p className="text-xs uppercase tracking-widest font-black text-[#D2E8FF]">Fin du Mois 1 — Projection de gains</p>
-                      <p className="mt-2 font-titan text-xl">3 clients closés = 1 800€ immédiats</p>
-                      <p className="mt-1 font-bold text-sm text-[#E2D9BC]/90">+ potentiel de 3 clients à 25 000€ chacun = 75 000€ de pipeline.</p>
-                      <p className="mt-1 font-bold text-sm text-[#E2D9BC]/90">Le Mois 1 n&apos;est pas une dépense : c&apos;est une preuve de ROI et un levier de CA futur.</p>
-                    </div>
-                  </>
-                )}
-
-                {section.id === "sphere" && (
-                  <div className="mt-6 space-y-4">
-                    <details open className="rounded-2xl border-2 border-[#2E130C] bg-[#E2D9BC] p-4">
-                      <summary className="cursor-pointer font-black text-[#B20B13]">Exemple 1 — Sphère Patrimoine & Art de vivre</summary>
-                      <div className="mt-4 grid sm:grid-cols-2 gap-3">
-                        {sphereClusters.map((cluster) => (
-                          <div key={cluster.title} className="rounded-2xl border-2 border-[#2E130C] bg-[#D2E8FF]/40 p-4">
-                            <p className="text-sm font-black text-[#B20B13]">{cluster.title}</p>
-                            <p className="mt-2 text-sm font-bold leading-relaxed">{cluster.roles}</p>
-                          </div>
-                        ))}
-                      </div>
-                      <div className="mt-3 rounded-2xl border-2 border-[#2E130C] bg-[#2E130C] text-[#E2D9BC] p-4">
-                        <p className="text-xs uppercase tracking-widest font-black text-[#D2E8FF]">Flux</p>
-                        <p className="mt-1 font-titan text-xl">Vente immo → 5 à 10 contrats satellites</p>
-                      </div>
-                    </details>
-                    <details className="rounded-2xl border-2 border-[#2E130C] bg-[#D2E8FF] p-4">
-                      <summary className="cursor-pointer font-black text-[#B20B13]">Exemple 2 — Sphère Bien-être & Santé</summary>
-                      <div className="mt-4 grid sm:grid-cols-2 gap-3">
-                        {wellnessClusters.map((cluster) => (
-                          <div key={cluster.title} className="rounded-2xl border-2 border-[#2E130C] bg-white p-4">
-                            <p className="text-sm font-black text-[#B20B13]">{cluster.title}</p>
-                            <p className="mt-2 text-sm font-bold leading-relaxed">{cluster.roles}</p>
-                          </div>
-                        ))}
-                      </div>
-                      <div className="mt-3 rounded-2xl border-2 border-[#2E130C] bg-[#2E130C] text-[#E2D9BC] p-4">
-                        <p className="text-xs uppercase tracking-widest font-black text-[#D2E8FF]">Flux circulaire</p>
-                        <p className="mt-1 font-titan text-xl">Comptable stress → Coach sportif → Styliste → Photographe → retour réseau</p>
-                      </div>
-                      <ul className="mt-3 space-y-1 text-sm font-bold">
-                        <li>• Marges élevées : prestations 500€ à 5 000€.</li>
-                        <li>• Commissions réelles : 10% crée un vrai levier.</li>
-                        <li>• Barrière à l&apos;entrée : 20 métiers inter-dépendants.</li>
-                      </ul>
-                    </details>
+                    <p className="mt-2 font-titan text-xl leading-tight">{item.title}</p>
+                    <p className="mt-2 text-sm font-bold text-[#2E130C]/90">{item.detail}</p>
                   </div>
-                )}
-
-                {section.bullets && section.id !== "method" && section.id !== "sphere" && (
-                  <ul className="mt-6 grid md:grid-cols-2 gap-3">
-                    {section.bullets.map((bullet) => (
-                      <li key={bullet} className="rounded-xl border-2 border-[#2E130C] bg-[#E2D9BC] px-4 py-3 font-bold">
-                        {bullet}
-                      </li>
-                    ))}
-                  </ul>
-                )}
+                ))}
               </div>
-              {section.id !== "method" && section.id !== "sphere" && (
-                <div className="rounded-3xl overflow-hidden border-4 border-[#2E130C] shadow-[8px_8px_0px_0px_#2E130C]">
-                  <img src={section.image} alt={section.heading} className="w-full h-[360px] object-cover" />
-                </div>
-              )}
+              <div className="mt-4 rounded-2xl border-2 border-[#2E130C] bg-[#2E130C] text-[#E2D9BC] p-4">
+                <p className="text-xs uppercase tracking-widest font-black text-[#D2E8FF]">Fin du Mois 1 — Projection de gains</p>
+                <p className="mt-2 font-titan text-xl">3 clients closés = 1 800€ immédiats</p>
+                <p className="mt-1 font-bold text-sm text-[#E2D9BC]/90">+ potentiel de 3 clients à 25 000€ chacun = 75 000€ de pipeline.</p>
+                <p className="mt-1 font-bold text-sm text-[#E2D9BC]/90">Le Mois 1 n&apos;est pas une dépense : c&apos;est une preuve de ROI et un levier de CA futur.</p>
+              </div>
             </div>
           </div>
         </section>
-      ))}
+      )}
+
+      {sphereSection && (
+        <section id="sphere" className="py-16 border-b-4 border-[#2E130C]">
+          <div className="container mx-auto px-4">
+            <div className="max-w-6xl mx-auto bg-white rounded-3xl border-4 border-[#2E130C] p-8 shadow-[8px_8px_0px_0px_#2E130C]">
+              <p className="text-xs uppercase tracking-widest font-black text-[#B20B13]">{sphereSection.title}</p>
+              <h2 className="mt-4 text-3xl md:text-5xl font-titan leading-tight">{sphereSection.heading}</h2>
+              <div className="mt-6 space-y-4">
+                <details open className="rounded-2xl border-2 border-[#2E130C] bg-[#E2D9BC] p-4">
+                  <summary className="cursor-pointer font-black text-[#B20B13]">Exemple 1 — Sphère Patrimoine & Art de vivre</summary>
+                  <div className="mt-4 grid sm:grid-cols-2 gap-3">
+                    {sphereClusters.map((cluster) => (
+                      <div key={cluster.title} className="rounded-2xl border-2 border-[#2E130C] bg-[#D2E8FF]/40 p-4">
+                        <p className="text-sm font-black text-[#B20B13]">{cluster.title}</p>
+                        <p className="mt-2 text-sm font-bold leading-relaxed">{cluster.roles}</p>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="mt-3 rounded-2xl border-2 border-[#2E130C] bg-[#2E130C] text-[#E2D9BC] p-4">
+                    <p className="text-xs uppercase tracking-widest font-black text-[#D2E8FF]">Flux</p>
+                    <p className="mt-1 font-titan text-xl">Vente immo → 5 à 10 contrats satellites</p>
+                  </div>
+                </details>
+                <details className="rounded-2xl border-2 border-[#2E130C] bg-[#D2E8FF] p-4">
+                  <summary className="cursor-pointer font-black text-[#B20B13]">Exemple 2 — Sphère Bien-être & Santé</summary>
+                  <div className="mt-4 grid sm:grid-cols-2 gap-3">
+                    {wellnessClusters.map((cluster) => (
+                      <div key={cluster.title} className="rounded-2xl border-2 border-[#2E130C] bg-white p-4">
+                        <p className="text-sm font-black text-[#B20B13]">{cluster.title}</p>
+                        <p className="mt-2 text-sm font-bold leading-relaxed">{cluster.roles}</p>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="mt-3 rounded-2xl border-2 border-[#2E130C] bg-[#2E130C] text-[#E2D9BC] p-4">
+                    <p className="text-xs uppercase tracking-widest font-black text-[#D2E8FF]">Flux circulaire</p>
+                    <p className="mt-1 font-titan text-xl">Comptable stress → Coach sportif → Styliste → Photographe → retour réseau</p>
+                  </div>
+                  <ul className="mt-3 space-y-1 text-sm font-bold">
+                    <li>• Marges élevées : prestations 500€ à 5 000€.</li>
+                    <li>• Commissions réelles : 10% crée un vrai levier.</li>
+                    <li>• Barrière à l&apos;entrée : 20 métiers inter-dépendants.</li>
+                  </ul>
+                </details>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
+      <section className="py-16 border-b-4 border-[#2E130C] bg-[#D2E8FF]">
+        <div className="container mx-auto px-4">
+          <div className="max-w-6xl mx-auto">
+            <p className="text-xs uppercase tracking-widest font-black text-[#B20B13]">Questions fréquentes</p>
+            <h2 className="mt-3 text-3xl md:text-5xl font-titan">Objections et réponses</h2>
+            <div className="mt-8 space-y-3">
+              {faqItems.map((item) => (
+                <details key={item.q} className="rounded-2xl border-2 border-[#2E130C] bg-white p-5 shadow-[6px_6px_0px_0px_#2E130C]">
+                  <summary className="cursor-pointer font-black">{item.q}</summary>
+                  <p className="mt-3 font-bold text-[#2E130C]/90">{item.a}</p>
+                </details>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
 
       <section id="cta" className="py-20">
         <div className="container mx-auto px-4">
