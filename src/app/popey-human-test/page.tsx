@@ -200,37 +200,63 @@ export default function PopeyHumanTestPage() {
       <section className="relative py-20 border-b-4 border-[#2E130C]">
         <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ backgroundImage: "radial-gradient(#2E130C 1px, transparent 1px)", backgroundSize: "20px 20px" }} />
         <div className="container mx-auto px-4 relative z-10">
-          <div className="max-w-5xl mx-auto text-center">
-            <p className="inline-block text-xs uppercase tracking-widest font-black bg-[#D2E8FF] border-2 border-[#2E130C] rounded-full px-4 py-2">
-              Page test — Vision Popey Academy 100% humaine
-            </p>
-            <h1 className="mt-8 text-4xl md:text-6xl font-titan leading-tight">
-              Cessez de quémander des clients.
-              <br />
-              <span className="text-[#B20B13] underline decoration-wavy">Commencez à orchestrer des actifs.</span>
-            </h1>
-            <p className="mt-6 text-lg md:text-2xl font-bold max-w-4xl mx-auto">
-              Comment transformer un simple partenariat en une machine à 40 000€ de CA additionnel par an grâce à Popey Academy.
-            </p>
-          </div>
-
-          <div className="mt-12 grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-            {[
-              { label: "Mois 1", value: "149€", desc: "Frais d'entrée et preuve de concept." },
-              { label: "Mois 2+", value: "490€ / mois", desc: "Accès à la Sphère des 20 et scalabilité." },
-              { label: "Promesse", value: "Popey Academy", desc: "Networking structuré, traçable, monétisable." },
-            ].map((card) => (
-              <div key={card.label} className="bg-white rounded-3xl border-4 border-[#2E130C] p-6 shadow-[8px_8px_0px_0px_#2E130C]">
-                <p className="text-xs uppercase tracking-widest font-black text-[#B20B13]">{card.label}</p>
-                <p className="text-3xl font-titan mt-2">{card.value}</p>
-                <p className="font-bold mt-2 text-[#2E130C]/80">{card.desc}</p>
+          <div className="max-w-6xl mx-auto grid lg:grid-cols-2 gap-8 items-center">
+            <div>
+              <p className="inline-block text-xs uppercase tracking-widest font-black bg-[#D2E8FF] border-2 border-[#2E130C] rounded-full px-4 py-2">
+                Page test — Vision Popey Academy 100% humaine
+              </p>
+              <h1 className="mt-6 text-4xl md:text-6xl font-titan leading-tight">
+                Cessez de quémander des clients.
+                <br />
+                <span className="text-[#B20B13] underline decoration-wavy">Commencez à orchestrer des actifs.</span>
+              </h1>
+              <p className="mt-6 text-lg md:text-2xl font-bold max-w-2xl">
+                Comment transformer un simple partenariat en une machine à 40 000€ de CA additionnel par an grâce à Popey Academy.
+              </p>
+              <div className="mt-8 flex flex-wrap gap-3">
+                {["Méthode testée", "Structure claire", "Résultats traçables"].map((item) => (
+                  <span key={item} className="rounded-full border-2 border-[#2E130C] bg-white px-4 py-2 text-xs font-black uppercase tracking-wider">
+                    {item}
+                  </span>
+                ))}
               </div>
+            </div>
+            <div className="grid sm:grid-cols-3 gap-4">
+              {[
+                { label: "Mois 1", value: "149€", desc: "Frais d'entrée et preuve de concept." },
+                { label: "Mois 2+", value: "490€", desc: "Accès à la Sphère des 20." },
+                { label: "Promesse", value: "Popey", desc: "Réseau monétisable." },
+              ].map((card) => (
+                <div key={card.label} className="bg-white rounded-3xl border-4 border-[#2E130C] p-5 shadow-[8px_8px_0px_0px_#2E130C] hover:-translate-y-1 transition-transform">
+                  <p className="text-[11px] uppercase tracking-widest font-black text-[#B20B13]">{card.label}</p>
+                  <p className="text-3xl font-titan mt-2">{card.value}</p>
+                  <p className="font-bold mt-2 text-sm text-[#2E130C]/80">{card.desc}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="sticky top-0 z-20 border-b-2 border-[#2E130C] bg-[#E2D9BC]/95 backdrop-blur">
+        <div className="container mx-auto px-4 py-3">
+          <div className="max-w-6xl mx-auto flex flex-wrap gap-2">
+            {[
+              { id: "vision", label: "Vision" },
+              { id: "fondateur", label: "Fondateur" },
+              { id: "method", label: "Mois 1" },
+              { id: "sphere", label: "Sphères" },
+              { id: "cta", label: "Audit" },
+            ].map((item) => (
+              <a key={item.id} href={`#${item.id}`} className="rounded-full border-2 border-[#2E130C] bg-white px-4 py-1.5 text-xs font-black uppercase tracking-wider hover:bg-[#D2E8FF] transition-colors">
+                {item.label}
+              </a>
             ))}
           </div>
         </div>
       </section>
 
-      <section className="py-16 bg-[#D2E8FF] border-b-4 border-[#2E130C]">
+      <section id="vision" className="py-16 bg-[#D2E8FF] border-b-4 border-[#2E130C]">
         <div className="container mx-auto px-4">
           <div className="max-w-6xl mx-auto grid lg:grid-cols-2 gap-8 items-center">
             <div className="bg-white rounded-3xl border-4 border-[#2E130C] p-8 shadow-[8px_8px_0px_0px_#2E130C]">
@@ -255,7 +281,7 @@ export default function PopeyHumanTestPage() {
         </div>
       </section>
 
-      <section className="py-16 border-b-4 border-[#2E130C]">
+      <section id="fondateur" className="py-16 border-b-4 border-[#2E130C]">
         <div className="container mx-auto px-4">
           <div className="max-w-6xl mx-auto grid lg:grid-cols-3 gap-8">
             <div className="bg-white rounded-3xl border-4 border-[#2E130C] p-6 shadow-[8px_8px_0px_0px_#2E130C] h-fit">
@@ -266,44 +292,30 @@ export default function PopeyHumanTestPage() {
               </div>
               <p className="mt-5 font-bold leading-relaxed">7 entreprises pilotées. Même constat à chaque fois : sans système réseau, le CA plafonne.</p>
             </div>
-
             <div className="lg:col-span-2 space-y-6">
               <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
                 {founderProofs.map((proof) => (
-                  <div key={proof.label} className="rounded-2xl border-2 border-[#2E130C] bg-[#D2E8FF] p-4 text-center">
+                  <div key={proof.label} className="rounded-2xl border-2 border-[#2E130C] bg-[#D2E8FF] p-4 text-center hover:scale-[1.02] transition-transform">
                     <p className="text-3xl font-titan text-[#B20B13]">{proof.value}</p>
                     <p className="text-[11px] uppercase tracking-widest font-black mt-1">{proof.label}</p>
                   </div>
                 ))}
               </div>
-
               <div className="rounded-3xl border-4 border-[#2E130C] bg-white p-6 shadow-[8px_8px_0px_0px_#2E130C]">
                 <p className="text-sm font-black uppercase tracking-widest text-[#B20B13]">Preuve rapide</p>
                 <p className="mt-2 font-bold">De Bangkok à Dubaï puis Bordeaux : retail, restauration et apps. La solution Popey est née du terrain, pas d&apos;une théorie.</p>
                 <div className="mt-4 space-y-2">
                   <details className="rounded-xl border-2 border-[#2E130C] bg-[#E2D9BC] px-4 py-3">
                     <summary className="cursor-pointer font-black">Voir les 7 entreprises</summary>
-                    <ul className="mt-3 space-y-2 text-sm font-bold">
-                      {ventures.map((venture) => (
-                        <li key={venture}>{venture}</li>
-                      ))}
-                    </ul>
+                    <ul className="mt-3 space-y-2 text-sm font-bold">{ventures.map((venture) => <li key={venture}>{venture}</li>)}</ul>
                   </details>
                   <details className="rounded-xl border-2 border-[#2E130C] bg-[#E2D9BC] px-4 py-3">
                     <summary className="cursor-pointer font-black">Voir les repères clés</summary>
-                    <ul className="mt-3 space-y-2 text-sm font-bold">
-                      {founderMilestones.map((milestone) => (
-                        <li key={milestone}>{milestone}</li>
-                      ))}
-                    </ul>
+                    <ul className="mt-3 space-y-2 text-sm font-bold">{founderMilestones.map((milestone) => <li key={milestone}>{milestone}</li>)}</ul>
                   </details>
                   <details className="rounded-xl border-2 border-[#2E130C] bg-[#E2D9BC] px-4 py-3">
                     <summary className="cursor-pointer font-black">Voir les apprentissages produit</summary>
-                    <ul className="mt-3 space-y-2 text-sm font-bold">
-                      {productLearnings.map((learning) => (
-                        <li key={learning}>{learning}</li>
-                      ))}
-                    </ul>
+                    <ul className="mt-3 space-y-2 text-sm font-bold">{productLearnings.map((learning) => <li key={learning}>{learning}</li>)}</ul>
                   </details>
                 </div>
               </div>
@@ -313,22 +325,23 @@ export default function PopeyHumanTestPage() {
       </section>
 
       {sections.map((section) => (
-        <section key={section.id} className="py-16 border-b-4 border-[#2E130C]">
+        <section key={section.id} id={section.id} className="py-16 border-b-4 border-[#2E130C]">
           <div className="container mx-auto px-4">
-            <div className="max-w-6xl mx-auto grid lg:grid-cols-2 gap-8 items-center">
+            <div className="max-w-6xl mx-auto space-y-6">
               <div className="bg-white rounded-3xl border-4 border-[#2E130C] p-8 shadow-[8px_8px_0px_0px_#2E130C]">
                 <p className="text-xs uppercase tracking-widest font-black text-[#B20B13]">{section.title}</p>
                 <h2 className="mt-4 text-3xl md:text-5xl font-titan leading-tight">{section.heading}</h2>
-                <div className="mt-6 space-y-3">
+                <div className="mt-6 grid gap-3 md:grid-cols-2">
                   {section.paragraphs.map((paragraph) => (
                     <p key={paragraph} className="font-bold leading-relaxed text-[#2E130C]/90">{paragraph}</p>
                   ))}
                 </div>
+
                 {section.id === "method" && (
                   <>
-                    <div className="mt-6 grid sm:grid-cols-2 gap-3">
+                    <div className="mt-6 grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
                       {methodTimeline.map((item) => (
-                        <div key={item.step} className={cn("rounded-2xl border-2 border-[#2E130C] p-4", item.color)}>
+                        <div key={item.step} className={cn("rounded-2xl border-2 border-[#2E130C] p-4 hover:-translate-y-1 transition-transform", item.color)}>
                           <div className="flex items-center justify-between gap-3">
                             <span className="text-xs font-black uppercase tracking-widest text-[#B20B13]">{item.step}</span>
                             <span className="text-[11px] font-black bg-white border border-[#2E130C] rounded-full px-2 py-1">{item.metrics}</span>
@@ -346,6 +359,7 @@ export default function PopeyHumanTestPage() {
                     </div>
                   </>
                 )}
+
                 {section.id === "sphere" && (
                   <div className="mt-6 space-y-4">
                     <details open className="rounded-2xl border-2 border-[#2E130C] bg-[#E2D9BC] p-4">
@@ -363,7 +377,6 @@ export default function PopeyHumanTestPage() {
                         <p className="mt-1 font-titan text-xl">Vente immo → 5 à 10 contrats satellites</p>
                       </div>
                     </details>
-
                     <details className="rounded-2xl border-2 border-[#2E130C] bg-[#D2E8FF] p-4">
                       <summary className="cursor-pointer font-black text-[#B20B13]">Exemple 2 — Sphère Bien-être & Santé</summary>
                       <div className="mt-4 grid sm:grid-cols-2 gap-3">
@@ -386,26 +399,28 @@ export default function PopeyHumanTestPage() {
                     </details>
                   </div>
                 )}
+
                 {section.bullets && section.id !== "method" && section.id !== "sphere" && (
-                  <ul className="mt-6 space-y-2">
+                  <ul className="mt-6 grid md:grid-cols-2 gap-3">
                     {section.bullets.map((bullet) => (
-                      <li key={bullet} className="flex items-start gap-2 font-bold">
-                        <span className="text-[#B20B13] mt-1">◆</span>
-                        <span>{bullet}</span>
+                      <li key={bullet} className="rounded-xl border-2 border-[#2E130C] bg-[#E2D9BC] px-4 py-3 font-bold">
+                        {bullet}
                       </li>
                     ))}
                   </ul>
                 )}
               </div>
-              <div className="rounded-3xl overflow-hidden border-4 border-[#2E130C] shadow-[8px_8px_0px_0px_#2E130C]">
-                <img src={section.image} alt={section.heading} className="w-full h-[430px] object-cover" />
-              </div>
+              {section.id !== "method" && section.id !== "sphere" && (
+                <div className="rounded-3xl overflow-hidden border-4 border-[#2E130C] shadow-[8px_8px_0px_0px_#2E130C]">
+                  <img src={section.image} alt={section.heading} className="w-full h-[360px] object-cover" />
+                </div>
+              )}
             </div>
           </div>
         </section>
       ))}
 
-      <section className="py-20">
+      <section id="cta" className="py-20">
         <div className="container mx-auto px-4">
           <div className="max-w-5xl mx-auto bg-[#2E130C] text-[#E2D9BC] rounded-[2.5rem] border-4 border-[#B20B13] p-8 md:p-12 shadow-[10px_10px_0px_0px_#7A0000] text-center">
             <p className="text-xs uppercase tracking-widest font-black text-[#D2E8FF]">Audit d&apos;entrée</p>
