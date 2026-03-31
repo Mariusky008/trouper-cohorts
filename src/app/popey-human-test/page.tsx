@@ -392,6 +392,70 @@ export default function PopeyHumanTestPage() {
         </div>
       </section>
 
+      <section className="py-16 border-b-4 border-[#2E130C]">
+        <div className="container mx-auto px-4">
+          <div className="max-w-6xl mx-auto bg-white rounded-3xl border-4 border-[#2E130C] p-6 md:p-8 shadow-[8px_8px_0px_0px_#2E130C]">
+            <p className="text-xs uppercase tracking-widest font-black text-[#B20B13]">L&apos;écosystème macro</p>
+            <h2 className="mt-3 text-3xl md:text-5xl font-titan">Les sphères de 20 autour du client cible.</h2>
+            <p className="mt-3 text-lg font-bold max-w-4xl">
+              Un seul représentant par métier. Zéro concurrence interne. Un flux de recommandations qui tourne en continu autour du même client.
+            </p>
+            <div className="mt-6 rounded-2xl border-2 border-[#2E130C] bg-[#E2D9BC] p-4">
+              <div className="relative aspect-square md:aspect-[16/10] w-full overflow-hidden rounded-xl border-2 border-[#2E130C] bg-white">
+                <svg viewBox="0 0 100 100" className="absolute inset-0 h-full w-full">
+                  <circle cx="50" cy="50" r="36" fill="none" stroke="#2E130C" strokeOpacity="0.18" strokeWidth="0.45" strokeDasharray="1.8 1.8" />
+                  {macroNodes.map((node) => (
+                    <line key={`l-${node.id}`} x1="50" y1="50" x2={node.x} y2={node.y} stroke="#2E130C" strokeOpacity="0.1" strokeWidth="0.25" />
+                  ))}
+                </svg>
+                <div className="absolute inset-0 animate-spin" style={{ animationDuration: "34s" }}>
+                  {macroNodes.map((node) => (
+                    <div
+                      key={node.id}
+                      className="absolute -translate-x-1/2 -translate-y-1/2"
+                      style={{ left: `${node.x}%`, top: `${node.y}%` }}
+                    >
+                      <div className={cn("h-3.5 w-3.5 md:h-4 md:w-4 rounded-full border border-[#2E130C] shadow-sm", selectedRole?.id === node.id ? "bg-[#B20B13]" : "bg-[#2E130C]")} />
+                    </div>
+                  ))}
+                </div>
+                <div className="absolute left-1/2 top-1/2 h-24 w-24 md:h-36 md:w-36 -translate-x-1/2 -translate-y-1/2 rounded-full border-4 border-[#2E130C] bg-[#2E130C] text-[#E2D9BC] flex items-center justify-center text-center px-3 animate-pulse">
+                  <p className="font-titan text-lg md:text-2xl leading-tight">Le client cible</p>
+                </div>
+                <div className="absolute bottom-3 left-3 right-3 hidden md:flex flex-wrap gap-2 justify-center">
+                  {macroNodes.slice(0, 8).map((node) => (
+                    <span key={`lg-${node.id}`} className={cn("rounded-full border px-2 py-1 text-[10px] font-black", selectedRole?.id === node.id ? "border-[#B20B13] bg-[#B20B13] text-[#E2D9BC]" : "border-[#2E130C] bg-white")}>
+                      {node.name}
+                    </span>
+                  ))}
+                </div>
+              </div>
+              <div className="mt-3 md:hidden grid grid-cols-2 gap-2">
+                {macroNodes.map((node) => (
+                  <div key={`sm-${node.id}`} className={cn("rounded-lg border px-2 py-1 text-[11px] font-black leading-tight", selectedRole?.id === node.id ? "border-[#B20B13] bg-[#B20B13] text-[#E2D9BC]" : "border-[#2E130C] bg-white")}>
+                    {node.name}
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="mt-4 grid md:grid-cols-3 gap-3">
+              <div className="rounded-xl border-2 border-[#2E130C] bg-[#D2E8FF] p-3">
+                <p className="text-xs uppercase tracking-widest font-black text-[#B20B13]">Règle 1</p>
+                <p className="mt-1 text-sm font-bold">1 seul représentant par métier pour éviter toute collision commerciale.</p>
+              </div>
+              <div className="rounded-xl border-2 border-[#2E130C] bg-[#E2D9BC] p-3">
+                <p className="text-xs uppercase tracking-widest font-black text-[#B20B13]">Règle 2</p>
+                <p className="mt-1 text-sm font-bold">Chaque métier nourrit le suivant avec un apport d&apos;affaire qualifié.</p>
+              </div>
+              <div className="rounded-xl border-2 border-[#2E130C] bg-[#F8D7DA] p-3">
+                <p className="text-xs uppercase tracking-widest font-black text-[#B20B13]">Règle 3</p>
+                <p className="mt-1 text-sm font-bold">Le client reste au centre, la valeur tourne en cercle et devient récurrente.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <section className="py-16 border-b-4 border-[#2E130C] bg-[#D2E8FF]">
         <div className="container mx-auto px-4">
           <div className="max-w-6xl mx-auto">
@@ -436,50 +500,6 @@ export default function PopeyHumanTestPage() {
               <p className="mt-1 text-sm font-bold">
                 Votre objectif est clair : combler {deltaRevenue.toLocaleString("fr-FR")}€ / mois. La suite de la page vous montre, métier par métier, comment y arriver concrètement.
               </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="py-16 border-b-4 border-[#2E130C]">
-        <div className="container mx-auto px-4">
-          <div className="max-w-6xl mx-auto bg-white rounded-3xl border-4 border-[#2E130C] p-6 md:p-8 shadow-[8px_8px_0px_0px_#2E130C]">
-            <p className="text-xs uppercase tracking-widest font-black text-[#B20B13]">L&apos;écosystème macro</p>
-            <h2 className="mt-3 text-3xl md:text-5xl font-titan">Les sphères de 20 autour d&apos;un même client cible.</h2>
-            <p className="mt-3 text-lg font-bold max-w-4xl">
-              On ne crée pas juste des binômes. On construit un QG fermé de 20 métiers non concurrents, tous connectés au même type de client.
-            </p>
-            <div className="mt-6 rounded-2xl border-2 border-[#2E130C] bg-[#E2D9BC] p-4">
-              <div className="relative aspect-[16/10] w-full overflow-hidden rounded-xl border-2 border-[#2E130C] bg-white">
-                <div className="absolute inset-[12%] rounded-full border-2 border-dashed border-[#2E130C]/40" />
-                <div className="absolute left-1/2 top-1/2 h-36 w-36 -translate-x-1/2 -translate-y-1/2 rounded-full border-4 border-[#2E130C] bg-[#2E130C] text-[#E2D9BC] flex items-center justify-center text-center px-4">
-                  <p className="font-titan text-2xl leading-tight">Le client cible</p>
-                </div>
-                {macroNodes.map((node) => (
-                  <div
-                    key={node.id}
-                    className="absolute -translate-x-1/2 -translate-y-1/2"
-                    style={{ left: `${node.x}%`, top: `${node.y}%` }}
-                  >
-                    <div className="h-5 w-5 rounded-full border border-[#2E130C] bg-[#B20B13]" />
-                    <p className="mt-1 hidden md:block text-[10px] font-black whitespace-nowrap">{node.name}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-            <div className="mt-4 grid md:grid-cols-3 gap-3">
-              <div className="rounded-xl border-2 border-[#2E130C] bg-[#D2E8FF] p-3">
-                <p className="text-xs uppercase tracking-widest font-black text-[#B20B13]">Règle 1</p>
-                <p className="mt-1 text-sm font-bold">1 seul représentant par métier : zéro concurrence interne.</p>
-              </div>
-              <div className="rounded-xl border-2 border-[#2E130C] bg-[#E2D9BC] p-3">
-                <p className="text-xs uppercase tracking-widest font-black text-[#B20B13]">Règle 2</p>
-                <p className="mt-1 text-sm font-bold">Des recommandations circulaires et traçables à chaque étape du parcours client.</p>
-              </div>
-              <div className="rounded-xl border-2 border-[#2E130C] bg-[#F8D7DA] p-3">
-                <p className="text-xs uppercase tracking-widest font-black text-[#B20B13]">Règle 3</p>
-                <p className="mt-1 text-sm font-bold">Objectif : transformer un client unique en plusieurs contrats utiles pour toute la sphère.</p>
-              </div>
             </div>
           </div>
         </div>
