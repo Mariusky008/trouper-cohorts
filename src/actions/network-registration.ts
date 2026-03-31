@@ -23,7 +23,7 @@ export async function registerNetworkUser(formData: FormData) {
   const receiveProfileStr = formData.get("receive_profile") as string;
 
   let giveProfile = {};
-  let receiveProfile: any = {};
+  let receiveProfile: Record<string, unknown> = {};
   const allowedResponseDelays = [1, 3, 6, 12];
   const whatsappResponseDelayHours = Number(whatsappResponseDelayHoursRaw);
 
@@ -86,6 +86,7 @@ export async function registerNetworkUser(formData: FormData) {
     city,
     trade,
     phone,
+    whatsapp_response_delay_hours: whatsappResponseDelayHours,
     give_profile: giveProfile,
     receive_profile: receiveProfile,
     role: 'member'
