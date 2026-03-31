@@ -334,9 +334,9 @@ export default function PopeyHumanTestPage() {
         <div className="container mx-auto px-4">
           <div className="max-w-6xl mx-auto bg-white rounded-3xl border-4 border-[#2E130C] p-6 md:p-8 shadow-[8px_8px_0px_0px_#2E130C]">
             <p className="text-xs uppercase tracking-widest font-black text-[#B20B13]">L&apos;écosystème macro</p>
-            <h2 className="mt-3 text-3xl md:text-5xl font-titan">Les sphères de 20 autour du client cible.</h2>
+            <h2 className="mt-3 text-3xl md:text-5xl font-titan">Les 20 métiers complémentaires autour du client cible.</h2>
             <p className="mt-3 text-lg font-bold max-w-4xl">
-              Un seul représentant par métier. Zéro concurrence interne. Un flux de recommandations qui tourne en continu autour du même client.
+              Un seul représentant par métier. Zéro concurrence interne. Un flux de recommandations qui tourne en continu autour du même client. Imaginez maintenant avec 100 clients !
             </p>
             <div className="mt-6 rounded-2xl border-2 border-[#2E130C] bg-[#E2D9BC] p-4">
               <div className="relative aspect-square md:aspect-[16/10] w-full overflow-hidden rounded-xl border-2 border-[#2E130C] bg-white">
