@@ -155,7 +155,7 @@ export default function PopeyHumanTestPage() {
     () =>
       allHeritageRoles.map((role, index) => {
         const angle = (index / allHeritageRoles.length) * Math.PI * 2 - Math.PI / 2;
-        const radius = 42;
+        const radius = 38;
         return {
           ...role,
           x: 50 + Math.cos(angle) * radius,
@@ -164,9 +164,15 @@ export default function PopeyHumanTestPage() {
       }),
     [allHeritageRoles],
   );
+  const macroOrbitNodes = useMemo(() => {
+    if (!macroNodes.length) return [];
+    const slots = 8;
+    const sampled = Array.from({ length: slots }, (_, slot) => macroNodes[Math.floor((slot * macroNodes.length) / slots)]);
+    return sampled.filter((node, index) => sampled.findIndex((candidate) => candidate.id === node.id) === index);
+  }, [macroNodes]);
   const [activeMacroIndex, setActiveMacroIndex] = useState(0);
-  const activeMacroNode = macroNodes[activeMacroIndex % Math.max(macroNodes.length, 1)];
-  const nextMacroNode = macroNodes[(activeMacroIndex + 1) % Math.max(macroNodes.length, 1)];
+  const activeMacroNode = macroOrbitNodes[activeMacroIndex % Math.max(macroOrbitNodes.length, 1)];
+  const transferMode = activeMacroIndex % 2 === 0 ? "message" : "call";
   const getRoleSymbol = (name: string) =>
     name
       .split(/[\s/&-]+/)
@@ -182,12 +188,12 @@ export default function PopeyHumanTestPage() {
   }, [networkRevenue, targetRevenue]);
 
   useEffect(() => {
-    if (!macroNodes.length) return;
+    if (!macroOrbitNodes.length) return;
     const timer = window.setInterval(() => {
-      setActiveMacroIndex((prev) => (prev + 1) % macroNodes.length);
-    }, 1700);
+      setActiveMacroIndex((prev) => (prev + 1) % macroOrbitNodes.length);
+    }, 1900);
     return () => window.clearInterval(timer);
-  }, [macroNodes.length]);
+  }, [macroOrbitNodes.length]);
 
   const faqItems = [
     {
@@ -333,27 +339,36 @@ export default function PopeyHumanTestPage() {
             <div className="mt-6 rounded-2xl border-2 border-[#2E130C] bg-[#E2D9BC] p-4">
               <div className="relative aspect-square md:aspect-[16/10] w-full overflow-hidden rounded-xl border-2 border-[#2E130C] bg-white">
                 <svg viewBox="0 0 100 100" className="absolute inset-0 h-full w-full">
-                  <circle cx="50" cy="50" r="22" fill="none" stroke="#2E130C" strokeOpacity="0.12" strokeWidth="0.35" />
-                  <circle cx="50" cy="50" r="36" fill="none" stroke="#2E130C" strokeOpacity="0.22" strokeWidth="0.45" strokeDasharray="1.8 1.8" />
-                  <circle cx="50" cy="50" r="44" fill="none" stroke="#2E130C" strokeOpacity="0.12" strokeWidth="0.25" />
-                  {macroNodes.map((node) => (
-                    <line key={`l-${node.id}`} x1="50" y1="50" x2={node.x} y2={node.y} stroke="#2E130C" strokeOpacity={activeMacroNode?.id === node.id ? "0.55" : "0.12"} strokeWidth={activeMacroNode?.id === node.id ? "0.55" : "0.25"} />
+                  <defs>
+                    <marker id="macroArrow" markerWidth="4" markerHeight="4" refX="3.4" refY="2" orient="auto">
+                      <path d="M0,0 L4,2 L0,4 Z" fill="#2E130C" />
+                    </marker>
+                  </defs>
+                  <circle cx="50" cy="50" r="22" fill="none" stroke="#2E130C" strokeOpacity="0.1" strokeWidth="0.3" />
+                  <circle cx="50" cy="50" r="36" fill="none" stroke="#2E130C" strokeOpacity="0.18" strokeWidth="0.45" strokeDasharray="1.5 1.5" />
+                  {macroOrbitNodes.map((node) => (
+                    <line key={`l-${node.id}`} x1="50" y1="50" x2={node.x} y2={node.y} stroke="#2E130C" strokeOpacity={activeMacroNode?.id === node.id ? "0.9" : "0.2"} strokeWidth={activeMacroNode?.id === node.id ? "0.7" : "0.3"} />
                   ))}
-                  {activeMacroNode && nextMacroNode && (
-                    <line
-                      x1={activeMacroNode.x}
-                      y1={activeMacroNode.y}
-                      x2={nextMacroNode.x}
-                      y2={nextMacroNode.y}
-                      stroke="#B20B13"
-                      strokeOpacity="0.55"
-                      strokeWidth="0.42"
-                      strokeDasharray="1.4 1.2"
-                    />
-                  )}
+                  {macroOrbitNodes.map((node, index) => {
+                    const target = macroOrbitNodes[(index + 1) % macroOrbitNodes.length];
+                    const highlighted = activeMacroNode?.id === node.id;
+                    return (
+                      <line
+                        key={`cycle-${node.id}`}
+                        x1={node.x}
+                        y1={node.y}
+                        x2={target?.x}
+                        y2={target?.y}
+                        stroke={highlighted ? "#B20B13" : "#2E130C"}
+                        strokeOpacity={highlighted ? "0.75" : "0.26"}
+                        strokeWidth={highlighted ? "0.52" : "0.26"}
+                        markerEnd="url(#macroArrow)"
+                      />
+                    );
+                  })}
                 </svg>
                 <div className="absolute inset-0">
-                  {macroNodes.map((node) => (
+                  {macroOrbitNodes.map((node) => (
                     <button
                       key={node.id}
                       type="button"
@@ -361,7 +376,7 @@ export default function PopeyHumanTestPage() {
                       className="absolute -translate-x-1/2 -translate-y-1/2 group"
                       style={{ left: `${node.x}%`, top: `${node.y}%` }}
                     >
-                      <div className={cn("h-10 w-10 md:h-11 md:w-11 rounded-full border-2 flex items-center justify-center text-[11px] md:text-xs font-black transition-all", activeMacroNode?.id === node.id ? "border-[#B20B13] bg-[#B20B13] text-[#E2D9BC] scale-110 shadow-[0_0_0_4px_rgba(178,11,19,0.22)]" : selectedRole?.id === node.id ? "border-[#2E130C] bg-[#2E130C] text-[#E2D9BC]" : "border-[#2E130C] bg-white text-[#2E130C] group-hover:bg-[#D2E8FF]")}>
+                      <div className={cn("h-12 w-12 md:h-14 md:w-14 rounded-full border-2 flex items-center justify-center text-[11px] md:text-xs font-black transition-all", activeMacroNode?.id === node.id ? "border-[#B20B13] bg-[#B20B13] text-[#E2D9BC] scale-110 shadow-[0_0_0_5px_rgba(178,11,19,0.22)]" : selectedRole?.id === node.id ? "border-[#2E130C] bg-[#2E130C] text-[#E2D9BC]" : "border-[#2E130C] bg-white text-[#2E130C] group-hover:bg-[#D2E8FF]")}>
                         {getRoleSymbol(node.name)}
                       </div>
                     </button>
@@ -370,12 +385,12 @@ export default function PopeyHumanTestPage() {
                 {activeMacroNode && (
                   <div className="absolute h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-[#2E130C] bg-[#B20B13] shadow-[0_0_0_4px_rgba(178,11,19,0.22)] transition-all duration-700" style={{ left: `${activeMacroNode.x}%`, top: `${activeMacroNode.y}%` }} />
                 )}
-                <div className="absolute left-1/2 top-1/2 h-24 w-24 md:h-36 md:w-36 -translate-x-1/2 -translate-y-1/2 rounded-full border-4 border-[#2E130C] bg-[#2E130C] text-[#E2D9BC] flex items-center justify-center text-center px-3 animate-pulse">
-                  <p className="font-titan text-lg md:text-2xl leading-tight">Le client cible</p>
+                <div className="absolute left-1/2 top-1/2 h-24 w-24 md:h-32 md:w-32 -translate-x-1/2 -translate-y-1/2 rounded-full border-4 border-[#2E130C] bg-[#2E130C] text-[#E2D9BC] flex items-center justify-center text-center px-3 animate-pulse">
+                  <p className="font-titan text-lg md:text-2xl leading-tight">Client</p>
                 </div>
                 <div className="absolute bottom-3 left-3 right-3 hidden md:flex items-center justify-center">
-                  <div className="rounded-full border-2 border-[#2E130C] bg-[#E2D9BC] px-4 py-2 text-xs font-black">
-                    Parcours client en cours : {activeMacroNode?.name}
+                  <div className="rounded-full border-2 border-[#2E130C] bg-[#E2D9BC] px-4 py-2 text-xs font-black text-center">
+                    {transferMode === "message" ? "Message envoyé au client" : "Numéro transmis pour appel"} → {activeMacroNode?.name}
                   </div>
                 </div>
               </div>
