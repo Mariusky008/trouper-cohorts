@@ -74,12 +74,11 @@ const sections = [
   },
   {
     id: "sphere",
-    title: "SECTION 5 — LA SPHÈRE « PATRIMOINE & ART DE VIVRE » (20 PILIERS)",
-    heading: "Mois 2+ : ce n'est plus un binôme. C'est un écosystème qui capte tout le flux d'investissement local.",
+    title: "SECTION 5 — 2 SPHÈRES EXEMPLES (CLIQUABLES)",
+    heading: "Mois 2+ : choisissez une sphère et voyez immédiatement le mécanisme.",
     paragraphs: [
-      "Exemple concret : une sphère premium où chaque métier alimente le suivant, de la transaction immobilière jusqu'à l'intendance du quotidien.",
-      "Le mécanisme Popey : chaque vente immobilière déclenche 5 à 10 contrats potentiels dans la sphère (travaux, cuisine, domotique, art, conciergerie...).",
-      "Le vrai enjeu n'est pas d'avoir plus de contacts. C'est d'installer la tuyauterie économique qui fait circuler l'argent entre les 20 piliers.",
+      "Chaque sphère regroupe 20 métiers complémentaires, organisée en 4 clusters.",
+      "Le principe est simple : une entrée client déclenche une chaîne de contrats dans tout l'écosystème.",
     ],
     bullets: [
       "Cluster 1 — Transaction & Finance : chasseur immo de luxe, courtier private banking, CGP, avocat fiscaliste, assureur objets de valeur.",
@@ -176,6 +175,25 @@ const sphereClusters = [
   },
 ];
 
+const wellnessClusters = [
+  {
+    title: "Cluster 1 — Corps (Noyau dur)",
+    roles: "Coach sportif, Nutritionniste, Ostéopathe, Drainage/Massage sportif, Sommeil/Bio-hacking",
+  },
+  {
+    title: "Cluster 2 — Mindset & Mental",
+    roles: "Coach de vie, Hypnothérapeute, Psychologue du travail, Yoga/Pilates",
+  },
+  {
+    title: "Cluster 3 — Image & Apparence",
+    roles: "Coach en image, Esthétique high-tech, Coiffeur visagiste, Photographe, Dentiste esthétique",
+  },
+  {
+    title: "Cluster 4 — Lifestyle & Business",
+    roles: "Expert-comptable, CGP, Agent immobilier, Chef à domicile, Conciergerie, Coach charisme",
+  },
+];
+
 export default function PopeyHumanTestPage() {
   return (
     <main className={cn("min-h-screen bg-[#E2D9BC] text-[#2E130C] overflow-hidden", titanOne.variable, pacifico.variable, poppins.variable, "font-poppins")}>
@@ -192,7 +210,7 @@ export default function PopeyHumanTestPage() {
               <span className="text-[#B20B13] underline decoration-wavy">Commencez à orchestrer des actifs.</span>
             </h1>
             <p className="mt-6 text-lg md:text-2xl font-bold max-w-4xl mx-auto">
-              Comment transformer un simple partenariat en une machine à 40 000€ de CA additionnel par an grâce au modèle Monthly Synergy™.
+              Comment transformer un simple partenariat en une machine à 40 000€ de CA additionnel par an grâce à Popey Academy.
             </p>
           </div>
 
@@ -200,7 +218,7 @@ export default function PopeyHumanTestPage() {
             {[
               { label: "Mois 1", value: "149€", desc: "Frais d'entrée et preuve de concept." },
               { label: "Mois 2+", value: "490€ / mois", desc: "Accès à la Sphère des 20 et scalabilité." },
-              { label: "Promesse", value: "Monthly Synergy™", desc: "Networking structuré, traçable, monétisable." },
+              { label: "Promesse", value: "Popey Academy", desc: "Networking structuré, traçable, monétisable." },
             ].map((card) => (
               <div key={card.label} className="bg-white rounded-3xl border-4 border-[#2E130C] p-6 shadow-[8px_8px_0px_0px_#2E130C]">
                 <p className="text-xs uppercase tracking-widest font-black text-[#B20B13]">{card.label}</p>
@@ -221,9 +239,14 @@ export default function PopeyHumanTestPage() {
               <p className="mt-4 text-lg font-bold leading-relaxed">
                 Les coachs, nutritionnistes, agents immo et experts terrain saturent parce qu&apos;ils vendent leur temps à l&apos;unité et chassent des leads froids.
               </p>
-              <p className="mt-3 text-lg font-bold leading-relaxed">
-                Popey Academy transforme ce chaos en système d&apos;exécution : deux métiers complémentaires, une offre commune, des audiences activées, un tunnel court, un revenu traçable.
-              </p>
+              <p className="mt-3 text-lg font-bold leading-relaxed">Popey Academy transforme ce chaos en système d&apos;exécution :</p>
+              <ul className="mt-2 space-y-1 text-lg font-bold leading-relaxed">
+                <li>- deux métiers complémentaires,</li>
+                <li>- une offre commune,</li>
+                <li>- des audiences activées,</li>
+                <li>- un tunnel court,</li>
+                <li>- un revenu traçable.</li>
+              </ul>
             </div>
             <div className="rounded-3xl overflow-hidden border-4 border-[#2E130C] shadow-[8px_8px_0px_0px_#2E130C]">
               <img src="https://images.unsplash.com/photo-1551434678-e076c223a692?q=80&w=1600&auto=format&fit=crop" alt="Équipe Popey en session stratégique" className="w-full h-[430px] object-cover" />
@@ -236,8 +259,8 @@ export default function PopeyHumanTestPage() {
         <div className="container mx-auto px-4">
           <div className="max-w-6xl mx-auto grid lg:grid-cols-3 gap-8">
             <div className="bg-white rounded-3xl border-4 border-[#2E130C] p-6 shadow-[8px_8px_0px_0px_#2E130C] h-fit">
-              <p className="text-xs uppercase tracking-widest font-black text-[#B20B13]">Fondateur</p>
-              <h2 className="text-3xl font-titan mt-3">Jean-Philippe Roth</h2>
+              <p className="text-xs uppercase tracking-widest font-black text-[#B20B13]">Qu&apos;est derrière Popey Academy</p>
+              <h2 className="text-3xl font-titan mt-3">Fondateur Jean-Philippe Roth</h2>
               <div className="mt-5 rounded-2xl overflow-hidden border-4 border-[#2E130C]">
                 <img src="/jeanphilipperoth.jpg" alt="Jean-Philippe Roth — Popey Academy" className="w-full h-[320px] object-cover" />
               </div>
@@ -302,36 +325,65 @@ export default function PopeyHumanTestPage() {
                   ))}
                 </div>
                 {section.id === "method" && (
-                  <div className="mt-6 grid sm:grid-cols-2 gap-3">
-                    {methodTimeline.map((item) => (
-                      <div key={item.step} className={cn("rounded-2xl border-2 border-[#2E130C] p-4", item.color)}>
-                        <div className="flex items-center justify-between gap-3">
-                          <span className="text-xs font-black uppercase tracking-widest text-[#B20B13]">{item.step}</span>
-                          <span className="text-[11px] font-black bg-white border border-[#2E130C] rounded-full px-2 py-1">{item.metrics}</span>
-                        </div>
-                        <p className="mt-2 font-titan text-xl leading-tight">{item.title}</p>
-                        <p className="mt-2 text-sm font-bold text-[#2E130C]/90">{item.detail}</p>
-                      </div>
-                    ))}
-                  </div>
-                )}
-                {section.id === "sphere" && (
-                  <div className="mt-6 space-y-4">
-                    <div className="grid sm:grid-cols-2 gap-3">
-                      {sphereClusters.map((cluster) => (
-                        <div key={cluster.title} className="rounded-2xl border-2 border-[#2E130C] bg-[#D2E8FF]/40 p-4">
-                          <p className="text-sm font-black text-[#B20B13]">{cluster.title}</p>
-                          <p className="mt-2 text-sm font-bold leading-relaxed">{cluster.roles}</p>
+                  <>
+                    <div className="mt-6 grid sm:grid-cols-2 gap-3">
+                      {methodTimeline.map((item) => (
+                        <div key={item.step} className={cn("rounded-2xl border-2 border-[#2E130C] p-4", item.color)}>
+                          <div className="flex items-center justify-between gap-3">
+                            <span className="text-xs font-black uppercase tracking-widest text-[#B20B13]">{item.step}</span>
+                            <span className="text-[11px] font-black bg-white border border-[#2E130C] rounded-full px-2 py-1">{item.metrics}</span>
+                          </div>
+                          <p className="mt-2 font-titan text-xl leading-tight">{item.title}</p>
+                          <p className="mt-2 text-sm font-bold text-[#2E130C]/90">{item.detail}</p>
                         </div>
                       ))}
                     </div>
-                    <div className="rounded-2xl border-2 border-[#2E130C] bg-[#2E130C] text-[#E2D9BC] p-4">
-                      <p className="text-xs uppercase tracking-widest font-black text-[#D2E8FF]">Ligne de flux Popey</p>
-                      <p className="mt-2 font-titan text-2xl">Vente immo → 5 à 10 contrats satellites</p>
-                      <p className="mt-2 text-sm font-bold text-[#E2D9BC]/90">
-                        Transaction initiale → Travaux → Cuisine → Domotique → Art de vivre → Intendance. Une seule entrée alimente toute la sphère.
-                      </p>
+                    <div className="mt-4 rounded-2xl border-2 border-[#2E130C] bg-[#2E130C] text-[#E2D9BC] p-4">
+                      <p className="text-xs uppercase tracking-widest font-black text-[#D2E8FF]">Fin du Mois 1 — Projection de gains</p>
+                      <p className="mt-2 font-titan text-xl">3 clients closés = 1 800€ immédiats</p>
+                      <p className="mt-1 font-bold text-sm text-[#E2D9BC]/90">+ potentiel de 3 clients à 25 000€ chacun = 75 000€ de pipeline.</p>
+                      <p className="mt-1 font-bold text-sm text-[#E2D9BC]/90">Le Mois 1 n&apos;est pas une dépense : c&apos;est une preuve de ROI et un levier de CA futur.</p>
                     </div>
+                  </>
+                )}
+                {section.id === "sphere" && (
+                  <div className="mt-6 space-y-4">
+                    <details open className="rounded-2xl border-2 border-[#2E130C] bg-[#E2D9BC] p-4">
+                      <summary className="cursor-pointer font-black text-[#B20B13]">Exemple 1 — Sphère Patrimoine & Art de vivre</summary>
+                      <div className="mt-4 grid sm:grid-cols-2 gap-3">
+                        {sphereClusters.map((cluster) => (
+                          <div key={cluster.title} className="rounded-2xl border-2 border-[#2E130C] bg-[#D2E8FF]/40 p-4">
+                            <p className="text-sm font-black text-[#B20B13]">{cluster.title}</p>
+                            <p className="mt-2 text-sm font-bold leading-relaxed">{cluster.roles}</p>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="mt-3 rounded-2xl border-2 border-[#2E130C] bg-[#2E130C] text-[#E2D9BC] p-4">
+                        <p className="text-xs uppercase tracking-widest font-black text-[#D2E8FF]">Flux</p>
+                        <p className="mt-1 font-titan text-xl">Vente immo → 5 à 10 contrats satellites</p>
+                      </div>
+                    </details>
+
+                    <details className="rounded-2xl border-2 border-[#2E130C] bg-[#D2E8FF] p-4">
+                      <summary className="cursor-pointer font-black text-[#B20B13]">Exemple 2 — Sphère Bien-être & Santé</summary>
+                      <div className="mt-4 grid sm:grid-cols-2 gap-3">
+                        {wellnessClusters.map((cluster) => (
+                          <div key={cluster.title} className="rounded-2xl border-2 border-[#2E130C] bg-white p-4">
+                            <p className="text-sm font-black text-[#B20B13]">{cluster.title}</p>
+                            <p className="mt-2 text-sm font-bold leading-relaxed">{cluster.roles}</p>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="mt-3 rounded-2xl border-2 border-[#2E130C] bg-[#2E130C] text-[#E2D9BC] p-4">
+                        <p className="text-xs uppercase tracking-widest font-black text-[#D2E8FF]">Flux circulaire</p>
+                        <p className="mt-1 font-titan text-xl">Comptable stress → Coach sportif → Styliste → Photographe → retour réseau</p>
+                      </div>
+                      <ul className="mt-3 space-y-1 text-sm font-bold">
+                        <li>• Marges élevées : prestations 500€ à 5 000€.</li>
+                        <li>• Commissions réelles : 10% crée un vrai levier.</li>
+                        <li>• Barrière à l&apos;entrée : 20 métiers inter-dépendants.</li>
+                      </ul>
+                    </details>
                   </div>
                 )}
                 {section.bullets && section.id !== "method" && section.id !== "sphere" && (
