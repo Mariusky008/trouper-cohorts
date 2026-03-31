@@ -119,6 +119,13 @@ const productLearnings = [
   "Nécessité d'améliorer, pivoter et retester en continu avec des communautés bêta-testeurs.",
 ];
 
+const founderProofs = [
+  { label: "Sociétés dirigées", value: "7" },
+  { label: "CA annuel (Lolypop)", value: "650K€" },
+  { label: "Restaurants pilotés", value: "4" },
+  { label: "Levées de fonds", value: "700K€+" },
+];
+
 const methodTimeline = [
   {
     step: "S1",
@@ -153,19 +160,19 @@ const methodTimeline = [
 const sphereClusters = [
   {
     title: "Cluster 1 — Transaction & Finance",
-    roles: "Chasseur luxe, Courtier private banking, CGP, Fiscaliste, Assureur objets de valeur",
+    roles: "Entrée d'argent, financement, structuration",
   },
   {
     title: "Cluster 2 — Métamorphose du lieu",
-    roles: "Architecte, Maître d'œuvre, Paysagiste/Piscine, Cuisiniste premium, Domotique/Sécurité",
+    roles: "Vision, travaux, cuisine, domotique",
   },
   {
     title: "Cluster 3 — Équipement & Esthétique",
-    roles: "Ébéniste, Art advisor, Hi-fi/Home cinéma, Lighting designer, Antiquaire design",
+    roles: "Sur-mesure, art, ambiance, design",
   },
   {
     title: "Cluster 4 — Intendance & Prestige",
-    roles: "Conciergerie, Chef à domicile, Déménageur premium, Home organizer, Sommelier",
+    roles: "Service récurrent, réception, gestion haut de gamme",
   },
 ];
 
@@ -227,52 +234,55 @@ export default function PopeyHumanTestPage() {
 
       <section className="py-16 border-b-4 border-[#2E130C]">
         <div className="container mx-auto px-4">
-          <div className="max-w-6xl mx-auto grid lg:grid-cols-5 gap-8">
-            <div className="lg:col-span-2 bg-white rounded-3xl border-4 border-[#2E130C] p-6 shadow-[8px_8px_0px_0px_#2E130C] h-fit">
+          <div className="max-w-6xl mx-auto grid lg:grid-cols-3 gap-8">
+            <div className="bg-white rounded-3xl border-4 border-[#2E130C] p-6 shadow-[8px_8px_0px_0px_#2E130C] h-fit">
               <p className="text-xs uppercase tracking-widest font-black text-[#B20B13]">Fondateur</p>
               <h2 className="text-3xl font-titan mt-3">Jean-Philippe Roth</h2>
               <div className="mt-5 rounded-2xl overflow-hidden border-4 border-[#2E130C]">
                 <img src="/jeanphilipperoth.jpg" alt="Jean-Philippe Roth — Popey Academy" className="w-full h-[320px] object-cover" />
               </div>
-              <p className="mt-5 font-bold leading-relaxed">
-                J&apos;ai dirigé 7 entreprises sur des marchés très différents : food, retail, tech, social app et services. À chaque fois, le même problème revenait : le réseau n&apos;était pas structuré, donc le chiffre d&apos;affaires dépendait trop de l&apos;énergie individuelle.
-              </p>
-              <p className="mt-3 font-bold leading-relaxed">
-                Popey Academy vient directement de cette expérience terrain : transformer le networking informel en système d&apos;exécution, pour augmenter durablement le CA des indépendants.
-              </p>
+              <p className="mt-5 font-bold leading-relaxed">7 entreprises pilotées. Même constat à chaque fois : sans système réseau, le CA plafonne.</p>
             </div>
-            <div className="lg:col-span-3 space-y-6">
-              <div className="bg-[#D2E8FF] rounded-3xl border-4 border-[#2E130C] p-6 shadow-[8px_8px_0px_0px_#2E130C]">
-                <h3 className="text-2xl font-titan">Repères clés du parcours</h3>
-                <ul className="mt-5 space-y-3 font-bold">
-                  {founderMilestones.map((milestone) => (
-                    <li key={milestone} className="bg-white rounded-xl border-2 border-[#2E130C] px-4 py-3">
-                      {milestone}
-                    </li>
-                  ))}
-                </ul>
+
+            <div className="lg:col-span-2 space-y-6">
+              <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                {founderProofs.map((proof) => (
+                  <div key={proof.label} className="rounded-2xl border-2 border-[#2E130C] bg-[#D2E8FF] p-4 text-center">
+                    <p className="text-3xl font-titan text-[#B20B13]">{proof.value}</p>
+                    <p className="text-[11px] uppercase tracking-widest font-black mt-1">{proof.label}</p>
+                  </div>
+                ))}
               </div>
 
-              <div className="bg-[#E2D9BC] rounded-3xl border-4 border-[#2E130C] p-6 shadow-[8px_8px_0px_0px_#2E130C]">
-                <h3 className="text-2xl font-titan">Parcours entrepreneurial (7 entreprises)</h3>
-                <ul className="mt-5 space-y-3 font-bold">
-                  {ventures.map((venture) => (
-                    <li key={venture} className="bg-white rounded-xl border-2 border-[#2E130C] px-4 py-3">
-                      {venture}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              <div className="bg-white rounded-3xl border-4 border-[#2E130C] p-6 shadow-[8px_8px_0px_0px_#2E130C]">
-                <h3 className="text-2xl font-titan">Ce que cette expérience apporte à Popey</h3>
-                <ul className="mt-5 space-y-3 font-bold">
-                  {productLearnings.map((learning) => (
-                    <li key={learning} className="rounded-xl border-2 border-[#2E130C] bg-[#D2E8FF]/50 px-4 py-3">
-                      {learning}
-                    </li>
-                  ))}
-                </ul>
+              <div className="rounded-3xl border-4 border-[#2E130C] bg-white p-6 shadow-[8px_8px_0px_0px_#2E130C]">
+                <p className="text-sm font-black uppercase tracking-widest text-[#B20B13]">Preuve rapide</p>
+                <p className="mt-2 font-bold">De Bangkok à Dubaï puis Bordeaux : retail, restauration et apps. La solution Popey est née du terrain, pas d&apos;une théorie.</p>
+                <div className="mt-4 space-y-2">
+                  <details className="rounded-xl border-2 border-[#2E130C] bg-[#E2D9BC] px-4 py-3">
+                    <summary className="cursor-pointer font-black">Voir les 7 entreprises</summary>
+                    <ul className="mt-3 space-y-2 text-sm font-bold">
+                      {ventures.map((venture) => (
+                        <li key={venture}>{venture}</li>
+                      ))}
+                    </ul>
+                  </details>
+                  <details className="rounded-xl border-2 border-[#2E130C] bg-[#E2D9BC] px-4 py-3">
+                    <summary className="cursor-pointer font-black">Voir les repères clés</summary>
+                    <ul className="mt-3 space-y-2 text-sm font-bold">
+                      {founderMilestones.map((milestone) => (
+                        <li key={milestone}>{milestone}</li>
+                      ))}
+                    </ul>
+                  </details>
+                  <details className="rounded-xl border-2 border-[#2E130C] bg-[#E2D9BC] px-4 py-3">
+                    <summary className="cursor-pointer font-black">Voir les apprentissages produit</summary>
+                    <ul className="mt-3 space-y-2 text-sm font-bold">
+                      {productLearnings.map((learning) => (
+                        <li key={learning}>{learning}</li>
+                      ))}
+                    </ul>
+                  </details>
+                </div>
               </div>
             </div>
           </div>
@@ -324,7 +334,7 @@ export default function PopeyHumanTestPage() {
                     </div>
                   </div>
                 )}
-                {section.bullets && (
+                {section.bullets && section.id !== "method" && section.id !== "sphere" && (
                   <ul className="mt-6 space-y-2">
                     {section.bullets.map((bullet) => (
                       <li key={bullet} className="flex items-start gap-2 font-bold">
