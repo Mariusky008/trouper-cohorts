@@ -240,8 +240,8 @@ export default function PopeyHumanTestPage() {
               Comment transformer un simple partenariat en machine à 40 000€ de CA additionnel par an grâce à Popey Academy.
             </p>
           </div>
-          <div className="mt-10 max-w-6xl mx-auto grid lg:grid-cols-5 gap-6 items-center">
-            <div className="lg:col-span-3 grid sm:grid-cols-3 gap-4">
+          <div className="mt-10 max-w-5xl mx-auto">
+            <div className="grid sm:grid-cols-3 gap-4">
               {[
                 { label: "Mois 1", value: "149€", desc: "Preuve de concept guidée." },
                 { label: "Mois 2+", value: "490€", desc: "Sphère des 20 en scale." },
@@ -253,9 +253,6 @@ export default function PopeyHumanTestPage() {
                   <p className="font-bold mt-2 text-sm text-[#2E130C]/80">{card.desc}</p>
                 </div>
               ))}
-            </div>
-            <div className="lg:col-span-2 rounded-3xl overflow-hidden border-4 border-[#2E130C] shadow-[8px_8px_0px_0px_#2E130C] bg-white">
-              <img src="/jeanphilipperoth.jpg" alt="Jean-Philippe Roth" className="w-full h-[290px] object-cover" />
             </div>
           </div>
         </div>
