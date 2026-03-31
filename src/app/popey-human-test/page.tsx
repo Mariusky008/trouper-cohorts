@@ -212,13 +212,47 @@ export default function PopeyHumanTestPage() {
   const methodSection = sections.find((section) => section.id === "method");
   const allHeritageRoles = useMemo(() => heritageSphereClusters.flatMap((cluster) => cluster.roles), []);
   const [selectedRoleId, setSelectedRoleId] = useState(allHeritageRoles[0]?.id ?? "");
+  const [selectedStage, setSelectedStage] = useState<"m1" | "m2" | "m3">("m1");
   const selectedRole = useMemo(
     () => allHeritageRoles.find((role) => role.id === selectedRoleId) ?? allHeritageRoles[0],
     [allHeritageRoles, selectedRoleId],
   );
-  const selectedCluster = useMemo(
-    () => heritageSphereClusters.find((cluster) => cluster.roles.some((role) => role.id === selectedRole?.id)),
-    [selectedRole],
+  const rolePartners = useMemo(
+    () => allHeritageRoles.filter((role) => role.id !== selectedRole?.id),
+    [allHeritageRoles, selectedRole?.id],
+  );
+  const [selectedPartnerId, setSelectedPartnerId] = useState("");
+  const partnerProfiles = useMemo(
+    () =>
+      rolePartners.map((role, index) => ({
+        ...role,
+        firstName: [
+          "Camille",
+          "Nicolas",
+          "Emma",
+          "Romain",
+          "Sarah",
+          "Julien",
+          "Nora",
+          "Thomas",
+          "Inès",
+          "Léo",
+          "Maya",
+          "Arthur",
+          "Chloé",
+          "Maxime",
+          "Lina",
+          "Hugo",
+          "Sonia",
+          "Yanis",
+          "Claire",
+        ][index % 19],
+      })),
+    [rolePartners],
+  );
+  const selectedPartner = useMemo(
+    () => partnerProfiles.find((role) => role.id === selectedPartnerId) ?? partnerProfiles[0],
+    [partnerProfiles, selectedPartnerId],
   );
 
   const promiseBlocks = [
@@ -356,73 +390,101 @@ export default function PopeyHumanTestPage() {
             <p className="text-xs uppercase tracking-widest font-black text-[#B20B13]">Choisissez votre métier</p>
             <h2 className="mt-3 text-3xl md:text-5xl font-titan">Sphère Patrimoine & Art de Vivre — 20 piliers</h2>
             <p className="mt-3 font-bold text-[#2E130C]/90">
-              Sélectionnez votre métier et Popey vous propose immédiatement vos binômes prioritaires et votre trajectoire Mois 1 → Mois 3.
+              Sélectionnez votre métier, puis déroulez votre parcours personnalisé Mois 1, Mois 2 et Mois 3.
             </p>
-            <div className="mt-8 space-y-4">
-              {heritageSphereClusters.map((cluster) => (
-                <div key={cluster.title} className="rounded-2xl border-2 border-[#2E130C] bg-white p-4 shadow-[6px_6px_0px_0px_#2E130C]">
-                  <p className="text-sm font-black text-[#B20B13]">{cluster.title}</p>
-                  <p className="text-sm font-bold mt-1">{cluster.purpose}</p>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {cluster.roles.map((role) => (
-                      <button
-                        key={role.id}
-                        type="button"
-                        onClick={() => setSelectedRoleId(role.id)}
-                        className={cn(
-                          "rounded-full border-2 border-[#2E130C] px-3 py-1.5 text-xs font-black uppercase tracking-wide transition-colors",
-                          selectedRole?.id === role.id ? "bg-[#B20B13] text-[#E2D9BC]" : "bg-[#E2D9BC] text-[#2E130C]",
-                        )}
-                      >
-                        {role.name}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              ))}
+            <div className="mt-6 rounded-2xl border-2 border-[#2E130C] bg-white p-5 shadow-[6px_6px_0px_0px_#2E130C]">
+              <p className="text-xs uppercase tracking-widest font-black text-[#B20B13]">Votre métier</p>
+              <select
+                value={selectedRole?.id}
+                onChange={(e) => setSelectedRoleId(e.target.value)}
+                className="mt-3 w-full rounded-xl border-2 border-[#2E130C] bg-[#E2D9BC] px-4 py-3 font-black"
+              >
+                {allHeritageRoles.map((role) => (
+                  <option key={role.id} value={role.id}>
+                    {role.name}
+                  </option>
+                ))}
+              </select>
+              <div className="mt-4 flex flex-wrap gap-2">
+                {[
+                  { id: "m1", label: "Voir Mois 1" },
+                  { id: "m2", label: "Voir Mois 2" },
+                  { id: "m3", label: "Voir Mois 3" },
+                ].map((step) => (
+                  <button
+                    key={step.id}
+                    type="button"
+                    onClick={() => setSelectedStage(step.id as "m1" | "m2" | "m3")}
+                    className={cn(
+                      "rounded-full border-2 border-[#2E130C] px-4 py-2 text-xs font-black uppercase tracking-wide",
+                      selectedStage === step.id ? "bg-[#B20B13] text-[#E2D9BC]" : "bg-[#D2E8FF] text-[#2E130C]",
+                    )}
+                  >
+                    {step.label}
+                  </button>
+                ))}
+              </div>
             </div>
 
-            <div className="mt-8 grid lg:grid-cols-2 gap-4">
+            <div className="mt-6 grid lg:grid-cols-2 gap-4">
               <div className="rounded-2xl border-2 border-[#2E130C] bg-[#2E130C] text-[#E2D9BC] p-5">
-                <p className="text-xs uppercase tracking-widest font-black text-[#D2E8FF]">Votre plan personnalisé</p>
+                <p className="text-xs uppercase tracking-widest font-black text-[#D2E8FF]">Parcours gamifié</p>
                 <p className="mt-2 font-titan text-2xl">{selectedRole?.name}</p>
-                <p className="mt-2 text-sm font-bold">Mois 1 détaillé : binôme prioritaire avec {selectedRole?.binomes[0]}.</p>
-                <ul className="mt-3 space-y-1 text-sm font-bold text-[#E2D9BC]/90">
-                  <li>• S1 : offre duo et proposition commune.</li>
-                  <li>• S2 : activation audience croisée.</li>
-                  <li>• S3 : qualification et appels duo.</li>
-                  <li>• S4 : premiers closings et preuve ROI.</li>
-                </ul>
-                <p className="mt-3 text-sm font-bold">Mois 2 : 2e binôme avec {selectedRole?.binomes[1]} (sans détailler, orienté exécution).</p>
-                <p className="mt-2 text-sm font-bold">Mois 3 : 3e binôme avec {selectedRole?.binomes[2]} + ouverture du canal des 20 partenaires.</p>
+                {selectedStage === "m1" && (
+                  <div className="mt-3 space-y-2 text-sm font-bold text-[#E2D9BC]/90">
+                    <p>Mois 1 — Binôme idéal : {selectedRole?.binomes[0]}</p>
+                    <p>• S1 : offre duo claire et prix d&apos;appel.</p>
+                    <p>• S2 : activation d&apos;audience croisée.</p>
+                    <p>• S3 : appels duo + qualification.</p>
+                    <p>• S4 : premiers closings + preuve ROI.</p>
+                  </div>
+                )}
+                {selectedStage === "m2" && (
+                  <div className="mt-3 space-y-2 text-sm font-bold text-[#E2D9BC]/90">
+                    <p>Mois 2 — Nouveau binôme : {selectedRole?.binomes[1]}</p>
+                    <p>Déploiement accéléré sur un second métier complémentaire, sans re-construire toute l&apos;infrastructure.</p>
+                  </div>
+                )}
+                {selectedStage === "m3" && (
+                  <div className="mt-3 space-y-2 text-sm font-bold text-[#E2D9BC]/90">
+                    <p>Mois 3 — Nouveau binôme : {selectedRole?.binomes[2]}</p>
+                    <p>Ouverture complète de la pompe à recommandation avec les 19 autres partenaires de la sphère.</p>
+                  </div>
+                )}
               </div>
 
               <div className="rounded-2xl border-2 border-[#2E130C] bg-white p-5 shadow-[6px_6px_0px_0px_#2E130C]">
-                <p className="text-xs uppercase tracking-widest font-black text-[#B20B13]">La pompe à recommandation</p>
-                <div className="mt-4 rounded-xl border-2 border-[#2E130C] bg-[#D2E8FF] p-4">
-                  <p className="font-titan text-xl text-center">{selectedRole?.name}</p>
-                  <p className="text-center text-xs font-black mt-1">↕ 19 partenaires connectés</p>
-                  <p className="mt-3 text-sm font-bold text-center">
-                    Vous apportez une affaire → vous touchez 10% de commission en tant qu&apos;apporteur.
-                  </p>
-                </div>
-                <div className="mt-4 grid grid-cols-3 gap-2">
-                  {selectedRole?.binomes.map((binome) => (
-                    <div key={binome} className="rounded-lg border border-[#2E130C] bg-[#E2D9BC] p-2 text-xs font-black text-center">
-                      {binome}
-                    </div>
+                <p className="text-xs uppercase tracking-widest font-black text-[#B20B13]">Pompe à recommandation</p>
+                <p className="mt-2 text-sm font-bold">19 partenaires potentiels autour de {selectedRole?.name}.</p>
+                <div className="mt-3 grid sm:grid-cols-2 gap-2 max-h-56 overflow-y-auto pr-1">
+                  {partnerProfiles.map((partner) => (
+                    <button
+                      key={partner.id}
+                      type="button"
+                      onClick={() => setSelectedPartnerId(partner.id)}
+                      className={cn(
+                        "rounded-xl border-2 border-[#2E130C] p-2 text-left",
+                        selectedPartner?.id === partner.id ? "bg-[#B20B13] text-[#E2D9BC]" : "bg-[#E2D9BC]",
+                      )}
+                    >
+                      <p className="text-xs font-black">{partner.firstName}</p>
+                      <p className="text-[11px] font-bold">{partner.name}</p>
+                    </button>
                   ))}
                 </div>
-                <p className="mt-4 text-sm font-bold">
-                  Exemple concret : si {selectedRole?.name} apporte un projet à {selectedRole?.binomes[0]} à {selectedRole?.deal.toLocaleString("fr-FR")}€,
-                  la commission d&apos;apport estimée = {(selectedRole?.deal * 0.1).toLocaleString("fr-FR")}€.
-                </p>
+                <div className="mt-4 rounded-xl border-2 border-[#2E130C] bg-[#D2E8FF] p-3">
+                  <p className="text-xs uppercase tracking-widest font-black text-[#B20B13]">{selectedPartner?.firstName} — {selectedPartner?.name}</p>
+                  <p className="mt-2 text-sm font-bold">
+                    Si vous lui apportez une affaire à {selectedPartner?.deal.toLocaleString("fr-FR")}€, vous gagnez {((selectedPartner?.deal ?? 0) * 0.1).toLocaleString("fr-FR")}€.
+                  </p>
+                  <p className="mt-1 text-sm font-bold">
+                    Si {selectedPartner?.firstName} vous apporte une affaire à {selectedRole?.deal.toLocaleString("fr-FR")}€, il/elle gagne {(selectedRole?.deal * 0.1).toLocaleString("fr-FR")}€.
+                  </p>
+                  <button className="mt-3 rounded-lg border-2 border-[#2E130C] bg-white px-3 py-1.5 text-xs font-black uppercase">
+                    Lui apporter une affaire
+                  </button>
+                </div>
               </div>
-            </div>
-
-            <div className="mt-5 rounded-2xl border-2 border-[#2E130C] bg-[#E2D9BC] p-4">
-              <p className="font-black">Cluster actif : {selectedCluster?.title}</p>
-              <p className="mt-1 text-sm font-bold">{selectedCluster?.purpose}</p>
             </div>
           </div>
         </div>
