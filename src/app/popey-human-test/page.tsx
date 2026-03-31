@@ -23,43 +23,6 @@ const poppins = Poppins({
   variable: "--font-poppins",
 });
 
-const sections = [
-  {
-    id: "method",
-    title: "SECTION 4 — MOIS 1 : L'ACCÉLÉRATEUR DE SYNERGIE (149€)",
-    heading: "Un plan d'exécution hebdomadaire, inspiré d'un binôme réel Archi + Cuisiniste.",
-    paragraphs: [
-      "Objectif : transformer deux expertises isolées en une offre duo monétisable, visible et vendue en 4 semaines.",
-      "Ce plan ne repose pas sur de la motivation. Il repose sur des livrables, des scripts et des chiffres.",
-    ],
-    bullets: [
-      "Semaine 1 — Ingénierie Synergy-Offer : audit de complémentarité, design du Pack Signature, pricing no-brainer (ex: 497€) et One-Page Solution.",
-      "Semaine 2 — Arsenal marketing : collab post + stories coulisses + script de tagging, puis turbo boost Popey (Meta Ads géolocalisées 50 à 97€).",
-      "Semaine 3 — Activation chirurgicale : Sprint des 20 contacts, appels de qualification duo, lead magnet PDF et suivi dans le Synergy Tracker.",
-      "Semaine 4 — Arbitrage et scale : closing des packs, preuve du ROI, protocole de split des revenus, puis passage à 490€/mois dans la Sphère des 20.",
-      "Logique finale : le pack d'appel ne vend pas seulement une prestation. Il ouvre la porte aux chantiers à forte valeur derrière.",
-    ],
-    image: "https://images.unsplash.com/photo-1552664730-d307ca884978?q=80&w=1600&auto=format&fit=crop",
-  },
-  {
-    id: "sphere",
-    title: "SECTION 5 — 2 SPHÈRES EXEMPLES (CLIQUABLES)",
-    heading: "Mois 2+ : choisissez une sphère et voyez immédiatement le mécanisme.",
-    paragraphs: [
-      "Chaque sphère regroupe 20 métiers complémentaires, organisée en 4 clusters.",
-      "Le principe est simple : une entrée client déclenche une chaîne de contrats dans tout l'écosystème.",
-    ],
-    bullets: [
-      "Cluster 1 — Transaction & Finance : chasseur immo de luxe, courtier private banking, CGP, avocat fiscaliste, assureur objets de valeur.",
-      "Cluster 2 — Métamorphose du lieu : architecte d'intérieur, maître d'œuvre, paysagiste/piscine, cuisiniste haut de gamme, expert domotique/sécurité.",
-      "Cluster 3 — Équipement & Esthétique : ébéniste, galeriste/art advisor, spécialiste hi-fi/home cinéma, lighting designer, antiquaire design.",
-      "Cluster 4 — Intendance & Prestige : conciergerie privée, chef à domicile, déménageur premium, home organizer, sommelier/cave à vin.",
-      "Effet de levier : une seule mise en relation qualifiée peut rembourser jusqu'à 1 an d'abonnement à 490€.",
-      "Gap business : hors Popey, ~15 000€ de valeur perdue par client ; sur 10 clients/an, ~150 000€ de manque à gagner.",
-    ],
-    image: "https://images.unsplash.com/photo-1529156069898-49953e39b3ac?q=80&w=1600&auto=format&fit=crop",
-  },
-];
 
 const ventures = [
   "1) Import / Export riz et sucre (Bangkok) — 1999/2000",
@@ -94,36 +57,6 @@ const founderProofs = [
   { label: "Levées de fonds", value: "700K€+" },
 ];
 
-const methodTimeline = [
-  {
-    step: "S1",
-    title: "Ingénierie Synergy-Offer",
-    color: "bg-[#D2E8FF]",
-    metrics: "1 pack signature | 1 one-page",
-    detail: "Audit de complémentarité, design de l'offre et prix d'appel no-brainer.",
-  },
-  {
-    step: "S2",
-    title: "Arsenal + Turbo Boost",
-    color: "bg-[#E2D9BC]",
-    metrics: "6k à 14k vues",
-    detail: "Posts coordonnés, stories, puis campagne Meta géolocalisée opérée par Popey.",
-  },
-  {
-    step: "S3",
-    title: "Activation Chirurgicale",
-    color: "bg-[#F8D7DA]",
-    metrics: "40 contacts | 4 à 12 réponses",
-    detail: "Sprint des 20, appels duo, lead magnet et suivi dans le Synergy Tracker.",
-  },
-  {
-    step: "S4",
-    title: "Arbitrage + Scale",
-    color: "bg-[#CDEAC0]",
-    metrics: "2 à 5 closings",
-    detail: "Closing, preuve ROI, split des revenus et entrée dans la Sphère à 490€/mois.",
-  },
-];
 
 const heritageSphereClusters = [
   {
@@ -173,7 +106,6 @@ const heritageSphereClusters = [
 ];
 
 export default function PopeyHumanTestPage() {
-  const methodSection = sections.find((section) => section.id === "method");
   const allHeritageRoles = useMemo(() => heritageSphereClusters.flatMap((cluster) => cluster.roles), []);
   const [selectedRoleId, setSelectedRoleId] = useState(allHeritageRoles[0]?.id ?? "");
   const [selectedStage, setSelectedStage] = useState<"m1" | "m2" | "m3">("m1");
@@ -261,37 +193,6 @@ export default function PopeyHumanTestPage() {
     window.sessionStorage.setItem("popey_target_revenue", String(targetRevenue));
   }, [networkRevenue, targetRevenue]);
 
-  const promiseBlocks = [
-    {
-      title: "Construire le binôme",
-      text: `Structurer ${selectedRole?.name} + ${selectedRole?.binomes[0]} en offre duo monétisable.`,
-      example: `Exemple : Pack d'entrée positionné entre 497€ et 900€ selon votre marché.`,
-      metric: "Objectif S1 : 1 offre claire",
-      image: "https://images.unsplash.com/photo-1552664730-d307ca884978?q=80&w=1200&auto=format&fit=crop",
-    },
-    {
-      title: "Activer l'audience",
-      text: `Activer l'audience de ${selectedRole?.name} et de ${selectedRole?.binomes[0]} avec plan traçable.`,
-      example: "Exemple : collab post + stories + ads localisées + tagging croisé.",
-      metric: "Objectif S2 : 6 000 à 14 000 vues",
-      image: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?q=80&w=1200&auto=format&fit=crop",
-    },
-    {
-      title: "Convertir en revenu",
-      text: `Transformer le réseau dormant de ${selectedRole?.name} en RDV qualifiés, closings et revenus.`,
-      example: `Exemple : Sprint des 20 + appels duo avec ${selectedRole?.binomes[1]}.`,
-      metric: "Objectif S3 : 4 à 12 réponses qualifiées",
-      image: "https://images.unsplash.com/photo-1552581234-26160f608093?q=80&w=1200&auto=format&fit=crop",
-    },
-    {
-      title: "Scaler avec la sphère",
-      text: `Passer du test Mois 1 à la Sphère Patrimoine & Art de Vivre pour scaler le CA de ${selectedRole?.name}.`,
-      example: `Exemple : ${selectedRole?.name} déclenche ensuite des missions chez ${selectedRole?.binomes[2]}.`,
-      metric: "Objectif S4 : passage à 490€/mois",
-      image: "https://images.unsplash.com/photo-1521737604893-d14cc237f11d?q=80&w=1200&auto=format&fit=crop",
-    },
-  ];
-
   const faqItems = [
     {
       q: "Est-ce que Popey peut vraiment augmenter mon CA ?",
@@ -348,21 +249,6 @@ export default function PopeyHumanTestPage() {
             <p className="mt-6 text-lg md:text-2xl font-bold max-w-4xl mx-auto">
               Comment transformer un simple partenariat en machine à 40 000€ de CA additionnel par an grâce à Popey Academy.
             </p>
-          </div>
-          <div className="mt-10 max-w-5xl mx-auto">
-            <div className="grid sm:grid-cols-3 gap-4">
-              {[
-                { label: "Dès Mois 1", value: "+1 800€ visés", desc: "Premiers closings avec un binôme complémentaire." },
-                { label: "Après 90 jours", value: "3 flux actifs", desc: "Mois 1, Mois 2, Mois 3 synchronisés et traçables." },
-                { label: "Cap 12 mois", value: "CA additionnel", desc: "Réseau structuré orienté opportunités récurrentes." },
-              ].map((card) => (
-                <div key={card.label} className="bg-white rounded-3xl border-4 border-[#2E130C] p-5 shadow-[8px_8px_0px_0px_#2E130C]">
-                  <p className="text-[11px] uppercase tracking-widest font-black text-[#B20B13]">{card.label}</p>
-                  <p className="text-3xl font-titan mt-2">{card.value}</p>
-                  <p className="font-bold mt-2 text-sm text-[#2E130C]/80">{card.desc}</p>
-                </div>
-              ))}
-            </div>
           </div>
         </div>
       </section>
@@ -656,34 +542,6 @@ export default function PopeyHumanTestPage() {
         </div>
       </section>
 
-      <section className="py-16 border-b-4 border-[#2E130C]">
-        <div className="container mx-auto px-4">
-          <div className="max-w-6xl mx-auto">
-            <p className="text-xs uppercase tracking-widest font-black text-[#B20B13]">La promesse</p>
-            <h2 className="mt-3 text-3xl md:text-5xl font-titan">Un système concret pour transformer votre réseau en chiffre d&apos;affaires.</h2>
-            <div className="mt-8 grid md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {promiseBlocks.map((item, idx) => (
-                <div key={item.title} className="rounded-2xl border-2 border-[#2E130C] bg-white overflow-hidden shadow-[6px_6px_0px_0px_#2E130C]">
-                  <img src={item.image} alt={item.title} className="w-full h-28 object-cover border-b-2 border-[#2E130C]" />
-                  <div className="p-4">
-                  <p className="text-xs uppercase tracking-widest font-black text-[#B20B13]">{`0${idx + 1}`}</p>
-                  <p className="mt-1 font-titan text-2xl leading-tight">{item.title}</p>
-                  <p className="mt-2 text-sm font-bold leading-relaxed">{item.text}</p>
-                  <p className="mt-2 text-xs font-black text-[#2E130C]/80">{item.example}</p>
-                  <p className="mt-2 text-xs uppercase tracking-wider font-black text-[#B20B13]">{item.metric}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-            <div className="mt-6 rounded-2xl border-2 border-[#2E130C] bg-[#2E130C] text-[#E2D9BC] p-5">
-              <p className="text-xs uppercase tracking-widest font-black text-[#D2E8FF]">But final à atteindre</p>
-              <p className="mt-2 font-titan text-2xl">Mois 1 ({selectedRole?.name}) : 3 clients closés = 1 800€ immédiats</p>
-              <p className="mt-1 font-bold text-sm text-[#E2D9BC]/90">+ potentiel de 3 clients à 25 000€ = 75 000€ de pipeline.</p>
-              <p className="mt-1 font-bold text-sm text-[#E2D9BC]/90">Objectif Popey : installer un système qui produit du cash court terme et du gros CA derrière.</p>
-            </div>
-          </div>
-        </div>
-      </section>
 
       <section id="fondateur" className="py-16 border-b-4 border-[#2E130C] bg-[#D2E8FF]">
         <div className="container mx-auto px-4">
@@ -728,36 +586,6 @@ export default function PopeyHumanTestPage() {
         </div>
       </section>
 
-      {methodSection && (
-        <section id="method" className="py-16 border-b-4 border-[#2E130C] bg-[#D2E8FF]">
-          <div className="container mx-auto px-4">
-            <div className="max-w-6xl mx-auto bg-white rounded-3xl border-4 border-[#2E130C] p-8 shadow-[8px_8px_0px_0px_#2E130C]">
-              <p className="text-xs uppercase tracking-widest font-black text-[#B20B13]">{methodSection.title}</p>
-              <h2 className="mt-4 text-3xl md:text-5xl font-titan leading-tight">
-                {`Plan Mois 1 personnalisé : ${selectedRole?.name} + ${selectedRole?.binomes[0]}.`}
-              </h2>
-              <div className="mt-6 grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                {methodTimeline.map((item) => (
-                  <div key={item.step} className={cn("rounded-2xl border-2 border-[#2E130C] p-4", item.color)}>
-                    <div className="flex items-center justify-between gap-3">
-                      <span className="text-xs font-black uppercase tracking-widest text-[#B20B13]">{item.step}</span>
-                      <span className="text-[11px] font-black bg-white border border-[#2E130C] rounded-full px-2 py-1">{item.metrics}</span>
-                    </div>
-                    <p className="mt-2 font-titan text-xl leading-tight">{item.title}</p>
-                    <p className="mt-2 text-sm font-bold text-[#2E130C]/90">{item.detail}</p>
-                  </div>
-                ))}
-              </div>
-              <div className="mt-4 rounded-2xl border-2 border-[#2E130C] bg-[#2E130C] text-[#E2D9BC] p-4">
-                <p className="text-xs uppercase tracking-widest font-black text-[#D2E8FF]">Fin du Mois 1 — Projection de gains</p>
-                <p className="mt-2 font-titan text-xl">{`3 clients closés (${selectedRole?.name}) = 1 800€ immédiats`}</p>
-                <p className="mt-1 font-bold text-sm text-[#E2D9BC]/90">+ potentiel de 3 clients à 25 000€ chacun = 75 000€ de pipeline.</p>
-                <p className="mt-1 font-bold text-sm text-[#E2D9BC]/90">Le Mois 1 n&apos;est pas une dépense : c&apos;est une preuve de ROI et un levier de CA futur.</p>
-              </div>
-            </div>
-          </div>
-        </section>
-      )}
 
       <section id="sphere" className="py-16 border-b-4 border-[#2E130C]">
         <div className="container mx-auto px-4">
