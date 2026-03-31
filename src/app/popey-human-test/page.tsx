@@ -201,10 +201,10 @@ export default function PopeyHumanTestPage() {
   const sphereSection = sections.find((section) => section.id === "sphere");
 
   const promiseBlocks = [
-    "Comprendre pourquoi un prospect décide ou bloque.",
-    "Identifier les leviers qui déclenchent l'action.",
-    "Guider la décision sans forcer ni sur-vendre.",
-    "Retrouver une vente claire, fluide et maîtrisée.",
+    "Monter un binôme métier complémentaire avec une offre commune monétisable.",
+    "Activer vos audiences existantes avec un plan d'exécution simple et traçable.",
+    "Transformer le réseau dormant en RDV qualifiés, closings et revenus concrets.",
+    "Passer du test Mois 1 à la Sphère des 20 pour scaler votre CA.",
   ];
 
   const faqItems = [
@@ -288,7 +288,7 @@ export default function PopeyHumanTestPage() {
         <div className="container mx-auto px-4">
           <div className="max-w-6xl mx-auto">
             <p className="text-xs uppercase tracking-widest font-black text-[#B20B13]">La promesse</p>
-            <h2 className="mt-3 text-3xl md:text-5xl font-titan">Un cadre clair pour piloter la décision et accélérer le CA.</h2>
+            <h2 className="mt-3 text-3xl md:text-5xl font-titan">Un système concret pour transformer votre réseau en chiffre d&apos;affaires.</h2>
             <div className="mt-8 grid md:grid-cols-2 lg:grid-cols-4 gap-4">
               {promiseBlocks.map((item, idx) => (
                 <div key={item} className="rounded-2xl border-2 border-[#2E130C] bg-white p-5 shadow-[6px_6px_0px_0px_#2E130C]">
