@@ -1,7 +1,7 @@
  "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Titan_One, Pacifico, Poppins } from "next/font/google";
 import { cn } from "@/lib/utils";
 
@@ -213,6 +213,18 @@ export default function PopeyHumanTestPage() {
   const allHeritageRoles = useMemo(() => heritageSphereClusters.flatMap((cluster) => cluster.roles), []);
   const [selectedRoleId, setSelectedRoleId] = useState(allHeritageRoles[0]?.id ?? "");
   const [selectedStage, setSelectedStage] = useState<"m1" | "m2" | "m3">("m1");
+  const [networkRevenue, setNetworkRevenue] = useState(() => {
+    if (typeof window === "undefined") {
+      return 500;
+    }
+    return Number(window.sessionStorage.getItem("popey_network_revenue") ?? 500);
+  });
+  const [targetRevenue, setTargetRevenue] = useState(() => {
+    if (typeof window === "undefined") {
+      return 5000;
+    }
+    return Number(window.sessionStorage.getItem("popey_target_revenue") ?? 5000);
+  });
   const selectedRole = useMemo(
     () => allHeritageRoles.find((role) => role.id === selectedRoleId) ?? allHeritageRoles[0],
     [allHeritageRoles, selectedRoleId],
@@ -254,6 +266,23 @@ export default function PopeyHumanTestPage() {
     () => partnerProfiles.find((role) => role.id === selectedPartnerId) ?? partnerProfiles[0],
     [partnerProfiles, selectedPartnerId],
   );
+  const deltaRevenue = Math.max(targetRevenue - networkRevenue, 0);
+  const deltaYearly = deltaRevenue * 12;
+  const averageDeal = selectedRole?.deal ?? 12000;
+  const commissionPerDeal = Math.round(averageDeal * 0.1);
+  const dealsNeeded = Math.max(Math.ceil(deltaRevenue / averageDeal), 1);
+  const referralsNeeded = Math.max(Math.ceil(deltaRevenue / commissionPerDeal), 1);
+  const progressionRate = targetRevenue > 0 ? Math.min(Math.round((networkRevenue / targetRevenue) * 100), 100) : 0;
+  const scenarioRates = [
+    { label: "Conservateur", pct: 30 },
+    { label: "Réaliste", pct: 55 },
+    { label: "Ambitieux", pct: 80 },
+  ];
+
+  useEffect(() => {
+    window.sessionStorage.setItem("popey_network_revenue", String(networkRevenue));
+    window.sessionStorage.setItem("popey_target_revenue", String(targetRevenue));
+  }, [networkRevenue, targetRevenue]);
 
   const promiseBlocks = [
     {
@@ -365,7 +394,41 @@ export default function PopeyHumanTestPage() {
         <div className="container mx-auto px-4">
           <div className="max-w-6xl mx-auto">
             <p className="text-xs uppercase tracking-widest font-black text-[#B20B13]">Le problème</p>
-            <h2 className="mt-3 text-3xl md:text-5xl font-titan">Vous avez la compétence, mais votre réseau ne convertit pas assez.</h2>
+            <h2 className="mt-3 text-3xl md:text-5xl font-titan">Combien votre réseau vous rapporte vraiment chaque mois ?</h2>
+            <div className="mt-6 grid lg:grid-cols-2 gap-4">
+              <div className="rounded-2xl border-2 border-[#2E130C] bg-white p-5 shadow-[6px_6px_0px_0px_#2E130C]">
+                <p className="text-xs uppercase tracking-widest font-black text-[#B20B13]">1) CA réseau actuel / mois</p>
+                <input
+                  type="number"
+                  min={0}
+                  value={networkRevenue}
+                  onChange={(e) => setNetworkRevenue(Number(e.target.value))}
+                  className="mt-2 w-full rounded-xl border-2 border-[#2E130C] bg-[#E2D9BC] px-4 py-3 font-black"
+                />
+                <p className="mt-4 text-xs uppercase tracking-widest font-black text-[#B20B13]">2) CA additionnel visé / mois</p>
+                <input
+                  type="number"
+                  min={0}
+                  value={targetRevenue}
+                  onChange={(e) => setTargetRevenue(Number(e.target.value))}
+                  className="mt-2 w-full rounded-xl border-2 border-[#2E130C] bg-[#E2D9BC] px-4 py-3 font-black"
+                />
+                <p className="mt-4 text-sm font-bold">Delta mensuel à combler : {deltaRevenue.toLocaleString("fr-FR")}€</p>
+                <p className="mt-1 text-sm font-bold">Delta annuel : {deltaYearly.toLocaleString("fr-FR")}€</p>
+              </div>
+              <div className="rounded-2xl border-2 border-[#2E130C] bg-[#2E130C] text-[#E2D9BC] p-5">
+                <p className="text-xs uppercase tracking-widest font-black text-[#D2E8FF]">Projection personnalisée</p>
+                <p className="mt-2 text-sm font-bold">Pour {selectedRole?.name}, vous pouvez viser :</p>
+                <ul className="mt-3 space-y-1 text-sm font-bold text-[#E2D9BC]/90">
+                  <li>• {dealsNeeded} deal(s) premium / mois à {averageDeal.toLocaleString("fr-FR")}€</li>
+                  <li>• ou {referralsNeeded} recommandation(s) / mois à 10%</li>
+                  <li>• progression actuelle : {progressionRate}% de votre objectif</li>
+                </ul>
+                <div className="mt-4 h-3 rounded-full bg-[#E2D9BC]/30 overflow-hidden">
+                  <div className="h-full bg-[#B20B13]" style={{ width: `${progressionRate}%` }} />
+                </div>
+              </div>
+            </div>
             <div className="mt-8 grid md:grid-cols-2 gap-4">
               {(miroirSection?.paragraphs ?? []).slice(0, 4).map((item) => (
                 <div key={item} className="rounded-2xl border-2 border-[#2E130C] bg-white p-5 shadow-[6px_6px_0px_0px_#2E130C]">
@@ -376,7 +439,7 @@ export default function PopeyHumanTestPage() {
             {gapSection && (
               <div className="mt-5 rounded-2xl border-2 border-[#2E130C] bg-[#2E130C] text-[#E2D9BC] p-4">
                 <p className="text-xs uppercase tracking-widest font-black text-[#D2E8FF]">{gapSection.title}</p>
-                <p className="mt-2 font-titan text-2xl">54 000€ laissés sur la table / an</p>
+                <p className="mt-2 font-titan text-2xl">{deltaYearly.toLocaleString("fr-FR")}€ laissés sur la table / an</p>
                 <p className="mt-1 text-sm font-bold text-[#E2D9BC]/90">Le manque à gagner est concret quand le réseau reste informel.</p>
               </div>
             )}
@@ -392,6 +455,12 @@ export default function PopeyHumanTestPage() {
             <p className="mt-3 font-bold text-[#2E130C]/90">
               Sélectionnez votre métier, puis déroulez votre parcours personnalisé Mois 1, Mois 2 et Mois 3.
             </p>
+            <div className="mt-4 rounded-2xl border-2 border-[#2E130C] bg-[#D2E8FF] p-4">
+              <p className="text-xs uppercase tracking-widest font-black text-[#B20B13]">Objectif dynamique</p>
+              <p className="mt-1 font-bold">
+                Vous voulez {targetRevenue.toLocaleString("fr-FR")}€ / mois de plus. Cette section montre comment {selectedRole?.name} peut combler ce delta.
+              </p>
+            </div>
             <div className="mt-6 rounded-2xl border-2 border-[#2E130C] bg-white p-5 shadow-[6px_6px_0px_0px_#2E130C]">
               <p className="text-xs uppercase tracking-widest font-black text-[#B20B13]">Votre métier</p>
               <select
@@ -451,6 +520,17 @@ export default function PopeyHumanTestPage() {
                     <p>Ouverture complète de la pompe à recommandation avec les 19 autres partenaires de la sphère.</p>
                   </div>
                 )}
+                <div className="mt-4 rounded-xl border-2 border-[#E2D9BC]/40 bg-[#E2D9BC]/10 p-3">
+                  <p className="text-xs uppercase tracking-widest font-black text-[#D2E8FF]">Scénarios de progression</p>
+                  <div className="mt-2 grid sm:grid-cols-3 gap-2">
+                    {scenarioRates.map((scenario) => (
+                      <div key={scenario.label} className="rounded-lg border border-[#E2D9BC]/40 p-2">
+                        <p className="text-xs font-black">{scenario.label}</p>
+                        <p className="text-sm font-bold">{Math.round(deltaRevenue * (scenario.pct / 100)).toLocaleString("fr-FR")}€ / mois</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
 
               <div className="rounded-2xl border-2 border-[#2E130C] bg-white p-5 shadow-[6px_6px_0px_0px_#2E130C]">
@@ -479,6 +559,9 @@ export default function PopeyHumanTestPage() {
                   </p>
                   <p className="mt-1 text-sm font-bold">
                     Si {selectedPartner?.firstName} vous apporte une affaire à {selectedRole?.deal.toLocaleString("fr-FR")}€, il/elle gagne {(selectedRole?.deal * 0.1).toLocaleString("fr-FR")}€.
+                  </p>
+                  <p className="mt-1 text-sm font-bold">
+                    Pour combler votre delta ({deltaRevenue.toLocaleString("fr-FR")}€), il faut environ {referralsNeeded} recommandations de ce type.
                   </p>
                   <button className="mt-3 rounded-lg border-2 border-[#2E130C] bg-white px-3 py-1.5 text-xs font-black uppercase">
                     Lui apporter une affaire
