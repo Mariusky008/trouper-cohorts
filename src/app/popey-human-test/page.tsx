@@ -173,6 +173,8 @@ export default function PopeyHumanTestPage() {
   const [activeMacroIndex, setActiveMacroIndex] = useState(0);
   const activeMacroNode = macroOrbitNodes[activeMacroIndex % Math.max(macroOrbitNodes.length, 1)];
   const transferMode = activeMacroIndex % 2 === 0 ? "message" : "call";
+  const transferLabel = transferMode === "message" ? "Message envoyé au client" : "Numéro transmis pour appel";
+  const transferDetail = transferMode === "message" ? "Intro WhatsApp + contact qualifié" : "Appel de recommandation au nom du partenaire";
   const getRoleSymbol = (name: string) =>
     name
       .split(/[\s/&-]+/)
@@ -191,7 +193,7 @@ export default function PopeyHumanTestPage() {
     if (!macroOrbitNodes.length) return;
     const timer = window.setInterval(() => {
       setActiveMacroIndex((prev) => (prev + 1) % macroOrbitNodes.length);
-    }, 1900);
+    }, 3200);
     return () => window.clearInterval(timer);
   }, [macroOrbitNodes.length]);
 
@@ -383,14 +385,25 @@ export default function PopeyHumanTestPage() {
                   ))}
                 </div>
                 {activeMacroNode && (
-                  <div className="absolute h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-[#2E130C] bg-[#B20B13] shadow-[0_0_0_4px_rgba(178,11,19,0.22)] transition-all duration-700" style={{ left: `${activeMacroNode.x}%`, top: `${activeMacroNode.y}%` }} />
+                  <div className="absolute h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-[#2E130C] bg-[#B20B13] shadow-[0_0_0_4px_rgba(178,11,19,0.22)] transition-all duration-[1200ms]" style={{ left: `${activeMacroNode.x}%`, top: `${activeMacroNode.y}%` }} />
                 )}
                 <div className="absolute left-1/2 top-1/2 h-24 w-24 md:h-32 md:w-32 -translate-x-1/2 -translate-y-1/2 rounded-full border-4 border-[#2E130C] bg-[#2E130C] text-[#E2D9BC] flex items-center justify-center text-center px-3 animate-pulse">
                   <p className="font-titan text-lg md:text-2xl leading-tight">Client</p>
                 </div>
-                <div className="absolute bottom-3 left-3 right-3 hidden md:flex items-center justify-center">
-                  <div className="rounded-full border-2 border-[#2E130C] bg-[#E2D9BC] px-4 py-2 text-xs font-black text-center">
-                    {transferMode === "message" ? "Message envoyé au client" : "Numéro transmis pour appel"} → {activeMacroNode?.name}
+                {activeMacroNode && (
+                  <div
+                    className="absolute -translate-x-1/2 -translate-y-1/2 transition-all duration-[1200ms]"
+                    style={{ left: `${(50 + activeMacroNode.x) / 2}%`, top: `${(50 + activeMacroNode.y) / 2}%` }}
+                  >
+                    <div className="rounded-xl border-2 border-[#2E130C] bg-[#E2D9BC] px-3 py-2 md:px-4 md:py-2.5 shadow-[4px_4px_0px_0px_#2E130C] min-w-[190px] md:min-w-[240px] text-center">
+                      <p className="text-[10px] md:text-xs font-black text-[#B20B13] uppercase tracking-wide">{transferLabel}</p>
+                      <p className="mt-0.5 text-[10px] md:text-[11px] font-bold">{transferDetail}</p>
+                    </div>
+                  </div>
+                )}
+                <div className="absolute bottom-3 left-3 right-3 flex items-center justify-center">
+                  <div className="rounded-full border-2 border-[#2E130C] bg-[#E2D9BC] px-4 py-2 text-[11px] font-black text-center">
+                    Cible en cours : {activeMacroNode?.name}
                   </div>
                 </div>
               </div>
