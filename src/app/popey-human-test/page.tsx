@@ -201,10 +201,34 @@ export default function PopeyHumanTestPage() {
   const sphereSection = sections.find((section) => section.id === "sphere");
 
   const promiseBlocks = [
-    "Monter un binôme métier complémentaire avec une offre commune monétisable.",
-    "Activer vos audiences existantes avec un plan d'exécution simple et traçable.",
-    "Transformer le réseau dormant en RDV qualifiés, closings et revenus concrets.",
-    "Passer du test Mois 1 à la Sphère des 20 pour scaler votre CA.",
+    {
+      title: "Construire le binôme",
+      text: "Monter un binôme métier complémentaire avec une offre commune monétisable.",
+      example: "Exemple : Architecte + Cuisiniste → Pack Signature à 497€.",
+      metric: "Objectif S1 : 1 offre claire",
+      image: "https://images.unsplash.com/photo-1552664730-d307ca884978?q=80&w=1200&auto=format&fit=crop",
+    },
+    {
+      title: "Activer l'audience",
+      text: "Activer vos audiences existantes avec un plan d'exécution simple et traçable.",
+      example: "Exemple : collab post + stories + ads localisées.",
+      metric: "Objectif S2 : 6 000 à 14 000 vues",
+      image: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?q=80&w=1200&auto=format&fit=crop",
+    },
+    {
+      title: "Convertir en revenu",
+      text: "Transformer le réseau dormant en RDV qualifiés, closings et revenus concrets.",
+      example: "Exemple : Sprint des 20 + appels duo + suivi Synergy Tracker.",
+      metric: "Objectif S3 : 4 à 12 réponses qualifiées",
+      image: "https://images.unsplash.com/photo-1552581234-26160f608093?q=80&w=1200&auto=format&fit=crop",
+    },
+    {
+      title: "Scaler avec la sphère",
+      text: "Passer du test Mois 1 à la Sphère des 20 pour scaler votre CA.",
+      example: "Exemple : 1 vente déclenche 5 à 10 contrats satellites.",
+      metric: "Objectif S4 : passage à 490€/mois",
+      image: "https://images.unsplash.com/photo-1521737604893-d14cc237f11d?q=80&w=1200&auto=format&fit=crop",
+    },
   ];
 
   const faqItems = [
@@ -288,11 +312,23 @@ export default function PopeyHumanTestPage() {
             <h2 className="mt-3 text-3xl md:text-5xl font-titan">Un système concret pour transformer votre réseau en chiffre d&apos;affaires.</h2>
             <div className="mt-8 grid md:grid-cols-2 lg:grid-cols-4 gap-4">
               {promiseBlocks.map((item, idx) => (
-                <div key={item} className="rounded-2xl border-2 border-[#2E130C] bg-white p-5 shadow-[6px_6px_0px_0px_#2E130C]">
+                <div key={item.title} className="rounded-2xl border-2 border-[#2E130C] bg-white overflow-hidden shadow-[6px_6px_0px_0px_#2E130C]">
+                  <img src={item.image} alt={item.title} className="w-full h-28 object-cover border-b-2 border-[#2E130C]" />
+                  <div className="p-4">
                   <p className="text-xs uppercase tracking-widest font-black text-[#B20B13]">{`0${idx + 1}`}</p>
-                  <p className="mt-2 font-bold leading-relaxed">{item}</p>
+                  <p className="mt-1 font-titan text-2xl leading-tight">{item.title}</p>
+                  <p className="mt-2 text-sm font-bold leading-relaxed">{item.text}</p>
+                  <p className="mt-2 text-xs font-black text-[#2E130C]/80">{item.example}</p>
+                  <p className="mt-2 text-xs uppercase tracking-wider font-black text-[#B20B13]">{item.metric}</p>
+                  </div>
                 </div>
               ))}
+            </div>
+            <div className="mt-6 rounded-2xl border-2 border-[#2E130C] bg-[#2E130C] text-[#E2D9BC] p-5">
+              <p className="text-xs uppercase tracking-widest font-black text-[#D2E8FF]">But final à atteindre</p>
+              <p className="mt-2 font-titan text-2xl">Mois 1 : 3 clients closés = 1 800€ immédiats</p>
+              <p className="mt-1 font-bold text-sm text-[#E2D9BC]/90">+ potentiel de 3 clients à 25 000€ = 75 000€ de pipeline.</p>
+              <p className="mt-1 font-bold text-sm text-[#E2D9BC]/90">Objectif Popey : installer un système qui produit du cash court terme et du gros CA derrière.</p>
             </div>
           </div>
         </div>
