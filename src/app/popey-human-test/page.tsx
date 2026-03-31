@@ -34,29 +34,6 @@ const ventures = [
   "7) Elyot (Bordeaux) — depuis septembre 2017 : socialisation instantanée et géolocalisée",
 ];
 
-const founderMilestones = [
-  "2004 : création à Paris d'une société de distributeurs automatiques (CA annuel 650 000€), revendue en 2006.",
-  "2007 : création de 3 restaurants à Dax et 1 à Pau ; management de 30 à 40 salariés ; revente après 4 ans.",
-  "2013 : lancement de la chaîne de boulangeries Au Petit Paris à Dubaï ; concept revendu en 1 an.",
-  "2014-2017 : lancement de My-Sign puis pivot vers 1TAM ; levées de fonds successives (300K€ puis 700K€ cumulés).",
-  "Fin 2017 : maintien de 20% des parts et passage en rôle de conseiller stratégique depuis la France.",
-];
-
-const productLearnings = [
-  "Compétences nécessaires pour développer une application de type Mikky.",
-  "Cadence produit réaliste : 5 mois de développement + 1 mois de débuggage et ajustements.",
-  "Seuil de traction initial à viser : 1 000 utilisateurs en 2 à 3 mois.",
-  "Lecture des taux de rebond comme signaux d&apos;alerte prioritaires.",
-  "Nécessité d'améliorer, pivoter et retester en continu avec des communautés bêta-testeurs.",
-];
-
-const founderProofs = [
-  { label: "Sociétés dirigées", value: "7" },
-  { label: "CA annuel (Lolypop)", value: "650K€" },
-  { label: "Restaurants pilotés", value: "4" },
-  { label: "Levées de fonds", value: "700K€+" },
-];
-
 
 const heritageSphereClusters = [
   {
@@ -187,11 +164,30 @@ export default function PopeyHumanTestPage() {
       }),
     [allHeritageRoles],
   );
+  const [activeMacroIndex, setActiveMacroIndex] = useState(0);
+  const activeMacroNode = macroNodes[activeMacroIndex % Math.max(macroNodes.length, 1)];
+  const nextMacroNode = macroNodes[(activeMacroIndex + 1) % Math.max(macroNodes.length, 1)];
+  const getRoleSymbol = (name: string) =>
+    name
+      .split(/[\s/&-]+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part) => part[0])
+      .join("")
+      .toUpperCase();
 
   useEffect(() => {
     window.sessionStorage.setItem("popey_network_revenue", String(networkRevenue));
     window.sessionStorage.setItem("popey_target_revenue", String(targetRevenue));
   }, [networkRevenue, targetRevenue]);
+
+  useEffect(() => {
+    if (!macroNodes.length) return;
+    const timer = window.setInterval(() => {
+      setActiveMacroIndex((prev) => (prev + 1) % macroNodes.length);
+    }, 1700);
+    return () => window.clearInterval(timer);
+  }, [macroNodes.length]);
 
   const faqItems = [
     {
@@ -337,37 +333,57 @@ export default function PopeyHumanTestPage() {
             <div className="mt-6 rounded-2xl border-2 border-[#2E130C] bg-[#E2D9BC] p-4">
               <div className="relative aspect-square md:aspect-[16/10] w-full overflow-hidden rounded-xl border-2 border-[#2E130C] bg-white">
                 <svg viewBox="0 0 100 100" className="absolute inset-0 h-full w-full">
-                  <circle cx="50" cy="50" r="36" fill="none" stroke="#2E130C" strokeOpacity="0.18" strokeWidth="0.45" strokeDasharray="1.8 1.8" />
+                  <circle cx="50" cy="50" r="22" fill="none" stroke="#2E130C" strokeOpacity="0.12" strokeWidth="0.35" />
+                  <circle cx="50" cy="50" r="36" fill="none" stroke="#2E130C" strokeOpacity="0.22" strokeWidth="0.45" strokeDasharray="1.8 1.8" />
+                  <circle cx="50" cy="50" r="44" fill="none" stroke="#2E130C" strokeOpacity="0.12" strokeWidth="0.25" />
                   {macroNodes.map((node) => (
-                    <line key={`l-${node.id}`} x1="50" y1="50" x2={node.x} y2={node.y} stroke="#2E130C" strokeOpacity="0.1" strokeWidth="0.25" />
+                    <line key={`l-${node.id}`} x1="50" y1="50" x2={node.x} y2={node.y} stroke="#2E130C" strokeOpacity={activeMacroNode?.id === node.id ? "0.55" : "0.12"} strokeWidth={activeMacroNode?.id === node.id ? "0.55" : "0.25"} />
                   ))}
+                  {activeMacroNode && nextMacroNode && (
+                    <line
+                      x1={activeMacroNode.x}
+                      y1={activeMacroNode.y}
+                      x2={nextMacroNode.x}
+                      y2={nextMacroNode.y}
+                      stroke="#B20B13"
+                      strokeOpacity="0.55"
+                      strokeWidth="0.42"
+                      strokeDasharray="1.4 1.2"
+                    />
+                  )}
                 </svg>
-                <div className="absolute inset-0 animate-spin" style={{ animationDuration: "34s" }}>
+                <div className="absolute inset-0">
                   {macroNodes.map((node) => (
-                    <div
+                    <button
                       key={node.id}
-                      className="absolute -translate-x-1/2 -translate-y-1/2"
+                      type="button"
+                      onClick={() => setSelectedRoleId(node.id)}
+                      className="absolute -translate-x-1/2 -translate-y-1/2 group"
                       style={{ left: `${node.x}%`, top: `${node.y}%` }}
                     >
-                      <div className={cn("h-3.5 w-3.5 md:h-4 md:w-4 rounded-full border border-[#2E130C] shadow-sm", selectedRole?.id === node.id ? "bg-[#B20B13]" : "bg-[#2E130C]")} />
-                    </div>
+                      <div className={cn("h-10 w-10 md:h-11 md:w-11 rounded-full border-2 flex items-center justify-center text-[11px] md:text-xs font-black transition-all", activeMacroNode?.id === node.id ? "border-[#B20B13] bg-[#B20B13] text-[#E2D9BC] scale-110 shadow-[0_0_0_4px_rgba(178,11,19,0.22)]" : selectedRole?.id === node.id ? "border-[#2E130C] bg-[#2E130C] text-[#E2D9BC]" : "border-[#2E130C] bg-white text-[#2E130C] group-hover:bg-[#D2E8FF]")}>
+                        {getRoleSymbol(node.name)}
+                      </div>
+                    </button>
                   ))}
                 </div>
+                {activeMacroNode && (
+                  <div className="absolute h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-[#2E130C] bg-[#B20B13] shadow-[0_0_0_4px_rgba(178,11,19,0.22)] transition-all duration-700" style={{ left: `${activeMacroNode.x}%`, top: `${activeMacroNode.y}%` }} />
+                )}
                 <div className="absolute left-1/2 top-1/2 h-24 w-24 md:h-36 md:w-36 -translate-x-1/2 -translate-y-1/2 rounded-full border-4 border-[#2E130C] bg-[#2E130C] text-[#E2D9BC] flex items-center justify-center text-center px-3 animate-pulse">
                   <p className="font-titan text-lg md:text-2xl leading-tight">Le client cible</p>
                 </div>
-                <div className="absolute bottom-3 left-3 right-3 hidden md:flex flex-wrap gap-2 justify-center">
-                  {macroNodes.slice(0, 8).map((node) => (
-                    <span key={`lg-${node.id}`} className={cn("rounded-full border px-2 py-1 text-[10px] font-black", selectedRole?.id === node.id ? "border-[#B20B13] bg-[#B20B13] text-[#E2D9BC]" : "border-[#2E130C] bg-white")}>
-                      {node.name}
-                    </span>
-                  ))}
+                <div className="absolute bottom-3 left-3 right-3 hidden md:flex items-center justify-center">
+                  <div className="rounded-full border-2 border-[#2E130C] bg-[#E2D9BC] px-4 py-2 text-xs font-black">
+                    Parcours client en cours : {activeMacroNode?.name}
+                  </div>
                 </div>
               </div>
-              <div className="mt-3 md:hidden grid grid-cols-2 gap-2">
+              <div className="mt-3 grid sm:grid-cols-2 lg:grid-cols-3 gap-2">
                 {macroNodes.map((node) => (
-                  <div key={`sm-${node.id}`} className={cn("rounded-lg border px-2 py-1 text-[11px] font-black leading-tight", selectedRole?.id === node.id ? "border-[#B20B13] bg-[#B20B13] text-[#E2D9BC]" : "border-[#2E130C] bg-white")}>
-                    {node.name}
+                  <div key={`sm-${node.id}`} className={cn("rounded-lg border px-2 py-1 text-[11px] font-black leading-tight flex items-center gap-2", activeMacroNode?.id === node.id ? "border-[#B20B13] bg-[#B20B13] text-[#E2D9BC]" : selectedRole?.id === node.id ? "border-[#2E130C] bg-[#2E130C] text-[#E2D9BC]" : "border-[#2E130C] bg-white")}>
+                    <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-current text-[9px]">{getRoleSymbol(node.name)}</span>
+                    <span>{node.name}</span>
                   </div>
                 ))}
               </div>
@@ -443,9 +459,9 @@ export default function PopeyHumanTestPage() {
         <div className="container mx-auto px-4">
           <div className="max-w-6xl mx-auto">
             <p className="text-xs uppercase tracking-widest font-black text-[#B20B13]">Choisissez votre métier</p>
-            <h2 className="mt-3 text-3xl md:text-5xl font-titan">Sphère Patrimoine & Art de Vivre — 20 piliers</h2>
+            <h2 className="mt-3 text-3xl md:text-5xl font-titan">Selectionnez votre metier</h2>
             <p className="mt-3 font-bold text-[#2E130C]/90">
-              Sélectionnez votre métier, puis déroulez votre parcours personnalisé Mois 1, Mois 2 et Mois 3.
+              Puis déroulez votre parcours personnalisé Mois 1, Mois 2 et Mois 3.
             </p>
             <div className="mt-4 rounded-2xl border-2 border-[#2E130C] bg-[#D2E8FF] p-4">
               <p className="text-xs uppercase tracking-widest font-black text-[#B20B13]">Objectif dynamique</p>
@@ -603,14 +619,6 @@ export default function PopeyHumanTestPage() {
               <p className="mt-5 font-bold leading-relaxed">7 entreprises pilotées. Même constat à chaque fois : sans système réseau, le CA plafonne.</p>
             </div>
             <div className="lg:col-span-2 space-y-6">
-              <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                {founderProofs.map((proof) => (
-                  <div key={proof.label} className="rounded-2xl border-2 border-[#2E130C] bg-[#D2E8FF] p-4 text-center hover:scale-[1.02] transition-transform">
-                    <p className="text-3xl font-titan text-[#B20B13]">{proof.value}</p>
-                    <p className="text-[11px] uppercase tracking-widest font-black mt-1">{proof.label}</p>
-                  </div>
-                ))}
-              </div>
               <div className="rounded-3xl border-4 border-[#2E130C] bg-white p-6 shadow-[8px_8px_0px_0px_#2E130C]">
                 <p className="text-sm font-black uppercase tracking-widest text-[#B20B13]">Preuve rapide</p>
                 <p className="mt-2 font-bold">De Bangkok à Dubaï puis Bordeaux : retail, restauration et apps. La solution Popey est née du terrain, pas d&apos;une théorie.</p>
@@ -618,14 +626,6 @@ export default function PopeyHumanTestPage() {
                   <details className="rounded-xl border-2 border-[#2E130C] bg-[#E2D9BC] px-4 py-3">
                     <summary className="cursor-pointer font-black">Voir les 7 entreprises</summary>
                     <ul className="mt-3 space-y-2 text-sm font-bold">{ventures.map((venture) => <li key={venture}>{venture}</li>)}</ul>
-                  </details>
-                  <details className="rounded-xl border-2 border-[#2E130C] bg-[#E2D9BC] px-4 py-3">
-                    <summary className="cursor-pointer font-black">Voir les repères clés</summary>
-                    <ul className="mt-3 space-y-2 text-sm font-bold">{founderMilestones.map((milestone) => <li key={milestone}>{milestone}</li>)}</ul>
-                  </details>
-                  <details className="rounded-xl border-2 border-[#2E130C] bg-[#E2D9BC] px-4 py-3">
-                    <summary className="cursor-pointer font-black">Voir les apprentissages produit</summary>
-                    <ul className="mt-3 space-y-2 text-sm font-bold">{productLearnings.map((learning) => <li key={learning}>{learning}</li>)}</ul>
                   </details>
                 </div>
               </div>
