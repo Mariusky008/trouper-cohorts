@@ -1,4 +1,7 @@
+ "use client";
+
 import Link from "next/link";
+import { useMemo, useState } from "react";
 import { Titan_One, Pacifico, Poppins } from "next/font/google";
 import { cn } from "@/lib/utils";
 
@@ -156,41 +159,50 @@ const methodTimeline = [
   },
 ];
 
-const sphereClusters = [
+const heritageSphereClusters = [
   {
-    title: "Cluster 1 — Transaction & Finance",
-    roles: "Entrée d'argent, financement, structuration",
+    title: "Cluster 1 — Transaction & Finance (Les portes d'entrée)",
+    purpose: "Ceux qui savent en premier quand l'argent arrive.",
+    roles: [
+      { id: "chasseur-luxe", name: "Chasseur Immobilier de Luxe", binomes: ["Architecte d'Intérieur", "Cuisiniste Haut de Gamme", "Conciergerie Privée"], deal: 22000 },
+      { id: "courtier-private", name: "Courtier en Prêt Immobilier Private Banking", binomes: ["Avocat Fiscaliste", "Maître d'Œuvre", "CGP"], deal: 18000 },
+      { id: "cgp", name: "Conseiller en Gestion de Patrimoine (CGP)", binomes: ["Avocat Fiscaliste", "Art Advisor", "Spécialiste Cave à Vin"], deal: 30000 },
+      { id: "avocat-fiscaliste", name: "Avocat Fiscaliste", binomes: ["CGP", "Assureur Objets de Valeur", "Chasseur Immobilier de Luxe"], deal: 25000 },
+      { id: "assureur-valeur", name: "Assureur Objets de Valeur", binomes: ["Galeriste / Art Advisor", "Antiquaire", "Conciergerie Privée"], deal: 15000 },
+    ],
   },
   {
-    title: "Cluster 2 — Métamorphose du lieu",
-    roles: "Vision, travaux, cuisine, domotique",
+    title: "Cluster 2 — Métamorphose du Lieu (Le gros budget)",
+    purpose: "Là où le client dépense 20% à 50% de la valeur du bien.",
+    roles: [
+      { id: "architecte-interieur", name: "Architecte d'Intérieur", binomes: ["Cuisiniste Haut de Gamme", "Maître d'Œuvre", "Concepteur Lumière"], deal: 28000 },
+      { id: "maitre-oeuvre", name: "Maître d'Œuvre / Contractant Général", binomes: ["Architecte d'Intérieur", "Expert Domotique & Sécurité", "Paysagiste Concepteur"], deal: 32000 },
+      { id: "paysagiste", name: "Paysagiste Concepteur / Piscine de prestige", binomes: ["Maître d'Œuvre", "Concepteur Lumière", "Chef à Domicile"], deal: 17000 },
+      { id: "cuisiniste", name: "Cuisiniste Haut de Gamme", binomes: ["Architecte d'Intérieur", "Ébéniste / Menuisier d'Art", "Chef à Domicile"], deal: 24000 },
+      { id: "domotique", name: "Expert en Domotique & Sécurité", binomes: ["Maître d'Œuvre", "Concepteur Lumière", "Conciergerie Privée"], deal: 19000 },
+    ],
   },
   {
-    title: "Cluster 3 — Équipement & Esthétique",
-    roles: "Sur-mesure, art, ambiance, design",
+    title: "Cluster 3 — Équipement & Esthétique (Le raffinement)",
+    purpose: "Le sur-mesure, l'exclusif, la valeur perçue.",
+    roles: [
+      { id: "ebeniste", name: "Ébéniste / Menuisier d'Art", binomes: ["Architecte d'Intérieur", "Antiquaire", "Cuisiniste Haut de Gamme"], deal: 14000 },
+      { id: "art-advisor", name: "Galeriste / Art Advisor", binomes: ["Assureur Objets de Valeur", "Antiquaire", "CGP"], deal: 26000 },
+      { id: "hifi-home-cinema", name: "Spécialiste Hi-Fi & Home Cinéma", binomes: ["Concepteur Lumière", "Domotique & Sécurité", "Conciergerie Privée"], deal: 12000 },
+      { id: "lighting-designer", name: "Concepteur Lumière (Lighting Designer)", binomes: ["Architecte d'Intérieur", "Spécialiste Hi-Fi & Home Cinéma", "Paysagiste Concepteur"], deal: 11000 },
+      { id: "antiquaire", name: "Antiquaire / Expert Mobilier Design", binomes: ["Art Advisor", "Ébéniste", "Assureur Objets de Valeur"], deal: 21000 },
+    ],
   },
   {
-    title: "Cluster 4 — Intendance & Prestige",
-    roles: "Service récurrent, réception, gestion haut de gamme",
-  },
-];
-
-const wellnessClusters = [
-  {
-    title: "Cluster 1 — Corps (Noyau dur)",
-    roles: "Coach sportif, Nutritionniste, Ostéopathe, Drainage/Massage sportif, Sommeil/Bio-hacking",
-  },
-  {
-    title: "Cluster 2 — Mindset & Mental",
-    roles: "Coach de vie, Hypnothérapeute, Psychologue du travail, Yoga/Pilates",
-  },
-  {
-    title: "Cluster 3 — Image & Apparence",
-    roles: "Coach en image, Esthétique high-tech, Coiffeur visagiste, Photographe, Dentiste esthétique",
-  },
-  {
-    title: "Cluster 4 — Lifestyle & Business",
-    roles: "Expert-comptable, CGP, Agent immobilier, Chef à domicile, Conciergerie, Coach charisme",
+    title: "Cluster 4 — Intendance & Prestige (Le récurrent)",
+    purpose: "Ceux qui gèrent le quotidien et multiplient les opportunités.",
+    roles: [
+      { id: "conciergerie", name: "Conciergerie Privée", binomes: ["Chef à Domicile", "Domotique & Sécurité", "Spécialiste Cave à Vin"], deal: 16000 },
+      { id: "chef-domicile", name: "Chef à Domicile", binomes: ["Conciergerie Privée", "Cuisiniste Haut de Gamme", "Spécialiste Cave à Vin"], deal: 9000 },
+      { id: "demenageur-premium", name: "Déménageur Premium / Garde-meuble sécurisé", binomes: ["Home Organizer", "Conciergerie Privée", "Assureur Objets de Valeur"], deal: 8000 },
+      { id: "home-organizer", name: "Home Organizer", binomes: ["Conciergerie Privée", "Ébéniste / Menuisier d'Art", "Architecte d'Intérieur"], deal: 7000 },
+      { id: "sommelier", name: "Spécialiste Cave à Vin / Sommelier privé", binomes: ["Chef à Domicile", "CGP", "Conciergerie Privée"], deal: 13000 },
+    ],
   },
 ];
 
@@ -198,34 +210,43 @@ export default function PopeyHumanTestPage() {
   const miroirSection = sections.find((section) => section.id === "miroir");
   const gapSection = sections.find((section) => section.id === "gap");
   const methodSection = sections.find((section) => section.id === "method");
-  const sphereSection = sections.find((section) => section.id === "sphere");
+  const allHeritageRoles = useMemo(() => heritageSphereClusters.flatMap((cluster) => cluster.roles), []);
+  const [selectedRoleId, setSelectedRoleId] = useState(allHeritageRoles[0]?.id ?? "");
+  const selectedRole = useMemo(
+    () => allHeritageRoles.find((role) => role.id === selectedRoleId) ?? allHeritageRoles[0],
+    [allHeritageRoles, selectedRoleId],
+  );
+  const selectedCluster = useMemo(
+    () => heritageSphereClusters.find((cluster) => cluster.roles.some((role) => role.id === selectedRole?.id)),
+    [selectedRole],
+  );
 
   const promiseBlocks = [
     {
       title: "Construire le binôme",
-      text: "Monter un binôme métier complémentaire avec une offre commune monétisable.",
-      example: "Exemple : Architecte + Cuisiniste → Pack Signature à 497€.",
+      text: `Structurer ${selectedRole?.name} + ${selectedRole?.binomes[0]} en offre duo monétisable.`,
+      example: `Exemple : Pack d'entrée positionné entre 497€ et 900€ selon votre marché.`,
       metric: "Objectif S1 : 1 offre claire",
       image: "https://images.unsplash.com/photo-1552664730-d307ca884978?q=80&w=1200&auto=format&fit=crop",
     },
     {
       title: "Activer l'audience",
-      text: "Activer vos audiences existantes avec un plan d'exécution simple et traçable.",
-      example: "Exemple : collab post + stories + ads localisées.",
+      text: `Activer l'audience de ${selectedRole?.name} et de ${selectedRole?.binomes[0]} avec plan traçable.`,
+      example: "Exemple : collab post + stories + ads localisées + tagging croisé.",
       metric: "Objectif S2 : 6 000 à 14 000 vues",
       image: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?q=80&w=1200&auto=format&fit=crop",
     },
     {
       title: "Convertir en revenu",
-      text: "Transformer le réseau dormant en RDV qualifiés, closings et revenus concrets.",
-      example: "Exemple : Sprint des 20 + appels duo + suivi Synergy Tracker.",
+      text: `Transformer le réseau dormant de ${selectedRole?.name} en RDV qualifiés, closings et revenus.`,
+      example: `Exemple : Sprint des 20 + appels duo avec ${selectedRole?.binomes[1]}.`,
       metric: "Objectif S3 : 4 à 12 réponses qualifiées",
       image: "https://images.unsplash.com/photo-1552581234-26160f608093?q=80&w=1200&auto=format&fit=crop",
     },
     {
       title: "Scaler avec la sphère",
-      text: "Passer du test Mois 1 à la Sphère des 20 pour scaler votre CA.",
-      example: "Exemple : 1 vente déclenche 5 à 10 contrats satellites.",
+      text: `Passer du test Mois 1 à la Sphère Patrimoine & Art de Vivre pour scaler le CA de ${selectedRole?.name}.`,
+      example: `Exemple : ${selectedRole?.name} déclenche ensuite des missions chez ${selectedRole?.binomes[2]}.`,
       metric: "Objectif S4 : passage à 490€/mois",
       image: "https://images.unsplash.com/photo-1521737604893-d14cc237f11d?q=80&w=1200&auto=format&fit=crop",
     },
@@ -235,13 +256,13 @@ export default function PopeyHumanTestPage() {
     {
       q: "Est-ce que Popey peut vraiment augmenter mon CA ?",
       a: "Oui. Popey structure vos synergies en actions hebdo, suivi et objectifs chiffrés.",
-      proof: "Mois 1 visé : 3 closings à 600€ = 1 800€ + pipeline 75 000€.",
+      proof: `Mois 1 visé pour ${selectedRole?.name} : 3 closings à 600€ = 1 800€ + pipeline 75 000€.`,
       action: "Audit de complémentarité + plan d'exécution S1 à S4.",
     },
     {
       q: "Je suis déjà expérimenté, est-ce utile pour moi ?",
       a: "Oui, car le sujet n'est pas votre compétence métier : c'est l'orchestration de votre écosystème.",
-      proof: "Passage du solo au duo, puis du duo à la Sphère des 20.",
+      proof: `Passage du solo (${selectedRole?.name}) au duo, puis du duo à la Sphère des 20.`,
       action: "Positionnement de votre rôle et de votre valeur dans le flux global.",
     },
     {
@@ -265,8 +286,8 @@ export default function PopeyHumanTestPage() {
     {
       q: "Pourquoi rester après le Mois 1 ?",
       a: "Parce que le Mois 1 valide le moteur, et la Sphère des 20 multiplie les opportunités.",
-      proof: "1 entrée client peut déclencher 5 à 10 contrats satellites.",
-      action: "Passage à 490€/mois pour capter le flux inter-métiers en continu.",
+      proof: `Pour ${selectedRole?.name}, 1 entrée client peut déclencher 5 à 10 contrats satellites.`,
+      action: `Passage à 490€/mois pour connecter ${selectedRole?.name} aux 19 autres métiers.`,
     },
   ];
 
@@ -332,6 +353,84 @@ export default function PopeyHumanTestPage() {
       <section className="py-16 border-b-4 border-[#2E130C]">
         <div className="container mx-auto px-4">
           <div className="max-w-6xl mx-auto">
+            <p className="text-xs uppercase tracking-widest font-black text-[#B20B13]">Choisissez votre métier</p>
+            <h2 className="mt-3 text-3xl md:text-5xl font-titan">Sphère Patrimoine & Art de Vivre — 20 piliers</h2>
+            <p className="mt-3 font-bold text-[#2E130C]/90">
+              Sélectionnez votre métier et Popey vous propose immédiatement vos binômes prioritaires et votre trajectoire Mois 1 → Mois 3.
+            </p>
+            <div className="mt-8 space-y-4">
+              {heritageSphereClusters.map((cluster) => (
+                <div key={cluster.title} className="rounded-2xl border-2 border-[#2E130C] bg-white p-4 shadow-[6px_6px_0px_0px_#2E130C]">
+                  <p className="text-sm font-black text-[#B20B13]">{cluster.title}</p>
+                  <p className="text-sm font-bold mt-1">{cluster.purpose}</p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {cluster.roles.map((role) => (
+                      <button
+                        key={role.id}
+                        type="button"
+                        onClick={() => setSelectedRoleId(role.id)}
+                        className={cn(
+                          "rounded-full border-2 border-[#2E130C] px-3 py-1.5 text-xs font-black uppercase tracking-wide transition-colors",
+                          selectedRole?.id === role.id ? "bg-[#B20B13] text-[#E2D9BC]" : "bg-[#E2D9BC] text-[#2E130C]",
+                        )}
+                      >
+                        {role.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-8 grid lg:grid-cols-2 gap-4">
+              <div className="rounded-2xl border-2 border-[#2E130C] bg-[#2E130C] text-[#E2D9BC] p-5">
+                <p className="text-xs uppercase tracking-widest font-black text-[#D2E8FF]">Votre plan personnalisé</p>
+                <p className="mt-2 font-titan text-2xl">{selectedRole?.name}</p>
+                <p className="mt-2 text-sm font-bold">Mois 1 détaillé : binôme prioritaire avec {selectedRole?.binomes[0]}.</p>
+                <ul className="mt-3 space-y-1 text-sm font-bold text-[#E2D9BC]/90">
+                  <li>• S1 : offre duo et proposition commune.</li>
+                  <li>• S2 : activation audience croisée.</li>
+                  <li>• S3 : qualification et appels duo.</li>
+                  <li>• S4 : premiers closings et preuve ROI.</li>
+                </ul>
+                <p className="mt-3 text-sm font-bold">Mois 2 : 2e binôme avec {selectedRole?.binomes[1]} (sans détailler, orienté exécution).</p>
+                <p className="mt-2 text-sm font-bold">Mois 3 : 3e binôme avec {selectedRole?.binomes[2]} + ouverture du canal des 20 partenaires.</p>
+              </div>
+
+              <div className="rounded-2xl border-2 border-[#2E130C] bg-white p-5 shadow-[6px_6px_0px_0px_#2E130C]">
+                <p className="text-xs uppercase tracking-widest font-black text-[#B20B13]">La pompe à recommandation</p>
+                <div className="mt-4 rounded-xl border-2 border-[#2E130C] bg-[#D2E8FF] p-4">
+                  <p className="font-titan text-xl text-center">{selectedRole?.name}</p>
+                  <p className="text-center text-xs font-black mt-1">↕ 19 partenaires connectés</p>
+                  <p className="mt-3 text-sm font-bold text-center">
+                    Vous apportez une affaire → vous touchez 10% de commission en tant qu&apos;apporteur.
+                  </p>
+                </div>
+                <div className="mt-4 grid grid-cols-3 gap-2">
+                  {selectedRole?.binomes.map((binome) => (
+                    <div key={binome} className="rounded-lg border border-[#2E130C] bg-[#E2D9BC] p-2 text-xs font-black text-center">
+                      {binome}
+                    </div>
+                  ))}
+                </div>
+                <p className="mt-4 text-sm font-bold">
+                  Exemple concret : si {selectedRole?.name} apporte un projet à {selectedRole?.binomes[0]} à {selectedRole?.deal.toLocaleString("fr-FR")}€,
+                  la commission d&apos;apport estimée = {(selectedRole?.deal * 0.1).toLocaleString("fr-FR")}€.
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-5 rounded-2xl border-2 border-[#2E130C] bg-[#E2D9BC] p-4">
+              <p className="font-black">Cluster actif : {selectedCluster?.title}</p>
+              <p className="mt-1 text-sm font-bold">{selectedCluster?.purpose}</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="py-16 border-b-4 border-[#2E130C]">
+        <div className="container mx-auto px-4">
+          <div className="max-w-6xl mx-auto">
             <p className="text-xs uppercase tracking-widest font-black text-[#B20B13]">La promesse</p>
             <h2 className="mt-3 text-3xl md:text-5xl font-titan">Un système concret pour transformer votre réseau en chiffre d&apos;affaires.</h2>
             <div className="mt-8 grid md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -350,7 +449,7 @@ export default function PopeyHumanTestPage() {
             </div>
             <div className="mt-6 rounded-2xl border-2 border-[#2E130C] bg-[#2E130C] text-[#E2D9BC] p-5">
               <p className="text-xs uppercase tracking-widest font-black text-[#D2E8FF]">But final à atteindre</p>
-              <p className="mt-2 font-titan text-2xl">Mois 1 : 3 clients closés = 1 800€ immédiats</p>
+              <p className="mt-2 font-titan text-2xl">Mois 1 ({selectedRole?.name}) : 3 clients closés = 1 800€ immédiats</p>
               <p className="mt-1 font-bold text-sm text-[#E2D9BC]/90">+ potentiel de 3 clients à 25 000€ = 75 000€ de pipeline.</p>
               <p className="mt-1 font-bold text-sm text-[#E2D9BC]/90">Objectif Popey : installer un système qui produit du cash court terme et du gros CA derrière.</p>
             </div>
@@ -456,7 +555,9 @@ export default function PopeyHumanTestPage() {
           <div className="container mx-auto px-4">
             <div className="max-w-6xl mx-auto bg-white rounded-3xl border-4 border-[#2E130C] p-8 shadow-[8px_8px_0px_0px_#2E130C]">
               <p className="text-xs uppercase tracking-widest font-black text-[#B20B13]">{methodSection.title}</p>
-              <h2 className="mt-4 text-3xl md:text-5xl font-titan leading-tight">{methodSection.heading}</h2>
+              <h2 className="mt-4 text-3xl md:text-5xl font-titan leading-tight">
+                {`Plan Mois 1 personnalisé : ${selectedRole?.name} + ${selectedRole?.binomes[0]}.`}
+              </h2>
               <div className="mt-6 grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
                 {methodTimeline.map((item) => (
                   <div key={item.step} className={cn("rounded-2xl border-2 border-[#2E130C] p-4", item.color)}>
@@ -471,7 +572,7 @@ export default function PopeyHumanTestPage() {
               </div>
               <div className="mt-4 rounded-2xl border-2 border-[#2E130C] bg-[#2E130C] text-[#E2D9BC] p-4">
                 <p className="text-xs uppercase tracking-widest font-black text-[#D2E8FF]">Fin du Mois 1 — Projection de gains</p>
-                <p className="mt-2 font-titan text-xl">3 clients closés = 1 800€ immédiats</p>
+                <p className="mt-2 font-titan text-xl">{`3 clients closés (${selectedRole?.name}) = 1 800€ immédiats`}</p>
                 <p className="mt-1 font-bold text-sm text-[#E2D9BC]/90">+ potentiel de 3 clients à 25 000€ chacun = 75 000€ de pipeline.</p>
                 <p className="mt-1 font-bold text-sm text-[#E2D9BC]/90">Le Mois 1 n&apos;est pas une dépense : c&apos;est une preuve de ROI et un levier de CA futur.</p>
               </div>
@@ -480,53 +581,32 @@ export default function PopeyHumanTestPage() {
         </section>
       )}
 
-      {sphereSection && (
-        <section id="sphere" className="py-16 border-b-4 border-[#2E130C]">
-          <div className="container mx-auto px-4">
-            <div className="max-w-6xl mx-auto bg-white rounded-3xl border-4 border-[#2E130C] p-8 shadow-[8px_8px_0px_0px_#2E130C]">
-              <p className="text-xs uppercase tracking-widest font-black text-[#B20B13]">{sphereSection.title}</p>
-              <h2 className="mt-4 text-3xl md:text-5xl font-titan leading-tight">{sphereSection.heading}</h2>
-              <div className="mt-6 space-y-4">
-                <details open className="rounded-2xl border-2 border-[#2E130C] bg-[#E2D9BC] p-4">
-                  <summary className="cursor-pointer font-black text-[#B20B13]">Exemple 1 — Sphère Patrimoine & Art de vivre</summary>
-                  <div className="mt-4 grid sm:grid-cols-2 gap-3">
-                    {sphereClusters.map((cluster) => (
-                      <div key={cluster.title} className="rounded-2xl border-2 border-[#2E130C] bg-[#D2E8FF]/40 p-4">
-                        <p className="text-sm font-black text-[#B20B13]">{cluster.title}</p>
-                        <p className="mt-2 text-sm font-bold leading-relaxed">{cluster.roles}</p>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="mt-3 rounded-2xl border-2 border-[#2E130C] bg-[#2E130C] text-[#E2D9BC] p-4">
-                    <p className="text-xs uppercase tracking-widest font-black text-[#D2E8FF]">Flux</p>
-                    <p className="mt-1 font-titan text-xl">Vente immo → 5 à 10 contrats satellites</p>
-                  </div>
-                </details>
-                <details className="rounded-2xl border-2 border-[#2E130C] bg-[#D2E8FF] p-4">
-                  <summary className="cursor-pointer font-black text-[#B20B13]">Exemple 2 — Sphère Bien-être & Santé</summary>
-                  <div className="mt-4 grid sm:grid-cols-2 gap-3">
-                    {wellnessClusters.map((cluster) => (
-                      <div key={cluster.title} className="rounded-2xl border-2 border-[#2E130C] bg-white p-4">
-                        <p className="text-sm font-black text-[#B20B13]">{cluster.title}</p>
-                        <p className="mt-2 text-sm font-bold leading-relaxed">{cluster.roles}</p>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="mt-3 rounded-2xl border-2 border-[#2E130C] bg-[#2E130C] text-[#E2D9BC] p-4">
-                    <p className="text-xs uppercase tracking-widest font-black text-[#D2E8FF]">Flux circulaire</p>
-                    <p className="mt-1 font-titan text-xl">Comptable stress → Coach sportif → Styliste → Photographe → retour réseau</p>
-                  </div>
-                  <ul className="mt-3 space-y-1 text-sm font-bold">
-                    <li>• Marges élevées : prestations 500€ à 5 000€.</li>
-                    <li>• Commissions réelles : 10% crée un vrai levier.</li>
-                    <li>• Barrière à l&apos;entrée : 20 métiers inter-dépendants.</li>
-                  </ul>
-                </details>
-              </div>
+      <section id="sphere" className="py-16 border-b-4 border-[#2E130C]">
+        <div className="container mx-auto px-4">
+          <div className="max-w-6xl mx-auto bg-white rounded-3xl border-4 border-[#2E130C] p-8 shadow-[8px_8px_0px_0px_#2E130C]">
+            <p className="text-xs uppercase tracking-widest font-black text-[#B20B13]">SECTION 5 — SPHÈRE PATRIMOINE & ART DE VIVRE</p>
+            <h2 className="mt-4 text-3xl md:text-5xl font-titan leading-tight">Votre rôle : {selectedRole?.name}</h2>
+            <p className="mt-3 font-bold">
+              Vous êtes connecté à 19 autres métiers. Chaque mise en relation peut générer une commission de 10% et alimenter la pompe à recommandation.
+            </p>
+            <div className="mt-6 grid md:grid-cols-2 gap-3">
+              {heritageSphereClusters.map((cluster) => (
+                <div key={cluster.title} className="rounded-2xl border-2 border-[#2E130C] bg-[#D2E8FF]/40 p-4">
+                  <p className="text-sm font-black text-[#B20B13]">{cluster.title}</p>
+                  <p className="mt-1 text-xs font-bold">{cluster.purpose}</p>
+                </div>
+              ))}
+            </div>
+            <div className="mt-4 rounded-2xl border-2 border-[#2E130C] bg-[#2E130C] text-[#E2D9BC] p-4">
+              <p className="text-xs uppercase tracking-widest font-black text-[#D2E8FF]">Exemple appliqué à votre métier</p>
+              <p className="mt-1 font-titan text-xl">{selectedRole?.name} → {selectedRole?.binomes[0]} → {selectedRole?.binomes[1]} → {selectedRole?.binomes[2]}</p>
+              <p className="mt-1 text-sm font-bold text-[#E2D9BC]/90">
+                Recommandation sur une mission de {selectedRole?.deal.toLocaleString("fr-FR")}€ = {(selectedRole?.deal * 0.1).toLocaleString("fr-FR")}€ de commission.
+              </p>
             </div>
           </div>
-        </section>
-      )}
+        </div>
+      </section>
 
       <section className="py-16 border-b-4 border-[#2E130C] bg-[#D2E8FF]">
         <div className="container mx-auto px-4">
