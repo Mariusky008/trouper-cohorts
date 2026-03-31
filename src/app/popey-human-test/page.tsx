@@ -479,11 +479,11 @@ export default function PopeyHumanTestPage() {
                   <div className="mt-3 space-y-2 text-sm font-bold text-[#E2D9BC]/90">
                     <p>Mois 1 — Binôme idéal : {selectedRole?.binomes[0]}</p>
                     <p>Objectif simple : sortir une première offre vendable en 30 jours.</p>
-                    <p>• Étape 1 : vous clarifiez qui fait quoi dans le binôme et le résultat client promis.</p>
-                    <p>• Étape 2 : vous créez une offre d&apos;entrée facile à acheter (prix lisible, bénéfice clair).</p>
-                    <p>• Étape 3 : vous activez vos contacts chauds avec un message prêt à copier/coller.</p>
+                    <p>• Étape 1 : nous clarifions avec vous qui fait quoi dans le binôme et le résultat client promis.</p>
+                    <p>• Étape 2 : nous construisons avec vous une offre d&apos;entrée facile à acheter (prix lisible, bénéfice clair), puis nous la mettons en place pour vous.</p>
+                    <p>• Étape 3 : nous rédigeons vos textes prêts à copier-coller ou à réciter, nous vous fournissons les contenus réseaux sociaux et nous finançons la publicité locale pour toucher entre 6 000 et 10 000 personnes dans votre ville.</p>
                     <p>• Étape 4 : vous prenez des rendez-vous duo, puis vous closez vos premiers clients.</p>
-                    <p>Résultat attendu : preuve terrain, premier cash, et méthode réplicable.</p>
+                    <p>Résultat attendu : preuve que le système fonctionne, premier cash, et méthode réplicable.</p>
                   </div>
                 )}
                 {selectedStage === "m2" && (
