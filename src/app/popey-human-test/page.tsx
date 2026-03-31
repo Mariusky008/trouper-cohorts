@@ -238,17 +238,11 @@ export default function PopeyHumanTestPage() {
         <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ backgroundImage: "radial-gradient(#2E130C 1px, transparent 1px)", backgroundSize: "20px 20px" }} />
         <div className="container mx-auto px-4 relative z-10">
           <div className="max-w-6xl mx-auto text-center">
-            <p className="inline-block text-xs uppercase tracking-widest font-black bg-[#D2E8FF] border-2 border-[#2E130C] rounded-full px-4 py-2">
-              HERO
-            </p>
             <h1 className="mt-8 text-4xl md:text-6xl lg:text-7xl font-titan leading-[1.05]">
               Popey vous aide à trouver les bons partenaires business pour gagner plus avec les mêmes clients.
             </h1>
             <p className="mt-6 text-base md:text-xl font-bold max-w-5xl mx-auto">
               Exemple : si vous êtes agent immobilier, on peut vous associer à un architecte d&apos;intérieur, un CGP, un courtier ou un cuisiniste etc... pour créer des recommandations, des offres communes et des commissions récurrentes autour du même client.
-            </p>
-            <p className="mt-4 text-lg md:text-2xl font-bold max-w-5xl mx-auto">
-              En 30 jours, vous lancez une première collaboration rentable avec 1 métier complémentaire au vôtre. Puis on vous ouvre progressivement un cercle de 19 autres métiers complémentaires.
             </p>
             <div className="mt-8">
               <Link href="/programme-commando/postuler" className="inline-flex items-center justify-center rounded-xl border-2 border-[#2E130C] bg-[#B20B13] px-8 py-4 text-[#E2D9BC] font-titan shadow-[4px_4px_0px_0px_#2E130C] hover:bg-[#7A0000]">
