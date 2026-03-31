@@ -234,15 +234,39 @@ export default function PopeyHumanTestPage() {
   const faqItems = [
     {
       q: "Est-ce que Popey peut vraiment augmenter mon CA ?",
-      a: "Oui, parce que le système est structuré, traçable et orienté résultats. Vous ne dépendez plus d'actions isolées, vous activez un flux organisé.",
+      a: "Oui. Popey structure vos synergies en actions hebdo, suivi et objectifs chiffrés.",
+      proof: "Mois 1 visé : 3 closings à 600€ = 1 800€ + pipeline 75 000€.",
+      action: "Audit de complémentarité + plan d'exécution S1 à S4.",
     },
     {
-      q: "Je suis déjà expérimenté, c'est utile pour moi ?",
-      a: "Oui. Le but n'est pas d'apprendre la théorie, mais d'optimiser votre posture, vos synergies et votre capacité à convertir des opportunités en revenus.",
+      q: "Je suis déjà expérimenté, est-ce utile pour moi ?",
+      a: "Oui, car le sujet n'est pas votre compétence métier : c'est l'orchestration de votre écosystème.",
+      proof: "Passage du solo au duo, puis du duo à la Sphère des 20.",
+      action: "Positionnement de votre rôle et de votre valeur dans le flux global.",
     },
     {
       q: "En combien de temps je vois des premiers résultats ?",
-      a: "Le Mois 1 sert de preuve de concept : visibilité, prises de contact qualifiées, premiers closings et pipeline à forte valeur.",
+      a: "Les premiers signaux arrivent dès le Mois 1 : visibilité, réponses qualifiées et premiers closings.",
+      proof: "S2 : 6k–14k vues, S3 : 4 à 12 réponses, S4 : premiers closings.",
+      action: "Suivi hebdo pour corriger vite ce qui bloque.",
+    },
+    {
+      q: "Et si je n'ai pas une grosse audience ?",
+      a: "Ce n'est pas bloquant. Popey active d'abord les audiences chaudes des 2 partenaires, puis amplifie.",
+      proof: "Le levier vient de la complémentarité + du script + du tracking.",
+      action: "Plan contenu minimal + activation ciblée + relances guidées.",
+    },
+    {
+      q: "Comment éviter les partenariats qui ne donnent rien ?",
+      a: "Popey filtre les duos sur la complémentarité réelle, la réciprocité et la capacité d'exécution.",
+      proof: "Chaque étape a un livrable concret, pas de promesse floue.",
+      action: "Critères d'entrée + protocole de suivi commun.",
+    },
+    {
+      q: "Pourquoi rester après le Mois 1 ?",
+      a: "Parce que le Mois 1 valide le moteur, et la Sphère des 20 multiplie les opportunités.",
+      proof: "1 entrée client peut déclencher 5 à 10 contrats satellites.",
+      action: "Passage à 490€/mois pour capter le flux inter-métiers en continu.",
     },
   ];
 
@@ -509,11 +533,19 @@ export default function PopeyHumanTestPage() {
           <div className="max-w-6xl mx-auto">
             <p className="text-xs uppercase tracking-widest font-black text-[#B20B13]">Questions fréquentes</p>
             <h2 className="mt-3 text-3xl md:text-5xl font-titan">Objections et réponses</h2>
-            <div className="mt-8 space-y-3">
+            <div className="mt-3 rounded-2xl border-2 border-[#2E130C] bg-[#2E130C] text-[#E2D9BC] p-4">
+              <p className="text-xs uppercase tracking-widest font-black text-[#D2E8FF]">Lecture rapide</p>
+              <p className="mt-1 font-bold text-sm text-[#E2D9BC]/90">6 objections réelles, 6 réponses opérationnelles, avec preuve et action immédiate.</p>
+            </div>
+            <div className="mt-8 grid md:grid-cols-2 gap-4">
               {faqItems.map((item) => (
                 <details key={item.q} className="rounded-2xl border-2 border-[#2E130C] bg-white p-5 shadow-[6px_6px_0px_0px_#2E130C]">
                   <summary className="cursor-pointer font-black">{item.q}</summary>
                   <p className="mt-3 font-bold text-[#2E130C]/90">{item.a}</p>
+                  <p className="mt-3 text-xs font-black uppercase tracking-wider text-[#B20B13]">Preuve</p>
+                  <p className="mt-1 text-sm font-bold text-[#2E130C]/90">{item.proof}</p>
+                  <p className="mt-3 text-xs font-black uppercase tracking-wider text-[#B20B13]">Action</p>
+                  <p className="mt-1 text-sm font-bold text-[#2E130C]/90">{item.action}</p>
                 </details>
               ))}
             </div>
