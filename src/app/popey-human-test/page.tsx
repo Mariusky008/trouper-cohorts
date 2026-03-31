@@ -239,15 +239,15 @@ export default function PopeyHumanTestPage() {
         <div className="container mx-auto px-4 relative z-10">
           <div className="max-w-6xl mx-auto text-center">
             <p className="inline-block text-xs uppercase tracking-widest font-black bg-[#D2E8FF] border-2 border-[#2E130C] rounded-full px-4 py-2">
-              Popey Academy — Système de synergies monétisables
+              Le Système Popey : 1 Binôme → 1 Sphère → 1 Moteur de Croissance
             </p>
             <h1 className="mt-8 text-4xl md:text-6xl lg:text-7xl font-titan leading-[1.05]">
-              Cessez de quémander des clients.
+              Popey vous associe au bon partenaire…
               <br />
-              <span className="text-[#B20B13]">Commencez à orchestrer des actifs.</span>
+              <span className="text-[#B20B13]">puis vous ouvre un cercle de 20 métiers.</span>
             </h1>
             <p className="mt-6 text-lg md:text-2xl font-bold max-w-4xl mx-auto">
-              Comment transformer un simple partenariat en machine à 40 000€ de CA additionnel par an grâce à Popey Academy.
+              En 30 jours, vous lancez une première synergie rentable avec 1 partenaire complémentaire. Puis vous accédez progressivement à une sphère de 19 autres partenaires pour générer recommandations, offres croisées, introductions stratégiques et commissions récurrentes.
             </p>
           </div>
         </div>
@@ -273,6 +273,38 @@ export default function PopeyHumanTestPage() {
             </div>
             <div className="rounded-3xl overflow-hidden border-4 border-[#2E130C] shadow-[8px_8px_0px_0px_#2E130C]">
               <img src="https://images.unsplash.com/photo-1551434678-e076c223a692?q=80&w=1600&auto=format&fit=crop" alt="Équipe Popey en session stratégique" className="w-full h-[430px] object-cover" />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="py-16 border-b-4 border-[#2E130C] bg-white">
+        <div className="container mx-auto px-4">
+          <div className="max-w-6xl mx-auto">
+            <p className="text-xs uppercase tracking-widest font-black text-[#B20B13]">Concrètement</p>
+            <h2 className="mt-3 text-3xl md:text-5xl font-titan">Concrètement, Popey c&apos;est quoi ?</h2>
+            <p className="mt-4 text-lg font-bold max-w-5xl">
+              Popey n&apos;est pas un simple réseau. C&apos;est un système de croissance par synergies business.
+            </p>
+            <div className="mt-6 grid md:grid-cols-3 gap-4">
+              <div className="rounded-2xl border-2 border-[#2E130C] bg-[#D2E8FF] p-5 shadow-[6px_6px_0px_0px_#2E130C]">
+                <p className="text-xs uppercase tracking-widest font-black text-[#B20B13]">1) Association ciblée</p>
+                <p className="mt-2 text-sm font-bold leading-relaxed">
+                  Vous êtes entrepreneur et vous appartenez à la sphère Patrimoine & Art de Vivre (voir les 20 métiers). Nous vous associons à un métier complémentaire au vôtre, capable d&apos;ouvrir des portes, d&apos;enrichir votre offre et de créer des opportunités.
+                </p>
+              </div>
+              <div className="rounded-2xl border-2 border-[#2E130C] bg-[#E2D9BC] p-5 shadow-[6px_6px_0px_0px_#2E130C]">
+                <p className="text-xs uppercase tracking-widest font-black text-[#B20B13]">2) Offre commune rentable</p>
+                <p className="mt-2 text-sm font-bold leading-relaxed">
+                  Nous structurons une offre duo claire, vendable et compréhensible, alignée sur un besoin premium de vos deux métiers complémentaires.
+                </p>
+              </div>
+              <div className="rounded-2xl border-2 border-[#2E130C] bg-[#F8D7DA] p-5 shadow-[6px_6px_0px_0px_#2E130C]">
+                <p className="text-xs uppercase tracking-widest font-black text-[#B20B13]">3) Ouverture de sphère</p>
+                <p className="mt-2 text-sm font-bold leading-relaxed">
+                  Nous faisons ceci sur 6 mois avec 6 métiers complémentaires au vôtre. Au 3ème mois vous ouvrez une nouvelle porte : la machine à recommandation. 19 autres partenaires à qui vous pourrez faire des recos (gain : 10%) ou qui pourront vous apporter leurs clients, avec apports et commissions traçables.
+                </p>
+              </div>
             </div>
           </div>
         </div>
