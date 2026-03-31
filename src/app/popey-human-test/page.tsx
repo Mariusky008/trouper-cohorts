@@ -239,16 +239,22 @@ export default function PopeyHumanTestPage() {
         <div className="container mx-auto px-4 relative z-10">
           <div className="max-w-6xl mx-auto text-center">
             <p className="inline-block text-xs uppercase tracking-widest font-black bg-[#D2E8FF] border-2 border-[#2E130C] rounded-full px-4 py-2">
-              Le Système Popey : 1 Binôme → 1 Sphère → 1 Moteur de Croissance
+              HERO
             </p>
             <h1 className="mt-8 text-4xl md:text-6xl lg:text-7xl font-titan leading-[1.05]">
-              Popey vous associe au bon partenaire…
-              <br />
-              <span className="text-[#B20B13]">puis vous ouvre un cercle de 20 métiers.</span>
+              Popey vous aide à trouver les bons partenaires business pour gagner plus avec les mêmes clients.
             </h1>
-            <p className="mt-6 text-lg md:text-2xl font-bold max-w-4xl mx-auto">
-              En 30 jours, vous lancez une première synergie rentable avec 1 partenaire complémentaire. Puis vous accédez progressivement à une sphère de 19 autres partenaires pour générer recommandations, offres croisées, introductions stratégiques et commissions récurrentes.
+            <p className="mt-6 text-base md:text-xl font-bold max-w-5xl mx-auto">
+              Exemple : si vous êtes agent immobilier, on peut vous associer à un architecte d&apos;intérieur, un CGP, un courtier ou un cuisiniste etc... pour créer des recommandations, des offres communes et des commissions récurrentes autour du même client.
             </p>
+            <p className="mt-4 text-lg md:text-2xl font-bold max-w-5xl mx-auto">
+              En 30 jours, vous lancez une première collaboration rentable avec 1 métier complémentaire au vôtre. Puis on vous ouvre progressivement un cercle de 19 autres métiers complémentaires.
+            </p>
+            <div className="mt-8">
+              <Link href="/programme-commando/postuler" className="inline-flex items-center justify-center rounded-xl border-2 border-[#2E130C] bg-[#B20B13] px-8 py-4 text-[#E2D9BC] font-titan shadow-[4px_4px_0px_0px_#2E130C] hover:bg-[#7A0000]">
+                Postuler à l&apos;Audit de Synergie
+              </Link>
+            </div>
           </div>
         </div>
       </section>
@@ -288,22 +294,38 @@ export default function PopeyHumanTestPage() {
             </p>
             <div className="mt-6 grid md:grid-cols-3 gap-4">
               <div className="rounded-2xl border-2 border-[#2E130C] bg-[#D2E8FF] p-5 shadow-[6px_6px_0px_0px_#2E130C]">
-                <p className="text-xs uppercase tracking-widest font-black text-[#B20B13]">1) Association ciblée</p>
-                <p className="mt-2 text-sm font-bold leading-relaxed">
-                  Vous êtes entrepreneur et vous appartenez à la sphère Patrimoine & Art de Vivre (voir les 20 métiers). Nous vous associons à un métier complémentaire au vôtre, capable d&apos;ouvrir des portes, d&apos;enrichir votre offre et de créer des opportunités.
-                </p>
+                <p className="text-xs uppercase tracking-widest font-black text-[#B20B13]">MOIS 1 — Votre premier partenaire rentable</p>
+                <p className="mt-2 text-sm font-bold leading-relaxed">On vous associe à un professionnel complémentaire qui vend à la même clientèle que vous.</p>
+                <p className="mt-2 text-sm font-bold leading-relaxed">Ensemble, on structure une première collaboration simple à monétiser :</p>
+                <ul className="mt-2 space-y-1 text-sm font-bold leading-relaxed">
+                  <li>• recommandations</li>
+                  <li>• offre commune</li>
+                  <li>• commission</li>
+                  <li>• messages prêts à l&apos;emploi</li>
+                </ul>
               </div>
               <div className="rounded-2xl border-2 border-[#2E130C] bg-[#E2D9BC] p-5 shadow-[6px_6px_0px_0px_#2E130C]">
-                <p className="text-xs uppercase tracking-widest font-black text-[#B20B13]">2) Offre commune rentable</p>
-                <p className="mt-2 text-sm font-bold leading-relaxed">
-                  Nous structurons une offre duo claire, vendable et compréhensible, alignée sur un besoin premium de vos deux métiers complémentaires.
-                </p>
+                <p className="text-xs uppercase tracking-widest font-black text-[#B20B13]">MOIS 2 — On ajoute 2 à 3 nouveaux métiers utiles</p>
+                <p className="mt-2 text-sm font-bold leading-relaxed">Une fois la première collaboration lancée, on vous aide à ouvrir 2 à 3 nouvelles portes autour du même client :</p>
+                <ul className="mt-2 space-y-1 text-sm font-bold leading-relaxed">
+                  <li>• un apporteur d&apos;affaires</li>
+                  <li>• un partenaire de transformation</li>
+                  <li>• un métier qui augmente le panier moyen</li>
+                </ul>
               </div>
               <div className="rounded-2xl border-2 border-[#2E130C] bg-[#F8D7DA] p-5 shadow-[6px_6px_0px_0px_#2E130C]">
-                <p className="text-xs uppercase tracking-widest font-black text-[#B20B13]">3) Ouverture de sphère</p>
+                <p className="text-xs uppercase tracking-widest font-black text-[#B20B13]">MOIS 3 — Votre cercle Popey commence à tourner</p>
                 <p className="mt-2 text-sm font-bold leading-relaxed">
-                  Nous faisons ceci sur 6 mois avec 6 métiers complémentaires au vôtre. Au 3ème mois vous ouvrez une nouvelle porte : la machine à recommandation. 19 autres partenaires à qui vous pourrez faire des recos (gain : 10%) ou qui pourront vous apporter leurs clients, avec apports et commissions traçables.
+                  Vous accédez progressivement à 19 autres professionnels sélectionnés autour du même client cible (ex : CGP, architecte, courtier, fiscaliste, cuisiniste, conciergerie…)
                 </p>
+                <p className="mt-2 text-sm font-bold leading-relaxed">À partir de là, vous pouvez :</p>
+                <ul className="mt-2 space-y-1 text-sm font-bold leading-relaxed">
+                  <li>• recevoir des recommandations</li>
+                  <li>• en envoyer</li>
+                  <li>• toucher des commissions</li>
+                  <li>• créer des offres croisées</li>
+                  <li>• faire tourner votre réseau comme un moteur de croissance</li>
+                </ul>
               </div>
             </div>
           </div>
