@@ -292,38 +292,47 @@ export default function PopeyHumanTestPage() {
             </p>
             <div className="mt-6 grid md:grid-cols-3 gap-4">
               <div className="rounded-2xl border-2 border-[#2E130C] bg-[#D2E8FF] p-5 shadow-[6px_6px_0px_0px_#2E130C]">
-                <p className="text-xs uppercase tracking-widest font-black text-[#B20B13]">MOIS 1 — Votre premier partenaire rentable</p>
-                <p className="mt-2 text-sm font-bold leading-relaxed">On vous associe à un professionnel complémentaire qui vend à la même clientèle que vous.</p>
-                <p className="mt-2 text-sm font-bold leading-relaxed">Ensemble, on structure une première collaboration simple à monétiser :</p>
-                <ul className="mt-2 space-y-1 text-sm font-bold leading-relaxed">
-                  <li>• recommandations</li>
-                  <li>• offre commune</li>
-                  <li>• commission</li>
-                  <li>• messages prêts à l&apos;emploi</li>
-                </ul>
+                <p className="text-xs uppercase tracking-widest font-black text-[#B20B13]">1) Connecter</p>
+                <p className="mt-2 text-sm font-bold leading-relaxed">
+                  Nous relions les bons métiers complémentaires autour du même client cible pour ouvrir plus d&apos;opportunités sans changer votre cible.
+                </p>
               </div>
               <div className="rounded-2xl border-2 border-[#2E130C] bg-[#E2D9BC] p-5 shadow-[6px_6px_0px_0px_#2E130C]">
-                <p className="text-xs uppercase tracking-widest font-black text-[#B20B13]">MOIS 2 — On ajoute 2 à 3 nouveaux métiers utiles</p>
-                <p className="mt-2 text-sm font-bold leading-relaxed">Une fois la première collaboration lancée, on vous aide à ouvrir 2 à 3 nouvelles portes autour du même client :</p>
-                <ul className="mt-2 space-y-1 text-sm font-bold leading-relaxed">
-                  <li>• un apporteur d&apos;affaires</li>
-                  <li>• un partenaire de transformation</li>
-                  <li>• un métier qui augmente le panier moyen</li>
-                </ul>
+                <p className="text-xs uppercase tracking-widest font-black text-[#B20B13]">2) Structurer</p>
+                <p className="mt-2 text-sm font-bold leading-relaxed">
+                  Nous mettons en place des offres communes simples à vendre, avec un rôle précis pour chaque partenaire et une valeur claire pour le client.
+                </p>
               </div>
               <div className="rounded-2xl border-2 border-[#2E130C] bg-[#F8D7DA] p-5 shadow-[6px_6px_0px_0px_#2E130C]">
-                <p className="text-xs uppercase tracking-widest font-black text-[#B20B13]">MOIS 3 — Votre cercle Popey commence à tourner</p>
+                <p className="text-xs uppercase tracking-widest font-black text-[#B20B13]">3) Activer</p>
                 <p className="mt-2 text-sm font-bold leading-relaxed">
-                  Vous accédez progressivement à 19 autres professionnels sélectionnés autour du même client cible (ex : CGP, architecte, courtier, fiscaliste, cuisiniste, conciergerie…)
+                  Nous déclenchons un flux continu de recommandations traçables et de commissions récurrentes, au lieu d&apos;un bouche-à-oreille aléatoire.
                 </p>
-                <p className="mt-2 text-sm font-bold leading-relaxed">À partir de là, vous pouvez :</p>
-                <ul className="mt-2 space-y-1 text-sm font-bold leading-relaxed">
-                  <li>• recevoir des recommandations</li>
-                  <li>• en envoyer</li>
-                  <li>• toucher des commissions</li>
-                  <li>• créer des offres croisées</li>
-                  <li>• faire tourner votre réseau comme un moteur de croissance</li>
-                </ul>
+              </div>
+            </div>
+            <div className="mt-6 rounded-3xl border-4 border-[#2E130C] bg-[#2E130C] text-[#E2D9BC] p-6 shadow-[8px_8px_0px_0px_#2E130C]">
+              <p className="text-xs uppercase tracking-widest font-black text-[#D2E8FF]">Le système en 1 client</p>
+              <div className="mt-4 grid md:grid-cols-4 gap-3">
+                <div className="rounded-xl border-2 border-[#E2D9BC]/40 bg-[#E2D9BC]/10 p-3">
+                  <p className="text-[11px] uppercase tracking-widest font-black text-[#D2E8FF]">Entrée</p>
+                  <p className="mt-1 text-sm font-bold">Un client entre via votre activité principale.</p>
+                </div>
+                <div className="rounded-xl border-2 border-[#E2D9BC]/40 bg-[#E2D9BC]/10 p-3">
+                  <p className="text-[11px] uppercase tracking-widest font-black text-[#D2E8FF]">Circulation</p>
+                  <p className="mt-1 text-sm font-bold">Ce même client est orienté vers 2 à 3 métiers complémentaires.</p>
+                </div>
+                <div className="rounded-xl border-2 border-[#E2D9BC]/40 bg-[#E2D9BC]/10 p-3">
+                  <p className="text-[11px] uppercase tracking-widest font-black text-[#D2E8FF]">Monétisation</p>
+                  <p className="mt-1 text-sm font-bold">Chaque passage peut déclencher vente, recommandation ou commission.</p>
+                </div>
+                <div className="rounded-xl border-2 border-[#E2D9BC]/40 bg-[#E2D9BC]/10 p-3">
+                  <p className="text-[11px] uppercase tracking-widest font-black text-[#D2E8FF]">Résultat</p>
+                  <p className="mt-1 text-sm font-bold">Vous créez plus de valeur par client, pas juste plus de volume.</p>
+                </div>
+              </div>
+              <div className="mt-4 rounded-xl border-2 border-[#E2D9BC]/50 bg-[#B20B13] px-4 py-3 text-center">
+                <p className="font-titan text-xl md:text-2xl">1 client bien orchestré peut valoir 3 à 5 opportunités business.</p>
+                <p className="mt-1 text-sm font-black uppercase tracking-wide text-[#E2D9BC]/90">Imaginez avec 100 clients.</p>
               </div>
             </div>
           </div>
