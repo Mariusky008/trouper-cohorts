@@ -367,6 +367,31 @@ export default function PopeyHumanTestPage() {
         </div>
       </section>
 
+      <section id="vision" className="py-16 bg-[#D2E8FF] border-b-4 border-[#2E130C]">
+        <div className="container mx-auto px-4">
+          <div className="max-w-6xl mx-auto grid lg:grid-cols-2 gap-8 items-center">
+            <div className="bg-white rounded-3xl border-4 border-[#2E130C] p-8 shadow-[8px_8px_0px_0px_#2E130C]">
+              <p className="text-xs uppercase tracking-widest font-black text-[#B20B13]">SECTION 1 — LA VISION</p>
+              <h2 className="mt-4 text-3xl md:text-5xl font-titan">Le problème n&apos;est pas le manque de talent.</h2>
+              <p className="mt-4 text-lg font-bold leading-relaxed">
+                Chasseur immo de luxe, CGP, architecte d&apos;intérieur, cuisiniste haut de gamme : chacun est fort seul, mais la croissance plafonne sans orchestration commune.
+              </p>
+              <p className="mt-3 text-lg font-bold leading-relaxed">Popey Academy transforme ce potentiel en système d&apos;exécution :</p>
+              <ul className="mt-2 space-y-1 text-lg font-bold leading-relaxed">
+                <li>- métiers complémentaires de la même sphère,</li>
+                <li>- offres liées autour d&apos;un client cible unique,</li>
+                <li>- recommandations circulaires traçables,</li>
+                <li>- commission claire à chaque apport d&apos;affaire,</li>
+                <li>- revenu additionnel piloté mois après mois.</li>
+              </ul>
+            </div>
+            <div className="rounded-3xl overflow-hidden border-4 border-[#2E130C] shadow-[8px_8px_0px_0px_#2E130C]">
+              <img src="https://images.unsplash.com/photo-1551434678-e076c223a692?q=80&w=1600&auto=format&fit=crop" alt="Équipe Popey en session stratégique" className="w-full h-[430px] object-cover" />
+            </div>
+          </div>
+        </div>
+      </section>
+
       <section className="py-16 border-b-4 border-[#2E130C] bg-[#D2E8FF]">
         <div className="container mx-auto px-4">
           <div className="max-w-6xl mx-auto">
@@ -640,31 +665,6 @@ export default function PopeyHumanTestPage() {
         </div>
       </section>
 
-      <section id="vision" className="py-16 bg-[#D2E8FF] border-b-4 border-[#2E130C]">
-        <div className="container mx-auto px-4">
-          <div className="max-w-6xl mx-auto grid lg:grid-cols-2 gap-8 items-center">
-            <div className="bg-white rounded-3xl border-4 border-[#2E130C] p-8 shadow-[8px_8px_0px_0px_#2E130C]">
-              <p className="text-xs uppercase tracking-widest font-black text-[#B20B13]">SECTION 1 — LA VISION</p>
-              <h2 className="mt-4 text-3xl md:text-5xl font-titan">Le problème n&apos;est pas le manque de talent.</h2>
-              <p className="mt-4 text-lg font-bold leading-relaxed">
-                Les coachs, nutritionnistes, agents immo et experts terrain saturent parce qu&apos;ils vendent leur temps à l&apos;unité et chassent des leads froids.
-              </p>
-              <p className="mt-3 text-lg font-bold leading-relaxed">Popey Academy transforme ce chaos en système d&apos;exécution :</p>
-              <ul className="mt-2 space-y-1 text-lg font-bold leading-relaxed">
-                <li>- deux métiers complémentaires,</li>
-                <li>- une offre commune,</li>
-                <li>- des audiences activées,</li>
-                <li>- un tunnel court,</li>
-                <li>- un revenu traçable.</li>
-              </ul>
-            </div>
-            <div className="rounded-3xl overflow-hidden border-4 border-[#2E130C] shadow-[8px_8px_0px_0px_#2E130C]">
-              <img src="https://images.unsplash.com/photo-1551434678-e076c223a692?q=80&w=1600&auto=format&fit=crop" alt="Équipe Popey en session stratégique" className="w-full h-[430px] object-cover" />
-            </div>
-          </div>
-        </div>
-      </section>
-
       <section id="fondateur" className="py-16 border-b-4 border-[#2E130C] bg-[#D2E8FF]">
         <div className="container mx-auto px-4">
           <div className="max-w-6xl mx-auto grid lg:grid-cols-3 gap-8">
@@ -703,31 +703,6 @@ export default function PopeyHumanTestPage() {
                   </details>
                 </div>
               </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="py-16 border-b-4 border-[#2E130C]">
-        <div className="container mx-auto px-4">
-          <div className="max-w-6xl mx-auto">
-            <p className="text-xs uppercase tracking-widest font-black text-[#B20B13]">Le process</p>
-            <h2 className="mt-3 text-3xl md:text-5xl font-titan">Une méthode structurée pour exécuter, pas improviser.</h2>
-            <div className="mt-8 grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {[
-                { num: "01", label: "Posture", text: "Vous passez de l'aléatoire au pilotage de vos synergies." },
-                { num: "02", label: "Compréhension", text: "Vous savez où se crée la valeur dans le duo et dans la sphère." },
-                { num: "03", label: "Structure", text: "Vous transformez l'offre en tunnel clair avec scripts et actifs." },
-                { num: "04", label: "Mise en pratique", text: "Activation terrain, prises de contact, qualification, suivi." },
-                { num: "05", label: "Feedback", text: "Mesure des actions, ajustements rapides, décisions orientées ROI." },
-                { num: "06", label: "Durabilité", text: "Répétition du modèle et passage au scale avec la Sphère des 20." },
-              ].map((step) => (
-                <div key={step.num} className="rounded-2xl border-2 border-[#2E130C] bg-white p-5 shadow-[6px_6px_0px_0px_#2E130C]">
-                  <p className="text-xs uppercase tracking-widest font-black text-[#B20B13]">{step.num}</p>
-                  <p className="mt-2 font-titan text-2xl">{step.label}</p>
-                  <p className="mt-2 font-bold text-sm leading-relaxed">{step.text}</p>
-                </div>
-              ))}
             </div>
           </div>
         </div>
