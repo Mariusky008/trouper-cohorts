@@ -17,8 +17,8 @@ const faqItems = [
     a: "Objectif : créer une première synergie activable en 30 jours, puis la dupliquer au Mois 2.",
   },
   {
-    q: "Est-ce que je dois changer mon métier ?",
-    a: "Non. Popey augmente la valeur de vos clients actuels, sans remplacer votre activité principale.",
+    q: "Que se passe-t-il concrètement en 30 jours ?",
+    a: "Vous activez un partenaire complémentaire, une offre DUO créée avec vous et promue sur vos réseaux ainsi que ceux de Popey, une logique de recommandation claire et un cadre de commission traçable.",
   },
   {
     q: "Comment fonctionnent les commissions ?",
@@ -196,14 +196,6 @@ export default function PopeyHumanTestV4Page() {
               </ul>
             </div>
           </div>
-          <div className="mt-5 rounded-xl border border-black bg-white p-4 text-center">
-            <p className="text-lg md:text-3xl font-black">1 client = 1 vente VS 1 client = 2 à 5 opportunités</p>
-          </div>
-          <div className="mt-6">
-            <Link href="/programme-commando/postuler" className="inline-flex items-center justify-center rounded-md bg-black text-white px-6 py-3 text-sm font-black uppercase tracking-wide transition hover:translate-y-[-1px] hover:shadow-[0_8px_0_0_#B6FF2B]">
-              Postuler à l’Audit de Synergie
-            </Link>
-          </div>
         </div>
       </section>
 
@@ -280,10 +272,24 @@ export default function PopeyHumanTestV4Page() {
         <div className="mx-auto max-w-6xl px-4 py-14">
           <h2 className="text-3xl md:text-5xl font-black">Ce que vous obtenez en 30 jours</h2>
           <div className="mt-6 grid md:grid-cols-2 gap-3 text-sm font-semibold">
-            <div className="rounded-lg bg-white border border-black/10 px-4 py-3">1 partenaire complémentaire prioritaire identifié</div>
-            <div className="rounded-lg bg-white border border-black/10 px-4 py-3">1 offre commune simple à vendre</div>
+            <div className="rounded-lg bg-white border border-black/10 px-4 py-3">1 partenaire complémentaire</div>
+            <div className="rounded-lg bg-white border border-black/10 px-4 py-3">1 offre DUO que nous créons et que nous promouvons sur nos réseaux sociaux et les vôtres</div>
             <div className="rounded-lg bg-white border border-black/10 px-4 py-3">1 logique de recommandation claire</div>
             <div className="rounded-lg bg-white border border-black/10 px-4 py-3">1 cadre de commission traçable</div>
+          </div>
+        </div>
+      </section>
+
+      <section className="border-b border-black/10 bg-white">
+        <div className="mx-auto max-w-6xl px-4 py-14">
+          <h2 className="text-3xl md:text-5xl font-black max-w-4xl">Votre temps et votre planning sont ROI.</h2>
+          <p className="mt-4 text-base md:text-lg font-medium text-black/80 max-w-5xl">
+            Nous ne prenons que quelques minutes de votre temps pour vous donner une marche à suivre claire, des conseils ciblés et des actions prioritaires qui augmentent votre chiffre d’affaires sans alourdir votre agenda.
+          </p>
+          <div className="mt-6 grid md:grid-cols-3 gap-3 text-sm font-semibold">
+            <div className="rounded-lg border border-black/10 bg-[#F7F7F7] px-4 py-3">Des points courts et structurés, orientés décision et exécution</div>
+            <div className="rounded-lg border border-black/10 bg-[#F7F7F7] px-4 py-3">Un plan d’action simple à appliquer dans votre planning existant</div>
+            <div className="rounded-lg border border-black/10 bg-[#F7F7F7] px-4 py-3">Une montée en valeur de vos clients actuels sans changer votre métier</div>
           </div>
         </div>
       </section>
