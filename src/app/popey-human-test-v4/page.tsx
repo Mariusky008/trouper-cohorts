@@ -121,17 +121,16 @@ export default function PopeyHumanTestV4Page() {
 
                 <div className="absolute right-4 bottom-9 h-[188px] w-[154px] rounded-t-[30px] border-[4px] border-white/85 bg-white/5">
                   <div className="door-light absolute -inset-5 rounded-full bg-[#B6FF2B]/25 blur-2xl" />
-                  <div className="absolute inset-[8px] rounded-t-[22px] border border-white/20 bg-black/55" />
-                  <div className="door-open absolute inset-y-[8px] left-[8px] w-[98px] rounded-l-[18px] border border-white/35 bg-gradient-to-r from-white to-[#ECECEC] shadow-[0_0_30px_rgba(255,255,255,0.45)] origin-left">
+                  <div className="door-open absolute inset-y-[8px] left-[8px] right-[8px] rounded-t-[20px] border border-white/35 bg-white shadow-[0_0_30px_rgba(255,255,255,0.45)] origin-left">
                     <div className="absolute right-2 top-1/2 -translate-y-1/2 h-2.5 w-2.5 rounded-full bg-black/35" />
                     <div className="px-2 pt-3 text-[10px] leading-[1.35] font-semibold tracking-[0.06em] text-black/70">
-                      <p>Courtier</p>
-                      <p>Architecte</p>
-                      <p>CGP</p>
-                      <p>Cuisiniste</p>
-                      <p>Déménageur</p>
-                      <p>Conciergerie</p>
-                      <p className="added-role mt-1 font-black text-[#2F7A00]">+ Agent immo</p>
+                      <p>• Courtier</p>
+                      <p>• Architecte</p>
+                      <p>• CGP</p>
+                      <p>• Cuisiniste</p>
+                      <p>• Déménageur</p>
+                      <p>• Conciergerie</p>
+                      <p className="added-role mt-1 font-black text-[#2F7A00]">• + Agent immo</p>
                     </div>
                   </div>
                   <span className="absolute -top-8 left-1/2 -translate-x-1/2 text-[12px] font-black uppercase tracking-[0.2em] text-[#B6FF2B]">Popey</span>
