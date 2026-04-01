@@ -59,12 +59,12 @@ export default function PopeyHumanTestV4Page() {
 
     const observer = new IntersectionObserver(
       ([entry]) => {
-        if (entry.isIntersecting) {
+        if (entry.isIntersecting && entry.intersectionRatio >= 0.45 && window.scrollY > 120) {
           setProblemSceneStarted(true);
           observer.disconnect();
         }
       },
-      { threshold: 0.35 }
+      { threshold: [0, 0.45, 0.7] }
     );
 
     observer.observe(node);
