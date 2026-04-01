@@ -33,6 +33,8 @@ const faqItems = [
 export default function PopeyHumanTestV4Page() {
   const [tick, setTick] = useState(0);
   const month = (tick % 6) + 1;
+  const doorOpen = tick % 4 >= 2;
+  const activeJourney = tick % 3;
   const duoRevenue = month * 600;
   const incomingRevenue = Math.max(month - 1, 0) * 400;
   const commissionRevenue = Math.max(month - 2, 0) * 500;
@@ -86,21 +88,66 @@ export default function PopeyHumanTestV4Page() {
 
       <section className="border-b border-black/10 bg-black text-white">
         <div className="mx-auto max-w-6xl px-4 py-14">
-          <p className="text-xs uppercase tracking-[0.2em] font-black text-[#B6FF2B]">Le problème à résoudre</p>
-          <h2 className="mt-3 text-3xl md:text-5xl font-black max-w-5xl">
-            Vos clients achètent déjà ailleurs avant et après vous. Le problème, c’est que vous n’êtes pas dans la boucle.
-          </h2>
-          <p className="mt-4 text-base md:text-lg font-medium text-white/85 max-w-5xl">
-            Un client qui vous fait confiance continue souvent son parcours chez d’autres professionnels complémentaires : courtier, architecte d’intérieur, CGP, cuisiniste, déménageur, conciergerie privée.
-          </p>
-          <p className="mt-3 text-base md:text-lg font-medium text-white/85 max-w-5xl">
-            Si ces achats se font sans vous, vous laissez partir de la valeur, des recommandations, des commissions et des opportunités de fidélisation.
-          </p>
-          <p className="mt-3 text-base md:text-lg font-medium text-white/85 max-w-5xl">
-            De l’autre côté, les métiers complémentaires hors de votre boucle ne vous recommandent pas. Vous perdez aussi des clients potentiels.
-          </p>
-          <div className="mt-4 rounded-xl border border-[#B6FF2B] bg-[#B6FF2B]/10 px-4 py-3 max-w-5xl">
-            <p className="font-black">Popey sert à remettre votre métier au centre de cette chaîne de valeur.</p>
+          <div className="grid gap-8 lg:grid-cols-[1.05fr_0.95fr] items-center">
+            <div>
+              <p className="text-xs uppercase tracking-[0.2em] font-black text-[#B6FF2B]">Le problème à résoudre</p>
+              <h2 className="mt-3 text-3xl md:text-5xl font-black max-w-5xl">
+                Vos clients achètent déjà ailleurs avant et après vous. Le problème, c’est que vous n’êtes pas dans la boucle.
+              </h2>
+              <p className="mt-4 text-base md:text-lg font-medium text-white/85 max-w-5xl">
+                Un client qui vous fait confiance continue souvent son parcours chez d’autres professionnels complémentaires : courtier, architecte d’intérieur, CGP, cuisiniste, déménageur, conciergerie privée.
+              </p>
+              <p className="mt-3 text-base md:text-lg font-medium text-white/85 max-w-5xl">
+                Si ces achats se font sans vous, vous laissez partir de la valeur, des recommandations, des commissions et des opportunités de fidélisation.
+              </p>
+              <p className="mt-3 text-base md:text-lg font-medium text-white/85 max-w-5xl">
+                De l’autre côté, les métiers complémentaires hors de votre boucle ne vous recommandent pas. Vous perdez aussi des clients potentiels.
+              </p>
+              <div className="mt-4 rounded-xl border border-[#B6FF2B] bg-[#B6FF2B]/10 px-4 py-3 max-w-5xl">
+                <p className="font-black">Popey sert à remettre votre métier au centre de cette chaîne de valeur.</p>
+              </div>
+            </div>
+
+            <div className="relative rounded-2xl border border-white/15 bg-gradient-to-b from-white/[0.07] to-white/[0.02] p-4 md:p-5 overflow-hidden">
+              <div className="absolute -top-8 -left-8 h-28 w-28 rounded-full bg-[#B6FF2B]/20 blur-2xl" />
+              <p className="text-[11px] uppercase tracking-[0.18em] font-black text-white/70">Vous êtes ici</p>
+              <div className="mt-3 relative h-[260px] rounded-xl border border-white/15 bg-black/50 overflow-hidden">
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_60%,rgba(182,255,43,0.15),transparent_40%)]" />
+                <div className="absolute left-7 bottom-12 flex flex-col items-center gap-1 z-20">
+                  <div className="h-7 w-7 rounded-full border-2 border-white" />
+                  <div className="h-10 w-[3px] bg-white rounded-full" />
+                  <div className="w-10 h-[3px] bg-white rounded-full -mt-8" />
+                  <div className="h-8 w-[3px] bg-white rounded-full rotate-[20deg] origin-top translate-x-1" />
+                  <div className="h-8 w-[3px] bg-white rounded-full -rotate-[20deg] origin-top -translate-x-1 -mt-8" />
+                </div>
+                <p className="absolute left-5 bottom-4 text-[10px] uppercase tracking-wide font-black text-white/70">Votre activité</p>
+
+                <div className="absolute right-10 top-6 text-[10px] uppercase tracking-wide font-black text-white/65">Avant vous</div>
+                <div className="absolute right-10 bottom-6 text-[10px] uppercase tracking-wide font-black text-white/65">Après vous</div>
+
+                <div className="absolute right-[18%] top-[20%] h-[58%] w-[34%] perspective-[800px]">
+                  <div className="absolute inset-y-0 left-0 w-[60%] rounded-l-lg bg-[#F4F4F4] shadow-[0_0_30px_rgba(255,255,255,0.3)]">
+                    <div
+                      className="absolute inset-0 origin-left rounded-l-lg bg-gradient-to-r from-white to-[#D8D8D8] border-l border-white/40 transition-transform duration-700"
+                      style={{ transform: doorOpen ? "rotateY(-68deg)" : "rotateY(0deg)" }}
+                    />
+                  </div>
+                  <div className="absolute inset-y-1 left-[56%] w-[40%] rounded-r-lg bg-[#B6FF2B]/20 border border-[#B6FF2B]/40 shadow-[0_0_30px_rgba(182,255,43,0.35)]" />
+                </div>
+
+                <div className="absolute left-[34%] top-[34%] h-[2px] w-[23%] bg-white/50 door-flow" />
+                <div className="absolute left-[34%] top-[51%] h-[2px] w-[23%] bg-white/50 door-flow [animation-delay:1.2s]" />
+                <div className="absolute right-4 top-24 rounded-full bg-white/10 border border-white/20 px-2 py-1 text-[10px] font-black">
+                  {activeJourney === 0 ? "Client chez courtier" : activeJourney === 1 ? "Client chez architecte" : "Client chez CGP"}
+                </div>
+                <div className="absolute right-4 top-36 rounded-full bg-white/10 border border-white/20 px-2 py-1 text-[10px] font-black">
+                  {activeJourney === 0 ? "Client chez cuisiniste" : activeJourney === 1 ? "Client chez déménageur" : "Client en conciergerie"}
+                </div>
+              </div>
+              <p className="mt-3 text-xs font-black uppercase tracking-wide text-[#B6FF2B]">
+                {doorOpen ? "La porte s’ouvre : vous entrez dans la boucle de valeur." : "La porte reste fermée : vos clients circulent sans vous."}
+              </p>
+            </div>
           </div>
         </div>
       </section>
@@ -275,6 +322,16 @@ export default function PopeyHumanTestV4Page() {
           Postuler à l’Audit de Synergie
         </Link>
       </div>
+      <style jsx global>{`
+        @keyframes doorFlow {
+          0% { transform: translateX(0); opacity: 0.2; }
+          50% { transform: translateX(8px); opacity: 0.7; }
+          100% { transform: translateX(16px); opacity: 0.15; }
+        }
+        .door-flow {
+          animation: doorFlow 1.6s ease-in-out infinite;
+        }
+      `}</style>
     </main>
   );
 }
