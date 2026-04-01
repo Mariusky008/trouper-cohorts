@@ -106,22 +106,32 @@ export default function PopeyHumanTestV4Page() {
               </div>
             </div>
 
-            <div className="relative rounded-2xl border border-white/15 bg-gradient-to-b from-white/[0.07] to-white/[0.02] p-4 md:p-5 overflow-hidden">
+            <div className="relative p-1 md:p-2 overflow-visible">
               <div className="absolute -top-8 -left-8 h-28 w-28 rounded-full bg-[#B6FF2B]/20 blur-2xl" />
-              <div className="mt-2 relative h-[240px] overflow-hidden">
+              <div className="mt-2 relative h-[240px] overflow-visible">
                 <div className="absolute left-0 right-0 bottom-9 h-[2px] bg-white/25" />
 
-                <div className="walk-man absolute left-4 bottom-9 z-20">
-                  <div className="h-8 w-8 rounded-full border-[3px] border-white mx-auto" />
-                  <div className="h-12 w-[4px] bg-white rounded-full mx-auto mt-1" />
-                  <div className="w-10 h-[4px] bg-white rounded-full mx-auto -mt-9" />
-                  <div className="walk-leg-left h-9 w-[4px] bg-white rounded-full origin-top translate-x-[6px]" />
-                  <div className="walk-leg-right h-9 w-[4px] bg-white rounded-full origin-top -translate-x-[6px] -mt-9" />
+                <div className="walk-man absolute left-2 bottom-9 z-20 h-[102px] w-14">
+                  <div className="absolute top-0 left-1/2 -translate-x-1/2 h-8 w-8 rounded-full border-[3px] border-white" />
+                  <div className="absolute top-8 left-1/2 -translate-x-1/2 h-14 w-[4px] bg-white rounded-full" />
+                  <div className="absolute top-[48px] left-1/2 -translate-x-1/2 w-10 h-[4px] bg-white rounded-full" />
+                  <div className="walk-leg-left absolute top-[66px] left-1/2 h-11 w-[4px] bg-white rounded-full origin-top" />
+                  <div className="walk-leg-right absolute top-[66px] left-1/2 h-11 w-[4px] bg-white rounded-full origin-top" />
                 </div>
 
-                <div className="absolute right-5 bottom-9 h-[148px] w-[112px] rounded-t-lg border-[3px] border-white/85 bg-white/5">
-                  <div className="door-open absolute inset-y-[6px] left-[6px] w-[70px] rounded-l-md border border-white/40 bg-gradient-to-r from-white to-white/85 shadow-[0_0_30px_rgba(255,255,255,0.45)] origin-left">
+                <div className="absolute right-6 bottom-9 h-[152px] w-[118px] rounded-t-lg border-[3px] border-white/85 bg-white/5">
+                  <div className="door-light absolute -inset-4 rounded-full bg-[#B6FF2B]/20 blur-2xl" />
+                  <div className="door-open absolute inset-y-[6px] left-[6px] w-[76px] rounded-l-md border border-white/40 bg-gradient-to-r from-white to-white/85 shadow-[0_0_30px_rgba(255,255,255,0.45)] origin-left">
                     <div className="absolute right-2 top-1/2 -translate-y-1/2 h-2.5 w-2.5 rounded-full bg-black/40" />
+                    <ul className="mt-3 pl-2 space-y-0.5 text-[8px] leading-tight font-black uppercase tracking-[0.08em] text-black/65">
+                      <li>Courtier</li>
+                      <li>Architecte</li>
+                      <li>CGP</li>
+                      <li>Cuisiniste</li>
+                      <li>Déménageur</li>
+                      <li>Conciergerie</li>
+                      <li className="added-role text-[#2F7A00]">+ Agent immo</li>
+                    </ul>
                   </div>
                   <span className="absolute -top-7 left-1/2 -translate-x-1/2 text-[10px] font-black uppercase tracking-[0.2em] text-[#B6FF2B]">Popey</span>
                 </div>
@@ -304,25 +314,34 @@ export default function PopeyHumanTestV4Page() {
       <style jsx global>{`
         @keyframes walkToPopey {
           0% { transform: translateX(0) translateY(0); opacity: 1; }
-          18% { transform: translateX(48px) translateY(-2px); opacity: 1; }
-          36% { transform: translateX(98px) translateY(0); opacity: 1; }
-          54% { transform: translateX(148px) translateY(-2px); opacity: 1; }
-          72% { transform: translateX(198px) translateY(0); opacity: 1; }
-          82% { transform: translateX(224px) translateY(0); opacity: 1; }
-          90% { transform: translateX(240px) translateY(0); opacity: 0; }
-          100% { transform: translateX(240px) translateY(0); opacity: 0; }
+          20% { transform: translateX(56px) translateY(-2px); opacity: 1; }
+          40% { transform: translateX(116px) translateY(0); opacity: 1; }
+          60% { transform: translateX(176px) translateY(-2px); opacity: 1; }
+          76% { transform: translateX(224px) translateY(0); opacity: 1; }
+          84% { transform: translateX(244px) translateY(0); opacity: 1; }
+          92% { transform: translateX(266px) translateY(0); opacity: 0; }
+          100% { transform: translateX(266px) translateY(0); opacity: 0; }
         }
         @keyframes doorOpenLoop {
-          0%, 52% { transform: rotateY(0deg); }
-          64%, 100% { transform: rotateY(-78deg); }
+          0%, 54% { transform: rotateY(0deg); }
+          68%, 82% { transform: rotateY(-82deg); }
+          94%, 100% { transform: rotateY(0deg); }
         }
         @keyframes legSwingLeft {
-          0%, 100% { transform: translateX(6px) rotate(22deg); }
-          50% { transform: translateX(6px) rotate(-22deg); }
+          0%, 100% { transform: translateX(-4px) rotate(24deg); }
+          50% { transform: translateX(-4px) rotate(-24deg); }
         }
         @keyframes legSwingRight {
-          0%, 100% { transform: translateX(-6px) rotate(-22deg); }
-          50% { transform: translateX(-6px) rotate(22deg); }
+          0%, 100% { transform: translateX(4px) rotate(-24deg); }
+          50% { transform: translateX(4px) rotate(24deg); }
+        }
+        @keyframes enterGlow {
+          0%, 70% { opacity: 0.15; transform: scale(0.85); }
+          82%, 100% { opacity: 0.55; transform: scale(1.05); }
+        }
+        @keyframes revealAddedRole {
+          0%, 86% { opacity: 0; transform: translateY(4px); }
+          94%, 100% { opacity: 1; transform: translateY(0); }
         }
         .walk-man {
           animation: walkToPopey 4.4s ease-in-out infinite;
@@ -335,6 +354,12 @@ export default function PopeyHumanTestV4Page() {
         }
         .door-open {
           animation: doorOpenLoop 4.4s ease-in-out infinite;
+        }
+        .door-light {
+          animation: enterGlow 4.4s ease-in-out infinite;
+        }
+        .added-role {
+          animation: revealAddedRole 4.4s ease-in-out infinite;
         }
       `}</style>
     </main>
