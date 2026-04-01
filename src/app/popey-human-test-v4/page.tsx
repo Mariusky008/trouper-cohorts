@@ -108,30 +108,24 @@ export default function PopeyHumanTestV4Page() {
 
             <div className="relative rounded-2xl border border-white/15 bg-gradient-to-b from-white/[0.07] to-white/[0.02] p-4 md:p-5 overflow-hidden">
               <div className="absolute -top-8 -left-8 h-28 w-28 rounded-full bg-[#B6FF2B]/20 blur-2xl" />
-              <p className="text-[11px] uppercase tracking-[0.18em] font-black text-white/70">Animation simple et claire</p>
-              <div className="mt-3 relative h-[230px] rounded-xl border border-white/15 bg-black/60 overflow-hidden">
-                <div className="absolute left-0 right-0 bottom-9 h-[2px] bg-white/20" />
+              <div className="mt-2 relative h-[240px] overflow-hidden">
+                <div className="absolute left-0 right-0 bottom-9 h-[2px] bg-white/25" />
 
-                <div className="walk-man absolute left-6 bottom-9 z-20">
-                  <div className="h-5 w-5 rounded-full border-2 border-white mx-auto" />
-                  <div className="h-8 w-[3px] bg-white rounded-full mx-auto mt-1" />
-                  <div className="w-7 h-[3px] bg-white rounded-full mx-auto -mt-6" />
-                  <div className="h-6 w-[3px] bg-white rounded-full rotate-[24deg] origin-top translate-x-2" />
-                  <div className="h-6 w-[3px] bg-white rounded-full -rotate-[24deg] origin-top -translate-x-2 -mt-6" />
+                <div className="walk-man absolute left-4 bottom-9 z-20">
+                  <div className="h-8 w-8 rounded-full border-[3px] border-white mx-auto" />
+                  <div className="h-12 w-[4px] bg-white rounded-full mx-auto mt-1" />
+                  <div className="w-10 h-[4px] bg-white rounded-full mx-auto -mt-9" />
+                  <div className="walk-leg-left h-9 w-[4px] bg-white rounded-full origin-top translate-x-[6px]" />
+                  <div className="walk-leg-right h-9 w-[4px] bg-white rounded-full origin-top -translate-x-[6px] -mt-9" />
                 </div>
 
-                <div className="absolute right-10 bottom-9 h-[124px] w-[86px] rounded-t-lg border-2 border-white/80 bg-white/5">
-                  <div className="door-open absolute inset-y-[8px] left-[8px] w-[50px] rounded-l-md bg-white shadow-[0_0_30px_rgba(255,255,255,0.45)] origin-left" />
+                <div className="absolute right-5 bottom-9 h-[148px] w-[112px] rounded-t-lg border-[3px] border-white/85 bg-white/5">
+                  <div className="door-open absolute inset-y-[6px] left-[6px] w-[70px] rounded-l-md border border-white/40 bg-gradient-to-r from-white to-white/85 shadow-[0_0_30px_rgba(255,255,255,0.45)] origin-left">
+                    <div className="absolute right-2 top-1/2 -translate-y-1/2 h-2.5 w-2.5 rounded-full bg-black/40" />
+                  </div>
                   <span className="absolute -top-7 left-1/2 -translate-x-1/2 text-[10px] font-black uppercase tracking-[0.2em] text-[#B6FF2B]">Popey</span>
                 </div>
-
-                <div className="good-choice absolute right-4 top-4 rounded-full border border-[#B6FF2B] bg-[#B6FF2B]/20 px-3 py-1 text-[10px] font-black uppercase tracking-wide text-[#B6FF2B]">
-                  Bon choix
-                </div>
               </div>
-              <p className="mt-3 text-xs font-black uppercase tracking-wide text-[#B6FF2B]">
-                Il entre chez Popey et rejoint la bonne boucle : recommandations, commissions, nouveaux clients.
-              </p>
             </div>
           </div>
         </div>
@@ -309,27 +303,38 @@ export default function PopeyHumanTestV4Page() {
       </div>
       <style jsx global>{`
         @keyframes walkToPopey {
-          0% { transform: translateX(0); opacity: 1; }
-          55% { transform: translateX(165px); opacity: 1; }
-          72% { transform: translateX(215px); opacity: 0; }
-          100% { transform: translateX(215px); opacity: 0; }
+          0% { transform: translateX(0) translateY(0); opacity: 1; }
+          18% { transform: translateX(48px) translateY(-2px); opacity: 1; }
+          36% { transform: translateX(98px) translateY(0); opacity: 1; }
+          54% { transform: translateX(148px) translateY(-2px); opacity: 1; }
+          72% { transform: translateX(198px) translateY(0); opacity: 1; }
+          82% { transform: translateX(224px) translateY(0); opacity: 1; }
+          90% { transform: translateX(240px) translateY(0); opacity: 0; }
+          100% { transform: translateX(240px) translateY(0); opacity: 0; }
         }
         @keyframes doorOpenLoop {
-          0%, 48% { transform: rotateY(0deg); }
-          62%, 100% { transform: rotateY(-68deg); }
+          0%, 52% { transform: rotateY(0deg); }
+          64%, 100% { transform: rotateY(-78deg); }
         }
-        @keyframes showChoice {
-          0%, 60% { opacity: 0; transform: translateY(6px); }
-          72%, 100% { opacity: 1; transform: translateY(0); }
+        @keyframes legSwingLeft {
+          0%, 100% { transform: translateX(6px) rotate(22deg); }
+          50% { transform: translateX(6px) rotate(-22deg); }
+        }
+        @keyframes legSwingRight {
+          0%, 100% { transform: translateX(-6px) rotate(-22deg); }
+          50% { transform: translateX(-6px) rotate(22deg); }
         }
         .walk-man {
           animation: walkToPopey 4.4s ease-in-out infinite;
         }
+        .walk-leg-left {
+          animation: legSwingLeft 0.45s ease-in-out infinite;
+        }
+        .walk-leg-right {
+          animation: legSwingRight 0.45s ease-in-out infinite;
+        }
         .door-open {
           animation: doorOpenLoop 4.4s ease-in-out infinite;
-        }
-        .good-choice {
-          animation: showChoice 4.4s ease-in-out infinite;
         }
       `}</style>
     </main>
