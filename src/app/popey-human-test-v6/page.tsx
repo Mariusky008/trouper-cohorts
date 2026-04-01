@@ -60,8 +60,8 @@ export default function PopeyHumanTestV6Page() {
   return (
     <main className={cn("min-h-screen bg-[#F7F7F7] text-[#0B0B0B]", poppins.variable, "font-poppins")}>
       <section className="border-b border-black/10">
-        <div className="mx-auto max-w-6xl px-4 py-10 md:py-14">
-          <div className="grid gap-8 lg:grid-cols-[1fr_1fr] items-start">
+        <div className="mx-auto max-w-6xl px-4 py-12 md:py-16 lg:min-h-[78vh] flex items-center">
+          <div className="grid gap-8 lg:grid-cols-[1fr_1fr] items-center w-full">
             <div className="space-y-5">
               <p className="inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.2em] font-black">
                 <span className="h-2 w-2 bg-[#B6FF2B] animate-pulse" />
@@ -119,6 +119,62 @@ export default function PopeyHumanTestV6Page() {
                 {phaseMessage}
               </p>
             </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="border-b border-black/10 bg-black text-white">
+        <div className="mx-auto max-w-6xl px-4 py-14">
+          <p className="text-xs uppercase tracking-[0.2em] font-black text-[#B6FF2B]">Le problème à résoudre</p>
+          <h2 className="mt-3 text-3xl md:text-5xl font-black max-w-5xl">
+            Vos clients achètent déjà ailleurs avant et après vous. Le problème, c’est que vous n’êtes pas dans la boucle.
+          </h2>
+          <p className="mt-5 text-base md:text-lg font-medium text-white/85 max-w-5xl">
+            Un client qui vous fait confiance continue souvent son parcours chez d’autres professionnels complémentaires : courtier, architecte d’intérieur, CGP, cuisiniste, déménageur, conciergerie privée.
+          </p>
+          <p className="mt-4 text-base md:text-lg font-medium text-white/85 max-w-5xl">
+            Si ces achats se font sans vous, vous laissez partir de la valeur, des recommandations, des commissions et des opportunités de fidélisation.
+          </p>
+          <p className="mt-4 text-base md:text-lg font-medium text-white/85 max-w-5xl">
+            De l’autre côté, les métiers complémentaires qui ne sont pas dans votre boucle ne vous recommandent pas. Vous perdez aussi des clients potentiels.
+          </p>
+          <div className="mt-5 rounded-xl border border-[#B6FF2B] bg-[#B6FF2B]/10 px-4 py-3 max-w-5xl">
+            <p className="font-black">Popey sert à remettre votre métier au centre de cette chaîne de valeur.</p>
+          </div>
+        </div>
+      </section>
+
+      <section className="border-b border-black/10 bg-white">
+        <div className="mx-auto max-w-6xl px-4 py-14">
+          <h2 className="text-3xl md:text-5xl font-black max-w-5xl">
+            Avant Popey, votre réseau est passif. Après Popey, il devient une machine à opportunités.
+          </h2>
+          <div className="mt-6 grid md:grid-cols-2 gap-4">
+            <div className="rounded-xl border border-black/15 bg-[#F7F7F7] p-5">
+              <p className="text-xs uppercase tracking-[0.2em] font-black text-black/60">Sans Popey</p>
+              <ul className="mt-3 space-y-1.5 text-sm font-semibold text-black/80">
+                <li>• 1 client = 1 vente</li>
+                <li>• réseau informel</li>
+                <li>• partenaires mal choisis</li>
+                <li>• recommandations aléatoires</li>
+                <li>• commissions floues ou inexistantes</li>
+                <li>• dépendance à la prospection ou au hasard</li>
+              </ul>
+            </div>
+            <div className="rounded-xl border border-black bg-black text-white p-5">
+              <p className="text-xs uppercase tracking-[0.2em] font-black text-[#B6FF2B]">Avec Popey</p>
+              <ul className="mt-3 space-y-1.5 text-sm font-semibold">
+                <li>• 1 client = 2 à 5 opportunités potentielles</li>
+                <li>• 1 partenaire complémentaire activé intelligemment</li>
+                <li>• 1 offre commune simple à vendre</li>
+                <li>• recommandations traçables</li>
+                <li>• commissions structurées</li>
+                <li>• système duplicable Mois 1 → 2 → 3</li>
+              </ul>
+            </div>
+          </div>
+          <div className="mt-5 rounded-xl border border-black bg-white p-4 text-center">
+            <p className="text-lg md:text-3xl font-black">1 client = 1 vente VS 1 client = 2 à 5 opportunités</p>
           </div>
         </div>
       </section>
@@ -191,6 +247,23 @@ export default function PopeyHumanTestV6Page() {
                 <p className="mt-2 text-sm font-medium text-black/75">{item.a}</p>
               </details>
             ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="border-b border-black/10 bg-[#F5F5F5]">
+        <div className="mx-auto max-w-6xl px-4 py-14">
+          <h2 className="text-3xl md:text-5xl font-black max-w-4xl">Nous ne retenons pas tous les profils.</h2>
+          <p className="mt-4 text-base md:text-lg font-medium text-black/80 max-w-5xl">
+            Popey fonctionne mieux avec des professionnels qui ont déjà une expertise, vendent une offre claire, comprennent la réciprocité et peuvent activer une vraie complémentarité métier.
+          </p>
+          <p className="mt-4 text-base md:text-lg font-medium text-black/80 max-w-5xl">
+            L’Audit de Synergie sert à vérifier si votre métier est compatible, quel partenaire activer en premier, et si une synergie rentable peut être construite rapidement.
+          </p>
+          <div className="mt-5 rounded-xl border border-black bg-white px-4 py-3 max-w-5xl">
+            <p className="font-black">
+              Si votre profil est validé, vous repartez avec une direction claire. Si ce n’est pas le bon moment, on vous le dira.
+            </p>
           </div>
         </div>
       </section>
