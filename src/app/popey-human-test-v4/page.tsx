@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
 import { Pacifico, Poppins, Titan_One } from "next/font/google";
 import { cn } from "@/lib/utils";
 
@@ -50,6 +51,44 @@ const faqItems = [
 ];
 
 export default function PopeyHumanTestV4Page() {
+  const [tick, setTick] = useState(0);
+  const month = (tick % 6) + 1;
+  const activeStream = tick % 3;
+  const duoRevenue = month * 1200;
+  const incomingRevenue = Math.max(month - 1, 0) * 900;
+  const commissionRevenue = Math.max(month - 2, 0) * 500;
+  const totalRevenue = duoRevenue + incomingRevenue + commissionRevenue;
+  const streamData = useMemo(
+    () => [
+      {
+        id: "duo",
+        title: "Pack duo",
+        subtitle: "Offre commune qui facture chaque mois",
+        value: duoRevenue,
+      },
+      {
+        id: "incoming",
+        title: "Reco entrantes",
+        subtitle: "Nouveaux clients apportés par le réseau",
+        value: incomingRevenue,
+      },
+      {
+        id: "commission",
+        title: "Reco sortantes (10%)",
+        subtitle: "Commissions d’apport d’affaires traçables",
+        value: commissionRevenue,
+      },
+    ],
+    [duoRevenue, incomingRevenue, commissionRevenue],
+  );
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setTick((prev) => (prev + 1) % 1200);
+    }, 1600);
+    return () => window.clearInterval(timer);
+  }, []);
+
   return (
     <main className={cn("min-h-screen bg-[#E2D9BC] text-[#2E130C] pb-28", titanOne.variable, pacifico.variable, poppins.variable, "font-poppins")}>
       <section className="py-14 md:py-16 border-b-4 border-[#2E130C] bg-white">
@@ -76,45 +115,44 @@ export default function PopeyHumanTestV4Page() {
               </p>
             </div>
             <div className="rounded-3xl border-4 border-[#2E130C] bg-[#2E130C] p-6 text-[#E2D9BC] shadow-[8px_8px_0px_0px_#2E130C]">
-              <p className="text-xs uppercase tracking-widest font-black text-[#D2E8FF]">Visualisation du mécanisme</p>
-              <div className="mt-5 rounded-2xl border-2 border-[#E2D9BC]/40 bg-[#E2D9BC]/5 p-4">
-                <div className="relative h-[260px]">
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-xs uppercase tracking-widest font-black text-[#D2E8FF]">Simulation des 6 premiers mois</p>
+                <p className="rounded-full border border-[#E2D9BC] bg-[#E2D9BC]/10 px-3 py-1 text-[11px] font-black">Mois {month}/6</p>
+              </div>
+              <div className="mt-4 grid grid-cols-3 gap-2">
+                {streamData.map((stream, index) => (
+                  <div key={stream.id} className={cn("rounded-lg border px-2 py-2 text-center transition-all", activeStream === index ? "border-[#E2D9BC] bg-[#E2D9BC]/20" : "border-[#E2D9BC]/40 bg-[#E2D9BC]/5")}>
+                    <p className="text-[10px] font-black uppercase tracking-wide">{stream.title}</p>
+                    <p className="mt-1 text-sm font-titan">{stream.value.toLocaleString("fr-FR")}€</p>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-4 rounded-2xl border-2 border-[#E2D9BC]/40 bg-[#E2D9BC]/5 p-3">
+                <div className="relative h-[200px]">
                   <svg viewBox="0 0 100 100" className="absolute inset-0 h-full w-full">
-                    <defs>
-                      <marker id="v4Arrow" markerWidth="5" markerHeight="5" refX="4.4" refY="2.5" orient="auto">
-                        <path d="M0,0 L5,2.5 L0,5 Z" fill="#E2D9BC" />
-                      </marker>
-                    </defs>
-                    <circle cx="50" cy="50" r="12" fill="none" stroke="#E2D9BC" strokeWidth="1.4" />
-                    <circle cx="18" cy="24" r="10" fill="#E2D9BC1A" stroke="#E2D9BC" strokeWidth="1" />
-                    <circle cx="82" cy="24" r="10" fill="#E2D9BC1A" stroke="#E2D9BC" strokeWidth="1" />
-                    <circle cx="18" cy="76" r="10" fill="#E2D9BC1A" stroke="#E2D9BC" strokeWidth="1" />
-                    <line x1="50" y1="50" x2="26" y2="30" stroke="#E2D9BC" strokeOpacity="0.85" strokeWidth="1.1" markerEnd="url(#v4Arrow)" />
-                    <line x1="50" y1="50" x2="74" y2="30" stroke="#E2D9BC" strokeOpacity="0.85" strokeWidth="1.1" markerEnd="url(#v4Arrow)" />
-                    <line x1="50" y1="50" x2="26" y2="70" stroke="#E2D9BC" strokeOpacity="0.85" strokeWidth="1.1" markerEnd="url(#v4Arrow)" />
+                    <line x1="50" y1="50" x2="20" y2="22" stroke={activeStream === 0 ? "#E2D9BC" : "#E2D9BC55"} strokeWidth={activeStream === 0 ? "1.5" : "1"} />
+                    <line x1="50" y1="50" x2="80" y2="22" stroke={activeStream === 1 ? "#E2D9BC" : "#E2D9BC55"} strokeWidth={activeStream === 1 ? "1.5" : "1"} />
+                    <line x1="50" y1="50" x2="80" y2="78" stroke={activeStream === 2 ? "#E2D9BC" : "#E2D9BC55"} strokeWidth={activeStream === 2 ? "1.5" : "1"} />
+                    <circle cx="50" cy="50" r="11.5" fill="#2E130C" stroke="#E2D9BC" strokeWidth="1.3" />
+                    <circle cx="20" cy="22" r="8.5" fill={activeStream === 0 ? "#E2D9BC33" : "#E2D9BC14"} stroke="#E2D9BC" strokeWidth="1" />
+                    <circle cx="80" cy="22" r="8.5" fill={activeStream === 1 ? "#E2D9BC33" : "#E2D9BC14"} stroke="#E2D9BC" strokeWidth="1" />
+                    <circle cx="80" cy="78" r="8.5" fill={activeStream === 2 ? "#E2D9BC33" : "#E2D9BC14"} stroke="#E2D9BC" strokeWidth="1" />
                   </svg>
-                  <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-[#E2D9BC] bg-[#2E130C] px-4 py-1.5 text-sm font-titan">
-                    Client
+                  <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-center">
+                    <p className="font-titan text-sm">Client</p>
+                    <p className="text-[10px] font-black uppercase tracking-wide text-[#D2E8FF]">point d’entrée</p>
                   </div>
-                  <div className="absolute left-[8%] top-[15%] rounded-full border border-[#E2D9BC] bg-[#E2D9BC]/10 px-3 py-1 text-[11px] font-black">
-                    Architecte
-                  </div>
-                  <div className="absolute right-[8%] top-[15%] rounded-full border border-[#E2D9BC] bg-[#E2D9BC]/10 px-3 py-1 text-[11px] font-black">
-                    Courtier / CGP
-                  </div>
-                  <div className="absolute left-[8%] bottom-[15%] rounded-full border border-[#E2D9BC] bg-[#E2D9BC]/10 px-3 py-1 text-[11px] font-black">
-                    Cuisiniste
-                  </div>
-                  <div className="absolute right-[7%] bottom-[12%] rounded-lg border border-[#E2D9BC] bg-[#E2D9BC]/10 px-3 py-2 text-[11px] font-black text-right leading-tight">
-                    Recommandations
-                    <br />
-                    Commissions
-                    <br />
-                    Offres communes
-                  </div>
+                  <div className="absolute left-[8%] top-[6%] rounded-md border border-[#E2D9BC] bg-[#E2D9BC]/10 px-2 py-1 text-[10px] font-black">Pack duo</div>
+                  <div className="absolute right-[8%] top-[6%] rounded-md border border-[#E2D9BC] bg-[#E2D9BC]/10 px-2 py-1 text-[10px] font-black">Reco entrantes</div>
+                  <div className="absolute right-[8%] bottom-[6%] rounded-md border border-[#E2D9BC] bg-[#E2D9BC]/10 px-2 py-1 text-[10px] font-black">Reco sortantes 10%</div>
                 </div>
               </div>
-              <p className="mt-3 text-center text-sm font-black">1 client bien orienté = plusieurs opportunités business activables</p>
+              <div className="mt-4 rounded-xl border-2 border-[#E2D9BC] bg-[#B20B13] px-4 py-3">
+                <p className="text-xs font-black uppercase tracking-wide">CA cumulé simulé à M{month} : {totalRevenue.toLocaleString("fr-FR")}€</p>
+                <p className="mt-1 text-[11px] font-black text-[#E2D9BC]/95">{streamData[activeStream].subtitle}</p>
+              </div>
+              <p className="mt-3 text-center text-sm font-black">3 sources de revenus qui démarrent dès le Mois 1 et accélèrent jusqu’au Mois 6.</p>
+              <p className="mt-1 text-center text-xs font-black uppercase tracking-wide text-[#D2E8FF]">Plus vous entrez tôt dans la sphère des 20 métiers, plus vite le système tourne.</p>
             </div>
           </div>
         </div>
