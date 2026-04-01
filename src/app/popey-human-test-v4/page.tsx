@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Poppins } from "next/font/google";
 import { cn } from "@/lib/utils";
 
@@ -32,6 +32,8 @@ const faqItems = [
 
 export default function PopeyHumanTestV4Page() {
   const [tick, setTick] = useState(0);
+  const [problemSceneStarted, setProblemSceneStarted] = useState(false);
+  const problemSectionRef = useRef<HTMLElement | null>(null);
   const month = (tick % 6) + 1;
   const duoRevenue = month * 600;
   const incomingRevenue = Math.max(month - 1, 0) * 400;
@@ -50,6 +52,24 @@ export default function PopeyHumanTestV4Page() {
     }, 1800);
     return () => window.clearInterval(timer);
   }, []);
+
+  useEffect(() => {
+    const node = problemSectionRef.current;
+    if (!node || problemSceneStarted) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setProblemSceneStarted(true);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.35 }
+    );
+
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [problemSceneStarted]);
 
   return (
     <main className={cn("min-h-screen bg-[#F7F7F7] text-[#0B0B0B]", poppins.variable, "font-poppins")}>
@@ -84,7 +104,7 @@ export default function PopeyHumanTestV4Page() {
         </div>
       </section>
 
-      <section className="border-b border-black/10 bg-black text-white">
+      <section ref={problemSectionRef} className="border-b border-black/10 bg-black text-white">
         <div className="mx-auto max-w-6xl px-4 py-14">
           <div className="grid gap-8 lg:grid-cols-[1.05fr_0.95fr] items-center">
             <div>
@@ -111,17 +131,17 @@ export default function PopeyHumanTestV4Page() {
               <div className="mt-2 relative h-[260px] overflow-visible">
                 <div className="absolute left-0 right-0 bottom-9 h-[2px] bg-white/25" />
 
-                <div className="walk-man absolute left-2 bottom-9 z-20 h-[102px] w-14">
+                <div className="walk-man absolute left-2 bottom-9 z-20 h-[102px] w-14" style={{ animationPlayState: problemSceneStarted ? "running" : "paused" }}>
                   <div className="absolute top-0 left-1/2 -translate-x-1/2 h-8 w-8 rounded-full border-[3px] border-white" />
                   <div className="absolute top-8 left-1/2 -translate-x-1/2 h-14 w-[4px] bg-white rounded-full" />
                   <div className="absolute top-[48px] left-1/2 -translate-x-1/2 w-10 h-[4px] bg-white rounded-full" />
-                  <div className="walk-leg-left absolute top-[66px] left-1/2 h-11 w-[4px] bg-white rounded-full origin-top" />
-                  <div className="walk-leg-right absolute top-[66px] left-1/2 h-11 w-[4px] bg-white rounded-full origin-top" />
+                  <div className="walk-leg-left absolute top-[66px] left-1/2 h-11 w-[4px] bg-white rounded-full origin-top" style={{ animationPlayState: problemSceneStarted ? "running" : "paused" }} />
+                  <div className="walk-leg-right absolute top-[66px] left-1/2 h-11 w-[4px] bg-white rounded-full origin-top" style={{ animationPlayState: problemSceneStarted ? "running" : "paused" }} />
                 </div>
 
                 <div className="absolute right-4 bottom-9 h-[188px] w-[154px] rounded-t-[30px] border-[4px] border-white/85 bg-white/5">
-                  <div className="door-light absolute -inset-5 rounded-full bg-[#B6FF2B]/25 blur-2xl" />
-                  <div className="door-open absolute inset-y-[8px] left-[8px] right-[8px] rounded-t-[20px] border border-white/35 bg-white shadow-[0_0_30px_rgba(255,255,255,0.45)] origin-left">
+                  <div className="door-light absolute -inset-5 rounded-full bg-[#B6FF2B]/25 blur-2xl" style={{ animationPlayState: problemSceneStarted ? "running" : "paused" }} />
+                  <div className="door-open absolute inset-y-[8px] left-[8px] right-[8px] rounded-t-[20px] border border-white/35 bg-white shadow-[0_0_30px_rgba(255,255,255,0.45)] origin-left" style={{ animationPlayState: problemSceneStarted ? "running" : "paused" }}>
                     <div className="absolute right-2 top-1/2 -translate-y-1/2 h-2.5 w-2.5 rounded-full bg-black/35" />
                     <div className="px-2 pt-3 text-[10px] leading-[1.35] font-semibold tracking-[0.06em] text-black/70">
                       <p>• Courtier</p>
@@ -130,13 +150,13 @@ export default function PopeyHumanTestV4Page() {
                       <p>• Cuisiniste</p>
                       <p>• Déménageur</p>
                       <p>• Conciergerie</p>
-                      <p className="added-role mt-1 font-black text-[#2F7A00]">• + Agent immo</p>
+                      <p className="added-role mt-1 font-black text-[#2F7A00]" style={{ animationPlayState: problemSceneStarted ? "running" : "paused" }}>• + Agent immo</p>
                     </div>
                   </div>
                   <span className="absolute -top-8 left-1/2 -translate-x-1/2 text-[12px] font-black uppercase tracking-[0.2em] text-[#B6FF2B]">Popey</span>
                 </div>
 
-                <div className="final-result absolute right-[6px] bottom-1 text-[11px] font-black uppercase tracking-[0.14em] text-[#B6FF2B]">
+                <div className="final-result absolute right-[6px] bottom-1 text-[11px] font-black uppercase tracking-[0.14em] text-[#B6FF2B]" style={{ animationPlayState: problemSceneStarted ? "running" : "paused" }}>
                   Agent immo ajouté
                 </div>
               </div>
