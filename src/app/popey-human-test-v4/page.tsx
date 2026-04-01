@@ -76,17 +76,45 @@ export default function PopeyHumanTestV4Page() {
               </p>
             </div>
             <div className="rounded-3xl border-4 border-[#2E130C] bg-[#2E130C] p-6 text-[#E2D9BC] shadow-[8px_8px_0px_0px_#2E130C]">
-              <p className="text-xs uppercase tracking-widest font-black text-[#D2E8FF]">Visualisation simple</p>
-              <div className="mt-6 relative h-[240px]">
-                <div className="absolute left-1/2 top-1/2 h-24 w-24 -translate-x-1/2 -translate-y-1/2 rounded-full border-4 border-[#E2D9BC] flex items-center justify-center font-titan text-lg">Client</div>
-                <div className="absolute left-[12%] top-[18%] rounded-full border-2 border-[#E2D9BC] px-3 py-2 text-xs font-black bg-[#E2D9BC]/10">Partenaire A</div>
-                <div className="absolute right-[8%] top-[22%] rounded-full border-2 border-[#E2D9BC] px-3 py-2 text-xs font-black bg-[#E2D9BC]/10">Partenaire B</div>
-                <div className="absolute left-[28%] bottom-[10%] rounded-full border-2 border-[#E2D9BC] px-3 py-2 text-xs font-black bg-[#E2D9BC]/10">Partenaire C</div>
-                <div className="absolute left-1/2 top-1/2 h-[2px] w-[34%] -translate-y-1/2 bg-[#E2D9BC]/70 origin-left rotate-[-35deg]" />
-                <div className="absolute left-1/2 top-1/2 h-[2px] w-[34%] -translate-y-1/2 bg-[#E2D9BC]/70 origin-left rotate-[20deg]" />
-                <div className="absolute left-1/2 top-1/2 h-[2px] w-[28%] -translate-y-1/2 bg-[#E2D9BC]/70 origin-left rotate-[110deg]" />
+              <p className="text-xs uppercase tracking-widest font-black text-[#D2E8FF]">Visualisation du mécanisme</p>
+              <div className="mt-5 rounded-2xl border-2 border-[#E2D9BC]/40 bg-[#E2D9BC]/5 p-4">
+                <div className="relative h-[260px]">
+                  <svg viewBox="0 0 100 100" className="absolute inset-0 h-full w-full">
+                    <defs>
+                      <marker id="v4Arrow" markerWidth="5" markerHeight="5" refX="4.4" refY="2.5" orient="auto">
+                        <path d="M0,0 L5,2.5 L0,5 Z" fill="#E2D9BC" />
+                      </marker>
+                    </defs>
+                    <circle cx="50" cy="50" r="12" fill="none" stroke="#E2D9BC" strokeWidth="1.4" />
+                    <circle cx="18" cy="24" r="10" fill="#E2D9BC1A" stroke="#E2D9BC" strokeWidth="1" />
+                    <circle cx="82" cy="24" r="10" fill="#E2D9BC1A" stroke="#E2D9BC" strokeWidth="1" />
+                    <circle cx="18" cy="76" r="10" fill="#E2D9BC1A" stroke="#E2D9BC" strokeWidth="1" />
+                    <line x1="50" y1="50" x2="26" y2="30" stroke="#E2D9BC" strokeOpacity="0.85" strokeWidth="1.1" markerEnd="url(#v4Arrow)" />
+                    <line x1="50" y1="50" x2="74" y2="30" stroke="#E2D9BC" strokeOpacity="0.85" strokeWidth="1.1" markerEnd="url(#v4Arrow)" />
+                    <line x1="50" y1="50" x2="26" y2="70" stroke="#E2D9BC" strokeOpacity="0.85" strokeWidth="1.1" markerEnd="url(#v4Arrow)" />
+                  </svg>
+                  <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-[#E2D9BC] bg-[#2E130C] px-4 py-1.5 text-sm font-titan">
+                    Client
+                  </div>
+                  <div className="absolute left-[8%] top-[15%] rounded-full border border-[#E2D9BC] bg-[#E2D9BC]/10 px-3 py-1 text-[11px] font-black">
+                    Architecte
+                  </div>
+                  <div className="absolute right-[8%] top-[15%] rounded-full border border-[#E2D9BC] bg-[#E2D9BC]/10 px-3 py-1 text-[11px] font-black">
+                    Courtier / CGP
+                  </div>
+                  <div className="absolute left-[8%] bottom-[15%] rounded-full border border-[#E2D9BC] bg-[#E2D9BC]/10 px-3 py-1 text-[11px] font-black">
+                    Cuisiniste
+                  </div>
+                  <div className="absolute right-[7%] bottom-[12%] rounded-lg border border-[#E2D9BC] bg-[#E2D9BC]/10 px-3 py-2 text-[11px] font-black text-right leading-tight">
+                    Recommandations
+                    <br />
+                    Commissions
+                    <br />
+                    Offres communes
+                  </div>
+                </div>
               </div>
-              <p className="text-center text-sm font-black">1 client → 3 partenaires → plusieurs opportunités</p>
+              <p className="mt-3 text-center text-sm font-black">1 client bien orienté = plusieurs opportunités business activables</p>
             </div>
           </div>
         </div>
