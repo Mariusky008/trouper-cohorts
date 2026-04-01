@@ -61,10 +61,15 @@ export default function PopeyHumanTestV4Page() {
               Landing V4.1 Conversion
             </p>
             <h1 className="mt-4 text-4xl md:text-6xl font-black leading-[1.04] max-w-5xl">
-              Augmentez votre chiffre d’affaires avec les mêmes clients, grâce aux bons partenaires business.
+              Ne cherchez plus vos clients, allez là où ils sont déjà.
+              <br />
+              Chez ceux qui vendent juste avant ou juste après vous.
             </h1>
             <p className="mt-4 text-base md:text-lg font-medium text-black/80 max-w-3xl">
-              En 30 jours, Popey vous aide à lancer une première synergie rentable puis à la dupliquer avec 3 flux de revenus.
+              Arrêtez de prospecter seul. Popey vous associe chaque mois à un partenaire stratégique et crée votre Pack Duo clé en main pour transformer l’alliance en chiffre d’affaires.
+            </p>
+            <p className="mt-3 inline-flex rounded-full border border-black/20 bg-[#B6FF2B]/30 px-4 py-1.5 text-xs md:text-sm font-black uppercase tracking-wide">
+              Objectif : activer 3 flux de revenus complémentaires en 6 mois grâce à un écosystème de 19 métiers partenaires.
             </p>
             <div className="mt-6 flex flex-col sm:flex-row gap-3">
               <Link href="/programme-commando/postuler" className="inline-flex items-center justify-center rounded-md bg-black text-white px-6 py-3 text-sm font-black uppercase tracking-wide transition hover:translate-y-[-1px] hover:shadow-[0_8px_0_0_#B6FF2B]">
