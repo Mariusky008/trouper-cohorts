@@ -54,8 +54,8 @@ export default function PopeyHumanTestV4Page() {
   const [tick, setTick] = useState(0);
   const month = (tick % 6) + 1;
   const activeStream = tick % 3;
-  const duoRevenue = month * 1200;
-  const incomingRevenue = Math.max(month - 1, 0) * 900;
+  const duoRevenue = month * 600;
+  const incomingRevenue = Math.max(month - 1, 0) * 400;
   const commissionRevenue = Math.max(month - 2, 0) * 500;
   const totalRevenue = duoRevenue + incomingRevenue + commissionRevenue;
   const streamData = useMemo(
