@@ -128,7 +128,7 @@ export default function PopeyHumanTestV4Page() {
 
             <div className="relative p-1 md:p-2 overflow-visible">
               <div className="absolute -top-8 -left-8 h-28 w-28 rounded-full bg-[#B6FF2B]/20 blur-2xl" />
-              <div className="mt-2 relative h-[260px] overflow-visible">
+              <div className="mt-2 relative h-[290px] overflow-visible">
                 <div className="absolute left-0 right-0 bottom-9 h-[2px] bg-white/25" />
 
                 <div className="walk-man absolute left-2 bottom-9 z-20 h-[102px] w-14" style={{ animationPlayState: problemSceneStarted ? "running" : "paused" }}>
@@ -139,25 +139,27 @@ export default function PopeyHumanTestV4Page() {
                   <div className="walk-leg-right absolute top-[66px] left-1/2 h-11 w-[4px] bg-white rounded-full origin-top" style={{ animationPlayState: problemSceneStarted ? "running" : "paused" }} />
                 </div>
 
-                <div className="absolute right-4 bottom-9 h-[188px] w-[154px] rounded-t-[30px] border-[4px] border-white/85 bg-white/5">
+                <div className="absolute right-3 bottom-9 h-[226px] w-[196px] rounded-t-[36px] border-[4px] border-white/85 bg-white/5">
                   <div className="door-light absolute -inset-5 rounded-full bg-[#B6FF2B]/25 blur-2xl" style={{ animationPlayState: problemSceneStarted ? "running" : "paused" }} />
-                  <div className="door-open absolute inset-y-[8px] left-[8px] right-[8px] rounded-t-[20px] border border-white/35 bg-white shadow-[0_0_30px_rgba(255,255,255,0.45)] origin-left" style={{ animationPlayState: problemSceneStarted ? "running" : "paused" }}>
+                  <div className="door-open absolute inset-y-[8px] left-[8px] right-[8px] rounded-t-[26px] border border-white/35 bg-white shadow-[0_0_30px_rgba(255,255,255,0.45)] origin-left" style={{ animationPlayState: problemSceneStarted ? "running" : "paused" }}>
                     <div className="absolute right-2 top-1/2 -translate-y-1/2 h-2.5 w-2.5 rounded-full bg-black/35" />
-                    <div className="px-2 pt-3 text-[10px] leading-[1.35] font-semibold tracking-[0.06em] text-black/70">
-                      <p>• Courtier</p>
-                      <p>• Architecte</p>
-                      <p>• CGP</p>
-                      <p>• Cuisiniste</p>
-                      <p>• Déménageur</p>
-                      <p>• Conciergerie</p>
-                      <p className="added-role mt-1 font-black text-[#2F7A00]" style={{ animationPlayState: problemSceneStarted ? "running" : "paused" }}>• + Agent immo</p>
+                    <div className="px-3 pt-4">
+                      <div className="grid grid-cols-1 gap-1.5 text-[11px] leading-none font-bold tracking-[0.03em] text-black/75">
+                        <p className="rounded-md border border-black/10 bg-[#F3F4F6] px-2.5 py-1.5">• Courtier</p>
+                        <p className="rounded-md border border-black/10 bg-[#F3F4F6] px-2.5 py-1.5">• Architecte</p>
+                        <p className="rounded-md border border-black/10 bg-[#F3F4F6] px-2.5 py-1.5">• CGP</p>
+                        <p className="rounded-md border border-black/10 bg-[#F3F4F6] px-2.5 py-1.5">• Cuisiniste</p>
+                        <p className="rounded-md border border-black/10 bg-[#F3F4F6] px-2.5 py-1.5">• Déménageur</p>
+                        <p className="rounded-md border border-black/10 bg-[#F3F4F6] px-2.5 py-1.5">• Conciergerie</p>
+                        <p className="added-role rounded-md border border-[#2F7A00]/35 bg-[#E9F9D9] px-2.5 py-1.5 font-black text-[#2F7A00]" style={{ animationPlayState: problemSceneStarted ? "running" : "paused" }}>• + Agent immo</p>
+                      </div>
                     </div>
                   </div>
-                  <span className="absolute -top-8 left-1/2 -translate-x-1/2 text-[12px] font-black uppercase tracking-[0.2em] text-[#B6FF2B]">Popey</span>
+                  <span className="absolute -top-8 left-1/2 -translate-x-1/2 text-[13px] font-black uppercase tracking-[0.2em] text-[#B6FF2B]">Popey</span>
                 </div>
 
                 <div className="final-result absolute right-[6px] bottom-1 text-[11px] font-black uppercase tracking-[0.14em] text-[#B6FF2B]" style={{ animationPlayState: problemSceneStarted ? "running" : "paused" }}>
-                  Agent immo ajouté
+                  Agent immo intégré à la sphère
                 </div>
               </div>
             </div>
