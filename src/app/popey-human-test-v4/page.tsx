@@ -188,7 +188,7 @@ export default function PopeyHumanTestV4Page() {
             <article className="rounded-xl border border-black/15 p-5 bg-white">
               <p className="text-xs uppercase tracking-[0.2em] font-black text-black/60">Mois 1</p>
               <h3 className="mt-2 text-xl font-black">Première synergie rentable</h3>
-              <p className="mt-2 text-sm font-medium text-black/75">Partenaire prioritaire, offre commune, premiers rendez-vous.</p>
+              <p className="mt-2 text-sm font-medium text-black/75">Création de votre 1er binôme et de votre offre DUO. Nous la créons entièrement pour vous et nous nous occupons de votre communication. Objectif : aller chercher des clients que vous n’avez pas encore.</p>
             </article>
             <article className="rounded-xl border border-black/15 p-5 bg-white">
               <p className="text-xs uppercase tracking-[0.2em] font-black text-black/60">Mois 2</p>
@@ -198,7 +198,7 @@ export default function PopeyHumanTestV4Page() {
             <article className="rounded-xl border border-black/15 p-5 bg-white">
               <p className="text-xs uppercase tracking-[0.2em] font-black text-black/60">Mois 3</p>
               <h3 className="mt-2 text-xl font-black">Ouverture de la sphère</h3>
-              <p className="mt-2 text-sm font-medium text-black/75">Accès aux métiers complémentaires et montée en puissance des flux.</p>
+              <p className="mt-2 text-sm font-medium text-black/75">Vous rejoignez l’ensemble des 20 métiers qui constituent toute la chaîne client. C’est à partir de là que la chaîne de recommandations s’active : 10% pour les apporteurs d’affaires et des clients pour ceux qui acceptent les mises en relation.</p>
             </article>
           </div>
           <div className="mt-6">
