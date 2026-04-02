@@ -35,6 +35,7 @@ export default function PopeyHumanTestV4Page() {
   const [problemSceneStarted, setProblemSceneStarted] = useState(false);
   const [activationTimelineStarted, setActivationTimelineStarted] = useState(false);
   const problemSectionRef = useRef<HTMLElement | null>(null);
+  const problemTriggerRef = useRef<HTMLDivElement | null>(null);
   const activationSectionRef = useRef<HTMLElement | null>(null);
   const month = (tick % 6) + 1;
   const duoRevenue = month * 600;
@@ -56,17 +57,28 @@ export default function PopeyHumanTestV4Page() {
   }, []);
 
   useEffect(() => {
-    const node = problemSectionRef.current;
+    const isMobile = window.matchMedia("(max-width: 767px)").matches;
+    const node = isMobile ? problemTriggerRef.current : problemSectionRef.current;
     if (!node || problemSceneStarted) return;
 
     const observer = new IntersectionObserver(
       ([entry]) => {
-        if (entry.isIntersecting && entry.intersectionRatio >= 0.45 && window.scrollY > 120) {
+        const mobileShouldStart =
+          isMobile &&
+          entry.boundingClientRect.top <= 0 &&
+          window.scrollY > 180;
+        const desktopShouldStart =
+          !isMobile &&
+          entry.isIntersecting &&
+          entry.intersectionRatio >= 0.45 &&
+          window.scrollY > 120;
+
+        if (mobileShouldStart || desktopShouldStart) {
           setProblemSceneStarted(true);
           observer.disconnect();
         }
       },
-      { threshold: [0, 0.45, 0.7] }
+      { threshold: isMobile ? [0, 0.1] : [0, 0.45, 0.7] }
     );
 
     observer.observe(node);
@@ -180,7 +192,7 @@ export default function PopeyHumanTestV4Page() {
               <p className="mt-5 text-[20px] md:text-xl font-medium leading-[1.45] text-white/85 max-w-5xl">
                 Si ces achats se font sans vous, vous laissez partir de la valeur, des recommandations, des commissions et des opportunités de fidélisation. Et les métiers hors de votre boucle ne vous recommandent pas non plus.
               </p>
-              <div className="mt-6 rounded-xl border border-[#B6FF2B] bg-[#B6FF2B]/10 px-5 py-4 max-w-5xl">
+              <div ref={problemTriggerRef} className="mt-6 rounded-xl border border-[#B6FF2B] bg-[#B6FF2B]/10 px-5 py-4 max-w-5xl">
                 <p className="text-xl md:text-2xl font-black">Popey sert à remettre votre métier au centre de cette chaîne de valeur.</p>
               </div>
             </div>
