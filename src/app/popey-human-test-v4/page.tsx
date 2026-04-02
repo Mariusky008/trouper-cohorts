@@ -147,12 +147,12 @@ export default function PopeyHumanTestV4Page() {
                   </div>
                 </div>
 
-                <div className="hero-track relative mt-4 h-14 md:mt-0 md:h-0">
-                  <div className="hero-rail absolute left-[8%] right-[8%] top-1/2 h-[3px] -translate-y-1/2 md:left-[20%] md:right-[20%]">
+                <div className="hero-track relative mt-4 h-14 md:absolute md:inset-x-0 md:top-0 md:bottom-0 md:mt-0 md:h-auto">
+                  <div className="hero-rail absolute left-[8%] right-[8%] top-1/2 h-[3px] -translate-y-1/2 md:left-[20%] md:right-[20%] md:top-[58%]">
                     <div className="hero-line hero-line-main relative h-full w-full rounded-full bg-black/15" />
                     <div className="hero-token hero-token-main absolute -top-[3px] left-0 h-2.5 w-2.5 rounded-full bg-[#2F7A00]" />
                   </div>
-                  <div className="hero-hub absolute left-1/2 top-1/2 z-20 h-14 w-14 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-black bg-[#B6FF2B] flex items-center justify-center text-[10px] font-black uppercase tracking-wide">Popey</div>
+                  <div className="hero-hub absolute left-1/2 top-1/2 z-20 h-14 w-14 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-black bg-[#B6FF2B] flex items-center justify-center text-[10px] font-black uppercase tracking-wide md:top-[58%]">Popey</div>
                 </div>
 
                 <div className="hero-status-wrap mt-4 flex justify-center md:absolute md:inset-x-0 md:bottom-4 md:mt-0">
