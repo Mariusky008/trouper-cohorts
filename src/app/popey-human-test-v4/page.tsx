@@ -553,6 +553,10 @@ export default function PopeyHumanTestV4Page() {
           50% { transform: translate(-50%, -50%) translateX(clamp(66px, 17vw, 90px)); }
           100% { transform: translate(-50%, -50%) translateX(calc(-1 * clamp(66px, 17vw, 90px))); }
         }
+        @keyframes heroHubRoll {
+          0% { transform: translate(-50%, -50%) translateX(calc(-1 * var(--hub-travel))) rotate(-560deg); }
+          100% { transform: translate(-50%, -50%) translateX(var(--hub-travel)) rotate(560deg); }
+        }
         .walk-man {
           animation: walkToPopey 6.8s ease-in-out 1 forwards;
         }
@@ -614,39 +618,38 @@ export default function PopeyHumanTestV4Page() {
           animation-play-state: running;
         }
         .hero-card-left {
-          animation: heroCardLeftIn 7.2s ease-in-out infinite;
+          animation: none;
         }
         .hero-card-right {
-          animation: heroCardRightIn 7.2s ease-in-out infinite;
+          animation: none;
         }
         .hero-hub {
-          animation: heroHubReveal 7.2s ease-in-out infinite, heroHubBeat 1.35s ease-in-out infinite;
+          --hub-travel: clamp(86px, 14vw, 168px);
+          animation: heroHubRoll 4.8s linear infinite alternate;
         }
         .hero-line-main {
           transform-origin: left;
-          animation: heroLineGrow 7.2s ease-in-out infinite;
+          animation: none;
         }
         .hero-token-main {
-          animation: heroTokenFlow 7.2s ease-in-out infinite;
+          display: none;
         }
         .hero-step-1 {
-          animation: heroStepReveal1 7.2s ease-in-out infinite;
+          animation: none;
         }
         .hero-step-2 {
-          animation: heroStepReveal2 7.2s ease-in-out infinite;
+          animation: none;
         }
         .hero-step-3 {
-          animation: heroStepReveal3 7.2s ease-in-out infinite;
+          animation: none;
         }
         .hero-status {
-          animation: heroStatusReveal 7.2s ease-in-out infinite;
+          animation: none;
         }
         @media (max-width: 767px) {
           .hero-hub {
-            animation: heroHubTravelMobile 5.8s ease-in-out infinite;
-          }
-          .hero-token-main {
-            display: none;
+            --hub-travel: clamp(50px, 17vw, 70px);
+            animation-duration: 4.1s;
           }
         }
       `}</style>
