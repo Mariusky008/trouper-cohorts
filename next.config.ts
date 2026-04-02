@@ -54,32 +54,37 @@ const config: NextConfig = {
       },
       {
         source: '/popey-business-test',
-        destination: '/popey-human-test-v4',
+        destination: '/popey-human',
         permanent: true,
       },
       {
         source: '/popey-business-v3',
-        destination: '/popey-human-test-v4',
+        destination: '/popey-human',
         permanent: true,
       },
       {
         source: '/popey-human-test',
-        destination: '/popey-human-test-v4',
+        destination: '/popey-human',
         permanent: true,
       },
       {
         source: '/popey-human-test-v2',
-        destination: '/popey-human-test-v4',
+        destination: '/popey-human',
         permanent: true,
       },
       {
         source: '/popey-human-test-v3',
-        destination: '/popey-human-test-v4',
+        destination: '/popey-human',
         permanent: true,
       },
       {
         source: '/popey-human-test-v6',
-        destination: '/popey-human-test-v4',
+        destination: '/popey-human',
+        permanent: true,
+      },
+      {
+        source: '/popey-human-test-v4',
+        destination: '/popey-human',
         permanent: true,
       }
     ]
