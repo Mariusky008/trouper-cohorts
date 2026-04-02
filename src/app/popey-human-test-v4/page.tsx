@@ -74,13 +74,9 @@ export default function PopeyHumanTestV4Page() {
   return (
     <main className={cn("min-h-screen bg-[#F7F7F7] text-[#0B0B0B]", poppins.variable, "font-poppins")}>
       <section className="border-b border-black/10 bg-white">
-        <div className="mx-auto max-w-6xl px-4 py-12 md:py-16 lg:min-h-[72vh] flex items-center">
+        <div className="mx-auto max-w-6xl px-4 py-10 md:py-16 lg:min-h-[72vh] flex items-center">
           <div className="w-full">
-            <p className="inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.2em] font-black">
-              <span className="h-2 w-2 bg-[#B6FF2B] animate-pulse" />
-              Landing V4.1 Conversion
-            </p>
-            <h1 className="mt-4 text-4xl md:text-6xl font-black leading-[1.04] max-w-5xl">
+            <h1 className="mt-2 text-4xl md:text-6xl font-black leading-[1.04] max-w-5xl">
               Ne cherchez plus vos clients, allez là où ils sont déjà.
               <br />
               <span className="inline-flex items-center gap-3">
@@ -91,12 +87,26 @@ export default function PopeyHumanTestV4Page() {
             <p className="mt-4 text-base md:text-lg font-medium text-black/80 max-w-3xl">
               Arrêtez de prospecter seul. Popey vous associe chaque mois à un partenaire stratégique et crée votre Pack Duo clé en main pour transformer l’alliance en chiffre d’affaires.
             </p>
+            <div className="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-2.5 max-w-4xl">
+              <div className="rounded-lg border border-black/10 bg-white px-4 py-3">
+                <p className="text-[10px] uppercase tracking-[0.12em] font-black text-black/60">Pros intégrés</p>
+                <p className="mt-1 text-xl font-black">120+</p>
+              </div>
+              <div className="rounded-lg border border-black/10 bg-white px-4 py-3">
+                <p className="text-[10px] uppercase tracking-[0.12em] font-black text-black/60">Synergies activées</p>
+                <p className="mt-1 text-xl font-black">340+</p>
+              </div>
+              <div className="rounded-lg border border-black/10 bg-white px-4 py-3">
+                <p className="text-[10px] uppercase tracking-[0.12em] font-black text-black/60">CA généré</p>
+                <p className="mt-1 text-xl font-black">1,2M€</p>
+              </div>
+            </div>
             <p className="mt-3 inline-flex rounded-full border border-black/20 bg-[#B6FF2B]/30 px-4 py-1.5 text-xs md:text-sm font-black uppercase tracking-wide">
               Objectif : activer 3 flux de revenus complémentaires en 6 mois grâce à un écosystème de 19 métiers partenaires.
             </p>
             <div className="mt-6 flex flex-col sm:flex-row gap-3">
               <Link href="/programme-commando/postuler" className="inline-flex items-center justify-center rounded-md bg-black text-white px-6 py-3 text-sm font-black uppercase tracking-wide transition hover:translate-y-[-1px] hover:shadow-[0_8px_0_0_#B6FF2B]">
-                Postuler à l’Audit de Synergie
+                Je veux ma 1ère synergie rentable
               </Link>
               <a href="#parcours-v4" className="inline-flex items-center justify-center rounded-md border border-black px-6 py-3 text-sm font-black uppercase tracking-wide transition hover:bg-black hover:text-white">
                 Voir le parcours 3 mois
@@ -108,7 +118,7 @@ export default function PopeyHumanTestV4Page() {
       </section>
 
       <section ref={problemSectionRef} className="border-b border-black/10 bg-black text-white">
-        <div className="mx-auto max-w-6xl px-4 py-14">
+        <div className="mx-auto max-w-6xl px-4 py-12 md:py-14">
           <div className="grid gap-8 lg:grid-cols-[1.05fr_0.95fr] items-center">
             <div>
               <p className="text-xs uppercase tracking-[0.2em] font-black text-[#B6FF2B]">Le problème à résoudre</p>
@@ -119,10 +129,7 @@ export default function PopeyHumanTestV4Page() {
                 Un client qui vous fait confiance continue souvent son parcours chez d’autres professionnels complémentaires : courtier, architecte d’intérieur, CGP, cuisiniste, déménageur, conciergerie privée.
               </p>
               <p className="mt-3 text-base md:text-lg font-medium text-white/85 max-w-5xl">
-                Si ces achats se font sans vous, vous laissez partir de la valeur, des recommandations, des commissions et des opportunités de fidélisation.
-              </p>
-              <p className="mt-3 text-base md:text-lg font-medium text-white/85 max-w-5xl">
-                De l’autre côté, les métiers complémentaires hors de votre boucle ne vous recommandent pas. Vous perdez aussi des clients potentiels.
+                Si ces achats se font sans vous, vous laissez partir de la valeur, des recommandations, des commissions et des opportunités de fidélisation. Et les métiers hors de votre boucle ne vous recommandent pas non plus.
               </p>
               <div className="mt-4 rounded-xl border border-[#B6FF2B] bg-[#B6FF2B]/10 px-4 py-3 max-w-5xl">
                 <p className="font-black">Popey sert à remettre votre métier au centre de cette chaîne de valeur.</p>
@@ -131,7 +138,7 @@ export default function PopeyHumanTestV4Page() {
 
             <div className="relative p-1 md:p-2 overflow-visible">
               <div className="absolute -top-8 -left-8 h-28 w-28 rounded-full bg-[#B6FF2B]/20 blur-2xl" />
-              <div className="mt-2 relative h-[330px] overflow-visible">
+              <div className="mt-2 relative h-[300px] md:h-[330px] overflow-visible">
                 <div className="absolute left-0 right-0 bottom-9 h-[2px] bg-white/25" />
 
                 <div className="walk-man absolute left-2 bottom-9 z-20 h-[102px] w-14" style={{ animationPlayState: problemSceneStarted ? "running" : "paused" }}>
@@ -142,7 +149,7 @@ export default function PopeyHumanTestV4Page() {
                   <div className="walk-leg-right absolute top-[66px] left-1/2 h-11 w-[4px] bg-white rounded-full origin-top" style={{ animationPlayState: problemSceneStarted ? "running" : "paused" }} />
                 </div>
 
-                <div className="absolute right-3 bottom-9 h-[272px] w-[206px] rounded-t-[36px] border-[4px] border-white/85 bg-white/5">
+                <div className="absolute right-3 bottom-9 h-[290px] w-[206px] rounded-t-[36px] border-[4px] border-white/85 bg-white/5">
                   <div className="door-light absolute -inset-5 rounded-full bg-[#B6FF2B]/25 blur-2xl" style={{ animationPlayState: problemSceneStarted ? "running" : "paused" }} />
                   <div className="door-open absolute inset-y-[8px] left-[8px] right-[8px] rounded-t-[26px] border border-white/35 bg-white shadow-[0_0_30px_rgba(255,255,255,0.45)] origin-left" style={{ animationPlayState: problemSceneStarted ? "running" : "paused" }}>
                     <div className="absolute right-2 top-1/2 -translate-y-1/2 h-2.5 w-2.5 rounded-full bg-black/35" />
@@ -154,7 +161,7 @@ export default function PopeyHumanTestV4Page() {
                         <p className="rounded-md border border-black/10 bg-[#F3F4F6] px-2.5 py-1.5">• Cuisiniste</p>
                         <p className="rounded-md border border-black/10 bg-[#F3F4F6] px-2.5 py-1.5">• Déménageur</p>
                         <p className="rounded-md border border-black/10 bg-[#F3F4F6] px-2.5 py-1.5">• Conciergerie</p>
-                        <p className="added-role rounded-md border border-[#2F7A00]/35 bg-[#E9F9D9] px-2.5 py-1.5 font-black text-[#2F7A00]" style={{ animationPlayState: problemSceneStarted ? "running" : "paused" }}>• + Agent immo</p>
+                        <p className="added-role inline-flex items-center gap-2 rounded-md border border-[#2F7A00]/35 bg-[#E9F9D9] px-2.5 py-1.5 font-black text-[#2F7A00]" style={{ animationPlayState: problemSceneStarted ? "running" : "paused" }}><span className="added-check inline-flex h-4 w-4 items-center justify-center rounded-full bg-[#2F7A00] text-[10px] text-white">✓</span>+ Agent immo</p>
                       </div>
                     </div>
                   </div>
@@ -171,7 +178,7 @@ export default function PopeyHumanTestV4Page() {
       </section>
 
       <section className="border-b border-black/10 bg-white">
-        <div className="mx-auto max-w-6xl px-4 py-14">
+        <div className="mx-auto max-w-6xl px-4 py-12 md:py-14">
           <h2 className="text-3xl md:text-5xl font-black max-w-5xl">
             Avant Popey, votre réseau est passif. Après Popey, il devient une machine à opportunités.
           </h2>
@@ -203,7 +210,7 @@ export default function PopeyHumanTestV4Page() {
       </section>
 
       <section className="border-b border-black/10 bg-white">
-        <div className="mx-auto max-w-6xl px-4 py-14">
+        <div className="mx-auto max-w-6xl px-4 py-12 md:py-14">
           <div className="rounded-2xl bg-[#0B0B0B] p-5 text-white">
             <div className="flex items-center justify-between">
               <p className="text-[10px] uppercase tracking-[0.2em] font-black text-[#B6FF2B]">Simulation revenus 6 mois</p>
@@ -244,7 +251,7 @@ export default function PopeyHumanTestV4Page() {
       </section>
 
       <section id="parcours-v4" className="border-b border-black/10">
-        <div className="mx-auto max-w-6xl px-4 py-14">
+        <div className="mx-auto max-w-6xl px-4 py-12 md:py-14">
           <h2 className="text-3xl md:text-5xl font-black">Parcours 3 mois</h2>
           <div className="mt-6 grid md:grid-cols-3 gap-4">
             <article className="rounded-xl border border-black/15 p-5 bg-white">
@@ -272,19 +279,32 @@ export default function PopeyHumanTestV4Page() {
       </section>
 
       <section className="border-b border-black/10 bg-[#F5F5F5]">
-        <div className="mx-auto max-w-6xl px-4 py-14">
+        <div className="mx-auto max-w-6xl px-4 py-12 md:py-14">
+          <p className="text-xs uppercase tracking-[0.2em] font-black text-black/55">Plan d’activation</p>
           <h2 className="text-3xl md:text-5xl font-black">Ce que vous obtenez en 30 jours</h2>
-          <div className="mt-6 grid md:grid-cols-2 gap-3 text-sm font-semibold">
-            <div className="rounded-lg bg-white border border-black/10 px-4 py-3">1 partenaire complémentaire</div>
-            <div className="rounded-lg bg-white border border-black/10 px-4 py-3">1 offre DUO que nous créons et que nous promouvons sur nos réseaux sociaux et les vôtres</div>
-            <div className="rounded-lg bg-white border border-black/10 px-4 py-3">1 logique de recommandation claire</div>
-            <div className="rounded-lg bg-white border border-black/10 px-4 py-3">1 cadre de commission traçable</div>
+          <div className="mt-6 grid md:grid-cols-3 gap-3 text-sm font-semibold">
+            <article className="rounded-lg bg-white border border-black/10 px-4 py-4">
+              <p className="text-[11px] uppercase tracking-[0.12em] font-black text-black/55">J+7</p>
+              <p className="mt-2 font-black">1 partenaire complémentaire</p>
+              <p className="mt-1 text-black/70 font-medium">Partenaire validé selon votre offre et votre zone.</p>
+            </article>
+            <article className="rounded-lg bg-white border border-black/10 px-4 py-4">
+              <p className="text-[11px] uppercase tracking-[0.12em] font-black text-black/55">J+15</p>
+              <p className="mt-2 font-black">1 offre DUO lancée</p>
+              <p className="mt-1 text-black/70 font-medium">Offre créée puis promue sur vos réseaux et ceux de Popey.</p>
+            </article>
+            <article className="rounded-lg bg-white border border-black/10 px-4 py-4">
+              <p className="text-[11px] uppercase tracking-[0.12em] font-black text-black/55">J+30</p>
+              <p className="mt-2 font-black">Reco + commissions cadrées</p>
+              <p className="mt-1 text-black/70 font-medium">Logique de recommandation claire et commission traçable.</p>
+            </article>
           </div>
         </div>
       </section>
 
       <section className="border-b border-black/10 bg-white">
-        <div className="mx-auto max-w-6xl px-4 py-14">
+        <div className="mx-auto max-w-6xl px-4 py-12 md:py-14">
+          <p className="text-xs uppercase tracking-[0.2em] font-black text-black/55">Exécution légère</p>
           <h2 className="text-3xl md:text-5xl font-black max-w-4xl">Votre temps et votre planning sont ROI.</h2>
           <p className="mt-4 text-base md:text-lg font-medium text-black/80 max-w-5xl">
             Nous ne prenons que quelques minutes de votre temps pour vous donner une marche à suivre claire, des conseils ciblés et des actions prioritaires qui augmentent votre chiffre d’affaires sans alourdir votre agenda.
@@ -294,11 +314,40 @@ export default function PopeyHumanTestV4Page() {
             <div className="rounded-lg border border-black/10 bg-[#F7F7F7] px-4 py-3">Un plan d’action simple à appliquer dans votre planning existant</div>
             <div className="rounded-lg border border-black/10 bg-[#F7F7F7] px-4 py-3">Une montée en valeur de vos clients actuels sans changer votre métier</div>
           </div>
+          <div className="mt-5 rounded-xl border border-[#B6FF2B] bg-[#B6FF2B]/15 px-4 py-3 max-w-4xl">
+            <p className="text-sm md:text-base font-black">Exemple simple : 1 offre DUO à 1 500€ + 2 recommandations commissionnées à 250€ = 2 000€ additionnels sur 30 jours.</p>
+          </div>
+        </div>
+      </section>
+
+      <section className="border-b border-black/10 bg-[#F5F5F5]">
+        <div className="mx-auto max-w-6xl px-4 py-12 md:py-14">
+          <p className="text-xs uppercase tracking-[0.2em] font-black text-black/55">Sélection de profils</p>
+          <h2 className="text-3xl md:text-5xl font-black">Pour qui / Pas pour qui</h2>
+          <div className="mt-6 grid md:grid-cols-2 gap-4">
+            <article className="rounded-xl border border-[#2F7A00]/25 bg-white p-5">
+              <p className="text-xs uppercase tracking-[0.16em] font-black text-[#2F7A00]">Pour qui</p>
+              <ul className="mt-3 space-y-1.5 text-sm font-semibold text-black/80">
+                <li>• Vous avez une offre claire et vendable</li>
+                <li>• Vous voulez activer des synergies rapidement</li>
+                <li>• Vous êtes prêt à exécuter un plan simple</li>
+              </ul>
+            </article>
+            <article className="rounded-xl border border-black/15 bg-white p-5">
+              <p className="text-xs uppercase tracking-[0.16em] font-black text-black/65">Pas pour qui</p>
+              <ul className="mt-3 space-y-1.5 text-sm font-semibold text-black/75">
+                <li>• Vous cherchez un système sans action terrain</li>
+                <li>• Vous refusez la logique de réciprocité partenaire</li>
+                <li>• Vous n’avez pas encore de base d’offre solide</li>
+              </ul>
+            </article>
+          </div>
         </div>
       </section>
 
       <section className="border-b border-black/10 bg-white">
         <div className="mx-auto max-w-4xl px-4 py-14">
+          <p className="text-xs uppercase tracking-[0.2em] font-black text-black/55">FAQ rapide</p>
           <h2 className="text-3xl md:text-5xl font-black">Questions fréquentes</h2>
           <div className="mt-6 space-y-2">
             {faqItems.map((item) => (
@@ -378,6 +427,11 @@ export default function PopeyHumanTestV4Page() {
           0%, 86% { opacity: 0; transform: translateY(4px); }
           94%, 100% { opacity: 1; transform: translateY(0); }
         }
+        @keyframes popCheck {
+          0%, 90% { transform: scale(0.5); opacity: 0; }
+          95% { transform: scale(1.2); opacity: 1; }
+          100% { transform: scale(1); opacity: 1; }
+        }
         @keyframes revealFinalResult {
           0%, 90% { opacity: 0; transform: translateY(5px); }
           100% { opacity: 1; transform: translateY(0); }
@@ -399,6 +453,9 @@ export default function PopeyHumanTestV4Page() {
         }
         .added-role {
           animation: revealAddedRole 6.8s ease-in-out 1 forwards;
+        }
+        .added-check {
+          animation: popCheck 6.8s ease-in-out 1 forwards;
         }
         .final-result {
           animation: revealFinalResult 6.8s ease-in-out 1 forwards;
