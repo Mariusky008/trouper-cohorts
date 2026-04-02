@@ -139,21 +139,25 @@ export default function PopeyHumanTestV4Page() {
 
                 <div className="hero-card hero-card-left absolute left-[7%] top-[35%] w-[110px] md:w-[140px] rounded-xl border border-black/15 bg-white p-3">
                   <p className="text-[10px] uppercase tracking-[0.18em] font-black text-black/55">Vous</p>
-                  <p className="mt-1 text-sm md:text-base font-black">Agent immo</p>
+                  <p className="mt-1 text-sm md:text-base font-black">Vous</p>
                 </div>
                 <div className="hero-card hero-card-right absolute right-[7%] top-[35%] w-[110px] md:w-[140px] rounded-xl border border-black/15 bg-white p-3">
                   <p className="text-[10px] uppercase tracking-[0.18em] font-black text-black/55">Partenaire</p>
-                  <p className="mt-1 text-sm md:text-base font-black">Courtier</p>
+                  <p className="mt-1 text-sm md:text-base font-black">Partenaire clé</p>
                 </div>
 
                 <div className="hero-hub absolute left-1/2 top-[40%] h-14 w-14 -translate-x-1/2 rounded-full border-2 border-black bg-[#B6FF2B] flex items-center justify-center text-[10px] font-black uppercase tracking-wide">Popey</div>
-                <div className="hero-line hero-line-left absolute left-[26%] top-[47%] h-[3px] w-[24%] rounded-full bg-black/15" />
-                <div className="hero-line hero-line-right absolute left-1/2 top-[47%] h-[3px] w-[24%] rounded-full bg-black/15" />
-                <div className="hero-token hero-token-a absolute left-[26%] top-[45.8%] h-2.5 w-2.5 rounded-full bg-[#2F7A00]" />
-                <div className="hero-token hero-token-b absolute left-1/2 top-[45.8%] h-2.5 w-2.5 rounded-full bg-black" />
+                <div className="hero-path-left absolute right-1/2 top-[45.8%] w-[29%]">
+                  <div className="hero-line hero-line-left relative h-[3px] w-full rounded-full bg-black/15" />
+                  <div className="hero-token hero-token-a absolute -top-[3px] left-0 h-2.5 w-2.5 rounded-full bg-[#2F7A00]" />
+                </div>
+                <div className="hero-path-right absolute left-1/2 top-[45.8%] w-[29%]">
+                  <div className="hero-line hero-line-right relative h-[3px] w-full rounded-full bg-black/15" />
+                  <div className="hero-token hero-token-b absolute -top-[3px] left-0 h-2.5 w-2.5 rounded-full bg-black" />
+                </div>
 
                 <div className="hero-status absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full border border-black/15 bg-white px-4 py-1.5">
-                  <p className="text-[11px] font-black uppercase tracking-[0.16em] text-black/70">Synergie en cours d’activation</p>
+                  <p className="text-center text-[11px] font-black uppercase tracking-[0.16em] text-black/70">Synergie en cours d’activation</p>
                 </div>
               </div>
             </div>
@@ -523,13 +527,13 @@ export default function PopeyHumanTestV4Page() {
         }
         @keyframes heroTokenAFlow {
           0%, 24% { transform: translateX(0); opacity: 0; }
-          34%, 44% { transform: translateX(74px); opacity: 1; }
-          45%, 100% { transform: translateX(74px); opacity: 0; }
+          34%, 44% { transform: translateX(calc(100% - 10px)); opacity: 1; }
+          45%, 100% { transform: translateX(calc(100% - 10px)); opacity: 0; }
         }
         @keyframes heroTokenBFlow {
           0%, 52% { transform: translateX(0); opacity: 0; }
-          62%, 76% { transform: translateX(74px); opacity: 1; }
-          77%, 100% { transform: translateX(74px); opacity: 0; }
+          62%, 76% { transform: translateX(calc(100% - 10px)); opacity: 1; }
+          77%, 100% { transform: translateX(calc(100% - 10px)); opacity: 0; }
         }
         @keyframes heroStepReveal1 {
           0%, 8%, 100% { opacity: 0.45; }
@@ -617,7 +621,7 @@ export default function PopeyHumanTestV4Page() {
           animation: heroHubPulse 1.2s ease-in-out infinite;
         }
         .hero-line-left {
-          transform-origin: left;
+          transform-origin: right;
           animation: heroLineGrowLeft 4.6s ease-in-out infinite;
         }
         .hero-line-right {
