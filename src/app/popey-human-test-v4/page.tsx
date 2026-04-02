@@ -94,9 +94,9 @@ export default function PopeyHumanTestV4Page() {
   return (
     <main className={cn("min-h-screen bg-[#F7F7F7] text-[#0B0B0B]", poppins.variable, "font-poppins")}>
       <section className="border-b border-black/10 bg-white">
-        <div className="mx-auto max-w-6xl px-4 py-10 md:py-16 lg:min-h-[72vh] flex items-center">
+        <div className="mx-auto max-w-6xl px-4 py-14 md:py-20 lg:min-h-[76vh] flex items-center">
           <div className="w-full">
-            <h1 className="mt-2 text-4xl md:text-6xl font-black leading-[1.04] max-w-5xl">
+            <h1 className="mt-2 text-5xl md:text-7xl font-black leading-[1.02] max-w-5xl">
               Ne cherchez plus vos clients, allez là où ils sont déjà.
               <br />
               <span className="inline-flex items-center gap-3">
@@ -104,17 +104,17 @@ export default function PopeyHumanTestV4Page() {
                 Chez ceux qui vendent juste avant ou juste après vous.
               </span>
             </h1>
-            <p className="mt-4 text-base md:text-lg font-medium text-black/80 max-w-3xl">
+            <p className="mt-6 text-lg md:text-2xl font-medium leading-relaxed text-black/75 max-w-4xl">
               Arrêtez de prospecter seul. Popey vous associe chaque mois à un partenaire stratégique et crée votre Pack Duo clé en main pour transformer l’alliance en chiffre d’affaires.
             </p>
             <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-w-3xl">
-              <div className="rounded-lg border border-black/10 bg-white px-4 py-3">
+              <div className="rounded-xl border border-black/10 bg-white px-5 py-4">
                 <p className="text-[10px] uppercase tracking-[0.12em] font-black text-black/60">Pros intégrés</p>
-                <p className="mt-1 text-xl font-black">120+</p>
+                <p className="mt-1 text-2xl font-black">120+</p>
               </div>
-              <div className="rounded-lg border border-black/10 bg-white px-4 py-3">
+              <div className="rounded-xl border border-black/10 bg-white px-5 py-4">
                 <p className="text-[10px] uppercase tracking-[0.12em] font-black text-black/60">Synergies activées</p>
-                <p className="mt-1 text-xl font-black">340+</p>
+                <p className="mt-1 text-2xl font-black">340+</p>
               </div>
             </div>
             <p className="mt-3 inline-flex rounded-full border border-black/20 bg-[#B6FF2B]/30 px-4 py-1.5 text-xs md:text-sm font-black uppercase tracking-wide">
@@ -129,6 +129,25 @@ export default function PopeyHumanTestV4Page() {
               </a>
             </div>
             <p className="mt-4 text-xs font-bold uppercase tracking-wide text-black/70">Audit 15 min • Sur sélection</p>
+            <div className="mt-8 rounded-2xl border border-black/10 bg-gradient-to-br from-white to-[#F3F6EA] p-5 md:p-7 max-w-5xl">
+              <div className="grid gap-4 md:grid-cols-3">
+                <div className="rounded-xl border border-black/10 bg-white p-4">
+                  <p className="text-2xl">🤝</p>
+                  <p className="mt-2 text-sm font-black">Partenaire ciblé</p>
+                  <p className="mt-1 text-sm text-black/65 font-medium">Un métier complémentaire activable vite.</p>
+                </div>
+                <div className="rounded-xl border border-black/10 bg-white p-4">
+                  <p className="text-2xl">🧩</p>
+                  <p className="mt-2 text-sm font-black">Offre DUO prête</p>
+                  <p className="mt-1 text-sm text-black/65 font-medium">Une proposition simple, claire, vendable.</p>
+                </div>
+                <div className="rounded-xl border border-black/10 bg-white p-4">
+                  <p className="text-2xl">📈</p>
+                  <p className="mt-2 text-sm font-black">Revenus additionnels</p>
+                  <p className="mt-1 text-sm text-black/65 font-medium">Commissions traçables et nouveaux clients.</p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -138,13 +157,13 @@ export default function PopeyHumanTestV4Page() {
           <div className="grid gap-8 lg:grid-cols-[1.05fr_0.95fr] items-center">
             <div>
               <p className="text-xs uppercase tracking-[0.2em] font-black text-[#B6FF2B]">Le problème à résoudre</p>
-              <h2 className="mt-3 text-3xl md:text-5xl font-black max-w-5xl">
+              <h2 className="mt-3 text-4xl md:text-6xl font-black max-w-5xl leading-tight">
                 Vos clients achètent déjà ailleurs avant et après vous. Le problème, c’est que vous n’êtes pas dans la boucle.
               </h2>
-              <p className="mt-4 text-base md:text-lg font-medium text-white/85 max-w-5xl">
+              <p className="mt-5 text-lg md:text-xl font-medium leading-relaxed text-white/85 max-w-5xl">
                 Un client qui vous fait confiance continue souvent son parcours chez d’autres professionnels complémentaires : courtier, architecte d’intérieur, CGP, cuisiniste, déménageur, conciergerie privée.
               </p>
-              <p className="mt-3 text-base md:text-lg font-medium text-white/85 max-w-5xl">
+              <p className="mt-4 text-lg md:text-xl font-medium leading-relaxed text-white/85 max-w-5xl">
                 Si ces achats se font sans vous, vous laissez partir de la valeur, des recommandations, des commissions et des opportunités de fidélisation. Et les métiers hors de votre boucle ne vous recommandent pas non plus.
               </p>
               <div className="mt-4 rounded-xl border border-[#B6FF2B] bg-[#B6FF2B]/10 px-4 py-3 max-w-5xl">
@@ -269,21 +288,21 @@ export default function PopeyHumanTestV4Page() {
       <section id="parcours-v4" className="border-b border-black/10">
         <div className="mx-auto max-w-6xl px-4 py-12 md:py-14">
           <h2 className="text-3xl md:text-5xl font-black">Parcours 3 mois</h2>
-          <div className="mt-6 grid md:grid-cols-3 gap-4">
+          <div className="mt-8 grid md:grid-cols-3 gap-5">
             <article className="rounded-xl border border-black/15 p-5 bg-white">
               <p className="text-xs uppercase tracking-[0.2em] font-black text-black/60">Mois 1</p>
-              <h3 className="mt-2 text-xl font-black">Première synergie rentable</h3>
-              <p className="mt-2 text-sm font-medium text-black/75">Création de votre 1er binôme et de votre offre DUO. Nous la créons entièrement pour vous et nous nous occupons de votre communication. Objectif : aller chercher des clients que vous n’avez pas encore.</p>
+              <h3 className="mt-2 text-2xl font-black">🚀 Première synergie rentable</h3>
+              <p className="mt-3 text-base font-medium leading-relaxed text-black/75">Création de votre 1er binôme et de votre offre DUO. Nous la créons entièrement pour vous et nous nous occupons de votre communication. Objectif : aller chercher des clients que vous n’avez pas encore.</p>
             </article>
             <article className="rounded-xl border border-black/15 p-5 bg-white">
               <p className="text-xs uppercase tracking-[0.2em] font-black text-black/60">Mois 2</p>
-              <h3 className="mt-2 text-xl font-black">Duplication</h3>
-              <p className="mt-2 text-sm font-medium text-black/75">2e partenaire, 2e source de revenu, recommandations en chaîne.</p>
+              <h3 className="mt-2 text-2xl font-black">🔁 Duplication</h3>
+              <p className="mt-3 text-base font-medium leading-relaxed text-black/75">2e partenaire, 2e source de revenu, recommandations en chaîne.</p>
             </article>
             <article className="rounded-xl border border-black/15 p-5 bg-white">
               <p className="text-xs uppercase tracking-[0.2em] font-black text-black/60">Mois 3</p>
-              <h3 className="mt-2 text-xl font-black">Ouverture de la sphère</h3>
-              <p className="mt-2 text-sm font-medium text-black/75">Vous rejoignez l’ensemble des 20 métiers qui constituent toute la chaîne client. C’est à partir de là que la chaîne de recommandations s’active : 10% pour les apporteurs d’affaires et des clients pour ceux qui acceptent les mises en relation.</p>
+              <h3 className="mt-2 text-2xl font-black">🌐 Ouverture de la sphère</h3>
+              <p className="mt-3 text-base font-medium leading-relaxed text-black/75">Vous rejoignez l’ensemble des 20 métiers qui constituent toute la chaîne client. C’est à partir de là que la chaîne de recommandations s’active : 10% pour les apporteurs d’affaires et des clients pour ceux qui acceptent les mises en relation.</p>
             </article>
           </div>
           <div className="mt-6">
@@ -352,17 +371,17 @@ export default function PopeyHumanTestV4Page() {
             <article className="rounded-xl border border-[#2F7A00]/25 bg-white p-5">
               <p className="text-xs uppercase tracking-[0.16em] font-black text-[#2F7A00]">Pour qui</p>
               <ul className="mt-3 space-y-1.5 text-sm font-semibold text-black/80">
-                <li>• Vous avez une offre claire et vendable</li>
-                <li>• Vous voulez activer des synergies rapidement</li>
-                <li>• Vous êtes prêt à exécuter un plan simple</li>
+                <li>✓ Vous avez une offre claire et vendable</li>
+                <li>✓ Vous voulez activer des synergies rapidement</li>
+                <li>✓ Vous êtes prêt à exécuter un plan simple</li>
               </ul>
             </article>
             <article className="rounded-xl border border-black/15 bg-white p-5">
               <p className="text-xs uppercase tracking-[0.16em] font-black text-black/65">Pas pour qui</p>
               <ul className="mt-3 space-y-1.5 text-sm font-semibold text-black/75">
-                <li>• Vous cherchez un système sans action terrain</li>
-                <li>• Vous refusez la logique de réciprocité partenaire</li>
-                <li>• Vous n’avez pas encore de base d’offre solide</li>
+                <li>✕ Vous cherchez un système sans action terrain</li>
+                <li>✕ Vous refusez la logique de réciprocité partenaire</li>
+                <li>✕ Vous n’avez pas encore de base d’offre solide</li>
               </ul>
             </article>
           </div>
