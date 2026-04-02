@@ -87,7 +87,7 @@ export default function PopeyHumanTestV4Page() {
             <p className="mt-4 text-base md:text-lg font-medium text-black/80 max-w-3xl">
               Arrêtez de prospecter seul. Popey vous associe chaque mois à un partenaire stratégique et crée votre Pack Duo clé en main pour transformer l’alliance en chiffre d’affaires.
             </p>
-            <div className="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-2.5 max-w-4xl">
+            <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-w-3xl">
               <div className="rounded-lg border border-black/10 bg-white px-4 py-3">
                 <p className="text-[10px] uppercase tracking-[0.12em] font-black text-black/60">Pros intégrés</p>
                 <p className="mt-1 text-xl font-black">120+</p>
@@ -95,10 +95,6 @@ export default function PopeyHumanTestV4Page() {
               <div className="rounded-lg border border-black/10 bg-white px-4 py-3">
                 <p className="text-[10px] uppercase tracking-[0.12em] font-black text-black/60">Synergies activées</p>
                 <p className="mt-1 text-xl font-black">340+</p>
-              </div>
-              <div className="rounded-lg border border-black/10 bg-white px-4 py-3">
-                <p className="text-[10px] uppercase tracking-[0.12em] font-black text-black/60">CA généré</p>
-                <p className="mt-1 text-xl font-black">1,2M€</p>
               </div>
             </div>
             <p className="mt-3 inline-flex rounded-full border border-black/20 bg-[#B6FF2B]/30 px-4 py-1.5 text-xs md:text-sm font-black uppercase tracking-wide">
@@ -282,22 +278,30 @@ export default function PopeyHumanTestV4Page() {
         <div className="mx-auto max-w-6xl px-4 py-12 md:py-14">
           <p className="text-xs uppercase tracking-[0.2em] font-black text-black/55">Plan d’activation</p>
           <h2 className="text-3xl md:text-5xl font-black">Ce que vous obtenez en 30 jours</h2>
-          <div className="mt-6 grid md:grid-cols-3 gap-3 text-sm font-semibold">
-            <article className="rounded-lg bg-white border border-black/10 px-4 py-4">
-              <p className="text-[11px] uppercase tracking-[0.12em] font-black text-black/55">J+7</p>
-              <p className="mt-2 font-black">1 partenaire complémentaire</p>
-              <p className="mt-1 text-black/70 font-medium">Partenaire validé selon votre offre et votre zone.</p>
-            </article>
-            <article className="rounded-lg bg-white border border-black/10 px-4 py-4">
-              <p className="text-[11px] uppercase tracking-[0.12em] font-black text-black/55">J+15</p>
-              <p className="mt-2 font-black">1 offre DUO lancée</p>
-              <p className="mt-1 text-black/70 font-medium">Offre créée puis promue sur vos réseaux et ceux de Popey.</p>
-            </article>
-            <article className="rounded-lg bg-white border border-black/10 px-4 py-4">
-              <p className="text-[11px] uppercase tracking-[0.12em] font-black text-black/55">J+30</p>
-              <p className="mt-2 font-black">Reco + commissions cadrées</p>
-              <p className="mt-1 text-black/70 font-medium">Logique de recommandation claire et commission traçable.</p>
-            </article>
+          <div className="mt-6 rounded-2xl border border-black/10 bg-white p-5 md:p-6">
+            <div className="relative">
+              <div className="absolute left-3 top-2 bottom-2 w-[2px] bg-gradient-to-b from-[#B6FF2B] via-black/25 to-[#B6FF2B]" />
+              <div className="space-y-5">
+                <article className="relative pl-10">
+                  <span className="absolute left-0 top-1.5 inline-flex h-6 w-6 items-center justify-center rounded-full border border-[#B6FF2B] bg-black text-[10px] font-black text-[#B6FF2B]">1</span>
+                  <p className="text-[11px] uppercase tracking-[0.12em] font-black text-black/55">J+3</p>
+                  <p className="mt-1 text-lg font-black">1 partenaire complémentaire</p>
+                  <p className="mt-1 text-black/70 font-medium">Partenaire validé selon votre offre et votre zone.</p>
+                </article>
+                <article className="relative pl-10">
+                  <span className="absolute left-0 top-1.5 inline-flex h-6 w-6 items-center justify-center rounded-full border border-[#B6FF2B] bg-black text-[10px] font-black text-[#B6FF2B]">2</span>
+                  <p className="text-[11px] uppercase tracking-[0.12em] font-black text-black/55">J+15</p>
+                  <p className="mt-1 text-lg font-black">1 offre DUO lancée</p>
+                  <p className="mt-1 text-black/70 font-medium">Offre créée puis promue sur vos réseaux et ceux de Popey.</p>
+                </article>
+                <article className="relative pl-10">
+                  <span className="absolute left-0 top-1.5 inline-flex h-6 w-6 items-center justify-center rounded-full border border-[#B6FF2B] bg-black text-[10px] font-black text-[#B6FF2B]">3</span>
+                  <p className="text-[11px] uppercase tracking-[0.12em] font-black text-black/55">J+30</p>
+                  <p className="mt-1 text-lg font-black">Reco + commissions cadrées</p>
+                  <p className="mt-1 text-black/70 font-medium">Logique de recommandation claire et commission traçable.</p>
+                </article>
+              </div>
+            </div>
           </div>
         </div>
       </section>
