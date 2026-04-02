@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Poppins } from "next/font/google";
 import { cn } from "@/lib/utils";
@@ -130,15 +129,31 @@ export default function PopeyHumanTestV4Page() {
               </a>
             </div>
             <p className="mt-4 text-xs font-bold uppercase tracking-wide text-black/70">Audit 15 min • Sur sélection</p>
-            <div className="mt-8 max-w-4xl rounded-2xl overflow-hidden border border-black/10 bg-[#EEF4DF]">
-              <Image
-                src="/jeanphilipperoth.jpg"
-                alt="Professionnel en situation de décision commerciale"
-                width={1400}
-                height={900}
-                className="h-[260px] md:h-[360px] w-full object-cover"
-                priority
-              />
+            <div className="mt-8 max-w-4xl rounded-2xl border border-black/10 bg-[#EEF4DF] p-4 md:p-5">
+              <div className="hero-network relative h-[220px] md:h-[260px] overflow-hidden rounded-xl border border-black/10 bg-white">
+                <div className="hero-glow absolute left-1/2 top-1/2 h-36 w-36 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#B6FF2B]/25 blur-2xl" />
+                <div className="hero-link absolute left-1/2 top-[54%] h-[3px] w-[46%] -translate-x-1/2 rounded-full bg-black/20" />
+
+                <div className="hero-person hero-person-left absolute left-[10%] top-[22%]">
+                  <div className="h-9 w-9 rounded-full border-[3px] border-black" />
+                  <div className="mx-auto mt-1 h-9 w-[4px] rounded-full bg-black" />
+                  <div className="-mt-6 ml-[-10px] h-[4px] w-14 rounded-full bg-black" />
+                  <div className="ml-[6px] mt-1 h-8 w-[4px] rounded-full bg-black" />
+                  <div className="ml-[22px] -mt-8 h-8 w-[4px] rounded-full bg-black" />
+                </div>
+
+                <div className="hero-person hero-person-right absolute right-[10%] top-[22%]">
+                  <div className="h-9 w-9 rounded-full border-[3px] border-black" />
+                  <div className="mx-auto mt-1 h-9 w-[4px] rounded-full bg-black" />
+                  <div className="-mt-6 ml-[-10px] h-[4px] w-14 rounded-full bg-black" />
+                  <div className="ml-[6px] mt-1 h-8 w-[4px] rounded-full bg-black" />
+                  <div className="ml-[22px] -mt-8 h-8 w-[4px] rounded-full bg-black" />
+                </div>
+
+                <div className="hero-bubble hero-bubble-left absolute left-[30%] top-[24%] rounded-full border border-black/20 bg-white px-3 py-1 text-[11px] font-black uppercase tracking-wide">Projet DUO ?</div>
+                <div className="hero-bubble hero-bubble-right absolute right-[27%] top-[40%] rounded-full border border-[#2F7A00]/30 bg-[#E9F9D9] px-3 py-1 text-[11px] font-black uppercase tracking-wide text-[#2F7A00]">Oui, on lance</div>
+                <p className="absolute bottom-3 left-1/2 -translate-x-1/2 text-[11px] font-black uppercase tracking-[0.16em] text-black/65">Connexion partenaire activée</p>
+              </div>
             </div>
           </div>
         </div>
@@ -484,6 +499,30 @@ export default function PopeyHumanTestV4Page() {
           70% { transform: scale(1.08); box-shadow: 0 0 0 8px rgba(182,255,43,0); }
           100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(182,255,43,0); }
         }
+        @keyframes heroLinkPulse {
+          0%, 100% { opacity: 0.3; transform: translateX(-50%) scaleX(0.92); }
+          50% { opacity: 0.95; transform: translateX(-50%) scaleX(1.02); }
+        }
+        @keyframes heroFloatLeft {
+          0%, 100% { transform: translateY(0) translateX(0); }
+          50% { transform: translateY(-3px) translateX(6px); }
+        }
+        @keyframes heroFloatRight {
+          0%, 100% { transform: translateY(0) translateX(0); }
+          50% { transform: translateY(-3px) translateX(-6px); }
+        }
+        @keyframes heroGlowPulse {
+          0%, 100% { opacity: 0.35; transform: translate(-50%, -50%) scale(0.92); }
+          50% { opacity: 0.7; transform: translate(-50%, -50%) scale(1.06); }
+        }
+        @keyframes heroBubbleLeft {
+          0%, 38%, 100% { opacity: 0; transform: translateY(4px) scale(0.96); }
+          10%, 30% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        @keyframes heroBubbleRight {
+          0%, 50%, 100% { opacity: 0; transform: translateY(4px) scale(0.96); }
+          62%, 84% { opacity: 1; transform: translateY(0) scale(1); }
+        }
         .walk-man {
           animation: walkToPopey 6.8s ease-in-out 1 forwards;
         }
@@ -543,6 +582,24 @@ export default function PopeyHumanTestV4Page() {
         .timeline-live .timeline-step,
         .timeline-live .timeline-dot {
           animation-play-state: running;
+        }
+        .hero-link {
+          animation: heroLinkPulse 2.2s ease-in-out infinite;
+        }
+        .hero-person-left {
+          animation: heroFloatLeft 2.4s ease-in-out infinite;
+        }
+        .hero-person-right {
+          animation: heroFloatRight 2.4s ease-in-out infinite;
+        }
+        .hero-glow {
+          animation: heroGlowPulse 2.2s ease-in-out infinite;
+        }
+        .hero-bubble-left {
+          animation: heroBubbleLeft 3.2s ease-in-out infinite;
+        }
+        .hero-bubble-right {
+          animation: heroBubbleRight 3.2s ease-in-out infinite;
         }
       `}</style>
     </main>
