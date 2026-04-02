@@ -130,29 +130,31 @@ export default function PopeyHumanTestV4Page() {
             </div>
             <p className="mt-4 text-xs font-bold uppercase tracking-wide text-black/70">Audit 15 min • Sur sélection</p>
             <div className="mt-8 max-w-4xl rounded-2xl border border-black/10 bg-[#EEF4DF] p-4 md:p-5">
-              <div className="hero-network relative h-[220px] md:h-[260px] overflow-hidden rounded-xl border border-black/10 bg-white">
-                <div className="hero-glow absolute left-1/2 top-1/2 h-36 w-36 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#B6FF2B]/25 blur-2xl" />
-                <div className="hero-link absolute left-1/2 top-[54%] h-[3px] w-[46%] -translate-x-1/2 rounded-full bg-black/20" />
-
-                <div className="hero-person hero-person-left absolute left-[10%] top-[22%]">
-                  <div className="h-9 w-9 rounded-full border-[3px] border-black" />
-                  <div className="mx-auto mt-1 h-9 w-[4px] rounded-full bg-black" />
-                  <div className="-mt-6 ml-[-10px] h-[4px] w-14 rounded-full bg-black" />
-                  <div className="ml-[6px] mt-1 h-8 w-[4px] rounded-full bg-black" />
-                  <div className="ml-[22px] -mt-8 h-8 w-[4px] rounded-full bg-black" />
+              <div className="hero-flow relative h-[220px] md:h-[260px] overflow-hidden rounded-xl border border-black/10 bg-white">
+                <div className="absolute inset-x-0 top-4 flex items-center justify-center">
+                  <p className="hero-step hero-step-1 rounded-full border border-black/15 bg-white px-3 py-1 text-[11px] font-black uppercase tracking-wide">1. Matching</p>
+                  <p className="hero-step hero-step-2 ml-2 rounded-full border border-black/15 bg-white px-3 py-1 text-[11px] font-black uppercase tracking-wide">2. Offre DUO</p>
+                  <p className="hero-step hero-step-3 ml-2 rounded-full border border-[#2F7A00]/25 bg-[#E9F9D9] px-3 py-1 text-[11px] font-black uppercase tracking-wide text-[#2F7A00]">3. Reco active</p>
                 </div>
 
-                <div className="hero-person hero-person-right absolute right-[10%] top-[22%]">
-                  <div className="h-9 w-9 rounded-full border-[3px] border-black" />
-                  <div className="mx-auto mt-1 h-9 w-[4px] rounded-full bg-black" />
-                  <div className="-mt-6 ml-[-10px] h-[4px] w-14 rounded-full bg-black" />
-                  <div className="ml-[6px] mt-1 h-8 w-[4px] rounded-full bg-black" />
-                  <div className="ml-[22px] -mt-8 h-8 w-[4px] rounded-full bg-black" />
+                <div className="hero-card hero-card-left absolute left-[7%] top-[35%] w-[110px] md:w-[140px] rounded-xl border border-black/15 bg-white p-3">
+                  <p className="text-[10px] uppercase tracking-[0.18em] font-black text-black/55">Vous</p>
+                  <p className="mt-1 text-sm md:text-base font-black">Agent immo</p>
+                </div>
+                <div className="hero-card hero-card-right absolute right-[7%] top-[35%] w-[110px] md:w-[140px] rounded-xl border border-black/15 bg-white p-3">
+                  <p className="text-[10px] uppercase tracking-[0.18em] font-black text-black/55">Partenaire</p>
+                  <p className="mt-1 text-sm md:text-base font-black">Courtier</p>
                 </div>
 
-                <div className="hero-bubble hero-bubble-left absolute left-[30%] top-[24%] rounded-full border border-black/20 bg-white px-3 py-1 text-[11px] font-black uppercase tracking-wide">Projet DUO ?</div>
-                <div className="hero-bubble hero-bubble-right absolute right-[27%] top-[40%] rounded-full border border-[#2F7A00]/30 bg-[#E9F9D9] px-3 py-1 text-[11px] font-black uppercase tracking-wide text-[#2F7A00]">Oui, on lance</div>
-                <p className="absolute bottom-3 left-1/2 -translate-x-1/2 text-[11px] font-black uppercase tracking-[0.16em] text-black/65">Connexion partenaire activée</p>
+                <div className="hero-hub absolute left-1/2 top-[40%] h-14 w-14 -translate-x-1/2 rounded-full border-2 border-black bg-[#B6FF2B] flex items-center justify-center text-[10px] font-black uppercase tracking-wide">Popey</div>
+                <div className="hero-line hero-line-left absolute left-[26%] top-[47%] h-[3px] w-[24%] rounded-full bg-black/15" />
+                <div className="hero-line hero-line-right absolute left-1/2 top-[47%] h-[3px] w-[24%] rounded-full bg-black/15" />
+                <div className="hero-token hero-token-a absolute left-[26%] top-[45.8%] h-2.5 w-2.5 rounded-full bg-[#2F7A00]" />
+                <div className="hero-token hero-token-b absolute left-1/2 top-[45.8%] h-2.5 w-2.5 rounded-full bg-black" />
+
+                <div className="hero-status absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full border border-black/15 bg-white px-4 py-1.5">
+                  <p className="text-[11px] font-black uppercase tracking-[0.16em] text-black/70">Synergie en cours d’activation</p>
+                </div>
               </div>
             </div>
           </div>
@@ -499,29 +501,51 @@ export default function PopeyHumanTestV4Page() {
           70% { transform: scale(1.08); box-shadow: 0 0 0 8px rgba(182,255,43,0); }
           100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(182,255,43,0); }
         }
-        @keyframes heroLinkPulse {
-          0%, 100% { opacity: 0.3; transform: translateX(-50%) scaleX(0.92); }
-          50% { opacity: 0.95; transform: translateX(-50%) scaleX(1.02); }
+        @keyframes heroCardLeftIn {
+          0%, 8% { opacity: 0; transform: translateX(-16px); }
+          16%, 100% { opacity: 1; transform: translateX(0); }
         }
-        @keyframes heroFloatLeft {
-          0%, 100% { transform: translateY(0) translateX(0); }
-          50% { transform: translateY(-3px) translateX(6px); }
+        @keyframes heroCardRightIn {
+          0%, 20% { opacity: 0; transform: translateX(16px); }
+          30%, 100% { opacity: 1; transform: translateX(0); }
         }
-        @keyframes heroFloatRight {
-          0%, 100% { transform: translateY(0) translateX(0); }
-          50% { transform: translateY(-3px) translateX(-6px); }
+        @keyframes heroHubPulse {
+          0%, 100% { transform: translateX(-50%) scale(1); }
+          50% { transform: translateX(-50%) scale(1.08); }
         }
-        @keyframes heroGlowPulse {
-          0%, 100% { opacity: 0.35; transform: translate(-50%, -50%) scale(0.92); }
-          50% { opacity: 0.7; transform: translate(-50%, -50%) scale(1.06); }
+        @keyframes heroLineGrowLeft {
+          0%, 18% { transform: scaleX(0); opacity: 0.2; }
+          36%, 100% { transform: scaleX(1); opacity: 1; }
         }
-        @keyframes heroBubbleLeft {
-          0%, 38%, 100% { opacity: 0; transform: translateY(4px) scale(0.96); }
-          10%, 30% { opacity: 1; transform: translateY(0) scale(1); }
+        @keyframes heroLineGrowRight {
+          0%, 40% { transform: scaleX(0); opacity: 0.2; }
+          58%, 100% { transform: scaleX(1); opacity: 1; }
         }
-        @keyframes heroBubbleRight {
-          0%, 50%, 100% { opacity: 0; transform: translateY(4px) scale(0.96); }
-          62%, 84% { opacity: 1; transform: translateY(0) scale(1); }
+        @keyframes heroTokenAFlow {
+          0%, 24% { transform: translateX(0); opacity: 0; }
+          34%, 44% { transform: translateX(74px); opacity: 1; }
+          45%, 100% { transform: translateX(74px); opacity: 0; }
+        }
+        @keyframes heroTokenBFlow {
+          0%, 52% { transform: translateX(0); opacity: 0; }
+          62%, 76% { transform: translateX(74px); opacity: 1; }
+          77%, 100% { transform: translateX(74px); opacity: 0; }
+        }
+        @keyframes heroStepReveal1 {
+          0%, 8%, 100% { opacity: 0.45; }
+          14%, 34% { opacity: 1; }
+        }
+        @keyframes heroStepReveal2 {
+          0%, 28%, 100% { opacity: 0.45; }
+          38%, 58% { opacity: 1; }
+        }
+        @keyframes heroStepReveal3 {
+          0%, 52%, 100% { opacity: 0.45; }
+          62%, 88% { opacity: 1; }
+        }
+        @keyframes heroStatusReveal {
+          0%, 62% { opacity: 0; transform: translateX(-50%) translateY(4px); }
+          76%, 100% { opacity: 1; transform: translateX(-50%) translateY(0); }
         }
         .walk-man {
           animation: walkToPopey 6.8s ease-in-out 1 forwards;
@@ -583,23 +607,40 @@ export default function PopeyHumanTestV4Page() {
         .timeline-live .timeline-dot {
           animation-play-state: running;
         }
-        .hero-link {
-          animation: heroLinkPulse 2.2s ease-in-out infinite;
+        .hero-card-left {
+          animation: heroCardLeftIn 4.6s ease-in-out infinite;
         }
-        .hero-person-left {
-          animation: heroFloatLeft 2.4s ease-in-out infinite;
+        .hero-card-right {
+          animation: heroCardRightIn 4.6s ease-in-out infinite;
         }
-        .hero-person-right {
-          animation: heroFloatRight 2.4s ease-in-out infinite;
+        .hero-hub {
+          animation: heroHubPulse 1.2s ease-in-out infinite;
         }
-        .hero-glow {
-          animation: heroGlowPulse 2.2s ease-in-out infinite;
+        .hero-line-left {
+          transform-origin: left;
+          animation: heroLineGrowLeft 4.6s ease-in-out infinite;
         }
-        .hero-bubble-left {
-          animation: heroBubbleLeft 3.2s ease-in-out infinite;
+        .hero-line-right {
+          transform-origin: left;
+          animation: heroLineGrowRight 4.6s ease-in-out infinite;
         }
-        .hero-bubble-right {
-          animation: heroBubbleRight 3.2s ease-in-out infinite;
+        .hero-token-a {
+          animation: heroTokenAFlow 4.6s ease-in-out infinite;
+        }
+        .hero-token-b {
+          animation: heroTokenBFlow 4.6s ease-in-out infinite;
+        }
+        .hero-step-1 {
+          animation: heroStepReveal1 4.6s ease-in-out infinite;
+        }
+        .hero-step-2 {
+          animation: heroStepReveal2 4.6s ease-in-out infinite;
+        }
+        .hero-step-3 {
+          animation: heroStepReveal3 4.6s ease-in-out infinite;
+        }
+        .hero-status {
+          animation: heroStatusReveal 4.6s ease-in-out infinite;
         }
       `}</style>
     </main>
