@@ -24,7 +24,19 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   title: "Popey Academy — La force du groupe",
-  description: "Cohortes de 14 jours pour devenir ultra visible localement.",
+  description: "Popey Academy 100% humain. Activez des synergies business locales avec des partenaires complémentaires et générez de nouveaux clients.",
+  openGraph: {
+    title: "Popey Academy — La force du groupe",
+    description: "Popey Academy 100% humain. Activez des synergies business locales avec des partenaires complémentaires et générez de nouveaux clients.",
+    siteName: "Popey Academy",
+    locale: "fr_FR",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Popey Academy — La force du groupe",
+    description: "Popey Academy 100% humain. Activez des synergies business locales avec des partenaires complémentaires et générez de nouveaux clients.",
+  },
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
