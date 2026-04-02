@@ -153,27 +153,27 @@ export default function PopeyHumanTestV4Page() {
       </section>
 
       <section ref={problemSectionRef} className="border-b border-black/10 bg-black text-white">
-        <div className="mx-auto max-w-6xl px-4 py-12 md:py-14">
-          <div className="grid gap-8 lg:grid-cols-[1.05fr_0.95fr] items-center">
+        <div className="mx-auto max-w-6xl px-4 py-14 md:py-16">
+          <div className="grid gap-10 lg:grid-cols-[1.05fr_0.95fr] items-center">
             <div>
-              <p className="text-xs uppercase tracking-[0.2em] font-black text-[#B6FF2B]">Le problème à résoudre</p>
-              <h2 className="mt-3 text-4xl md:text-6xl font-black max-w-5xl leading-tight">
+              <p className="text-sm uppercase tracking-[0.2em] font-black text-[#B6FF2B]">Le problème à résoudre</p>
+              <h2 className="mt-3 text-[46px] md:text-6xl font-black max-w-5xl leading-[1.08]">
                 Vos clients achètent déjà ailleurs avant et après vous. Le problème, c’est que vous n’êtes pas dans la boucle.
               </h2>
-              <p className="mt-5 text-lg md:text-xl font-medium leading-relaxed text-white/85 max-w-5xl">
+              <p className="mt-6 text-[20px] md:text-xl font-medium leading-[1.45] text-white/85 max-w-5xl">
                 Un client qui vous fait confiance continue souvent son parcours chez d’autres professionnels complémentaires : courtier, architecte d’intérieur, CGP, cuisiniste, déménageur, conciergerie privée.
               </p>
-              <p className="mt-4 text-lg md:text-xl font-medium leading-relaxed text-white/85 max-w-5xl">
+              <p className="mt-5 text-[20px] md:text-xl font-medium leading-[1.45] text-white/85 max-w-5xl">
                 Si ces achats se font sans vous, vous laissez partir de la valeur, des recommandations, des commissions et des opportunités de fidélisation. Et les métiers hors de votre boucle ne vous recommandent pas non plus.
               </p>
-              <div className="mt-4 rounded-xl border border-[#B6FF2B] bg-[#B6FF2B]/10 px-4 py-3 max-w-5xl">
-                <p className="font-black">Popey sert à remettre votre métier au centre de cette chaîne de valeur.</p>
+              <div className="mt-6 rounded-xl border border-[#B6FF2B] bg-[#B6FF2B]/10 px-5 py-4 max-w-5xl">
+                <p className="text-xl md:text-2xl font-black">Popey sert à remettre votre métier au centre de cette chaîne de valeur.</p>
               </div>
             </div>
 
-            <div className="relative p-1 md:p-2 overflow-visible">
+            <div className="relative p-1 md:p-2 overflow-visible mt-8 lg:mt-12">
               <div className="absolute -top-8 -left-8 h-28 w-28 rounded-full bg-[#B6FF2B]/20 blur-2xl" />
-              <div className="mt-2 relative h-[300px] md:h-[330px] overflow-visible">
+              <div className="mt-8 relative h-[300px] md:h-[330px] overflow-visible">
                 <div className="absolute left-0 right-0 bottom-9 h-[2px] bg-white/25" />
 
                 <div className="walk-man absolute left-2 bottom-9 z-20 h-[102px] w-14" style={{ animationPlayState: problemSceneStarted ? "running" : "paused" }}>
@@ -203,7 +203,7 @@ export default function PopeyHumanTestV4Page() {
                   <span className="absolute -top-8 left-1/2 -translate-x-1/2 text-[13px] font-black uppercase tracking-[0.2em] text-[#B6FF2B]">Popey</span>
                 </div>
 
-                <div className="final-result absolute right-[6px] bottom-1 text-[11px] font-black uppercase tracking-[0.14em] text-[#B6FF2B]" style={{ animationPlayState: problemSceneStarted ? "running" : "paused" }}>
+                <div className="final-result absolute right-[6px] -bottom-4 md:bottom-1 text-[13px] md:text-[11px] font-black uppercase tracking-[0.14em] text-[#B6FF2B]" style={{ animationPlayState: problemSceneStarted ? "running" : "paused" }}>
                   Agent immo intégré à la sphère
                 </div>
               </div>
@@ -214,13 +214,13 @@ export default function PopeyHumanTestV4Page() {
 
       <section className="border-b border-black/10 bg-white">
         <div className="mx-auto max-w-6xl px-4 py-12 md:py-14">
-          <h2 className="text-3xl md:text-5xl font-black max-w-5xl">
+          <h2 className="text-4xl md:text-5xl font-black leading-tight max-w-5xl">
             Avant Popey, votre réseau est passif. Après Popey, il devient une machine à opportunités.
           </h2>
           <div className="mt-6 grid md:grid-cols-2 gap-4">
             <div className="rounded-xl border border-black/15 bg-[#F7F7F7] p-5">
-              <p className="text-xs uppercase tracking-[0.2em] font-black text-black/60">Sans Popey</p>
-              <ul className="mt-3 space-y-1.5 text-sm font-semibold text-black/80">
+              <p className="text-sm uppercase tracking-[0.2em] font-black text-black/60">Sans Popey</p>
+              <ul className="mt-3 space-y-2 text-[18px] md:text-base font-semibold leading-[1.45] text-black/80">
                 <li>• 1 client = 1 vente</li>
                 <li>• réseau informel</li>
                 <li>• partenaires mal choisis</li>
@@ -230,8 +230,8 @@ export default function PopeyHumanTestV4Page() {
               </ul>
             </div>
             <div className="rounded-xl border border-black bg-black text-white p-5">
-              <p className="text-xs uppercase tracking-[0.2em] font-black text-[#B6FF2B]">Avec Popey</p>
-              <ul className="mt-3 space-y-1.5 text-sm font-semibold">
+              <p className="text-sm uppercase tracking-[0.2em] font-black text-[#B6FF2B]">Avec Popey</p>
+              <ul className="mt-3 space-y-2 text-[18px] md:text-base font-semibold leading-[1.45]">
                 <li>• 1 client = 2 à 5 opportunités potentielles</li>
                 <li>• 1 partenaire complémentaire activé intelligemment</li>
                 <li>• 1 offre commune simple à vendre</li>
@@ -246,10 +246,10 @@ export default function PopeyHumanTestV4Page() {
 
       <section className="border-b border-black/10 bg-white">
         <div className="mx-auto max-w-6xl px-4 py-12 md:py-14">
-          <div className="rounded-2xl bg-[#0B0B0B] p-5 text-white">
+          <div className="rounded-2xl bg-[#0B0B0B] p-6 text-white">
             <div className="flex items-center justify-between">
-              <p className="text-[10px] uppercase tracking-[0.2em] font-black text-[#B6FF2B]">Simulation revenus 6 mois</p>
-              <p className="text-xs font-bold border border-white/30 rounded-full px-3 py-1">M{month}/6</p>
+              <p className="text-xs uppercase tracking-[0.2em] font-black text-[#B6FF2B]">Simulation revenus 6 mois</p>
+              <p className="text-sm font-bold border border-white/30 rounded-full px-3 py-1">M{month}/6</p>
             </div>
             <div className="mt-3 grid grid-cols-6 gap-1">
               {Array.from({ length: 6 }).map((_, index) => (
@@ -259,48 +259,48 @@ export default function PopeyHumanTestV4Page() {
             <div className="mt-4 space-y-2">
               <div className="rounded-lg border border-white/20 bg-white/5 px-3 py-2">
                 <div className="flex items-center justify-between gap-2">
-                  <p className="text-xs uppercase tracking-wide font-black">Pack duo</p>
-                  <p className="text-xl font-black">{duoRevenue.toLocaleString("fr-FR")}€</p>
+                  <p className="text-sm uppercase tracking-wide font-black">Pack duo</p>
+                  <p className="text-2xl font-black">{duoRevenue.toLocaleString("fr-FR")}€</p>
                 </div>
               </div>
               <div className="rounded-lg border border-white/20 bg-white/5 px-3 py-2">
                 <div className="flex items-center justify-between gap-2">
-                  <p className="text-xs uppercase tracking-wide font-black">Reco entrantes</p>
-                  <p className="text-xl font-black">{incomingRevenue.toLocaleString("fr-FR")}€</p>
+                  <p className="text-sm uppercase tracking-wide font-black">Reco entrantes</p>
+                  <p className="text-2xl font-black">{incomingRevenue.toLocaleString("fr-FR")}€</p>
                 </div>
               </div>
               <div className="rounded-lg border border-white/20 bg-white/5 px-3 py-2">
                 <div className="flex items-center justify-between gap-2">
-                  <p className="text-xs uppercase tracking-wide font-black">Reco sortantes (10%)</p>
-                  <p className="text-xl font-black">{commissionRevenue.toLocaleString("fr-FR")}€</p>
+                  <p className="text-sm uppercase tracking-wide font-black">Reco sortantes (10%)</p>
+                  <p className="text-2xl font-black">{commissionRevenue.toLocaleString("fr-FR")}€</p>
                 </div>
               </div>
             </div>
             <div className="mt-4 rounded-xl bg-[#B6FF2B] text-black p-3">
-              <p className="text-[11px] uppercase tracking-wide font-black">CA cumulé simulé à M{month}</p>
-              <p className="text-3xl font-black">{totalRevenue.toLocaleString("fr-FR")}€</p>
+              <p className="text-xs uppercase tracking-wide font-black">CA cumulé simulé à M{month}</p>
+              <p className="text-4xl font-black">{totalRevenue.toLocaleString("fr-FR")}€</p>
             </div>
-            <p className="mt-3 text-xs font-black uppercase tracking-wide text-white/90">{phaseMessage}</p>
+            <p className="mt-3 text-sm font-black uppercase tracking-wide text-white/90">{phaseMessage}</p>
           </div>
         </div>
       </section>
 
       <section id="parcours-v4" className="border-b border-black/10">
         <div className="mx-auto max-w-6xl px-4 py-12 md:py-14">
-          <h2 className="text-3xl md:text-5xl font-black">Parcours 3 mois</h2>
+          <h2 className="text-4xl md:text-5xl font-black">Parcours 3 mois</h2>
           <div className="mt-8 grid md:grid-cols-3 gap-5">
             <article className="rounded-xl border border-black/15 p-5 bg-white">
-              <p className="text-xs uppercase tracking-[0.2em] font-black text-black/60">Mois 1</p>
+              <p className="text-sm uppercase tracking-[0.2em] font-black text-black/60">Mois 1</p>
               <h3 className="mt-2 text-2xl font-black">🚀 Première synergie rentable</h3>
               <p className="mt-3 text-base font-medium leading-relaxed text-black/75">Création de votre 1er binôme et de votre offre DUO. Nous la créons entièrement pour vous et nous nous occupons de votre communication. Objectif : aller chercher des clients que vous n’avez pas encore.</p>
             </article>
             <article className="rounded-xl border border-black/15 p-5 bg-white">
-              <p className="text-xs uppercase tracking-[0.2em] font-black text-black/60">Mois 2</p>
+              <p className="text-sm uppercase tracking-[0.2em] font-black text-black/60">Mois 2</p>
               <h3 className="mt-2 text-2xl font-black">🔁 Duplication</h3>
               <p className="mt-3 text-base font-medium leading-relaxed text-black/75">2e partenaire, 2e source de revenu, recommandations en chaîne.</p>
             </article>
             <article className="rounded-xl border border-black/15 p-5 bg-white">
-              <p className="text-xs uppercase tracking-[0.2em] font-black text-black/60">Mois 3</p>
+              <p className="text-sm uppercase tracking-[0.2em] font-black text-black/60">Mois 3</p>
               <h3 className="mt-2 text-2xl font-black">🌐 Ouverture de la sphère</h3>
               <p className="mt-3 text-base font-medium leading-relaxed text-black/75">Vous rejoignez l’ensemble des 20 métiers qui constituent toute la chaîne client. C’est à partir de là que la chaîne de recommandations s’active : 10% pour les apporteurs d’affaires et des clients pour ceux qui acceptent les mises en relation.</p>
             </article>
@@ -315,29 +315,29 @@ export default function PopeyHumanTestV4Page() {
 
       <section ref={activationSectionRef} className="border-b border-black/10 bg-[#F5F5F5]">
         <div className="mx-auto max-w-6xl px-4 py-12 md:py-14">
-          <p className="text-xs uppercase tracking-[0.2em] font-black text-black/55">Plan d’activation</p>
-          <h2 className="text-3xl md:text-5xl font-black">Ce que vous obtenez en 30 jours</h2>
+          <p className="text-sm uppercase tracking-[0.2em] font-black text-black/55">Plan d’activation</p>
+          <h2 className="text-4xl md:text-5xl font-black">Ce que vous obtenez en 30 jours</h2>
           <div className={cn("timeline-wrap mt-6 rounded-2xl border border-black/10 bg-white p-5 md:p-6", activationTimelineStarted && "timeline-live")}>
             <div className="relative">
               <div className="timeline-line absolute left-3 top-2 bottom-2 w-[2px] bg-gradient-to-b from-[#B6FF2B] via-black/25 to-[#B6FF2B]" />
               <div className="space-y-5">
                 <article className="timeline-step timeline-step-1 relative pl-10">
                   <span className="timeline-dot absolute left-0 top-1.5 inline-flex h-6 w-6 items-center justify-center rounded-full border border-[#B6FF2B] bg-black text-[10px] font-black text-[#B6FF2B]">1</span>
-                  <p className="text-[11px] uppercase tracking-[0.12em] font-black text-black/55">J+3</p>
+                  <p className="text-xs uppercase tracking-[0.12em] font-black text-black/55">J+3</p>
                   <p className="mt-1 text-lg font-black">1 partenaire complémentaire</p>
-                  <p className="mt-1 text-black/70 font-medium">Partenaire validé selon votre offre et votre zone.</p>
+                  <p className="mt-1 text-base md:text-lg text-black/70 font-medium">Partenaire validé selon votre offre et votre zone.</p>
                 </article>
                 <article className="timeline-step timeline-step-2 relative pl-10">
                   <span className="timeline-dot absolute left-0 top-1.5 inline-flex h-6 w-6 items-center justify-center rounded-full border border-[#B6FF2B] bg-black text-[10px] font-black text-[#B6FF2B]">2</span>
-                  <p className="text-[11px] uppercase tracking-[0.12em] font-black text-black/55">J+15</p>
+                  <p className="text-xs uppercase tracking-[0.12em] font-black text-black/55">J+15</p>
                   <p className="mt-1 text-lg font-black">1 offre DUO lancée</p>
-                  <p className="mt-1 text-black/70 font-medium">Offre créée puis promue sur vos réseaux et ceux de Popey.</p>
+                  <p className="mt-1 text-base md:text-lg text-black/70 font-medium">Offre créée puis promue sur vos réseaux et ceux de Popey.</p>
                 </article>
                 <article className="timeline-step timeline-step-3 relative pl-10">
                   <span className="timeline-dot absolute left-0 top-1.5 inline-flex h-6 w-6 items-center justify-center rounded-full border border-[#B6FF2B] bg-black text-[10px] font-black text-[#B6FF2B]">3</span>
-                  <p className="text-[11px] uppercase tracking-[0.12em] font-black text-black/55">J+30</p>
+                  <p className="text-xs uppercase tracking-[0.12em] font-black text-black/55">J+30</p>
                   <p className="mt-1 text-lg font-black">Reco + commissions cadrées</p>
-                  <p className="mt-1 text-black/70 font-medium">Logique de recommandation claire et commission traçable.</p>
+                  <p className="mt-1 text-base md:text-lg text-black/70 font-medium">Logique de recommandation claire et commission traçable.</p>
                 </article>
               </div>
             </div>
