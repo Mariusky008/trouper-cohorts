@@ -139,15 +139,15 @@ export default function PopeyHumanTestV4Page() {
                 </div>
 
                 <div className="hero-cards mt-4 flex items-center justify-between gap-2 md:contents">
-                  <div className="hero-card hero-card-left relative w-[47%] rounded-xl border border-black/15 bg-white p-3 md:absolute md:left-[7%] md:top-[35%] md:w-[140px]">
-                    <p className="text-center text-sm md:text-base font-black uppercase tracking-[0.12em]">Vous</p>
+                  <div className="hero-card hero-card-left relative w-[44%] rounded-xl border border-black/15 bg-white px-2.5 py-2 md:absolute md:left-[7%] md:top-[35%] md:w-[140px] md:p-3">
+                    <p className="text-center text-xs md:text-base font-black uppercase tracking-[0.08em] md:tracking-[0.12em]">Vous</p>
                   </div>
-                  <div className="hero-card hero-card-right relative w-[47%] rounded-xl border border-black/15 bg-white p-3 md:absolute md:right-[7%] md:top-[35%] md:w-[140px]">
-                    <p className="text-center text-sm md:text-base font-black uppercase tracking-[0.12em]">Partenaire clé</p>
+                  <div className="hero-card hero-card-right relative w-[44%] rounded-xl border border-black/15 bg-white px-2.5 py-2 md:absolute md:right-[7%] md:top-[35%] md:w-[140px] md:p-3">
+                    <p className="text-center text-xs md:text-base font-black uppercase tracking-[0.08em] md:tracking-[0.12em]">Partenaire clé</p>
                   </div>
                 </div>
 
-                <div className="hero-track relative mt-5 h-16 md:mt-0 md:h-0">
+                <div className="hero-track relative mt-4 h-14 md:mt-0 md:h-0">
                   <div className="hero-rail absolute left-[8%] right-[8%] top-1/2 h-[3px] -translate-y-1/2 md:left-[20%] md:right-[20%]">
                     <div className="hero-line hero-line-main relative h-full w-full rounded-full bg-black/15" />
                     <div className="hero-token hero-token-main absolute -top-[3px] left-0 h-2.5 w-2.5 rounded-full bg-[#2F7A00]" />
@@ -157,7 +157,7 @@ export default function PopeyHumanTestV4Page() {
 
                 <div className="hero-status-wrap mt-4 flex justify-center md:absolute md:inset-x-0 md:bottom-4 md:mt-0">
                   <div className="hero-status rounded-full border border-black/15 bg-white px-4 py-1.5">
-                    <p className="text-center text-[11px] font-black uppercase tracking-[0.16em] text-black/70">Synergie en cours d’activation</p>
+                    <p className="text-center text-[10px] md:text-[11px] font-black uppercase tracking-[0.08em] md:tracking-[0.16em] text-black/70">Synergie en cours d’activation</p>
                   </div>
                 </div>
               </div>
@@ -548,6 +548,11 @@ export default function PopeyHumanTestV4Page() {
           0%, 74% { opacity: 0; transform: translateY(4px); }
           86%, 100% { opacity: 1; transform: translateY(0); }
         }
+        @keyframes heroHubTravelMobile {
+          0% { transform: translate(-50%, -50%) translateX(calc(-1 * clamp(66px, 17vw, 90px))); }
+          50% { transform: translate(-50%, -50%) translateX(clamp(66px, 17vw, 90px)); }
+          100% { transform: translate(-50%, -50%) translateX(calc(-1 * clamp(66px, 17vw, 90px))); }
+        }
         .walk-man {
           animation: walkToPopey 6.8s ease-in-out 1 forwards;
         }
@@ -635,6 +640,14 @@ export default function PopeyHumanTestV4Page() {
         }
         .hero-status {
           animation: heroStatusReveal 7.2s ease-in-out infinite;
+        }
+        @media (max-width: 767px) {
+          .hero-hub {
+            animation: heroHubTravelMobile 5.8s ease-in-out infinite;
+          }
+          .hero-token-main {
+            display: none;
+          }
         }
       `}</style>
     </main>
