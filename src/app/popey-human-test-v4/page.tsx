@@ -33,7 +33,9 @@ const faqItems = [
 export default function PopeyHumanTestV4Page() {
   const [tick, setTick] = useState(0);
   const [problemSceneStarted, setProblemSceneStarted] = useState(false);
+  const [activationTimelineStarted, setActivationTimelineStarted] = useState(false);
   const problemSectionRef = useRef<HTMLElement | null>(null);
+  const activationSectionRef = useRef<HTMLElement | null>(null);
   const month = (tick % 6) + 1;
   const duoRevenue = month * 600;
   const incomingRevenue = Math.max(month - 1, 0) * 400;
@@ -70,6 +72,24 @@ export default function PopeyHumanTestV4Page() {
     observer.observe(node);
     return () => observer.disconnect();
   }, [problemSceneStarted]);
+
+  useEffect(() => {
+    const node = activationSectionRef.current;
+    if (!node || activationTimelineStarted) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && entry.intersectionRatio >= 0.35 && window.scrollY > 180) {
+          setActivationTimelineStarted(true);
+          observer.disconnect();
+        }
+      },
+      { threshold: [0, 0.35, 0.6] }
+    );
+
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [activationTimelineStarted]);
 
   return (
     <main className={cn("min-h-screen bg-[#F7F7F7] text-[#0B0B0B]", poppins.variable, "font-poppins")}>
@@ -274,28 +294,28 @@ export default function PopeyHumanTestV4Page() {
         </div>
       </section>
 
-      <section className="border-b border-black/10 bg-[#F5F5F5]">
+      <section ref={activationSectionRef} className="border-b border-black/10 bg-[#F5F5F5]">
         <div className="mx-auto max-w-6xl px-4 py-12 md:py-14">
           <p className="text-xs uppercase tracking-[0.2em] font-black text-black/55">Plan d’activation</p>
           <h2 className="text-3xl md:text-5xl font-black">Ce que vous obtenez en 30 jours</h2>
-          <div className="mt-6 rounded-2xl border border-black/10 bg-white p-5 md:p-6">
+          <div className={cn("timeline-wrap mt-6 rounded-2xl border border-black/10 bg-white p-5 md:p-6", activationTimelineStarted && "timeline-live")}>
             <div className="relative">
-              <div className="absolute left-3 top-2 bottom-2 w-[2px] bg-gradient-to-b from-[#B6FF2B] via-black/25 to-[#B6FF2B]" />
+              <div className="timeline-line absolute left-3 top-2 bottom-2 w-[2px] bg-gradient-to-b from-[#B6FF2B] via-black/25 to-[#B6FF2B]" />
               <div className="space-y-5">
-                <article className="relative pl-10">
-                  <span className="absolute left-0 top-1.5 inline-flex h-6 w-6 items-center justify-center rounded-full border border-[#B6FF2B] bg-black text-[10px] font-black text-[#B6FF2B]">1</span>
+                <article className="timeline-step timeline-step-1 relative pl-10">
+                  <span className="timeline-dot absolute left-0 top-1.5 inline-flex h-6 w-6 items-center justify-center rounded-full border border-[#B6FF2B] bg-black text-[10px] font-black text-[#B6FF2B]">1</span>
                   <p className="text-[11px] uppercase tracking-[0.12em] font-black text-black/55">J+3</p>
                   <p className="mt-1 text-lg font-black">1 partenaire complémentaire</p>
                   <p className="mt-1 text-black/70 font-medium">Partenaire validé selon votre offre et votre zone.</p>
                 </article>
-                <article className="relative pl-10">
-                  <span className="absolute left-0 top-1.5 inline-flex h-6 w-6 items-center justify-center rounded-full border border-[#B6FF2B] bg-black text-[10px] font-black text-[#B6FF2B]">2</span>
+                <article className="timeline-step timeline-step-2 relative pl-10">
+                  <span className="timeline-dot absolute left-0 top-1.5 inline-flex h-6 w-6 items-center justify-center rounded-full border border-[#B6FF2B] bg-black text-[10px] font-black text-[#B6FF2B]">2</span>
                   <p className="text-[11px] uppercase tracking-[0.12em] font-black text-black/55">J+15</p>
                   <p className="mt-1 text-lg font-black">1 offre DUO lancée</p>
                   <p className="mt-1 text-black/70 font-medium">Offre créée puis promue sur vos réseaux et ceux de Popey.</p>
                 </article>
-                <article className="relative pl-10">
-                  <span className="absolute left-0 top-1.5 inline-flex h-6 w-6 items-center justify-center rounded-full border border-[#B6FF2B] bg-black text-[10px] font-black text-[#B6FF2B]">3</span>
+                <article className="timeline-step timeline-step-3 relative pl-10">
+                  <span className="timeline-dot absolute left-0 top-1.5 inline-flex h-6 w-6 items-center justify-center rounded-full border border-[#B6FF2B] bg-black text-[10px] font-black text-[#B6FF2B]">3</span>
                   <p className="text-[11px] uppercase tracking-[0.12em] font-black text-black/55">J+30</p>
                   <p className="mt-1 text-lg font-black">Reco + commissions cadrées</p>
                   <p className="mt-1 text-black/70 font-medium">Logique de recommandation claire et commission traçable.</p>
@@ -319,7 +339,7 @@ export default function PopeyHumanTestV4Page() {
             <div className="rounded-lg border border-black/10 bg-[#F7F7F7] px-4 py-3">Une montée en valeur de vos clients actuels sans changer votre métier</div>
           </div>
           <div className="mt-5 rounded-xl border border-[#B6FF2B] bg-[#B6FF2B]/15 px-4 py-3 max-w-4xl">
-            <p className="text-sm md:text-base font-black">Exemple simple : 1 offre DUO à 1 500€ + 2 recommandations commissionnées à 250€ = 2 000€ additionnels sur 30 jours.</p>
+            <p className="text-sm md:text-base font-black">Exemple simple : 1 offre DUO à 1 500€ + 2 recommandations commissionnées à 250€ = 2 000€ additionnels sur 30 jours. Ceci est sans compter l’essentiel : les nouveaux clients que vous attirez pour un chiffre d’affaires additionnel.</p>
           </div>
         </div>
       </section>
@@ -440,6 +460,19 @@ export default function PopeyHumanTestV4Page() {
           0%, 90% { opacity: 0; transform: translateY(5px); }
           100% { opacity: 1; transform: translateY(0); }
         }
+        @keyframes timelineGrow {
+          0% { transform: scaleY(0); opacity: 0.25; }
+          100% { transform: scaleY(1); opacity: 1; }
+        }
+        @keyframes timelineStepIn {
+          0% { opacity: 0; transform: translateY(16px); filter: blur(2px); }
+          100% { opacity: 1; transform: translateY(0); filter: blur(0); }
+        }
+        @keyframes timelineDotPop {
+          0% { transform: scale(0.65); box-shadow: 0 0 0 0 rgba(182,255,43,0.6); }
+          70% { transform: scale(1.08); box-shadow: 0 0 0 8px rgba(182,255,43,0); }
+          100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(182,255,43,0); }
+        }
         .walk-man {
           animation: walkToPopey 6.8s ease-in-out 1 forwards;
         }
@@ -463,6 +496,42 @@ export default function PopeyHumanTestV4Page() {
         }
         .final-result {
           animation: revealFinalResult 6.8s ease-in-out 1 forwards;
+        }
+        .timeline-line {
+          transform-origin: top;
+          animation: timelineGrow 1.1s cubic-bezier(0.2, 0.8, 0.2, 1) 1 both;
+          animation-play-state: paused;
+        }
+        .timeline-step {
+          animation: timelineStepIn 0.75s cubic-bezier(0.2, 0.8, 0.2, 1) 1 both;
+          animation-play-state: paused;
+        }
+        .timeline-step-1 {
+          animation-delay: 0.18s;
+        }
+        .timeline-step-2 {
+          animation-delay: 0.42s;
+        }
+        .timeline-step-3 {
+          animation-delay: 0.66s;
+        }
+        .timeline-dot {
+          animation: timelineDotPop 0.55s ease-out 1 both;
+          animation-play-state: paused;
+        }
+        .timeline-step-1 .timeline-dot {
+          animation-delay: 0.24s;
+        }
+        .timeline-step-2 .timeline-dot {
+          animation-delay: 0.48s;
+        }
+        .timeline-step-3 .timeline-dot {
+          animation-delay: 0.72s;
+        }
+        .timeline-live .timeline-line,
+        .timeline-live .timeline-step,
+        .timeline-live .timeline-dot {
+          animation-play-state: running;
         }
       `}</style>
     </main>
