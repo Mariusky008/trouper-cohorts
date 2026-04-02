@@ -134,30 +134,24 @@ export default function PopeyHumanTestV4Page() {
                 <div className="absolute inset-x-0 top-4 flex items-center justify-center">
                   <p className="hero-step hero-step-1 rounded-full border border-black/15 bg-white px-3 py-1 text-[11px] font-black uppercase tracking-wide">1. Matching</p>
                   <p className="hero-step hero-step-2 ml-2 rounded-full border border-black/15 bg-white px-3 py-1 text-[11px] font-black uppercase tracking-wide">2. Offre DUO</p>
-                  <p className="hero-step hero-step-3 ml-2 rounded-full border border-[#2F7A00]/25 bg-[#E9F9D9] px-3 py-1 text-[11px] font-black uppercase tracking-wide text-[#2F7A00]">3. Reco active</p>
+                  <p className="hero-step hero-step-3 ml-2 rounded-full border border-[#2F7A00]/25 bg-[#E9F9D9] px-3 py-1 text-[11px] font-black uppercase tracking-wide text-[#2F7A00]">3. Nouveaux clients</p>
                 </div>
 
                 <div className="hero-card hero-card-left absolute left-[7%] top-[35%] w-[110px] md:w-[140px] rounded-xl border border-black/15 bg-white p-3">
-                  <p className="text-[10px] uppercase tracking-[0.18em] font-black text-black/55">Vous</p>
-                  <p className="mt-1 text-sm md:text-base font-black">Vous</p>
+                  <p className="text-sm md:text-base font-black uppercase tracking-[0.12em]">Vous</p>
                 </div>
                 <div className="hero-card hero-card-right absolute right-[7%] top-[35%] w-[110px] md:w-[140px] rounded-xl border border-black/15 bg-white p-3">
-                  <p className="text-[10px] uppercase tracking-[0.18em] font-black text-black/55">Partenaire</p>
-                  <p className="mt-1 text-sm md:text-base font-black">Partenaire clé</p>
+                  <p className="text-sm md:text-base font-black uppercase tracking-[0.12em]">Partenaire clé</p>
                 </div>
 
-                <div className="hero-hub absolute left-1/2 top-[40%] h-14 w-14 -translate-x-1/2 rounded-full border-2 border-black bg-[#B6FF2B] flex items-center justify-center text-[10px] font-black uppercase tracking-wide">Popey</div>
-                <div className="hero-path-left absolute right-1/2 top-[45.8%] w-[29%]">
-                  <div className="hero-line hero-line-left relative h-[3px] w-full rounded-full bg-black/15" />
-                  <div className="hero-token hero-token-a absolute -top-[3px] left-0 h-2.5 w-2.5 rounded-full bg-[#2F7A00]" />
+                <div className="hero-rail absolute left-[20%] right-[20%] top-[45.8%] h-[3px]">
+                  <div className="hero-line hero-line-main relative h-full w-full rounded-full bg-black/15" />
+                  <div className="hero-token hero-token-main absolute -top-[3px] left-0 h-2.5 w-2.5 rounded-full bg-[#2F7A00]" />
                 </div>
-                <div className="hero-path-right absolute left-1/2 top-[45.8%] w-[29%]">
-                  <div className="hero-line hero-line-right relative h-[3px] w-full rounded-full bg-black/15" />
-                  <div className="hero-token hero-token-b absolute -top-[3px] left-0 h-2.5 w-2.5 rounded-full bg-black" />
-                </div>
+                <div className="hero-hub absolute left-1/2 top-[40%] z-20 h-14 w-14 -translate-x-1/2 rounded-full border-2 border-black bg-[#B6FF2B] flex items-center justify-center text-[10px] font-black uppercase tracking-wide">Popey</div>
 
                 <div className="hero-status absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full border border-black/15 bg-white px-4 py-1.5">
-                  <p className="text-center text-[11px] font-black uppercase tracking-[0.16em] text-black/70">Synergie en cours d’activation</p>
+                  <p className="w-full text-center text-[11px] font-black uppercase tracking-[0.16em] text-black/70">Synergie en cours d’activation</p>
                 </div>
               </div>
             </div>
@@ -506,50 +500,46 @@ export default function PopeyHumanTestV4Page() {
           100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(182,255,43,0); }
         }
         @keyframes heroCardLeftIn {
-          0%, 8% { opacity: 0; transform: translateX(-16px); }
-          16%, 100% { opacity: 1; transform: translateX(0); }
+          0%, 10% { opacity: 0; transform: translateX(-16px); }
+          18%, 100% { opacity: 1; transform: translateX(0); }
+        }
+        @keyframes heroHubReveal {
+          0%, 24% { opacity: 0; transform: translateX(-50%) scale(0.85); }
+          34%, 100% { opacity: 1; transform: translateX(-50%) scale(1); }
+        }
+        @keyframes heroHubBeat {
+          0%, 100% { transform: translateX(-50%) scale(1); }
+          50% { transform: translateX(-50%) scale(1.05); }
         }
         @keyframes heroCardRightIn {
-          0%, 20% { opacity: 0; transform: translateX(16px); }
-          30%, 100% { opacity: 1; transform: translateX(0); }
+          0%, 46% { opacity: 0; transform: translateX(16px); }
+          56%, 100% { opacity: 1; transform: translateX(0); }
         }
-        @keyframes heroHubPulse {
-          0%, 100% { transform: translateX(-50%) scale(1); }
-          50% { transform: translateX(-50%) scale(1.08); }
+        @keyframes heroLineGrow {
+          0%, 26% { transform: scaleX(0); opacity: 0.2; }
+          38%, 100% { transform: scaleX(1); opacity: 1; }
         }
-        @keyframes heroLineGrowLeft {
-          0%, 18% { transform: scaleX(0); opacity: 0.2; }
-          36%, 100% { transform: scaleX(1); opacity: 1; }
-        }
-        @keyframes heroLineGrowRight {
-          0%, 40% { transform: scaleX(0); opacity: 0.2; }
-          58%, 100% { transform: scaleX(1); opacity: 1; }
-        }
-        @keyframes heroTokenAFlow {
-          0%, 24% { transform: translateX(0); opacity: 0; }
-          34%, 44% { transform: translateX(calc(100% - 10px)); opacity: 1; }
-          45%, 100% { transform: translateX(calc(100% - 10px)); opacity: 0; }
-        }
-        @keyframes heroTokenBFlow {
-          0%, 52% { transform: translateX(0); opacity: 0; }
-          62%, 76% { transform: translateX(calc(100% - 10px)); opacity: 1; }
-          77%, 100% { transform: translateX(calc(100% - 10px)); opacity: 0; }
+        @keyframes heroTokenFlow {
+          0%, 36% { transform: translateX(0); opacity: 0; }
+          42% { opacity: 1; }
+          72% { transform: translateX(calc(100% - 10px)); opacity: 1; }
+          82%, 100% { transform: translateX(calc(100% - 10px)); opacity: 0; }
         }
         @keyframes heroStepReveal1 {
-          0%, 8%, 100% { opacity: 0.45; }
-          14%, 34% { opacity: 1; }
+          0%, 10%, 100% { opacity: 0.45; }
+          18%, 34% { opacity: 1; }
         }
         @keyframes heroStepReveal2 {
-          0%, 28%, 100% { opacity: 0.45; }
-          38%, 58% { opacity: 1; }
+          0%, 26%, 100% { opacity: 0.45; }
+          36%, 56% { opacity: 1; }
         }
         @keyframes heroStepReveal3 {
-          0%, 52%, 100% { opacity: 0.45; }
-          62%, 88% { opacity: 1; }
+          0%, 50%, 100% { opacity: 0.45; }
+          60%, 86% { opacity: 1; }
         }
         @keyframes heroStatusReveal {
-          0%, 62% { opacity: 0; transform: translateX(-50%) translateY(4px); }
-          76%, 100% { opacity: 1; transform: translateX(-50%) translateY(0); }
+          0%, 74% { opacity: 0; transform: translateX(-50%) translateY(4px); }
+          86%, 100% { opacity: 1; transform: translateX(-50%) translateY(0); }
         }
         .walk-man {
           animation: walkToPopey 6.8s ease-in-out 1 forwards;
@@ -618,21 +608,14 @@ export default function PopeyHumanTestV4Page() {
           animation: heroCardRightIn 4.6s ease-in-out infinite;
         }
         .hero-hub {
-          animation: heroHubPulse 1.2s ease-in-out infinite;
+          animation: heroHubReveal 4.6s ease-in-out infinite, heroHubBeat 1.2s ease-in-out infinite;
         }
-        .hero-line-left {
-          transform-origin: right;
-          animation: heroLineGrowLeft 4.6s ease-in-out infinite;
-        }
-        .hero-line-right {
+        .hero-line-main {
           transform-origin: left;
-          animation: heroLineGrowRight 4.6s ease-in-out infinite;
+          animation: heroLineGrow 4.6s ease-in-out infinite;
         }
-        .hero-token-a {
-          animation: heroTokenAFlow 4.6s ease-in-out infinite;
-        }
-        .hero-token-b {
-          animation: heroTokenBFlow 4.6s ease-in-out infinite;
+        .hero-token-main {
+          animation: heroTokenFlow 4.6s ease-in-out infinite;
         }
         .hero-step-1 {
           animation: heroStepReveal1 4.6s ease-in-out infinite;
