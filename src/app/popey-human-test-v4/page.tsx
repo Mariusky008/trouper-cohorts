@@ -36,6 +36,7 @@ export default function PopeyHumanTestV4Page() {
   const [activationTimelineStarted, setActivationTimelineStarted] = useState(false);
   const problemSectionRef = useRef<HTMLElement | null>(null);
   const problemTriggerRef = useRef<HTMLDivElement | null>(null);
+  const problemAnimationRef = useRef<HTMLDivElement | null>(null);
   const activationSectionRef = useRef<HTMLElement | null>(null);
   const month = (tick % 6) + 1;
   const duoRevenue = month * 600;
@@ -58,14 +59,15 @@ export default function PopeyHumanTestV4Page() {
 
   useEffect(() => {
     const isMobile = window.matchMedia("(max-width: 767px)").matches;
-    const node = isMobile ? problemTriggerRef.current : problemSectionRef.current;
+    const node = isMobile ? problemAnimationRef.current : problemSectionRef.current;
     if (!node || problemSceneStarted) return;
 
     const observer = new IntersectionObserver(
       ([entry]) => {
         const mobileShouldStart =
           isMobile &&
-          entry.boundingClientRect.top <= 0 &&
+          entry.isIntersecting &&
+          entry.intersectionRatio >= 0.35 &&
           window.scrollY > 180;
         const desktopShouldStart =
           !isMobile &&
@@ -78,7 +80,7 @@ export default function PopeyHumanTestV4Page() {
           observer.disconnect();
         }
       },
-      { threshold: isMobile ? [0, 0.1] : [0, 0.45, 0.7] }
+      { threshold: isMobile ? [0, 0.2, 0.35, 0.6] : [0, 0.45, 0.7] }
     );
 
     observer.observe(node);
@@ -197,7 +199,7 @@ export default function PopeyHumanTestV4Page() {
               </div>
             </div>
 
-            <div className="relative p-1 md:p-2 overflow-visible mt-8 lg:mt-12">
+            <div ref={problemAnimationRef} className="relative p-1 md:p-2 overflow-visible mt-8 lg:mt-12">
               <div className="absolute -top-8 -left-8 h-28 w-28 rounded-full bg-[#B6FF2B]/20 blur-2xl" />
               <div className="mt-8 relative h-[300px] md:h-[330px] overflow-visible">
                 <div className="absolute left-0 right-0 bottom-9 h-[2px] bg-white/25" />
