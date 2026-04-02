@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Poppins } from "next/font/google";
 import { cn } from "@/lib/utils";
@@ -129,24 +130,15 @@ export default function PopeyHumanTestV4Page() {
               </a>
             </div>
             <p className="mt-4 text-xs font-bold uppercase tracking-wide text-black/70">Audit 15 min • Sur sélection</p>
-            <div className="mt-8 rounded-2xl border border-black/10 bg-gradient-to-br from-white to-[#F3F6EA] p-5 md:p-7 max-w-5xl">
-              <div className="grid gap-4 md:grid-cols-3">
-                <div className="rounded-xl border border-black/10 bg-white p-4">
-                  <p className="text-2xl">🤝</p>
-                  <p className="mt-2 text-sm font-black">Partenaire ciblé</p>
-                  <p className="mt-1 text-sm text-black/65 font-medium">Un métier complémentaire activable vite.</p>
-                </div>
-                <div className="rounded-xl border border-black/10 bg-white p-4">
-                  <p className="text-2xl">🧩</p>
-                  <p className="mt-2 text-sm font-black">Offre DUO prête</p>
-                  <p className="mt-1 text-sm text-black/65 font-medium">Une proposition simple, claire, vendable.</p>
-                </div>
-                <div className="rounded-xl border border-black/10 bg-white p-4">
-                  <p className="text-2xl">📈</p>
-                  <p className="mt-2 text-sm font-black">Revenus additionnels</p>
-                  <p className="mt-1 text-sm text-black/65 font-medium">Commissions traçables et nouveaux clients.</p>
-                </div>
-              </div>
+            <div className="mt-8 max-w-4xl rounded-2xl overflow-hidden border border-black/10 bg-[#EEF4DF]">
+              <Image
+                src="/jeanphilipperoth.jpg"
+                alt="Professionnel en situation de décision commerciale"
+                width={1400}
+                height={900}
+                className="h-[260px] md:h-[360px] w-full object-cover"
+                priority
+              />
             </div>
           </div>
         </div>
@@ -366,11 +358,11 @@ export default function PopeyHumanTestV4Page() {
       <section className="border-b border-black/10 bg-[#F5F5F5]">
         <div className="mx-auto max-w-6xl px-4 py-12 md:py-14">
           <p className="text-xs uppercase tracking-[0.2em] font-black text-black/55">Sélection de profils</p>
-          <h2 className="text-3xl md:text-5xl font-black">Pour qui / Pas pour qui</h2>
+          <h2 className="text-5xl md:text-6xl font-black leading-tight">Pour qui / Pas pour qui</h2>
           <div className="mt-6 grid md:grid-cols-2 gap-4">
             <article className="rounded-xl border border-[#2F7A00]/25 bg-white p-5">
               <p className="text-xs uppercase tracking-[0.16em] font-black text-[#2F7A00]">Pour qui</p>
-              <ul className="mt-3 space-y-1.5 text-sm font-semibold text-black/80">
+              <ul className="mt-3 space-y-2.5 text-[26px] md:text-2xl leading-[1.35] font-semibold text-black/80">
                 <li>✓ Vous avez une offre claire et vendable</li>
                 <li>✓ Vous voulez activer des synergies rapidement</li>
                 <li>✓ Vous êtes prêt à exécuter un plan simple</li>
@@ -378,7 +370,7 @@ export default function PopeyHumanTestV4Page() {
             </article>
             <article className="rounded-xl border border-black/15 bg-white p-5">
               <p className="text-xs uppercase tracking-[0.16em] font-black text-black/65">Pas pour qui</p>
-              <ul className="mt-3 space-y-1.5 text-sm font-semibold text-black/75">
+              <ul className="mt-3 space-y-2.5 text-[26px] md:text-2xl leading-[1.35] font-semibold text-black/75">
                 <li>✕ Vous cherchez un système sans action terrain</li>
                 <li>✕ Vous refusez la logique de réciprocité partenaire</li>
                 <li>✕ Vous n’avez pas encore de base d’offre solide</li>
@@ -391,12 +383,12 @@ export default function PopeyHumanTestV4Page() {
       <section className="border-b border-black/10 bg-white">
         <div className="mx-auto max-w-4xl px-4 py-14">
           <p className="text-xs uppercase tracking-[0.2em] font-black text-black/55">FAQ rapide</p>
-          <h2 className="text-3xl md:text-5xl font-black">Questions fréquentes</h2>
-          <div className="mt-6 space-y-2">
+          <h2 className="text-5xl md:text-6xl font-black leading-tight">Questions fréquentes</h2>
+          <div className="mt-7 space-y-3">
             {faqItems.map((item) => (
-              <details key={item.q} className="rounded-lg border border-black/15 bg-white px-4 py-3">
-                <summary className="cursor-pointer font-black text-sm md:text-base">{item.q}</summary>
-                <p className="mt-2 text-sm font-medium text-black/75">{item.a}</p>
+              <details key={item.q} className="rounded-xl border border-black/15 bg-white px-5 py-4">
+                <summary className="cursor-pointer font-black text-[26px] md:text-[30px] leading-[1.25]">{item.q}</summary>
+                <p className="mt-3 text-[22px] md:text-2xl leading-[1.45] font-medium text-black/75">{item.a}</p>
               </details>
             ))}
           </div>
@@ -405,15 +397,15 @@ export default function PopeyHumanTestV4Page() {
 
       <section className="border-b border-black/10 bg-[#F5F5F5]">
         <div className="mx-auto max-w-6xl px-4 py-14">
-          <h2 className="text-3xl md:text-5xl font-black max-w-4xl">Nous ne retenons pas tous les profils.</h2>
-          <p className="mt-4 text-base md:text-lg font-medium text-black/80 max-w-5xl">
+          <h2 className="text-5xl md:text-6xl font-black leading-tight max-w-5xl">Nous ne retenons pas tous les profils.</h2>
+          <p className="mt-5 text-[21px] md:text-2xl leading-[1.45] font-medium text-black/80 max-w-5xl">
             Popey fonctionne mieux avec des professionnels qui ont déjà une expertise, vendent une offre claire, comprennent la réciprocité et peuvent activer une vraie complémentarité métier.
           </p>
-          <p className="mt-4 text-base md:text-lg font-medium text-black/80 max-w-5xl">
+          <p className="mt-5 text-[21px] md:text-2xl leading-[1.45] font-medium text-black/80 max-w-5xl">
             L’Audit de Synergie sert à vérifier si votre métier est compatible, quel partenaire activer en premier, et si une synergie rentable peut être construite rapidement.
           </p>
           <div className="mt-5 rounded-xl border border-black bg-white px-4 py-3 max-w-5xl">
-            <p className="font-black">Si votre profil est validé, vous repartez avec une direction claire. Si ce n’est pas le bon moment, on vous le dira.</p>
+            <p className="text-[22px] md:text-2xl leading-[1.35] font-black">Si votre profil est validé, vous repartez avec une direction claire. Si ce n’est pas le bon moment, on vous le dira.</p>
           </div>
         </div>
       </section>
