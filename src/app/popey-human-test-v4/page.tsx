@@ -107,7 +107,11 @@ export default function PopeyHumanTestV4Page() {
             <p className="mt-6 text-lg md:text-2xl font-medium leading-relaxed text-black/75 max-w-4xl">
               Arrêtez de prospecter seul. Popey vous associe chaque mois à un partenaire stratégique et crée votre Pack Duo clé en main pour transformer l’alliance en chiffre d’affaires.
             </p>
-            <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-w-3xl">
+            <div className="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-2.5 max-w-4xl">
+              <div className="rounded-xl border border-black/10 bg-white px-5 py-4">
+                <p className="text-[10px] uppercase tracking-[0.12em] font-black text-black/60">Nbre Sphère Habitat</p>
+                <p className="mt-1 text-2xl font-black">6</p>
+              </div>
               <div className="rounded-xl border border-black/10 bg-white px-5 py-4">
                 <p className="text-[10px] uppercase tracking-[0.12em] font-black text-black/60">Pros intégrés</p>
                 <p className="mt-1 text-2xl font-black">120+</p>
@@ -117,9 +121,6 @@ export default function PopeyHumanTestV4Page() {
                 <p className="mt-1 text-2xl font-black">340+</p>
               </div>
             </div>
-            <p className="mt-3 inline-flex rounded-full border border-black/20 bg-[#B6FF2B]/30 px-4 py-1.5 text-xs md:text-sm font-black uppercase tracking-wide">
-              Objectif : activer 3 flux de revenus complémentaires en 6 mois grâce à un écosystème de 19 métiers partenaires.
-            </p>
             <div className="mt-6 flex flex-col sm:flex-row gap-3">
               <Link href="/programme-commando/postuler" className="inline-flex items-center justify-center rounded-md bg-black text-white px-6 py-3 text-sm font-black uppercase tracking-wide transition hover:translate-y-[-1px] hover:shadow-[0_8px_0_0_#B6FF2B]">
                 Je veux ma 1ère synergie rentable
