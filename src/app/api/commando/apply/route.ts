@@ -12,7 +12,7 @@ const commandApplicationSchema = z.object({
   city: z.string().trim().min(2, "Ville requise"),
   activity: z.string().trim().min(2, "Activité requise"),
   objective: z.string().trim().min(10, "Objectif trop court"),
-  availability: z.string().trim().min(1, "Disponibilité requise"),
+  availability: z.string().trim().optional().default("À définir pendant l'appel"),
 });
 
 export async function POST(request: Request) {
@@ -26,7 +26,7 @@ export async function POST(request: Request) {
       city: body?.city ?? "",
       activity: body?.activity ?? "",
       objective: body?.objective ?? "",
-      availability: body?.availability ?? "",
+      availability: body?.availability ?? "À définir pendant l'appel",
     });
 
     if (!parsed.success) {

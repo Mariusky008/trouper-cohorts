@@ -19,7 +19,6 @@ const validateForm = (form: {
   city: string;
   activity: string;
   objective: string;
-  availability: string;
 }) => {
   if (form.fullName.trim().length < 3) return "Nom complet requis";
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) return "Email invalide";
@@ -28,7 +27,6 @@ const validateForm = (form: {
   if (form.city.trim().length < 2) return "Ville requise";
   if (form.activity.trim().length < 2) return "Activité requise";
   if (form.objective.trim().length < 10) return "Objectif trop court";
-  if (form.availability.trim().length < 1) return "Disponibilité requise";
   return "";
 };
 
@@ -49,7 +47,6 @@ export default function CommandoApplyPage() {
     city: "",
     activity: "",
     objective: "",
-    availability: "",
   });
 
   const update = (key: keyof typeof form, value: string) => {
@@ -104,12 +101,12 @@ export default function CommandoApplyPage() {
             Postuler au Programme Commando
           </h1>
           <p className="mt-4 text-base md:text-lg font-medium text-white/80 max-w-3xl">
-            Renseignez vos infos pour l'étape de sélection. Si vous êtes déjà qualifié(e) après appel, le paiement se débloque immédiatement.
+            Renseignez vos infos.
           </p>
           <div className="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-2.5 max-w-4xl">
             <div className="rounded-xl border border-white/20 bg-white/5 px-4 py-3">
               <p className="text-[10px] uppercase tracking-[0.12em] font-black text-white/65">Format</p>
-              <p className="mt-1 text-lg font-black">Accompagnement 6 mois</p>
+              <p className="mt-1 text-lg font-black">Accompagnement mois par mois</p>
             </div>
             <div className="rounded-xl border border-white/20 bg-white/5 px-4 py-3">
               <p className="text-[10px] uppercase tracking-[0.12em] font-black text-white/65">Objectif</p>
@@ -117,13 +114,12 @@ export default function CommandoApplyPage() {
             </div>
             <div className="rounded-xl border border-white/20 bg-white/5 px-4 py-3">
               <p className="text-[10px] uppercase tracking-[0.12em] font-black text-white/65">Accès</p>
-              <p className="mt-1 text-lg font-black text-[#B6FF2B]">Paiement après validation</p>
+              <p className="mt-1 text-lg font-black text-[#B6FF2B]">Réservation créneau téléphonique</p>
             </div>
           </div>
           <div className="mt-5 flex flex-wrap gap-2 text-[11px] font-black uppercase tracking-wide">
             <span className="rounded-full border border-white/25 bg-white/10 px-3 py-1">1. Candidature</span>
             <span className="rounded-full border border-white/25 bg-white/10 px-3 py-1">2. Appel de sélection</span>
-            <span className="rounded-full border border-[#B6FF2B]/40 bg-[#B6FF2B]/15 px-3 py-1 text-[#B6FF2B]">3. Paiement si validé</span>
           </div>
         </div>
       </section>
@@ -153,15 +149,9 @@ export default function CommandoApplyPage() {
             </div>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="city" className="font-bold text-black/80">Ville</Label>
-              <Input id="city" className="h-12 border-black/20 bg-[#FAFAFA] focus-visible:ring-black" value={form.city} onChange={(event) => update("city", event.target.value)} required />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="availability" className="font-bold text-black/80">Disponibilité hebdo</Label>
-              <Input id="availability" className="h-12 border-black/20 bg-[#FAFAFA] focus-visible:ring-black" placeholder="Ex: 1 RDV / semaine" value={form.availability} onChange={(event) => update("availability", event.target.value)} required />
-            </div>
+          <div className="space-y-2">
+            <Label htmlFor="city" className="font-bold text-black/80">Ville</Label>
+            <Input id="city" className="h-12 border-black/20 bg-[#FAFAFA] focus-visible:ring-black" value={form.city} onChange={(event) => update("city", event.target.value)} required />
           </div>
 
           <div className="space-y-2">
@@ -170,7 +160,7 @@ export default function CommandoApplyPage() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="objective" className="font-bold text-black/80">Objectif principal sur 6 mois</Label>
+            <Label htmlFor="objective" className="font-bold text-black/80">Objectif principal du mois</Label>
             <Textarea id="objective" className="min-h-24 border-black/20 bg-[#FAFAFA] focus-visible:ring-black" minLength={10} value={form.objective} onChange={(event) => update("objective", event.target.value)} required />
           </div>
 
