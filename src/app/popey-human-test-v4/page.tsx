@@ -168,7 +168,7 @@ export default function PopeyHumanTestV4Page() {
                   <p className="hero-step hero-step-3 rounded-full border border-[#2F7A00]/25 bg-[#E9F9D9] px-3 py-1 text-[11px] font-black uppercase tracking-wide text-[#2F7A00]">3. Nouveaux clients</p>
                 </div>
 
-                <div className="hero-cards mt-4 flex items-center justify-between gap-2 md:contents">
+                <div className="hero-cards mt-4 hidden md:flex items-center justify-between gap-2 md:contents">
                   <div className="hero-card hero-card-left relative w-[44%] rounded-xl border border-black/15 bg-white px-2.5 py-2 md:absolute md:left-[7%] md:top-[35%] md:w-[140px] md:p-3">
                     <p className="text-center text-xs md:text-base font-black uppercase tracking-[0.08em] md:tracking-[0.12em]">Vous</p>
                   </div>
@@ -178,6 +178,8 @@ export default function PopeyHumanTestV4Page() {
                 </div>
 
                 <div className="hero-track relative mt-4 h-14 md:absolute md:inset-x-0 md:top-0 md:bottom-0 md:mt-0 md:h-auto">
+                  <p className="absolute left-[8%] top-0 -translate-y-[130%] rounded-full border border-black/15 bg-white px-3 py-1 text-[10px] font-black uppercase tracking-[0.1em] md:hidden">Vous</p>
+                  <p className="absolute right-[8%] top-0 -translate-y-[130%] rounded-full border border-black/15 bg-white px-3 py-1 text-[10px] font-black uppercase tracking-[0.1em] md:hidden">Partenaire clé</p>
                   <div className="hero-rail absolute left-[8%] right-[8%] top-1/2 h-[3px] -translate-y-1/2 md:left-[20%] md:right-[20%] md:top-[58%]">
                     <div className="hero-line hero-line-main relative h-full w-full rounded-full bg-black/15" />
                     <div className="hero-token hero-token-main absolute -top-[3px] left-0 h-2.5 w-2.5 rounded-full bg-[#2F7A00]" />
@@ -185,7 +187,7 @@ export default function PopeyHumanTestV4Page() {
                   <div className="hero-hub absolute left-1/2 top-1/2 z-20 h-14 w-14 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-black bg-[#B6FF2B] flex items-center justify-center text-[10px] font-black uppercase tracking-wide md:top-[58%]">Popey</div>
                 </div>
 
-                <div className="hero-status-wrap mt-4 flex justify-center md:absolute md:inset-x-0 md:bottom-4 md:mt-0">
+                <div className="hero-status-wrap mt-4 hidden md:flex justify-center md:absolute md:inset-x-0 md:bottom-4 md:mt-0">
                   <div className="hero-status rounded-full border border-black/15 bg-white px-4 py-1.5">
                     <p className="text-center text-[10px] md:text-[11px] font-black uppercase tracking-[0.08em] md:tracking-[0.16em] text-black/70">Synergie en cours d’activation</p>
                   </div>
