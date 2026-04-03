@@ -25,8 +25,24 @@ const faqItems = [
     a: "Avec des règles cadrées entre partenaires : logique d’apport, traçabilité et activation terrain.",
   },
   {
-    q: "Est-ce réservé aux profils avec grosse audience ?",
-    a: "Non. Le critère principal est votre capacité à exécuter une offre sérieuse avec un partenaire complémentaire.",
+    q: "Et si je n’ai pas une grosse audience ?",
+    a: "Ce n’est pas un prérequis. Popey privilégie la complémentarité métier, la clarté de l’offre et la capacité d’exécution terrain.",
+  },
+  {
+    q: "Et si je n’ai jamais travaillé avec un partenaire ?",
+    a: "C’est justement le rôle de Popey : cadrer la collaboration, clarifier les rôles et structurer une première offre DUO simple à lancer.",
+  },
+  {
+    q: "Est-ce que Popey me trouve le bon partenaire ou je dois le chercher moi-même ?",
+    a: "Popey identifie et active le partenaire complémentaire avec vous. Vous ne partez pas d’une recherche à froid.",
+  },
+  {
+    q: "Est-ce que l’offre DUO est créée avec moi ou je dois tout construire ?",
+    a: "L’offre DUO est co-construite avec vous, puis packagée pour être comprise et vendue facilement.",
+  },
+  {
+    q: "Est-ce que je dois passer des heures en réunions ?",
+    a: "Non. Le système est conçu pour des points courts, des actions ciblées et une exécution efficace sans alourdir votre agenda.",
   },
 ];
 
@@ -119,20 +135,20 @@ export default function PopeyHumanTestV4Page() {
               </span>
             </h1>
             <p className="mt-6 text-lg md:text-2xl font-medium leading-relaxed text-black/75 max-w-4xl">
-              Arrêtez de prospecter seul. Popey vous associe chaque mois à un partenaire stratégique et crée votre Pack Duo clé en main pour transformer l’alliance en chiffre d’affaires.
+              Vos clients achètent déjà ailleurs. Popey vous aide à récupérer cette valeur en vous associant chaque mois à un partenaire stratégique et complémentaire pour générer recommandations + commissions + chiffre d'affaires.
             </p>
             <div className="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-2.5 max-w-4xl">
               <div className="rounded-xl border border-black/10 bg-white px-5 py-4">
-                <p className="text-[10px] uppercase tracking-[0.12em] font-black text-black/60">Nbre Sphère Habitat</p>
-                <p className="mt-1 text-2xl font-black">6</p>
-              </div>
-              <div className="rounded-xl border border-black/10 bg-white px-5 py-4">
-                <p className="text-[10px] uppercase tracking-[0.12em] font-black text-black/60">Pros intégrés</p>
+                <p className="text-[10px] uppercase tracking-[0.12em] font-black text-black/60">Professionnels complémentaires intégrés</p>
                 <p className="mt-1 text-2xl font-black">120+</p>
               </div>
               <div className="rounded-xl border border-black/10 bg-white px-5 py-4">
-                <p className="text-[10px] uppercase tracking-[0.12em] font-black text-black/60">Synergies activées</p>
+                <p className="text-[10px] uppercase tracking-[0.12em] font-black text-black/60">Synergies déjà activées</p>
                 <p className="mt-1 text-2xl font-black">340+</p>
+              </div>
+              <div className="rounded-xl border border-black/10 bg-white px-5 py-4">
+                <p className="text-[10px] uppercase tracking-[0.12em] font-black text-black/60">1 objectif</p>
+                <p className="mt-1 text-sm md:text-base font-black leading-snug">Plus de CA avec le partage clients</p>
               </div>
             </div>
             <div className="mt-6 flex flex-col sm:flex-row gap-3">
@@ -249,23 +265,21 @@ export default function PopeyHumanTestV4Page() {
             <div className="rounded-xl border border-black/15 bg-[#F7F7F7] p-5">
               <p className="text-sm uppercase tracking-[0.2em] font-black text-black/60">Sans Popey</p>
               <ul className="mt-3 space-y-2 text-[18px] md:text-base font-semibold leading-[1.45] text-black/80">
-                <li>• 1 client = 1 vente</li>
-                <li>• réseau informel</li>
-                <li>• partenaires mal choisis</li>
-                <li>• recommandations aléatoires</li>
-                <li>• commissions floues ou inexistantes</li>
-                <li>• dépendance à la prospection ou au hasard</li>
+                <li>• 1 client = 1 vente… puis il part dépenser ailleurs</li>
+                <li>• vos partenaires ne pensent pas à vous au bon moment</li>
+                <li>• vos recommandations sont floues et non suivies</li>
+                <li>• vous laissez filer des commissions invisibles</li>
+                <li>• votre croissance dépend encore de la prospection</li>
               </ul>
             </div>
             <div className="rounded-xl border border-black bg-black text-white p-5">
               <p className="text-sm uppercase tracking-[0.2em] font-black text-[#B6FF2B]">Avec Popey</p>
               <ul className="mt-3 space-y-2 text-[18px] md:text-base font-semibold leading-[1.45]">
-                <li>• 1 client = 2 à 5 opportunités potentielles</li>
-                <li>• 1 partenaire complémentaire activé intelligemment</li>
-                <li>• 1 offre commune simple à vendre</li>
-                <li>• recommandations traçables</li>
-                <li>• commissions structurées</li>
-                <li>• système duplicable Mois 1 → 2 → 3</li>
+                <li>• 1 client peut déclencher plusieurs ventes complémentaires</li>
+                <li>• vous activez un partenaire qui vous renvoie aussi des clients</li>
+                <li>• vous vendez une offre DUO plus simple à comprendre</li>
+                <li>• vos recommandations sont structurées et traçables</li>
+                <li>• vous construisez une machine duplicable, pas un simple réseau</li>
               </ul>
             </div>
           </div>
@@ -376,7 +390,7 @@ export default function PopeyHumanTestV4Page() {
       <section className="border-b border-black/10 bg-white">
         <div className="mx-auto max-w-6xl px-4 py-12 md:py-14">
           <p className="text-xs uppercase tracking-[0.2em] font-black text-black/55">Exécution légère</p>
-          <h2 className="text-3xl md:text-5xl font-black max-w-4xl">Votre temps et votre planning sont ROI.</h2>
+          <h2 className="text-3xl md:text-5xl font-black max-w-4xl">Un système rentable sans alourdir votre agenda</h2>
           <p className="mt-4 text-base md:text-lg font-medium text-black/80 max-w-5xl">
             Nous ne prenons que quelques minutes de votre temps pour vous donner une marche à suivre claire, des conseils ciblés et des actions prioritaires qui augmentent votre chiffre d’affaires sans alourdir votre agenda.
           </p>
