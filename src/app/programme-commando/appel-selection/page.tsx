@@ -7,25 +7,23 @@ export default async function CommandoSelectionCallPage({
   searchParams: Promise<{ applicationId?: string }>;
 }) {
   const params = await searchParams;
-  const applicationId = params.applicationId || "";
-  const mailSubject = encodeURIComponent("Demande d'appel de sélection - Programme Commando");
-  const mailBody = encodeURIComponent(
-    `Bonjour l'équipe Popey,%0D%0A%0D%0AJe souhaite planifier mon appel de sélection pour le Programme Commando.%0D%0AApplication ID: ${applicationId || "non renseigné"}%0D%0A%0D%0AMerci.`
-  );
-  const mailtoHref = `mailto:contact@popey.academy?subject=${mailSubject}&body=${mailBody}`;
+  const applicationId = params.applicationId || "non-renseigne";
+  const whatsappHref = `https://wa.me/33768233347?text=${encodeURIComponent(
+    `Bonjour, je viens de finaliser ma candidature Programme Commando (ID: ${applicationId}). Je souhaite convenir d'une heure précise pour mon appel de sélection.`
+  )}`;
 
   return (
     <main className="min-h-screen bg-[#F7F7F7] py-14 px-4">
       <div className="max-w-2xl mx-auto bg-white rounded-[2rem] border border-black/15 p-6 md:p-10 shadow-[0_16px_35px_-24px_rgba(0,0,0,0.35)] text-center">
         <h1 className="text-3xl md:text-4xl font-black text-[#0B0B0B] mb-3">Prendre mon appel de sélection</h1>
         <p className="text-black/70 font-semibold mb-8">
-          Choisissez votre canal préféré. Notre équipe vous répond rapidement pour fixer votre créneau de qualification.
+          Le plus simple : envoyez-moi un message WhatsApp pour convenir d'une heure précise.
         </p>
 
         <div className="space-y-3">
-          <a href={mailtoHref} className="block">
+          <a href={whatsappHref} target="_blank" rel="noopener noreferrer" className="block">
             <Button className="w-full bg-black hover:bg-black/90 text-white font-black">
-              Réserver par email
+              M'envoyer un WhatsApp
             </Button>
           </a>
           <a href="tel:+33768233347" className="block">
