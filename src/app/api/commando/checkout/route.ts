@@ -23,7 +23,7 @@ export async function POST(request: Request) {
     const supabaseAdmin = createAdminClient();
     const { data: application, error: applicationError } = await supabaseAdmin
       .from("commando_applications")
-      .select("id, email, full_name")
+      .select("id, email, full_name, qualification_status")
       .eq("id", applicationId)
       .single();
 
@@ -31,6 +31,16 @@ export async function POST(request: Request) {
       return NextResponse.json(
         { error: "Candidature introuvable." },
         { status: 404 }
+      );
+    }
+
+    if (application.qualification_status !== "qualified") {
+      return NextResponse.json(
+        {
+          error: "Paiement disponible après validation de votre appel de sélection.",
+          code: "NOT_QUALIFIED",
+        },
+        { status: 403 }
       );
     }
 

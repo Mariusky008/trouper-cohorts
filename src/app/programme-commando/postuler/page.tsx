@@ -83,7 +83,11 @@ export default function CommandoApplyPage() {
       toast.error(details || result.error || "Impossible d'enregistrer votre candidature.");
       return;
     }
-    router.push(`/programme-commando/paiement?applicationId=${result.applicationId}`);
+    if (result.canPayNow) {
+      router.push(`/programme-commando/paiement?applicationId=${result.applicationId}`);
+      return;
+    }
+    router.push(`/programme-commando/eligibilite?applicationId=${result.applicationId}&status=${result.qualificationStatus || "pending_review"}`);
   };
 
   return (
@@ -100,7 +104,7 @@ export default function CommandoApplyPage() {
             Postuler au Programme Commando
           </h1>
           <p className="mt-4 text-base md:text-lg font-medium text-white/80 max-w-3xl">
-            Renseignez vos infos. Vous accédez juste après à la page de paiement Stripe (149€/mois pendant 6 mois).
+            Renseignez vos infos pour l'étape de sélection. Si vous êtes déjà qualifié(e) après appel, le paiement se débloque immédiatement.
           </p>
           <div className="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-2.5 max-w-4xl">
             <div className="rounded-xl border border-white/20 bg-white/5 px-4 py-3">
@@ -113,8 +117,13 @@ export default function CommandoApplyPage() {
             </div>
             <div className="rounded-xl border border-white/20 bg-white/5 px-4 py-3">
               <p className="text-[10px] uppercase tracking-[0.12em] font-black text-white/65">Accès</p>
-              <p className="mt-1 text-lg font-black text-[#B6FF2B]">Sur sélection</p>
+              <p className="mt-1 text-lg font-black text-[#B6FF2B]">Paiement après validation</p>
             </div>
+          </div>
+          <div className="mt-5 flex flex-wrap gap-2 text-[11px] font-black uppercase tracking-wide">
+            <span className="rounded-full border border-white/25 bg-white/10 px-3 py-1">1. Candidature</span>
+            <span className="rounded-full border border-white/25 bg-white/10 px-3 py-1">2. Appel de sélection</span>
+            <span className="rounded-full border border-[#B6FF2B]/40 bg-[#B6FF2B]/15 px-3 py-1 text-[#B6FF2B]">3. Paiement si validé</span>
           </div>
         </div>
       </section>
@@ -166,7 +175,7 @@ export default function CommandoApplyPage() {
           </div>
 
           <Button type="submit" disabled={loading} className="w-full h-12 md:h-14 bg-black hover:bg-black/90 text-white font-black text-base uppercase tracking-wide transition hover:translate-y-[-1px] hover:shadow-[0_8px_0_0_#B6FF2B]">
-            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Continuer vers le paiement"}
+            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Envoyer ma candidature"}
           </Button>
           </form>
         </div>

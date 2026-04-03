@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import Link from "next/link";
+import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -11,6 +12,22 @@ export default function CommandoPaymentPage() {
   const applicationId = searchParams.get("applicationId") || "";
   const paymentCancelled = searchParams.get("payment") === "cancelled";
   const [loading, setLoading] = useState(false);
+  const [checking, setChecking] = useState(true);
+  const [canPayNow, setCanPayNow] = useState(false);
+
+  useEffect(() => {
+    const run = async () => {
+      if (!applicationId) {
+        setChecking(false);
+        return;
+      }
+      const response = await fetch(`/api/commando/application-status?applicationId=${applicationId}`);
+      const result = await response.json();
+      setCanPayNow(Boolean(result.canPayNow));
+      setChecking(false);
+    };
+    run();
+  }, [applicationId]);
 
   const handlePay = async () => {
     if (!applicationId) {
@@ -50,13 +67,33 @@ export default function CommandoPaymentPage() {
           <p className="text-[#2E130C] font-bold mt-1">Durée: 6 mois (arrêt automatique au terme du programme)</p>
         </div>
 
-        {paymentCancelled && (
+        {paymentCancelled && canPayNow && (
           <p className="text-[#7A0000] font-bold mb-4">Paiement annulé. Vous pouvez réessayer ci-dessous.</p>
         )}
 
-        <Button onClick={handlePay} disabled={loading || !applicationId} className="w-full h-12 bg-[#B20B13] hover:bg-[#7A0000] text-[#E2D9BC] font-black border-2 border-[#2E130C]">
-          {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Payer avec Stripe"}
-        </Button>
+        {checking ? (
+          <div className="flex items-center justify-center py-3">
+            <Loader2 className="w-5 h-5 animate-spin text-[#2E130C]" />
+          </div>
+        ) : canPayNow ? (
+          <Button onClick={handlePay} disabled={loading || !applicationId} className="w-full h-12 bg-[#B20B13] hover:bg-[#7A0000] text-[#E2D9BC] font-black border-2 border-[#2E130C]">
+            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Payer avec Stripe"}
+          </Button>
+        ) : (
+          <div className="space-y-4">
+            <div className="rounded-xl border-2 border-[#2E130C] bg-white p-4 text-left">
+              <p className="text-[#2E130C] font-black">Paiement disponible après appel de sélection.</p>
+              <p className="mt-1 text-[#2E130C]/75 font-semibold">
+                Votre candidature est enregistrée. Nous devons valider votre profil avant d'activer le paiement.
+              </p>
+            </div>
+            <Link href="/contact">
+              <Button variant="outline" className="w-full border-2 border-[#2E130C] text-[#2E130C] font-black">
+                Réserver mon appel de qualification
+              </Button>
+            </Link>
+          </div>
+        )}
       </div>
     </main>
   );

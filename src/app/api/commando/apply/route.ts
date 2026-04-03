@@ -38,21 +38,76 @@ export async function POST(request: Request) {
     }
 
     const supabaseAdmin = createAdminClient();
+    const normalizedEmail = parsed.data.email.trim().toLowerCase();
+    const normalizedPhone = parsed.data.phone.trim();
+
+    const { data: existingByEmail } = await supabaseAdmin
+      .from("commando_applications")
+      .select("id, qualification_status")
+      .eq("email", normalizedEmail)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    const { data: existingByPhone } = await supabaseAdmin
+      .from("commando_applications")
+      .select("id, qualification_status")
+      .eq("phone", normalizedPhone)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    const existingApplication = existingByEmail || existingByPhone;
+
+    if (existingApplication?.id) {
+      const { data: updatedApplication, error: updateError } = await supabaseAdmin
+        .from("commando_applications")
+        .update({
+          full_name: parsed.data.fullName,
+          email: normalizedEmail,
+          phone: normalizedPhone,
+          business_name: parsed.data.businessName,
+          city: parsed.data.city,
+          activity: parsed.data.activity,
+          objective: parsed.data.objective,
+          availability: parsed.data.availability,
+          source: "homepage",
+        })
+        .eq("id", existingApplication.id)
+        .select("id, qualification_status")
+        .single();
+
+      if (updateError || !updatedApplication) {
+        return NextResponse.json(
+          { error: "Impossible de mettre à jour la candidature." },
+          { status: 500 }
+        );
+      }
+
+      return NextResponse.json({
+        success: true,
+        applicationId: updatedApplication.id,
+        canPayNow: updatedApplication.qualification_status === "qualified",
+        qualificationStatus: updatedApplication.qualification_status,
+      });
+    }
+
     const { data, error } = await supabaseAdmin
       .from("commando_applications")
       .insert({
         full_name: parsed.data.fullName,
-        email: parsed.data.email,
-        phone: parsed.data.phone,
+        email: normalizedEmail,
+        phone: normalizedPhone,
         business_name: parsed.data.businessName,
         city: parsed.data.city,
         activity: parsed.data.activity,
         objective: parsed.data.objective,
         availability: parsed.data.availability,
         status: "pending",
+        qualification_status: "pending_review",
         source: "homepage",
       })
-      .select("id")
+      .select("id, qualification_status")
       .single();
 
     if (error || !data) {
@@ -62,7 +117,12 @@ export async function POST(request: Request) {
       );
     }
 
-    return NextResponse.json({ success: true, applicationId: data.id });
+    return NextResponse.json({
+      success: true,
+      applicationId: data.id,
+      canPayNow: data.qualification_status === "qualified",
+      qualificationStatus: data.qualification_status,
+    });
   } catch {
     return NextResponse.json(
       { error: "Erreur serveur pendant la candidature." },
