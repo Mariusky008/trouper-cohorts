@@ -1,5 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { revalidatePath } from "next/cache";
+import Link from "next/link";
 import {
   Table,
   TableBody,
@@ -35,10 +36,10 @@ const QUALIFICATION_STYLES: Record<string, string> = {
 };
 
 const QUALIFICATION_LABELS: Record<string, string> = {
-  pending_review: "À qualifier",
-  call_scheduled: "Appel planifié",
-  qualified: "Qualifié",
-  rejected: "Refusé",
+  pending_review: "À traiter",
+  call_scheduled: "Appel programmé",
+  qualified: "Prêt à payer",
+  rejected: "Non retenu",
 };
 
 async function updateQualificationStatus(formData: FormData) {
@@ -59,18 +60,58 @@ async function updateQualificationStatus(formData: FormData) {
   revalidatePath("/admin/commando");
 }
 
-export default async function AdminCommandoPage() {
+export default async function AdminCommandoPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ filter?: string }>;
+}) {
+  const params = await searchParams;
+  const filter = params.filter || "all";
   const supabase = createAdminClient();
   const { data: applications } = await supabase
     .from("commando_applications")
     .select("*")
     .order("created_at", { ascending: false });
 
+  const allApplications = applications || [];
+  const readyToPayApplications = allApplications.filter((item) => item.qualification_status === "qualified");
+  const pendingReviewApplications = allApplications.filter((item) => item.qualification_status === "pending_review");
+  const scheduledCallApplications = allApplications.filter((item) => item.qualification_status === "call_scheduled");
+  const filteredApplications =
+    filter === "ready_to_pay"
+      ? readyToPayApplications
+      : filter === "pending_review"
+        ? pendingReviewApplications
+        : filter === "call_scheduled"
+          ? scheduledCallApplications
+          : allApplications;
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Candidatures Commando</h1>
-        <Badge variant="outline">{applications?.length || 0} candidatures</Badge>
+        <Badge variant="outline">{filteredApplications.length} candidatures</Badge>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2">
+        <Link href="/admin/commando">
+          <Button variant={filter === "all" ? "default" : "outline"} size="sm">Toutes ({allApplications.length})</Button>
+        </Link>
+        <Link href="/admin/commando?filter=ready_to_pay">
+          <Button variant={filter === "ready_to_pay" ? "default" : "outline"} size="sm" className={filter === "ready_to_pay" ? "" : "border-emerald-600 text-emerald-700"}>
+            Prêts à payer ({readyToPayApplications.length})
+          </Button>
+        </Link>
+        <Link href="/admin/commando?filter=pending_review">
+          <Button variant={filter === "pending_review" ? "default" : "outline"} size="sm">
+            À traiter ({pendingReviewApplications.length})
+          </Button>
+        </Link>
+        <Link href="/admin/commando?filter=call_scheduled">
+          <Button variant={filter === "call_scheduled" ? "default" : "outline"} size="sm" className={filter === "call_scheduled" ? "" : "border-blue-600 text-blue-700"}>
+            Appels programmés ({scheduledCallApplications.length})
+          </Button>
+        </Link>
       </div>
 
       <div className="border rounded-lg">
@@ -89,7 +130,7 @@ export default async function AdminCommandoPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {applications?.map((application) => (
+            {filteredApplications.map((application) => (
               <TableRow key={application.id}>
                 <TableCell className="font-bold">
                   <div>{application.full_name}</div>
@@ -137,10 +178,10 @@ export default async function AdminCommandoPage() {
                 </TableCell>
               </TableRow>
             ))}
-            {applications?.length === 0 && (
+            {filteredApplications.length === 0 && (
               <TableRow>
                 <TableCell colSpan={9} className="text-center h-24 text-muted-foreground">
-                  Aucune candidature Commando pour le moment.
+                  Aucune candidature pour ce filtre.
                 </TableCell>
               </TableRow>
             )}
