@@ -42,6 +42,15 @@ const QUALIFICATION_LABELS: Record<string, string> = {
   rejected: "Non retenu",
 };
 
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://www.popey.academy";
+
+const normalizePhoneForWhatsApp = (phone: string) => {
+  const digits = phone.replace(/\D/g, "");
+  if (digits.startsWith("33")) return digits;
+  if (digits.startsWith("0")) return `33${digits.slice(1)}`;
+  return digits;
+};
+
 async function updateQualificationStatus(formData: FormData) {
   "use server";
   const applicationId = String(formData.get("applicationId") || "");
@@ -175,6 +184,33 @@ export default async function AdminCommandoPage({
                       Refuser
                     </Button>
                   </form>
+                  {application.qualification_status === "qualified" && (
+                    <div className="mt-2 flex justify-end gap-2">
+                      <Link
+                        href={`/programme-commando/paiement?applicationId=${application.id}`}
+                        target="_blank"
+                      >
+                        <Button size="sm" className="bg-black text-white hover:bg-black/90">
+                          Lien paiement
+                        </Button>
+                      </Link>
+                      <Link
+                        href={`mailto:${application.email}?subject=${encodeURIComponent("Votre lien de paiement - Programme Commando")}&body=${encodeURIComponent(`Bonjour ${application.full_name},\n\nComme convenu, voici votre lien de paiement sécurisé :\n${APP_URL}/programme-commando/paiement?applicationId=${application.id}\n\nÀ très vite,\nÉquipe Popey`)}`}
+                      >
+                        <Button size="sm" variant="outline">
+                          Email
+                        </Button>
+                      </Link>
+                      <Link
+                        href={`https://wa.me/${normalizePhoneForWhatsApp(application.phone || "")}?text=${encodeURIComponent(`Bonjour ${application.full_name}, voici votre lien de paiement sécurisé Programme Commando : ${APP_URL}/programme-commando/paiement?applicationId=${application.id}`)}`}
+                        target="_blank"
+                      >
+                        <Button size="sm" variant="outline" className="border-emerald-600 text-emerald-700">
+                          WhatsApp
+                        </Button>
+                      </Link>
+                    </div>
+                  )}
                 </TableCell>
               </TableRow>
             ))}
