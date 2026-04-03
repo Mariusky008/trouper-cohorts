@@ -17,10 +17,17 @@ const poppins = Poppins({
 export default function CommandoPaymentPage() {
   const searchParams = useSearchParams();
   const applicationId = searchParams.get("applicationId") || "";
+  const plan = searchParams.get("plan") === "core" ? "core" : "discovery";
   const paymentCancelled = searchParams.get("payment") === "cancelled";
   const [loading, setLoading] = useState(false);
   const [checking, setChecking] = useState(true);
   const [canPayNow, setCanPayNow] = useState(false);
+  const planLabel = plan === "core" ? "Mois 2 à 6" : "Mois 1 - Découverte";
+  const planPrice = plan === "core" ? "490€ HT / mois" : "149€ HT (paiement unique)";
+  const planDuration =
+    plan === "core"
+      ? "Abonnement mensuel du mois 2 au mois 6."
+      : "Paiement unique pour démarrer le Programme 100% humain.";
 
   useEffect(() => {
     const run = async () => {
@@ -47,7 +54,7 @@ export default function CommandoPaymentPage() {
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ applicationId }),
+      body: JSON.stringify({ applicationId, plan }),
     });
     const result = await response.json();
     setLoading(false);
@@ -80,9 +87,9 @@ export default function CommandoPaymentPage() {
       <section className="py-10 md:py-14 px-4">
         <div className="max-w-2xl mx-auto rounded-2xl border border-black/15 bg-white p-6 md:p-8 shadow-[0_16px_35px_-24px_rgba(0,0,0,0.35)] text-center">
           <div className="rounded-xl border border-black/15 bg-[#F7F7F7] p-5 text-left mb-6">
-            <p className="text-sm uppercase tracking-[0.12em] font-black text-black/60">Plan sélectionné</p>
-            <p className="text-4xl font-black text-black mt-1">149€ / mois</p>
-            <p className="text-black/70 font-bold mt-1">Durée : 6 mois (arrêt automatique au terme du programme)</p>
+            <p className="text-sm uppercase tracking-[0.12em] font-black text-black/60">{planLabel}</p>
+            <p className="text-4xl font-black text-black mt-1">{planPrice}</p>
+            <p className="text-black/70 font-bold mt-1">{planDuration}</p>
           </div>
 
           {paymentCancelled && canPayNow && (

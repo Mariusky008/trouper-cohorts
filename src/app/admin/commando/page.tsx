@@ -187,22 +187,30 @@ export default async function AdminCommandoPage({
                   {application.qualification_status === "qualified" && (
                     <div className="mt-2 flex justify-end gap-2">
                       <Link
-                        href={`/programme-commando/paiement?applicationId=${application.id}`}
+                        href={`/programme-commando/paiement?applicationId=${application.id}&plan=discovery`}
                         target="_blank"
                       >
                         <Button size="sm" className="bg-black text-white hover:bg-black/90">
-                          Lien paiement
+                          Lien M1
                         </Button>
                       </Link>
                       <Link
-                        href={`mailto:${application.email}?subject=${encodeURIComponent("Votre lien de paiement - Programme 100% humain")}&body=${encodeURIComponent(`Bonjour ${application.full_name},\n\nComme convenu, voici votre lien de paiement sécurisé Programme 100% humain :\n${APP_URL}/programme-commando/paiement?applicationId=${application.id}\n\nÀ très vite,\nÉquipe Popey`)}`}
+                        href={`/programme-commando/paiement?applicationId=${application.id}&plan=core`}
+                        target="_blank"
+                      >
+                        <Button size="sm" variant="outline" className="border-black text-black">
+                          Lien M2-6
+                        </Button>
+                      </Link>
+                      <Link
+                        href={`mailto:${application.email}?subject=${encodeURIComponent("Vos liens de paiement - Programme 100% humain")}&body=${encodeURIComponent(`Bonjour ${application.full_name},\n\nComme convenu, voici vos liens de paiement sécurisés Programme 100% humain :\n\n- Mois 1 (découverte, paiement unique 149€ HT) :\n${APP_URL}/programme-commando/paiement?applicationId=${application.id}&plan=discovery\n\n- Mois 2 à 6 (490€ HT / mois) :\n${APP_URL}/programme-commando/paiement?applicationId=${application.id}&plan=core\n\nÀ très vite,\nÉquipe Popey`)}`}
                       >
                         <Button size="sm" variant="outline">
                           Email
                         </Button>
                       </Link>
                       <Link
-                        href={`https://wa.me/${normalizePhoneForWhatsApp(application.phone || "")}?text=${encodeURIComponent(`Bonjour ${application.full_name}, voici votre lien de paiement sécurisé Programme 100% humain : ${APP_URL}/programme-commando/paiement?applicationId=${application.id}`)}`}
+                        href={`https://wa.me/${normalizePhoneForWhatsApp(application.phone || "")}?text=${encodeURIComponent(`Bonjour ${application.full_name}, voici vos liens de paiement sécurisés Programme 100% humain :\n\nMois 1 (149€ HT, paiement unique) : ${APP_URL}/programme-commando/paiement?applicationId=${application.id}&plan=discovery\n\nMois 2 à 6 (490€ HT / mois) : ${APP_URL}/programme-commando/paiement?applicationId=${application.id}&plan=core`)}`}
                         target="_blank"
                       >
                         <Button size="sm" variant="outline" className="border-emerald-600 text-emerald-700">
