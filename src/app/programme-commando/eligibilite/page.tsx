@@ -26,6 +26,7 @@ export default async function CommandoEligibilityPage({
 }) {
   const params = await searchParams;
   const status = params.status || "pending_review";
+  const applicationId = params.applicationId || "";
   const content = STATUS_COPY[status] || STATUS_COPY.pending_review;
 
   return (
@@ -34,7 +35,7 @@ export default async function CommandoEligibilityPage({
         <h1 className="text-3xl md:text-4xl font-black text-[#0B0B0B] mb-3">{content.title}</h1>
         <p className="text-black/70 font-semibold mb-8">{content.description}</p>
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
-          <Link href="/contact">
+          <Link href={`/programme-commando/appel-selection${applicationId ? `?applicationId=${applicationId}` : ""}`}>
             <Button className="bg-black hover:bg-black/90 text-white font-black">
               Prendre mon appel de sélection
             </Button>

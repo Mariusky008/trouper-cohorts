@@ -87,7 +87,7 @@ export default function CommandoPaymentPage() {
                 Votre candidature est enregistrée. Nous devons valider votre profil avant d'activer le paiement.
               </p>
             </div>
-            <Link href="/contact">
+            <Link href={`/programme-commando/appel-selection${applicationId ? `?applicationId=${applicationId}` : ""}`}>
               <Button variant="outline" className="w-full border-2 border-[#2E130C] text-[#2E130C] font-black">
                 Réserver mon appel de qualification
               </Button>
