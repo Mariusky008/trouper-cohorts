@@ -178,8 +178,8 @@ export default function PopeyHumanTestV4Page() {
                 </div>
 
                 <div className="hero-track relative mt-4 h-14 md:absolute md:inset-x-0 md:top-0 md:bottom-0 md:mt-0 md:h-auto">
-                  <p className="absolute left-[8%] top-0 -translate-y-[130%] rounded-full border border-black/15 bg-white px-3 py-1 text-[10px] font-black uppercase tracking-[0.1em] md:hidden">Vous</p>
-                  <p className="absolute right-[8%] top-0 -translate-y-[130%] rounded-full border border-black/15 bg-white px-3 py-1 text-[10px] font-black uppercase tracking-[0.1em] md:hidden">Partenaire clé</p>
+                  <p className="absolute left-[8%] top-0 -translate-y-[82%] rounded-full border border-black/20 bg-[#F8FAF2] px-3 py-1 text-[10px] font-black uppercase tracking-[0.1em] text-black/85 md:hidden">Vous</p>
+                  <p className="absolute right-[8%] top-0 -translate-y-[82%] rounded-full border border-[#2F7A00]/30 bg-[#E9F9D9] px-3 py-1 text-[10px] font-black uppercase tracking-[0.1em] text-[#2F7A00] md:hidden">Partenaire clé</p>
                   <div className="hero-rail absolute left-[8%] right-[8%] top-1/2 h-[3px] -translate-y-1/2 md:left-[20%] md:right-[20%] md:top-[58%]">
                     <div className="hero-line hero-line-main relative h-full w-full rounded-full bg-black/15" />
                     <div className="hero-token hero-token-main absolute -top-[3px] left-0 h-2.5 w-2.5 rounded-full bg-[#2F7A00]" />
