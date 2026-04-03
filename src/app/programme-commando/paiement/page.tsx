@@ -69,7 +69,7 @@ export default function CommandoPaymentPage() {
             Étape finale • Paiement sécurisé
           </div>
           <h1 className="mt-4 text-4xl md:text-6xl font-black leading-[1.03]">
-            Paiement Programme Commando
+            Paiement Programme 100% humain
           </h1>
           <p className="mt-4 text-base md:text-lg font-medium text-white/80 max-w-3xl">
             Vous êtes à 1 étape de votre accompagnement 100% humain.

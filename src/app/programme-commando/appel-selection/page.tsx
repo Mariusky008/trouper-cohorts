@@ -9,7 +9,7 @@ export default async function CommandoSelectionCallPage({
   const params = await searchParams;
   const applicationId = params.applicationId || "non-renseigne";
   const whatsappHref = `https://wa.me/33768233347?text=${encodeURIComponent(
-    `Bonjour, je viens de finaliser ma candidature Programme Commando (ID: ${applicationId}). Je souhaite convenir d'une heure précise pour mon appel de sélection.`
+    `Bonjour, je viens de finaliser ma candidature Programme 100% humain (ID: ${applicationId}). Je souhaite convenir d'une heure précise pour mon appel de sélection.`
   )}`;
 
   return (

@@ -195,14 +195,14 @@ export default async function AdminCommandoPage({
                         </Button>
                       </Link>
                       <Link
-                        href={`mailto:${application.email}?subject=${encodeURIComponent("Votre lien de paiement - Programme Commando")}&body=${encodeURIComponent(`Bonjour ${application.full_name},\n\nComme convenu, voici votre lien de paiement sécurisé :\n${APP_URL}/programme-commando/paiement?applicationId=${application.id}\n\nÀ très vite,\nÉquipe Popey`)}`}
+                        href={`mailto:${application.email}?subject=${encodeURIComponent("Votre lien de paiement - Programme 100% humain")}&body=${encodeURIComponent(`Bonjour ${application.full_name},\n\nComme convenu, voici votre lien de paiement sécurisé Programme 100% humain :\n${APP_URL}/programme-commando/paiement?applicationId=${application.id}\n\nÀ très vite,\nÉquipe Popey`)}`}
                       >
                         <Button size="sm" variant="outline">
                           Email
                         </Button>
                       </Link>
                       <Link
-                        href={`https://wa.me/${normalizePhoneForWhatsApp(application.phone || "")}?text=${encodeURIComponent(`Bonjour ${application.full_name}, voici votre lien de paiement sécurisé Programme Commando : ${APP_URL}/programme-commando/paiement?applicationId=${application.id}`)}`}
+                        href={`https://wa.me/${normalizePhoneForWhatsApp(application.phone || "")}?text=${encodeURIComponent(`Bonjour ${application.full_name}, voici votre lien de paiement sécurisé Programme 100% humain : ${APP_URL}/programme-commando/paiement?applicationId=${application.id}`)}`}
                         target="_blank"
                       >
                         <Button size="sm" variant="outline" className="border-emerald-600 text-emerald-700">
