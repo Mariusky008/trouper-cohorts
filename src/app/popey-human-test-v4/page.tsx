@@ -48,6 +48,8 @@ const faqItems = [
 
 export default function PopeyHumanTestV4Page() {
   const [tick, setTick] = useState(0);
+  const [showCityModal, setShowCityModal] = useState(false);
+  const [showMetierModal, setShowMetierModal] = useState(false);
   const [problemSceneStarted, setProblemSceneStarted] = useState(false);
   const [activationTimelineStarted, setActivationTimelineStarted] = useState(false);
   const problemSectionRef = useRef<HTMLElement | null>(null);
@@ -135,8 +137,14 @@ export default function PopeyHumanTestV4Page() {
               </span>
             </h1>
             <p className="mt-6 text-lg md:text-2xl font-medium leading-relaxed text-black/75 max-w-4xl">
-              Vos clients achètent déjà ailleurs. Popey vous aide à récupérer cette valeur en vous associant chaque mois à un partenaire stratégique et complémentaire pour générer recommandations + commissions + chiffre d'affaires.
+              Vos clients achètent déjà ailleurs. Popey vous aide à récupérer cette valeur en vous associant chaque mois à un partenaire stratégique et complémentaire pour générer :
             </p>
+            <ul className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-w-4xl text-sm md:text-base font-black text-black/80">
+              <li className="rounded-lg border border-black/10 bg-white px-4 py-2">- de nouveaux clients</li>
+              <li className="rounded-lg border border-black/10 bg-white px-4 py-2">- des recommandations</li>
+              <li className="rounded-lg border border-black/10 bg-white px-4 py-2">- des commissions</li>
+              <li className="rounded-lg border border-black/10 bg-white px-4 py-2">- + de chiffre d&apos;affaires</li>
+            </ul>
             <div className="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-2.5 max-w-4xl">
               <div className="rounded-xl border border-black/10 bg-white px-5 py-4">
                 <p className="text-[10px] uppercase tracking-[0.12em] font-black text-black/60">Professionnels complémentaires intégrés</p>
@@ -153,11 +161,22 @@ export default function PopeyHumanTestV4Page() {
             </div>
             <div className="mt-6 flex flex-col sm:flex-row gap-3">
               <Link href="/programme-commando/postuler" className="inline-flex items-center justify-center rounded-md bg-black text-white px-6 py-3 text-sm font-black uppercase tracking-wide transition hover:translate-y-[-1px] hover:shadow-[0_8px_0_0_#B6FF2B]">
-                Je veux ma 1ère synergie rentable
+                Trouver mon partenaire stratégique
               </Link>
-              <a href="#parcours-v4" className="inline-flex items-center justify-center rounded-md border border-black px-6 py-3 text-sm font-black uppercase tracking-wide transition hover:bg-black hover:text-white">
-                Voir le parcours 3 mois
-              </a>
+              <button
+                type="button"
+                onClick={() => setShowCityModal(true)}
+                className="inline-flex items-center justify-center rounded-md border border-black px-6 py-3 text-sm font-black uppercase tracking-wide transition hover:bg-black hover:text-white"
+              >
+                Voir si ma ville est disponible
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowMetierModal(true)}
+                className="inline-flex items-center justify-center rounded-md border border-black px-6 py-3 text-sm font-black uppercase tracking-wide transition hover:bg-black hover:text-white"
+              >
+                Voir si mon métier est dans la liste
+              </button>
             </div>
             <p className="mt-4 text-xs font-bold uppercase tracking-wide text-black/70">Audit 15 min • Sur sélection</p>
             <div className="mt-8 max-w-4xl rounded-2xl border border-black/10 bg-[#EEF4DF] p-4 md:p-5">
@@ -329,34 +348,6 @@ export default function PopeyHumanTestV4Page() {
         </div>
       </section>
 
-      <section id="parcours-v4" className="border-b border-black/10">
-        <div className="mx-auto max-w-6xl px-4 py-12 md:py-14">
-          <h2 className="text-4xl md:text-5xl font-black">Parcours 3 mois</h2>
-          <div className="mt-8 grid md:grid-cols-3 gap-5">
-            <article className="rounded-xl border border-black/15 p-5 bg-white">
-              <p className="text-sm uppercase tracking-[0.2em] font-black text-black/60">Mois 1</p>
-              <h3 className="mt-2 text-2xl font-black">🚀 Première synergie rentable</h3>
-              <p className="mt-3 text-base font-medium leading-relaxed text-black/75">Création de votre 1er binôme et de votre offre DUO. Nous la créons entièrement pour vous et nous nous occupons de votre communication. Objectif : aller chercher des clients que vous n’avez pas encore.</p>
-            </article>
-            <article className="rounded-xl border border-black/15 p-5 bg-white">
-              <p className="text-sm uppercase tracking-[0.2em] font-black text-black/60">Mois 2</p>
-              <h3 className="mt-2 text-2xl font-black">🔁 Duplication</h3>
-              <p className="mt-3 text-base font-medium leading-relaxed text-black/75">2e partenaire, 2e source de revenu, recommandations en chaîne.</p>
-            </article>
-            <article className="rounded-xl border border-black/15 p-5 bg-white">
-              <p className="text-sm uppercase tracking-[0.2em] font-black text-black/60">Mois 3</p>
-              <h3 className="mt-2 text-2xl font-black">🌐 Ouverture de la sphère</h3>
-              <p className="mt-3 text-base font-medium leading-relaxed text-black/75">Vous rejoignez l’ensemble des 20 métiers qui constituent toute la chaîne client. C’est à partir de là que la chaîne de recommandations s’active : 10% pour les apporteurs d’affaires et des clients pour ceux qui acceptent les mises en relation.</p>
-            </article>
-          </div>
-          <div className="mt-6">
-            <Link href="/programme-commando/postuler" className="inline-flex items-center justify-center rounded-md bg-black text-white px-6 py-3 text-sm font-black uppercase tracking-wide transition hover:translate-y-[-1px] hover:shadow-[0_8px_0_0_#B6FF2B]">
-              Postuler à l’Audit de Synergie
-            </Link>
-          </div>
-        </div>
-      </section>
-
       <section ref={activationSectionRef} className="border-b border-black/10 bg-[#F5F5F5]">
         <div className="mx-auto max-w-6xl px-4 py-12 md:py-14">
           <p className="text-sm uppercase tracking-[0.2em] font-black text-black/55">Plan d’activation</p>
@@ -482,6 +473,64 @@ export default function PopeyHumanTestV4Page() {
           Postuler à l’Audit de Synergie
         </Link>
       </div>
+
+      {showCityModal && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/60 p-4">
+          <div className="w-full max-w-md rounded-2xl border border-black/10 bg-white p-5">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-xs font-black uppercase tracking-[0.14em] text-black/55">Disponibilité ville</p>
+                <h3 className="mt-1 text-2xl font-black">Villes actuellement ouvertes</h3>
+              </div>
+              <button onClick={() => setShowCityModal(false)} className="rounded-md border border-black/15 px-2 py-1 text-xs font-black uppercase tracking-wide">
+                Fermer
+              </button>
+            </div>
+            <div className="mt-4 rounded-xl border border-[#2F7A00]/20 bg-[#E9F9D9] px-4 py-3">
+              <p className="text-xs uppercase tracking-[0.12em] font-black text-[#2F7A00]">Ville disponible</p>
+              <p className="mt-1 text-xl font-black text-[#1E4F00]">Bordeaux</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showMetierModal && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/60 p-4">
+          <div className="w-full max-w-2xl rounded-2xl border border-black/10 bg-white p-5">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-xs font-black uppercase tracking-[0.14em] text-black/55">Sphère habitat</p>
+                <h3 className="mt-1 text-2xl font-black">20 métiers de la liste actuelle</h3>
+              </div>
+              <button onClick={() => setShowMetierModal(false)} className="rounded-md border border-black/15 px-2 py-1 text-xs font-black uppercase tracking-wide">
+                Fermer
+              </button>
+            </div>
+            <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm font-bold text-black/80">
+              <p className="rounded-lg border border-black/10 bg-[#F7F7F7] px-3 py-2">Agent immobilier</p>
+              <p className="rounded-lg border border-black/10 bg-[#F7F7F7] px-3 py-2">Courtier</p>
+              <p className="rounded-lg border border-black/10 bg-[#F7F7F7] px-3 py-2">Notaire</p>
+              <p className="rounded-lg border border-black/10 bg-[#F7F7F7] px-3 py-2">Diagnostiqueur immobilier</p>
+              <p className="rounded-lg border border-black/10 bg-[#F7F7F7] px-3 py-2">Assureur</p>
+              <p className="rounded-lg border border-black/10 bg-[#F7F7F7] px-3 py-2">Architecte d'intérieur</p>
+              <p className="rounded-lg border border-black/10 bg-[#F7F7F7] px-3 py-2">Architecte</p>
+              <p className="rounded-lg border border-black/10 bg-[#F7F7F7] px-3 py-2">Maître d'oeuvre</p>
+              <p className="rounded-lg border border-black/10 bg-[#F7F7F7] px-3 py-2">Artisan rénovation</p>
+              <p className="rounded-lg border border-black/10 bg-[#F7F7F7] px-3 py-2">Électricien</p>
+              <p className="rounded-lg border border-black/10 bg-[#F7F7F7] px-3 py-2">Plombier</p>
+              <p className="rounded-lg border border-black/10 bg-[#F7F7F7] px-3 py-2">Menuisier</p>
+              <p className="rounded-lg border border-black/10 bg-[#F7F7F7] px-3 py-2">Cuisiniste</p>
+              <p className="rounded-lg border border-black/10 bg-[#F7F7F7] px-3 py-2">Home stager</p>
+              <p className="rounded-lg border border-black/10 bg-[#F7F7F7] px-3 py-2">Photographe immobilier</p>
+              <p className="rounded-lg border border-black/10 bg-[#F7F7F7] px-3 py-2">Déménageur</p>
+              <p className="rounded-lg border border-black/10 bg-[#F7F7F7] px-3 py-2">Conciergerie privée</p>
+              <p className="rounded-lg border border-black/10 bg-[#F7F7F7] px-3 py-2">Décorateur</p>
+              <p className="rounded-lg border border-black/10 bg-[#F7F7F7] px-3 py-2">Expert-comptable</p>
+              <p className="rounded-lg border border-black/10 bg-[#F7F7F7] px-3 py-2">Avocat immobilier</p>
+            </div>
+          </div>
+        </div>
+      )}
       <style jsx global>{`
         @keyframes walkToPopey {
           0% { transform: translateX(0) translateY(0); opacity: 1; }
