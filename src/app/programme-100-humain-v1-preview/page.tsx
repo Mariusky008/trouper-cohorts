@@ -14,9 +14,9 @@ type ScreenProps = {
 
 function Screen({ title, subtitle, children }: ScreenProps) {
   return (
-    <section className="w-full max-w-[360px] rounded-[28px] border border-black/15 bg-white p-4 shadow-[0_20px_40px_-24px_rgba(0,0,0,0.45)]">
+    <section className="w-full max-w-[390px] rounded-[28px] border border-black/15 bg-white p-4 shadow-[0_20px_40px_-24px_rgba(0,0,0,0.45)]">
       <div className="mb-4 rounded-2xl bg-black px-4 py-3 text-white">
-        <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[#B6FF2B]">V1 Preview</p>
+        <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[#B6FF2B]">V2 WhatsApp-First</p>
         <h2 className="mt-1 text-xl font-black leading-tight">{title}</h2>
         <p className="mt-1 text-sm font-medium text-white/80">{subtitle}</p>
       </div>
@@ -25,11 +25,17 @@ function Screen({ title, subtitle, children }: ScreenProps) {
   );
 }
 
-function Kpi({ label, value }: { label: string; value: string }) {
+function Stat({ label, value, tone = "default" }: { label: string; value: string; tone?: "default" | "danger" | "good" }) {
+  const toneClass =
+    tone === "danger"
+      ? "bg-rose-50 border-rose-200 text-rose-800"
+      : tone === "good"
+        ? "bg-emerald-50 border-emerald-200 text-emerald-800"
+        : "bg-[#F7F7F7] border-black/10 text-black";
   return (
-    <div className="rounded-xl border border-black/10 bg-[#F7F7F7] px-3 py-2">
-      <p className="text-[10px] font-black uppercase tracking-[0.12em] text-black/50">{label}</p>
-      <p className="mt-0.5 text-sm font-black text-black">{value}</p>
+    <div className={`rounded-xl border px-3 py-2 ${toneClass}`}>
+      <p className="text-[10px] font-black uppercase tracking-[0.12em] opacity-70">{label}</p>
+      <p className="mt-0.5 text-sm font-black">{value}</p>
     </div>
   );
 }
@@ -37,113 +43,103 @@ function Kpi({ label, value }: { label: string; value: string }) {
 export default function Programme100HumainV1PreviewPage() {
   return (
     <main className={`${poppins.variable} font-poppins min-h-screen bg-[#F3F3F3] px-4 py-10 text-[#0B0B0B]`}>
-      <div className="mx-auto max-w-6xl">
+      <div className="mx-auto max-w-7xl">
         <div className="mb-8 rounded-2xl border border-black/15 bg-white p-5 shadow-sm">
           <p className="text-xs font-black uppercase tracking-[0.14em] text-black/55">Prototype visuel</p>
-          <h1 className="mt-2 text-3xl md:text-4xl font-black leading-[1.05]">Programme 100% humain - V1 écran par écran</h1>
+          <h1 className="mt-2 text-3xl md:text-4xl font-black leading-[1.05]">Programme 100% humain - V2 WhatsApp-first</h1>
           <p className="mt-2 text-sm md:text-base font-medium text-black/70">
-            Version maquette sans fonctionnalités. Objectif : valider le design, la lisibilité et la structure du parcours.
+            Les membres restent sur WhatsApp. L'app sert de cockpit opérateur pour piloter plusieurs duos, détecter les retards et industrialiser les preuves.
           </p>
         </div>
 
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          <Screen title="1. Aujourd'hui" subtitle="Une mission claire, rien d'autre.">
-            <div className="space-y-3">
-              <div className="rounded-xl border border-black/15 bg-[#F7F7F7] p-3">
-                <p className="text-[11px] font-black uppercase tracking-[0.12em] text-black/55">Mission du jour</p>
-                <p className="mt-1 text-base font-black">Créer votre Offre Duo en 1 phrase vendable.</p>
-                <p className="mt-1 text-sm font-semibold text-black/65">Durée estimée: 35 min</p>
-              </div>
-              <div className="rounded-xl border border-[#B6FF2B]/50 bg-[#F4FFE2] p-3">
-                <p className="text-[11px] font-black uppercase tracking-[0.12em] text-[#2F7A00]">Livrable attendu</p>
-                <p className="mt-1 text-sm font-bold text-[#1C4F00]">Nom + promesse + script DM validés.</p>
-              </div>
-              <button className="h-11 w-full rounded-xl bg-black text-sm font-black uppercase tracking-wide text-white hover:bg-black/90">
-                Marquer comme terminé
+          <Screen title="1. Cockpit Jour" subtitle="Vue globale des duos en 10 secondes.">
+            <div className="space-y-2.5">
+              <Stat label="Duos actifs" value="8 duos" />
+              <Stat label="Alertes rouges" value="3 duos sans action depuis 48h" tone="danger" />
+              <Stat label="Traction du jour" value="6 RDV pris / 2 offres envoyées" tone="good" />
+              <button className="h-11 w-full rounded-xl bg-black text-xs font-black uppercase tracking-wide text-white">
+                Ouvrir les priorités du jour
               </button>
             </div>
           </Screen>
 
-          <Screen title="2. Check-list" subtitle="Action -> Livrable -> KPI.">
+          <Screen title="2. File Priorités" subtitle="Qui contacter maintenant sur WhatsApp.">
             <div className="space-y-2.5">
-              <div className="flex items-start gap-2 rounded-xl border border-black/10 p-3">
-                <span className="mt-0.5 h-4 w-4 rounded-full border-2 border-black/30" />
-                <p className="text-sm font-semibold">Offre exprimée en moins de 7 secondes</p>
+              <div className="rounded-xl border border-rose-200 bg-rose-50 p-3">
+                <p className="text-xs font-black uppercase tracking-[0.12em] text-rose-800">Urgent</p>
+                <p className="mt-1 text-sm font-bold text-rose-900">Duo Habitat 03 - pas de relance depuis 3 jours</p>
+                <button className="mt-2 h-8 rounded-lg bg-black px-3 text-[11px] font-black uppercase tracking-wide text-white">Envoyer rappel WhatsApp</button>
               </div>
-              <div className="flex items-start gap-2 rounded-xl border border-black/10 p-3">
-                <span className="mt-0.5 h-4 w-4 rounded-full border-2 border-black/30" />
-                <p className="text-sm font-semibold">1 phrase Instagram prête</p>
+              <div className="rounded-xl border border-amber-200 bg-amber-50 p-3">
+                <p className="text-xs font-black uppercase tracking-[0.12em] text-amber-800">À traiter</p>
+                <p className="mt-1 text-sm font-bold text-amber-900">Duo Immo 01 - script J18 non validé</p>
               </div>
-              <div className="flex items-start gap-2 rounded-xl border border-black/10 p-3">
-                <span className="mt-0.5 h-4 w-4 rounded-full border-2 border-black/30" />
-                <p className="text-sm font-semibold">1 script DM prêt à envoyer</p>
-              </div>
-              <p className="pt-1 text-xs font-bold uppercase tracking-[0.12em] text-rose-700">Retard: 0 jour</p>
             </div>
           </Screen>
 
-          <Screen title="3. Duo" subtitle="Le binôme et son cap commun.">
-            <div className="space-y-3">
+          <Screen title="3. Fiche Duo" subtitle="Tout en une page: mission, preuves, KPI.">
+            <div className="space-y-2.5">
               <div className="rounded-xl border border-black/10 bg-[#F7F7F7] p-3">
-                <p className="text-sm font-black">Jean Philippe + Jérémy</p>
-                <p className="mt-1 text-sm font-semibold text-black/65">Sphère Habitat • Zone: Dax</p>
+                <p className="text-sm font-black">Jean Philippe + Jeremy</p>
+                <p className="mt-1 text-sm font-semibold text-black/65">Sphère Habitat • Semaine 3 • Jour 18</p>
               </div>
               <div className="rounded-xl border border-black/10 p-3">
-                <p className="text-[11px] font-black uppercase tracking-[0.12em] text-black/55">Promesse duo</p>
-                <p className="mt-1 text-sm font-bold">Évitez 3 mois de visites inutiles avant d'acheter.</p>
+                <p className="text-[11px] font-black uppercase tracking-[0.12em] text-black/55">Mission active</p>
+                <p className="mt-1 text-sm font-bold">Formaliser le script de traitement des leads (réponse &lt; 30 min).</p>
               </div>
               <div className="grid grid-cols-2 gap-2">
-                <Kpi label="Réactivité" value="< 4h" />
-                <Kpi label="Score Duo" value="82 / 100" />
+                <Stat label="Leads" value="14" />
+                <Stat label="RDV" value="4" />
               </div>
             </div>
           </Screen>
 
-          <Screen title="4. Pipeline" subtitle="Simple: chaud, tiède, long terme.">
+          <Screen title="4. Ops WhatsApp" subtitle="Console d'envoi et relance guidée.">
             <div className="space-y-2.5">
-              <div className="rounded-xl border border-emerald-300 bg-emerald-50 p-3">
-                <p className="text-[11px] font-black uppercase tracking-[0.12em] text-emerald-800">Chaud • 4</p>
-                <p className="mt-1 text-sm font-bold text-emerald-900">2 RDV prévus cette semaine</p>
+              <div className="rounded-xl border border-black/10 p-3">
+                <p className="text-[11px] font-black uppercase tracking-[0.12em] text-black/55">Template du jour</p>
+                <p className="mt-1 text-sm font-semibold text-black/80">
+                  "Salut, je te relance rapidement sur ton projet. On te propose un point de 15 min pour valider le plan d'action."
+                </p>
               </div>
-              <div className="rounded-xl border border-amber-300 bg-amber-50 p-3">
-                <p className="text-[11px] font-black uppercase tracking-[0.12em] text-amber-800">Tiède • 7</p>
-                <p className="mt-1 text-sm font-bold text-amber-900">Relance DM sous 24h</p>
+              <div className="grid grid-cols-2 gap-2">
+                <button className="h-9 rounded-lg border border-black/20 bg-white text-[11px] font-black uppercase">Copier</button>
+                <button className="h-9 rounded-lg bg-black text-[11px] font-black uppercase text-white">Ouvrir WhatsApp</button>
               </div>
-              <div className="rounded-xl border border-slate-300 bg-slate-50 p-3">
-                <p className="text-[11px] font-black uppercase tracking-[0.12em] text-slate-700">Long terme • 12</p>
-                <p className="mt-1 text-sm font-bold text-slate-800">Nurturing contenu</p>
-              </div>
+              <Stat label="Objectif J" value="10 relances envoyées" />
             </div>
           </Screen>
 
-          <Screen title="5. Preuves" subtitle="Ce qui crédibilise et convertit.">
+          <Screen title="5. Mur de Preuves" subtitle="Centraliser tout ce qui convertit.">
             <div className="space-y-2.5">
-              <div className="rounded-xl border border-black/10 p-3">
-                <p className="text-sm font-black">Mini étude de cas #01</p>
-                <p className="mt-1 text-sm font-semibold text-black/65">Client bloqué -&gt; duo activé -&gt; RDV signé en 48h.</p>
+              <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3">
+                <p className="text-xs font-black uppercase tracking-[0.12em] text-emerald-800">Nouveau</p>
+                <p className="mt-1 text-sm font-bold text-emerald-900">Témoignage vidéo client - Duo Habitat 02</p>
               </div>
               <div className="rounded-xl border border-black/10 p-3">
-                <p className="text-sm font-black">Témoignage vidéo (30 sec)</p>
-                <p className="mt-1 text-sm font-semibold text-black/65">“On a arrêté de prospecter dans le vide.”</p>
+                <p className="text-sm font-black">Capture WhatsApp “merci, super réactifs”</p>
+                <p className="mt-1 text-sm font-semibold text-black/65">Tag: Réactivité • Semaine 2</p>
               </div>
               <button className="h-10 w-full rounded-xl border border-black/20 bg-white text-xs font-black uppercase tracking-wide">
-                Ajouter une preuve
+                Publier sur le mur social
               </button>
             </div>
           </Screen>
 
-          <Screen title="6. Score Mois 1" subtitle="Pilotage orienté résultats, pas vanity.">
-            <div className="grid grid-cols-2 gap-2.5">
-              <Kpi label="Leads" value="18" />
-              <Kpi label="RDV" value="6" />
-              <Kpi label="Offres" value="3" />
-              <Kpi label="Signatures" value="1" />
-              <Kpi label="Temps réponse" value="26 min" />
-              <Kpi label="Reco croisées" value="7" />
-            </div>
-            <div className="mt-3 rounded-xl border border-[#B6FF2B]/40 bg-[#F4FFE2] p-3">
-              <p className="text-[11px] font-black uppercase tracking-[0.12em] text-[#2F7A00]">Décision fin de mois</p>
-              <p className="mt-1 text-sm font-bold text-[#1C4F00]">Traction validée -&gt; ouverture Duo 2</p>
+          <Screen title="6. Bilan & Scale" subtitle="Décider quoi ouvrir au mois suivant.">
+            <div className="space-y-2.5">
+              <div className="grid grid-cols-2 gap-2">
+                <Stat label="CA pipeline" value="27k EUR" tone="good" />
+                <Stat label="Duo en risque" value="2" tone="danger" />
+              </div>
+              <div className="rounded-xl border border-black/10 p-3">
+                <p className="text-[11px] font-black uppercase tracking-[0.12em] text-black/55">Décision recommandée</p>
+                <p className="mt-1 text-sm font-bold">Ouvrir Duo 2 sur notaire + assurance</p>
+              </div>
+              <button className="h-10 w-full rounded-xl bg-black text-xs font-black uppercase tracking-wide text-white">
+                Générer plan mois 2
+              </button>
             </div>
           </Screen>
         </div>
