@@ -327,32 +327,6 @@ export default function QuizStatutBusinessPage() {
         </div>
       </section>
 
-      <section className="border-b border-black/10 bg-[#FBF9F5]">
-        <div className="mx-auto max-w-5xl px-4 py-12">
-          <p className="text-[11px] uppercase tracking-[0.14em] font-black text-[#6B1E22]/80">Problème de position</p>
-          <h2 className="text-2xl md:text-4xl font-black leading-tight">
-            La plupart des indépendants pensent qu’ils manquent de visibilité.
-            <br />
-            En réalité, ils manquent surtout de position.
-          </h2>
-          <p className="mt-5 text-base md:text-lg font-medium leading-relaxed text-black/75">
-            On peut être :
-            <br />
-            très compétent… mais invisible
-            <br />
-            très actif… mais mal entouré
-            <br />
-            très connu… mais pas rentable
-            <br />
-            très recommandé… mais sans aucun contrôle
-            <br />
-            <br />
-            Chez Popey, on ne vous aide pas seulement à “trouver plus de clients”.
-            On vous aide à comprendre le rôle que votre marché vous fait jouer… puis à en changer.
-          </p>
-        </div>
-      </section>
-
       <section ref={quizRef} className="border-b border-black/10 bg-white">
         <div className="mx-auto max-w-4xl px-4 py-12 md:py-14">
           <div className="rounded-[24px] border border-black/10 bg-white p-5 md:p-7 shadow-[0_20px_45px_-26px_rgba(0,0,0,0.45)]">
