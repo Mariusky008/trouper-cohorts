@@ -188,6 +188,13 @@ const PYRAMID_LEVELS = [
   { label: "L’Invisible", width: "w-full", tone: "bg-[#F7E9EA] text-[#2A1112]" },
 ];
 
+const STATUS_BY_LETTER: Record<Letter, string> = {
+  A: "L’Invisible",
+  B: "Le Chasseur de Miettes",
+  C: "Le Recommandé",
+  D: "Le Technicien Solo",
+};
+
 const PRIMARY_CTA = "Trouver mon partenaire stratégique";
 
 export default function QuizStatutBusinessPage() {
@@ -197,6 +204,7 @@ export default function QuizStatutBusinessPage() {
   const [selectedOption, setSelectedOption] = useState<Letter | null>(null);
   const [isAdvancing, setIsAdvancing] = useState(false);
   const quizRef = useRef<HTMLElement | null>(null);
+  const analysisRef = useRef<HTMLDivElement | null>(null);
 
   const isComplete = answers.every(Boolean);
   const progress = isComplete ? 100 : Math.round(((currentIndex + 1) / QUESTIONS.length) * 100);
@@ -220,6 +228,7 @@ export default function QuizStatutBusinessPage() {
   }, [answers]);
 
   const result = RESULT_MAP[computedLetter];
+  const currentStatusLabel = STATUS_BY_LETTER[computedLetter];
 
   const startQuiz = () => {
     setStarted(true);
@@ -435,7 +444,7 @@ export default function QuizStatutBusinessPage() {
 
             {started && isComplete && (
               <div className="space-y-6 animate-[fadeIn_.25s_ease-out]">
-                <div className="rounded-2xl border border-[#6B1E22]/20 bg-gradient-to-br from-[#6B1E22]/12 to-white p-5">
+                <div ref={analysisRef} className="rounded-2xl border border-[#6B1E22]/20 bg-gradient-to-br from-[#6B1E22]/12 to-white p-5">
                   <p className="text-[11px] uppercase tracking-[0.14em] font-black text-[#6B1E22]">Résultat</p>
                   <h3 className="mt-1 text-2xl md:text-4xl font-black leading-tight">{result.title}</h3>
                   <p className="mt-3 text-base md:text-xl font-bold text-black/85">{result.impact}</p>
@@ -486,45 +495,25 @@ export default function QuizStatutBusinessPage() {
 
       {started && isComplete && (
         <>
-          <section className="border-b border-black/10 bg-[#FBF9F5]">
-            <div className="mx-auto max-w-5xl px-4 py-12">
-              <p className="text-[11px] uppercase tracking-[0.14em] font-black text-[#6B1E22]/80">Repositionnement</p>
-              <h2 className="text-2xl md:text-4xl font-black leading-tight">
-                Le problème n’est pas votre talent.
-                <br />
-                Le problème, c’est la place que votre marché vous a donnée.
-              </h2>
-              <p className="mt-5 text-base md:text-lg font-medium leading-relaxed text-black/75">
-                Chez Popey, nous aidons les indépendants, experts et entrepreneurs locaux à passer :
-                <br />
-                de l’invisible à l’identifiable
-                <br />
-                du hasard à la recommandation structurée
-                <br />
-                du réseau flou à l’écosystème rentable
-                <br />
-                du bon professionnel… à la référence locale
-              </p>
-            </div>
-          </section>
-
           <section className="border-b border-black/10 bg-white">
             <div className="mx-auto max-w-5xl px-4 py-12">
               <p className="text-[11px] uppercase tracking-[0.14em] font-black text-[#6B1E22]/80">Promesse Popey</p>
               <h2 className="text-3xl md:text-5xl font-black leading-tight">
-                Ne cherchez plus vos clients.
+                Ne cherchez plus seulement des clients.
                 <br />
-                Allez là où ils sont déjà.
+                Construisez votre statut local.
               </h2>
               <p className="mt-5 text-base md:text-lg font-medium leading-relaxed text-black/75">
-                Vos futurs clients achètent déjà ailleurs.
-                Chez Popey, nous vous connectons à des partenaires stratégiques et complémentaires capables de vous recommander au bon moment, au bon client, avec le bon niveau de confiance.
+                Vos futurs clients achètent déjà ailleurs, mais votre enjeu principal est d’être la personne
+                que le marché cite en premier au bon moment.
+                Chez Popey, nous vous connectons à des partenaires stratégiques pour vous faire passer
+                d’un statut subi à une position locale choisie, crédible et dominante.
               </p>
               <div className="mt-4 grid gap-2 sm:grid-cols-2 text-sm font-bold text-black/80">
-                <p className="rounded-lg border border-black/10 bg-white px-3 py-2">Plus de recommandations</p>
-                <p className="rounded-lg border border-black/10 bg-white px-3 py-2">Plus d’opportunités</p>
-                <p className="rounded-lg border border-black/10 bg-white px-3 py-2">Plus de valeur par client</p>
-                <p className="rounded-lg border border-black/10 bg-white px-3 py-2">Plus de position dans votre ville</p>
+                <p className="rounded-lg border border-black/10 bg-white px-3 py-2">Plus de centralité dans votre ville</p>
+                <p className="rounded-lg border border-black/10 bg-white px-3 py-2">Plus de recommandations maîtrisées</p>
+                <p className="rounded-lg border border-black/10 bg-white px-3 py-2">Plus de confiance perçue</p>
+                <p className="rounded-lg border border-black/10 bg-white px-3 py-2">Plus de part de marché locale</p>
               </div>
               <div className="mt-6">
                 <Link
@@ -536,36 +525,46 @@ export default function QuizStatutBusinessPage() {
               </div>
             </div>
           </section>
+          <section className="border-b border-black/10 bg-[#FBF9F5]">
+            <div className="mx-auto max-w-6xl px-4 py-12">
+              <div className="max-w-4xl">
+                <p className="text-[11px] uppercase tracking-[0.14em] font-black text-[#6B1E22]/80">Pyramide des statuts</p>
+                <h2 className="text-2xl md:text-4xl font-black">Les 8 niveaux de statut business local</h2>
+                <p className="mt-2 text-sm md:text-base font-medium text-black/70">
+                  Vous venez de terminer le quiz. Voici où vous vous situez aujourd&apos;hui dans la pyramide.
+                  Le niveau qui capte la plus grande part du marché est tout en haut : <span className="font-black">L’Ambassadeur / Mentor</span>.
+                </p>
+              </div>
+              <div className="mt-8 flex flex-col items-center gap-2.5 animate-[fadeIn_.35s_ease-out]">
+                {PYRAMID_LEVELS.map((level) => (
+                  <div key={level.label} className="w-full flex flex-col items-center">
+                    {level.label === currentStatusLabel && (
+                      <button
+                        onClick={() => analysisRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })}
+                        className="mb-2 inline-flex items-center gap-2 rounded-full border border-[#6B1E22]/30 bg-white px-3 py-1 text-[11px] font-black uppercase tracking-[0.1em] text-[#6B1E22]"
+                      >
+                        ↘ Vous êtes là • Cliquez pour voir votre analyse
+                      </button>
+                    )}
+                    <div
+                      className={`${level.width} ${level.tone} rounded-lg px-4 py-2.5 text-center text-xs md:text-sm font-black shadow-sm transition hover:scale-[1.01] ${
+                        level.label === currentStatusLabel ? "ring-2 ring-[#6B1E22]/40" : ""
+                      }`}
+                    >
+                      {level.label}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-5 grid sm:grid-cols-3 gap-2.5 text-xs font-bold uppercase tracking-[0.1em] text-black/60">
+                <div className="rounded-lg border border-black/10 bg-white px-3 py-2 text-center">Base : visibilité faible</div>
+                <div className="rounded-lg border border-black/10 bg-white px-3 py-2 text-center">Milieu : réseau actif</div>
+                <div className="rounded-lg border border-black/10 bg-white px-3 py-2 text-center">Sommet : autorité locale</div>
+              </div>
+            </div>
+          </section>
         </>
       )}
-
-      <section className="border-b border-black/10 bg-[#FBF9F5]">
-        <div className="mx-auto max-w-6xl px-4 py-12">
-          <div className="max-w-4xl">
-            <p className="text-[11px] uppercase tracking-[0.14em] font-black text-[#6B1E22]/80">Pyramide des statuts</p>
-            <h2 className="text-2xl md:text-4xl font-black">Les 8 niveaux de statut business local</h2>
-            <p className="mt-2 text-sm md:text-base font-medium text-black/70">
-              Plus vous montez dans la pyramide, plus vous captez la confiance, les recommandations et la part de marché.
-              Le niveau qui prend la plus grande part du marché est tout en haut : <span className="font-black">L’Ambassadeur / Mentor</span>.
-            </p>
-          </div>
-          <div className="mt-8 flex flex-col items-center gap-2.5 animate-[fadeIn_.35s_ease-out]">
-            {PYRAMID_LEVELS.map((level) => (
-              <div
-                key={level.label}
-                className={`${level.width} ${level.tone} rounded-lg px-4 py-2.5 text-center text-xs md:text-sm font-black shadow-sm transition hover:scale-[1.01]`}
-              >
-                {level.label}
-              </div>
-            ))}
-          </div>
-          <div className="mt-5 grid sm:grid-cols-3 gap-2.5 text-xs font-bold uppercase tracking-[0.1em] text-black/60">
-            <div className="rounded-lg border border-black/10 bg-white px-3 py-2 text-center">Base : visibilité faible</div>
-            <div className="rounded-lg border border-black/10 bg-white px-3 py-2 text-center">Milieu : réseau actif</div>
-            <div className="rounded-lg border border-black/10 bg-white px-3 py-2 text-center">Sommet : autorité locale</div>
-          </div>
-        </div>
-      </section>
 
       <div className="fixed bottom-3 left-3 right-3 z-50 md:hidden">
         <Link
