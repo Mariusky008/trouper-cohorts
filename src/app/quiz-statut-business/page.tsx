@@ -207,15 +207,17 @@ export default function QuizStatutBusinessPage() {
   };
 
   return (
-    <main className={`${poppins.variable} font-poppins min-h-screen bg-[#F7F4EF] text-[#111111]`}>
-      <section className="border-b border-black/10">
-        <div className="mx-auto max-w-6xl px-4 py-14 md:py-20">
+    <main className={`${poppins.variable} font-poppins min-h-screen bg-[#F6F2EC] text-[#111111]`}>
+      <section className="relative overflow-hidden border-b border-black/10">
+        <div className="pointer-events-none absolute -top-24 -right-24 h-72 w-72 rounded-full bg-[#6B1E22]/10 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-20 -left-16 h-56 w-56 rounded-full bg-black/5 blur-3xl" />
+        <div className="relative mx-auto max-w-6xl px-4 py-14 md:py-20">
           <div className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr] items-center">
             <div>
-              <p className="inline-flex rounded-full border border-[#6B1E22]/20 bg-[#6B1E22]/10 px-3 py-1 text-[11px] font-black uppercase tracking-[0.14em] text-[#6B1E22]">
+              <p className="inline-flex rounded-full border border-[#6B1E22]/25 bg-white px-3 py-1 text-[11px] font-black uppercase tracking-[0.14em] text-[#6B1E22] shadow-sm">
                 Quiz Statut Business
               </p>
-              <h1 className="mt-4 text-4xl md:text-6xl font-black leading-[1.03]">
+              <h1 className="mt-4 text-4xl md:text-6xl font-black leading-[1.03] text-balance">
                 Quel est votre vrai statut business dans votre ville ?
               </h1>
               <p className="mt-5 text-base md:text-xl font-medium leading-relaxed text-black/75 max-w-3xl">
@@ -240,18 +242,19 @@ export default function QuizStatutBusinessPage() {
               </div>
             </div>
 
-            <div className="rounded-2xl border border-black/10 bg-white p-5 shadow-[0_16px_30px_-22px_rgba(0,0,0,0.4)]">
-              <p className="text-[11px] font-black uppercase tracking-[0.12em] text-black/55">Transformation</p>
-              <div className="mt-3 space-y-2.5">
-                <div className="rounded-lg border border-black/10 bg-[#F8F8F8] px-4 py-3 text-sm font-bold text-black/70">
-                  Statut subi
+            <div className="rounded-2xl border border-black/10 bg-white/95 p-5 shadow-[0_18px_40px_-24px_rgba(0,0,0,0.4)] backdrop-blur">
+              <p className="text-[11px] font-black uppercase tracking-[0.12em] text-black/55">Votre trajectoire</p>
+              <div className="mt-4 space-y-3">
+                <div className="rounded-xl border border-black/10 bg-[#FAFAFA] px-4 py-3 text-sm font-bold text-black/70">
+                  1. Statut subi
                 </div>
-                <div className="text-center text-[#6B1E22] font-black">↓</div>
-                <div className="rounded-lg border border-[#6B1E22]/25 bg-[#6B1E22]/10 px-4 py-3 text-sm font-black text-[#6B1E22]">
-                  Position locale choisie
+                <div className="h-7 flex items-center justify-center text-[#6B1E22] text-xl font-black">↓</div>
+                <div className="rounded-xl border border-[#6B1E22]/25 bg-[#6B1E22]/10 px-4 py-3 text-sm font-black text-[#6B1E22]">
+                  2. Position choisie
                 </div>
-                <div className="rounded-lg border border-black/10 bg-[#F8F8F8] px-4 py-3 text-sm font-bold text-black/75">
-                  Plus de recommandations • Plus d’opportunités • Plus de statut
+                <div className="h-7 flex items-center justify-center text-[#6B1E22] text-xl font-black">↓</div>
+                <div className="rounded-xl border border-black/10 bg-[#FAFAFA] px-4 py-3 text-sm font-black text-black/75">
+                  3. Référence locale
                 </div>
               </div>
             </div>
@@ -285,18 +288,33 @@ export default function QuizStatutBusinessPage() {
       </section>
 
       <section ref={quizRef} className="border-b border-black/10">
-        <div className="mx-auto max-w-3xl px-4 py-12 md:py-14">
-          <div className="rounded-2xl border border-black/10 bg-white p-5 md:p-7 shadow-[0_16px_30px_-22px_rgba(0,0,0,0.38)]">
-            <div className="mb-5">
-              <div className="h-2 rounded-full bg-black/10 overflow-hidden">
+        <div className="mx-auto max-w-4xl px-4 py-12 md:py-14">
+          <div className="rounded-[24px] border border-black/10 bg-white p-5 md:p-7 shadow-[0_20px_45px_-26px_rgba(0,0,0,0.45)]">
+            <div className="mb-6">
+              <div className="flex items-center justify-between">
+                <p className="text-[11px] uppercase tracking-[0.14em] font-black text-black/50">
+                  {started ? `Question ${Math.min(currentIndex + 1, QUESTIONS.length)}/${QUESTIONS.length}` : "Prêt à démarrer"}
+                </p>
+                <p className="text-[11px] uppercase tracking-[0.14em] font-black text-[#6B1E22]">
+                  {started ? `${progress}%` : "0%"}
+                </p>
+              </div>
+              <div className="mt-2 h-2 rounded-full bg-black/10 overflow-hidden">
                 <div
-                  className="h-full bg-[#6B1E22] transition-all duration-300"
+                  className="h-full bg-gradient-to-r from-[#6B1E22] to-[#8A2A31] transition-all duration-300"
                   style={{ width: `${started ? progress : 0}%` }}
                 />
               </div>
-              <p className="mt-2 text-[11px] uppercase tracking-[0.12em] font-black text-black/55">
-                {started ? `${progress}%` : "Prêt à démarrer"}
-              </p>
+              <div className="mt-3 grid grid-cols-4 gap-2">
+                {QUESTIONS.map((q, idx) => (
+                  <div
+                    key={q.id}
+                    className={`h-1.5 rounded-full ${
+                      idx <= currentIndex && started ? "bg-[#6B1E22]" : "bg-black/10"
+                    }`}
+                  />
+                ))}
+              </div>
             </div>
 
             {!started && (
@@ -311,20 +329,23 @@ export default function QuizStatutBusinessPage() {
             )}
 
             {started && !isComplete && (
-              <div>
-                <p className="text-[11px] font-black uppercase tracking-[0.12em] text-black/50">
-                  Question {currentIndex + 1} / {QUESTIONS.length}
-                </p>
-                <h3 className="mt-2 text-xl md:text-2xl font-black leading-snug">{currentQuestion.prompt}</h3>
-                <div className="mt-5 space-y-2.5">
+              <div className="animate-[fadeIn_.25s_ease-out]">
+                <h3 className="text-xl md:text-3xl font-black leading-snug">{currentQuestion.prompt}</h3>
+                <div className="mt-6 grid gap-3">
                   {currentQuestion.options.map((option) => (
                     <button
                       key={option.key}
                       onClick={() => selectAnswer(option.key)}
-                      className="w-full rounded-xl border border-black/15 bg-white px-4 py-3 text-left text-sm md:text-base font-bold transition hover:border-[#6B1E22] hover:bg-[#6B1E22]/5"
+                      className="group w-full rounded-2xl border border-black/12 bg-white px-4 py-4 text-left transition hover:-translate-y-0.5 hover:border-[#6B1E22]/50 hover:bg-[#6B1E22]/5 hover:shadow-sm"
                     >
-                      <span className="text-[#6B1E22] mr-2">{option.key}.</span>
-                      {option.label}
+                      <div className="flex items-start gap-3">
+                        <span className="mt-0.5 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-[#6B1E22]/30 bg-[#6B1E22]/8 text-xs font-black text-[#6B1E22]">
+                          {option.key}
+                        </span>
+                        <span className="text-sm md:text-base font-bold text-black/85 group-hover:text-black">
+                          {option.label}
+                        </span>
+                      </div>
                     </button>
                   ))}
                 </div>
@@ -336,17 +357,17 @@ export default function QuizStatutBusinessPage() {
                   >
                     Retour
                   </button>
-                  <p className="text-xs font-bold text-black/55">Réponse enregistrée à chaque clic</p>
+                  <p className="text-xs font-bold text-black/55">Sélection instantanée</p>
                 </div>
               </div>
             )}
 
             {started && isComplete && (
-              <div className="space-y-5">
-                <div className="rounded-xl border border-[#6B1E22]/20 bg-[#6B1E22]/8 p-4">
-                  <p className="text-[11px] uppercase tracking-[0.12em] font-black text-[#6B1E22]">Résultat</p>
-                  <h3 className="mt-1 text-2xl md:text-3xl font-black">{result.title}</h3>
-                  <p className="mt-2 text-base md:text-lg font-bold text-black/85">{result.impact}</p>
+              <div className="space-y-6 animate-[fadeIn_.25s_ease-out]">
+                <div className="rounded-2xl border border-[#6B1E22]/20 bg-gradient-to-br from-[#6B1E22]/12 to-white p-5">
+                  <p className="text-[11px] uppercase tracking-[0.14em] font-black text-[#6B1E22]">Résultat</p>
+                  <h3 className="mt-1 text-2xl md:text-4xl font-black leading-tight">{result.title}</h3>
+                  <p className="mt-3 text-base md:text-xl font-bold text-black/85">{result.impact}</p>
                 </div>
 
                 <div className="space-y-2">
@@ -357,18 +378,19 @@ export default function QuizStatutBusinessPage() {
                   ))}
                 </div>
 
-                <div className="rounded-xl border border-black/10 bg-[#F8F8F8] p-4">
-                  <p className="text-[11px] font-black uppercase tracking-[0.12em] text-black/55">Ce que ça vous coûte</p>
-                  <ul className="mt-2 space-y-1.5 text-sm font-semibold text-black/75">
-                    {result.cost.map((item) => (
-                      <li key={item}>- {item}</li>
-                    ))}
-                  </ul>
-                </div>
-
-                <div className="rounded-xl border border-black/10 p-4">
-                  <p className="text-[11px] font-black uppercase tracking-[0.12em] text-black/55">Prochaine étape</p>
-                  <p className="mt-1 text-sm md:text-base font-bold text-black/85">{result.nextStep}</p>
+                <div className="grid gap-4 md:grid-cols-[1fr_1fr]">
+                  <div className="rounded-xl border border-black/10 bg-[#FAFAFA] p-4">
+                    <p className="text-[11px] font-black uppercase tracking-[0.12em] text-black/55">Ce que ça vous coûte</p>
+                    <ul className="mt-2 space-y-1.5 text-sm font-semibold text-black/75">
+                      {result.cost.map((item) => (
+                        <li key={item}>- {item}</li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div className="rounded-xl border border-black/10 p-4">
+                    <p className="text-[11px] font-black uppercase tracking-[0.12em] text-black/55">Prochaine étape</p>
+                    <p className="mt-1 text-sm md:text-base font-bold text-black/85">{result.nextStep}</p>
+                  </div>
                 </div>
 
                 <div className="flex flex-col sm:flex-row gap-2.5">
@@ -414,7 +436,7 @@ export default function QuizStatutBusinessPage() {
             </div>
           </section>
 
-          <section className="border-b border-black/10">
+          <section className="border-b border-black/10 bg-[#FFFDFC]">
             <div className="mx-auto max-w-5xl px-4 py-12">
               <h2 className="text-3xl md:text-5xl font-black leading-tight">
                 Ne cherchez plus vos clients.
@@ -456,9 +478,9 @@ export default function QuizStatutBusinessPage() {
             </button>
           </div>
           {showAllStatuses && (
-            <div className="mt-5 grid gap-3 md:grid-cols-2 lg:grid-cols-4">
+            <div className="mt-5 grid gap-3 md:grid-cols-2 lg:grid-cols-4 animate-[fadeIn_.25s_ease-out]">
               {STATUS_CARDS.map((card) => (
-                <article key={card.n} className="rounded-xl border border-black/10 bg-[#FBFBFB] p-4">
+                <article key={card.n} className="rounded-xl border border-black/10 bg-[#FBFBFB] p-4 transition hover:-translate-y-0.5 hover:shadow-sm">
                   <p className="text-[11px] font-black uppercase tracking-[0.12em] text-black/50">Statut {card.n}</p>
                   <h3 className="mt-1 text-lg font-black leading-tight">{card.t}</h3>
                   <p className="mt-2 text-sm font-medium text-black/70">{card.d}</p>
@@ -477,6 +499,13 @@ export default function QuizStatutBusinessPage() {
           {PRIMARY_CTA}
         </Link>
       </div>
+
+      <style jsx global>{`
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(6px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
     </main>
   );
 }
