@@ -461,7 +461,7 @@ export default function PopeyHumanTestV4Page() {
           </p>
           <div className="mt-7">
             <Link href="/programme-commando/postuler" className="inline-flex items-center justify-center rounded-md bg-[#B6FF2B] text-black px-7 py-3 text-sm font-black uppercase tracking-wide transition hover:translate-y-[-1px]">
-              Postuler à l’Audit de Synergie
+              Trouver mon partenaire stratégique
             </Link>
           </div>
           <p className="mt-3 text-xs font-bold uppercase tracking-wide text-white/70">Audit court • Sur sélection • Sans engagement</p>
@@ -470,7 +470,7 @@ export default function PopeyHumanTestV4Page() {
 
       <div className="fixed bottom-3 left-3 right-3 z-50 md:left-auto md:right-6 md:w-[380px]">
         <Link href="/programme-commando/postuler" className="flex items-center justify-center rounded-md bg-[#B6FF2B] text-black px-4 py-4 md:py-3 text-base md:text-sm font-black uppercase tracking-wide shadow-[0_12px_30px_-12px_rgba(182,255,43,0.9)] transition hover:scale-[1.01]">
-          Postuler à l’Audit de Synergie
+          Trouver mon partenaire stratégique
         </Link>
       </div>
 
