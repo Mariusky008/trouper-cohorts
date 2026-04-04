@@ -177,15 +177,15 @@ const RESULT_MAP: Record<Letter, ResultContent> = {
   },
 };
 
-const STATUS_CARDS = [
-  { n: 1, t: "L’Invisible", d: "Très bon… mais personne ne pense à lui au bon moment." },
-  { n: 2, t: "Le Chasseur de Miettes", d: "Il remplit son mois dans l’urgence, au lieu de choisir ses clients." },
-  { n: 3, t: "Le Réseautard “Petit Four”", d: "Très visible socialement… mais peu rentable économiquement." },
-  { n: 4, t: "Le Technicien Solo", d: "Reconnu pour son expertise, mais prisonnier de son propre temps." },
-  { n: 5, t: "Le Recommandé", d: "Quelques opportunités tombent… mais sans aucun vrai contrôle." },
-  { n: 6, t: "Le Connecteur Naturel", d: "Il apporte de la valeur à tout le monde… sans toujours la récupérer." },
-  { n: 7, t: "Le Notable", d: "Installé, connu, crédible… mais menacé par des méthodes plus modernes." },
-  { n: 8, t: "L’Ambassadeur / Mentor", d: "La référence locale qu’on appelle en premier." },
+const PYRAMID_LEVELS = [
+  { label: "L’Ambassadeur / Mentor", width: "w-[44%]", tone: "bg-[#6B1E22] text-white" },
+  { label: "Le Notable", width: "w-[56%]", tone: "bg-[#8A2A31] text-white" },
+  { label: "Le Connecteur Naturel", width: "w-[66%]", tone: "bg-[#A44A50] text-white" },
+  { label: "Le Recommandé", width: "w-[74%]", tone: "bg-[#BF6F74] text-white" },
+  { label: "Le Technicien Solo", width: "w-[82%]", tone: "bg-[#D4989C] text-[#2A1112]" },
+  { label: "Le Réseautard “Petit Four”", width: "w-[90%]", tone: "bg-[#E5B9BB] text-[#2A1112]" },
+  { label: "Le Chasseur de Miettes", width: "w-[96%]", tone: "bg-[#F1D8DA] text-[#2A1112]" },
+  { label: "L’Invisible", width: "w-full", tone: "bg-[#F7E9EA] text-[#2A1112]" },
 ];
 
 const PRIMARY_CTA = "Trouver mon partenaire stratégique";
@@ -196,7 +196,6 @@ export default function QuizStatutBusinessPage() {
   const [answers, setAnswers] = useState<(Letter | null)[]>(Array(QUESTIONS.length).fill(null));
   const [selectedOption, setSelectedOption] = useState<Letter | null>(null);
   const [isAdvancing, setIsAdvancing] = useState(false);
-  const [showAllStatuses, setShowAllStatuses] = useState(false);
   const quizRef = useRef<HTMLElement | null>(null);
 
   const isComplete = answers.every(Boolean);
@@ -260,14 +259,14 @@ export default function QuizStatutBusinessPage() {
 
   return (
     <main className={`${poppins.variable} font-poppins min-h-screen bg-[#F6F2EC] text-[#111111]`}>
-      <section className="relative overflow-hidden border-b border-black/10">
+      <section className="relative overflow-hidden border-b border-black/10 bg-white">
         <div className="pointer-events-none absolute -top-24 -right-24 h-72 w-72 rounded-full bg-[#6B1E22]/10 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-20 -left-16 h-56 w-56 rounded-full bg-black/5 blur-3xl" />
         <div className="relative mx-auto max-w-6xl px-4 py-14 md:py-20">
           <div className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr] items-center">
             <div>
               <p className="inline-flex rounded-full border border-[#6B1E22]/25 bg-white px-3 py-1 text-[11px] font-black uppercase tracking-[0.14em] text-[#6B1E22] shadow-sm">
-                Quiz Statut Business
+                Section 1 • Diagnostic
               </p>
               <h1 className="mt-4 text-4xl md:text-6xl font-black leading-[1.03] text-balance">
                 Quel est votre vrai statut business dans votre ville ?
@@ -314,8 +313,9 @@ export default function QuizStatutBusinessPage() {
         </div>
       </section>
 
-      <section className="border-b border-black/10 bg-white">
+      <section className="border-b border-black/10 bg-[#FBF9F5]">
         <div className="mx-auto max-w-5xl px-4 py-12">
+          <p className="text-[11px] uppercase tracking-[0.14em] font-black text-[#6B1E22]/80">Section 2 • Problème de position</p>
           <h2 className="text-2xl md:text-4xl font-black leading-tight">
             La plupart des indépendants pensent qu’ils manquent de visibilité.
             <br />
@@ -339,7 +339,7 @@ export default function QuizStatutBusinessPage() {
         </div>
       </section>
 
-      <section ref={quizRef} className="border-b border-black/10">
+      <section ref={quizRef} className="border-b border-black/10 bg-white">
         <div className="mx-auto max-w-4xl px-4 py-12 md:py-14">
           <div className="rounded-[24px] border border-black/10 bg-white p-5 md:p-7 shadow-[0_20px_45px_-26px_rgba(0,0,0,0.45)]">
             <div className="mb-6">
@@ -481,8 +481,9 @@ export default function QuizStatutBusinessPage() {
 
       {started && isComplete && (
         <>
-          <section className="border-b border-black/10 bg-white">
+          <section className="border-b border-black/10 bg-[#FBF9F5]">
             <div className="mx-auto max-w-5xl px-4 py-12">
+              <p className="text-[11px] uppercase tracking-[0.14em] font-black text-[#6B1E22]/80">Section 4 • Repositionnement</p>
               <h2 className="text-2xl md:text-4xl font-black leading-tight">
                 Le problème n’est pas votre talent.
                 <br />
@@ -502,8 +503,9 @@ export default function QuizStatutBusinessPage() {
             </div>
           </section>
 
-          <section className="border-b border-black/10 bg-[#FFFDFC]">
+          <section className="border-b border-black/10 bg-white">
             <div className="mx-auto max-w-5xl px-4 py-12">
+              <p className="text-[11px] uppercase tracking-[0.14em] font-black text-[#6B1E22]/80">Section 5 • Promesse Popey</p>
               <h2 className="text-3xl md:text-5xl font-black leading-tight">
                 Ne cherchez plus vos clients.
                 <br />
@@ -532,28 +534,31 @@ export default function QuizStatutBusinessPage() {
         </>
       )}
 
-      <section className="border-b border-black/10 bg-white">
+      <section className="border-b border-black/10 bg-[#FBF9F5]">
         <div className="mx-auto max-w-6xl px-4 py-12">
-          <div className="flex items-center justify-between gap-4">
-            <h2 className="text-2xl md:text-4xl font-black">Les 8 statuts de la vie réelle</h2>
-            <button
-              onClick={() => setShowAllStatuses((prev) => !prev)}
-              className="rounded-lg border border-black/15 px-3 py-2 text-xs font-black uppercase tracking-wide"
-            >
-              {showAllStatuses ? "Masquer" : "Afficher"}
-            </button>
+          <div className="max-w-4xl">
+            <p className="text-[11px] uppercase tracking-[0.14em] font-black text-[#6B1E22]/80">Section 6 • Pyramide des statuts</p>
+            <h2 className="text-2xl md:text-4xl font-black">Les 8 niveaux de statut business local</h2>
+            <p className="mt-2 text-sm md:text-base font-medium text-black/70">
+              Plus vous montez dans la pyramide, plus vous captez la confiance, les recommandations et la part de marché.
+              Le niveau qui prend la plus grande part du marché est tout en haut : <span className="font-black">L’Ambassadeur / Mentor</span>.
+            </p>
           </div>
-          {showAllStatuses && (
-            <div className="mt-5 grid gap-3 md:grid-cols-2 lg:grid-cols-4 animate-[fadeIn_.25s_ease-out]">
-              {STATUS_CARDS.map((card) => (
-                <article key={card.n} className="rounded-xl border border-black/10 bg-[#FBFBFB] p-4 transition hover:-translate-y-0.5 hover:shadow-sm">
-                  <p className="text-[11px] font-black uppercase tracking-[0.12em] text-black/50">Statut {card.n}</p>
-                  <h3 className="mt-1 text-lg font-black leading-tight">{card.t}</h3>
-                  <p className="mt-2 text-sm font-medium text-black/70">{card.d}</p>
-                </article>
-              ))}
-            </div>
-          )}
+          <div className="mt-8 flex flex-col items-center gap-2.5 animate-[fadeIn_.35s_ease-out]">
+            {PYRAMID_LEVELS.map((level) => (
+              <div
+                key={level.label}
+                className={`${level.width} ${level.tone} rounded-lg px-4 py-2.5 text-center text-xs md:text-sm font-black shadow-sm transition hover:scale-[1.01]`}
+              >
+                {level.label}
+              </div>
+            ))}
+          </div>
+          <div className="mt-5 grid sm:grid-cols-3 gap-2.5 text-xs font-bold uppercase tracking-[0.1em] text-black/60">
+            <div className="rounded-lg border border-black/10 bg-white px-3 py-2 text-center">Base : visibilité faible</div>
+            <div className="rounded-lg border border-black/10 bg-white px-3 py-2 text-center">Milieu : réseau actif</div>
+            <div className="rounded-lg border border-black/10 bg-white px-3 py-2 text-center">Sommet : autorité locale</div>
+          </div>
         </div>
       </section>
 
