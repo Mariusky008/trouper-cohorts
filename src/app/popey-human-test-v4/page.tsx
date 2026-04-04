@@ -76,6 +76,27 @@ export default function PopeyHumanTestV4Page() {
   }, []);
 
   useEffect(() => {
+    const hasModalOpen = showCityModal || showMetierModal;
+    if (!hasModalOpen) return;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setShowCityModal(false);
+        setShowMetierModal(false);
+      }
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", onKeyDown);
+    };
+  }, [showCityModal, showMetierModal]);
+
+  useEffect(() => {
     const isMobile = window.matchMedia("(max-width: 767px)").matches;
     const node = isMobile ? problemAnimationRef.current : problemSectionRef.current;
     if (!node || problemSceneStarted) return;
@@ -475,14 +496,23 @@ export default function PopeyHumanTestV4Page() {
       </div>
 
       {showCityModal && (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/60 p-4">
-          <div className="w-full max-w-md rounded-2xl border border-black/10 bg-white p-5">
+        <div
+          className="fixed inset-0 z-[70] flex items-center justify-center bg-black/60 p-4"
+          onClick={() => setShowCityModal(false)}
+        >
+          <div
+            className="w-full max-w-md rounded-2xl border border-black/10 bg-white p-5"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex items-start justify-between gap-3">
               <div>
                 <p className="text-xs font-black uppercase tracking-[0.14em] text-black/55">Disponibilité ville</p>
                 <h3 className="mt-1 text-2xl font-black">Villes actuellement ouvertes</h3>
               </div>
-              <button onClick={() => setShowCityModal(false)} className="rounded-md border border-black/15 px-2 py-1 text-xs font-black uppercase tracking-wide">
+              <button
+                onClick={() => setShowCityModal(false)}
+                className="rounded-md border border-black/15 px-2 py-1 text-xs font-black uppercase tracking-wide"
+              >
                 Fermer
               </button>
             </div>
@@ -495,18 +525,30 @@ export default function PopeyHumanTestV4Page() {
       )}
 
       {showMetierModal && (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/60 p-4">
-          <div className="w-full max-w-2xl rounded-2xl border border-black/10 bg-white p-5">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <p className="text-xs font-black uppercase tracking-[0.14em] text-black/55">Sphère habitat</p>
-                <h3 className="mt-1 text-2xl font-black">20 métiers de la liste actuelle</h3>
+        <div
+          className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center bg-black/60 p-0 sm:p-4"
+          onClick={() => setShowMetierModal(false)}
+        >
+          <div
+            className="w-full max-w-2xl h-[88dvh] sm:h-auto sm:max-h-[86vh] rounded-t-2xl sm:rounded-2xl border border-black/10 bg-white flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="sticky top-0 z-10 border-b border-black/10 bg-white px-4 py-3 sm:px-5 sm:py-4 rounded-t-2xl">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-xs font-black uppercase tracking-[0.14em] text-black/55">Sphère habitat</p>
+                  <h3 className="mt-1 text-xl sm:text-2xl font-black">20 métiers de la liste actuelle</h3>
+                </div>
+                <button
+                  onClick={() => setShowMetierModal(false)}
+                  className="rounded-md border border-black/15 px-3 py-1 text-xs font-black uppercase tracking-wide"
+                >
+                  Fermer
+                </button>
               </div>
-              <button onClick={() => setShowMetierModal(false)} className="rounded-md border border-black/15 px-2 py-1 text-xs font-black uppercase tracking-wide">
-                Fermer
-              </button>
             </div>
-            <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm font-bold text-black/80">
+            <div className="flex-1 overflow-y-auto px-4 py-3 sm:px-5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm font-bold text-black/80">
               <p className="rounded-lg border border-black/10 bg-[#F7F7F7] px-3 py-2">Agent immobilier</p>
               <p className="rounded-lg border border-black/10 bg-[#F7F7F7] px-3 py-2">Courtier</p>
               <p className="rounded-lg border border-black/10 bg-[#F7F7F7] px-3 py-2">Notaire</p>
@@ -527,6 +569,15 @@ export default function PopeyHumanTestV4Page() {
               <p className="rounded-lg border border-black/10 bg-[#F7F7F7] px-3 py-2">Décorateur</p>
               <p className="rounded-lg border border-black/10 bg-[#F7F7F7] px-3 py-2">Expert-comptable</p>
               <p className="rounded-lg border border-black/10 bg-[#F7F7F7] px-3 py-2">Avocat immobilier</p>
+              </div>
+            </div>
+            <div className="sticky bottom-0 border-t border-black/10 bg-white p-3 sm:hidden">
+              <button
+                onClick={() => setShowMetierModal(false)}
+                className="h-11 w-full rounded-xl bg-black text-sm font-black uppercase tracking-wide text-white"
+              >
+                Fermer la liste
+              </button>
             </div>
           </div>
         </div>
