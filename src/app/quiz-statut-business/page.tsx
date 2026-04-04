@@ -361,13 +361,36 @@ export default function QuizStatutBusinessPage() {
             </div>
 
             {!started && (
-              <div className="text-center py-3">
+              <div className="rounded-2xl border border-[#6B1E22]/20 bg-gradient-to-br from-[#6B1E22]/10 via-white to-[#6B1E22]/5 p-4 md:p-5 animate-[fadeIn_.35s_ease-out]">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-sm md:text-base font-black text-[#6B1E22]">Prêt à découvrir votre statut réel ?</p>
+                  <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[#6B1E22] text-white text-xs font-black animate-[pulseDot_1.5s_ease-in-out_infinite]">
+                    GO
+                  </span>
+                </div>
+                <p className="mt-2 text-sm font-semibold text-black/70">
+                  8 questions rapides. Résultat immédiat. Positionnement clair.
+                </p>
+                <div className="mt-3 grid sm:grid-cols-3 gap-2">
+                  <p className="rounded-lg border border-black/10 bg-white px-3 py-2 text-xs font-black uppercase tracking-[0.08em] text-black/65">
+                    2 minutes
+                  </p>
+                  <p className="rounded-lg border border-black/10 bg-white px-3 py-2 text-xs font-black uppercase tracking-[0.08em] text-black/65">
+                    8 questions
+                  </p>
+                  <p className="rounded-lg border border-black/10 bg-white px-3 py-2 text-xs font-black uppercase tracking-[0.08em] text-black/65">
+                    Plan concret
+                  </p>
+                </div>
                 <button
                   onClick={startQuiz}
-                  className="h-12 rounded-xl bg-black px-6 text-sm font-black uppercase tracking-wide text-white transition hover:bg-black/90"
+                  className="mt-4 h-12 w-full rounded-xl bg-black px-6 text-sm font-black uppercase tracking-wide text-white transition hover:-translate-y-0.5 hover:bg-black/90 hover:shadow-[0_10px_20px_-12px_rgba(0,0,0,0.6)]"
                 >
-                  Découvrir mon statut business
+                  Découvrir mon statut business →
                 </button>
+                <p className="mt-2 text-[11px] font-bold uppercase tracking-[0.1em] text-black/55 text-center">
+                  Aucun formulaire avant votre résultat
+                </p>
               </div>
             )}
 
@@ -557,6 +580,10 @@ export default function QuizStatutBusinessPage() {
         @keyframes slideIn {
           from { opacity: 0; transform: translateX(8px) translateY(6px); }
           to { opacity: 1; transform: translateX(0) translateY(0); }
+        }
+        @keyframes pulseDot {
+          0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(107,30,34,0.35); }
+          50% { transform: scale(1.08); box-shadow: 0 0 0 8px rgba(107,30,34,0); }
         }
       `}</style>
     </main>
