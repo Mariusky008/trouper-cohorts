@@ -50,14 +50,19 @@ export default function Programme100HumainV1PreviewPage() {
           <p className="mt-2 text-sm md:text-base font-medium text-black/70">
             Les membres restent sur WhatsApp. L'app sert de cockpit opérateur pour piloter plusieurs duos, détecter les retards et industrialiser les preuves.
           </p>
+          <div className="mt-3 flex flex-wrap gap-2 text-[11px] font-black uppercase tracking-[0.12em]">
+            <span className="rounded-full border border-black/15 bg-[#F7F7F7] px-3 py-1">Semaine 2: J8-J12</span>
+            <span className="rounded-full border border-black/15 bg-[#F7F7F7] px-3 py-1">Semaine 3: J15-J20</span>
+            <span className="rounded-full border border-black/15 bg-[#F7F7F7] px-3 py-1">Semaine 4: J22-J30</span>
+          </div>
         </div>
 
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          <Screen title="1. Cockpit Jour" subtitle="Vue globale des duos en 10 secondes.">
+          <Screen title="1. Cockpit Jour (J18)" subtitle="Vue globale des duos en 10 secondes.">
             <div className="space-y-2.5">
               <Stat label="Duos actifs" value="8 duos" />
-              <Stat label="Alertes rouges" value="3 duos sans action depuis 48h" tone="danger" />
-              <Stat label="Traction du jour" value="6 RDV pris / 2 offres envoyées" tone="good" />
+              <Stat label="Alertes rouges" value="3 duos sans action depuis 48h (retard J18)" tone="danger" />
+              <Stat label="Traction du jour" value="6 RDV pris / 2 offres envoyées / 1 preuve postée" tone="good" />
               <button className="h-11 w-full rounded-xl bg-black text-xs font-black uppercase tracking-wide text-white">
                 Ouvrir les priorités du jour
               </button>
@@ -68,12 +73,12 @@ export default function Programme100HumainV1PreviewPage() {
             <div className="space-y-2.5">
               <div className="rounded-xl border border-rose-200 bg-rose-50 p-3">
                 <p className="text-xs font-black uppercase tracking-[0.12em] text-rose-800">Urgent</p>
-                <p className="mt-1 text-sm font-bold text-rose-900">Duo Habitat 03 - pas de relance depuis 3 jours</p>
+                <p className="mt-1 text-sm font-bold text-rose-900">Duo Habitat 03 - J8 non validé (mini tunnel absent)</p>
                 <button className="mt-2 h-8 rounded-lg bg-black px-3 text-[11px] font-black uppercase tracking-wide text-white">Envoyer rappel WhatsApp</button>
               </div>
               <div className="rounded-xl border border-amber-200 bg-amber-50 p-3">
                 <p className="text-xs font-black uppercase tracking-[0.12em] text-amber-800">À traiter</p>
-                <p className="mt-1 text-sm font-bold text-amber-900">Duo Immo 01 - script J18 non validé</p>
+                <p className="mt-1 text-sm font-bold text-amber-900">Duo Immo 01 - script J18 non validé + temps réponse &gt; 30 min</p>
               </div>
             </div>
           </Screen>
@@ -87,6 +92,10 @@ export default function Programme100HumainV1PreviewPage() {
               <div className="rounded-xl border border-black/10 p-3">
                 <p className="text-[11px] font-black uppercase tracking-[0.12em] text-black/55">Mission active</p>
                 <p className="mt-1 text-sm font-bold">Formaliser le script de traitement des leads (réponse &lt; 30 min).</p>
+              </div>
+              <div className="rounded-xl border border-black/10 p-3">
+                <p className="text-[11px] font-black uppercase tracking-[0.12em] text-black/55">Checkpoint de semaine</p>
+                <p className="mt-1 text-sm font-semibold text-black/80">J15 validé • J16 validé • J17 en cours • J18 en retard</p>
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <Stat label="Leads" value="14" />
@@ -102,6 +111,10 @@ export default function Programme100HumainV1PreviewPage() {
                 <p className="mt-1 text-sm font-semibold text-black/80">
                   "Salut, je te relance rapidement sur ton projet. On te propose un point de 15 min pour valider le plan d'action."
                 </p>
+              </div>
+              <div className="rounded-xl border border-black/10 p-3">
+                <p className="text-[11px] font-black uppercase tracking-[0.12em] text-black/55">Règle d'or</p>
+                <p className="mt-1 text-sm font-semibold text-black/80">Réponse initiale &lt; 30 min • relance max sous 24h.</p>
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <button className="h-9 rounded-lg border border-black/20 bg-white text-[11px] font-black uppercase">Copier</button>
@@ -121,6 +134,10 @@ export default function Programme100HumainV1PreviewPage() {
                 <p className="text-sm font-black">Capture WhatsApp “merci, super réactifs”</p>
                 <p className="mt-1 text-sm font-semibold text-black/65">Tag: Réactivité • Semaine 2</p>
               </div>
+              <div className="rounded-xl border border-rose-200 bg-rose-50 p-3">
+                <p className="text-xs font-black uppercase tracking-[0.12em] text-rose-800">Manquant</p>
+                <p className="mt-1 text-sm font-bold text-rose-900">Duo Immo 01 - aucune preuve depuis J11</p>
+              </div>
               <button className="h-10 w-full rounded-xl border border-black/20 bg-white text-xs font-black uppercase tracking-wide">
                 Publier sur le mur social
               </button>
@@ -136,6 +153,10 @@ export default function Programme100HumainV1PreviewPage() {
               <div className="rounded-xl border border-black/10 p-3">
                 <p className="text-[11px] font-black uppercase tracking-[0.12em] text-black/55">Décision recommandée</p>
                 <p className="mt-1 text-sm font-bold">Ouvrir Duo 2 sur notaire + assurance</p>
+              </div>
+              <div className="rounded-xl border border-black/10 p-3">
+                <p className="text-[11px] font-black uppercase tracking-[0.12em] text-black/55">Préparation J30</p>
+                <p className="mt-1 text-sm font-semibold text-black/80">Badge "Duo certifié" + bilan KPI + décision continue/rematch/scale.</p>
               </div>
               <button className="h-10 w-full rounded-xl bg-black text-xs font-black uppercase tracking-wide text-white">
                 Générer plan mois 2
