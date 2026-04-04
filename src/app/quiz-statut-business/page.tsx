@@ -361,7 +361,11 @@ export default function QuizStatutBusinessPage() {
             </div>
 
             {!started && (
-              <div className="rounded-2xl border border-[#6B1E22]/20 bg-gradient-to-br from-[#6B1E22]/10 via-white to-[#6B1E22]/5 p-4 md:p-5 animate-[fadeIn_.35s_ease-out]">
+              <div className="relative overflow-hidden rounded-2xl border border-[#6B1E22]/20 bg-gradient-to-br from-[#6B1E22]/10 via-white to-[#6B1E22]/5 p-4 md:p-5 animate-[fadeIn_.35s_ease-out]">
+                <div className="pointer-events-none absolute -top-2 left-8 h-2.5 w-2.5 rounded-full bg-[#6B1E22]/35 animate-[floatDot_4.2s_ease-in-out_infinite]" />
+                <div className="pointer-events-none absolute top-8 right-10 h-1.5 w-1.5 rounded-full bg-[#6B1E22]/30 animate-[floatDot_5.1s_ease-in-out_infinite]" />
+                <div className="pointer-events-none absolute bottom-8 left-14 h-2 w-2 rounded-full bg-[#6B1E22]/20 animate-[floatDot_4.8s_ease-in-out_infinite]" />
+                <div className="pointer-events-none absolute bottom-4 right-20 h-1.5 w-1.5 rounded-full bg-[#6B1E22]/35 animate-[floatDot_5.4s_ease-in-out_infinite]" />
                 <div className="flex items-center justify-between gap-2">
                   <p className="text-sm md:text-base font-black text-[#6B1E22]">Prêt à découvrir votre statut réel ?</p>
                   <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[#6B1E22] text-white text-xs font-black animate-[pulseDot_1.5s_ease-in-out_infinite]">
@@ -584,6 +588,10 @@ export default function QuizStatutBusinessPage() {
         @keyframes pulseDot {
           0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(107,30,34,0.35); }
           50% { transform: scale(1.08); box-shadow: 0 0 0 8px rgba(107,30,34,0); }
+        }
+        @keyframes floatDot {
+          0%, 100% { transform: translateY(0px); opacity: 0.35; }
+          50% { transform: translateY(-8px); opacity: 0.85; }
         }
       `}</style>
     </main>
