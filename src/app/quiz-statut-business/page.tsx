@@ -29,11 +29,11 @@ type ResultContent = {
 const QUESTIONS: Question[] = [
   {
     id: 1,
-    prompt: "Aujourd’hui, laquelle de ces phrases vous ressemble le plus ?",
+    prompt: "Quand vous pensez à vos clients, laquelle de ces phrases vous ressemble le plus ?",
     options: [
-      { key: "A", label: "Peu de gens savent vraiment que j’existe" },
-      { key: "B", label: "Je cours après les opportunités pour remplir mon mois" },
-      { key: "C", label: "J’ai des contacts, mais ça se transforme mal en chiffre" },
+      { key: "A", label: "J’ai l’impression que peu de gens savent vraiment que j’existe" },
+      { key: "B", label: "Je prends ce qui tombe, même si ce n’est pas idéal" },
+      { key: "C", label: "J’ai des contacts, mais ça ne se transforme pas vraiment" },
       { key: "D", label: "J’ai des clients, mais je sens que je plafonne" },
     ],
   },
@@ -52,13 +52,53 @@ const QUESTIONS: Question[] = [
     prompt: "Si vous arrêtez de prospecter ou de travailler pendant 30 jours, que se passe-t-il ?",
     options: [
       { key: "A", label: "Plus rien ou presque" },
-      { key: "B", label: "Mon activité ralentit très vite" },
+      { key: "B", label: "Je panique, car mon activité ralentit très vite" },
       { key: "C", label: "Quelques opportunités tombent encore, mais c’est imprévisible" },
-      { key: "D", label: "J’ai encore du flux, mais ça dépend trop de moi" },
+      { key: "D", label: "J’ai encore du flux, mais je sens que ça dépend trop de ma présence" },
     ],
   },
   {
     id: 4,
+    prompt: "Quand quelqu’un cherche un professionnel de votre métier dans votre ville, votre nom revient-il naturellement ?",
+    options: [
+      { key: "A", label: "Rarement, voire jamais" },
+      { key: "B", label: "Parfois, mais seulement dans certains cercles" },
+      { key: "C", label: "Oui, auprès de quelques personnes-clés" },
+      { key: "D", label: "Souvent, et de plus en plus régulièrement" },
+    ],
+  },
+  {
+    id: 5,
+    prompt: "Votre réseau actuel vous apporte-t-il vraiment du chiffre d’affaires ?",
+    options: [
+      { key: "A", label: "Honnêtement, non" },
+      { key: "B", label: "Un peu, mais ce n’est pas stable" },
+      { key: "C", label: "Oui, de temps en temps" },
+      { key: "D", label: "Oui, mais je pourrais largement mieux l’organiser" },
+    ],
+  },
+  {
+    id: 6,
+    prompt: "Lequel de ces problèmes vous parle le plus ?",
+    options: [
+      { key: "A", label: "Personne ne pense à moi au bon moment" },
+      { key: "B", label: "Je cours après les opportunités" },
+      { key: "C", label: "Je parle à beaucoup de monde, mais peu d’affaires concrètes" },
+      { key: "D", label: "Je suis bon… mais je reste trop dépendant de moi-même" },
+    ],
+  },
+  {
+    id: 7,
+    prompt: "Quand vous rendez service ou recommandez quelqu’un, qu’obtenez-vous en retour ?",
+    options: [
+      { key: "A", label: "Pas grand-chose" },
+      { key: "B", label: "Parfois un merci… rarement plus" },
+      { key: "C", label: "Quelques retours, mais rien de structuré" },
+      { key: "D", label: "J’aide beaucoup de monde, mais je sens que je valorise mal cette position" },
+    ],
+  },
+  {
+    id: 8,
     prompt: "Votre ambition réelle, si vous êtes honnête ?",
     options: [
       { key: "A", label: "Sortir de l’anonymat" },
@@ -154,6 +194,8 @@ export default function QuizStatutBusinessPage() {
   const [started, setStarted] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState<(Letter | null)[]>(Array(QUESTIONS.length).fill(null));
+  const [selectedOption, setSelectedOption] = useState<Letter | null>(null);
+  const [isAdvancing, setIsAdvancing] = useState(false);
   const [showAllStatuses, setShowAllStatuses] = useState(false);
   const quizRef = useRef<HTMLElement | null>(null);
 
@@ -175,7 +217,7 @@ export default function QuizStatutBusinessPage() {
       .filter(([, score]) => score === counts[best])
       .map(([k]) => k);
     if (ties.length === 1) return best;
-    return (answers[3] as Letter) || best;
+    return (answers[answers.length - 1] as Letter) || best;
   }, [answers]);
 
   const result = RESULT_MAP[computedLetter];
@@ -188,21 +230,31 @@ export default function QuizStatutBusinessPage() {
   };
 
   const selectAnswer = (letter: Letter) => {
+    if (isAdvancing) return;
+    setIsAdvancing(true);
+    setSelectedOption(letter);
     const next = [...answers];
     next[currentIndex] = letter;
     setAnswers(next);
-    if (currentIndex < QUESTIONS.length - 1) {
-      setCurrentIndex((prev) => prev + 1);
-    }
+    window.setTimeout(() => {
+      if (currentIndex < QUESTIONS.length - 1) {
+        setCurrentIndex((prev) => prev + 1);
+      }
+      setSelectedOption(null);
+      setIsAdvancing(false);
+    }, 210);
   };
 
   const goBack = () => {
+    if (isAdvancing) return;
     if (currentIndex > 0) setCurrentIndex((prev) => prev - 1);
   };
 
   const resetQuiz = () => {
     setAnswers(Array(QUESTIONS.length).fill(null));
     setCurrentIndex(0);
+    setSelectedOption(null);
+    setIsAdvancing(false);
     setStarted(true);
   };
 
@@ -305,7 +357,10 @@ export default function QuizStatutBusinessPage() {
                   style={{ width: `${started ? progress : 0}%` }}
                 />
               </div>
-              <div className="mt-3 grid grid-cols-4 gap-2">
+              <div
+                className="mt-3 grid gap-2"
+                style={{ gridTemplateColumns: `repeat(${QUESTIONS.length}, minmax(0, 1fr))` }}
+              >
                 {QUESTIONS.map((q, idx) => (
                   <div
                     key={q.id}
@@ -329,17 +384,28 @@ export default function QuizStatutBusinessPage() {
             )}
 
             {started && !isComplete && (
-              <div className="animate-[fadeIn_.25s_ease-out]">
+              <div key={currentQuestion.id} className="animate-[slideIn_.28s_ease-out]">
                 <h3 className="text-xl md:text-3xl font-black leading-snug">{currentQuestion.prompt}</h3>
                 <div className="mt-6 grid gap-3">
                   {currentQuestion.options.map((option) => (
                     <button
                       key={option.key}
                       onClick={() => selectAnswer(option.key)}
-                      className="group w-full rounded-2xl border border-black/12 bg-white px-4 py-4 text-left transition hover:-translate-y-0.5 hover:border-[#6B1E22]/50 hover:bg-[#6B1E22]/5 hover:shadow-sm"
+                      className={`group w-full rounded-2xl border px-4 py-4 text-left transition duration-200 ${
+                        selectedOption === option.key
+                          ? "border-[#6B1E22] bg-[#6B1E22]/10 scale-[1.01] shadow-[0_8px_20px_-12px_rgba(107,30,34,0.55)]"
+                          : "border-black/12 bg-white hover:-translate-y-0.5 hover:border-[#6B1E22]/50 hover:bg-[#6B1E22]/5 hover:shadow-sm"
+                      }`}
+                      disabled={isAdvancing}
                     >
                       <div className="flex items-start gap-3">
-                        <span className="mt-0.5 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-[#6B1E22]/30 bg-[#6B1E22]/8 text-xs font-black text-[#6B1E22]">
+                        <span
+                          className={`mt-0.5 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border text-xs font-black ${
+                            selectedOption === option.key
+                              ? "border-[#6B1E22] bg-[#6B1E22] text-white"
+                              : "border-[#6B1E22]/30 bg-[#6B1E22]/8 text-[#6B1E22]"
+                          }`}
+                        >
                           {option.key}
                         </span>
                         <span className="text-sm md:text-base font-bold text-black/85 group-hover:text-black">
@@ -352,12 +418,12 @@ export default function QuizStatutBusinessPage() {
                 <div className="mt-5 flex items-center justify-between">
                   <button
                     onClick={goBack}
-                    disabled={currentIndex === 0}
+                    disabled={currentIndex === 0 || isAdvancing}
                     className="text-xs font-black uppercase tracking-wide text-black/55 disabled:opacity-30"
                   >
                     Retour
                   </button>
-                  <p className="text-xs font-bold text-black/55">Sélection instantanée</p>
+                  <p className="text-xs font-bold text-black/55">{isAdvancing ? "Validation..." : "Sélection instantanée"}</p>
                 </div>
               </div>
             )}
@@ -504,6 +570,10 @@ export default function QuizStatutBusinessPage() {
         @keyframes fadeIn {
           from { opacity: 0; transform: translateY(6px); }
           to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes slideIn {
+          from { opacity: 0; transform: translateX(8px) translateY(6px); }
+          to { opacity: 1; transform: translateX(0) translateY(0); }
         }
       `}</style>
     </main>
