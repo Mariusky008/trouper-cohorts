@@ -266,7 +266,7 @@ export default function QuizStatutBusinessPage() {
           <div className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr] items-center">
             <div>
               <p className="inline-flex rounded-full border border-[#6B1E22]/25 bg-white px-3 py-1 text-[11px] font-black uppercase tracking-[0.14em] text-[#6B1E22] shadow-sm">
-                Section 1 • Diagnostic
+                Quiz Statut Business
               </p>
               <h1 className="mt-4 text-4xl md:text-6xl font-black leading-[1.03] text-balance">
                 Quel est votre vrai statut business dans votre ville ?
@@ -294,19 +294,24 @@ export default function QuizStatutBusinessPage() {
             </div>
 
             <div className="rounded-2xl border border-black/10 bg-white/95 p-5 shadow-[0_18px_40px_-24px_rgba(0,0,0,0.4)] backdrop-blur">
-              <p className="text-[11px] font-black uppercase tracking-[0.12em] text-black/55">Votre trajectoire</p>
-              <div className="mt-4 space-y-3">
-                <div className="rounded-xl border border-black/10 bg-[#FAFAFA] px-4 py-3 text-sm font-bold text-black/70">
-                  1. Statut subi
+              <p className="text-[11px] font-black uppercase tracking-[0.12em] text-black/55">Ce que vous obtenez en 2 minutes</p>
+              <div className="mt-4 space-y-2.5">
+                <div className="rounded-xl border border-black/10 bg-[#FAFAFA] px-4 py-3">
+                  <p className="text-[11px] font-black uppercase tracking-[0.12em] text-black/55">Diagnostic</p>
+                  <p className="mt-1 text-sm font-bold text-black/80">Votre statut business dominant aujourd’hui</p>
                 </div>
-                <div className="h-7 flex items-center justify-center text-[#6B1E22] text-xl font-black">↓</div>
-                <div className="rounded-xl border border-[#6B1E22]/25 bg-[#6B1E22]/10 px-4 py-3 text-sm font-black text-[#6B1E22]">
-                  2. Position choisie
+                <div className="rounded-xl border border-black/10 bg-[#FAFAFA] px-4 py-3">
+                  <p className="text-[11px] font-black uppercase tracking-[0.12em] text-black/55">Coût caché</p>
+                  <p className="mt-1 text-sm font-bold text-black/80">Ce que ce statut vous fait perdre chaque mois</p>
                 </div>
-                <div className="h-7 flex items-center justify-center text-[#6B1E22] text-xl font-black">↓</div>
-                <div className="rounded-xl border border-black/10 bg-[#FAFAFA] px-4 py-3 text-sm font-black text-black/75">
-                  3. Référence locale
+                <div className="rounded-xl border border-[#6B1E22]/25 bg-[#6B1E22]/10 px-4 py-3">
+                  <p className="text-[11px] font-black uppercase tracking-[0.12em] text-[#6B1E22]">Plan d’action</p>
+                  <p className="mt-1 text-sm font-black text-[#6B1E22]">La prochaine étape la plus rentable pour remonter de niveau</p>
                 </div>
+              </div>
+              <div className="mt-4 rounded-xl border border-black/10 bg-white p-3">
+                <p className="text-[11px] font-black uppercase tracking-[0.12em] text-black/55">Format du rendu</p>
+                <p className="mt-1 text-sm font-semibold text-black/75">Rapport immédiat, lisible en moins de 60 secondes.</p>
               </div>
             </div>
           </div>
@@ -315,7 +320,7 @@ export default function QuizStatutBusinessPage() {
 
       <section className="border-b border-black/10 bg-[#FBF9F5]">
         <div className="mx-auto max-w-5xl px-4 py-12">
-          <p className="text-[11px] uppercase tracking-[0.14em] font-black text-[#6B1E22]/80">Section 2 • Problème de position</p>
+          <p className="text-[11px] uppercase tracking-[0.14em] font-black text-[#6B1E22]/80">Problème de position</p>
           <h2 className="text-2xl md:text-4xl font-black leading-tight">
             La plupart des indépendants pensent qu’ils manquent de visibilité.
             <br />
@@ -483,7 +488,7 @@ export default function QuizStatutBusinessPage() {
         <>
           <section className="border-b border-black/10 bg-[#FBF9F5]">
             <div className="mx-auto max-w-5xl px-4 py-12">
-              <p className="text-[11px] uppercase tracking-[0.14em] font-black text-[#6B1E22]/80">Section 4 • Repositionnement</p>
+              <p className="text-[11px] uppercase tracking-[0.14em] font-black text-[#6B1E22]/80">Repositionnement</p>
               <h2 className="text-2xl md:text-4xl font-black leading-tight">
                 Le problème n’est pas votre talent.
                 <br />
@@ -505,7 +510,7 @@ export default function QuizStatutBusinessPage() {
 
           <section className="border-b border-black/10 bg-white">
             <div className="mx-auto max-w-5xl px-4 py-12">
-              <p className="text-[11px] uppercase tracking-[0.14em] font-black text-[#6B1E22]/80">Section 5 • Promesse Popey</p>
+              <p className="text-[11px] uppercase tracking-[0.14em] font-black text-[#6B1E22]/80">Promesse Popey</p>
               <h2 className="text-3xl md:text-5xl font-black leading-tight">
                 Ne cherchez plus vos clients.
                 <br />
@@ -537,7 +542,7 @@ export default function QuizStatutBusinessPage() {
       <section className="border-b border-black/10 bg-[#FBF9F5]">
         <div className="mx-auto max-w-6xl px-4 py-12">
           <div className="max-w-4xl">
-            <p className="text-[11px] uppercase tracking-[0.14em] font-black text-[#6B1E22]/80">Section 6 • Pyramide des statuts</p>
+            <p className="text-[11px] uppercase tracking-[0.14em] font-black text-[#6B1E22]/80">Pyramide des statuts</p>
             <h2 className="text-2xl md:text-4xl font-black">Les 8 niveaux de statut business local</h2>
             <p className="mt-2 text-sm md:text-base font-medium text-black/70">
               Plus vous montez dans la pyramide, plus vous captez la confiance, les recommandations et la part de marché.
