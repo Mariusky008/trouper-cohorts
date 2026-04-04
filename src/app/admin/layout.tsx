@@ -94,7 +94,7 @@ export default async function AdminLayout({
           </Button>
         </div>
       </header>
-      <main className="flex-1 p-6 max-w-5xl mx-auto w-full">{children}</main>
+      <main className="flex-1 p-6 w-full max-w-none">{children}</main>
     </div>
   );
 }

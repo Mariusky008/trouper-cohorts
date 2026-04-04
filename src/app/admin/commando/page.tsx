@@ -69,6 +69,20 @@ async function updateQualificationStatus(formData: FormData) {
   revalidatePath("/admin/commando");
 }
 
+async function deleteApplication(formData: FormData) {
+  "use server";
+  const applicationId = String(formData.get("applicationId") || "");
+  if (!applicationId) return;
+
+  const supabase = createAdminClient();
+  await supabase
+    .from("commando_applications")
+    .delete()
+    .eq("id", applicationId);
+
+  revalidatePath("/admin/commando");
+}
+
 export default async function AdminCommandoPage({
   searchParams,
 }: {
@@ -124,18 +138,17 @@ export default async function AdminCommandoPage({
       </div>
 
       <div className="border rounded-lg">
-        <Table>
+        <Table className="table-fixed [&_th]:whitespace-normal [&_td]:whitespace-normal">
           <TableHeader>
             <TableRow>
               <TableHead>Identité</TableHead>
               <TableHead>Contact</TableHead>
               <TableHead>Business</TableHead>
               <TableHead>Objectif</TableHead>
-              <TableHead>Disponibilité</TableHead>
               <TableHead>Date</TableHead>
               <TableHead>Qualification</TableHead>
               <TableHead>Statut</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+              <TableHead className="text-right w-[360px]">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -153,10 +166,9 @@ export default async function AdminCommandoPage({
                   <div className="font-semibold">{application.business_name}</div>
                   <div className="text-xs text-muted-foreground">{application.activity}</div>
                 </TableCell>
-                <TableCell className="max-w-[360px]">
+                <TableCell className="max-w-[260px]">
                   <p className="text-sm text-slate-700 line-clamp-3">{application.objective}</p>
                 </TableCell>
-                <TableCell className="text-sm">{application.availability}</TableCell>
                 <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
                   {new Date(application.created_at).toLocaleDateString()}{" "}
                   {new Date(application.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
@@ -172,25 +184,31 @@ export default async function AdminCommandoPage({
                   </Badge>
                 </TableCell>
                 <TableCell>
-                  <form action={updateQualificationStatus} className="flex justify-end gap-2">
+                  <form action={updateQualificationStatus} className="flex justify-end gap-1.5">
                     <input type="hidden" name="applicationId" value={application.id} />
-                    <Button size="sm" variant="outline" name="qualificationStatus" value="call_scheduled">
+                    <Button size="sm" variant="outline" className="h-7 px-2 text-xs" name="qualificationStatus" value="call_scheduled">
                       Appel
                     </Button>
-                    <Button size="sm" variant="outline" className="border-emerald-600 text-emerald-700" name="qualificationStatus" value="qualified">
+                    <Button size="sm" variant="outline" className="h-7 px-2 text-xs border-emerald-600 text-emerald-700" name="qualificationStatus" value="qualified">
                       Qualifier
                     </Button>
-                    <Button size="sm" variant="outline" className="border-rose-600 text-rose-700" name="qualificationStatus" value="rejected">
+                    <Button size="sm" variant="outline" className="h-7 px-2 text-xs border-rose-600 text-rose-700" name="qualificationStatus" value="rejected">
                       Refuser
                     </Button>
                   </form>
+                  <form action={deleteApplication} className="mt-1.5 flex justify-end">
+                    <input type="hidden" name="applicationId" value={application.id} />
+                    <Button size="sm" variant="outline" className="h-7 px-2 text-xs border-rose-700 text-rose-700">
+                      Supprimer
+                    </Button>
+                  </form>
                   {application.qualification_status === "qualified" && (
-                    <div className="mt-2 flex justify-end gap-2">
+                    <div className="mt-2 flex flex-wrap justify-end gap-1.5">
                       <Link
                         href={`/programme-commando/paiement?applicationId=${application.id}&plan=discovery`}
                         target="_blank"
                       >
-                        <Button size="sm" className="bg-black text-white hover:bg-black/90">
+                        <Button size="sm" className="h-7 px-2 text-xs bg-black text-white hover:bg-black/90">
                           Lien M1
                         </Button>
                       </Link>
@@ -198,14 +216,14 @@ export default async function AdminCommandoPage({
                         href={`/programme-commando/paiement?applicationId=${application.id}&plan=core`}
                         target="_blank"
                       >
-                        <Button size="sm" variant="outline" className="border-black text-black">
+                        <Button size="sm" variant="outline" className="h-7 px-2 text-xs border-black text-black">
                           Lien M2-6
                         </Button>
                       </Link>
                       <Link
                         href={`mailto:${application.email}?subject=${encodeURIComponent("Vos liens de paiement - Programme 100% humain")}&body=${encodeURIComponent(`Bonjour ${application.full_name},\n\nComme convenu, voici vos liens de paiement sécurisés Programme 100% humain :\n\n- Mois 1 (découverte, paiement unique 149€ HT) :\n${APP_URL}/programme-commando/paiement?applicationId=${application.id}&plan=discovery\n\n- Mois 2 à 6 (490€ HT / mois) :\n${APP_URL}/programme-commando/paiement?applicationId=${application.id}&plan=core\n\nÀ très vite,\nÉquipe Popey`)}`}
                       >
-                        <Button size="sm" variant="outline">
+                        <Button size="sm" variant="outline" className="h-7 px-2 text-xs">
                           Email
                         </Button>
                       </Link>
@@ -213,7 +231,7 @@ export default async function AdminCommandoPage({
                         href={`https://wa.me/${normalizePhoneForWhatsApp(application.phone || "")}?text=${encodeURIComponent(`Bonjour ${application.full_name}, voici vos liens de paiement sécurisés Programme 100% humain :\n\nMois 1 (149€ HT, paiement unique) : ${APP_URL}/programme-commando/paiement?applicationId=${application.id}&plan=discovery\n\nMois 2 à 6 (490€ HT / mois) : ${APP_URL}/programme-commando/paiement?applicationId=${application.id}&plan=core`)}`}
                         target="_blank"
                       >
-                        <Button size="sm" variant="outline" className="border-emerald-600 text-emerald-700">
+                        <Button size="sm" variant="outline" className="h-7 px-2 text-xs border-emerald-600 text-emerald-700">
                           WhatsApp
                         </Button>
                       </Link>
@@ -224,7 +242,7 @@ export default async function AdminCommandoPage({
             ))}
             {filteredApplications.length === 0 && (
               <TableRow>
-                <TableCell colSpan={9} className="text-center h-24 text-muted-foreground">
+                <TableCell colSpan={8} className="text-center h-24 text-muted-foreground">
                   Aucune candidature pour ce filtre.
                 </TableCell>
               </TableRow>
