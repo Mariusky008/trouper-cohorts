@@ -1,0 +1,482 @@
+"use client";
+
+import Link from "next/link";
+import { useMemo, useRef, useState } from "react";
+import { Poppins } from "next/font/google";
+
+const poppins = Poppins({
+  weight: ["400", "500", "600", "700", "900"],
+  subsets: ["latin"],
+  variable: "--font-poppins",
+});
+
+type Letter = "A" | "B" | "C" | "D";
+
+type Question = {
+  id: number;
+  prompt: string;
+  options: { key: Letter; label: string }[];
+};
+
+type ResultContent = {
+  title: string;
+  impact: string;
+  body: string[];
+  cost: string[];
+  nextStep: string;
+};
+
+const QUESTIONS: Question[] = [
+  {
+    id: 1,
+    prompt: "Aujourd’hui, laquelle de ces phrases vous ressemble le plus ?",
+    options: [
+      { key: "A", label: "Peu de gens savent vraiment que j’existe" },
+      { key: "B", label: "Je cours après les opportunités pour remplir mon mois" },
+      { key: "C", label: "J’ai des contacts, mais ça se transforme mal en chiffre" },
+      { key: "D", label: "J’ai des clients, mais je sens que je plafonne" },
+    ],
+  },
+  {
+    id: 2,
+    prompt: "D’où viennent la plupart de vos opportunités aujourd’hui ?",
+    options: [
+      { key: "A", label: "Du hasard ou de quelques posts" },
+      { key: "B", label: "De ma prospection / relances / énergie du moment" },
+      { key: "C", label: "De quelques recommandations irrégulières" },
+      { key: "D", label: "Du bouche-à-oreille, mais sans vrai système structuré" },
+    ],
+  },
+  {
+    id: 3,
+    prompt: "Si vous arrêtez de prospecter ou de travailler pendant 30 jours, que se passe-t-il ?",
+    options: [
+      { key: "A", label: "Plus rien ou presque" },
+      { key: "B", label: "Mon activité ralentit très vite" },
+      { key: "C", label: "Quelques opportunités tombent encore, mais c’est imprévisible" },
+      { key: "D", label: "J’ai encore du flux, mais ça dépend trop de moi" },
+    ],
+  },
+  {
+    id: 4,
+    prompt: "Votre ambition réelle, si vous êtes honnête ?",
+    options: [
+      { key: "A", label: "Sortir de l’anonymat" },
+      { key: "B", label: "Arrêter de survivre et respirer enfin" },
+      { key: "C", label: "Transformer mes relations en vraies opportunités" },
+      { key: "D", label: "Devenir une référence locale incontournable" },
+    ],
+  },
+];
+
+const RESULT_MAP: Record<Letter, ResultContent> = {
+  A: {
+    title: "Vous êtes : L’Invisible",
+    impact: "Vous êtes peut-être excellent… mais votre marché ne le sait pas encore.",
+    body: [
+      "Votre plus grand problème n’est pas la concurrence.",
+      "C’est l’oubli.",
+      "Vous avez du savoir-faire, mais pas encore de place claire dans l’écosystème local.",
+      "Tant que les bonnes personnes ne pensent pas à vous au bon moment, votre valeur reste sous-exploitée.",
+    ],
+    cost: [
+      "Des opportunités qui passent chez d’autres",
+      "Une impression de crier dans le vide",
+      "Un talent qui reste trop discret",
+    ],
+    nextStep: "Créer vos premiers relais de confiance, pas juste “plus de visibilité”.",
+  },
+  B: {
+    title: "Vous êtes : Le Chasseur de Miettes",
+    impact: "Vous travaillez… mais trop souvent dans l’urgence.",
+    body: [
+      "Vous acceptez ce qui tombe, même quand ce n’est pas idéal.",
+      "Vous ne choisissez pas encore vraiment vos clients : ce sont eux qui vous choisissent.",
+    ],
+    cost: [
+      "Fatigue",
+      "Pression permanente",
+      "Mauvais clients",
+      "Dépendance au mois suivant",
+    ],
+    nextStep: "Construire un flux d’opportunités plus prévisible grâce à des partenaires stratégiques.",
+  },
+  C: {
+    title: "Vous êtes : Le Recommandé",
+    impact: "Vous avez des opportunités… mais sans vraie maîtrise.",
+    body: [
+      "Quelques personnes pensent déjà à vous.",
+      "Mais vous ne savez jamais quand la prochaine recommandation va tomber.",
+      "Vous n’êtes plus invisible.",
+      "Mais vous n’avez pas encore un système.",
+    ],
+    cost: [
+      "Incertitude",
+      "Difficulté à prévoir",
+      "Dépendance à la chance",
+      "Croissance non maîtrisée",
+    ],
+    nextStep: "Transformer les recommandations informelles en système récurrent.",
+  },
+  D: {
+    title: "Vous êtes : Le Technicien Solo",
+    impact: "Vous êtes bon. Très bon. Mais votre système reste fragile.",
+    body: [
+      "Vos clients viennent surtout grâce à votre compétence.",
+      "Le problème ? Si vous ralentissez, le moteur ralentit aussi.",
+      "Vous avez de la valeur.",
+      "Mais votre activité dépend encore trop de vous.",
+    ],
+    cost: [
+      "Plafond de verre",
+      "Dépendance à votre temps",
+      "Croissance lente",
+      "Sensation d’être prisonnier de votre propre expertise",
+    ],
+    nextStep: "Passer d’une activité portée par vous… à une position portée par un écosystème.",
+  },
+};
+
+const STATUS_CARDS = [
+  { n: 1, t: "L’Invisible", d: "Très bon… mais personne ne pense à lui au bon moment." },
+  { n: 2, t: "Le Chasseur de Miettes", d: "Il remplit son mois dans l’urgence, au lieu de choisir ses clients." },
+  { n: 3, t: "Le Réseautard “Petit Four”", d: "Très visible socialement… mais peu rentable économiquement." },
+  { n: 4, t: "Le Technicien Solo", d: "Reconnu pour son expertise, mais prisonnier de son propre temps." },
+  { n: 5, t: "Le Recommandé", d: "Quelques opportunités tombent… mais sans aucun vrai contrôle." },
+  { n: 6, t: "Le Connecteur Naturel", d: "Il apporte de la valeur à tout le monde… sans toujours la récupérer." },
+  { n: 7, t: "Le Notable", d: "Installé, connu, crédible… mais menacé par des méthodes plus modernes." },
+  { n: 8, t: "L’Ambassadeur / Mentor", d: "La référence locale qu’on appelle en premier." },
+];
+
+const PRIMARY_CTA = "Trouver mon partenaire stratégique";
+
+export default function QuizStatutBusinessPage() {
+  const [started, setStarted] = useState(false);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [answers, setAnswers] = useState<(Letter | null)[]>(Array(QUESTIONS.length).fill(null));
+  const [showAllStatuses, setShowAllStatuses] = useState(false);
+  const quizRef = useRef<HTMLElement | null>(null);
+
+  const isComplete = answers.every(Boolean);
+  const progress = isComplete ? 100 : Math.round(((currentIndex + 1) / QUESTIONS.length) * 100);
+
+  const currentQuestion = QUESTIONS[currentIndex];
+
+  const computedLetter = useMemo<Letter>(() => {
+    const counts: Record<Letter, number> = { A: 0, B: 0, C: 0, D: 0 };
+    answers.forEach((value) => {
+      if (value) counts[value] += 1;
+    });
+    const sorted = (Object.entries(counts) as [Letter, number][])
+      .sort((a, b) => b[1] - a[1])
+      .map(([k]) => k);
+    const best = sorted[0];
+    const ties = (Object.entries(counts) as [Letter, number][])
+      .filter(([, score]) => score === counts[best])
+      .map(([k]) => k);
+    if (ties.length === 1) return best;
+    return (answers[3] as Letter) || best;
+  }, [answers]);
+
+  const result = RESULT_MAP[computedLetter];
+
+  const startQuiz = () => {
+    setStarted(true);
+    requestAnimationFrame(() => {
+      quizRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  };
+
+  const selectAnswer = (letter: Letter) => {
+    const next = [...answers];
+    next[currentIndex] = letter;
+    setAnswers(next);
+    if (currentIndex < QUESTIONS.length - 1) {
+      setCurrentIndex((prev) => prev + 1);
+    }
+  };
+
+  const goBack = () => {
+    if (currentIndex > 0) setCurrentIndex((prev) => prev - 1);
+  };
+
+  const resetQuiz = () => {
+    setAnswers(Array(QUESTIONS.length).fill(null));
+    setCurrentIndex(0);
+    setStarted(true);
+  };
+
+  return (
+    <main className={`${poppins.variable} font-poppins min-h-screen bg-[#F7F4EF] text-[#111111]`}>
+      <section className="border-b border-black/10">
+        <div className="mx-auto max-w-6xl px-4 py-14 md:py-20">
+          <div className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr] items-center">
+            <div>
+              <p className="inline-flex rounded-full border border-[#6B1E22]/20 bg-[#6B1E22]/10 px-3 py-1 text-[11px] font-black uppercase tracking-[0.14em] text-[#6B1E22]">
+                Quiz Statut Business
+              </p>
+              <h1 className="mt-4 text-4xl md:text-6xl font-black leading-[1.03]">
+                Quel est votre vrai statut business dans votre ville ?
+              </h1>
+              <p className="mt-5 text-base md:text-xl font-medium leading-relaxed text-black/75 max-w-3xl">
+                Vous êtes peut-être excellent dans votre métier.
+                <br />
+                Mais votre marché, lui, vous a déjà mis dans une case.
+                <br />
+                <br />
+                Invisible. Sur-sollicité. Recommandé par hasard. Connu mais pas rentable.
+                Découvrez en 2 minutes le vrai statut que vous occupez aujourd’hui… et surtout comment en sortir.
+              </p>
+              <div className="mt-7">
+                <button
+                  onClick={startQuiz}
+                  className="inline-flex items-center justify-center rounded-xl bg-black px-7 py-3.5 text-sm font-black uppercase tracking-wide text-white transition hover:-translate-y-0.5 hover:shadow-[0_10px_0_0_#6B1E22]"
+                >
+                  Découvrir mon statut business
+                </button>
+                <p className="mt-3 text-xs font-bold uppercase tracking-wide text-black/60">
+                  Quiz rapide • 2 minutes • Résultat immédiat
+                </p>
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-black/10 bg-white p-5 shadow-[0_16px_30px_-22px_rgba(0,0,0,0.4)]">
+              <p className="text-[11px] font-black uppercase tracking-[0.12em] text-black/55">Transformation</p>
+              <div className="mt-3 space-y-2.5">
+                <div className="rounded-lg border border-black/10 bg-[#F8F8F8] px-4 py-3 text-sm font-bold text-black/70">
+                  Statut subi
+                </div>
+                <div className="text-center text-[#6B1E22] font-black">↓</div>
+                <div className="rounded-lg border border-[#6B1E22]/25 bg-[#6B1E22]/10 px-4 py-3 text-sm font-black text-[#6B1E22]">
+                  Position locale choisie
+                </div>
+                <div className="rounded-lg border border-black/10 bg-[#F8F8F8] px-4 py-3 text-sm font-bold text-black/75">
+                  Plus de recommandations • Plus d’opportunités • Plus de statut
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="border-b border-black/10 bg-white">
+        <div className="mx-auto max-w-5xl px-4 py-12">
+          <h2 className="text-2xl md:text-4xl font-black leading-tight">
+            La plupart des indépendants pensent qu’ils manquent de visibilité.
+            <br />
+            En réalité, ils manquent surtout de position.
+          </h2>
+          <p className="mt-5 text-base md:text-lg font-medium leading-relaxed text-black/75">
+            On peut être :
+            <br />
+            très compétent… mais invisible
+            <br />
+            très actif… mais mal entouré
+            <br />
+            très connu… mais pas rentable
+            <br />
+            très recommandé… mais sans aucun contrôle
+            <br />
+            <br />
+            Chez Popey, on ne vous aide pas seulement à “trouver plus de clients”.
+            On vous aide à comprendre le rôle que votre marché vous fait jouer… puis à en changer.
+          </p>
+        </div>
+      </section>
+
+      <section ref={quizRef} className="border-b border-black/10">
+        <div className="mx-auto max-w-3xl px-4 py-12 md:py-14">
+          <div className="rounded-2xl border border-black/10 bg-white p-5 md:p-7 shadow-[0_16px_30px_-22px_rgba(0,0,0,0.38)]">
+            <div className="mb-5">
+              <div className="h-2 rounded-full bg-black/10 overflow-hidden">
+                <div
+                  className="h-full bg-[#6B1E22] transition-all duration-300"
+                  style={{ width: `${started ? progress : 0}%` }}
+                />
+              </div>
+              <p className="mt-2 text-[11px] uppercase tracking-[0.12em] font-black text-black/55">
+                {started ? `${progress}%` : "Prêt à démarrer"}
+              </p>
+            </div>
+
+            {!started && (
+              <div className="text-center py-3">
+                <button
+                  onClick={startQuiz}
+                  className="h-12 rounded-xl bg-black px-6 text-sm font-black uppercase tracking-wide text-white transition hover:bg-black/90"
+                >
+                  Découvrir mon statut business
+                </button>
+              </div>
+            )}
+
+            {started && !isComplete && (
+              <div>
+                <p className="text-[11px] font-black uppercase tracking-[0.12em] text-black/50">
+                  Question {currentIndex + 1} / {QUESTIONS.length}
+                </p>
+                <h3 className="mt-2 text-xl md:text-2xl font-black leading-snug">{currentQuestion.prompt}</h3>
+                <div className="mt-5 space-y-2.5">
+                  {currentQuestion.options.map((option) => (
+                    <button
+                      key={option.key}
+                      onClick={() => selectAnswer(option.key)}
+                      className="w-full rounded-xl border border-black/15 bg-white px-4 py-3 text-left text-sm md:text-base font-bold transition hover:border-[#6B1E22] hover:bg-[#6B1E22]/5"
+                    >
+                      <span className="text-[#6B1E22] mr-2">{option.key}.</span>
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+                <div className="mt-5 flex items-center justify-between">
+                  <button
+                    onClick={goBack}
+                    disabled={currentIndex === 0}
+                    className="text-xs font-black uppercase tracking-wide text-black/55 disabled:opacity-30"
+                  >
+                    Retour
+                  </button>
+                  <p className="text-xs font-bold text-black/55">Réponse enregistrée à chaque clic</p>
+                </div>
+              </div>
+            )}
+
+            {started && isComplete && (
+              <div className="space-y-5">
+                <div className="rounded-xl border border-[#6B1E22]/20 bg-[#6B1E22]/8 p-4">
+                  <p className="text-[11px] uppercase tracking-[0.12em] font-black text-[#6B1E22]">Résultat</p>
+                  <h3 className="mt-1 text-2xl md:text-3xl font-black">{result.title}</h3>
+                  <p className="mt-2 text-base md:text-lg font-bold text-black/85">{result.impact}</p>
+                </div>
+
+                <div className="space-y-2">
+                  {result.body.map((line) => (
+                    <p key={line} className="text-sm md:text-base font-medium text-black/75 leading-relaxed">
+                      {line}
+                    </p>
+                  ))}
+                </div>
+
+                <div className="rounded-xl border border-black/10 bg-[#F8F8F8] p-4">
+                  <p className="text-[11px] font-black uppercase tracking-[0.12em] text-black/55">Ce que ça vous coûte</p>
+                  <ul className="mt-2 space-y-1.5 text-sm font-semibold text-black/75">
+                    {result.cost.map((item) => (
+                      <li key={item}>- {item}</li>
+                    ))}
+                  </ul>
+                </div>
+
+                <div className="rounded-xl border border-black/10 p-4">
+                  <p className="text-[11px] font-black uppercase tracking-[0.12em] text-black/55">Prochaine étape</p>
+                  <p className="mt-1 text-sm md:text-base font-bold text-black/85">{result.nextStep}</p>
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-2.5">
+                  <Link
+                    href="/popey-human"
+                    className="inline-flex h-11 items-center justify-center rounded-xl bg-black px-5 text-sm font-black uppercase tracking-wide text-white transition hover:bg-black/90"
+                  >
+                    {PRIMARY_CTA}
+                  </Link>
+                  <button
+                    onClick={resetQuiz}
+                    className="inline-flex h-11 items-center justify-center rounded-xl border border-black/15 px-5 text-sm font-black uppercase tracking-wide text-black/75"
+                  >
+                    Refaire le quiz
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </section>
+
+      {started && isComplete && (
+        <>
+          <section className="border-b border-black/10 bg-white">
+            <div className="mx-auto max-w-5xl px-4 py-12">
+              <h2 className="text-2xl md:text-4xl font-black leading-tight">
+                Le problème n’est pas votre talent.
+                <br />
+                Le problème, c’est la place que votre marché vous a donnée.
+              </h2>
+              <p className="mt-5 text-base md:text-lg font-medium leading-relaxed text-black/75">
+                Chez Popey, nous aidons les indépendants, experts et entrepreneurs locaux à passer :
+                <br />
+                de l’invisible à l’identifiable
+                <br />
+                du hasard à la recommandation structurée
+                <br />
+                du réseau flou à l’écosystème rentable
+                <br />
+                du bon professionnel… à la référence locale
+              </p>
+            </div>
+          </section>
+
+          <section className="border-b border-black/10">
+            <div className="mx-auto max-w-5xl px-4 py-12">
+              <h2 className="text-3xl md:text-5xl font-black leading-tight">
+                Ne cherchez plus vos clients.
+                <br />
+                Allez là où ils sont déjà.
+              </h2>
+              <p className="mt-5 text-base md:text-lg font-medium leading-relaxed text-black/75">
+                Vos futurs clients achètent déjà ailleurs.
+                Chez Popey, nous vous connectons à des partenaires stratégiques et complémentaires capables de vous recommander au bon moment, au bon client, avec le bon niveau de confiance.
+              </p>
+              <div className="mt-4 grid gap-2 sm:grid-cols-2 text-sm font-bold text-black/80">
+                <p className="rounded-lg border border-black/10 bg-white px-3 py-2">Plus de recommandations</p>
+                <p className="rounded-lg border border-black/10 bg-white px-3 py-2">Plus d’opportunités</p>
+                <p className="rounded-lg border border-black/10 bg-white px-3 py-2">Plus de valeur par client</p>
+                <p className="rounded-lg border border-black/10 bg-white px-3 py-2">Plus de position dans votre ville</p>
+              </div>
+              <div className="mt-6">
+                <Link
+                  href="/popey-human"
+                  className="inline-flex h-11 items-center justify-center rounded-xl bg-black px-6 text-sm font-black uppercase tracking-wide text-white transition hover:bg-black/90"
+                >
+                  {PRIMARY_CTA}
+                </Link>
+              </div>
+            </div>
+          </section>
+        </>
+      )}
+
+      <section className="border-b border-black/10 bg-white">
+        <div className="mx-auto max-w-6xl px-4 py-12">
+          <div className="flex items-center justify-between gap-4">
+            <h2 className="text-2xl md:text-4xl font-black">Les 8 statuts de la vie réelle</h2>
+            <button
+              onClick={() => setShowAllStatuses((prev) => !prev)}
+              className="rounded-lg border border-black/15 px-3 py-2 text-xs font-black uppercase tracking-wide"
+            >
+              {showAllStatuses ? "Masquer" : "Afficher"}
+            </button>
+          </div>
+          {showAllStatuses && (
+            <div className="mt-5 grid gap-3 md:grid-cols-2 lg:grid-cols-4">
+              {STATUS_CARDS.map((card) => (
+                <article key={card.n} className="rounded-xl border border-black/10 bg-[#FBFBFB] p-4">
+                  <p className="text-[11px] font-black uppercase tracking-[0.12em] text-black/50">Statut {card.n}</p>
+                  <h3 className="mt-1 text-lg font-black leading-tight">{card.t}</h3>
+                  <p className="mt-2 text-sm font-medium text-black/70">{card.d}</p>
+                </article>
+              ))}
+            </div>
+          )}
+        </div>
+      </section>
+
+      <div className="fixed bottom-3 left-3 right-3 z-50 md:hidden">
+        <Link
+          href="/popey-human"
+          className="flex h-12 items-center justify-center rounded-xl bg-[#6B1E22] px-4 text-sm font-black uppercase tracking-wide text-white shadow-[0_12px_28px_-14px_rgba(107,30,34,0.9)]"
+        >
+          {PRIMARY_CTA}
+        </Link>
+      </div>
+    </main>
+  );
+}
