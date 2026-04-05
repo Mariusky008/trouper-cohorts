@@ -272,8 +272,7 @@ export default function QuizStatutBusinessPage() {
         <div className="pointer-events-none absolute -top-24 -right-24 h-72 w-72 rounded-full bg-[#6B1E22]/10 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-20 -left-16 h-56 w-56 rounded-full bg-black/5 blur-3xl" />
         <div className="relative mx-auto max-w-6xl px-4 py-14 md:py-20">
-          <div className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr] items-center">
-            <div>
+          <div>
               <p className="inline-flex rounded-full border border-[#6B1E22]/25 bg-white px-3 py-1 text-[11px] font-black uppercase tracking-[0.14em] text-[#6B1E22] shadow-sm">
                 Quiz Statut Business
               </p>
@@ -300,29 +299,6 @@ export default function QuizStatutBusinessPage() {
                   Quiz rapide • 2 minutes • Résultat immédiat
                 </p>
               </div>
-            </div>
-
-            <div className="rounded-2xl border border-black/10 bg-white/95 p-5 shadow-[0_18px_40px_-24px_rgba(0,0,0,0.4)] backdrop-blur">
-              <p className="text-[11px] font-black uppercase tracking-[0.12em] text-black/55">Ce que vous obtenez en 2 minutes</p>
-              <div className="mt-4 space-y-2.5">
-                <div className="rounded-xl border border-black/10 bg-[#FAFAFA] px-4 py-3">
-                  <p className="text-[11px] font-black uppercase tracking-[0.12em] text-black/55">Diagnostic</p>
-                  <p className="mt-1 text-sm font-bold text-black/80">Votre statut business dominant aujourd’hui</p>
-                </div>
-                <div className="rounded-xl border border-black/10 bg-[#FAFAFA] px-4 py-3">
-                  <p className="text-[11px] font-black uppercase tracking-[0.12em] text-black/55">Coût caché</p>
-                  <p className="mt-1 text-sm font-bold text-black/80">Ce que ce statut vous fait perdre chaque mois</p>
-                </div>
-                <div className="rounded-xl border border-[#6B1E22]/25 bg-[#6B1E22]/10 px-4 py-3">
-                  <p className="text-[11px] font-black uppercase tracking-[0.12em] text-[#6B1E22]">Plan d’action</p>
-                  <p className="mt-1 text-sm font-black text-[#6B1E22]">La prochaine étape la plus rentable pour remonter de niveau</p>
-                </div>
-              </div>
-              <div className="mt-4 rounded-xl border border-black/10 bg-white p-3">
-                <p className="text-[11px] font-black uppercase tracking-[0.12em] text-black/55">Format du rendu</p>
-                <p className="mt-1 text-sm font-semibold text-black/75">Rapport immédiat, lisible en moins de 60 secondes.</p>
-              </div>
-            </div>
           </div>
         </div>
       </section>
@@ -566,15 +542,6 @@ export default function QuizStatutBusinessPage() {
           </section>
         </>
       )}
-
-      <div className="fixed bottom-3 left-3 right-3 z-50 md:hidden">
-        <Link
-          href="/popey-human"
-          className="flex h-12 items-center justify-center rounded-xl bg-[#6B1E22] px-4 text-sm font-black uppercase tracking-wide text-white shadow-[0_12px_28px_-14px_rgba(107,30,34,0.9)]"
-        >
-          {PRIMARY_CTA}
-        </Link>
-      </div>
 
       <style jsx global>{`
         @keyframes fadeIn {
