@@ -267,45 +267,61 @@ export default function QuizStatutBusinessPage() {
   };
 
   return (
-    <main className={`${poppins.variable} font-poppins min-h-screen bg-[#F6F2EC] text-[#111111]`}>
-      <section className="relative overflow-hidden border-b border-black/10 bg-white">
-        <div className="pointer-events-none absolute -top-24 -right-24 h-72 w-72 rounded-full bg-[#6B1E22]/10 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-20 -left-16 h-56 w-56 rounded-full bg-black/5 blur-3xl" />
-        <div className="relative mx-auto max-w-6xl px-4 py-14 md:py-20">
-          <div>
-              <p className="inline-flex rounded-full border border-[#6B1E22]/25 bg-white px-3 py-1 text-[11px] font-black uppercase tracking-[0.14em] text-[#6B1E22] shadow-sm">
-                Quiz Statut Business
-              </p>
-              <h1 className="mt-4 text-4xl md:text-6xl font-black leading-[1.03] text-balance">
-                Quel est votre vrai statut business dans votre ville ?
-              </h1>
-              <p className="mt-5 text-base md:text-xl font-medium leading-relaxed text-black/75 max-w-3xl">
-                Vous êtes peut-être excellent dans votre métier.
-                <br />
-                Mais votre marché, lui, vous a déjà mis dans une case.
-                <br />
-                <br />
-                Invisible. Sur-sollicité. Recommandé par hasard. Connu mais pas rentable.
-                Découvrez en 2 minutes le vrai statut que vous occupez aujourd’hui… et surtout comment en sortir.
-              </p>
-              <div className="mt-7">
-                <button
-                  onClick={startQuiz}
-                  className="inline-flex items-center justify-center rounded-xl bg-black px-7 py-3.5 text-sm font-black uppercase tracking-wide text-white transition hover:-translate-y-0.5 hover:shadow-[0_10px_0_0_#6B1E22]"
-                >
-                  Découvrir mon statut business
-                </button>
-                <p className="mt-3 text-xs font-bold uppercase tracking-wide text-black/60">
-                  Quiz rapide • 2 minutes • Résultat immédiat
+    <main className={`${poppins.variable} font-poppins min-h-screen bg-[#F8F5F1] text-[#111111]`}>
+      <section className="relative overflow-hidden">
+        <div className="pointer-events-none absolute -top-24 -right-16 h-72 w-72 rounded-full bg-[#6B1E22]/12 blur-3xl" />
+        <div className="pointer-events-none absolute top-20 -left-20 h-64 w-64 rounded-full bg-black/5 blur-3xl" />
+        <div className="relative mx-auto max-w-6xl px-4 py-10 md:py-14">
+          <div className="rounded-3xl border border-black/10 bg-white p-6 md:p-8 shadow-[0_24px_55px_-30px_rgba(0,0,0,0.4)]">
+            <div className="grid gap-8 lg:grid-cols-[1.15fr_0.85fr]">
+              <div>
+                <p className="inline-flex rounded-full border border-[#6B1E22]/25 bg-[#6B1E22]/5 px-3 py-1 text-[11px] font-black uppercase tracking-[0.14em] text-[#6B1E22]">
+                  Quiz Statut Business
                 </p>
+                <h1 className="mt-4 text-4xl md:text-6xl font-black leading-[1.03]">
+                  Quel est votre vrai statut business dans votre ville ?
+                </h1>
+                <p className="mt-5 text-base md:text-xl font-medium leading-relaxed text-black/75 max-w-3xl">
+                  Vous êtes peut-être excellent dans votre métier.
+                  <br />
+                  Mais votre marché, lui, vous a déjà mis dans une case.
+                  <br />
+                  <br />
+                  Invisible. Sur-sollicité. Recommandé par hasard. Connu mais pas rentable.
+                  Découvrez en 2 minutes le vrai statut que vous occupez aujourd’hui… et surtout comment en sortir.
+                </p>
+                <div className="mt-7">
+                  <button
+                    onClick={startQuiz}
+                    className="inline-flex items-center justify-center rounded-xl bg-black px-7 py-3.5 text-sm font-black uppercase tracking-wide text-white transition hover:-translate-y-0.5 hover:shadow-[0_10px_0_0_#6B1E22]"
+                  >
+                    Découvrir mon statut business
+                  </button>
+                  <p className="mt-3 text-xs font-bold uppercase tracking-wide text-black/60">
+                    Quiz rapide • 2 minutes • Résultat immédiat
+                  </p>
+                </div>
               </div>
+              <aside className="rounded-2xl border border-black/10 bg-[#FCFBF9] p-4 md:p-5">
+                <p className="text-[11px] uppercase tracking-[0.12em] font-black text-[#6B1E22]">Ce que vous obtenez</p>
+                <ul className="mt-3 space-y-2.5 text-sm font-semibold text-black/75">
+                  <li className="rounded-lg border border-black/10 bg-white px-3 py-2">Un statut business dominant clair</li>
+                  <li className="rounded-lg border border-black/10 bg-white px-3 py-2">Un coût caché identifié</li>
+                  <li className="rounded-lg border border-black/10 bg-white px-3 py-2">Une prochaine étape prioritaire</li>
+                </ul>
+                <div className="mt-4 rounded-lg border border-[#6B1E22]/20 bg-[#6B1E22]/10 px-3 py-2">
+                  <p className="text-xs font-black uppercase tracking-[0.1em] text-[#6B1E22]">Sans friction</p>
+                  <p className="mt-1 text-sm font-bold text-[#4D171A]">Vous voyez d’abord le résultat, sans formulaire bloquant.</p>
+                </div>
+              </aside>
+            </div>
           </div>
         </div>
       </section>
 
-      <section ref={quizRef} className="border-b border-black/10 bg-white">
-        <div className="mx-auto max-w-4xl px-4 py-12 md:py-14">
-          <div className="rounded-[24px] border border-black/10 bg-white p-5 md:p-7 shadow-[0_20px_45px_-26px_rgba(0,0,0,0.45)]">
+      <section ref={quizRef}>
+        <div className="mx-auto max-w-6xl px-4 pb-10">
+          <div className="rounded-3xl border border-black/10 bg-white p-5 md:p-7 shadow-[0_24px_55px_-30px_rgba(0,0,0,0.35)]">
             <div className="mb-6">
               <div className="flex items-center justify-between">
                 <p className="text-[11px] uppercase tracking-[0.14em] font-black text-black/50">
@@ -472,8 +488,9 @@ export default function QuizStatutBusinessPage() {
 
       {started && isComplete && (
         <>
-          <section className="border-b border-black/10 bg-white">
-            <div className="mx-auto max-w-5xl px-4 py-12">
+          <section>
+            <div className="mx-auto max-w-6xl px-4 pb-10">
+              <div className="rounded-3xl border border-black/10 bg-white p-6 md:p-8 shadow-[0_20px_45px_-26px_rgba(0,0,0,0.3)]">
               <p className="text-[11px] uppercase tracking-[0.14em] font-black text-[#6B1E22]/80">Promesse Popey</p>
               <h2 className="text-3xl md:text-5xl font-black leading-tight">
                 Ne cherchez plus seulement des clients.
@@ -500,10 +517,12 @@ export default function QuizStatutBusinessPage() {
                   {PRIMARY_CTA}
                 </Link>
               </div>
+              </div>
             </div>
           </section>
-          <section className="border-b border-black/10 bg-[#FBF9F5]">
-            <div className="mx-auto max-w-6xl px-4 py-12">
+          <section>
+            <div className="mx-auto max-w-6xl px-4 pb-14">
+              <div className="rounded-3xl border border-black/10 bg-[#FBF9F5] p-6 md:p-8">
               <div className="max-w-4xl">
                 <p className="text-[11px] uppercase tracking-[0.14em] font-black text-[#6B1E22]/80">Pyramide des statuts</p>
                 <h2 className="text-2xl md:text-4xl font-black">Les 8 niveaux de statut business local</h2>
@@ -537,6 +556,7 @@ export default function QuizStatutBusinessPage() {
                 <div className="rounded-lg border border-black/10 bg-white px-3 py-2 text-center">Base : visibilité faible</div>
                 <div className="rounded-lg border border-black/10 bg-white px-3 py-2 text-center">Milieu : réseau actif</div>
                 <div className="rounded-lg border border-black/10 bg-white px-3 py-2 text-center">Sommet : autorité locale</div>
+              </div>
               </div>
             </div>
           </section>
