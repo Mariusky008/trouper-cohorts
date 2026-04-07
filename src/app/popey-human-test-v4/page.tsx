@@ -54,6 +54,9 @@ type MetierSimulatorItem = {
   inbound: string[];
   outbound: string[];
   narratif: string;
+  indice_nom?: string;
+  label_force?: string;
+  description_force?: string;
 };
 
 const metierSimulatorData: MetierSimulatorItem[] = [
@@ -65,6 +68,9 @@ const metierSimulatorData: MetierSimulatorItem[] = [
     inbound: ["Notaire", "Diagnostiqueur", "Courtier"],
     outbound: ["Maître d'Œuvre", "Cuisiniste", "Déménageur"],
     narratif: "Chaque estimation que vous faites est une mine d'or. En signalant un compromis, vous déclenchez le travail de 5 collègues. Résultat : vous encaissez des commissions sur des services que vous recommandiez gratuitement auparavant.",
+    indice_nom: "Score de Pertinence Marché",
+    label_force: "Moteur de la Sphère",
+    description_force: "Vous êtes la source. Votre puissance réside dans votre capacité à générer des commissions en cascade.",
   },
   {
     id: "pisciniste",
@@ -236,6 +242,9 @@ const metierSimulatorData: MetierSimulatorItem[] = [
     inbound: ["Agent Immo", "Notaire"],
     outbound: ["Garde-Meubles", "Nettoyage", "Conciergerie"],
     narratif: "Le déménagement est le point de bascule. Vous savez qui part, qui arrive et qui a trop de meubles. Popey monétise ces infos logistiques stratégiques.",
+    indice_nom: "Indice de Vitesse de ROI",
+    label_force: "Accélérateur de Transition",
+    description_force: "Votre métier est le point de passage obligé. Vous ne recevez peut-être que 4 alertes, mais ce sont 4 signatures garanties.",
   },
   {
     id: "architecte-int",
@@ -354,19 +363,67 @@ export default function PopeyHumanTestV4Page() {
 
   const maxCa = useMemo(() => Math.max(...metierSimulatorData.map((item) => item.ca_mensuel)), []);
   const maxComm = useMemo(() => Math.max(...metierSimulatorData.map((item) => item.comm_mensuelle)), []);
-  const synergyScore = useMemo(() => {
+  const maxConnections = useMemo(
+    () =>
+      Math.max(
+        ...metierSimulatorData.map((item) =>
+          item.inbound.length +
+          item.outbound.length +
+          (item.outbound.some((entry) => entry.includes("Tous les Artisans")) ? 8 : 0)
+        )
+      ),
+    []
+  );
+  const isPilierProfile = useMemo(() => {
+    if (!selectedMetier) return false;
+    const connectionCount =
+      selectedMetier.inbound.length +
+      selectedMetier.outbound.length +
+      (selectedMetier.outbound.some((entry) => entry.includes("Tous les Artisans")) ? 8 : 0);
+    return connectionCount >= 6;
+  }, [selectedMetier]);
+  const strategicIndex = useMemo(() => {
     if (!selectedMetier) return 0;
-    const weighted =
-      (selectedMetier.ca_mensuel / maxCa) * 0.6 + (selectedMetier.comm_mensuelle / maxComm) * 0.4;
-    return Math.round(weighted * 100);
-  }, [selectedMetier, maxCa, maxComm]);
-  const synergyLevelLabel = useMemo(() => {
-    if (synergyScore >= 80) return "Très fort";
-    if (synergyScore >= 60) return "Fort";
-    if (synergyScore >= 40) return "En progression";
-    if (synergyScore >= 20) return "À activer";
-    return "À construire";
-  }, [synergyScore]);
+    const connectionCount =
+      selectedMetier.inbound.length +
+      selectedMetier.outbound.length +
+      (selectedMetier.outbound.some((entry) => entry.includes("Tous les Artisans")) ? 8 : 0);
+    if (isPilierProfile) {
+      const volumeScore =
+        (selectedMetier.ca_mensuel / maxCa) * 0.45 +
+        (selectedMetier.comm_mensuelle / maxComm) * 0.25 +
+        (connectionCount / maxConnections) * 0.3;
+      return Math.round(volumeScore * 100);
+    }
+    const conversionEase =
+      (selectedMetier.comm_mensuelle / maxComm) * 0.55 +
+      Math.min(1, selectedMetier.ca_mensuel / Math.max(8000, maxCa * 0.45)) * 0.2 +
+      (1 - Math.min(connectionCount / maxConnections, 1)) * 0.25;
+    return Math.round(conversionEase * 100);
+  }, [selectedMetier, isPilierProfile, maxCa, maxComm, maxConnections]);
+  const indiceNom = useMemo(() => {
+    if (!selectedMetier) return "";
+    if (selectedMetier.indice_nom) return selectedMetier.indice_nom;
+    return isPilierProfile ? "Score de Pertinence Marché" : "Indice de Vitesse de ROI";
+  }, [selectedMetier, isPilierProfile]);
+  const labelForce = useMemo(() => {
+    if (!selectedMetier) return "";
+    if (selectedMetier.label_force) return selectedMetier.label_force;
+    return isPilierProfile ? "Profil Pilier / Flux Massif" : "Profil Finisseur / Haute Précision";
+  }, [selectedMetier, isPilierProfile]);
+  const descriptionForce = useMemo(() => {
+    if (!selectedMetier) return "";
+    if (selectedMetier.description_force) return selectedMetier.description_force;
+    if (isPilierProfile) {
+      return "Vous êtes au cœur du réacteur local : vous brassez du volume et déclenchez des commissions en cascade.";
+    }
+    return "Vous intervenez à des moments clés : peu de signaux, mais des dossiers chauds et rapides à convertir.";
+  }, [selectedMetier, isPilierProfile]);
+  const niveauForce = useMemo(() => {
+    if (!selectedMetier) return "";
+    if (strategicIndex >= 80) return "Très élevé";
+    return "Élevé";
+  }, [selectedMetier, strategicIndex]);
 
   const phaseMessage = useMemo(() => {
     if (month === 1) return "M1: le pack duo démarre et crée le premier CA.";
@@ -912,12 +969,12 @@ export default function PopeyHumanTestV4Page() {
                 <>
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 <div className="rounded-xl border border-[#B6FF2B]/30 bg-[#1A2513] p-3">
-                  <p className="text-[11px] font-black uppercase tracking-[0.12em] text-[#B6FF2B]/85">Score de Synergie</p>
-                  <p className="mt-1 text-2xl font-black text-[#B6FF2B]">{synergyScore}%</p>
+                  <p className="text-[11px] font-black uppercase tracking-[0.12em] text-[#B6FF2B]/85">{indiceNom}</p>
+                  <p className="mt-1 text-2xl font-black text-[#B6FF2B]">{niveauForce}</p>
                   <div className="mt-2 h-2 rounded-full bg-white/15 overflow-hidden">
-                    <div className="h-full bg-[#B6FF2B] transition-all duration-500" style={{ width: `${synergyScore}%` }} />
+                    <div className="h-full bg-[#B6FF2B] transition-all duration-500" style={{ width: `${Math.max(55, strategicIndex)}%` }} />
                   </div>
-                  <p className="mt-1 text-xs font-bold text-[#B6FF2B]/85">Niveau actuel : {synergyLevelLabel}</p>
+                  <p className="mt-1 text-xs font-bold text-[#B6FF2B]/85">{isPilierProfile ? "Logique volume" : "Logique conversion rapide"}</p>
                 </div>
 
                 <div className="rounded-xl border border-[#E7BE65]/35 bg-[#2A2111] p-3">
@@ -956,6 +1013,12 @@ export default function PopeyHumanTestV4Page() {
                     ))}
                   </div>
                 </div>
+              </div>
+
+              <div className="rounded-xl border border-white/10 bg-white/5 p-3">
+                <p className="text-[11px] font-black uppercase tracking-[0.12em] text-white/70">Label de Force</p>
+                <p className="mt-1 text-base font-black text-[#B6FF2B]">{labelForce}</p>
+                <p className="mt-1 text-sm font-medium leading-relaxed text-white/85">{descriptionForce}</p>
               </div>
 
               <div className="rounded-xl border border-white/10 bg-white/5 p-3">
