@@ -46,10 +46,296 @@ const faqItems = [
   },
 ];
 
+type MetierSimulatorItem = {
+  id: string;
+  metier: string;
+  ca_mensuel: number;
+  comm_mensuelle: number;
+  inbound: string[];
+  outbound: string[];
+  narratif: string;
+};
+
+const metierSimulatorData: MetierSimulatorItem[] = [
+  {
+    id: "agent-immo",
+    metier: "Agent Immobilier",
+    ca_mensuel: 18000,
+    comm_mensuelle: 2200,
+    inbound: ["Notaire", "Diagnostiqueur", "Courtier"],
+    outbound: ["Maître d'Œuvre", "Cuisiniste", "Déménageur"],
+    narratif: "Chaque estimation que vous faites est une mine d'or. En signalant un compromis, vous déclenchez le travail de 5 collègues. Résultat : vous encaissez des commissions sur des services que vous recommandiez gratuitement auparavant.",
+  },
+  {
+    id: "pisciniste",
+    metier: "Pisciniste",
+    ca_mensuel: 35000,
+    comm_mensuelle: 1400,
+    inbound: ["Paysagiste", "Maître d'Œuvre", "Courtier"],
+    outbound: ["Électricien", "Plombier", "Paysagiste"],
+    narratif: "Votre panier moyen est élevé, mais vos clients attendent souvent des mois. Le Radar Popey vous apporte des projets déjà financés et prêts à creuser, tout en vous rémunérant sur l'aménagement extérieur global.",
+  },
+  {
+    id: "paysagiste",
+    metier: "Paysagiste",
+    ca_mensuel: 12000,
+    comm_mensuelle: 1000,
+    inbound: ["Constructeur", "Pisciniste", "Agent Immo"],
+    outbound: ["Clôture/Portail", "Store", "Élagueur"],
+    narratif: "Sur 10 jardins, 3 clients veulent une pergola ou un spa. En ouvrant vos oreilles au Radar, vous financez votre abonnement Popey uniquement via vos commissions, sans lever une pelle de plus.",
+  },
+  {
+    id: "cuisiniste",
+    metier: "Cuisiniste",
+    ca_mensuel: 24000,
+    comm_mensuelle: 650,
+    inbound: ["Agent Immo", "Architecte", "Maître d'Œuvre"],
+    outbound: ["Électricien", "Plombier", "Carreleur"],
+    narratif: "Le moment du choix de la cuisine est le pivot de toute rénovation. En captant les clients dès le compromis de vente via l'Agent Immo, vous verrouillez votre vente avant même que le client ne fasse les magasins.",
+  },
+  {
+    id: "electricien",
+    metier: "Électricien",
+    ca_mensuel: 8000,
+    comm_mensuelle: 450,
+    inbound: ["Cuisiniste", "Maître d'Œuvre", "Pisciniste"],
+    outbound: ["Domotique", "Solaire", "Alarme"],
+    narratif: "Mise aux normes, bornes de recharge... vous êtes partout. Le Radar Popey transforme vos interventions techniques en opportunités de business pour la sécurité et l'énergie, payées en commissions directes.",
+  },
+  {
+    id: "notaire",
+    metier: "Notaire",
+    ca_mensuel: 12000,
+    comm_mensuelle: 1700,
+    inbound: ["Agent Immo", "Expert-Comptable"],
+    outbound: ["Diagnostiqueur", "Déménageur", "Courtier"],
+    narratif: "En tant que premier maillon de la chaîne, vous voyez les successions et les ventes avant tout le monde. Popey transforme votre rôle de conseil en un moteur de revenus passifs via le ruissellement vers les services.",
+  },
+  {
+    id: "courtier",
+    metier: "Courtier en Prêt",
+    ca_mensuel: 8000,
+    comm_mensuelle: 750,
+    inbound: ["Agent Immo", "Notaire", "Maître d'Œuvre"],
+    outbound: ["Assureur", "Gestionnaire Patrimoine", "Agent Immo"],
+    narratif: "Vous connaissez le budget exact des clients. Le Radar Popey vous permet d'orienter ce budget vers les bons pros du cercle, sécurisant ainsi le dossier de prêt et vos commissions d'apporteur.",
+  },
+  {
+    id: "maitre-oeuvre",
+    metier: "Maître d'Œuvre",
+    ca_mensuel: 15000,
+    comm_mensuelle: 3000,
+    inbound: ["Agent Immo", "Architecte", "Courtier"],
+    outbound: ["Tous les Artisans du Cercle"],
+    narratif: "Vous êtes le chef d'orchestre. Le Radar Popey vous donne accès à des terrains hors-marché et centralise toutes vos commissions d'apporteurs auprès des artisans en un seul virement mensuel.",
+  },
+  {
+    id: "charpentier",
+    metier: "Charpentier / Couvreur",
+    ca_mensuel: 25000,
+    comm_mensuelle: 600,
+    inbound: ["Maître d'Œuvre", "Diagnostiqueur"],
+    outbound: ["Façadier", "Électricien (Solaire)"],
+    narratif: "Une toiture à refaire cache souvent un besoin d'isolation ou de panneaux solaires. Le Radar Popey valorise votre expertise technique en vous connectant aux énergies renouvelables.",
+  },
+  {
+    id: "menuisier",
+    metier: "Menuisier",
+    ca_mensuel: 12000,
+    comm_mensuelle: 450,
+    inbound: ["Maître d'Œuvre", "Architecte", "Façadier"],
+    outbound: ["Store/Portail", "Domotique", "Peintre"],
+    narratif: "Fenêtres et portes sont des signes de rénovation globale. En signalant ces chantiers, vous activez le pôle domotique et sécurité pour un bonus de revenus mensuels.",
+  },
+  {
+    id: "facadier",
+    metier: "Façadier / Peintre Ext.",
+    ca_mensuel: 15000,
+    comm_mensuelle: 350,
+    inbound: ["Menuisier", "Maître d'Œuvre", "Diagnostiqueur"],
+    outbound: ["Store/Pergola", "Paysagiste"],
+    narratif: "Le ravalement est souvent la dernière étape avant la vente ou juste après l'achat. Vous êtes le lien parfait vers l'aménagement extérieur et les protections solaires.",
+  },
+  {
+    id: "plombier",
+    metier: "Plombier / Chauffagiste",
+    ca_mensuel: 10000,
+    comm_mensuelle: 550,
+    inbound: ["Maître d'Œuvre", "Cuisiniste", "Pisciniste"],
+    outbound: ["Électricien", "Carreleur"],
+    narratif: "Salles de bains et chaufferies sont des déclencheurs de travaux. Le Radar Popey vous permet de monétiser votre présence chez le client en recommandant le carreleur ou l'électricien du cercle.",
+  },
+  {
+    id: "solaire",
+    metier: "Spécialiste Solaire",
+    ca_mensuel: 20000,
+    comm_mensuelle: 750,
+    inbound: ["Charpentier", "Électricien", "Courtier"],
+    outbound: ["Domotique", "Couvreur"],
+    narratif: "Le solaire est un investissement financier. Popey vous apporte des clients déjà sensibilisés par l'électricien ou le couvreur, augmentant votre taux de conversion de 40%.",
+  },
+  {
+    id: "cheministe",
+    metier: "Cheministe / Poêlier",
+    ca_mensuel: 10000,
+    comm_mensuelle: 300,
+    inbound: ["Maître d'Œuvre", "Chauffagiste"],
+    outbound: ["Ramoneur", "Peintre"],
+    narratif: "Chaque nouveau poêle est une rénovation de salon. Le Radar Popey vous connecte aux peintres et décorateurs pour transformer un simple conduit en un projet déco rémunéré.",
+  },
+  {
+    id: "carreleur",
+    metier: "Carreleur",
+    ca_mensuel: 9000,
+    comm_mensuelle: 350,
+    inbound: ["Plombier", "Cuisiniste", "Architecte"],
+    outbound: ["Peintre", "Nettoyage"],
+    narratif: "Vous intervenez souvent en fin de gros œuvre. Le Radar Popey vous assure un flux constant via les cuisinistes et plombiers de la ville.",
+  },
+  {
+    id: "decorateur",
+    metier: "Décorateur / Home Stager",
+    ca_mensuel: 4500,
+    comm_mensuelle: 800,
+    inbound: ["Architecte", "Agent Immo", "Photographe"],
+    outbound: ["Magasin de meubles", "Peintre"],
+    narratif: "Votre conseil est précieux. Le Radar Popey rémunère votre œil d'expert : chaque recommandation de mobilier ou de travaux devient une commission nette.",
+  },
+  {
+    id: "portail",
+    metier: "Portail / Store / Pergola",
+    ca_mensuel: 9000,
+    comm_mensuelle: 300,
+    inbound: ["Paysagiste", "Façadier", "Menuisier"],
+    outbound: ["Domotique", "Alarme", "Électricien"],
+    narratif: "Vous terminez l'esthétique de la maison. Popey vous apporte les chantiers de construction qui arrivent à terme, là où le besoin de fermeture est immédiat.",
+  },
+  {
+    id: "assureur",
+    metier: "Assureur",
+    ca_mensuel: 3000,
+    comm_mensuelle: 600,
+    inbound: ["Courtier", "Agent Immo", "Expert-Comptable"],
+    outbound: ["Gestionnaire Patrimoine", "Alarme"],
+    narratif: "Le prêt immo déclenche l'assurance. Le Radar Popey vous place en pole position dès la signature du compromis pour récupérer les contrats MRH et prévoyance.",
+  },
+  {
+    id: "diagnostiqueur",
+    metier: "Diagnostiqueur",
+    ca_mensuel: 2400,
+    comm_mensuelle: 1400,
+    inbound: ["Agent Immo", "Notaire"],
+    outbound: ["Maître d'Œuvre", "Charpentier", "Désamianteur"],
+    narratif: "Vous êtes le premier à entrer dans la maison. Votre rapport de diagnostic dicte les futurs travaux. Popey transforme vos préconisations techniques en commissions sur les travaux réalisés.",
+  },
+  {
+    id: "demenageur",
+    metier: "Déménageur",
+    ca_mensuel: 6000,
+    comm_mensuelle: 300,
+    inbound: ["Agent Immo", "Notaire"],
+    outbound: ["Garde-Meubles", "Nettoyage", "Conciergerie"],
+    narratif: "Le déménagement est le point de bascule. Vous savez qui part, qui arrive et qui a trop de meubles. Popey monétise ces infos logistiques stratégiques.",
+  },
+  {
+    id: "architecte-int",
+    metier: "Architecte d’intérieur",
+    ca_mensuel: 8000,
+    comm_mensuelle: 2200,
+    inbound: ["Agent Immo", "Maître d'Œuvre"],
+    outbound: ["Décorateur", "Cuisiniste", "Carreleur"],
+    narratif: "Vous transformez les volumes. Le Radar Popey vous apporte des acquéreurs de plateaux bruts et vous rémunère sur tous les corps d'état que vous faites intervenir.",
+  },
+  {
+    id: "photographe",
+    metier: "Photographe Immobilier",
+    ca_mensuel: 1800,
+    comm_mensuelle: 350,
+    inbound: ["Agent Immo", "Conciergerie"],
+    outbound: ["Décorateur", "Home Stager"],
+    narratif: "Vous sublimez les biens. Votre présence sur site vous permet de détecter les besoins de Home Staging avant la mise en vente, générant des commissions bonus.",
+  },
+  {
+    id: "expert-comptable",
+    metier: "Expert-Comptable",
+    ca_mensuel: 4000,
+    comm_mensuelle: 500,
+    inbound: ["Notaire", "Courtier"],
+    outbound: ["Gestionnaire Patrimoine", "Assureur"],
+    narratif: "Création de SCI, investissements LMNP... vous conseillez les investisseurs. Popey vous permet d'offrir une solution clé en main à vos clients pour leur patrimoine.",
+  },
+  {
+    id: "gest-patrimoine",
+    metier: "Gestionnaire Patrimoine",
+    ca_mensuel: 15000,
+    comm_mensuelle: 1000,
+    inbound: ["Expert-Comptable", "Assureur", "Notaire"],
+    outbound: ["Agent Immo (Achat)", "Courtier"],
+    narratif: "La vente d'un bien génère du cash à réinvestir. Popey vous alerte dès qu'un capital se libère dans le cercle pour proposer vos solutions de placement.",
+  },
+  {
+    id: "conciergerie",
+    metier: "Conciergerie Airbnb",
+    ca_mensuel: 2000,
+    comm_mensuelle: 700,
+    inbound: ["Agent Immo", "Photographe"],
+    outbound: ["Nettoyage", "Blanchisserie", "Plombier"],
+    narratif: "Les investisseurs cherchent de la rentabilité. Popey vous amène les propriétaires de résidences secondaires et vous aide à gérer vos besoins en maintenance via le cercle.",
+  },
+  {
+    id: "event-planner",
+    metier: "Event Planner",
+    ca_mensuel: 10000,
+    comm_mensuelle: 1000,
+    inbound: ["Conciergerie", "Paysagiste"],
+    outbound: ["Traiteur", "Photographe", "Sono"],
+    narratif: "Les grandes propriétés se louent pour des événements. Popey vous connecte aux propriétaires de parcs et domaines pour organiser des réceptions d'exception.",
+  },
+  {
+    id: "domotique",
+    metier: "Domotique / Alarme",
+    ca_mensuel: 12000,
+    comm_mensuelle: 450,
+    inbound: ["Électricien", "Portail", "Assureur"],
+    outbound: ["Serrurier", "Électricien"],
+    narratif: "La sécurité est la priorité post-achat. Le Radar Popey vous envoie chez le client au moment précis où il installe ses meubles et ses valeurs.",
+  },
+  {
+    id: "nettoyage",
+    metier: "Société de Nettoyage",
+    ca_mensuel: 2500,
+    comm_mensuelle: 200,
+    inbound: ["Carreleur", "Maître d'Œuvre", "Déménageur"],
+    outbound: ["Conciergerie", "Diagnostiqueur"],
+    narratif: "Fin de chantier ou déménagement : votre intervention est le point final. Popey vous apporte des contrats récurrents via les pros du bâtiment du cercle.",
+  },
+  {
+    id: "elagueur",
+    metier: "Élagueur",
+    ca_mensuel: 3000,
+    comm_mensuelle: 350,
+    inbound: ["Paysagiste", "Assureur", "Notaire"],
+    outbound: ["Paysagiste", "Charpentier"],
+    narratif: "Un arbre dangereux est souvent détecté lors d'une vente ou d'une tempête (Assurance). Popey vous place directement sur ces urgences payantes.",
+  },
+  {
+    id: "garde-meubles",
+    metier: "Garde-Meubles / Stockage",
+    ca_mensuel: 1500,
+    comm_mensuelle: 250,
+    inbound: ["Déménageur", "Notaire", "Agent Immo"],
+    outbound: ["Déménageur", "Nettoyage"],
+    narratif: "Entre deux maisons, le stockage est obligatoire. Popey vous apporte les clients en transition immobilière pour remplir vos box à 100%.",
+  },
+];
+
 export default function PopeyHumanTestV4Page() {
   const [tick, setTick] = useState(0);
   const [showCityModal, setShowCityModal] = useState(false);
   const [showMetierModal, setShowMetierModal] = useState(false);
+  const [selectedMetierId, setSelectedMetierId] = useState(metierSimulatorData[0].id);
+  const [animatedCa, setAnimatedCa] = useState(0);
+  const [animatedComm, setAnimatedComm] = useState(0);
   const [problemSceneStarted, setProblemSceneStarted] = useState(false);
   const [activationTimelineStarted, setActivationTimelineStarted] = useState(false);
   const problemSectionRef = useRef<HTMLElement | null>(null);
@@ -61,6 +347,19 @@ export default function PopeyHumanTestV4Page() {
   const incomingRevenue = Math.max(month - 1, 0) * 400;
   const commissionRevenue = Math.max(month - 2, 0) * 500;
   const totalRevenue = duoRevenue + incomingRevenue + commissionRevenue;
+  const selectedMetier = useMemo(
+    () => metierSimulatorData.find((item) => item.id === selectedMetierId) ?? metierSimulatorData[0],
+    [selectedMetierId]
+  );
+
+  const maxCa = useMemo(() => Math.max(...metierSimulatorData.map((item) => item.ca_mensuel)), []);
+  const maxComm = useMemo(() => Math.max(...metierSimulatorData.map((item) => item.comm_mensuelle)), []);
+  const synergyScore = useMemo(() => {
+    const weighted =
+      (selectedMetier.ca_mensuel / maxCa) * 0.6 + (selectedMetier.comm_mensuelle / maxComm) * 0.4;
+    return Math.round(weighted * 100);
+  }, [selectedMetier, maxCa, maxComm]);
+  const synergyStars = Math.max(1, Math.round(synergyScore / 20));
 
   const phaseMessage = useMemo(() => {
     if (month === 1) return "M1: le pack duo démarre et crée le premier CA.";
@@ -95,6 +394,33 @@ export default function PopeyHumanTestV4Page() {
       window.removeEventListener("keydown", onKeyDown);
     };
   }, [showCityModal, showMetierModal]);
+
+  useEffect(() => {
+    if (!showMetierModal) return;
+
+    let frameId = 0;
+    let startTs = 0;
+    const duration = 850;
+    const targetCa = selectedMetier.ca_mensuel;
+    const targetComm = selectedMetier.comm_mensuelle;
+
+    const animate = (ts: number) => {
+      if (!startTs) startTs = ts;
+      const progress = Math.min((ts - startTs) / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setAnimatedCa(Math.round(targetCa * eased));
+      setAnimatedComm(Math.round(targetComm * eased));
+      if (progress < 1) {
+        frameId = window.requestAnimationFrame(animate);
+      }
+    };
+
+    setAnimatedCa(0);
+    setAnimatedComm(0);
+    frameId = window.requestAnimationFrame(animate);
+
+    return () => window.cancelAnimationFrame(frameId);
+  }, [selectedMetier, showMetierModal]);
 
   useEffect(() => {
     const isMobile = window.matchMedia("(max-width: 767px)").matches;
@@ -530,54 +856,103 @@ export default function PopeyHumanTestV4Page() {
           onClick={() => setShowMetierModal(false)}
         >
           <div
-            className="w-full max-w-2xl h-[88dvh] sm:h-auto sm:max-h-[86vh] rounded-t-2xl sm:rounded-2xl border border-black/10 bg-white flex flex-col"
+            className="w-full max-w-4xl h-[92dvh] sm:h-auto sm:max-h-[92vh] rounded-t-2xl sm:rounded-2xl border border-black/10 bg-[#0F1110] text-white flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="sticky top-0 z-10 border-b border-black/10 bg-white px-4 py-3 sm:px-5 sm:py-4 rounded-t-2xl">
+            <div className="sticky top-0 z-10 border-b border-white/10 bg-[#111513] px-4 py-3 sm:px-5 sm:py-4 rounded-t-2xl">
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <p className="text-xs font-black uppercase tracking-[0.14em] text-black/55">Sphère habitat</p>
-                  <h3 className="mt-1 text-xl sm:text-2xl font-black">20 métiers de la liste actuelle</h3>
+                  <p className="text-xs font-black uppercase tracking-[0.14em] text-[#B6FF2B]/80">Simulateur de rentabilité</p>
+                  <h3 className="mt-1 text-xl sm:text-2xl font-black">Choisissez votre métier (30 disponibles)</h3>
                 </div>
                 <button
                   onClick={() => setShowMetierModal(false)}
-                  className="rounded-md border border-black/15 px-3 py-1 text-xs font-black uppercase tracking-wide"
+                  className="rounded-md border border-white/20 px-3 py-1 text-xs font-black uppercase tracking-wide text-white/90"
                 >
                   Fermer
                 </button>
               </div>
             </div>
-            <div className="flex-1 overflow-y-auto px-4 py-3 sm:px-5">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm font-bold text-black/80">
-              <p className="rounded-lg border border-black/10 bg-[#F7F7F7] px-3 py-2">Agent immobilier</p>
-              <p className="rounded-lg border border-black/10 bg-[#F7F7F7] px-3 py-2">Courtier</p>
-              <p className="rounded-lg border border-black/10 bg-[#F7F7F7] px-3 py-2">Notaire</p>
-              <p className="rounded-lg border border-black/10 bg-[#F7F7F7] px-3 py-2">Diagnostiqueur immobilier</p>
-              <p className="rounded-lg border border-black/10 bg-[#F7F7F7] px-3 py-2">Assureur</p>
-              <p className="rounded-lg border border-black/10 bg-[#F7F7F7] px-3 py-2">Architecte d'intérieur</p>
-              <p className="rounded-lg border border-black/10 bg-[#F7F7F7] px-3 py-2">Architecte</p>
-              <p className="rounded-lg border border-black/10 bg-[#F7F7F7] px-3 py-2">Maître d'oeuvre</p>
-              <p className="rounded-lg border border-black/10 bg-[#F7F7F7] px-3 py-2">Artisan rénovation</p>
-              <p className="rounded-lg border border-black/10 bg-[#F7F7F7] px-3 py-2">Électricien</p>
-              <p className="rounded-lg border border-black/10 bg-[#F7F7F7] px-3 py-2">Plombier</p>
-              <p className="rounded-lg border border-black/10 bg-[#F7F7F7] px-3 py-2">Menuisier</p>
-              <p className="rounded-lg border border-black/10 bg-[#F7F7F7] px-3 py-2">Cuisiniste</p>
-              <p className="rounded-lg border border-black/10 bg-[#F7F7F7] px-3 py-2">Home stager</p>
-              <p className="rounded-lg border border-black/10 bg-[#F7F7F7] px-3 py-2">Photographe immobilier</p>
-              <p className="rounded-lg border border-black/10 bg-[#F7F7F7] px-3 py-2">Déménageur</p>
-              <p className="rounded-lg border border-black/10 bg-[#F7F7F7] px-3 py-2">Conciergerie privée</p>
-              <p className="rounded-lg border border-black/10 bg-[#F7F7F7] px-3 py-2">Décorateur</p>
-              <p className="rounded-lg border border-black/10 bg-[#F7F7F7] px-3 py-2">Expert-comptable</p>
-              <p className="rounded-lg border border-black/10 bg-[#F7F7F7] px-3 py-2">Avocat immobilier</p>
+            <div className="flex-1 overflow-y-auto px-4 py-4 sm:px-5 space-y-4">
+              <div className="rounded-xl border border-white/10 bg-white/5 p-3">
+                <label htmlFor="metier-select" className="text-xs font-black uppercase tracking-[0.14em] text-white/75">
+                  Métier
+                </label>
+                <select
+                  id="metier-select"
+                  value={selectedMetierId}
+                  onChange={(e) => setSelectedMetierId(e.target.value)}
+                  className="mt-2 h-11 w-full rounded-lg border border-white/20 bg-[#1A1E1C] px-3 text-sm font-bold text-white"
+                >
+                  {metierSimulatorData.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {item.metier}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                <div className="rounded-xl border border-[#B6FF2B]/30 bg-[#1A2513] p-3">
+                  <p className="text-[11px] font-black uppercase tracking-[0.12em] text-[#B6FF2B]/85">Score de Synergie</p>
+                  <p className="mt-1 text-2xl font-black text-[#B6FF2B]">{synergyScore}%</p>
+                  <div className="mt-2 h-2 rounded-full bg-white/15 overflow-hidden">
+                    <div className="h-full bg-[#B6FF2B] transition-all duration-500" style={{ width: `${synergyScore}%` }} />
+                  </div>
+                  <p className="mt-1 text-xs text-[#B6FF2B]/85">{Array.from({ length: synergyStars }).map(() => "★").join("")}</p>
+                </div>
+
+                <div className="rounded-xl border border-[#E7BE65]/35 bg-[#2A2111] p-3">
+                  <p className="text-[11px] font-black uppercase tracking-[0.12em] text-[#E7BE65]/85">CA Additionnel Potentiel</p>
+                  <p className="mt-1 text-2xl font-black text-[#E7BE65]">{animatedCa.toLocaleString("fr-FR")}€</p>
+                  <p className="text-xs text-white/70">Mensuel estimé</p>
+                </div>
+
+                <div className="rounded-xl border border-[#E7BE65]/35 bg-[#2A2111] p-3 sm:col-span-2">
+                  <p className="text-[11px] font-black uppercase tracking-[0.12em] text-[#E7BE65]/85">Commissions Nettes</p>
+                  <p className="mt-1 text-2xl font-black text-[#E7BE65]">{animatedComm.toLocaleString("fr-FR")}€</p>
+                  <p className="text-xs text-white/70">Mensuel estimé</p>
+                </div>
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="rounded-xl border border-white/10 bg-white/5 p-3">
+                  <p className="text-[11px] font-black uppercase tracking-[0.12em] text-white/70">Radar Inbound</p>
+                  <p className="text-sm font-bold text-[#B6FF2B]">Qui vous envoie du business ?</p>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {selectedMetier.inbound.map((entry) => (
+                      <span key={entry} className="rounded-full border border-white/20 bg-black/30 px-2.5 py-1 text-xs font-bold">
+                        ↓ {entry}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+                <div className="rounded-xl border border-white/10 bg-white/5 p-3">
+                  <p className="text-[11px] font-black uppercase tracking-[0.12em] text-white/70">Radar Outbound</p>
+                  <p className="text-sm font-bold text-[#B6FF2B]">Sur qui faites-vous ruisseler ?</p>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {selectedMetier.outbound.map((entry) => (
+                      <span key={entry} className="rounded-full border border-white/20 bg-black/30 px-2.5 py-1 text-xs font-bold">
+                        ↑ {entry}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-white/10 bg-white/5 p-3">
+                <p className="text-[11px] font-black uppercase tracking-[0.12em] text-white/70">Narratif Popey</p>
+                <p className="mt-1 text-sm font-medium leading-relaxed text-white/85">{selectedMetier.narratif}</p>
               </div>
             </div>
-            <div className="sticky bottom-0 border-t border-black/10 bg-white p-3 sm:hidden">
-              <button
-                onClick={() => setShowMetierModal(false)}
-                className="h-11 w-full rounded-xl bg-black text-sm font-black uppercase tracking-wide text-white"
+
+            <div className="sticky bottom-0 border-t border-white/10 bg-[#111513] p-3">
+              <Link
+                href="/programme-commando/postuler"
+                className="blink-cta flex h-11 w-full items-center justify-center rounded-xl bg-[#B6FF2B] text-black text-sm font-black uppercase tracking-wide"
               >
-                Fermer la liste
-              </button>
+                Ma place est-elle encore libre à Dax ?
+              </Link>
             </div>
           </div>
         </div>
@@ -687,6 +1062,10 @@ export default function PopeyHumanTestV4Page() {
           0% { transform: translate(-50%, -50%) translateX(calc(-1 * var(--hub-travel))) rotate(-560deg); }
           100% { transform: translate(-50%, -50%) translateX(var(--hub-travel)) rotate(560deg); }
         }
+        @keyframes ctaGlow {
+          0%, 100% { box-shadow: 0 0 0 0 rgba(182,255,43,0.25); transform: translateY(0); }
+          50% { box-shadow: 0 0 0 8px rgba(182,255,43,0); transform: translateY(-1px); }
+        }
         .walk-man {
           animation: walkToPopey 6.8s ease-in-out 1 forwards;
         }
@@ -775,6 +1154,9 @@ export default function PopeyHumanTestV4Page() {
         }
         .hero-status {
           animation: none;
+        }
+        .blink-cta {
+          animation: ctaGlow 1.8s ease-in-out infinite;
         }
         @media (max-width: 767px) {
           .hero-hub {
