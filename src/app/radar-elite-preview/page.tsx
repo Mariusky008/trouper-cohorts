@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 type Role = "membre" | "admin";
 type Tab = "radar" | "portefeuille" | "cercle";
 type DealStatus = "Radar" | "En cours" | "Victoire";
+type FlowScreen = 1 | 2 | 3 | 4;
 
 const memberDeals: Array<{
   id: string;
@@ -29,6 +30,13 @@ const cercle = [
   "Électricien", "Menuisier", "Façadier", "Paysagiste", "Déménageur", "Conciergerie", "Décorateur",
 ];
 
+const flowTitles: Record<FlowScreen, string> = {
+  1: "Screen 1 - Tous les duos",
+  2: "Screen 2 - Planning global",
+  3: "Screen 3 - Programme du jour",
+  4: "Screen 4 - Bilan mensuel",
+};
+
 function statusStyle(status: DealStatus) {
   if (status === "Victoire") return "bg-emerald-500/20 text-emerald-300 border-emerald-400/35";
   if (status === "En cours") return "bg-amber-500/20 text-amber-200 border-amber-400/35";
@@ -38,6 +46,8 @@ function statusStyle(status: DealStatus) {
 export default function RadarElitePreviewPage() {
   const [role, setRole] = useState<Role>("membre");
   const [tab, setTab] = useState<Tab>("radar");
+  const [flowScreen, setFlowScreen] = useState<FlowScreen>(1);
+  const [sunMode, setSunMode] = useState(false);
   const [selectedLead, setSelectedLead] = useState(adminLeads[0].id);
 
   const selectedLeadData = useMemo(
@@ -46,26 +56,26 @@ export default function RadarElitePreviewPage() {
   );
 
   return (
-    <main className="min-h-screen bg-[#080909] text-white px-4 py-8 md:py-10">
+    <main className={`${sunMode ? "sun-mode bg-[#F1F4EC] text-black" : "bg-[#080909] text-white"} min-h-screen px-4 py-8 md:py-10 transition-colors`}>
       <div className="mx-auto max-w-7xl">
         <div className="text-center">
-          <p className="inline-flex rounded-full border border-[#C49A4A]/35 bg-[#C49A4A]/10 px-3 py-1 text-[11px] font-black uppercase tracking-[0.14em] text-[#EAC886]">
+          <p className={`inline-flex rounded-full border px-3 py-1 text-[11px] font-black uppercase tracking-[0.14em] ${sunMode ? "border-black/15 bg-black/5 text-black/75" : "border-[#C49A4A]/35 bg-[#C49A4A]/10 text-[#EAC886]"}`}>
             Prototype Visuel • Popey Academy
           </p>
           <h1 className="mt-3 text-3xl md:text-5xl font-black leading-tight">
             Radar Business Élité
           </h1>
-          <p className="mt-3 text-sm md:text-base text-white/70">
+          <p className={`mt-3 text-sm md:text-base ${sunMode ? "text-black/65" : "text-white/70"}`}>
             Mockup UX uniquement. Aucun backend branché. Objectif : potentiel d’attraction et d’addiction visuelle.
           </p>
         </div>
 
-        <div className="mt-6 flex justify-center">
-          <div className="inline-flex rounded-xl border border-white/10 bg-white/5 p-1">
+        <div className="mt-6 flex flex-wrap justify-center gap-3">
+          <div className={`inline-flex rounded-xl border p-1 ${sunMode ? "border-black/15 bg-black/5" : "border-white/10 bg-white/5"}`}>
             <button
               onClick={() => setRole("membre")}
               className={`rounded-lg px-4 py-2 text-xs font-black uppercase tracking-wide transition ${
-                role === "membre" ? "bg-[#0E3E2A] text-emerald-200" : "text-white/70"
+                role === "membre" ? "bg-[#0E3E2A] text-emerald-200" : sunMode ? "text-black/65" : "text-white/70"
               }`}
             >
               Vue Membre
@@ -73,17 +83,26 @@ export default function RadarElitePreviewPage() {
             <button
               onClick={() => setRole("admin")}
               className={`rounded-lg px-4 py-2 text-xs font-black uppercase tracking-wide transition ${
-                role === "admin" ? "bg-[#3E2E0E] text-[#EAC886]" : "text-white/70"
+                role === "admin" ? "bg-[#3E2E0E] text-[#EAC886]" : sunMode ? "text-black/65" : "text-white/70"
               }`}
             >
               Vue Admin
             </button>
           </div>
+          <button
+            onClick={() => setSunMode((prev) => !prev)}
+            className={`touch-btn rounded-xl border px-4 py-2 text-xs font-black uppercase tracking-wide ${sunMode ? "border-black/20 bg-black text-white" : "border-[#EAC886]/30 bg-[#EAC886]/10 text-[#EAC886]"}`}
+          >
+            {sunMode ? "Mode Soleil ON" : "Mode Soleil OFF"}
+          </button>
         </div>
 
         <div className="mt-8 grid gap-6 lg:grid-cols-3">
-          <section className="rounded-[30px] border border-white/10 bg-gradient-to-b from-[#121414] to-[#0B0D0D] p-4 shadow-[0_24px_55px_-30px_rgba(0,0,0,0.8)]">
-            <div className="rounded-[24px] border border-white/10 bg-[#0A0B0C] p-4 min-h-[640px]">
+          <section className={`phone-shell rounded-[30px] border p-4 ${sunMode ? "border-black/15 bg-white" : "border-white/10 bg-gradient-to-b from-[#121414] to-[#0B0D0D]"} shadow-[0_24px_55px_-30px_rgba(0,0,0,0.8)]`}>
+            <div className={`rounded-[24px] border p-4 min-h-[640px] ${sunMode ? "border-black/15 bg-[#F9FBF5] text-black" : "border-white/10 bg-[#0A0B0C]"}`}>
+              <div className={`mb-4 flex items-center justify-between text-[10px] font-black ${sunMode ? "text-black/70" : "text-white/60"}`}>
+                <span>9:41</span><span className="h-5 w-24 rounded-full bg-black/20" /><span>5G 100%</span>
+              </div>
               <p className="text-xs font-black uppercase tracking-[0.14em] text-white/50">Login Screen</p>
               <div className="mt-16 text-center">
                 <div className="mx-auto h-16 w-16 rounded-2xl bg-gradient-to-br from-[#C49A4A] to-[#EAC886]" />
@@ -100,8 +119,11 @@ export default function RadarElitePreviewPage() {
           </section>
 
           {role === "membre" ? (
-            <section className="lg:col-span-2 rounded-[30px] border border-white/10 bg-gradient-to-b from-[#111414] to-[#0A0C0C] p-4 shadow-[0_24px_55px_-30px_rgba(0,0,0,0.9)]">
-              <div className="rounded-[24px] border border-white/10 bg-[#090B0B] p-4 min-h-[640px] relative">
+            <section className={`phone-shell lg:col-span-2 rounded-[30px] border p-4 ${sunMode ? "border-black/15 bg-white" : "border-white/10 bg-gradient-to-b from-[#111414] to-[#0A0C0C]"} shadow-[0_24px_55px_-30px_rgba(0,0,0,0.9)]`}>
+              <div className={`rounded-[24px] border p-4 min-h-[640px] relative ${sunMode ? "border-black/15 bg-[#F9FBF5] text-black" : "border-white/10 bg-[#090B0B]"}`}>
+                <div className={`mb-4 flex items-center justify-between text-[10px] font-black ${sunMode ? "text-black/70" : "text-white/60"}`}>
+                  <span>9:41</span><span className="h-5 w-24 rounded-full bg-black/20" /><span>5G 82%</span>
+                </div>
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-[11px] font-black uppercase tracking-[0.14em] text-emerald-300/80">Popey Radar</p>
@@ -133,6 +155,30 @@ export default function RadarElitePreviewPage() {
                       {t}
                     </button>
                   ))}
+                </div>
+
+                <div className={`mt-4 rounded-xl border p-3 ${sunMode ? "border-black/15 bg-black/[0.03]" : "border-white/10 bg-white/5"}`}>
+                  <p className={`text-xs font-black uppercase tracking-[0.12em] ${sunMode ? "text-black/60" : "text-white/60"}`}>Flow clair demandé</p>
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {[1, 2, 3, 4].map((n) => (
+                      <button
+                        key={n}
+                        onClick={() => setFlowScreen(n as FlowScreen)}
+                        className={`touch-btn rounded-md px-2.5 py-1.5 text-[10px] font-black uppercase tracking-wide ${
+                          flowScreen === n ? "bg-[#C49A4A] text-black" : sunMode ? "border border-black/20 text-black/70" : "border border-white/20 text-white/75"
+                        }`}
+                      >
+                        Screen {n}
+                      </button>
+                    ))}
+                  </div>
+                  <div key={flowScreen} className={`mt-3 rounded-lg border p-3 animate-[appScreenIn_.28s_ease-out] ${sunMode ? "border-black/15 bg-white" : "border-white/10 bg-black/30"}`}>
+                    <p className="text-sm font-black">{flowTitles[flowScreen]}</p>
+                    {flowScreen === 1 && <p className="mt-1 text-xs opacity-80">Duo Habitat 01 • J18 En avance · Duo Immo 02 • J10 En retard · Duo Travaux 03 • J4 À suivre</p>}
+                    {flowScreen === 2 && <p className="mt-1 text-xs opacity-80">Mois 1 : J1 onboarding ✅ J3 offre duo ✅ J10 intros ❌ J18 scripts en cours</p>}
+                    {flowScreen === 3 && <p className="mt-1 text-xs opacity-80">Aujourd’hui J18 : Formaliser script DM + appel + qualification. Checklist prête.</p>}
+                    {flowScreen === 4 && <p className="mt-1 text-xs opacity-80">Bilan: Leads 18 · RDV 6 · Dossiers 2 · Décision mois 2 à valider.</p>}
+                  </div>
                 </div>
 
                 {tab === "radar" && (
@@ -187,14 +233,17 @@ export default function RadarElitePreviewPage() {
                   </div>
                 )}
 
-                <button className="absolute bottom-4 left-1/2 -translate-x-1/2 h-14 w-[calc(100%-2rem)] rounded-2xl bg-gradient-to-r from-emerald-500 to-emerald-400 text-black font-black uppercase tracking-wide shadow-[0_0_0_0_rgba(16,185,129,0.5)] animate-[pulse_1.8s_ease-in-out_infinite]">
+                <button className="touch-btn absolute bottom-4 left-1/2 -translate-x-1/2 h-14 w-[calc(100%-2rem)] rounded-2xl bg-gradient-to-r from-emerald-500 to-emerald-400 text-black font-black uppercase tracking-wide shadow-[0_0_0_0_rgba(16,185,129,0.5)] animate-[pulse_1.8s_ease-in-out_infinite]">
                   Signaler une opportunité (Vocal)
                 </button>
               </div>
             </section>
           ) : (
-            <section className="lg:col-span-2 rounded-[30px] border border-white/10 bg-gradient-to-b from-[#111414] to-[#0A0C0C] p-4 shadow-[0_24px_55px_-30px_rgba(0,0,0,0.9)]">
-              <div className="rounded-[24px] border border-white/10 bg-[#090B0B] p-4 min-h-[640px]">
+            <section className={`phone-shell lg:col-span-2 rounded-[30px] border p-4 ${sunMode ? "border-black/15 bg-white" : "border-white/10 bg-gradient-to-b from-[#111414] to-[#0A0C0C]"} shadow-[0_24px_55px_-30px_rgba(0,0,0,0.9)]`}>
+              <div className={`rounded-[24px] border p-4 min-h-[640px] ${sunMode ? "border-black/15 bg-[#F9FBF5] text-black" : "border-white/10 bg-[#090B0B]"}`}>
+                <div className={`mb-4 flex items-center justify-between text-[10px] font-black ${sunMode ? "text-black/70" : "text-white/60"}`}>
+                  <span>9:41</span><span className="h-5 w-24 rounded-full bg-black/20" /><span>5G 91%</span>
+                </div>
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-[11px] font-black uppercase tracking-[0.14em] text-[#EAC886]/80">Dashboard Admin</p>
@@ -247,7 +296,30 @@ export default function RadarElitePreviewPage() {
           )}
         </div>
       </div>
+      <style jsx global>{`
+        @keyframes appScreenIn {
+          from { opacity: 0; transform: translateY(8px) scale(0.99); }
+          to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        .phone-shell {
+          position: relative;
+        }
+        .phone-shell::after {
+          content: "";
+          position: absolute;
+          left: 50%;
+          bottom: 10px;
+          width: 120px;
+          height: 4px;
+          border-radius: 999px;
+          transform: translateX(-50%);
+          background: rgba(255,255,255,0.25);
+        }
+        .sun-mode .touch-btn {
+          min-height: 52px;
+          font-size: 13px;
+        }
+      `}</style>
     </main>
   );
 }
-
