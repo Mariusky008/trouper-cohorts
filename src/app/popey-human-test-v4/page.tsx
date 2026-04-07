@@ -586,9 +586,6 @@ export default function PopeyHumanTestV4Page() {
               >
                 Voir si mon métier est dans la liste
               </button>
-              <Link href="/programme-commando/postuler" className="inline-flex items-center justify-center rounded-md bg-black text-white px-6 py-3 text-sm font-black uppercase tracking-wide transition hover:translate-y-[-1px] hover:shadow-[0_8px_0_0_#B6FF2B]">
-                Trouver mon partenaire stratégique
-              </Link>
               <button
                 type="button"
                 onClick={() => setShowCityModal(true)}
@@ -879,18 +876,32 @@ export default function PopeyHumanTestV4Page() {
             En 15 minutes, on valide votre partenaire prioritaire, votre première synergie activable et votre potentiel réel.
           </p>
           <div className="mt-7">
-            <Link href="/programme-commando/postuler" className="inline-flex items-center justify-center rounded-md bg-[#B6FF2B] text-black px-7 py-3 text-sm font-black uppercase tracking-wide transition hover:translate-y-[-1px]">
-              Trouver mon partenaire stratégique
-            </Link>
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedMetierId("");
+                setShowMetierModal(true);
+              }}
+              className="inline-flex items-center justify-center rounded-md bg-[#B6FF2B] text-black px-7 py-3 text-sm font-black uppercase tracking-wide transition hover:translate-y-[-1px]"
+            >
+              Voir si mon métier est dans la liste
+            </button>
           </div>
           <p className="mt-3 text-xs font-bold uppercase tracking-wide text-white/70">Audit court • Sur sélection • Sans engagement</p>
         </div>
       </section>
 
       <div className="fixed bottom-3 left-3 right-3 z-50 md:left-auto md:right-6 md:w-[380px]">
-        <Link href="/programme-commando/postuler" className="flex items-center justify-center rounded-md bg-[#B6FF2B] text-black px-4 py-4 md:py-3 text-base md:text-sm font-black uppercase tracking-wide shadow-[0_12px_30px_-12px_rgba(182,255,43,0.9)] transition hover:scale-[1.01]">
-          Trouver mon partenaire stratégique
-        </Link>
+        <button
+          type="button"
+          onClick={() => {
+            setSelectedMetierId("");
+            setShowMetierModal(true);
+          }}
+          className="flex w-full items-center justify-center rounded-md bg-[#B6FF2B] text-black px-4 py-4 md:py-3 text-base md:text-sm font-black uppercase tracking-wide shadow-[0_12px_30px_-12px_rgba(182,255,43,0.9)] transition hover:scale-[1.01]"
+        >
+          Voir si mon métier est dans la liste
+        </button>
       </div>
 
       {showCityModal && (
@@ -916,7 +927,7 @@ export default function PopeyHumanTestV4Page() {
             </div>
             <div className="mt-4 rounded-xl border border-[#2F7A00]/20 bg-[#E9F9D9] px-4 py-3">
               <p className="text-xs uppercase tracking-[0.12em] font-black text-[#2F7A00]">Ville disponible</p>
-              <p className="mt-1 text-xl font-black text-[#1E4F00]">Bordeaux</p>
+              <p className="mt-1 text-xl font-black text-[#1E4F00]">Le grand Dax</p>
             </div>
           </div>
         </div>
