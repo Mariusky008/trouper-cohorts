@@ -53,6 +53,38 @@ export default function RadarElitePreviewPage() {
               {role === "membre" ? "Que dois-je faire maintenant ?" : "Quelle est la prochaine action admin ?"}
             </h2>
 
+            {role === "membre" ? (
+              <div className="mt-4 grid gap-2 sm:grid-cols-3">
+                <div className="rounded-xl border border-[#EAC886]/25 bg-[#2A2111] p-3">
+                  <p className="text-[10px] uppercase font-black tracking-[0.12em] text-[#EAC886]/80">Niveau Popey</p>
+                  <p className="mt-1 text-xl font-black text-[#EAC886]">14</p>
+                </div>
+                <div className="rounded-xl border border-emerald-400/25 bg-[#10251D] p-3">
+                  <p className="text-[10px] uppercase font-black tracking-[0.12em] text-emerald-300/80">Streak</p>
+                  <p className="mt-1 text-xl font-black text-emerald-300">9 jours</p>
+                </div>
+                <div className="rounded-xl border border-white/15 bg-white/5 p-3">
+                  <p className="text-[10px] uppercase font-black tracking-[0.12em] text-white/65">Objectif du jour</p>
+                  <p className="mt-1 text-sm font-black">1 vocal qualifié</p>
+                </div>
+              </div>
+            ) : (
+              <div className="mt-4 grid gap-2 sm:grid-cols-3">
+                <div className="rounded-xl border border-white/15 bg-white/5 p-3">
+                  <p className="text-[10px] uppercase font-black tracking-[0.12em] text-white/65">Vocaux reçus</p>
+                  <p className="mt-1 text-xl font-black">12</p>
+                </div>
+                <div className="rounded-xl border border-[#EAC886]/25 bg-[#2A2111] p-3">
+                  <p className="text-[10px] uppercase font-black tracking-[0.12em] text-[#EAC886]/80">Leads qualifiés</p>
+                  <p className="mt-1 text-xl font-black text-[#EAC886]">7</p>
+                </div>
+                <div className="rounded-xl border border-emerald-400/25 bg-[#10251D] p-3">
+                  <p className="text-[10px] uppercase font-black tracking-[0.12em] text-emerald-300/80">Commissions validées</p>
+                  <p className="mt-1 text-xl font-black text-emerald-300">3 280€</p>
+                </div>
+              </div>
+            )}
+
             <div className="mt-4 flex gap-2">
               {[1, 2, 3].map((n) => (
                 <button
@@ -77,6 +109,7 @@ export default function RadarElitePreviewPage() {
                     <button className="mt-4 h-14 w-full rounded-xl bg-emerald-400 text-black text-sm font-black uppercase tracking-wide">
                       Signaler une opportunité (Vocal)
                     </button>
+                    <p className="mt-3 text-xs font-black text-emerald-200/90">Récompense: +120 XP si vocal exploitable.</p>
                   </div>
                 )}
                 {step === 2 && (
@@ -88,6 +121,7 @@ export default function RadarElitePreviewPage() {
                       <p className="font-black">Famille Dubois • 22 000€</p>
                       <p className="text-xs text-white/70">Cuisine + électricité • À contacter</p>
                     </div>
+                    <p className="mt-3 text-xs font-black text-[#EAC886]">Bonus vitesse: +60 XP si contact sous 30 min.</p>
                   </div>
                 )}
                 {step === 3 && (
@@ -105,6 +139,9 @@ export default function RadarElitePreviewPage() {
                         <p className="text-2xl font-black text-emerald-300">12 840€</p>
                       </div>
                     </div>
+                    <button className="reward-pulse mt-3 h-11 w-full rounded-xl border border-[#EAC886]/40 bg-[#EAC886]/15 text-[#EAC886] text-xs font-black uppercase tracking-wide">
+                      Réclamer badge “Closer du mois”
+                    </button>
                   </div>
                 )}
               </div>
@@ -146,6 +183,7 @@ export default function RadarElitePreviewPage() {
                     <button className="mt-4 h-12 w-full rounded-xl bg-emerald-400 text-black text-sm font-black uppercase tracking-wide">
                       Envoyer l’alerte générale
                     </button>
+                    <p className="mt-3 text-xs font-black text-emerald-200/90">Impact estimé: +18% d’activité sur 48h.</p>
                   </div>
                 )}
               </div>
@@ -157,6 +195,13 @@ export default function RadarElitePreviewPage() {
         @keyframes fadeIn {
           from { opacity: 0; transform: translateY(8px); }
           to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes rewardPulse {
+          0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(234,200,134,0.35); }
+          50% { transform: scale(1.01); box-shadow: 0 0 0 8px rgba(234,200,134,0); }
+        }
+        .reward-pulse {
+          animation: rewardPulse 1.8s ease-in-out infinite;
         }
       `}</style>
     </main>
