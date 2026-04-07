@@ -360,7 +360,13 @@ export default function PopeyHumanTestV4Page() {
       (selectedMetier.ca_mensuel / maxCa) * 0.6 + (selectedMetier.comm_mensuelle / maxComm) * 0.4;
     return Math.round(weighted * 100);
   }, [selectedMetier, maxCa, maxComm]);
-  const synergyStars = synergyScore > 0 ? Math.max(1, Math.round(synergyScore / 20)) : 0;
+  const synergyLevelLabel = useMemo(() => {
+    if (synergyScore >= 80) return "Très fort";
+    if (synergyScore >= 60) return "Fort";
+    if (synergyScore >= 40) return "En progression";
+    if (synergyScore >= 20) return "À activer";
+    return "À construire";
+  }, [synergyScore]);
 
   const phaseMessage = useMemo(() => {
     if (month === 1) return "M1: le pack duo démarre et crée le premier CA.";
@@ -911,7 +917,7 @@ export default function PopeyHumanTestV4Page() {
                   <div className="mt-2 h-2 rounded-full bg-white/15 overflow-hidden">
                     <div className="h-full bg-[#B6FF2B] transition-all duration-500" style={{ width: `${synergyScore}%` }} />
                   </div>
-                  <p className="mt-1 text-xs text-[#B6FF2B]/85">{Array.from({ length: synergyStars }).map(() => "★").join("")}</p>
+                  <p className="mt-1 text-xs font-bold text-[#B6FF2B]/85">Niveau actuel : {synergyLevelLabel}</p>
                 </div>
 
                 <div className="rounded-xl border border-[#E7BE65]/35 bg-[#2A2111] p-3">
