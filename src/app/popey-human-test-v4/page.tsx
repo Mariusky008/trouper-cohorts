@@ -513,16 +513,6 @@ export default function PopeyHumanTestV4Page() {
               </div>
             </div>
             <div className="mt-6 flex flex-col sm:flex-row gap-3">
-              <Link href="/programme-commando/postuler" className="inline-flex items-center justify-center rounded-md bg-black text-white px-6 py-3 text-sm font-black uppercase tracking-wide transition hover:translate-y-[-1px] hover:shadow-[0_8px_0_0_#B6FF2B]">
-                Trouver mon partenaire stratégique
-              </Link>
-              <button
-                type="button"
-                onClick={() => setShowCityModal(true)}
-                className="inline-flex items-center justify-center rounded-md border border-black px-6 py-3 text-sm font-black uppercase tracking-wide transition hover:bg-black hover:text-white"
-              >
-                Voir si ma ville est disponible
-              </button>
               <button
                 type="button"
                 onClick={() => {
@@ -532,6 +522,16 @@ export default function PopeyHumanTestV4Page() {
                 className="inline-flex items-center justify-center rounded-md border border-black px-6 py-3 text-sm font-black uppercase tracking-wide transition hover:bg-black hover:text-white"
               >
                 Voir si mon métier est dans la liste
+              </button>
+              <Link href="/programme-commando/postuler" className="inline-flex items-center justify-center rounded-md bg-black text-white px-6 py-3 text-sm font-black uppercase tracking-wide transition hover:translate-y-[-1px] hover:shadow-[0_8px_0_0_#B6FF2B]">
+                Trouver mon partenaire stratégique
+              </Link>
+              <button
+                type="button"
+                onClick={() => setShowCityModal(true)}
+                className="inline-flex items-center justify-center rounded-md border border-black px-6 py-3 text-sm font-black uppercase tracking-wide transition hover:bg-black hover:text-white"
+              >
+                Voir si ma ville est disponible
               </button>
             </div>
             <p className="mt-4 text-xs font-bold uppercase tracking-wide text-black/70">Audit 15 min • Sur sélection</p>
