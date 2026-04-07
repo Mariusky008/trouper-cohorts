@@ -333,7 +333,7 @@ export default function PopeyHumanTestV4Page() {
   const [tick, setTick] = useState(0);
   const [showCityModal, setShowCityModal] = useState(false);
   const [showMetierModal, setShowMetierModal] = useState(false);
-  const [selectedMetierId, setSelectedMetierId] = useState(metierSimulatorData[0].id);
+  const [selectedMetierId, setSelectedMetierId] = useState("");
   const [animatedCa, setAnimatedCa] = useState(0);
   const [animatedComm, setAnimatedComm] = useState(0);
   const [problemSceneStarted, setProblemSceneStarted] = useState(false);
@@ -348,18 +348,19 @@ export default function PopeyHumanTestV4Page() {
   const commissionRevenue = Math.max(month - 2, 0) * 500;
   const totalRevenue = duoRevenue + incomingRevenue + commissionRevenue;
   const selectedMetier = useMemo(
-    () => metierSimulatorData.find((item) => item.id === selectedMetierId) ?? metierSimulatorData[0],
+    () => metierSimulatorData.find((item) => item.id === selectedMetierId) ?? null,
     [selectedMetierId]
   );
 
   const maxCa = useMemo(() => Math.max(...metierSimulatorData.map((item) => item.ca_mensuel)), []);
   const maxComm = useMemo(() => Math.max(...metierSimulatorData.map((item) => item.comm_mensuelle)), []);
   const synergyScore = useMemo(() => {
+    if (!selectedMetier) return 0;
     const weighted =
       (selectedMetier.ca_mensuel / maxCa) * 0.6 + (selectedMetier.comm_mensuelle / maxComm) * 0.4;
     return Math.round(weighted * 100);
   }, [selectedMetier, maxCa, maxComm]);
-  const synergyStars = Math.max(1, Math.round(synergyScore / 20));
+  const synergyStars = synergyScore > 0 ? Math.max(1, Math.round(synergyScore / 20)) : 0;
 
   const phaseMessage = useMemo(() => {
     if (month === 1) return "M1: le pack duo démarre et crée le premier CA.";
@@ -397,6 +398,11 @@ export default function PopeyHumanTestV4Page() {
 
   useEffect(() => {
     if (!showMetierModal) return;
+    if (!selectedMetier) {
+      setAnimatedCa(0);
+      setAnimatedComm(0);
+      return;
+    }
 
     let frameId = 0;
     let startTs = 0;
@@ -519,7 +525,10 @@ export default function PopeyHumanTestV4Page() {
               </button>
               <button
                 type="button"
-                onClick={() => setShowMetierModal(true)}
+                onClick={() => {
+                  setSelectedMetierId("");
+                  setShowMetierModal(true);
+                }}
                 className="inline-flex items-center justify-center rounded-md border border-black px-6 py-3 text-sm font-black uppercase tracking-wide transition hover:bg-black hover:text-white"
               >
                 Voir si mon métier est dans la liste
@@ -884,6 +893,7 @@ export default function PopeyHumanTestV4Page() {
                   onChange={(e) => setSelectedMetierId(e.target.value)}
                   className="mt-2 h-11 w-full rounded-lg border border-white/20 bg-[#1A1E1C] px-3 text-sm font-bold text-white"
                 >
+                  <option value="">Métier</option>
                   {metierSimulatorData.map((item) => (
                     <option key={item.id} value={item.id}>
                       {item.metier}
@@ -892,6 +902,8 @@ export default function PopeyHumanTestV4Page() {
                 </select>
               </div>
 
+              {selectedMetier ? (
+                <>
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 <div className="rounded-xl border border-[#B6FF2B]/30 bg-[#1A2513] p-3">
                   <p className="text-[11px] font-black uppercase tracking-[0.12em] text-[#B6FF2B]/85">Score de Synergie</p>
@@ -944,15 +956,31 @@ export default function PopeyHumanTestV4Page() {
                 <p className="text-[11px] font-black uppercase tracking-[0.12em] text-white/70">Narratif Popey</p>
                 <p className="mt-1 text-sm font-medium leading-relaxed text-white/85">{selectedMetier.narratif}</p>
               </div>
+                </>
+              ) : (
+                <div className="rounded-xl border border-dashed border-white/20 bg-white/5 p-4 text-center">
+                  <p className="text-sm font-bold text-white/85">Choisissez votre métier pour afficher votre simulation complète.</p>
+                </div>
+              )}
             </div>
 
             <div className="sticky bottom-0 border-t border-white/10 bg-[#111513] p-3">
-              <Link
-                href="/programme-commando/postuler"
-                className="blink-cta flex h-11 w-full items-center justify-center rounded-xl bg-[#B6FF2B] text-black text-sm font-black uppercase tracking-wide"
-              >
-                Ma place est-elle encore libre à Dax ?
-              </Link>
+              {selectedMetier ? (
+                <Link
+                  href="/programme-commando/postuler"
+                  className="blink-cta flex h-11 w-full items-center justify-center rounded-xl bg-[#B6FF2B] text-black text-sm font-black uppercase tracking-wide"
+                >
+                  Ma place est-elle encore libre à Dax ?
+                </Link>
+              ) : (
+                <button
+                  type="button"
+                  disabled
+                  className="flex h-11 w-full items-center justify-center rounded-xl border border-white/20 bg-white/5 text-sm font-black uppercase tracking-wide text-white/55"
+                >
+                  Sélectionnez un métier
+                </button>
+              )}
             </div>
           </div>
         </div>
