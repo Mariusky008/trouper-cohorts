@@ -13,9 +13,13 @@ type ClientLead = {
   besoin: string;
   telephone: string;
   adresse: string;
-  statut: "Radar" | "En cours" | "Victoire";
+  statut: "Radar" | "En cours" | "Victoire" | "À contacter";
+  sourcePrenom: string;
+  sourceMetier: string;
   notes: string;
 };
+
+type DealProgress = "nouveau" | "pris" | "signe" | "perdu";
 
 const memberLeads: ClientLead[] = [
   {
@@ -26,6 +30,8 @@ const memberLeads: ClientLead[] = [
     telephone: "06 12 45 78 90",
     adresse: "Dax centre",
     statut: "À contacter",
+    sourcePrenom: "Claire",
+    sourceMetier: "Agent Immo",
     notes: "Projet à lancer sous 10 jours, budget validé, décisionnaire présent.",
   },
   {
@@ -36,6 +42,8 @@ const memberLeads: ClientLead[] = [
     telephone: "06 44 18 93 70",
     adresse: "Saint-Paul-lès-Dax",
     statut: "En cours",
+    sourcePrenom: "David",
+    sourceMetier: "Plombier",
     notes: "Attente du devis final. Bonne probabilité de signature.",
   },
 ];
@@ -45,6 +53,13 @@ export default function RadarElitePreviewPage() {
   const [memberTab, setMemberTab] = useState<MemberTab>("signal");
   const [isRecording, setIsRecording] = useState(false);
   const [selectedLead, setSelectedLead] = useState<ClientLead | null>(null);
+  const [dealProgressById, setDealProgressById] = useState<Record<string, DealProgress>>({
+    "L-204": "nouveau",
+    "L-213": "nouveau",
+  });
+  const [signedAmountById, setSignedAmountById] = useState<Record<string, number>>({});
+  const [showSignedModalFor, setShowSignedModalFor] = useState<ClientLead | null>(null);
+  const [signedAmountInput, setSignedAmountInput] = useState("");
 
   useEffect(() => {
     if (!isRecording) return;
@@ -55,6 +70,29 @@ export default function RadarElitePreviewPage() {
   const triggerRecording = () => {
     setMemberTab("signal");
     setIsRecording(true);
+  };
+
+  const takeDeal = (leadId: string) => {
+    setDealProgressById((prev) => ({ ...prev, [leadId]: "pris" }));
+  };
+
+  const markDealLost = (leadId: string) => {
+    setDealProgressById((prev) => ({ ...prev, [leadId]: "perdu" }));
+  };
+
+  const openSignedModal = (lead: ClientLead) => {
+    setShowSignedModalFor(lead);
+    setSignedAmountInput("");
+  };
+
+  const confirmSignedDeal = () => {
+    if (!showSignedModalFor) return;
+    const amount = Number(signedAmountInput);
+    if (!Number.isFinite(amount) || amount <= 0) return;
+    setSignedAmountById((prev) => ({ ...prev, [showSignedModalFor.id]: amount }));
+    setDealProgressById((prev) => ({ ...prev, [showSignedModalFor.id]: "signe" }));
+    setShowSignedModalFor(null);
+    setSignedAmountInput("");
   };
 
   return (
@@ -136,14 +174,73 @@ export default function RadarElitePreviewPage() {
                       <p className="mt-2 text-sm text-white/80">Vous voyez besoin, budget, contact et prochaine action.</p>
                       <div className="mt-4 space-y-2">
                         {memberLeads.map((lead) => (
-                          <button
+                          <div
                             key={lead.id}
-                            onClick={() => setSelectedLead(lead)}
-                            className="w-full rounded-xl border border-white/15 bg-black/25 p-3 text-left"
+                            className={`rounded-xl border p-3 ${
+                              dealProgressById[lead.id] === "pris"
+                                ? "border-emerald-400/45 bg-emerald-500/15"
+                                : dealProgressById[lead.id] === "signe"
+                                ? "border-[#EAC886]/45 bg-[#EAC886]/15"
+                                : dealProgressById[lead.id] === "perdu"
+                                ? "border-red-400/40 bg-red-500/10"
+                                : "border-white/15 bg-black/25"
+                            }`}
                           >
-                            <p className="font-black">{lead.client} • {lead.budget}</p>
-                            <p className="text-xs text-white/70">{lead.besoin} • {lead.statut}</p>
-                          </button>
+                            <button
+                              onClick={() => setSelectedLead(lead)}
+                              className="w-full text-left"
+                            >
+                              <p className="font-black">{lead.client} • {lead.budget}</p>
+                              <p className="text-xs text-white/70">{lead.besoin} • {lead.statut}</p>
+                              <p className="mt-1 text-[11px] font-bold text-white/75">
+                                Contact apporté par {lead.sourcePrenom} ({lead.sourceMetier})
+                              </p>
+                            </button>
+
+                            <div className="mt-3">
+                              {dealProgressById[lead.id] === "nouveau" && (
+                                <button
+                                  onClick={() => takeDeal(lead.id)}
+                                  className="h-10 w-full rounded-lg bg-emerald-400 text-black text-xs font-black uppercase tracking-wide"
+                                >
+                                  Je prends le deal et je contacte le client
+                                </button>
+                              )}
+
+                              {dealProgressById[lead.id] === "pris" && (
+                                <div className="grid grid-cols-2 gap-2">
+                                  <button
+                                    onClick={() => openSignedModal(lead)}
+                                    className="h-10 rounded-lg bg-[#EAC886] text-black text-xs font-black uppercase tracking-wide"
+                                  >
+                                    J&apos;ai signé le client
+                                  </button>
+                                  <button
+                                    onClick={() => markDealLost(lead.id)}
+                                    className="h-10 rounded-lg border border-red-300/35 bg-red-500/10 text-red-200 text-xs font-black uppercase tracking-wide"
+                                  >
+                                    Je n&apos;ai pas signé
+                                  </button>
+                                </div>
+                              )}
+
+                              {dealProgressById[lead.id] === "signe" && (
+                                <div className="rounded-lg border border-emerald-400/35 bg-emerald-500/10 px-3 py-2">
+                                  <p className="text-xs font-black uppercase tracking-[0.1em] text-emerald-200">Signé et transmis</p>
+                                  <p className="text-xs text-emerald-100/90">
+                                    Dossier envoyé à Jean-Philippe + à {lead.sourcePrenom}.
+                                  </p>
+                                </div>
+                              )}
+
+                              {dealProgressById[lead.id] === "perdu" && (
+                                <div className="rounded-lg border border-red-300/35 bg-red-500/10 px-3 py-2">
+                                  <p className="text-xs font-black uppercase tracking-[0.1em] text-red-200">Non signé</p>
+                                  <p className="text-xs text-red-100/90">Vous pouvez relancer plus tard ou archiver ce lead.</p>
+                                </div>
+                              )}
+                            </div>
+                          </div>
                         ))}
                       </div>
                     </div>
@@ -258,6 +355,7 @@ export default function RadarElitePreviewPage() {
               <p className="rounded-lg border border-white/15 bg-black/25 px-3 py-2"><span className="font-black">Budget:</span> {selectedLead.budget}</p>
               <p className="rounded-lg border border-white/15 bg-black/25 px-3 py-2"><span className="font-black">Zone:</span> {selectedLead.adresse}</p>
               <p className="rounded-lg border border-white/15 bg-black/25 px-3 py-2"><span className="font-black">Statut:</span> {selectedLead.statut}</p>
+              <p className="rounded-lg border border-[#EAC886]/25 bg-[#EAC886]/10 px-3 py-2"><span className="font-black">Apporteur:</span> {selectedLead.sourcePrenom} ({selectedLead.sourceMetier})</p>
               <p className="rounded-lg border border-white/15 bg-black/25 px-3 py-2"><span className="font-black">Notes:</span> {selectedLead.notes}</p>
             </div>
             <div className="mt-4 grid gap-2 sm:grid-cols-2">
@@ -268,6 +366,46 @@ export default function RadarElitePreviewPage() {
                 Envoyer un devis
               </button>
             </div>
+          </div>
+        </div>
+      )}
+      {showSignedModalFor && (
+        <div className="fixed inset-0 z-[60] bg-black/75 p-0 md:p-4 flex items-end md:items-center justify-center" onClick={() => setShowSignedModalFor(null)}>
+          <div className="w-full max-w-lg rounded-t-2xl md:rounded-2xl border border-white/15 bg-[#0F1112] p-5" onClick={(e) => e.stopPropagation()}>
+            <p className="text-xs uppercase font-black tracking-[0.12em] text-[#EAC886]/80">Validation signature</p>
+            <h3 className="mt-1 text-2xl font-black">{showSignedModalFor.client}</h3>
+            <p className="mt-2 text-sm text-white/75">
+              Saisissez le montant signé. La rétrocession apporteur est calculée automatiquement à 10%.
+            </p>
+            <div className="mt-4">
+              <label className="text-xs font-black uppercase tracking-[0.1em] text-white/60">Montant signé (€)</label>
+              <input
+                type="number"
+                min="0"
+                value={signedAmountInput}
+                onChange={(e) => setSignedAmountInput(e.target.value)}
+                className="mt-2 h-12 w-full rounded-xl border border-white/20 bg-black/25 px-3 text-base font-bold"
+                placeholder="Ex: 22000"
+              />
+            </div>
+            <div className="mt-3 rounded-xl border border-[#EAC886]/25 bg-[#EAC886]/10 px-3 py-2">
+              <p className="text-xs font-black uppercase tracking-[0.1em] text-[#EAC886]">Rétrocession apporteur (10%)</p>
+              <p className="mt-1 text-xl font-black text-[#EAC886]">
+                {Number.isFinite(Number(signedAmountInput)) && Number(signedAmountInput) > 0
+                  ? `${Math.round(Number(signedAmountInput) * 0.1).toLocaleString("fr-FR")}€`
+                  : "0€"}
+              </p>
+              <p className="text-xs text-[#EAC886]/85">
+                Versé à {showSignedModalFor.sourcePrenom} ({showSignedModalFor.sourceMetier})
+              </p>
+            </div>
+            <button
+              onClick={confirmSignedDeal}
+              disabled={!Number.isFinite(Number(signedAmountInput)) || Number(signedAmountInput) <= 0}
+              className="mt-4 h-12 w-full rounded-xl bg-emerald-400 text-black text-sm font-black uppercase tracking-wide disabled:opacity-40"
+            >
+              Valider et envoyer à l&apos;admin + apporteur
+            </button>
           </div>
         </div>
       )}
