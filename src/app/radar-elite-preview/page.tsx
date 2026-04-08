@@ -89,44 +89,14 @@ export default function RadarElitePreviewPage() {
 
         <div className="mt-5 md:mt-8 md:rounded-[30px] md:border md:border-white/10 md:bg-gradient-to-b md:from-[#111414] md:to-[#0A0C0C] md:p-4 md:shadow-[0_24px_55px_-30px_rgba(0,0,0,0.9)]">
           <div className="relative bg-transparent md:rounded-[24px] md:border md:border-white/10 md:bg-[#090B0B] p-0 md:p-5">
-            <p className="text-xs font-black uppercase tracking-[0.14em] text-white/60">
-              {role === "membre" ? "Vue membre" : "Vue admin"}
-            </p>
-            <div className="mt-2 flex items-center justify-between gap-3">
-              <h2 className="text-[34px] leading-[1.05] md:text-2xl font-black">{role === "membre" ? "Mon écran du jour" : "Mon cockpit admin"}</h2>
-              {role === "membre" && (
-                <Link
-                  href="/radar-elite-preview/notifications"
-                  className="group relative h-16 w-16 rounded-2xl border border-white/20 bg-white/5 text-[30px] transition hover:bg-white/10 inline-flex items-center justify-center bell-pop"
-                  aria-label="Aller aux notifications"
-                >
-                  🔔
-                  <span className="absolute -right-1 -top-1 inline-flex min-w-6 h-6 items-center justify-center rounded-full bg-emerald-400 px-1.5 text-[10px] font-black text-black ring-2 ring-[#090B0B]">
-                    2
-                  </span>
-                </Link>
-              )}
-            </div>
-
-            {role === "membre" ? (
-              <div className="mt-4 grid gap-2 sm:grid-cols-3">
-                <div className="rounded-xl border border-[#EAC886]/25 bg-[#2A2111] p-3">
-                  <p className="text-[10px] uppercase font-black tracking-[0.12em] text-[#EAC886]/80">Dossiers signés ce mois</p>
-                  <p className="mt-1 text-xl font-black text-[#EAC886]">4</p>
-                  <p className="text-[11px] text-[#EAC886]/70">Objectif: 6 dossiers</p>
-                </div>
-                <div className="rounded-xl border border-emerald-400/25 bg-[#10251D] p-3">
-                  <p className="text-[10px] uppercase font-black tracking-[0.12em] text-emerald-300/80">Commissions ce mois</p>
-                  <p className="mt-1 text-xl font-black text-emerald-300">2 180€</p>
-                  <p className="text-[11px] text-emerald-300/70">+420€ vs semaine dernière</p>
-                </div>
-                <div className="rounded-xl border border-white/15 bg-white/5 p-3">
-                  <p className="text-[10px] uppercase font-black tracking-[0.12em] text-white/65">Action prioritaire</p>
-                  <p className="mt-1 text-sm font-black">Envoyer 1 vocal exploitable</p>
-                  <p className="text-[11px] text-white/60">10 secondes suffisent</p>
-                </div>
+            {role === "admin" && (
+              <>
+              <p className="text-xs font-black uppercase tracking-[0.14em] text-white/60">
+                Vue admin
+              </p>
+              <div className="mt-2 flex items-center justify-between gap-3">
+                <h2 className="text-[34px] leading-[1.05] md:text-2xl font-black">Mon cockpit admin</h2>
               </div>
-            ) : (
               <div className="mt-4 grid gap-2 sm:grid-cols-3">
                 <div className="rounded-xl border border-white/15 bg-white/5 p-3">
                   <p className="text-[10px] uppercase font-black tracking-[0.12em] text-white/65">Vocaux reçus</p>
@@ -141,10 +111,23 @@ export default function RadarElitePreviewPage() {
                   <p className="mt-1 text-xl font-black text-emerald-300">3 280€</p>
                 </div>
               </div>
+              </>
             )}
 
             {role === "membre" && (
               <>
+                <div className="mt-1 flex justify-end">
+                  <Link
+                    href="/radar-elite-preview/notifications"
+                    className="group relative h-12 w-12 rounded-xl border border-white/20 bg-white/5 text-xl transition hover:bg-white/10 inline-flex items-center justify-center bell-pop"
+                    aria-label="Aller aux notifications"
+                  >
+                    🔔
+                    <span className="absolute -right-1 -top-1 inline-flex min-w-5 h-5 items-center justify-center rounded-full bg-emerald-400 px-1 text-[10px] font-black text-black ring-2 ring-[#090B0B]">
+                      2
+                    </span>
+                  </Link>
+                </div>
                 <div key={memberTab} className="mt-4 animate-[fadeIn_.25s_ease-out]">
                   {memberTab === "clients" && (
                     <div className="rounded-2xl border border-[#EAC886]/25 bg-[#EAC886]/10 p-5">
