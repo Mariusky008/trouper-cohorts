@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 type Role = "membre" | "admin";
 type MemberTab = "clients" | "signal" | "cash";
@@ -20,6 +20,14 @@ type ClientLead = {
 };
 
 type DealProgress = "nouveau" | "pris" | "signe" | "perdu";
+
+type GivenDealCommission = {
+  id: string;
+  client: string;
+  signedAmount: number;
+  commission: number;
+  signedBy: string;
+};
 
 const memberLeads: ClientLead[] = [
   {
@@ -48,6 +56,11 @@ const memberLeads: ClientLead[] = [
   },
 ];
 
+const givenDealsCommissions: GivenDealCommission[] = [
+  { id: "G-101", client: "Villa Marin", signedAmount: 18000, commission: 1800, signedBy: "Thomas (Carreleur)" },
+  { id: "G-102", client: "Famille Pierre", signedAmount: 9500, commission: 950, signedBy: "Claire (Cuisiniste)" },
+];
+
 export default function RadarElitePreviewPage() {
   const [role, setRole] = useState<Role>("membre");
   const [memberTab, setMemberTab] = useState<MemberTab>("signal");
@@ -60,6 +73,34 @@ export default function RadarElitePreviewPage() {
   const [signedAmountById, setSignedAmountById] = useState<Record<string, number>>({});
   const [showSignedModalFor, setShowSignedModalFor] = useState<ClientLead | null>(null);
   const [signedAmountInput, setSignedAmountInput] = useState("");
+  const [showPayCommissionsModal, setShowPayCommissionsModal] = useState(false);
+
+  const signedDeals = useMemo(
+    () =>
+      memberLeads
+        .filter((lead) => dealProgressById[lead.id] === "signe" && (signedAmountById[lead.id] ?? 0) > 0)
+        .map((lead) => ({
+          ...lead,
+          signedAmount: signedAmountById[lead.id] ?? 0,
+          dueCommission: Math.round((signedAmountById[lead.id] ?? 0) * 0.1),
+        })),
+    [dealProgressById, signedAmountById]
+  );
+
+  const totalSignedClientsRevenue = useMemo(
+    () => signedDeals.reduce((sum, item) => sum + item.signedAmount, 0),
+    [signedDeals]
+  );
+
+  const totalCommissionsToPay = useMemo(
+    () => signedDeals.reduce((sum, item) => sum + item.dueCommission, 0),
+    [signedDeals]
+  );
+
+  const totalCommissionsEarned = useMemo(
+    () => givenDealsCommissions.reduce((sum, item) => sum + item.commission, 0),
+    []
+  );
 
   useEffect(() => {
     if (!isRecording) return;
@@ -274,16 +315,38 @@ export default function RadarElitePreviewPage() {
                   {memberTab === "cash" && (
                     <div className="rounded-2xl border border-emerald-400/25 bg-emerald-500/10 p-5">
                       <p className="text-xs font-black uppercase tracking-[0.12em] text-emerald-300">Cash</p>
-                      <h3 className="mt-1 text-xl font-black">Déclarez un dossier signé et votre commission</h3>
-                      <p className="mt-2 text-sm text-white/80">Quand un dossier est signé, vous entrez le montant ici.</p>
-                      <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                      <h3 className="mt-1 text-xl font-black">Suivi financier en temps réel</h3>
+                      <p className="mt-2 text-sm text-white/80">Montants signés, commissions reçues et commissions à payer.</p>
+
+                      <div className="mt-4 space-y-2">
                         <div className="rounded-xl border border-[#EAC886]/30 bg-[#2A2111] p-3">
-                          <p className="text-xs text-[#EAC886]/80 uppercase font-black">Cash business reçu</p>
-                          <p className="text-2xl font-black text-[#EAC886]">96 300€</p>
+                          <p className="text-xs text-[#EAC886]/80 uppercase font-black">1. Clients signés (depuis l&apos;onglet clients)</p>
+                          <p className="text-2xl font-black text-[#EAC886]">
+                            {totalSignedClientsRevenue.toLocaleString("fr-FR")}€
+                          </p>
+                          <p className="text-[11px] text-[#EAC886]/70">{signedDeals.length} dossier(s) signé(s)</p>
                         </div>
+
                         <div className="rounded-xl border border-emerald-400/30 bg-[#10251D] p-3">
-                          <p className="text-xs text-emerald-300/80 uppercase font-black">Commissions encaissées</p>
-                          <p className="text-2xl font-black text-emerald-300">12 840€</p>
+                          <p className="text-xs text-emerald-300/80 uppercase font-black">2. Commissions obtenues (mes contacts apportés)</p>
+                          <p className="text-2xl font-black text-emerald-300">
+                            {totalCommissionsEarned.toLocaleString("fr-FR")}€
+                          </p>
+                          <p className="text-[11px] text-emerald-300/70">Apports signés par d&apos;autres membres</p>
+                        </div>
+
+                        <div className="rounded-xl border border-white/20 bg-black/25 p-3">
+                          <p className="text-xs text-white/75 uppercase font-black">3. Commissions que je dois</p>
+                          <p className="text-2xl font-black text-white">
+                            {totalCommissionsToPay.toLocaleString("fr-FR")}€
+                          </p>
+                          <button
+                            onClick={() => setShowPayCommissionsModal(true)}
+                            disabled={totalCommissionsToPay <= 0}
+                            className="mt-2 h-10 w-full rounded-lg bg-white text-black text-xs font-black uppercase tracking-wide disabled:opacity-40"
+                          >
+                            Payer mes commissions
+                          </button>
                         </div>
                       </div>
                     </div>
@@ -406,6 +469,54 @@ export default function RadarElitePreviewPage() {
             >
               Valider et envoyer à l&apos;admin + apporteur
             </button>
+          </div>
+        </div>
+      )}
+      {showPayCommissionsModal && (
+        <div className="fixed inset-0 z-[70] bg-black/75 p-0 md:p-4 flex items-end md:items-center justify-center" onClick={() => setShowPayCommissionsModal(false)}>
+          <div className="w-full max-w-xl rounded-t-2xl md:rounded-2xl border border-white/15 bg-[#0F1112] p-5" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-xs uppercase font-black tracking-[0.12em] text-white/65">Paiement commissions</p>
+                <h3 className="mt-1 text-2xl font-black">Détail des commissions à payer</h3>
+              </div>
+              <button onClick={() => setShowPayCommissionsModal(false)} className="text-xs font-black uppercase tracking-wide text-white/70">
+                Fermer
+              </button>
+            </div>
+
+            <div className="mt-4 space-y-2 max-h-[45vh] overflow-y-auto pr-1">
+              {signedDeals.length === 0 && (
+                <p className="rounded-lg border border-white/15 bg-black/25 px-3 py-2 text-sm text-white/75">
+                  Aucune commission à payer pour l&apos;instant.
+                </p>
+              )}
+              {signedDeals.map((deal) => (
+                <div key={deal.id} className="rounded-lg border border-white/15 bg-black/25 px-3 py-2">
+                  <p className="text-sm font-black">{deal.client}</p>
+                  <p className="text-xs text-white/70">
+                    Signé: {deal.signedAmount.toLocaleString("fr-FR")}€ • Apporteur: {deal.sourcePrenom} ({deal.sourceMetier})
+                  </p>
+                  <p className="text-xs font-black text-[#EAC886]">À payer: {deal.dueCommission.toLocaleString("fr-FR")}€</p>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-4 rounded-xl border border-[#EAC886]/25 bg-[#EAC886]/10 px-3 py-2">
+              <p className="text-xs uppercase font-black tracking-[0.1em] text-[#EAC886]">Total à payer maintenant</p>
+              <p className="text-2xl font-black text-[#EAC886]">{totalCommissionsToPay.toLocaleString("fr-FR")}€</p>
+            </div>
+
+            <button
+              onClick={() => setShowPayCommissionsModal(false)}
+              disabled={totalCommissionsToPay <= 0}
+              className="mt-4 h-12 w-full rounded-xl bg-emerald-400 text-black text-sm font-black uppercase tracking-wide disabled:opacity-40"
+            >
+              Confirmer le paiement
+            </button>
+            <p className="mt-2 text-[11px] text-white/60">
+              Simulation prototype: validation envoyée à l&apos;admin + aux apporteurs concernés.
+            </p>
           </div>
         </div>
       )}
