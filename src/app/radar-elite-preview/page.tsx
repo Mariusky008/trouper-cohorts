@@ -452,8 +452,8 @@ export default function RadarElitePreviewPage() {
         </nav>
       )}
       {selectedLead && (
-        <div className="fixed inset-0 z-50 bg-black/70 p-4 flex items-center justify-center" onClick={() => setSelectedLead(null)}>
-          <div className="w-full max-w-lg rounded-2xl border border-white/15 bg-[#0E1011] p-5" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-[2px] p-4 flex items-center justify-center" onClick={() => setSelectedLead(null)}>
+          <div className="w-full max-w-lg rounded-2xl border border-white/25 ring-1 ring-white/10 bg-[#1B2227] shadow-[0_25px_80px_-30px_rgba(0,0,0,0.9)] p-5" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-start justify-between gap-3">
               <div>
                 <p className="text-xs uppercase font-black tracking-[0.12em] text-[#EAC886]/80">Fiche client</p>
@@ -481,8 +481,8 @@ export default function RadarElitePreviewPage() {
         </div>
       )}
       {showSignedModalFor && (
-        <div className="fixed inset-0 z-[60] bg-black/75 p-4 flex items-center justify-center" onClick={() => setShowSignedModalFor(null)}>
-          <div className="w-full max-w-lg rounded-2xl border border-white/15 bg-[#0F1112] p-5" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-[60] bg-black/40 backdrop-blur-[2px] p-4 flex items-center justify-center" onClick={() => setShowSignedModalFor(null)}>
+          <div className="w-full max-w-lg rounded-2xl border border-white/25 ring-1 ring-white/10 bg-[#1B2227] shadow-[0_25px_80px_-30px_rgba(0,0,0,0.9)] p-5" onClick={(e) => e.stopPropagation()}>
             <p className="text-xs uppercase font-black tracking-[0.12em] text-[#EAC886]/80">Validation signature</p>
             <h3 className="mt-1 text-2xl font-black">{showSignedModalFor.client}</h3>
             <p className="mt-2 text-sm text-white/75">
@@ -521,8 +521,8 @@ export default function RadarElitePreviewPage() {
         </div>
       )}
       {showSignedClientsModal && (
-        <div className="fixed inset-0 z-[65] bg-black/75 p-4 flex items-center justify-center" onClick={() => setShowSignedClientsModal(false)}>
-          <div className="w-full max-w-xl rounded-2xl border border-white/15 bg-[#0F1112] p-5" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-[65] bg-black/40 backdrop-blur-[2px] p-4 flex items-center justify-center" onClick={() => setShowSignedClientsModal(false)}>
+          <div className="w-full max-w-xl rounded-2xl border border-white/25 ring-1 ring-white/10 bg-[#1B2227] shadow-[0_25px_80px_-30px_rgba(0,0,0,0.9)] p-5" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-start justify-between gap-3">
               <div>
                 <p className="text-xs uppercase font-black tracking-[0.12em] text-[#EAC886]/80">Clients signés</p>
@@ -551,8 +551,8 @@ export default function RadarElitePreviewPage() {
         </div>
       )}
       {showCommissionsDueToMeModal && (
-        <div className="fixed inset-0 z-[68] bg-black/75 p-4 flex items-center justify-center" onClick={() => setShowCommissionsDueToMeModal(false)}>
-          <div className="w-full max-w-xl rounded-2xl border border-white/15 bg-[#0F1112] p-5" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-[68] bg-black/40 backdrop-blur-[2px] p-4 flex items-center justify-center" onClick={() => setShowCommissionsDueToMeModal(false)}>
+          <div className="w-full max-w-xl rounded-2xl border border-white/25 ring-1 ring-white/10 bg-[#1B2227] shadow-[0_25px_80px_-30px_rgba(0,0,0,0.9)] p-5" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-start justify-between gap-3">
               <div>
                 <p className="text-xs uppercase font-black tracking-[0.12em] text-emerald-300/80">Commissions qu&apos;on me doit</p>
@@ -587,8 +587,8 @@ export default function RadarElitePreviewPage() {
         </div>
       )}
       {showPayCommissionsModal && (
-        <div className="fixed inset-0 z-[70] bg-black/75 p-4 flex items-center justify-center" onClick={() => setShowPayCommissionsModal(false)}>
-          <div className="w-full max-w-xl rounded-2xl border border-white/15 bg-[#0F1112] p-5" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-[70] bg-black/40 backdrop-blur-[2px] p-4 flex items-center justify-center" onClick={() => setShowPayCommissionsModal(false)}>
+          <div className="w-full max-w-xl rounded-2xl border border-white/25 ring-1 ring-white/10 bg-[#1B2227] shadow-[0_25px_80px_-30px_rgba(0,0,0,0.9)] p-5" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-start justify-between gap-3">
               <div>
                 <p className="text-xs uppercase font-black tracking-[0.12em] text-white/65">Paiement commissions</p>
