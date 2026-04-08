@@ -58,10 +58,10 @@ export default function RadarElitePreviewPage() {
   };
 
   return (
-    <main className="min-h-screen bg-[#0A0B0C] text-white px-4 py-8">
-      <div className="mx-auto max-w-5xl">
-        <div className="text-center">
-          <h1 className="mt-3 text-3xl md:text-5xl font-black leading-tight">
+    <main className="min-h-screen bg-[#0A0B0C] text-white pb-28 md:pb-8">
+      <div className="mx-auto max-w-4xl px-4 md:px-6 py-5 md:py-8">
+        <div className="text-center md:text-left">
+          <h1 className="mt-1 text-4xl md:text-5xl font-black leading-tight">
             Popey Radar
           </h1>
         </div>
@@ -87,17 +87,17 @@ export default function RadarElitePreviewPage() {
           </div>
         </div>
 
-        <div className="mt-8 rounded-[30px] border border-white/10 bg-gradient-to-b from-[#111414] to-[#0A0C0C] p-4 shadow-[0_24px_55px_-30px_rgba(0,0,0,0.9)]">
-          <div className="relative rounded-[24px] border border-white/10 bg-[#090B0B] p-5">
+        <div className="mt-5 md:mt-8 md:rounded-[30px] md:border md:border-white/10 md:bg-gradient-to-b md:from-[#111414] md:to-[#0A0C0C] md:p-4 md:shadow-[0_24px_55px_-30px_rgba(0,0,0,0.9)]">
+          <div className="relative bg-transparent md:rounded-[24px] md:border md:border-white/10 md:bg-[#090B0B] p-0 md:p-5">
             <p className="text-xs font-black uppercase tracking-[0.14em] text-white/60">
               {role === "membre" ? "Vue membre" : "Vue admin"}
             </p>
             <div className="mt-2 flex items-center justify-between gap-3">
-              <h2 className="text-2xl font-black">{role === "membre" ? "Mon écran du jour" : "Mon cockpit admin"}</h2>
+              <h2 className="text-[34px] leading-[1.05] md:text-2xl font-black">{role === "membre" ? "Mon écran du jour" : "Mon cockpit admin"}</h2>
               {role === "membre" && (
                 <Link
                   href="/radar-elite-preview/notifications"
-                  className="group relative h-14 w-14 rounded-2xl border border-white/20 bg-white/5 text-2xl transition hover:bg-white/10 inline-flex items-center justify-center bell-pop"
+                  className="group relative h-16 w-16 rounded-2xl border border-white/20 bg-white/5 text-[30px] transition hover:bg-white/10 inline-flex items-center justify-center bell-pop"
                   aria-label="Aller aux notifications"
                 >
                   🔔
@@ -173,7 +173,7 @@ export default function RadarElitePreviewPage() {
                       <p className="mt-2 text-sm text-white/80">Maintenez 10 secondes pour décrire le besoin client.</p>
                       <button
                         onClick={triggerRecording}
-                        className={`mt-4 h-16 w-full rounded-xl text-sm font-black uppercase tracking-wide ${
+                        className={`mt-4 h-16 w-full rounded-xl text-sm font-black uppercase tracking-wide transition ${
                           isRecording
                             ? "bg-red-500 text-white"
                             : "bg-emerald-400 text-black"
@@ -209,37 +209,6 @@ export default function RadarElitePreviewPage() {
                     </div>
                   )}
                 </div>
-
-                <div className="mt-5 rounded-2xl border border-white/10 bg-black/30 p-2">
-                  <div className="grid grid-cols-3 gap-2 items-end">
-                    <button
-                      onClick={() => setMemberTab("clients")}
-                      className={`h-12 rounded-xl text-xs font-black uppercase tracking-wide ${
-                        memberTab === "clients" ? "bg-white text-black" : "border border-white/20 text-white/75"
-                      }`}
-                    >
-                      Clients
-                    </button>
-                    <button
-                      onClick={() => setMemberTab("signal")}
-                      className={`h-14 rounded-2xl text-xs font-black uppercase tracking-wide ${
-                        memberTab === "signal"
-                          ? "bg-emerald-400 text-black shadow-[0_10px_25px_-12px_rgba(52,211,153,0.9)]"
-                          : "border border-emerald-300/40 text-emerald-200"
-                      }`}
-                    >
-                      Signal
-                    </button>
-                    <button
-                      onClick={() => setMemberTab("cash")}
-                      className={`h-12 rounded-xl text-xs font-black uppercase tracking-wide ${
-                        memberTab === "cash" ? "bg-white text-black" : "border border-white/20 text-white/75"
-                      }`}
-                    >
-                      Cash
-                    </button>
-                  </div>
-                </div>
               </>
             )}
 
@@ -259,9 +228,41 @@ export default function RadarElitePreviewPage() {
           </div>
         </div>
       </div>
+      {role === "membre" && (
+        <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-white/10 bg-[#0B0D0E]/95 backdrop-blur px-4 pb-[max(12px,env(safe-area-inset-bottom))] pt-2">
+          <div className="mx-auto max-w-4xl grid grid-cols-3 gap-2 items-end">
+            <button
+              onClick={() => setMemberTab("clients")}
+              className={`h-12 rounded-xl text-xs font-black uppercase tracking-wide ${
+                memberTab === "clients" ? "bg-white text-black" : "border border-white/20 text-white/75"
+              }`}
+            >
+              Clients
+            </button>
+            <button
+              onClick={() => setMemberTab("signal")}
+              className={`h-14 rounded-2xl text-xs font-black uppercase tracking-wide ${
+                memberTab === "signal"
+                  ? "bg-emerald-400 text-black shadow-[0_10px_25px_-12px_rgba(52,211,153,0.9)]"
+                  : "border border-emerald-300/40 text-emerald-200"
+              }`}
+            >
+              Signal
+            </button>
+            <button
+              onClick={() => setMemberTab("cash")}
+              className={`h-12 rounded-xl text-xs font-black uppercase tracking-wide ${
+                memberTab === "cash" ? "bg-white text-black" : "border border-white/20 text-white/75"
+              }`}
+            >
+              Cash
+            </button>
+          </div>
+        </nav>
+      )}
       {selectedLead && (
-        <div className="fixed inset-0 z-50 bg-black/70 p-4 flex items-center justify-center" onClick={() => setSelectedLead(null)}>
-          <div className="w-full max-w-lg rounded-2xl border border-white/15 bg-[#0E1011] p-5" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-50 bg-black/70 p-0 md:p-4 flex items-end md:items-center justify-center" onClick={() => setSelectedLead(null)}>
+          <div className="w-full max-w-lg rounded-t-2xl md:rounded-2xl border border-white/15 bg-[#0E1011] p-5" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-start justify-between gap-3">
               <div>
                 <p className="text-xs uppercase font-black tracking-[0.12em] text-[#EAC886]/80">Fiche client</p>
