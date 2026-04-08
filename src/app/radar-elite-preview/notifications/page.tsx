@@ -68,10 +68,10 @@ export default function RadarEliteNotificationsPage() {
   };
 
   return (
-    <main className="min-h-screen bg-[#0A0B0C] text-white px-4 py-6">
-      <div className="mx-auto max-w-3xl">
-        <div className="rounded-[30px] border border-white/10 bg-gradient-to-b from-[#121718] to-[#0A0C0C] p-4 shadow-[0_24px_55px_-30px_rgba(0,0,0,0.9)]">
-          <div className="rounded-[24px] border border-white/10 bg-[#090B0B] p-5 md:p-6">
+    <main className="min-h-screen bg-[#0A0B0C] text-white px-4 py-6 md:px-6 md:py-8">
+      <div className="w-full">
+        <div className="bg-transparent p-0 md:p-1">
+          <div className="p-0 md:p-3">
             <div className="flex items-center justify-between gap-3">
               <Link href="/radar-elite-preview" className="h-10 rounded-lg border border-white/20 px-3 inline-flex items-center text-xs font-black uppercase tracking-wide text-white/80">
                 ← Retour
