@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 
 type NotifType = "generale" | "personnelle" | "felicitation";
+type FilterType = "toutes" | NotifType;
 
 const notifications: Array<{
   id: string;
@@ -38,6 +39,13 @@ const notifications: Array<{
   },
 ];
 
+const reactionChoices = ["👏", "🔥", "💰", "🚀"];
+const baseReactionCounts: Record<string, Record<string, number>> = {
+  "N-1": { "👏": 8, "🔥": 5, "💰": 12, "🚀": 4 },
+  "N-2": { "👏": 3, "🔥": 1, "💰": 0, "🚀": 2 },
+  "N-3": { "👏": 10, "🔥": 6, "💰": 2, "🚀": 3 },
+};
+
 function cardTone(type: NotifType) {
   if (type === "generale") return "border-emerald-400/30 bg-emerald-500/10";
   if (type === "personnelle") return "border-[#EAC886]/35 bg-[#EAC886]/10";
@@ -46,12 +54,24 @@ function cardTone(type: NotifType) {
 
 export default function RadarEliteNotificationsPage() {
   const [showCongratsComposer, setShowCongratsComposer] = useState(false);
+  const [filter, setFilter] = useState<FilterType>("toutes");
+  const [myReactions, setMyReactions] = useState<Record<string, string | null>>({});
+
+  const visibleNotifications =
+    filter === "toutes" ? notifications : notifications.filter((notif) => notif.type === filter);
+
+  const toggleReaction = (notifId: string, emoji: string) => {
+    setMyReactions((prev) => ({
+      ...prev,
+      [notifId]: prev[notifId] === emoji ? null : emoji,
+    }));
+  };
 
   return (
     <main className="min-h-screen bg-[#0A0B0C] text-white px-4 py-6">
       <div className="mx-auto max-w-3xl">
-        <div className="rounded-[30px] border border-white/10 bg-gradient-to-b from-[#111414] to-[#0A0C0C] p-4 shadow-[0_24px_55px_-30px_rgba(0,0,0,0.9)]">
-          <div className="rounded-[24px] border border-white/10 bg-[#090B0B] p-5">
+        <div className="rounded-[30px] border border-white/10 bg-gradient-to-b from-[#121718] to-[#0A0C0C] p-4 shadow-[0_24px_55px_-30px_rgba(0,0,0,0.9)]">
+          <div className="rounded-[24px] border border-white/10 bg-[#090B0B] p-5 md:p-6">
             <div className="flex items-center justify-between gap-3">
               <Link href="/radar-elite-preview" className="h-10 rounded-lg border border-white/20 px-3 inline-flex items-center text-xs font-black uppercase tracking-wide text-white/80">
                 ← Retour
@@ -63,8 +83,29 @@ export default function RadarEliteNotificationsPage() {
             <h1 className="mt-4 text-3xl font-black">Centre de notifications</h1>
             <p className="mt-1 text-sm text-white/70">Alertes générales, personnelles et félicitations du cercle.</p>
 
+            <div className="mt-4 flex flex-wrap gap-2">
+              {[
+                { key: "toutes", label: "Toutes" },
+                { key: "generale", label: "Générales" },
+                { key: "personnelle", label: "Personnelles" },
+                { key: "felicitation", label: "Félicitations" },
+              ].map((item) => (
+                <button
+                  key={item.key}
+                  onClick={() => setFilter(item.key as FilterType)}
+                  className={`h-9 rounded-full px-3 text-xs font-black uppercase tracking-wide transition ${
+                    filter === item.key
+                      ? "bg-white text-black"
+                      : "border border-white/20 bg-white/5 text-white/75"
+                  }`}
+                >
+                  {item.label}
+                </button>
+              ))}
+            </div>
+
             <div className="mt-5 space-y-3">
-              {notifications.map((notif, idx) => (
+              {visibleNotifications.map((notif, idx) => (
                 <article
                   key={notif.id}
                   className={`rounded-2xl border p-4 animate-[notifIn_.28s_ease-out] ${cardTone(notif.type)}`}
@@ -85,8 +126,38 @@ export default function RadarEliteNotificationsPage() {
                       {notif.impact}
                     </p>
                   )}
+
+                  <div className="mt-3 border-t border-white/10 pt-3">
+                    <p className="text-[11px] font-black uppercase tracking-[0.12em] text-white/55">Réagir</p>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {reactionChoices.map((emoji) => {
+                        const base = baseReactionCounts[notif.id]?.[emoji] ?? 0;
+                        const mine = myReactions[notif.id] === emoji ? 1 : 0;
+                        const count = base + mine;
+                        const active = myReactions[notif.id] === emoji;
+                        return (
+                          <button
+                            key={`${notif.id}-${emoji}`}
+                            onClick={() => toggleReaction(notif.id, emoji)}
+                            className={`h-9 rounded-full px-3 text-sm font-black transition ${
+                              active
+                                ? "bg-emerald-400 text-black"
+                                : "border border-white/20 bg-black/20 text-white/85"
+                            }`}
+                          >
+                            {emoji} {count}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
                 </article>
               ))}
+              {visibleNotifications.length === 0 && (
+                <div className="rounded-xl border border-dashed border-white/20 bg-white/5 p-4 text-center text-sm font-semibold text-white/70">
+                  Aucune notification dans cette catégorie.
+                </div>
+              )}
             </div>
 
             <div className="mt-5 rounded-2xl border border-white/15 bg-white/5 p-4">
@@ -131,4 +202,3 @@ export default function RadarEliteNotificationsPage() {
     </main>
   );
 }
-
