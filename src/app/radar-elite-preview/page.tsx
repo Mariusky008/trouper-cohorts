@@ -70,15 +70,9 @@ export default function RadarElitePreviewPage() {
     <main className="min-h-screen bg-[#0A0B0C] text-white px-4 py-8">
       <div className="mx-auto max-w-5xl">
         <div className="text-center">
-          <p className="inline-flex rounded-full border border-[#C49A4A]/35 bg-[#C49A4A]/10 px-3 py-1 text-[11px] font-black uppercase tracking-[0.14em] text-[#EAC886]">
-            Prototype V3 simplifié
-          </p>
           <h1 className="mt-3 text-3xl md:text-5xl font-black leading-tight">
             Popey Radar
           </h1>
-          <p className="mt-3 text-sm md:text-base text-white/70">
-            Version simplifiée: menu iPhone en bas, action claire, infos compréhensibles.
-          </p>
         </div>
 
         <div className="mt-6 flex justify-center">
@@ -89,7 +83,7 @@ export default function RadarElitePreviewPage() {
                 role === "membre" ? "bg-[#0E3E2A] text-emerald-200" : "text-white/70"
               }`}
             >
-              Vue Membre
+              Membre
             </button>
             <button
               onClick={() => setRole("admin")}
