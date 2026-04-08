@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 
 type Role = "membre" | "admin";
@@ -42,8 +43,6 @@ const memberLeads: ClientLead[] = [
 export default function RadarElitePreviewPage() {
   const [role, setRole] = useState<Role>("membre");
   const [memberTab, setMemberTab] = useState<MemberTab>("signal");
-  const [notificationsOpen, setNotificationsOpen] = useState(false);
-  const [unreadCount, setUnreadCount] = useState(2);
   const [isRecording, setIsRecording] = useState(false);
   const [selectedLead, setSelectedLead] = useState<ClientLead | null>(null);
 
@@ -56,14 +55,6 @@ export default function RadarElitePreviewPage() {
   const triggerRecording = () => {
     setMemberTab("signal");
     setIsRecording(true);
-  };
-
-  const openNotifications = () => {
-    setNotificationsOpen((prev) => {
-      const next = !prev;
-      if (next) setUnreadCount(0);
-      return next;
-    });
   };
 
   return (
@@ -104,34 +95,18 @@ export default function RadarElitePreviewPage() {
             <div className="mt-2 flex items-center justify-between gap-3">
               <h2 className="text-2xl font-black">{role === "membre" ? "Mon écran du jour" : "Mon cockpit admin"}</h2>
               {role === "membre" && (
-                <button
-                  onClick={openNotifications}
-                  className="relative h-11 w-11 rounded-xl border border-white/20 bg-white/5 text-lg transition hover:bg-white/10"
-                  aria-label="Ouvrir les notifications"
+                <Link
+                  href="/radar-elite-preview/notifications"
+                  className="group relative h-14 w-14 rounded-2xl border border-white/20 bg-white/5 text-2xl transition hover:bg-white/10 inline-flex items-center justify-center bell-pop"
+                  aria-label="Aller aux notifications"
                 >
                   🔔
-                  {unreadCount > 0 && (
-                    <span className="absolute -right-1 -top-1 inline-flex min-w-5 items-center justify-center rounded-full bg-emerald-400 px-1.5 text-[10px] font-black text-black">
-                      {unreadCount}
-                    </span>
-                  )}
-                </button>
+                  <span className="absolute -right-1 -top-1 inline-flex min-w-6 h-6 items-center justify-center rounded-full bg-emerald-400 px-1.5 text-[10px] font-black text-black ring-2 ring-[#090B0B]">
+                    2
+                  </span>
+                </Link>
               )}
             </div>
-
-            {role === "membre" && notificationsOpen && (
-              <div className="mt-3 rounded-2xl border border-white/10 bg-[#111416] p-4 animate-[fadeIn_.2s_ease-out]">
-                <p className="text-xs font-black uppercase tracking-[0.12em] text-white/65">Nouvelles notifications</p>
-                <div className="mt-2 space-y-2">
-                  <p className="rounded-lg border border-emerald-400/25 bg-emerald-500/10 px-3 py-2 text-xs font-semibold">
-                    Alerte générale: “Thomas a généré 780€ via Claire. La pluie tombe sur Dax.”
-                  </p>
-                  <p className="rounded-lg border border-[#EAC886]/25 bg-[#EAC886]/10 px-3 py-2 text-xs font-semibold">
-                    Votre alerte: Nouveau client “Famille Dubois” à contacter aujourd’hui.
-                  </p>
-                </div>
-              </div>
-            )}
 
             {role === "membre" ? (
               <div className="mt-4 grid gap-2 sm:grid-cols-3">
@@ -320,6 +295,13 @@ export default function RadarElitePreviewPage() {
         @keyframes recordPulse {
           0%, 100% { opacity: 0.45; transform: scaleX(0.2); }
           50% { opacity: 1; transform: scaleX(1); }
+        }
+        @keyframes bellPop {
+          0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(52,211,153,0.35); }
+          50% { transform: scale(1.06); box-shadow: 0 0 0 10px rgba(52,211,153,0); }
+        }
+        .bell-pop {
+          animation: bellPop 1.8s ease-in-out infinite;
         }
       `}</style>
     </main>
