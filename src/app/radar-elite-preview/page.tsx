@@ -42,7 +42,8 @@ const memberLeads: ClientLead[] = [
 export default function RadarElitePreviewPage() {
   const [role, setRole] = useState<Role>("membre");
   const [memberTab, setMemberTab] = useState<MemberTab>("signal");
-  const [showNotifications, setShowNotifications] = useState(true);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(2);
   const [isRecording, setIsRecording] = useState(false);
   const [selectedLead, setSelectedLead] = useState<ClientLead | null>(null);
 
@@ -55,6 +56,14 @@ export default function RadarElitePreviewPage() {
   const triggerRecording = () => {
     setMemberTab("signal");
     setIsRecording(true);
+  };
+
+  const openNotifications = () => {
+    setNotificationsOpen((prev) => {
+      const next = !prev;
+      if (next) setUnreadCount(0);
+      return next;
+    });
   };
 
   return (
@@ -94,11 +103,41 @@ export default function RadarElitePreviewPage() {
         </div>
 
         <div className="mt-8 rounded-[30px] border border-white/10 bg-gradient-to-b from-[#111414] to-[#0A0C0C] p-4 shadow-[0_24px_55px_-30px_rgba(0,0,0,0.9)]">
-          <div className="rounded-[24px] border border-white/10 bg-[#090B0B] p-5">
+          <div className="relative rounded-[24px] border border-white/10 bg-[#090B0B] p-5">
             <p className="text-xs font-black uppercase tracking-[0.14em] text-white/60">
               {role === "membre" ? "Vue membre" : "Vue admin"}
             </p>
-            <h2 className="mt-2 text-2xl font-black">{role === "membre" ? "Mon écran du jour" : "Mon cockpit admin"}</h2>
+            <div className="mt-2 flex items-center justify-between gap-3">
+              <h2 className="text-2xl font-black">{role === "membre" ? "Mon écran du jour" : "Mon cockpit admin"}</h2>
+              {role === "membre" && (
+                <button
+                  onClick={openNotifications}
+                  className="relative h-11 w-11 rounded-xl border border-white/20 bg-white/5 text-lg transition hover:bg-white/10"
+                  aria-label="Ouvrir les notifications"
+                >
+                  🔔
+                  {unreadCount > 0 && (
+                    <span className="absolute -right-1 -top-1 inline-flex min-w-5 items-center justify-center rounded-full bg-emerald-400 px-1.5 text-[10px] font-black text-black">
+                      {unreadCount}
+                    </span>
+                  )}
+                </button>
+              )}
+            </div>
+
+            {role === "membre" && notificationsOpen && (
+              <div className="mt-3 rounded-2xl border border-white/10 bg-[#111416] p-4 animate-[fadeIn_.2s_ease-out]">
+                <p className="text-xs font-black uppercase tracking-[0.12em] text-white/65">Nouvelles notifications</p>
+                <div className="mt-2 space-y-2">
+                  <p className="rounded-lg border border-emerald-400/25 bg-emerald-500/10 px-3 py-2 text-xs font-semibold">
+                    Alerte générale: “Thomas a généré 780€ via Claire. La pluie tombe sur Dax.”
+                  </p>
+                  <p className="rounded-lg border border-[#EAC886]/25 bg-[#EAC886]/10 px-3 py-2 text-xs font-semibold">
+                    Votre alerte: Nouveau client “Famille Dubois” à contacter aujourd’hui.
+                  </p>
+                </div>
+              </div>
+            )}
 
             {role === "membre" ? (
               <div className="mt-4 grid gap-2 sm:grid-cols-3">
@@ -137,28 +176,6 @@ export default function RadarElitePreviewPage() {
 
             {role === "membre" && (
               <>
-                {showNotifications && (
-                  <div className="mt-4 rounded-2xl border border-white/10 bg-white/5 p-4 animate-[fadeIn_.2s_ease-out]">
-                    <div className="flex items-center justify-between">
-                      <p className="text-xs font-black uppercase tracking-[0.12em] text-white/65">Notifications</p>
-                      <button
-                        onClick={() => setShowNotifications(false)}
-                        className="text-[11px] font-black uppercase tracking-wide text-white/60"
-                      >
-                        Masquer
-                      </button>
-                    </div>
-                    <div className="mt-2 space-y-2">
-                      <p className="rounded-lg border border-emerald-400/25 bg-emerald-500/10 px-3 py-2 text-xs font-semibold">
-                        Alerte générale: “Thomas a généré 780€ via Claire. La pluie tombe sur Dax.”
-                      </p>
-                      <p className="rounded-lg border border-[#EAC886]/25 bg-[#EAC886]/10 px-3 py-2 text-xs font-semibold">
-                        Votre alerte: Nouveau client “Famille Dubois” à contacter aujourd’hui.
-                      </p>
-                    </div>
-                  </div>
-                )}
-
                 <div key={memberTab} className="mt-4 animate-[fadeIn_.25s_ease-out]">
                   {memberTab === "clients" && (
                     <div className="rounded-2xl border border-[#EAC886]/25 bg-[#EAC886]/10 p-5">
