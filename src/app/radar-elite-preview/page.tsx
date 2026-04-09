@@ -147,7 +147,6 @@ export default function RadarElitePreviewPage() {
   const [listenedVocalIds, setListenedVocalIds] = useState<string[]>([]);
   const [dispatchSelectionByVocal, setDispatchSelectionByVocal] = useState<Record<string, string[]>>({});
   const [showSignalAckModal, setShowSignalAckModal] = useState(false);
-  const [signalAckPhase, setSignalAckPhase] = useState<"sending" | "received" | "message">("sending");
   const [flashAdminVocalId, setFlashAdminVocalId] = useState<string | null>(null);
 
   const signedDeals = useMemo<SignedDeal[]>(
@@ -211,9 +210,6 @@ export default function RadarElitePreviewPage() {
     const timer = window.setTimeout(() => {
       setIsRecording(false);
       setShowSignalAckModal(true);
-      setSignalAckPhase("sending");
-      window.setTimeout(() => setSignalAckPhase("received"), 500);
-      window.setTimeout(() => setSignalAckPhase("message"), 1100);
       setFlashAdminVocalId("VOC-991");
       window.setTimeout(() => setFlashAdminVocalId(null), 6000);
     }, 2600);
@@ -891,25 +887,22 @@ export default function RadarElitePreviewPage() {
       {showSignalAckModal && (
         <div className="fixed inset-0 z-[75] bg-black/40 backdrop-blur-[2px] p-4 flex items-center justify-center" onClick={() => setShowSignalAckModal(false)}>
           <div className="w-full max-w-lg rounded-2xl border border-white/25 ring-1 ring-white/10 bg-[#1B2227] shadow-[0_25px_80px_-30px_rgba(0,0,0,0.9)] p-5" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-center min-h-[72px]">
-              {signalAckPhase === "sending" && <p className="text-4xl animate-[sendUp_.6s_ease-out]">⬆️</p>}
-              {signalAckPhase === "received" && <p className="text-5xl text-emerald-300 animate-[fadeIn_.2s_ease-out]">✅</p>}
+            <div className="flex items-center justify-center min-h-[56px]">
+              <p className="text-5xl text-emerald-300 animate-[fadeIn_.2s_ease-out]">✅</p>
             </div>
-            {signalAckPhase === "message" && (
-              <div className="animate-[fadeIn_.2s_ease-out]">
-                <h3 className="text-2xl font-black">Bien reçu ! 🎙️</h3>
-                <p className="mt-2 text-sm text-white/85 leading-relaxed">
-                  Merci pour ce signal. Je traite l&apos;information immédiatement : je qualifie le besoin du client et j&apos;active les membres du Cercle concernés.
-                  On continue de faire pleuvoir le business sur Dax !
-                </p>
-                <button
-                  onClick={() => setShowSignalAckModal(false)}
-                  className="mt-4 h-11 w-full rounded-xl bg-emerald-400 text-black text-sm font-black uppercase tracking-wide"
-                >
-                  OK
-                </button>
-              </div>
-            )}
+            <div className="animate-[fadeIn_.2s_ease-out]">
+              <h3 className="text-2xl font-black">Bien reçu ! 🎙️</h3>
+              <p className="mt-2 text-sm text-white/85 leading-relaxed">
+                Merci pour ce signal. Je traite l&apos;information immédiatement : je qualifie le besoin du client et j&apos;active les membres du Cercle concernés.
+                On continue de faire pleuvoir le business sur Dax !
+              </p>
+              <button
+                onClick={() => setShowSignalAckModal(false)}
+                className="mt-4 h-11 w-full rounded-xl bg-emerald-400 text-black text-sm font-black uppercase tracking-wide"
+              >
+                OK
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -944,10 +937,6 @@ export default function RadarElitePreviewPage() {
         @keyframes newLeadPulse {
           0%, 100% { box-shadow: 0 0 0 0 rgba(52,211,153,0.3); }
           50% { box-shadow: 0 0 0 12px rgba(52,211,153,0); }
-        }
-        @keyframes sendUp {
-          from { opacity: 0; transform: translateY(20px); }
-          to { opacity: 1; transform: translateY(-6px); }
         }
         .bell-shake {
           animation: bellShake 1.6s ease-in-out infinite;
