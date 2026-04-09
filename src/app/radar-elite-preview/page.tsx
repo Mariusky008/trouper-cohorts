@@ -138,6 +138,9 @@ export default function RadarElitePreviewPage() {
   const [selectedVocalId, setSelectedVocalId] = useState<string>(adminVocals[0].id);
   const [playingVocalId, setPlayingVocalId] = useState<string | null>(null);
   const [dispatchSelectionByVocal, setDispatchSelectionByVocal] = useState<Record<string, string[]>>({});
+  const [showSignalAckModal, setShowSignalAckModal] = useState(false);
+  const [signalAckPhase, setSignalAckPhase] = useState<"sending" | "received" | "message">("sending");
+  const [flashAdminVocalId, setFlashAdminVocalId] = useState<string | null>(null);
 
   const signedDeals = useMemo<SignedDeal[]>(
     () =>
@@ -191,7 +194,15 @@ export default function RadarElitePreviewPage() {
 
   useEffect(() => {
     if (!isRecording) return;
-    const timer = window.setTimeout(() => setIsRecording(false), 2600);
+    const timer = window.setTimeout(() => {
+      setIsRecording(false);
+      setShowSignalAckModal(true);
+      setSignalAckPhase("sending");
+      window.setTimeout(() => setSignalAckPhase("received"), 500);
+      window.setTimeout(() => setSignalAckPhase("message"), 1100);
+      setFlashAdminVocalId("VOC-991");
+      window.setTimeout(() => setFlashAdminVocalId(null), 6000);
+    }, 2600);
     return () => window.clearTimeout(timer);
   }, [isRecording]);
 
@@ -330,6 +341,9 @@ export default function RadarElitePreviewPage() {
                         key={vocal.id}
                         onClick={() => setSelectedVocalId(vocal.id)}
                         className={`w-full rounded-lg border px-3 py-2 text-left ${
+                          flashAdminVocalId === vocal.id
+                            ? "border-emerald-300/55 bg-emerald-500/20 animate-[newLeadPulse_1.1s_ease-in-out_infinite]"
+                            :
                           vocal.urgent
                             ? "border-red-300/45 bg-red-500/15 animate-[urgPulse_1.4s_ease-in-out_infinite]"
                             : selectedVocal?.id === vocal.id
@@ -864,6 +878,31 @@ export default function RadarElitePreviewPage() {
           </div>
         </div>
       )}
+      {showSignalAckModal && (
+        <div className="fixed inset-0 z-[75] bg-black/40 backdrop-blur-[2px] p-4 flex items-center justify-center" onClick={() => setShowSignalAckModal(false)}>
+          <div className="w-full max-w-lg rounded-2xl border border-white/25 ring-1 ring-white/10 bg-[#1B2227] shadow-[0_25px_80px_-30px_rgba(0,0,0,0.9)] p-5" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-center min-h-[72px]">
+              {signalAckPhase === "sending" && <p className="text-4xl animate-[sendUp_.6s_ease-out]">⬆️</p>}
+              {signalAckPhase === "received" && <p className="text-5xl text-emerald-300 animate-[fadeIn_.2s_ease-out]">✅</p>}
+            </div>
+            {signalAckPhase === "message" && (
+              <div className="animate-[fadeIn_.2s_ease-out]">
+                <h3 className="text-2xl font-black">Bien reçu ! 🎙️</h3>
+                <p className="mt-2 text-sm text-white/85 leading-relaxed">
+                  Merci pour ce signal. Je traite l&apos;information immédiatement : je qualifie le besoin du client et j&apos;active les membres du Cercle concernés.
+                  On continue de faire pleuvoir le business sur Dax !
+                </p>
+                <button
+                  onClick={() => setShowSignalAckModal(false)}
+                  className="mt-4 h-11 w-full rounded-xl bg-emerald-400 text-black text-sm font-black uppercase tracking-wide"
+                >
+                  OK
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
       <style jsx global>{`
         @keyframes fadeIn {
           from { opacity: 0; transform: translateY(8px); }
@@ -891,6 +930,14 @@ export default function RadarElitePreviewPage() {
         @keyframes urgPulse {
           0%, 100% { box-shadow: 0 0 0 0 rgba(248,113,113,0.25); }
           50% { box-shadow: 0 0 0 10px rgba(248,113,113,0); }
+        }
+        @keyframes newLeadPulse {
+          0%, 100% { box-shadow: 0 0 0 0 rgba(52,211,153,0.3); }
+          50% { box-shadow: 0 0 0 12px rgba(52,211,153,0); }
+        }
+        @keyframes sendUp {
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(-6px); }
         }
         .bell-shake {
           animation: bellShake 1.6s ease-in-out infinite;
