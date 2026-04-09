@@ -167,7 +167,6 @@ export default function RadarElitePreviewPage() {
   const [profileMetier, setProfileMetier] = useState("Carreleur");
   const [profileVille, setProfileVille] = useState("Dax");
   const [profilePhone, setProfilePhone] = useState("06 77 88 99 00");
-  const [voiceMeterBars, setVoiceMeterBars] = useState<number[]>(Array.from({ length: 14 }, () => 18));
   const [memberLeadOpenedById, setMemberLeadOpenedById] = useState<Record<string, boolean>>({
     "L-204": false,
     "L-213": false,
@@ -247,22 +246,6 @@ export default function RadarElitePreviewPage() {
       window.setTimeout(() => setFlashAdminVocalId(null), 6000);
     }, 2600);
     return () => window.clearTimeout(timer);
-  }, [isRecording]);
-
-  useEffect(() => {
-    if (!isRecording) {
-      setVoiceMeterBars(Array.from({ length: 14 }, () => 18));
-      return;
-    }
-    const meterInterval = window.setInterval(() => {
-      setVoiceMeterBars((prev) =>
-        prev.map((bar) => {
-          const next = bar + (Math.random() * 38 - 16);
-          return Math.max(10, Math.min(96, Math.round(next)));
-        })
-      );
-    }, 120);
-    return () => window.clearInterval(meterInterval);
   }, [isRecording]);
 
   const triggerRecording = () => {
@@ -596,7 +579,7 @@ export default function RadarElitePreviewPage() {
                       <p className="text-xs font-black uppercase tracking-[0.12em] text-emerald-300">Signal vocal</p>
                       <h3 className="mt-1 text-2xl font-black">Mode Talkie-Walkie</h3>
                       <p className="mt-2 text-sm text-white/85 leading-relaxed">
-                        Maintenez pour transmettre votre opportunité. Donnez moi tous les details, Je me charge de contacter votre client pour qualifier ses besoins et alerter les métiers concernés. Vos commissions s&apos;afficheront dès la signature des contrats par les membres du Cercle.
+                        Maintenez pour transmettre votre opportunité. Donnez moi tous les details, je me charge de contacter votre client pour qualifier ses besoins et alerter les métiers concernés. Vos commissions s&apos;afficheront dès la signature des contrats par les membres du Cercle.
                       </p>
                       <div className="relative mt-6 h-64 flex justify-center items-center">
                         <span className="absolute left-1/2 top-1/2 h-56 w-56 -translate-x-1/2 -translate-y-1/2 rounded-full border border-emerald-300/30 animate-[talkieRing_1.6s_ease-out_infinite]" />
@@ -626,20 +609,6 @@ export default function RadarElitePreviewPage() {
                             isRecording ? "w-full animate-[recordPulse_1.2s_ease-in-out_infinite]" : "w-0"
                           }`}
                         />
-                      </div>
-                      <div className="mt-4 rounded-xl border border-emerald-300/20 bg-black/30 px-3 py-3">
-                        <p className="text-[10px] font-black uppercase tracking-[0.12em] text-emerald-200/80">
-                          VU-METRE VOCAL EN TEMPS REEL
-                        </p>
-                        <div className="mt-2 flex items-end gap-1 h-14">
-                          {voiceMeterBars.map((level, idx) => (
-                            <span
-                              key={`meter-${idx}`}
-                              className="w-1.5 rounded-t bg-gradient-to-t from-emerald-400 to-cyan-300 transition-all duration-100"
-                              style={{ height: `${isRecording ? level : 10}%`, opacity: isRecording ? 1 : 0.35 }}
-                            />
-                          ))}
-                        </div>
                       </div>
                     </div>
                   )}
