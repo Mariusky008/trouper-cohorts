@@ -137,6 +137,7 @@ const adminMetricsBySphere: Record<Sphere, { leadsQualifies: number; commissions
 export default function RadarElitePreviewPage() {
   const searchParams = useSearchParams();
   const [role] = useState<Role>("membre");
+  const [themeMode, setThemeMode] = useState<"sombre" | "clair">("sombre");
   const [memberTab, setMemberTab] = useState<MemberTab>("signal");
   const [isRecording, setIsRecording] = useState(false);
   const [selectedLead, setSelectedLead] = useState<ClientLead | null>(null);
@@ -300,9 +301,10 @@ export default function RadarElitePreviewPage() {
   };
 
   const selectedDispatchTargets = selectedVocal ? dispatchSelectionByVocal[selectedVocal.id] ?? [] : [];
+  const isLightTheme = themeMode === "clair";
 
   return (
-    <main className="min-h-screen bg-[#0A0B0C] text-white pb-28 md:pb-8">
+    <main className={`min-h-screen pb-28 md:pb-8 ${isLightTheme ? "bg-[#EEF3F8] text-[#0F172A]" : "bg-[#0A0B0C] text-white"}`}>
       <div className="mx-auto max-w-4xl px-4 md:px-6 py-5 md:py-8">
         <div className="text-center md:text-left">
           <h1 className="mt-1 text-4xl md:text-5xl font-black leading-tight">
@@ -311,16 +313,28 @@ export default function RadarElitePreviewPage() {
         </div>
 
         <div className="mt-6 flex justify-center">
-          <div className="inline-flex rounded-xl border border-white/10 bg-white/5 p-1 gap-1">
+          <div className={`inline-flex rounded-xl p-1 gap-1 ${isLightTheme ? "border border-black/10 bg-black/5" : "border border-white/10 bg-white/5"}`}>
+            <button
+              onClick={() => setThemeMode("sombre")}
+              className={`rounded-lg px-3 py-2 text-xs font-black uppercase tracking-wide ${themeMode === "sombre" ? "bg-[#0E3E2A] text-emerald-200" : isLightTheme ? "text-black/70" : "text-white/70"}`}
+            >
+              Sombre
+            </button>
+            <button
+              onClick={() => setThemeMode("clair")}
+              className={`rounded-lg px-3 py-2 text-xs font-black uppercase tracking-wide ${themeMode === "clair" ? "bg-[#EAC886] text-black" : isLightTheme ? "text-black/70" : "text-white/70"}`}
+            >
+              Clair
+            </button>
             <button
               onClick={() => setShowDirectoryModal(true)}
-              className="rounded-lg px-4 py-2 text-xs font-black uppercase tracking-wide bg-[#0E3E2A] text-emerald-200"
+              className={`rounded-lg px-4 py-2 text-xs font-black uppercase tracking-wide ${isLightTheme ? "bg-white text-[#0F172A] border border-black/10" : "bg-[#0E3E2A] text-emerald-200"}`}
             >
               Annuaire
             </button>
             <button
               onClick={() => setShowProfileModal(true)}
-              className="rounded-lg px-4 py-2 text-xs font-black uppercase tracking-wide text-white/80"
+              className={`rounded-lg px-4 py-2 text-xs font-black uppercase tracking-wide ${isLightTheme ? "text-black/80" : "text-white/80"}`}
             >
               Profil
             </button>
@@ -684,12 +698,12 @@ export default function RadarElitePreviewPage() {
         </div>
       </div>
       {role === "membre" && (
-        <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-white/10 bg-[#0B0D0E]/95 backdrop-blur px-4 pb-[max(12px,env(safe-area-inset-bottom))] pt-2">
+        <nav className={`fixed bottom-0 left-0 right-0 z-40 backdrop-blur px-4 pb-[max(12px,env(safe-area-inset-bottom))] pt-2 ${isLightTheme ? "border-t border-black/10 bg-white/85" : "border-t border-white/10 bg-[#0B0D0E]/95"}`}>
           <div className="mx-auto max-w-4xl grid grid-cols-3 gap-2 items-end">
             <button
               onClick={() => setMemberTab("clients")}
               className={`h-12 rounded-xl text-xs font-black uppercase tracking-wide ${
-                memberTab === "clients" ? "bg-white text-black" : "border border-white/20 text-white/75"
+                memberTab === "clients" ? "bg-white text-black" : isLightTheme ? "border border-black/15 text-black/70" : "border border-white/20 text-white/75"
               }`}
             >
               Clients
@@ -699,7 +713,7 @@ export default function RadarElitePreviewPage() {
               className={`h-14 rounded-2xl text-xs font-black uppercase tracking-wide ${
                 memberTab === "signal"
                   ? "bg-emerald-400 text-black shadow-[0_10px_25px_-12px_rgba(52,211,153,0.9)]"
-                  : "border border-emerald-300/40 text-emerald-200"
+                  : isLightTheme ? "border border-emerald-500/35 text-emerald-700" : "border border-emerald-300/40 text-emerald-200"
               }`}
             >
               Signal
@@ -707,7 +721,7 @@ export default function RadarElitePreviewPage() {
             <button
               onClick={() => setMemberTab("cash")}
               className={`h-12 rounded-xl text-xs font-black uppercase tracking-wide ${
-                memberTab === "cash" ? "bg-white text-black" : "border border-white/20 text-white/75"
+                memberTab === "cash" ? "bg-white text-black" : isLightTheme ? "border border-black/15 text-black/70" : "border border-white/20 text-white/75"
               }`}
             >
               Cash
