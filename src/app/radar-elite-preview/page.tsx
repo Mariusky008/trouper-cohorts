@@ -304,7 +304,7 @@ export default function RadarElitePreviewPage() {
   const isLightTheme = themeMode === "clair";
 
   return (
-    <main className={`min-h-screen pb-28 md:pb-8 ${isLightTheme ? "bg-[#EEF3F8] text-[#0F172A]" : "bg-[#0A0B0C] text-white"}`}>
+    <main className={`min-h-screen pb-28 md:pb-8 ${isLightTheme ? "theme-light bg-[#EEF3F8] text-[#0F172A]" : "bg-[#0A0B0C] text-white"}`}>
       <div className="mx-auto max-w-4xl px-4 md:px-6 py-5 md:py-8">
         <div className="text-center md:text-left">
           <h1 className="mt-1 text-4xl md:text-5xl font-black leading-tight">
@@ -1034,6 +1034,57 @@ export default function RadarElitePreviewPage() {
         </div>
       )}
       <style jsx global>{`
+        .theme-light {
+          background: linear-gradient(180deg, #f3f7fb 0%, #edf3f9 55%, #e8f0f7 100%);
+        }
+        .theme-light h1,
+        .theme-light h2,
+        .theme-light h3,
+        .theme-light p,
+        .theme-light span,
+        .theme-light label,
+        .theme-light button,
+        .theme-light a {
+          color: #0f172a;
+        }
+        .theme-light [class*="text-white"] {
+          color: #1e293b !important;
+        }
+        .theme-light [class*="text-emerald-200"],
+        .theme-light [class*="text-emerald-300"] {
+          color: #065f46 !important;
+        }
+        .theme-light [class*="text-red-200"] {
+          color: #b91c1c !important;
+        }
+        .theme-light [class*="text-[#EAC886]"] {
+          color: #8a5c00 !important;
+        }
+        .theme-light [class*="bg-black/25"],
+        .theme-light [class*="bg-black/20"],
+        .theme-light [class*="bg-black/30"] {
+          background: rgba(255, 255, 255, 0.72) !important;
+        }
+        .theme-light [class*="bg-white/5"],
+        .theme-light [class*="bg-white/10"] {
+          background: rgba(255, 255, 255, 0.86) !important;
+        }
+        .theme-light [class*="border-white/15"],
+        .theme-light [class*="border-white/20"],
+        .theme-light [class*="border-white/25"],
+        .theme-light [class*="border-white/10"] {
+          border-color: rgba(15, 23, 42, 0.16) !important;
+        }
+        .theme-light .bell-shake {
+          filter: drop-shadow(0 8px 18px rgba(14, 165, 233, 0.2));
+        }
+        .theme-light .talkie-btn {
+          box-shadow: 0 14px 34px -18px rgba(6, 95, 70, 0.65);
+        }
+        .theme-light .fixed.inset-0 > div {
+          background: rgba(255, 255, 255, 0.96) !important;
+          border-color: rgba(15, 23, 42, 0.16) !important;
+        }
         @keyframes fadeIn {
           from { opacity: 0; transform: translateY(8px); }
           to { opacity: 1; transform: translateY(0); }
