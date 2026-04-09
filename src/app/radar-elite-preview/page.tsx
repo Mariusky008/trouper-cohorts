@@ -579,7 +579,8 @@ export default function RadarElitePreviewPage() {
                       <p className="text-xs font-black uppercase tracking-[0.12em] text-emerald-300">Signal vocal</p>
                       <h3 className="mt-1 text-2xl font-black">Mode Talkie-Walkie</h3>
                       <p className="mt-2 text-sm text-white/85 leading-relaxed">
-                        Maintenez pour transmettre votre opportunité. Donnez moi tous les details, je me charge de contacter votre client pour qualifier ses besoins et alerter les métiers concernés. Vos commissions s&apos;afficheront dès la signature des contrats par les membres du Cercle.
+                        Maintenez pour transmettre votre opportunité. Donnez moi tous les details, je me charge de contacter votre client pour qualifier ses besoins et alerter les métiers concernés. 
+                        <br/>Vos commissions s&apos;afficheront dès la signature des contrats par les membres du Cercle.
                       </p>
                       <div className="relative mt-6 h-64 flex justify-center items-center">
                         <span className="absolute left-1/2 top-1/2 h-56 w-56 -translate-x-1/2 -translate-y-1/2 rounded-full border border-emerald-300/30 animate-[talkieRing_1.6s_ease-out_infinite]" />
@@ -602,13 +603,6 @@ export default function RadarElitePreviewPage() {
                           <span className="absolute inset-0 rounded-full animate-[talkieGlow_1.6s_ease-in-out_infinite]" />
                           <span className="relative z-10">{isRecording ? "Transmission..." : "Maintenir pour parler"}</span>
                         </button>
-                      </div>
-                      <div className="mt-6 h-3 rounded-full bg-black/30 overflow-hidden">
-                        <div
-                          className={`h-full bg-red-400 transition-all duration-300 ${
-                            isRecording ? "w-full animate-[recordPulse_1.2s_ease-in-out_infinite]" : "w-0"
-                          }`}
-                        />
                       </div>
                     </div>
                   )}
@@ -1046,10 +1040,6 @@ export default function RadarElitePreviewPage() {
         @keyframes fadeIn {
           from { opacity: 0; transform: translateY(8px); }
           to { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes recordPulse {
-          0%, 100% { opacity: 0.45; transform: scaleX(0.2); }
-          50% { opacity: 1; transform: scaleX(1); }
         }
         @keyframes bellShake {
           0%, 100% { transform: rotate(0deg); }
