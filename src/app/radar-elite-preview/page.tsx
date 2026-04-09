@@ -1060,7 +1060,7 @@ export default function RadarElitePreviewPage() {
         }
         .theme-light [class*="text-emerald-200"],
         .theme-light [class*="text-emerald-300"] {
-          color: #065f46 !important;
+          color: #1d4ed8 !important;
         }
         .theme-light [class*="text-red-200"] {
           color: #b91c1c !important;
@@ -1083,11 +1083,26 @@ export default function RadarElitePreviewPage() {
         .theme-light [class*="border-white/10"] {
           border-color: rgba(15, 23, 42, 0.16) !important;
         }
+        .theme-light [class*="bg-emerald-400"] {
+          background: #2563eb !important;
+          color: #ffffff !important;
+        }
+        .theme-light [class*="border-emerald-"] {
+          border-color: rgba(37, 99, 235, 0.4) !important;
+        }
+        .theme-light [class*="text-emerald-700"],
+        .theme-light [class*="text-emerald-800"],
+        .theme-light [class*="text-emerald-900"] {
+          color: #1e40af !important;
+        }
         .theme-light .bell-shake {
           filter: drop-shadow(0 8px 18px rgba(14, 165, 233, 0.2));
         }
         .theme-light .talkie-btn {
-          box-shadow: 0 14px 34px -18px rgba(6, 95, 70, 0.65);
+          background: linear-gradient(180deg, #60a5fa 0%, #2563eb 100%) !important;
+          color: #ffffff !important;
+          border-color: rgba(37, 99, 235, 0.45) !important;
+          box-shadow: 0 16px 34px -18px rgba(37, 99, 235, 0.55);
         }
         .theme-light .fixed.inset-0 > div {
           background: rgba(255, 255, 255, 0.96) !important;
