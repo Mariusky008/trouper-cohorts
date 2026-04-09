@@ -733,13 +733,10 @@ export default function RadarElitePreviewPage() {
               <p className="rounded-lg border border-[#EAC886]/25 bg-[#EAC886]/10 px-3 py-2"><span className="font-black">Apporteur:</span> {selectedLead.sourcePrenom} ({selectedLead.sourceMetier})</p>
               <p className="rounded-lg border border-white/15 bg-black/25 px-3 py-2"><span className="font-black">Notes:</span> {selectedLead.notes}</p>
             </div>
-            <div className="mt-4 grid gap-2 sm:grid-cols-2">
+            <div className="mt-4">
               <a href={`tel:${selectedLead.telephone.replaceAll(" ", "")}`} className="h-11 rounded-xl bg-emerald-400 text-black text-sm font-black uppercase tracking-wide inline-flex items-center justify-center">
                 Appeler le client
               </a>
-              <button className="h-11 rounded-xl border border-[#EAC886]/35 bg-[#EAC886]/10 text-[#EAC886] text-sm font-black uppercase tracking-wide">
-                Envoyer un devis
-              </button>
             </div>
           </div>
         </div>
