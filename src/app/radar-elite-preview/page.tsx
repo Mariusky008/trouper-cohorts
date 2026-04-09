@@ -260,8 +260,10 @@ export default function RadarElitePreviewPage() {
     }
   }, [searchParams]);
 
-  const takeDeal = (leadId: string) => {
-    setDealProgressById((prev) => ({ ...prev, [leadId]: "pris" }));
+  const takeDeal = (lead: ClientLead) => {
+    setDealProgressById((prev) => ({ ...prev, [lead.id]: "pris" }));
+    // Ouvre immédiatement la fiche complète pour avoir téléphone/adresse/notes.
+    openLeadDetails(lead);
   };
 
   const markDealLost = (leadId: string) => {
@@ -512,7 +514,7 @@ export default function RadarElitePreviewPage() {
                             <div className="mt-3">
                               {dealProgressById[lead.id] === "nouveau" && (
                                 <button
-                                  onClick={() => takeDeal(lead.id)}
+                                  onClick={() => takeDeal(lead)}
                                   className="h-11 w-full rounded-xl bg-emerald-400 text-black text-xs font-black uppercase tracking-wide shadow-[0_10px_25px_-15px_rgba(52,211,153,0.85)]"
                                 >
                                   Je prends le deal et je contacte le client
