@@ -136,7 +136,7 @@ const adminMetricsBySphere: Record<Sphere, { leadsQualifies: number; commissions
 
 export default function RadarElitePreviewPage() {
   const searchParams = useSearchParams();
-  const [role, setRole] = useState<Role>("membre");
+  const [role] = useState<Role>("membre");
   const [memberTab, setMemberTab] = useState<MemberTab>("signal");
   const [isRecording, setIsRecording] = useState(false);
   const [selectedLead, setSelectedLead] = useState<ClientLead | null>(null);
@@ -309,23 +309,25 @@ export default function RadarElitePreviewPage() {
         </div>
 
         <div className="mt-6 flex justify-center">
-          <div className="inline-flex rounded-xl border border-white/10 bg-white/5 p-1">
+          <div className="inline-flex rounded-xl border border-white/10 bg-white/5 p-1 gap-1">
             <button
-              onClick={() => setRole("membre")}
-              className={`rounded-lg px-4 py-2 text-xs font-black uppercase tracking-wide transition ${
-                role === "membre" ? "bg-[#0E3E2A] text-emerald-200" : "text-white/70"
-              }`}
+              onClick={() => setShowDirectoryModal(true)}
+              className="rounded-lg px-4 py-2 text-xs font-black uppercase tracking-wide bg-[#0E3E2A] text-emerald-200"
             >
-              Membre
+              Annuaire
             </button>
             <button
-              onClick={() => setRole("admin")}
-              className={`rounded-lg px-4 py-2 text-xs font-black uppercase tracking-wide transition ${
-                role === "admin" ? "bg-[#3E2E0E] text-[#EAC886]" : "text-white/70"
-              }`}
+              onClick={() => setShowProfileModal(true)}
+              className="rounded-lg px-4 py-2 text-xs font-black uppercase tracking-wide text-white/80"
             >
-              Vue Admin
+              Profil
             </button>
+            <Link
+              href="/radar-elite-preview/admin-preview"
+              className="rounded-lg px-4 py-2 text-xs font-black uppercase tracking-wide text-[#EAC886]/90"
+            >
+              Admin Preview
+            </Link>
           </div>
         </div>
 
@@ -472,18 +474,6 @@ export default function RadarElitePreviewPage() {
             {role === "membre" && (
               <>
                 <div className="mt-1 flex justify-end gap-2">
-                  <button
-                    onClick={() => setShowDirectoryModal(true)}
-                    className="h-10 rounded-lg border border-white/20 bg-white/5 px-3 text-[11px] font-black uppercase tracking-wide"
-                  >
-                    Annuaire
-                  </button>
-                  <button
-                    onClick={() => setShowProfileModal(true)}
-                    className="h-10 rounded-lg border border-white/20 bg-white/5 px-3 text-[11px] font-black uppercase tracking-wide"
-                  >
-                    Profil
-                  </button>
                   <Link
                     href="/radar-elite-preview/notifications"
                     className="group relative h-[60px] w-[60px] rounded-full border border-emerald-300/35 bg-gradient-to-b from-[#1A3A31] to-[#0E241E] text-2xl transition hover:brightness-110 inline-flex items-center justify-center bell-shake shadow-[0_10px_30px_-15px_rgba(0,245,176,0.6)]"
