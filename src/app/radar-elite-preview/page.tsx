@@ -115,6 +115,13 @@ const memberHealth = [
   { name: "Nora", metier: "Infirmière", status: "ok", overdueDays: 0 },
 ];
 
+const adminMetricsBySphere: Record<Sphere, { leadsQualifies: number; commissionsValidees: number; caTotalReseau: number }> = {
+  toutes: { leadsQualifies: 7, commissionsValidees: 3280, caTotalReseau: 450000 },
+  habitat: { leadsQualifies: 5, commissionsValidees: 2510, caTotalReseau: 312000 },
+  sante: { leadsQualifies: 1, commissionsValidees: 470, caTotalReseau: 74000 },
+  auto: { leadsQualifies: 1, commissionsValidees: 300, caTotalReseau: 64000 },
+};
+
 export default function RadarElitePreviewPage() {
   const searchParams = useSearchParams();
   const [role, setRole] = useState<Role>("membre");
@@ -137,6 +144,7 @@ export default function RadarElitePreviewPage() {
   const [adminSphere, setAdminSphere] = useState<Sphere>("toutes");
   const [selectedVocalId, setSelectedVocalId] = useState<string>(adminVocals[0].id);
   const [playingVocalId, setPlayingVocalId] = useState<string | null>(null);
+  const [listenedVocalIds, setListenedVocalIds] = useState<string[]>([]);
   const [dispatchSelectionByVocal, setDispatchSelectionByVocal] = useState<Record<string, string[]>>({});
   const [showSignalAckModal, setShowSignalAckModal] = useState(false);
   const [signalAckPhase, setSignalAckPhase] = useState<"sending" | "received" | "message">("sending");
@@ -191,6 +199,12 @@ export default function RadarElitePreviewPage() {
     () => visibleAdminVocals.find((v) => v.id === selectedVocalId) ?? visibleAdminVocals[0] ?? null,
     [visibleAdminVocals, selectedVocalId]
   );
+  const healthByMember = useMemo(
+    () =>
+      Object.fromEntries(memberHealth.map((m) => [m.name, m])) as Record<string, (typeof memberHealth)[number]>,
+    []
+  );
+  const adminMetrics = adminMetricsBySphere[adminSphere];
 
   useEffect(() => {
     if (!isRecording) return;
@@ -320,15 +334,15 @@ export default function RadarElitePreviewPage() {
                   </div>
                   <div className="rounded-xl border border-[#EAC886]/25 bg-[#2A2111] p-3">
                     <p className="text-[10px] uppercase font-black tracking-[0.12em] text-[#EAC886]/80">Leads qualifiés</p>
-                    <p className="mt-1 text-xl font-black text-[#EAC886]">7</p>
+                    <p className="mt-1 text-xl font-black text-[#EAC886]">{adminMetrics.leadsQualifies}</p>
                   </div>
                   <div className="rounded-xl border border-emerald-400/25 bg-[#10251D] p-3">
                     <p className="text-[10px] uppercase font-black tracking-[0.12em] text-emerald-300/80">Commissions validées</p>
-                    <p className="mt-1 text-xl font-black text-emerald-300">3 280€</p>
+                    <p className="mt-1 text-xl font-black text-emerald-300">{adminMetrics.commissionsValidees.toLocaleString("fr-FR")}€</p>
                   </div>
                   <div className="rounded-xl border border-cyan-300/30 bg-cyan-500/10 p-3">
                     <p className="text-[10px] uppercase font-black tracking-[0.12em] text-cyan-200/85">CA Total Réseau</p>
-                    <p className="mt-1 text-xl font-black text-cyan-200">450 000€</p>
+                    <p className="mt-1 text-xl font-black text-cyan-200">{adminMetrics.caTotalReseau.toLocaleString("fr-FR")}€</p>
                   </div>
                 </div>
 
@@ -352,7 +366,12 @@ export default function RadarElitePreviewPage() {
                         }`}
                       >
                         <div className="flex items-center justify-between gap-3">
-                          <p className="text-sm font-black">
+                          <p className="text-sm font-black flex items-center gap-2">
+                            <span
+                              className={`inline-block h-2.5 w-2.5 rounded-full ${
+                                healthByMember[vocal.from]?.status === "alert" ? "bg-red-400" : "bg-emerald-400"
+                              }`}
+                            />
                             {vocal.id} · {vocal.from} ({vocal.metier})
                             {vocal.urgent ? " · URGENCE" : ""}
                           </p>
@@ -360,9 +379,16 @@ export default function RadarElitePreviewPage() {
                             type="button"
                             onClick={(e) => {
                               e.stopPropagation();
+                              setListenedVocalIds((prev) => (prev.includes(vocal.id) ? prev : [...prev, vocal.id]));
                               setPlayingVocalId((prev) => (prev === vocal.id ? null : vocal.id));
                             }}
-                            className="h-8 rounded-md border border-white/20 px-2 text-[11px] font-black uppercase tracking-wide"
+                            className={`h-8 rounded-md border px-2 text-[11px] font-black uppercase tracking-wide ${
+                              playingVocalId === vocal.id
+                                ? "border-emerald-300/40 bg-emerald-500/10 text-emerald-200"
+                                : listenedVocalIds.includes(vocal.id)
+                                ? "border-white/10 bg-white/5 text-white/45"
+                                : "border-white/20 text-white/90"
+                            }`}
                           >
                             {playingVocalId === vocal.id ? `Pause ${vocal.duration}` : `Play ${vocal.duration}`}
                           </button>
@@ -405,22 +431,6 @@ export default function RadarElitePreviewPage() {
                   </div>
                 )}
 
-                <div className="mt-3 rounded-2xl border border-white/15 bg-white/5 p-4">
-                  <p className="text-xs font-black uppercase tracking-[0.12em] text-white/70">Kill Switch</p>
-                  <p className="mt-1 text-sm font-black">Santé membres (litiges / retards)</p>
-                  <div className="mt-2 space-y-2">
-                    {memberHealth.map((member) => (
-                      <div key={member.name} className="rounded-lg border border-white/15 bg-black/25 px-3 py-2 flex items-center justify-between gap-3">
-                        <p className="text-sm font-bold">{member.name} ({member.metier})</p>
-                        <span className={`inline-flex items-center rounded-full px-2 py-1 text-[10px] font-black uppercase tracking-wide ${
-                          member.status === "ok" ? "bg-emerald-500/20 text-emerald-200" : "bg-red-500/20 text-red-200"
-                        }`}>
-                          {member.status === "ok" ? "À jour" : `Rouge +${member.overdueDays}j`}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
               </>
             )}
 
