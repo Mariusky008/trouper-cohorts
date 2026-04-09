@@ -136,7 +136,16 @@ export default function RadarEliteNotificationsPage() {
                     </div>
                     <p className="text-[11px] font-bold text-white/65">{notif.time}</p>
                   </div>
-                  <p className="mt-2 text-[15px] font-medium text-white/90 leading-relaxed">{notif.message}</p>
+                  {notif.type === "personnelle" ? (
+                    <Link
+                      href="/radar-elite-preview?tab=clients"
+                      className="mt-2 block rounded-xl border border-cyan-300/35 bg-cyan-500/15 px-3 py-2 text-[15px] font-semibold text-white leading-relaxed"
+                    >
+                      {notif.message}
+                    </Link>
+                  ) : (
+                    <p className="mt-2 text-[15px] font-medium text-white/90 leading-relaxed">{notif.message}</p>
+                  )}
                   {notif.impact && (
                     <p className="mt-2 inline-flex rounded-full border border-white/20 bg-black/25 px-2.5 py-1 text-[11px] font-black uppercase tracking-[0.1em] text-white/85">
                       {notif.impact}

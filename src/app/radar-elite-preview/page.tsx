@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
 type Role = "membre" | "admin";
@@ -20,6 +21,7 @@ type ClientLead = {
 };
 
 type DealProgress = "nouveau" | "pris" | "signe" | "perdu";
+type SignedDeal = ClientLead & { signedAmount: number; dueCommission: number };
 
 type GivenDealCommission = {
   id: string;
@@ -28,7 +30,7 @@ type GivenDealCommission = {
   commission: number;
   signedBy: string;
   signedByMetier: string;
-  paiementStatut: "paye" | "en_attente";
+  paiementStatut: "paye" | "en_attente_tiers" | "en_attente_jp";
   paidAt?: string;
 };
 
@@ -77,11 +79,12 @@ const givenDealsCommissions: GivenDealCommission[] = [
     commission: 950,
     signedBy: "Claire",
     signedByMetier: "Cuisiniste",
-    paiementStatut: "en_attente",
+    paiementStatut: "en_attente_jp",
   },
 ];
 
 export default function RadarElitePreviewPage() {
+  const searchParams = useSearchParams();
   const [role, setRole] = useState<Role>("membre");
   const [memberTab, setMemberTab] = useState<MemberTab>("signal");
   const [isRecording, setIsRecording] = useState(false);
@@ -98,8 +101,9 @@ export default function RadarElitePreviewPage() {
   const [showPayCommissionsModal, setShowPayCommissionsModal] = useState(false);
   const [showSignedClientsModal, setShowSignedClientsModal] = useState(false);
   const [showCommissionsDueToMeModal, setShowCommissionsDueToMeModal] = useState(false);
+  const [selectedSignedDealHistory, setSelectedSignedDealHistory] = useState<SignedDeal | null>(null);
 
-  const signedDeals = useMemo(
+  const signedDeals = useMemo<SignedDeal[]>(
     () =>
       memberLeads
         .filter((lead) => dealProgressById[lead.id] === "signe" && (signedAmountById[lead.id] ?? 0) > 0)
@@ -135,10 +139,11 @@ export default function RadarElitePreviewPage() {
   const totalCommissionsPendingToMe = useMemo(
     () =>
       givenDealsCommissions
-        .filter((item) => item.paiementStatut === "en_attente")
+        .filter((item) => item.paiementStatut !== "paye")
         .reduce((sum, item) => sum + item.commission, 0),
     []
   );
+  const cashDisponiblePopey = useMemo(() => totalCommissionsAlreadyPaidToMe, [totalCommissionsAlreadyPaidToMe]);
 
   useEffect(() => {
     if (!isRecording) return;
@@ -150,6 +155,13 @@ export default function RadarElitePreviewPage() {
     setMemberTab("signal");
     setIsRecording(true);
   };
+
+  useEffect(() => {
+    const tab = searchParams.get("tab");
+    if (tab === "clients" || tab === "signal" || tab === "cash") {
+      setMemberTab(tab);
+    }
+  }, [searchParams]);
 
   const takeDeal = (leadId: string) => {
     setDealProgressById((prev) => ({ ...prev, [leadId]: "pris" }));
@@ -250,7 +262,6 @@ export default function RadarElitePreviewPage() {
                     <div className="p-1">
                       <p className="text-xs font-black uppercase tracking-[0.12em] text-[#EAC886]">Clients reçus</p>
                       <h3 className="mt-1 text-xl font-black">Touchez un client pour ouvrir sa fiche complète</h3>
-                      <p className="mt-2 text-sm text-white/80">Vous voyez besoin, budget, contact et prochaine action.</p>
                       <div className="mt-4 space-y-2">
                         {memberLeads.map((lead) => (
                           <div
@@ -367,6 +378,16 @@ export default function RadarElitePreviewPage() {
                       <p className="mt-2 text-sm text-white/80">Montants signés, commissions reçues et commissions à payer.</p>
 
                       <div className="mt-4 space-y-2">
+                        <div className="rounded-xl border border-cyan-300/30 bg-cyan-500/10 p-3">
+                          <p className="text-xs text-cyan-200/90 uppercase font-black">Mon cash disponible Popey</p>
+                          <p className="text-2xl font-black text-cyan-200">
+                            {cashDisponiblePopey.toLocaleString("fr-FR")}€
+                          </p>
+                          <button className="mt-2 h-10 w-full rounded-lg bg-cyan-300 text-black text-xs font-black uppercase tracking-wide">
+                            Demander un virement Popey
+                          </button>
+                        </div>
+
                         <button
                           type="button"
                           onClick={() => setShowSignedClientsModal(true)}
@@ -384,7 +405,7 @@ export default function RadarElitePreviewPage() {
                           onClick={() => setShowCommissionsDueToMeModal(true)}
                           className="w-full rounded-xl border border-emerald-400/30 bg-[#10251D] p-3 text-left"
                         >
-                          <p className="text-xs text-emerald-300/80 uppercase font-black">2. Commissions qu&apos;on me doit</p>
+                          <p className="text-xs text-emerald-300/80 uppercase font-black">2. Commissions dues (Inbound)</p>
                           <p className="text-2xl font-black text-emerald-300">
                             {totalCommissionsDueToMe.toLocaleString("fr-FR")}€
                           </p>
@@ -549,12 +570,17 @@ export default function RadarElitePreviewPage() {
                 </p>
               )}
               {signedDeals.map((deal) => (
-                <div key={deal.id} className="rounded-lg border border-white/15 bg-black/25 px-3 py-2">
+                <button
+                  type="button"
+                  key={deal.id}
+                  onClick={() => setSelectedSignedDealHistory(deal)}
+                  className="w-full rounded-lg border border-white/15 bg-black/25 px-3 py-2 text-left"
+                >
                   <p className="text-sm font-black">{deal.client}</p>
                   <p className="text-xs text-white/70">
                     Montant signé: {deal.signedAmount.toLocaleString("fr-FR")}€ • Apporté par {deal.sourcePrenom} ({deal.sourceMetier})
                   </p>
-                </div>
+                </button>
               ))}
             </div>
           </div>
@@ -565,7 +591,7 @@ export default function RadarElitePreviewPage() {
           <div className="w-full max-w-xl rounded-2xl border border-white/25 ring-1 ring-white/10 bg-[#1B2227] shadow-[0_25px_80px_-30px_rgba(0,0,0,0.9)] p-5" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-start justify-between gap-3">
               <div>
-                <p className="text-xs uppercase font-black tracking-[0.12em] text-emerald-300/80">Commissions qu&apos;on me doit</p>
+                <p className="text-xs uppercase font-black tracking-[0.12em] text-emerald-300/80">Commissions dues (Inbound)</p>
                 <h3 className="mt-1 text-2xl font-black">Qui a payé / qui n&apos;a pas payé</h3>
               </div>
               <button onClick={() => setShowCommissionsDueToMeModal(false)} className="text-xs font-black uppercase tracking-wide text-white/70">
@@ -580,7 +606,11 @@ export default function RadarElitePreviewPage() {
                     Signé par {item.signedBy} ({item.signedByMetier}) • Commission due: {item.commission.toLocaleString("fr-FR")}€
                   </p>
                   <p className={`text-xs font-black mt-1 ${item.paiementStatut === "paye" ? "text-emerald-300" : "text-amber-300"}`}>
-                    {item.paiementStatut === "paye" ? `Payé${item.paidAt ? ` le ${item.paidAt}` : ""}` : "Pas encore payé"}
+                    {item.paiementStatut === "paye"
+                      ? `Payé${item.paidAt ? ` le ${item.paidAt}` : ""}`
+                      : item.paiementStatut === "en_attente_jp"
+                      ? "En attente JP"
+                      : "Pas encore payé"}
                   </p>
                 </div>
               ))}
@@ -626,10 +656,12 @@ export default function RadarElitePreviewPage() {
               ))}
             </div>
 
-            <div className="mt-4 rounded-xl border border-[#EAC886]/25 bg-[#EAC886]/10 px-3 py-2">
-              <p className="text-xs uppercase font-black tracking-[0.1em] text-[#EAC886]">Total à payer maintenant</p>
-              <p className="text-2xl font-black text-[#EAC886]">{totalCommissionsToPay.toLocaleString("fr-FR")}€</p>
-            </div>
+            {signedDeals.length > 1 && (
+              <div className="mt-4 rounded-xl border border-[#EAC886]/25 bg-[#EAC886]/10 px-3 py-2">
+                <p className="text-xs uppercase font-black tracking-[0.1em] text-[#EAC886]">Total à payer maintenant</p>
+                <p className="text-2xl font-black text-[#EAC886]">{totalCommissionsToPay.toLocaleString("fr-FR")}€</p>
+              </div>
+            )}
 
             <button
               onClick={() => setShowPayCommissionsModal(false)}
@@ -641,6 +673,27 @@ export default function RadarElitePreviewPage() {
             <p className="mt-2 text-[11px] text-white/60">
               Simulation prototype: validation envoyée à l&apos;admin + aux apporteurs concernés.
             </p>
+          </div>
+        </div>
+      )}
+      {selectedSignedDealHistory && (
+        <div className="fixed inset-0 z-[72] bg-black/40 backdrop-blur-[2px] p-4 flex items-center justify-center" onClick={() => setSelectedSignedDealHistory(null)}>
+          <div className="w-full max-w-xl rounded-2xl border border-white/25 ring-1 ring-white/10 bg-[#1B2227] shadow-[0_25px_80px_-30px_rgba(0,0,0,0.9)] p-5" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-xs uppercase font-black tracking-[0.12em] text-[#EAC886]/80">Historique de communication</p>
+                <h3 className="mt-1 text-2xl font-black">{selectedSignedDealHistory.client}</h3>
+              </div>
+              <button onClick={() => setSelectedSignedDealHistory(null)} className="text-xs font-black uppercase tracking-wide text-white/70">
+                Fermer
+              </button>
+            </div>
+            <div className="mt-4 space-y-2 text-sm">
+              <p className="rounded-lg border border-white/15 bg-black/25 px-3 py-2"><span className="font-black">Vocal source:</span> “Client chaud, budget validé, décision sous 7 jours.”</p>
+              <p className="rounded-lg border border-white/15 bg-black/25 px-3 py-2"><span className="font-black">Qualification:</span> besoin cadré, zone confirmée, décisionnaire identifié.</p>
+              <p className="rounded-lg border border-white/15 bg-black/25 px-3 py-2"><span className="font-black">Apporteur:</span> {selectedSignedDealHistory.sourcePrenom} ({selectedSignedDealHistory.sourceMetier})</p>
+              <p className="rounded-lg border border-[#EAC886]/25 bg-[#EAC886]/10 px-3 py-2"><span className="font-black">Montant signé:</span> {selectedSignedDealHistory.signedAmount.toLocaleString("fr-FR")}€</p>
+            </div>
           </div>
         </div>
       )}
