@@ -1043,7 +1043,7 @@ export default function RadarElitePreviewPage() {
       )}
       <style jsx global>{`
         .theme-light {
-          background: linear-gradient(180deg, #f3f7fb 0%, #edf3f9 55%, #e8f0f7 100%);
+          background: linear-gradient(180deg, #faf7ee 0%, #f6f1e6 55%, #f2ebdd 100%);
         }
         .theme-light h1,
         .theme-light h2,
@@ -1056,57 +1056,57 @@ export default function RadarElitePreviewPage() {
           color: #0f172a;
         }
         .theme-light [class*="text-white"] {
-          color: #1e293b !important;
+          color: #1f2937 !important;
         }
         .theme-light [class*="text-emerald-200"],
         .theme-light [class*="text-emerald-300"] {
-          color: #1d4ed8 !important;
+          color: #1e3a8a !important;
         }
         .theme-light [class*="text-red-200"] {
           color: #b91c1c !important;
         }
         .theme-light [class*="text-[#EAC886]"] {
-          color: #8a5c00 !important;
+          color: #9a6b14 !important;
         }
         .theme-light [class*="bg-black/25"],
         .theme-light [class*="bg-black/20"],
         .theme-light [class*="bg-black/30"] {
-          background: rgba(255, 255, 255, 0.72) !important;
+          background: rgba(255, 251, 243, 0.9) !important;
         }
         .theme-light [class*="bg-white/5"],
         .theme-light [class*="bg-white/10"] {
-          background: rgba(255, 255, 255, 0.86) !important;
+          background: rgba(255, 248, 238, 0.95) !important;
         }
         .theme-light [class*="border-white/15"],
         .theme-light [class*="border-white/20"],
         .theme-light [class*="border-white/25"],
         .theme-light [class*="border-white/10"] {
-          border-color: rgba(15, 23, 42, 0.16) !important;
+          border-color: rgba(71, 85, 105, 0.2) !important;
         }
         .theme-light [class*="bg-emerald-400"] {
-          background: #2563eb !important;
+          background: #1e3a8a !important;
           color: #ffffff !important;
         }
         .theme-light [class*="border-emerald-"] {
-          border-color: rgba(37, 99, 235, 0.4) !important;
+          border-color: rgba(30, 58, 138, 0.38) !important;
         }
         .theme-light [class*="text-emerald-700"],
         .theme-light [class*="text-emerald-800"],
         .theme-light [class*="text-emerald-900"] {
-          color: #1e40af !important;
+          color: #1e3a8a !important;
         }
         .theme-light .bell-shake {
           filter: drop-shadow(0 8px 18px rgba(14, 165, 233, 0.2));
         }
         .theme-light .talkie-btn {
-          background: linear-gradient(180deg, #60a5fa 0%, #2563eb 100%) !important;
+          background: linear-gradient(180deg, #334a94 0%, #1f2f63 100%) !important;
           color: #ffffff !important;
-          border-color: rgba(37, 99, 235, 0.45) !important;
-          box-shadow: 0 16px 34px -18px rgba(37, 99, 235, 0.55);
+          border-color: rgba(30, 58, 138, 0.5) !important;
+          box-shadow: 0 16px 34px -18px rgba(31, 47, 99, 0.58);
         }
         .theme-light .fixed.inset-0 > div {
-          background: rgba(255, 255, 255, 0.96) !important;
-          border-color: rgba(15, 23, 42, 0.16) !important;
+          background: rgba(255, 250, 242, 0.98) !important;
+          border-color: rgba(71, 85, 105, 0.2) !important;
         }
         @keyframes fadeIn {
           from { opacity: 0; transform: translateY(8px); }
