@@ -162,8 +162,12 @@ export default function RadarElitePreviewPage() {
   const [flashAdminVocalId, setFlashAdminVocalId] = useState<string | null>(null);
   const [showDirectoryModal, setShowDirectoryModal] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
+  const [profileNom, setProfileNom] = useState("Dupont");
+  const [profilePrenom, setProfilePrenom] = useState("Thomas");
+  const [profileMetier, setProfileMetier] = useState("Carreleur");
+  const [profileVille, setProfileVille] = useState("Dax");
   const [profilePhone, setProfilePhone] = useState("06 77 88 99 00");
-  const [profileZone, setProfileZone] = useState("Dax + 20km");
+  const [voiceMeterBars, setVoiceMeterBars] = useState<number[]>(Array.from({ length: 14 }, () => 18));
   const [memberLeadOpenedById, setMemberLeadOpenedById] = useState<Record<string, boolean>>({
     "L-204": false,
     "L-213": false,
@@ -243,6 +247,22 @@ export default function RadarElitePreviewPage() {
       window.setTimeout(() => setFlashAdminVocalId(null), 6000);
     }, 2600);
     return () => window.clearTimeout(timer);
+  }, [isRecording]);
+
+  useEffect(() => {
+    if (!isRecording) {
+      setVoiceMeterBars(Array.from({ length: 14 }, () => 18));
+      return;
+    }
+    const meterInterval = window.setInterval(() => {
+      setVoiceMeterBars((prev) =>
+        prev.map((bar) => {
+          const next = bar + (Math.random() * 38 - 16);
+          return Math.max(10, Math.min(96, Math.round(next)));
+        })
+      );
+    }, 120);
+    return () => window.clearInterval(meterInterval);
   }, [isRecording]);
 
   const triggerRecording = () => {
@@ -576,7 +596,7 @@ export default function RadarElitePreviewPage() {
                       <p className="text-xs font-black uppercase tracking-[0.12em] text-emerald-300">Signal vocal</p>
                       <h3 className="mt-1 text-2xl font-black">Mode Talkie-Walkie</h3>
                       <p className="mt-2 text-sm text-white/85 leading-relaxed">
-                        Maintenez pour transmettre l&apos;opportunité à Popey. Je me charge de contacter votre client pour qualifier ses besoins et alerter les métiers concernés. Vos commissions s&apos;afficheront dès la signature des contrats par les membres du Cercle.
+                        Maintenez pour transmettre votre opportunité. Donnez moi tous les details, Je me charge de contacter votre client pour qualifier ses besoins et alerter les métiers concernés. Vos commissions s&apos;afficheront dès la signature des contrats par les membres du Cercle.
                       </p>
                       <div className="relative mt-6 h-64 flex justify-center items-center">
                         <span className="absolute left-1/2 top-1/2 h-56 w-56 -translate-x-1/2 -translate-y-1/2 rounded-full border border-emerald-300/30 animate-[talkieRing_1.6s_ease-out_infinite]" />
@@ -606,6 +626,20 @@ export default function RadarElitePreviewPage() {
                             isRecording ? "w-full animate-[recordPulse_1.2s_ease-in-out_infinite]" : "w-0"
                           }`}
                         />
+                      </div>
+                      <div className="mt-4 rounded-xl border border-emerald-300/20 bg-black/30 px-3 py-3">
+                        <p className="text-[10px] font-black uppercase tracking-[0.12em] text-emerald-200/80">
+                          VU-METRE VOCAL EN TEMPS REEL
+                        </p>
+                        <div className="mt-2 flex items-end gap-1 h-14">
+                          {voiceMeterBars.map((level, idx) => (
+                            <span
+                              key={`meter-${idx}`}
+                              className="w-1.5 rounded-t bg-gradient-to-t from-emerald-400 to-cyan-300 transition-all duration-100"
+                              style={{ height: `${isRecording ? level : 10}%`, opacity: isRecording ? 1 : 0.35 }}
+                            />
+                          ))}
+                        </div>
                       </div>
                     </div>
                   )}
@@ -1007,18 +1041,33 @@ export default function RadarElitePreviewPage() {
             </div>
             <div className="mt-4 space-y-3">
               <div>
-                <label className="text-xs font-black uppercase tracking-[0.1em] text-white/60">Téléphone</label>
-                <input value={profilePhone} onChange={(e) => setProfilePhone(e.target.value)} className="mt-1 h-11 w-full rounded-lg border border-white/20 bg-black/25 px-3 text-sm" />
+                <label className="text-xs font-black uppercase tracking-[0.1em] text-white/60">Nom</label>
+                <input value={profileNom} onChange={(e) => setProfileNom(e.target.value)} className="mt-1 h-11 w-full rounded-lg border border-white/20 bg-black/25 px-3 text-sm" />
               </div>
               <div>
-                <label className="text-xs font-black uppercase tracking-[0.1em] text-white/60">Zone d&apos;intervention</label>
-                <input value={profileZone} onChange={(e) => setProfileZone(e.target.value)} className="mt-1 h-11 w-full rounded-lg border border-white/20 bg-black/25 px-3 text-sm" />
+                <label className="text-xs font-black uppercase tracking-[0.1em] text-white/60">Prénom</label>
+                <input value={profilePrenom} onChange={(e) => setProfilePrenom(e.target.value)} className="mt-1 h-11 w-full rounded-lg border border-white/20 bg-black/25 px-3 text-sm" />
+              </div>
+              <div>
+                <label className="text-xs font-black uppercase tracking-[0.1em] text-white/60">Métier</label>
+                <input value={profileMetier} onChange={(e) => setProfileMetier(e.target.value)} className="mt-1 h-11 w-full rounded-lg border border-white/20 bg-black/25 px-3 text-sm" />
+              </div>
+              <div>
+                <label className="text-xs font-black uppercase tracking-[0.1em] text-white/60">Ville</label>
+                <input value={profileVille} onChange={(e) => setProfileVille(e.target.value)} className="mt-1 h-11 w-full rounded-lg border border-white/20 bg-black/25 px-3 text-sm" />
+              </div>
+              <div>
+                <label className="text-xs font-black uppercase tracking-[0.1em] text-white/60">Téléphone</label>
+                <input value={profilePhone} onChange={(e) => setProfilePhone(e.target.value)} className="mt-1 h-11 w-full rounded-lg border border-white/20 bg-black/25 px-3 text-sm" />
               </div>
               <a href="tel:+33600000000" className="h-11 w-full rounded-xl border border-cyan-300/35 bg-cyan-500/10 inline-flex items-center justify-center text-sm font-black uppercase tracking-wide text-cyan-200">
                 Besoin d&apos;aide ? Appelez Jean-Philippe
               </a>
               <button onClick={() => setShowProfileModal(false)} className="h-11 w-full rounded-xl bg-emerald-400 text-black text-sm font-black uppercase tracking-wide">
                 Enregistrer
+              </button>
+              <button className="h-11 w-full rounded-xl border border-red-300/35 bg-red-500/10 text-red-200 text-sm font-black uppercase tracking-wide">
+                Déconnexion
               </button>
             </div>
           </div>
