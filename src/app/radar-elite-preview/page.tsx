@@ -638,25 +638,33 @@ export default function RadarElitePreviewPage() {
                         <button
                           type="button"
                           onClick={() => setShowSignedClientsModal(true)}
-                          className="w-full rounded-xl border border-[#EAC886]/30 bg-[#2A2111] p-3 text-left"
+                          className={`w-full rounded-xl p-3 text-left ${
+                            isLightTheme
+                              ? "border border-amber-300/45 bg-amber-50"
+                              : "border border-[#EAC886]/30 bg-[#2A2111]"
+                          }`}
                         >
-                          <p className="text-xs text-[#EAC886]/80 uppercase font-black">1. Clients signés (depuis l&apos;onglet clients)</p>
-                          <p className="text-2xl font-black text-[#EAC886]">
+                          <p className={`text-xs uppercase font-black ${isLightTheme ? "text-amber-800" : "text-[#EAC886]/80"}`}>1. Clients signés (depuis l&apos;onglet clients)</p>
+                          <p className={`text-2xl font-black ${isLightTheme ? "text-amber-900" : "text-[#EAC886]"}`}>
                             {totalSignedClientsRevenue.toLocaleString("fr-FR")}€
                           </p>
-                          <p className="text-[11px] text-[#EAC886]/70">{signedDeals.length} dossier(s) signé(s)</p>
+                          <p className={`text-[11px] ${isLightTheme ? "text-amber-700" : "text-[#EAC886]/70"}`}>{signedDeals.length} dossier(s) signé(s)</p>
                         </button>
 
                         <button
                           type="button"
                           onClick={() => setShowCommissionsDueToMeModal(true)}
-                          className="w-full rounded-xl border border-emerald-400/30 bg-[#10251D] p-3 text-left"
+                          className={`w-full rounded-xl p-3 text-left ${
+                            isLightTheme
+                              ? "border border-emerald-300/45 bg-emerald-50"
+                              : "border border-emerald-400/30 bg-[#10251D]"
+                          }`}
                         >
-                          <p className="text-xs text-emerald-300/80 uppercase font-black">2. Commissions dues (Inbound)</p>
-                          <p className="text-2xl font-black text-emerald-300">
+                          <p className={`text-xs uppercase font-black ${isLightTheme ? "text-emerald-800" : "text-emerald-300/80"}`}>2. Commissions dues (Inbound)</p>
+                          <p className={`text-2xl font-black ${isLightTheme ? "text-emerald-900" : "text-emerald-300"}`}>
                             {totalCommissionsDueToMe.toLocaleString("fr-FR")}€
                           </p>
-                          <p className="text-[11px] text-emerald-300/70">
+                          <p className={`text-[11px] ${isLightTheme ? "text-emerald-700" : "text-emerald-300/70"}`}>
                             Payé: {totalCommissionsAlreadyPaidToMe.toLocaleString("fr-FR")}€ • En attente: {totalCommissionsPendingToMe.toLocaleString("fr-FR")}€
                           </p>
                         </button>
