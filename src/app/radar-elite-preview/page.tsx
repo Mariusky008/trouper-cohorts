@@ -108,6 +108,18 @@ const dispatchMetiers = [
   "Garagiste", "Carrossier", "Contrôle Technique", "Infirmière", "Kiné", "Opticien",
 ];
 
+const directoryMembers = dispatchMetiers.map((metier, idx) => ({
+  id: `M-${idx + 1}`,
+  name: `Membre ${String(idx + 1).padStart(2, "0")}`,
+  metier,
+  phone: `06 ${String(10 + (idx % 80)).padStart(2, "0")} ${String(20 + ((idx * 3) % 70)).padStart(2, "0")} ${String(30 + ((idx * 5) % 60)).padStart(2, "0")} ${String(40 + ((idx * 7) % 50)).padStart(2, "0")}`,
+}));
+
+const vocalLeadMap: Record<string, string> = {
+  "VOC-991": "L-204",
+  "VOC-993": "L-213",
+};
+
 const memberHealth = [
   { name: "Thomas", metier: "Carreleur", status: "ok", overdueDays: 0 },
   { name: "Claire", metier: "Agent Immo", status: "ok", overdueDays: 0 },
@@ -148,6 +160,14 @@ export default function RadarElitePreviewPage() {
   const [dispatchSelectionByVocal, setDispatchSelectionByVocal] = useState<Record<string, string[]>>({});
   const [showSignalAckModal, setShowSignalAckModal] = useState(false);
   const [flashAdminVocalId, setFlashAdminVocalId] = useState<string | null>(null);
+  const [showDirectoryModal, setShowDirectoryModal] = useState(false);
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [profilePhone, setProfilePhone] = useState("06 77 88 99 00");
+  const [profileZone, setProfileZone] = useState("Dax + 20km");
+  const [memberLeadOpenedById, setMemberLeadOpenedById] = useState<Record<string, boolean>>({
+    "L-204": false,
+    "L-213": false,
+  });
 
   const signedDeals = useMemo<SignedDeal[]>(
     () =>
@@ -190,6 +210,15 @@ export default function RadarElitePreviewPage() {
     []
   );
   const cashDisponiblePopey = useMemo(() => totalCommissionsAlreadyPaidToMe, [totalCommissionsAlreadyPaidToMe]);
+  const myBusinessContribution = useMemo(
+    () => givenDealsCommissions.reduce((sum, item) => sum + item.signedAmount, 0),
+    []
+  );
+  const isCashZeroState =
+    totalSignedClientsRevenue === 0 &&
+    totalCommissionsDueToMe === 0 &&
+    totalCommissionsToPay === 0 &&
+    cashDisponiblePopey === 0;
   const visibleAdminVocals = useMemo(
     () => adminVocals.filter((v) => adminSphere === "toutes" || v.sphere === adminSphere),
     [adminSphere]
@@ -239,6 +268,10 @@ export default function RadarElitePreviewPage() {
   const openSignedModal = (lead: ClientLead) => {
     setShowSignedModalFor(lead);
     setSignedAmountInput("");
+  };
+  const openLeadDetails = (lead: ClientLead) => {
+    setSelectedLead(lead);
+    setMemberLeadOpenedById((prev) => ({ ...prev, [lead.id]: true }));
   };
 
   const confirmSignedDeal = () => {
@@ -368,6 +401,9 @@ export default function RadarElitePreviewPage() {
                                 healthByMember[vocal.from]?.status === "alert" ? "bg-red-400" : "bg-emerald-400"
                               }`}
                             />
+                            {vocalLeadMap[vocal.id] && !memberLeadOpenedById[vocalLeadMap[vocal.id]] && (
+                              <span className="inline-block h-2.5 w-2.5 rounded-full bg-blue-400" title="Non ouvert par le membre" />
+                            )}
                             {vocal.id} · {vocal.from} ({vocal.metier})
                             {vocal.urgent ? " · URGENCE" : ""}
                           </p>
@@ -432,7 +468,19 @@ export default function RadarElitePreviewPage() {
 
             {role === "membre" && (
               <>
-                <div className="mt-1 flex justify-end">
+                <div className="mt-1 flex justify-end gap-2">
+                  <button
+                    onClick={() => setShowDirectoryModal(true)}
+                    className="h-10 rounded-lg border border-white/20 bg-white/5 px-3 text-[11px] font-black uppercase tracking-wide"
+                  >
+                    Annuaire
+                  </button>
+                  <button
+                    onClick={() => setShowProfileModal(true)}
+                    className="h-10 rounded-lg border border-white/20 bg-white/5 px-3 text-[11px] font-black uppercase tracking-wide"
+                  >
+                    Profil
+                  </button>
                   <Link
                     href="/radar-elite-preview/notifications"
                     className="group relative h-[60px] w-[60px] rounded-full border border-emerald-300/35 bg-gradient-to-b from-[#1A3A31] to-[#0E241E] text-2xl transition hover:brightness-110 inline-flex items-center justify-center bell-shake shadow-[0_10px_30px_-15px_rgba(0,245,176,0.6)]"
@@ -464,7 +512,7 @@ export default function RadarElitePreviewPage() {
                             }`}
                           >
                             <button
-                              onClick={() => setSelectedLead(lead)}
+                              onClick={() => openLeadDetails(lead)}
                               className="w-full text-left"
                             >
                               <p className="font-black">{lead.client} • {lead.budget}</p>
@@ -565,6 +613,11 @@ export default function RadarElitePreviewPage() {
                       <p className="mt-2 text-sm text-white/80">Montants signés, commissions reçues et commissions à payer.</p>
 
                       <div className="mt-4 space-y-2">
+                        <div className="rounded-xl border border-fuchsia-300/30 bg-fuchsia-500/10 p-3">
+                          <p className="text-xs text-fuchsia-200/90 uppercase font-black">Ma contribution au groupe</p>
+                          <p className="text-2xl font-black text-fuchsia-200">{myBusinessContribution.toLocaleString("fr-FR")}€</p>
+                          <p className="text-[11px] text-fuchsia-200/75">Business généré pour mes collègues ce mois-ci</p>
+                        </div>
                         <div className="rounded-xl border border-cyan-300/30 bg-cyan-500/10 p-3">
                           <p className="text-xs text-cyan-200/90 uppercase font-black">Mon cash disponible Popey</p>
                           <p className="text-2xl font-black text-cyan-200">
@@ -574,6 +627,12 @@ export default function RadarElitePreviewPage() {
                             Demander un virement Popey
                           </button>
                         </div>
+                        {isCashZeroState && (
+                          <div className="rounded-xl border border-dashed border-emerald-300/35 bg-emerald-500/10 px-3 py-3">
+                            <p className="text-sm font-black text-emerald-200">Le compteur est à zéro.</p>
+                            <p className="text-xs text-emerald-200/80">A vous de faire tomber la première pluie sur Dax !</p>
+                          </div>
+                        )}
 
                         <button
                           type="button"
@@ -901,6 +960,61 @@ export default function RadarElitePreviewPage() {
                 className="mt-4 h-11 w-full rounded-xl bg-emerald-400 text-black text-sm font-black uppercase tracking-wide"
               >
                 OK
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {showDirectoryModal && (
+        <div className="fixed inset-0 z-[76] bg-black/40 backdrop-blur-[2px] p-4 flex items-center justify-center" onClick={() => setShowDirectoryModal(false)}>
+          <div className="w-full max-w-xl rounded-2xl border border-white/25 ring-1 ring-white/10 bg-[#1B2227] shadow-[0_25px_80px_-30px_rgba(0,0,0,0.9)] p-5" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-xs uppercase font-black tracking-[0.12em] text-white/65">L&apos;Annuaire du Cercle</p>
+                <h3 className="mt-1 text-2xl font-black">Membres et métiers</h3>
+              </div>
+              <button onClick={() => setShowDirectoryModal(false)} className="text-xs font-black uppercase tracking-wide text-white/70">Retour</button>
+            </div>
+            <div className="mt-4 max-h-[52vh] overflow-y-auto pr-1 space-y-2">
+              {directoryMembers.map((member) => (
+                <div key={member.id} className="rounded-lg border border-white/15 bg-black/25 px-3 py-2 flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-black">{member.name}</p>
+                    <p className="text-xs text-white/70">{member.metier}</p>
+                  </div>
+                  <a href={`tel:${member.phone.replaceAll(" ", "")}`} className="h-9 rounded-lg bg-emerald-400 px-3 inline-flex items-center text-[11px] font-black uppercase tracking-wide text-black">
+                    Appeler
+                  </a>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+      {showProfileModal && (
+        <div className="fixed inset-0 z-[77] bg-black/40 backdrop-blur-[2px] p-4 flex items-center justify-center" onClick={() => setShowProfileModal(false)}>
+          <div className="w-full max-w-lg rounded-2xl border border-white/25 ring-1 ring-white/10 bg-[#1B2227] shadow-[0_25px_80px_-30px_rgba(0,0,0,0.9)] p-5" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-xs uppercase font-black tracking-[0.12em] text-white/65">Profil & Réglages</p>
+                <h3 className="mt-1 text-2xl font-black">Mes informations</h3>
+              </div>
+              <button onClick={() => setShowProfileModal(false)} className="text-xs font-black uppercase tracking-wide text-white/70">Retour</button>
+            </div>
+            <div className="mt-4 space-y-3">
+              <div>
+                <label className="text-xs font-black uppercase tracking-[0.1em] text-white/60">Téléphone</label>
+                <input value={profilePhone} onChange={(e) => setProfilePhone(e.target.value)} className="mt-1 h-11 w-full rounded-lg border border-white/20 bg-black/25 px-3 text-sm" />
+              </div>
+              <div>
+                <label className="text-xs font-black uppercase tracking-[0.1em] text-white/60">Zone d&apos;intervention</label>
+                <input value={profileZone} onChange={(e) => setProfileZone(e.target.value)} className="mt-1 h-11 w-full rounded-lg border border-white/20 bg-black/25 px-3 text-sm" />
+              </div>
+              <a href="tel:+33600000000" className="h-11 w-full rounded-xl border border-cyan-300/35 bg-cyan-500/10 inline-flex items-center justify-center text-sm font-black uppercase tracking-wide text-cyan-200">
+                Besoin d&apos;aide ? Appelez Jean-Philippe
+              </a>
+              <button onClick={() => setShowProfileModal(false)} className="h-11 w-full rounded-xl bg-emerald-400 text-black text-sm font-black uppercase tracking-wide">
+                Enregistrer
               </button>
             </div>
           </div>

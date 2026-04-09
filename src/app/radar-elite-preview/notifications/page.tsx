@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 
 type NotifType = "generale" | "personnelle" | "felicitation";
-type FilterType = "toutes" | NotifType;
+type FilterType = "toutes" | NotifType | "mes_deals";
 
 const notifications: Array<{
   id: string;
@@ -13,6 +13,7 @@ const notifications: Array<{
   message: string;
   time: string;
   impact?: string;
+  mine?: boolean;
 }> = [
   {
     id: "N-1",
@@ -29,6 +30,7 @@ const notifications: Array<{
     message: "Famille Dubois • 22 000€ • Cuisine + électricité • À contacter aujourd'hui",
     time: "Il y a 12 min",
     impact: "Priorité haute",
+    mine: true,
   },
   {
     id: "N-3",
@@ -36,6 +38,7 @@ const notifications: Array<{
     title: "Félicitations des membres",
     message: "“Bravo pour ton lead, c'est propre 👏” — Claire • “Masterclass” — David",
     time: "Il y a 32 min",
+    mine: true,
   },
 ];
 
@@ -58,7 +61,11 @@ export default function RadarEliteNotificationsPage() {
   const [myReactions, setMyReactions] = useState<Record<string, string | null>>({});
 
   const visibleNotifications =
-    filter === "toutes" ? notifications : notifications.filter((notif) => notif.type === filter);
+    filter === "toutes"
+      ? notifications
+      : filter === "mes_deals"
+      ? notifications.filter((notif) => notif.mine)
+      : notifications.filter((notif) => notif.type === filter);
 
   const toggleReaction = (notifId: string, emoji: string) => {
     setMyReactions((prev) => ({
@@ -104,6 +111,7 @@ export default function RadarEliteNotificationsPage() {
                 { key: "generale", label: "Générales" },
                 { key: "personnelle", label: "Personnelles" },
                 { key: "felicitation", label: "Félicitations" },
+                { key: "mes_deals", label: "Mes deals" },
               ].map((item) => (
                 <button
                   key={item.key}
