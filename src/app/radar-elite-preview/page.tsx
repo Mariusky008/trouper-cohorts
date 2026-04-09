@@ -322,12 +322,6 @@ export default function RadarElitePreviewPage() {
             >
               Profil
             </button>
-            <Link
-              href="/radar-elite-preview/admin-preview"
-              className="rounded-lg px-4 py-2 text-xs font-black uppercase tracking-wide text-[#EAC886]/90"
-            >
-              Admin Preview
-            </Link>
           </div>
         </div>
 
