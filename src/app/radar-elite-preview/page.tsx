@@ -204,8 +204,8 @@ export default function RadarElitePreviewPage() {
           </div>
         </div>
 
-        <div className="mt-5 md:mt-8 md:rounded-[30px] md:border md:border-white/10 md:bg-gradient-to-b md:from-[#111414] md:to-[#0A0C0C] md:p-4 md:shadow-[0_24px_55px_-30px_rgba(0,0,0,0.9)]">
-          <div className="relative bg-transparent md:rounded-[24px] md:border md:border-white/10 md:bg-[#090B0B] p-0 md:p-5">
+        <div className="mt-5">
+          <div className="relative bg-transparent p-0">
             {role === "admin" && (
               <>
               <p className="text-xs font-black uppercase tracking-[0.14em] text-white/60">
@@ -236,18 +236,20 @@ export default function RadarElitePreviewPage() {
                 <div className="mt-1 flex justify-end">
                   <Link
                     href="/radar-elite-preview/notifications"
-                    className="group relative h-12 w-12 rounded-xl border border-white/20 bg-white/5 text-xl transition hover:bg-white/10 inline-flex items-center justify-center bell-pop"
+                    className="group relative h-[60px] w-[60px] rounded-full border border-[#f6d24b]/50 bg-gradient-to-b from-[#ffd84d] to-[#f0b90b] text-2xl transition hover:brightness-110 inline-flex items-center justify-center bell-shake shadow-[0_10px_30px_-15px_rgba(255,216,77,0.9)]"
                     aria-label="Aller aux notifications"
                   >
-                    🔔
-                    <span className="absolute -right-1 -top-1 inline-flex min-w-5 h-5 items-center justify-center rounded-full bg-emerald-400 px-1 text-[10px] font-black text-black ring-2 ring-[#090B0B]">
+                    <span className="bell-wave-left absolute -left-2 top-1/2 h-6 w-2 -translate-y-1/2 rounded-full bg-white/70" />
+                    <span className="bell-wave-right absolute -right-2 top-1/2 h-6 w-2 -translate-y-1/2 rounded-full bg-white/70" />
+                    <span className="relative -mt-0.5">🔔</span>
+                    <span className="absolute right-0 top-0 inline-flex min-w-5 h-5 items-center justify-center rounded-full bg-[#ff2d55] px-1 text-[10px] font-black text-white ring-2 ring-[#090B0B]">
                       2
                     </span>
                   </Link>
                 </div>
                 <div key={memberTab} className="mt-4 animate-[fadeIn_.25s_ease-out]">
                   {memberTab === "clients" && (
-                    <div className="rounded-2xl border border-[#EAC886]/25 bg-[#EAC886]/10 p-5">
+                    <div className="p-1">
                       <p className="text-xs font-black uppercase tracking-[0.12em] text-[#EAC886]">Clients reçus</p>
                       <h3 className="mt-1 text-xl font-black">Touchez un client pour ouvrir sa fiche complète</h3>
                       <p className="mt-2 text-sm text-white/80">Vous voyez besoin, budget, contact et prochaine action.</p>
@@ -280,7 +282,7 @@ export default function RadarElitePreviewPage() {
                               {dealProgressById[lead.id] === "nouveau" && (
                                 <button
                                   onClick={() => takeDeal(lead.id)}
-                                  className="h-10 w-full rounded-lg bg-emerald-400 text-black text-xs font-black uppercase tracking-wide"
+                                  className="h-11 w-full rounded-xl bg-emerald-400 text-black text-xs font-black uppercase tracking-wide shadow-[0_10px_25px_-15px_rgba(52,211,153,0.85)]"
                                 >
                                   Je prends le deal et je contacte le client
                                 </button>
@@ -326,21 +328,34 @@ export default function RadarElitePreviewPage() {
                   )}
 
                   {memberTab === "signal" && (
-                    <div className="rounded-2xl border border-emerald-400/25 bg-emerald-500/10 p-5">
+                    <div className="p-1">
                       <p className="text-xs font-black uppercase tracking-[0.12em] text-emerald-300">Signal vocal</p>
-                      <h3 className="mt-1 text-xl font-black">Envoyer une opportunité au groupe</h3>
-                      <p className="mt-2 text-sm text-white/80">Maintenez 10 secondes pour décrire le besoin client.</p>
+                      <h3 className="mt-1 text-2xl font-black">Mode Talkie-Walkie</h3>
+                      <p className="mt-2 text-sm text-white/80">Appuyez et maintenez pour transmettre le besoin au groupe.</p>
+                      <div className="mt-6 flex justify-center">
+                        <button
+                          onClick={triggerRecording}
+                          className={`talkie-btn relative h-44 w-44 rounded-full border-2 border-emerald-300/35 ${
+                            isRecording
+                              ? "bg-red-500 text-white"
+                              : "bg-gradient-to-b from-emerald-400 to-emerald-500 text-black"
+                          } text-base font-black uppercase tracking-wide`}
+                        >
+                          <span className="absolute inset-0 rounded-full animate-[talkieGlow_1.6s_ease-in-out_infinite]" />
+                          <span className="relative z-10">{isRecording ? "Enregistrement..." : "Parler"}</span>
+                        </button>
+                      </div>
                       <button
                         onClick={triggerRecording}
-                        className={`mt-4 h-16 w-full rounded-xl text-sm font-black uppercase tracking-wide transition ${
+                        className={`mt-6 h-14 w-full rounded-2xl text-sm font-black uppercase tracking-wide transition ${
                           isRecording
                             ? "bg-red-500 text-white"
-                            : "bg-emerald-400 text-black"
+                            : "bg-gradient-to-r from-emerald-400 to-[#00f5b0] text-black shadow-[0_12px_30px_-16px_rgba(0,245,176,0.95)]"
                         }`}
                       >
                         {isRecording ? "● Enregistrement en cours..." : "Signaler une opportunité (Vocal)"}
                       </button>
-                      <div className="mt-3 h-2 rounded-full bg-black/30 overflow-hidden">
+                      <div className="mt-4 h-3 rounded-full bg-black/30 overflow-hidden">
                         <div
                           className={`h-full bg-red-400 transition-all duration-300 ${
                             isRecording ? "w-full animate-[recordPulse_1.2s_ease-in-out_infinite]" : "w-0"
@@ -351,7 +366,7 @@ export default function RadarElitePreviewPage() {
                   )}
 
                   {memberTab === "cash" && (
-                    <div className="rounded-2xl border border-emerald-400/25 bg-emerald-500/10 p-5">
+                    <div className="p-1">
                       <p className="text-xs font-black uppercase tracking-[0.12em] text-emerald-300">Cash</p>
                       <h3 className="mt-1 text-xl font-black">Suivi financier en temps réel</h3>
                       <p className="mt-2 text-sm text-white/80">Montants signés, commissions reçues et commissions à payer.</p>
@@ -643,12 +658,33 @@ export default function RadarElitePreviewPage() {
           0%, 100% { opacity: 0.45; transform: scaleX(0.2); }
           50% { opacity: 1; transform: scaleX(1); }
         }
-        @keyframes bellPop {
-          0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(52,211,153,0.35); }
-          50% { transform: scale(1.06); box-shadow: 0 0 0 10px rgba(52,211,153,0); }
+        @keyframes bellShake {
+          0%, 100% { transform: rotate(0deg); }
+          20% { transform: rotate(-12deg); }
+          40% { transform: rotate(10deg); }
+          60% { transform: rotate(-8deg); }
+          80% { transform: rotate(6deg); }
         }
-        .bell-pop {
-          animation: bellPop 1.8s ease-in-out infinite;
+        @keyframes wavePulse {
+          0%, 100% { opacity: 0.35; transform: translateY(-50%) scaleY(0.8); }
+          50% { opacity: 0.9; transform: translateY(-50%) scaleY(1.1); }
+        }
+        @keyframes talkieGlow {
+          0%, 100% { box-shadow: 0 0 0 0 rgba(0,245,176,0.35); }
+          50% { box-shadow: 0 0 0 14px rgba(0,245,176,0); }
+        }
+        .bell-shake {
+          animation: bellShake 1.6s ease-in-out infinite;
+          transform-origin: 50% 20%;
+        }
+        .bell-wave-left, .bell-wave-right {
+          animation: wavePulse 1.2s ease-in-out infinite;
+        }
+        .bell-wave-right {
+          animation-delay: .12s;
+        }
+        .talkie-btn {
+          box-shadow: 0 18px 40px -18px rgba(0,245,176,0.9);
         }
       `}</style>
     </main>
