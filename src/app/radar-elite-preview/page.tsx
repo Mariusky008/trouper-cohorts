@@ -578,15 +578,19 @@ export default function RadarElitePreviewPage() {
                       <p className="mt-2 text-sm text-white/85 leading-relaxed">
                         Maintenez pour transmettre l&apos;opportunité à Popey. Je me charge de contacter votre client pour qualifier ses besoins et alerter les métiers concernés. Vos commissions s&apos;afficheront dès la signature des contrats par les membres du Cercle.
                       </p>
-                      <div className="relative mt-6 flex justify-center">
-                        <span className="absolute h-44 w-44 rounded-full border border-emerald-300/20 animate-[talkieRing_2.2s_ease-in-out_infinite]" />
+                      <div className="relative mt-6 h-64 flex justify-center items-center">
+                        <span className="absolute left-1/2 top-1/2 h-56 w-56 -translate-x-1/2 -translate-y-1/2 rounded-full border border-emerald-300/30 animate-[talkieRing_1.6s_ease-out_infinite]" />
                         <span
-                          className="absolute h-52 w-52 rounded-full border border-emerald-300/15 animate-[talkieRing_2.2s_ease-in-out_infinite]"
-                          style={{ animationDelay: "350ms" }}
+                          className="absolute left-1/2 top-1/2 h-72 w-72 -translate-x-1/2 -translate-y-1/2 rounded-full border border-emerald-300/20 animate-[talkieRing_2.1s_ease-out_infinite]"
+                          style={{ animationDelay: "250ms" }}
+                        />
+                        <span
+                          className="absolute left-1/2 top-1/2 h-80 w-80 -translate-x-1/2 -translate-y-1/2 rounded-full border border-emerald-300/15 animate-[talkieRing_2.6s_ease-out_infinite]"
+                          style={{ animationDelay: "450ms" }}
                         />
                         <button
                           onClick={triggerRecording}
-                          className={`talkie-btn relative h-44 w-44 rounded-full border-2 border-emerald-300/35 ${
+                          className={`talkie-btn relative h-48 w-48 rounded-full border-2 border-emerald-300/45 ${
                             isRecording
                               ? "bg-red-500 text-white"
                               : "bg-gradient-to-b from-emerald-400 to-emerald-500 text-black"
@@ -1037,12 +1041,16 @@ export default function RadarElitePreviewPage() {
           80% { transform: rotate(6deg); }
         }
         @keyframes talkieGlow {
-          0%, 100% { box-shadow: 0 0 0 0 rgba(0,245,176,0.35); }
-          50% { box-shadow: 0 0 0 14px rgba(0,245,176,0); }
+          0%, 100% { box-shadow: 0 0 0 0 rgba(0,245,176,0.42); }
+          50% { box-shadow: 0 0 0 24px rgba(0,245,176,0); }
         }
         @keyframes talkieRing {
-          0% { opacity: 0.9; transform: scale(0.92); }
-          100% { opacity: 0; transform: scale(1.2); }
+          0% { opacity: 0.95; transform: translate(-50%, -50%) scale(0.88); }
+          100% { opacity: 0; transform: translate(-50%, -50%) scale(1.22); }
+        }
+        @keyframes talkieBreath {
+          0%, 100% { transform: scale(1); }
+          50% { transform: scale(1.04); }
         }
         @keyframes urgPulse {
           0%, 100% { box-shadow: 0 0 0 0 rgba(248,113,113,0.25); }
@@ -1058,6 +1066,7 @@ export default function RadarElitePreviewPage() {
         }
         .talkie-btn {
           box-shadow: 0 18px 40px -18px rgba(0,245,176,0.9);
+          animation: talkieBreath 1.15s ease-in-out infinite;
         }
       `}</style>
     </main>
