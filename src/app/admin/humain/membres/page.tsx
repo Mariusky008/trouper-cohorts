@@ -1,7 +1,7 @@
 import Link from "next/link";
 import {
-  adminInitMember,
-  adminSetMemberStatus,
+  adminInitMemberAction,
+  adminSetMemberStatusAction,
   getHumanPermissionsAdminSnapshot,
   type HumanMemberStatus,
 } from "@/lib/actions/human-permissions";
@@ -13,7 +13,17 @@ function memberName(member: { first_name: string | null; last_name: string | nul
   return [member.first_name, member.last_name].filter(Boolean).join(" ").trim() || "Membre sans nom";
 }
 
-export default async function AdminHumainMembresPage() {
+export default async function AdminHumainMembresPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{
+    memberStatus?: string;
+    memberMessage?: string;
+  }>;
+}) {
+  const params = (await searchParams) || {};
+  const memberStatus = typeof params.memberStatus === "string" ? params.memberStatus : "";
+  const memberMessage = typeof params.memberMessage === "string" ? params.memberMessage : "";
   const snapshot = await getHumanPermissionsAdminSnapshot();
 
   if (snapshot.error) {
@@ -24,6 +34,14 @@ export default async function AdminHumainMembresPage() {
       </section>
     );
   }
+
+  const currentHref = (() => {
+    const query = new URLSearchParams();
+    if (memberStatus) query.set("memberStatus", memberStatus);
+    if (memberMessage) query.set("memberMessage", memberMessage);
+    const search = query.toString();
+    return search ? `/admin/humain/membres?${search}` : "/admin/humain/membres";
+  })();
 
   return (
     <section className="space-y-6">
@@ -45,7 +63,7 @@ export default async function AdminHumainMembresPage() {
         </div>
       </div>
 
-      <form action={adminInitMember} className="grid gap-3 rounded-xl border bg-card p-4 sm:grid-cols-[1fr_auto]">
+      <form action={adminInitMemberAction} className="grid gap-3 rounded-xl border bg-card p-4 sm:grid-cols-[1fr_auto]">
         <select name="user_id" required className="w-full rounded border px-3 py-2 text-sm">
           <option value="">Sélectionner un utilisateur à initialiser</option>
           {snapshot.candidates.map((candidate) => (
@@ -55,7 +73,25 @@ export default async function AdminHumainMembresPage() {
           ))}
         </select>
         <button className="rounded bg-black px-3 py-2 text-sm font-bold text-white">Initialiser le membre</button>
+        <input type="hidden" name="current_url" value={currentHref} />
       </form>
+
+      {memberStatus === "success" && (
+        <div className="flex items-center justify-between gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">
+          <span>{memberMessage || "Action appliquée."}</span>
+          <Link href="/admin/humain/membres" className="rounded border border-emerald-300 px-2 py-1 text-xs">
+            Effacer
+          </Link>
+        </div>
+      )}
+      {memberStatus === "error" && (
+        <div className="flex items-center justify-between gap-3 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+          <span>{memberMessage || "Action impossible."}</span>
+          <Link href="/admin/humain/membres" className="rounded border border-red-300 px-2 py-1 text-xs">
+            Effacer
+          </Link>
+        </div>
+      )}
 
       <div className="overflow-x-auto rounded-xl border bg-white">
         <table className="min-w-full text-sm">
@@ -79,8 +115,9 @@ export default async function AdminHumainMembresPage() {
                 <td className="px-3 py-2">{member.ville || "-"}</td>
                 <td className="px-3 py-2">{member.phone || "-"}</td>
                 <td className="px-3 py-2">
-                  <form action={adminSetMemberStatus} className="flex items-center gap-2">
+                  <form action={adminSetMemberStatusAction} className="flex items-center gap-2">
                     <input type="hidden" name="member_id" value={member.id} />
+                    <input type="hidden" name="current_url" value={currentHref} />
                     <select name="status" defaultValue={member.status} className="rounded border px-2 py-1 text-xs">
                       {MEMBER_STATUSES.map((status) => (
                         <option key={status} value={status}>

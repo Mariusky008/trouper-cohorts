@@ -432,6 +432,15 @@ export async function adminInitMember(formData: FormData) {
   return { success: true };
 }
 
+export async function adminInitMemberAction(formData: FormData): Promise<void> {
+  const currentUrl = String(formData.get("current_url") || "/admin/humain/membres");
+  const result = await adminInitMember(formData);
+  if ("error" in result) {
+    redirect(withMembersStatus(currentUrl, "error", result.error || "Action impossible."));
+  }
+  redirect(withMembersStatus(currentUrl, "success", "Membre initialisé."));
+}
+
 export async function adminSetMemberStatus(formData: FormData) {
   const adminCheck = await requireHumanAdmin();
   if ("error" in adminCheck) return { error: adminCheck.error };
@@ -457,6 +466,15 @@ export async function adminSetMemberStatus(formData: FormData) {
   revalidatePath("/admin/humain/membres");
   revalidatePath("/admin/humain/permissions");
   return { success: true };
+}
+
+export async function adminSetMemberStatusAction(formData: FormData): Promise<void> {
+  const currentUrl = String(formData.get("current_url") || "/admin/humain/membres");
+  const result = await adminSetMemberStatus(formData);
+  if ("error" in result) {
+    redirect(withMembersStatus(currentUrl, "error", result.error || "Action impossible."));
+  }
+  redirect(withMembersStatus(currentUrl, "success", "Statut membre mis à jour."));
 }
 
 export async function getMyHumanScope() {
@@ -708,5 +726,13 @@ function withPermissionsStatus(url: string, status: "success" | "error", message
   const parsed = new URL(safePath, "http://localhost");
   parsed.searchParams.set("permStatus", status);
   parsed.searchParams.set("permMessage", message);
+  return `${parsed.pathname}?${parsed.searchParams.toString()}`;
+}
+
+function withMembersStatus(url: string, status: "success" | "error", message: string) {
+  const safePath = url.startsWith("/admin/humain/membres") ? url : "/admin/humain/membres";
+  const parsed = new URL(safePath, "http://localhost");
+  parsed.searchParams.set("memberStatus", status);
+  parsed.searchParams.set("memberMessage", message);
   return `${parsed.pathname}?${parsed.searchParams.toString()}`;
 }
