@@ -33,6 +33,9 @@ export default function AdminHumainPage() {
         <Button asChild variant="outline">
           <Link href="/admin/humain/notifications">Ouvrir les notifications</Link>
         </Button>
+        <Button asChild variant="outline">
+          <Link href="/admin/humain/commissions">Ouvrir les commissions</Link>
+        </Button>
       </div>
     </section>
   );

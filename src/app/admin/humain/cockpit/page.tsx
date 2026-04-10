@@ -101,13 +101,19 @@ export default async function AdminHumainCockpitPage({
             <Link href={`/admin/humain/cockpit/export/cash${exportSuffix}`}>Exporter Cash CSV</Link>
           </Button>
           <Button asChild variant="outline">
+            <Link href={`/admin/humain/cockpit/export/commissions${exportSuffix}`}>Exporter Commissions CSV</Link>
+          </Button>
+          <Button asChild variant="outline">
+            <Link href="/admin/humain/commissions">Gérer les commissions</Link>
+          </Button>
+          <Button asChild variant="outline">
             <Link href="/admin/humain">Retour espace humain</Link>
           </Button>
         </div>
       </div>
 
       <div className="rounded-xl border bg-white p-4 text-sm text-muted-foreground">
-        Exports disponibles: leads, signaux et cash au format CSV. Les téléchargements sont réservés aux admins.
+        Exports disponibles: leads, signaux, cash et commissions au format CSV. Les téléchargements sont réservés aux admins.
       </div>
 
       <form className="grid gap-3 rounded-xl border bg-white p-4 sm:grid-cols-[1fr_1fr_auto_auto] sm:items-end">
@@ -156,6 +162,14 @@ export default async function AdminHumainCockpitPage({
         <div className="rounded-xl border bg-white p-4">
           <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Notifications non lues</p>
           <p className="mt-2 text-3xl font-black">{data.kpis.notificationsUnread}</p>
+        </div>
+        <div className="rounded-xl border bg-white p-4">
+          <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Commissions en attente</p>
+          <p className="mt-2 text-3xl font-black text-amber-700">{euros(data.kpis.commissionsPending)}</p>
+        </div>
+        <div className="rounded-xl border bg-white p-4">
+          <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Commissions payées</p>
+          <p className="mt-2 text-3xl font-black text-emerald-700">{euros(data.kpis.commissionsPaid)}</p>
         </div>
       </div>
 

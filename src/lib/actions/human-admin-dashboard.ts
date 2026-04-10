@@ -42,6 +42,13 @@ type NotificationRow = {
   created_at: string;
 };
 
+type CommissionRow = {
+  id: string;
+  payment_status: "pending" | "paid" | "cancelled";
+  commission_amount: number;
+  created_at: string;
+};
+
 type DashboardPeriod = {
   startDate?: string;
   endDate?: string;
@@ -60,13 +67,14 @@ export async function getAdminHumanDashboard(period?: DashboardPeriod) {
 
   const supabaseAdmin = createAdminClient();
 
-  const [{ data: membersData }, { data: leadsData }, { data: signalsData }, { data: cashData }, { data: notificationsData }] =
+  const [{ data: membersData }, { data: leadsData }, { data: signalsData }, { data: cashData }, { data: notificationsData }, { data: commissionsData }] =
     await Promise.all([
       supabaseAdmin.from("human_members").select("id,user_id,status,first_name,last_name"),
       supabaseAdmin.from("human_leads").select("id,owner_member_id,status,budget,created_at"),
       supabaseAdmin.from("human_signals").select("id,emitter_member_id,status,signal_strength,created_at"),
       supabaseAdmin.from("human_cash_events").select("id,member_id,kind,amount,event_date"),
       supabaseAdmin.from("human_notifications").select("id,member_id,is_read,created_at"),
+      supabaseAdmin.from("human_commissions").select("id,payment_status,commission_amount,created_at"),
     ]);
 
   const members = (membersData as MemberRow[] | null) || [];
@@ -77,6 +85,7 @@ export async function getAdminHumanDashboard(period?: DashboardPeriod) {
   const signals = ((signalsData as SignalRow[] | null) || []).filter((row) => inRange(row.created_at, start, end));
   const cash = ((cashData as CashRow[] | null) || []).filter((row) => inRange(row.event_date, start, end));
   const notifications = ((notificationsData as NotificationRow[] | null) || []).filter((row) => inRange(row.created_at, start, end));
+  const commissions = ((commissionsData as CommissionRow[] | null) || []).filter((row) => inRange(row.created_at, start, end));
 
   const kpis = {
     membersActive: members.filter((m) => m.status === "active").length,
@@ -89,6 +98,12 @@ export async function getAdminHumanDashboard(period?: DashboardPeriod) {
     cashIn: cash.filter((c) => c.kind === "encaissement").reduce((sum, c) => sum + Number(c.amount || 0), 0),
     cashOut: cash.filter((c) => c.kind === "decaissement").reduce((sum, c) => sum + Number(c.amount || 0), 0),
     notificationsUnread: notifications.filter((n) => !n.is_read).length,
+    commissionsPending: commissions
+      .filter((commission) => commission.payment_status === "pending")
+      .reduce((sum, commission) => sum + Number(commission.commission_amount || 0), 0),
+    commissionsPaid: commissions
+      .filter((commission) => commission.payment_status === "paid")
+      .reduce((sum, commission) => sum + Number(commission.commission_amount || 0), 0),
   };
 
   const labelByMemberId = new Map<string, string>();

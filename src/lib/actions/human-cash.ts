@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { ensureHumanMemberForUserId } from "@/lib/actions/human-permissions";
@@ -31,6 +32,11 @@ type HumanCommission = {
   payment_status: "pending" | "paid" | "cancelled";
   created_at: string;
   updated_at: string;
+};
+
+type AdminCommission = HumanCommission & {
+  payerLabel: string;
+  receiverLabel: string;
 };
 
 export async function getMyCashSummary() {
@@ -187,5 +193,95 @@ export async function createCommissionForSignedLead(input: {
 
   revalidatePath("/popey-human/app/cash");
   revalidatePath("/admin/humain/cockpit");
+  revalidatePath("/admin/humain/commissions");
   return { success: true };
+}
+
+export async function getAdminHumanCommissions() {
+  const admin = await requireAdminUser();
+  if ("error" in admin) {
+    return { error: admin.error, commissions: [] as AdminCommission[] };
+  }
+
+  const supabaseAdmin = createAdminClient();
+  const [{ data: commissionsData }, { data: membersData }, { data: profilesData }] = await Promise.all([
+    supabaseAdmin
+      .from("human_commissions")
+      .select("id,lead_id,signed_amount,commission_amount,payer_member_id,receiver_member_id,payment_status,created_at,updated_at")
+      .order("created_at", { ascending: false })
+      .limit(500),
+    supabaseAdmin.from("human_members").select("id,user_id,first_name,last_name"),
+    supabaseAdmin.from("profiles").select("id,display_name"),
+  ]);
+
+  const members = (membersData as Array<{ id: string; user_id: string; first_name: string | null; last_name: string | null }> | null) || [];
+  const profiles = (profilesData as Array<{ id: string; display_name: string | null }> | null) || [];
+  const profileNameByUserId = new Map(profiles.map((profile) => [profile.id, profile.display_name || ""]));
+
+  const memberLabelById = new Map<string, string>();
+  members.forEach((member) => {
+    const full = [member.first_name, member.last_name].filter(Boolean).join(" ").trim();
+    const fallback = profileNameByUserId.get(member.user_id) || member.user_id;
+    memberLabelById.set(member.id, full || fallback || "Membre");
+  });
+
+  const commissions = ((commissionsData as HumanCommission[] | null) || []).map((commission) => ({
+    ...commission,
+    payerLabel: memberLabelById.get(commission.payer_member_id) || commission.payer_member_id,
+    receiverLabel: memberLabelById.get(commission.receiver_member_id) || commission.receiver_member_id,
+  }));
+
+  return { error: null as string | null, commissions };
+}
+
+export async function adminSetHumanCommissionStatus(formData: FormData) {
+  const admin = await requireAdminUser();
+  if ("error" in admin) return { error: admin.error };
+
+  const commissionId = String(formData.get("commission_id") || "");
+  const paymentStatus = String(formData.get("payment_status") || "");
+  if (!commissionId) return { error: "Commission invalide." };
+  if (!["pending", "paid", "cancelled"].includes(paymentStatus)) return { error: "Statut de paiement invalide." };
+
+  const supabaseAdmin = createAdminClient();
+  const { error } = await supabaseAdmin
+    .from("human_commissions")
+    .update({ payment_status: paymentStatus, updated_at: new Date().toISOString() })
+    .eq("id", commissionId);
+  if (error) return { error: error.message };
+
+  revalidatePath("/admin/humain/commissions");
+  revalidatePath("/popey-human/app/cash");
+  revalidatePath("/admin/humain/cockpit");
+  return { success: true };
+}
+
+export async function adminSetHumanCommissionStatusAction(formData: FormData): Promise<void> {
+  const currentUrl = String(formData.get("current_url") || "/admin/humain/commissions");
+  const result = await adminSetHumanCommissionStatus(formData);
+  if ("error" in result) {
+    redirect(withCommissionStatus(currentUrl, "error", result.error || "Action impossible."));
+  }
+  redirect(withCommissionStatus(currentUrl, "success", "Statut de commission mis à jour."));
+}
+
+async function requireAdminUser() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Session requise." };
+
+  const supabaseAdmin = createAdminClient();
+  const { data } = await supabaseAdmin.from("admins").select("user_id").eq("user_id", user.id).maybeSingle();
+  if (!data) return { error: "Accès admin requis." };
+  return { user };
+}
+
+function withCommissionStatus(url: string, status: "success" | "error", message: string) {
+  const safePath = url.startsWith("/admin/humain/commissions") ? url : "/admin/humain/commissions";
+  const parsed = new URL(safePath, "http://localhost");
+  parsed.searchParams.set("commissionStatus", status);
+  parsed.searchParams.set("commissionMessage", message);
+  return `${parsed.pathname}?${parsed.searchParams.toString()}`;
 }
