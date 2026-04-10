@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
@@ -300,6 +301,15 @@ export async function adminSetMode(formData: FormData) {
   return { success: true };
 }
 
+export async function adminSetModeAction(formData: FormData): Promise<void> {
+  const currentUrl = String(formData.get("current_url") || "/admin/humain/permissions");
+  const result = await adminSetMode(formData);
+  if ("error" in result) {
+    redirect(withPermissionsStatus(currentUrl, "error", result.error || "Action impossible."));
+  }
+  redirect(withPermissionsStatus(currentUrl, "success", "Mode d'accès mis à jour."));
+}
+
 export async function adminGrantMember(formData: FormData) {
   const adminCheck = await requireHumanAdmin();
   if ("error" in adminCheck) return { error: adminCheck.error };
@@ -329,6 +339,15 @@ export async function adminGrantMember(formData: FormData) {
   return { success: true };
 }
 
+export async function adminGrantMemberAction(formData: FormData): Promise<void> {
+  const currentUrl = String(formData.get("current_url") || "/admin/humain/permissions");
+  const result = await adminGrantMember(formData);
+  if ("error" in result) {
+    redirect(withPermissionsStatus(currentUrl, "error", result.error || "Action impossible."));
+  }
+  redirect(withPermissionsStatus(currentUrl, "success", "Membre autorisé ajouté."));
+}
+
 export async function adminRevokeMember(formData: FormData) {
   const adminCheck = await requireHumanAdmin();
   if ("error" in adminCheck) return { error: adminCheck.error };
@@ -347,6 +366,15 @@ export async function adminRevokeMember(formData: FormData) {
   if (error) return { error: error.message };
   revalidatePath("/admin/humain/permissions");
   return { success: true };
+}
+
+export async function adminRevokeMemberAction(formData: FormData): Promise<void> {
+  const currentUrl = String(formData.get("current_url") || "/admin/humain/permissions");
+  const result = await adminRevokeMember(formData);
+  if ("error" in result) {
+    redirect(withPermissionsStatus(currentUrl, "error", result.error || "Action impossible."));
+  }
+  redirect(withPermissionsStatus(currentUrl, "success", "Membre autorisé retiré."));
 }
 
 export async function adminAssignBuddy(formData: FormData) {
@@ -377,6 +405,15 @@ export async function adminAssignBuddy(formData: FormData) {
   if (error) return { error: error.message };
   revalidatePath("/admin/humain/permissions");
   return { success: true };
+}
+
+export async function adminAssignBuddyAction(formData: FormData): Promise<void> {
+  const currentUrl = String(formData.get("current_url") || "/admin/humain/permissions");
+  const result = await adminAssignBuddy(formData);
+  if ("error" in result) {
+    redirect(withPermissionsStatus(currentUrl, "error", result.error || "Action impossible."));
+  }
+  redirect(withPermissionsStatus(currentUrl, "success", "Binôme créé."));
 }
 
 export async function adminInitMember(formData: FormData) {
@@ -664,4 +701,12 @@ async function ensureHumanMember(
 export async function ensureHumanMemberForUserId(userId: string) {
   const supabaseAdmin = createAdminClient();
   return ensureHumanMember(supabaseAdmin, userId);
+}
+
+function withPermissionsStatus(url: string, status: "success" | "error", message: string) {
+  const safePath = url.startsWith("/admin/humain/permissions") ? url : "/admin/humain/permissions";
+  const parsed = new URL(safePath, "http://localhost");
+  parsed.searchParams.set("permStatus", status);
+  parsed.searchParams.set("permMessage", message);
+  return `${parsed.pathname}?${parsed.searchParams.toString()}`;
 }

@@ -1,9 +1,9 @@
 import Link from "next/link";
 import {
-  adminAssignBuddy,
-  adminGrantMember,
-  adminRevokeMember,
-  adminSetMode,
+  adminAssignBuddyAction,
+  adminGrantMemberAction,
+  adminRevokeMemberAction,
+  adminSetModeAction,
   HUMAN_AUDIT_ACTIONS,
   getHumanPermissionsAdminSnapshot,
   type HumanAccessMode,
@@ -45,6 +45,8 @@ export default async function AdminHumainPermissionsPage({
     auditEnd?: string;
     auditSort?: string;
     auditPage?: string;
+    permStatus?: string;
+    permMessage?: string;
   }>;
 }) {
   const params = (await searchParams) || {};
@@ -54,6 +56,8 @@ export default async function AdminHumainPermissionsPage({
   const auditEnd = typeof params.auditEnd === "string" ? params.auditEnd : "";
   const auditSort = params.auditSort === "date_asc" ? "date_asc" : "date_desc";
   const auditPage = Math.max(1, Number(typeof params.auditPage === "string" ? params.auditPage : "1") || 1);
+  const permStatus = typeof params.permStatus === "string" ? params.permStatus : "";
+  const permMessage = typeof params.permMessage === "string" ? params.permMessage : "";
 
   const snapshot = await getHumanPermissionsAdminSnapshot({
     action: HUMAN_AUDIT_ACTIONS.includes(auditAction as (typeof HUMAN_AUDIT_ACTIONS)[number])
@@ -98,6 +102,18 @@ export default async function AdminHumainPermissionsPage({
       ? `/admin/humain/permissions/export/audit?${search}`
       : "/admin/humain/permissions/export/audit";
   };
+  const currentPermissionsHref = buildAuditHref(auditPage);
+  const clearStatusHref = (() => {
+    const query = new URLSearchParams();
+    if (auditAction) query.set("auditAction", auditAction);
+    if (auditMemberId) query.set("auditMemberId", auditMemberId);
+    if (auditStart) query.set("auditStart", auditStart);
+    if (auditEnd) query.set("auditEnd", auditEnd);
+    if (auditSort) query.set("auditSort", auditSort);
+    if (auditPage) query.set("auditPage", String(auditPage));
+    const search = query.toString();
+    return search ? `/admin/humain/permissions?${search}` : "/admin/humain/permissions";
+  })();
 
   return (
     <section className="space-y-8">
@@ -115,7 +131,7 @@ export default async function AdminHumainPermissionsPage({
       </div>
 
       <div className="grid gap-4 rounded-xl border bg-card p-4 lg:grid-cols-3">
-        <form action={adminSetMode} className="space-y-3 rounded-lg border p-3">
+        <form action={adminSetModeAction} className="space-y-3 rounded-lg border p-3">
           <h2 className="text-sm font-black uppercase tracking-wide">Définir le mode</h2>
           <select name="user_id" required className="w-full rounded border px-2 py-2 text-sm">
             <option value="">Choisir un membre</option>
@@ -139,9 +155,10 @@ export default async function AdminHumainPermissionsPage({
             className="w-full rounded border px-2 py-2 text-sm"
           />
           <button className="rounded bg-black px-3 py-2 text-sm font-bold text-white">Enregistrer</button>
+          <input type="hidden" name="current_url" value={currentPermissionsHref} />
         </form>
 
-        <form action={adminGrantMember} className="space-y-3 rounded-lg border p-3">
+        <form action={adminGrantMemberAction} className="space-y-3 rounded-lg border p-3">
           <h2 className="text-sm font-black uppercase tracking-wide">Autoriser un membre</h2>
           <select name="user_id" required className="w-full rounded border px-2 py-2 text-sm">
             <option value="">Membre qui reçoit l&apos;accès</option>
@@ -160,9 +177,10 @@ export default async function AdminHumainPermissionsPage({
             ))}
           </select>
           <button className="rounded bg-black px-3 py-2 text-sm font-bold text-white">Ajouter</button>
+          <input type="hidden" name="current_url" value={currentPermissionsHref} />
         </form>
 
-        <form action={adminAssignBuddy} className="space-y-3 rounded-lg border p-3">
+        <form action={adminAssignBuddyAction} className="space-y-3 rounded-lg border p-3">
           <h2 className="text-sm font-black uppercase tracking-wide">Assigner un binôme</h2>
           <select name="user_a_id" required className="w-full rounded border px-2 py-2 text-sm">
             <option value="">Membre A</option>
@@ -181,8 +199,26 @@ export default async function AdminHumainPermissionsPage({
             ))}
           </select>
           <button className="rounded bg-black px-3 py-2 text-sm font-bold text-white">Créer le binôme</button>
+          <input type="hidden" name="current_url" value={currentPermissionsHref} />
         </form>
       </div>
+
+      {permStatus === "success" && (
+        <div className="flex items-center justify-between gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">
+          <span>{permMessage || "Action appliquée."}</span>
+          <Link href={clearStatusHref} className="rounded border border-emerald-300 px-2 py-1 text-xs">
+            Effacer
+          </Link>
+        </div>
+      )}
+      {permStatus === "error" && (
+        <div className="flex items-center justify-between gap-3 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+          <span>{permMessage || "Action impossible."}</span>
+          <Link href={clearStatusHref} className="rounded border border-red-300 px-2 py-1 text-xs">
+            Effacer
+          </Link>
+        </div>
+      )}
 
       <div className="overflow-x-auto rounded-xl border bg-white">
         <table className="min-w-full text-sm">
@@ -216,9 +252,10 @@ export default async function AdminHumainPermissionsPage({
                       const allowedMember = memberById.get(allowedId);
                       if (!allowedMember) return null;
                       return (
-                        <form key={allowedId} action={adminRevokeMember} className="mb-1 flex items-center gap-2">
+                        <form key={allowedId} action={adminRevokeMemberAction} className="mb-1 flex items-center gap-2">
                           <input type="hidden" name="member_id" value={member.id} />
                           <input type="hidden" name="allowed_member_id" value={allowedId} />
+                          <input type="hidden" name="current_url" value={currentPermissionsHref} />
                           <span className="rounded bg-muted px-2 py-1 text-xs">{memberLabel(allowedMember)}</span>
                           <button className="text-xs font-semibold text-red-600">Retirer</button>
                         </form>
