@@ -1,9 +1,28 @@
 import { type NextRequest } from "next/server";
+import { NextResponse } from "next/server";
 import { updateSession } from "@/lib/supabase/middleware";
 
 export default async function proxy(request: NextRequest) {
-  // Update session for Supabase Auth
-  return await updateSession(request);
+  const { response, user } = await updateSession(request);
+  const pathname = request.nextUrl.pathname;
+
+  const isHumanMemberArea = pathname.startsWith("/popey-human/app");
+  const isHumanAdminArea = pathname.startsWith("/admin/humain");
+  const isHumanLogin = pathname.startsWith("/popey-human/login");
+
+  if (!user && (isHumanMemberArea || isHumanAdminArea)) {
+    const loginPath = isHumanMemberArea ? "/popey-human/login" : "/login";
+    const loginUrl = new URL(loginPath, request.url);
+    loginUrl.searchParams.set("next", pathname);
+    return copyResponseCookies(NextResponse.redirect(loginUrl), response);
+  }
+
+  if (user && isHumanLogin) {
+    const appUrl = new URL("/popey-human/app", request.url);
+    return copyResponseCookies(NextResponse.redirect(appUrl), response);
+  }
+
+  return response;
 }
 
 export const config = {
@@ -18,3 +37,10 @@ export const config = {
     "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };
+
+function copyResponseCookies(target: NextResponse, source: NextResponse) {
+  source.cookies.getAll().forEach((cookie) => {
+    target.cookies.set(cookie);
+  });
+  return target;
+}

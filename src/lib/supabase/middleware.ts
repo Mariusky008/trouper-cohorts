@@ -37,8 +37,8 @@ export async function updateSession(request: NextRequest) {
   // issues with users being randomly logged out.
 
   const {
-    data: { user: _user },
+    data: { user },
   } = await supabase.auth.getUser()
 
-  return response
+  return { response, user }
 }
