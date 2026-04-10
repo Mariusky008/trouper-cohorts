@@ -5,17 +5,31 @@ import {
   getAdminHumanNotificationsFeed,
   type HumanNotificationType,
 } from "@/lib/actions/human-notifications";
+import { buildAdminHumanHref, pickParam } from "@/lib/url/admin-human-navigation";
 
 const NOTIFICATION_TYPES: HumanNotificationType[] = ["generale", "personnelle", "felicitation"];
 
 export default async function AdminHumainNotificationsPage({
   searchParams,
 }: {
-  searchParams?: Promise<{ sort?: string; page?: string }>;
+  searchParams?: Promise<{
+    sort?: string;
+    page?: string;
+    notificationsSort?: string;
+    notificationsPage?: string;
+    clientsSort?: string;
+    clientsPage?: string;
+    start?: string;
+    end?: string;
+    topSort?: string;
+    topPage?: string;
+    signalSort?: string;
+    signalPage?: string;
+  }>;
 }) {
   const params = (await searchParams) || {};
-  const sort = params.sort || "date_desc";
-  const page = Math.max(1, Number(params.page || "1") || 1);
+  const sort = pickParam(params, ["notificationsSort", "sort"], "date_desc");
+  const page = Math.max(1, Number(pickParam(params, ["notificationsPage", "page"], "1")) || 1);
   const pageSize = 12;
   const feed = await getAdminHumanNotificationsFeed();
 
@@ -39,12 +53,18 @@ export default async function AdminHumainNotificationsPage({
   const safePage = Math.min(page, totalPages);
   const startIndex = (safePage - 1) * pageSize;
   const pagedNotifications = sortedNotifications.slice(startIndex, startIndex + pageSize);
-  const hrefFor = (nextSort: string, nextPage: number) => {
-    const query = new URLSearchParams();
-    query.set("sort", nextSort);
-    query.set("page", String(nextPage));
-    return `/admin/humain/notifications?${query.toString()}`;
+  const sharedParams = {
+    ...params,
+    notificationsSort: sort,
+    notificationsPage: String(safePage),
   };
+  const hrefFor = (nextSort: string, nextPage: number) =>
+    buildAdminHumanHref("/admin/humain/notifications", sharedParams, {
+      notificationsSort: nextSort,
+      notificationsPage: String(nextPage),
+      sort: "",
+      page: "",
+    });
 
   return (
     <section className="space-y-6">
@@ -55,6 +75,12 @@ export default async function AdminHumainNotificationsPage({
           <p className="text-sm text-muted-foreground">Diffusion globale ou ciblée des messages admin.</p>
         </div>
         <div className="flex gap-2">
+          <Button asChild variant="outline">
+            <Link href={buildAdminHumanHref("/admin/humain/cockpit", sharedParams)}>Aller au cockpit</Link>
+          </Button>
+          <Button asChild variant="outline">
+            <Link href={buildAdminHumanHref("/admin/humain/clients", sharedParams)}>Aller aux clients</Link>
+          </Button>
           <Button asChild variant="outline">
             <Link href="/admin/humain">Retour espace humain</Link>
           </Button>

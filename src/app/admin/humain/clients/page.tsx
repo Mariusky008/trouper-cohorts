@@ -5,6 +5,7 @@ import {
   getAdminHumanLeads,
   getHumanLeadSourceCandidates,
 } from "@/lib/actions/human-leads";
+import { buildAdminHumanHref, pickParam } from "@/lib/url/admin-human-navigation";
 
 function statusLabel(status: "nouveau" | "pris" | "signe" | "perdu") {
   switch (status) {
@@ -24,11 +25,24 @@ function statusLabel(status: "nouveau" | "pris" | "signe" | "perdu") {
 export default async function AdminHumainClientsPage({
   searchParams,
 }: {
-  searchParams?: Promise<{ sort?: string; page?: string }>;
+  searchParams?: Promise<{
+    sort?: string;
+    page?: string;
+    clientsSort?: string;
+    clientsPage?: string;
+    notificationsSort?: string;
+    notificationsPage?: string;
+    start?: string;
+    end?: string;
+    topSort?: string;
+    topPage?: string;
+    signalSort?: string;
+    signalPage?: string;
+  }>;
 }) {
   const params = (await searchParams) || {};
-  const sort = params.sort || "date_desc";
-  const page = Math.max(1, Number(params.page || "1") || 1);
+  const sort = pickParam(params, ["clientsSort", "sort"], "date_desc");
+  const page = Math.max(1, Number(pickParam(params, ["clientsPage", "page"], "1")) || 1);
   const pageSize = 12;
   const [feed, sources] = await Promise.all([getAdminHumanLeads(), getHumanLeadSourceCandidates()]);
 
@@ -51,12 +65,18 @@ export default async function AdminHumainClientsPage({
   const safePage = Math.min(page, totalPages);
   const startIndex = (safePage - 1) * pageSize;
   const pagedLeads = sortedLeads.slice(startIndex, startIndex + pageSize);
-  const hrefFor = (nextSort: string, nextPage: number) => {
-    const query = new URLSearchParams();
-    query.set("sort", nextSort);
-    query.set("page", String(nextPage));
-    return `/admin/humain/clients?${query.toString()}`;
+  const sharedParams = {
+    ...params,
+    clientsSort: sort,
+    clientsPage: String(safePage),
   };
+  const hrefFor = (nextSort: string, nextPage: number) =>
+    buildAdminHumanHref("/admin/humain/clients", sharedParams, {
+      clientsSort: nextSort,
+      clientsPage: String(nextPage),
+      sort: "",
+      page: "",
+    });
 
   return (
     <section className="space-y-6">
@@ -66,9 +86,17 @@ export default async function AdminHumainClientsPage({
           <h1 className="text-3xl font-black">Leads clients</h1>
           <p className="text-sm text-muted-foreground">Création et pilotage des leads envoyés dans la sphère.</p>
         </div>
-        <Button asChild variant="outline">
-          <Link href="/admin/humain">Retour espace humain</Link>
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button asChild variant="outline">
+            <Link href={buildAdminHumanHref("/admin/humain/cockpit", sharedParams)}>Aller au cockpit</Link>
+          </Button>
+          <Button asChild variant="outline">
+            <Link href={buildAdminHumanHref("/admin/humain/notifications", sharedParams)}>Aller aux notifications</Link>
+          </Button>
+          <Button asChild variant="outline">
+            <Link href="/admin/humain">Retour espace humain</Link>
+          </Button>
+        </div>
       </div>
 
       <form action={adminCreateHumanLeadAction} className="grid gap-3 rounded-xl border bg-card p-4">

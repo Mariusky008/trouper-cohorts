@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { getAdminHumanDashboard } from "@/lib/actions/human-admin-dashboard";
+import { buildAdminHumanHref, pickParam } from "@/lib/url/admin-human-navigation";
 
 function euros(value: number) {
   return value.toLocaleString("fr-FR", { style: "currency", currency: "EUR" });
@@ -12,17 +13,23 @@ export default async function AdminHumainCockpitPage({
   searchParams?: Promise<{
     start?: string;
     end?: string;
+    cockpitStart?: string;
+    cockpitEnd?: string;
     topSort?: string;
     topPage?: string;
     signalSort?: string;
     signalPage?: string;
+    clientsSort?: string;
+    clientsPage?: string;
+    notificationsSort?: string;
+    notificationsPage?: string;
   }>;
 }) {
   const params = (await searchParams) || {};
-  const start = params.start || "";
-  const end = params.end || "";
-  const topSort = params.topSort || "value_desc";
-  const signalSort = params.signalSort || "value_desc";
+  const start = pickParam(params, ["cockpitStart", "start"], "");
+  const end = pickParam(params, ["cockpitEnd", "end"], "");
+  const topSort = pickParam(params, ["topSort"], "value_desc");
+  const signalSort = pickParam(params, ["signalSort"], "value_desc");
   const topPage = Math.max(1, Number(params.topPage || "1") || 1);
   const signalPage = Math.max(1, Number(params.signalPage || "1") || 1);
   const topPageSize = 5;
@@ -31,14 +38,17 @@ export default async function AdminHumainCockpitPage({
   if (start) exportQuery.set("start", start);
   if (end) exportQuery.set("end", end);
   const exportSuffix = exportQuery.toString() ? `?${exportQuery.toString()}` : "";
-  const baseQuery = new URLSearchParams();
-  if (start) baseQuery.set("start", start);
-  if (end) baseQuery.set("end", end);
-  const cockpitHref = (updates: Record<string, string>) => {
-    const query = new URLSearchParams(baseQuery.toString());
-    Object.entries(updates).forEach(([key, value]) => query.set(key, value));
-    return `/admin/humain/cockpit?${query.toString()}`;
+  const sharedParams = {
+    ...params,
+    cockpitStart: start,
+    cockpitEnd: end,
+    topSort,
+    topPage: String(topPage),
+    signalSort,
+    signalPage: String(signalPage),
   };
+  const cockpitHref = (updates: Record<string, string>) =>
+    buildAdminHumanHref("/admin/humain/cockpit", sharedParams, { ...updates, start: "", end: "" });
 
   if (data.error || !data.kpis) {
     return (
@@ -75,6 +85,12 @@ export default async function AdminHumainCockpitPage({
           <p className="text-sm text-muted-foreground">Vue globale membres, pipeline, signaux, cash et notifications.</p>
         </div>
         <div className="flex flex-wrap gap-2">
+          <Button asChild variant="outline">
+            <Link href={buildAdminHumanHref("/admin/humain/clients", sharedParams)}>Aller aux clients</Link>
+          </Button>
+          <Button asChild variant="outline">
+            <Link href={buildAdminHumanHref("/admin/humain/notifications", sharedParams)}>Aller aux notifications</Link>
+          </Button>
           <Button asChild variant="outline">
             <Link href={`/admin/humain/cockpit/export/leads${exportSuffix}`}>Exporter Leads CSV</Link>
           </Button>
