@@ -4,13 +4,21 @@ import {
   adminGrantMemberAction,
   adminRevokeMemberAction,
   adminSetModeAction,
-  HUMAN_AUDIT_ACTIONS,
   getHumanPermissionsAdminSnapshot,
   type HumanAccessMode,
 } from "@/lib/actions/human-permissions";
 import { Button } from "@/components/ui/button";
 
 const ACCESS_MODES: HumanAccessMode[] = ["BINOME_ONLY", "SELECTED_MEMBERS", "SPHERE_FULL"];
+const HUMAN_AUDIT_ACTIONS = [
+  "permission_created",
+  "permission_updated",
+  "permission_deleted",
+  "allowed_member_granted",
+  "allowed_member_revoked",
+  "buddy_assigned",
+  "buddy_removed",
+] as const;
 
 function memberLabel(member: {
   first_name: string | null;

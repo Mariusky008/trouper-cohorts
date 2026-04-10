@@ -54,7 +54,7 @@ type HumanPermissionAuditEvent = {
   created_at: string;
 };
 
-export const HUMAN_AUDIT_ACTIONS = [
+const HUMAN_AUDIT_ACTIONS = [
   "permission_created",
   "permission_updated",
   "permission_deleted",
