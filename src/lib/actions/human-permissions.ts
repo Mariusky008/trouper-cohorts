@@ -70,6 +70,8 @@ type HumanAuditFilters = {
   memberId?: string;
   startDate?: string;
   endDate?: string;
+  sort?: "date_desc" | "date_asc";
+  page?: number;
 };
 
 export type HumanDirectoryMember = {
@@ -104,11 +106,17 @@ export async function getHumanPermissionsAdminSnapshot(filters: HumanAuditFilter
 
   const supabaseAdmin = createAdminClient();
 
+  const pageSize = 20;
+  const page = Math.max(1, Number(filters.page || 1));
+  const rangeStart = (page - 1) * pageSize;
+  const rangeEnd = rangeStart + pageSize - 1;
+  const ascending = filters.sort === "date_asc";
+
   let auditsQuery = supabaseAdmin
     .from("human_permissions_audit_log")
-    .select("id,member_id,actor_user_id,action,previous_mode,next_mode,note,meta,created_at")
-    .order("created_at", { ascending: false })
-    .limit(120);
+    .select("id,member_id,actor_user_id,action,previous_mode,next_mode,note,meta,created_at", { count: "exact" })
+    .order("created_at", { ascending })
+    .range(rangeStart, rangeEnd);
 
   if (filters.action && HUMAN_AUDIT_ACTIONS.includes(filters.action)) {
     auditsQuery = auditsQuery.eq("action", filters.action);
@@ -123,7 +131,14 @@ export async function getHumanPermissionsAdminSnapshot(filters: HumanAuditFilter
     auditsQuery = auditsQuery.lte("created_at", `${filters.endDate}T23:59:59.999Z`);
   }
 
-  const [{ data: members }, { data: permissions }, { data: allowed }, { data: buddies }, { data: profiles }, { data: audits }] =
+  const [
+    { data: members },
+    { data: permissions },
+    { data: allowed },
+    { data: buddies },
+    { data: profiles },
+    { data: audits, count: auditsCount },
+  ] =
     await Promise.all([
       supabaseAdmin
         .from("human_members")
@@ -233,6 +248,13 @@ export async function getHumanPermissionsAdminSnapshot(filters: HumanAuditFilter
     allowedByMemberId,
     buddiesByMemberId,
     auditEvents,
+    auditPagination: {
+      page,
+      pageSize,
+      total: auditsCount || 0,
+      totalPages: Math.max(1, Math.ceil((auditsCount || 0) / pageSize)),
+      sort: ascending ? "date_asc" : "date_desc",
+    },
     error: null as string | null,
   };
 }

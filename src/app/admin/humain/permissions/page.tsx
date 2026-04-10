@@ -43,6 +43,8 @@ export default async function AdminHumainPermissionsPage({
     auditMemberId?: string;
     auditStart?: string;
     auditEnd?: string;
+    auditSort?: string;
+    auditPage?: string;
   }>;
 }) {
   const params = (await searchParams) || {};
@@ -50,6 +52,8 @@ export default async function AdminHumainPermissionsPage({
   const auditMemberId = typeof params.auditMemberId === "string" ? params.auditMemberId : "";
   const auditStart = typeof params.auditStart === "string" ? params.auditStart : "";
   const auditEnd = typeof params.auditEnd === "string" ? params.auditEnd : "";
+  const auditSort = params.auditSort === "date_asc" ? "date_asc" : "date_desc";
+  const auditPage = Math.max(1, Number(typeof params.auditPage === "string" ? params.auditPage : "1") || 1);
 
   const snapshot = await getHumanPermissionsAdminSnapshot({
     action: HUMAN_AUDIT_ACTIONS.includes(auditAction as (typeof HUMAN_AUDIT_ACTIONS)[number])
@@ -58,6 +62,8 @@ export default async function AdminHumainPermissionsPage({
     memberId: auditMemberId || undefined,
     startDate: auditStart || undefined,
     endDate: auditEnd || undefined,
+    sort: auditSort,
+    page: auditPage,
   });
 
   if (snapshot.error) {
@@ -70,6 +76,16 @@ export default async function AdminHumainPermissionsPage({
   }
 
   const memberById = new Map(snapshot.members.map((member) => [member.id, member]));
+  const buildAuditHref = (nextPage: number) => {
+    const query = new URLSearchParams();
+    if (auditAction) query.set("auditAction", auditAction);
+    if (auditMemberId) query.set("auditMemberId", auditMemberId);
+    if (auditStart) query.set("auditStart", auditStart);
+    if (auditEnd) query.set("auditEnd", auditEnd);
+    if (auditSort) query.set("auditSort", auditSort);
+    query.set("auditPage", String(nextPage));
+    return `/admin/humain/permissions?${query.toString()}`;
+  };
 
   return (
     <section className="space-y-8">
@@ -225,7 +241,7 @@ export default async function AdminHumainPermissionsPage({
       <div className="rounded-xl border bg-white p-4">
         <h2 className="text-lg font-black">Historique des changements</h2>
         <p className="mb-3 text-xs text-muted-foreground">Derniers événements permissions / accès réseau.</p>
-        <form className="mb-4 grid gap-2 rounded border p-3 text-sm md:grid-cols-5">
+        <form className="mb-4 grid gap-2 rounded border p-3 text-sm md:grid-cols-6">
           <select name="auditAction" defaultValue={auditAction} className="rounded border px-2 py-2">
             <option value="">Toutes les actions</option>
             {HUMAN_AUDIT_ACTIONS.map((action) => (
@@ -244,7 +260,12 @@ export default async function AdminHumainPermissionsPage({
           </select>
           <input type="date" name="auditStart" defaultValue={auditStart} className="rounded border px-2 py-2" />
           <input type="date" name="auditEnd" defaultValue={auditEnd} className="rounded border px-2 py-2" />
+          <select name="auditSort" defaultValue={auditSort} className="rounded border px-2 py-2">
+            <option value="date_desc">Plus récent → ancien</option>
+            <option value="date_asc">Plus ancien → récent</option>
+          </select>
           <div className="flex gap-2">
+            <input type="hidden" name="auditPage" value="1" />
             <button className="rounded border px-3 py-2">Filtrer</button>
             <Link href="/admin/humain/permissions" className="rounded border px-3 py-2">
               Réinitialiser
@@ -253,7 +274,11 @@ export default async function AdminHumainPermissionsPage({
         </form>
         {snapshot.auditEvents.length === 0 && <p className="text-sm text-muted-foreground">Aucun événement enregistré.</p>}
         {snapshot.auditEvents.length > 0 && (
-          <ul className="space-y-2">
+          <div className="space-y-3">
+            <p className="text-xs text-muted-foreground">
+              Page {snapshot.auditPagination.page}/{snapshot.auditPagination.totalPages} • {snapshot.auditPagination.total} événements
+            </p>
+            <ul className="space-y-2">
             {snapshot.auditEvents.map((event) => (
               <li key={event.id} className="rounded border p-2 text-sm">
                 <p className="font-semibold">{auditActionLabel(event.action)}</p>
@@ -268,7 +293,24 @@ export default async function AdminHumainPermissionsPage({
                 {event.note && <p className="text-xs">{event.note}</p>}
               </li>
             ))}
-          </ul>
+            </ul>
+            <div className="flex flex-wrap gap-2">
+              <Link
+                href={buildAuditHref(Math.max(1, snapshot.auditPagination.page - 1))}
+                className="rounded border px-3 py-1.5 text-sm disabled:pointer-events-none disabled:opacity-50"
+                aria-disabled={snapshot.auditPagination.page <= 1}
+              >
+                Précédent
+              </Link>
+              <Link
+                href={buildAuditHref(Math.min(snapshot.auditPagination.totalPages, snapshot.auditPagination.page + 1))}
+                className="rounded border px-3 py-1.5 text-sm disabled:pointer-events-none disabled:opacity-50"
+                aria-disabled={snapshot.auditPagination.page >= snapshot.auditPagination.totalPages}
+              >
+                Suivant
+              </Link>
+            </div>
+          </div>
         )}
       </div>
     </section>
