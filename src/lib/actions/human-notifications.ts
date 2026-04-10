@@ -79,6 +79,35 @@ export async function adminSendHumanNotificationAction(formData: FormData): Prom
   await adminSendHumanNotification(formData);
 }
 
+export async function adminBulkSetHumanNotificationsRead(formData: FormData) {
+  const adminUser = await requireAdminUser();
+  if ("error" in adminUser) return { error: adminUser.error };
+
+  const mode = String(formData.get("mode") || "read");
+  const ids = formData
+    .getAll("notification_ids")
+    .map((value) => String(value || "").trim())
+    .filter(Boolean);
+
+  if (!["read", "unread"].includes(mode)) return { error: "Mode invalide." };
+  if (ids.length === 0) return { error: "Aucune notification sélectionnée." };
+
+  const supabaseAdmin = createAdminClient();
+  const { error } = await supabaseAdmin
+    .from("human_notifications")
+    .update({ is_read: mode === "read" })
+    .in("id", ids);
+  if (error) return { error: error.message };
+
+  revalidatePath("/admin/humain/notifications");
+  revalidatePath("/popey-human/app/notifications");
+  return { success: true };
+}
+
+export async function adminBulkSetHumanNotificationsReadAction(formData: FormData): Promise<void> {
+  await adminBulkSetHumanNotificationsRead(formData);
+}
+
 export async function getAdminHumanNotificationsFeed() {
   const adminUser = await requireAdminUser();
   if ("error" in adminUser) {

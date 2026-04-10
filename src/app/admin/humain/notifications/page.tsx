@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import {
+  adminBulkSetHumanNotificationsReadAction,
   adminSendHumanNotificationAction,
   getAdminHumanNotificationsFeed,
   type HumanNotificationType,
@@ -155,35 +156,50 @@ export default async function AdminHumainNotificationsPage({
         </p>
       </div>
 
-      <div className="overflow-x-auto rounded-xl border bg-white">
-        <table className="min-w-full text-sm">
-          <thead className="bg-muted/40">
-            <tr>
-              <th className="px-3 py-2 text-left font-bold">Date</th>
-              <th className="px-3 py-2 text-left font-bold">Destinataire</th>
-              <th className="px-3 py-2 text-left font-bold">Type</th>
-              <th className="px-3 py-2 text-left font-bold">Titre</th>
-              <th className="px-3 py-2 text-left font-bold">Lu</th>
-            </tr>
-          </thead>
-          <tbody>
-            {pagedNotifications.map((notification) => (
-              <tr key={notification.id} className="border-t">
-                <td className="px-3 py-2 text-xs text-muted-foreground">
-                  {new Date(notification.created_at).toLocaleString("fr-FR")}
-                </td>
-                <td className="px-3 py-2">{notification.recipient}</td>
-                <td className="px-3 py-2">{notification.type}</td>
-                <td className="px-3 py-2">
-                  <p className="font-semibold">{notification.title}</p>
-                  <p className="text-xs text-muted-foreground">{notification.message}</p>
-                </td>
-                <td className="px-3 py-2">{notification.is_read ? "Oui" : "Non"}</td>
+      <form action={adminBulkSetHumanNotificationsReadAction} className="space-y-2">
+        <div className="flex flex-wrap items-center gap-2 rounded-xl border bg-white p-3">
+          <button name="mode" value="read" className="rounded border px-3 py-1.5 text-sm">
+            Marquer sélection lue
+          </button>
+          <button name="mode" value="unread" className="rounded border px-3 py-1.5 text-sm">
+            Marquer sélection non lue
+          </button>
+          <p className="text-xs text-muted-foreground">Coche les lignes dans le tableau puis applique l&apos;action.</p>
+        </div>
+        <div className="overflow-x-auto rounded-xl border bg-white">
+          <table className="min-w-full text-sm">
+            <thead className="bg-muted/40">
+              <tr>
+                <th className="px-3 py-2 text-left font-bold">Choix</th>
+                <th className="px-3 py-2 text-left font-bold">Date</th>
+                <th className="px-3 py-2 text-left font-bold">Destinataire</th>
+                <th className="px-3 py-2 text-left font-bold">Type</th>
+                <th className="px-3 py-2 text-left font-bold">Titre</th>
+                <th className="px-3 py-2 text-left font-bold">Lu</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {pagedNotifications.map((notification) => (
+                <tr key={notification.id} className="border-t">
+                  <td className="px-3 py-2">
+                    <input type="checkbox" name="notification_ids" value={notification.id} />
+                  </td>
+                  <td className="px-3 py-2 text-xs text-muted-foreground">
+                    {new Date(notification.created_at).toLocaleString("fr-FR")}
+                  </td>
+                  <td className="px-3 py-2">{notification.recipient}</td>
+                  <td className="px-3 py-2">{notification.type}</td>
+                  <td className="px-3 py-2">
+                    <p className="font-semibold">{notification.title}</p>
+                    <p className="text-xs text-muted-foreground">{notification.message}</p>
+                  </td>
+                  <td className="px-3 py-2">{notification.is_read ? "Oui" : "Non"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </form>
 
       <div className="flex flex-wrap items-center gap-2">
         <Link
