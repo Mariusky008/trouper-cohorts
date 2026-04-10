@@ -2,8 +2,18 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { getMyHumanNotifications, markMyHumanNotificationReadAction } from "@/lib/actions/human-notifications";
 
-export default async function PopeyHumanNotificationsPage() {
-  const feed = await getMyHumanNotifications();
+export default async function PopeyHumanNotificationsPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{
+    scope?: string;
+  }>;
+}) {
+  const params = (await searchParams) || {};
+  const scope = params.scope === "deals" ? "deals" : "all";
+  const feed = await getMyHumanNotifications(scope);
+  const allHref = "/popey-human/app/notifications";
+  const dealsHref = "/popey-human/app/notifications?scope=deals";
 
   return (
     <main className="min-h-screen bg-[#F7F7F7] px-4 py-10">
@@ -16,6 +26,15 @@ export default async function PopeyHumanNotificationsPage() {
           <Button asChild variant="outline">
             <Link href="/popey-human/app">Retour cockpit</Link>
           </Button>
+        </div>
+
+        <div className="flex flex-wrap gap-2 rounded-xl border bg-white p-3 text-sm">
+          <Link className={`rounded border px-3 py-1 ${scope === "all" ? "bg-black text-white" : ""}`} href={allHref}>
+            Toutes
+          </Link>
+          <Link className={`rounded border px-3 py-1 ${scope === "deals" ? "bg-black text-white" : ""}`} href={dealsHref}>
+            Mes deals
+          </Link>
         </div>
 
         {feed.error && <p className="rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">{feed.error}</p>}
@@ -44,6 +63,7 @@ export default async function PopeyHumanNotificationsPage() {
                   {!notification.is_read && (
                     <form action={markMyHumanNotificationReadAction}>
                       <input type="hidden" name="notification_id" value={notification.id} />
+                      <input type="hidden" name="current_url" value={scope === "deals" ? dealsHref : allHref} />
                       <button className="rounded border px-2 py-1 text-xs font-semibold">Marquer comme lu</button>
                     </form>
                   )}

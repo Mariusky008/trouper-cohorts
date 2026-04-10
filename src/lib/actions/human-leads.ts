@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { ensureHumanMemberForUserId, getMyHumanScope } from "@/lib/actions/human-permissions";
+import { createDealNotifications } from "@/lib/actions/human-notifications";
 
 type HumanLeadStatus = "nouveau" | "pris" | "signe" | "perdu";
 
@@ -138,6 +139,14 @@ export async function takeHumanLead(formData: FormData) {
     .eq("id", leadId);
   if (error) return { error: error.message };
 
+  const dealNotification = await createDealNotifications({
+    memberIds: [myMember.id, lead.source_member_id || ""],
+    title: `Deal pris - ${lead.client_name}`,
+    message: "Le deal est désormais en cours de traitement.",
+    impact: "deal:pris",
+  });
+  if ("error" in dealNotification) return { error: dealNotification.error };
+
   revalidatePath("/popey-human/app/clients");
   return { success: true };
 }
@@ -222,6 +231,14 @@ export async function markHumanLeadSigned(formData: FormData) {
     .eq("owner_member_id", myMember.id);
   if (error) return { error: error.message };
 
+  const dealNotification = await createDealNotifications({
+    memberIds: [myMember.id, lead.source_member_id || ""],
+    title: `Deal signé - ${lead.client_name}`,
+    message: "Bravo, ce deal est marqué comme signé.",
+    impact: "deal:signe",
+  });
+  if ("error" in dealNotification) return { error: dealNotification.error };
+
   revalidatePath("/popey-human/app/clients");
   return { success: true };
 }
@@ -265,6 +282,14 @@ export async function markHumanLeadLost(formData: FormData) {
     .eq("id", leadId)
     .eq("owner_member_id", myMember.id);
   if (error) return { error: error.message };
+
+  const dealNotification = await createDealNotifications({
+    memberIds: [myMember.id, lead.source_member_id || ""],
+    title: `Deal perdu - ${lead.client_name}`,
+    message: "Le deal est clôturé en perdu.",
+    impact: "deal:perdu",
+  });
+  if ("error" in dealNotification) return { error: dealNotification.error };
 
   revalidatePath("/popey-human/app/clients");
   return { success: true };

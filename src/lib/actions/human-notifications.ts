@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 import { ensureHumanMemberForUserId } from "@/lib/actions/human-permissions";
 
 export type HumanNotificationType = "generale" | "personnelle" | "felicitation";
+type HumanNotificationScope = "all" | "deals";
 
 type HumanNotificationRow = {
   id: string;
@@ -178,7 +179,7 @@ export async function getAdminHumanNotificationsFeed() {
   };
 }
 
-export async function getMyHumanNotifications() {
+export async function getMyHumanNotifications(scope: HumanNotificationScope = "all") {
   const supabase = await createClient();
   const {
     data: { user },
@@ -196,9 +197,12 @@ export async function getMyHumanNotifications() {
     .order("created_at", { ascending: false })
     .limit(200);
 
+  const notifications = (data as HumanNotificationRow[] | null) || [];
+  const filtered = scope === "deals" ? notifications.filter((n) => (n.impact || "").startsWith("deal:")) : notifications;
+
   return {
     error: null as string | null,
-    notifications: (data as HumanNotificationRow[] | null) || [],
+    notifications: filtered,
   };
 }
 
@@ -229,7 +233,41 @@ export async function markMyHumanNotificationRead(formData: FormData) {
 }
 
 export async function markMyHumanNotificationReadAction(formData: FormData): Promise<void> {
-  await markMyHumanNotificationRead(formData);
+  const currentUrl = String(formData.get("current_url") || "/popey-human/app/notifications");
+  const result = await markMyHumanNotificationRead(formData);
+  if ("error" in result) {
+    redirect(currentUrl);
+  }
+  redirect(currentUrl);
+}
+
+export async function createDealNotifications(input: {
+  memberIds: string[];
+  title: string;
+  message: string;
+  impact: "deal:pris" | "deal:signe" | "deal:perdu";
+}) {
+  const uniqueMemberIds = Array.from(new Set(input.memberIds.filter(Boolean)));
+  if (uniqueMemberIds.length === 0) {
+    return { success: true };
+  }
+
+  const supabaseAdmin = createAdminClient();
+  const payload = uniqueMemberIds.map((memberId) => ({
+    member_id: memberId,
+    type: "personnelle" as const,
+    title: input.title,
+    message: input.message,
+    impact: input.impact,
+    is_read: false,
+  }));
+
+  const { error } = await supabaseAdmin.from("human_notifications").insert(payload);
+  if (error) return { error: error.message };
+
+  revalidatePath("/popey-human/app/notifications");
+  revalidatePath("/admin/humain/notifications");
+  return { success: true };
 }
 
 async function requireAdminUser() {
