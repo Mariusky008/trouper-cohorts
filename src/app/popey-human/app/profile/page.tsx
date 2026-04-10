@@ -6,8 +6,7 @@ export default async function PopeyHumanProfilePage() {
   const data = await getMyHumanProfile();
 
   return (
-    <main className="min-h-screen bg-[#F7F7F7] px-4 py-10">
-      <div className="mx-auto max-w-2xl space-y-5">
+    <section className="space-y-5 max-w-2xl">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <p className="text-xs font-black uppercase tracking-[0.12em] text-black/60">Popey Human</p>
@@ -89,7 +88,6 @@ export default async function PopeyHumanProfilePage() {
             <button className="rounded bg-black px-4 py-2 text-sm font-bold text-white">Enregistrer le profil</button>
           </form>
         )}
-      </div>
-    </main>
+    </section>
   );
 }

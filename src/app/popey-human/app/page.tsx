@@ -11,8 +11,7 @@ export default async function PopeyHumanAppPage() {
   const firstName = dashboard.profile?.first_name || "Membre";
 
   return (
-    <main className="min-h-screen bg-[#F7F7F7] px-4 py-10">
-      <div className="mx-auto max-w-5xl space-y-5">
+    <section className="space-y-5">
         <div className="rounded-2xl border border-black/10 bg-white p-6 md:p-8">
           <p className="text-xs font-black uppercase tracking-[0.12em] text-black/60">Popey Human</p>
           <h1 className="mt-2 text-3xl font-black">Cockpit membre</h1>
@@ -85,7 +84,6 @@ export default async function PopeyHumanAppPage() {
             </Button>
           </div>
         </div>
-      </div>
-    </main>
+    </section>
   );
 }

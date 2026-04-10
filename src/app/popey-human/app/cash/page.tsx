@@ -20,8 +20,7 @@ export default async function PopeyHumanCashPage() {
   const summary = await getMyCashSummary();
 
   return (
-    <main className="min-h-screen bg-[#F7F7F7] px-4 py-10">
-      <div className="mx-auto max-w-5xl space-y-5">
+    <section className="space-y-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <p className="text-xs font-black uppercase tracking-[0.12em] text-black/60">Popey Human</p>
@@ -146,7 +145,6 @@ export default async function PopeyHumanCashPage() {
             </div>
           </>
         )}
-      </div>
-    </main>
+    </section>
   );
 }
