@@ -23,6 +23,17 @@ function memberLabel(member: {
   return subtitle ? `${identity} (${subtitle})` : identity;
 }
 
+function auditActionLabel(action: string) {
+  if (action === "permission_created") return "Permission créée";
+  if (action === "permission_updated") return "Permission modifiée";
+  if (action === "permission_deleted") return "Permission supprimée";
+  if (action === "allowed_member_granted") return "Membre autorisé ajouté";
+  if (action === "allowed_member_revoked") return "Membre autorisé retiré";
+  if (action === "buddy_assigned") return "Binôme assigné";
+  if (action === "buddy_removed") return "Binôme retiré";
+  return action;
+}
+
 export default async function AdminHumainPermissionsPage() {
   const snapshot = await getHumanPermissionsAdminSnapshot();
 
@@ -187,6 +198,30 @@ export default async function AdminHumainPermissionsPage() {
           Aucun membre Popey Human initialisé. Utilisez les formulaires ci-dessus pour créer les premiers membres.
         </p>
       )}
+
+      <div className="rounded-xl border bg-white p-4">
+        <h2 className="text-lg font-black">Historique des changements</h2>
+        <p className="mb-3 text-xs text-muted-foreground">Derniers événements permissions / accès réseau.</p>
+        {snapshot.auditEvents.length === 0 && <p className="text-sm text-muted-foreground">Aucun événement enregistré.</p>}
+        {snapshot.auditEvents.length > 0 && (
+          <ul className="space-y-2">
+            {snapshot.auditEvents.map((event) => (
+              <li key={event.id} className="rounded border p-2 text-sm">
+                <p className="font-semibold">{auditActionLabel(event.action)}</p>
+                <p className="text-xs text-muted-foreground">
+                  {new Date(event.created_at).toLocaleString("fr-FR")} • membre: {event.memberLabel} • acteur: {event.actorLabel}
+                </p>
+                {(event.previous_mode || event.next_mode) && (
+                  <p className="text-xs text-muted-foreground">
+                    Mode: {event.previous_mode || "—"} → {event.next_mode || "—"}
+                  </p>
+                )}
+                {event.note && <p className="text-xs">{event.note}</p>}
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
     </section>
   );
 }

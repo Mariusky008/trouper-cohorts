@@ -34,6 +34,25 @@ type HumanBuddy = {
   member_b_id: string;
 };
 
+type HumanPermissionAuditEvent = {
+  id: string;
+  member_id: string | null;
+  actor_user_id: string | null;
+  action:
+    | "permission_created"
+    | "permission_updated"
+    | "permission_deleted"
+    | "allowed_member_granted"
+    | "allowed_member_revoked"
+    | "buddy_assigned"
+    | "buddy_removed";
+  previous_mode: string | null;
+  next_mode: string | null;
+  note: string | null;
+  meta: Record<string, unknown> | null;
+  created_at: string;
+};
+
 export type HumanDirectoryMember = {
   id: string;
   user_id: string;
@@ -55,12 +74,18 @@ export async function getHumanPermissionsAdminSnapshot() {
       permissionsByMemberId: {} as Record<string, HumanPermission>,
       allowedByMemberId: {} as Record<string, string[]>,
       buddiesByMemberId: {} as Record<string, string[]>,
+      auditEvents: [] as Array<
+        HumanPermissionAuditEvent & {
+          memberLabel: string;
+          actorLabel: string;
+        }
+      >,
     };
   }
 
   const supabaseAdmin = createAdminClient();
 
-  const [{ data: members }, { data: permissions }, { data: allowed }, { data: buddies }, { data: profiles }] =
+  const [{ data: members }, { data: permissions }, { data: allowed }, { data: buddies }, { data: profiles }, { data: audits }] =
     await Promise.all([
       supabaseAdmin
         .from("human_members")
@@ -78,6 +103,11 @@ export async function getHumanPermissionsAdminSnapshot() {
       supabaseAdmin
         .from("profiles")
         .select("id,display_name,trade,city,phone"),
+      supabaseAdmin
+        .from("human_permissions_audit_log")
+        .select("id,member_id,actor_user_id,action,previous_mode,next_mode,note,meta,created_at")
+        .order("created_at", { ascending: false })
+        .limit(120),
     ]);
 
   const profileByUserId = new Map(
@@ -89,6 +119,14 @@ export async function getHumanPermissionsAdminSnapshot() {
         city: typeof p.city === "string" ? p.city : null,
         phone: typeof p.phone === "string" ? p.phone : null,
       },
+    ])
+  );
+  const profileLabelByUserId = new Map(
+    (profiles || []).map((p) => [
+      String(p.id),
+      (typeof p.display_name === "string" && p.display_name.trim()) ||
+        (typeof p.trade === "string" && p.trade.trim()) ||
+        String(p.id),
     ])
   );
 
@@ -131,6 +169,23 @@ export async function getHumanPermissionsAdminSnapshot() {
     buddiesByMemberId[entry.member_b_id].push(entry.member_a_id);
   });
 
+  const memberLabelById = new Map(
+    normalizedMembers.map((member) => {
+      const fullName = [member.first_name, member.last_name].filter(Boolean).join(" ").trim();
+      const identity = fullName || "Membre sans nom";
+      const subtitle = [member.metier, member.ville].filter(Boolean).join(" • ");
+      return [member.id, subtitle ? `${identity} (${subtitle})` : identity];
+    })
+  );
+
+  const auditEvents = ((audits as HumanPermissionAuditEvent[] | null) || []).map((event) => ({
+    ...event,
+    memberLabel: event.member_id ? memberLabelById.get(event.member_id) || event.member_id : "N/A",
+    actorLabel: event.actor_user_id
+      ? profileLabelByUserId.get(event.actor_user_id) || event.actor_user_id
+      : "Système",
+  }));
+
   return {
     members: normalizedMembers,
     candidates: (profiles || []).map((p) => ({
@@ -143,6 +198,7 @@ export async function getHumanPermissionsAdminSnapshot() {
     permissionsByMemberId,
     allowedByMemberId,
     buddiesByMemberId,
+    auditEvents,
     error: null as string | null,
   };
 }
