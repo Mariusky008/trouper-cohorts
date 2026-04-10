@@ -86,6 +86,18 @@ export default async function AdminHumainPermissionsPage({
     query.set("auditPage", String(nextPage));
     return `/admin/humain/permissions?${query.toString()}`;
   };
+  const buildAuditExportHref = () => {
+    const query = new URLSearchParams();
+    if (auditAction) query.set("auditAction", auditAction);
+    if (auditMemberId) query.set("auditMemberId", auditMemberId);
+    if (auditStart) query.set("auditStart", auditStart);
+    if (auditEnd) query.set("auditEnd", auditEnd);
+    if (auditSort) query.set("auditSort", auditSort);
+    const search = query.toString();
+    return search
+      ? `/admin/humain/permissions/export/audit?${search}`
+      : "/admin/humain/permissions/export/audit";
+  };
 
   return (
     <section className="space-y-8">
@@ -267,6 +279,9 @@ export default async function AdminHumainPermissionsPage({
           <div className="flex gap-2">
             <input type="hidden" name="auditPage" value="1" />
             <button className="rounded border px-3 py-2">Filtrer</button>
+            <Link href={buildAuditExportHref()} className="rounded border px-3 py-2">
+              Export CSV
+            </Link>
             <Link href="/admin/humain/permissions" className="rounded border px-3 py-2">
               Réinitialiser
             </Link>
