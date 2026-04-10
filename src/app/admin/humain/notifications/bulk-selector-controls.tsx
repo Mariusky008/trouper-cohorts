@@ -1,10 +1,32 @@
 "use client";
 
+import { useEffect, useState } from "react";
+
 type BulkSelectorControlsProps = {
   formId: string;
 };
 
 export function BulkSelectorControls({ formId }: BulkSelectorControlsProps) {
+  const [selectedCount, setSelectedCount] = useState(0);
+
+  useEffect(() => {
+    const form = document.getElementById(formId);
+    if (!form) return;
+
+    const boxes = Array.from(form.querySelectorAll<HTMLInputElement>('input[data-bulk-item="true"]'));
+    const refreshCount = () => {
+      const checked = boxes.filter((box) => box.checked).length;
+      setSelectedCount(checked);
+    };
+
+    boxes.forEach((box) => box.addEventListener("change", refreshCount));
+    refreshCount();
+
+    return () => {
+      boxes.forEach((box) => box.removeEventListener("change", refreshCount));
+    };
+  }, [formId]);
+
   const toggleAll = (checked: boolean) => {
     const root = document.getElementById(formId);
     if (!root) return;
@@ -13,6 +35,7 @@ export function BulkSelectorControls({ formId }: BulkSelectorControlsProps) {
     boxes.forEach((box) => {
       box.checked = checked;
     });
+    setSelectedCount(checked ? boxes.length : 0);
   };
 
   const setModeAndSubmit = (mode: "read" | "unread", selectAll: boolean) => {
@@ -26,8 +49,7 @@ export function BulkSelectorControls({ formId }: BulkSelectorControlsProps) {
       if (!confirmed) return;
       toggleAll(true);
     } else {
-      const selected = form.querySelectorAll<HTMLInputElement>('input[data-bulk-item="true"]:checked').length;
-      if (selected === 0) {
+      if (selectedCount === 0) {
         window.alert("Aucune notification sélectionnée.");
         return;
       }
@@ -41,10 +63,20 @@ export function BulkSelectorControls({ formId }: BulkSelectorControlsProps) {
 
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <button type="button" onClick={() => setModeAndSubmit("read", false)} className="rounded border px-3 py-1.5 text-sm">
+      <button
+        type="button"
+        onClick={() => setModeAndSubmit("read", false)}
+        className="rounded border px-3 py-1.5 text-sm disabled:pointer-events-none disabled:opacity-50"
+        disabled={selectedCount === 0}
+      >
         Marquer sélection lue
       </button>
-      <button type="button" onClick={() => setModeAndSubmit("unread", false)} className="rounded border px-3 py-1.5 text-sm">
+      <button
+        type="button"
+        onClick={() => setModeAndSubmit("unread", false)}
+        className="rounded border px-3 py-1.5 text-sm disabled:pointer-events-none disabled:opacity-50"
+        disabled={selectedCount === 0}
+      >
         Marquer sélection non lue
       </button>
       <button type="button" onClick={() => toggleAll(true)} className="rounded border px-3 py-1.5 text-sm">
@@ -59,6 +91,7 @@ export function BulkSelectorControls({ formId }: BulkSelectorControlsProps) {
       <button type="button" onClick={() => setModeAndSubmit("unread", true)} className="rounded border px-3 py-1.5 text-sm">
         Marquer toute la page non lue
       </button>
+      <span className="text-xs text-muted-foreground">{selectedCount} sélectionnée(s)</span>
     </div>
   );
 }
