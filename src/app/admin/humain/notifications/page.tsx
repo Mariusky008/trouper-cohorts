@@ -27,6 +27,8 @@ export default async function AdminHumainNotificationsPage({
     topPage?: string;
     signalSort?: string;
     signalPage?: string;
+    bulkStatus?: string;
+    bulkMessage?: string;
   }>;
 }) {
   const params = (await searchParams) || {};
@@ -59,6 +61,8 @@ export default async function AdminHumainNotificationsPage({
     ...params,
     notificationsSort: sort,
     notificationsPage: String(safePage),
+    bulkStatus: "",
+    bulkMessage: "",
   };
   const hrefFor = (nextSort: string, nextPage: number) =>
     buildAdminHumanHref("/admin/humain/notifications", sharedParams, {
@@ -157,8 +161,20 @@ export default async function AdminHumainNotificationsPage({
         </p>
       </div>
 
+      {params.bulkStatus === "success" && (
+        <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">
+          {params.bulkMessage || "Action appliquée."}
+        </div>
+      )}
+      {params.bulkStatus === "error" && (
+        <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+          {params.bulkMessage || "Action impossible."}
+        </div>
+      )}
+
       <form id="notifications-bulk-form" action={adminBulkSetHumanNotificationsReadAction} className="space-y-2">
         <input type="hidden" name="mode" defaultValue="read" data-bulk-mode="true" />
+        <input type="hidden" name="current_url" value={buildAdminHumanHref("/admin/humain/notifications", sharedParams)} />
         <div className="flex flex-wrap items-center gap-2 rounded-xl border bg-white p-3">
           <BulkSelectorControls formId="notifications-bulk-form" />
           <p className="text-xs text-muted-foreground">Sélection manuelle ou actions directes sur toute la page.</p>

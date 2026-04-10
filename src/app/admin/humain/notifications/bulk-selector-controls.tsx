@@ -19,7 +19,15 @@ export function BulkSelectorControls({ formId }: BulkSelectorControlsProps) {
     const form = document.getElementById(formId) as HTMLFormElement | null;
     if (!form) return;
 
-    if (selectAll) toggleAll(true);
+    if (selectAll) {
+      toggleAll(true);
+    } else {
+      const selected = form.querySelectorAll<HTMLInputElement>('input[data-bulk-item="true"]:checked').length;
+      if (selected === 0) {
+        window.alert("Aucune notification sélectionnée.");
+        return;
+      }
+    }
 
     const modeInput = form.querySelector<HTMLInputElement>('input[data-bulk-mode="true"]');
     if (modeInput) modeInput.value = mode;

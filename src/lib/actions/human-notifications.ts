@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { ensureHumanMemberForUserId } from "@/lib/actions/human-permissions";
@@ -101,11 +102,16 @@ export async function adminBulkSetHumanNotificationsRead(formData: FormData) {
 
   revalidatePath("/admin/humain/notifications");
   revalidatePath("/popey-human/app/notifications");
-  return { success: true };
+  return { success: true, updatedCount: ids.length };
 }
 
 export async function adminBulkSetHumanNotificationsReadAction(formData: FormData): Promise<void> {
-  await adminBulkSetHumanNotificationsRead(formData);
+  const currentUrl = String(formData.get("current_url") || "/admin/humain/notifications");
+  const result = await adminBulkSetHumanNotificationsRead(formData);
+  if ("error" in result) {
+    redirect(withBulkStatus(currentUrl, "error", result.error || "Erreur inconnue."));
+  }
+  redirect(withBulkStatus(currentUrl, "success", `${result.updatedCount} notification(s) mise(s) à jour.`));
 }
 
 export async function getAdminHumanNotificationsFeed() {
@@ -237,4 +243,12 @@ async function requireAdminUser() {
   if (!data) return { error: "Accès admin requis." };
 
   return { user };
+}
+
+function withBulkStatus(url: string, status: "success" | "error", message: string) {
+  const safePath = url.startsWith("/") ? url : "/admin/humain/notifications";
+  const parsed = new URL(safePath, "http://localhost");
+  parsed.searchParams.set("bulkStatus", status);
+  parsed.searchParams.set("bulkMessage", message);
+  return `${parsed.pathname}?${parsed.searchParams.toString()}`;
 }
