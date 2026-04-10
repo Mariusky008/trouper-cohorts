@@ -49,8 +49,11 @@ export async function getMyCashSummary() {
       error: "Session requise.",
       events: [] as HumanCashEvent[],
       commissions: [] as HumanCommission[],
+      commissionsInbound: [] as HumanCommission[],
+      commissionsOutbound: [] as HumanCommission[],
       totals: { in: 0, out: 0, net: 0 },
       commissionsTotals: { pending: 0, paid: 0, total: 0 },
+      commissionsOutboundTotals: { pending: 0, paid: 0, cancelled: 0, total: 0 },
     };
   }
 
@@ -60,13 +63,16 @@ export async function getMyCashSummary() {
       error: "Profil Popey Human introuvable.",
       events: [] as HumanCashEvent[],
       commissions: [] as HumanCommission[],
+      commissionsInbound: [] as HumanCommission[],
+      commissionsOutbound: [] as HumanCommission[],
       totals: { in: 0, out: 0, net: 0 },
       commissionsTotals: { pending: 0, paid: 0, total: 0 },
+      commissionsOutboundTotals: { pending: 0, paid: 0, cancelled: 0, total: 0 },
     };
   }
 
   const supabaseAdmin = createAdminClient();
-  const [{ data }, { data: commissionsData }] = await Promise.all([
+  const [{ data }, { data: commissionsInboundData }, { data: commissionsOutboundData }] = await Promise.all([
     supabaseAdmin
       .from("human_cash_events")
       .select("id,member_id,source_type,source_id,kind,amount,description,event_date,created_at,updated_at")
@@ -78,28 +84,43 @@ export async function getMyCashSummary() {
       .select("id,lead_id,signed_amount,commission_amount,payer_member_id,receiver_member_id,payment_status,created_at,updated_at")
       .eq("receiver_member_id", myMember.id)
       .order("created_at", { ascending: false })
-      .limit(200),
+      .limit(300),
+    supabaseAdmin
+      .from("human_commissions")
+      .select("id,lead_id,signed_amount,commission_amount,payer_member_id,receiver_member_id,payment_status,created_at,updated_at")
+      .eq("payer_member_id", myMember.id)
+      .order("created_at", { ascending: false })
+      .limit(300),
   ]);
 
   const events = (data as HumanCashEvent[] | null) || [];
-  const commissions = (commissionsData as HumanCommission[] | null) || [];
-  const totalIn = events
-    .filter((event) => event.kind === "encaissement")
-    .reduce((sum, event) => sum + Number(event.amount || 0), 0);
-  const totalOut = events
-    .filter((event) => event.kind === "decaissement")
-    .reduce((sum, event) => sum + Number(event.amount || 0), 0);
-  const commissionsPending = commissions
+  const commissionsInbound = (commissionsInboundData as HumanCommission[] | null) || [];
+  const commissionsOutbound = (commissionsOutboundData as HumanCommission[] | null) || [];
+  const commissions = commissionsInbound;
+  const totalIn = events.filter((event) => event.kind === "encaissement").reduce((sum, event) => sum + Number(event.amount || 0), 0);
+  const totalOut = events.filter((event) => event.kind === "decaissement").reduce((sum, event) => sum + Number(event.amount || 0), 0);
+  const commissionsPending = commissionsInbound
     .filter((commission) => commission.payment_status === "pending")
     .reduce((sum, commission) => sum + Number(commission.commission_amount || 0), 0);
-  const commissionsPaid = commissions
+  const commissionsPaid = commissionsInbound
     .filter((commission) => commission.payment_status === "paid")
+    .reduce((sum, commission) => sum + Number(commission.commission_amount || 0), 0);
+  const commissionsOutboundPending = commissionsOutbound
+    .filter((commission) => commission.payment_status === "pending")
+    .reduce((sum, commission) => sum + Number(commission.commission_amount || 0), 0);
+  const commissionsOutboundPaid = commissionsOutbound
+    .filter((commission) => commission.payment_status === "paid")
+    .reduce((sum, commission) => sum + Number(commission.commission_amount || 0), 0);
+  const commissionsOutboundCancelled = commissionsOutbound
+    .filter((commission) => commission.payment_status === "cancelled")
     .reduce((sum, commission) => sum + Number(commission.commission_amount || 0), 0);
 
   return {
     error: null as string | null,
     events,
     commissions,
+    commissionsInbound,
+    commissionsOutbound,
     totals: {
       in: totalIn,
       out: totalOut,
@@ -109,6 +130,12 @@ export async function getMyCashSummary() {
       pending: commissionsPending,
       paid: commissionsPaid,
       total: commissionsPending + commissionsPaid,
+    },
+    commissionsOutboundTotals: {
+      pending: commissionsOutboundPending,
+      paid: commissionsOutboundPaid,
+      cancelled: commissionsOutboundCancelled,
+      total: commissionsOutboundPending + commissionsOutboundPaid + commissionsOutboundCancelled,
     },
   };
 }
@@ -155,6 +182,72 @@ export async function addMyCashEvent(formData: FormData) {
 
 export async function addMyCashEventAction(formData: FormData): Promise<void> {
   await addMyCashEvent(formData);
+}
+
+export async function requestMyCashPayout(formData: FormData) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Session requise." };
+
+  const myMember = await ensureHumanMemberForUserId(user.id);
+  if (!myMember) return { error: "Profil Popey Human introuvable." };
+
+  const requestedAmountRaw = String(formData.get("requested_amount") || "").trim();
+  const requestedAmount = Number(requestedAmountRaw || "0");
+  if (!Number.isFinite(requestedAmount) || requestedAmount <= 0) {
+    return { error: "Montant de virement invalide." };
+  }
+
+  const supabaseAdmin = createAdminClient();
+  const [{ data: adminsData }, { data: meData }] = await Promise.all([
+    supabaseAdmin.from("admins").select("user_id"),
+    supabaseAdmin.from("human_members").select("first_name,last_name").eq("id", myMember.id).maybeSingle(),
+  ]);
+
+  const requesterName =
+    [meData?.first_name, meData?.last_name].filter(Boolean).join(" ").trim() || "Membre Popey Human";
+
+  const adminUserIds = ((adminsData as Array<{ user_id: string }> | null) || []).map((row) => row.user_id);
+  const { data: adminMembers } = await supabaseAdmin.from("human_members").select("id,user_id").in("user_id", adminUserIds);
+  const adminMemberIds = ((adminMembers as Array<{ id: string; user_id: string }> | null) || []).map((row) => row.id);
+
+  const notificationPayload = [
+    {
+      member_id: myMember.id,
+      type: "personnelle",
+      title: "Demande de virement envoyée",
+      message: `Votre demande de virement de ${requestedAmount.toLocaleString("fr-FR")}€ a été transmise à l'admin.`,
+      impact: "cash:payout_request",
+      is_read: false,
+    },
+    ...adminMemberIds.map((memberId) => ({
+      member_id: memberId,
+      type: "personnelle",
+      title: "Demande de virement à traiter",
+      message: `${requesterName} demande un virement de ${requestedAmount.toLocaleString("fr-FR")}€.`,
+      impact: "cash:payout_request_admin",
+      is_read: false,
+    })),
+  ];
+
+  const { error } = await supabaseAdmin.from("human_notifications").insert(notificationPayload);
+  if (error) return { error: error.message };
+
+  revalidatePath("/popey-human/app/cash");
+  revalidatePath("/popey-human/app/notifications");
+  revalidatePath("/admin/humain/notifications");
+  return { success: true };
+}
+
+export async function requestMyCashPayoutAction(formData: FormData): Promise<void> {
+  const currentUrl = String(formData.get("current_url") || "/popey-human/app/cash");
+  const result = await requestMyCashPayout(formData);
+  if ("error" in result) {
+    redirect(withCashStatus(currentUrl, "error", result.error || "Action impossible."));
+  }
+  redirect(withCashStatus(currentUrl, "success", "Demande de virement envoyée."));
 }
 
 export async function createCommissionForSignedLead(input: {
@@ -283,5 +376,13 @@ function withCommissionStatus(url: string, status: "success" | "error", message:
   const parsed = new URL(safePath, "http://localhost");
   parsed.searchParams.set("commissionStatus", status);
   parsed.searchParams.set("commissionMessage", message);
+  return `${parsed.pathname}?${parsed.searchParams.toString()}`;
+}
+
+function withCashStatus(url: string, status: "success" | "error", message: string) {
+  const safePath = url.startsWith("/popey-human/app/cash") ? url : "/popey-human/app/cash";
+  const parsed = new URL(safePath, "http://localhost");
+  parsed.searchParams.set("cashStatus", status);
+  parsed.searchParams.set("cashMessage", message);
   return `${parsed.pathname}?${parsed.searchParams.toString()}`;
 }
