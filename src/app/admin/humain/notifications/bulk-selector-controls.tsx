@@ -15,13 +15,37 @@ export function BulkSelectorControls({ formId }: BulkSelectorControlsProps) {
     });
   };
 
+  const setModeAndSubmit = (mode: "read" | "unread", selectAll: boolean) => {
+    const form = document.getElementById(formId) as HTMLFormElement | null;
+    if (!form) return;
+
+    if (selectAll) toggleAll(true);
+
+    const modeInput = form.querySelector<HTMLInputElement>('input[data-bulk-mode="true"]');
+    if (modeInput) modeInput.value = mode;
+
+    form.requestSubmit();
+  };
+
   return (
     <div className="flex flex-wrap items-center gap-2">
+      <button type="button" onClick={() => setModeAndSubmit("read", false)} className="rounded border px-3 py-1.5 text-sm">
+        Marquer sélection lue
+      </button>
+      <button type="button" onClick={() => setModeAndSubmit("unread", false)} className="rounded border px-3 py-1.5 text-sm">
+        Marquer sélection non lue
+      </button>
       <button type="button" onClick={() => toggleAll(true)} className="rounded border px-3 py-1.5 text-sm">
         Tout cocher (page)
       </button>
       <button type="button" onClick={() => toggleAll(false)} className="rounded border px-3 py-1.5 text-sm">
         Tout décocher
+      </button>
+      <button type="button" onClick={() => setModeAndSubmit("read", true)} className="rounded border px-3 py-1.5 text-sm">
+        Marquer toute la page lue
+      </button>
+      <button type="button" onClick={() => setModeAndSubmit("unread", true)} className="rounded border px-3 py-1.5 text-sm">
+        Marquer toute la page non lue
       </button>
     </div>
   );
