@@ -8,7 +8,15 @@ import {
 
 const NOTIFICATION_TYPES: HumanNotificationType[] = ["generale", "personnelle", "felicitation"];
 
-export default async function AdminHumainNotificationsPage() {
+export default async function AdminHumainNotificationsPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ sort?: string; page?: string }>;
+}) {
+  const params = (await searchParams) || {};
+  const sort = params.sort || "date_desc";
+  const page = Math.max(1, Number(params.page || "1") || 1);
+  const pageSize = 12;
   const feed = await getAdminHumanNotificationsFeed();
 
   if (feed.error) {
@@ -19,6 +27,24 @@ export default async function AdminHumainNotificationsPage() {
       </section>
     );
   }
+
+  const sortedNotifications = [...feed.notifications].sort((a, b) => {
+    if (sort === "date_asc") return a.created_at.localeCompare(b.created_at);
+    if (sort === "recipient") return a.recipient.localeCompare(b.recipient, "fr");
+    if (sort === "type") return a.type.localeCompare(b.type);
+    if (sort === "read") return Number(a.is_read) - Number(b.is_read);
+    return b.created_at.localeCompare(a.created_at);
+  });
+  const totalPages = Math.max(1, Math.ceil(sortedNotifications.length / pageSize));
+  const safePage = Math.min(page, totalPages);
+  const startIndex = (safePage - 1) * pageSize;
+  const pagedNotifications = sortedNotifications.slice(startIndex, startIndex + pageSize);
+  const hrefFor = (nextSort: string, nextPage: number) => {
+    const query = new URLSearchParams();
+    query.set("sort", nextSort);
+    query.set("page", String(nextPage));
+    return `/admin/humain/notifications?${query.toString()}`;
+  };
 
   return (
     <section className="space-y-6">
@@ -80,6 +106,29 @@ export default async function AdminHumainNotificationsPage() {
         <button className="w-fit rounded bg-black px-4 py-2 text-sm font-bold text-white">Envoyer</button>
       </form>
 
+      <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border bg-white p-3 text-sm">
+        <div className="flex flex-wrap gap-2">
+          <Link className="rounded border px-2 py-1" href={hrefFor("date_desc", 1)}>
+            Tri: plus récentes
+          </Link>
+          <Link className="rounded border px-2 py-1" href={hrefFor("date_asc", 1)}>
+            Tri: plus anciennes
+          </Link>
+          <Link className="rounded border px-2 py-1" href={hrefFor("recipient", 1)}>
+            Tri: destinataire
+          </Link>
+          <Link className="rounded border px-2 py-1" href={hrefFor("type", 1)}>
+            Tri: type
+          </Link>
+          <Link className="rounded border px-2 py-1" href={hrefFor("read", 1)}>
+            Tri: statut lu
+          </Link>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          Page {safePage}/{totalPages} • {sortedNotifications.length} notifications
+        </p>
+      </div>
+
       <div className="overflow-x-auto rounded-xl border bg-white">
         <table className="min-w-full text-sm">
           <thead className="bg-muted/40">
@@ -92,7 +141,7 @@ export default async function AdminHumainNotificationsPage() {
             </tr>
           </thead>
           <tbody>
-            {feed.notifications.map((notification) => (
+            {pagedNotifications.map((notification) => (
               <tr key={notification.id} className="border-t">
                 <td className="px-3 py-2 text-xs text-muted-foreground">
                   {new Date(notification.created_at).toLocaleString("fr-FR")}
@@ -108,6 +157,23 @@ export default async function AdminHumainNotificationsPage() {
             ))}
           </tbody>
         </table>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2">
+        <Link
+          className="rounded border px-3 py-1.5 text-sm disabled:pointer-events-none disabled:opacity-50"
+          href={hrefFor(sort, Math.max(1, safePage - 1))}
+          aria-disabled={safePage <= 1}
+        >
+          Précédent
+        </Link>
+        <Link
+          className="rounded border px-3 py-1.5 text-sm disabled:pointer-events-none disabled:opacity-50"
+          href={hrefFor(sort, Math.min(totalPages, safePage + 1))}
+          aria-disabled={safePage >= totalPages}
+        >
+          Suivant
+        </Link>
       </div>
     </section>
   );

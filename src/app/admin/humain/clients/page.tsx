@@ -21,7 +21,15 @@ function statusLabel(status: "nouveau" | "pris" | "signe" | "perdu") {
   }
 }
 
-export default async function AdminHumainClientsPage() {
+export default async function AdminHumainClientsPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ sort?: string; page?: string }>;
+}) {
+  const params = (await searchParams) || {};
+  const sort = params.sort || "date_desc";
+  const page = Math.max(1, Number(params.page || "1") || 1);
+  const pageSize = 12;
   const [feed, sources] = await Promise.all([getAdminHumanLeads(), getHumanLeadSourceCandidates()]);
 
   if (feed.error) {
@@ -32,6 +40,23 @@ export default async function AdminHumainClientsPage() {
       </section>
     );
   }
+
+  const sortedLeads = [...feed.leads].sort((a, b) => {
+    if (sort === "date_asc") return a.created_at.localeCompare(b.created_at);
+    if (sort === "status") return a.status.localeCompare(b.status);
+    if (sort === "client") return a.client_name.localeCompare(b.client_name, "fr");
+    return b.created_at.localeCompare(a.created_at);
+  });
+  const totalPages = Math.max(1, Math.ceil(sortedLeads.length / pageSize));
+  const safePage = Math.min(page, totalPages);
+  const startIndex = (safePage - 1) * pageSize;
+  const pagedLeads = sortedLeads.slice(startIndex, startIndex + pageSize);
+  const hrefFor = (nextSort: string, nextPage: number) => {
+    const query = new URLSearchParams();
+    query.set("sort", nextSort);
+    query.set("page", String(nextPage));
+    return `/admin/humain/clients?${query.toString()}`;
+  };
 
   return (
     <section className="space-y-6">
@@ -68,6 +93,26 @@ export default async function AdminHumainClientsPage() {
         <button className="w-fit rounded bg-black px-4 py-2 text-sm font-bold text-white">Créer le lead</button>
       </form>
 
+      <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border bg-white p-3 text-sm">
+        <div className="flex flex-wrap gap-2">
+          <Link className="rounded border px-2 py-1" href={hrefFor("date_desc", 1)}>
+            Tri: plus récents
+          </Link>
+          <Link className="rounded border px-2 py-1" href={hrefFor("date_asc", 1)}>
+            Tri: plus anciens
+          </Link>
+          <Link className="rounded border px-2 py-1" href={hrefFor("status", 1)}>
+            Tri: statut
+          </Link>
+          <Link className="rounded border px-2 py-1" href={hrefFor("client", 1)}>
+            Tri: client A-Z
+          </Link>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          Page {safePage}/{totalPages} • {sortedLeads.length} leads
+        </p>
+      </div>
+
       <div className="overflow-x-auto rounded-xl border bg-white">
         <table className="min-w-full text-sm">
           <thead className="bg-muted/40">
@@ -80,7 +125,7 @@ export default async function AdminHumainClientsPage() {
             </tr>
           </thead>
           <tbody>
-            {feed.leads.map((lead) => (
+            {pagedLeads.map((lead) => (
               <tr key={lead.id} className="border-t">
                 <td className="px-3 py-2 text-xs text-muted-foreground">{new Date(lead.created_at).toLocaleString("fr-FR")}</td>
                 <td className="px-3 py-2">
@@ -94,6 +139,23 @@ export default async function AdminHumainClientsPage() {
             ))}
           </tbody>
         </table>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2">
+        <Link
+          className="rounded border px-3 py-1.5 text-sm disabled:pointer-events-none disabled:opacity-50"
+          href={hrefFor(sort, Math.max(1, safePage - 1))}
+          aria-disabled={safePage <= 1}
+        >
+          Précédent
+        </Link>
+        <Link
+          className="rounded border px-3 py-1.5 text-sm disabled:pointer-events-none disabled:opacity-50"
+          href={hrefFor(sort, Math.min(totalPages, safePage + 1))}
+          aria-disabled={safePage >= totalPages}
+        >
+          Suivant
+        </Link>
       </div>
     </section>
   );

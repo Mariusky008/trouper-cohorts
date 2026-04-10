@@ -110,13 +110,11 @@ export async function getAdminHumanDashboard(period?: DashboardPeriod) {
 
   const topMembersByLeads = Array.from(leadsByOwner.entries())
     .map(([memberId, value]) => ({ label: labelByMemberId.get(memberId) || memberId, value }))
-    .sort((a, b) => b.value - a.value)
-    .slice(0, 5);
+    .sort((a, b) => b.value - a.value);
 
   const topMembersBySignals = Array.from(signalsByEmitter.entries())
     .map(([memberId, value]) => ({ label: labelByMemberId.get(memberId) || memberId, value }))
-    .sort((a, b) => b.value - a.value)
-    .slice(0, 5);
+    .sort((a, b) => b.value - a.value);
 
   return {
     error: null as string | null,

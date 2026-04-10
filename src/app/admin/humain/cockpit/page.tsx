@@ -9,16 +9,36 @@ function euros(value: number) {
 export default async function AdminHumainCockpitPage({
   searchParams,
 }: {
-  searchParams?: Promise<{ start?: string; end?: string }>;
+  searchParams?: Promise<{
+    start?: string;
+    end?: string;
+    topSort?: string;
+    topPage?: string;
+    signalSort?: string;
+    signalPage?: string;
+  }>;
 }) {
   const params = (await searchParams) || {};
   const start = params.start || "";
   const end = params.end || "";
+  const topSort = params.topSort || "value_desc";
+  const signalSort = params.signalSort || "value_desc";
+  const topPage = Math.max(1, Number(params.topPage || "1") || 1);
+  const signalPage = Math.max(1, Number(params.signalPage || "1") || 1);
+  const topPageSize = 5;
   const data = await getAdminHumanDashboard({ startDate: start, endDate: end });
   const exportQuery = new URLSearchParams();
   if (start) exportQuery.set("start", start);
   if (end) exportQuery.set("end", end);
   const exportSuffix = exportQuery.toString() ? `?${exportQuery.toString()}` : "";
+  const baseQuery = new URLSearchParams();
+  if (start) baseQuery.set("start", start);
+  if (end) baseQuery.set("end", end);
+  const cockpitHref = (updates: Record<string, string>) => {
+    const query = new URLSearchParams(baseQuery.toString());
+    Object.entries(updates).forEach(([key, value]) => query.set(key, value));
+    return `/admin/humain/cockpit?${query.toString()}`;
+  };
 
   if (data.error || !data.kpis) {
     return (
@@ -28,6 +48,23 @@ export default async function AdminHumainCockpitPage({
       </section>
     );
   }
+
+  const sortedTopLeads = [...data.topMembersByLeads].sort((a, b) => {
+    if (topSort === "label") return a.label.localeCompare(b.label, "fr");
+    if (topSort === "value_asc") return a.value - b.value;
+    return b.value - a.value;
+  });
+  const sortedTopSignals = [...data.topMembersBySignals].sort((a, b) => {
+    if (signalSort === "label") return a.label.localeCompare(b.label, "fr");
+    if (signalSort === "value_asc") return a.value - b.value;
+    return b.value - a.value;
+  });
+  const totalTopPages = Math.max(1, Math.ceil(sortedTopLeads.length / topPageSize));
+  const totalSignalPages = Math.max(1, Math.ceil(sortedTopSignals.length / topPageSize));
+  const safeTopPage = Math.min(topPage, totalTopPages);
+  const safeSignalPage = Math.min(signalPage, totalSignalPages);
+  const pagedTopLeads = sortedTopLeads.slice((safeTopPage - 1) * topPageSize, safeTopPage * topPageSize);
+  const pagedTopSignals = sortedTopSignals.slice((safeSignalPage - 1) * topPageSize, safeSignalPage * topPageSize);
 
   return (
     <section className="space-y-6">
@@ -108,11 +145,24 @@ export default async function AdminHumainCockpitPage({
 
       <div className="grid gap-4 lg:grid-cols-2">
         <div className="rounded-xl border bg-white p-4">
-          <h2 className="text-lg font-black">Top membres (leads)</h2>
-          {data.topMembersByLeads.length === 0 && <p className="mt-2 text-sm text-muted-foreground">Aucune donnée.</p>}
-          {data.topMembersByLeads.length > 0 && (
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h2 className="text-lg font-black">Top membres (leads)</h2>
+            <div className="flex gap-2 text-xs">
+              <Link className="rounded border px-2 py-1" href={cockpitHref({ topSort: "value_desc", topPage: "1", signalSort, signalPage: String(safeSignalPage) })}>
+                Score desc
+              </Link>
+              <Link className="rounded border px-2 py-1" href={cockpitHref({ topSort: "value_asc", topPage: "1", signalSort, signalPage: String(safeSignalPage) })}>
+                Score asc
+              </Link>
+              <Link className="rounded border px-2 py-1" href={cockpitHref({ topSort: "label", topPage: "1", signalSort, signalPage: String(safeSignalPage) })}>
+                Nom A-Z
+              </Link>
+            </div>
+          </div>
+          {sortedTopLeads.length === 0 && <p className="mt-2 text-sm text-muted-foreground">Aucune donnée.</p>}
+          {sortedTopLeads.length > 0 && (
             <ul className="mt-2 space-y-2">
-              {data.topMembersByLeads.map((row) => (
+              {pagedTopLeads.map((row) => (
                 <li key={`lead-${row.label}`} className="flex items-center justify-between rounded border px-3 py-2 text-sm">
                   <span>{row.label}</span>
                   <span className="font-bold">{row.value}</span>
@@ -120,14 +170,44 @@ export default async function AdminHumainCockpitPage({
               ))}
             </ul>
           )}
+          <div className="mt-2 flex items-center gap-2 text-xs">
+            <Link
+              className="rounded border px-2 py-1"
+              href={cockpitHref({ topSort, topPage: String(Math.max(1, safeTopPage - 1)), signalSort, signalPage: String(safeSignalPage) })}
+            >
+              Précédent
+            </Link>
+            <Link
+              className="rounded border px-2 py-1"
+              href={cockpitHref({ topSort, topPage: String(Math.min(totalTopPages, safeTopPage + 1)), signalSort, signalPage: String(safeSignalPage) })}
+            >
+              Suivant
+            </Link>
+            <span className="text-muted-foreground">
+              Page {safeTopPage}/{totalTopPages}
+            </span>
+          </div>
         </div>
 
         <div className="rounded-xl border bg-white p-4">
-          <h2 className="text-lg font-black">Top membres (signals)</h2>
-          {data.topMembersBySignals.length === 0 && <p className="mt-2 text-sm text-muted-foreground">Aucune donnée.</p>}
-          {data.topMembersBySignals.length > 0 && (
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h2 className="text-lg font-black">Top membres (signals)</h2>
+            <div className="flex gap-2 text-xs">
+              <Link className="rounded border px-2 py-1" href={cockpitHref({ signalSort: "value_desc", signalPage: "1", topSort, topPage: String(safeTopPage) })}>
+                Score desc
+              </Link>
+              <Link className="rounded border px-2 py-1" href={cockpitHref({ signalSort: "value_asc", signalPage: "1", topSort, topPage: String(safeTopPage) })}>
+                Score asc
+              </Link>
+              <Link className="rounded border px-2 py-1" href={cockpitHref({ signalSort: "label", signalPage: "1", topSort, topPage: String(safeTopPage) })}>
+                Nom A-Z
+              </Link>
+            </div>
+          </div>
+          {sortedTopSignals.length === 0 && <p className="mt-2 text-sm text-muted-foreground">Aucune donnée.</p>}
+          {sortedTopSignals.length > 0 && (
             <ul className="mt-2 space-y-2">
-              {data.topMembersBySignals.map((row) => (
+              {pagedTopSignals.map((row) => (
                 <li key={`signal-${row.label}`} className="flex items-center justify-between rounded border px-3 py-2 text-sm">
                   <span>{row.label}</span>
                   <span className="font-bold">{row.value}</span>
@@ -135,6 +215,23 @@ export default async function AdminHumainCockpitPage({
               ))}
             </ul>
           )}
+          <div className="mt-2 flex items-center gap-2 text-xs">
+            <Link
+              className="rounded border px-2 py-1"
+              href={cockpitHref({ signalSort, signalPage: String(Math.max(1, safeSignalPage - 1)), topSort, topPage: String(safeTopPage) })}
+            >
+              Précédent
+            </Link>
+            <Link
+              className="rounded border px-2 py-1"
+              href={cockpitHref({ signalSort, signalPage: String(Math.min(totalSignalPages, safeSignalPage + 1)), topSort, topPage: String(safeTopPage) })}
+            >
+              Suivant
+            </Link>
+            <span className="text-muted-foreground">
+              Page {safeSignalPage}/{totalSignalPages}
+            </span>
+          </div>
         </div>
       </div>
     </section>
