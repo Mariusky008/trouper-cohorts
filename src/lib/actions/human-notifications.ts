@@ -84,7 +84,7 @@ export async function getAdminHumanNotificationsFeed() {
   if ("error" in adminUser) {
     return {
       error: adminUser.error,
-      notifications: [] as HumanNotificationRow[],
+      notifications: [] as AdminHumanNotification[],
       candidates: [] as Array<{ user_id: string; label: string }>,
     };
   }
