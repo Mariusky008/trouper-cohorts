@@ -6,8 +6,19 @@ function euros(value: number) {
   return value.toLocaleString("fr-FR", { style: "currency", currency: "EUR" });
 }
 
-export default async function AdminHumainCockpitPage() {
-  const data = await getAdminHumanDashboard();
+export default async function AdminHumainCockpitPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ start?: string; end?: string }>;
+}) {
+  const params = (await searchParams) || {};
+  const start = params.start || "";
+  const end = params.end || "";
+  const data = await getAdminHumanDashboard({ startDate: start, endDate: end });
+  const exportQuery = new URLSearchParams();
+  if (start) exportQuery.set("start", start);
+  if (end) exportQuery.set("end", end);
+  const exportSuffix = exportQuery.toString() ? `?${exportQuery.toString()}` : "";
 
   if (data.error || !data.kpis) {
     return (
@@ -28,13 +39,13 @@ export default async function AdminHumainCockpitPage() {
         </div>
         <div className="flex flex-wrap gap-2">
           <Button asChild variant="outline">
-            <Link href="/admin/humain/cockpit/export/leads">Exporter Leads CSV</Link>
+            <Link href={`/admin/humain/cockpit/export/leads${exportSuffix}`}>Exporter Leads CSV</Link>
           </Button>
           <Button asChild variant="outline">
-            <Link href="/admin/humain/cockpit/export/signals">Exporter Signals CSV</Link>
+            <Link href={`/admin/humain/cockpit/export/signals${exportSuffix}`}>Exporter Signals CSV</Link>
           </Button>
           <Button asChild variant="outline">
-            <Link href="/admin/humain/cockpit/export/cash">Exporter Cash CSV</Link>
+            <Link href={`/admin/humain/cockpit/export/cash${exportSuffix}`}>Exporter Cash CSV</Link>
           </Button>
           <Button asChild variant="outline">
             <Link href="/admin/humain">Retour espace humain</Link>
@@ -45,6 +56,25 @@ export default async function AdminHumainCockpitPage() {
       <div className="rounded-xl border bg-white p-4 text-sm text-muted-foreground">
         Exports disponibles: leads, signaux et cash au format CSV. Les téléchargements sont réservés aux admins.
       </div>
+
+      <form className="grid gap-3 rounded-xl border bg-white p-4 sm:grid-cols-[1fr_1fr_auto_auto] sm:items-end">
+        <div>
+          <label htmlFor="start" className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
+            Début
+          </label>
+          <input id="start" name="start" type="date" defaultValue={start} className="mt-1 w-full rounded border px-3 py-2 text-sm" />
+        </div>
+        <div>
+          <label htmlFor="end" className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
+            Fin
+          </label>
+          <input id="end" name="end" type="date" defaultValue={end} className="mt-1 w-full rounded border px-3 py-2 text-sm" />
+        </div>
+        <button className="rounded bg-black px-4 py-2 text-sm font-bold text-white">Appliquer</button>
+        <Button asChild variant="outline">
+          <Link href="/admin/humain/cockpit">Réinitialiser</Link>
+        </Button>
+      </form>
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         <div className="rounded-xl border bg-white p-4">

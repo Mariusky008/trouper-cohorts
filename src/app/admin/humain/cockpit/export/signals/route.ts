@@ -1,16 +1,20 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { requireHumanAdminExport, toCsv } from "../_lib";
+import { getDateRangeFromUrl, requireHumanAdminExport, toCsv } from "../_lib";
 
-export async function GET() {
+export async function GET(request: Request) {
   const admin = await requireHumanAdminExport();
   if ("error" in admin) return NextResponse.json({ error: admin.error }, { status: 403 });
+  const { start, end } = getDateRangeFromUrl(request.url);
 
   const supabaseAdmin = createAdminClient();
-  const { data: signals } = await supabaseAdmin
+  let query = supabaseAdmin
     .from("human_signals")
     .select("id,emitter_member_id,target_member_id,title,detail,signal_strength,status,created_at,updated_at")
     .order("created_at", { ascending: false });
+  if (start) query = query.gte("created_at", `${start}T00:00:00.000Z`);
+  if (end) query = query.lte("created_at", `${end}T23:59:59.999Z`);
+  const { data: signals } = await query;
 
   const csv = toCsv(
     ["id", "emitter_member_id", "target_member_id", "title", "detail", "signal_strength", "status", "created_at", "updated_at"],

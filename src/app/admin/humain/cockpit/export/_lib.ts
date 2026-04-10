@@ -28,3 +28,16 @@ export function toCsv(headers: string[], rows: Array<Array<string | number | nul
   });
   return `${lines.join("\n")}\n`;
 }
+
+export function getDateRangeFromUrl(url: string) {
+  const parsed = new URL(url);
+  const start = normalizeDate(parsed.searchParams.get("start"));
+  const end = normalizeDate(parsed.searchParams.get("end"));
+  return { start, end };
+}
+
+function normalizeDate(value: string | null) {
+  if (!value) return undefined;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return undefined;
+  return value;
+}
