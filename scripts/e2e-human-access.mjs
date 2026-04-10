@@ -1,4 +1,9 @@
 import puppeteer from "puppeteer";
+import fs from "node:fs";
+import path from "node:path";
+
+loadEnvFile(".env.local");
+loadEnvFile(".env");
 
 function required(name) {
   const value = process.env[name];
@@ -8,19 +13,48 @@ function required(name) {
   return value;
 }
 
+function loadEnvFile(fileName) {
+  const filePath = path.resolve(process.cwd(), fileName);
+  if (!fs.existsSync(filePath)) return;
+
+  const raw = fs.readFileSync(filePath, "utf8");
+  for (const line of raw.split("\n")) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith("#")) continue;
+    const eqIndex = trimmed.indexOf("=");
+    if (eqIndex <= 0) continue;
+
+    const key = trimmed.slice(0, eqIndex).trim();
+    if (!key || process.env[key]) continue;
+
+    let value = trimmed.slice(eqIndex + 1).trim();
+    if (
+      (value.startsWith('"') && value.endsWith('"')) ||
+      (value.startsWith("'") && value.endsWith("'"))
+    ) {
+      value = value.slice(1, -1);
+    }
+    process.env[key] = value;
+  }
+}
+
 async function loginAndCheckScope(browser, baseUrl, account) {
-  const page = await browser.newPage();
+  const context =
+    typeof browser.createBrowserContext === "function" ? await browser.createBrowserContext() : null;
+  const page = context ? await context.newPage() : await browser.newPage();
+  page.setDefaultNavigationTimeout(90000);
+  page.setDefaultTimeout(90000);
   try {
-    await page.goto(`${baseUrl}/popey-human/login`, { waitUntil: "networkidle2" });
+    await page.goto(`${baseUrl}/popey-human/login`, { waitUntil: "domcontentloaded" });
     await page.type("#email", account.email);
     await page.type("#password", account.password);
 
     await Promise.all([
-      page.waitForNavigation({ waitUntil: "networkidle2" }),
+      page.waitForNavigation({ waitUntil: "domcontentloaded" }),
       page.click('button[type="submit"]'),
     ]);
 
-    await page.goto(`${baseUrl}/popey-human/app/annuaire`, { waitUntil: "networkidle2" });
+    await page.goto(`${baseUrl}/popey-human/app/annuaire`, { waitUntil: "domcontentloaded" });
 
     const modeText = await page.$eval("main", (root) => root.textContent || "");
     if (!modeText.includes(`Mode actif: ${account.expectedMode}`)) {
@@ -46,7 +80,11 @@ async function loginAndCheckScope(browser, baseUrl, account) {
 
     return { mode: account.expectedMode, visibleMembers };
   } finally {
-    await page.close();
+    if (context) {
+      await context.close();
+    } else {
+      await page.close();
+    }
   }
 }
 
