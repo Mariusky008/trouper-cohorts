@@ -71,6 +71,7 @@ export default async function AdminHumainNotificationsPage({
       sort: "",
       page: "",
     });
+  const clearStatusHref = buildAdminHumanHref("/admin/humain/notifications", sharedParams);
 
   return (
     <section className="space-y-6">
@@ -162,13 +163,19 @@ export default async function AdminHumainNotificationsPage({
       </div>
 
       {params.bulkStatus === "success" && (
-        <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">
-          {params.bulkMessage || "Action appliquée."}
+        <div className="flex items-center justify-between gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">
+          <span>{params.bulkMessage || "Action appliquée."}</span>
+          <Link className="rounded border border-emerald-300 px-2 py-1 text-xs" href={clearStatusHref}>
+            Effacer
+          </Link>
         </div>
       )}
       {params.bulkStatus === "error" && (
-        <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-          {params.bulkMessage || "Action impossible."}
+        <div className="flex items-center justify-between gap-3 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+          <span>{params.bulkMessage || "Action impossible."}</span>
+          <Link className="rounded border border-red-300 px-2 py-1 text-xs" href={clearStatusHref}>
+            Effacer
+          </Link>
         </div>
       )}
 
