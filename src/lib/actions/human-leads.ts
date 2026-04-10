@@ -6,6 +6,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { ensureHumanMemberForUserId, getMyHumanScope } from "@/lib/actions/human-permissions";
 import { createDealNotifications } from "@/lib/actions/human-notifications";
+import { createCommissionForSignedLead } from "@/lib/actions/human-cash";
 
 type HumanLeadStatus = "nouveau" | "pris" | "signe" | "perdu";
 
@@ -230,6 +231,14 @@ export async function markHumanLeadSigned(formData: FormData) {
     .eq("id", leadId)
     .eq("owner_member_id", myMember.id);
   if (error) return { error: error.message };
+
+  const commission = await createCommissionForSignedLead({
+    leadId,
+    ownerMemberId: lead.owner_member_id,
+    sourceMemberId: lead.source_member_id,
+    signedAmount: lead.budget,
+  });
+  if ("error" in commission) return { error: commission.error };
 
   const dealNotification = await createDealNotifications({
     memberIds: [myMember.id, lead.source_member_id || ""],

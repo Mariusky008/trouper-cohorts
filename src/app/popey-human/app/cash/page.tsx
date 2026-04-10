@@ -10,6 +10,12 @@ function kindLabel(kind: "encaissement" | "decaissement") {
   return kind === "encaissement" ? "Encaissement" : "Décaissement";
 }
 
+function commissionStatusLabel(status: "pending" | "paid" | "cancelled") {
+  if (status === "pending") return "En attente";
+  if (status === "paid") return "Payée";
+  return "Annulée";
+}
+
 export default async function PopeyHumanCashPage() {
   const summary = await getMyCashSummary();
 
@@ -45,6 +51,21 @@ export default async function PopeyHumanCashPage() {
                 <p className={`mt-2 text-2xl font-black ${summary.totals.net >= 0 ? "text-emerald-700" : "text-rose-700"}`}>
                   {euros(summary.totals.net)}
                 </p>
+              </div>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-3">
+              <div className="rounded-xl border bg-white p-4">
+                <p className="text-xs font-bold uppercase tracking-wide text-black/60">Commissions totales</p>
+                <p className="mt-2 text-2xl font-black text-emerald-700">{euros(summary.commissionsTotals.total)}</p>
+              </div>
+              <div className="rounded-xl border bg-white p-4">
+                <p className="text-xs font-bold uppercase tracking-wide text-black/60">Commissions en attente</p>
+                <p className="mt-2 text-2xl font-black text-amber-700">{euros(summary.commissionsTotals.pending)}</p>
+              </div>
+              <div className="rounded-xl border bg-white p-4">
+                <p className="text-xs font-bold uppercase tracking-wide text-black/60">Commissions payées</p>
+                <p className="mt-2 text-2xl font-black text-emerald-700">{euros(summary.commissionsTotals.paid)}</p>
               </div>
             </div>
 
@@ -90,6 +111,36 @@ export default async function PopeyHumanCashPage() {
                       </td>
                     </tr>
                   ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="overflow-x-auto rounded-xl border bg-white">
+              <table className="min-w-full text-sm">
+                <thead className="bg-muted/40">
+                  <tr>
+                    <th className="px-3 py-2 text-left font-bold">Lead</th>
+                    <th className="px-3 py-2 text-left font-bold">Montant signé</th>
+                    <th className="px-3 py-2 text-left font-bold">Commission</th>
+                    <th className="px-3 py-2 text-left font-bold">Statut</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {summary.commissions.map((commission) => (
+                    <tr key={commission.id} className="border-t">
+                      <td className="px-3 py-2 text-xs text-muted-foreground">{commission.lead_id}</td>
+                      <td className="px-3 py-2">{euros(Number(commission.signed_amount))}</td>
+                      <td className="px-3 py-2 font-semibold text-emerald-700">{euros(Number(commission.commission_amount))}</td>
+                      <td className="px-3 py-2">{commissionStatusLabel(commission.payment_status)}</td>
+                    </tr>
+                  ))}
+                  {summary.commissions.length === 0 && (
+                    <tr>
+                      <td className="px-3 py-2 text-sm text-muted-foreground" colSpan={4}>
+                        Aucune commission enregistrée pour le moment.
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
