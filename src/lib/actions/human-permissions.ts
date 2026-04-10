@@ -53,6 +53,25 @@ type HumanPermissionAuditEvent = {
   created_at: string;
 };
 
+export const HUMAN_AUDIT_ACTIONS = [
+  "permission_created",
+  "permission_updated",
+  "permission_deleted",
+  "allowed_member_granted",
+  "allowed_member_revoked",
+  "buddy_assigned",
+  "buddy_removed",
+] as const;
+
+type HumanAuditAction = (typeof HUMAN_AUDIT_ACTIONS)[number];
+
+type HumanAuditFilters = {
+  action?: HumanAuditAction;
+  memberId?: string;
+  startDate?: string;
+  endDate?: string;
+};
+
 export type HumanDirectoryMember = {
   id: string;
   user_id: string;
@@ -64,7 +83,7 @@ export type HumanDirectoryMember = {
   status: "active" | "paused" | "archived";
 };
 
-export async function getHumanPermissionsAdminSnapshot() {
+export async function getHumanPermissionsAdminSnapshot(filters: HumanAuditFilters = {}) {
   const adminCheck = await requireHumanAdmin();
   if ("error" in adminCheck) {
     return {
@@ -85,6 +104,25 @@ export async function getHumanPermissionsAdminSnapshot() {
 
   const supabaseAdmin = createAdminClient();
 
+  let auditsQuery = supabaseAdmin
+    .from("human_permissions_audit_log")
+    .select("id,member_id,actor_user_id,action,previous_mode,next_mode,note,meta,created_at")
+    .order("created_at", { ascending: false })
+    .limit(120);
+
+  if (filters.action && HUMAN_AUDIT_ACTIONS.includes(filters.action)) {
+    auditsQuery = auditsQuery.eq("action", filters.action);
+  }
+  if (filters.memberId) {
+    auditsQuery = auditsQuery.eq("member_id", filters.memberId);
+  }
+  if (filters.startDate && /^\d{4}-\d{2}-\d{2}$/.test(filters.startDate)) {
+    auditsQuery = auditsQuery.gte("created_at", `${filters.startDate}T00:00:00.000Z`);
+  }
+  if (filters.endDate && /^\d{4}-\d{2}-\d{2}$/.test(filters.endDate)) {
+    auditsQuery = auditsQuery.lte("created_at", `${filters.endDate}T23:59:59.999Z`);
+  }
+
   const [{ data: members }, { data: permissions }, { data: allowed }, { data: buddies }, { data: profiles }, { data: audits }] =
     await Promise.all([
       supabaseAdmin
@@ -103,11 +141,7 @@ export async function getHumanPermissionsAdminSnapshot() {
       supabaseAdmin
         .from("profiles")
         .select("id,display_name,trade,city,phone"),
-      supabaseAdmin
-        .from("human_permissions_audit_log")
-        .select("id,member_id,actor_user_id,action,previous_mode,next_mode,note,meta,created_at")
-        .order("created_at", { ascending: false })
-        .limit(120),
+      auditsQuery,
     ]);
 
   const profileByUserId = new Map(

@@ -4,6 +4,7 @@ import {
   adminGrantMember,
   adminRevokeMember,
   adminSetMode,
+  HUMAN_AUDIT_ACTIONS,
   getHumanPermissionsAdminSnapshot,
   type HumanAccessMode,
 } from "@/lib/actions/human-permissions";
@@ -34,8 +35,30 @@ function auditActionLabel(action: string) {
   return action;
 }
 
-export default async function AdminHumainPermissionsPage() {
-  const snapshot = await getHumanPermissionsAdminSnapshot();
+export default async function AdminHumainPermissionsPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{
+    auditAction?: string;
+    auditMemberId?: string;
+    auditStart?: string;
+    auditEnd?: string;
+  }>;
+}) {
+  const params = (await searchParams) || {};
+  const auditAction = typeof params.auditAction === "string" ? params.auditAction : "";
+  const auditMemberId = typeof params.auditMemberId === "string" ? params.auditMemberId : "";
+  const auditStart = typeof params.auditStart === "string" ? params.auditStart : "";
+  const auditEnd = typeof params.auditEnd === "string" ? params.auditEnd : "";
+
+  const snapshot = await getHumanPermissionsAdminSnapshot({
+    action: HUMAN_AUDIT_ACTIONS.includes(auditAction as (typeof HUMAN_AUDIT_ACTIONS)[number])
+      ? (auditAction as (typeof HUMAN_AUDIT_ACTIONS)[number])
+      : undefined,
+    memberId: auditMemberId || undefined,
+    startDate: auditStart || undefined,
+    endDate: auditEnd || undefined,
+  });
 
   if (snapshot.error) {
     return (
@@ -202,6 +225,32 @@ export default async function AdminHumainPermissionsPage() {
       <div className="rounded-xl border bg-white p-4">
         <h2 className="text-lg font-black">Historique des changements</h2>
         <p className="mb-3 text-xs text-muted-foreground">Derniers événements permissions / accès réseau.</p>
+        <form className="mb-4 grid gap-2 rounded border p-3 text-sm md:grid-cols-5">
+          <select name="auditAction" defaultValue={auditAction} className="rounded border px-2 py-2">
+            <option value="">Toutes les actions</option>
+            {HUMAN_AUDIT_ACTIONS.map((action) => (
+              <option key={action} value={action}>
+                {auditActionLabel(action)}
+              </option>
+            ))}
+          </select>
+          <select name="auditMemberId" defaultValue={auditMemberId} className="rounded border px-2 py-2">
+            <option value="">Tous les membres</option>
+            {snapshot.members.map((member) => (
+              <option key={member.id} value={member.id}>
+                {memberLabel(member)}
+              </option>
+            ))}
+          </select>
+          <input type="date" name="auditStart" defaultValue={auditStart} className="rounded border px-2 py-2" />
+          <input type="date" name="auditEnd" defaultValue={auditEnd} className="rounded border px-2 py-2" />
+          <div className="flex gap-2">
+            <button className="rounded border px-3 py-2">Filtrer</button>
+            <Link href="/admin/humain/permissions" className="rounded border px-3 py-2">
+              Réinitialiser
+            </Link>
+          </div>
+        </form>
         {snapshot.auditEvents.length === 0 && <p className="text-sm text-muted-foreground">Aucun événement enregistré.</p>}
         {snapshot.auditEvents.length > 0 && (
           <ul className="space-y-2">
