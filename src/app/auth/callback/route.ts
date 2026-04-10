@@ -6,6 +6,7 @@ export async function GET(request: Request) {
   const code = url.searchParams.get("code");
   const tokenHash = url.searchParams.get("token_hash");
   const type = url.searchParams.get("type");
+  const nextPath = url.searchParams.get("next");
 
   if (!code && !(tokenHash && type)) {
     console.error("Callback error: Missing code or token_hash/type");
@@ -33,6 +34,10 @@ export async function GET(request: Request) {
 
   if (type === "recovery") {
     return NextResponse.redirect(new URL("/update-password", url.origin));
+  }
+
+  if (nextPath && nextPath.startsWith("/") && !nextPath.startsWith("//")) {
+    return NextResponse.redirect(new URL(nextPath, url.origin));
   }
 
   return NextResponse.redirect(new URL("/app/today", url.origin));

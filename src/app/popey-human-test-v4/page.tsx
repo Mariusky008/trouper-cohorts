@@ -576,6 +576,12 @@ export default function PopeyHumanTestV4Page() {
               </div>
             </div>
             <div className="mt-6 flex flex-col sm:flex-row gap-3">
+              <Link
+                href="/popey-human/login"
+                className="inline-flex items-center justify-center rounded-md border border-black bg-black px-6 py-3 text-sm font-black uppercase tracking-wide text-white transition hover:bg-white hover:text-black"
+              >
+                Connexion
+              </Link>
               <button
                 type="button"
                 onClick={() => {

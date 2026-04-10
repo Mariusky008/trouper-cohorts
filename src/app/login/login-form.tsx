@@ -11,9 +11,14 @@ import { Label } from "@/components/ui/label";
 interface LoginFormProps {
   defaultEmail?: string;
   isNetworkLogin?: boolean;
+  postLoginPath?: string;
 }
 
-export function LoginForm({ defaultEmail = "", isNetworkLogin = false }: LoginFormProps) {
+export function LoginForm({
+  defaultEmail = "",
+  isNetworkLogin = false,
+  postLoginPath,
+}: LoginFormProps) {
   const supabase = createClient();
   const router = useRouter();
   const [email, setEmail] = useState(defaultEmail);
@@ -61,12 +66,17 @@ export function LoginForm({ defaultEmail = "", isNetworkLogin = false }: LoginFo
         toast.success("Connexion réussie", {
           description: "Bienvenue !",
         });
-        router.push("/mon-reseau-local/dashboard");
+        router.push(postLoginPath ?? "/mon-reseau-local/dashboard");
       } else {
+        const callbackUrl = new URL("/auth/callback", window.location.origin);
+        if (postLoginPath) {
+          callbackUrl.searchParams.set("next", postLoginPath);
+        }
+
         const { error } = await supabase.auth.signInWithOtp({
           email,
           options: {
-            emailRedirectTo: `${window.location.origin}/auth/callback`,
+            emailRedirectTo: callbackUrl.toString(),
           },
         });
         if (error) throw error;
