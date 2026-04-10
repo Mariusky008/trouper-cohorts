@@ -238,19 +238,19 @@ export default function RadarElitePreviewPage() {
   );
   const adminMetrics = adminMetricsBySphere[adminSphere];
 
-  useEffect(() => {
-    if (!isRecording) return;
-    const timer = window.setTimeout(() => {
-      setIsRecording(false);
-      setShowSignalAckModal(true);
-      setFlashAdminVocalId("VOC-991");
-      window.setTimeout(() => setFlashAdminVocalId(null), 6000);
-    }, 2600);
-    return () => window.clearTimeout(timer);
-  }, [isRecording]);
+  const finishRecording = () => {
+    setIsRecording(false);
+    setShowSignalAckModal(true);
+    setFlashAdminVocalId("VOC-991");
+    window.setTimeout(() => setFlashAdminVocalId(null), 6000);
+  };
 
   const triggerRecording = () => {
     setMemberTab("signal");
+    if (isRecording) {
+      finishRecording();
+      return;
+    }
     setIsRecording(true);
   };
 
@@ -583,7 +583,7 @@ export default function RadarElitePreviewPage() {
                       <p className="text-xs font-black uppercase tracking-[0.12em] text-emerald-300">Signal vocal</p>
                       <h3 className="mt-1 text-2xl font-black">Mode Talkie-Walkie</h3>
                       <p className="mt-2 text-sm text-white/85 leading-relaxed">
-                        Maintenez pour transmettre votre opportunité. Donnez moi tous les details, je me charge de contacter votre client pour qualifier ses besoins et alerter les métiers concernés. 
+                        Appuyez pour transmettre votre opportunité. Donnez moi tous les details, je me charge de contacter votre client pour qualifier ses besoins et alerter les métiers concernés. 
                         <br/>Vos commissions s&apos;afficheront dès la signature des contrats par les membres du Cercle.
                       </p>
                       <div className="relative mt-6 h-64 flex justify-center items-center">
@@ -598,14 +598,18 @@ export default function RadarElitePreviewPage() {
                         />
                         <button
                           onClick={triggerRecording}
-                          className={`talkie-btn relative h-48 w-48 rounded-full border-2 border-emerald-300/45 ${
+                          className={`talkie-btn relative h-48 w-48 rounded-full border-2 ${
                             isRecording
-                              ? "bg-red-500 text-white"
+                              ? isLightTheme
+                                ? "bg-gradient-to-b from-[#F97373] to-[#DC2626] text-white border-red-300/65"
+                                : "bg-red-500 text-white border-red-300/60"
+                              : isLightTheme
+                              ? "bg-gradient-to-b from-[#E8C98D] to-[#C9973E] text-[#1F2937] border-amber-500/60"
                               : "bg-gradient-to-b from-emerald-400 to-emerald-500 text-black"
                           } text-base font-black uppercase tracking-wide`}
                         >
                           <span className="absolute inset-0 rounded-full animate-[talkieGlow_1.6s_ease-in-out_infinite]" />
-                          <span className="relative z-10">{isRecording ? "Transmission..." : "Maintenir pour parler"}</span>
+                          <span className="relative z-10">{isRecording ? "Arrêter" : "Appuyer pour parler"}</span>
                         </button>
                       </div>
                     </div>
@@ -1103,9 +1107,6 @@ export default function RadarElitePreviewPage() {
           filter: drop-shadow(0 8px 18px rgba(14, 165, 233, 0.2));
         }
         .theme-light .talkie-btn {
-          background: linear-gradient(180deg, #e0ba73 0%, #be8a33 100%) !important;
-          color: #1f2937 !important;
-          border-color: rgba(181, 134, 54, 0.5) !important;
           box-shadow: 0 16px 34px -18px rgba(181, 134, 54, 0.52);
         }
         .theme-light .fixed.inset-0 > div {
