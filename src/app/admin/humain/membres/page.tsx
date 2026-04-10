@@ -6,6 +6,7 @@ import {
   type HumanMemberStatus,
 } from "@/lib/actions/human-permissions";
 import { Button } from "@/components/ui/button";
+import { AdminStatusBanner } from "@/components/admin/status-banner";
 
 const MEMBER_STATUSES: HumanMemberStatus[] = ["active", "paused", "archived"];
 
@@ -76,22 +77,7 @@ export default async function AdminHumainMembresPage({
         <input type="hidden" name="current_url" value={currentHref} />
       </form>
 
-      {memberStatus === "success" && (
-        <div className="flex items-center justify-between gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">
-          <span>{memberMessage || "Action appliquée."}</span>
-          <Link href="/admin/humain/membres" className="rounded border border-emerald-300 px-2 py-1 text-xs">
-            Effacer
-          </Link>
-        </div>
-      )}
-      {memberStatus === "error" && (
-        <div className="flex items-center justify-between gap-3 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-          <span>{memberMessage || "Action impossible."}</span>
-          <Link href="/admin/humain/membres" className="rounded border border-red-300 px-2 py-1 text-xs">
-            Effacer
-          </Link>
-        </div>
-      )}
+      <AdminStatusBanner status={memberStatus} message={memberMessage} clearHref="/admin/humain/membres" />
 
       <div className="overflow-x-auto rounded-xl border bg-white">
         <table className="min-w-full text-sm">

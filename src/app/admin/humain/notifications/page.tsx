@@ -7,6 +7,7 @@ import {
   type HumanNotificationType,
 } from "@/lib/actions/human-notifications";
 import { buildAdminHumanHref, pickParam } from "@/lib/url/admin-human-navigation";
+import { AdminStatusBanner } from "@/components/admin/status-banner";
 import { BulkSelectorControls } from "./bulk-selector-controls";
 
 const NOTIFICATION_TYPES: HumanNotificationType[] = ["generale", "personnelle", "felicitation"];
@@ -163,22 +164,7 @@ export default async function AdminHumainNotificationsPage({
         </p>
       </div>
 
-      {params.bulkStatus === "success" && (
-        <div className="flex items-center justify-between gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">
-          <span>{params.bulkMessage || "Action appliquée."}</span>
-          <Link className="rounded border border-emerald-300 px-2 py-1 text-xs" href={clearStatusHref}>
-            Effacer
-          </Link>
-        </div>
-      )}
-      {params.bulkStatus === "error" && (
-        <div className="flex items-center justify-between gap-3 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-          <span>{params.bulkMessage || "Action impossible."}</span>
-          <Link className="rounded border border-red-300 px-2 py-1 text-xs" href={clearStatusHref}>
-            Effacer
-          </Link>
-        </div>
-      )}
+      <AdminStatusBanner status={params.bulkStatus || ""} message={params.bulkMessage} clearHref={clearStatusHref} />
 
       <form id="notifications-bulk-form" action={adminBulkSetHumanNotificationsReadAction} className="space-y-2">
         <input type="hidden" name="mode" defaultValue="read" data-bulk-mode="true" />

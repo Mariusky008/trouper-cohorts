@@ -8,6 +8,7 @@ import {
   type HumanAccessMode,
 } from "@/lib/actions/human-permissions";
 import { Button } from "@/components/ui/button";
+import { AdminStatusBanner } from "@/components/admin/status-banner";
 
 const ACCESS_MODES: HumanAccessMode[] = ["BINOME_ONLY", "SELECTED_MEMBERS", "SPHERE_FULL"];
 const HUMAN_AUDIT_ACTIONS = [
@@ -88,6 +89,11 @@ export default async function AdminHumainPermissionsPage({
   }
 
   const memberById = new Map(snapshot.members.map((member) => [member.id, member]));
+  const auditPagination = snapshot.auditPagination || {
+    page: 1,
+    totalPages: 1,
+    total: 0,
+  };
   const buildAuditHref = (nextPage: number) => {
     const query = new URLSearchParams();
     if (auditAction) query.set("auditAction", auditAction);
@@ -211,22 +217,7 @@ export default async function AdminHumainPermissionsPage({
         </form>
       </div>
 
-      {permStatus === "success" && (
-        <div className="flex items-center justify-between gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">
-          <span>{permMessage || "Action appliquée."}</span>
-          <Link href={clearStatusHref} className="rounded border border-emerald-300 px-2 py-1 text-xs">
-            Effacer
-          </Link>
-        </div>
-      )}
-      {permStatus === "error" && (
-        <div className="flex items-center justify-between gap-3 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-          <span>{permMessage || "Action impossible."}</span>
-          <Link href={clearStatusHref} className="rounded border border-red-300 px-2 py-1 text-xs">
-            Effacer
-          </Link>
-        </div>
-      )}
+      <AdminStatusBanner status={permStatus} message={permMessage} clearHref={clearStatusHref} />
 
       <div className="overflow-x-auto rounded-xl border bg-white">
         <table className="min-w-full text-sm">
@@ -336,7 +327,7 @@ export default async function AdminHumainPermissionsPage({
         {snapshot.auditEvents.length > 0 && (
           <div className="space-y-3">
             <p className="text-xs text-muted-foreground">
-              Page {snapshot.auditPagination.page}/{snapshot.auditPagination.totalPages} • {snapshot.auditPagination.total} événements
+              Page {auditPagination.page}/{auditPagination.totalPages} • {auditPagination.total} événements
             </p>
             <ul className="space-y-2">
             {snapshot.auditEvents.map((event) => (
@@ -356,16 +347,16 @@ export default async function AdminHumainPermissionsPage({
             </ul>
             <div className="flex flex-wrap gap-2">
               <Link
-                href={buildAuditHref(Math.max(1, snapshot.auditPagination.page - 1))}
+                href={buildAuditHref(Math.max(1, auditPagination.page - 1))}
                 className="rounded border px-3 py-1.5 text-sm disabled:pointer-events-none disabled:opacity-50"
-                aria-disabled={snapshot.auditPagination.page <= 1}
+                aria-disabled={auditPagination.page <= 1}
               >
                 Précédent
               </Link>
               <Link
-                href={buildAuditHref(Math.min(snapshot.auditPagination.totalPages, snapshot.auditPagination.page + 1))}
+                href={buildAuditHref(Math.min(auditPagination.totalPages, auditPagination.page + 1))}
                 className="rounded border px-3 py-1.5 text-sm disabled:pointer-events-none disabled:opacity-50"
-                aria-disabled={snapshot.auditPagination.page >= snapshot.auditPagination.totalPages}
+                aria-disabled={auditPagination.page >= auditPagination.totalPages}
               >
                 Suivant
               </Link>
