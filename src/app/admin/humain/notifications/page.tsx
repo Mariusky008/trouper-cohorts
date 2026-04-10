@@ -7,6 +7,7 @@ import {
   type HumanNotificationType,
 } from "@/lib/actions/human-notifications";
 import { buildAdminHumanHref, pickParam } from "@/lib/url/admin-human-navigation";
+import { BulkSelectorControls } from "./bulk-selector-controls";
 
 const NOTIFICATION_TYPES: HumanNotificationType[] = ["generale", "personnelle", "felicitation"];
 
@@ -156,7 +157,7 @@ export default async function AdminHumainNotificationsPage({
         </p>
       </div>
 
-      <form action={adminBulkSetHumanNotificationsReadAction} className="space-y-2">
+      <form id="notifications-bulk-form" action={adminBulkSetHumanNotificationsReadAction} className="space-y-2">
         <div className="flex flex-wrap items-center gap-2 rounded-xl border bg-white p-3">
           <button name="mode" value="read" className="rounded border px-3 py-1.5 text-sm">
             Marquer sélection lue
@@ -164,6 +165,7 @@ export default async function AdminHumainNotificationsPage({
           <button name="mode" value="unread" className="rounded border px-3 py-1.5 text-sm">
             Marquer sélection non lue
           </button>
+          <BulkSelectorControls formId="notifications-bulk-form" />
           <p className="text-xs text-muted-foreground">Coche les lignes dans le tableau puis applique l&apos;action.</p>
         </div>
         <div className="overflow-x-auto rounded-xl border bg-white">
@@ -182,7 +184,7 @@ export default async function AdminHumainNotificationsPage({
               {pagedNotifications.map((notification) => (
                 <tr key={notification.id} className="border-t">
                   <td className="px-3 py-2">
-                    <input type="checkbox" name="notification_ids" value={notification.id} />
+                    <input type="checkbox" name="notification_ids" value={notification.id} data-bulk-item="true" />
                   </td>
                   <td className="px-3 py-2 text-xs text-muted-foreground">
                     {new Date(notification.created_at).toLocaleString("fr-FR")}
