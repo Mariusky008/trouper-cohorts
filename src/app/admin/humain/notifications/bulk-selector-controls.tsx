@@ -20,6 +20,10 @@ export function BulkSelectorControls({ formId }: BulkSelectorControlsProps) {
     if (!form) return;
 
     if (selectAll) {
+      const total = form.querySelectorAll<HTMLInputElement>('input[data-bulk-item="true"]').length;
+      const label = mode === "read" ? "lues" : "non lues";
+      const confirmed = window.confirm(`Confirmer la mise à jour de ${total} notification(s) en "${label}" ?`);
+      if (!confirmed) return;
       toggleAll(true);
     } else {
       const selected = form.querySelectorAll<HTMLInputElement>('input[data-bulk-item="true"]:checked').length;
