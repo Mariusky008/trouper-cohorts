@@ -133,7 +133,6 @@ export async function takeHumanLead(formData: FormData) {
     .update({
       owner_member_id: myMember.id,
       status: "pris",
-      opened_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     })
     .eq("id", leadId);
@@ -150,6 +149,46 @@ export async function takeHumanLeadAction(formData: FormData): Promise<void> {
     redirect(withLeadStatus(currentUrl, "error", result.error || "Action impossible."));
   }
   redirect(withLeadStatus(currentUrl, "success", "Deal pris avec succès."));
+}
+
+export async function markHumanLeadOpened(formData: FormData) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Session requise." };
+
+  const leadId = String(formData.get("lead_id") || "");
+  if (!leadId) return { error: "Lead invalide." };
+
+  const visible = await listVisibleHumanLeads();
+  if (visible.error) return { error: visible.error };
+  const lead = visible.leads.find((l) => l.id === leadId);
+  if (!lead) return { error: "Lead non visible avec votre scope d'accès." };
+  if (lead.opened_at) return { success: true };
+
+  const supabaseAdmin = createAdminClient();
+  const { error } = await supabaseAdmin
+    .from("human_leads")
+    .update({
+      opened_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", leadId);
+  if (error) return { error: error.message };
+
+  revalidatePath("/popey-human/app/clients");
+  revalidatePath("/admin/humain/clients");
+  return { success: true };
+}
+
+export async function markHumanLeadOpenedAction(formData: FormData): Promise<void> {
+  const currentUrl = String(formData.get("current_url") || "/popey-human/app/clients");
+  const result = await markHumanLeadOpened(formData);
+  if ("error" in result) {
+    redirect(withLeadStatus(currentUrl, "error", result.error || "Action impossible."));
+  }
+  redirect(withLeadStatus(currentUrl, "success", "Fiche client marquée comme lue."));
 }
 
 export async function markHumanLeadSigned(formData: FormData) {

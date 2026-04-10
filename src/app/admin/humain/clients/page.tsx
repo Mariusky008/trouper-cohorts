@@ -157,12 +157,18 @@ export default async function AdminHumainClientsPage({
               <tr key={lead.id} className="border-t">
                 <td className="px-3 py-2 text-xs text-muted-foreground">{new Date(lead.created_at).toLocaleString("fr-FR")}</td>
                 <td className="px-3 py-2">
-                  <p className="font-semibold">{lead.client_name}</p>
+                  <p className="flex items-center gap-2 font-semibold">
+                    {!lead.opened_at && <span className="inline-block h-2 w-2 rounded-full bg-blue-500" aria-label="Non lu" />}
+                    {lead.client_name}
+                  </p>
                   <p className="text-xs text-muted-foreground">{lead.besoin || "Sans besoin précisé"}</p>
                 </td>
                 <td className="px-3 py-2">{lead.sourceLabel}</td>
                 <td className="px-3 py-2">{lead.ownerLabel}</td>
-                <td className="px-3 py-2">{statusLabel(lead.status)}</td>
+                <td className="px-3 py-2">
+                  <p>{statusLabel(lead.status)}</p>
+                  <p className="text-xs text-muted-foreground">{lead.opened_at ? "Lu" : "Non lu"}</p>
+                </td>
               </tr>
             ))}
           </tbody>

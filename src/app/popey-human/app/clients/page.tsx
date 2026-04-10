@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import {
   listVisibleHumanLeads,
+  markHumanLeadOpenedAction,
   markHumanLeadLostAction,
   markHumanLeadSignedAction,
   takeHumanLeadAction,
@@ -86,6 +87,13 @@ export default async function PopeyHumanClientsPage({
                     </p>
                   </div>
                   <div className="flex flex-wrap gap-2">
+                    <form action={markHumanLeadOpenedAction}>
+                      <input type="hidden" name="lead_id" value={lead.id} />
+                      <input type="hidden" name="current_url" value="/popey-human/app/clients" />
+                      <button className="rounded border px-3 py-1.5 text-xs font-semibold">
+                        {lead.opened_at ? "Fiche déjà lue" : "Ouvrir fiche"}
+                      </button>
+                    </form>
                     {lead.status === "nouveau" && (
                       <form action={takeHumanLeadAction}>
                         <input type="hidden" name="lead_id" value={lead.id} />
