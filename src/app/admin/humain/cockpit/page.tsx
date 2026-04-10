@@ -26,9 +26,24 @@ export default async function AdminHumainCockpitPage() {
           <h1 className="text-3xl font-black">Cockpit KPI</h1>
           <p className="text-sm text-muted-foreground">Vue globale membres, pipeline, signaux, cash et notifications.</p>
         </div>
-        <Button asChild variant="outline">
-          <Link href="/admin/humain">Retour espace humain</Link>
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button asChild variant="outline">
+            <Link href="/admin/humain/cockpit/export/leads">Exporter Leads CSV</Link>
+          </Button>
+          <Button asChild variant="outline">
+            <Link href="/admin/humain/cockpit/export/signals">Exporter Signals CSV</Link>
+          </Button>
+          <Button asChild variant="outline">
+            <Link href="/admin/humain/cockpit/export/cash">Exporter Cash CSV</Link>
+          </Button>
+          <Button asChild variant="outline">
+            <Link href="/admin/humain">Retour espace humain</Link>
+          </Button>
+        </div>
+      </div>
+
+      <div className="rounded-xl border bg-white p-4 text-sm text-muted-foreground">
+        Exports disponibles: leads, signaux et cash au format CSV. Les téléchargements sont réservés aux admins.
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
