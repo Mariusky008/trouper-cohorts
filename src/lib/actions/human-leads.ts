@@ -209,6 +209,7 @@ export async function markHumanLeadSigned(formData: FormData) {
   if (!user) return { error: "Session requise." };
 
   const leadId = String(formData.get("lead_id") || "");
+  const signedAmountRaw = String(formData.get("signed_amount") || "").trim();
   if (!leadId) return { error: "Lead invalide." };
 
   const myMember = await ensureHumanMemberForUserId(user.id);
@@ -221,11 +222,21 @@ export async function markHumanLeadSigned(formData: FormData) {
   if (lead.owner_member_id !== myMember.id) return { error: "Seul le propriétaire du deal peut le clôturer." };
   if (lead.status !== "pris") return { error: "Seuls les deals pris peuvent être marqués signés." };
 
+  let signedAmount = lead.budget;
+  if (signedAmountRaw) {
+    const parsed = Number(signedAmountRaw);
+    if (!Number.isFinite(parsed) || parsed <= 0) {
+      return { error: "Montant signé invalide." };
+    }
+    signedAmount = parsed;
+  }
+
   const supabaseAdmin = createAdminClient();
   const { error } = await supabaseAdmin
     .from("human_leads")
     .update({
       status: "signe",
+      budget: signedAmount,
       updated_at: new Date().toISOString(),
     })
     .eq("id", leadId)
@@ -236,7 +247,7 @@ export async function markHumanLeadSigned(formData: FormData) {
     leadId,
     ownerMemberId: lead.owner_member_id,
     sourceMemberId: lead.source_member_id,
-    signedAmount: lead.budget,
+    signedAmount,
   });
   if ("error" in commission) return { error: commission.error };
 
