@@ -486,10 +486,14 @@ export default function RadarElitePreviewPage() {
                 <div className="mt-1 flex justify-end gap-2">
                   <Link
                     href="/radar-elite-preview/notifications"
-                    className="group relative h-[60px] w-[60px] rounded-full border border-emerald-300/35 bg-gradient-to-b from-[#1A3A31] to-[#0E241E] text-2xl transition hover:brightness-110 inline-flex items-center justify-center bell-shake shadow-[0_10px_30px_-15px_rgba(0,245,176,0.6)]"
+                    className={`group relative h-[60px] w-[60px] rounded-full text-2xl transition hover:brightness-110 inline-flex items-center justify-center bell-shake ${
+                      isLightTheme
+                        ? "border border-amber-400/40 bg-gradient-to-b from-[#F7E7C6] to-[#E8C98D] shadow-[0_10px_28px_-16px_rgba(181,134,54,0.55)]"
+                        : "border border-emerald-300/35 bg-gradient-to-b from-[#1A3A31] to-[#0E241E] shadow-[0_10px_30px_-15px_rgba(0,245,176,0.6)]"
+                    }`}
                     aria-label="Aller aux notifications"
                   >
-                    <span className="relative -mt-0.5 text-emerald-200">🔔</span>
+                    <span className={`relative -mt-0.5 ${isLightTheme ? "text-[#7A4E13]" : "text-emerald-200"}`}>🔔</span>
                     <span className="absolute right-0 top-0 inline-flex min-w-5 h-5 items-center justify-center rounded-full bg-[#ff2d55] px-1 text-[10px] font-black text-white ring-2 ring-[#090B0B]">
                       2
                     </span>
@@ -1060,7 +1064,7 @@ export default function RadarElitePreviewPage() {
         }
         .theme-light [class*="text-emerald-200"],
         .theme-light [class*="text-emerald-300"] {
-          color: #1e3a8a !important;
+          color: #8a6a2a !important;
         }
         .theme-light [class*="text-red-200"] {
           color: #b91c1c !important;
@@ -1084,25 +1088,25 @@ export default function RadarElitePreviewPage() {
           border-color: rgba(71, 85, 105, 0.2) !important;
         }
         .theme-light [class*="bg-emerald-400"] {
-          background: #1e3a8a !important;
-          color: #ffffff !important;
+          background: #c9973e !important;
+          color: #1f2937 !important;
         }
         .theme-light [class*="border-emerald-"] {
-          border-color: rgba(30, 58, 138, 0.38) !important;
+          border-color: rgba(181, 134, 54, 0.42) !important;
         }
         .theme-light [class*="text-emerald-700"],
         .theme-light [class*="text-emerald-800"],
         .theme-light [class*="text-emerald-900"] {
-          color: #1e3a8a !important;
+          color: #7a4e13 !important;
         }
         .theme-light .bell-shake {
           filter: drop-shadow(0 8px 18px rgba(14, 165, 233, 0.2));
         }
         .theme-light .talkie-btn {
-          background: linear-gradient(180deg, #334a94 0%, #1f2f63 100%) !important;
-          color: #ffffff !important;
-          border-color: rgba(30, 58, 138, 0.5) !important;
-          box-shadow: 0 16px 34px -18px rgba(31, 47, 99, 0.58);
+          background: linear-gradient(180deg, #e0ba73 0%, #be8a33 100%) !important;
+          color: #1f2937 !important;
+          border-color: rgba(181, 134, 54, 0.5) !important;
+          box-shadow: 0 16px 34px -18px rgba(181, 134, 54, 0.52);
         }
         .theme-light .fixed.inset-0 > div {
           background: rgba(255, 250, 242, 0.98) !important;
