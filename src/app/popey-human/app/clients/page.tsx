@@ -1,6 +1,11 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { listVisibleHumanLeads, takeHumanLeadAction } from "@/lib/actions/human-leads";
+import {
+  listVisibleHumanLeads,
+  markHumanLeadLostAction,
+  markHumanLeadSignedAction,
+  takeHumanLeadAction,
+} from "@/lib/actions/human-leads";
 
 function statusLabel(status: "nouveau" | "pris" | "signe" | "perdu") {
   switch (status) {
@@ -17,7 +22,17 @@ function statusLabel(status: "nouveau" | "pris" | "signe" | "perdu") {
   }
 }
 
-export default async function PopeyHumanClientsPage() {
+export default async function PopeyHumanClientsPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{
+    leadStatus?: string;
+    leadMessage?: string;
+  }>;
+}) {
+  const params = (await searchParams) || {};
+  const leadStatus = typeof params.leadStatus === "string" ? params.leadStatus : "";
+  const leadMessage = typeof params.leadMessage === "string" ? params.leadMessage : "";
   const feed = await listVisibleHumanLeads();
 
   return (
@@ -35,6 +50,22 @@ export default async function PopeyHumanClientsPage() {
         </div>
 
         {feed.error && <p className="rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">{feed.error}</p>}
+        {leadStatus === "success" && (
+          <p className="rounded border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+            {leadMessage || "Action appliquée."}{" "}
+            <Link className="underline" href="/popey-human/app/clients">
+              Effacer
+            </Link>
+          </p>
+        )}
+        {leadStatus === "error" && (
+          <p className="rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+            {leadMessage || "Action impossible."}{" "}
+            <Link className="underline" href="/popey-human/app/clients">
+              Effacer
+            </Link>
+          </p>
+        )}
 
         {!feed.error && feed.leads.length === 0 && (
           <p className="rounded border bg-white px-3 py-3 text-sm text-black/70">Aucun lead visible pour le moment.</p>
@@ -54,12 +85,33 @@ export default async function PopeyHumanClientsPage() {
                       Source: {lead.sourceLabel} • Propriétaire: {lead.ownerLabel}
                     </p>
                   </div>
-                  {lead.status === "nouveau" && (
-                    <form action={takeHumanLeadAction}>
-                      <input type="hidden" name="lead_id" value={lead.id} />
-                      <button className="rounded border px-3 py-1.5 text-xs font-semibold">Prendre ce deal</button>
-                    </form>
-                  )}
+                  <div className="flex flex-wrap gap-2">
+                    {lead.status === "nouveau" && (
+                      <form action={takeHumanLeadAction}>
+                        <input type="hidden" name="lead_id" value={lead.id} />
+                        <input type="hidden" name="current_url" value="/popey-human/app/clients" />
+                        <button className="rounded border px-3 py-1.5 text-xs font-semibold">Prendre ce deal</button>
+                      </form>
+                    )}
+                    {lead.status === "pris" && (
+                      <>
+                        <form action={markHumanLeadSignedAction}>
+                          <input type="hidden" name="lead_id" value={lead.id} />
+                          <input type="hidden" name="current_url" value="/popey-human/app/clients" />
+                          <button className="rounded border border-emerald-300 px-3 py-1.5 text-xs font-semibold text-emerald-700">
+                            Marquer signé
+                          </button>
+                        </form>
+                        <form action={markHumanLeadLostAction}>
+                          <input type="hidden" name="lead_id" value={lead.id} />
+                          <input type="hidden" name="current_url" value="/popey-human/app/clients" />
+                          <button className="rounded border border-red-300 px-3 py-1.5 text-xs font-semibold text-red-700">
+                            Marquer perdu
+                          </button>
+                        </form>
+                      </>
+                    )}
+                  </div>
                 </div>
               </article>
             ))}

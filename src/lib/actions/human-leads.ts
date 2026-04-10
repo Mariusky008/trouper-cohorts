@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { ensureHumanMemberForUserId, getMyHumanScope } from "@/lib/actions/human-permissions";
@@ -124,6 +125,7 @@ export async function takeHumanLead(formData: FormData) {
   if (visible.error) return { error: visible.error };
   const lead = visible.leads.find((l) => l.id === leadId);
   if (!lead) return { error: "Lead non visible avec votre scope d'accès." };
+  if (lead.status !== "nouveau") return { error: "Ce lead ne peut plus être pris." };
 
   const supabaseAdmin = createAdminClient();
   const { error } = await supabaseAdmin
@@ -142,7 +144,100 @@ export async function takeHumanLead(formData: FormData) {
 }
 
 export async function takeHumanLeadAction(formData: FormData): Promise<void> {
-  await takeHumanLead(formData);
+  const currentUrl = String(formData.get("current_url") || "/popey-human/app/clients");
+  const result = await takeHumanLead(formData);
+  if ("error" in result) {
+    redirect(withLeadStatus(currentUrl, "error", result.error || "Action impossible."));
+  }
+  redirect(withLeadStatus(currentUrl, "success", "Deal pris avec succès."));
+}
+
+export async function markHumanLeadSigned(formData: FormData) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Session requise." };
+
+  const leadId = String(formData.get("lead_id") || "");
+  if (!leadId) return { error: "Lead invalide." };
+
+  const myMember = await ensureHumanMemberForUserId(user.id);
+  if (!myMember) return { error: "Profil Popey Human introuvable." };
+
+  const visible = await listVisibleHumanLeads();
+  if (visible.error) return { error: visible.error };
+  const lead = visible.leads.find((l) => l.id === leadId);
+  if (!lead) return { error: "Lead non visible avec votre scope d'accès." };
+  if (lead.owner_member_id !== myMember.id) return { error: "Seul le propriétaire du deal peut le clôturer." };
+  if (lead.status !== "pris") return { error: "Seuls les deals pris peuvent être marqués signés." };
+
+  const supabaseAdmin = createAdminClient();
+  const { error } = await supabaseAdmin
+    .from("human_leads")
+    .update({
+      status: "signe",
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", leadId)
+    .eq("owner_member_id", myMember.id);
+  if (error) return { error: error.message };
+
+  revalidatePath("/popey-human/app/clients");
+  return { success: true };
+}
+
+export async function markHumanLeadSignedAction(formData: FormData): Promise<void> {
+  const currentUrl = String(formData.get("current_url") || "/popey-human/app/clients");
+  const result = await markHumanLeadSigned(formData);
+  if ("error" in result) {
+    redirect(withLeadStatus(currentUrl, "error", result.error || "Action impossible."));
+  }
+  redirect(withLeadStatus(currentUrl, "success", "Deal marqué signé."));
+}
+
+export async function markHumanLeadLost(formData: FormData) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Session requise." };
+
+  const leadId = String(formData.get("lead_id") || "");
+  if (!leadId) return { error: "Lead invalide." };
+
+  const myMember = await ensureHumanMemberForUserId(user.id);
+  if (!myMember) return { error: "Profil Popey Human introuvable." };
+
+  const visible = await listVisibleHumanLeads();
+  if (visible.error) return { error: visible.error };
+  const lead = visible.leads.find((l) => l.id === leadId);
+  if (!lead) return { error: "Lead non visible avec votre scope d'accès." };
+  if (lead.owner_member_id !== myMember.id) return { error: "Seul le propriétaire du deal peut le clôturer." };
+  if (lead.status !== "pris") return { error: "Seuls les deals pris peuvent être marqués perdus." };
+
+  const supabaseAdmin = createAdminClient();
+  const { error } = await supabaseAdmin
+    .from("human_leads")
+    .update({
+      status: "perdu",
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", leadId)
+    .eq("owner_member_id", myMember.id);
+  if (error) return { error: error.message };
+
+  revalidatePath("/popey-human/app/clients");
+  return { success: true };
+}
+
+export async function markHumanLeadLostAction(formData: FormData): Promise<void> {
+  const currentUrl = String(formData.get("current_url") || "/popey-human/app/clients");
+  const result = await markHumanLeadLost(formData);
+  if ("error" in result) {
+    redirect(withLeadStatus(currentUrl, "error", result.error || "Action impossible."));
+  }
+  redirect(withLeadStatus(currentUrl, "success", "Deal marqué perdu."));
 }
 
 export async function adminCreateHumanLead(formData: FormData) {
@@ -276,4 +371,12 @@ async function requireAdminUser() {
   const { data } = await supabaseAdmin.from("admins").select("user_id").eq("user_id", user.id).maybeSingle();
   if (!data) return { error: "Accès admin requis." };
   return { user };
+}
+
+function withLeadStatus(url: string, status: "success" | "error", message: string) {
+  const safePath = url.startsWith("/popey-human/app/clients") ? url : "/popey-human/app/clients";
+  const parsed = new URL(safePath, "http://localhost");
+  parsed.searchParams.set("leadStatus", status);
+  parsed.searchParams.set("leadMessage", message);
+  return `${parsed.pathname}?${parsed.searchParams.toString()}`;
 }
