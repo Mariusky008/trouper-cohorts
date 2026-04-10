@@ -20,6 +20,20 @@ type HumanNotificationRow = {
   created_at: string;
 };
 
+type HumanNotificationReaction = {
+  id: string;
+  notification_id: string;
+  member_id: string;
+  emoji: "👏" | "🔥" | "💰" | "🚀";
+  created_at: string;
+  updated_at: string;
+};
+
+type HumanNotificationView = HumanNotificationRow & {
+  reactionCounts: Record<"👏" | "🔥" | "💰" | "🚀", number>;
+  myReaction: "👏" | "🔥" | "💰" | "🚀" | null;
+};
+
 type AdminHumanNotification = HumanNotificationRow & {
   recipient: string;
 };
@@ -184,10 +198,10 @@ export async function getMyHumanNotifications(scope: HumanNotificationScope = "a
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { error: "Session requise.", notifications: [] as HumanNotificationRow[] };
+  if (!user) return { error: "Session requise.", notifications: [] as HumanNotificationView[], candidates: [] as Array<{ member_id: string; label: string }> };
 
   const ensured = await ensureHumanMemberForUserId(user.id);
-  if (!ensured) return { error: "Profil Popey Human introuvable.", notifications: [] as HumanNotificationRow[] };
+  if (!ensured) return { error: "Profil Popey Human introuvable.", notifications: [] as HumanNotificationView[], candidates: [] as Array<{ member_id: string; label: string }> };
 
   const supabaseAdmin = createAdminClient();
   const { data } = await supabaseAdmin
@@ -200,9 +214,63 @@ export async function getMyHumanNotifications(scope: HumanNotificationScope = "a
   const notifications = (data as HumanNotificationRow[] | null) || [];
   const filtered = scope === "deals" ? notifications.filter((n) => (n.impact || "").startsWith("deal:")) : notifications;
 
+  const notificationIds = filtered.map((n) => n.id);
+  const { data: reactionsData } =
+    notificationIds.length > 0
+      ? await supabaseAdmin
+          .from("human_notification_reactions")
+          .select("id,notification_id,member_id,emoji,created_at,updated_at")
+          .in("notification_id", notificationIds)
+      : { data: [] as HumanNotificationReaction[] };
+
+  const reactions = (reactionsData as HumanNotificationReaction[] | null) || [];
+  const reactionByNotification = new Map<string, Record<"👏" | "🔥" | "💰" | "🚀", number>>();
+  const myReactionByNotification = new Map<string, "👏" | "🔥" | "💰" | "🚀" | null>();
+
+  filtered.forEach((n) => {
+    reactionByNotification.set(n.id, { "👏": 0, "🔥": 0, "💰": 0, "🚀": 0 });
+    myReactionByNotification.set(n.id, null);
+  });
+
+  reactions.forEach((reaction) => {
+    const bucket = reactionByNotification.get(reaction.notification_id);
+    if (!bucket) return;
+    bucket[reaction.emoji] += 1;
+    if (reaction.member_id === ensured.id) {
+      myReactionByNotification.set(reaction.notification_id, reaction.emoji);
+    }
+  });
+
+  const { data: visibleMembers } = await supabaseAdmin
+    .from("human_members")
+    .select("id,user_id,first_name,last_name,status")
+    .eq("status", "active")
+    .limit(300);
+  const { data: profiles } = await supabaseAdmin.from("profiles").select("id,display_name,trade").limit(600);
+
+  const profileLabelByUserId = new Map(
+    ((profiles as Array<{ id: string; display_name: string | null; trade: string | null }> | null) || []).map((profile) => [
+      profile.id,
+      (profile.display_name && profile.display_name.trim()) || (profile.trade && profile.trade.trim()) || profile.id,
+    ])
+  );
+
+  const candidates = ((visibleMembers as Array<{ id: string; user_id: string; first_name: string | null; last_name: string | null }> | null) || [])
+    .filter((member) => member.id !== ensured.id)
+    .map((member) => {
+      const full = [member.first_name, member.last_name].filter(Boolean).join(" ").trim();
+      const fallback = profileLabelByUserId.get(member.user_id) || member.user_id;
+      return { member_id: member.id, label: full || fallback };
+    });
+
   return {
     error: null as string | null,
-    notifications: filtered,
+    notifications: filtered.map((notification) => ({
+      ...notification,
+      reactionCounts: reactionByNotification.get(notification.id) || { "👏": 0, "🔥": 0, "💰": 0, "🚀": 0 },
+      myReaction: myReactionByNotification.get(notification.id) || null,
+    })),
+    candidates,
   };
 }
 
@@ -237,6 +305,109 @@ export async function markMyHumanNotificationReadAction(formData: FormData): Pro
   const result = await markMyHumanNotificationRead(formData);
   if ("error" in result) {
     redirect(currentUrl);
+  }
+  redirect(currentUrl);
+}
+
+export async function toggleMyHumanNotificationReaction(formData: FormData) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Session requise." };
+
+  const notificationId = String(formData.get("notification_id") || "");
+  const emoji = String(formData.get("emoji") || "") as "👏" | "🔥" | "💰" | "🚀";
+  if (!notificationId) return { error: "Notification invalide." };
+  if (!["👏", "🔥", "💰", "🚀"].includes(emoji)) return { error: "Réaction invalide." };
+
+  const ensured = await ensureHumanMemberForUserId(user.id);
+  if (!ensured) return { error: "Profil Popey Human introuvable." };
+
+  const supabaseAdmin = createAdminClient();
+  const { data: existing } = await supabaseAdmin
+    .from("human_notification_reactions")
+    .select("id,emoji")
+    .eq("notification_id", notificationId)
+    .eq("member_id", ensured.id)
+    .maybeSingle();
+
+  if (existing && existing.emoji === emoji) {
+    const { error } = await supabaseAdmin
+      .from("human_notification_reactions")
+      .delete()
+      .eq("notification_id", notificationId)
+      .eq("member_id", ensured.id);
+    if (error) return { error: error.message };
+  } else if (existing) {
+    const { error } = await supabaseAdmin
+      .from("human_notification_reactions")
+      .update({ emoji, updated_at: new Date().toISOString() })
+      .eq("id", existing.id);
+    if (error) return { error: error.message };
+  } else {
+    const { error } = await supabaseAdmin.from("human_notification_reactions").insert({
+      notification_id: notificationId,
+      member_id: ensured.id,
+      emoji,
+    });
+    if (error) return { error: error.message };
+  }
+
+  revalidatePath("/popey-human/app/notifications");
+  return { success: true };
+}
+
+export async function toggleMyHumanNotificationReactionAction(formData: FormData): Promise<void> {
+  const currentUrl = String(formData.get("current_url") || "/popey-human/app/notifications");
+  await toggleMyHumanNotificationReaction(formData);
+  redirect(currentUrl);
+}
+
+export async function createMyHumanCongrats(formData: FormData) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Session requise." };
+
+  const targetMemberId = String(formData.get("target_member_id") || "");
+  const message = String(formData.get("message") || "").trim();
+  if (!targetMemberId) return { error: "Membre cible manquant." };
+  if (!message) return { error: "Message requis." };
+
+  const sender = await ensureHumanMemberForUserId(user.id);
+  if (!sender) return { error: "Profil Popey Human introuvable." };
+
+  const supabaseAdmin = createAdminClient();
+  const { data: senderRow } = await supabaseAdmin
+    .from("human_members")
+    .select("first_name,last_name")
+    .eq("id", sender.id)
+    .maybeSingle();
+
+  const senderLabel = [senderRow?.first_name, senderRow?.last_name].filter(Boolean).join(" ").trim() || "Un membre du Cercle";
+  const payload = {
+    member_id: targetMemberId,
+    type: "felicitation" as const,
+    title: "Félicitations d'un membre",
+    message: `${senderLabel}: ${message}`,
+    impact: "social:felicitation",
+    is_read: false,
+  };
+
+  const { error } = await supabaseAdmin.from("human_notifications").insert(payload);
+  if (error) return { error: error.message };
+
+  revalidatePath("/popey-human/app/notifications");
+  return { success: true };
+}
+
+export async function createMyHumanCongratsAction(formData: FormData): Promise<void> {
+  const currentUrl = String(formData.get("current_url") || "/popey-human/app/notifications");
+  const result = await createMyHumanCongrats(formData);
+  if ("error" in result) {
+    redirect(`${currentUrl}${currentUrl.includes("?") ? "&" : "?"}notifError=${encodeURIComponent(result.error || "Action impossible.")}`);
   }
   redirect(currentUrl);
 }
