@@ -136,6 +136,7 @@ export default async function AdminHumainNotificationsPage({
           placeholder="Message"
           className="min-h-24 w-full rounded border px-2 py-2 text-sm"
         />
+        <input type="hidden" name="current_url" value={buildAdminHumanHref("/admin/humain/notifications", sharedParams)} />
         <button className="w-fit rounded bg-black px-4 py-2 text-sm font-bold text-white">Envoyer</button>
       </form>
 

@@ -77,7 +77,12 @@ export async function adminSendHumanNotification(formData: FormData) {
 }
 
 export async function adminSendHumanNotificationAction(formData: FormData): Promise<void> {
-  await adminSendHumanNotification(formData);
+  const currentUrl = String(formData.get("current_url") || "/admin/humain/notifications");
+  const result = await adminSendHumanNotification(formData);
+  if ("error" in result) {
+    redirect(withBulkStatus(currentUrl, "error", result.error || "Erreur inconnue."));
+  }
+  redirect(withBulkStatus(currentUrl, "success", "Notification envoyée."));
 }
 
 export async function adminBulkSetHumanNotificationsRead(formData: FormData) {
