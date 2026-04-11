@@ -1,0 +1,115 @@
+name: Popey Human E2E
+
+on:
+  workflow_dispatch:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  human-e2e:
+    name: Human Suite
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      E2E_BASE_URL: http://127.0.0.1:3000
+      HUMAN_E2E_BINOME_EMAIL: ${{ secrets.HUMAN_E2E_BINOME_EMAIL }}
+      HUMAN_E2E_BINOME_PASSWORD: ${{ secrets.HUMAN_E2E_BINOME_PASSWORD }}
+      HUMAN_E2E_SELECTED_EMAIL: ${{ secrets.HUMAN_E2E_SELECTED_EMAIL }}
+      HUMAN_E2E_SELECTED_PASSWORD: ${{ secrets.HUMAN_E2E_SELECTED_PASSWORD }}
+      HUMAN_E2E_SPHERE_EMAIL: ${{ secrets.HUMAN_E2E_SPHERE_EMAIL }}
+      HUMAN_E2E_SPHERE_PASSWORD: ${{ secrets.HUMAN_E2E_SPHERE_PASSWORD }}
+      HUMAN_E2E_BINOME_MIN_MEMBERS: ${{ secrets.HUMAN_E2E_BINOME_MIN_MEMBERS }}
+      HUMAN_E2E_SELECTED_MIN_MEMBERS: ${{ secrets.HUMAN_E2E_SELECTED_MIN_MEMBERS }}
+      HUMAN_E2E_SPHERE_MIN_MEMBERS: ${{ secrets.HUMAN_E2E_SPHERE_MIN_MEMBERS }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Start App Server
+        run: |
+          npm run dev -- --hostname 127.0.0.1 --port 3000 > /tmp/next-dev.log 2>&1 &
+          echo $! > /tmp/next-dev.pid
+
+      - name: Wait For App
+        run: |
+          for i in {1..90}; do
+            if curl -fsS "$E2E_BASE_URL/popey-human/login" > /dev/null; then
+              echo "App server is ready."
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "App server failed to start in time."
+          tail -n 120 /tmp/next-dev.log || true
+          exit 1
+
+      - name: Run Human E2E Suite
+        id: run_e2e
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          npm run e2e:human-ci | tee e2e-human-ci.json
+
+      - name: Publish E2E Artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: popey-human-e2e-artifacts
+          path: |
+            e2e-human-ci.json
+            /tmp/next-dev.log
+          if-no-files-found: warn
+
+      - name: Job Summary
+        if: always()
+        shell: bash
+        run: |
+          if [ ! -f e2e-human-ci.json ]; then
+            {
+              echo "## Popey Human E2E"
+              echo ""
+              echo "- Result: no JSON output generated"
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          node -e '
+            const fs = require("node:fs");
+            const raw = fs.readFileSync("e2e-human-ci.json", "utf8");
+            const report = JSON.parse(raw);
+            const lines = [];
+            lines.push("## Popey Human E2E");
+            lines.push("");
+            lines.push(`- Result: ${report.passed ? "passed" : "failed"}`);
+            lines.push(`- Duration (ms): ${report.durationMs}`);
+            if (Array.isArray(report.checks)) {
+              for (const check of report.checks) {
+                lines.push(`- ${check.name}: ${check.passed ? "passed" : "failed"} (exit=${check.exitCode})`);
+              }
+            }
+            fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, `${lines.join("\n")}\n`);
+          '
+
+      - name: Stop App Server
+        if: always()
+        run: |
+          if [ -f /tmp/next-dev.pid ]; then
+            kill "$(cat /tmp/next-dev.pid)" || true
+          fi
+
+      - name: Fail If Suite Failed
+        if: steps.run_e2e.outcome != 'success'
+        run: exit 1
