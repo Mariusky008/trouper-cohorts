@@ -57,11 +57,10 @@ async function loginAndCheckScope(browser, baseUrl, account) {
     ]);
 
     await page.goto(`${baseUrl}/popey-human/app/annuaire`, { waitUntil: "domcontentloaded" });
-    await page.waitForFunction(
-      (expectedMode) => (document.body?.textContent || "").includes(`Mode actif: ${expectedMode}`),
-      {},
-      account.expectedMode
-    );
+    await page.waitForFunction(() => {
+      const text = document.body?.textContent || "";
+      return text.includes("Annuaire") && text.includes("Mode actif:");
+    });
 
     const modeText = await page.$eval("body", (root) => root.textContent || "");
     if (!modeText.includes(`Mode actif: ${account.expectedMode}`)) {
