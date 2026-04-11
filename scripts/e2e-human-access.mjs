@@ -46,6 +46,8 @@ async function loginAndCheckScope(browser, baseUrl, account) {
   page.setDefaultTimeout(90000);
   try {
     await page.goto(`${baseUrl}/popey-human/login`, { waitUntil: "domcontentloaded" });
+    await page.waitForSelector("#email");
+    await page.waitForSelector("#password");
     await page.type("#email", account.email);
     await page.type("#password", account.password);
 
@@ -55,16 +57,22 @@ async function loginAndCheckScope(browser, baseUrl, account) {
     ]);
 
     await page.goto(`${baseUrl}/popey-human/app/annuaire`, { waitUntil: "domcontentloaded" });
+    await page.waitForFunction(
+      (expectedMode) => (document.body?.textContent || "").includes(`Mode actif: ${expectedMode}`),
+      {},
+      account.expectedMode
+    );
 
-    const modeText = await page.$eval("main", (root) => root.textContent || "");
+    const modeText = await page.$eval("body", (root) => root.textContent || "");
     if (!modeText.includes(`Mode actif: ${account.expectedMode}`)) {
       throw new Error(
         `Unexpected mode for ${account.label}. Expected ${account.expectedMode}.`
       );
     }
 
-    const visibleMembers = await page.$$eval("p", (nodes) =>
-      nodes.filter((node) => (node.textContent || "").startsWith("Métier:")).length
+    const visibleMembers = await page.$$eval(
+      'a[href^="/popey-human/app/annuaire?member="]',
+      (nodes) => nodes.length
     );
 
     console.log(
