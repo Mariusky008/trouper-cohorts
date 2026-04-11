@@ -11,15 +11,18 @@ type Candidate = {
 type Props = {
   candidates: Candidate[];
   createSignalAction: (formData: FormData) => Promise<void>;
+  initialTargetMemberId?: string;
 };
 
-export function TalkieSignalComposer({ candidates, createSignalAction }: Props) {
+export function TalkieSignalComposer({ candidates, createSignalAction, initialTargetMemberId = "" }: Props) {
   const formRef = useRef<HTMLFormElement | null>(null);
   const [isRecording, setIsRecording] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [signalStrength, setSignalStrength] = useState("3");
-  const [targetMemberId, setTargetMemberId] = useState("");
+  const [targetMemberId, setTargetMemberId] = useState(
+    candidates.some((candidate) => candidate.member_id === initialTargetMemberId) ? initialTargetMemberId : ""
+  );
   const [detail, setDetail] = useState(
     "Signal vocal transmis depuis le mode talkie-walkie. Merci de qualifier le besoin et d'activer les métiers concernés."
   );

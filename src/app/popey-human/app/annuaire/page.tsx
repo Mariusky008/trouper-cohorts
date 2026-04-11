@@ -95,7 +95,7 @@ export default async function PopeyHumanAnnuairePage({
                 Appeler
               </a>
               <Link
-                href="/popey-human/app/signal"
+                href={`/popey-human/app/signal?target_member_id=${selectedMember.id}`}
                 className="h-11 rounded-xl border border-white/20 inline-flex items-center justify-center text-sm font-black uppercase tracking-wide"
               >
                 Envoyer un signal
