@@ -4,6 +4,7 @@ import { getHumanPermissionsAdminSnapshot, type HumanAccessMode } from "@/lib/ac
 import { adminDispatchHumanSignalAction, getAdminSignalDispatchSnapshot } from "@/lib/actions/human-signals";
 
 type ModeKey = HumanAccessMode;
+type AdminSphereFilter = "toutes" | "habitat" | "sante" | "auto";
 
 const MODE_LABELS: Record<ModeKey, string> = {
   BINOME_ONLY: "Binôme uniquement",
@@ -21,11 +22,18 @@ export default async function AdminHumainSpherePage({
   searchParams?: Promise<{
     dispatchStatus?: string;
     dispatchMessage?: string;
+    adminSphere?: string;
+    selectedSignal?: string;
   }>;
 }) {
   const params = (await searchParams) || {};
   const dispatchStatus = typeof params.dispatchStatus === "string" ? params.dispatchStatus : "";
   const dispatchMessage = typeof params.dispatchMessage === "string" ? params.dispatchMessage : "";
+  const adminSphere: AdminSphereFilter =
+    params.adminSphere === "habitat" || params.adminSphere === "sante" || params.adminSphere === "auto"
+      ? params.adminSphere
+      : "toutes";
+  const selectedSignalId = typeof params.selectedSignal === "string" ? params.selectedSignal : "";
   const [snapshot, signalSnapshot] = await Promise.all([getHumanPermissionsAdminSnapshot(), getAdminSignalDispatchSnapshot()]);
 
   if (snapshot.error) {
@@ -67,6 +75,9 @@ export default async function AdminHumainSpherePage({
       });
     }
   });
+
+  const baseSphereHref = (sphere: AdminSphereFilter) =>
+    sphere === "toutes" ? "/admin/humain/sphere" : `/admin/humain/sphere?adminSphere=${sphere}`;
 
   return (
     <section className="space-y-6">
@@ -143,74 +154,159 @@ export default async function AdminHumainSpherePage({
           Impossible de charger le cockpit dispatch vocal: {signalSnapshot.error}
         </div>
       ) : (
-        <div className="rounded-xl border bg-white p-4">
+        <div className="rounded-xl border bg-[#0E1113] text-white p-4">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <h2 className="text-lg font-black">Cockpit Dispatch Vocaux</h2>
-            <p className="text-xs text-muted-foreground">
-              {signalSnapshot.signals.filter((signal) => signal.status !== "closed").length} vocal(aux) actif(s)
-            </p>
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.12em] text-white/65">Cockpit admin Radar</p>
+              <h2 className="text-lg font-black">Timeline de distribution vocale</h2>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {([
+                { key: "toutes", label: "Toutes" },
+                { key: "habitat", label: "Habitat" },
+                { key: "sante", label: "Santé" },
+                { key: "auto", label: "Auto" },
+              ] as Array<{ key: AdminSphereFilter; label: string }>).map((sphere) => (
+                <Link
+                  key={sphere.key}
+                  href={baseSphereHref(sphere.key)}
+                  className={`h-8 rounded-full px-3 text-[11px] font-black uppercase tracking-wide inline-flex items-center ${
+                    adminSphere === sphere.key ? "bg-white text-black" : "border border-white/25 text-white/80"
+                  }`}
+                >
+                  {sphere.label}
+                </Link>
+              ))}
+            </div>
           </div>
 
-          <div className="mt-3 space-y-3">
-            {signalSnapshot.signals.slice(0, 25).map((signal) => (
-              <article key={signal.id} className="rounded-lg border p-3">
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="text-xs uppercase tracking-wide text-muted-foreground">{signal.status}</p>
-                    <p className="font-black">{signal.title}</p>
-                    <p className="text-sm text-black/70">{signal.detail}</p>
-                    <p className="text-xs text-black/60">
-                      Émetteur: {signal.emitterLabel} • Cible directe: {signal.directTargetLabel}
-                    </p>
-                    {signal.audio_url && (
-                      <audio controls className="mt-2 w-full max-w-sm" src={signal.audio_url}>
-                        Votre navigateur ne supporte pas la lecture audio.
-                      </audio>
-                    )}
+          {(() => {
+            const scopedSignals = signalSnapshot.signals
+              .filter((signal) => adminSphere === "toutes" || signal.sphere === adminSphere)
+              .sort((a, b) => {
+                const urgentDiff = Number(b.urgent) - Number(a.urgent);
+                if (urgentDiff !== 0) return urgentDiff;
+                return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+              });
+            const selectedSignal = scopedSignals.find((signal) => signal.id === selectedSignalId) || scopedSignals[0] || null;
+            const activeVocals = scopedSignals.filter((signal) => signal.status !== "closed").length;
+            const dispatchedVocals = scopedSignals.filter((signal) => signal.dispatchTargets.length > 0).length;
+            const totalDispatchTargets = scopedSignals.reduce((sum, signal) => sum + signal.dispatchTargets.length, 0);
+            const urgentVocals = scopedSignals.filter((signal) => signal.urgent).length;
+
+            return (
+              <>
+                <div className="mt-3 grid gap-2 sm:grid-cols-4">
+                  <div className="rounded-xl border border-white/15 bg-white/5 p-3">
+                    <p className="text-[10px] uppercase font-black tracking-[0.12em] text-white/65">Vocaux reçus</p>
+                    <p className="mt-1 text-xl font-black">{scopedSignals.length}</p>
+                  </div>
+                  <div className="rounded-xl border border-[#EAC886]/25 bg-[#2A2111] p-3">
+                    <p className="text-[10px] uppercase font-black tracking-[0.12em] text-[#EAC886]/80">Vocaux actifs</p>
+                    <p className="mt-1 text-xl font-black text-[#EAC886]">{activeVocals}</p>
+                  </div>
+                  <div className="rounded-xl border border-emerald-400/25 bg-[#10251D] p-3">
+                    <p className="text-[10px] uppercase font-black tracking-[0.12em] text-emerald-300/80">Vocaux dispatchés</p>
+                    <p className="mt-1 text-xl font-black text-emerald-300">{dispatchedVocals}</p>
+                  </div>
+                  <div className="rounded-xl border border-cyan-300/30 bg-cyan-500/10 p-3">
+                    <p className="text-[10px] uppercase font-black tracking-[0.12em] text-cyan-200/85">Cibles notifiées</p>
+                    <p className="mt-1 text-xl font-black text-cyan-200">{totalDispatchTargets}</p>
+                    <p className="text-[10px] text-cyan-100/80">Urgence: {urgentVocals}</p>
                   </div>
                 </div>
 
-                <form action={adminDispatchHumanSignalAction} className="mt-3 space-y-2">
-                  <input type="hidden" name="signal_id" value={signal.id} />
-                  <input type="hidden" name="current_url" value="/admin/humain/sphere" />
-                  <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Dispatch métiers / membres</p>
-                  <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3 max-h-40 overflow-y-auto pr-1">
-                    {signalSnapshot.candidates
-                      .filter((candidate) => candidate.member_id !== signal.emitter_member_id)
-                      .map((candidate) => (
-                        <label key={`${signal.id}-${candidate.member_id}`} className="rounded border px-2 py-1.5 text-xs">
-                          <input type="checkbox" name="target_member_ids" value={candidate.member_id} className="mr-2 align-middle" />
-                          {candidate.label}
-                        </label>
+                <div className="mt-4 grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
+                  <div className="rounded-2xl border border-white/15 bg-white/5 p-3">
+                    <p className="text-xs font-black uppercase tracking-[0.12em] text-white/70">Timeline des vocaux</p>
+                    <div className="mt-3 space-y-2 max-h-[560px] overflow-y-auto pr-1">
+                      {scopedSignals.map((signal) => (
+                        <Link
+                          key={signal.id}
+                          href={`${baseSphereHref(adminSphere)}${adminSphere === "toutes" ? "?" : "&"}selectedSignal=${signal.id}`}
+                          className={`block rounded-lg border px-3 py-2 ${
+                            signal.id === selectedSignal?.id
+                              ? "border-emerald-300/45 bg-emerald-500/10"
+                              : signal.urgent
+                              ? "border-red-300/45 bg-red-500/15"
+                              : "border-white/15 bg-black/25"
+                          }`}
+                        >
+                          <div className="flex items-center justify-between gap-2">
+                            <p className="text-sm font-black">
+                              {signal.emitterLabel} {signal.emitterTrade ? `(${signal.emitterTrade})` : ""}
+                              {signal.urgent ? " • URGENCE" : ""}
+                            </p>
+                            <span className="text-[10px] text-white/65">{new Date(signal.created_at).toLocaleString("fr-FR")}</span>
+                          </div>
+                          <p className="mt-1 text-xs text-white/80">{signal.title}</p>
+                          <p className="text-[11px] text-white/60">
+                            Statut: {signal.status} • Dispatch: {signal.dispatchTargets.length}
+                          </p>
+                        </Link>
                       ))}
+                      {scopedSignals.length === 0 && <p className="text-sm text-white/70">Aucun vocal pour ce filtre.</p>}
+                    </div>
                   </div>
-                  <input
-                    type="text"
-                    name="note"
-                    placeholder="Note admin (optionnel)"
-                    className="w-full rounded border px-2 py-2 text-sm"
-                  />
-                  <button className="rounded bg-black px-3 py-2 text-xs font-black uppercase tracking-wide text-white">
-                    Dispatcher ce vocal
-                  </button>
-                </form>
 
-                {signal.dispatchTargets.length > 0 && (
-                  <div className="mt-3 rounded border bg-muted/20 p-2">
-                    <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Cibles déjà dispatchées</p>
-                    <ul className="mt-1 space-y-1">
-                      {signal.dispatchTargets.map((target) => (
-                        <li key={`${signal.id}-${target.target_member_id}`} className="text-xs">
-                          {target.label} • {target.status} • {new Date(target.notified_at).toLocaleString("fr-FR")}
-                        </li>
-                      ))}
-                    </ul>
+                  <div className="rounded-2xl border border-white/15 bg-black/25 p-4">
+                    {!selectedSignal && <p className="text-sm text-white/70">Sélectionnez un vocal dans la timeline.</p>}
+                    {selectedSignal && (
+                      <>
+                        <p className="text-xs font-black uppercase tracking-[0.12em] text-white/70">Dispatch chirurgical</p>
+                        <p className="mt-1 text-sm font-black">{selectedSignal.title}</p>
+                        <p className="text-xs text-white/70">
+                          Émetteur: {selectedSignal.emitterLabel} • Cible directe: {selectedSignal.directTargetLabel}
+                        </p>
+                        <p className="mt-2 text-xs text-white/75">{selectedSignal.detail}</p>
+                        {selectedSignal.audio_url && (
+                          <audio controls className="mt-2 w-full" src={selectedSignal.audio_url}>
+                            Votre navigateur ne supporte pas la lecture audio.
+                          </audio>
+                        )}
+                        <form action={adminDispatchHumanSignalAction} className="mt-3 space-y-2">
+                          <input type="hidden" name="signal_id" value={selectedSignal.id} />
+                          <input type="hidden" name="current_url" value={baseSphereHref(adminSphere)} />
+                          <div className="grid gap-2 sm:grid-cols-2 max-h-48 overflow-y-auto pr-1">
+                            {signalSnapshot.candidates
+                              .filter((candidate) => candidate.member_id !== selectedSignal.emitter_member_id)
+                              .map((candidate) => (
+                                <label key={`${selectedSignal.id}-${candidate.member_id}`} className="rounded border border-white/20 px-2 py-1.5 text-xs">
+                                  <input type="checkbox" name="target_member_ids" value={candidate.member_id} className="mr-2 align-middle" />
+                                  {candidate.label}
+                                </label>
+                              ))}
+                          </div>
+                          <input
+                            type="text"
+                            name="note"
+                            placeholder="Note admin (optionnel)"
+                            className="w-full rounded border border-white/20 bg-black/35 px-2 py-2 text-sm"
+                          />
+                          <button className="h-10 w-full rounded-lg bg-emerald-400 text-black text-xs font-black uppercase tracking-wide">
+                            Valider et notifier
+                          </button>
+                        </form>
+
+                        {selectedSignal.dispatchTargets.length > 0 && (
+                          <div className="mt-3 rounded border border-white/15 bg-white/5 p-2">
+                            <p className="text-xs font-bold uppercase tracking-wide text-white/65">Cibles déjà dispatchées</p>
+                            <ul className="mt-1 space-y-1">
+                              {selectedSignal.dispatchTargets.map((target) => (
+                                <li key={`${selectedSignal.id}-${target.target_member_id}`} className="text-xs text-white/85">
+                                  {target.label} • {target.status} • {new Date(target.notified_at).toLocaleString("fr-FR")}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </>
+                    )}
                   </div>
-                )}
-              </article>
-            ))}
-            {signalSnapshot.signals.length === 0 && <p className="text-sm text-muted-foreground">Aucun vocal pour le moment.</p>}
-          </div>
+                </div>
+              </>
+            );
+          })()}
         </div>
       )}
     </section>

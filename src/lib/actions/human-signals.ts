@@ -35,6 +35,8 @@ type HumanSignalDispatchRow = {
   note: string | null;
 };
 
+type AdminSphereKey = "habitat" | "sante" | "auto";
+
 export async function listVisibleHumanSignals() {
   const supabase = await createClient();
   const {
@@ -263,6 +265,9 @@ export async function getAdminSignalDispatchSnapshot() {
       signals: [] as Array<
         HumanSignal & {
           emitterLabel: string;
+          emitterTrade: string;
+          sphere: AdminSphereKey;
+          urgent: boolean;
           directTargetLabel: string;
           dispatchTargets: Array<{ target_member_id: string; label: string; status: "notified" | "seen" | "acted"; notified_at: string }>;
         }
@@ -293,12 +298,21 @@ export async function getAdminSignalDispatchSnapshot() {
   const dispatchRows = (dispatchData as HumanSignalDispatchRow[] | null) || [];
 
   const profileByUserId = new Map(
-    profiles.map((profile) => [profile.id, (profile.display_name && profile.display_name.trim()) || (profile.trade && profile.trade.trim()) || profile.id])
+    profiles.map((profile) => [
+      profile.id,
+      {
+        label: (profile.display_name && profile.display_name.trim()) || (profile.trade && profile.trade.trim()) || profile.id,
+        trade: (profile.trade && profile.trade.trim()) || "",
+      },
+    ])
   );
   const memberLabelById = new Map<string, string>();
+  const memberTradeById = new Map<string, string>();
   members.forEach((member) => {
     const full = [member.first_name, member.last_name].filter(Boolean).join(" ").trim();
-    memberLabelById.set(member.id, full || profileByUserId.get(member.user_id) || member.user_id);
+    const profile = profileByUserId.get(member.user_id);
+    memberLabelById.set(member.id, full || profile?.label || member.user_id);
+    memberTradeById.set(member.id, profile?.trade || "");
   });
 
   const dispatchBySignalId = new Map<string, HumanSignalDispatchRow[]>();
@@ -311,6 +325,9 @@ export async function getAdminSignalDispatchSnapshot() {
   const signalsView = signals.map((signal) => ({
     ...signal,
     emitterLabel: memberLabelById.get(signal.emitter_member_id) || "Émetteur",
+    emitterTrade: memberTradeById.get(signal.emitter_member_id) || "",
+    sphere: inferSphere(memberTradeById.get(signal.emitter_member_id) || "", `${signal.title} ${signal.detail}`),
+    urgent: signal.signal_strength >= 4 || /\burgent|urgence\b/i.test(`${signal.title} ${signal.detail}`),
     directTargetLabel: signal.target_member_id ? memberLabelById.get(signal.target_member_id) || "Cible" : "Sphère",
     dispatchTargets: (dispatchBySignalId.get(signal.id) || []).map((row) => ({
       target_member_id: row.target_member_id,
@@ -439,4 +456,11 @@ async function requireAdminUser() {
   const { data } = await supabaseAdmin.from("admins").select("user_id").eq("user_id", user.id).maybeSingle();
   if (!data) return { error: "Accès admin requis." };
   return { user };
+}
+
+function inferSphere(trade: string, content: string): AdminSphereKey {
+  const text = `${trade} ${content}`.toLowerCase();
+  if (/(infirm|kine|kiné|medec|médec|sante|santé|optic|dent|pharma)/.test(text)) return "sante";
+  if (/(garage|auto|carross|mecan|mécan|controle technique|contrôle technique|vehicule|véhicule)/.test(text)) return "auto";
+  return "habitat";
 }
