@@ -14,6 +14,9 @@ jobs:
     timeout-minutes: 35
     env:
       E2E_BASE_URL: http://127.0.0.1:3000
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
       HUMAN_E2E_BINOME_EMAIL: ${{ secrets.HUMAN_E2E_BINOME_EMAIL }}
       HUMAN_E2E_BINOME_PASSWORD: ${{ secrets.HUMAN_E2E_BINOME_PASSWORD }}
       HUMAN_E2E_SELECTED_EMAIL: ${{ secrets.HUMAN_E2E_SELECTED_EMAIL }}
@@ -36,6 +39,31 @@ jobs:
 
       - name: Install Dependencies
         run: npm ci
+
+      - name: Validate Required Secrets
+        shell: bash
+        run: |
+          required_vars=(
+            NEXT_PUBLIC_SUPABASE_URL
+            NEXT_PUBLIC_SUPABASE_ANON_KEY
+            SUPABASE_SERVICE_ROLE_KEY
+            HUMAN_E2E_BINOME_EMAIL
+            HUMAN_E2E_BINOME_PASSWORD
+            HUMAN_E2E_SELECTED_EMAIL
+            HUMAN_E2E_SELECTED_PASSWORD
+            HUMAN_E2E_SPHERE_EMAIL
+            HUMAN_E2E_SPHERE_PASSWORD
+          )
+          missing=0
+          for name in "${required_vars[@]}"; do
+            if [ -z "${!name}" ]; then
+              echo "Missing required secret/env: $name"
+              missing=1
+            fi
+          done
+          if [ "$missing" -ne 0 ]; then
+            exit 1
+          fi
 
       - name: Start App Server
         run: |
