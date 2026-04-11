@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import {
@@ -17,6 +18,8 @@ type HumanSignal = {
   target_member_id: string | null;
   title: string;
   detail: string;
+  audio_url: string | null;
+  audio_duration_seconds: number | null;
   signal_strength: number;
   status: HumanSignalStatus;
   created_at: string;
@@ -45,7 +48,7 @@ export async function listVisibleHumanSignals() {
   const supabaseAdmin = createAdminClient();
   const { data } = await supabaseAdmin
     .from("human_signals")
-    .select("id,emitter_member_id,target_member_id,title,detail,signal_strength,status,created_at,updated_at")
+    .select("id,emitter_member_id,target_member_id,title,detail,audio_url,audio_duration_seconds,signal_strength,status,created_at,updated_at")
     .order("created_at", { ascending: false })
     .limit(300);
 
@@ -115,6 +118,8 @@ export async function createHumanSignal(formData: FormData) {
   const detail = String(formData.get("detail") || "").trim();
   const strengthRaw = String(formData.get("signal_strength") || "1").trim();
   const targetMemberIdRaw = String(formData.get("target_member_id") || "").trim();
+  const audioUrlRaw = String(formData.get("audio_url") || "").trim();
+  const audioDurationRaw = String(formData.get("audio_duration_seconds") || "").trim();
 
   if (!title) return { error: "Titre requis." };
   if (!detail) return { error: "Détail requis." };
@@ -125,6 +130,15 @@ export async function createHumanSignal(formData: FormData) {
   }
 
   const target_member_id = targetMemberIdRaw || null;
+  const audio_url = audioUrlRaw || null;
+  let audio_duration_seconds: number | null = null;
+  if (audioDurationRaw) {
+    const parsed = Number(audioDurationRaw);
+    if (!Number.isInteger(parsed) || parsed < 0) {
+      return { error: "Durée audio invalide." };
+    }
+    audio_duration_seconds = parsed;
+  }
 
   const supabaseAdmin = createAdminClient();
   const { error } = await supabaseAdmin.from("human_signals").insert({
@@ -132,6 +146,8 @@ export async function createHumanSignal(formData: FormData) {
     target_member_id,
     title,
     detail,
+    audio_url,
+    audio_duration_seconds,
     signal_strength: signalStrength,
     status: "open",
   });
@@ -144,7 +160,12 @@ export async function createHumanSignal(formData: FormData) {
 }
 
 export async function createHumanSignalAction(formData: FormData): Promise<void> {
-  await createHumanSignal(formData);
+  const currentUrl = String(formData.get("current_url") || "/popey-human/app/signal");
+  const result = await createHumanSignal(formData);
+  if ("error" in result) {
+    redirect(withSignalStatus(currentUrl, "error", result.error || "Action impossible."));
+  }
+  redirect(withSignalStatus(currentUrl, "success", "Signal vocal envoyé."));
 }
 
 export async function closeHumanSignal(formData: FormData) {
@@ -175,7 +196,12 @@ export async function closeHumanSignal(formData: FormData) {
 }
 
 export async function closeHumanSignalAction(formData: FormData): Promise<void> {
-  await closeHumanSignal(formData);
+  const currentUrl = String(formData.get("current_url") || "/popey-human/app/signal");
+  const result = await closeHumanSignal(formData);
+  if ("error" in result) {
+    redirect(withSignalStatus(currentUrl, "error", result.error || "Action impossible."));
+  }
+  redirect(withSignalStatus(currentUrl, "success", "Signal clôturé."));
 }
 
 export async function getSignalTargetCandidates() {
@@ -198,4 +224,12 @@ function computeSignalScore(strength: number, status: HumanSignalStatus) {
   if (status === "closed") return Math.max(0, base - 10);
   if (status === "in_progress") return base + 10;
   return base;
+}
+
+function withSignalStatus(url: string, status: "success" | "error", message: string) {
+  const safePath = url.startsWith("/popey-human/app/signal") ? url : "/popey-human/app/signal";
+  const parsed = new URL(safePath, "http://localhost");
+  parsed.searchParams.set("signalStatus", status);
+  parsed.searchParams.set("signalMessage", message);
+  return `${parsed.pathname}?${parsed.searchParams.toString()}`;
 }
