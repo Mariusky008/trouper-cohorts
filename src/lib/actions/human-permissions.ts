@@ -652,7 +652,12 @@ export async function updateMyHumanProfile(formData: FormData) {
 }
 
 export async function updateMyHumanProfileAction(formData: FormData): Promise<void> {
-  await updateMyHumanProfile(formData);
+  const currentUrl = String(formData.get("current_url") || "/popey-human/app/profile");
+  const result = await updateMyHumanProfile(formData);
+  if ("error" in result) {
+    redirect(withHumanProfileStatus(currentUrl, "error", result.error || "Action impossible."));
+  }
+  redirect(withHumanProfileStatus(currentUrl, "success", "Profil mis à jour."));
 }
 
 async function requireHumanAdmin() {
@@ -734,5 +739,13 @@ function withMembersStatus(url: string, status: "success" | "error", message: st
   const parsed = new URL(safePath, "http://localhost");
   parsed.searchParams.set("memberStatus", status);
   parsed.searchParams.set("memberMessage", message);
+  return `${parsed.pathname}?${parsed.searchParams.toString()}`;
+}
+
+function withHumanProfileStatus(url: string, status: "success" | "error", message: string) {
+  const safePath = url.startsWith("/popey-human/app/profile") ? url : "/popey-human/app/profile";
+  const parsed = new URL(safePath, "http://localhost");
+  parsed.searchParams.set("profileStatus", status);
+  parsed.searchParams.set("profileMessage", message);
   return `${parsed.pathname}?${parsed.searchParams.toString()}`;
 }
