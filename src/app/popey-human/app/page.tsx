@@ -71,6 +71,9 @@ export default async function PopeyHumanAppPage() {
               <Link href="/popey-human/app/signal">Ouvrir Signal</Link>
             </Button>
             <Button asChild>
+              <Link href="/popey-human/app/eclaireurs">Ouvrir Éclaireurs</Link>
+            </Button>
+            <Button asChild>
               <Link href="/popey-human/app/annuaire">Ouvrir l&apos;annuaire</Link>
             </Button>
             <Button asChild variant="outline">

@@ -9,7 +9,7 @@ export default function AdminHumainPage() {
         <h1 className="text-3xl font-black">Admin Popey Human</h1>
       </div>
       <p className="max-w-2xl text-sm text-muted-foreground">
-        Espace dédié au pilotage Popey Human: permissions réseau, binômes, sphère et notifications.
+        Espace dédié au pilotage Popey Human: permissions réseau, binômes, sphère, éclaireurs et notifications.
       </p>
       <div className="rounded-xl border bg-card p-5 text-sm">
         Sprint 1 livré: routage indépendant et redirection post-login vers cet espace pour les admins.
@@ -35,6 +35,9 @@ export default function AdminHumainPage() {
         </Button>
         <Button asChild variant="outline">
           <Link href="/admin/humain/commissions">Ouvrir les commissions</Link>
+        </Button>
+        <Button asChild variant="outline">
+          <Link href="/admin/humain/eclaireurs">Ouvrir les éclaireurs</Link>
         </Button>
       </div>
     </section>

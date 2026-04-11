@@ -30,6 +30,7 @@ export function PopeyHumanMemberShell({ children }: MemberShellProps) {
     () => [
       { href: "/popey-human/app/clients", label: "Clients", active: pathname.startsWith("/popey-human/app/clients") },
       { href: "/popey-human/app/signal", label: "Signal", active: pathname.startsWith("/popey-human/app/signal") },
+      { href: "/popey-human/app/eclaireurs", label: "Éclaireurs", active: pathname.startsWith("/popey-human/app/eclaireurs") },
       { href: "/popey-human/app/cash", label: "Cash", active: pathname.startsWith("/popey-human/app/cash") },
     ],
     [pathname]
@@ -93,7 +94,7 @@ export function PopeyHumanMemberShell({ children }: MemberShellProps) {
           isLight ? "border-t border-black/10 bg-white/85" : "border-t border-white/10 bg-[#0B0D0E]/95"
         }`}
       >
-        <div className="mx-auto max-w-5xl grid grid-cols-3 gap-2 items-end">
+        <div className="mx-auto max-w-5xl grid grid-cols-4 gap-2 items-end">
           {navItems.map((item) => (
             <Link
               key={item.href}
