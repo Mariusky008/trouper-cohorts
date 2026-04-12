@@ -12,6 +12,7 @@ export default async function proxy(request: NextRequest) {
 
   const { response, user } = await updateSession(request);
   const pathname = request.nextUrl.pathname;
+  const scoutPortalMatch = pathname.match(/^\/popey-human\/eclaireur\/([^/?#]+)/);
 
   const isHumanMemberArea = pathname.startsWith("/popey-human/app");
   const isHumanAdminArea = pathname.startsWith("/admin/humain");
@@ -27,6 +28,15 @@ export default async function proxy(request: NextRequest) {
   if (user && isHumanLogin) {
     const appUrl = new URL("/popey-human/app", request.url);
     return copyResponseCookies(NextResponse.redirect(appUrl), response);
+  }
+
+  if (scoutPortalMatch?.[1]) {
+    response.cookies.set("popey_human_scout_last_access", decodeURIComponent(scoutPortalMatch[1]), {
+      path: "/popey-human/eclaireur",
+      httpOnly: false,
+      sameSite: "lax",
+      maxAge: 60 * 60 * 24 * 90,
+    });
   }
 
   return response;
