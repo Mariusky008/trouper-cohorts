@@ -16,12 +16,19 @@ function extractToken(input: string) {
     if (/^[a-f0-9]{16,64}$/i.test(last)) {
       return last.toLowerCase();
     }
+    if (/^[a-z0-9]{4}-[a-z0-9]{4}$/i.test(last)) {
+      return last.toUpperCase();
+    }
   } catch {
     // not an URL, continue
   }
 
   const normalized = trimmed.replace(/\s+/g, "").replace(/-/g, "").toLowerCase();
   if (/^[a-f0-9]{16,64}$/.test(normalized)) return normalized;
+  if (/^[a-z0-9]{8}$/i.test(normalized)) {
+    const upper = normalized.toUpperCase();
+    return `${upper.slice(0, 4)}-${upper.slice(4, 8)}`;
+  }
   return "";
 }
 
@@ -83,4 +90,3 @@ export default function ScoutQuickAccessPage() {
     </main>
   );
 }
-

@@ -31,6 +31,7 @@ type HumanScoutInvite = {
   owner_member_id: string;
   scout_id: string | null;
   invite_token: string;
+  short_code: string | null;
   expires_at: string;
   accepted_at: string | null;
   created_at: string;
@@ -72,7 +73,7 @@ export async function getMyScoutWorkspace() {
   }
 
   const supabaseAdmin = createAdminClient();
-  const [{ data: scoutsData }, { data: referralsData }, { data: invitesData }] = await Promise.all([
+  const [{ data: scoutsData }, { data: referralsData }] = await Promise.all([
     supabaseAdmin
       .from("human_scouts")
       .select("id,owner_member_id,user_id,first_name,last_name,phone,email,status,commission_rate,total_paid,pending_earnings,created_at,updated_at")
@@ -86,13 +87,27 @@ export async function getMyScoutWorkspace() {
       .eq("owner_member_id", member.myMember.id)
       .order("created_at", { ascending: false })
       .limit(500),
-    supabaseAdmin
+  ]);
+
+  let invitesData: any[] | null = null;
+  const invitesWithShortCode = await supabaseAdmin
+    .from("human_scout_invites")
+    .select("id,owner_member_id,scout_id,invite_token,short_code,expires_at,accepted_at,created_at")
+    .eq("owner_member_id", member.myMember.id)
+    .order("created_at", { ascending: false })
+    .limit(500);
+
+  if (!invitesWithShortCode.error) {
+    invitesData = invitesWithShortCode.data as any[] | null;
+  } else {
+    const fallbackInvites = await supabaseAdmin
       .from("human_scout_invites")
       .select("id,owner_member_id,scout_id,invite_token,expires_at,accepted_at,created_at")
       .eq("owner_member_id", member.myMember.id)
       .order("created_at", { ascending: false })
-      .limit(500),
-  ]);
+      .limit(500);
+    invitesData = (fallbackInvites.data as any[] | null) || [];
+  }
 
   const scouts = (scoutsData as HumanScout[] | null) || [];
   const referrals = (referralsData as HumanScoutReferral[] | null) || [];
@@ -151,13 +166,44 @@ export async function createScoutInvite(formData: FormData) {
 
   const token = randomUUID().replaceAll("-", "");
   const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24 * 30).toISOString();
-  const { error: inviteError } = await supabaseAdmin.from("human_scout_invites").insert({
-    owner_member_id: member.myMember.id,
-    scout_id: scoutRow.id,
-    invite_token: token,
-    expires_at: expiresAt,
-  });
-  if (inviteError) return { error: inviteError.message };
+  let inviteInserted = false;
+  let inviteErrorMessage = "";
+  for (let attempt = 0; attempt < 10; attempt++) {
+    const shortCode = generateScoutShortCode();
+    const { error: inviteError } = await supabaseAdmin.from("human_scout_invites").insert({
+      owner_member_id: member.myMember.id,
+      scout_id: scoutRow.id,
+      invite_token: token,
+      short_code: shortCode,
+      expires_at: expiresAt,
+    });
+
+    if (!inviteError) {
+      inviteInserted = true;
+      break;
+    }
+
+    inviteErrorMessage = inviteError.message;
+    if (inviteError.message.toLowerCase().includes("column") && inviteError.message.toLowerCase().includes("short_code")) {
+      const { error: fallbackInviteError } = await supabaseAdmin.from("human_scout_invites").insert({
+        owner_member_id: member.myMember.id,
+        scout_id: scoutRow.id,
+        invite_token: token,
+        expires_at: expiresAt,
+      });
+      if (!fallbackInviteError) {
+        inviteInserted = true;
+        break;
+      }
+      inviteErrorMessage = fallbackInviteError.message;
+      break;
+    }
+
+    if (!inviteError.message.toLowerCase().includes("short_code")) {
+      break;
+    }
+  }
+  if (!inviteInserted) return { error: inviteErrorMessage || "Impossible de générer un code court unique." };
 
   revalidatePath("/popey-human/app/eclaireurs");
   revalidatePath("/admin/humain/eclaireurs");
@@ -483,8 +529,8 @@ export async function markScoutReferralPaidAction(formData: FormData): Promise<v
 }
 
 export async function getScoutPortalByToken(token: string) {
-  const inviteToken = token.trim();
-  if (!inviteToken) {
+  const inviteTokenOrCode = token.trim();
+  if (!inviteTokenOrCode) {
     return {
       error: "Lien invalide.",
       scout: null as HumanScout | null,
@@ -494,11 +540,38 @@ export async function getScoutPortalByToken(token: string) {
   }
 
   const supabaseAdmin = createAdminClient();
-  const { data: invite } = await supabaseAdmin
+  const normalizedToken = inviteTokenOrCode.toLowerCase();
+  const normalizedShortCode = normalizeScoutShortCode(inviteTokenOrCode);
+
+  let invite: any = null;
+  let shortCodeEnabled = true;
+  const inviteByTokenWithCode = await supabaseAdmin
     .from("human_scout_invites")
-    .select("id,owner_member_id,scout_id,invite_token,expires_at,accepted_at,created_at")
-    .eq("invite_token", inviteToken)
+    .select("id,owner_member_id,scout_id,invite_token,short_code,expires_at,accepted_at,created_at")
+    .eq("invite_token", normalizedToken)
     .maybeSingle();
+
+  if (!inviteByTokenWithCode.error) {
+    invite = inviteByTokenWithCode.data;
+  } else {
+    shortCodeEnabled = false;
+    const fallbackInviteByToken = await supabaseAdmin
+      .from("human_scout_invites")
+      .select("id,owner_member_id,scout_id,invite_token,expires_at,accepted_at,created_at")
+      .eq("invite_token", normalizedToken)
+      .maybeSingle();
+    invite = fallbackInviteByToken.data;
+  }
+
+  if (!invite && normalizedShortCode && shortCodeEnabled) {
+    const inviteByCode = await supabaseAdmin
+      .from("human_scout_invites")
+      .select("id,owner_member_id,scout_id,invite_token,short_code,expires_at,accepted_at,created_at")
+      .eq("short_code", normalizedShortCode)
+      .maybeSingle();
+    invite = inviteByCode.data;
+  }
+
   if (!invite || !invite.scout_id) {
     return { error: "Invitation introuvable.", scout: null as HumanScout | null, invite: null as HumanScoutInvite | null, referrals: [] as HumanScoutReferral[] };
   }
@@ -542,8 +615,8 @@ export async function activateScoutFromToken(formData: FormData) {
   const supabaseAdmin = createAdminClient();
   const { data: invite } = await supabaseAdmin
     .from("human_scout_invites")
-    .select("id,scout_id,expires_at,accepted_at")
-    .eq("invite_token", token)
+    .select("id,scout_id,invite_token,expires_at,accepted_at")
+    .eq("invite_token", token.toLowerCase())
     .maybeSingle();
   if (!invite || !invite.scout_id) return { error: "Invitation introuvable." };
   if (new Date(invite.expires_at).getTime() < Date.now()) return { error: "Invitation expirée." };
@@ -599,8 +672,8 @@ export async function submitScoutReferralFromToken(formData: FormData) {
   const supabaseAdmin = createAdminClient();
   const { data: invite } = await supabaseAdmin
     .from("human_scout_invites")
-    .select("id,owner_member_id,scout_id,expires_at")
-    .eq("invite_token", token)
+    .select("id,owner_member_id,scout_id,invite_token,expires_at")
+    .eq("invite_token", token.toLowerCase())
     .maybeSingle();
   if (!invite || !invite.scout_id) return { error: "Invitation introuvable." };
   if (new Date(invite.expires_at).getTime() < Date.now()) return { error: "Invitation expirée." };
@@ -853,6 +926,17 @@ async function logScoutEvent(input: {
 
 function normalizePhone(input: string) {
   return input.replaceAll(/\s+/g, "").replaceAll("-", "").replaceAll(".", "");
+}
+
+function generateScoutShortCode() {
+  const raw = randomUUID().replaceAll("-", "").toUpperCase();
+  return `${raw.slice(0, 4)}-${raw.slice(4, 8)}`;
+}
+
+function normalizeScoutShortCode(value: string) {
+  const raw = value.trim().toUpperCase().replace(/[^A-Z0-9]/g, "");
+  if (raw.length !== 8) return "";
+  return `${raw.slice(0, 4)}-${raw.slice(4, 8)}`;
 }
 
 async function requireMemberUser() {

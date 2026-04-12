@@ -117,13 +117,24 @@ export default async function PopeyHumanScoutsPage({
                     <p className="text-xs text-white/65">Referrals: {referrals.length}</p>
                     {invite && (
                       <>
+                        {invite.short_code ? (
+                          <p className="mt-1 text-[11px] text-[#EAC886]">
+                            Code court: <span className="font-black tracking-wider">{invite.short_code}</span>
+                          </p>
+                        ) : null}
                         <p className="mt-1 text-[11px] text-emerald-300/85 break-all">
                           Lien complet: https://www.popey.academy/popey-human/eclaireur/{invite.invite_token}
                         </p>
-                        <p className="mt-1 text-[11px] text-[#EAC886]/85">
-                          Accès simple ensuite: https://www.popey.academy/popey-human/eclaireur
-                        </p>
-                        <ScoutShareLink url={`https://www.popey.academy/popey-human/eclaireur/${invite.invite_token}`} />
+                        {invite.short_code ? (
+                          <>
+                            <p className="mt-1 text-[11px] text-[#EAC886]/85">
+                              Accès simple ensuite: https://www.popey.academy/popey-human/eclaireur?code={invite.short_code}
+                            </p>
+                            <ScoutShareLink url={`https://www.popey.academy/popey-human/eclaireur?code=${invite.short_code}`} />
+                          </>
+                        ) : (
+                          <ScoutShareLink url={`https://www.popey.academy/popey-human/eclaireur/${invite.invite_token}`} />
+                        )}
                       </>
                     )}
                   </div>

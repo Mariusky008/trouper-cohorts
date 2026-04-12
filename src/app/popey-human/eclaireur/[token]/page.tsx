@@ -48,7 +48,7 @@ export default async function PopeyHumanScoutPortalPage({
 
         {!data.error && data.scout && (
           <>
-            <ScoutPortalTools token={token} />
+            <ScoutPortalTools token={data.invite?.invite_token || token} shortCode={data.invite?.short_code || ""} />
 
             <section className="rounded-2xl border border-white/15 bg-black/25 p-4 space-y-2">
               <p className="text-sm font-black">
@@ -64,7 +64,7 @@ export default async function PopeyHumanScoutPortalPage({
               <section className="rounded-2xl border border-[#EAC886]/40 bg-[#2A2111] p-4">
                 <p className="text-sm font-black">Activer mon profil éclaireur</p>
                 <form action={activateScoutFromTokenAction} className="mt-3 space-y-2">
-                  <input type="hidden" name="invite_token" value={token} />
+                  <input type="hidden" name="invite_token" value={data.invite?.invite_token || token} />
                   <div className="grid gap-2 sm:grid-cols-2">
                     <input
                       name="first_name"
@@ -95,7 +95,7 @@ export default async function PopeyHumanScoutPortalPage({
             <section className="rounded-2xl border border-white/15 bg-black/25 p-4">
               <p className="text-sm font-black">Lancer une alerte</p>
               <form action={submitScoutReferralFromTokenAction} className="mt-3 space-y-2">
-                <input type="hidden" name="invite_token" value={token} />
+                <input type="hidden" name="invite_token" value={data.invite?.invite_token || token} />
                 <input name="contact_name" required placeholder="Nom du contact" className="h-10 w-full rounded border border-white/20 bg-black/25 px-2 text-sm" />
                 <input
                   name="contact_phone"

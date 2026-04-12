@@ -10,7 +10,7 @@ function formatTokenForReadability(token: string) {
   return token.replace(/(.{4})/g, "$1 ").trim();
 }
 
-export function ScoutPortalTools({ token }: { token: string }) {
+export function ScoutPortalTools({ token, shortCode }: { token: string; shortCode?: string }) {
   const [copied, setCopied] = useState(false);
   const [showInstall, setShowInstall] = useState(false);
   const portalUrl = useMemo(() => {
@@ -54,9 +54,15 @@ export function ScoutPortalTools({ token }: { token: string }) {
       <section className="rounded-2xl border border-[#EAC886]/35 bg-[#2A2111]/80 p-4 space-y-3">
         <p className="text-xs uppercase font-black tracking-[0.12em] text-[#EAC886]/85">Accès rapide éclaireur</p>
         <p className="text-xs text-[#F6E7CA] break-all">{portalUrl}</p>
-        <p className="text-[11px] text-[#F6E7CA]/80">
-          Code d'accès: <span className="font-black tracking-wider">{formatTokenForReadability(token)}</span>
-        </p>
+        {shortCode ? (
+          <p className="text-[11px] text-[#F6E7CA]/80">
+            Code d'accès court: <span className="font-black tracking-wider">{shortCode}</span>
+          </p>
+        ) : (
+          <p className="text-[11px] text-[#F6E7CA]/80">
+            Code d'accès: <span className="font-black tracking-wider">{formatTokenForReadability(token)}</span>
+          </p>
+        )}
         <div className="grid gap-2 sm:grid-cols-3">
           <button
             type="button"
@@ -88,4 +94,3 @@ export function ScoutPortalTools({ token }: { token: string }) {
     </>
   );
 }
-
