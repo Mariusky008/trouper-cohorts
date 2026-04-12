@@ -7,6 +7,7 @@ import {
   rejectScoutReferralAction,
   validateScoutReferralAction,
 } from "@/lib/actions/human-scouts";
+import { ScoutShareLink } from "@/components/popey-human/scout-share-link";
 
 function euros(value: number) {
   return value.toLocaleString("fr-FR", { style: "currency", currency: "EUR" });
@@ -115,9 +116,15 @@ export default async function PopeyHumanScoutsPage({
                     </p>
                     <p className="text-xs text-white/65">Referrals: {referrals.length}</p>
                     {invite && (
-                      <p className="mt-1 text-[11px] text-emerald-300/85 break-all">
-                        Lien: /popey-human/eclaireur/{invite.invite_token}
-                      </p>
+                      <>
+                        <p className="mt-1 text-[11px] text-emerald-300/85 break-all">
+                          Lien complet: https://www.popey.academy/popey-human/eclaireur/{invite.invite_token}
+                        </p>
+                        <p className="mt-1 text-[11px] text-[#EAC886]/85">
+                          Accès simple ensuite: https://www.popey.academy/popey-human/eclaireur
+                        </p>
+                        <ScoutShareLink url={`https://www.popey.academy/popey-human/eclaireur/${invite.invite_token}`} />
+                      </>
                     )}
                   </div>
                 );

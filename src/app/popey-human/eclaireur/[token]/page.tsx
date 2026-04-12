@@ -4,6 +4,7 @@ import {
   getScoutPortalByToken,
   submitScoutReferralFromTokenAction,
 } from "@/lib/actions/human-scouts";
+import { ScoutPortalTools } from "@/components/popey-human/scout-portal-tools";
 
 function euros(value: number) {
   return value.toLocaleString("fr-FR", { style: "currency", currency: "EUR" });
@@ -31,8 +32,8 @@ export default async function PopeyHumanScoutPortalPage({
             <p className="text-xs font-black uppercase tracking-[0.12em] text-[#EAC886]/85">Portail Éclaireur</p>
             <h1 className="text-3xl font-black">Mes alertes & gains</h1>
           </div>
-          <Link href="/popey-human/login" className="text-xs font-black uppercase tracking-wide border border-white/20 rounded px-3 py-2">
-            Accès membre
+          <Link href="/popey-human/eclaireur" className="text-xs font-black uppercase tracking-wide border border-white/20 rounded px-3 py-2">
+            Mon accès rapide
           </Link>
         </div>
 
@@ -47,6 +48,8 @@ export default async function PopeyHumanScoutPortalPage({
 
         {!data.error && data.scout && (
           <>
+            <ScoutPortalTools token={token} />
+
             <section className="rounded-2xl border border-white/15 bg-black/25 p-4 space-y-2">
               <p className="text-sm font-black">
                 {data.scout.first_name || "Éclaireur"} {data.scout.last_name || ""} • {data.scout.status}
