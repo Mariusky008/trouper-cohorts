@@ -3,6 +3,9 @@ import { Button } from "@/components/ui/button";
 import { getHumanPermissionsAdminSnapshot, type HumanAccessMode } from "@/lib/actions/human-permissions";
 import { adminDispatchHumanSignalAction, getAdminSignalDispatchSnapshot } from "@/lib/actions/human-signals";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 type ModeKey = HumanAccessMode;
 type AdminSphereFilter = "toutes" | "habitat" | "sante" | "auto";
 

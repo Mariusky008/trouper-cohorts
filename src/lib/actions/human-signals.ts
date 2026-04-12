@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, unstable_noStore as noStore } from "next/cache";
 import { redirect } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
@@ -38,6 +38,7 @@ type HumanSignalDispatchRow = {
 type AdminSphereKey = "habitat" | "sante" | "auto";
 
 export async function listVisibleHumanSignals() {
+  noStore();
   const supabase = await createClient();
   const {
     data: { user },
@@ -267,6 +268,7 @@ export async function getSignalTargetCandidates() {
 }
 
 export async function getAdminSignalDispatchSnapshot() {
+  noStore();
   const admin = await requireAdminUser();
   if ("error" in admin) {
     return {
