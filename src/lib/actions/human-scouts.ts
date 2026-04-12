@@ -536,6 +536,7 @@ export async function getScoutPortalByToken(token: string) {
       scout: null as HumanScout | null,
       invite: null as HumanScoutInvite | null,
       referrals: [] as HumanScoutReferral[],
+      sponsorName: null as string | null,
     };
   }
 
@@ -573,12 +574,24 @@ export async function getScoutPortalByToken(token: string) {
   }
 
   if (!invite || !invite.scout_id) {
-    return { error: "Invitation introuvable.", scout: null as HumanScout | null, invite: null as HumanScoutInvite | null, referrals: [] as HumanScoutReferral[] };
+    return {
+      error: "Invitation introuvable.",
+      scout: null as HumanScout | null,
+      invite: null as HumanScoutInvite | null,
+      referrals: [] as HumanScoutReferral[],
+      sponsorName: null as string | null,
+    };
   }
 
   const inviteTyped = invite as HumanScoutInvite;
   if (new Date(inviteTyped.expires_at).getTime() < Date.now()) {
-    return { error: "Invitation expirée.", scout: null as HumanScout | null, invite: inviteTyped, referrals: [] as HumanScoutReferral[] };
+    return {
+      error: "Invitation expirée.",
+      scout: null as HumanScout | null,
+      invite: inviteTyped,
+      referrals: [] as HumanScoutReferral[],
+      sponsorName: null as string | null,
+    };
   }
 
   const [{ data: scout }, { data: referrals }] = await Promise.all([
@@ -597,11 +610,35 @@ export async function getScoutPortalByToken(token: string) {
       .limit(200),
   ]);
 
+  let sponsorName: string | null = null;
+  const scoutRow = (scout as HumanScout | null) || null;
+  if (scoutRow?.owner_member_id) {
+    const { data: ownerMember } = await supabaseAdmin
+      .from("human_members")
+      .select("id,user_id,first_name,last_name")
+      .eq("id", scoutRow.owner_member_id)
+      .maybeSingle();
+    if (ownerMember) {
+      const ownerFullName = [ownerMember.first_name, ownerMember.last_name].filter(Boolean).join(" ").trim();
+      if (ownerFullName) {
+        sponsorName = ownerFullName;
+      } else {
+        const { data: ownerProfile } = await supabaseAdmin
+          .from("profiles")
+          .select("display_name")
+          .eq("id", ownerMember.user_id)
+          .maybeSingle();
+        sponsorName = ownerProfile?.display_name || null;
+      }
+    }
+  }
+
   return {
     error: null as string | null,
-    scout: (scout as HumanScout | null) || null,
+    scout: scoutRow,
     invite: inviteTyped,
     referrals: (referrals as HumanScoutReferral[] | null) || [],
+    sponsorName,
   };
 }
 

@@ -1,10 +1,8 @@
-import Link from "next/link";
 import {
   activateScoutFromTokenAction,
   getScoutPortalByToken,
   submitScoutReferralFromTokenAction,
 } from "@/lib/actions/human-scouts";
-import { ScoutPortalTools } from "@/components/popey-human/scout-portal-tools";
 
 function euros(value: number) {
   return value.toLocaleString("fr-FR", { style: "currency", currency: "EUR" });
@@ -60,14 +58,9 @@ export default async function PopeyHumanScoutPortalPage({
   return (
     <main className="min-h-screen bg-[#0A0B0C] text-white">
       <div className="mx-auto max-w-2xl px-4 py-8 space-y-5">
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <p className="text-xs font-black uppercase tracking-[0.12em] text-[#EAC886]/85">Portail Éclaireur</p>
-            <h1 className="text-3xl font-black">Mes alertes & gains</h1>
-          </div>
-          <Link href="/popey-human/eclaireur" className="text-xs font-black uppercase tracking-wide border border-white/20 rounded px-3 py-2">
-            Mon accès rapide
-          </Link>
+        <div>
+          <p className="text-xs font-black uppercase tracking-[0.12em] text-[#EAC886]/85">Portail Éclaireur</p>
+          <h1 className="text-3xl font-black">Mes alertes & gains</h1>
         </div>
 
         {status === "success" && (
@@ -136,8 +129,6 @@ export default async function PopeyHumanScoutPortalPage({
               </div>
             </section>
 
-            <ScoutPortalTools token={data.invite?.invite_token || token} shortCode={data.invite?.short_code || ""} />
-
             {data.scout.status !== "active" && (
               <section className="rounded-2xl border border-[#EAC886]/40 bg-[#2A2111] p-4">
                 <p className="text-sm font-black">Activer mon profil éclaireur</p>
@@ -172,6 +163,9 @@ export default async function PopeyHumanScoutPortalPage({
 
             <section className="rounded-2xl border border-white/15 bg-black/25 p-4">
               <p className="text-sm font-black">Lancer une alerte</p>
+              <p className="text-xs text-white/70">
+                Cette alerte sera envoyée à votre parrain {data.sponsorName || "Popey Human"} pour qualification et dispatch.
+              </p>
               <form action={submitScoutReferralFromTokenAction} className="mt-3 space-y-2">
                 <input type="hidden" name="invite_token" value={data.invite?.invite_token || token} />
                 <input name="contact_name" required placeholder="Nom du contact" className="h-10 w-full rounded border border-white/20 bg-black/25 px-2 text-sm" />
