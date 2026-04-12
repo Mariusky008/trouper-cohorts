@@ -8,6 +8,11 @@ export default async function AdminHumainPage() {
   const recordingsCount = signalSnapshot.error
     ? null
     : signalSnapshot.signals.filter((signal) => Boolean(signal.audio_url)).length;
+  const newVocalsCount = signalSnapshot.error
+    ? null
+    : signalSnapshot.signals.filter(
+        (signal) => Boolean(signal.audio_url) && signal.status !== "closed" && signal.dispatchTargets.length === 0
+      ).length;
 
   return (
     <section className="space-y-4">
@@ -27,7 +32,14 @@ export default async function AdminHumainPage() {
         </p>
         <div className="mt-3">
           <Button asChild>
-            <Link href="/admin/humain/sphere">Ouvrir la timeline des vocaux</Link>
+            <Link href="/admin/humain/sphere" className="inline-flex items-center gap-2">
+              Ouvrir la timeline des vocaux
+              {newVocalsCount && newVocalsCount > 0 ? (
+                <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-black text-white">
+                  {newVocalsCount}
+                </span>
+              ) : null}
+            </Link>
           </Button>
         </div>
       </div>
@@ -45,7 +57,14 @@ export default async function AdminHumainPage() {
           <Link href="/admin/humain/membres">Ouvrir la gestion des membres</Link>
         </Button>
         <Button asChild variant="outline">
-          <Link href="/admin/humain/sphere">Ouvrir la vue sphère</Link>
+          <Link href="/admin/humain/sphere" className="inline-flex items-center gap-2">
+            Ouvrir la vue sphère
+            {newVocalsCount && newVocalsCount > 0 ? (
+              <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-black text-white">
+                {newVocalsCount}
+              </span>
+            ) : null}
+          </Link>
         </Button>
         <Button asChild>
           <Link href="/admin/humain/permissions">Ouvrir la gestion des permissions</Link>
