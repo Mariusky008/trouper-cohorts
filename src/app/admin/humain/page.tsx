@@ -7,7 +7,11 @@ export default async function AdminHumainPage() {
   const signalsCount = signalSnapshot.error ? null : signalSnapshot.signals.length;
   const recordingsCount = signalSnapshot.error
     ? null
-    : signalSnapshot.signals.filter((signal) => Boolean(signal.audio_url)).length;
+    : signalSnapshot.signals.filter((signal) => Boolean(signal.audio_url && String(signal.audio_url).trim())).length;
+  const withoutAudioCount =
+    signalSnapshot.error || recordingsCount === null || signalsCount === null
+      ? null
+      : Math.max(0, signalsCount - recordingsCount);
   const newVocalsCount = signalSnapshot.error
     ? null
     : signalSnapshot.signals.filter(
@@ -23,13 +27,18 @@ export default async function AdminHumainPage() {
       <p className="max-w-2xl text-sm text-muted-foreground">
         Espace dédié au pilotage Popey Human: permissions réseau, binômes, sphère, éclaireurs et notifications.
       </p>
-      <div className="rounded-xl border border-cyan-300/30 bg-cyan-500/10 p-5">
-        <p className="text-xs font-black uppercase tracking-[0.12em] text-cyan-200/90">Enregistrements vocaux reçus</p>
-        <p className="mt-1 text-sm text-cyan-100/90">
+      <div className="rounded-xl border border-cyan-300/40 bg-cyan-500/10 p-5">
+        <p className="text-xs font-black uppercase tracking-[0.12em] text-cyan-900">Enregistrements vocaux reçus</p>
+        <p className="mt-1 text-sm text-cyan-900">
           {signalSnapshot.error
             ? "Impossible de charger le compteur vocal pour le moment."
             : `${recordingsCount} enregistrement(s) audio sur ${signalsCount} signal(aux) total.`}
         </p>
+        {!signalSnapshot.error && (
+          <p className="mt-1 text-xs text-cyan-900/85">
+            Sans audio exploitable: {withoutAudioCount} (upload manquant ou signal texte).
+          </p>
+        )}
         <div className="mt-3">
           <Button asChild>
             <Link href="/admin/humain/sphere" className="inline-flex items-center gap-2">

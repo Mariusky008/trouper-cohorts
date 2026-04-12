@@ -243,6 +243,9 @@ export default async function AdminHumainSpherePage({
                           <p className="text-[11px] text-white/60">
                             Statut: {signal.status} • Dispatch: {signal.dispatchTargets.length}
                           </p>
+                          <p className="text-[11px] text-white/70">
+                            Audio: {signal.audio_url ? "oui" : "non"}
+                          </p>
                         </Link>
                       ))}
                       {scopedSignals.length === 0 && <p className="text-sm text-white/70">Aucun vocal pour ce filtre.</p>}
