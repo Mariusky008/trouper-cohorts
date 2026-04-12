@@ -143,13 +143,21 @@ export function TalkieSignalComposer({ createSignalAction, initialSuccessVisible
           Appuyez pour transmettre votre opportunité. Je qualifie le besoin puis j&apos;active les métiers concernés.
         </p>
 
-        <div className="relative mt-6 h-56 flex justify-center items-center">
-          <span className="absolute left-1/2 top-1/2 h-44 w-44 -translate-x-1/2 -translate-y-1/2 rounded-full border border-emerald-300/25" />
+        <div className="relative mt-6 h-64 flex justify-center items-center">
+          <span className="absolute left-1/2 top-1/2 h-56 w-56 -translate-x-1/2 -translate-y-1/2 rounded-full border border-emerald-300/30 animate-[talkieRing_1.6s_ease-out_infinite]" />
+          <span
+            className="absolute left-1/2 top-1/2 h-72 w-72 -translate-x-1/2 -translate-y-1/2 rounded-full border border-emerald-300/20 animate-[talkieRing_2.1s_ease-out_infinite]"
+            style={{ animationDelay: "250ms" }}
+          />
+          <span
+            className="absolute left-1/2 top-1/2 h-80 w-80 -translate-x-1/2 -translate-y-1/2 rounded-full border border-emerald-300/15 animate-[talkieRing_2.6s_ease-out_infinite]"
+            style={{ animationDelay: "450ms" }}
+          />
           <button
             type="button"
             onClick={isRecording ? stopRecording : startRecording}
             disabled={isUploading || isPreparing || isStopping}
-            className={`relative h-40 w-40 rounded-full border-2 text-sm font-black uppercase tracking-wide ${
+            className={`talkie-btn relative h-48 w-48 rounded-full border-2 text-base font-black uppercase tracking-wide ${
               isRecording
                 ? "bg-red-500 text-white border-red-300/60"
                 : isPreparing
@@ -157,7 +165,10 @@ export function TalkieSignalComposer({ createSignalAction, initialSuccessVisible
                 : "bg-gradient-to-b from-emerald-400 to-emerald-500 text-black border-emerald-300/60"
             } ${isUploading ? "opacity-60 cursor-not-allowed" : ""}`}
           >
-            {isUploading ? "Upload..." : isPreparing ? "Préparation..." : isStopping ? "Finalisation..." : isRecording ? "Arrêter" : "Appuyer pour parler"}
+            <span className="pointer-events-none absolute inset-0 rounded-full animate-[talkieGlow_1.6s_ease-in-out_infinite]" />
+            <span className="relative z-10">
+              {isUploading ? "Upload..." : isPreparing ? "Préparation..." : isStopping ? "Finalisation..." : isRecording ? "Arrêter" : "Appuyer pour parler"}
+            </span>
           </button>
         </div>
         {isPreparing && (
