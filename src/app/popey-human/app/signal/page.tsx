@@ -66,12 +66,6 @@ async function PopeyHumanSignalContent({
             Appuyez pour transmettre votre opportunité. Votre vocal arrive d&apos;abord à l&apos;admin pour qualification, puis dispatch manuel vers les métiers concernés.
           </p>
         </div>
-        <Link
-          href="/popey-human/app"
-          className="h-10 rounded-xl px-3 inline-flex items-center text-xs font-black uppercase tracking-wide border border-white/20 bg-white/10 text-white/90"
-        >
-          Retour cockpit
-        </Link>
       </div>
 
       <TalkieSignalComposer
