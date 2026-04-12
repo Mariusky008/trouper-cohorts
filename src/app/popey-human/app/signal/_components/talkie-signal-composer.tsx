@@ -26,8 +26,14 @@ export function TalkieSignalComposer({ createSignalAction }: Props) {
     setAckVisible(false);
     setIsPreparing(true);
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const recorder = new MediaRecorder(stream);
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: false,
+          noiseSuppression: false,
+          autoGainControl: false,
+        },
+      });
+      const recorder = new MediaRecorder(stream, { mimeType: "audio/webm;codecs=opus" });
       audioChunksRef.current = [];
       recorder.ondataavailable = (event) => {
         if (event.data.size > 0) {
@@ -44,7 +50,8 @@ export function TalkieSignalComposer({ createSignalAction }: Props) {
       };
       mediaRecorderRef.current = recorder;
       recordingStartedAtRef.current = Date.now();
-      recorder.start();
+      // Emit chunks frequently to avoid browser-dependent clipping at start/end.
+      recorder.start(250);
     } catch {
       setIsPreparing(false);
       setErrorMessage("Impossible d'accéder au micro. Vérifiez les permissions.");
@@ -53,6 +60,8 @@ export function TalkieSignalComposer({ createSignalAction }: Props) {
 
   const stopRecording = () => {
     if (!mediaRecorderRef.current || mediaRecorderRef.current.state === "inactive") return;
+    // Flush current internal encoder buffer before stopping.
+    mediaRecorderRef.current.requestData();
     mediaRecorderRef.current.stop();
     setIsRecording(false);
     setIsPreparing(false);
