@@ -544,6 +544,14 @@ export default function PopeyHumanTestV4Page() {
       <section className="border-b border-black/10 bg-white">
         <div className="mx-auto max-w-6xl px-4 py-14 md:py-20 lg:min-h-[76vh] flex items-center">
           <div className="w-full">
+            <div className="flex justify-end">
+              <Link
+                href="/programme-commando/postuler"
+                className="inline-flex items-center justify-center rounded-md bg-black px-4 py-2 text-xs font-black uppercase tracking-wide text-white transition hover:bg-black/85"
+              >
+                Ma place est-elle encore libre à Dax ?
+              </Link>
+            </div>
             <h1 className="mt-2 text-5xl md:text-7xl font-black leading-[1.02] max-w-5xl">
               Ne cherchez plus vos clients, allez là où ils sont déjà.
               <br />

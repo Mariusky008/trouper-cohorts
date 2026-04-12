@@ -1,9 +1,15 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { getAdminSignalDispatchSnapshot } from "@/lib/actions/human-signals";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export default async function AdminHumainPage() {
   const signalSnapshot = await getAdminSignalDispatchSnapshot();
+  const supabaseAdmin = createAdminClient();
+  const { count: commandoPendingCount } = await supabaseAdmin
+    .from("commando_applications")
+    .select("*", { count: "exact", head: true })
+    .eq("qualification_status", "pending_review");
   const signalsCount = signalSnapshot.error ? null : signalSnapshot.signals.length;
   const recordingsCount = signalSnapshot.error
     ? null
@@ -54,6 +60,26 @@ export default async function AdminHumainPage() {
       </div>
       <div className="rounded-xl border bg-card p-5 text-sm">
         Sprint 1 livré: routage indépendant et redirection post-login vers cet espace pour les admins.
+      </div>
+      <div className="rounded-xl border border-amber-300/40 bg-amber-500/10 p-5">
+        <p className="text-xs font-black uppercase tracking-[0.12em] text-amber-900">
+          Candidatures Programme 100% Humain
+        </p>
+        <p className="mt-1 text-sm text-amber-900">
+          Les formulaires d&apos;inscription de `popey-human` arrivent dans `commando_applications` via `/api/commando/apply`, visibles sur `/admin/commando`.
+        </p>
+        <div className="mt-3">
+          <Button asChild variant="outline">
+            <Link href="/admin/commando" className="inline-flex items-center gap-2">
+              Ouvrir les candidatures
+              {commandoPendingCount && commandoPendingCount > 0 ? (
+                <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-black text-white">
+                  {commandoPendingCount}
+                </span>
+              ) : null}
+            </Link>
+          </Button>
+        </div>
       </div>
       <div className="flex flex-wrap gap-2">
         <Button asChild>
