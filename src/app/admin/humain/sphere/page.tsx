@@ -1,7 +1,11 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { getHumanPermissionsAdminSnapshot, type HumanAccessMode } from "@/lib/actions/human-permissions";
-import { adminDispatchHumanSignalAction, getAdminSignalDispatchSnapshot } from "@/lib/actions/human-signals";
+import {
+  adminDeleteHumanSignalAction,
+  adminDispatchHumanSignalAction,
+  getAdminSignalDispatchSnapshot,
+} from "@/lib/actions/human-signals";
 import { RefreshButton } from "./_components/refresh-button";
 
 export const dynamic = "force-dynamic";
@@ -226,10 +230,9 @@ export default async function AdminHumainSpherePage({
                     <p className="text-xs font-black uppercase tracking-[0.12em] text-white/70">Timeline des vocaux</p>
                     <div className="mt-3 space-y-2 max-h-[560px] overflow-y-auto pr-1">
                       {scopedSignals.map((signal) => (
-                        <Link
+                        <div
                           key={signal.id}
-                          href={`${baseSphereHref(adminSphere)}${adminSphere === "toutes" ? "?" : "&"}selectedSignal=${signal.id}`}
-                          className={`block rounded-lg border px-3 py-2 ${
+                          className={`rounded-lg border px-3 py-2 ${
                             signal.id === selectedSignal?.id
                               ? "border-emerald-300/45 bg-emerald-500/10"
                               : signal.urgent
@@ -237,21 +240,35 @@ export default async function AdminHumainSpherePage({
                               : "border-white/15 bg-black/25"
                           }`}
                         >
-                          <div className="flex items-center justify-between gap-2">
-                            <p className="text-sm font-black">
-                              {signal.emitterLabel} {signal.emitterTrade ? `(${signal.emitterTrade})` : ""}
-                              {signal.urgent ? " • URGENCE" : ""}
-                            </p>
-                            <span className="text-[10px] text-white/65">{new Date(signal.created_at).toLocaleString("fr-FR")}</span>
+                          <div className="flex items-start justify-between gap-2">
+                            <Link
+                              href={`${baseSphereHref(adminSphere)}${adminSphere === "toutes" ? "?" : "&"}selectedSignal=${signal.id}`}
+                              className="min-w-0 flex-1"
+                            >
+                              <p className="text-sm font-black">
+                                {signal.emitterLabel} {signal.emitterTrade ? `(${signal.emitterTrade})` : ""}
+                                {signal.urgent ? " • URGENCE" : ""}
+                              </p>
+                              <p className="mt-1 text-xs text-white/80">{signal.title}</p>
+                              <p className="text-[11px] text-white/60">
+                                Statut: {signal.status} • Dispatch: {signal.dispatchTargets.length}
+                              </p>
+                              <p className="text-[11px] text-white/70">
+                                Audio: {signal.audio_url ? "oui" : "non"}
+                              </p>
+                            </Link>
+                            <div className="flex flex-col items-end gap-2">
+                              <span className="text-[10px] text-white/65">{new Date(signal.created_at).toLocaleString("fr-FR")}</span>
+                              <form action={adminDeleteHumanSignalAction}>
+                                <input type="hidden" name="signal_id" value={signal.id} />
+                                <input type="hidden" name="current_url" value={baseSphereHref(adminSphere)} />
+                                <button className="rounded border border-red-300/50 bg-red-500/15 px-2 py-1 text-[10px] font-black uppercase tracking-wide text-red-100">
+                                  Supprimer
+                                </button>
+                              </form>
+                            </div>
                           </div>
-                          <p className="mt-1 text-xs text-white/80">{signal.title}</p>
-                          <p className="text-[11px] text-white/60">
-                            Statut: {signal.status} • Dispatch: {signal.dispatchTargets.length}
-                          </p>
-                          <p className="text-[11px] text-white/70">
-                            Audio: {signal.audio_url ? "oui" : "non"}
-                          </p>
-                        </Link>
+                        </div>
                       ))}
                       {scopedSignals.length === 0 && <p className="text-sm text-white/70">Aucun vocal pour ce filtre.</p>}
                     </div>

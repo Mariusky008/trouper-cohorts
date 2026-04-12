@@ -453,6 +453,45 @@ export async function adminDispatchHumanSignalAction(formData: FormData): Promis
   redirect(withAdminSignalStatus(currentUrl, "success", "Signal dispatché avec succès."));
 }
 
+export async function adminDeleteHumanSignal(formData: FormData) {
+  const admin = await requireAdminUser();
+  if ("error" in admin) return { error: admin.error };
+
+  const signalId = String(formData.get("signal_id") || "").trim();
+  if (!signalId) return { error: "Signal invalide." };
+
+  const supabaseAdmin = createAdminClient();
+  const { data: signalRow, error: signalFetchError } = await supabaseAdmin
+    .from("human_signals")
+    .select("id,audio_url")
+    .eq("id", signalId)
+    .maybeSingle();
+  if (signalFetchError) return { error: signalFetchError.message };
+  if (!signalRow) return { error: "Signal introuvable." };
+
+  const { error: deleteError } = await supabaseAdmin.from("human_signals").delete().eq("id", signalId);
+  if (deleteError) return { error: deleteError.message };
+
+  const audioPath = extractAudioStoragePath(signalRow.audio_url || "");
+  if (audioPath) {
+    await supabaseAdmin.storage.from("human-signals-audio").remove([audioPath]);
+  }
+
+  revalidatePath("/admin/humain/sphere");
+  revalidatePath("/admin/humain");
+  revalidatePath("/admin/humain/cockpit");
+  return { success: true };
+}
+
+export async function adminDeleteHumanSignalAction(formData: FormData): Promise<void> {
+  const currentUrl = String(formData.get("current_url") || "/admin/humain/sphere");
+  const result = await adminDeleteHumanSignal(formData);
+  if ("error" in result) {
+    redirect(withAdminSignalStatus(currentUrl, "error", result.error || "Suppression impossible."));
+  }
+  redirect(withAdminSignalStatus(currentUrl, "success", "Vocal supprimé."));
+}
+
 function computeSignalScore(strength: number, status: HumanSignalStatus) {
   const base = strength * 20;
   if (status === "closed") return Math.max(0, base - 10);
