@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { getHumanPermissionsAdminSnapshot, type HumanAccessMode } from "@/lib/actions/human-permissions";
 import { adminDispatchHumanSignalAction, getAdminSignalDispatchSnapshot } from "@/lib/actions/human-signals";
+import { RefreshButton } from "./_components/refresh-button";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -93,6 +94,7 @@ export default async function AdminHumainSpherePage({
           </p>
         </div>
         <div className="flex gap-2">
+          <RefreshButton />
           <Button asChild variant="outline">
             <Link href="/admin/humain/membres">Membres</Link>
           </Button>
