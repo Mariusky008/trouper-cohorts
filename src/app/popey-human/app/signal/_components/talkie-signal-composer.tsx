@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { createClient } from "@/lib/supabase/client";
 
 type Props = {
   createSignalAction: (formData: FormData) => Promise<void>;
@@ -51,14 +52,16 @@ export function TalkieSignalComposer({ createSignalAction }: Props) {
   };
 
   const uploadAndSubmit = async () => {
-    const submitSignal = (detailText: string) => {
+    const submitSignal = (detailText: string, audioUrl: string, durationSeconds: number) => {
       const titleInput = formRef.current?.querySelector('input[name="title"]') as HTMLInputElement | null;
       const detailInput = formRef.current?.querySelector('input[name="detail"]') as HTMLInputElement | null;
       const strengthInput = formRef.current?.querySelector('input[name="signal_strength"]') as HTMLInputElement | null;
       const targetInput = formRef.current?.querySelector('input[name="target_member_id"]') as HTMLInputElement | null;
+      const audioUrlInput = formRef.current?.querySelector('input[name="audio_url"]') as HTMLInputElement | null;
+      const audioDurationInput = formRef.current?.querySelector('input[name="audio_duration_seconds"]') as HTMLInputElement | null;
       const currentUrlInput = formRef.current?.querySelector('input[name="current_url"]') as HTMLInputElement | null;
 
-      if (!titleInput || !detailInput || !strengthInput || !targetInput || !currentUrlInput || !formRef.current) {
+      if (!titleInput || !detailInput || !strengthInput || !targetInput || !audioUrlInput || !audioDurationInput || !currentUrlInput || !formRef.current) {
         throw new Error("Formulaire signal introuvable.");
       }
 
@@ -66,13 +69,38 @@ export function TalkieSignalComposer({ createSignalAction }: Props) {
       detailInput.value = detailText;
       strengthInput.value = "3";
       targetInput.value = "";
+      audioUrlInput.value = audioUrl;
+      audioDurationInput.value = String(durationSeconds);
       currentUrlInput.value = "/popey-human/app/signal";
       formRef.current.requestSubmit();
     };
 
     try {
       setIsUploading(true);
-      submitSignal(baseDetail);
+      const blob = new Blob(audioChunksRef.current, { type: "audio/webm" });
+      const durationSeconds = Math.max(1, Math.round((Date.now() - recordingStartedAtRef.current) / 1000));
+      if (blob.size === 0) {
+        submitSignal(baseDetail, "", durationSeconds);
+        setAckVisible(true);
+        return;
+      }
+
+      const filePath = `signals/${Date.now()}-${Math.random().toString(36).slice(2)}.webm`;
+      const supabase = createClient();
+      const { error: uploadError } = await supabase.storage.from("human-signals-audio").upload(filePath, blob, {
+        contentType: "audio/webm",
+        upsert: false,
+      });
+
+      if (uploadError) {
+        submitSignal(`${baseDetail} (Audio non joint: upload indisponible)`, "", durationSeconds);
+        setErrorMessage("Upload audio indisponible. Le signal a été envoyé à Popey admin sans pièce audio.");
+        setAckVisible(true);
+        return;
+      }
+
+      const { data: publicUrlData } = supabase.storage.from("human-signals-audio").getPublicUrl(filePath);
+      submitSignal(baseDetail, publicUrlData.publicUrl, durationSeconds);
       setAckVisible(true);
     } catch {
       setErrorMessage("Envoi impossible. Vérifiez les permissions micro et réessayez.");
@@ -120,6 +148,8 @@ export function TalkieSignalComposer({ createSignalAction }: Props) {
         <input name="detail" />
         <input name="signal_strength" />
         <input name="target_member_id" />
+        <input name="audio_url" />
+        <input name="audio_duration_seconds" />
         <input name="current_url" />
       </form>
     </div>
