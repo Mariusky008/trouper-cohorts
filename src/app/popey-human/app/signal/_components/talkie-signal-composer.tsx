@@ -15,6 +15,8 @@ type Props = {
 };
 
 export function TalkieSignalComposer({ candidates, createSignalAction, initialTargetMemberId = "" }: Props) {
+  const baseDetail =
+    "Signal vocal transmis depuis le mode talkie-walkie. Merci de qualifier le besoin et d'activer les métiers concernés.";
   const formRef = useRef<HTMLFormElement | null>(null);
   const [isRecording, setIsRecording] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -22,9 +24,6 @@ export function TalkieSignalComposer({ candidates, createSignalAction, initialTa
   const [signalStrength, setSignalStrength] = useState("3");
   const [targetMemberId, setTargetMemberId] = useState(
     candidates.some((candidate) => candidate.member_id === initialTargetMemberId) ? initialTargetMemberId : ""
-  );
-  const [detail, setDetail] = useState(
-    "Signal vocal transmis depuis le mode talkie-walkie. Merci de qualifier le besoin et d'activer les métiers concernés."
   );
   const [ackVisible, setAckVisible] = useState(false);
 
@@ -64,22 +63,7 @@ export function TalkieSignalComposer({ candidates, createSignalAction, initialTa
   };
 
   const uploadAndSubmit = async () => {
-    try {
-      setIsUploading(true);
-      const blob = new Blob(audioChunksRef.current, { type: "audio/webm" });
-      const durationSeconds = Math.max(1, Math.round((Date.now() - recordingStartedAtRef.current) / 1000));
-      const filePath = `signals/${Date.now()}-${Math.random().toString(36).slice(2)}.webm`;
-
-      const supabase = createClient();
-      const { error: uploadError } = await supabase.storage.from("human-signals-audio").upload(filePath, blob, {
-        contentType: "audio/webm",
-        upsert: false,
-      });
-      if (uploadError) throw uploadError;
-
-      const { data: publicUrlData } = supabase.storage.from("human-signals-audio").getPublicUrl(filePath);
-      const audioUrl = publicUrlData.publicUrl;
-
+    const submitSignal = (audioUrl: string, durationSeconds: number, detailText: string) => {
       const titleInput = formRef.current?.querySelector('input[name="title"]') as HTMLInputElement | null;
       const detailInput = formRef.current?.querySelector('input[name="detail"]') as HTMLInputElement | null;
       const strengthInput = formRef.current?.querySelector('input[name="signal_strength"]') as HTMLInputElement | null;
@@ -93,17 +77,45 @@ export function TalkieSignalComposer({ candidates, createSignalAction, initialTa
       }
 
       titleInput.value = "Signal vocal";
-      detailInput.value = detail;
+      detailInput.value = detailText;
       strengthInput.value = signalStrength;
       targetInput.value = targetMemberId;
       audioUrlInput.value = audioUrl;
       audioDurationInput.value = String(durationSeconds);
       currentUrlInput.value = "/popey-human/app/signal";
-
-      setAckVisible(true);
       formRef.current.requestSubmit();
+    };
+
+    try {
+      setIsUploading(true);
+      const blob = new Blob(audioChunksRef.current, { type: "audio/webm" });
+      const durationSeconds = Math.max(1, Math.round((Date.now() - recordingStartedAtRef.current) / 1000));
+      if (blob.size === 0) {
+        submitSignal("", durationSeconds, baseDetail);
+        setAckVisible(true);
+        return;
+      }
+      const filePath = `signals/${Date.now()}-${Math.random().toString(36).slice(2)}.webm`;
+
+      const supabase = createClient();
+      const { error: uploadError } = await supabase.storage.from("human-signals-audio").upload(filePath, blob, {
+        contentType: "audio/webm",
+        upsert: false,
+      });
+      if (uploadError) {
+        // Fallback: envoyer le signal même sans pièce audio pour ne pas bloquer l'utilisateur.
+        submitSignal("", durationSeconds, `${baseDetail} (Audio non joint: upload indisponible)`);
+        setErrorMessage("Upload audio indisponible. Le signal a été envoyé à Popey admin sans pièce audio.");
+        setAckVisible(true);
+        return;
+      }
+
+      const { data: publicUrlData } = supabase.storage.from("human-signals-audio").getPublicUrl(filePath);
+      const audioUrl = publicUrlData.publicUrl;
+      submitSignal(audioUrl, durationSeconds, baseDetail);
+      setAckVisible(true);
     } catch {
-      setErrorMessage("Upload audio impossible. Vérifiez le bucket Supabase `human-signals-audio`.");
+      setErrorMessage("Envoi impossible. Vérifiez les permissions micro et réessayez.");
     } finally {
       setIsUploading(false);
     }
@@ -142,13 +154,6 @@ export function TalkieSignalComposer({ candidates, createSignalAction, initialTa
           ))}
         </select>
       </div>
-
-      <textarea
-        value={detail}
-        onChange={(e) => setDetail(e.target.value)}
-        className="mt-3 min-h-20 w-full rounded-lg border border-white/20 bg-black/30 px-3 py-2 text-sm"
-        placeholder="Contexte du signal vocal..."
-      />
 
       <div className="relative mt-6 h-56 flex justify-center items-center">
         <span className="absolute left-1/2 top-1/2 h-44 w-44 -translate-x-1/2 -translate-y-1/2 rounded-full border border-emerald-300/25" />
