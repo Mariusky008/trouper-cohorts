@@ -14,7 +14,7 @@ export default async function PopeyHumanAppPage() {
       <div className="mt-1 flex justify-end">
         <Link
           href="/popey-human/app/notifications"
-          className="group relative h-[60px] w-[60px] rounded-full text-2xl transition hover:brightness-110 inline-flex items-center justify-center border border-emerald-300/35 bg-gradient-to-b from-[#1A3A31] to-[#0E241E] shadow-[0_10px_30px_-15px_rgba(0,245,176,0.6)]"
+          className="group bell-shake relative h-[60px] w-[60px] rounded-full text-2xl transition hover:brightness-110 inline-flex items-center justify-center border border-emerald-300/35 bg-gradient-to-b from-[#1A3A31] to-[#0E241E] shadow-[0_10px_30px_-15px_rgba(0,245,176,0.6)]"
           aria-label="Aller aux notifications"
         >
           <span className="relative -mt-0.5 text-emerald-200">🔔</span>

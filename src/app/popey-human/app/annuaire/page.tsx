@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { getVisibleHumanDirectory } from "@/lib/actions/human-permissions";
-import { Button } from "@/components/ui/button";
 
 function fullName(member: { first_name: string | null; last_name: string | null }) {
   return [member.first_name, member.last_name].filter(Boolean).join(" ").trim() || "Membre Popey";
@@ -22,15 +21,18 @@ export default async function PopeyHumanAnnuairePage({
     <section className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <p className="text-xs font-black uppercase tracking-[0.12em] text-emerald-300/85">Popey Human</p>
+          <p className="text-xs font-black uppercase tracking-[0.12em] text-emerald-300">L&apos;annuaire du Cercle</p>
           <h1 className="text-3xl font-black">Annuaire</h1>
           <p className="text-sm text-white/75">
             Mode actif: <span className="font-bold">{directory.mode ?? "Indisponible"}</span>
           </p>
         </div>
-        <Button asChild variant="outline">
-          <Link href="/popey-human/app">Retour cockpit</Link>
-        </Button>
+        <Link
+          href="/popey-human/app"
+          className="h-10 rounded-xl px-3 inline-flex items-center text-xs font-black uppercase tracking-wide border border-white/20 bg-white/10 text-white/90"
+        >
+          Retour cockpit
+        </Link>
       </div>
 
       {directory.error && (
@@ -49,7 +51,7 @@ export default async function PopeyHumanAnnuairePage({
             <Link
               key={member.id}
               href={`/popey-human/app/annuaire?member=${member.id}`}
-              className="rounded-xl border border-white/15 bg-black/25 p-4 hover:border-emerald-300/45 transition-colors"
+              className="rounded-xl border border-white/15 bg-black/25 p-4 hover:border-emerald-300/45 transition-colors hover:bg-emerald-500/10"
             >
               <p className="text-lg font-black">{fullName(member)}</p>
               <p className="mt-1 text-sm text-white/75">{member.metier || "Métier non renseigné"}</p>

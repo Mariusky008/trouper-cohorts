@@ -1,11 +1,16 @@
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
 import {
   createMyHumanCongratsAction,
   getMyHumanNotifications,
   markMyHumanNotificationReadAction,
   toggleMyHumanNotificationReactionAction,
 } from "@/lib/actions/human-notifications";
+
+function badgeTone(type: string) {
+  if (type === "personnelle") return "bg-cyan-100 text-cyan-800 border-cyan-200";
+  if (type === "felicitation") return "bg-fuchsia-100 text-fuchsia-800 border-fuchsia-200";
+  return "bg-emerald-100 text-emerald-800 border-emerald-200";
+}
 
 export default async function PopeyHumanNotificationsPage({
   searchParams,
@@ -31,17 +36,39 @@ export default async function PopeyHumanNotificationsPage({
 
   const withSelected = (notificationId: string) =>
     `${currentBase}${currentBase.includes("?") ? "&" : "?"}selected=${encodeURIComponent(notificationId)}`;
+  const unreadCount = !feed.error ? feed.notifications.filter((notification) => !notification.is_read).length : 0;
+  const personalCount = !feed.error ? feed.notifications.filter((notification) => notification.type === "personnelle").length : 0;
+  const congratsCount = !feed.error ? feed.notifications.filter((notification) => notification.type === "felicitation").length : 0;
 
   return (
     <section className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <p className="text-xs font-black uppercase tracking-[0.12em] text-emerald-300/85">Popey Radar</p>
+          <p className="text-xs font-black uppercase tracking-[0.12em] text-emerald-300">Popey Radar</p>
           <h1 className="text-3xl font-black">Centre de notifications</h1>
+          <p className="text-sm text-white/75">Version conversationnelle: cliquez une notif pour l&apos;ouvrir en grand.</p>
         </div>
-        <Button asChild variant="outline">
-          <Link href="/popey-human/app">Retour cockpit</Link>
-        </Button>
+        <Link
+          href="/popey-human/app"
+          className="h-10 rounded-xl px-3 inline-flex items-center text-xs font-black uppercase tracking-wide border border-white/20 bg-white/10 text-white/90"
+        >
+          Retour cockpit
+        </Link>
+      </div>
+
+      <div className="grid grid-cols-3 gap-2">
+        <div className="rounded-xl border border-emerald-300/35 bg-emerald-50 px-3 py-2">
+          <p className="text-[10px] uppercase tracking-[0.1em] font-black text-emerald-800">Non lues</p>
+          <p className="text-lg font-black text-emerald-900">{unreadCount}</p>
+        </div>
+        <div className="rounded-xl border border-cyan-300/35 bg-cyan-50 px-3 py-2">
+          <p className="text-[10px] uppercase tracking-[0.1em] font-black text-cyan-800">Personnelles</p>
+          <p className="text-lg font-black text-cyan-900">{personalCount}</p>
+        </div>
+        <div className="rounded-xl border border-fuchsia-300/35 bg-fuchsia-50 px-3 py-2">
+          <p className="text-[10px] uppercase tracking-[0.1em] font-black text-fuchsia-800">Félicitations</p>
+          <p className="text-lg font-black text-fuchsia-900">{congratsCount}</p>
+        </div>
       </div>
 
       <div className="flex flex-wrap gap-2">
@@ -52,7 +79,9 @@ export default async function PopeyHumanNotificationsPage({
           <Link
             key={item.key}
             className={`h-9 rounded-full px-3 text-xs font-black uppercase tracking-wide inline-flex items-center ${
-              scope === item.key ? "bg-emerald-400 text-black" : "border border-white/20 bg-black/25 text-white/80"
+              scope === item.key
+                ? "bg-emerald-400 text-black shadow-[0_10px_24px_-14px_rgba(16,185,129,0.55)]"
+                : "border border-white/20 bg-black/25 text-white/80"
             }`}
             href={item.href}
           >
@@ -86,7 +115,7 @@ export default async function PopeyHumanNotificationsPage({
                   }`}
                 >
                   <div className="flex items-center justify-between gap-2">
-                    <span className="inline-flex rounded-full border border-white/25 px-2 py-0.5 text-[10px] font-black uppercase">
+                    <span className={`inline-flex rounded-full border px-2 py-0.5 text-[10px] font-black uppercase ${badgeTone(notification.type)}`}>
                       {notification.type}
                     </span>
                     <span className="text-[11px] font-bold text-white/65">
@@ -109,7 +138,7 @@ export default async function PopeyHumanNotificationsPage({
               <>
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <span className="inline-flex rounded-full border border-white/25 px-2 py-0.5 text-[10px] font-black uppercase">
+                    <span className={`inline-flex rounded-full border px-2 py-0.5 text-[10px] font-black uppercase ${badgeTone(selectedNotification.type)}`}>
                       {selectedNotification.type}
                     </span>
                     <h2 className="mt-2 text-2xl font-black leading-tight">{selectedNotification.title}</h2>

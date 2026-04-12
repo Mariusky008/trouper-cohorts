@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
 import { getMyHumanProfile, updateMyHumanProfileAction } from "@/lib/actions/human-permissions";
 
 export default async function PopeyHumanProfilePage({
@@ -21,12 +20,16 @@ export default async function PopeyHumanProfilePage({
     <section className="space-y-5 max-w-2xl">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <p className="text-xs font-black uppercase tracking-[0.12em] text-emerald-300/85">Popey Human</p>
+          <p className="text-xs font-black uppercase tracking-[0.12em] text-emerald-300">Profil & Réglages</p>
           <h1 className="text-3xl font-black">Mon profil</h1>
+          <p className="text-sm text-white/75">Informations visibles dans l&apos;annuaire du Cercle.</p>
         </div>
-        <Button asChild variant="outline">
-          <Link href="/popey-human/app">Retour cockpit</Link>
-        </Button>
+        <Link
+          href="/popey-human/app"
+          className="h-10 rounded-xl px-3 inline-flex items-center text-xs font-black uppercase tracking-wide border border-white/20 bg-white/10 text-white/90"
+        >
+          Retour cockpit
+        </Link>
       </div>
 
       {data.error && <p className="rounded border border-red-300/35 bg-red-500/10 px-3 py-2 text-sm text-red-200">{data.error}</p>}
@@ -66,7 +69,7 @@ export default async function PopeyHumanProfilePage({
           </div>
           <Link
             href="/popey-human/app/profile?edit=1"
-            className="mt-4 h-11 rounded-xl bg-emerald-400 text-black text-sm font-black uppercase tracking-wide inline-flex items-center justify-center px-4"
+            className="mt-4 h-11 rounded-xl bg-emerald-400 text-black text-sm font-black uppercase tracking-wide inline-flex items-center justify-center px-4 shadow-[0_10px_25px_-15px_rgba(52,211,153,0.85)]"
           >
             Modifier mon profil
           </Link>

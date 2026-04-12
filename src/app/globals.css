@@ -309,3 +309,26 @@
   box-shadow: 0 18px 40px -18px rgba(0, 245, 176, 0.9);
   animation: talkieBreath 1.15s ease-in-out infinite;
 }
+
+.bell-shake {
+  animation: bellShake 1.6s ease-in-out infinite;
+  transform-origin: 50% 20%;
+}
+
+@keyframes bellShake {
+  0%, 100% {
+    transform: rotate(0deg);
+  }
+  20% {
+    transform: rotate(-12deg);
+  }
+  40% {
+    transform: rotate(10deg);
+  }
+  60% {
+    transform: rotate(-8deg);
+  }
+  80% {
+    transform: rotate(6deg);
+  }
+}
