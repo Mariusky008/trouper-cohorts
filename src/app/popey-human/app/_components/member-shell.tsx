@@ -40,7 +40,7 @@ export function PopeyHumanMemberShell({ children }: MemberShellProps) {
     <div
       className={`min-h-screen pb-24 md:pb-8 ${isLight ? "bg-[linear-gradient(180deg,#faf7ee_0%,#f3ecdf_55%,#efe7db_100%)] text-[#0F172A]" : "bg-[#0A0B0C] text-white"}`}
     >
-      <div className="mx-auto max-w-5xl px-4 py-5 md:px-6 md:py-8">
+      <div className="mx-auto max-w-5xl px-4 pt-[calc(env(safe-area-inset-top)+14px)] pb-5 md:px-6 md:pt-8 md:pb-8">
         <header className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <p className={`text-xs font-black uppercase tracking-[0.12em] ${isLight ? "text-[#7A4E13]" : "text-emerald-300/85"}`}>
