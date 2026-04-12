@@ -141,14 +141,16 @@ export function TalkieSignalComposer({ createSignalAction, initialSuccessVisible
 
   return (
     <>
-      <div className="rounded-2xl border border-white/15 bg-black/20 p-4">
-        <p className="text-xs font-black uppercase tracking-[0.12em] text-emerald-300">Signal vocal</p>
-        <h3 className="mt-1 text-2xl font-black">Mode Talkie-Walkie</h3>
-        <p className="mt-2 text-sm text-white/85 leading-relaxed">
-          Appuyez pour transmettre votre opportunité. Je qualifie le besoin puis j&apos;active les métiers concernés.
-        </p>
+      <div className="flex min-h-[calc(100svh-220px)] flex-col">
+        <div className="px-1">
+          <p className="text-xs font-black uppercase tracking-[0.12em] text-emerald-300">Signal vocal</p>
+          <h3 className="mt-1 text-2xl font-black">Mode Talkie-Walkie</h3>
+          <p className="mt-2 max-w-xl text-sm text-white/80 leading-relaxed">
+            Appuyez pour transmettre votre opportunité. Je qualifie le besoin puis j&apos;active les métiers concernés.
+          </p>
+        </div>
 
-        <div className="relative mt-6 h-64 flex justify-center items-center">
+        <div className="relative flex flex-1 items-center justify-center">
           <span className="absolute left-1/2 top-1/2 h-56 w-56 -translate-x-1/2 -translate-y-1/2 rounded-full border border-emerald-300/30 animate-[talkieRing_1.6s_ease-out_infinite]" />
           <span
             className="absolute left-1/2 top-1/2 h-72 w-72 -translate-x-1/2 -translate-y-1/2 rounded-full border border-emerald-300/20 animate-[talkieRing_2.1s_ease-out_infinite]"
@@ -177,14 +179,14 @@ export function TalkieSignalComposer({ createSignalAction, initialSuccessVisible
           </button>
         </div>
         {isPreparing && (
-          <p className="text-center text-xs text-amber-200">
+          <p className="mt-2 text-center text-xs text-amber-200">
             Initialisation du micro... parlez quand le bouton passe en rouge.
           </p>
         )}
-        {isStopping && <p className="text-center text-xs text-amber-200">Finalisation de la fin de phrase...</p>}
+        {isStopping && <p className="mt-2 text-center text-xs text-amber-200">Finalisation de la fin de phrase...</p>}
 
         {errorMessage && (
-          <p className="rounded border border-red-300/35 bg-red-500/10 px-3 py-2 text-sm text-red-200">{errorMessage}</p>
+          <p className="mt-3 rounded border border-red-300/35 bg-red-500/10 px-3 py-2 text-sm text-red-200">{errorMessage}</p>
         )}
 
         <form ref={formRef} action={createSignalAction} className="hidden">
