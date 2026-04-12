@@ -7,12 +7,13 @@ import { createClient } from "@/lib/supabase/client";
 type Props = {
   createSignalAction: (formData: FormData) => Promise<void>;
   initialSuccessVisible?: boolean;
-  successMessage?: string;
 };
 
-export function TalkieSignalComposer({ createSignalAction, initialSuccessVisible = false, successMessage = "" }: Props) {
+export function TalkieSignalComposer({ createSignalAction, initialSuccessVisible = false }: Props) {
   const baseDetail =
     "Signal vocal transmis depuis le mode talkie-walkie. Merci de qualifier le besoin et d'activer les métiers concernés.";
+  const successDetailText =
+    "Merci pour ce signal. Je traite l'information immédiatement : je qualifie le besoin du client et j'active les membres du Cercle concernés. On continue de faire pleuvoir le business sur Dax !";
   const router = useRouter();
   const formRef = useRef<HTMLFormElement | null>(null);
   const [isRecording, setIsRecording] = useState(false);
@@ -21,7 +22,6 @@ export function TalkieSignalComposer({ createSignalAction, initialSuccessVisible
   const [isUploading, setIsUploading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [ackVisible, setAckVisible] = useState(initialSuccessVisible);
-  const [ackMessage] = useState(successMessage);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<BlobPart[]>([]);
@@ -110,10 +110,13 @@ export function TalkieSignalComposer({ createSignalAction, initialSuccessVisible
       const blob = new Blob(audioChunksRef.current, { type: "audio/webm" });
       const durationSeconds = Math.max(1, Math.round((Date.now() - recordingStartedAtRef.current) / 1000));
       if (blob.size === 0) {
+        setAckVisible(false);
         setErrorMessage("Aucun son capté. Réessayez et autorisez le micro.");
         return;
       }
 
+      // Show feedback immediately after stop while upload/submit completes.
+      setAckVisible(true);
       const filePath = `signals/${Date.now()}-${Math.random().toString(36).slice(2)}.webm`;
       const supabase = createClient();
       const { error: uploadError } = await supabase.storage.from("human-signals-audio").upload(filePath, blob, {
@@ -122,12 +125,14 @@ export function TalkieSignalComposer({ createSignalAction, initialSuccessVisible
       });
 
       if (uploadError) {
+        setAckVisible(false);
         setErrorMessage(`Upload audio indisponible: ${uploadError.message}`);
         return;
       }
 
       submitSignal(baseDetail, filePath, durationSeconds);
     } catch {
+      setAckVisible(false);
       setErrorMessage("Envoi impossible. Vérifiez les permissions micro et réessayez.");
     } finally {
       setIsUploading(false);
@@ -195,11 +200,10 @@ export function TalkieSignalComposer({ createSignalAction, initialSuccessVisible
       {ackVisible && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
           <div className="w-full max-w-[680px] rounded-3xl border border-white/25 bg-[#101820] p-4 sm:p-6 shadow-[0_0_40px_rgba(0,0,0,0.55)]">
-            <p className="text-center text-5xl sm:text-6xl leading-none">✅</p>
-            <h4 className="mt-3 text-4xl sm:text-5xl font-black text-white">Bien reçu ! 🎙️</h4>
-            <p className="mt-3 text-xl sm:text-3xl leading-snug sm:leading-relaxed text-white/95">
-              {ackMessage ||
-                "Merci pour ce signal. Je traite l'information immédiatement : je qualifie le besoin du client et j'active les membres du Cercle concernés. On continue de faire pleuvoir le business sur Dax !"}
+            <p className="text-center text-4xl sm:text-5xl leading-none">✅</p>
+            <h4 className="mt-3 text-2xl sm:text-4xl font-black text-white">Bien reçu ! 🎙️</h4>
+            <p className="mt-3 text-base sm:text-xl leading-relaxed text-white/95">
+              {successDetailText}
             </p>
             <button
               type="button"
@@ -207,7 +211,7 @@ export function TalkieSignalComposer({ createSignalAction, initialSuccessVisible
                 setAckVisible(false);
                 router.replace("/popey-human/app/signal");
               }}
-              className="mt-6 h-14 sm:h-16 w-full rounded-full bg-emerald-400 text-xl sm:text-2xl font-black uppercase tracking-wide text-black"
+              className="mt-5 h-12 sm:h-14 w-full rounded-full bg-emerald-400 text-lg sm:text-xl font-black uppercase tracking-wide text-black"
             >
               OK
             </button>

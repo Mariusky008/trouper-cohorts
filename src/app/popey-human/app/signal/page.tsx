@@ -32,7 +32,6 @@ async function PopeyHumanSignalContent({
       <TalkieSignalComposer
         createSignalAction={createHumanSignalAction}
         initialSuccessVisible={signalStatus === "success"}
-        successMessage={signalMessage}
       />
 
       {signalStatus === "error" && (
