@@ -1,3 +1,4 @@
+import Link from "next/link";
 import {
   activateScoutFromTokenAction,
   getScoutPortalByToken,
@@ -21,13 +22,14 @@ export default async function PopeyHumanScoutPortalPage({
   searchParams,
 }: {
   params: Promise<{ token: string }>;
-  searchParams?: Promise<{ status?: string; message?: string }>;
+  searchParams?: Promise<{ status?: string; message?: string; modal?: string }>;
 }) {
   const route = await params;
   const token = route.token;
   const query = (await searchParams) || {};
   const status = typeof query.status === "string" ? query.status : "";
   const message = typeof query.message === "string" ? query.message : "";
+  const modal = typeof query.modal === "string" ? query.modal : "";
   const data = await getScoutPortalByToken(token);
   const scout = data.scout;
   const referrals = data.referrals || [];
@@ -59,9 +61,17 @@ export default async function PopeyHumanScoutPortalPage({
   return (
     <main className="min-h-screen bg-[#0A0B0C] text-white">
       <div className="mx-auto max-w-2xl px-4 py-8 space-y-5">
-        <div>
-          <p className="text-xs font-black uppercase tracking-[0.12em] text-[#EAC886]/85">Portail Éclaireur</p>
-          <h1 className="text-3xl font-black">Mes alertes & gains</h1>
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="text-xs font-black uppercase tracking-[0.12em] text-[#EAC886]/85">Portail Éclaireur</p>
+            <h1 className="text-3xl font-black">Mes alertes & gains</h1>
+          </div>
+          <Link
+            href={`/popey-human/eclaireur/${token}?modal=history`}
+            className="h-10 rounded-xl px-3 inline-flex items-center text-xs font-black uppercase tracking-wide border border-white/20 bg-white/10 text-white/90"
+          >
+            Historique
+          </Link>
         </div>
 
         {status === "success" && (
@@ -219,24 +229,44 @@ export default async function PopeyHumanScoutPortalPage({
               </form>
             </section>
 
-            <section className="rounded-2xl border border-white/15 bg-black/25 p-4">
-              <p className="text-sm font-black">Historique de mes alertes</p>
-              <div className="mt-3 space-y-2">
+          </>
+        )}
+
+        {!data.error && data.scout && modal === "history" && (
+          <div className="fixed inset-0 z-50 bg-black/55 backdrop-blur-[2px] p-4 flex items-center justify-center">
+            <div className="w-full max-w-xl rounded-2xl border border-white/25 bg-[#1B2227] p-5">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-xs uppercase font-black tracking-[0.12em] text-[#EAC886]/80">Historique de mes alertes</p>
+                  <h2 className="mt-1 text-2xl font-black">Mes signaux envoyés</h2>
+                </div>
+                <Link
+                  href={`/popey-human/eclaireur/${token}`}
+                  className="text-xs font-black uppercase tracking-wide text-white/70"
+                >
+                  Fermer
+                </Link>
+              </div>
+              <div className="mt-4 max-h-[52vh] overflow-y-auto pr-1 space-y-2">
                 {data.referrals.map((referral) => (
                   <article key={referral.id} className="rounded-lg border border-white/15 bg-black/25 px-3 py-2">
                     <p className="text-sm font-black">
                       {referral.contact_name} • {referral.project_type || "Projet non précisé"}
                     </p>
                     <p className="text-xs text-white/70">Statut: {referral.status}</p>
-                    {referral.estimated_commission ? <p className="text-xs text-emerald-300">Potentiel: {euros(Number(referral.estimated_commission || 0))}</p> : null}
-                    {referral.final_commission ? <p className="text-xs text-cyan-300">Gagné: {euros(Number(referral.final_commission || 0))}</p> : null}
+                    {referral.estimated_commission ? (
+                      <p className="text-xs text-emerald-300">Potentiel: {euros(Number(referral.estimated_commission || 0))}</p>
+                    ) : null}
+                    {referral.final_commission ? (
+                      <p className="text-xs text-cyan-300">Gagné: {euros(Number(referral.final_commission || 0))}</p>
+                    ) : null}
                     {referral.rejection_reason && <p className="text-xs text-red-300">Motif rejet: {referral.rejection_reason}</p>}
                   </article>
                 ))}
                 {data.referrals.length === 0 && <p className="text-sm text-white/70">Aucune alerte envoyée pour le moment.</p>}
               </div>
-            </section>
-          </>
+            </div>
+          </div>
         )}
       </div>
     </main>
