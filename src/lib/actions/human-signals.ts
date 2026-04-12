@@ -302,6 +302,23 @@ export async function getAdminSignalDispatchSnapshot() {
   ]);
 
   const signals = (signalsData as HumanSignal[] | null) || [];
+  const uniqueAudioPaths = Array.from(
+    new Set(
+      signals
+        .map((signal) => extractAudioStoragePath(signal.audio_url || ""))
+        .filter(Boolean)
+    )
+  );
+  const signedAudioUrlByPath = new Map<string, string>();
+  if (uniqueAudioPaths.length > 0) {
+    const { data: signedUrls } = await supabaseAdmin.storage.from("human-signals-audio").createSignedUrls(uniqueAudioPaths, 60 * 60);
+    (signedUrls || []).forEach((entry, index) => {
+      const path = uniqueAudioPaths[index];
+      if (path && entry?.signedUrl) {
+        signedAudioUrlByPath.set(path, entry.signedUrl);
+      }
+    });
+  }
   const members = (membersData as Array<{ id: string; user_id: string; first_name: string | null; last_name: string | null; status: string }> | null) || [];
   const profiles = (profilesData as Array<{ id: string; display_name: string | null; trade: string | null }> | null) || [];
   const dispatchRows = (dispatchData as HumanSignalDispatchRow[] | null) || [];
@@ -333,6 +350,9 @@ export async function getAdminSignalDispatchSnapshot() {
 
   const signalsView = signals.map((signal) => ({
     ...signal,
+    audio_url:
+      (signal.audio_url && signedAudioUrlByPath.get(extractAudioStoragePath(signal.audio_url))) ||
+      signal.audio_url,
     emitterLabel: memberLabelById.get(signal.emitter_member_id) || "Émetteur",
     emitterTrade: memberTradeById.get(signal.emitter_member_id) || "",
     sphere: inferSphere(memberTradeById.get(signal.emitter_member_id) || "", `${signal.title} ${signal.detail}`),
@@ -472,4 +492,20 @@ function inferSphere(trade: string, content: string): AdminSphereKey {
   if (/(infirm|kine|kiné|medec|médec|sante|santé|optic|dent|pharma)/.test(text)) return "sante";
   if (/(garage|auto|carross|mecan|mécan|controle technique|contrôle technique|vehicule|véhicule)/.test(text)) return "auto";
   return "habitat";
+}
+
+function extractAudioStoragePath(value: string) {
+  const trimmed = value.trim();
+  if (!trimmed) return "";
+  if (!trimmed.startsWith("http")) return trimmed;
+
+  const marker = "/human-signals-audio/";
+  const markerIndex = trimmed.indexOf(marker);
+  if (markerIndex < 0) return "";
+  const afterBucket = trimmed.slice(markerIndex + marker.length).split("?")[0].split("#")[0];
+  try {
+    return decodeURIComponent(afterBucket);
+  } catch {
+    return afterBucket;
+  }
 }

@@ -52,7 +52,7 @@ export function TalkieSignalComposer({ createSignalAction }: Props) {
   };
 
   const uploadAndSubmit = async () => {
-    const submitSignal = (detailText: string, audioUrl: string, durationSeconds: number) => {
+    const submitSignal = (detailText: string, audioPath: string, durationSeconds: number) => {
       const titleInput = formRef.current?.querySelector('input[name="title"]') as HTMLInputElement | null;
       const detailInput = formRef.current?.querySelector('input[name="detail"]') as HTMLInputElement | null;
       const strengthInput = formRef.current?.querySelector('input[name="signal_strength"]') as HTMLInputElement | null;
@@ -69,7 +69,7 @@ export function TalkieSignalComposer({ createSignalAction }: Props) {
       detailInput.value = detailText;
       strengthInput.value = "3";
       targetInput.value = "";
-      audioUrlInput.value = audioUrl;
+      audioUrlInput.value = audioPath;
       audioDurationInput.value = String(durationSeconds);
       currentUrlInput.value = "/popey-human/app/signal";
       formRef.current.requestSubmit();
@@ -99,8 +99,7 @@ export function TalkieSignalComposer({ createSignalAction }: Props) {
         return;
       }
 
-      const { data: publicUrlData } = supabase.storage.from("human-signals-audio").getPublicUrl(filePath);
-      submitSignal(baseDetail, publicUrlData.publicUrl, durationSeconds);
+      submitSignal(baseDetail, filePath, durationSeconds);
       setAckVisible(true);
     } catch {
       setErrorMessage("Envoi impossible. Vérifiez les permissions micro et réessayez.");

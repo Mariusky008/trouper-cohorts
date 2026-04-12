@@ -264,6 +264,11 @@ export default async function AdminHumainSpherePage({
                             Votre navigateur ne supporte pas la lecture audio.
                           </audio>
                         )}
+                        {!selectedSignal.audio_url && (
+                          <p className="mt-2 rounded border border-amber-300/30 bg-amber-500/10 px-2 py-1 text-[11px] text-amber-200">
+                            Aucun vocal lisible pour ce signal (upload manquant ou accès storage à corriger).
+                          </p>
+                        )}
                         <form action={adminDispatchHumanSignalAction} className="mt-3 space-y-2">
                           <input type="hidden" name="signal_id" value={selectedSignal.id} />
                           <input type="hidden" name="current_url" value={baseSphereHref(adminSphere)} />
