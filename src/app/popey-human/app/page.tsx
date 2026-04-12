@@ -79,24 +79,6 @@ export default async function PopeyHumanAppPage() {
         </div>
       )}
 
-      <style jsx global>{`
-        @keyframes talkieGlow {
-          0%, 100% { box-shadow: 0 0 0 0 rgba(0,245,176,0.42); }
-          50% { box-shadow: 0 0 0 24px rgba(0,245,176,0); }
-        }
-        @keyframes talkieRing {
-          0% { opacity: 0.95; transform: translate(-50%, -50%) scale(0.88); }
-          100% { opacity: 0; transform: translate(-50%, -50%) scale(1.22); }
-        }
-        @keyframes talkieBreath {
-          0%, 100% { transform: scale(1); }
-          50% { transform: scale(1.04); }
-        }
-        .talkie-btn {
-          box-shadow: 0 18px 40px -18px rgba(0,245,176,0.9);
-          animation: talkieBreath 1.15s ease-in-out infinite;
-        }
-      `}</style>
     </section>
   );
 }
