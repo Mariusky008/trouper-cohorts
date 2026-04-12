@@ -1,26 +1,35 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
 type Props = {
   createSignalAction: (formData: FormData) => Promise<void>;
+  initialSuccessVisible?: boolean;
+  successMessage?: string;
 };
 
-export function TalkieSignalComposer({ createSignalAction }: Props) {
+export function TalkieSignalComposer({ createSignalAction, initialSuccessVisible = false, successMessage = "" }: Props) {
   const baseDetail =
     "Signal vocal transmis depuis le mode talkie-walkie. Merci de qualifier le besoin et d'activer les métiers concernés.";
+  const router = useRouter();
   const formRef = useRef<HTMLFormElement | null>(null);
   const [isRecording, setIsRecording] = useState(false);
   const [isPreparing, setIsPreparing] = useState(false);
   const [isStopping, setIsStopping] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
-  const [ackVisible, setAckVisible] = useState(false);
+  const [ackVisible, setAckVisible] = useState(initialSuccessVisible);
+  const [ackMessage] = useState(successMessage);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<BlobPart[]>([]);
   const recordingStartedAtRef = useRef<number>(0);
+
+  useEffect(() => {
+    setAckVisible(initialSuccessVisible);
+  }, [initialSuccessVisible]);
 
   const startRecording = async () => {
     setErrorMessage("");
@@ -118,7 +127,6 @@ export function TalkieSignalComposer({ createSignalAction }: Props) {
       }
 
       submitSignal(baseDetail, filePath, durationSeconds);
-      setAckVisible(true);
     } catch {
       setErrorMessage("Envoi impossible. Vérifiez les permissions micro et réessayez.");
     } finally {
@@ -175,16 +183,20 @@ export function TalkieSignalComposer({ createSignalAction }: Props) {
       </div>
       {ackVisible && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-          <div className="w-full max-w-3xl rounded-[28px] border border-white/25 bg-[#101820] p-6 shadow-[0_0_40px_rgba(0,0,0,0.55)]">
-            <p className="text-center text-6xl leading-none">✅</p>
-            <h4 className="mt-3 text-4xl font-black text-white">Bien reçu ! 🎙️</h4>
-            <p className="mt-3 text-3xl leading-relaxed text-white/95">
-              Merci pour ce signal. Je traite l&apos;information immédiatement : je qualifie le besoin du client et j&apos;active les membres du Cercle concernés. On continue de faire pleuvoir le business sur Dax !
+          <div className="w-full max-w-[680px] rounded-3xl border border-white/25 bg-[#101820] p-4 sm:p-6 shadow-[0_0_40px_rgba(0,0,0,0.55)]">
+            <p className="text-center text-5xl sm:text-6xl leading-none">✅</p>
+            <h4 className="mt-3 text-4xl sm:text-5xl font-black text-white">Bien reçu ! 🎙️</h4>
+            <p className="mt-3 text-xl sm:text-3xl leading-snug sm:leading-relaxed text-white/95">
+              {ackMessage ||
+                "Merci pour ce signal. Je traite l'information immédiatement : je qualifie le besoin du client et j'active les membres du Cercle concernés. On continue de faire pleuvoir le business sur Dax !"}
             </p>
             <button
               type="button"
-              onClick={() => setAckVisible(false)}
-              className="mt-6 h-16 w-full rounded-full bg-emerald-400 text-2xl font-black uppercase tracking-wide text-black"
+              onClick={() => {
+                setAckVisible(false);
+                router.replace("/popey-human/app/signal");
+              }}
+              className="mt-6 h-14 sm:h-16 w-full rounded-full bg-emerald-400 text-xl sm:text-2xl font-black uppercase tracking-wide text-black"
             >
               OK
             </button>

@@ -29,16 +29,12 @@ async function PopeyHumanSignalContent({
 
   return (
     <section className="space-y-5">
-      <TalkieSignalComposer createSignalAction={createHumanSignalAction} />
+      <TalkieSignalComposer
+        createSignalAction={createHumanSignalAction}
+        initialSuccessVisible={signalStatus === "success"}
+        successMessage={signalMessage}
+      />
 
-      {signalStatus === "success" && (
-        <p className="rounded border border-emerald-300/35 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-200">
-          {signalMessage || "Signal envoyé."}{" "}
-          <Link className="underline" href="/popey-human/app/signal">
-            Effacer
-          </Link>
-        </p>
-      )}
       {signalStatus === "error" && (
         <p className="rounded border border-red-300/35 bg-red-500/10 px-3 py-2 text-sm text-red-200">
           {signalMessage || "Action impossible."}{" "}
