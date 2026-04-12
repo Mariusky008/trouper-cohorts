@@ -13,6 +13,10 @@
       "schedule": "0 8 * * *"
     },
     {
+      "path": "/api/cron/send-human-daily-emails",
+      "schedule": "15 8 * * *"
+    },
+    {
       "path": "/api/cron/validate-missions-j1",
       "schedule": "0 10 * * *"
     }
