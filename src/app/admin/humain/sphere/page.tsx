@@ -259,11 +259,6 @@ export default async function AdminHumainSpherePage({
                           Émetteur: {selectedSignal.emitterLabel} • Cible directe: {selectedSignal.directTargetLabel}
                         </p>
                         <p className="mt-2 text-xs text-white/75">{selectedSignal.detail}</p>
-                        {selectedSignal.audio_url && (
-                          <audio controls className="mt-2 w-full" src={selectedSignal.audio_url}>
-                            Votre navigateur ne supporte pas la lecture audio.
-                          </audio>
-                        )}
                         <form action={adminDispatchHumanSignalAction} className="mt-3 space-y-2">
                           <input type="hidden" name="signal_id" value={selectedSignal.id} />
                           <input type="hidden" name="current_url" value={baseSphereHref(adminSphere)} />

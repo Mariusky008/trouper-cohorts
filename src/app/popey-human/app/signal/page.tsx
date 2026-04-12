@@ -1,7 +1,6 @@
 import Link from "next/link";
 import {
   createHumanSignalAction,
-  getSignalTargetCandidates,
 } from "@/lib/actions/human-signals";
 import { TalkieSignalComposer } from "./_components/talkie-signal-composer";
 
@@ -11,7 +10,6 @@ export default async function PopeyHumanSignalPage({
   searchParams?: Promise<{
     signalStatus?: string;
     signalMessage?: string;
-    target_member_id?: string;
   }>;
 }) {
   return <PopeyHumanSignalContent searchParams={searchParams} />;
@@ -23,22 +21,15 @@ async function PopeyHumanSignalContent({
   searchParams?: Promise<{
     signalStatus?: string;
     signalMessage?: string;
-    target_member_id?: string;
   }>;
 }) {
   const params = (await searchParams) || {};
   const signalStatus = typeof params.signalStatus === "string" ? params.signalStatus : "";
   const signalMessage = typeof params.signalMessage === "string" ? params.signalMessage : "";
-  const targetMemberId = typeof params.target_member_id === "string" ? params.target_member_id : "";
-  const targets = await getSignalTargetCandidates();
 
   return (
     <section className="space-y-5">
-      <TalkieSignalComposer
-        candidates={targets.candidates}
-        createSignalAction={createHumanSignalAction}
-        initialTargetMemberId={targetMemberId}
-      />
+      <TalkieSignalComposer createSignalAction={createHumanSignalAction} />
 
       {signalStatus === "success" && (
         <p className="rounded border border-emerald-300/35 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-200">

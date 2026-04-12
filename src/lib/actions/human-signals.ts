@@ -18,7 +18,6 @@ type HumanSignal = {
   target_member_id: string | null;
   title: string;
   detail: string;
-  audio_url: string | null;
   signal_strength: number;
   status: HumanSignalStatus;
   created_at: string;
@@ -59,7 +58,7 @@ export async function listVisibleHumanSignals() {
   const [{ data }, { data: myDispatchRows }] = await Promise.all([
     supabaseAdmin
       .from("human_signals")
-      .select("id,emitter_member_id,target_member_id,title,detail,audio_url,signal_strength,status,created_at,updated_at")
+      .select("id,emitter_member_id,target_member_id,title,detail,signal_strength,status,created_at,updated_at")
       .order("created_at", { ascending: false })
       .limit(300),
     supabaseAdmin
@@ -164,7 +163,6 @@ export async function createHumanSignal(formData: FormData) {
   const detail = String(formData.get("detail") || "").trim();
   const strengthRaw = String(formData.get("signal_strength") || "1").trim();
   const targetMemberIdRaw = String(formData.get("target_member_id") || "").trim();
-  const audioUrlRaw = String(formData.get("audio_url") || "").trim();
 
   if (!title) return { error: "Titre requis." };
   if (!detail) return { error: "Détail requis." };
@@ -175,7 +173,6 @@ export async function createHumanSignal(formData: FormData) {
   }
 
   const target_member_id = targetMemberIdRaw || null;
-  const audio_url = audioUrlRaw || null;
 
   const supabaseAdmin = createAdminClient();
   const { error } = await supabaseAdmin.from("human_signals").insert({
@@ -183,7 +180,6 @@ export async function createHumanSignal(formData: FormData) {
     target_member_id,
     title,
     detail,
-    audio_url,
     signal_strength: signalStrength,
     status: "open",
   });
@@ -278,7 +274,7 @@ export async function getAdminSignalDispatchSnapshot() {
   const [{ data: signalsData }, { data: membersData }, { data: profilesData }, { data: dispatchData }] = await Promise.all([
     supabaseAdmin
       .from("human_signals")
-      .select("id,emitter_member_id,target_member_id,title,detail,audio_url,signal_strength,status,created_at,updated_at")
+      .select("id,emitter_member_id,target_member_id,title,detail,signal_strength,status,created_at,updated_at")
       .order("created_at", { ascending: false })
       .limit(400),
     supabaseAdmin.from("human_members").select("id,user_id,first_name,last_name,status"),

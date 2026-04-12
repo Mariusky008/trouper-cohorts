@@ -1,20 +1,12 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { createClient } from "@/lib/supabase/client";
-
-type Candidate = {
-  member_id: string;
-  label: string;
-};
 
 type Props = {
-  candidates: Candidate[];
   createSignalAction: (formData: FormData) => Promise<void>;
-  initialTargetMemberId?: string;
 };
 
-export function TalkieSignalComposer({ candidates, createSignalAction, initialTargetMemberId = "" }: Props) {
+export function TalkieSignalComposer({ createSignalAction }: Props) {
   const baseDetail =
     "Signal vocal transmis depuis le mode talkie-walkie. Merci de qualifier le besoin et d'activer les métiers concernés.";
   const formRef = useRef<HTMLFormElement | null>(null);
@@ -59,15 +51,14 @@ export function TalkieSignalComposer({ candidates, createSignalAction, initialTa
   };
 
   const uploadAndSubmit = async () => {
-    const submitSignal = (audioUrl: string, durationSeconds: number, detailText: string) => {
+    const submitSignal = (detailText: string) => {
       const titleInput = formRef.current?.querySelector('input[name="title"]') as HTMLInputElement | null;
       const detailInput = formRef.current?.querySelector('input[name="detail"]') as HTMLInputElement | null;
       const strengthInput = formRef.current?.querySelector('input[name="signal_strength"]') as HTMLInputElement | null;
       const targetInput = formRef.current?.querySelector('input[name="target_member_id"]') as HTMLInputElement | null;
-      const audioUrlInput = formRef.current?.querySelector('input[name="audio_url"]') as HTMLInputElement | null;
       const currentUrlInput = formRef.current?.querySelector('input[name="current_url"]') as HTMLInputElement | null;
 
-      if (!titleInput || !detailInput || !strengthInput || !targetInput || !audioUrlInput || !currentUrlInput || !formRef.current) {
+      if (!titleInput || !detailInput || !strengthInput || !targetInput || !currentUrlInput || !formRef.current) {
         throw new Error("Formulaire signal introuvable.");
       }
 
@@ -75,38 +66,13 @@ export function TalkieSignalComposer({ candidates, createSignalAction, initialTa
       detailInput.value = detailText;
       strengthInput.value = "3";
       targetInput.value = "";
-      audioUrlInput.value = audioUrl;
       currentUrlInput.value = "/popey-human/app/signal";
       formRef.current.requestSubmit();
     };
 
     try {
       setIsUploading(true);
-      const blob = new Blob(audioChunksRef.current, { type: "audio/webm" });
-      const durationSeconds = Math.max(1, Math.round((Date.now() - recordingStartedAtRef.current) / 1000));
-      if (blob.size === 0) {
-        submitSignal("", durationSeconds, baseDetail);
-        setAckVisible(true);
-        return;
-      }
-      const filePath = `signals/${Date.now()}-${Math.random().toString(36).slice(2)}.webm`;
-
-      const supabase = createClient();
-      const { error: uploadError } = await supabase.storage.from("human-signals-audio").upload(filePath, blob, {
-        contentType: "audio/webm",
-        upsert: false,
-      });
-      if (uploadError) {
-        // Fallback: envoyer le signal même sans pièce audio pour ne pas bloquer l'utilisateur.
-        submitSignal("", durationSeconds, `${baseDetail} (Audio non joint: upload indisponible)`);
-        setErrorMessage("Upload audio indisponible. Le signal a été envoyé à Popey admin sans pièce audio.");
-        setAckVisible(true);
-        return;
-      }
-
-      const { data: publicUrlData } = supabase.storage.from("human-signals-audio").getPublicUrl(filePath);
-      const audioUrl = publicUrlData.publicUrl;
-      submitSignal(audioUrl, durationSeconds, baseDetail);
+      submitSignal(baseDetail);
       setAckVisible(true);
     } catch {
       setErrorMessage("Envoi impossible. Vérifiez les permissions micro et réessayez.");
@@ -154,7 +120,6 @@ export function TalkieSignalComposer({ candidates, createSignalAction, initialTa
         <input name="detail" />
         <input name="signal_strength" />
         <input name="target_member_id" />
-        <input name="audio_url" />
         <input name="current_url" />
       </form>
     </div>
