@@ -14,6 +14,10 @@ function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
 }
 
+function isWinningStatus(status: string) {
+  return status === "validated" || status === "converted";
+}
+
 export default async function PopeyHumanScoutPortalPage({
   params,
   searchParams,
@@ -39,6 +43,19 @@ export default async function PopeyHumanScoutPortalPage({
   const level = 1 + Math.floor(total / 500);
   const nextMilestone = (level + 1) * 500;
   const levelProgress = clamp(((total - level * 500) / 500) * 100, 0, 100);
+  const sortedByDate = [...referrals].sort((a, b) => +new Date(b.created_at) - +new Date(a.created_at));
+  let currentStreak = 0;
+  for (const referral of sortedByDate) {
+    if (!isWinningStatus(referral.status)) break;
+    currentStreak += 1;
+  }
+  const weeklyWins = sortedByDate.filter(
+    (referral) =>
+      isWinningStatus(referral.status) &&
+      Date.now() - +new Date(referral.created_at) <= 1000 * 60 * 60 * 24 * 7
+  ).length;
+  const weeklyBadge =
+    weeklyWins >= 6 ? "Pluie d'Or" : weeklyWins >= 3 ? "Sprinter" : weeklyWins >= 1 ? "En feu" : "Starter";
 
   return (
     <main className="min-h-screen bg-[#0A0B0C] text-white">
@@ -103,6 +120,18 @@ export default async function PopeyHumanScoutPortalPage({
                     className="h-full rounded-full bg-gradient-to-r from-emerald-300 via-[#EAC886] to-cyan-300 animate-pulse"
                     style={{ width: `${levelProgress}%` }}
                   />
+                </div>
+              </div>
+              <div className="grid gap-2 sm:grid-cols-2">
+                <div className="rounded-xl border border-emerald-300/35 bg-emerald-500/12 p-3">
+                  <p className="text-[10px] uppercase font-black tracking-[0.1em] text-emerald-200/85">Streak actuel</p>
+                  <p className="mt-1 text-2xl font-black text-emerald-200">{currentStreak}x</p>
+                  <p className="text-[11px] text-emerald-100/80">Alertes qualifiées d&apos;affilée</p>
+                </div>
+                <div className="rounded-xl border border-[#EAC886]/45 bg-[#EAC886]/12 p-3">
+                  <p className="text-[10px] uppercase font-black tracking-[0.1em] text-[#EAC886]/90">Badge hebdo</p>
+                  <p className="mt-1 text-2xl font-black text-[#EAC886] animate-pulse">{weeklyBadge}</p>
+                  <p className="text-[11px] text-[#EAC886]/75">{weeklyWins} victoire(s) cette semaine</p>
                 </div>
               </div>
             </section>
