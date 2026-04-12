@@ -1,6 +1,7 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { revalidatePath } from "next/cache";
 import Link from "next/link";
+import { ensureHumanMemberForUserId } from "@/lib/actions/human-permissions";
 import {
   Table,
   TableBody,
@@ -83,6 +84,100 @@ async function deleteApplication(formData: FormData) {
   revalidatePath("/admin/commando");
 }
 
+async function activateHumanAccess(formData: FormData) {
+  "use server";
+  const applicationId = String(formData.get("applicationId") || "");
+  if (!applicationId) return;
+
+  const supabase = createAdminClient();
+  const { data: application } = await supabase
+    .from("commando_applications")
+    .select("id,email,full_name,phone,city,activity,status,qualification_status")
+    .eq("id", applicationId)
+    .maybeSingle();
+
+  if (!application) return;
+  if (application.status !== "paid" || application.qualification_status !== "qualified") return;
+
+  const normalizedEmail = String(application.email || "").trim().toLowerCase();
+  if (!normalizedEmail) return;
+
+  let userId = "";
+  const { data: existingProfile } = await supabase
+    .from("profiles")
+    .select("id")
+    .eq("email", normalizedEmail)
+    .maybeSingle();
+  if (existingProfile?.id) {
+    userId = String(existingProfile.id);
+  }
+
+  if (!userId) {
+    const temporaryPassword = `Popey-${crypto.randomUUID()}!`;
+    const { data: createdUser, error: createUserError } = await supabase.auth.admin.createUser({
+      email: normalizedEmail,
+      password: temporaryPassword,
+      email_confirm: true,
+      user_metadata: {
+        full_name: application.full_name,
+        city: application.city,
+        trade: application.activity,
+      },
+    });
+
+    if (createUserError) {
+      const existingUserId = await findAuthUserIdByEmail(supabase, normalizedEmail);
+      if (!existingUserId) return;
+      userId = existingUserId;
+    } else if (createdUser.user?.id) {
+      userId = createdUser.user.id;
+    }
+  }
+
+  if (!userId) return;
+
+  await supabase.from("profiles").upsert(
+    {
+      id: userId,
+      email: normalizedEmail,
+      display_name: application.full_name,
+      city: application.city,
+      trade: application.activity,
+      phone: application.phone,
+      role: "member",
+    },
+    { onConflict: "id" }
+  );
+
+  await ensureHumanMemberForUserId(userId);
+
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://www.popey.academy";
+  await supabase.auth.resetPasswordForEmail(normalizedEmail, {
+    redirectTo: `${appUrl}/update-password`,
+  });
+
+  revalidatePath("/admin/commando");
+  revalidatePath("/admin/humain/membres");
+  revalidatePath("/admin/humain/permissions");
+}
+
+async function findAuthUserIdByEmail(
+  supabase: ReturnType<typeof createAdminClient>,
+  email: string
+): Promise<string | null> {
+  const target = email.trim().toLowerCase();
+  const perPage = 200;
+  for (let page = 1; page <= 10; page += 1) {
+    const { data, error } = await supabase.auth.admin.listUsers({ page, perPage });
+    if (error) return null;
+    const users = data?.users || [];
+    const matched = users.find((user) => String(user.email || "").trim().toLowerCase() === target);
+    if (matched?.id) return matched.id;
+    if (users.length < perPage) break;
+  }
+  return null;
+}
+
 export default async function AdminCommandoPage({
   searchParams,
 }: {
@@ -108,6 +203,26 @@ export default async function AdminCommandoPage({
         : filter === "call_scheduled"
           ? scheduledCallApplications
           : allApplications;
+  const applicationEmails = Array.from(
+    new Set(
+      allApplications
+        .map((item) => String(item.email || "").trim().toLowerCase())
+        .filter(Boolean)
+    )
+  );
+  const { data: profilesByEmail } =
+    applicationEmails.length > 0
+      ? await supabase.from("profiles").select("id,email").in("email", applicationEmails)
+      : { data: [] as Array<{ id: string; email: string | null }> };
+  const profileIdByEmail = new Map(
+    (profilesByEmail || []).map((profile) => [String(profile.email || "").trim().toLowerCase(), String(profile.id)])
+  );
+  const profileIds = Array.from(new Set((profilesByEmail || []).map((profile) => String(profile.id)).filter(Boolean)));
+  const { data: humanMembersByUserId } =
+    profileIds.length > 0
+      ? await supabase.from("human_members").select("user_id").in("user_id", profileIds)
+      : { data: [] as Array<{ user_id: string }> };
+  const humanMemberUserIds = new Set((humanMembersByUserId || []).map((row) => String(row.user_id)));
 
   return (
     <div className="space-y-6">
@@ -148,11 +263,16 @@ export default async function AdminCommandoPage({
               <TableHead>Date</TableHead>
               <TableHead>Qualification</TableHead>
               <TableHead>Statut</TableHead>
+              <TableHead>Accès app</TableHead>
               <TableHead className="text-right w-[360px]">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredApplications.map((application) => (
+            {filteredApplications.map((application) => {
+              const normalizedEmail = String(application.email || "").trim().toLowerCase();
+              const profileId = profileIdByEmail.get(normalizedEmail) || "";
+              const hasHumanAccess = Boolean(profileId && humanMemberUserIds.has(profileId));
+              return (
               <TableRow key={application.id}>
                 <TableCell className="font-bold">
                   <div>{application.full_name}</div>
@@ -184,6 +304,19 @@ export default async function AdminCommandoPage({
                   </Badge>
                 </TableCell>
                 <TableCell>
+                  <Badge className={hasHumanAccess ? "bg-emerald-100 text-emerald-800 border-emerald-200" : "bg-slate-100 text-slate-800 border-slate-200"}>
+                    {hasHumanAccess ? "Activé" : "Non activé"}
+                  </Badge>
+                </TableCell>
+                <TableCell>
+                  {!hasHumanAccess && application.status === "paid" && application.qualification_status === "qualified" && (
+                    <form action={activateHumanAccess} className="mb-1.5 flex justify-end">
+                      <input type="hidden" name="applicationId" value={application.id} />
+                      <Button size="sm" variant="outline" className="h-7 px-2 text-xs border-emerald-600 text-emerald-700">
+                        Activer accès Popey Human
+                      </Button>
+                    </form>
+                  )}
                   <form action={updateQualificationStatus} className="flex justify-end gap-1.5">
                     <input type="hidden" name="applicationId" value={application.id} />
                     <Button size="sm" variant="outline" className="h-7 px-2 text-xs" name="qualificationStatus" value="call_scheduled">
@@ -239,10 +372,10 @@ export default async function AdminCommandoPage({
                   )}
                 </TableCell>
               </TableRow>
-            ))}
+            )})}
             {filteredApplications.length === 0 && (
               <TableRow>
-                <TableCell colSpan={8} className="text-center h-24 text-muted-foreground">
+                <TableCell colSpan={9} className="text-center h-24 text-muted-foreground">
                   Aucune candidature pour ce filtre.
                 </TableCell>
               </TableRow>
