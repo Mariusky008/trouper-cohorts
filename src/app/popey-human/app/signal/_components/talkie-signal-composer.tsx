@@ -13,6 +13,7 @@ export function TalkieSignalComposer({ createSignalAction }: Props) {
   const formRef = useRef<HTMLFormElement | null>(null);
   const [isRecording, setIsRecording] = useState(false);
   const [isPreparing, setIsPreparing] = useState(false);
+  const [isStopping, setIsStopping] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [ackVisible, setAckVisible] = useState(false);
@@ -60,9 +61,13 @@ export function TalkieSignalComposer({ createSignalAction }: Props) {
 
   const stopRecording = () => {
     if (!mediaRecorderRef.current || mediaRecorderRef.current.state === "inactive") return;
-    // Flush current internal encoder buffer before stopping.
-    mediaRecorderRef.current.requestData();
-    mediaRecorderRef.current.stop();
+    setIsStopping(true);
+    // Keep a short tail window to avoid clipping the final spoken words.
+    setTimeout(() => {
+      if (!mediaRecorderRef.current || mediaRecorderRef.current.state === "inactive") return;
+      mediaRecorderRef.current.stop();
+      setIsStopping(false);
+    }, 350);
     setIsRecording(false);
     setIsPreparing(false);
   };
@@ -134,7 +139,7 @@ export function TalkieSignalComposer({ createSignalAction }: Props) {
         <button
           type="button"
           onClick={isRecording ? stopRecording : startRecording}
-          disabled={isUploading || isPreparing}
+          disabled={isUploading || isPreparing || isStopping}
           className={`relative h-40 w-40 rounded-full border-2 text-sm font-black uppercase tracking-wide ${
             isRecording
               ? "bg-red-500 text-white border-red-300/60"
@@ -143,7 +148,7 @@ export function TalkieSignalComposer({ createSignalAction }: Props) {
               : "bg-gradient-to-b from-emerald-400 to-emerald-500 text-black border-emerald-300/60"
           } ${isUploading ? "opacity-60 cursor-not-allowed" : ""}`}
         >
-          {isUploading ? "Upload..." : isPreparing ? "Préparation..." : isRecording ? "Arrêter" : "Appuyer pour parler"}
+          {isUploading ? "Upload..." : isPreparing ? "Préparation..." : isStopping ? "Finalisation..." : isRecording ? "Arrêter" : "Appuyer pour parler"}
         </button>
       </div>
       {isPreparing && (
@@ -151,6 +156,7 @@ export function TalkieSignalComposer({ createSignalAction }: Props) {
           Initialisation du micro... parlez quand le bouton passe en rouge.
         </p>
       )}
+      {isStopping && <p className="text-center text-xs text-amber-200">Finalisation de la fin de phrase...</p>}
 
       {errorMessage && (
         <p className="rounded border border-red-300/35 bg-red-500/10 px-3 py-2 text-sm text-red-200">{errorMessage}</p>
