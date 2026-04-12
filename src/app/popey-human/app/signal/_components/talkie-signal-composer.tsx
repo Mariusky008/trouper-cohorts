@@ -21,10 +21,6 @@ export function TalkieSignalComposer({ candidates, createSignalAction, initialTa
   const [isRecording, setIsRecording] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
-  const [signalStrength, setSignalStrength] = useState("3");
-  const [targetMemberId, setTargetMemberId] = useState(
-    candidates.some((candidate) => candidate.member_id === initialTargetMemberId) ? initialTargetMemberId : ""
-  );
   const [ackVisible, setAckVisible] = useState(false);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -69,19 +65,17 @@ export function TalkieSignalComposer({ candidates, createSignalAction, initialTa
       const strengthInput = formRef.current?.querySelector('input[name="signal_strength"]') as HTMLInputElement | null;
       const targetInput = formRef.current?.querySelector('input[name="target_member_id"]') as HTMLInputElement | null;
       const audioUrlInput = formRef.current?.querySelector('input[name="audio_url"]') as HTMLInputElement | null;
-      const audioDurationInput = formRef.current?.querySelector('input[name="audio_duration_seconds"]') as HTMLInputElement | null;
       const currentUrlInput = formRef.current?.querySelector('input[name="current_url"]') as HTMLInputElement | null;
 
-      if (!titleInput || !detailInput || !strengthInput || !targetInput || !audioUrlInput || !audioDurationInput || !currentUrlInput || !formRef.current) {
+      if (!titleInput || !detailInput || !strengthInput || !targetInput || !audioUrlInput || !currentUrlInput || !formRef.current) {
         throw new Error("Formulaire signal introuvable.");
       }
 
       titleInput.value = "Signal vocal";
       detailInput.value = detailText;
-      strengthInput.value = signalStrength;
-      targetInput.value = targetMemberId;
+      strengthInput.value = "3";
+      targetInput.value = "";
       audioUrlInput.value = audioUrl;
-      audioDurationInput.value = String(durationSeconds);
       currentUrlInput.value = "/popey-human/app/signal";
       formRef.current.requestSubmit();
     };
@@ -129,32 +123,6 @@ export function TalkieSignalComposer({ candidates, createSignalAction, initialTa
         Appuyez pour transmettre votre opportunité. Je qualifie le besoin puis j&apos;active les métiers concernés.
       </p>
 
-      <div className="mt-4 grid gap-3 sm:grid-cols-2">
-        <select
-          value={signalStrength}
-          onChange={(e) => setSignalStrength(e.target.value)}
-          className="w-full rounded-lg border border-white/20 bg-black/30 px-3 py-2 text-sm"
-        >
-          <option value="1">Force 1</option>
-          <option value="2">Force 2</option>
-          <option value="3">Force 3</option>
-          <option value="4">Force 4</option>
-          <option value="5">Force 5</option>
-        </select>
-        <select
-          value={targetMemberId}
-          onChange={(e) => setTargetMemberId(e.target.value)}
-          className="w-full rounded-lg border border-white/20 bg-black/30 px-3 py-2 text-sm"
-        >
-          <option value="">Cible: sphère</option>
-          {candidates.map((candidate) => (
-            <option key={candidate.member_id} value={candidate.member_id}>
-              {candidate.label}
-            </option>
-          ))}
-        </select>
-      </div>
-
       <div className="relative mt-6 h-56 flex justify-center items-center">
         <span className="absolute left-1/2 top-1/2 h-44 w-44 -translate-x-1/2 -translate-y-1/2 rounded-full border border-emerald-300/25" />
         <button
@@ -187,7 +155,6 @@ export function TalkieSignalComposer({ candidates, createSignalAction, initialTa
         <input name="signal_strength" />
         <input name="target_member_id" />
         <input name="audio_url" />
-        <input name="audio_duration_seconds" />
         <input name="current_url" />
       </form>
     </div>
