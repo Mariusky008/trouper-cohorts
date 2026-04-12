@@ -13,6 +13,7 @@ function formatTokenForReadability(token: string) {
 export function ScoutPortalTools({ token, shortCode }: { token: string; shortCode?: string }) {
   const [copied, setCopied] = useState(false);
   const [showInstall, setShowInstall] = useState(false);
+  const [expanded, setExpanded] = useState(false);
   const portalUrl = useMemo(() => {
     if (typeof window === "undefined") return `/popey-human/eclaireur/${token}`;
     return `${window.location.origin}/popey-human/eclaireur/${token}`;
@@ -51,18 +52,17 @@ export function ScoutPortalTools({ token, shortCode }: { token: string; shortCod
 
   return (
     <>
-      <section className="rounded-2xl border border-[#EAC886]/35 bg-[#2A2111]/80 p-4 space-y-3">
-        <p className="text-xs uppercase font-black tracking-[0.12em] text-[#EAC886]/85">Accès rapide éclaireur</p>
-        <p className="text-xs text-[#F6E7CA] break-all">{portalUrl}</p>
-        {shortCode ? (
-          <p className="text-[11px] text-[#F6E7CA]/80">
-            Code d'accès court: <span className="font-black tracking-wider">{shortCode}</span>
-          </p>
-        ) : (
-          <p className="text-[11px] text-[#F6E7CA]/80">
-            Code d'accès: <span className="font-black tracking-wider">{formatTokenForReadability(token)}</span>
-          </p>
-        )}
+      <section className="rounded-2xl border border-white/15 bg-black/25 p-4 space-y-3">
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-xs uppercase font-black tracking-[0.12em] text-white/70">Mon accès rapide</p>
+          <button
+            type="button"
+            onClick={() => setExpanded((value) => !value)}
+            className="h-8 rounded-lg border border-white/20 px-3 text-[11px] font-black uppercase tracking-wide"
+          >
+            {expanded ? "Masquer" : "Voir lien"}
+          </button>
+        </div>
         <div className="grid gap-2 sm:grid-cols-3">
           <button
             type="button"
@@ -89,6 +89,20 @@ export function ScoutPortalTools({ token, shortCode }: { token: string; shortCod
             Installer
           </button>
         </div>
+        {expanded ? (
+          <div className="space-y-2 rounded-xl border border-[#EAC886]/35 bg-[#2A2111]/70 p-3">
+            <p className="text-xs text-[#F6E7CA] break-all">{portalUrl}</p>
+            {shortCode ? (
+              <p className="text-[11px] text-[#F6E7CA]/80">
+                Code court: <span className="font-black tracking-wider">{shortCode}</span>
+              </p>
+            ) : (
+              <p className="text-[11px] text-[#F6E7CA]/80">
+                Code: <span className="font-black tracking-wider">{formatTokenForReadability(token)}</span>
+              </p>
+            )}
+          </div>
+        ) : null}
       </section>
       {showInstall ? <PWAInstallPrompt forceShow onDismiss={() => setShowInstall(false)} /> : null}
     </>
