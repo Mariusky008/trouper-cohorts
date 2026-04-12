@@ -12,6 +12,7 @@ export function TalkieSignalComposer({ createSignalAction }: Props) {
     "Signal vocal transmis depuis le mode talkie-walkie. Merci de qualifier le besoin et d'activer les métiers concernés.";
   const formRef = useRef<HTMLFormElement | null>(null);
   const [isRecording, setIsRecording] = useState(false);
+  const [isPreparing, setIsPreparing] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [ackVisible, setAckVisible] = useState(false);
@@ -23,6 +24,7 @@ export function TalkieSignalComposer({ createSignalAction }: Props) {
   const startRecording = async () => {
     setErrorMessage("");
     setAckVisible(false);
+    setIsPreparing(true);
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const recorder = new MediaRecorder(stream);
@@ -36,11 +38,15 @@ export function TalkieSignalComposer({ createSignalAction }: Props) {
         stream.getTracks().forEach((track) => track.stop());
         await uploadAndSubmit();
       };
+      recorder.onstart = () => {
+        setIsPreparing(false);
+        setIsRecording(true);
+      };
       mediaRecorderRef.current = recorder;
       recordingStartedAtRef.current = Date.now();
       recorder.start();
-      setIsRecording(true);
     } catch {
+      setIsPreparing(false);
       setErrorMessage("Impossible d'accéder au micro. Vérifiez les permissions.");
     }
   };
@@ -49,6 +55,7 @@ export function TalkieSignalComposer({ createSignalAction }: Props) {
     if (!mediaRecorderRef.current || mediaRecorderRef.current.state === "inactive") return;
     mediaRecorderRef.current.stop();
     setIsRecording(false);
+    setIsPreparing(false);
   };
 
   const uploadAndSubmit = async () => {
@@ -118,16 +125,23 @@ export function TalkieSignalComposer({ createSignalAction }: Props) {
         <button
           type="button"
           onClick={isRecording ? stopRecording : startRecording}
-          disabled={isUploading}
+          disabled={isUploading || isPreparing}
           className={`relative h-40 w-40 rounded-full border-2 text-sm font-black uppercase tracking-wide ${
             isRecording
               ? "bg-red-500 text-white border-red-300/60"
+              : isPreparing
+              ? "bg-amber-400 text-black border-amber-200/70"
               : "bg-gradient-to-b from-emerald-400 to-emerald-500 text-black border-emerald-300/60"
           } ${isUploading ? "opacity-60 cursor-not-allowed" : ""}`}
         >
-          {isUploading ? "Upload..." : isRecording ? "Arrêter" : "Appuyer pour parler"}
+          {isUploading ? "Upload..." : isPreparing ? "Préparation..." : isRecording ? "Arrêter" : "Appuyer pour parler"}
         </button>
       </div>
+      {isPreparing && (
+        <p className="text-center text-xs text-amber-200">
+          Initialisation du micro... parlez quand le bouton passe en rouge.
+        </p>
+      )}
 
       {errorMessage && (
         <p className="rounded border border-red-300/35 bg-red-500/10 px-3 py-2 text-sm text-red-200">{errorMessage}</p>
