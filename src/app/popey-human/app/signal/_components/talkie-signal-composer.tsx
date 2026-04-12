@@ -127,56 +127,70 @@ export function TalkieSignalComposer({ createSignalAction }: Props) {
   };
 
   return (
-    <div className="rounded-2xl border border-white/15 bg-black/20 p-4">
-      <p className="text-xs font-black uppercase tracking-[0.12em] text-emerald-300">Signal vocal</p>
-      <h3 className="mt-1 text-2xl font-black">Mode Talkie-Walkie</h3>
-      <p className="mt-2 text-sm text-white/85 leading-relaxed">
-        Appuyez pour transmettre votre opportunité. Je qualifie le besoin puis j&apos;active les métiers concernés.
-      </p>
+    <>
+      <div className="rounded-2xl border border-white/15 bg-black/20 p-4">
+        <p className="text-xs font-black uppercase tracking-[0.12em] text-emerald-300">Signal vocal</p>
+        <h3 className="mt-1 text-2xl font-black">Mode Talkie-Walkie</h3>
+        <p className="mt-2 text-sm text-white/85 leading-relaxed">
+          Appuyez pour transmettre votre opportunité. Je qualifie le besoin puis j&apos;active les métiers concernés.
+        </p>
 
-      <div className="relative mt-6 h-56 flex justify-center items-center">
-        <span className="absolute left-1/2 top-1/2 h-44 w-44 -translate-x-1/2 -translate-y-1/2 rounded-full border border-emerald-300/25" />
-        <button
-          type="button"
-          onClick={isRecording ? stopRecording : startRecording}
-          disabled={isUploading || isPreparing || isStopping}
-          className={`relative h-40 w-40 rounded-full border-2 text-sm font-black uppercase tracking-wide ${
-            isRecording
-              ? "bg-red-500 text-white border-red-300/60"
-              : isPreparing
-              ? "bg-amber-400 text-black border-amber-200/70"
-              : "bg-gradient-to-b from-emerald-400 to-emerald-500 text-black border-emerald-300/60"
-          } ${isUploading ? "opacity-60 cursor-not-allowed" : ""}`}
-        >
-          {isUploading ? "Upload..." : isPreparing ? "Préparation..." : isStopping ? "Finalisation..." : isRecording ? "Arrêter" : "Appuyer pour parler"}
-        </button>
+        <div className="relative mt-6 h-56 flex justify-center items-center">
+          <span className="absolute left-1/2 top-1/2 h-44 w-44 -translate-x-1/2 -translate-y-1/2 rounded-full border border-emerald-300/25" />
+          <button
+            type="button"
+            onClick={isRecording ? stopRecording : startRecording}
+            disabled={isUploading || isPreparing || isStopping}
+            className={`relative h-40 w-40 rounded-full border-2 text-sm font-black uppercase tracking-wide ${
+              isRecording
+                ? "bg-red-500 text-white border-red-300/60"
+                : isPreparing
+                ? "bg-amber-400 text-black border-amber-200/70"
+                : "bg-gradient-to-b from-emerald-400 to-emerald-500 text-black border-emerald-300/60"
+            } ${isUploading ? "opacity-60 cursor-not-allowed" : ""}`}
+          >
+            {isUploading ? "Upload..." : isPreparing ? "Préparation..." : isStopping ? "Finalisation..." : isRecording ? "Arrêter" : "Appuyer pour parler"}
+          </button>
+        </div>
+        {isPreparing && (
+          <p className="text-center text-xs text-amber-200">
+            Initialisation du micro... parlez quand le bouton passe en rouge.
+          </p>
+        )}
+        {isStopping && <p className="text-center text-xs text-amber-200">Finalisation de la fin de phrase...</p>}
+
+        {errorMessage && (
+          <p className="rounded border border-red-300/35 bg-red-500/10 px-3 py-2 text-sm text-red-200">{errorMessage}</p>
+        )}
+
+        <form ref={formRef} action={createSignalAction} className="hidden">
+          <input name="title" />
+          <input name="detail" />
+          <input name="signal_strength" />
+          <input name="target_member_id" />
+          <input name="audio_url" />
+          <input name="audio_duration_seconds" />
+          <input name="current_url" />
+        </form>
       </div>
-      {isPreparing && (
-        <p className="text-center text-xs text-amber-200">
-          Initialisation du micro... parlez quand le bouton passe en rouge.
-        </p>
-      )}
-      {isStopping && <p className="text-center text-xs text-amber-200">Finalisation de la fin de phrase...</p>}
-
-      {errorMessage && (
-        <p className="rounded border border-red-300/35 bg-red-500/10 px-3 py-2 text-sm text-red-200">{errorMessage}</p>
-      )}
-
       {ackVisible && (
-        <p className="rounded border border-emerald-300/35 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-200">
-          Bien reçu. Le signal vocal est en cours d&apos;envoi.
-        </p>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
+          <div className="w-full max-w-3xl rounded-[28px] border border-white/25 bg-[#101820] p-6 shadow-[0_0_40px_rgba(0,0,0,0.55)]">
+            <p className="text-center text-6xl leading-none">✅</p>
+            <h4 className="mt-3 text-4xl font-black text-white">Bien reçu ! 🎙️</h4>
+            <p className="mt-3 text-3xl leading-relaxed text-white/95">
+              Merci pour ce signal. Je traite l&apos;information immédiatement : je qualifie le besoin du client et j&apos;active les membres du Cercle concernés. On continue de faire pleuvoir le business sur Dax !
+            </p>
+            <button
+              type="button"
+              onClick={() => setAckVisible(false)}
+              className="mt-6 h-16 w-full rounded-full bg-emerald-400 text-2xl font-black uppercase tracking-wide text-black"
+            >
+              OK
+            </button>
+          </div>
+        </div>
       )}
-
-      <form ref={formRef} action={createSignalAction} className="hidden">
-        <input name="title" />
-        <input name="detail" />
-        <input name="signal_strength" />
-        <input name="target_member_id" />
-        <input name="audio_url" />
-        <input name="audio_duration_seconds" />
-        <input name="current_url" />
-      </form>
-    </div>
+    </>
   );
 }
