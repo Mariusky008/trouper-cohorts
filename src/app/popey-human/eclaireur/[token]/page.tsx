@@ -54,6 +54,7 @@ export default async function PopeyHumanScoutPortalPage({
   ).length;
   const weeklyBadge =
     weeklyWins >= 6 ? "Pluie d'Or" : weeklyWins >= 3 ? "Sprinter" : weeklyWins >= 1 ? "En feu" : "Starter";
+  const sponsorName = data.sponsor?.name || data.sponsorName || "Popey Human";
 
   return (
     <main className="min-h-screen bg-[#0A0B0C] text-white">
@@ -164,8 +165,33 @@ export default async function PopeyHumanScoutPortalPage({
             <section className="rounded-2xl border border-white/15 bg-black/25 p-4">
               <p className="text-sm font-black">Lancer une alerte</p>
               <p className="text-xs text-white/70">
-                Cette alerte sera envoyée à votre parrain {data.sponsorName || "Popey Human"} pour qualification et dispatch.
+                Cette alerte sera envoyée à votre parrain {sponsorName} pour qualification et dispatch.
               </p>
+              <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                <div className="rounded-xl border border-cyan-300/30 bg-cyan-500/10 p-3">
+                  <p className="text-[10px] font-black uppercase tracking-[0.1em] text-cyan-200/90">Votre parrain</p>
+                  <p className="mt-1 text-sm font-black text-cyan-100">{sponsorName}</p>
+                  <p className="text-[11px] text-cyan-100/80">
+                    {[data.sponsor?.metier, data.sponsor?.ville].filter(Boolean).join(" • ") || "Équipe Popey Human"}
+                  </p>
+                  {data.sponsor?.phone ? (
+                    <a
+                      href={`tel:${data.sponsor.phone.replaceAll(" ", "")}`}
+                      className="mt-2 inline-flex h-8 rounded-lg border border-cyan-200/40 px-2 items-center text-[11px] font-black uppercase tracking-wide text-cyan-100"
+                    >
+                      Appeler mon parrain
+                    </a>
+                  ) : null}
+                </div>
+                <div className="rounded-xl border border-emerald-300/30 bg-emerald-500/10 p-3">
+                  <p className="text-[10px] font-black uppercase tracking-[0.1em] text-emerald-200/90">Confiance & suivi</p>
+                  <ul className="mt-1 space-y-1 text-[11px] text-emerald-100/85">
+                    <li>Qualification humaine du besoin avant diffusion.</li>
+                    <li>Alerte tracée avec statut visible dans votre historique.</li>
+                    <li>Commission calculée automatiquement selon votre taux.</li>
+                  </ul>
+                </div>
+              </div>
               <form action={submitScoutReferralFromTokenAction} className="mt-3 space-y-2">
                 <input type="hidden" name="invite_token" value={data.invite?.invite_token || token} />
                 <input name="contact_name" required placeholder="Nom du contact" className="h-10 w-full rounded border border-white/20 bg-black/25 px-2 text-sm" />

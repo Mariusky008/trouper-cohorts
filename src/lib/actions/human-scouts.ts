@@ -537,6 +537,7 @@ export async function getScoutPortalByToken(token: string) {
       invite: null as HumanScoutInvite | null,
       referrals: [] as HumanScoutReferral[],
       sponsorName: null as string | null,
+      sponsor: null as { name: string | null; metier: string | null; ville: string | null; phone: string | null } | null,
     };
   }
 
@@ -580,6 +581,7 @@ export async function getScoutPortalByToken(token: string) {
       invite: null as HumanScoutInvite | null,
       referrals: [] as HumanScoutReferral[],
       sponsorName: null as string | null,
+      sponsor: null as { name: string | null; metier: string | null; ville: string | null; phone: string | null } | null,
     };
   }
 
@@ -591,6 +593,7 @@ export async function getScoutPortalByToken(token: string) {
       invite: inviteTyped,
       referrals: [] as HumanScoutReferral[],
       sponsorName: null as string | null,
+      sponsor: null as { name: string | null; metier: string | null; ville: string | null; phone: string | null } | null,
     };
   }
 
@@ -611,11 +614,12 @@ export async function getScoutPortalByToken(token: string) {
   ]);
 
   let sponsorName: string | null = null;
+  let sponsor: { name: string | null; metier: string | null; ville: string | null; phone: string | null } | null = null;
   const scoutRow = (scout as HumanScout | null) || null;
   if (scoutRow?.owner_member_id) {
     const { data: ownerMember } = await supabaseAdmin
       .from("human_members")
-      .select("id,user_id,first_name,last_name")
+      .select("id,user_id,first_name,last_name,metier,ville,phone")
       .eq("id", scoutRow.owner_member_id)
       .maybeSingle();
     if (ownerMember) {
@@ -625,10 +629,25 @@ export async function getScoutPortalByToken(token: string) {
       } else {
         const { data: ownerProfile } = await supabaseAdmin
           .from("profiles")
-          .select("display_name")
+          .select("display_name,trade,city,phone")
           .eq("id", ownerMember.user_id)
           .maybeSingle();
         sponsorName = ownerProfile?.display_name || null;
+        sponsor = {
+          name: sponsorName,
+          metier: ownerMember.metier || ownerProfile?.trade || null,
+          ville: ownerMember.ville || ownerProfile?.city || null,
+          phone: ownerMember.phone || ownerProfile?.phone || null,
+        };
+      }
+
+      if (!sponsor) {
+        sponsor = {
+          name: sponsorName,
+          metier: ownerMember.metier || null,
+          ville: ownerMember.ville || null,
+          phone: ownerMember.phone || null,
+        };
       }
     }
   }
@@ -639,6 +658,7 @@ export async function getScoutPortalByToken(token: string) {
     invite: inviteTyped,
     referrals: (referrals as HumanScoutReferral[] | null) || [],
     sponsorName,
+    sponsor,
   };
 }
 
