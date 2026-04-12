@@ -80,8 +80,7 @@ export function TalkieSignalComposer({ createSignalAction }: Props) {
       const blob = new Blob(audioChunksRef.current, { type: "audio/webm" });
       const durationSeconds = Math.max(1, Math.round((Date.now() - recordingStartedAtRef.current) / 1000));
       if (blob.size === 0) {
-        submitSignal(baseDetail, "", durationSeconds);
-        setAckVisible(true);
+        setErrorMessage("Aucun son capté. Réessayez et autorisez le micro.");
         return;
       }
 
@@ -93,9 +92,7 @@ export function TalkieSignalComposer({ createSignalAction }: Props) {
       });
 
       if (uploadError) {
-        submitSignal(`${baseDetail} (Audio non joint: upload indisponible)`, "", durationSeconds);
-        setErrorMessage("Upload audio indisponible. Le signal a été envoyé à Popey admin sans pièce audio.");
-        setAckVisible(true);
+        setErrorMessage(`Upload audio indisponible: ${uploadError.message}`);
         return;
       }
 
