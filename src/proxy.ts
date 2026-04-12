@@ -3,6 +3,13 @@ import { NextResponse } from "next/server";
 import { updateSession } from "@/lib/supabase/middleware";
 
 export default async function proxy(request: NextRequest) {
+  const isPrefetchRequest =
+    request.headers.get("next-router-prefetch") === "1" ||
+    request.headers.get("purpose") === "prefetch";
+  if (isPrefetchRequest) {
+    return NextResponse.next();
+  }
+
   const { response, user } = await updateSession(request);
   const pathname = request.nextUrl.pathname;
 

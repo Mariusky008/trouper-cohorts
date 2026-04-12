@@ -103,7 +103,16 @@ export async function listVisibleHumanSignals() {
     .from("human_members")
     .select("id,user_id,first_name,last_name")
     .in("id", Array.from(memberIds));
-  const { data: profiles } = await supabaseAdmin.from("profiles").select("id,display_name");
+  const memberUserIds = ((members as Array<{ id: string; user_id: string; first_name: string | null; last_name: string | null }> | null) || [])
+    .map((member) => member.user_id)
+    .filter(Boolean);
+  const { data: profiles } =
+    memberUserIds.length > 0
+      ? await supabaseAdmin
+          .from("profiles")
+          .select("id,display_name")
+          .in("id", memberUserIds)
+      : { data: [] as Array<{ id: string; display_name: string | null }> };
 
   const profileByUserId = new Map(
     ((profiles as Array<{ id: string; display_name: string | null }> | null) || []).map((p) => [p.id, p.display_name || ""])

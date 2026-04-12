@@ -69,6 +69,7 @@ export function PopeyHumanMemberShell({ children }: MemberShellProps) {
             </div>
             <Link
               href="/popey-human/app/annuaire"
+              prefetch={false}
               className={`h-10 rounded-xl px-3 inline-flex items-center text-xs font-black uppercase tracking-wide ${
                 isLight ? "border border-black/15 bg-white text-black" : "border border-white/20 bg-white/10 text-white/90"
               }`}
@@ -77,6 +78,7 @@ export function PopeyHumanMemberShell({ children }: MemberShellProps) {
             </Link>
             <Link
               href="/popey-human/app/profile"
+              prefetch={false}
               className={`h-10 rounded-xl px-3 inline-flex items-center text-xs font-black uppercase tracking-wide ${
                 isLight ? "border border-black/15 bg-white text-black" : "border border-white/20 bg-white/10 text-white/90"
               }`}
@@ -99,6 +101,7 @@ export function PopeyHumanMemberShell({ children }: MemberShellProps) {
             <Link
               key={item.href}
               href={item.href}
+              prefetch={false}
               className={`h-12 rounded-xl text-xs font-black uppercase tracking-wide inline-flex items-center justify-center ${
                 item.active
                   ? item.label === "Signal"
