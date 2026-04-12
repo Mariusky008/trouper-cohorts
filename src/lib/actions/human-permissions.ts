@@ -238,13 +238,18 @@ export async function getHumanPermissionsAdminSnapshot(filters: HumanAuditFilter
 
   return {
     members: normalizedMembers,
-    candidates: (profiles || []).map((p) => ({
-      user_id: String(p.id),
-      label:
-        (typeof p.display_name === "string" && p.display_name.trim()) ||
-        (typeof p.trade === "string" && p.trade.trim()) ||
-        "Membre",
-    })),
+    candidates: normalizedMembers
+      .filter((member) => member.status !== "archived")
+      .map((member) => {
+        const fullName = [member.first_name, member.last_name].filter(Boolean).join(" ").trim();
+        const identity = fullName || profileLabelByUserId.get(member.user_id) || "Membre";
+        const subtitle = [member.metier, member.ville].filter(Boolean).join(" • ");
+        return {
+          user_id: member.user_id,
+          label: subtitle ? `${identity} (${subtitle})` : identity,
+        };
+      })
+      .sort((a, b) => a.label.localeCompare(b.label, "fr")),
     permissionsByMemberId,
     allowedByMemberId,
     buddiesByMemberId,
