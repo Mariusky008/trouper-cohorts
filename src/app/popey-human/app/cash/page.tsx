@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
 import { addMyCashEventAction, getMyCashSummary, requestMyCashPayoutAction } from "@/lib/actions/human-cash";
 
 function euros(value: number) {
@@ -43,13 +42,16 @@ export default async function PopeyHumanCashPage({
     <section className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <p className="text-xs font-black uppercase tracking-[0.12em] text-emerald-300/85">Cash Radar</p>
+          <p className="text-xs font-black uppercase tracking-[0.12em] text-emerald-300">Cash Radar</p>
           <h1 className="text-3xl font-black">Cash</h1>
           <p className="text-sm text-white/75">Montants signés, commissions reçues et commissions à payer.</p>
         </div>
-        <Button asChild variant="outline">
-          <Link href="/popey-human/app">Retour cockpit</Link>
-        </Button>
+        <Link
+          href="/popey-human/app"
+          className="h-10 rounded-xl px-3 inline-flex items-center text-xs font-black uppercase tracking-wide border border-white/20 bg-white/10 text-white/90"
+        >
+          Retour cockpit
+        </Link>
       </div>
 
       {summary.error && <p className="rounded border border-red-300/35 bg-red-500/10 px-3 py-2 text-sm text-red-200">{summary.error}</p>}

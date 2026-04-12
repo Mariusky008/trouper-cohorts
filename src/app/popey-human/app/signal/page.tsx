@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
 import {
   closeHumanSignalAction,
   createHumanSignalAction,
@@ -61,13 +60,18 @@ async function PopeyHumanSignalContent({
     <section className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <p className="text-xs font-black uppercase tracking-[0.12em] text-emerald-300/85">Popey Human</p>
-          <h1 className="text-3xl font-black">Signal</h1>
-          <p className="text-sm text-white/75">Flux de signaux business + score d&apos;attention.</p>
+          <p className="text-xs font-black uppercase tracking-[0.12em] text-emerald-300">Signal vocal</p>
+          <h1 className="text-3xl font-black">Mode Talkie-Walkie</h1>
+          <p className="text-sm text-white/85">
+            Appuyez pour transmettre votre opportunité. Votre vocal arrive d&apos;abord à l&apos;admin pour qualification, puis dispatch manuel vers les métiers concernés.
+          </p>
         </div>
-        <Button asChild variant="outline">
-          <Link href="/popey-human/app">Retour cockpit</Link>
-        </Button>
+        <Link
+          href="/popey-human/app"
+          className="h-10 rounded-xl px-3 inline-flex items-center text-xs font-black uppercase tracking-wide border border-white/20 bg-white/10 text-white/90"
+        >
+          Retour cockpit
+        </Link>
       </div>
 
       <TalkieSignalComposer
