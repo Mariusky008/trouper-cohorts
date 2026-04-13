@@ -322,25 +322,25 @@ export default function EclaireurScanFunnelPreviewPage() {
 
   return (
     <main className="min-h-screen bg-[#06080A] text-white">
-      <div className="mx-auto max-w-5xl px-4 pt-8 sm:pt-10">
-        <header className="flex items-center justify-between gap-3">
-          <div>
-            <p className="text-xs font-black uppercase tracking-[0.12em] text-[#EAC886]/90">Eclaireur Scan V2 - Preview</p>
-            <h1 className="text-3xl sm:text-4xl font-black">Daily Scan Popey</h1>
-            <p className="mt-1 text-sm text-white/75">20 cartes par jour. Swipe. Qualifie. Convertis.</p>
+      <div className="sticky top-0 z-30 border-b border-white/10 bg-[#06080A]/80 backdrop-blur-xl">
+        <header className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-4 py-3">
+          <div className="min-w-0">
+            <h1 className="truncate text-2xl sm:text-3xl font-black tracking-tight">Daily Scan Popey</h1>
+            <p className="mt-0.5 text-xs sm:text-sm text-white/70">20 cartes par jour. Swipe. Qualifie. Convertis.</p>
           </div>
           <button
             type="button"
             onClick={() => setShowProfile((value) => !value)}
-            className="rounded-xl border border-white/20 bg-white/10 px-3 py-2 text-xs font-black uppercase tracking-wide"
+            className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-2 text-xs font-black tracking-wide"
           >
-            Mes infos
+            <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-white/20 text-[10px]">JP</span>
+            <span>Mes infos</span>
           </button>
         </header>
       </div>
 
       {introStep !== "done" && (
-        <div className="mx-auto max-w-3xl px-4 py-8 pb-36">
+        <div className="mx-auto max-w-3xl px-4 py-6 pb-36">
           {introStep === "welcome" && (
             <section className="rounded-3xl border border-emerald-300/35 bg-[radial-gradient(120%_120%_at_0%_0%,rgba(18,72,54,0.95)_0%,rgba(12,20,22,0.96)_52%,rgba(8,10,12,1)_100%)] p-6 sm:p-8">
               <p className="text-[11px] font-black uppercase tracking-[0.12em] text-emerald-200/90">Demarrage</p>
