@@ -18,7 +18,7 @@ type Opportunity = {
 };
 
 export default function EclaireurScanPreviewPage() {
-  const [phase, setPhase] = useState<"home" | "source" | "quiz" | "results" | "convert" | "reward">("home");
+  const [phase, setPhase] = useState<"home" | "source" | "quiz" | "results" | "assignment" | "convert" | "reward">("home");
   const [source, setSource] = useState<ScanSource>("guided");
   const [quizStep, setQuizStep] = useState(1);
   const [contactName, setContactName] = useState("");
@@ -87,20 +87,20 @@ export default function EclaireurScanPreviewPage() {
   const missionProgress = phase === "reward" ? 1 : 0;
 
   return (
-    <main className="min-h-screen bg-[#080A0C] text-white">
-      <div className="mx-auto max-w-3xl px-4 py-8 space-y-5">
+    <main className="min-h-screen bg-[#06080A] text-white">
+      <div className="mx-auto max-w-4xl px-4 py-10 space-y-6">
         <div className="flex items-center justify-between gap-3">
           <div>
             <p className="text-xs font-black uppercase tracking-[0.12em] text-[#EAC886]/90">Eclaireur Scan V2 - Preview</p>
-            <h1 className="text-3xl font-black">Trouve. Convertis. Encaisse.</h1>
+            <h1 className="text-3xl sm:text-4xl font-black">Trouve. Convertis. Encaisse.</h1>
             <p className="mt-1 text-sm text-white/75">Prototype de flow motivation lead-first.</p>
           </div>
-          <Link href="/popey-human/eclaireur-preview" className="rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-xs font-black uppercase tracking-wide">
+          <Link href="/popey-human/eclaireur-preview" className="rounded-xl border border-white/20 bg-white/10 px-3 py-2 text-xs font-black uppercase tracking-wide hover:bg-white/15 transition">
             Ancienne preview
           </Link>
         </div>
 
-        <section className="rounded-xl border border-[#EAC886]/35 bg-[#1D170E] p-3">
+        <section className="rounded-2xl border border-[#EAC886]/35 bg-gradient-to-br from-[#2A1E10] to-[#16110A] p-4 shadow-[0_20px_50px_-30px_rgba(234,200,134,0.6)]">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <p className="text-[11px] font-black uppercase tracking-[0.12em] text-[#EAC886]">Mission du jour</p>
             <p className="text-[11px] font-black uppercase tracking-[0.12em] text-white/80">Streak: 4 jours</p>
@@ -113,28 +113,28 @@ export default function EclaireurScanPreviewPage() {
         </section>
 
         {phase === "home" && (
-          <section className="rounded-3xl border border-emerald-300/35 bg-[radial-gradient(120%_120%_at_0%_0%,rgba(18,72,54,0.95)_0%,rgba(12,20,22,0.96)_52%,rgba(8,10,12,1)_100%)] p-5 shadow-[0_24px_55px_-30px_rgba(16,185,129,0.8)]">
+          <section className="rounded-[28px] border border-emerald-300/35 bg-[radial-gradient(120%_120%_at_0%_0%,rgba(18,72,54,0.95)_0%,rgba(12,20,22,0.96)_52%,rgba(8,10,12,1)_100%)] p-6 sm:p-7 shadow-[0_26px_60px_-30px_rgba(16,185,129,0.8)]">
             <p className="text-[11px] font-black uppercase tracking-[0.12em] text-emerald-200/90">Nouveau mode scan</p>
-            <h2 className="mt-2 text-2xl font-black leading-tight">Tu as deja des leads dans ton reseau</h2>
-            <p className="mt-2 text-sm text-white/80">On les detecte en 2 minutes avec score de conversion et gain estime.</p>
+            <h2 className="mt-2 text-3xl font-black leading-tight">Tu as deja des leads dans ton reseau</h2>
+            <p className="mt-2 text-base text-white/85">On les detecte en 2 minutes avec score de potentiel et gain estime.</p>
             <p className="mt-3 rounded-lg border border-white/15 bg-black/25 px-3 py-2 text-sm text-white/85">
               Cette semaine a Dax: <span className="font-black text-emerald-200">27 leads detectes</span> • <span className="font-black text-cyan-200">9 signes</span>
             </p>
-            <div className="mt-4 grid gap-2 sm:grid-cols-2">
+            <div className="mt-5 grid gap-3 sm:grid-cols-2">
               <button
                 type="button"
                 onClick={() => setPhase("source")}
-                className="h-12 rounded-xl bg-gradient-to-r from-emerald-300 via-emerald-400 to-cyan-300 text-black text-sm font-black uppercase tracking-wide"
+                className="h-12 rounded-xl bg-gradient-to-r from-emerald-300 via-emerald-400 to-cyan-300 text-black text-sm font-black uppercase tracking-wide shadow-[0_14px_30px_-18px_rgba(34,197,94,0.9)] hover:brightness-105 transition"
               >
                 Lancer le scan (2 min)
               </button>
               <button
                 type="button"
                 onClick={() => {
-                  setPhase("convert");
+                  setPhase("assignment");
                   setSelectedOpportunityId("op-1");
                 }}
-                className="h-12 rounded-xl border border-white/25 bg-white/10 text-sm font-black uppercase tracking-wide"
+                className="h-12 rounded-xl border border-white/25 bg-white/10 text-sm font-black uppercase tracking-wide hover:bg-white/15 transition"
               >
                 Envoyer un lead manuel
               </button>
@@ -144,7 +144,7 @@ export default function EclaireurScanPreviewPage() {
         )}
 
         {phase === "source" && (
-          <section className="rounded-2xl border border-white/15 bg-[#12161A] p-4">
+          <section className="rounded-3xl border border-white/15 bg-[#12161A] p-5 sm:p-6">
             <h2 className="text-xl font-black">Choisis comment scanner</h2>
             <p className="mt-1 text-sm text-white/75">Tu gardes le controle. Les contacts ne sont jamais partages automatiquement.</p>
             <div className="mt-3 space-y-2">
@@ -157,15 +157,18 @@ export default function EclaireurScanPreviewPage() {
                   key={value}
                   type="button"
                   onClick={() => setSource(value)}
-                  className={`w-full rounded-xl border px-3 py-3 text-left transition ${
-                    source === value ? "border-emerald-300/55 bg-emerald-500/12" : "border-white/15 bg-black/20"
+                  className={`w-full rounded-2xl border px-3 py-3 text-left transition ${
+                    source === value ? "border-emerald-300/55 bg-emerald-500/12 shadow-[0_10px_25px_-18px_rgba(16,185,129,0.9)]" : "border-white/15 bg-black/20 hover:bg-black/30"
                   }`}
                 >
-                  <p className="text-sm font-black">{label}</p>
-                  <p className="text-xs text-white/70">{description}</p>
+                  <p className="text-sm font-black tracking-wide">{label}</p>
+                  <p className="mt-1 text-xs text-white/70">{description}</p>
                 </button>
               ))}
             </div>
+            <p className="mt-3 rounded-lg border border-[#EAC886]/35 bg-[#1D170E] px-3 py-2 text-xs text-[#EAC886]/90">
+              Note preview: avec seulement nom + telephone, le score est preliminaire et sert a prioriser.
+            </p>
             <div className="mt-3 grid grid-cols-2 gap-2">
               <button type="button" onClick={() => setPhase("home")} className="h-11 rounded-xl border border-white/20 bg-white/10 text-xs font-black uppercase tracking-wide">
                 Retour
@@ -176,7 +179,7 @@ export default function EclaireurScanPreviewPage() {
                   setQuizStep(1);
                   setPhase("quiz");
                 }}
-                className="h-11 rounded-xl bg-emerald-400 text-black text-xs font-black uppercase tracking-wide"
+                className="h-11 rounded-xl bg-gradient-to-r from-emerald-300 via-emerald-400 to-cyan-300 text-black text-xs font-black uppercase tracking-wide shadow-[0_14px_30px_-18px_rgba(34,197,94,0.9)] hover:brightness-105 transition"
               >
                 Continuer
               </button>
@@ -338,7 +341,7 @@ export default function EclaireurScanPreviewPage() {
                       type="button"
                       onClick={() => {
                         setSelectedOpportunityId(opportunity.id);
-                        setPhase("convert");
+                        setPhase("assignment");
                       }}
                       className="h-10 rounded-lg bg-emerald-400 text-black text-xs font-black uppercase tracking-wide"
                     >
@@ -356,12 +359,53 @@ export default function EclaireurScanPreviewPage() {
               type="button"
               onClick={() => {
                 setSelectedOpportunityId(visibleOpportunities[0]?.id || "op-1");
-                setPhase("convert");
+                setPhase("assignment");
               }}
               className="mt-3 h-11 w-full rounded-xl border border-[#EAC886]/45 bg-[#EAC886]/18 text-xs font-black uppercase tracking-wide text-[#EAC886]"
             >
               Convertir les 3 meilleurs
             </button>
+          </section>
+        )}
+
+        {phase === "assignment" && (
+          <section className="rounded-3xl border border-[#EAC886]/35 bg-gradient-to-br from-[#241B12] via-[#1A1510] to-[#15100A] p-5 sm:p-6 shadow-[0_24px_55px_-30px_rgba(234,200,134,0.55)]">
+            <p className="text-[11px] font-black uppercase tracking-[0.12em] text-[#EAC886]">Attribution locale</p>
+            <h2 className="mt-2 text-2xl font-black">Comment ce lead est attribue</h2>
+            <p className="mt-3 text-sm text-white/85">
+              Dans cette ville, nous avons actuellement 50 metiers enregistres dont les services sont plebiscites.
+            </p>
+            <p className="mt-2 text-sm text-white/80">
+              Pour chaque lead, nous selectionnons un seul metier/entreprise partenaire, le plus pertinent selon le besoin.
+            </p>
+
+            <div className="mt-4 rounded-2xl border border-white/15 bg-black/25 p-4">
+              <p className="text-[11px] font-black uppercase tracking-[0.12em] text-white/65">Entreprise recommandee</p>
+              <p className="mt-1 text-lg font-black">{selectedOpportunity.targetTrade} Horizon Dax</p>
+              <div className="mt-2 grid gap-2 sm:grid-cols-3">
+                <p className="rounded-lg border border-white/10 bg-white/5 px-2 py-1 text-xs text-white/75">Zone: Dax + 25 km</p>
+                <p className="rounded-lg border border-white/10 bg-white/5 px-2 py-1 text-xs text-white/75">Rappel moyen: 2h</p>
+                <p className="rounded-lg border border-white/10 bg-white/5 px-2 py-1 text-xs text-white/75">Satisfaction: 4.8/5</p>
+              </div>
+              <p className="mt-3 text-xs text-emerald-200">Pourquoi ce choix: adequation besoin + disponibilite immediate.</p>
+            </div>
+
+            <p className="mt-3 rounded-lg border border-emerald-300/30 bg-emerald-500/10 px-3 py-2 text-xs text-emerald-200">
+              Tu peux consulter les details avant envoi. Rien n est envoye sans ta validation.
+            </p>
+
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              <button type="button" onClick={() => setPhase("results")} className="h-11 rounded-xl border border-white/20 bg-white/10 text-xs font-black uppercase tracking-wide">
+                Retour
+              </button>
+              <button
+                type="button"
+                onClick={() => setPhase("convert")}
+                className="h-11 rounded-xl bg-gradient-to-r from-[#F1D9A3] via-[#EAC886] to-[#E5B86A] text-black text-xs font-black uppercase tracking-wide shadow-[0_18px_35px_-20px_rgba(234,200,134,0.9)] hover:brightness-105 transition"
+              >
+                Continuer
+              </button>
+            </div>
           </section>
         )}
 
