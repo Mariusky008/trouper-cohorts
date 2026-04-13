@@ -336,6 +336,7 @@ export async function adminCreateHumanLead(formData: FormData) {
   if ("error" in admin) return { error: admin.error };
 
   const sourceUserId = String(formData.get("source_user_id") || "");
+  const ownerUserId = String(formData.get("owner_user_id") || "");
   const clientName = String(formData.get("client_name") || "").trim();
   const budgetRaw = String(formData.get("budget") || "").trim();
   const besoin = String(formData.get("besoin") || "").trim();
@@ -344,17 +345,20 @@ export async function adminCreateHumanLead(formData: FormData) {
   const notes = String(formData.get("notes") || "").trim();
 
   if (!sourceUserId) return { error: "Source manquante." };
+  if (!ownerUserId) return { error: "Destinataire manquant." };
   if (!clientName) return { error: "Nom client requis." };
 
   const sourceMember = await ensureHumanMemberForUserId(sourceUserId);
+  const ownerMember = await ensureHumanMemberForUserId(ownerUserId);
   if (!sourceMember) return { error: "Source Popey Human introuvable." };
+  if (!ownerMember) return { error: "Destinataire Popey Human introuvable." };
 
   const budget = budgetRaw ? Number(budgetRaw) : null;
   if (budgetRaw && Number.isNaN(budget)) return { error: "Budget invalide." };
 
   const supabaseAdmin = createAdminClient();
   const { error } = await supabaseAdmin.from("human_leads").insert({
-    owner_member_id: null,
+    owner_member_id: ownerMember.id,
     source_member_id: sourceMember.id,
     client_name: clientName,
     budget,
@@ -443,18 +447,54 @@ export async function getHumanLeadSourceCandidates() {
   }
 
   const supabaseAdmin = createAdminClient();
-  const { data: profiles } = await supabaseAdmin
-    .from("profiles")
-    .select("id,display_name,trade")
-    .order("display_name", { ascending: true })
-    .limit(500);
+  const { data: members } = await supabaseAdmin
+    .from("human_members")
+    .select("id,user_id,first_name,last_name,metier,ville,status")
+    .neq("status", "archived")
+    .order("created_at", { ascending: true });
+
+  const userIds = ((members as Array<{ user_id: string }> | null) || [])
+    .map((member) => member.user_id)
+    .filter(Boolean);
+  const { data: profiles } =
+    userIds.length > 0
+      ? await supabaseAdmin
+          .from("profiles")
+          .select("id,display_name,trade,city")
+          .in("id", userIds)
+      : { data: [] as Array<{ id: string; display_name: string | null; trade: string | null; city: string | null }> };
+
+  const profileByUserId = new Map(
+    ((profiles as Array<{ id: string; display_name: string | null; trade: string | null; city: string | null }> | null) || []).map(
+      (profile) => [profile.id, profile]
+    )
+  );
 
   return {
     error: null as string | null,
-    candidates: ((profiles as Array<{ id: string; display_name: string | null; trade: string | null }> | null) || []).map((profile) => ({
-      user_id: profile.id,
-      label: (profile.display_name && profile.display_name.trim()) || (profile.trade && profile.trade.trim()) || profile.id,
-    })),
+    candidates: ((members as Array<{
+      user_id: string;
+      first_name: string | null;
+      last_name: string | null;
+      metier: string | null;
+      ville: string | null;
+    }> | null) || [])
+      .map((member) => {
+        const profile = profileByUserId.get(member.user_id);
+        const fullName = [member.first_name, member.last_name].filter(Boolean).join(" ").trim();
+        const identity =
+          fullName ||
+          (profile?.display_name && profile.display_name.trim()) ||
+          member.user_id;
+        const metier = member.metier || profile?.trade || null;
+        const ville = member.ville || profile?.city || null;
+        const subtitle = [metier, ville].filter(Boolean).join(" • ");
+        return {
+          user_id: member.user_id,
+          label: subtitle ? `${identity} (${subtitle})` : identity,
+        };
+      })
+      .sort((a, b) => a.label.localeCompare(b.label, "fr")),
   };
 }
 

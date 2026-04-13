@@ -109,13 +109,23 @@ export default async function AdminHumainClientsPage({
               </option>
             ))}
           </select>
-          <input name="client_name" required placeholder="Nom client" className="w-full rounded border px-2 py-2 text-sm" />
+          <select name="owner_user_id" required className="w-full rounded border px-2 py-2 text-sm">
+            <option value="">Donner le lead à</option>
+            {sources.candidates.map((candidate) => (
+              <option key={`owner-${candidate.user_id}`} value={candidate.user_id}>
+                {candidate.label}
+              </option>
+            ))}
+          </select>
         </div>
         <div className="grid gap-3 sm:grid-cols-2">
+          <input name="client_name" required placeholder="Nom client" className="w-full rounded border px-2 py-2 text-sm" />
           <input name="budget" placeholder="Budget (ex: 45000)" className="w-full rounded border px-2 py-2 text-sm" />
-          <input name="phone" placeholder="Téléphone" className="w-full rounded border px-2 py-2 text-sm" />
         </div>
-        <input name="adresse" placeholder="Adresse" className="w-full rounded border px-2 py-2 text-sm" />
+        <div className="grid gap-3 sm:grid-cols-2">
+          <input name="phone" placeholder="Téléphone" className="w-full rounded border px-2 py-2 text-sm" />
+          <input name="adresse" placeholder="Adresse" className="w-full rounded border px-2 py-2 text-sm" />
+        </div>
         <input name="besoin" placeholder="Besoin principal" className="w-full rounded border px-2 py-2 text-sm" />
         <textarea name="notes" placeholder="Notes" className="min-h-20 w-full rounded border px-2 py-2 text-sm" />
         <button className="w-fit rounded bg-black px-4 py-2 text-sm font-bold text-white">Créer le lead</button>
