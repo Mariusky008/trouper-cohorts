@@ -322,8 +322,25 @@ export default function EclaireurScanFunnelPreviewPage() {
 
   return (
     <main className="min-h-screen bg-[#06080A] text-white">
+      <div className="mx-auto max-w-5xl px-4 pt-8 sm:pt-10">
+        <header className="flex items-center justify-between gap-3">
+          <div>
+            <p className="text-xs font-black uppercase tracking-[0.12em] text-[#EAC886]/90">Eclaireur Scan V2 - Preview</p>
+            <h1 className="text-3xl sm:text-4xl font-black">Daily Scan Popey</h1>
+            <p className="mt-1 text-sm text-white/75">20 cartes par jour. Swipe. Qualifie. Convertis.</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowProfile((value) => !value)}
+            className="rounded-xl border border-white/20 bg-white/10 px-3 py-2 text-xs font-black uppercase tracking-wide"
+          >
+            Mes infos
+          </button>
+        </header>
+      </div>
+
       {introStep !== "done" && (
-        <div className="mx-auto max-w-3xl px-4 py-10">
+        <div className="mx-auto max-w-3xl px-4 py-8 pb-36">
           {introStep === "welcome" && (
             <section className="rounded-3xl border border-emerald-300/35 bg-[radial-gradient(120%_120%_at_0%_0%,rgba(18,72,54,0.95)_0%,rgba(12,20,22,0.96)_52%,rgba(8,10,12,1)_100%)] p-6 sm:p-8">
               <p className="text-[11px] font-black uppercase tracking-[0.12em] text-emerald-200/90">Demarrage</p>
@@ -401,21 +418,7 @@ export default function EclaireurScanFunnelPreviewPage() {
 
       {introStep === "done" && (
       <>
-      <div className="mx-auto max-w-5xl px-4 py-8 pb-36 sm:py-10 space-y-6">
-        <header className="flex items-center justify-between gap-3">
-          <div>
-            <p className="text-xs font-black uppercase tracking-[0.12em] text-[#EAC886]/90">Eclaireur Scan V2 - Preview</p>
-            <h1 className="text-3xl sm:text-4xl font-black">Daily Scan Popey</h1>
-            <p className="mt-1 text-sm text-white/75">20 cartes par jour. Swipe. Qualifie. Convertis.</p>
-          </div>
-          <button
-            type="button"
-            onClick={() => setShowProfile((value) => !value)}
-            className="rounded-xl border border-white/20 bg-white/10 px-3 py-2 text-xs font-black uppercase tracking-wide"
-          >
-            Mes infos
-          </button>
-        </header>
+      <div className="mx-auto max-w-5xl px-4 py-6 pb-36 space-y-6">
 
         {showProfile && (
           <section className="rounded-2xl border border-white/15 bg-[#12161A] p-4">
