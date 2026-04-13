@@ -88,6 +88,7 @@ const NEEDS_BY_MOMENT: Record<string, string[]> = {
 };
 
 export default function EclaireurScanFunnelPreviewPage() {
+  const [introDone, setIntroDone] = useState(false);
   const [mainTab, setMainTab] = useState<MainTab>("daily");
   const [showProfile, setShowProfile] = useState(false);
   const [funnelStep, setFunnelStep] = useState<FunnelStep | null>(null);
@@ -305,6 +306,34 @@ export default function EclaireurScanFunnelPreviewPage() {
 
   return (
     <main className="min-h-screen bg-[#06080A] text-white">
+      {!introDone && (
+        <div className="mx-auto max-w-3xl px-4 py-10">
+          <section className="rounded-3xl border border-emerald-300/35 bg-[radial-gradient(120%_120%_at_0%_0%,rgba(18,72,54,0.95)_0%,rgba(12,20,22,0.96)_52%,rgba(8,10,12,1)_100%)] p-6 sm:p-8">
+            <p className="text-[11px] font-black uppercase tracking-[0.12em] text-emerald-200/90">Bienvenue</p>
+            <h1 className="mt-2 text-3xl sm:text-4xl font-black leading-tight">Scanne ton annuaire, transforme ton reseau en opportunites</h1>
+            <p className="mt-3 text-sm text-white/85">
+              Le scan permet d organiser tes contacts et de lancer un tri quotidien simple: 20 cartes par jour, 2 minutes, et des leads actionnables.
+            </p>
+            <div className="mt-4 grid gap-2 sm:grid-cols-3 text-sm">
+              <p className="rounded-xl border border-white/15 bg-black/25 px-3 py-2">1. Scanner ton annuaire</p>
+              <p className="rounded-xl border border-white/15 bg-black/25 px-3 py-2">2. Qualifier les bons profils</p>
+              <p className="rounded-xl border border-white/15 bg-black/25 px-3 py-2">3. Envoyer au bon pro</p>
+            </div>
+            <p className="mt-4 rounded-xl border border-[#EAC886]/35 bg-[#1D170E] px-4 py-3 text-sm text-[#EAC886]">
+              Pourquoi scanner ? Pour ne plus perdre de contacts utiles, garder un suivi clair, et convertir au bon moment.
+            </p>
+            <button
+              type="button"
+              onClick={() => setIntroDone(true)}
+              className="mt-5 h-12 rounded-xl bg-gradient-to-r from-emerald-300 via-emerald-400 to-cyan-300 px-5 text-black text-sm font-black uppercase tracking-wide"
+            >
+              Scanner mon annuaire
+            </button>
+          </section>
+        </div>
+      )}
+
+      {introDone && (
       <div className="mx-auto max-w-5xl px-4 py-8 pb-36 sm:py-10 space-y-6">
         <header className="flex items-center justify-between gap-3">
           <div>
@@ -886,6 +915,7 @@ export default function EclaireurScanFunnelPreviewPage() {
           </button>
         </div>
       </nav>
+      )}
     </main>
   );
 }
