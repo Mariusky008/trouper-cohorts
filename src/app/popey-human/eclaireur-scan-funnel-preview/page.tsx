@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 
 type Phase = "home" | "scan" | "directory" | "moments" | "needs" | "message" | "response" | "dispatch" | "done";
 type ReplyStatus = "waiting" | "ok" | "no";
+type MainTab = "scan" | "gains" | "history";
 
 type Contact = {
   id: string;
@@ -72,6 +73,8 @@ const NEEDS_BY_MOMENT: Record<string, string[]> = {
 
 export default function EclaireurScanFunnelPreviewPage() {
   const [phase, setPhase] = useState<Phase>("home");
+  const [mainTab, setMainTab] = useState<MainTab>("scan");
+  const [showProfile, setShowProfile] = useState(false);
   const [totalContacts] = useState(800);
   const [selectedContactId, setSelectedContactId] = useState(DIRECTORY[0].id);
   const [selectedMoment, setSelectedMoment] = useState<string>("baby");
@@ -95,6 +98,16 @@ export default function EclaireurScanFunnelPreviewPage() {
   );
 
   const totalPotential = segmentStats.reduce((sum, segment) => sum + segment.potential, 0);
+  const qualifiedCount = 140;
+  const progressPercent = Math.round((qualifiedCount / totalContacts) * 100);
+  const pendingAmount = 1260;
+  const validatedAmount = 3820;
+  const rejectedAmount = 540;
+  const historyItems = [
+    { id: "h1", label: "Lead envoye - Julien M.", status: "En attente", amount: 280, color: "text-amber-200" },
+    { id: "h2", label: "Lead signe - Claire R.", status: "Valide", amount: 320, color: "text-emerald-200" },
+    { id: "h3", label: "Lead refuse - Karim B.", status: "Refuse", amount: 0, color: "text-rose-200" },
+  ];
 
   const defaultMessage = `Salut ${selectedContact.name.split(" ")[0]}, je pense a toi suite a ton contexte "${selectedMomentLabel}". J ai un pro de confiance sur ${selectedNeed || "ce sujet"} a ${selectedContact.city}. Tu veux que je lui demande de te contacter ?`;
 
@@ -108,24 +121,42 @@ export default function EclaireurScanFunnelPreviewPage() {
 
   return (
     <main className="min-h-screen bg-[#06080A] text-white">
-      <div className="mx-auto max-w-5xl px-4 py-8 sm:py-10 space-y-6">
+      <div className="mx-auto max-w-5xl px-4 py-8 pb-28 sm:py-10 space-y-6">
         <header className="flex items-center justify-between gap-3">
           <div>
             <p className="text-xs font-black uppercase tracking-[0.12em] text-[#EAC886]/90">Eclaireur Scan V2 - Funnel Compare</p>
             <h1 className="text-3xl sm:text-4xl font-black">Scan. Detecte. Convertis.</h1>
             <p className="mt-1 text-sm text-white/75">Version orientee terrain: simple, motive, actionnable.</p>
           </div>
-          <Link href="/popey-human/eclaireur-scan-preview" className="rounded-xl border border-white/20 bg-white/10 px-3 py-2 text-xs font-black uppercase tracking-wide">
-            Preview actuelle
-          </Link>
+          <button
+            type="button"
+            onClick={() => setShowProfile((value) => !value)}
+            className="rounded-xl border border-white/20 bg-white/10 px-3 py-2 text-xs font-black uppercase tracking-wide"
+          >
+            Mes infos
+          </button>
         </header>
 
-        {phase === "home" && (
+        {showProfile && (
+          <section className="rounded-2xl border border-white/15 bg-[#12161A] p-4">
+            <h2 className="text-lg font-black">Mes informations</h2>
+            <div className="mt-3 grid gap-2 sm:grid-cols-3 text-sm">
+              <p className="rounded-lg border border-white/15 bg-black/25 px-3 py-2">Statut: Eclaireur particulier</p>
+              <p className="rounded-lg border border-white/15 bg-black/25 px-3 py-2">Badge: Eclaireur Bronze</p>
+              <p className="rounded-lg border border-white/15 bg-black/25 px-3 py-2">RIB: Configure</p>
+            </div>
+          </section>
+        )}
+
+        {mainTab === "scan" && phase === "home" && (
           <section className="rounded-3xl border border-emerald-300/35 bg-[radial-gradient(120%_120%_at_0%_0%,rgba(18,72,54,0.95)_0%,rgba(12,20,22,0.96)_52%,rgba(8,10,12,1)_100%)] p-6 sm:p-7">
             <p className="text-[11px] font-black uppercase tracking-[0.12em] text-emerald-200/90">Etape 1</p>
             <h2 className="mt-2 text-3xl font-black leading-tight">Scanner l annuaire pour motiver l eclaireur</h2>
             <p className="mt-2 text-base text-white/85">
               Tu as environ <span className="font-black text-emerald-200">{totalContacts} contacts</span>. On estime le potentiel par categories pour te donner un objectif clair.
+            </p>
+            <p className="mt-3 rounded-lg border border-white/15 bg-black/25 px-3 py-2 text-sm text-white/80">
+              Progression annuaire: <span className="font-black text-emerald-200">{qualifiedCount}/{totalContacts}</span> ({progressPercent}%)
             </p>
             <button
               type="button"
@@ -137,7 +168,7 @@ export default function EclaireurScanFunnelPreviewPage() {
           </section>
         )}
 
-        {phase === "scan" && (
+        {mainTab === "scan" && phase === "scan" && (
           <section className="rounded-3xl border border-white/15 bg-[#12161A] p-5 sm:p-6">
             <p className="text-[11px] font-black uppercase tracking-[0.12em] text-[#EAC886]">Etape 2 - Scan termine</p>
             <h2 className="mt-2 text-2xl sm:text-3xl font-black">Potentiel estime sur ton reseau</h2>
@@ -169,7 +200,7 @@ export default function EclaireurScanFunnelPreviewPage() {
           </section>
         )}
 
-        {phase === "directory" && (
+        {mainTab === "scan" && phase === "directory" && (
           <section className="rounded-3xl border border-white/15 bg-[#12161A] p-5 sm:p-6">
             <p className="text-[11px] font-black uppercase tracking-[0.12em] text-[#EAC886]">Etape 3 - Annuaire</p>
             <h2 className="mt-1 text-2xl font-black">Choisis une personne</h2>
@@ -205,7 +236,7 @@ export default function EclaireurScanFunnelPreviewPage() {
           </section>
         )}
 
-        {phase === "moments" && (
+        {mainTab === "scan" && phase === "moments" && (
           <section className="rounded-3xl border border-white/15 bg-[#12161A] p-5 sm:p-6">
             <p className="text-[11px] font-black uppercase tracking-[0.12em] text-[#EAC886]">Etape 4 - Moments de vie</p>
             <h2 className="mt-1 text-2xl font-black">Quel signal correspond a {selectedContact.name} ?</h2>
@@ -242,7 +273,7 @@ export default function EclaireurScanFunnelPreviewPage() {
           </section>
         )}
 
-        {phase === "needs" && (
+        {mainTab === "scan" && phase === "needs" && (
           <section className="rounded-3xl border border-white/15 bg-[#12161A] p-5 sm:p-6">
             <p className="text-[11px] font-black uppercase tracking-[0.12em] text-[#EAC886]">Etape 5 - Besoin associe</p>
             <h2 className="mt-1 text-2xl font-black">Que pourrait-il/elle avoir besoin maintenant ?</h2>
@@ -280,7 +311,7 @@ export default function EclaireurScanFunnelPreviewPage() {
           </section>
         )}
 
-        {phase === "message" && (
+        {mainTab === "scan" && phase === "message" && (
           <section className="rounded-3xl border border-white/15 bg-[#12161A] p-5 sm:p-6">
             <p className="text-[11px] font-black uppercase tracking-[0.12em] text-[#EAC886]">Etape 6 - Message pre-rempli</p>
             <h2 className="mt-1 text-2xl font-black">Envoyer la relance a {selectedContact.name}</h2>
@@ -304,7 +335,7 @@ export default function EclaireurScanFunnelPreviewPage() {
           </section>
         )}
 
-        {phase === "response" && (
+        {mainTab === "scan" && phase === "response" && (
           <section className="rounded-3xl border border-[#EAC886]/35 bg-[#1A1510] p-5 sm:p-6">
             <p className="text-[11px] font-black uppercase tracking-[0.12em] text-[#EAC886]">Etape 7 - Suivi reponse</p>
             <h2 className="mt-1 text-2xl font-black">Statut de la reponse de {selectedContact.name}</h2>
@@ -351,7 +382,7 @@ export default function EclaireurScanFunnelPreviewPage() {
           </section>
         )}
 
-        {phase === "dispatch" && (
+        {mainTab === "scan" && phase === "dispatch" && (
           <section className="rounded-3xl border border-emerald-300/35 bg-emerald-500/12 p-5 sm:p-6">
             <p className="text-[11px] font-black uppercase tracking-[0.12em] text-emerald-100">Envoi du lead</p>
             <h2 className="mt-1 text-2xl font-black">Choisir le metier concerne</h2>
@@ -387,7 +418,7 @@ export default function EclaireurScanFunnelPreviewPage() {
           </section>
         )}
 
-        {phase === "done" && (
+        {mainTab === "scan" && phase === "done" && (
           <section className="rounded-3xl border border-white/15 bg-[#12161A] p-5 sm:p-6">
             <p className="inline-flex rounded-full border border-emerald-300/40 bg-emerald-500/15 px-2 py-1 text-[10px] font-black uppercase tracking-[0.1em] text-emerald-100">
               Session terminee
@@ -417,7 +448,65 @@ export default function EclaireurScanFunnelPreviewPage() {
             </div>
           </section>
         )}
+
+        {mainTab === "gains" && (
+          <section className="rounded-3xl border border-[#EAC886]/35 bg-[#12161A] p-5 sm:p-6">
+            <p className="text-[11px] font-black uppercase tracking-[0.12em] text-[#EAC886]">Mes gains</p>
+            <h2 className="mt-1 text-2xl font-black">Portefeuille eclaireur</h2>
+            <p className="mt-2 rounded-xl border border-emerald-300/35 bg-emerald-500/10 px-4 py-3 text-emerald-100">
+              Total cumule: <span className="font-black">{validatedAmount.toLocaleString("fr-FR")} EUR</span>
+            </p>
+            <div className="mt-4 grid gap-2 sm:grid-cols-3 text-sm">
+              <p className="rounded-xl border border-amber-300/30 bg-amber-500/10 px-3 py-2">En attente: {pendingAmount} EUR</p>
+              <p className="rounded-xl border border-emerald-300/30 bg-emerald-500/10 px-3 py-2">Valides: {validatedAmount} EUR</p>
+              <p className="rounded-xl border border-rose-300/30 bg-rose-500/10 px-3 py-2">Refuses: {rejectedAmount} EUR</p>
+            </div>
+          </section>
+        )}
+
+        {mainTab === "history" && (
+          <section className="rounded-3xl border border-white/15 bg-[#12161A] p-5 sm:p-6">
+            <p className="text-[11px] font-black uppercase tracking-[0.12em] text-[#EAC886]">Historique</p>
+            <h2 className="mt-1 text-2xl font-black">Timeline des leads</h2>
+            <div className="mt-4 space-y-2">
+              {historyItems.map((item) => (
+                <article key={item.id} className="rounded-xl border border-white/15 bg-black/25 px-3 py-3">
+                  <p className="text-sm font-black">{item.label}</p>
+                  <p className={`text-xs ${item.color}`}>
+                    {item.status} • {item.amount} EUR
+                  </p>
+                </article>
+              ))}
+            </div>
+          </section>
+        )}
       </div>
+
+      <nav className="fixed bottom-0 left-0 right-0 border-t border-white/10 bg-[#0A0D10]/95 backdrop-blur">
+        <div className="mx-auto grid max-w-5xl grid-cols-3 gap-2 px-4 py-3">
+          <button
+            type="button"
+            onClick={() => setMainTab("gains")}
+            className={`h-11 rounded-xl text-xs font-black uppercase tracking-wide ${mainTab === "gains" ? "bg-[#EAC886] text-black" : "bg-white/10 text-white"}`}
+          >
+            Gains
+          </button>
+          <button
+            type="button"
+            onClick={() => setMainTab("scan")}
+            className={`h-11 rounded-xl text-xs font-black uppercase tracking-wide ${mainTab === "scan" ? "bg-emerald-400 text-black" : "bg-white/10 text-white"}`}
+          >
+            Scan
+          </button>
+          <button
+            type="button"
+            onClick={() => setMainTab("history")}
+            className={`h-11 rounded-xl text-xs font-black uppercase tracking-wide ${mainTab === "history" ? "bg-cyan-300 text-black" : "bg-white/10 text-white"}`}
+          >
+            Historique
+          </button>
+        </div>
+      </nav>
     </main>
   );
 }
