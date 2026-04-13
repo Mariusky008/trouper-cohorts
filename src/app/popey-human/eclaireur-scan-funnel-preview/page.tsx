@@ -478,8 +478,8 @@ export default function EclaireurScanFunnelPreviewPage() {
         )}
 
         {mainTab === "daily" && (
-          <section className="rounded-3xl border border-emerald-300/35 bg-[radial-gradient(120%_120%_at_0%_0%,rgba(18,72,54,0.95)_0%,rgba(12,20,22,0.96)_52%,rgba(8,10,12,1)_100%)] p-4 sm:p-5">
-            <div className="space-y-2">
+          <section className="rounded-3xl border border-emerald-300/35 bg-[radial-gradient(120%_120%_at_0%_0%,rgba(18,72,54,0.95)_0%,rgba(12,20,22,0.96)_52%,rgba(8,10,12,1)_100%)] p-3 sm:p-5">
+            <div className="space-y-1.5 sm:space-y-2">
               <div className="flex items-center justify-between rounded-lg border border-white/15 bg-black/20 px-3 py-2">
                 <p className="text-xs font-black uppercase tracking-wide">Daily</p>
                 <p className="text-xs text-white/80">
@@ -491,7 +491,7 @@ export default function EclaireurScanFunnelPreviewPage() {
               </div>
             </div>
 
-            <div className={`mt-3 min-h-[52vh] rounded-2xl border border-white/15 bg-gradient-to-br ${currentCardTheme} p-4 flex flex-col justify-center`}>
+            <div className={`mt-2 sm:mt-3 min-h-[40vh] sm:min-h-[52vh] max-h-[44vh] sm:max-h-none rounded-2xl border border-white/15 bg-gradient-to-br ${currentCardTheme} p-3 sm:p-4 flex flex-col justify-center`}>
               {!currentDailyContact ? (
                 <div className="rounded-lg border border-emerald-300/30 bg-emerald-500/10 px-3 py-3 text-center">
                   <p className="text-sm text-emerald-200">Felicitations, mission du jour terminee.</p>
@@ -509,7 +509,7 @@ export default function EclaireurScanFunnelPreviewPage() {
                           : ""
                   }`}
                 >
-                  <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full border border-white/25 bg-white/10 text-2xl font-black">
+                  <div className="mx-auto mb-3 sm:mb-4 flex h-16 w-16 sm:h-20 sm:w-20 items-center justify-center rounded-full border border-white/25 bg-white/10 text-xl sm:text-2xl font-black">
                     {currentDailyContact.name
                       .split(" ")
                       .slice(0, 2)
@@ -517,14 +517,14 @@ export default function EclaireurScanFunnelPreviewPage() {
                       .join("")}
                   </div>
                   <p className="text-xs uppercase tracking-[0.12em] text-white/60">Carte du jour</p>
-                  <p className="mt-3 text-5xl sm:text-6xl font-black leading-tight">{currentDailyContact.name}</p>
-                  <p className="mt-3 inline-flex rounded-full border border-white/20 bg-black/20 px-3 py-1 text-xl font-black text-white/95">{currentDailyContact.city}</p>
-                  <p className="mt-2 text-base text-white/65">{currentDailyContact.phone}</p>
+                  <p className="mt-2 sm:mt-3 text-4xl sm:text-6xl font-black leading-tight">{currentDailyContact.name}</p>
+                  <p className="mt-2 sm:mt-3 inline-flex rounded-full border border-white/20 bg-black/20 px-3 py-1 text-lg sm:text-xl font-black text-white/95">{currentDailyContact.city}</p>
+                  <p className="mt-1 sm:mt-2 text-sm sm:text-base text-white/65">{currentDailyContact.phone}</p>
                 </article>
               )}
             </div>
             {tutorialActive && currentDailyContact && tutorialExpectedAction && (
-              <div className="mt-3 rounded-xl border border-cyan-300/35 bg-cyan-500/10 px-3 py-2 text-sm text-cyan-100">
+              <div className="mt-2 rounded-xl border border-cyan-300/35 bg-cyan-500/10 px-3 py-2 text-xs sm:text-sm text-cyan-100">
                 {tutorialExpectedAction === "up" && `${currentDailyContact.name} a un projet urgent ? Swipe vers le HAUT ★ pour l alerte directe.`}
                 {tutorialExpectedAction === "right" && `${currentDailyContact.name} semble prometteur ? Clique ✓ pour le qualifier.`}
                 {tutorialExpectedAction === "left" && `${currentDailyContact.name} n a pas de projet pour l instant ? Clique ✕ pour ignorer.`}
@@ -532,39 +532,39 @@ export default function EclaireurScanFunnelPreviewPage() {
             )}
 
             {currentDailyContact && (
-              <div className="mt-4 grid grid-cols-5 gap-2 items-center">
+              <div className="mt-2 sm:mt-4 grid grid-cols-5 gap-2 items-center">
                 <button
                   type="button"
                   onClick={onUndoLast}
-                  className="h-12 rounded-full border border-white/20 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.2),rgba(0,0,0,0.3))] text-xl font-black text-amber-300 shadow-[0_10px_20px_-14px_rgba(251,191,36,0.9)] active:scale-95 transition"
+                  className="h-10 sm:h-12 rounded-full border border-white/20 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.2),rgba(0,0,0,0.3))] text-lg sm:text-xl font-black text-amber-300 shadow-[0_10px_20px_-14px_rgba(251,191,36,0.9)] active:scale-95 transition"
                 >
                   ↺
                 </button>
                 <button
                   type="button"
                   onClick={onSwipeLeft}
-                  className="h-20 rounded-full border border-white/20 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.2),rgba(0,0,0,0.3))] text-4xl font-black text-rose-400 shadow-[0_16px_30px_-16px_rgba(244,63,94,0.9)] active:scale-95 transition"
+                  className="h-16 sm:h-20 rounded-full border border-white/20 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.2),rgba(0,0,0,0.3))] text-3xl sm:text-4xl font-black text-rose-400 shadow-[0_16px_30px_-16px_rgba(244,63,94,0.9)] active:scale-95 transition"
                 >
                   ✕
                 </button>
                 <button
                   type="button"
                   onClick={onSwipeUp}
-                  className="h-14 rounded-full border border-white/20 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.2),rgba(0,0,0,0.3))] text-3xl font-black text-cyan-300 shadow-[0_14px_26px_-14px_rgba(34,211,238,0.9)] active:scale-95 transition"
+                  className="h-12 sm:h-14 rounded-full border border-white/20 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.2),rgba(0,0,0,0.3))] text-2xl sm:text-3xl font-black text-cyan-300 shadow-[0_14px_26px_-14px_rgba(34,211,238,0.9)] active:scale-95 transition"
                 >
                   ★
                 </button>
                 <button
                   type="button"
                   onClick={onSwipeRight}
-                  className="h-20 rounded-full border border-white/20 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.2),rgba(0,0,0,0.3))] text-4xl font-black text-emerald-300 shadow-[0_16px_30px_-16px_rgba(52,211,153,0.9)] active:scale-95 transition"
+                  className="h-16 sm:h-20 rounded-full border border-white/20 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.2),rgba(0,0,0,0.3))] text-3xl sm:text-4xl font-black text-emerald-300 shadow-[0_16px_30px_-16px_rgba(52,211,153,0.9)] active:scale-95 transition"
                 >
                   ✓
                 </button>
                 <button
                   type="button"
                   onClick={() => setShowSearchPanel(true)}
-                  className="h-14 rounded-full border border-white/20 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.2),rgba(0,0,0,0.3))] text-2xl font-black text-cyan-200 shadow-[0_12px_22px_-14px_rgba(56,189,248,0.9)] active:scale-95 transition"
+                  className="h-12 sm:h-14 rounded-full border border-white/20 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.2),rgba(0,0,0,0.3))] text-xl sm:text-2xl font-black text-cyan-200 shadow-[0_12px_22px_-14px_rgba(56,189,248,0.9)] active:scale-95 transition"
                 >
                   ⌕
                 </button>
