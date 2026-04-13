@@ -334,6 +334,7 @@ export default function EclaireurScanFunnelPreviewPage() {
       )}
 
       {introDone && (
+      <>
       <div className="mx-auto max-w-5xl px-4 py-8 pb-36 sm:py-10 space-y-6">
         <header className="flex items-center justify-between gap-3">
           <div>
@@ -915,6 +916,7 @@ export default function EclaireurScanFunnelPreviewPage() {
           </button>
         </div>
       </nav>
+      </>
       )}
     </main>
   );
