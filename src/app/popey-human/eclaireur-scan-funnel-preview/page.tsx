@@ -89,6 +89,8 @@ const NEEDS_BY_MOMENT: Record<string, string[]> = {
 
 export default function EclaireurScanFunnelPreviewPage() {
   const [introStep, setIntroStep] = useState<"welcome" | "scanning" | "guide" | "done">("welcome");
+  const [dailyTutorialStep, setDailyTutorialStep] = useState<0 | 1 | 2 | 3>(0);
+  const [tutorialActive, setTutorialActive] = useState(true);
   const [mainTab, setMainTab] = useState<MainTab>("daily");
   const [showProfile, setShowProfile] = useState(false);
   const [funnelStep, setFunnelStep] = useState<FunnelStep | null>(null);
@@ -192,6 +194,8 @@ export default function EclaireurScanFunnelPreviewPage() {
   const defaultMessage = `Salut ${activeContact.name.split(" ")[0]}, je pense a toi suite a ton contexte "${selectedMoment}". J ai un pro de confiance sur ${selectedNeed || "ce sujet"} a ${activeContact.city}. Tu veux que je lui demande de te contacter ?`;
   const scanProgressPercent = Math.round((scanCount / totalContacts) * 100);
   const scanCompleted = scanCount >= totalContacts;
+  const scoutFirstName = "Jean-Philippe";
+  const tutorialExpectedAction = tutorialActive ? (["up", "right", "left"][dailyTutorialStep] ?? null) : null;
 
   useEffect(() => {
     if (introStep !== "scanning") return;
@@ -249,15 +253,33 @@ export default function EclaireurScanFunnelPreviewPage() {
 
   function onSwipeLeft() {
     if (!currentDailyContact) return;
+    if (tutorialExpectedAction && tutorialExpectedAction !== "left") {
+      setLastActionMessage("Tutoriel: fais d abord l action indiquee.");
+      return;
+    }
     animateAndThen("left", () => {
       updateStatus(currentDailyContact.id, "masked_90d");
       setLastActionMessage(`${currentDailyContact.name} masque 90 jours`);
+      if (tutorialExpectedAction === "left") {
+        setDailyTutorialStep((value) => {
+          const next = (value + 1) as 0 | 1 | 2 | 3;
+          if (next >= 3) {
+            setTutorialActive(false);
+            setLastActionMessage("Parfait. Tutoriel termine, tu peux swiper librement.");
+          }
+          return next;
+        });
+      }
       goNextCard();
     });
   }
 
   function onSwipeRight() {
     if (!currentDailyContact) return;
+    if (tutorialExpectedAction && tutorialExpectedAction !== "right") {
+      setLastActionMessage("Tutoriel: fais d abord l action indiquee.");
+      return;
+    }
     setSelectedQuickTag(DAILY_TAGS[0]);
     setPendingTagContactId(currentDailyContact.id);
   }
@@ -269,6 +291,9 @@ export default function EclaireurScanFunnelPreviewPage() {
       updateStatus(pendingTagContactId, "qualified", tag);
       setPendingTagContactId(null);
       if (contact) setLastActionMessage(`${contact.name} ajoute a "A contacter"`);
+      if (tutorialExpectedAction === "right") {
+        setDailyTutorialStep((value) => (value + 1) as 0 | 1 | 2 | 3);
+      }
       goNextCard();
     });
   }
@@ -285,10 +310,17 @@ export default function EclaireurScanFunnelPreviewPage() {
 
   function onSwipeUp() {
     if (!currentDailyContact) return;
+    if (tutorialExpectedAction && tutorialExpectedAction !== "up") {
+      setLastActionMessage("Tutoriel: fais d abord l action indiquee.");
+      return;
+    }
     animateAndThen("up", () => {
       updateStatus(currentDailyContact.id, "alert");
       openFunnelForContact(currentDailyContact.id);
       setLastActionMessage(`Alerte immediate lancee pour ${currentDailyContact.name}`);
+      if (tutorialExpectedAction === "up") {
+        setDailyTutorialStep((value) => (value + 1) as 0 | 1 | 2 | 3);
+      }
       goNextCard();
     });
   }
@@ -393,23 +425,37 @@ export default function EclaireurScanFunnelPreviewPage() {
           {introStep === "guide" && (
             <section className="rounded-3xl border border-[#EAC886]/35 bg-[#12161A] p-6 sm:p-8">
               <p className="text-[11px] font-black uppercase tracking-[0.12em] text-[#EAC886]">Mode d emploi daily</p>
-              <h2 className="mt-2 text-3xl font-black">5 boutons pour traiter 20 profils chaque jour</h2>
-              <div className="mt-4 grid grid-cols-5 gap-2 text-center">
-                <p className="rounded-xl border border-white/15 bg-black/20 px-2 py-3 text-xs"><span className="text-amber-300 text-lg">↺</span><br />Retour</p>
-                <p className="rounded-xl border border-white/15 bg-black/20 px-2 py-3 text-xs"><span className="text-rose-400 text-lg">✕</span><br />Masquer 90j</p>
-                <p className="rounded-xl border border-white/15 bg-black/20 px-2 py-3 text-xs"><span className="text-cyan-300 text-lg">★</span><br />Alerte</p>
-                <p className="rounded-xl border border-white/15 bg-black/20 px-2 py-3 text-xs"><span className="text-emerald-300 text-lg">✓</span><br />Qualifier</p>
-                <p className="rounded-xl border border-white/15 bg-black/20 px-2 py-3 text-xs"><span className="text-cyan-200 text-lg">⌕</span><br />Recherche</p>
+              <h2 className="mt-2 text-3xl font-black">Bonjour {scoutFirstName}, voici tes 20 scans prioritaires du jour</h2>
+              <p className="mt-2 text-sm text-white/80">2 minutes pour verifier si ton reseau a des projets et activer tes commissions.</p>
+              <input
+                value=""
+                readOnly
+                placeholder="Recherche rapide (discrete)"
+                className="mt-3 h-10 w-full rounded-xl border border-white/20 bg-black/25 px-3 text-xs text-white/60"
+              />
+              <div className="mt-3 min-h-[34vh] rounded-2xl border border-white/15 bg-gradient-to-br from-[#1F2A35] via-[#1B2630] to-[#172126] p-5 flex flex-col justify-center text-center">
+                <p className="text-xs uppercase tracking-[0.12em] text-white/60">Contact prioritaire</p>
+                <p className="mt-2 text-4xl font-black">Jean-Mi B.</p>
+                <p className="mt-2 text-xl font-black text-white/90">Dax</p>
+              </div>
+              <div className="mt-4 grid grid-cols-3 gap-3 text-center">
+                <p className="rounded-xl border border-white/15 bg-black/20 px-2 py-3 text-xs"><span className="text-rose-400 text-xl">✕</span><br />Ignorer</p>
+                <p className="rounded-xl border border-white/15 bg-black/20 px-2 py-3 text-xs"><span className="text-emerald-300 text-xl">✓</span><br />Qualifier</p>
+                <p className="rounded-xl border border-white/15 bg-black/20 px-2 py-3 text-xs"><span className="text-cyan-300 text-xl">★</span><br />Alerte</p>
               </div>
               <p className="mt-4 rounded-xl border border-white/15 bg-black/20 px-4 py-3 text-sm text-white/85">
-                Objectif: 20 profils/jour. A la fin, votre annuaire devient une source de recommandations claire et actionnable.
+                Objectif: 20 contacts qualifies en 2 minutes. Ne rate aucune opportunite dans ton repertoire de 800 noms.
               </p>
               <button
                 type="button"
-                onClick={() => setIntroStep("done")}
+                onClick={() => {
+                  setDailyTutorialStep(0);
+                  setTutorialActive(true);
+                  setIntroStep("done");
+                }}
                 className="mt-5 h-12 w-full rounded-xl bg-gradient-to-r from-emerald-300 via-emerald-400 to-cyan-300 px-5 text-black text-sm font-black uppercase tracking-wide"
               >
-                Commencer
+                C EST PARTI, JE SCANE !
               </button>
             </section>
           )}
@@ -477,6 +523,13 @@ export default function EclaireurScanFunnelPreviewPage() {
                 </article>
               )}
             </div>
+            {tutorialActive && currentDailyContact && tutorialExpectedAction && (
+              <div className="mt-3 rounded-xl border border-cyan-300/35 bg-cyan-500/10 px-3 py-2 text-sm text-cyan-100">
+                {tutorialExpectedAction === "up" && `${currentDailyContact.name} a un projet urgent ? Swipe vers le HAUT ★ pour l alerte directe.`}
+                {tutorialExpectedAction === "right" && `${currentDailyContact.name} semble prometteur ? Clique ✓ pour le qualifier.`}
+                {tutorialExpectedAction === "left" && `${currentDailyContact.name} n a pas de projet pour l instant ? Clique ✕ pour ignorer.`}
+              </div>
+            )}
 
             {currentDailyContact && (
               <div className="mt-4 grid grid-cols-5 gap-2 items-center">
