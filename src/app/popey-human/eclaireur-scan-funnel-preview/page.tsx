@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 type MainTab = "daily" | "contact" | "gains" | "pros";
 type SwipeStatus = "new" | "masked_90d" | "qualified" | "alert";
@@ -88,12 +88,13 @@ const NEEDS_BY_MOMENT: Record<string, string[]> = {
 };
 
 export default function EclaireurScanFunnelPreviewPage() {
-  const [introDone, setIntroDone] = useState(false);
+  const [introStep, setIntroStep] = useState<"welcome" | "scanning" | "guide" | "done">("welcome");
   const [mainTab, setMainTab] = useState<MainTab>("daily");
   const [showProfile, setShowProfile] = useState(false);
   const [funnelStep, setFunnelStep] = useState<FunnelStep | null>(null);
   const [activeContactId, setActiveContactId] = useState(CONTACTS[0].id);
   const [totalContacts] = useState(800);
+  const [scanCount, setScanCount] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
   const [dailyProcessed, setDailyProcessed] = useState(0);
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
@@ -189,6 +190,21 @@ export default function EclaireurScanFunnelPreviewPage() {
   const refusedContacts = contactsToContact.filter((contact) => contactResponse[contact.id] === "no");
 
   const defaultMessage = `Salut ${activeContact.name.split(" ")[0]}, je pense a toi suite a ton contexte "${selectedMoment}". J ai un pro de confiance sur ${selectedNeed || "ce sujet"} a ${activeContact.city}. Tu veux que je lui demande de te contacter ?`;
+  const scanProgressPercent = Math.round((scanCount / totalContacts) * 100);
+  const scanCompleted = scanCount >= totalContacts;
+
+  useEffect(() => {
+    if (introStep !== "scanning") return;
+    setScanCount(0);
+    const increment = Math.max(20, Math.ceil(totalContacts / 24));
+    const timer = setInterval(() => {
+      setScanCount((prev) => {
+        const next = Math.min(totalContacts, prev + increment);
+        return next;
+      });
+    }, 90);
+    return () => clearInterval(timer);
+  }, [introStep, totalContacts]);
 
   function updateStatus(contactId: string, status: SwipeStatus, tag?: string) {
     const maskedUntil =
@@ -306,34 +322,84 @@ export default function EclaireurScanFunnelPreviewPage() {
 
   return (
     <main className="min-h-screen bg-[#06080A] text-white">
-      {!introDone && (
+      {introStep !== "done" && (
         <div className="mx-auto max-w-3xl px-4 py-10">
-          <section className="rounded-3xl border border-emerald-300/35 bg-[radial-gradient(120%_120%_at_0%_0%,rgba(18,72,54,0.95)_0%,rgba(12,20,22,0.96)_52%,rgba(8,10,12,1)_100%)] p-6 sm:p-8">
-            <p className="text-[11px] font-black uppercase tracking-[0.12em] text-emerald-200/90">Bienvenue</p>
-            <h1 className="mt-2 text-3xl sm:text-4xl font-black leading-tight">Scanne ton annuaire, transforme ton reseau en opportunites</h1>
-            <p className="mt-3 text-sm text-white/85">
-              Le scan permet d organiser tes contacts et de lancer un tri quotidien simple: 20 cartes par jour, 2 minutes, et des leads actionnables.
-            </p>
-            <div className="mt-4 grid gap-2 sm:grid-cols-3 text-sm">
-              <p className="rounded-xl border border-white/15 bg-black/25 px-3 py-2">1. Scanner ton annuaire</p>
-              <p className="rounded-xl border border-white/15 bg-black/25 px-3 py-2">2. Qualifier les bons profils</p>
-              <p className="rounded-xl border border-white/15 bg-black/25 px-3 py-2">3. Envoyer au bon pro</p>
-            </div>
-            <p className="mt-4 rounded-xl border border-[#EAC886]/35 bg-[#1D170E] px-4 py-3 text-sm text-[#EAC886]">
-              Pourquoi scanner ? Pour ne plus perdre de contacts utiles, garder un suivi clair, et convertir au bon moment.
-            </p>
-            <button
-              type="button"
-              onClick={() => setIntroDone(true)}
-              className="mt-5 h-12 rounded-xl bg-gradient-to-r from-emerald-300 via-emerald-400 to-cyan-300 px-5 text-black text-sm font-black uppercase tracking-wide"
-            >
-              Scanner mon annuaire
-            </button>
-          </section>
+          {introStep === "welcome" && (
+            <section className="rounded-3xl border border-emerald-300/35 bg-[radial-gradient(120%_120%_at_0%_0%,rgba(18,72,54,0.95)_0%,rgba(12,20,22,0.96)_52%,rgba(8,10,12,1)_100%)] p-6 sm:p-8">
+              <p className="text-[11px] font-black uppercase tracking-[0.12em] text-emerald-200/90">Demarrage</p>
+              <div className="mt-3 min-h-[46vh] rounded-2xl border border-white/15 bg-[#12161A] p-5 flex flex-col justify-center text-center">
+                <h1 className="text-3xl sm:text-4xl font-black leading-tight">Demarrer le scan de votre annuaire telephonique</h1>
+                <p className="mt-4 text-sm sm:text-base text-white/85">
+                  Chaque personne de votre annuaire possede des besoins. En la conseillant vers un excellent pro local, vous pouvez toucher une commission.
+                </p>
+                <p className="mt-2 text-sm text-white/75">Lancez le scan et laissez-vous guider.</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIntroStep("scanning")}
+                className="mt-5 h-12 w-full rounded-xl bg-gradient-to-r from-emerald-300 via-emerald-400 to-cyan-300 px-5 text-black text-sm font-black uppercase tracking-wide"
+              >
+                Demarrer
+              </button>
+            </section>
+          )}
+
+          {introStep === "scanning" && (
+            <section className="rounded-3xl border border-cyan-300/35 bg-[radial-gradient(120%_120%_at_0%_0%,rgba(28,78,96,0.95)_0%,rgba(15,24,32,0.96)_52%,rgba(8,10,12,1)_100%)] p-6 sm:p-8">
+              <p className="text-[11px] font-black uppercase tracking-[0.12em] text-cyan-200/90">Scan en cours</p>
+              <h2 className="mt-2 text-3xl font-black">Analyse de l annuaire</h2>
+              <p className="mt-2 text-sm text-white/80">{scanCount}/{totalContacts} personnes analysees</p>
+              <div className="mt-4 h-3 rounded-full bg-white/10 overflow-hidden">
+                <div className="h-full bg-gradient-to-r from-cyan-300 via-emerald-300 to-emerald-400 transition-all duration-150" style={{ width: `${scanProgressPercent}%` }} />
+              </div>
+              <p className="mt-2 text-xs text-white/70">{scanProgressPercent}%</p>
+
+              {scanCompleted ? (
+                <div className="mt-5">
+                  <p className="rounded-xl border border-emerald-300/35 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-100">
+                    Scan termine: {totalContacts} contacts disponibles.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setIntroStep("guide")}
+                    className="mt-4 h-12 w-full rounded-xl bg-gradient-to-r from-emerald-300 via-emerald-400 to-cyan-300 px-5 text-black text-sm font-black uppercase tracking-wide"
+                  >
+                    Continuer
+                  </button>
+                </div>
+              ) : (
+                <p className="mt-5 text-sm text-cyan-100/85">Analyse automatique en cours...</p>
+              )}
+            </section>
+          )}
+
+          {introStep === "guide" && (
+            <section className="rounded-3xl border border-[#EAC886]/35 bg-[#12161A] p-6 sm:p-8">
+              <p className="text-[11px] font-black uppercase tracking-[0.12em] text-[#EAC886]">Mode d emploi daily</p>
+              <h2 className="mt-2 text-3xl font-black">5 boutons pour traiter 20 profils chaque jour</h2>
+              <div className="mt-4 grid grid-cols-5 gap-2 text-center">
+                <p className="rounded-xl border border-white/15 bg-black/20 px-2 py-3 text-xs"><span className="text-amber-300 text-lg">↺</span><br />Retour</p>
+                <p className="rounded-xl border border-white/15 bg-black/20 px-2 py-3 text-xs"><span className="text-rose-400 text-lg">✕</span><br />Masquer 90j</p>
+                <p className="rounded-xl border border-white/15 bg-black/20 px-2 py-3 text-xs"><span className="text-cyan-300 text-lg">★</span><br />Alerte</p>
+                <p className="rounded-xl border border-white/15 bg-black/20 px-2 py-3 text-xs"><span className="text-emerald-300 text-lg">✓</span><br />Qualifier</p>
+                <p className="rounded-xl border border-white/15 bg-black/20 px-2 py-3 text-xs"><span className="text-cyan-200 text-lg">⌕</span><br />Recherche</p>
+              </div>
+              <p className="mt-4 rounded-xl border border-white/15 bg-black/20 px-4 py-3 text-sm text-white/85">
+                Objectif: 20 profils/jour. A la fin, votre annuaire devient une source de recommandations claire et actionnable.
+              </p>
+              <button
+                type="button"
+                onClick={() => setIntroStep("done")}
+                className="mt-5 h-12 w-full rounded-xl bg-gradient-to-r from-emerald-300 via-emerald-400 to-cyan-300 px-5 text-black text-sm font-black uppercase tracking-wide"
+              >
+                Commencer
+              </button>
+            </section>
+          )}
         </div>
       )}
 
-      {introDone && (
+      {introStep === "done" && (
       <>
       <div className="mx-auto max-w-5xl px-4 py-8 pb-36 sm:py-10 space-y-6">
         <header className="flex items-center justify-between gap-3">
