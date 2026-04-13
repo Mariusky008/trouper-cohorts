@@ -4,6 +4,7 @@ import {
   getScoutPortalByToken,
   submitScoutReferralFromTokenAction,
 } from "@/lib/actions/human-scouts";
+import { ScoutAlertForm } from "./_components/scout-alert-form";
 
 function euros(value: number) {
   return value.toLocaleString("fr-FR", { style: "currency", currency: "EUR" });
@@ -207,73 +208,11 @@ export default async function PopeyHumanScoutPortalPage({
             )}
 
             {tab === "alert" && (
-              <section className="relative overflow-hidden rounded-3xl border border-emerald-300/30 bg-[radial-gradient(120%_120%_at_0%_0%,rgba(16,46,38,0.9)_0%,rgba(11,18,20,0.96)_52%,rgba(7,10,12,1)_100%)] p-4 sm:p-5 shadow-[0_24px_55px_-30px_rgba(16,185,129,0.7)]">
-                <div className="pointer-events-none absolute -right-14 -top-16 h-44 w-44 rounded-full bg-emerald-400/25 blur-3xl animate-pulse" />
-                <div className="pointer-events-none absolute -left-12 -bottom-14 h-36 w-36 rounded-full bg-cyan-400/20 blur-3xl animate-pulse" />
-                <div className="relative">
-                  <div className="inline-flex items-center gap-2 rounded-full border border-emerald-300/35 bg-emerald-400/15 px-3 py-1 text-[11px] font-black uppercase tracking-[0.12em] text-emerald-100">
-                    ⚡ Lancer une alerte
-                  </div>
-                  <h2 className="mt-3 text-xl sm:text-2xl font-black leading-tight">
-                    Envoyez un contact en 20 secondes
-                  </h2>
-                  <p className="mt-2 text-sm text-white/80">
-                    Votre alerte part directement chez <span className="font-black text-emerald-200">{sponsorName}</span> pour qualification et dispatch.
-                  </p>
-                </div>
-                <form action={submitScoutReferralFromTokenAction} className="relative mt-4 space-y-3">
-                  <input type="hidden" name="invite_token" value={data.invite?.invite_token || token} />
-                  <div>
-                    <label className="mb-1 block text-[11px] font-black uppercase tracking-[0.12em] text-white/70">Nom du contact</label>
-                    <input
-                      name="contact_name"
-                      required
-                      placeholder="Ex: Sophie Martin"
-                      className="h-12 w-full rounded-xl border border-white/20 bg-black/35 px-3 text-sm outline-none transition focus:border-emerald-300/55 focus:ring-2 focus:ring-emerald-300/25"
-                    />
-                  </div>
-                  <div>
-                    <label className="mb-1 block text-[11px] font-black uppercase tracking-[0.12em] text-white/70">Téléphone du contact</label>
-                    <input
-                      name="contact_phone"
-                      required
-                      placeholder="Ex: 06 12 34 56 78"
-                      className="h-12 w-full rounded-xl border border-white/20 bg-black/35 px-3 text-sm outline-none transition focus:border-emerald-300/55 focus:ring-2 focus:ring-emerald-300/25"
-                    />
-                  </div>
-                  <div>
-                    <label className="mb-1 block text-[11px] font-black uppercase tracking-[0.12em] text-white/70">Type de projet</label>
-                    <input
-                      name="project_type"
-                      placeholder="Immo, auto, santé..."
-                      className="h-12 w-full rounded-xl border border-white/20 bg-black/35 px-3 text-sm outline-none transition focus:border-emerald-300/55 focus:ring-2 focus:ring-emerald-300/25"
-                    />
-                  </div>
-                  <div>
-                    <label className="mb-1 block text-[11px] font-black uppercase tracking-[0.12em] text-white/70">Valeur estimée (optionnel)</label>
-                    <input
-                      name="estimated_deal_value"
-                      type="number"
-                      step="0.01"
-                      min="1"
-                      placeholder="Ex: 2500"
-                      className="h-12 w-full rounded-xl border border-white/20 bg-black/35 px-3 text-sm outline-none transition focus:border-emerald-300/55 focus:ring-2 focus:ring-emerald-300/25"
-                    />
-                  </div>
-                  <div>
-                    <label className="mb-1 block text-[11px] font-black uppercase tracking-[0.12em] text-white/70">Commentaire libre</label>
-                    <textarea
-                      name="comment"
-                      placeholder="Contexte, urgence, dispo..."
-                      className="min-h-28 w-full rounded-xl border border-white/20 bg-black/35 px-3 py-2 text-sm outline-none transition focus:border-emerald-300/55 focus:ring-2 focus:ring-emerald-300/25"
-                    />
-                  </div>
-                  <button className="group relative h-12 w-full overflow-hidden rounded-xl bg-gradient-to-r from-emerald-300 via-emerald-400 to-cyan-300 text-black text-sm font-black uppercase tracking-wide shadow-[0_12px_30px_-14px_rgba(16,185,129,0.9)] transition hover:scale-[1.01]">
-                    <span className="absolute inset-0 bg-white/20 opacity-0 transition group-hover:opacity-100" />
-                    <span className="relative">Lancer mon alerte</span>
-                  </button>
-                </form>
-              </section>
+              <ScoutAlertForm
+                inviteToken={data.invite?.invite_token || token}
+                sponsorName={sponsorName}
+                submitAction={submitScoutReferralFromTokenAction}
+              />
             )}
 
             {tab === "history" && (
