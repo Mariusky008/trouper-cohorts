@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 
-type MainTab = "daily" | "search" | "gains" | "pros" | "history";
+type MainTab = "daily" | "gains" | "pros";
 type SwipeStatus = "new" | "masked_90d" | "qualified" | "alert";
 type ReplyStatus = "waiting" | "ok" | "no";
 type FunnelStep = "moment" | "need" | "message" | "response" | "dispatch" | "done";
@@ -106,6 +106,10 @@ export default function EclaireurScanFunnelPreviewPage() {
   const [reply, setReply] = useState<ReplyStatus>("waiting");
   const [selectedTrade, setSelectedTrade] = useState<string>("Courtier");
   const [selectedProCategory, setSelectedProCategory] = useState<string>("Tous");
+  const [selectedProId, setSelectedProId] = useState<string | null>(null);
+  const [swipeAnim, setSwipeAnim] = useState<"none" | "left" | "right" | "up">("none");
+  const [selectedQuickTag, setSelectedQuickTag] = useState<string>(DAILY_TAGS[0]);
+  const [showCelebration, setShowCelebration] = useState(false);
 
   const dailyDeckIds = useMemo(() => CONTACTS.slice(0, 20).map((contact) => contact.id), []);
   const currentDailyContact = CONTACTS.find((contact) => contact.id === dailyDeckIds[currentCardIndex]) || null;
@@ -180,26 +184,43 @@ export default function EclaireurScanFunnelPreviewPage() {
   }
 
   function goNextCard() {
-    setDailyProcessed((value) => Math.min(20, value + 1));
-    setCurrentCardIndex((value) => Math.min(19, value + 1));
+    setDailyProcessed((value) => {
+      const next = Math.min(20, value + 1);
+      if (next === 20) setShowCelebration(true);
+      return next;
+    });
+    setCurrentCardIndex((value) => Math.min(20, value + 1));
+  }
+
+  function animateAndThen(direction: "left" | "right" | "up", callback: () => void) {
+    setSwipeAnim(direction);
+    setTimeout(() => {
+      callback();
+      setSwipeAnim("none");
+    }, 220);
   }
 
   function onSwipeLeft() {
     if (!currentDailyContact) return;
-    updateStatus(currentDailyContact.id, "masked_90d");
-    goNextCard();
+    animateAndThen("left", () => {
+      updateStatus(currentDailyContact.id, "masked_90d");
+      goNextCard();
+    });
   }
 
   function onSwipeRight() {
     if (!currentDailyContact) return;
+    setSelectedQuickTag(DAILY_TAGS[0]);
     setPendingTagContactId(currentDailyContact.id);
   }
 
-  function onSelectTag(tag: string) {
+  function onConfirmTag(tag: string) {
     if (!pendingTagContactId) return;
-    updateStatus(pendingTagContactId, "qualified", tag);
-    setPendingTagContactId(null);
-    goNextCard();
+    animateAndThen("right", () => {
+      updateStatus(pendingTagContactId, "qualified", tag);
+      setPendingTagContactId(null);
+      goNextCard();
+    });
   }
 
   function openFunnelForContact(contactId: string) {
@@ -214,9 +235,11 @@ export default function EclaireurScanFunnelPreviewPage() {
 
   function onSwipeUp() {
     if (!currentDailyContact) return;
-    updateStatus(currentDailyContact.id, "alert");
-    openFunnelForContact(currentDailyContact.id);
-    goNextCard();
+    animateAndThen("up", () => {
+      updateStatus(currentDailyContact.id, "alert");
+      openFunnelForContact(currentDailyContact.id);
+      goNextCard();
+    });
   }
 
   function goNextFromResponse() {
@@ -271,18 +294,46 @@ export default function EclaireurScanFunnelPreviewPage() {
                   {Math.min(currentCardIndex + 1, 20)}/20 • {qualifiedCount}/{totalContacts}
                 </p>
               </div>
+              <div className="h-2 rounded-full bg-white/10 overflow-hidden">
+                <div className="h-full bg-gradient-to-r from-emerald-300 to-cyan-300" style={{ width: `${(dailyProcessed / 20) * 100}%` }} />
+              </div>
+              {searchQuery.trim().length > 0 && (
+                <div className="rounded-xl border border-white/15 bg-[#12161A] p-2 space-y-1">
+                  {searchResults.slice(0, 3).map((contact) => (
+                    <button
+                      key={contact.id}
+                      type="button"
+                      onClick={() => openFunnelForContact(contact.id)}
+                      className="w-full rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-left text-xs"
+                    >
+                      {contact.name} • {contact.city}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div className="mt-3 min-h-[52vh] rounded-2xl border border-white/15 bg-[#12161A] p-4 flex flex-col justify-center">
               {!currentDailyContact ? (
-                <p className="rounded-lg border border-emerald-300/30 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-200 text-center">
-                  Bien joue, tes 20 cartes du jour sont traitees.
-                </p>
+                <div className="rounded-lg border border-emerald-300/30 bg-emerald-500/10 px-3 py-3 text-center">
+                  <p className="text-sm text-emerald-200">Felicitations, mission du jour terminee.</p>
+                  <p className="text-xs text-emerald-100/80">A demain pour 20 nouvelles cartes.</p>
+                </div>
               ) : (
-                <article className="text-center">
+                <article
+                  className={`text-center transition duration-200 ${
+                    swipeAnim === "left"
+                      ? "-translate-x-16 opacity-30"
+                      : swipeAnim === "right"
+                        ? "translate-x-16 opacity-30"
+                        : swipeAnim === "up"
+                          ? "-translate-y-14 opacity-30"
+                          : ""
+                  }`}
+                >
                   <p className="text-xs uppercase tracking-[0.12em] text-white/60">Carte du jour</p>
                   <p className="mt-3 text-4xl sm:text-5xl font-black leading-tight">{currentDailyContact.name}</p>
-                  <p className="mt-2 text-lg text-white/80">{currentDailyContact.city}</p>
+                  <p className="mt-2 text-xl font-black text-white/90">{currentDailyContact.city}</p>
                   <p className="mt-1 text-sm text-white/55">{currentDailyContact.phone}</p>
                 </article>
               )}
@@ -290,13 +341,13 @@ export default function EclaireurScanFunnelPreviewPage() {
 
             {currentDailyContact && (
               <div className="mt-3 grid grid-cols-3 gap-2">
-                <button type="button" onClick={onSwipeLeft} className="h-14 rounded-xl bg-rose-500/85 text-white text-lg font-black">
+                <button type="button" onClick={onSwipeLeft} className="h-14 rounded-xl bg-rose-500 text-white text-2xl font-black shadow-[0_10px_20px_-12px_rgba(244,63,94,0.9)] active:scale-95 transition">
                   ❌
                 </button>
-                <button type="button" onClick={onSwipeRight} className="h-14 rounded-xl bg-emerald-400 text-black text-lg font-black">
+                <button type="button" onClick={onSwipeRight} className="h-14 rounded-xl bg-emerald-400 text-black text-2xl font-black shadow-[0_10px_20px_-12px_rgba(52,211,153,0.9)] active:scale-95 transition">
                   ✅
                 </button>
-                <button type="button" onClick={onSwipeUp} className="h-14 rounded-xl bg-cyan-300 text-black text-lg font-black">
+                <button type="button" onClick={onSwipeUp} className="h-14 rounded-xl bg-cyan-300 text-black text-2xl font-black shadow-[0_10px_20px_-12px_rgba(34,211,238,0.9)] active:scale-95 transition">
                   🔥
                 </button>
               </div>
@@ -305,33 +356,47 @@ export default function EclaireurScanFunnelPreviewPage() {
         )}
 
         {pendingTagContactId && (
-          <section className="rounded-2xl border border-[#EAC886]/35 bg-[#1A1510] p-4">
-            <p className="text-[11px] font-black uppercase tracking-[0.12em] text-[#EAC886]">Tag profil</p>
-            <h3 className="mt-1 text-lg font-black">Quel est son profil ?</h3>
-            <div className="mt-3 grid grid-cols-2 gap-2">
-              {DAILY_TAGS.map((tag) => (
+          <div className="fixed inset-0 z-40 bg-black/55 backdrop-blur-sm flex items-center justify-center px-4">
+            <section className="w-full max-w-sm rounded-2xl border border-[#EAC886]/35 bg-[#1A1510] p-4 animate-[fadeIn_.2s_ease-out]">
+              <p className="text-[11px] font-black uppercase tracking-[0.12em] text-[#EAC886]">Tag profil</p>
+              <h3 className="mt-1 text-lg font-black">Quel est son profil ?</h3>
+              <div className="mt-3 grid grid-cols-2 gap-2">
+                {DAILY_TAGS.map((tag) => (
+                  <button
+                    key={tag}
+                    type="button"
+                    onClick={() => setSelectedQuickTag(tag)}
+                    className={`h-10 rounded-lg border text-xs font-black uppercase tracking-wide ${
+                      selectedQuickTag === tag ? "border-emerald-300/55 bg-emerald-500/12" : "border-white/20 bg-white/10"
+                    }`}
+                  >
+                    {tag}
+                  </button>
+                ))}
+              </div>
+              <div className="mt-3 grid grid-cols-2 gap-2">
                 <button
-                  key={tag}
                   type="button"
-                  onClick={() => onSelectTag(tag)}
-                  className="h-10 rounded-lg border border-white/20 bg-white/10 text-xs font-black uppercase tracking-wide"
+                  onClick={() => setPendingTagContactId(null)}
+                  className="h-10 rounded-lg border border-white/20 bg-black/25 px-4 text-xs font-black uppercase tracking-wide"
                 >
-                  {tag}
+                  Annuler
                 </button>
-              ))}
-            </div>
-            <button
-              type="button"
-              onClick={() => setPendingTagContactId(null)}
-              className="mt-3 h-10 rounded-lg border border-white/20 bg-black/25 px-4 text-xs font-black uppercase tracking-wide"
-            >
-              Fermer
-            </button>
-          </section>
+                <button
+                  type="button"
+                  onClick={() => onConfirmTag(selectedQuickTag)}
+                  className="h-10 rounded-lg bg-emerald-400 px-4 text-xs font-black uppercase tracking-wide text-black"
+                >
+                  Valider
+                </button>
+              </div>
+            </section>
+          </div>
         )}
 
         {funnelStep && (
-          <section className="rounded-3xl border border-white/15 bg-[#12161A] p-5 sm:p-6">
+          <div className="fixed inset-0 z-30 bg-black/55 backdrop-blur-sm overflow-y-auto px-4 py-10">
+          <section className="mx-auto max-w-2xl rounded-3xl border border-white/15 bg-[#12161A] p-5 sm:p-6">
             <p className="text-[11px] font-black uppercase tracking-[0.12em] text-[#EAC886]">Funnel direct</p>
             <h2 className="mt-1 text-2xl font-black">Contact: {activeContact.name}</h2>
 
@@ -451,25 +516,32 @@ export default function EclaireurScanFunnelPreviewPage() {
 
             {funnelStep === "dispatch" && (
               <>
-                <p className="mt-2 text-sm text-white/75">Choisir le metier concerne (possible seulement si OK)</p>
-                <div className="mt-3 grid gap-2 sm:grid-cols-3">
-                  {(NEEDS_BY_MOMENT[selectedMoment] ?? NEEDS_BY_MOMENT.Autre).map((trade) => (
+                <p className="mt-2 text-sm text-white/75">Choisir un pro de {activeContact.city} pour envoyer le lead</p>
+                <div className="mt-3 space-y-2">
+                  {PROS.filter((pro) => pro.city === "Dax" || pro.city === activeContact.city).map((pro) => (
                     <button
-                      key={trade}
+                      key={pro.id}
                       type="button"
-                      onClick={() => setSelectedTrade(trade)}
-                      className={`h-11 rounded-xl border text-xs font-black uppercase tracking-wide ${
-                        selectedTrade === trade ? "border-emerald-200/60 bg-emerald-400/15" : "border-white/25 bg-black/20"
+                      onClick={() => {
+                        setSelectedProId(pro.id);
+                        setSelectedTrade(pro.name);
+                      }}
+                      className={`w-full rounded-xl border px-3 py-3 text-left ${
+                        selectedProId === pro.id ? "border-emerald-300/55 bg-emerald-500/12" : "border-white/20 bg-black/20"
                       }`}
                     >
-                      {trade}
+                      <p className="text-sm font-black">{pro.name}</p>
+                      <p className="text-xs text-white/70">
+                        {pro.category} • {pro.city} • note {pro.rating}/5
+                      </p>
                     </button>
                   ))}
                 </div>
                 <button
                   type="button"
                   onClick={() => setFunnelStep("done")}
-                  className="mt-3 h-11 rounded-xl bg-black px-4 text-white text-xs font-black uppercase tracking-wide"
+                  disabled={!selectedProId}
+                  className="mt-3 h-11 rounded-xl bg-black px-4 text-white text-xs font-black uppercase tracking-wide disabled:opacity-40"
                 >
                   Envoyer le lead
                 </button>
@@ -483,7 +555,10 @@ export default function EclaireurScanFunnelPreviewPage() {
                 </p>
                 <button
                   type="button"
-                  onClick={() => setFunnelStep(null)}
+                  onClick={() => {
+                    setFunnelStep(null);
+                    setSelectedProId(null);
+                  }}
                   className="mt-3 h-11 rounded-xl border border-white/20 bg-white/10 px-4 text-xs font-black uppercase tracking-wide"
                 >
                   Fermer le funnel
@@ -491,47 +566,7 @@ export default function EclaireurScanFunnelPreviewPage() {
               </>
             )}
           </section>
-        )}
-
-        {mainTab === "search" && (
-          <section className="rounded-3xl border border-white/15 bg-[#12161A] p-5 sm:p-6">
-            <p className="text-[11px] font-black uppercase tracking-[0.12em] text-[#EAC886]">Recherche directe</p>
-            <h2 className="mt-1 text-2xl font-black">Mode libre</h2>
-            <input
-              value={searchQuery}
-              onChange={(event) => setSearchQuery(event.target.value)}
-              placeholder="Tape un nom, numero ou ville"
-              className="mt-3 h-11 w-full rounded-xl border border-white/20 bg-black/25 px-3 text-sm"
-            />
-            <div className="mt-3 space-y-2">
-              {searchResults.map((contact) => (
-                <article key={contact.id} className="rounded-xl border border-white/15 bg-black/20 p-3">
-                  <p className="text-sm font-black">{contact.name}</p>
-                  <p className="text-xs text-white/70">
-                    {contact.phone} • {contact.city}
-                  </p>
-                  <div className="mt-2 flex gap-2">
-                    <button
-                      type="button"
-                      onClick={() => openFunnelForContact(contact.id)}
-                      className="h-9 rounded-lg bg-emerald-400 px-3 text-xs font-black uppercase tracking-wide text-black"
-                    >
-                      Creer lead direct
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        updateStatus(contact.id, "masked_90d");
-                      }}
-                      className="h-9 rounded-lg border border-white/20 bg-white/10 px-3 text-xs font-black uppercase tracking-wide"
-                    >
-                      Masquer 90j
-                    </button>
-                  </div>
-                </article>
-              ))}
-            </div>
-          </section>
+          </div>
         )}
 
         {mainTab === "gains" && (
@@ -593,14 +628,7 @@ export default function EclaireurScanFunnelPreviewPage() {
                     <button type="button" className="h-9 rounded-lg border border-white/20 bg-white/10 px-3 text-xs font-black uppercase tracking-wide">
                       Message
                     </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setSelectedTrade(pro.category);
-                        openFunnelForContact(activeContactId);
-                      }}
-                      className="h-9 rounded-lg bg-emerald-400 px-3 text-xs font-black uppercase tracking-wide text-black"
-                    >
+                    <button type="button" className="h-9 rounded-lg bg-emerald-400 px-3 text-xs font-black uppercase tracking-wide text-black">
                       Recommander ce pro
                     </button>
                   </div>
@@ -610,22 +638,20 @@ export default function EclaireurScanFunnelPreviewPage() {
           </section>
         )}
 
-        {mainTab === "history" && (
-          <section className="rounded-3xl border border-white/15 bg-[#12161A] p-5 sm:p-6">
-            <p className="text-[11px] font-black uppercase tracking-[0.12em] text-[#EAC886]">Historique</p>
-            <h2 className="mt-1 text-2xl font-black">Timeline des leads</h2>
-            <div className="mt-4 space-y-2">
-              {historyItems.map((item) => (
-                <article key={item.id} className="rounded-xl border border-white/15 bg-black/25 px-3 py-3">
-                  <p className="text-sm font-black">{item.label}</p>
-                  <p className={`text-xs ${item.color}`}>
-                    {item.status} • {item.amount} EUR
-                  </p>
-                </article>
-              ))}
-            </div>
-          </section>
-        )}
+        <section className="rounded-3xl border border-white/15 bg-[#12161A] p-5 sm:p-6">
+          <p className="text-[11px] font-black uppercase tracking-[0.12em] text-[#EAC886]">Historique</p>
+          <h2 className="mt-1 text-2xl font-black">Timeline des leads</h2>
+          <div className="mt-4 space-y-2">
+            {historyItems.map((item) => (
+              <article key={item.id} className="rounded-xl border border-white/15 bg-black/25 px-3 py-3">
+                <p className="text-sm font-black">{item.label}</p>
+                <p className={`text-xs ${item.color}`}>
+                  {item.status} • {item.amount} EUR
+                </p>
+              </article>
+            ))}
+          </div>
+        </section>
       </div>
 
       <nav className="fixed bottom-0 left-0 right-0 border-t border-white/10 bg-[#0A0D10]/95 backdrop-blur">
@@ -639,10 +665,10 @@ export default function EclaireurScanFunnelPreviewPage() {
           </button>
           <button
             type="button"
-            onClick={() => setMainTab("search")}
-            className={`h-11 rounded-xl text-xs font-black uppercase tracking-wide ${mainTab === "search" ? "bg-cyan-300 text-black" : "bg-white/10 text-white"}`}
+            onClick={() => setMainTab("pros")}
+            className={`h-11 rounded-xl text-xs font-black uppercase tracking-wide ${mainTab === "pros" ? "bg-cyan-300 text-black" : "bg-white/10 text-white"}`}
           >
-            Recherche
+            Pros
           </button>
           <button
             type="button"
@@ -652,24 +678,6 @@ export default function EclaireurScanFunnelPreviewPage() {
             Gains
           </button>
         </div>
-        {mainTab !== "daily" && (
-          <div className="mx-auto mt-2 grid max-w-5xl grid-cols-2 gap-2 px-4 pb-2">
-            <button
-              type="button"
-              onClick={() => setMainTab("pros")}
-              className={`h-10 rounded-xl text-xs font-black uppercase tracking-wide ${mainTab === "pros" ? "bg-emerald-300 text-black" : "bg-white/10 text-white"}`}
-            >
-              Pros
-            </button>
-            <button
-              type="button"
-              onClick={() => setMainTab("history")}
-              className={`h-10 rounded-xl text-xs font-black uppercase tracking-wide ${mainTab === "history" ? "bg-cyan-300 text-black" : "bg-white/10 text-white"}`}
-            >
-              Historique
-            </button>
-          </div>
-        )}
       </nav>
     </main>
   );
