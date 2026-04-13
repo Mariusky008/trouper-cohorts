@@ -905,6 +905,25 @@ export default function PopeyHumanTestV4Page() {
         </div>
       </section>
 
+      <footer className="border-t border-black/10 bg-[#0A0A0A] text-white">
+        <div className="mx-auto max-w-6xl px-4 py-8">
+          <div className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
+            <p className="text-sm font-semibold text-white/75">© {new Date().getFullYear()} Popey Academy. Tous droits réservés.</p>
+            <div className="flex flex-wrap items-center gap-3 text-xs font-bold uppercase tracking-wide text-white/80">
+              <Link href="/legal/mentions" className="hover:text-[#B6FF2B] transition-colors">
+                Mentions légales
+              </Link>
+              <Link href="/legal/privacy" className="hover:text-[#B6FF2B] transition-colors">
+                Politique de confidentialité
+              </Link>
+              <Link href="/legal/terms" className="hover:text-[#B6FF2B] transition-colors">
+                Conditions d’utilisation
+              </Link>
+            </div>
+          </div>
+        </div>
+      </footer>
+
       <div className="fixed bottom-3 left-3 right-3 z-50 md:left-auto md:right-6 md:w-[380px]">
         <button
           type="button"
