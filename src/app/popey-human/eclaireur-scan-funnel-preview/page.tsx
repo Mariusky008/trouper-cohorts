@@ -257,69 +257,50 @@ export default function EclaireurScanFunnelPreviewPage() {
         )}
 
         {mainTab === "daily" && (
-          <section className="rounded-3xl border border-emerald-300/35 bg-[radial-gradient(120%_120%_at_0%_0%,rgba(18,72,54,0.95)_0%,rgba(12,20,22,0.96)_52%,rgba(8,10,12,1)_100%)] p-6 sm:p-7">
-            <p className="text-[11px] font-black uppercase tracking-[0.12em] text-emerald-200/90">Mission du jour</p>
-            <h2 className="mt-2 text-3xl font-black leading-tight">Tes 20 pepites du jour sont pretes</h2>
-            <p className="mt-2 text-base text-white/85">Recherche permanente: tape un nom pour acces direct a une fiche.</p>
-            <input
-              value={searchQuery}
-              onChange={(event) => setSearchQuery(event.target.value)}
-              placeholder="Rechercher un contact..."
-              className="mt-3 h-11 w-full rounded-xl border border-white/20 bg-black/25 px-3 text-sm"
-            />
-            <p className="mt-3 rounded-lg border border-white/15 bg-black/25 px-3 py-2 text-sm text-white/80">
-              Progression annuaire: <span className="font-black text-emerald-200">{qualifiedCount}/{totalContacts}</span> ({progressPercent}%)
-            </p>
-
-            <div className="mt-4 grid gap-3 sm:grid-cols-2">
-              {segmentStats.map((segment) => (
-                <article key={segment.id} className="rounded-2xl border border-white/15 bg-black/25 p-4">
-                  <p className="text-xs text-white/65">{segment.percent}% de {totalContacts} contacts</p>
-                  <p className="mt-1 text-lg font-black">{segment.label}</p>
-                  <p className="text-sm text-emerald-200">
-                    {segment.leads} contacts potentiels • {segment.potential.toLocaleString("fr-FR")} EUR
-                  </p>
-                </article>
-              ))}
-            </div>
-            <p className="mt-4 rounded-xl border border-[#EAC886]/35 bg-[#1D170E] px-4 py-3 text-sm text-[#EAC886]">
-              Potentiel global estime: <span className="font-black">{totalPotential.toLocaleString("fr-FR")} EUR</span>
-            </p>
-
-            <div className="mt-4 rounded-2xl border border-white/15 bg-[#12161A] p-4">
-              <div className="flex items-center justify-between gap-2">
-                <p className="text-sm font-black">Carte du jour {Math.min(currentCardIndex + 1, 20)}/20</p>
-                <p className="text-xs text-white/70">Traitees: {dailyProcessed}/20</p>
+          <section className="rounded-3xl border border-emerald-300/35 bg-[radial-gradient(120%_120%_at_0%_0%,rgba(18,72,54,0.95)_0%,rgba(12,20,22,0.96)_52%,rgba(8,10,12,1)_100%)] p-4 sm:p-5">
+            <div className="space-y-2">
+              <input
+                value={searchQuery}
+                onChange={(event) => setSearchQuery(event.target.value)}
+                placeholder="Rechercher un contact..."
+                className="h-10 w-full rounded-xl border border-white/20 bg-black/25 px-3 text-sm"
+              />
+              <div className="flex items-center justify-between rounded-lg border border-white/15 bg-black/20 px-3 py-2">
+                <p className="text-xs font-black uppercase tracking-wide">Daily</p>
+                <p className="text-xs text-white/80">
+                  {Math.min(currentCardIndex + 1, 20)}/20 • {qualifiedCount}/{totalContacts}
+                </p>
               </div>
+            </div>
+
+            <div className="mt-3 min-h-[52vh] rounded-2xl border border-white/15 bg-[#12161A] p-4 flex flex-col justify-center">
               {!currentDailyContact ? (
-                <p className="mt-3 rounded-lg border border-emerald-300/30 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-200">
+                <p className="rounded-lg border border-emerald-300/30 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-200 text-center">
                   Bien joue, tes 20 cartes du jour sont traitees.
                 </p>
               ) : (
-                <>
-                  <article className="mt-3 rounded-xl border border-white/15 bg-black/25 p-4">
-                    <p className="text-lg font-black">{currentDailyContact.name}</p>
-                    <p className="text-sm text-white/75">
-                      {currentDailyContact.phone} • {currentDailyContact.city}
-                    </p>
-                    <p className="mt-2 text-xs text-white/65">
-                      Gauche = masque 90 jours • Droite = qualifie + tag • Haut = alerte immediate
-                    </p>
-                  </article>
-                  <div className="mt-3 grid grid-cols-3 gap-2">
-                    <button type="button" onClick={onSwipeLeft} className="h-11 rounded-xl border border-white/20 bg-white/10 text-xs font-black uppercase tracking-wide">
-                      Gauche
-                    </button>
-                    <button type="button" onClick={onSwipeRight} className="h-11 rounded-xl bg-emerald-400 text-black text-xs font-black uppercase tracking-wide">
-                      Droite
-                    </button>
-                    <button type="button" onClick={onSwipeUp} className="h-11 rounded-xl bg-cyan-300 text-black text-xs font-black uppercase tracking-wide">
-                      Haut
-                    </button>
-                  </div>
-                </>
+                <article className="text-center">
+                  <p className="text-xs uppercase tracking-[0.12em] text-white/60">Carte du jour</p>
+                  <p className="mt-3 text-4xl sm:text-5xl font-black leading-tight">{currentDailyContact.name}</p>
+                  <p className="mt-2 text-lg text-white/80">{currentDailyContact.city}</p>
+                  <p className="mt-1 text-sm text-white/55">{currentDailyContact.phone}</p>
+                </article>
               )}
             </div>
+
+            {currentDailyContact && (
+              <div className="mt-3 grid grid-cols-3 gap-2">
+                <button type="button" onClick={onSwipeLeft} className="h-14 rounded-xl bg-rose-500/85 text-white text-lg font-black">
+                  ❌
+                </button>
+                <button type="button" onClick={onSwipeRight} className="h-14 rounded-xl bg-emerald-400 text-black text-lg font-black">
+                  ✅
+                </button>
+                <button type="button" onClick={onSwipeUp} className="h-14 rounded-xl bg-cyan-300 text-black text-lg font-black">
+                  🔥
+                </button>
+              </div>
+            )}
           </section>
         )}
 
@@ -565,6 +546,9 @@ export default function EclaireurScanFunnelPreviewPage() {
               <p className="rounded-xl border border-emerald-300/30 bg-emerald-500/10 px-3 py-2">Valides: {validatedAmount} EUR</p>
               <p className="rounded-xl border border-rose-300/30 bg-rose-500/10 px-3 py-2">Refuses: {rejectedAmount} EUR</p>
             </div>
+            <p className="mt-4 rounded-xl border border-[#EAC886]/35 bg-[#1D170E] px-4 py-3 text-sm text-[#EAC886]">
+              Potentiel global estime annuaire: <span className="font-black">{totalPotential.toLocaleString("fr-FR")} EUR</span>
+            </p>
             <div className="mt-4 grid gap-2 sm:grid-cols-2 text-sm">
               <p className="rounded-xl border border-white/15 bg-black/20 px-3 py-2">% cartes traitees/jour: {Math.round((kpi.treated / 20) * 100)}%</p>
               <p className="rounded-xl border border-white/15 bg-black/20 px-3 py-2">% swipe droite: {Math.round((kpi.right / 20) * 100)}%</p>
@@ -668,22 +652,24 @@ export default function EclaireurScanFunnelPreviewPage() {
             Gains
           </button>
         </div>
-        <div className="mx-auto mt-2 grid max-w-5xl grid-cols-2 gap-2 px-4 pb-2">
-          <button
-            type="button"
-            onClick={() => setMainTab("pros")}
-            className={`h-10 rounded-xl text-xs font-black uppercase tracking-wide ${mainTab === "pros" ? "bg-emerald-300 text-black" : "bg-white/10 text-white"}`}
-          >
-            Pros
-          </button>
-          <button
-            type="button"
-            onClick={() => setMainTab("history")}
-            className={`h-10 rounded-xl text-xs font-black uppercase tracking-wide ${mainTab === "history" ? "bg-cyan-300 text-black" : "bg-white/10 text-white"}`}
-          >
-            Historique
-          </button>
-        </div>
+        {mainTab !== "daily" && (
+          <div className="mx-auto mt-2 grid max-w-5xl grid-cols-2 gap-2 px-4 pb-2">
+            <button
+              type="button"
+              onClick={() => setMainTab("pros")}
+              className={`h-10 rounded-xl text-xs font-black uppercase tracking-wide ${mainTab === "pros" ? "bg-emerald-300 text-black" : "bg-white/10 text-white"}`}
+            >
+              Pros
+            </button>
+            <button
+              type="button"
+              onClick={() => setMainTab("history")}
+              className={`h-10 rounded-xl text-xs font-black uppercase tracking-wide ${mainTab === "history" ? "bg-cyan-300 text-black" : "bg-white/10 text-white"}`}
+            >
+              Historique
+            </button>
+          </div>
+        )}
       </nav>
     </main>
   );
