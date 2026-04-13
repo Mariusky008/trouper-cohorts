@@ -114,7 +114,6 @@ export default function EclaireurScanFunnelPreviewPage() {
   const [selectedTrade, setSelectedTrade] = useState<string>("Courtier");
   const [selectedProCategory, setSelectedProCategory] = useState<string>("Tous");
   const [selectedProId, setSelectedProId] = useState<string | null>(null);
-  const [consentChecked, setConsentChecked] = useState(true);
   const [swipeAnim, setSwipeAnim] = useState<"none" | "left" | "right" | "up">("none");
   const [selectedQuickTag, setSelectedQuickTag] = useState<string>(DAILY_TAGS[0]);
   const [lastActionMessage, setLastActionMessage] = useState("");
@@ -312,7 +311,6 @@ export default function EclaireurScanFunnelPreviewPage() {
     setSelectedMoment("Autre");
     setSelectedNeed(ALL_NEEDS[0] ?? "Courtier");
     setMessageDraft("");
-    setConsentChecked(true);
     setSelectedProId(null);
     setFunnelStep("match");
     setMainTab("daily");
@@ -343,7 +341,6 @@ export default function EclaireurScanFunnelPreviewPage() {
     setSelectedNeed("Courtier");
     setSelectedProId(PROS[0]?.id ?? null);
     setSelectedTrade(PROS[0]?.name ?? "Expert local");
-    setConsentChecked(true);
     setMessageDraft(
       `Salut ${contact.name.split(" ")[0]}, j ai pense a toi. J ai un pro de confiance a ${contact.city}. Tu veux que je lui demande de te contacter ?`,
     );
@@ -352,13 +349,20 @@ export default function EclaireurScanFunnelPreviewPage() {
     setMainTab("daily");
   }
 
-  function handleSendToMessaging() {
-    if (!consentChecked) return;
-    const phone = activeContact.phone.replace(/\s+/g, "");
+  function handleAskConsentViaWhatsApp() {
+    const digits = activeContact.phone.replace(/\D+/g, "");
+    const whatsappPhone = digits.startsWith("0") ? `33${digits.slice(1)}` : digits;
     const encoded = encodeURIComponent(messageDraft);
     if (typeof window !== "undefined") {
-      window.open(`sms:${phone}?body=${encoded}`, "_blank");
+      window.open(`https://wa.me/${whatsappPhone}?text=${encoded}`, "_blank");
     }
+    setContactHasMessage((prev) => ({ ...prev, [activeContactId]: true }));
+    setContactResponse((prev) => ({ ...prev, [activeContactId]: "waiting" }));
+    setLastActionMessage(`Message WhatsApp ouvert pour demander l accord a ${activeContact.name}.`);
+  }
+
+  function handleConsentAndSendLead() {
+    if (!selectedProId) return;
     setContactHasMessage((prev) => ({ ...prev, [activeContactId]: true }));
     setContactResponse((prev) => ({ ...prev, [activeContactId]: "ok" }));
     setContactDispatched((prev) => ({ ...prev, [activeContactId]: true }));
@@ -728,7 +732,6 @@ export default function EclaireurScanFunnelPreviewPage() {
                   type="button"
                   onClick={() => {
                     setMessageDraft(defaultMessage);
-                    setConsentChecked(true);
                     setFunnelStep("message");
                   }}
                   disabled={!selectedProId}
@@ -747,18 +750,24 @@ export default function EclaireurScanFunnelPreviewPage() {
                   onChange={(event) => setMessageDraft(event.target.value)}
                   className="mt-3 min-h-28 w-full rounded-xl border border-white/20 bg-black/25 px-3 py-2 text-sm"
                 />
-                <label className="mt-3 flex items-start gap-2 rounded-xl border border-white/15 bg-black/20 px-3 py-2 text-sm">
-                  <input type="checkbox" checked={consentChecked} onChange={(event) => setConsentChecked(event.target.checked)} className="mt-0.5" />
-                  <span>J ai le consentement de {activeContact.name.split(" ")[0]} pour transmettre ses coordonnees a {selectedTrade}.</span>
-                </label>
-                <button
-                  type="button"
-                  onClick={handleSendToMessaging}
-                  disabled={!consentChecked || !selectedProId}
-                  className="mt-3 h-11 rounded-xl bg-cyan-300 px-4 text-black text-xs font-black uppercase tracking-wide"
-                >
-                  Demander l accord de {activeContact.name.split(" ")[0]} (SMS/WA)
-                </button>
+                <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                  <button
+                    type="button"
+                    onClick={handleAskConsentViaWhatsApp}
+                    className="h-11 rounded-xl bg-cyan-300 px-3 text-black text-xs font-black uppercase tracking-wide"
+                  >
+                    Demander l accord de {activeContact.name.split(" ")[0]}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleConsentAndSendLead}
+                    disabled={!selectedProId}
+                    className="h-11 rounded-xl bg-emerald-400 px-3 text-black text-xs font-black uppercase tracking-wide disabled:opacity-40"
+                  >
+                    J ai le consentement de {activeContact.name.split(" ")[0]}
+                  </button>
+                </div>
+                <p className="mt-2 text-xs text-white/70">Le 1er bouton ouvre WhatsApp. Le 2e envoie le lead au pro avec accord de rappel.</p>
               </>
             )}
           </section>
