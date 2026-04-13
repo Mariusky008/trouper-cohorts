@@ -111,6 +111,9 @@ export default function EclaireurScanFunnelPreviewPage() {
   const [selectedQuickTag, setSelectedQuickTag] = useState<string>(DAILY_TAGS[0]);
   const [lastActionMessage, setLastActionMessage] = useState("");
   const [showSearchPanel, setShowSearchPanel] = useState(false);
+  const [contactResponse, setContactResponse] = useState<Record<string, ReplyStatus>>({});
+  const [contactHasMessage, setContactHasMessage] = useState<Record<string, boolean>>({});
+  const [contactDispatched, setContactDispatched] = useState<Record<string, boolean>>({});
 
   const dailyDeckIds = useMemo(() => CONTACTS.slice(0, 20).map((contact) => contact.id), []);
   const currentDailyContact = CONTACTS.find((contact) => contact.id === dailyDeckIds[currentCardIndex]) || null;
@@ -178,6 +181,11 @@ export default function EclaireurScanFunnelPreviewPage() {
       }),
     [contactMeta],
   );
+  const qualifiedWithoutMessage = contactsToContact.filter((contact) => !contactHasMessage[contact.id] && !contactDispatched[contact.id]);
+  const waitingContacts = contactsToContact.filter((contact) => contactResponse[contact.id] === "waiting" && !contactDispatched[contact.id]);
+  const okToSendContacts = contactsToContact.filter((contact) => contactResponse[contact.id] === "ok" && !contactDispatched[contact.id]);
+  const dispatchedContacts = contactsToContact.filter((contact) => contactDispatched[contact.id]);
+  const refusedContacts = contactsToContact.filter((contact) => contactResponse[contact.id] === "no");
 
   const defaultMessage = `Salut ${activeContact.name.split(" ")[0]}, je pense a toi suite a ton contexte "${selectedMoment}". J ai un pro de confiance sur ${selectedNeed || "ce sujet"} a ${activeContact.city}. Tu veux que je lui demande de te contacter ?`;
 
@@ -284,8 +292,13 @@ export default function EclaireurScanFunnelPreviewPage() {
 
   function goNextFromResponse() {
     if (reply === "ok") {
+      setContactResponse((prev) => ({ ...prev, [activeContactId]: "ok" }));
       setFunnelStep("dispatch");
       return;
+    }
+    setContactResponse((prev) => ({ ...prev, [activeContactId]: reply }));
+    if (reply === "waiting") {
+      setLastActionMessage(`${activeContact.name} passe en "En attente" dans A contacter`);
     }
     setFunnelStep("done");
   }
@@ -394,12 +407,12 @@ export default function EclaireurScanFunnelPreviewPage() {
                   onClick={onSwipeRight}
                   className="h-20 rounded-full border border-white/20 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.2),rgba(0,0,0,0.3))] text-4xl font-black text-emerald-300 shadow-[0_16px_30px_-16px_rgba(52,211,153,0.9)] active:scale-95 transition"
                 >
-                  ❤
+                  ✓
                 </button>
                 <button
                   type="button"
                   onClick={() => setShowSearchPanel(true)}
-                  className="h-12 rounded-full border border-white/20 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.2),rgba(0,0,0,0.3))] text-xl font-black text-cyan-200 shadow-[0_10px_20px_-14px_rgba(56,189,248,0.9)] active:scale-95 transition"
+                  className="h-14 rounded-full border border-white/20 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.2),rgba(0,0,0,0.3))] text-2xl font-black text-cyan-200 shadow-[0_12px_22px_-14px_rgba(56,189,248,0.9)] active:scale-95 transition"
                 >
                   ⌕
                 </button>
@@ -451,6 +464,9 @@ export default function EclaireurScanFunnelPreviewPage() {
             <section className="w-full max-w-sm rounded-2xl border border-[#EAC886]/35 bg-[#1A1510] p-4 animate-[fadeIn_.2s_ease-out]">
               <p className="text-[11px] font-black uppercase tracking-[0.12em] text-[#EAC886]">Tag profil</p>
               <h3 className="mt-1 text-lg font-black">Quel est son profil ?</h3>
+              <p className="mt-1 text-xs text-white/75">
+                Ce tag sert a retrouver ce contact dans <span className="font-black">A contacter</span> et personnaliser le message plus tard.
+              </p>
               <div className="mt-3 grid grid-cols-2 gap-2">
                 {DAILY_TAGS.map((tag) => (
                   <button
@@ -493,7 +509,9 @@ export default function EclaireurScanFunnelPreviewPage() {
 
             {funnelStep === "moment" && (
               <>
-                <p className="mt-2 text-sm text-white/75">Choisis un moment de vie (8 tags + autre)</p>
+                <p className="mt-2 text-sm text-white/75">
+                  Parcours express: Moment de vie → Besoin → Message → Reponse → Envoi au pro.
+                </p>
                 <div className="mt-3 grid gap-2 sm:grid-cols-2">
                   {MOMENTS.map((moment) => (
                     <button
@@ -561,7 +579,11 @@ export default function EclaireurScanFunnelPreviewPage() {
                 />
                 <button
                   type="button"
-                  onClick={() => setFunnelStep("response")}
+                  onClick={() => {
+                    setContactHasMessage((prev) => ({ ...prev, [activeContactId]: true }));
+                    setContactResponse((prev) => ({ ...prev, [activeContactId]: "waiting" }));
+                    setFunnelStep("response");
+                  }}
                   className="mt-3 h-11 rounded-xl bg-cyan-300 px-4 text-black text-xs font-black uppercase tracking-wide"
                 >
                   Message envoye
@@ -571,7 +593,9 @@ export default function EclaireurScanFunnelPreviewPage() {
 
             {funnelStep === "response" && (
               <>
-                <p className="mt-2 text-sm text-white/75">Consentement explicite requis avant envoi lead</p>
+                <p className="mt-2 text-sm text-white/75">
+                  Consentement explicite requis avant envoi lead. Si tu choisis "En attente", le contact sera range dans <span className="font-black">A contacter → En attente</span>.
+                </p>
                 <div className="mt-3 grid grid-cols-3 gap-2">
                   <button
                     type="button"
@@ -630,7 +654,11 @@ export default function EclaireurScanFunnelPreviewPage() {
                 </div>
                 <button
                   type="button"
-                  onClick={() => setFunnelStep("done")}
+                  onClick={() => {
+                    setContactDispatched((prev) => ({ ...prev, [activeContactId]: true }));
+                    setContactResponse((prev) => ({ ...prev, [activeContactId]: "ok" }));
+                    setFunnelStep("done");
+                  }}
                   disabled={!selectedProId}
                   className="mt-3 h-11 rounded-xl bg-black px-4 text-white text-xs font-black uppercase tracking-wide disabled:opacity-40"
                 >
@@ -738,26 +766,88 @@ export default function EclaireurScanFunnelPreviewPage() {
                 Aucun contact pour le moment. Swipe vert ou bleu pour alimenter cette liste.
               </p>
             ) : (
-              <div className="mt-3 space-y-2">
-                {contactsToContact.map((contact) => {
-                  const meta = contactMeta[contact.id];
-                  return (
-                    <article key={contact.id} className="rounded-xl border border-white/15 bg-black/20 p-3">
-                      <p className="text-sm font-black">{contact.name}</p>
-                      <p className="text-xs text-white/70">
-                        {contact.city} • {meta?.status === "alert" ? "Alerte immediate" : "Qualifie"}
-                      </p>
-                      {meta?.tags?.length > 0 && <p className="mt-1 text-xs text-emerald-200">Tags: {meta.tags.join(" • ")}</p>}
-                      <button
-                        type="button"
-                        onClick={() => openMessageForContact(contact.id)}
-                        className="mt-2 h-9 rounded-lg bg-emerald-400 px-3 text-xs font-black uppercase tracking-wide text-black"
-                      >
-                        Envoyer un message
-                      </button>
-                    </article>
-                  );
-                })}
+              <div className="mt-3 space-y-4">
+                <div>
+                  <p className="text-xs font-black uppercase tracking-wide text-white/70">Qualifies sans message ({qualifiedWithoutMessage.length})</p>
+                  <div className="mt-2 space-y-2">
+                    {qualifiedWithoutMessage.map((contact) => {
+                      const meta = contactMeta[contact.id];
+                      return (
+                        <article key={contact.id} className="rounded-xl border border-white/15 bg-black/20 p-3">
+                          <p className="text-sm font-black">{contact.name}</p>
+                          <p className="text-xs text-white/70">{contact.city}</p>
+                          {meta?.tags?.length > 0 && <p className="mt-1 text-xs text-emerald-200">Tags: {meta.tags.join(" • ")}</p>}
+                          <button
+                            type="button"
+                            onClick={() => openMessageForContact(contact.id)}
+                            className="mt-2 h-9 rounded-lg bg-emerald-400 px-3 text-xs font-black uppercase tracking-wide text-black"
+                          >
+                            Envoyer un message
+                          </button>
+                        </article>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div>
+                  <p className="text-xs font-black uppercase tracking-wide text-white/70">En attente de reponse ({waitingContacts.length})</p>
+                  <div className="mt-2 space-y-2">
+                    {waitingContacts.map((contact) => (
+                      <article key={contact.id} className="rounded-xl border border-amber-300/25 bg-amber-500/10 p-3">
+                        <p className="text-sm font-black">{contact.name}</p>
+                        <p className="text-xs text-white/75">{contact.city}</p>
+                        <button
+                          type="button"
+                          onClick={() => openMessageForContact(contact.id)}
+                          className="mt-2 h-9 rounded-lg border border-white/20 bg-white/10 px-3 text-xs font-black uppercase tracking-wide"
+                        >
+                          Reouvrir le suivi
+                        </button>
+                      </article>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <p className="text-xs font-black uppercase tracking-wide text-white/70">OK a envoyer ({okToSendContacts.length})</p>
+                  <div className="mt-2 space-y-2">
+                    {okToSendContacts.map((contact) => (
+                      <article key={contact.id} className="rounded-xl border border-emerald-300/25 bg-emerald-500/10 p-3">
+                        <p className="text-sm font-black">{contact.name}</p>
+                        <button
+                          type="button"
+                          onClick={() => openFunnelForContact(contact.id)}
+                          className="mt-2 h-9 rounded-lg bg-emerald-400 px-3 text-xs font-black uppercase tracking-wide text-black"
+                        >
+                          Choisir un pro et envoyer
+                        </button>
+                      </article>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <p className="text-xs font-black uppercase tracking-wide text-white/70">Deja envoyes ({dispatchedContacts.length})</p>
+                  <div className="mt-2 space-y-2">
+                    {dispatchedContacts.map((contact) => (
+                      <article key={contact.id} className="rounded-xl border border-cyan-300/25 bg-cyan-500/10 p-3">
+                        <p className="text-sm font-black">{contact.name}</p>
+                      </article>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <p className="text-xs font-black uppercase tracking-wide text-white/70">Refuses ({refusedContacts.length})</p>
+                  <div className="mt-2 space-y-2">
+                    {refusedContacts.map((contact) => (
+                      <article key={contact.id} className="rounded-xl border border-rose-300/25 bg-rose-500/10 p-3">
+                        <p className="text-sm font-black">{contact.name}</p>
+                      </article>
+                    ))}
+                  </div>
+                </div>
               </div>
             )}
           </section>
