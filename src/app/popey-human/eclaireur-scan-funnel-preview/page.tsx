@@ -1,11 +1,11 @@
 "use client";
 
-import Link from "next/link";
 import { useMemo, useState } from "react";
 
-type Phase = "home" | "scan" | "directory" | "moments" | "needs" | "message" | "response" | "dispatch" | "done";
+type MainTab = "daily" | "search" | "gains" | "pros" | "history";
+type SwipeStatus = "new" | "masked_90d" | "qualified" | "alert";
 type ReplyStatus = "waiting" | "ok" | "no";
-type MainTab = "scan" | "gains" | "history";
+type FunnelStep = "moment" | "need" | "message" | "response" | "dispatch" | "done";
 
 type Contact = {
   id: string;
@@ -14,78 +14,102 @@ type Contact = {
   city: string;
 };
 
-type MarketSegment = {
-  id: string;
-  label: string;
-  percent: number;
-  avgCommission: number;
+type ContactMeta = {
+  status: SwipeStatus;
+  tags: string[];
+  maskedUntil?: string;
 };
 
-type MomentOption = {
+type Pro = {
   id: string;
-  label: string;
-  helper: string;
+  name: string;
+  category: string;
+  city: string;
+  rating: number;
 };
 
-const DIRECTORY: Contact[] = [
+const CONTACTS: Contact[] = [
   { id: "c1", name: "Julien M.", phone: "06 12 78 44 01", city: "Dax" },
   { id: "c2", name: "Claire R.", phone: "06 90 11 43 29", city: "Dax" },
   { id: "c3", name: "Karim B.", phone: "06 31 77 09 11", city: "Saint-Paul-les-Dax" },
   { id: "c4", name: "Laura T.", phone: "06 40 80 42 51", city: "Dax" },
   { id: "c5", name: "Nicolas G.", phone: "06 58 12 09 62", city: "Narrosse" },
   { id: "c6", name: "Farah K.", phone: "06 22 63 17 98", city: "Dax" },
+  { id: "c7", name: "Mickael P.", phone: "06 73 62 18 44", city: "Dax" },
+  { id: "c8", name: "Sonia V.", phone: "06 84 90 23 18", city: "Dax" },
+  { id: "c9", name: "Hugo L.", phone: "06 18 22 31 78", city: "Narrosse" },
+  { id: "c10", name: "Nadine C.", phone: "06 49 20 31 41", city: "Dax" },
+  { id: "c11", name: "Jean-Mi B.", phone: "06 91 22 31 44", city: "Dax" },
+  { id: "c12", name: "Mme Dupuis", phone: "06 85 31 29 17", city: "Saint-Paul-les-Dax" },
+  { id: "c13", name: "Yann G.", phone: "06 44 31 70 28", city: "Dax" },
+  { id: "c14", name: "Olivia N.", phone: "06 16 42 63 45", city: "Dax" },
+  { id: "c15", name: "Theo D.", phone: "06 54 39 47 10", city: "Dax" },
+  { id: "c16", name: "Aurelie F.", phone: "06 77 19 20 25", city: "Dax" },
+  { id: "c17", name: "Romain T.", phone: "06 11 93 44 10", city: "Narrosse" },
+  { id: "c18", name: "Nora K.", phone: "06 29 61 17 22", city: "Dax" },
+  { id: "c19", name: "Pascal R.", phone: "06 88 40 10 33", city: "Dax" },
+  { id: "c20", name: "Lea M.", phone: "06 50 19 36 29", city: "Saint-Paul-les-Dax" },
 ];
 
-const SEGMENTS: MarketSegment[] = [
+const DAILY_TAGS = ["Proprietaire", "Pro", "Famille", "Ami proche"] as const;
+const MOMENTS = [
+  "Vient d avoir un enfant",
+  "Est en plein divorce",
+  "Vient d heriter",
+  "Besoin de vendre",
+  "Besoin d acheter",
+  "Nouveau poste / mutation",
+  "Demange bientot",
+  "Investir",
+  "Autre",
+] as const;
+const SEGMENTS = [
   { id: "immo", label: "Recherche maison", percent: 5, avgCommission: 275 },
   { id: "sante", label: "Perte de poids / sante", percent: 9, avgCommission: 120 },
   { id: "travaux", label: "Travaux / deco", percent: 12, avgCommission: 180 },
-  { id: "finance", label: "Patrimoine / investissement", percent: 4, avgCommission: 320 },
+  { id: "finance", label: "Investissement", percent: 4, avgCommission: 320 },
+] as const;
+const PROS: Pro[] = [
+  { id: "p1", name: "Camille Durand", category: "Immo", city: "Dax", rating: 4.8 },
+  { id: "p2", name: "Atelier Nova", category: "Travaux", city: "Dax", rating: 4.7 },
+  { id: "p3", name: "Sante Active", category: "Sante", city: "Dax", rating: 4.6 },
+  { id: "p4", name: "Patrimoine Sud", category: "Finances", city: "Dax", rating: 4.9 },
 ];
-
-const MOMENT_OPTIONS: MomentOption[] = [
-  { id: "baby", label: "Vient d avoir un enfant", helper: "A entendu au comptoir / en appel" },
-  { id: "deco", label: "Besoin de refaire sa deco", helper: "Projet maison en cours" },
-  { id: "divorce", label: "Est en plein divorce", helper: "Souvent besoin de vendre / estimer" },
-  { id: "partner", label: "Besoin de trouver un partenaire", helper: "Recherche un pro de confiance" },
-  { id: "inheritance", label: "Vient d heriter", helper: "Besoin de structurer rapidement" },
-  { id: "sell", label: "Besoin de vendre", helper: "Delai potentiel court" },
-  { id: "buy", label: "Besoin d acheter", helper: "Projet concret a cadrer" },
-  { id: "invest", label: "Investir", helper: "Cherche rendement / securite" },
-  { id: "new_job", label: "Nouveau poste / mutation", helper: "Changement de rythme de vie" },
-  { id: "moving", label: "Demange bientot", helper: "Projet concret a court terme" },
-  { id: "other", label: "Autre", helper: "Preciser le contexte" },
-];
-
 const NEEDS_BY_MOMENT: Record<string, string[]> = {
-  baby: ["Courtier", "Agrandissement", "Assurance familiale"],
-  deco: ["Artisan travaux", "Decorateur", "Magasin amenagement"],
-  divorce: ["Agent immo estimation", "Notaire", "Courtier"],
-  partner: ["Courtier local", "Conseiller expert", "Partenaire business"],
-  inheritance: ["Notaire", "Gestionnaire patrimoine", "Agent immo vente"],
-  sell: ["Agent immo", "Notaire", "Diagnostiqueur"],
-  buy: ["Courtier pret", "Agent immo", "Notaire"],
-  invest: ["Gestionnaire patrimoine", "Conseil fiscal", "Agent immo"],
-  new_job: ["Agent immo", "Courtier", "Coach mobilite"],
-  moving: ["Artisan travaux", "Agent immo", "Assurance habitation"],
-  other: ["Courtier", "Agent immo", "Conseiller local"],
+  "Vient d avoir un enfant": ["Courtier", "Agrandissement", "Assurance familiale"],
+  "Est en plein divorce": ["Agent immo", "Notaire", "Courtier"],
+  "Vient d heriter": ["Notaire", "Gestion patrimoine", "Agent immo"],
+  "Besoin de vendre": ["Agent immo", "Notaire", "Diagnostiqueur"],
+  "Besoin d acheter": ["Courtier pret", "Agent immo", "Notaire"],
+  "Nouveau poste / mutation": ["Agent immo", "Courtier", "Assurance"],
+  "Demange bientot": ["Artisan travaux", "Agent immo", "Assurance habitation"],
+  Investir: ["Gestion patrimoine", "Conseil fiscal", "Agent immo"],
+  Autre: ["Courtier", "Agent immo", "Conseiller local"],
 };
 
 export default function EclaireurScanFunnelPreviewPage() {
-  const [phase, setPhase] = useState<Phase>("home");
-  const [mainTab, setMainTab] = useState<MainTab>("scan");
+  const [mainTab, setMainTab] = useState<MainTab>("daily");
   const [showProfile, setShowProfile] = useState(false);
+  const [funnelStep, setFunnelStep] = useState<FunnelStep | null>(null);
+  const [activeContactId, setActiveContactId] = useState(CONTACTS[0].id);
   const [totalContacts] = useState(800);
-  const [selectedContactId, setSelectedContactId] = useState(DIRECTORY[0].id);
-  const [selectedMoment, setSelectedMoment] = useState<string>("baby");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [dailyProcessed, setDailyProcessed] = useState(0);
+  const [currentCardIndex, setCurrentCardIndex] = useState(0);
+  const [contactMeta, setContactMeta] = useState<Record<string, ContactMeta>>(() =>
+    Object.fromEntries(CONTACTS.map((contact) => [contact.id, { status: "new", tags: [] }])),
+  );
+  const [pendingTagContactId, setPendingTagContactId] = useState<string | null>(null);
+  const [selectedMoment, setSelectedMoment] = useState<string>(MOMENTS[0]);
   const [selectedNeed, setSelectedNeed] = useState<string>("");
   const [messageDraft, setMessageDraft] = useState("");
   const [reply, setReply] = useState<ReplyStatus>("waiting");
   const [selectedTrade, setSelectedTrade] = useState<string>("Courtier");
+  const [selectedProCategory, setSelectedProCategory] = useState<string>("Tous");
 
-  const selectedContact = DIRECTORY.find((contact) => contact.id === selectedContactId) ?? DIRECTORY[0];
-  const suggestedNeeds = NEEDS_BY_MOMENT[selectedMoment] ?? NEEDS_BY_MOMENT.other;
-  const selectedMomentLabel = MOMENT_OPTIONS.find((moment) => moment.id === selectedMoment)?.label ?? "Autre";
+  const dailyDeckIds = useMemo(() => CONTACTS.slice(0, 20).map((contact) => contact.id), []);
+  const currentDailyContact = CONTACTS.find((contact) => contact.id === dailyDeckIds[currentCardIndex]) || null;
+  const activeContact = CONTACTS.find((contact) => contact.id === activeContactId) ?? CONTACTS[0];
 
   const segmentStats = useMemo(
     () =>
@@ -96,6 +120,37 @@ export default function EclaireurScanFunnelPreviewPage() {
       }),
     [totalContacts],
   );
+
+  const searchResults = useMemo(
+    () =>
+      CONTACTS.filter((contact) => {
+        const query = searchQuery.trim().toLowerCase();
+        if (!query) return true;
+        return `${contact.name} ${contact.phone} ${contact.city}`.toLowerCase().includes(query);
+      }),
+    [searchQuery],
+  );
+
+  const prosResults = useMemo(
+    () =>
+      PROS.filter((pro) => {
+        if (selectedProCategory === "Tous") return true;
+        return pro.category === selectedProCategory;
+      }),
+    [selectedProCategory],
+  );
+
+  const kpi = useMemo(() => {
+    const metas = Object.values(contactMeta);
+    const treated = metas.filter((meta) => meta.status !== "new").length;
+    const right = metas.filter((meta) => meta.status === "qualified").length;
+    const up = metas.filter((meta) => meta.status === "alert").length;
+    const messages = reply === "waiting" ? up : up + 1;
+    const repliesOk = reply === "ok" ? 1 : 0;
+    const leads = reply === "ok" && funnelStep === "done" ? 1 : 0;
+    const deals = 1;
+    return { treated, right, up, messages, repliesOk, leads, deals };
+  }, [contactMeta, reply, funnelStep]);
 
   const totalPotential = segmentStats.reduce((sum, segment) => sum + segment.potential, 0);
   const qualifiedCount = 140;
@@ -109,24 +164,77 @@ export default function EclaireurScanFunnelPreviewPage() {
     { id: "h3", label: "Lead refuse - Karim B.", status: "Refuse", amount: 0, color: "text-rose-200" },
   ];
 
-  const defaultMessage = `Salut ${selectedContact.name.split(" ")[0]}, je pense a toi suite a ton contexte "${selectedMomentLabel}". J ai un pro de confiance sur ${selectedNeed || "ce sujet"} a ${selectedContact.city}. Tu veux que je lui demande de te contacter ?`;
+  const defaultMessage = `Salut ${activeContact.name.split(" ")[0]}, je pense a toi suite a ton contexte "${selectedMoment}". J ai un pro de confiance sur ${selectedNeed || "ce sujet"} a ${activeContact.city}. Tu veux que je lui demande de te contacter ?`;
+
+  function updateStatus(contactId: string, status: SwipeStatus, tag?: string) {
+    const maskedUntil =
+      status === "masked_90d" ? new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toLocaleDateString("fr-FR") : undefined;
+    setContactMeta((prev) => {
+      const current = prev[contactId] || { status: "new", tags: [] };
+      const nextTags = tag && !current.tags.includes(tag) ? [...current.tags, tag] : current.tags;
+      return {
+        ...prev,
+        [contactId]: { status, tags: nextTags, maskedUntil },
+      };
+    });
+  }
+
+  function goNextCard() {
+    setDailyProcessed((value) => Math.min(20, value + 1));
+    setCurrentCardIndex((value) => Math.min(19, value + 1));
+  }
+
+  function onSwipeLeft() {
+    if (!currentDailyContact) return;
+    updateStatus(currentDailyContact.id, "masked_90d");
+    goNextCard();
+  }
+
+  function onSwipeRight() {
+    if (!currentDailyContact) return;
+    setPendingTagContactId(currentDailyContact.id);
+  }
+
+  function onSelectTag(tag: string) {
+    if (!pendingTagContactId) return;
+    updateStatus(pendingTagContactId, "qualified", tag);
+    setPendingTagContactId(null);
+    goNextCard();
+  }
+
+  function openFunnelForContact(contactId: string) {
+    setActiveContactId(contactId);
+    setSelectedMoment(MOMENTS[0]);
+    setSelectedNeed("");
+    setMessageDraft("");
+    setReply("waiting");
+    setFunnelStep("moment");
+    setMainTab("daily");
+  }
+
+  function onSwipeUp() {
+    if (!currentDailyContact) return;
+    updateStatus(currentDailyContact.id, "alert");
+    openFunnelForContact(currentDailyContact.id);
+    goNextCard();
+  }
 
   function goNextFromResponse() {
     if (reply === "ok") {
-      setPhase("dispatch");
+      setFunnelStep("dispatch");
       return;
     }
-    setPhase("done");
+    setFunnelStep("done");
   }
 
   return (
     <main className="min-h-screen bg-[#06080A] text-white">
-      <div className="mx-auto max-w-5xl px-4 py-8 pb-28 sm:py-10 space-y-6">
+      <div className="mx-auto max-w-5xl px-4 py-8 pb-36 sm:py-10 space-y-6">
         <header className="flex items-center justify-between gap-3">
           <div>
-            <p className="text-xs font-black uppercase tracking-[0.12em] text-[#EAC886]/90">Eclaireur Scan V2 - Funnel Compare</p>
-            <h1 className="text-3xl sm:text-4xl font-black">Scan. Detecte. Convertis.</h1>
-            <p className="mt-1 text-sm text-white/75">Version orientee terrain: simple, motive, actionnable.</p>
+            <p className="text-xs font-black uppercase tracking-[0.12em] text-[#EAC886]/90">Eclaireur Scan V2 - Preview</p>
+            <h1 className="text-3xl sm:text-4xl font-black">Daily Scan Popey</h1>
+            <p className="mt-1 text-sm text-white/75">20 cartes par jour. Swipe. Qualifie. Convertis.</p>
           </div>
           <button
             type="button"
@@ -148,31 +256,20 @@ export default function EclaireurScanFunnelPreviewPage() {
           </section>
         )}
 
-        {mainTab === "scan" && phase === "home" && (
+        {mainTab === "daily" && (
           <section className="rounded-3xl border border-emerald-300/35 bg-[radial-gradient(120%_120%_at_0%_0%,rgba(18,72,54,0.95)_0%,rgba(12,20,22,0.96)_52%,rgba(8,10,12,1)_100%)] p-6 sm:p-7">
-            <p className="text-[11px] font-black uppercase tracking-[0.12em] text-emerald-200/90">Etape 1</p>
-            <h2 className="mt-2 text-3xl font-black leading-tight">Scanner l annuaire pour motiver l eclaireur</h2>
-            <p className="mt-2 text-base text-white/85">
-              Tu as environ <span className="font-black text-emerald-200">{totalContacts} contacts</span>. On estime le potentiel par categories pour te donner un objectif clair.
-            </p>
+            <p className="text-[11px] font-black uppercase tracking-[0.12em] text-emerald-200/90">Mission du jour</p>
+            <h2 className="mt-2 text-3xl font-black leading-tight">Tes 20 pepites du jour sont pretes</h2>
+            <p className="mt-2 text-base text-white/85">Recherche permanente: tape un nom pour acces direct a une fiche.</p>
+            <input
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
+              placeholder="Rechercher un contact..."
+              className="mt-3 h-11 w-full rounded-xl border border-white/20 bg-black/25 px-3 text-sm"
+            />
             <p className="mt-3 rounded-lg border border-white/15 bg-black/25 px-3 py-2 text-sm text-white/80">
               Progression annuaire: <span className="font-black text-emerald-200">{qualifiedCount}/{totalContacts}</span> ({progressPercent}%)
             </p>
-            <button
-              type="button"
-              onClick={() => setPhase("scan")}
-              className="mt-5 h-12 rounded-xl bg-gradient-to-r from-emerald-300 via-emerald-400 to-cyan-300 px-5 text-black text-sm font-black uppercase tracking-wide"
-            >
-              Scanner mon annuaire
-            </button>
-          </section>
-        )}
-
-        {mainTab === "scan" && phase === "scan" && (
-          <section className="rounded-3xl border border-white/15 bg-[#12161A] p-5 sm:p-6">
-            <p className="text-[11px] font-black uppercase tracking-[0.12em] text-[#EAC886]">Etape 2 - Scan termine</p>
-            <h2 className="mt-2 text-2xl sm:text-3xl font-black">Potentiel estime sur ton reseau</h2>
-            <p className="mt-2 text-sm text-white/75">Estimation indicatrice pour prioriser (pas promesse de conversion).</p>
 
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
               {segmentStats.map((segment) => (
@@ -185,266 +282,273 @@ export default function EclaireurScanFunnelPreviewPage() {
                 </article>
               ))}
             </div>
-
             <p className="mt-4 rounded-xl border border-[#EAC886]/35 bg-[#1D170E] px-4 py-3 text-sm text-[#EAC886]">
               Potentiel global estime: <span className="font-black">{totalPotential.toLocaleString("fr-FR")} EUR</span>
             </p>
 
+            <div className="mt-4 rounded-2xl border border-white/15 bg-[#12161A] p-4">
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-sm font-black">Carte du jour {Math.min(currentCardIndex + 1, 20)}/20</p>
+                <p className="text-xs text-white/70">Traitees: {dailyProcessed}/20</p>
+              </div>
+              {!currentDailyContact ? (
+                <p className="mt-3 rounded-lg border border-emerald-300/30 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-200">
+                  Bien joue, tes 20 cartes du jour sont traitees.
+                </p>
+              ) : (
+                <>
+                  <article className="mt-3 rounded-xl border border-white/15 bg-black/25 p-4">
+                    <p className="text-lg font-black">{currentDailyContact.name}</p>
+                    <p className="text-sm text-white/75">
+                      {currentDailyContact.phone} • {currentDailyContact.city}
+                    </p>
+                    <p className="mt-2 text-xs text-white/65">
+                      Gauche = masque 90 jours • Droite = qualifie + tag • Haut = alerte immediate
+                    </p>
+                  </article>
+                  <div className="mt-3 grid grid-cols-3 gap-2">
+                    <button type="button" onClick={onSwipeLeft} className="h-11 rounded-xl border border-white/20 bg-white/10 text-xs font-black uppercase tracking-wide">
+                      Gauche
+                    </button>
+                    <button type="button" onClick={onSwipeRight} className="h-11 rounded-xl bg-emerald-400 text-black text-xs font-black uppercase tracking-wide">
+                      Droite
+                    </button>
+                    <button type="button" onClick={onSwipeUp} className="h-11 rounded-xl bg-cyan-300 text-black text-xs font-black uppercase tracking-wide">
+                      Haut
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          </section>
+        )}
+
+        {pendingTagContactId && (
+          <section className="rounded-2xl border border-[#EAC886]/35 bg-[#1A1510] p-4">
+            <p className="text-[11px] font-black uppercase tracking-[0.12em] text-[#EAC886]">Tag profil</p>
+            <h3 className="mt-1 text-lg font-black">Quel est son profil ?</h3>
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              {DAILY_TAGS.map((tag) => (
+                <button
+                  key={tag}
+                  type="button"
+                  onClick={() => onSelectTag(tag)}
+                  className="h-10 rounded-lg border border-white/20 bg-white/10 text-xs font-black uppercase tracking-wide"
+                >
+                  {tag}
+                </button>
+              ))}
+            </div>
             <button
               type="button"
-              onClick={() => setPhase("directory")}
-              className="mt-4 h-12 w-full rounded-xl bg-gradient-to-r from-[#F1D9A3] via-[#EAC886] to-[#E5B86A] text-black text-sm font-black uppercase tracking-wide"
+              onClick={() => setPendingTagContactId(null)}
+              className="mt-3 h-10 rounded-lg border border-white/20 bg-black/25 px-4 text-xs font-black uppercase tracking-wide"
             >
-              Demarrer (detecter les moments de vie)
+              Fermer
             </button>
           </section>
         )}
 
-        {mainTab === "scan" && phase === "directory" && (
+        {funnelStep && (
           <section className="rounded-3xl border border-white/15 bg-[#12161A] p-5 sm:p-6">
-            <p className="text-[11px] font-black uppercase tracking-[0.12em] text-[#EAC886]">Etape 3 - Annuaire</p>
-            <h2 className="mt-1 text-2xl font-black">Choisis une personne</h2>
-            <div className="mt-4 space-y-2">
-              {DIRECTORY.map((contact) => (
+            <p className="text-[11px] font-black uppercase tracking-[0.12em] text-[#EAC886]">Funnel direct</p>
+            <h2 className="mt-1 text-2xl font-black">Contact: {activeContact.name}</h2>
+
+            {funnelStep === "moment" && (
+              <>
+                <p className="mt-2 text-sm text-white/75">Choisis un moment de vie (8 tags + autre)</p>
+                <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                  {MOMENTS.map((moment) => (
+                    <button
+                      key={moment}
+                      type="button"
+                      onClick={() => setSelectedMoment(moment)}
+                      className={`h-11 rounded-xl border text-xs font-black uppercase tracking-wide ${
+                        selectedMoment === moment ? "border-emerald-300/55 bg-emerald-500/12" : "border-white/20 bg-white/5"
+                      }`}
+                    >
+                      {moment}
+                    </button>
+                  ))}
+                </div>
                 <button
-                  key={contact.id}
                   type="button"
-                  onClick={() => setSelectedContactId(contact.id)}
-                  className={`w-full rounded-2xl border px-4 py-3 text-left ${
-                    selectedContactId === contact.id ? "border-emerald-300/55 bg-emerald-500/12" : "border-white/15 bg-black/20"
-                  }`}
+                  onClick={() => {
+                    setSelectedNeed((NEEDS_BY_MOMENT[selectedMoment] ?? NEEDS_BY_MOMENT.Autre)[0]);
+                    setFunnelStep("need");
+                  }}
+                  className="mt-3 h-11 rounded-xl bg-emerald-400 px-4 text-black text-xs font-black uppercase tracking-wide"
                 >
+                  Continuer
+                </button>
+              </>
+            )}
+
+            {funnelStep === "need" && (
+              <>
+                <p className="mt-2 text-sm text-white/75">Besoin recommande selon le moment</p>
+                <div className="mt-3 grid gap-2 sm:grid-cols-3">
+                  {(NEEDS_BY_MOMENT[selectedMoment] ?? NEEDS_BY_MOMENT.Autre).map((need) => (
+                    <button
+                      key={need}
+                      type="button"
+                      onClick={() => setSelectedNeed(need)}
+                      className={`h-11 rounded-xl border text-xs font-black uppercase tracking-wide ${
+                        selectedNeed === need ? "border-emerald-300/55 bg-emerald-500/12" : "border-white/20 bg-white/5"
+                      }`}
+                    >
+                      {need}
+                    </button>
+                  ))}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMessageDraft(defaultMessage);
+                    setFunnelStep("message");
+                  }}
+                  className="mt-3 h-11 rounded-xl bg-emerald-400 px-4 text-black text-xs font-black uppercase tracking-wide"
+                >
+                  Continuer
+                </button>
+              </>
+            )}
+
+            {funnelStep === "message" && (
+              <>
+                <p className="mt-2 text-sm text-white/75">Message pre-rempli</p>
+                <textarea
+                  value={messageDraft}
+                  onChange={(event) => setMessageDraft(event.target.value)}
+                  className="mt-3 min-h-28 w-full rounded-xl border border-white/20 bg-black/25 px-3 py-2 text-sm"
+                />
+                <button
+                  type="button"
+                  onClick={() => setFunnelStep("response")}
+                  className="mt-3 h-11 rounded-xl bg-cyan-300 px-4 text-black text-xs font-black uppercase tracking-wide"
+                >
+                  Message envoye
+                </button>
+              </>
+            )}
+
+            {funnelStep === "response" && (
+              <>
+                <p className="mt-2 text-sm text-white/75">Consentement explicite requis avant envoi lead</p>
+                <div className="mt-3 grid grid-cols-3 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setReply("waiting")}
+                    className={`h-11 rounded-xl border text-xs font-black uppercase tracking-wide ${reply === "waiting" ? "border-cyan-300/55 bg-cyan-500/12" : "border-white/20 bg-white/5"}`}
+                  >
+                    En attente
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setReply("ok")}
+                    className={`h-11 rounded-xl border text-xs font-black uppercase tracking-wide ${reply === "ok" ? "border-emerald-300/55 bg-emerald-500/12" : "border-white/20 bg-white/5"}`}
+                  >
+                    OK
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setReply("no")}
+                    className={`h-11 rounded-xl border text-xs font-black uppercase tracking-wide ${reply === "no" ? "border-rose-300/55 bg-rose-500/12" : "border-white/20 bg-white/5"}`}
+                  >
+                    Non
+                  </button>
+                </div>
+                <button
+                  type="button"
+                  onClick={goNextFromResponse}
+                  className="mt-3 h-11 rounded-xl bg-[#EAC886] px-4 text-black text-xs font-black uppercase tracking-wide"
+                >
+                  Continuer
+                </button>
+              </>
+            )}
+
+            {funnelStep === "dispatch" && (
+              <>
+                <p className="mt-2 text-sm text-white/75">Choisir le metier concerne (possible seulement si OK)</p>
+                <div className="mt-3 grid gap-2 sm:grid-cols-3">
+                  {(NEEDS_BY_MOMENT[selectedMoment] ?? NEEDS_BY_MOMENT.Autre).map((trade) => (
+                    <button
+                      key={trade}
+                      type="button"
+                      onClick={() => setSelectedTrade(trade)}
+                      className={`h-11 rounded-xl border text-xs font-black uppercase tracking-wide ${
+                        selectedTrade === trade ? "border-emerald-200/60 bg-emerald-400/15" : "border-white/25 bg-black/20"
+                      }`}
+                    >
+                      {trade}
+                    </button>
+                  ))}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setFunnelStep("done")}
+                  className="mt-3 h-11 rounded-xl bg-black px-4 text-white text-xs font-black uppercase tracking-wide"
+                >
+                  Envoyer le lead
+                </button>
+              </>
+            )}
+
+            {funnelStep === "done" && (
+              <>
+                <p className="mt-3 rounded-xl border border-emerald-300/35 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-200">
+                  Lead transmis a {selectedTrade} pour {activeContact.name}. Consentement OK confirme.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setFunnelStep(null)}
+                  className="mt-3 h-11 rounded-xl border border-white/20 bg-white/10 px-4 text-xs font-black uppercase tracking-wide"
+                >
+                  Fermer le funnel
+                </button>
+              </>
+            )}
+          </section>
+        )}
+
+        {mainTab === "search" && (
+          <section className="rounded-3xl border border-white/15 bg-[#12161A] p-5 sm:p-6">
+            <p className="text-[11px] font-black uppercase tracking-[0.12em] text-[#EAC886]">Recherche directe</p>
+            <h2 className="mt-1 text-2xl font-black">Mode libre</h2>
+            <input
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
+              placeholder="Tape un nom, numero ou ville"
+              className="mt-3 h-11 w-full rounded-xl border border-white/20 bg-black/25 px-3 text-sm"
+            />
+            <div className="mt-3 space-y-2">
+              {searchResults.map((contact) => (
+                <article key={contact.id} className="rounded-xl border border-white/15 bg-black/20 p-3">
                   <p className="text-sm font-black">{contact.name}</p>
                   <p className="text-xs text-white/70">
-                    {contact.phone} - {contact.city}
+                    {contact.phone} • {contact.city}
                   </p>
-                </button>
+                  <div className="mt-2 flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => openFunnelForContact(contact.id)}
+                      className="h-9 rounded-lg bg-emerald-400 px-3 text-xs font-black uppercase tracking-wide text-black"
+                    >
+                      Creer lead direct
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        updateStatus(contact.id, "masked_90d");
+                      }}
+                      className="h-9 rounded-lg border border-white/20 bg-white/10 px-3 text-xs font-black uppercase tracking-wide"
+                    >
+                      Masquer 90j
+                    </button>
+                  </div>
+                </article>
               ))}
-            </div>
-            <div className="mt-4 grid grid-cols-2 gap-2">
-              <button type="button" onClick={() => setPhase("scan")} className="h-11 rounded-xl border border-white/20 bg-white/10 text-xs font-black uppercase tracking-wide">
-                Retour
-              </button>
-              <button
-                type="button"
-                onClick={() => setPhase("moments")}
-                className="h-11 rounded-xl bg-emerald-400 text-black text-xs font-black uppercase tracking-wide"
-              >
-                Continuer
-              </button>
-            </div>
-          </section>
-        )}
-
-        {mainTab === "scan" && phase === "moments" && (
-          <section className="rounded-3xl border border-white/15 bg-[#12161A] p-5 sm:p-6">
-            <p className="text-[11px] font-black uppercase tracking-[0.12em] text-[#EAC886]">Etape 4 - Moments de vie</p>
-            <h2 className="mt-1 text-2xl font-black">Quel signal correspond a {selectedContact.name} ?</h2>
-            <div className="mt-4 grid gap-2 sm:grid-cols-2">
-              {MOMENT_OPTIONS.map((moment) => (
-                <button
-                  key={moment.id}
-                  type="button"
-                  onClick={() => setSelectedMoment(moment.id)}
-                  className={`rounded-2xl border px-3 py-3 text-left ${
-                    selectedMoment === moment.id ? "border-emerald-300/55 bg-emerald-500/12" : "border-white/15 bg-black/20"
-                  }`}
-                >
-                  <p className="text-sm font-black">{moment.label}</p>
-                  <p className="text-xs text-white/70">{moment.helper}</p>
-                </button>
-              ))}
-            </div>
-            <div className="mt-4 grid grid-cols-2 gap-2">
-              <button type="button" onClick={() => setPhase("directory")} className="h-11 rounded-xl border border-white/20 bg-white/10 text-xs font-black uppercase tracking-wide">
-                Retour
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setSelectedNeed(suggestedNeeds[0]);
-                  setPhase("needs");
-                }}
-                className="h-11 rounded-xl bg-emerald-400 text-black text-xs font-black uppercase tracking-wide"
-              >
-                Continuer
-              </button>
-            </div>
-          </section>
-        )}
-
-        {mainTab === "scan" && phase === "needs" && (
-          <section className="rounded-3xl border border-white/15 bg-[#12161A] p-5 sm:p-6">
-            <p className="text-[11px] font-black uppercase tracking-[0.12em] text-[#EAC886]">Etape 5 - Besoin associe</p>
-            <h2 className="mt-1 text-2xl font-black">Que pourrait-il/elle avoir besoin maintenant ?</h2>
-            <p className="mt-2 text-sm text-white/75">Suggestions basees sur le moment choisi: {selectedMomentLabel}</p>
-            <div className="mt-4 grid gap-2 sm:grid-cols-3">
-              {suggestedNeeds.map((need) => (
-                <button
-                  key={need}
-                  type="button"
-                  onClick={() => setSelectedNeed(need)}
-                  className={`h-11 rounded-xl border text-xs font-black uppercase tracking-wide ${
-                    selectedNeed === need ? "border-emerald-300/55 bg-emerald-500/12" : "border-white/20 bg-white/5"
-                  }`}
-                >
-                  {need}
-                </button>
-              ))}
-            </div>
-            <div className="mt-4 grid grid-cols-2 gap-2">
-              <button type="button" onClick={() => setPhase("moments")} className="h-11 rounded-xl border border-white/20 bg-white/10 text-xs font-black uppercase tracking-wide">
-                Retour
-              </button>
-              <button
-                type="button"
-                disabled={!selectedNeed}
-                onClick={() => {
-                  setMessageDraft(defaultMessage);
-                  setPhase("message");
-                }}
-                className="h-11 rounded-xl bg-emerald-400 text-black text-xs font-black uppercase tracking-wide disabled:opacity-40"
-              >
-                Continuer
-              </button>
-            </div>
-          </section>
-        )}
-
-        {mainTab === "scan" && phase === "message" && (
-          <section className="rounded-3xl border border-white/15 bg-[#12161A] p-5 sm:p-6">
-            <p className="text-[11px] font-black uppercase tracking-[0.12em] text-[#EAC886]">Etape 6 - Message pre-rempli</p>
-            <h2 className="mt-1 text-2xl font-black">Envoyer la relance a {selectedContact.name}</h2>
-            <textarea
-              value={messageDraft}
-              onChange={(event) => setMessageDraft(event.target.value)}
-              className="mt-4 min-h-32 w-full rounded-2xl border border-white/20 bg-black/25 px-3 py-3 text-sm"
-            />
-            <div className="mt-4 grid grid-cols-2 gap-2">
-              <button type="button" onClick={() => setPhase("needs")} className="h-11 rounded-xl border border-white/20 bg-white/10 text-xs font-black uppercase tracking-wide">
-                Retour
-              </button>
-              <button
-                type="button"
-                onClick={() => setPhase("response")}
-                className="h-11 rounded-xl bg-gradient-to-r from-emerald-300 via-emerald-400 to-cyan-300 text-black text-xs font-black uppercase tracking-wide"
-              >
-                Message envoye
-              </button>
-            </div>
-          </section>
-        )}
-
-        {mainTab === "scan" && phase === "response" && (
-          <section className="rounded-3xl border border-[#EAC886]/35 bg-[#1A1510] p-5 sm:p-6">
-            <p className="text-[11px] font-black uppercase tracking-[0.12em] text-[#EAC886]">Etape 7 - Suivi reponse</p>
-            <h2 className="mt-1 text-2xl font-black">Statut de la reponse de {selectedContact.name}</h2>
-            <div className="mt-4 grid grid-cols-3 gap-2">
-              <button
-                type="button"
-                onClick={() => setReply("waiting")}
-                className={`h-11 rounded-xl border text-xs font-black uppercase tracking-wide ${reply === "waiting" ? "border-cyan-300/55 bg-cyan-500/12" : "border-white/20 bg-white/5"}`}
-              >
-                En attente
-              </button>
-              <button
-                type="button"
-                onClick={() => setReply("ok")}
-                className={`h-11 rounded-xl border text-xs font-black uppercase tracking-wide ${reply === "ok" ? "border-emerald-300/55 bg-emerald-500/12" : "border-white/20 bg-white/5"}`}
-              >
-                A repondu OK
-              </button>
-              <button
-                type="button"
-                onClick={() => setReply("no")}
-                className={`h-11 rounded-xl border text-xs font-black uppercase tracking-wide ${reply === "no" ? "border-rose-300/55 bg-rose-500/12" : "border-white/20 bg-white/5"}`}
-              >
-                A repondu Non
-              </button>
-            </div>
-            <p className="mt-4 rounded-xl border border-white/15 bg-black/20 px-3 py-2 text-sm text-white/80">
-              {reply === "ok" && "Le contact est d accord: tu peux envoyer le lead au metier concerne."}
-              {reply === "waiting" && "Aucun envoi lead pour l instant. Planifie une relance douce."}
-              {reply === "no" && "Pas d envoi lead. Garde la relation active, sans forcer."}
-            </p>
-            <div className="mt-4 grid grid-cols-2 gap-2">
-              <button type="button" onClick={() => setPhase("message")} className="h-11 rounded-xl border border-white/20 bg-white/10 text-xs font-black uppercase tracking-wide">
-                Retour
-              </button>
-              <button
-                type="button"
-                onClick={goNextFromResponse}
-                className="h-11 rounded-xl bg-gradient-to-r from-[#F1D9A3] via-[#EAC886] to-[#E5B86A] text-black text-xs font-black uppercase tracking-wide"
-              >
-                Continuer
-              </button>
-            </div>
-          </section>
-        )}
-
-        {mainTab === "scan" && phase === "dispatch" && (
-          <section className="rounded-3xl border border-emerald-300/35 bg-emerald-500/12 p-5 sm:p-6">
-            <p className="text-[11px] font-black uppercase tracking-[0.12em] text-emerald-100">Envoi du lead</p>
-            <h2 className="mt-1 text-2xl font-black">Choisir le metier concerne</h2>
-            <div className="mt-4 grid gap-2 sm:grid-cols-3">
-              {(NEEDS_BY_MOMENT[selectedMoment] ?? NEEDS_BY_MOMENT.other).map((trade) => (
-                <button
-                  key={trade}
-                  type="button"
-                  onClick={() => setSelectedTrade(trade)}
-                  className={`h-11 rounded-xl border text-xs font-black uppercase tracking-wide ${
-                    selectedTrade === trade ? "border-emerald-200/60 bg-emerald-400/15" : "border-white/25 bg-black/20"
-                  }`}
-                >
-                  {trade}
-                </button>
-              ))}
-            </div>
-            <p className="mt-4 text-sm text-emerald-100">
-              Lead pret a envoyer a: <span className="font-black">{selectedTrade}</span> - zone {selectedContact.city}
-            </p>
-            <div className="mt-4 grid grid-cols-2 gap-2">
-              <button type="button" onClick={() => setPhase("response")} className="h-11 rounded-xl border border-white/25 bg-white/10 text-xs font-black uppercase tracking-wide">
-                Retour
-              </button>
-              <button
-                type="button"
-                onClick={() => setPhase("done")}
-                className="h-11 rounded-xl bg-black text-white text-xs font-black uppercase tracking-wide"
-              >
-                Envoyer le lead
-              </button>
-            </div>
-          </section>
-        )}
-
-        {mainTab === "scan" && phase === "done" && (
-          <section className="rounded-3xl border border-white/15 bg-[#12161A] p-5 sm:p-6">
-            <p className="inline-flex rounded-full border border-emerald-300/40 bg-emerald-500/15 px-2 py-1 text-[10px] font-black uppercase tracking-[0.1em] text-emerald-100">
-              Session terminee
-            </p>
-            <h2 className="mt-2 text-2xl font-black">Resume actionnable</h2>
-            <div className="mt-3 grid gap-2 sm:grid-cols-3 text-sm">
-              <p className="rounded-xl border border-white/15 bg-black/20 px-3 py-2">Contact traite: {selectedContact.name}</p>
-              <p className="rounded-xl border border-white/15 bg-black/20 px-3 py-2">Moment detecte: {selectedMomentLabel}</p>
-              <p className="rounded-xl border border-white/15 bg-black/20 px-3 py-2">Statut: {reply === "ok" ? "Lead envoye" : "Suivi en cours"}</p>
-            </div>
-            <div className="mt-4 grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => {
-                  setPhase("directory");
-                  setReply("waiting");
-                  setSelectedNeed("");
-                  setMessageDraft("");
-                }}
-                className="h-11 rounded-xl bg-black text-white text-xs font-black uppercase tracking-wide"
-              >
-                Traiter un autre contact
-              </button>
-              <Link href="/popey-human/eclaireur-scan-preview" className="h-11 rounded-xl border border-white/25 bg-white/10 text-xs font-black uppercase tracking-wide inline-flex items-center justify-center">
-                Comparer avec ancienne page
-              </Link>
             </div>
           </section>
         )}
@@ -460,6 +564,64 @@ export default function EclaireurScanFunnelPreviewPage() {
               <p className="rounded-xl border border-amber-300/30 bg-amber-500/10 px-3 py-2">En attente: {pendingAmount} EUR</p>
               <p className="rounded-xl border border-emerald-300/30 bg-emerald-500/10 px-3 py-2">Valides: {validatedAmount} EUR</p>
               <p className="rounded-xl border border-rose-300/30 bg-rose-500/10 px-3 py-2">Refuses: {rejectedAmount} EUR</p>
+            </div>
+            <div className="mt-4 grid gap-2 sm:grid-cols-2 text-sm">
+              <p className="rounded-xl border border-white/15 bg-black/20 px-3 py-2">% cartes traitees/jour: {Math.round((kpi.treated / 20) * 100)}%</p>
+              <p className="rounded-xl border border-white/15 bg-black/20 px-3 py-2">% swipe droite: {Math.round((kpi.right / 20) * 100)}%</p>
+              <p className="rounded-xl border border-white/15 bg-black/20 px-3 py-2">% swipe haut: {Math.round((kpi.up / 20) * 100)}%</p>
+              <p className="rounded-xl border border-white/15 bg-black/20 px-3 py-2">% messages envoyes: {kpi.messages}</p>
+              <p className="rounded-xl border border-white/15 bg-black/20 px-3 py-2">% reponses OK: {kpi.repliesOk}</p>
+              <p className="rounded-xl border border-white/15 bg-black/20 px-3 py-2">% leads transmis: {kpi.leads}</p>
+              <p className="rounded-xl border border-white/15 bg-black/20 px-3 py-2">% deals valides: {kpi.deals}</p>
+            </div>
+          </section>
+        )}
+
+        {mainTab === "pros" && (
+          <section className="rounded-3xl border border-white/15 bg-[#12161A] p-5 sm:p-6">
+            <p className="text-[11px] font-black uppercase tracking-[0.12em] text-[#EAC886]">Annuaire des metiers</p>
+            <h2 className="mt-1 text-2xl font-black">Les cracks de la ville</h2>
+            <div className="mt-3 grid grid-cols-5 gap-2">
+              {["Tous", "Immo", "Travaux", "Sante", "Finances"].map((category) => (
+                <button
+                  key={category}
+                  type="button"
+                  onClick={() => setSelectedProCategory(category)}
+                  className={`h-9 rounded-lg border text-[11px] font-black uppercase tracking-wide ${
+                    selectedProCategory === category ? "border-emerald-300/55 bg-emerald-500/12" : "border-white/20 bg-white/5"
+                  }`}
+                >
+                  {category}
+                </button>
+              ))}
+            </div>
+            <div className="mt-3 space-y-2">
+              {prosResults.map((pro) => (
+                <article key={pro.id} className="rounded-xl border border-white/15 bg-black/20 p-3">
+                  <p className="text-sm font-black">{pro.name}</p>
+                  <p className="text-xs text-white/70">
+                    {pro.category} • {pro.city} • note {pro.rating}/5
+                  </p>
+                  <div className="mt-2 flex gap-2">
+                    <button type="button" className="h-9 rounded-lg border border-white/20 bg-white/10 px-3 text-xs font-black uppercase tracking-wide">
+                      Appeler
+                    </button>
+                    <button type="button" className="h-9 rounded-lg border border-white/20 bg-white/10 px-3 text-xs font-black uppercase tracking-wide">
+                      Message
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedTrade(pro.category);
+                        openFunnelForContact(activeContactId);
+                      }}
+                      className="h-9 rounded-lg bg-emerald-400 px-3 text-xs font-black uppercase tracking-wide text-black"
+                    >
+                      Recommander ce pro
+                    </button>
+                  </div>
+                </article>
+              ))}
             </div>
           </section>
         )}
@@ -486,22 +648,38 @@ export default function EclaireurScanFunnelPreviewPage() {
         <div className="mx-auto grid max-w-5xl grid-cols-3 gap-2 px-4 py-3">
           <button
             type="button"
+            onClick={() => setMainTab("daily")}
+            className={`h-11 rounded-xl text-xs font-black uppercase tracking-wide ${mainTab === "daily" ? "bg-emerald-400 text-black" : "bg-white/10 text-white"}`}
+          >
+            Daily
+          </button>
+          <button
+            type="button"
+            onClick={() => setMainTab("search")}
+            className={`h-11 rounded-xl text-xs font-black uppercase tracking-wide ${mainTab === "search" ? "bg-cyan-300 text-black" : "bg-white/10 text-white"}`}
+          >
+            Recherche
+          </button>
+          <button
+            type="button"
             onClick={() => setMainTab("gains")}
             className={`h-11 rounded-xl text-xs font-black uppercase tracking-wide ${mainTab === "gains" ? "bg-[#EAC886] text-black" : "bg-white/10 text-white"}`}
           >
             Gains
           </button>
+        </div>
+        <div className="mx-auto mt-2 grid max-w-5xl grid-cols-2 gap-2 px-4 pb-2">
           <button
             type="button"
-            onClick={() => setMainTab("scan")}
-            className={`h-11 rounded-xl text-xs font-black uppercase tracking-wide ${mainTab === "scan" ? "bg-emerald-400 text-black" : "bg-white/10 text-white"}`}
+            onClick={() => setMainTab("pros")}
+            className={`h-10 rounded-xl text-xs font-black uppercase tracking-wide ${mainTab === "pros" ? "bg-emerald-300 text-black" : "bg-white/10 text-white"}`}
           >
-            Scan
+            Pros
           </button>
           <button
             type="button"
             onClick={() => setMainTab("history")}
-            className={`h-11 rounded-xl text-xs font-black uppercase tracking-wide ${mainTab === "history" ? "bg-cyan-300 text-black" : "bg-white/10 text-white"}`}
+            className={`h-10 rounded-xl text-xs font-black uppercase tracking-wide ${mainTab === "history" ? "bg-cyan-300 text-black" : "bg-white/10 text-white"}`}
           >
             Historique
           </button>
