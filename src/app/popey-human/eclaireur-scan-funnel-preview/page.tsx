@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 
-type MainTab = "daily" | "gains" | "pros";
+type MainTab = "daily" | "contact" | "gains" | "pros";
 type SwipeStatus = "new" | "masked_90d" | "qualified" | "alert";
 type ReplyStatus = "waiting" | "ok" | "no";
 type FunnelStep = "moment" | "need" | "message" | "response" | "dispatch" | "done";
@@ -109,7 +109,7 @@ export default function EclaireurScanFunnelPreviewPage() {
   const [selectedProId, setSelectedProId] = useState<string | null>(null);
   const [swipeAnim, setSwipeAnim] = useState<"none" | "left" | "right" | "up">("none");
   const [selectedQuickTag, setSelectedQuickTag] = useState<string>(DAILY_TAGS[0]);
-  const [showCelebration, setShowCelebration] = useState(false);
+  const [lastActionMessage, setLastActionMessage] = useState("");
 
   const dailyDeckIds = useMemo(() => CONTACTS.slice(0, 20).map((contact) => contact.id), []);
   const currentDailyContact = CONTACTS.find((contact) => contact.id === dailyDeckIds[currentCardIndex]) || null;
@@ -162,11 +162,14 @@ export default function EclaireurScanFunnelPreviewPage() {
   const pendingAmount = 1260;
   const validatedAmount = 3820;
   const rejectedAmount = 540;
-  const historyItems = [
-    { id: "h1", label: "Lead envoye - Julien M.", status: "En attente", amount: 280, color: "text-amber-200" },
-    { id: "h2", label: "Lead signe - Claire R.", status: "Valide", amount: 320, color: "text-emerald-200" },
-    { id: "h3", label: "Lead refuse - Karim B.", status: "Refuse", amount: 0, color: "text-rose-200" },
-  ];
+  const contactsToContact = useMemo(
+    () =>
+      CONTACTS.filter((contact) => {
+        const status = contactMeta[contact.id]?.status;
+        return status === "qualified" || status === "alert";
+      }),
+    [contactMeta],
+  );
 
   const defaultMessage = `Salut ${activeContact.name.split(" ")[0]}, je pense a toi suite a ton contexte "${selectedMoment}". J ai un pro de confiance sur ${selectedNeed || "ce sujet"} a ${activeContact.city}. Tu veux que je lui demande de te contacter ?`;
 
@@ -186,7 +189,6 @@ export default function EclaireurScanFunnelPreviewPage() {
   function goNextCard() {
     setDailyProcessed((value) => {
       const next = Math.min(20, value + 1);
-      if (next === 20) setShowCelebration(true);
       return next;
     });
     setCurrentCardIndex((value) => Math.min(20, value + 1));
@@ -204,6 +206,7 @@ export default function EclaireurScanFunnelPreviewPage() {
     if (!currentDailyContact) return;
     animateAndThen("left", () => {
       updateStatus(currentDailyContact.id, "masked_90d");
+      setLastActionMessage(`${currentDailyContact.name} masque 90 jours`);
       goNextCard();
     });
   }
@@ -216,9 +219,11 @@ export default function EclaireurScanFunnelPreviewPage() {
 
   function onConfirmTag(tag: string) {
     if (!pendingTagContactId) return;
+    const contact = CONTACTS.find((item) => item.id === pendingTagContactId);
     animateAndThen("right", () => {
       updateStatus(pendingTagContactId, "qualified", tag);
       setPendingTagContactId(null);
+      if (contact) setLastActionMessage(`${contact.name} ajoute a "A contacter"`);
       goNextCard();
     });
   }
@@ -238,8 +243,23 @@ export default function EclaireurScanFunnelPreviewPage() {
     animateAndThen("up", () => {
       updateStatus(currentDailyContact.id, "alert");
       openFunnelForContact(currentDailyContact.id);
+      setLastActionMessage(`Alerte immediate lancee pour ${currentDailyContact.name}`);
       goNextCard();
     });
+  }
+
+  function openMessageForContact(contactId: string) {
+    const contact = CONTACTS.find((item) => item.id === contactId);
+    if (!contact) return;
+    setActiveContactId(contact.id);
+    setSelectedMoment("Autre");
+    setSelectedNeed("Courtier");
+    setMessageDraft(
+      `Salut ${contact.name.split(" ")[0]}, j ai pense a toi. J ai un pro de confiance a ${contact.city}. Tu veux que je lui demande de te contacter ?`,
+    );
+    setReply("waiting");
+    setFunnelStep("message");
+    setMainTab("daily");
   }
 
   function goNextFromResponse() {
@@ -340,18 +360,31 @@ export default function EclaireurScanFunnelPreviewPage() {
             </div>
 
             {currentDailyContact && (
-              <div className="mt-3 grid grid-cols-3 gap-2">
-                <button type="button" onClick={onSwipeLeft} className="h-14 rounded-xl bg-rose-500 text-white text-2xl font-black shadow-[0_10px_20px_-12px_rgba(244,63,94,0.9)] active:scale-95 transition">
-                  ❌
+              <div className="mt-3 grid grid-cols-3 gap-3">
+                <button
+                  type="button"
+                  onClick={onSwipeLeft}
+                  className="h-16 rounded-full border border-white/20 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.2),rgba(0,0,0,0.3))] text-3xl font-black text-rose-400 shadow-[0_12px_24px_-14px_rgba(244,63,94,0.9)] active:scale-95 transition"
+                >
+                  ✕
                 </button>
-                <button type="button" onClick={onSwipeRight} className="h-14 rounded-xl bg-emerald-400 text-black text-2xl font-black shadow-[0_10px_20px_-12px_rgba(52,211,153,0.9)] active:scale-95 transition">
-                  ✅
+                <button
+                  type="button"
+                  onClick={onSwipeRight}
+                  className="h-16 rounded-full border border-white/20 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.2),rgba(0,0,0,0.3))] text-3xl font-black text-emerald-300 shadow-[0_12px_24px_-14px_rgba(52,211,153,0.9)] active:scale-95 transition"
+                >
+                  ❤
                 </button>
-                <button type="button" onClick={onSwipeUp} className="h-14 rounded-xl bg-cyan-300 text-black text-2xl font-black shadow-[0_10px_20px_-12px_rgba(34,211,238,0.9)] active:scale-95 transition">
-                  🔥
+                <button
+                  type="button"
+                  onClick={onSwipeUp}
+                  className="h-16 rounded-full border border-white/20 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.2),rgba(0,0,0,0.3))] text-3xl font-black text-cyan-300 shadow-[0_12px_24px_-14px_rgba(34,211,238,0.9)] active:scale-95 transition"
+                >
+                  ★
                 </button>
               </div>
             )}
+            {lastActionMessage && <p className="mt-2 text-center text-xs text-white/75">{lastActionMessage}</p>}
           </section>
         )}
 
@@ -638,30 +671,56 @@ export default function EclaireurScanFunnelPreviewPage() {
           </section>
         )}
 
-        <section className="rounded-3xl border border-white/15 bg-[#12161A] p-5 sm:p-6">
-          <p className="text-[11px] font-black uppercase tracking-[0.12em] text-[#EAC886]">Historique</p>
-          <h2 className="mt-1 text-2xl font-black">Timeline des leads</h2>
-          <div className="mt-4 space-y-2">
-            {historyItems.map((item) => (
-              <article key={item.id} className="rounded-xl border border-white/15 bg-black/25 px-3 py-3">
-                <p className="text-sm font-black">{item.label}</p>
-                <p className={`text-xs ${item.color}`}>
-                  {item.status} • {item.amount} EUR
-                </p>
-              </article>
-            ))}
-          </div>
-        </section>
+        {mainTab === "contact" && (
+          <section className="rounded-3xl border border-white/15 bg-[#12161A] p-5 sm:p-6">
+            <p className="text-[11px] font-black uppercase tracking-[0.12em] text-[#EAC886]">A contacter</p>
+            <h2 className="mt-1 text-2xl font-black">Mes contacts qualifies</h2>
+            {contactsToContact.length === 0 ? (
+              <p className="mt-3 rounded-xl border border-white/15 bg-black/20 px-3 py-2 text-sm text-white/75">
+                Aucun contact pour le moment. Swipe vert ou bleu pour alimenter cette liste.
+              </p>
+            ) : (
+              <div className="mt-3 space-y-2">
+                {contactsToContact.map((contact) => {
+                  const meta = contactMeta[contact.id];
+                  return (
+                    <article key={contact.id} className="rounded-xl border border-white/15 bg-black/20 p-3">
+                      <p className="text-sm font-black">{contact.name}</p>
+                      <p className="text-xs text-white/70">
+                        {contact.city} • {meta?.status === "alert" ? "Alerte immediate" : "Qualifie"}
+                      </p>
+                      {meta?.tags?.length > 0 && <p className="mt-1 text-xs text-emerald-200">Tags: {meta.tags.join(" • ")}</p>}
+                      <button
+                        type="button"
+                        onClick={() => openMessageForContact(contact.id)}
+                        className="mt-2 h-9 rounded-lg bg-emerald-400 px-3 text-xs font-black uppercase tracking-wide text-black"
+                      >
+                        Envoyer un message
+                      </button>
+                    </article>
+                  );
+                })}
+              </div>
+            )}
+          </section>
+        )}
       </div>
 
       <nav className="fixed bottom-0 left-0 right-0 border-t border-white/10 bg-[#0A0D10]/95 backdrop-blur">
-        <div className="mx-auto grid max-w-5xl grid-cols-3 gap-2 px-4 py-3">
+        <div className="mx-auto grid max-w-5xl grid-cols-4 gap-2 px-4 py-3">
           <button
             type="button"
             onClick={() => setMainTab("daily")}
             className={`h-11 rounded-xl text-xs font-black uppercase tracking-wide ${mainTab === "daily" ? "bg-emerald-400 text-black" : "bg-white/10 text-white"}`}
           >
             Daily
+          </button>
+          <button
+            type="button"
+            onClick={() => setMainTab("contact")}
+            className={`h-11 rounded-xl text-xs font-black uppercase tracking-wide ${mainTab === "contact" ? "bg-cyan-300 text-black" : "bg-white/10 text-white"}`}
+          >
+            A contacter
           </button>
           <button
             type="button"
