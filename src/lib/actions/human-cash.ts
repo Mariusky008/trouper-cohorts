@@ -260,11 +260,11 @@ export async function createCommissionForSignedLead(input: {
   const sourceId = input.sourceMemberId || "";
   const signedAmount = Number(input.signedAmount || 0);
 
-  if (!ownerId || !sourceId || ownerId === sourceId) return { success: true, skipped: true };
-  if (!Number.isFinite(signedAmount) || signedAmount <= 0) return { success: true, skipped: true };
+  if (!ownerId || !sourceId || ownerId === sourceId) return { success: true, skipped: true, commissionAmount: 0 };
+  if (!Number.isFinite(signedAmount) || signedAmount <= 0) return { success: true, skipped: true, commissionAmount: 0 };
 
   const commissionAmount = Math.round(signedAmount * 0.1 * 100) / 100;
-  if (commissionAmount <= 0) return { success: true, skipped: true };
+  if (commissionAmount <= 0) return { success: true, skipped: true, commissionAmount: 0 };
 
   const supabaseAdmin = createAdminClient();
   const { error } = await supabaseAdmin
@@ -287,7 +287,7 @@ export async function createCommissionForSignedLead(input: {
   revalidatePath("/popey-human/app/cash");
   revalidatePath("/admin/humain/cockpit");
   revalidatePath("/admin/humain/commissions");
-  return { success: true };
+  return { success: true, commissionAmount };
 }
 
 export async function getAdminHumanCommissions() {

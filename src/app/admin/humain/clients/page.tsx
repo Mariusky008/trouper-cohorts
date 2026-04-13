@@ -22,6 +22,16 @@ function statusLabel(status: "nouveau" | "pris" | "signe" | "perdu") {
   }
 }
 
+function commissionStatusLabel(status: "pending" | "paid" | "cancelled") {
+  if (status === "pending") return "En attente";
+  if (status === "paid") return "Payée";
+  return "Annulée";
+}
+
+function euros(value: number) {
+  return value.toLocaleString("fr-FR", { style: "currency", currency: "EUR" });
+}
+
 export default async function AdminHumainClientsPage({
   searchParams,
 }: {
@@ -160,10 +170,14 @@ export default async function AdminHumainClientsPage({
               <th className="px-3 py-2 text-left font-bold">Source</th>
               <th className="px-3 py-2 text-left font-bold">Owner</th>
               <th className="px-3 py-2 text-left font-bold">Statut</th>
+              <th className="px-3 py-2 text-left font-bold">Commission apporteur</th>
             </tr>
           </thead>
           <tbody>
             {pagedLeads.map((lead) => (
+              (() => {
+                const commission = feed.commissionsByLeadId?.[lead.id];
+                return (
               <tr key={lead.id} className="border-t">
                 <td className="px-3 py-2 text-xs text-muted-foreground">{new Date(lead.created_at).toLocaleString("fr-FR")}</td>
                 <td className="px-3 py-2">
@@ -179,7 +193,19 @@ export default async function AdminHumainClientsPage({
                   <p>{statusLabel(lead.status)}</p>
                   <p className="text-xs text-muted-foreground">{lead.opened_at ? "Lu" : "Non lu"}</p>
                 </td>
+                <td className="px-3 py-2">
+                  {commission ? (
+                    <>
+                      <p className="font-semibold text-emerald-700">{euros(Number(commission.amount || 0))}</p>
+                      <p className="text-xs text-muted-foreground">{commissionStatusLabel(commission.status)}</p>
+                    </>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">—</p>
+                  )}
+                </td>
               </tr>
+                );
+              })()
             ))}
           </tbody>
         </table>

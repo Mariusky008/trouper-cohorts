@@ -131,7 +131,7 @@ export default async function PopeyHumanClientsPage({
         </div>
       )}
 
-      {selectedLead && (
+      {selectedLead && !signLead && (
         <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-[2px] p-4 flex items-center justify-center">
           <div className="w-full max-w-xl rounded-2xl border border-white/25 bg-[#1B2227] p-5">
             <div className="flex items-start justify-between gap-3">

@@ -257,6 +257,7 @@ export async function markHumanLeadSigned(formData: FormData) {
     signedAmount,
   });
   if ("error" in commission) return { error: commission.error };
+  const commissionAmount = Number(commission.commissionAmount || 0);
 
   const dealNotification = await createDealNotifications({
     memberIds: [myMember.id, lead.source_member_id || ""],
@@ -265,6 +266,21 @@ export async function markHumanLeadSigned(formData: FormData) {
     impact: "deal:signe",
   });
   if ("error" in dealNotification) return { error: dealNotification.error };
+
+  const adminMemberIds = await listAdminHumanMemberIds();
+  const adminNotification = await createDealNotifications({
+    memberIds: adminMemberIds,
+    title: `Deal signé à valider - ${lead.client_name}`,
+    message:
+      commissionAmount > 0
+        ? `Commission apporteur à traiter: ${commissionAmount.toLocaleString("fr-FR", {
+            style: "currency",
+            currency: "EUR",
+          })}.`
+        : "Deal signé, vérifier la commission apporteur.",
+    impact: "deal:signe",
+  });
+  if ("error" in adminNotification) return { error: adminNotification.error };
 
   revalidatePath("/popey-human/app/clients");
   return { success: true };
@@ -389,11 +405,17 @@ export async function getAdminHumanLeads() {
   }
 
   const supabaseAdmin = createAdminClient();
-  const { data: leadsData } = await supabaseAdmin
-    .from("human_leads")
-    .select("id,owner_member_id,source_member_id,client_name,budget,besoin,phone,adresse,notes,status,opened_at,created_at,updated_at")
-    .order("created_at", { ascending: false })
-    .limit(500);
+  const [{ data: leadsData }, { data: commissionsData }] = await Promise.all([
+    supabaseAdmin
+      .from("human_leads")
+      .select("id,owner_member_id,source_member_id,client_name,budget,besoin,phone,adresse,notes,status,opened_at,created_at,updated_at")
+      .order("created_at", { ascending: false })
+      .limit(500),
+    supabaseAdmin
+      .from("human_commissions")
+      .select("lead_id,commission_amount,payment_status")
+      .limit(1000),
+  ]);
 
   const leads = (leadsData as HumanLead[] | null) || [];
   const memberIds = new Set<string>();
@@ -432,6 +454,17 @@ export async function getAdminHumanLeads() {
 
   return {
     error: null as string | null,
+    commissionsByLeadId: Object.fromEntries(
+      ((commissionsData as Array<{ lead_id: string; commission_amount: number; payment_status: "pending" | "paid" | "cancelled" }> | null) || []).map(
+        (commission) => [
+          commission.lead_id,
+          {
+            amount: Number(commission.commission_amount || 0),
+            status: commission.payment_status,
+          },
+        ]
+      )
+    ) as Record<string, { amount: number; status: "pending" | "paid" | "cancelled" }>,
     leads: leads.map((lead) => ({
       ...lead,
       ownerLabel: lead.owner_member_id ? memberLabelById.get(lead.owner_member_id) || "Non assigné" : "Non assigné",
@@ -496,6 +529,22 @@ export async function getHumanLeadSourceCandidates() {
       })
       .sort((a, b) => a.label.localeCompare(b.label, "fr")),
   };
+}
+
+async function listAdminHumanMemberIds() {
+  const supabaseAdmin = createAdminClient();
+  const { data: admins } = await supabaseAdmin.from("admins").select("user_id");
+  const adminUserIds = ((admins as Array<{ user_id: string }> | null) || [])
+    .map((row) => row.user_id)
+    .filter(Boolean);
+  if (adminUserIds.length === 0) return [] as string[];
+
+  const { data: members } = await supabaseAdmin
+    .from("human_members")
+    .select("id,user_id")
+    .in("user_id", adminUserIds);
+
+  return ((members as Array<{ id: string }> | null) || []).map((member) => member.id);
 }
 
 async function requireAdminUser() {
