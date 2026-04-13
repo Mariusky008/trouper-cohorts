@@ -17,6 +17,23 @@ function isWinningStatus(status: string) {
   return status === "validated" || status === "converted";
 }
 
+function referralStatusLabel(status: string) {
+  if (status === "submitted") return "Envoyée";
+  if (status === "qualified") return "Qualifiée";
+  if (status === "validated") return "Validée";
+  if (status === "converted") return "Signée";
+  if (status === "rejected") return "Refusée";
+  return status;
+}
+
+function referralStatusClass(status: string) {
+  if (status === "converted") return "border-cyan-300/45 bg-cyan-500/15 text-cyan-100";
+  if (status === "validated") return "border-emerald-300/45 bg-emerald-500/15 text-emerald-100";
+  if (status === "qualified") return "border-amber-300/45 bg-amber-500/15 text-amber-100";
+  if (status === "rejected") return "border-red-300/45 bg-red-500/15 text-red-100";
+  return "border-white/20 bg-white/8 text-white/85";
+}
+
 export default async function PopeyHumanScoutPortalPage({
   params,
   searchParams,
@@ -63,7 +80,7 @@ export default async function PopeyHumanScoutPortalPage({
 
   return (
     <main className="min-h-screen bg-[#0A0B0C] text-white pb-28">
-      <div className="mx-auto max-w-2xl px-4 py-8 space-y-5">
+      <div className="mx-auto max-w-2xl px-4 pt-[calc(env(safe-area-inset-top)+22px)] pb-8 space-y-5">
         <div>
           <div>
             <p className="text-xs font-black uppercase tracking-[0.12em] text-[#EAC886]/85">Portail Éclaireur</p>
@@ -190,63 +207,136 @@ export default async function PopeyHumanScoutPortalPage({
             )}
 
             {tab === "alert" && (
-              <section className="rounded-2xl border border-white/15 bg-black/25 p-4">
-                <p className="text-sm font-black">Lancer une alerte</p>
-                <p className="text-xs text-white/70">
-                  Cette alerte sera envoyée à votre parrain {sponsorName} pour qualification et dispatch.
-                </p>
-                <div className="mt-2 rounded-xl border border-emerald-300/30 bg-emerald-500/10 p-3">
-                  <p className="text-[10px] font-black uppercase tracking-[0.1em] text-emerald-200/90">Confiance & suivi</p>
-                  <ul className="mt-1 space-y-1 text-[11px] text-emerald-100/85">
-                    <li>Qualification humaine du besoin avant diffusion.</li>
-                    <li>Alerte tracée avec statut visible dans votre historique.</li>
-                    <li>Commission calculée automatiquement selon votre taux.</li>
-                  </ul>
+              <section className="relative overflow-hidden rounded-3xl border border-emerald-300/30 bg-[radial-gradient(120%_120%_at_0%_0%,rgba(16,46,38,0.9)_0%,rgba(11,18,20,0.96)_52%,rgba(7,10,12,1)_100%)] p-4 sm:p-5 shadow-[0_24px_55px_-30px_rgba(16,185,129,0.7)]">
+                <div className="pointer-events-none absolute -right-14 -top-16 h-44 w-44 rounded-full bg-emerald-400/25 blur-3xl animate-pulse" />
+                <div className="pointer-events-none absolute -left-12 -bottom-14 h-36 w-36 rounded-full bg-cyan-400/20 blur-3xl animate-pulse" />
+                <div className="relative">
+                  <div className="inline-flex items-center gap-2 rounded-full border border-emerald-300/35 bg-emerald-400/15 px-3 py-1 text-[11px] font-black uppercase tracking-[0.12em] text-emerald-100">
+                    ⚡ Lancer une alerte
+                  </div>
+                  <h2 className="mt-3 text-xl sm:text-2xl font-black leading-tight">
+                    Envoyez un contact en 20 secondes
+                  </h2>
+                  <p className="mt-2 text-sm text-white/80">
+                    Votre alerte part directement chez <span className="font-black text-emerald-200">{sponsorName}</span> pour qualification et dispatch.
+                  </p>
                 </div>
-                <form action={submitScoutReferralFromTokenAction} className="mt-3 space-y-2">
+                <form action={submitScoutReferralFromTokenAction} className="relative mt-4 space-y-3">
                   <input type="hidden" name="invite_token" value={data.invite?.invite_token || token} />
-                  <input name="contact_name" required placeholder="Nom du contact" className="h-10 w-full rounded border border-white/20 bg-black/25 px-2 text-sm" />
-                  <input
-                    name="contact_phone"
-                    required
-                    placeholder="Téléphone du contact"
-                    className="h-10 w-full rounded border border-white/20 bg-black/25 px-2 text-sm"
-                  />
-                  <input name="project_type" placeholder="Type de projet (immo, auto, santé...)" className="h-10 w-full rounded border border-white/20 bg-black/25 px-2 text-sm" />
-                  <input
-                    name="estimated_deal_value"
-                    type="number"
-                    step="0.01"
-                    min="1"
-                    placeholder="Valeur estimée du deal (optionnel)"
-                    className="h-10 w-full rounded border border-white/20 bg-black/25 px-2 text-sm"
-                  />
-                  <textarea
-                    name="comment"
-                    placeholder="Commentaire libre"
-                    className="min-h-24 w-full rounded border border-white/20 bg-black/25 px-2 py-2 text-sm"
-                  />
-                  <button className="h-11 w-full rounded bg-emerald-400 text-black text-xs font-black uppercase tracking-wide">Lancer une alerte</button>
+                  <div>
+                    <label className="mb-1 block text-[11px] font-black uppercase tracking-[0.12em] text-white/70">Nom du contact</label>
+                    <input
+                      name="contact_name"
+                      required
+                      placeholder="Ex: Sophie Martin"
+                      className="h-12 w-full rounded-xl border border-white/20 bg-black/35 px-3 text-sm outline-none transition focus:border-emerald-300/55 focus:ring-2 focus:ring-emerald-300/25"
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-[11px] font-black uppercase tracking-[0.12em] text-white/70">Téléphone du contact</label>
+                    <input
+                      name="contact_phone"
+                      required
+                      placeholder="Ex: 06 12 34 56 78"
+                      className="h-12 w-full rounded-xl border border-white/20 bg-black/35 px-3 text-sm outline-none transition focus:border-emerald-300/55 focus:ring-2 focus:ring-emerald-300/25"
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-[11px] font-black uppercase tracking-[0.12em] text-white/70">Type de projet</label>
+                    <input
+                      name="project_type"
+                      placeholder="Immo, auto, santé..."
+                      className="h-12 w-full rounded-xl border border-white/20 bg-black/35 px-3 text-sm outline-none transition focus:border-emerald-300/55 focus:ring-2 focus:ring-emerald-300/25"
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-[11px] font-black uppercase tracking-[0.12em] text-white/70">Valeur estimée (optionnel)</label>
+                    <input
+                      name="estimated_deal_value"
+                      type="number"
+                      step="0.01"
+                      min="1"
+                      placeholder="Ex: 2500"
+                      className="h-12 w-full rounded-xl border border-white/20 bg-black/35 px-3 text-sm outline-none transition focus:border-emerald-300/55 focus:ring-2 focus:ring-emerald-300/25"
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-[11px] font-black uppercase tracking-[0.12em] text-white/70">Commentaire libre</label>
+                    <textarea
+                      name="comment"
+                      placeholder="Contexte, urgence, dispo..."
+                      className="min-h-28 w-full rounded-xl border border-white/20 bg-black/35 px-3 py-2 text-sm outline-none transition focus:border-emerald-300/55 focus:ring-2 focus:ring-emerald-300/25"
+                    />
+                  </div>
+                  <button className="group relative h-12 w-full overflow-hidden rounded-xl bg-gradient-to-r from-emerald-300 via-emerald-400 to-cyan-300 text-black text-sm font-black uppercase tracking-wide shadow-[0_12px_30px_-14px_rgba(16,185,129,0.9)] transition hover:scale-[1.01]">
+                    <span className="absolute inset-0 bg-white/20 opacity-0 transition group-hover:opacity-100" />
+                    <span className="relative">Lancer mon alerte</span>
+                  </button>
                 </form>
               </section>
             )}
 
             {tab === "history" && (
-              <section className="rounded-2xl border border-white/15 bg-black/25 p-4">
-                <p className="text-sm font-black">Historique de mes alertes</p>
-                <div className="mt-3 space-y-2">
+              <section className="rounded-3xl border border-white/15 bg-gradient-to-b from-[#12191B] to-[#0B0E10] p-4 sm:p-5">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div>
+                    <p className="text-xs font-black uppercase tracking-[0.12em] text-white/65">Historique</p>
+                    <h2 className="mt-1 text-xl sm:text-2xl font-black">Mes alertes envoyées</h2>
+                  </div>
+                  <span className="rounded-full border border-white/20 bg-white/5 px-3 py-1 text-xs font-black uppercase tracking-wide text-white/80">
+                    {data.referrals.length} alerte(s)
+                  </span>
+                </div>
+
+                <div className="mt-4 grid gap-2 sm:grid-cols-3">
+                  <div className="rounded-xl border border-emerald-300/30 bg-emerald-500/10 p-3">
+                    <p className="text-[10px] font-black uppercase tracking-[0.1em] text-emerald-200/90">Signées</p>
+                    <p className="mt-1 text-xl font-black text-emerald-100">{data.referrals.filter((r) => r.status === "converted").length}</p>
+                  </div>
+                  <div className="rounded-xl border border-cyan-300/30 bg-cyan-500/10 p-3">
+                    <p className="text-[10px] font-black uppercase tracking-[0.1em] text-cyan-200/90">Validées</p>
+                    <p className="mt-1 text-xl font-black text-cyan-100">{data.referrals.filter((r) => r.status === "validated").length}</p>
+                  </div>
+                  <div className="rounded-xl border border-white/20 bg-white/5 p-3">
+                    <p className="text-[10px] font-black uppercase tracking-[0.1em] text-white/80">En cours</p>
+                    <p className="mt-1 text-xl font-black text-white">{data.referrals.filter((r) => !["converted", "validated", "rejected"].includes(r.status)).length}</p>
+                  </div>
+                </div>
+
+                <div className="mt-4 space-y-3">
                   {data.referrals.map((referral) => (
-                    <article key={referral.id} className="rounded-lg border border-white/15 bg-black/25 px-3 py-2">
-                      <p className="text-sm font-black">
-                        {referral.contact_name} • {referral.project_type || "Projet non précisé"}
+                    <article key={referral.id} className="rounded-xl border border-white/15 bg-black/25 px-3 py-3 sm:px-4">
+                      <div className="flex flex-wrap items-start justify-between gap-2">
+                        <p className="text-base sm:text-lg font-black leading-tight">
+                          {referral.contact_name}
+                        </p>
+                        <span className={`rounded-full border px-2 py-1 text-[10px] font-black uppercase tracking-[0.1em] ${referralStatusClass(referral.status)}`}>
+                          {referralStatusLabel(referral.status)}
+                        </span>
+                      </div>
+                      <p className="mt-1 text-sm text-white/75">{referral.project_type || "Projet non précisé"}</p>
+                      <p className="mt-1 text-[11px] text-white/50">
+                        {new Date(referral.created_at).toLocaleDateString("fr-FR")} • {new Date(referral.created_at).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}
                       </p>
-                      <p className="text-xs text-white/70">Statut: {referral.status}</p>
-                      {referral.estimated_commission ? <p className="text-xs text-emerald-300">Potentiel: {euros(Number(referral.estimated_commission || 0))}</p> : null}
-                      {referral.final_commission ? <p className="text-xs text-cyan-300">Gagné: {euros(Number(referral.final_commission || 0))}</p> : null}
-                      {referral.rejection_reason && <p className="text-xs text-red-300">Motif rejet: {referral.rejection_reason}</p>}
+                      <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                        <div className="rounded-lg border border-emerald-300/30 bg-emerald-500/10 px-2 py-1.5">
+                          <p className="text-[10px] uppercase font-black tracking-[0.1em] text-emerald-200/90">Potentiel</p>
+                          <p className="text-sm font-black text-emerald-100">{referral.estimated_commission ? euros(Number(referral.estimated_commission || 0)) : "—"}</p>
+                        </div>
+                        <div className="rounded-lg border border-cyan-300/30 bg-cyan-500/10 px-2 py-1.5">
+                          <p className="text-[10px] uppercase font-black tracking-[0.1em] text-cyan-200/90">Gagné</p>
+                          <p className="text-sm font-black text-cyan-100">{referral.final_commission ? euros(Number(referral.final_commission || 0)) : "—"}</p>
+                        </div>
+                      </div>
+                      {referral.rejection_reason && <p className="mt-2 text-xs text-red-300">Motif rejet: {referral.rejection_reason}</p>}
                     </article>
                   ))}
-                  {data.referrals.length === 0 && <p className="text-sm text-white/70">Aucune alerte envoyée pour le moment.</p>}
+                  {data.referrals.length === 0 && (
+                    <div className="rounded-xl border border-white/15 bg-black/20 px-4 py-5 text-center">
+                      <p className="text-sm text-white/75">Aucune alerte envoyée pour le moment.</p>
+                      <p className="mt-1 text-xs text-white/55">Commencez par l’onglet “Alerte” pour déclencher votre première opportunité.</p>
+                    </div>
+                  )}
                 </div>
               </section>
             )}
