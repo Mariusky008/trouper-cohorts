@@ -7,19 +7,11 @@ import {
   takeHumanLeadAction,
 } from "@/lib/actions/human-leads";
 
-function statusLabel(status: "nouveau" | "pris" | "signe" | "perdu") {
-  switch (status) {
-    case "nouveau":
-      return "Nouveau";
-    case "pris":
-      return "Pris";
-    case "signe":
-      return "Signé";
-    case "perdu":
-      return "Perdu";
-    default:
-      return status;
-  }
+function statusInlineLabel(status: "nouveau" | "pris" | "signe" | "perdu") {
+  if (status === "nouveau") return "À contacter";
+  if (status === "pris") return "En cours";
+  if (status === "signe") return "Signé et transmis";
+  return "Perdu";
 }
 
 export default async function PopeyHumanClientsPage({
@@ -100,7 +92,9 @@ export default async function PopeyHumanClientsPage({
             <article
               key={lead.id}
               className={`rounded-xl border p-4 ${
-                lead.status === "pris"
+                lead.status === "nouveau"
+                  ? "border-emerald-400/40 bg-emerald-500/10"
+                  : lead.status === "pris"
                   ? "border-emerald-400/45 bg-emerald-500/15"
                   : lead.status === "signe"
                   ? "border-[#EAC886]/45 bg-[#EAC886]/15"
@@ -111,13 +105,15 @@ export default async function PopeyHumanClientsPage({
             >
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
-                  <p className="text-xs uppercase tracking-wide text-white/65">{statusLabel(lead.status)}</p>
-                  <h2 className="text-lg font-black">{lead.client_name}</h2>
-                  <p className="mt-1 text-sm text-white/75">{lead.besoin || "Besoin non renseigné"}</p>
-                  <p className="text-sm text-white/75">
-                    {lead.budget ? `${lead.budget.toLocaleString("fr-FR")} €` : "Budget non renseigné"}
+                  <h2 className="text-2xl font-black leading-tight">
+                    {lead.client_name} • {lead.budget ? `${lead.budget.toLocaleString("fr-FR")} €` : "Budget à valider"}
+                  </h2>
+                  <p className="mt-1 text-lg text-white/80">
+                    {lead.besoin || "Besoin non renseigné"} • {statusInlineLabel(lead.status)}
                   </p>
-                  <p className="text-xs text-white/65">Apporteur: {lead.sourceLabel}</p>
+                  <p className="text-base text-white/85">
+                    Contact apporté par <span className="font-black">{lead.sourceLabel}</span>
+                  </p>
                 </div>
                 <Link
                   href={withQuery({ lead: lead.id, sign: "" })}
@@ -126,6 +122,44 @@ export default async function PopeyHumanClientsPage({
                   Ouvrir fiche
                 </Link>
               </div>
+
+              {lead.status === "nouveau" && (
+                <form action={takeHumanLeadAction} className="mt-3">
+                  <input type="hidden" name="lead_id" value={lead.id} />
+                  <input type="hidden" name="current_url" value="/popey-human/app/clients" />
+                  <button className="h-12 w-full rounded-xl bg-emerald-400 text-black text-sm font-black uppercase tracking-wide">
+                    Je prends le deal et je contacte le client
+                  </button>
+                </form>
+              )}
+
+              {lead.status === "pris" && (
+                <div className="mt-3 grid grid-cols-2 gap-2">
+                  <Link
+                    href={withQuery({ lead: lead.id, sign: lead.id })}
+                    className="h-12 rounded-xl bg-[#EAC886] text-black text-sm font-black uppercase tracking-wide inline-flex items-center justify-center"
+                  >
+                    J&apos;ai signé le client
+                  </Link>
+                  <form action={markHumanLeadLostAction}>
+                    <input type="hidden" name="lead_id" value={lead.id} />
+                    <input type="hidden" name="current_url" value="/popey-human/app/clients" />
+                    <button className="h-12 w-full rounded-xl border border-red-300/35 bg-red-500/10 text-red-100 text-sm font-black uppercase tracking-wide">
+                      Je n&apos;ai pas signé
+                    </button>
+                  </form>
+                </div>
+              )}
+
+              {lead.status === "signe" && (
+                <div className="mt-3 rounded-xl border border-emerald-300/30 bg-emerald-500/10 px-3 py-2">
+                  <p className="text-sm font-black uppercase tracking-[0.12em] text-emerald-200">Signé et transmis</p>
+                  <p className="text-sm text-emerald-100/90">
+                    Dossier envoyé à {lead.ownerLabel}
+                    {lead.sourceLabel && lead.sourceLabel !== lead.ownerLabel ? ` + à ${lead.sourceLabel}` : ""}.
+                  </p>
+                </div>
+              )}
             </article>
           ))}
         </div>
