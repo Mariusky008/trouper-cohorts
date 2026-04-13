@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 type MainTab = "daily" | "contact" | "gains" | "pros";
 type SwipeStatus = "new" | "masked_90d" | "qualified" | "alert";
 type ReplyStatus = "waiting" | "ok" | "no";
-type FunnelStep = "moment" | "match" | "message";
+type FunnelStep = "match" | "message";
 
 type Contact = {
   id: string;
@@ -88,6 +88,7 @@ const NEEDS_BY_MOMENT: Record<string, string[]> = {
   Investir: ["Gestion patrimoine", "Conseil fiscal", "Agent immo"],
   Autre: ["Courtier", "Agent immo", "Conseiller local"],
 };
+const ALL_NEEDS = Array.from(new Set(Object.values(NEEDS_BY_MOMENT).flat()));
 
 export default function EclaireurScanFunnelPreviewPage() {
   const [introStep, setIntroStep] = useState<"welcome" | "scanning" | "guide" | "done">("welcome");
@@ -308,12 +309,12 @@ export default function EclaireurScanFunnelPreviewPage() {
 
   function openFunnelForContact(contactId: string) {
     setActiveContactId(contactId);
-    setSelectedMoment(MOMENTS[0]);
-    setSelectedNeed((NEEDS_BY_MOMENT[MOMENTS[0]] ?? NEEDS_BY_MOMENT.Autre)[0]);
+    setSelectedMoment("Autre");
+    setSelectedNeed(ALL_NEEDS[0] ?? "Courtier");
     setMessageDraft("");
     setConsentChecked(true);
     setSelectedProId(null);
-    setFunnelStep("moment");
+    setFunnelStep("match");
     setMainTab("daily");
   }
 
@@ -672,44 +673,11 @@ export default function EclaireurScanFunnelPreviewPage() {
             <p className="text-[11px] font-black uppercase tracking-[0.12em] text-[#EAC886]">Funnel direct</p>
             <h2 className="mt-1 text-2xl font-black">Contact: {activeContact.name}</h2>
 
-            {funnelStep === "moment" && (
-              <>
-                <p className="mt-2 text-sm text-white/75">
-                  Parcours 4 clics: Signal → Besoin + Pro → Message/Consentement → Retour au Daily.
-                </p>
-                <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                  {MOMENTS.map((moment) => (
-                    <button
-                      key={moment}
-                      type="button"
-                      onClick={() => setSelectedMoment(moment)}
-                      className={`h-11 rounded-xl border text-xs font-black uppercase tracking-wide ${
-                        selectedMoment === moment ? "border-emerald-300/55 bg-emerald-500/12" : "border-white/20 bg-white/5"
-                      }`}
-                    >
-                      {moment}
-                    </button>
-                  ))}
-                </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSelectedNeed((NEEDS_BY_MOMENT[selectedMoment] ?? NEEDS_BY_MOMENT.Autre)[0]);
-                    setSelectedProId(null);
-                    setFunnelStep("match");
-                  }}
-                  className="mt-3 h-11 rounded-xl bg-emerald-400 px-4 text-black text-xs font-black uppercase tracking-wide"
-                >
-                  Continuer
-                </button>
-              </>
-            )}
-
             {funnelStep === "match" && (
               <>
                 <p className="mt-2 text-sm text-white/75">De quel expert {activeContact.name.split(" ")[0]} a-t-il besoin ?</p>
                 <div className="mt-3 grid gap-2 sm:grid-cols-3">
-                  {(NEEDS_BY_MOMENT[selectedMoment] ?? NEEDS_BY_MOMENT.Autre).map((need) => (
+                  {ALL_NEEDS.map((need) => (
                     <button
                       key={need}
                       type="button"
