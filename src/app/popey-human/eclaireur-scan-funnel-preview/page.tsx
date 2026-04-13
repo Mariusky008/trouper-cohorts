@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 type MainTab = "daily" | "contact" | "gains" | "pros";
 type SwipeStatus = "new" | "masked_90d" | "qualified" | "alert";
 type ReplyStatus = "waiting" | "ok" | "no";
-type FunnelStep = "moment" | "need" | "message" | "response" | "dispatch" | "done";
+type FunnelStep = "moment" | "match" | "message";
 
 type Contact = {
   id: string;
@@ -26,6 +26,8 @@ type Pro = {
   category: string;
   city: string;
   rating: number;
+  trade: string;
+  needs: string[];
 };
 
 const CONTACTS: Contact[] = [
@@ -70,10 +72,10 @@ const SEGMENTS = [
   { id: "finance", label: "Investissement", percent: 4, avgCommission: 320 },
 ] as const;
 const PROS: Pro[] = [
-  { id: "p1", name: "Camille Durand", category: "Immo", city: "Dax", rating: 4.8 },
-  { id: "p2", name: "Atelier Nova", category: "Travaux", city: "Dax", rating: 4.7 },
-  { id: "p3", name: "Sante Active", category: "Sante", city: "Dax", rating: 4.6 },
-  { id: "p4", name: "Patrimoine Sud", category: "Finances", city: "Dax", rating: 4.9 },
+  { id: "p1", name: "Camille Durand", category: "Immo", city: "Dax", rating: 4.8, trade: "Courtier", needs: ["Courtier", "Courtier pret", "Assurance familiale"] },
+  { id: "p2", name: "Atelier Nova", category: "Travaux", city: "Dax", rating: 4.7, trade: "Artisan travaux", needs: ["Artisan travaux", "Agrandissement"] },
+  { id: "p3", name: "Sante Active", category: "Sante", city: "Dax", rating: 4.6, trade: "Assurance", needs: ["Assurance", "Assurance habitation"] },
+  { id: "p4", name: "Patrimoine Sud", category: "Finances", city: "Dax", rating: 4.9, trade: "Gestion patrimoine", needs: ["Gestion patrimoine", "Conseil fiscal", "Notaire"] },
 ];
 const NEEDS_BY_MOMENT: Record<string, string[]> = {
   "Vient d avoir un enfant": ["Courtier", "Agrandissement", "Assurance familiale"],
@@ -111,6 +113,7 @@ export default function EclaireurScanFunnelPreviewPage() {
   const [selectedTrade, setSelectedTrade] = useState<string>("Courtier");
   const [selectedProCategory, setSelectedProCategory] = useState<string>("Tous");
   const [selectedProId, setSelectedProId] = useState<string | null>(null);
+  const [consentChecked, setConsentChecked] = useState(true);
   const [swipeAnim, setSwipeAnim] = useState<"none" | "left" | "right" | "up">("none");
   const [selectedQuickTag, setSelectedQuickTag] = useState<string>(DAILY_TAGS[0]);
   const [lastActionMessage, setLastActionMessage] = useState("");
@@ -158,18 +161,23 @@ export default function EclaireurScanFunnelPreviewPage() {
       }),
     [selectedProCategory],
   );
+  const prosByNeed = useMemo(() => {
+    const source = PROS.filter((pro) => pro.city === "Dax" || pro.city === activeContact.city);
+    if (!selectedNeed) return source;
+    return source.filter((pro) => pro.needs.includes(selectedNeed) || pro.trade === selectedNeed);
+  }, [activeContact.city, selectedNeed]);
 
   const kpi = useMemo(() => {
     const metas = Object.values(contactMeta);
     const treated = metas.filter((meta) => meta.status !== "new").length;
     const right = metas.filter((meta) => meta.status === "qualified").length;
     const up = metas.filter((meta) => meta.status === "alert").length;
-    const messages = reply === "waiting" ? up : up + 1;
-    const repliesOk = reply === "ok" ? 1 : 0;
-    const leads = reply === "ok" && funnelStep === "done" ? 1 : 0;
-    const deals = 1;
+    const messages = Object.values(contactHasMessage).filter(Boolean).length;
+    const repliesOk = Object.values(contactResponse).filter((status) => status === "ok").length;
+    const leads = Object.values(contactDispatched).filter(Boolean).length;
+    const deals = leads;
     return { treated, right, up, messages, repliesOk, leads, deals };
-  }, [contactMeta, reply, funnelStep]);
+  }, [contactMeta, contactHasMessage, contactResponse, contactDispatched]);
 
   const totalPotential = segmentStats.reduce((sum, segment) => sum + segment.potential, 0);
   const qualifiedCount = 140;
@@ -301,9 +309,10 @@ export default function EclaireurScanFunnelPreviewPage() {
   function openFunnelForContact(contactId: string) {
     setActiveContactId(contactId);
     setSelectedMoment(MOMENTS[0]);
-    setSelectedNeed("");
+    setSelectedNeed((NEEDS_BY_MOMENT[MOMENTS[0]] ?? NEEDS_BY_MOMENT.Autre)[0]);
     setMessageDraft("");
-    setReply("waiting");
+    setConsentChecked(true);
+    setSelectedProId(null);
     setFunnelStep("moment");
     setMainTab("daily");
   }
@@ -331,6 +340,9 @@ export default function EclaireurScanFunnelPreviewPage() {
     setActiveContactId(contact.id);
     setSelectedMoment("Autre");
     setSelectedNeed("Courtier");
+    setSelectedProId(PROS[0]?.id ?? null);
+    setSelectedTrade(PROS[0]?.name ?? "Expert local");
+    setConsentChecked(true);
     setMessageDraft(
       `Salut ${contact.name.split(" ")[0]}, j ai pense a toi. J ai un pro de confiance a ${contact.city}. Tu veux que je lui demande de te contacter ?`,
     );
@@ -339,17 +351,18 @@ export default function EclaireurScanFunnelPreviewPage() {
     setMainTab("daily");
   }
 
-  function goNextFromResponse() {
-    if (reply === "ok") {
-      setContactResponse((prev) => ({ ...prev, [activeContactId]: "ok" }));
-      setFunnelStep("dispatch");
-      return;
+  function handleSendToMessaging() {
+    if (!consentChecked) return;
+    const phone = activeContact.phone.replace(/\s+/g, "");
+    const encoded = encodeURIComponent(messageDraft);
+    if (typeof window !== "undefined") {
+      window.open(`sms:${phone}?body=${encoded}`, "_blank");
     }
-    setContactResponse((prev) => ({ ...prev, [activeContactId]: reply }));
-    if (reply === "waiting") {
-      setLastActionMessage(`${activeContact.name} passe en "En attente" dans A contacter`);
-    }
-    setFunnelStep("done");
+    setContactHasMessage((prev) => ({ ...prev, [activeContactId]: true }));
+    setContactResponse((prev) => ({ ...prev, [activeContactId]: "ok" }));
+    setContactDispatched((prev) => ({ ...prev, [activeContactId]: true }));
+    setLastActionMessage(`Lead envoye a ${selectedTrade} pour ${activeContact.name} !`);
+    setFunnelStep(null);
   }
 
   return (
@@ -662,7 +675,7 @@ export default function EclaireurScanFunnelPreviewPage() {
             {funnelStep === "moment" && (
               <>
                 <p className="mt-2 text-sm text-white/75">
-                  Parcours express: Moment de vie → Besoin → Message → Reponse → Envoi au pro.
+                  Parcours 4 clics: Signal → Besoin + Pro → Message/Consentement → Retour au Daily.
                 </p>
                 <div className="mt-3 grid gap-2 sm:grid-cols-2">
                   {MOMENTS.map((moment) => (
@@ -682,7 +695,8 @@ export default function EclaireurScanFunnelPreviewPage() {
                   type="button"
                   onClick={() => {
                     setSelectedNeed((NEEDS_BY_MOMENT[selectedMoment] ?? NEEDS_BY_MOMENT.Autre)[0]);
-                    setFunnelStep("need");
+                    setSelectedProId(null);
+                    setFunnelStep("match");
                   }}
                   className="mt-3 h-11 rounded-xl bg-emerald-400 px-4 text-black text-xs font-black uppercase tracking-wide"
                 >
@@ -691,9 +705,9 @@ export default function EclaireurScanFunnelPreviewPage() {
               </>
             )}
 
-            {funnelStep === "need" && (
+            {funnelStep === "match" && (
               <>
-                <p className="mt-2 text-sm text-white/75">Besoin recommande selon le moment</p>
+                <p className="mt-2 text-sm text-white/75">De quel expert {activeContact.name.split(" ")[0]} a-t-il besoin ?</p>
                 <div className="mt-3 grid gap-2 sm:grid-cols-3">
                   {(NEEDS_BY_MOMENT[selectedMoment] ?? NEEDS_BY_MOMENT.Autre).map((need) => (
                     <button
@@ -708,13 +722,49 @@ export default function EclaireurScanFunnelPreviewPage() {
                     </button>
                   ))}
                 </div>
+
+                <div className="mt-3 space-y-2">
+                  {prosByNeed.map((pro) => (
+                    <button
+                      key={pro.id}
+                      type="button"
+                      onClick={() => {
+                        setSelectedProId(pro.id);
+                        setSelectedTrade(pro.name);
+                      }}
+                      className={`w-full rounded-xl border px-3 py-3 text-left ${
+                        selectedProId === pro.id ? "border-emerald-300/55 bg-emerald-500/12" : "border-white/20 bg-black/20"
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="h-11 w-11 rounded-full border border-white/20 bg-white/10 flex items-center justify-center text-sm font-black">
+                          {pro.name
+                            .split(" ")
+                            .slice(0, 2)
+                            .map((part) => part[0])
+                            .join("")}
+                        </div>
+                        <div>
+                          <p className="text-sm font-black">{pro.name}</p>
+                          <p className="text-xs text-white/70">
+                            {pro.trade} • {pro.city}
+                          </p>
+                          <p className="text-xs text-emerald-300">⭐⭐⭐⭐ {pro.rating}/5</p>
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+
                 <button
                   type="button"
                   onClick={() => {
                     setMessageDraft(defaultMessage);
+                    setConsentChecked(true);
                     setFunnelStep("message");
                   }}
-                  className="mt-3 h-11 rounded-xl bg-emerald-400 px-4 text-black text-xs font-black uppercase tracking-wide"
+                  disabled={!selectedProId}
+                  className="mt-3 h-11 rounded-xl bg-emerald-400 px-4 text-black text-xs font-black uppercase tracking-wide disabled:opacity-40"
                 >
                   Continuer
                 </button>
@@ -729,110 +779,17 @@ export default function EclaireurScanFunnelPreviewPage() {
                   onChange={(event) => setMessageDraft(event.target.value)}
                   className="mt-3 min-h-28 w-full rounded-xl border border-white/20 bg-black/25 px-3 py-2 text-sm"
                 />
+                <label className="mt-3 flex items-start gap-2 rounded-xl border border-white/15 bg-black/20 px-3 py-2 text-sm">
+                  <input type="checkbox" checked={consentChecked} onChange={(event) => setConsentChecked(event.target.checked)} className="mt-0.5" />
+                  <span>J ai le consentement de {activeContact.name.split(" ")[0]} pour transmettre ses coordonnees a {selectedTrade}.</span>
+                </label>
                 <button
                   type="button"
-                  onClick={() => {
-                    setContactHasMessage((prev) => ({ ...prev, [activeContactId]: true }));
-                    setContactResponse((prev) => ({ ...prev, [activeContactId]: "waiting" }));
-                    setFunnelStep("response");
-                  }}
+                  onClick={handleSendToMessaging}
+                  disabled={!consentChecked || !selectedProId}
                   className="mt-3 h-11 rounded-xl bg-cyan-300 px-4 text-black text-xs font-black uppercase tracking-wide"
                 >
-                  Message envoye
-                </button>
-              </>
-            )}
-
-            {funnelStep === "response" && (
-              <>
-                <p className="mt-2 text-sm text-white/75">
-                  Consentement explicite requis avant envoi lead. Si tu choisis "En attente", le contact sera range dans <span className="font-black">A contacter → En attente</span>.
-                </p>
-                <div className="mt-3 grid grid-cols-3 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setReply("waiting")}
-                    className={`h-11 rounded-xl border text-xs font-black uppercase tracking-wide ${reply === "waiting" ? "border-cyan-300/55 bg-cyan-500/12" : "border-white/20 bg-white/5"}`}
-                  >
-                    En attente
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setReply("ok")}
-                    className={`h-11 rounded-xl border text-xs font-black uppercase tracking-wide ${reply === "ok" ? "border-emerald-300/55 bg-emerald-500/12" : "border-white/20 bg-white/5"}`}
-                  >
-                    OK
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setReply("no")}
-                    className={`h-11 rounded-xl border text-xs font-black uppercase tracking-wide ${reply === "no" ? "border-rose-300/55 bg-rose-500/12" : "border-white/20 bg-white/5"}`}
-                  >
-                    Non
-                  </button>
-                </div>
-                <button
-                  type="button"
-                  onClick={goNextFromResponse}
-                  className="mt-3 h-11 rounded-xl bg-[#EAC886] px-4 text-black text-xs font-black uppercase tracking-wide"
-                >
-                  Continuer
-                </button>
-              </>
-            )}
-
-            {funnelStep === "dispatch" && (
-              <>
-                <p className="mt-2 text-sm text-white/75">Choisir un pro de {activeContact.city} pour envoyer le lead</p>
-                <div className="mt-3 space-y-2">
-                  {PROS.filter((pro) => pro.city === "Dax" || pro.city === activeContact.city).map((pro) => (
-                    <button
-                      key={pro.id}
-                      type="button"
-                      onClick={() => {
-                        setSelectedProId(pro.id);
-                        setSelectedTrade(pro.name);
-                      }}
-                      className={`w-full rounded-xl border px-3 py-3 text-left ${
-                        selectedProId === pro.id ? "border-emerald-300/55 bg-emerald-500/12" : "border-white/20 bg-black/20"
-                      }`}
-                    >
-                      <p className="text-sm font-black">{pro.name}</p>
-                      <p className="text-xs text-white/70">
-                        {pro.category} • {pro.city} • note {pro.rating}/5
-                      </p>
-                    </button>
-                  ))}
-                </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setContactDispatched((prev) => ({ ...prev, [activeContactId]: true }));
-                    setContactResponse((prev) => ({ ...prev, [activeContactId]: "ok" }));
-                    setFunnelStep("done");
-                  }}
-                  disabled={!selectedProId}
-                  className="mt-3 h-11 rounded-xl bg-black px-4 text-white text-xs font-black uppercase tracking-wide disabled:opacity-40"
-                >
-                  Envoyer le lead
-                </button>
-              </>
-            )}
-
-            {funnelStep === "done" && (
-              <>
-                <p className="mt-3 rounded-xl border border-emerald-300/35 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-200">
-                  Lead transmis a {selectedTrade} pour {activeContact.name}. Consentement OK confirme.
-                </p>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setFunnelStep(null);
-                    setSelectedProId(null);
-                  }}
-                  className="mt-3 h-11 rounded-xl border border-white/20 bg-white/10 px-4 text-xs font-black uppercase tracking-wide"
-                >
-                  Fermer le funnel
+                  Demander l accord de {activeContact.name.split(" ")[0]} (SMS/WA)
                 </button>
               </>
             )}
