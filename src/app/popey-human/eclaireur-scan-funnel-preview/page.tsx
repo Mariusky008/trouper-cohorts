@@ -525,7 +525,7 @@ export default function EclaireurScanFunnelPreviewPage() {
             </div>
             {tutorialActive && currentDailyContact && tutorialExpectedAction && (
               <div className="mt-2 rounded-xl border border-cyan-300/35 bg-cyan-500/10 px-3 py-2 text-xs sm:text-sm text-cyan-100">
-                {tutorialExpectedAction === "up" && `${currentDailyContact.name} a un projet urgent ? Swipe vers le HAUT ★ pour l alerte directe.`}
+                {tutorialExpectedAction === "up" && `${currentDailyContact.name} a un projet urgent ? Clique sur l etoile pour envoyer le prospect a un pro de ta ville.`}
                 {tutorialExpectedAction === "right" && `${currentDailyContact.name} semble prometteur ? Clique ✓ pour le qualifier.`}
                 {tutorialExpectedAction === "left" && `${currentDailyContact.name} n a pas de projet pour l instant ? Clique ✕ pour ignorer.`}
               </div>
