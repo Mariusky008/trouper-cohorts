@@ -28,6 +28,10 @@ type Pro = {
   rating: number;
   trade: string;
   needs: string[];
+  company: string;
+  companyAddress: string;
+  googleReviews: number;
+  photoInitials: string;
 };
 
 const CONTACTS: Contact[] = [
@@ -72,10 +76,10 @@ const SEGMENTS = [
   { id: "finance", label: "Investissement", percent: 4, avgCommission: 320 },
 ] as const;
 const PROS: Pro[] = [
-  { id: "p1", name: "Camille Durand", category: "Immo", city: "Dax", rating: 4.8, trade: "Courtier", needs: ["Courtier", "Courtier pret", "Assurance familiale"] },
-  { id: "p2", name: "Atelier Nova", category: "Travaux", city: "Dax", rating: 4.7, trade: "Artisan travaux", needs: ["Artisan travaux", "Agrandissement"] },
-  { id: "p3", name: "Sante Active", category: "Sante", city: "Dax", rating: 4.6, trade: "Assurance", needs: ["Assurance", "Assurance habitation"] },
-  { id: "p4", name: "Patrimoine Sud", category: "Finances", city: "Dax", rating: 4.9, trade: "Gestion patrimoine", needs: ["Gestion patrimoine", "Conseil fiscal", "Notaire"] },
+  { id: "p1", name: "Camille Durand", category: "Immo", city: "Dax", rating: 4.8, trade: "Courtier", needs: ["Courtier", "Courtier pret", "Assurance familiale"], company: "Durand Courtage", companyAddress: "12 Rue de la Liberte, Dax", googleReviews: 126, photoInitials: "CD" },
+  { id: "p2", name: "Atelier Nova", category: "Travaux", city: "Dax", rating: 4.7, trade: "Artisan travaux", needs: ["Artisan travaux", "Agrandissement"], company: "Atelier Nova", companyAddress: "8 Avenue du Stade, Dax", googleReviews: 94, photoInitials: "AN" },
+  { id: "p3", name: "Sante Active", category: "Sante", city: "Dax", rating: 4.6, trade: "Assurance", needs: ["Assurance", "Assurance habitation"], company: "Sante Active Conseil", companyAddress: "4 Rue du Marche, Dax", googleReviews: 81, photoInitials: "SA" },
+  { id: "p4", name: "Patrimoine Sud", category: "Finances", city: "Dax", rating: 4.9, trade: "Gestion patrimoine", needs: ["Gestion patrimoine", "Conseil fiscal", "Notaire"], company: "Patrimoine Sud", companyAddress: "21 Boulevard Carnot, Dax", googleReviews: 172, photoInitials: "PS" },
 ];
 const NEEDS_BY_MOMENT: Record<string, string[]> = {
   "Vient d avoir un enfant": ["Courtier", "Agrandissement", "Assurance familiale"],
@@ -114,6 +118,9 @@ export default function EclaireurScanFunnelPreviewPage() {
   const [selectedTrade, setSelectedTrade] = useState<string>("Courtier");
   const [selectedProCategory, setSelectedProCategory] = useState<string>("Tous");
   const [selectedProId, setSelectedProId] = useState<string | null>(null);
+  const [showProDetailModal, setShowProDetailModal] = useState(false);
+  const [featuredProId, setFeaturedProId] = useState<string | null>(null);
+  const [showLeadSentModal, setShowLeadSentModal] = useState(false);
   const [swipeAnim, setSwipeAnim] = useState<"none" | "left" | "right" | "up">("none");
   const [selectedQuickTag, setSelectedQuickTag] = useState<string>(DAILY_TAGS[0]);
   const [lastActionMessage, setLastActionMessage] = useState("");
@@ -166,6 +173,10 @@ export default function EclaireurScanFunnelPreviewPage() {
     if (!selectedNeed) return source;
     return source.filter((pro) => pro.needs.includes(selectedNeed) || pro.trade === selectedNeed);
   }, [activeContact.city, selectedNeed]);
+  const featuredPro = PROS.find((pro) => pro.id === featuredProId) ?? null;
+  const prospectedCount = Math.round(totalContacts * 0.38);
+  const localCityCount = Math.round(totalContacts * 0.61);
+  const hotSignalsCount = Math.round(totalContacts * 0.14);
 
   const kpi = useMemo(() => {
     const metas = Object.values(contactMeta);
@@ -312,6 +323,8 @@ export default function EclaireurScanFunnelPreviewPage() {
     setSelectedNeed(ALL_NEEDS[0] ?? "Courtier");
     setMessageDraft("");
     setSelectedProId(null);
+    setFeaturedProId(null);
+    setShowProDetailModal(false);
     setFunnelStep("match");
     setMainTab("daily");
   }
@@ -341,6 +354,7 @@ export default function EclaireurScanFunnelPreviewPage() {
     setSelectedNeed("Courtier");
     setSelectedProId(PROS[0]?.id ?? null);
     setSelectedTrade(PROS[0]?.name ?? "Expert local");
+    setFeaturedProId(PROS[0]?.id ?? null);
     setMessageDraft(
       `Salut ${contact.name.split(" ")[0]}, j ai pense a toi. J ai un pro de confiance a ${contact.city}. Tu veux que je lui demande de te contacter ?`,
     );
@@ -368,6 +382,8 @@ export default function EclaireurScanFunnelPreviewPage() {
     setContactDispatched((prev) => ({ ...prev, [activeContactId]: true }));
     setLastActionMessage(`Lead envoye a ${selectedTrade} pour ${activeContact.name} !`);
     setFunnelStep(null);
+    setShowLeadSentModal(true);
+    setShowProDetailModal(false);
   }
 
   return (
@@ -420,6 +436,11 @@ export default function EclaireurScanFunnelPreviewPage() {
                 <div className="h-full bg-gradient-to-r from-cyan-300 via-emerald-300 to-emerald-400 transition-all duration-150" style={{ width: `${scanProgressPercent}%` }} />
               </div>
               <p className="mt-2 text-xs text-white/70">{scanProgressPercent}%</p>
+              <div className="mt-4 grid grid-cols-3 gap-2 text-xs sm:text-sm">
+                <p className="rounded-lg border border-white/15 bg-black/20 px-2 py-2"><span className="block font-black text-emerald-300">{prospectedCount}</span>profils actifs</p>
+                <p className="rounded-lg border border-white/15 bg-black/20 px-2 py-2"><span className="block font-black text-cyan-200">{localCityCount}</span>contacts locaux</p>
+                <p className="rounded-lg border border-white/15 bg-black/20 px-2 py-2"><span className="block font-black text-[#EAC886]">{hotSignalsCount}</span>signaux chauds</p>
+              </div>
 
               {scanCompleted ? (
                 <div className="mt-5">
@@ -441,27 +462,21 @@ export default function EclaireurScanFunnelPreviewPage() {
           )}
 
           {introStep === "guide" && (
-            <section className="rounded-3xl border border-[#EAC886]/35 bg-[#12161A] p-6 sm:p-8">
+            <section className="rounded-3xl border border-[#EAC886]/35 bg-[#12161A] p-5 sm:p-7">
               <p className="text-[11px] font-black uppercase tracking-[0.12em] text-[#EAC886]">Mode d emploi daily</p>
-              <h2 className="mt-2 text-3xl font-black">Bonjour {scoutFirstName}, voici tes 20 scans prioritaires du jour</h2>
+              <h2 className="mt-2 text-[34px] leading-tight font-black">Bonjour {scoutFirstName}, voici tes 20 scans prioritaires du jour</h2>
               <p className="mt-2 text-sm text-white/80">2 minutes pour verifier si ton reseau a des projets et activer tes commissions.</p>
-              <input
-                value=""
-                readOnly
-                placeholder="Recherche rapide (discrete)"
-                className="mt-3 h-10 w-full rounded-xl border border-white/20 bg-black/25 px-3 text-xs text-white/60"
-              />
-              <div className="mt-3 min-h-[34vh] rounded-2xl border border-white/15 bg-gradient-to-br from-[#1F2A35] via-[#1B2630] to-[#172126] p-5 flex flex-col justify-center text-center">
+              <div className="mt-3 h-[24vh] sm:h-[30vh] rounded-2xl border border-white/15 bg-gradient-to-br from-[#1F2A35] via-[#1B2630] to-[#172126] p-4 flex flex-col justify-center text-center">
                 <p className="text-xs uppercase tracking-[0.12em] text-white/60">Contact prioritaire</p>
-                <p className="mt-2 text-4xl font-black">Jean-Mi B.</p>
-                <p className="mt-2 text-xl font-black text-white/90">Dax</p>
+                <p className="mt-1 text-3xl sm:text-4xl font-black">Jean-Mi B.</p>
+                <p className="mt-1 text-lg sm:text-xl font-black text-white/90">Dax</p>
               </div>
-              <div className="mt-4 grid grid-cols-3 gap-3 text-center">
+              <div className="mt-3 grid grid-cols-3 gap-2 text-center">
                 <p className="rounded-xl border border-white/15 bg-black/20 px-2 py-3 text-xs"><span className="text-rose-400 text-xl">✕</span><br />Ignorer</p>
                 <p className="rounded-xl border border-white/15 bg-black/20 px-2 py-3 text-xs"><span className="text-emerald-300 text-xl">✓</span><br />Qualifier</p>
                 <p className="rounded-xl border border-white/15 bg-black/20 px-2 py-3 text-xs"><span className="text-cyan-300 text-xl">★</span><br />Alerte</p>
               </div>
-              <p className="mt-4 rounded-xl border border-white/15 bg-black/20 px-4 py-3 text-sm text-white/85">
+              <p className="mt-3 rounded-xl border border-white/15 bg-black/20 px-4 py-2 text-xs sm:text-sm text-white/85">
                 Objectif: 20 contacts qualifies en 2 minutes. Ne rate aucune opportunite dans ton repertoire de 800 noms.
               </p>
               <button
@@ -685,7 +700,18 @@ export default function EclaireurScanFunnelPreviewPage() {
                     <button
                       key={need}
                       type="button"
-                      onClick={() => setSelectedNeed(need)}
+                      onClick={() => {
+                        setSelectedNeed(need);
+                        const suggested = PROS.find(
+                          (pro) => (pro.city === "Dax" || pro.city === activeContact.city) && (pro.needs.includes(need) || pro.trade === need),
+                        );
+                        if (suggested) {
+                          setFeaturedProId(suggested.id);
+                          setSelectedProId(suggested.id);
+                          setSelectedTrade(suggested.name);
+                          setShowProDetailModal(true);
+                        }
+                      }}
                       className={`h-11 rounded-xl border text-xs font-black uppercase tracking-wide ${
                         selectedNeed === need ? "border-emerald-300/55 bg-emerald-500/12" : "border-white/20 bg-white/5"
                       }`}
@@ -703,6 +729,8 @@ export default function EclaireurScanFunnelPreviewPage() {
                       onClick={() => {
                         setSelectedProId(pro.id);
                         setSelectedTrade(pro.name);
+                        setFeaturedProId(pro.id);
+                        setShowProDetailModal(true);
                       }}
                       className={`w-full rounded-xl border px-3 py-3 text-left ${
                         selectedProId === pro.id ? "border-emerald-300/55 bg-emerald-500/12" : "border-white/20 bg-black/20"
@@ -710,18 +738,14 @@ export default function EclaireurScanFunnelPreviewPage() {
                     >
                       <div className="flex items-center gap-3">
                         <div className="h-11 w-11 rounded-full border border-white/20 bg-white/10 flex items-center justify-center text-sm font-black">
-                          {pro.name
-                            .split(" ")
-                            .slice(0, 2)
-                            .map((part) => part[0])
-                            .join("")}
+                          {pro.photoInitials}
                         </div>
                         <div>
                           <p className="text-sm font-black">{pro.name}</p>
                           <p className="text-xs text-white/70">
-                            {pro.trade} • {pro.city}
+                            {pro.trade} • {pro.city} • {pro.company}
                           </p>
-                          <p className="text-xs text-emerald-300">⭐⭐⭐⭐ {pro.rating}/5</p>
+                          <p className="text-xs text-emerald-300">⭐⭐⭐⭐ {pro.rating}/5 • {pro.googleReviews} avis</p>
                         </div>
                       </div>
                     </button>
@@ -771,6 +795,73 @@ export default function EclaireurScanFunnelPreviewPage() {
               </>
             )}
           </section>
+          </div>
+        )}
+
+        {showProDetailModal && featuredPro && (
+          <div className="fixed inset-0 z-40 bg-black/55 backdrop-blur-sm flex items-center justify-center px-4">
+            <section className="w-full max-w-md rounded-3xl border border-white/15 bg-[#12161A] p-5">
+              <p className="text-[11px] font-black uppercase tracking-[0.12em] text-[#EAC886]">Fiche pro</p>
+              <div className="mt-3 flex items-center gap-3">
+                <div className="h-14 w-14 rounded-full border border-white/20 bg-white/10 flex items-center justify-center text-lg font-black">
+                  {featuredPro.photoInitials}
+                </div>
+                <div>
+                  <p className="text-lg font-black">{featuredPro.name}</p>
+                  <p className="text-sm text-white/80">{featuredPro.company}</p>
+                </div>
+              </div>
+              <div className="mt-3 rounded-2xl border border-white/15 bg-black/20 p-3">
+                <p className="text-xs text-white/70">Metier</p>
+                <p className="text-sm font-black">{featuredPro.trade}</p>
+                <p className="mt-2 text-xs text-white/70">Adresse</p>
+                <p className="text-sm">{featuredPro.companyAddress}</p>
+                <p className="mt-2 text-xs text-white/70">Avis Google</p>
+                <p className="text-sm text-emerald-300">⭐⭐⭐⭐ {featuredPro.rating}/5 • {featuredPro.googleReviews} avis</p>
+              </div>
+              <div className="mt-3 grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowProDetailModal(false)}
+                  className="h-11 rounded-xl border border-white/20 bg-white/10 text-xs font-black uppercase tracking-wide"
+                >
+                  Fermer
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedProId(featuredPro.id);
+                    setSelectedTrade(featuredPro.name);
+                    setShowProDetailModal(false);
+                  }}
+                  className="h-11 rounded-xl bg-emerald-400 text-black text-xs font-black uppercase tracking-wide"
+                >
+                  Choisir ce pro
+                </button>
+              </div>
+            </section>
+          </div>
+        )}
+
+        {showLeadSentModal && (
+          <div className="fixed inset-0 z-40 bg-black/55 backdrop-blur-sm flex items-center justify-center px-4">
+            <section className="w-full max-w-md rounded-3xl border border-emerald-300/25 bg-[#12161A] p-5">
+              <p className="text-[11px] font-black uppercase tracking-[0.12em] text-emerald-200/90">Felicitations</p>
+              <h3 className="mt-2 text-xl font-black">Contact envoye</h3>
+              <p className="mt-2 text-sm text-white/85">
+                Le contact de <span className="font-black">{activeContact.name}</span> a bien ete envoye a <span className="font-black">{selectedTrade}</span>.
+              </p>
+              <p className="mt-2 text-sm text-white/75">
+                Il/elle appellera <span className="font-black">{activeContact.name}</span> dans les plus brefs delais. Si un rendez-vous est pris, ta commission sera versee sous 30 jours.
+              </p>
+              <button
+                type="button"
+                onClick={() => setShowLeadSentModal(false)}
+                className="mt-4 h-11 w-full rounded-xl bg-emerald-400 text-black text-xs font-black uppercase tracking-wide"
+              >
+                Continuer le daily
+              </button>
+            </section>
           </div>
         )}
 
