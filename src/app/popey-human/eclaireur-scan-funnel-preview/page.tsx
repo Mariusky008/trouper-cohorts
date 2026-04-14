@@ -210,7 +210,6 @@ export default function EclaireurScanFunnelPreviewPage() {
   const dispatchedContacts = contactsToContact.filter((contact) => contactDispatched[contact.id]);
   const refusedContacts = contactsToContact.filter((contact) => contactResponse[contact.id] === "no");
 
-  const defaultMessage = `Salut ${activeContact.name.split(" ")[0]}, je pense a toi suite a ton contexte "${selectedMoment}". J ai un pro de confiance sur ${selectedNeed || "ce sujet"} a ${activeContact.city}. Tu veux que je lui demande de te contacter ?`;
   const scanProgressPercent = Math.round((scanCount / totalContacts) * 100);
   const scanCompleted = scanCount >= totalContacts;
   const scoutFirstName = "Jean-Philippe";
@@ -384,6 +383,15 @@ export default function EclaireurScanFunnelPreviewPage() {
     setFunnelStep(null);
     setShowLeadSentModal(true);
     setShowProDetailModal(false);
+  }
+
+  function proceedToMessageWithPro(pro: Pro) {
+    setSelectedProId(pro.id);
+    setSelectedTrade(pro.name);
+    const draft = `Salut ${activeContact.name.split(" ")[0]}, je pense a toi suite a ton contexte "${selectedMoment}". J ai un pro de confiance sur ${pro.trade} a ${activeContact.city}. Tu veux que je lui demande de te contacter ?`;
+    setMessageDraft(draft);
+    setShowProDetailModal(false);
+    setFunnelStep("message");
   }
 
   return (
@@ -707,8 +715,6 @@ export default function EclaireurScanFunnelPreviewPage() {
                         );
                         if (suggested) {
                           setFeaturedProId(suggested.id);
-                          setSelectedProId(suggested.id);
-                          setSelectedTrade(suggested.name);
                           setShowProDetailModal(true);
                         }
                       }}
@@ -720,49 +726,7 @@ export default function EclaireurScanFunnelPreviewPage() {
                     </button>
                   ))}
                 </div>
-
-                <div className="mt-3 space-y-2">
-                  {prosByNeed.map((pro) => (
-                    <button
-                      key={pro.id}
-                      type="button"
-                      onClick={() => {
-                        setSelectedProId(pro.id);
-                        setSelectedTrade(pro.name);
-                        setFeaturedProId(pro.id);
-                        setShowProDetailModal(true);
-                      }}
-                      className={`w-full rounded-xl border px-3 py-3 text-left ${
-                        selectedProId === pro.id ? "border-emerald-300/55 bg-emerald-500/12" : "border-white/20 bg-black/20"
-                      }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="h-11 w-11 rounded-full border border-white/20 bg-white/10 flex items-center justify-center text-sm font-black">
-                          {pro.photoInitials}
-                        </div>
-                        <div>
-                          <p className="text-sm font-black">{pro.name}</p>
-                          <p className="text-xs text-white/70">
-                            {pro.trade} • {pro.city} • {pro.company}
-                          </p>
-                          <p className="text-xs text-emerald-300">⭐⭐⭐⭐ {pro.rating}/5 • {pro.googleReviews} avis</p>
-                        </div>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    setMessageDraft(defaultMessage);
-                    setFunnelStep("message");
-                  }}
-                  disabled={!selectedProId}
-                  className="mt-3 h-11 rounded-xl bg-emerald-400 px-4 text-black text-xs font-black uppercase tracking-wide disabled:opacity-40"
-                >
-                  Continuer
-                </button>
+                <p className="mt-3 text-xs text-white/70">Choisis un besoin. Une pop-up pro s’ouvre, puis tu passes directement a l’etape message.</p>
               </>
             )}
 
@@ -829,11 +793,7 @@ export default function EclaireurScanFunnelPreviewPage() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => {
-                    setSelectedProId(featuredPro.id);
-                    setSelectedTrade(featuredPro.name);
-                    setShowProDetailModal(false);
-                  }}
+                  onClick={() => proceedToMessageWithPro(featuredPro)}
                   className="h-11 rounded-xl bg-emerald-400 text-black text-xs font-black uppercase tracking-wide"
                 >
                   Choisir ce pro
