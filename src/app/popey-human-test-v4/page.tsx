@@ -546,10 +546,10 @@ export default function PopeyHumanTestV4Page() {
           <div className="w-full">
             <div className="flex justify-end">
               <Link
-                href="/programme-commando/postuler"
+                href="/popey-human/login"
                 className="inline-flex items-center justify-center rounded-md bg-black px-4 py-2 text-xs font-black uppercase tracking-wide text-white transition hover:bg-black/85"
               >
-                Ma place est-elle encore libre à Dax ?
+                Connexion
               </Link>
             </div>
             <h1 className="mt-2 text-5xl md:text-7xl font-black leading-[1.02] max-w-5xl">
@@ -585,10 +585,10 @@ export default function PopeyHumanTestV4Page() {
             </div>
             <div className="mt-6 flex flex-col sm:flex-row gap-3">
               <Link
-                href="/popey-human/login"
+                href="/programme-commando/postuler"
                 className="inline-flex items-center justify-center rounded-md border border-black bg-black px-6 py-3 text-sm font-black uppercase tracking-wide text-white transition hover:bg-white hover:text-black"
               >
-                Connexion
+                Ma place est-elle encore libre à Dax ?
               </Link>
               <button
                 type="button"
