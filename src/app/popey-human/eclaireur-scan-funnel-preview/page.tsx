@@ -658,7 +658,7 @@ export default function EclaireurScanFunnelPreviewPage() {
               <p className="text-[11px] font-black uppercase tracking-[0.12em] text-[#EAC886]">Tag profil</p>
               <h3 className="mt-1 text-lg font-black">Quel est son profil ?</h3>
               <p className="mt-1 text-xs text-white/75">
-                Ce tag sert a retrouver ce contact dans <span className="font-black">A contacter</span> et personnaliser le message plus tard.
+                Identifie le lien que vous avez avec cette personne. Le jour ou elle aura besoin d un professionnel Popey, vous pourrez la retrouver dans <span className="font-black">A contacter</span> et la recommander facilement.
               </p>
               <div className="mt-3 grid grid-cols-2 gap-2">
                 {DAILY_TAGS.map((tag) => (
