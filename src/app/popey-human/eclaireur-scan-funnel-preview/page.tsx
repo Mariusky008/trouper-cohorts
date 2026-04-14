@@ -102,7 +102,7 @@ export default function EclaireurScanFunnelPreviewPage() {
   const [showProfile, setShowProfile] = useState(false);
   const [funnelStep, setFunnelStep] = useState<FunnelStep | null>(null);
   const [activeContactId, setActiveContactId] = useState(CONTACTS[0].id);
-  const [totalContacts] = useState(800);
+  const [totalContacts] = useState(816);
   const [scanCount, setScanCount] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
   const [dailyProcessed, setDailyProcessed] = useState(0);
@@ -174,9 +174,9 @@ export default function EclaireurScanFunnelPreviewPage() {
     return source.filter((pro) => pro.needs.includes(selectedNeed) || pro.trade === selectedNeed);
   }, [activeContact.city, selectedNeed]);
   const featuredPro = PROS.find((pro) => pro.id === featuredProId) ?? null;
-  const prospectedCount = Math.round(totalContacts * 0.38);
-  const localCityCount = Math.round(totalContacts * 0.61);
-  const hotSignalsCount = Math.round(totalContacts * 0.14);
+  const prospectedCount = 304;
+  const localCityCount = 488;
+  const hotSignalsCount = 112;
 
   const kpi = useMemo(() => {
     const metas = Object.values(contactMeta);
@@ -218,13 +218,14 @@ export default function EclaireurScanFunnelPreviewPage() {
   useEffect(() => {
     if (introStep !== "scanning") return;
     setScanCount(0);
-    const increment = Math.max(20, Math.ceil(totalContacts / 24));
+    const increment = Math.max(6, Math.ceil(totalContacts / 80));
     const timer = setInterval(() => {
       setScanCount((prev) => {
-        const next = Math.min(totalContacts, prev + increment);
+        const randomBoost = Math.floor(Math.random() * 4);
+        const next = Math.min(totalContacts, prev + increment + randomBoost);
         return next;
       });
-    }, 90);
+    }, 180);
     return () => clearInterval(timer);
   }, [introStep, totalContacts]);
 
@@ -440,15 +441,23 @@ export default function EclaireurScanFunnelPreviewPage() {
               <p className="text-[11px] font-black uppercase tracking-[0.12em] text-cyan-200/90">Scan en cours</p>
               <h2 className="mt-2 text-3xl font-black">Analyse de l annuaire</h2>
               <p className="mt-2 text-sm text-white/80">{scanCount}/{totalContacts} personnes analysees</p>
+              <div className="mt-4 relative h-24 rounded-2xl border border-cyan-300/25 bg-black/20 overflow-hidden">
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(34,211,238,0.18)_0%,rgba(0,0,0,0)_65%)] animate-pulse" />
+                <div className="absolute left-1/2 top-1/2 h-10 w-10 -translate-x-1/2 -translate-y-1/2 rounded-full border border-cyan-300/60" />
+                <div className="absolute left-1/2 top-1/2 h-16 w-16 -translate-x-1/2 -translate-y-1/2 rounded-full border border-cyan-300/30 animate-ping" />
+                <div className="absolute left-0 top-0 h-full w-1/3 bg-gradient-to-r from-transparent via-cyan-200/35 to-transparent animate-[pulse_1.2s_ease-in-out_infinite]" />
+              </div>
               <div className="mt-4 h-3 rounded-full bg-white/10 overflow-hidden">
                 <div className="h-full bg-gradient-to-r from-cyan-300 via-emerald-300 to-emerald-400 transition-all duration-150" style={{ width: `${scanProgressPercent}%` }} />
               </div>
               <p className="mt-2 text-xs text-white/70">{scanProgressPercent}%</p>
-              <div className="mt-4 grid grid-cols-3 gap-2 text-xs sm:text-sm">
-                <p className="rounded-lg border border-white/15 bg-black/20 px-2 py-2"><span className="block font-black text-emerald-300">{prospectedCount}</span>profils actifs</p>
-                <p className="rounded-lg border border-white/15 bg-black/20 px-2 py-2"><span className="block font-black text-cyan-200">{localCityCount}</span>contacts locaux</p>
-                <p className="rounded-lg border border-white/15 bg-black/20 px-2 py-2"><span className="block font-black text-[#EAC886]">{hotSignalsCount}</span>signaux chauds</p>
-              </div>
+              {scanCompleted && (
+                <div className="mt-4 grid grid-cols-3 gap-2 text-xs sm:text-sm">
+                  <p className="rounded-lg border border-white/15 bg-black/20 px-2 py-2"><span className="block font-black text-emerald-300">{prospectedCount}</span>profils actifs</p>
+                  <p className="rounded-lg border border-white/15 bg-black/20 px-2 py-2"><span className="block font-black text-cyan-200">{localCityCount}</span>contacts locaux</p>
+                  <p className="rounded-lg border border-white/15 bg-black/20 px-2 py-2"><span className="block font-black text-[#EAC886]">{hotSignalsCount}</span>signaux chauds</p>
+                </div>
+              )}
 
               {scanCompleted ? (
                 <div className="mt-5">
@@ -485,7 +494,7 @@ export default function EclaireurScanFunnelPreviewPage() {
                 <p className="rounded-xl border border-white/15 bg-black/20 px-2 py-3 text-xs"><span className="text-cyan-300 text-xl">★</span><br />Alerte</p>
               </div>
               <p className="mt-3 rounded-xl border border-white/15 bg-black/20 px-4 py-2 text-xs sm:text-sm text-white/85">
-                Objectif: 20 contacts qualifies en 2 minutes. Ne rate aucune opportunite dans ton repertoire de 800 noms.
+                Objectif: 20 contacts qualifies en 2 minutes. Ne rate aucune opportunite dans ton repertoire de {totalContacts} noms.
               </p>
               <button
                 type="button"
