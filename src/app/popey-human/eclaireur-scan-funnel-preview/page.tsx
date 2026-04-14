@@ -346,20 +346,18 @@ export default function EclaireurScanFunnelPreviewPage() {
     });
   }
 
-  function openMessageForContact(contactId: string) {
+  function openContactFlowFromQueue(contactId: string) {
     const contact = CONTACTS.find((item) => item.id === contactId);
     if (!contact) return;
     setActiveContactId(contact.id);
     setSelectedMoment("Autre");
-    setSelectedNeed("Courtier");
-    setSelectedProId(PROS[0]?.id ?? null);
-    setSelectedTrade(PROS[0]?.name ?? "Expert local");
-    setFeaturedProId(PROS[0]?.id ?? null);
-    setMessageDraft(
-      `Salut ${contact.name.split(" ")[0]}, j ai pense a toi. J ai un pro de confiance a ${contact.city}. Tu veux que je lui demande de te contacter ?`,
-    );
+    setSelectedNeed(ALL_NEEDS[0] ?? "Courtier");
+    setSelectedProId(null);
+    setFeaturedProId(null);
+    setSelectedTrade("Expert local");
+    setMessageDraft("");
     setReply("waiting");
-    setFunnelStep("message");
+    setFunnelStep("match");
     setMainTab("daily");
   }
 
@@ -925,10 +923,10 @@ export default function EclaireurScanFunnelPreviewPage() {
                           {meta?.tags?.length > 0 && <p className="mt-1 text-xs text-emerald-200">Tags: {meta.tags.join(" • ")}</p>}
                           <button
                             type="button"
-                            onClick={() => openMessageForContact(contact.id)}
+                            onClick={() => openContactFlowFromQueue(contact.id)}
                             className="mt-2 h-9 rounded-lg bg-emerald-400 px-3 text-xs font-black uppercase tracking-wide text-black"
                           >
-                            Envoyer un message
+                            Choisir besoin et pro
                           </button>
                         </article>
                       );
@@ -945,10 +943,10 @@ export default function EclaireurScanFunnelPreviewPage() {
                         <p className="text-xs text-white/75">{contact.city}</p>
                         <button
                           type="button"
-                          onClick={() => openMessageForContact(contact.id)}
+                          onClick={() => openContactFlowFromQueue(contact.id)}
                           className="mt-2 h-9 rounded-lg border border-white/20 bg-white/10 px-3 text-xs font-black uppercase tracking-wide"
                         >
-                          Reouvrir le suivi
+                          Reprendre le parcours
                         </button>
                       </article>
                     ))}
