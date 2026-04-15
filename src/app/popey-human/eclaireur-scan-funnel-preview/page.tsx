@@ -168,7 +168,6 @@ export default function EclaireurScanFunnelPreviewPage() {
   const [selectedDiagnosticId, setSelectedDiagnosticId] = useState<string | null>(null);
   const [magicSearchTerm, setMagicSearchTerm] = useState("");
   const [funnelNeeds, setFunnelNeeds] = useState<string[]>([]);
-  const [scheduledReminders, setScheduledReminders] = useState<Record<string, string>>({});
   const [selectedMoment, setSelectedMoment] = useState<string>(MOMENTS[0]);
   const [selectedNeed, setSelectedNeed] = useState<string>("");
   const [messageDraft, setMessageDraft] = useState("");
@@ -396,18 +395,6 @@ export default function EclaireurScanFunnelPreviewPage() {
       }
       goNextCard();
     });
-  }
-
-  function scheduleReminder(months: 3 | 6) {
-    if (!surveillanceContactId) return;
-    const contact = CONTACTS.find((item) => item.id === surveillanceContactId);
-    const dueDate = new Date();
-    dueDate.setMonth(dueDate.getMonth() + months);
-    setScheduledReminders((prev) => ({ ...prev, [surveillanceContactId]: dueDate.toLocaleDateString("fr-FR") }));
-    updateStatus(surveillanceContactId, "qualified", `Rappel ${months}m`);
-    setSurveillanceContactId(null);
-    if (contact) setLastActionMessage(`Rappel programme dans ${months} mois pour ${contact.name}.`);
-    goNextCard();
   }
 
   function sendWakeMessage() {
@@ -876,21 +863,7 @@ export default function EclaireurScanFunnelPreviewPage() {
                         </button>
                       ))}
                     </div>
-                    <div className="mt-3 grid grid-cols-3 gap-2">
-                      <button
-                        type="button"
-                        onClick={() => scheduleReminder(3)}
-                        className="h-10 rounded-xl border border-white/20 bg-white/10 text-xs font-black uppercase tracking-wide"
-                      >
-                        🔔 3 mois
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => scheduleReminder(6)}
-                        className="h-10 rounded-xl border border-white/20 bg-white/10 text-xs font-black uppercase tracking-wide"
-                      >
-                        🔔 6 mois
-                      </button>
+                    <div className="mt-3 grid grid-cols-1 gap-2">
                       <button
                         type="button"
                         disabled={!selectedDiagnosticId}
