@@ -274,6 +274,7 @@ export default function EclaireurScanFunnelPreviewPage() {
   const scanCompleted = scanCount >= totalContacts;
   const scoutFirstName = "Jean-Philippe";
   const tutorialExpectedAction = tutorialActive ? (["up", "right", "left"][dailyTutorialStep] ?? null) : null;
+  const tutorialEnforced = tutorialActive && currentCardIndex < 3;
   const needsForMatch = funnelNeeds.length > 0 ? funnelNeeds : ALL_NEEDS;
   const diagnosticsForSphere = DIAGNOSTICS[selectedSphereId] ?? [];
   const selectedDiagnostic = diagnosticsForSphere.find((diag) => diag.id === selectedDiagnosticId) ?? null;
@@ -349,7 +350,7 @@ export default function EclaireurScanFunnelPreviewPage() {
 
   function onSwipeLeft() {
     if (!currentDailyContact) return;
-    if (tutorialExpectedAction && tutorialExpectedAction !== "left") {
+    if (tutorialEnforced && tutorialExpectedAction && tutorialExpectedAction !== "left") {
       setLastActionMessage("Tutoriel: fais d abord l action indiquee.");
       return;
     }
@@ -372,7 +373,7 @@ export default function EclaireurScanFunnelPreviewPage() {
 
   function onSwipeRight() {
     if (!currentDailyContact) return;
-    if (tutorialExpectedAction && tutorialExpectedAction !== "right") {
+    if (tutorialEnforced && tutorialExpectedAction && tutorialExpectedAction !== "right") {
       setLastActionMessage("Tutoriel: fais d abord l action indiquee.");
       return;
     }
@@ -470,7 +471,7 @@ export default function EclaireurScanFunnelPreviewPage() {
 
   function onSwipeUp() {
     if (!currentDailyContact) return;
-    if (tutorialExpectedAction && tutorialExpectedAction !== "up") {
+    if (tutorialEnforced && tutorialExpectedAction && tutorialExpectedAction !== "up") {
       setLastActionMessage("Tutoriel: fais d abord l action indiquee.");
       return;
     }
