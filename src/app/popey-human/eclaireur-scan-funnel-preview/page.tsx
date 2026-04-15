@@ -27,6 +27,7 @@ type Pro = {
   city: string;
   rating: number;
   commissionRate: number;
+  avgReverseCommission: number;
   trade: string;
   needs: string[];
   company: string;
@@ -127,12 +128,12 @@ const SEGMENTS = [
   { id: "finance", label: "Investissement", percent: 4, avgCommission: 320 },
 ] as const;
 const PROS: Pro[] = [
-  { id: "p1", name: "Camille Durand", category: "Immo", city: "Dax", rating: 4.8, commissionRate: 12, trade: "Courtier", needs: ["Courtier", "Courtier pret", "Assurance familiale"], company: "Durand Courtage", companyAddress: "12 Rue de la Liberte, Dax", googleReviews: 126, photoInitials: "CD" },
-  { id: "p2", name: "Atelier Nova", category: "Travaux", city: "Dax", rating: 4.7, commissionRate: 10, trade: "Artisan travaux", needs: ["Artisan travaux", "Agrandissement"], company: "Atelier Nova", companyAddress: "8 Avenue du Stade, Dax", googleReviews: 94, photoInitials: "AN" },
-  { id: "p3", name: "Sante Active", category: "Sante", city: "Dax", rating: 4.6, commissionRate: 8, trade: "Assurance", needs: ["Assurance", "Assurance habitation"], company: "Sante Active Conseil", companyAddress: "4 Rue du Marche, Dax", googleReviews: 81, photoInitials: "SA" },
-  { id: "p4", name: "Patrimoine Sud", category: "Finances", city: "Dax", rating: 4.9, commissionRate: 14, trade: "Gestion patrimoine", needs: ["Gestion patrimoine", "Conseil fiscal", "Notaire"], company: "Patrimoine Sud", companyAddress: "21 Boulevard Carnot, Dax", googleReviews: 172, photoInitials: "PS" },
-  { id: "p5", name: "Julie Martin", category: "Services", city: "Dax", rating: 4.7, commissionRate: 9, trade: "Nounou", needs: ["Nounou", "Services a la personne"], company: "Julie Services Famille", companyAddress: "6 Rue des Ecoles, Dax", googleReviews: 63, photoInitials: "JM" },
-  { id: "p6", name: "Maxime Leroy", category: "Animalier", city: "Dax", rating: 4.8, commissionRate: 11, trade: "Educateur Canin", needs: ["Educateur Canin", "Toiletteur"], company: "CaniCoach Dax", companyAddress: "14 Route de Narrosse, Dax", googleReviews: 88, photoInitials: "ML" },
+  { id: "p1", name: "Camille Durand", category: "Immo", city: "Dax", rating: 4.8, commissionRate: 12, avgReverseCommission: 290, trade: "Courtier", needs: ["Courtier", "Courtier pret", "Assurance familiale"], company: "Durand Courtage", companyAddress: "12 Rue de la Liberte, Dax", googleReviews: 126, photoInitials: "CD" },
+  { id: "p2", name: "Atelier Nova", category: "Travaux", city: "Dax", rating: 4.7, commissionRate: 10, avgReverseCommission: 210, trade: "Artisan travaux", needs: ["Artisan travaux", "Agrandissement"], company: "Atelier Nova", companyAddress: "8 Avenue du Stade, Dax", googleReviews: 94, photoInitials: "AN" },
+  { id: "p3", name: "Sante Active", category: "Sante", city: "Dax", rating: 4.6, commissionRate: 8, avgReverseCommission: 150, trade: "Assurance", needs: ["Assurance", "Assurance habitation"], company: "Sante Active Conseil", companyAddress: "4 Rue du Marche, Dax", googleReviews: 81, photoInitials: "SA" },
+  { id: "p4", name: "Patrimoine Sud", category: "Finances", city: "Dax", rating: 4.9, commissionRate: 14, avgReverseCommission: 340, trade: "Gestion patrimoine", needs: ["Gestion patrimoine", "Conseil fiscal", "Notaire"], company: "Patrimoine Sud", companyAddress: "21 Boulevard Carnot, Dax", googleReviews: 172, photoInitials: "PS" },
+  { id: "p5", name: "Julie Martin", category: "Services", city: "Dax", rating: 4.7, commissionRate: 9, avgReverseCommission: 180, trade: "Nounou", needs: ["Nounou", "Services a la personne"], company: "Julie Services Famille", companyAddress: "6 Rue des Ecoles, Dax", googleReviews: 63, photoInitials: "JM" },
+  { id: "p6", name: "Maxime Leroy", category: "Animalier", city: "Dax", rating: 4.8, commissionRate: 11, avgReverseCommission: 195, trade: "Educateur Canin", needs: ["Educateur Canin", "Toiletteur"], company: "CaniCoach Dax", companyAddress: "14 Route de Narrosse, Dax", googleReviews: 88, photoInitials: "ML" },
 ];
 const NEEDS_BY_MOMENT: Record<string, string[]> = {
   "Vient d avoir un enfant": ["Courtier", "Agrandissement", "Assurance familiale"],
@@ -1141,6 +1142,7 @@ export default function EclaireurScanFunnelPreviewPage() {
                   <div className="mt-2 rounded-lg border border-emerald-300/35 bg-emerald-500/10 px-3 py-2">
                     <p className="text-[11px] uppercase tracking-[0.12em] text-emerald-100/85">Reversion Popey</p>
                     <p className="text-xl font-black text-emerald-300">{pro.commissionRate}% reverses</p>
+                    <p className="text-xs text-emerald-100/90">Moyenne commission possible: ~{pro.avgReverseCommission}€ par lead</p>
                   </div>
                   <div className="mt-2 flex gap-2">
                     <button type="button" className="h-9 rounded-lg border border-white/20 bg-white/10 px-3 text-xs font-black uppercase tracking-wide">
