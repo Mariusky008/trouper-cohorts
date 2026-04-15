@@ -68,37 +68,37 @@ const SPHERES = [
 
 const DIAGNOSTICS: Record<
   string,
-  Array<{ id: string; label: string; need: string; trade: string[] }>
+  Array<{ id: string; label: string; need: string; trade: string[]; avgCommission: number; teaser: string }>
 > = {
   logement: [
-    { id: "sell-home", label: "Doit vendre rapidement", need: "Besoin de vendre", trade: ["Agent immo", "Notaire"] },
-    { id: "renov", label: "A des travaux a lancer", need: "Artisan travaux", trade: ["Artisan travaux", "Agrandissement"] },
-    { id: "buy-home", label: "Veut acheter bientot", need: "Besoin d acheter", trade: ["Courtier pret", "Agent immo"] },
+    { id: "sell-home", label: "Doit vendre rapidement", need: "Besoin de vendre", trade: ["Agent immo", "Notaire"], avgCommission: 320, teaser: "Vente immo: cycle court, commission souvent rapide." },
+    { id: "renov", label: "A des travaux a lancer", need: "Artisan travaux", trade: ["Artisan travaux", "Agrandissement"], avgCommission: 210, teaser: "Travaux: plusieurs opportunites de recommandation." },
+    { id: "buy-home", label: "Veut acheter bientot", need: "Besoin d acheter", trade: ["Courtier pret", "Agent immo"], avgCommission: 290, teaser: "Achat immo: fort potentiel de mise en relation." },
   ],
   juridique: [
-    { id: "optimize", label: "Veut optimiser ses finances", need: "Gestion patrimoine", trade: ["Gestion patrimoine", "Conseil fiscal"] },
-    { id: "protect", label: "Doit revoir ses assurances", need: "Assurance", trade: ["Assurance", "Assurance habitation"] },
-    { id: "inherit", label: "Sujet d heritage", need: "Notaire", trade: ["Notaire", "Gestion patrimoine"] },
+    { id: "optimize", label: "Veut optimiser ses finances", need: "Gestion patrimoine", trade: ["Gestion patrimoine", "Conseil fiscal"], avgCommission: 260, teaser: "Finance: tickets elevés et leads qualifiés." },
+    { id: "protect", label: "Doit revoir ses assurances", need: "Assurance", trade: ["Assurance", "Assurance habitation"], avgCommission: 170, teaser: "Assurance: ideal pour convertir par confiance." },
+    { id: "inherit", label: "Sujet d heritage", need: "Notaire", trade: ["Notaire", "Gestion patrimoine"], avgCommission: 300, teaser: "Heritage: besoin concret, actionnable rapidement." },
   ],
   bienetre: [
-    { id: "kilos", label: "Doit perdre des kilos", need: "Nutritionniste", trade: ["Nutritionniste", "Coach Sportif"] },
-    { id: "sport", label: "Veut se mettre au sport", need: "Coach Sportif", trade: ["Coach Sportif"] },
-    { id: "relax", label: "Besoin de se relaxer", need: "Bien-etre", trade: ["Praticien Bien-etre"] },
+    { id: "kilos", label: "Doit perdre des kilos", need: "Nutritionniste", trade: ["Nutritionniste", "Coach Sportif"], avgCommission: 140, teaser: "Bien-etre: petit ticket mais volume régulier." },
+    { id: "sport", label: "Veut se mettre au sport", need: "Coach Sportif", trade: ["Coach Sportif"], avgCommission: 120, teaser: "Sport: conversion facile si relation de confiance." },
+    { id: "relax", label: "Besoin de se relaxer", need: "Bien-etre", trade: ["Praticien Bien-etre"], avgCommission: 110, teaser: "Bien-etre: bon levier pour activer des recommandations douces." },
   ],
   quotidien: [
-    { id: "dog", label: "Son chien est son amour", need: "Educateur Canin", trade: ["Educateur Canin", "Toiletteur"] },
-    { id: "kids", label: "A besoin d une nounou", need: "Nounou", trade: ["Nounou", "Services a la personne"] },
-    { id: "help", label: "Cherche aide quotidienne", need: "Services a la personne", trade: ["Services a la personne"] },
+    { id: "dog", label: "Son chien est son amour", need: "Educateur Canin", trade: ["Educateur Canin", "Toiletteur"], avgCommission: 130, teaser: "Animaux: besoin affectif, taux de réponse élevé." },
+    { id: "kids", label: "A besoin d une nounou", need: "Nounou", trade: ["Nounou", "Services a la personne"], avgCommission: 180, teaser: "Services famille: besoin urgent, décision rapide." },
+    { id: "help", label: "Cherche aide quotidienne", need: "Services a la personne", trade: ["Services a la personne"], avgCommission: 160, teaser: "Aide quotidienne: excellent pour leads réguliers." },
   ],
   auto: [
-    { id: "car", label: "Veut vendre sa voiture", need: "Vente auto", trade: ["Vente auto"] },
-    { id: "trip", label: "Prepare un voyage", need: "Voyages", trade: ["Voyages"] },
-    { id: "event", label: "Organise un evenement", need: "Evenementiel", trade: ["Evenementiel"] },
+    { id: "car", label: "Veut vendre sa voiture", need: "Vente auto", trade: ["Vente auto"], avgCommission: 150, teaser: "Auto: opportunite ponctuelle mais concrète." },
+    { id: "trip", label: "Prepare un voyage", need: "Voyages", trade: ["Voyages"], avgCommission: 120, teaser: "Voyage: utile pour ouvrir la conversation." },
+    { id: "event", label: "Organise un evenement", need: "Evenementiel", trade: ["Evenementiel"], avgCommission: 190, teaser: "Evenementiel: panier moyen intéressant." },
   ],
   business: [
-    { id: "accounting", label: "Doit structurer sa boite", need: "Expert-comptable", trade: ["Expert-comptable"] },
-    { id: "marketing", label: "Veut plus de clients", need: "Marketing", trade: ["Marketing"] },
-    { id: "hiring", label: "Recrute actuellement", need: "Recrutement", trade: ["Recrutement"] },
+    { id: "accounting", label: "Doit structurer sa boite", need: "Expert-comptable", trade: ["Expert-comptable"], avgCommission: 240, teaser: "Business: fort potentiel sur clients pros." },
+    { id: "marketing", label: "Veut plus de clients", need: "Marketing", trade: ["Marketing"], avgCommission: 210, teaser: "Marketing: besoins fréquents, bonnes recurrences." },
+    { id: "hiring", label: "Recrute actuellement", need: "Recrutement", trade: ["Recrutement"], avgCommission: 260, teaser: "Recrutement: commission élevée si besoin validé." },
   ],
 };
 
@@ -273,6 +273,12 @@ export default function EclaireurScanFunnelPreviewPage() {
   const scoutFirstName = "Jean-Philippe";
   const tutorialExpectedAction = tutorialActive ? (["up", "right", "left"][dailyTutorialStep] ?? null) : null;
   const needsForMatch = funnelNeeds.length > 0 ? funnelNeeds : ALL_NEEDS;
+  const diagnosticsForSphere = DIAGNOSTICS[selectedSphereId] ?? [];
+  const selectedDiagnostic = diagnosticsForSphere.find((diag) => diag.id === selectedDiagnosticId) ?? null;
+  const avgSphereCommission =
+    diagnosticsForSphere.length > 0
+      ? Math.round(diagnosticsForSphere.reduce((sum, diag) => sum + diag.avgCommission, 0) / diagnosticsForSphere.length)
+      : null;
 
   function findSuggestedPro(need: string) {
     const inCity = PROS.filter((pro) => pro.city === "Dax" || pro.city === activeContact.city);
@@ -847,6 +853,12 @@ export default function EclaireurScanFunnelPreviewPage() {
                     ))}
                   </div>
 
+                  {avgSphereCommission && (
+                    <p className="mt-3 rounded-xl border border-emerald-300/25 bg-emerald-500/10 px-3 py-2 text-xs text-emerald-100">
+                      Potentiel moyen sur cette categorie: <span className="font-black">~{avgSphereCommission}€</span> par lead valide. Astuce: priorise les contacts chauds.
+                    </p>
+                  )}
+
                   <div className="mt-3 rounded-2xl border border-white/15 bg-black/20 p-3">
                     <p className="text-xs text-white/70">Qu est-ce qui definit le mieux {surveillanceContact.name.split(" ")[0]} ?</p>
                     <div className="mt-2 flex flex-wrap gap-2">
@@ -863,6 +875,11 @@ export default function EclaireurScanFunnelPreviewPage() {
                         </button>
                       ))}
                     </div>
+                    {selectedDiagnostic && (
+                      <p className="mt-3 rounded-xl border border-cyan-300/25 bg-cyan-500/10 px-3 py-2 text-xs text-cyan-100">
+                        Potentiel estime pour ce choix: <span className="font-black">~{selectedDiagnostic.avgCommission}€</span>. {selectedDiagnostic.teaser}
+                      </p>
+                    )}
                     <div className="mt-3 grid grid-cols-1 gap-2">
                       <button
                         type="button"
