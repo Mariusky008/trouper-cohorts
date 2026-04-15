@@ -57,7 +57,57 @@ const CONTACTS: Contact[] = [
   { id: "c20", name: "Lea M.", phone: "06 50 19 36 29", city: "Saint-Paul-les-Dax" },
 ];
 
-const DAILY_TAGS = ["Proprietaire", "Pro", "Famille", "Ami proche"] as const;
+const SPHERES = [
+  { id: "logement", icon: "🏠", label: "Logement", description: "Immo, Travaux, Deco, Jardin" },
+  { id: "juridique", icon: "⚖️", label: "Juridique & Argent", description: "Banque, Assurances, Notaire, Fiscalite" },
+  { id: "bienetre", icon: "🧘", label: "Bien-etre & Sante", description: "Sport, Nutrition, Beauté" },
+  { id: "quotidien", icon: "🐾", label: "Vie quotidienne", description: "Animaux, Enfants, Services" },
+  { id: "auto", icon: "🚗", label: "Auto & Loisirs", description: "Auto, Voyages, Evenementiel" },
+  { id: "business", icon: "💼", label: "Business", description: "Compta, Marketing, Recrutement" },
+] as const;
+
+const DIAGNOSTICS: Record<
+  string,
+  Array<{ id: string; label: string; need: string; trade: string[] }>
+> = {
+  logement: [
+    { id: "sell-home", label: "Doit vendre rapidement", need: "Besoin de vendre", trade: ["Agent immo", "Notaire"] },
+    { id: "renov", label: "A des travaux a lancer", need: "Artisan travaux", trade: ["Artisan travaux", "Agrandissement"] },
+    { id: "buy-home", label: "Veut acheter bientot", need: "Besoin d acheter", trade: ["Courtier pret", "Agent immo"] },
+  ],
+  juridique: [
+    { id: "optimize", label: "Veut optimiser ses finances", need: "Gestion patrimoine", trade: ["Gestion patrimoine", "Conseil fiscal"] },
+    { id: "protect", label: "Doit revoir ses assurances", need: "Assurance", trade: ["Assurance", "Assurance habitation"] },
+    { id: "inherit", label: "Sujet d heritage", need: "Notaire", trade: ["Notaire", "Gestion patrimoine"] },
+  ],
+  bienetre: [
+    { id: "kilos", label: "Doit perdre des kilos", need: "Nutritionniste", trade: ["Nutritionniste", "Coach Sportif"] },
+    { id: "sport", label: "Veut se mettre au sport", need: "Coach Sportif", trade: ["Coach Sportif"] },
+    { id: "relax", label: "Besoin de se relaxer", need: "Bien-etre", trade: ["Praticien Bien-etre"] },
+  ],
+  quotidien: [
+    { id: "dog", label: "Son chien est son amour", need: "Educateur Canin", trade: ["Educateur Canin", "Toiletteur"] },
+    { id: "kids", label: "A besoin d une nounou", need: "Nounou", trade: ["Nounou", "Services a la personne"] },
+    { id: "help", label: "Cherche aide quotidienne", need: "Services a la personne", trade: ["Services a la personne"] },
+  ],
+  auto: [
+    { id: "car", label: "Veut vendre sa voiture", need: "Vente auto", trade: ["Vente auto"] },
+    { id: "trip", label: "Prepare un voyage", need: "Voyages", trade: ["Voyages"] },
+    { id: "event", label: "Organise un evenement", need: "Evenementiel", trade: ["Evenementiel"] },
+  ],
+  business: [
+    { id: "accounting", label: "Doit structurer sa boite", need: "Expert-comptable", trade: ["Expert-comptable"] },
+    { id: "marketing", label: "Veut plus de clients", need: "Marketing", trade: ["Marketing"] },
+    { id: "hiring", label: "Recrute actuellement", need: "Recrutement", trade: ["Recrutement"] },
+  ],
+};
+
+const MAGIC_SEARCH: Array<{ keyword: string; suggestion: string; need: string }> = [
+  { keyword: "chocolat", suggestion: "Veut offrir un cadeau gourmand ?", need: "Artisan Chocolatier" },
+  { keyword: "voyance", suggestion: "Cherche un accompagnement spirituel ?", need: "Voyance" },
+  { keyword: "chien", suggestion: "Son chien est son amour ?", need: "Educateur Canin" },
+  { keyword: "maison", suggestion: "Projet immo en preparation ?", need: "Besoin d acheter" },
+];
 const MOMENTS = [
   "Vient d avoir un enfant",
   "Est en plein divorce",
@@ -110,7 +160,12 @@ export default function EclaireurScanFunnelPreviewPage() {
   const [contactMeta, setContactMeta] = useState<Record<string, ContactMeta>>(() =>
     Object.fromEntries(CONTACTS.map((contact) => [contact.id, { status: "new", tags: [] }])),
   );
-  const [pendingTagContactId, setPendingTagContactId] = useState<string | null>(null);
+  const [surveillanceContactId, setSurveillanceContactId] = useState<string | null>(null);
+  const [surveillanceMode, setSurveillanceMode] = useState<"actions" | "funnel">("actions");
+  const [selectedSphereId, setSelectedSphereId] = useState<string>(SPHERES[0].id);
+  const [selectedDiagnosticId, setSelectedDiagnosticId] = useState<string | null>(null);
+  const [magicSearchTerm, setMagicSearchTerm] = useState("");
+  const [scheduledReminders, setScheduledReminders] = useState<Record<string, string>>({});
   const [selectedMoment, setSelectedMoment] = useState<string>(MOMENTS[0]);
   const [selectedNeed, setSelectedNeed] = useState<string>("");
   const [messageDraft, setMessageDraft] = useState("");
@@ -122,7 +177,6 @@ export default function EclaireurScanFunnelPreviewPage() {
   const [featuredProId, setFeaturedProId] = useState<string | null>(null);
   const [showLeadSentModal, setShowLeadSentModal] = useState(false);
   const [swipeAnim, setSwipeAnim] = useState<"none" | "left" | "right" | "up">("none");
-  const [selectedQuickTag, setSelectedQuickTag] = useState<string>(DAILY_TAGS[0]);
   const [lastActionMessage, setLastActionMessage] = useState("");
   const [showSearchPanel, setShowSearchPanel] = useState(false);
   const [contactResponse, setContactResponse] = useState<Record<string, ReplyStatus>>({});
@@ -132,6 +186,8 @@ export default function EclaireurScanFunnelPreviewPage() {
   const dailyDeckIds = useMemo(() => CONTACTS.slice(0, 20).map((contact) => contact.id), []);
   const currentDailyContact = CONTACTS.find((contact) => contact.id === dailyDeckIds[currentCardIndex]) || null;
   const activeContact = CONTACTS.find((contact) => contact.id === activeContactId) ?? CONTACTS[0];
+  const surveillanceContact = CONTACTS.find((contact) => contact.id === surveillanceContactId) ?? null;
+  const isColdContact = surveillanceContact ? Number(surveillanceContact.id.replace("c", "")) % 2 === 0 : false;
   const cardThemes = [
     "from-[#1B2430] via-[#1A2D32] to-[#172126]",
     "from-[#261B2B] via-[#1F2236] to-[#1B2630]",
@@ -299,22 +355,60 @@ export default function EclaireurScanFunnelPreviewPage() {
       setLastActionMessage("Tutoriel: fais d abord l action indiquee.");
       return;
     }
-    setSelectedQuickTag(DAILY_TAGS[0]);
-    setPendingTagContactId(currentDailyContact.id);
+    setSurveillanceContactId(currentDailyContact.id);
+    setSurveillanceMode("actions");
+    setSelectedSphereId(SPHERES[0].id);
+    setSelectedDiagnosticId(null);
+    setMagicSearchTerm("");
   }
 
-  function onConfirmTag(tag: string) {
-    if (!pendingTagContactId) return;
-    const contact = CONTACTS.find((item) => item.id === pendingTagContactId);
+  function launchSmartFunnel(contactId: string, need: string, businessTag: string) {
+    const contact = CONTACTS.find((item) => item.id === contactId);
+    if (!contact) return;
     animateAndThen("right", () => {
-      updateStatus(pendingTagContactId, "qualified", tag);
-      setPendingTagContactId(null);
-      if (contact) setLastActionMessage(`${contact.name} ajoute a "A contacter"`);
+      updateStatus(contactId, "qualified", businessTag);
+      setSurveillanceContactId(null);
+      setActiveContactId(contactId);
+      setSelectedMoment("Autre");
+      setSelectedNeed(need);
+      setSelectedProId(null);
+      setFeaturedProId(null);
+      setMessageDraft("");
+      setFunnelStep("match");
+      setLastActionMessage(`${contact.name} passe en qualification business (${businessTag}).`);
       if (tutorialExpectedAction === "right") {
         setDailyTutorialStep((value) => (value + 1) as 0 | 1 | 2 | 3);
       }
       goNextCard();
     });
+  }
+
+  function scheduleReminder(months: 3 | 6) {
+    if (!surveillanceContactId) return;
+    const contact = CONTACTS.find((item) => item.id === surveillanceContactId);
+    const dueDate = new Date();
+    dueDate.setMonth(dueDate.getMonth() + months);
+    setScheduledReminders((prev) => ({ ...prev, [surveillanceContactId]: dueDate.toLocaleDateString("fr-FR") }));
+    updateStatus(surveillanceContactId, "qualified", `Rappel ${months}m`);
+    setSurveillanceContactId(null);
+    if (contact) setLastActionMessage(`Rappel programme dans ${months} mois pour ${contact.name}.`);
+    goNextCard();
+  }
+
+  function sendWakeMessage() {
+    if (!surveillanceContactId) return;
+    const contact = CONTACTS.find((item) => item.id === surveillanceContactId);
+    if (!contact) return;
+    const digits = contact.phone.replace(/\D+/g, "");
+    const whatsappPhone = digits.startsWith("0") ? `33${digits.slice(1)}` : digits;
+    const wakeMessage = `Salut ${contact.name.split(" ")[0]}, ca fait un bail ! Je me suis mis a fond dans un reseau d experts sur Dax (Immo, travaux, finance...). Si jamais toi ou un proche cherchez un crack dans un domaine, demande-moi, j ai les meilleurs deals de la ville en ce moment. A plus !`;
+    if (typeof window !== "undefined") {
+      window.open(`https://wa.me/${whatsappPhone}?text=${encodeURIComponent(wakeMessage)}`, "_blank");
+    }
+    updateStatus(surveillanceContactId, "qualified", "Message reveil");
+    setSurveillanceContactId(null);
+    setLastActionMessage(`Message de courtoisie lance pour ${contact.name}.`);
+    goNextCard();
   }
 
   function openFunnelForContact(contactId: string) {
@@ -659,44 +753,144 @@ export default function EclaireurScanFunnelPreviewPage() {
           </div>
         )}
 
-        {pendingTagContactId && (
-          <div className="fixed inset-0 z-40 bg-black/55 backdrop-blur-sm flex items-center justify-center px-4">
-            <section className="w-full max-w-sm rounded-2xl border border-[#EAC886]/35 bg-[#1A1510] p-4 animate-[fadeIn_.2s_ease-out]">
-              <p className="text-[11px] font-black uppercase tracking-[0.12em] text-[#EAC886]">Tag profil</p>
-              <h3 className="mt-1 text-lg font-black">Quel est son profil ?</h3>
-              <p className="mt-1 text-xs text-white/75">
-                Identifie le lien que vous avez avec cette personne. Le jour ou elle aura besoin d un professionnel Popey, vous pourrez la retrouver dans <span className="font-black">A contacter</span> et la recommander facilement.
+        {surveillanceContactId && surveillanceContact && (
+          <div className="fixed inset-0 z-40 bg-black/55 backdrop-blur-sm">
+            <button
+              type="button"
+              aria-label="Fermer"
+              onClick={() => setSurveillanceContactId(null)}
+              className="absolute inset-0 h-full w-full"
+            />
+            <section className="absolute bottom-0 left-0 right-0 z-50 mx-auto max-w-2xl rounded-t-3xl border border-white/15 bg-[#12161A] p-5 shadow-[0_-30px_80px_rgba(0,0,0,0.6)]">
+              <div className="mx-auto mb-2 h-1.5 w-12 rounded-full bg-white/20" />
+              <p className="text-[11px] font-black uppercase tracking-[0.12em] text-[#EAC886]">Mise sous surveillance</p>
+              <h3 className="mt-2 text-xl font-black">Pas de besoin immediat ? Organisons la suite.</h3>
+              <p className="mt-2 text-sm text-white/75">
+                C est peut-etre pas encore le moment pour {surveillanceContact.name.split(" ")[0]}, mais ne le laissons pas s endormir. Choisissez une action
+                pour rester dans son radar.
               </p>
-              <div className="mt-3 grid grid-cols-2 gap-2">
-                {DAILY_TAGS.map((tag) => (
-                  <button
-                    key={tag}
-                    type="button"
-                    onClick={() => setSelectedQuickTag(tag)}
-                    className={`h-10 rounded-lg border text-xs font-black uppercase tracking-wide ${
-                      selectedQuickTag === tag ? "border-emerald-300/55 bg-emerald-500/12" : "border-white/20 bg-white/10"
-                    }`}
-                  >
-                    {tag}
-                  </button>
-                ))}
-              </div>
-              <div className="mt-3 grid grid-cols-2 gap-2">
+
+              {isColdContact && (
+                <p className="mt-3 rounded-xl border border-[#EAC886]/25 bg-[#1A1510] px-3 py-2 text-xs text-[#F2D9A2]">
+                  💡 Contact froid: un message de reveil est conseille.
+                </p>
+              )}
+
+              <div className="mt-4 grid gap-2 sm:grid-cols-2">
                 <button
                   type="button"
-                  onClick={() => setPendingTagContactId(null)}
-                  className="h-10 rounded-lg border border-white/20 bg-black/25 px-4 text-xs font-black uppercase tracking-wide"
+                  onClick={() => setSurveillanceMode("funnel")}
+                  className={`h-11 rounded-xl border text-xs font-black uppercase tracking-wide ${
+                    surveillanceMode === "funnel" ? "border-emerald-300/55 bg-emerald-500/12" : "border-white/20 bg-white/5"
+                  }`}
                 >
-                  Annuler
+                  Entonnoir intelligent
                 </button>
                 <button
                   type="button"
-                  onClick={() => onConfirmTag(selectedQuickTag)}
-                  className="h-10 rounded-lg bg-emerald-400 px-4 text-xs font-black uppercase tracking-wide text-black"
+                  onClick={sendWakeMessage}
+                  className="h-11 rounded-xl bg-cyan-300 text-black text-xs font-black uppercase tracking-wide"
                 >
-                  Valider
+                  💬 Envoyer un message de courtoisie
                 </button>
               </div>
+
+              {surveillanceMode === "funnel" && (
+                <div className="mt-4">
+                  <div className="flex items-center gap-2">
+                    <input
+                      value={magicSearchTerm}
+                      onChange={(event) => setMagicSearchTerm(event.target.value)}
+                      placeholder='Magic search (ex: \"Chocolat\")'
+                      className="h-10 w-full rounded-xl border border-white/20 bg-black/25 px-3 text-sm"
+                    />
+                  </div>
+
+                  {magicSearchTerm.trim() && (
+                    <div className="mt-2 space-y-2">
+                      {MAGIC_SEARCH.filter((item) => item.keyword.includes(magicSearchTerm.trim().toLowerCase())).map((item) => (
+                        <button
+                          key={item.keyword}
+                          type="button"
+                          onClick={() => launchSmartFunnel(surveillanceContactId, item.need, "Potentiel business")}
+                          className="w-full rounded-xl border border-white/15 bg-black/20 p-3 text-left"
+                        >
+                          <p className="text-sm font-black">{item.suggestion}</p>
+                          <p className="text-xs text-white/70">Suggestion: {item.need}</p>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                    {SPHERES.map((sphere) => (
+                      <button
+                        key={sphere.id}
+                        type="button"
+                        onClick={() => {
+                          setSelectedSphereId(sphere.id);
+                          setSelectedDiagnosticId(null);
+                        }}
+                        className={`rounded-2xl border p-3 text-left ${
+                          selectedSphereId === sphere.id ? "border-emerald-300/55 bg-emerald-500/10" : "border-white/15 bg-black/20"
+                        }`}
+                      >
+                        <p className="text-sm font-black">
+                          {sphere.icon} {sphere.label}
+                        </p>
+                        <p className="text-xs text-white/70">{sphere.description}</p>
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="mt-3 rounded-2xl border border-white/15 bg-black/20 p-3">
+                    <p className="text-xs text-white/70">Qu est-ce qui definit le mieux {surveillanceContact.name.split(" ")[0]} ?</p>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {(DIAGNOSTICS[selectedSphereId] ?? []).map((d) => (
+                        <button
+                          key={d.id}
+                          type="button"
+                          onClick={() => setSelectedDiagnosticId(d.id)}
+                          className={`rounded-full border px-3 py-2 text-xs font-black uppercase tracking-wide ${
+                            selectedDiagnosticId === d.id ? "border-emerald-300/55 bg-emerald-500/12" : "border-white/20 bg-white/5"
+                          }`}
+                        >
+                          {d.label}
+                        </button>
+                      ))}
+                    </div>
+                    <div className="mt-3 grid grid-cols-3 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => scheduleReminder(3)}
+                        className="h-10 rounded-xl border border-white/20 bg-white/10 text-xs font-black uppercase tracking-wide"
+                      >
+                        🔔 3 mois
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => scheduleReminder(6)}
+                        className="h-10 rounded-xl border border-white/20 bg-white/10 text-xs font-black uppercase tracking-wide"
+                      >
+                        🔔 6 mois
+                      </button>
+                      <button
+                        type="button"
+                        disabled={!selectedDiagnosticId}
+                        onClick={() => {
+                          const diag = (DIAGNOSTICS[selectedSphereId] ?? []).find((d) => d.id === selectedDiagnosticId);
+                          if (!diag) return;
+                          const mappedNeed = diag.trade[0] ?? diag.need;
+                          launchSmartFunnel(surveillanceContactId, mappedNeed, "Potentiel business");
+                        }}
+                        className="h-10 rounded-xl bg-emerald-400 text-black text-xs font-black uppercase tracking-wide disabled:opacity-40"
+                      >
+                        Continuer
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </section>
           </div>
         )}
