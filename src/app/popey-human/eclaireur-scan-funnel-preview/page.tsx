@@ -165,6 +165,7 @@ export default function EclaireurScanFunnelPreviewPage() {
   const [selectedSphereId, setSelectedSphereId] = useState<string>(SPHERES[0].id);
   const [selectedDiagnosticId, setSelectedDiagnosticId] = useState<string | null>(null);
   const [magicSearchTerm, setMagicSearchTerm] = useState("");
+  const [funnelNeeds, setFunnelNeeds] = useState<string[]>([]);
   const [scheduledReminders, setScheduledReminders] = useState<Record<string, string>>({});
   const [selectedMoment, setSelectedMoment] = useState<string>(MOMENTS[0]);
   const [selectedNeed, setSelectedNeed] = useState<string>("");
@@ -270,6 +271,7 @@ export default function EclaireurScanFunnelPreviewPage() {
   const scanCompleted = scanCount >= totalContacts;
   const scoutFirstName = "Jean-Philippe";
   const tutorialExpectedAction = tutorialActive ? (["up", "right", "left"][dailyTutorialStep] ?? null) : null;
+  const needsForMatch = funnelNeeds.length > 0 ? funnelNeeds : ALL_NEEDS;
 
   useEffect(() => {
     if (introStep !== "scanning") return;
@@ -362,7 +364,7 @@ export default function EclaireurScanFunnelPreviewPage() {
     setMagicSearchTerm("");
   }
 
-  function launchSmartFunnel(contactId: string, need: string, businessTag: string) {
+  function launchSmartFunnel(contactId: string, need: string, businessTag: string, relatedNeeds?: string[]) {
     const contact = CONTACTS.find((item) => item.id === contactId);
     if (!contact) return;
     animateAndThen("right", () => {
@@ -371,6 +373,7 @@ export default function EclaireurScanFunnelPreviewPage() {
       setActiveContactId(contactId);
       setSelectedMoment("Autre");
       setSelectedNeed(need);
+      setFunnelNeeds(relatedNeeds && relatedNeeds.length > 0 ? Array.from(new Set(relatedNeeds)) : [need]);
       setSelectedProId(null);
       setFeaturedProId(null);
       setMessageDraft("");
@@ -415,6 +418,7 @@ export default function EclaireurScanFunnelPreviewPage() {
     setActiveContactId(contactId);
     setSelectedMoment("Autre");
     setSelectedNeed(ALL_NEEDS[0] ?? "Courtier");
+    setFunnelNeeds([]);
     setMessageDraft("");
     setSelectedProId(null);
     setFeaturedProId(null);
@@ -446,6 +450,7 @@ export default function EclaireurScanFunnelPreviewPage() {
     setActiveContactId(contact.id);
     setSelectedMoment("Autre");
     setSelectedNeed(ALL_NEEDS[0] ?? "Courtier");
+    setFunnelNeeds([]);
     setSelectedProId(null);
     setFeaturedProId(null);
     setSelectedTrade("Expert local");
@@ -754,14 +759,14 @@ export default function EclaireurScanFunnelPreviewPage() {
         )}
 
         {surveillanceContactId && surveillanceContact && (
-          <div className="fixed inset-0 z-40 bg-black/55 backdrop-blur-sm">
+          <div className="fixed inset-0 z-40 bg-black/55 backdrop-blur-sm flex items-center justify-center px-4">
             <button
               type="button"
               aria-label="Fermer"
               onClick={() => setSurveillanceContactId(null)}
               className="absolute inset-0 h-full w-full"
             />
-            <section className="absolute bottom-0 left-0 right-0 z-50 mx-auto max-w-2xl rounded-t-3xl border border-white/15 bg-[#12161A] p-5 shadow-[0_-30px_80px_rgba(0,0,0,0.6)]">
+            <section className="relative z-50 w-full max-w-2xl max-h-[88vh] overflow-y-auto rounded-3xl border border-white/15 bg-[#12161A] p-5 shadow-[0_30px_80px_rgba(0,0,0,0.6)]">
               <div className="mx-auto mb-2 h-1.5 w-12 rounded-full bg-white/20" />
               <p className="text-[11px] font-black uppercase tracking-[0.12em] text-[#EAC886]">Mise sous surveillance</p>
               <h3 className="mt-2 text-xl font-black">Pas de besoin immediat ? Organisons la suite.</h3>
@@ -812,7 +817,7 @@ export default function EclaireurScanFunnelPreviewPage() {
                         <button
                           key={item.keyword}
                           type="button"
-                          onClick={() => launchSmartFunnel(surveillanceContactId, item.need, "Potentiel business")}
+                          onClick={() => launchSmartFunnel(surveillanceContactId, item.need, "Potentiel business", [item.need])}
                           className="w-full rounded-xl border border-white/15 bg-black/20 p-3 text-left"
                         >
                           <p className="text-sm font-black">{item.suggestion}</p>
@@ -881,7 +886,12 @@ export default function EclaireurScanFunnelPreviewPage() {
                           const diag = (DIAGNOSTICS[selectedSphereId] ?? []).find((d) => d.id === selectedDiagnosticId);
                           if (!diag) return;
                           const mappedNeed = diag.trade[0] ?? diag.need;
-                          launchSmartFunnel(surveillanceContactId, mappedNeed, "Potentiel business");
+                          launchSmartFunnel(
+                            surveillanceContactId,
+                            mappedNeed,
+                            "Potentiel business",
+                            [...diag.trade, diag.need],
+                          );
                         }}
                         className="h-10 rounded-xl bg-emerald-400 text-black text-xs font-black uppercase tracking-wide disabled:opacity-40"
                       >
@@ -905,7 +915,7 @@ export default function EclaireurScanFunnelPreviewPage() {
               <>
                 <p className="mt-2 text-sm text-white/75">De quel expert {activeContact.name.split(" ")[0]} a-t-il besoin ?</p>
                 <div className="mt-3 grid gap-2 sm:grid-cols-3">
-                  {ALL_NEEDS.map((need) => (
+                  {needsForMatch.map((need) => (
                     <button
                       key={need}
                       type="button"
