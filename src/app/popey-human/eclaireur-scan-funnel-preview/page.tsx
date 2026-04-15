@@ -913,7 +913,7 @@ export default function EclaireurScanFunnelPreviewPage() {
 
             {funnelStep === "match" && (
               <>
-                <p className="mt-2 text-sm text-white/75">De quel expert {activeContact.name.split(" ")[0]} a-t-il besoin ?</p>
+                <p className="mt-2 text-sm text-white/75">De quel expert {activeContact.name.split(" ")[0]} pourrait-elle etre interessee ?</p>
                 <div className="mt-3 grid gap-2 sm:grid-cols-3">
                   {needsForMatch.map((need) => (
                     <button
@@ -926,7 +926,8 @@ export default function EclaireurScanFunnelPreviewPage() {
                         );
                         if (suggested) {
                           setFeaturedProId(suggested.id);
-                          setShowProDetailModal(true);
+                        } else {
+                          setFeaturedProId(null);
                         }
                       }}
                       className={`h-11 rounded-xl border text-xs font-black uppercase tracking-wide ${
@@ -937,7 +938,15 @@ export default function EclaireurScanFunnelPreviewPage() {
                     </button>
                   ))}
                 </div>
-                <p className="mt-3 text-xs text-white/70">Choisis un besoin. Une pop-up pro s’ouvre, puis tu passes directement a l’etape message.</p>
+                <button
+                  type="button"
+                  disabled={!featuredProId}
+                  onClick={() => setShowProDetailModal(true)}
+                  className="mt-3 h-11 rounded-xl bg-emerald-400 px-4 text-black text-xs font-black uppercase tracking-wide disabled:opacity-40"
+                >
+                  Voir l expert recommande
+                </button>
+                <p className="mt-2 text-xs text-white/70">Choisis un besoin, puis ouvre la pop-up pro avec le CTA.</p>
               </>
             )}
 
