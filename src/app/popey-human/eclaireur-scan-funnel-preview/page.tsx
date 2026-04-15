@@ -26,6 +26,7 @@ type Pro = {
   category: string;
   city: string;
   rating: number;
+  commissionRate: number;
   trade: string;
   needs: string[];
   company: string;
@@ -126,12 +127,12 @@ const SEGMENTS = [
   { id: "finance", label: "Investissement", percent: 4, avgCommission: 320 },
 ] as const;
 const PROS: Pro[] = [
-  { id: "p1", name: "Camille Durand", category: "Immo", city: "Dax", rating: 4.8, trade: "Courtier", needs: ["Courtier", "Courtier pret", "Assurance familiale"], company: "Durand Courtage", companyAddress: "12 Rue de la Liberte, Dax", googleReviews: 126, photoInitials: "CD" },
-  { id: "p2", name: "Atelier Nova", category: "Travaux", city: "Dax", rating: 4.7, trade: "Artisan travaux", needs: ["Artisan travaux", "Agrandissement"], company: "Atelier Nova", companyAddress: "8 Avenue du Stade, Dax", googleReviews: 94, photoInitials: "AN" },
-  { id: "p3", name: "Sante Active", category: "Sante", city: "Dax", rating: 4.6, trade: "Assurance", needs: ["Assurance", "Assurance habitation"], company: "Sante Active Conseil", companyAddress: "4 Rue du Marche, Dax", googleReviews: 81, photoInitials: "SA" },
-  { id: "p4", name: "Patrimoine Sud", category: "Finances", city: "Dax", rating: 4.9, trade: "Gestion patrimoine", needs: ["Gestion patrimoine", "Conseil fiscal", "Notaire"], company: "Patrimoine Sud", companyAddress: "21 Boulevard Carnot, Dax", googleReviews: 172, photoInitials: "PS" },
-  { id: "p5", name: "Julie Martin", category: "Services", city: "Dax", rating: 4.7, trade: "Nounou", needs: ["Nounou", "Services a la personne"], company: "Julie Services Famille", companyAddress: "6 Rue des Ecoles, Dax", googleReviews: 63, photoInitials: "JM" },
-  { id: "p6", name: "Maxime Leroy", category: "Animalier", city: "Dax", rating: 4.8, trade: "Educateur Canin", needs: ["Educateur Canin", "Toiletteur"], company: "CaniCoach Dax", companyAddress: "14 Route de Narrosse, Dax", googleReviews: 88, photoInitials: "ML" },
+  { id: "p1", name: "Camille Durand", category: "Immo", city: "Dax", rating: 4.8, commissionRate: 12, trade: "Courtier", needs: ["Courtier", "Courtier pret", "Assurance familiale"], company: "Durand Courtage", companyAddress: "12 Rue de la Liberte, Dax", googleReviews: 126, photoInitials: "CD" },
+  { id: "p2", name: "Atelier Nova", category: "Travaux", city: "Dax", rating: 4.7, commissionRate: 10, trade: "Artisan travaux", needs: ["Artisan travaux", "Agrandissement"], company: "Atelier Nova", companyAddress: "8 Avenue du Stade, Dax", googleReviews: 94, photoInitials: "AN" },
+  { id: "p3", name: "Sante Active", category: "Sante", city: "Dax", rating: 4.6, commissionRate: 8, trade: "Assurance", needs: ["Assurance", "Assurance habitation"], company: "Sante Active Conseil", companyAddress: "4 Rue du Marche, Dax", googleReviews: 81, photoInitials: "SA" },
+  { id: "p4", name: "Patrimoine Sud", category: "Finances", city: "Dax", rating: 4.9, commissionRate: 14, trade: "Gestion patrimoine", needs: ["Gestion patrimoine", "Conseil fiscal", "Notaire"], company: "Patrimoine Sud", companyAddress: "21 Boulevard Carnot, Dax", googleReviews: 172, photoInitials: "PS" },
+  { id: "p5", name: "Julie Martin", category: "Services", city: "Dax", rating: 4.7, commissionRate: 9, trade: "Nounou", needs: ["Nounou", "Services a la personne"], company: "Julie Services Famille", companyAddress: "6 Rue des Ecoles, Dax", googleReviews: 63, photoInitials: "JM" },
+  { id: "p6", name: "Maxime Leroy", category: "Animalier", city: "Dax", rating: 4.8, commissionRate: 11, trade: "Educateur Canin", needs: ["Educateur Canin", "Toiletteur"], company: "CaniCoach Dax", companyAddress: "14 Route de Narrosse, Dax", googleReviews: 88, photoInitials: "ML" },
 ];
 const NEEDS_BY_MOMENT: Record<string, string[]> = {
   "Vient d avoir un enfant": ["Courtier", "Agrandissement", "Assurance familiale"],
@@ -428,6 +429,29 @@ export default function EclaireurScanFunnelPreviewPage() {
     }
     updateStatus(contact.id, "qualified", "Message prise de contact");
     setLastActionMessage(`Message de prise de contact ouvert pour ${contact.name}.`);
+  }
+
+  function informOneContactAboutPro(pro: Pro) {
+    const contact = activeContact;
+    const digits = contact.phone.replace(/\D+/g, "");
+    const whatsappPhone = digits.startsWith("0") ? `33${digits.slice(1)}` : digits;
+    const text = `Salut ${contact.name.split(" ")[0]}, si tu as un besoin sur ${pro.trade}, je pense a ${pro.name} (${pro.company}) a ${pro.city}. Tres bon retour client et offres VIP possibles.`;
+    if (typeof window !== "undefined") {
+      window.open(`https://wa.me/${whatsappPhone}?text=${encodeURIComponent(text)}`, "_blank");
+    }
+    setLastActionMessage(`Info envoyee a ${contact.name} au sujet de ${pro.name}.`);
+  }
+
+  function sendFriendToPro(pro: Pro) {
+    setActiveContactId(activeContact.id);
+    setSelectedProId(pro.id);
+    setSelectedTrade(pro.name);
+    setMessageDraft(
+      `Salut ${activeContact.name.split(" ")[0]}, je te mets en relation avec ${pro.name} (${pro.trade}) a ${pro.city}. C est un pro recommande de mon reseau Popey, je peux lui demander de te contacter.`,
+    );
+    setFunnelStep("message");
+    setMainTab("daily");
+    setLastActionMessage(`Passage au message pour envoyer ${activeContact.name} vers ${pro.name}.`);
   }
 
   function openFunnelForContact(contactId: string) {
@@ -1094,7 +1118,7 @@ export default function EclaireurScanFunnelPreviewPage() {
             <p className="text-[11px] font-black uppercase tracking-[0.12em] text-[#EAC886]">Annuaire des metiers</p>
             <h2 className="mt-1 text-2xl font-black">Les cracks de la ville</h2>
             <div className="mt-3 grid grid-cols-5 gap-2">
-              {["Tous", "Immo", "Travaux", "Sante", "Finances"].map((category) => (
+              {["Tous", "Immo", "Travaux", "Sante", "Finances", "Services", "Animalier"].map((category) => (
                 <button
                   key={category}
                   type="button"
@@ -1114,6 +1138,10 @@ export default function EclaireurScanFunnelPreviewPage() {
                   <p className="text-xs text-white/70">
                     {pro.category} • {pro.city} • note {pro.rating}/5
                   </p>
+                  <div className="mt-2 rounded-lg border border-emerald-300/35 bg-emerald-500/10 px-3 py-2">
+                    <p className="text-[11px] uppercase tracking-[0.12em] text-emerald-100/85">Reversion Popey</p>
+                    <p className="text-xl font-black text-emerald-300">{pro.commissionRate}% reverses</p>
+                  </div>
                   <div className="mt-2 flex gap-2">
                     <button type="button" className="h-9 rounded-lg border border-white/20 bg-white/10 px-3 text-xs font-black uppercase tracking-wide">
                       Appeler
@@ -1123,6 +1151,22 @@ export default function EclaireurScanFunnelPreviewPage() {
                     </button>
                     <button type="button" className="h-9 rounded-lg bg-emerald-400 px-3 text-xs font-black uppercase tracking-wide text-black">
                       Recommander ce pro
+                    </button>
+                  </div>
+                  <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                    <button
+                      type="button"
+                      onClick={() => informOneContactAboutPro(pro)}
+                      className="h-9 rounded-lg border border-cyan-300/35 bg-cyan-500/10 px-3 text-xs font-black uppercase tracking-wide text-cyan-100"
+                    >
+                      J informe un de mes contact
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => sendFriendToPro(pro)}
+                      className="h-9 rounded-lg bg-[#EAC886] px-3 text-xs font-black uppercase tracking-wide text-black"
+                    >
+                      J envoie un ami a ce pro
                     </button>
                   </div>
                 </article>
