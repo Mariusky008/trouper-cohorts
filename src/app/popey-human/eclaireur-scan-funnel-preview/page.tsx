@@ -130,6 +130,8 @@ const PROS: Pro[] = [
   { id: "p2", name: "Atelier Nova", category: "Travaux", city: "Dax", rating: 4.7, trade: "Artisan travaux", needs: ["Artisan travaux", "Agrandissement"], company: "Atelier Nova", companyAddress: "8 Avenue du Stade, Dax", googleReviews: 94, photoInitials: "AN" },
   { id: "p3", name: "Sante Active", category: "Sante", city: "Dax", rating: 4.6, trade: "Assurance", needs: ["Assurance", "Assurance habitation"], company: "Sante Active Conseil", companyAddress: "4 Rue du Marche, Dax", googleReviews: 81, photoInitials: "SA" },
   { id: "p4", name: "Patrimoine Sud", category: "Finances", city: "Dax", rating: 4.9, trade: "Gestion patrimoine", needs: ["Gestion patrimoine", "Conseil fiscal", "Notaire"], company: "Patrimoine Sud", companyAddress: "21 Boulevard Carnot, Dax", googleReviews: 172, photoInitials: "PS" },
+  { id: "p5", name: "Julie Martin", category: "Services", city: "Dax", rating: 4.7, trade: "Nounou", needs: ["Nounou", "Services a la personne"], company: "Julie Services Famille", companyAddress: "6 Rue des Ecoles, Dax", googleReviews: 63, photoInitials: "JM" },
+  { id: "p6", name: "Maxime Leroy", category: "Animalier", city: "Dax", rating: 4.8, trade: "Educateur Canin", needs: ["Educateur Canin", "Toiletteur"], company: "CaniCoach Dax", companyAddress: "14 Route de Narrosse, Dax", googleReviews: 88, photoInitials: "ML" },
 ];
 const NEEDS_BY_MOMENT: Record<string, string[]> = {
   "Vient d avoir un enfant": ["Courtier", "Agrandissement", "Assurance familiale"],
@@ -272,6 +274,16 @@ export default function EclaireurScanFunnelPreviewPage() {
   const scoutFirstName = "Jean-Philippe";
   const tutorialExpectedAction = tutorialActive ? (["up", "right", "left"][dailyTutorialStep] ?? null) : null;
   const needsForMatch = funnelNeeds.length > 0 ? funnelNeeds : ALL_NEEDS;
+
+  function findSuggestedPro(need: string) {
+    const inCity = PROS.filter((pro) => pro.city === "Dax" || pro.city === activeContact.city);
+    return (
+      inCity.find((pro) => pro.needs.includes(need) || pro.trade === need) ??
+      inCity.find((pro) => pro.trade.toLowerCase().includes(need.toLowerCase())) ??
+      inCity[0] ??
+      PROS[0]
+    );
+  }
 
   useEffect(() => {
     if (introStep !== "scanning") return;
@@ -921,14 +933,8 @@ export default function EclaireurScanFunnelPreviewPage() {
                       type="button"
                       onClick={() => {
                         setSelectedNeed(need);
-                        const suggested = PROS.find(
-                          (pro) => (pro.city === "Dax" || pro.city === activeContact.city) && (pro.needs.includes(need) || pro.trade === need),
-                        );
-                        if (suggested) {
-                          setFeaturedProId(suggested.id);
-                        } else {
-                          setFeaturedProId(null);
-                        }
+                        const suggested = findSuggestedPro(need);
+                        setFeaturedProId(suggested?.id ?? null);
                       }}
                       className={`h-11 rounded-xl border text-xs font-black uppercase tracking-wide ${
                         selectedNeed === need ? "border-emerald-300/55 bg-emerald-500/12" : "border-white/20 bg-white/5"
