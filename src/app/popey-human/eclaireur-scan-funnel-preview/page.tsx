@@ -419,6 +419,17 @@ export default function EclaireurScanFunnelPreviewPage() {
     goNextCard();
   }
 
+  function sendContactIntroMessage(contact: Contact) {
+    const digits = contact.phone.replace(/\D+/g, "");
+    const whatsappPhone = digits.startsWith("0") ? `33${digits.slice(1)}` : digits;
+    const introMessage = `Salut ${contact.name.split(" ")[0]}, ca fait un moment ! Je me suis specialise dans la recommandation d experts locaux sur Dax (Immo, travaux, bien-etre...). Si jamais tu as un projet en tete ou un besoin specifique en ce moment, dis-le moi, j ai acces a des offres VIP pour mon entourage. A bientot !`;
+    if (typeof window !== "undefined") {
+      window.open(`https://wa.me/${whatsappPhone}?text=${encodeURIComponent(introMessage)}`, "_blank");
+    }
+    updateStatus(contact.id, "qualified", "Message prise de contact");
+    setLastActionMessage(`Message de prise de contact ouvert pour ${contact.name}.`);
+  }
+
   function openFunnelForContact(contactId: string) {
     setActiveContactId(contactId);
     setSelectedMoment("Autre");
@@ -505,14 +516,24 @@ export default function EclaireurScanFunnelPreviewPage() {
             <h1 className="truncate text-2xl sm:text-3xl font-black tracking-tight">Daily Scan Popey</h1>
             <p className="mt-0.5 text-xs sm:text-sm text-white/70">20 cartes par jour. Swipe. Qualifie. Convertis.</p>
           </div>
-          <button
-            type="button"
-            onClick={() => setShowProfile((value) => !value)}
-            className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-2 text-xs font-black tracking-wide"
-          >
-            <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-white/20 text-[10px]">JP</span>
-            <span>Mes infos</span>
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setShowSearchPanel(true)}
+              className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/20 bg-white/10 text-sm font-black"
+              aria-label="Recherche"
+            >
+              ⌕
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowProfile((value) => !value)}
+              className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-2 text-xs font-black tracking-wide"
+            >
+              <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-white/20 text-[10px]">JP</span>
+              <span>Mes infos</span>
+            </button>
+          </div>
         </header>
       </div>
 
@@ -715,10 +736,10 @@ export default function EclaireurScanFunnelPreviewPage() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setShowSearchPanel(true)}
-                  className="h-12 sm:h-14 rounded-full border border-white/20 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.2),rgba(0,0,0,0.3))] text-xl sm:text-2xl font-black text-cyan-200 shadow-[0_12px_22px_-14px_rgba(56,189,248,0.9)] active:scale-95 transition"
+                  onClick={() => currentDailyContact && sendContactIntroMessage(currentDailyContact)}
+                  className="h-12 sm:h-14 rounded-full border border-white/20 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.2),rgba(0,0,0,0.3))] px-2 text-[10px] leading-tight sm:text-xs font-black text-cyan-200 shadow-[0_12px_22px_-14px_rgba(56,189,248,0.9)] active:scale-95 transition"
                 >
-                  ⌕
+                  💬 Message Reveil
                 </button>
               </div>
             )}
