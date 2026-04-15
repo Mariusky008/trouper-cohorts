@@ -544,7 +544,7 @@ export default function EclaireurScanFunnelPreviewPage() {
             <button
               type="button"
               onClick={() => setShowSearchPanel(true)}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/20 bg-white/10 text-sm font-black"
+              className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/20 bg-white/10 text-lg font-black shadow-[0_10px_22px_-14px_rgba(56,189,248,0.9)]"
               aria-label="Recherche"
             >
               ⌕
