@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, useMotionValue, useScroll, useTransform } from "framer-motion";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 type DemoInsight = {
   name: string;
@@ -50,7 +50,9 @@ const DEMO_INSIGHTS: DemoInsight[] = [
 export default function EclaireurLandingTestPage() {
   const [activeIndex, setActiveIndex] = useState(0);
   const [contactsCount, setContactsCount] = useState(800);
-  const { scrollYProgress } = useScroll();
+  const [activeSection, setActiveSection] = useState("hero");
+  const mainRef = useRef<HTMLElement | null>(null);
+  const { scrollYProgress } = useScroll({ container: mainRef });
   const progressWidth = useTransform(scrollYProgress, [0, 1], ["0%", "100%"]);
   const dragX = useMotionValue(0);
   const dragRotate = useTransform(dragX, [-220, 220], [-12, 12]);
@@ -63,13 +65,48 @@ export default function EclaireurLandingTestPage() {
     return () => clearInterval(timer);
   }, []);
 
+  useEffect(() => {
+    const root = mainRef.current;
+    if (!root) return;
+    const targets = Array.from(root.querySelectorAll<HTMLElement>("[data-snap-section]"));
+    if (targets.length === 0) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries
+          .filter((entry) => entry.isIntersecting)
+          .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+        if (!visible) return;
+        const id = visible.target.getAttribute("data-snap-section");
+        if (id) setActiveSection(id);
+      },
+      { root, threshold: [0.45, 0.7, 0.9] },
+    );
+
+    targets.forEach((target) => observer.observe(target));
+    return () => observer.disconnect();
+  }, []);
+
+  const sectionAnchors = [
+    { id: "hero", label: "Hero" },
+    { id: "etapes", label: "Etapes" },
+    { id: "ia", label: "IA" },
+    { id: "benefices", label: "Benefices" },
+    { id: "securite", label: "Securite" },
+    { id: "preuve", label: "Preuve" },
+    { id: "simulateur", label: "Simulateur" },
+  ] as const;
+
   const current = DEMO_INSIGHTS[activeIndex];
   const potential = useMemo(() => Math.round(contactsCount * 0.05 * 500), [contactsCount]);
   const sourceChipClass =
     current.source === "LinkedIn" ? "bg-[#46C3FF]/20 text-[#D8F2FF] border-[#46C3FF]/45" : current.source === "Wiki" ? "bg-[#B487FF]/20 text-[#F0E6FF] border-[#B487FF]/45" : "bg-[#FFBF66]/20 text-[#FFF0D8] border-[#FFBF66]/45";
 
   return (
-    <main className="relative min-h-screen overflow-x-hidden bg-[radial-gradient(circle_at_15%_5%,#EEF3FF_0%,#F8FAFF_35%,#F2F4F9_100%)] text-[#111327]">
+    <main
+      ref={mainRef}
+      className="relative h-screen overflow-y-auto overflow-x-hidden scroll-smooth snap-y snap-mandatory md:h-auto md:overflow-visible md:snap-none bg-[radial-gradient(circle_at_15%_5%,#EEF3FF_0%,#F8FAFF_35%,#F2F4F9_100%)] text-[#111327]"
+    >
       <div className="pointer-events-none absolute inset-0">
         <motion.div
           animate={{ x: [0, 30, 0], y: [0, -16, 0] }}
@@ -83,8 +120,25 @@ export default function EclaireurLandingTestPage() {
         />
       </div>
       <motion.div className="fixed left-0 top-0 z-50 h-1 bg-gradient-to-r from-[#3B66FF] via-[#8A5BFF] to-[#FFB72C]" style={{ width: progressWidth }} />
+      <div className="fixed right-3 top-1/2 z-40 hidden -translate-y-1/2 flex-col gap-2 sm:flex md:hidden">
+        {sectionAnchors.map((section) => (
+          <button
+            key={section.id}
+            type="button"
+            aria-label={section.label}
+            onClick={() =>
+              mainRef.current
+                ?.querySelector<HTMLElement>(`[data-snap-section="${section.id}"]`)
+                ?.scrollIntoView({ behavior: "smooth", block: "start" })
+            }
+            className={`h-2.5 w-2.5 rounded-full border transition ${
+              activeSection === section.id ? "scale-125 border-[#3B66FF] bg-[#3B66FF]" : "border-[#8A96BF] bg-white/80"
+            }`}
+          />
+        ))}
+      </div>
 
-      <section className="relative mx-auto max-w-6xl px-4 pb-12 pt-10 sm:pt-16">
+      <section data-snap-section="hero" className="relative snap-start min-h-screen md:min-h-0 mx-auto max-w-6xl px-4 pb-12 pt-10 sm:pt-16 flex items-center">
         <div className="inline-flex items-center rounded-full bg-white px-3 py-1 text-xs font-black tracking-wide text-[#3B66FF] shadow-[8px_8px_18px_#DCE2F3,-8px_-8px_18px_#FFFFFF]">
           Daily Scan Eclaireurs • Dax
         </div>
@@ -159,7 +213,7 @@ export default function EclaireurLandingTestPage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-6xl px-4 py-10">
+      <section data-snap-section="etapes" className="snap-start min-h-screen md:min-h-0 mx-auto max-w-6xl px-4 py-10 flex items-center">
         <h2 className="text-3xl font-black sm:text-5xl">Le Daily en 3 etapes</h2>
         <div className="mt-6 grid gap-4 sm:grid-cols-3">
           <motion.article whileHover={{ y: -4 }} className="rounded-3xl bg-[#EEF2FF] p-5 shadow-[12px_12px_24px_#D3DAEE,-10px_-10px_22px_#FFFFFF]">
@@ -180,7 +234,7 @@ export default function EclaireurLandingTestPage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-6xl px-4 py-10">
+      <section data-snap-section="ia" className="snap-start min-h-screen md:min-h-0 mx-auto max-w-6xl px-4 py-10 flex items-center">
         <h2 className="text-3xl font-black sm:text-5xl">L IA intelligente</h2>
         <div className="mt-6 grid gap-4 sm:grid-cols-3">
           <motion.article whileHover={{ scale: 1.02 }} className="rounded-3xl bg-gradient-to-br from-[#DBE8FF] to-[#EEF3FF] p-5 shadow-[12px_12px_24px_#D3DAEE,-10px_-10px_22px_#FFFFFF]">
@@ -201,7 +255,7 @@ export default function EclaireurLandingTestPage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-6xl px-4 py-10">
+      <section data-snap-section="benefices" className="snap-start min-h-screen md:min-h-0 mx-auto max-w-6xl px-4 py-10 flex items-center">
         <h2 className="text-3xl font-black sm:text-5xl">Pourquoi devenir Eclaireur ?</h2>
         <div className="mt-6 space-y-3">
           <motion.p initial={{ opacity: 0.85, x: -8 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} className="max-w-[85%] rounded-2xl bg-white px-4 py-3 text-sm shadow-[10px_10px_22px_#D3DAEE,-8px_-8px_18px_#FFFFFF]">
@@ -216,7 +270,7 @@ export default function EclaireurLandingTestPage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-6xl px-4 py-10">
+      <section data-snap-section="securite" className="snap-start min-h-screen md:min-h-0 mx-auto max-w-6xl px-4 py-10 flex items-center">
         <div className="rounded-3xl bg-[#EEF2FF] p-6 shadow-[14px_14px_28px_#D3DAEE,-10px_-10px_22px_#FFFFFF]">
           <h2 className="text-3xl font-black sm:text-4xl">Transparence & Securite</h2>
           <p className="mt-4 text-sm text-[#363C56]">
@@ -232,7 +286,7 @@ export default function EclaireurLandingTestPage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-6xl px-4 pb-20 pt-4">
+      <section data-snap-section="preuve" className="snap-start min-h-screen md:min-h-0 mx-auto max-w-6xl px-4 pb-20 pt-4 flex items-center">
         <motion.div
           animate={{ scale: [1, 1.015, 1] }}
           transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
@@ -242,7 +296,7 @@ export default function EclaireurLandingTestPage() {
         </motion.div>
       </section>
 
-      <section className="mx-auto max-w-6xl px-4 pb-24">
+      <section data-snap-section="simulateur" className="snap-start min-h-screen md:min-h-0 mx-auto max-w-6xl px-4 pb-24 flex items-center">
         <div className="rounded-3xl bg-white p-5 shadow-[12px_12px_24px_#D3DAEE,-10px_-10px_22px_#FFFFFF]">
           <label className="text-xs font-black uppercase tracking-wide text-[#4A5172]">Simulateur potentiel</label>
           <input
