@@ -274,7 +274,6 @@ export default function EclaireurScanFunnelPreviewPage() {
   const scanCompleted = scanCount >= totalContacts;
   const scoutFirstName = "Jean-Philippe";
   const tutorialExpectedAction = tutorialActive ? (["up", "right", "left"][dailyTutorialStep] ?? null) : null;
-  const tutorialEnforced = tutorialActive && currentCardIndex < 3;
   const needsForMatch = funnelNeeds.length > 0 ? funnelNeeds : ALL_NEEDS;
   const diagnosticsForSphere = DIAGNOSTICS[selectedSphereId] ?? [];
   const selectedDiagnostic = diagnosticsForSphere.find((diag) => diag.id === selectedDiagnosticId) ?? null;
@@ -350,10 +349,6 @@ export default function EclaireurScanFunnelPreviewPage() {
 
   function onSwipeLeft() {
     if (!currentDailyContact) return;
-    if (tutorialEnforced && tutorialExpectedAction && tutorialExpectedAction !== "left") {
-      setLastActionMessage("Tutoriel: fais d abord l action indiquee.");
-      return;
-    }
     animateAndThen("left", () => {
       updateStatus(currentDailyContact.id, "masked_90d");
       setLastActionMessage(`${currentDailyContact.name} masque 90 jours`);
@@ -373,10 +368,6 @@ export default function EclaireurScanFunnelPreviewPage() {
 
   function onSwipeRight() {
     if (!currentDailyContact) return;
-    if (tutorialEnforced && tutorialExpectedAction && tutorialExpectedAction !== "right") {
-      setLastActionMessage("Tutoriel: fais d abord l action indiquee.");
-      return;
-    }
     setSurveillanceContactId(currentDailyContact.id);
     setSurveillanceMode("actions");
     setSelectedSphereId(SPHERES[0].id);
@@ -471,10 +462,6 @@ export default function EclaireurScanFunnelPreviewPage() {
 
   function onSwipeUp() {
     if (!currentDailyContact) return;
-    if (tutorialEnforced && tutorialExpectedAction && tutorialExpectedAction !== "up") {
-      setLastActionMessage("Tutoriel: fais d abord l action indiquee.");
-      return;
-    }
     animateAndThen("up", () => {
       updateStatus(currentDailyContact.id, "alert");
       openFunnelForContact(currentDailyContact.id);
