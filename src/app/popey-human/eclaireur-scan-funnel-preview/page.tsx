@@ -6,6 +6,7 @@ type MainTab = "daily" | "contact" | "gains" | "pros";
 type SwipeStatus = "new" | "masked_90d" | "qualified" | "alert";
 type ReplyStatus = "waiting" | "ok" | "no";
 type FunnelStep = "match" | "message";
+type InsightSource = "external" | "community" | "fallback";
 
 type Contact = {
   id: string;
@@ -34,6 +35,19 @@ type Pro = {
   companyAddress: string;
   googleReviews: number;
   photoInitials: string;
+};
+
+type DailyDigest = {
+  contactId: string;
+  job: string;
+  sourceType: InsightSource;
+  sourceLabel: string;
+  insightTitle: string;
+  insightBody: string;
+  saviezVous: string;
+  lifeBadges: string[];
+  trait: string;
+  communityNote: string;
 };
 
 const CONTACTS: Contact[] = [
@@ -110,6 +124,8 @@ const MAGIC_SEARCH: Array<{ keyword: string; suggestion: string; need: string }>
   { keyword: "chien", suggestion: "Son chien est son amour ?", need: "Educateur Canin" },
   { keyword: "maison", suggestion: "Projet immo en preparation ?", need: "Besoin d acheter" },
 ];
+const SIGNAL_BADGES = ["Fine gueule", "Partenaire de Padel", "Fan de Rock", "Bons plans restos", "Toujours connecte"] as const;
+const SIGNAL_TRAITS = ["Solaire", "Toujours de bon conseil", "Grand voyageur", "Discret", "Humour decapant"] as const;
 const BROAD_NEEDS = [
   "Courtier",
   "Agent immo",
@@ -120,6 +136,25 @@ const BROAD_NEEDS = [
   "Services a la personne",
   "Educateur Canin",
   "Marketing",
+] as const;
+const JOB_TITLES = ["Responsable secteur", "Chef de projet", "Commercial terrain", "Independant", "Manager operationnel", "Consultant"] as const;
+const EXTERNAL_INSIGHTS = [
+  "Aime des contenus sur l investissement local",
+  "Sa societe recrute actuellement",
+  "Interet recent pour la renovation habitat",
+  "Engagement fort sur le reseau pro cette semaine",
+] as const;
+const COMMUNITY_TIPS = [
+  "Incollable sur les bons restos de Dax",
+  "Toujours un plan weekend de qualite",
+  "Tres reactif pour connecter les bonnes personnes",
+  "Connait les meilleurs artisans du coin",
+] as const;
+const FUN_FACTS = [
+  "Ce contact existe dans ton repertoire depuis plus de 7 ans.",
+  "C est ton seul contact actif dans cette zone cette semaine.",
+  "Historique: vous avez echange surtout en debut d annee.",
+  "Indice nostalgie: fort potentiel de reprise de lien cette semaine.",
 ] as const;
 const MOMENTS = [
   "Vient d avoir un enfant",
@@ -197,18 +232,22 @@ export default function EclaireurScanFunnelPreviewPage() {
   const [contactResponse, setContactResponse] = useState<Record<string, ReplyStatus>>({});
   const [contactHasMessage, setContactHasMessage] = useState<Record<string, boolean>>({});
   const [contactDispatched, setContactDispatched] = useState<Record<string, boolean>>({});
+  const [showSignalModal, setShowSignalModal] = useState(false);
+  const [signalTargetContactId, setSignalTargetContactId] = useState<string | null>(null);
+  const [selectedSignalBadges, setSelectedSignalBadges] = useState<string[]>([]);
+  const [selectedSignalTrait, setSelectedSignalTrait] = useState<string>("");
+  const [signalSharedNote, setSignalSharedNote] = useState("");
 
   const dailyDeckIds = useMemo(() => CONTACTS.slice(0, 20).map((contact) => contact.id), []);
   const currentDailyContact = CONTACTS.find((contact) => contact.id === dailyDeckIds[currentCardIndex]) || null;
   const activeContact = CONTACTS.find((contact) => contact.id === activeContactId) ?? CONTACTS[0];
+  const signalTargetContact = CONTACTS.find((contact) => contact.id === signalTargetContactId) ?? null;
   const surveillanceContact = CONTACTS.find((contact) => contact.id === surveillanceContactId) ?? null;
-  const cardThemes = [
-    "from-[#1B2430] via-[#1A2D32] to-[#172126]",
-    "from-[#261B2B] via-[#1F2236] to-[#1B2630]",
-    "from-[#203229] via-[#1C2A3A] to-[#172024]",
-    "from-[#312318] via-[#2A1F2D] to-[#1F2530]",
-  ];
-  const currentCardTheme = cardThemes[currentCardIndex % cardThemes.length];
+  const sourceTheme: Record<InsightSource, string> = {
+    external: "from-[#123347] via-[#182A38] to-[#10161D]",
+    community: "from-[#2A1F3A] via-[#211B34] to-[#171526]",
+    fallback: "from-[#3A2A1A] via-[#2B221E] to-[#191716]",
+  };
 
   const segmentStats = useMemo(
     () =>
@@ -291,6 +330,45 @@ export default function EclaireurScanFunnelPreviewPage() {
     diagnosticsForSphere.length > 0
       ? Math.round(diagnosticsForSphere.reduce((sum, diag) => sum + diag.avgCommission, 0) / diagnosticsForSphere.length)
       : null;
+  const dailyDigestByContact = useMemo<Record<string, DailyDigest>>(
+    () =>
+      Object.fromEntries(
+        CONTACTS.map((contact, idx) => {
+          const sourceType: InsightSource = (["external", "community", "fallback"] as const)[idx % 3];
+          const metaTags = contactMeta[contact.id]?.tags ?? [];
+          const sharedBadges = metaTags.filter((tag) => tag.startsWith("Life:")).map((tag) => tag.replace("Life:", "")).slice(0, 3);
+          const sharedTrait = metaTags.find((tag) => tag.startsWith("Trait:"))?.replace("Trait:", "");
+          const sharedInfo = metaTags.find((tag) => tag.startsWith("Info:"))?.replace("Info:", "");
+
+          const digest: DailyDigest = {
+            contactId: contact.id,
+            job: JOB_TITLES[idx % JOB_TITLES.length],
+            sourceType,
+            sourceLabel: sourceType === "external" ? "Actu temps reel" : sourceType === "community" ? "Signal Communaute" : "Capsule locale",
+            insightTitle:
+              sourceType === "external"
+                ? "Insight chaud du jour"
+                : sourceType === "community"
+                  ? "Ce que la communaute voit"
+                  : "Radar reseau intelligent",
+            insightBody:
+              sourceType === "external"
+                ? EXTERNAL_INSIGHTS[idx % EXTERNAL_INSIGHTS.length]
+                : sourceType === "community"
+                  ? `${contact.name.split(" ")[0]} est percu comme ${(sharedTrait ?? SIGNAL_TRAITS[idx % SIGNAL_TRAITS.length]).toLowerCase()}`
+                  : "Pas de signal externe ce matin: Popey active une piste de lien social utile.",
+            saviezVous: FUN_FACTS[idx % FUN_FACTS.length],
+            lifeBadges: sharedBadges.length > 0 ? sharedBadges : [SIGNAL_BADGES[idx % SIGNAL_BADGES.length], SIGNAL_BADGES[(idx + 2) % SIGNAL_BADGES.length]],
+            trait: sharedTrait ?? SIGNAL_TRAITS[idx % SIGNAL_TRAITS.length],
+            communityNote: sharedInfo ?? COMMUNITY_TIPS[idx % COMMUNITY_TIPS.length],
+          };
+          return [contact.id, digest];
+        }),
+      ),
+    [contactMeta],
+  );
+  const currentDigest = currentDailyContact ? dailyDigestByContact[currentDailyContact.id] : null;
+  const currentCardTheme = currentDigest ? sourceTheme[currentDigest.sourceType] : "from-[#1B2430] via-[#1A2D32] to-[#172126]";
 
   function findSuggestedPro(need: string) {
     const inCity = PROS.filter((pro) => pro.city === "Dax" || pro.city === activeContact.city);
@@ -439,6 +517,32 @@ export default function EclaireurScanFunnelPreviewPage() {
     setFunnelStep("message");
     setMainTab("daily");
     setLastActionMessage(`Passage au message pour envoyer ${activeContact.name} vers ${pro.name}.`);
+  }
+
+  function openSignalPopeyForContact(contact: Contact) {
+    setSignalTargetContactId(contact.id);
+    setSelectedSignalBadges([]);
+    setSelectedSignalTrait("");
+    setSignalSharedNote("");
+    setShowSignalModal(true);
+  }
+
+  function submitSignalPopey() {
+    if (!signalTargetContactId) return;
+    const additions = [
+      ...selectedSignalBadges.map((badge) => `Life:${badge}`),
+      selectedSignalTrait ? `Trait:${selectedSignalTrait}` : "",
+      signalSharedNote ? `Info:${signalSharedNote}` : "",
+      "Signal Popey partage",
+    ].filter(Boolean);
+    setContactMeta((prev) => {
+      const current = prev[signalTargetContactId] || { status: "new" as SwipeStatus, tags: [] };
+      const merged = Array.from(new Set([...current.tags, ...additions]));
+      return { ...prev, [signalTargetContactId]: { ...current, tags: merged } };
+    });
+    const contact = CONTACTS.find((item) => item.id === signalTargetContactId);
+    setLastActionMessage(`Signal Popey partage pour ${contact?.name ?? "ce contact"} (anonyme pour la communaute).`);
+    setShowSignalModal(false);
   }
 
   function openFunnelForContact(contactId: string) {
@@ -667,7 +771,7 @@ export default function EclaireurScanFunnelPreviewPage() {
               <div className="flex items-center justify-between rounded-lg border border-white/15 bg-black/20 px-3 py-2">
                 <p className="text-xs font-black uppercase tracking-wide">Daily</p>
                 <p className="text-xs text-white/80">
-                  {Math.min(currentCardIndex + 1, 20)}/20 • {qualifiedCount}/{totalContacts}
+                  Carte {Math.min(currentCardIndex + 1, 20)}/20 • Streak 4j
                 </p>
               </div>
               <div className="h-2 rounded-full bg-white/10 overflow-hidden">
@@ -693,17 +797,29 @@ export default function EclaireurScanFunnelPreviewPage() {
                           : ""
                   }`}
                 >
-                  <div className="mx-auto mb-3 sm:mb-4 flex h-16 w-16 sm:h-20 sm:w-20 items-center justify-center rounded-full border border-white/25 bg-white/10 text-xl sm:text-2xl font-black">
-                    {currentDailyContact.name
-                      .split(" ")
-                      .slice(0, 2)
-                      .map((part) => part[0])
-                      .join("")}
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs uppercase tracking-[0.12em] text-white/60">Daily Digest</p>
+                    <span className="rounded-full border border-white/20 bg-black/20 px-2 py-1 text-[10px] font-black uppercase tracking-wide">
+                      {currentDigest?.sourceLabel}
+                    </span>
                   </div>
-                  <p className="text-xs uppercase tracking-[0.12em] text-white/60">Carte du jour</p>
-                  <p className="mt-2 sm:mt-3 text-4xl sm:text-6xl font-black leading-tight">{currentDailyContact.name}</p>
-                  <p className="mt-2 sm:mt-3 inline-flex rounded-full border border-white/20 bg-black/20 px-3 py-1 text-lg sm:text-xl font-black text-white/95">{currentDailyContact.city}</p>
-                  <p className="mt-1 sm:mt-2 text-sm sm:text-base text-white/65">{currentDailyContact.phone}</p>
+                  <p className="mt-2 text-3xl sm:text-4xl font-black leading-tight">{currentDailyContact.name}</p>
+                  <p className="mt-1 text-sm text-white/75">
+                    {currentDigest?.job} • {currentDailyContact.city}
+                  </p>
+                  <div className="mt-3 rounded-xl border border-white/15 bg-black/25 p-3 text-left">
+                    <p className="text-[11px] uppercase tracking-[0.12em] text-cyan-200">{currentDigest?.insightTitle}</p>
+                    <p className="mt-1 text-sm font-black">{currentDigest?.insightBody}</p>
+                  </div>
+                  <div className="mt-2 rounded-xl border border-white/15 bg-black/25 p-3 text-left">
+                    <p className="text-[11px] uppercase tracking-[0.12em] text-fuchsia-200">Signal Popey</p>
+                    <p className="mt-1 text-xs text-white/80">Badges: {(currentDigest?.lifeBadges ?? []).join(" | ")}</p>
+                    <p className="mt-1 text-xs text-white/80">Trait: {currentDigest?.trait}</p>
+                    <p className="mt-1 text-xs text-white/80">Info partagee: {currentDigest?.communityNote}</p>
+                  </div>
+                  <p className="mt-2 rounded-xl border border-white/15 bg-black/20 px-3 py-2 text-xs text-white/75 text-left">
+                    Le saviez-vous ? {currentDigest?.saviezVous}
+                  </p>
                 </article>
               )}
             </div>
@@ -716,41 +832,48 @@ export default function EclaireurScanFunnelPreviewPage() {
             )}
 
             {currentDailyContact && (
-              <div className="mt-2 sm:mt-4 grid grid-cols-5 gap-2 items-center">
+              <div className="mt-2 sm:mt-4 grid grid-cols-6 gap-2 items-center">
                 <button
                   type="button"
                   onClick={onUndoLast}
-                  className="h-10 sm:h-12 rounded-full border border-white/20 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.2),rgba(0,0,0,0.3))] text-lg sm:text-xl font-black text-amber-300 shadow-[0_10px_20px_-14px_rgba(251,191,36,0.9)] active:scale-95 transition"
+                  className="h-12 rounded-xl border border-white/20 bg-black/25 px-2 text-[11px] font-black uppercase tracking-wide text-amber-300 active:scale-95 transition"
                 >
-                  ↺
+                  ↺ Retour
                 </button>
                 <button
                   type="button"
                   onClick={onSwipeLeft}
-                  className="h-16 sm:h-20 rounded-full border border-white/20 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.2),rgba(0,0,0,0.3))] text-3xl sm:text-4xl font-black text-rose-400 shadow-[0_16px_30px_-16px_rgba(244,63,94,0.9)] active:scale-95 transition"
+                  className="h-12 rounded-xl border border-white/20 bg-black/25 px-2 text-[11px] font-black uppercase tracking-wide text-rose-300 active:scale-95 transition"
                 >
-                  ✕
+                  ✕ Passer
                 </button>
                 <button
                   type="button"
                   onClick={onSwipeUp}
-                  className="h-12 sm:h-14 rounded-full border border-white/20 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.2),rgba(0,0,0,0.3))] text-2xl sm:text-3xl font-black text-cyan-300 shadow-[0_14px_26px_-14px_rgba(34,211,238,0.9)] active:scale-95 transition"
+                  className="h-12 rounded-xl border border-cyan-300/35 bg-cyan-500/10 px-2 text-[11px] font-black uppercase tracking-wide text-cyan-200 active:scale-95 transition"
                 >
-                  ★
+                  ⭐ Matcher Pro
                 </button>
                 <button
                   type="button"
                   onClick={onSwipeRight}
-                  className="h-16 sm:h-20 rounded-full border border-white/20 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.2),rgba(0,0,0,0.3))] text-3xl sm:text-4xl font-black text-emerald-300 shadow-[0_16px_30px_-16px_rgba(52,211,153,0.9)] active:scale-95 transition"
+                  className="h-12 rounded-xl border border-emerald-300/35 bg-emerald-500/10 px-2 text-[11px] font-black uppercase tracking-wide text-emerald-200 active:scale-95 transition"
                 >
-                  ✓
+                  ✅ Sous radar
+                </button>
+                <button
+                  type="button"
+                  onClick={() => currentDailyContact && openSignalPopeyForContact(currentDailyContact)}
+                  className="h-12 rounded-xl border border-fuchsia-300/35 bg-fuchsia-500/10 px-2 text-[11px] font-black uppercase tracking-wide text-fuchsia-100 active:scale-95 transition"
+                >
+                  📝 Signal
                 </button>
                 <button
                   type="button"
                   onClick={() => currentDailyContact && sendContactIntroMessage(currentDailyContact)}
-                  className="h-12 sm:h-14 rounded-full border border-white/20 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.2),rgba(0,0,0,0.3))] px-2 text-[10px] leading-tight sm:text-xs font-black text-cyan-200 shadow-[0_12px_22px_-14px_rgba(56,189,248,0.9)] active:scale-95 transition"
+                  className="h-12 rounded-xl border border-white/20 bg-black/25 px-2 text-[11px] font-black uppercase tracking-wide text-cyan-200 active:scale-95 transition"
                 >
-                  💬 Message Reveil
+                  💬 Brise-glace
                 </button>
               </div>
             )}
@@ -791,6 +914,82 @@ export default function EclaireurScanFunnelPreviewPage() {
               >
                 Fermer
               </button>
+            </section>
+          </div>
+        )}
+
+        {showSignalModal && signalTargetContact && (
+          <div className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm flex items-center justify-center px-4">
+            <button
+              type="button"
+              aria-label="Fermer"
+              onClick={() => setShowSignalModal(false)}
+              className="absolute inset-0 h-full w-full"
+            />
+            <section className="relative z-50 w-full max-w-lg rounded-3xl border border-fuchsia-300/35 bg-[#12161A] p-5">
+              <p className="text-[11px] font-black uppercase tracking-[0.12em] text-fuchsia-200">Signal Popey (anonyme)</p>
+              <h3 className="mt-2 text-xl font-black">Que veux-tu dire sur {signalTargetContact.name.split(" ")[0]} ?</h3>
+              <p className="mt-1 text-sm text-white/75">Ce signal aidera la communaute Popey a mieux connaitre cette personne.</p>
+
+              <p className="mt-3 text-xs uppercase tracking-[0.12em] text-white/70">Badges lifestyle</p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {SIGNAL_BADGES.map((badge) => (
+                  <button
+                    key={badge}
+                    type="button"
+                    onClick={() =>
+                      setSelectedSignalBadges((prev) =>
+                        prev.includes(badge) ? prev.filter((item) => item !== badge) : [...prev, badge],
+                      )
+                    }
+                    className={`rounded-full border px-3 py-2 text-xs font-black uppercase tracking-wide ${
+                      selectedSignalBadges.includes(badge) ? "border-fuchsia-300/65 bg-fuchsia-500/15 text-fuchsia-100" : "border-white/20 bg-white/5"
+                    }`}
+                  >
+                    {badge}
+                  </button>
+                ))}
+              </div>
+
+              <p className="mt-3 text-xs uppercase tracking-[0.12em] text-white/70">Trait dominant</p>
+              <div className="mt-2 grid grid-cols-2 gap-2">
+                {SIGNAL_TRAITS.map((trait) => (
+                  <button
+                    key={trait}
+                    type="button"
+                    onClick={() => setSelectedSignalTrait(trait)}
+                    className={`h-10 rounded-xl border text-xs font-black uppercase tracking-wide ${
+                      selectedSignalTrait === trait ? "border-fuchsia-300/65 bg-fuchsia-500/15 text-fuchsia-100" : "border-white/20 bg-white/5"
+                    }`}
+                  >
+                    {trait}
+                  </button>
+                ))}
+              </div>
+
+              <p className="mt-3 text-xs uppercase tracking-[0.12em] text-white/70">Info partagee</p>
+              <textarea
+                value={signalSharedNote}
+                onChange={(event) => setSignalSharedNote(event.target.value)}
+                placeholder="Ex: Incollable sur les coins de champignons vers Dax"
+                className="mt-2 min-h-20 w-full rounded-xl border border-white/20 bg-black/20 px-3 py-2 text-sm"
+              />
+              <div className="mt-3 grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowSignalModal(false)}
+                  className="h-11 rounded-xl border border-white/20 bg-white/10 text-xs font-black uppercase tracking-wide"
+                >
+                  Annuler
+                </button>
+                <button
+                  type="button"
+                  onClick={submitSignalPopey}
+                  className="h-11 rounded-xl bg-fuchsia-400 text-black text-xs font-black uppercase tracking-wide"
+                >
+                  Partager le signal
+                </button>
+              </div>
             </section>
           </div>
         )}
