@@ -229,7 +229,8 @@ export default function EclaireurScanFunnelPreviewPage() {
   const [showLeadSentModal, setShowLeadSentModal] = useState(false);
   const [swipeAnim, setSwipeAnim] = useState<"none" | "left" | "right" | "up">("none");
   const [cardIntroAnim, setCardIntroAnim] = useState(false);
-  const [activeDigestPopup, setActiveDigestPopup] = useState<"insight" | "signal" | "saviez" | null>(null);
+  const [showSwipeHints, setShowSwipeHints] = useState(false);
+  const [touchStartPoint, setTouchStartPoint] = useState<{ x: number; y: number } | null>(null);
   const [lastActionMessage, setLastActionMessage] = useState("");
   const [showSearchPanel, setShowSearchPanel] = useState(false);
   const [contactResponse, setContactResponse] = useState<Record<string, ReplyStatus>>({});
@@ -406,10 +407,16 @@ export default function EclaireurScanFunnelPreviewPage() {
   useEffect(() => {
     if (!currentDailyContact) return;
     setCardIntroAnim(true);
-    setActiveDigestPopup(null);
+    setShowSwipeHints(false);
     const timer = setTimeout(() => setCardIntroAnim(false), 260);
     return () => clearTimeout(timer);
   }, [currentCardIndex, currentDailyContact?.id]);
+
+  useEffect(() => {
+    if (!currentDailyContact || introStep !== "done" || mainTab !== "daily") return;
+    const timer = setTimeout(() => setShowSwipeHints(true), 2000);
+    return () => clearTimeout(timer);
+  }, [currentCardIndex, currentDailyContact?.id, introStep, mainTab]);
 
   function updateStatus(contactId: string, status: SwipeStatus, tag?: string) {
     const maskedUntil =
@@ -430,18 +437,6 @@ export default function EclaireurScanFunnelPreviewPage() {
       return next;
     });
     setCurrentCardIndex((value) => Math.min(20, value + 1));
-  }
-
-  function onUndoLast() {
-    if (currentCardIndex <= 0) return;
-    const previousCardId = dailyDeckIds[currentCardIndex - 1];
-    setCurrentCardIndex((value) => Math.max(0, value - 1));
-    setDailyProcessed((value) => Math.max(0, value - 1));
-    setContactMeta((prev) => ({
-      ...prev,
-      [previousCardId]: { status: "new", tags: [] },
-    }));
-    setLastActionMessage("Derniere action annulee");
   }
 
   function toggleFavorite(contactId: string) {
@@ -857,6 +852,26 @@ export default function EclaireurScanFunnelPreviewPage() {
                 </div>
               ) : (
                 <article
+                  onTouchStart={(event) => {
+                    const touch = event.touches[0];
+                    if (!touch) return;
+                    setTouchStartPoint({ x: touch.clientX, y: touch.clientY });
+                    setShowSwipeHints(false);
+                  }}
+                  onTouchEnd={(event) => {
+                    if (!touchStartPoint) return;
+                    const touch = event.changedTouches[0];
+                    if (!touch) return;
+                    const dx = touch.clientX - touchStartPoint.x;
+                    const dy = touch.clientY - touchStartPoint.y;
+                    setTouchStartPoint(null);
+                    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 42) {
+                      if (dx > 0) onSwipeRight();
+                      else onSwipeLeft();
+                      return;
+                    }
+                    if (dy < -55) onSwipeUp();
+                  }}
                   className={`text-center transition duration-200 ${
                     swipeAnim === "left"
                       ? "-translate-x-[140%] rotate-[-18deg] opacity-0 scale-95"
@@ -869,78 +884,30 @@ export default function EclaireurScanFunnelPreviewPage() {
                             : ""
                   }`}
                 >
-                  <div className="flex items-center justify-between">
-                    <p className="text-xs uppercase tracking-[0.12em] text-white/60">Daily Digest</p>
-                    <span className="rounded-full border border-white/20 bg-black/20 px-2 py-1 text-[10px] font-black uppercase tracking-wide">
-                      {currentDigest?.sourceLabel}
-                    </span>
-                  </div>
-
-                  <div className="mt-4 sm:hidden space-y-2">
-                    <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full border border-white/25 bg-white/10 text-2xl font-black shadow-[0_0_35px_rgba(255,255,255,0.18)]">
-                      {currentDailyContact.name
-                        .split(" ")
-                        .slice(0, 2)
-                        .map((part) => part[0])
-                        .join("")}
+                  <div className="mx-auto max-w-xl rounded-[30px] bg-white/8 p-4 backdrop-blur-xl shadow-[0_24px_50px_-30px_rgba(0,0,0,0.75)]">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-black uppercase tracking-[0.12em] text-white/70">Carte Pepite</span>
+                      <span className="rounded-full bg-white/10 px-2 py-1 text-[10px] font-black uppercase tracking-wide text-white/85">{currentDigest?.sourceLabel}</span>
                     </div>
-                    <p className="text-2xl font-black leading-tight">{currentDailyContact.name}</p>
-                    <p className="text-sm text-white/75">{currentDigest?.job} • {currentDailyContact.city}</p>
-                    <button type="button" onClick={() => setActiveDigestPopup("insight")} className="w-full rounded-xl border border-cyan-300/35 bg-cyan-500/10 p-3 text-left">
-                      <p className="text-[11px] uppercase tracking-[0.12em] text-cyan-200">Insight</p>
-                      <p className="text-sm font-black">{currentDigest?.insightTitle}</p>
-                    </button>
-                    <button type="button" onClick={() => setActiveDigestPopup("signal")} className="w-full rounded-xl border border-fuchsia-300/35 bg-fuchsia-500/10 p-3 text-left">
-                      <p className="text-[11px] uppercase tracking-[0.12em] text-fuchsia-200">Signal Popey</p>
-                      <p className="text-sm font-black">{(currentDigest?.lifeBadges ?? []).slice(0, 2).join(" • ")}</p>
-                    </button>
-                    <button type="button" onClick={() => setActiveDigestPopup("saviez")} className="w-full rounded-xl border border-[#EAC886]/35 bg-[#EAC886]/10 p-3 text-left">
-                      <p className="text-[11px] uppercase tracking-[0.12em] text-[#EAC886]">Le saviez-vous ?</p>
-                      <p className="text-sm font-black">{currentDigest?.saviezVous}</p>
-                    </button>
-                  </div>
-
-                  <div className="relative mt-5 hidden sm:block h-[360px]">
-                    <button
-                      type="button"
-                      onClick={() => setActiveDigestPopup("insight")}
-                      className="absolute left-3 top-2 w-[36%] rounded-2xl border border-cyan-300/35 bg-cyan-500/12 p-3 text-left shadow-[0_0_35px_rgba(34,211,238,0.18)]"
-                    >
-                      <p className="text-[11px] uppercase tracking-[0.12em] text-cyan-200">Insight</p>
-                      <p className="mt-1 text-sm font-black">{currentDigest?.insightTitle}</p>
-                      <p className="mt-1 text-xs text-white/75 line-clamp-2">{currentDigest?.insightBody}</p>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setActiveDigestPopup("signal")}
-                      className="absolute right-3 top-8 w-[36%] rounded-2xl border border-fuchsia-300/35 bg-fuchsia-500/12 p-3 text-left shadow-[0_0_35px_rgba(232,121,249,0.2)]"
-                    >
-                      <p className="text-[11px] uppercase tracking-[0.12em] text-fuchsia-200">Signal Popey</p>
-                      <p className="mt-1 text-xs text-white/80">Badges: {(currentDigest?.lifeBadges ?? []).slice(0, 2).join(" • ")}</p>
-                      <p className="mt-1 text-xs text-white/80">{currentDigest?.trait}</p>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setActiveDigestPopup("saviez")}
-                      className="absolute bottom-3 left-1/2 w-[48%] -translate-x-1/2 rounded-2xl border border-[#EAC886]/35 bg-[#EAC886]/12 p-3 text-left shadow-[0_0_35px_rgba(234,200,134,0.16)]"
-                    >
-                      <p className="text-[11px] uppercase tracking-[0.12em] text-[#EAC886]">Le saviez-vous ?</p>
-                      <p className="mt-1 text-xs text-white/80 line-clamp-2">{currentDigest?.saviezVous}</p>
-                    </button>
-
-                    <div className="absolute left-1/2 top-[48%] -translate-x-1/2 -translate-y-1/2">
-                      <div className="mx-auto flex h-28 w-28 items-center justify-center rounded-full border border-white/30 bg-white/10 text-3xl font-black shadow-[0_0_55px_rgba(255,255,255,0.2)]">
-                        {currentDailyContact.name
-                          .split(" ")
-                          .slice(0, 2)
-                          .map((part) => part[0])
-                          .join("")}
+                    <div className="mt-4">
+                      <div className="mx-auto relative h-24 w-24">
+                        <div className="absolute inset-0 rounded-full bg-cyan-300/25 blur-xl" />
+                        <div className="relative flex h-24 w-24 items-center justify-center rounded-full border border-white/30 bg-white/12 text-3xl font-black shadow-[0_0_35px_rgba(255,255,255,0.2)]">
+                          {currentDailyContact.name
+                            .split(" ")
+                            .slice(0, 2)
+                            .map((part) => part[0])
+                            .join("")}
+                        </div>
                       </div>
-                      <p className="mt-3 text-3xl font-black leading-tight">{currentDailyContact.name}</p>
+                      <p className="mt-3 text-3xl sm:text-4xl font-black leading-tight">{currentDailyContact.name}</p>
                       <p className="mt-1 text-sm text-white/75">{currentDigest?.job} • {currentDailyContact.city}</p>
                     </div>
+                    <div className="mt-4 rounded-2xl bg-white/10 px-4 py-4 text-left">
+                      <p className="text-[11px] font-black uppercase tracking-[0.12em] text-cyan-200">Pepite du jour</p>
+                      <p className="mt-1 text-base sm:text-lg font-black text-white">{currentDigest?.insightBody}</p>
+                    </div>
+                    <p className="mt-3 text-xs italic text-white/70">“{currentDigest?.saviezVous}”</p>
                   </div>
                 </article>
               )}
@@ -954,83 +921,32 @@ export default function EclaireurScanFunnelPreviewPage() {
             )}
 
             {currentDailyContact && (
-              <div className="mt-3 sm:mt-4 grid grid-cols-2 sm:grid-cols-6 gap-2 items-center">
-                <button
-                  type="button"
-                  onClick={() => currentDailyContact && toggleFavorite(currentDailyContact.id)}
-                  className={`h-12 rounded-xl border px-2 text-[11px] font-black uppercase tracking-wide active:scale-95 transition ${
-                    currentDailyContact && favoriteContactIds.includes(currentDailyContact.id)
-                      ? "border-[#EAC886]/45 bg-[#EAC886]/15 text-[#F8E7BF]"
-                      : "border-white/20 bg-black/25 text-amber-300 hover:bg-white/10"
-                  }`}
-                >
-                  ⭐ Favori
-                </button>
-                <button
-                  type="button"
-                  onClick={onSwipeLeft}
-                  className="h-12 rounded-xl border border-white/20 bg-black/25 px-2 text-[11px] font-black uppercase tracking-wide text-rose-300 hover:bg-white/10 active:scale-95 transition"
-                >
-                  ✕ Passer
-                </button>
-                <button
-                  type="button"
-                  onClick={onSwipeUp}
-                  className="h-12 rounded-xl border border-cyan-300/35 bg-gradient-to-r from-cyan-500/20 to-cyan-400/10 px-2 text-[11px] font-black uppercase tracking-wide text-cyan-100 hover:from-cyan-500/30 hover:to-cyan-400/20 active:scale-95 transition"
-                >
-                  ⭐ Matcher Pro
-                </button>
-                <button
-                  type="button"
-                  onClick={onSwipeRight}
-                  className="h-12 rounded-xl border border-emerald-300/35 bg-gradient-to-r from-emerald-500/20 to-emerald-400/10 px-2 text-[11px] font-black uppercase tracking-wide text-emerald-100 hover:from-emerald-500/30 hover:to-emerald-400/20 active:scale-95 transition"
-                >
-                  ✅ Sous radar
-                </button>
-                <button
-                  type="button"
-                  onClick={() => currentDailyContact && openSignalPopeyForContact(currentDailyContact)}
-                  className="h-12 rounded-xl border border-fuchsia-300/35 bg-gradient-to-r from-fuchsia-500/20 to-violet-500/15 px-2 text-[11px] font-black uppercase tracking-wide text-fuchsia-100 hover:from-fuchsia-500/30 hover:to-violet-500/25 active:scale-95 transition"
-                >
-                  📝 Signal Popey
-                </button>
-                <button
-                  type="button"
-                  onClick={() => currentDailyContact && sendContactIntroMessage(currentDailyContact)}
-                  className="h-12 rounded-xl border border-white/20 bg-black/25 px-2 text-[11px] font-black uppercase tracking-wide text-cyan-200 hover:bg-white/10 active:scale-95 transition"
-                >
-                  💬 Brise-glace
-                </button>
-              </div>
-            )}
-            {activeDigestPopup && currentDigest && (
-              <div className="mt-3 rounded-2xl border border-white/20 bg-black/30 p-4 text-left">
-                <div className="flex items-center justify-between">
-                  <p className="text-xs font-black uppercase tracking-[0.12em] text-white/70">
-                    {activeDigestPopup === "insight" ? "Insight detaille" : activeDigestPopup === "signal" ? "Signal Popey detaille" : "Le saviez-vous detaille"}
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => setActiveDigestPopup(null)}
-                    className="rounded-lg border border-white/20 bg-white/10 px-2 py-1 text-[10px] font-black uppercase tracking-wide"
-                  >
-                    Fermer
-                  </button>
-                </div>
-                {activeDigestPopup === "insight" && (
-                  <p className="mt-2 text-sm text-white/90">{currentDigest.insightBody}</p>
-                )}
-                {activeDigestPopup === "signal" && (
-                  <div className="mt-2 text-sm text-white/90 space-y-1">
-                    <p>Badges: {currentDigest.lifeBadges.join(" | ")}</p>
-                    <p>Trait: {currentDigest.trait}</p>
-                    <p>Info partagee: {currentDigest.communityNote}</p>
+              <>
+                {showSwipeHints && (
+                  <div className="mt-3 flex items-center justify-center gap-2 text-[11px] font-black uppercase tracking-wide">
+                    <button type="button" onClick={onSwipeLeft} className="rounded-full bg-white/10 px-3 py-2 text-rose-200">← Passer</button>
+                    <button type="button" onClick={onSwipeRight} className="rounded-full bg-white/10 px-3 py-2 text-emerald-100">→ Sous radar</button>
+                    <button type="button" onClick={onSwipeUp} className="rounded-full bg-white/10 px-3 py-2 text-cyan-100">↑ Matcher Pro</button>
+                    <button type="button" onClick={() => currentDailyContact && toggleFavorite(currentDailyContact.id)} className="rounded-full bg-white/10 px-3 py-2 text-[#F8E7BF]">⭐ Favori</button>
                   </div>
                 )}
-                {activeDigestPopup === "saviez" && (
-                  <p className="mt-2 text-sm text-white/90">{currentDigest.saviezVous}</p>
-                )}
-              </div>
+                <div className="mt-3 flex items-center justify-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => currentDailyContact && sendContactIntroMessage(currentDailyContact)}
+                    className="h-11 rounded-full border border-white/20 bg-white/10 px-4 text-xs font-black uppercase tracking-wide text-cyan-100"
+                  >
+                    💬 Brise-glace
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => currentDailyContact && openSignalPopeyForContact(currentDailyContact)}
+                    className="h-11 rounded-full border border-fuchsia-300/35 bg-fuchsia-500/12 px-4 text-xs font-black uppercase tracking-wide text-fuchsia-100"
+                  >
+                    ✍️ Signal Popey
+                  </button>
+                </div>
+              </>
             )}
             {lastActionMessage && <p className="mt-2 text-center text-xs text-white/75">{lastActionMessage}</p>}
           </section>
