@@ -227,6 +227,7 @@ export default function EclaireurScanFunnelPreviewPage() {
   const [featuredProId, setFeaturedProId] = useState<string | null>(null);
   const [showLeadSentModal, setShowLeadSentModal] = useState(false);
   const [swipeAnim, setSwipeAnim] = useState<"none" | "left" | "right" | "up">("none");
+  const [cardIntroAnim, setCardIntroAnim] = useState(false);
   const [lastActionMessage, setLastActionMessage] = useState("");
   const [showSearchPanel, setShowSearchPanel] = useState(false);
   const [contactResponse, setContactResponse] = useState<Record<string, ReplyStatus>>({});
@@ -369,6 +370,7 @@ export default function EclaireurScanFunnelPreviewPage() {
   );
   const currentDigest = currentDailyContact ? dailyDigestByContact[currentDailyContact.id] : null;
   const currentCardTheme = currentDigest ? sourceTheme[currentDigest.sourceType] : "from-[#1B2430] via-[#1A2D32] to-[#172126]";
+  const pepitesCount = Math.min(dailyProcessed, 20);
 
   function findSuggestedPro(need: string) {
     const inCity = PROS.filter((pro) => pro.city === "Dax" || pro.city === activeContact.city);
@@ -393,6 +395,13 @@ export default function EclaireurScanFunnelPreviewPage() {
     }, 180);
     return () => clearInterval(timer);
   }, [introStep, totalContacts]);
+
+  useEffect(() => {
+    if (!currentDailyContact) return;
+    setCardIntroAnim(true);
+    const timer = setTimeout(() => setCardIntroAnim(false), 260);
+    return () => clearTimeout(timer);
+  }, [currentCardIndex, currentDailyContact?.id]);
 
   function updateStatus(contactId: string, status: SwipeStatus, tag?: string) {
     const maskedUntil =
@@ -774,6 +783,9 @@ export default function EclaireurScanFunnelPreviewPage() {
                   Carte {Math.min(currentCardIndex + 1, 20)}/20 • Streak 4j
                 </p>
               </div>
+              <div className="mt-1 inline-flex items-center rounded-full border border-fuchsia-300/35 bg-fuchsia-500/10 px-3 py-1 text-[11px] font-black uppercase tracking-wide text-fuchsia-100">
+                Pepites decouvertes: {pepitesCount}/20
+              </div>
               <div className="h-2 rounded-full bg-white/10 overflow-hidden">
                 <div className="h-full bg-gradient-to-r from-emerald-300 to-cyan-300" style={{ width: `${(dailyProcessed / 20) * 100}%` }} />
               </div>
@@ -794,7 +806,9 @@ export default function EclaireurScanFunnelPreviewPage() {
                         ? "translate-x-[140%] rotate-[18deg] opacity-0 scale-95"
                         : swipeAnim === "up"
                           ? "-translate-y-[150%] opacity-0 scale-95"
-                          : ""
+                          : cardIntroAnim
+                            ? "animate-[pulse_0.25s_ease-out] scale-[1.015]"
+                            : ""
                   }`}
                 >
                   <div className="flex items-center justify-between">
