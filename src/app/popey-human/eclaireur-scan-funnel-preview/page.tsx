@@ -110,6 +110,17 @@ const MAGIC_SEARCH: Array<{ keyword: string; suggestion: string; need: string }>
   { keyword: "chien", suggestion: "Son chien est son amour ?", need: "Educateur Canin" },
   { keyword: "maison", suggestion: "Projet immo en preparation ?", need: "Besoin d acheter" },
 ];
+const BROAD_NEEDS = [
+  "Courtier",
+  "Agent immo",
+  "Artisan travaux",
+  "Assurance",
+  "Gestion patrimoine",
+  "Nounou",
+  "Services a la personne",
+  "Educateur Canin",
+  "Marketing",
+] as const;
 const MOMENTS = [
   "Vient d avoir un enfant",
   "Est en plein divorce",
@@ -165,7 +176,6 @@ export default function EclaireurScanFunnelPreviewPage() {
     Object.fromEntries(CONTACTS.map((contact) => [contact.id, { status: "new", tags: [] }])),
   );
   const [surveillanceContactId, setSurveillanceContactId] = useState<string | null>(null);
-  const [surveillanceMode, setSurveillanceMode] = useState<"actions" | "funnel">("actions");
   const [selectedSphereId, setSelectedSphereId] = useState<string>(SPHERES[0].id);
   const [selectedDiagnosticId, setSelectedDiagnosticId] = useState<string | null>(null);
   const [magicSearchTerm, setMagicSearchTerm] = useState("");
@@ -173,6 +183,7 @@ export default function EclaireurScanFunnelPreviewPage() {
   const [selectedMoment, setSelectedMoment] = useState<string>(MOMENTS[0]);
   const [selectedNeed, setSelectedNeed] = useState<string>("");
   const [messageDraft, setMessageDraft] = useState("");
+  const [proMessageDraft, setProMessageDraft] = useState("");
   const [reply, setReply] = useState<ReplyStatus>("waiting");
   const [selectedTrade, setSelectedTrade] = useState<string>("Courtier");
   const [selectedProCategory, setSelectedProCategory] = useState<string>("Tous");
@@ -191,7 +202,6 @@ export default function EclaireurScanFunnelPreviewPage() {
   const currentDailyContact = CONTACTS.find((contact) => contact.id === dailyDeckIds[currentCardIndex]) || null;
   const activeContact = CONTACTS.find((contact) => contact.id === activeContactId) ?? CONTACTS[0];
   const surveillanceContact = CONTACTS.find((contact) => contact.id === surveillanceContactId) ?? null;
-  const isColdContact = surveillanceContact ? Number(surveillanceContact.id.replace("c", "")) % 2 === 0 : false;
   const cardThemes = [
     "from-[#1B2430] via-[#1A2D32] to-[#172126]",
     "from-[#261B2B] via-[#1F2236] to-[#1B2630]",
@@ -274,7 +284,7 @@ export default function EclaireurScanFunnelPreviewPage() {
   const scanCompleted = scanCount >= totalContacts;
   const scoutFirstName = "Jean-Philippe";
   const tutorialExpectedAction = tutorialActive ? (["up", "right", "left"][dailyTutorialStep] ?? null) : null;
-  const needsForMatch = funnelNeeds.length > 0 ? funnelNeeds : ALL_NEEDS;
+  const needsForMatch = funnelNeeds.length > 0 ? Array.from(new Set([...funnelNeeds, ...BROAD_NEEDS])) : ALL_NEEDS;
   const diagnosticsForSphere = DIAGNOSTICS[selectedSphereId] ?? [];
   const selectedDiagnostic = diagnosticsForSphere.find((diag) => diag.id === selectedDiagnosticId) ?? null;
   const avgSphereCommission =
@@ -369,7 +379,6 @@ export default function EclaireurScanFunnelPreviewPage() {
   function onSwipeRight() {
     if (!currentDailyContact) return;
     setSurveillanceContactId(currentDailyContact.id);
-    setSurveillanceMode("actions");
     setSelectedSphereId(SPHERES[0].id);
     setSelectedDiagnosticId(null);
     setMagicSearchTerm("");
@@ -388,6 +397,7 @@ export default function EclaireurScanFunnelPreviewPage() {
       setSelectedProId(null);
       setFeaturedProId(null);
       setMessageDraft("");
+      setProMessageDraft("");
       setFunnelStep("match");
       setLastActionMessage(`${contact.name} passe en qualification business (${businessTag}).`);
       if (tutorialExpectedAction === "right") {
@@ -395,22 +405,6 @@ export default function EclaireurScanFunnelPreviewPage() {
       }
       goNextCard();
     });
-  }
-
-  function sendWakeMessage() {
-    if (!surveillanceContactId) return;
-    const contact = CONTACTS.find((item) => item.id === surveillanceContactId);
-    if (!contact) return;
-    const digits = contact.phone.replace(/\D+/g, "");
-    const whatsappPhone = digits.startsWith("0") ? `33${digits.slice(1)}` : digits;
-    const wakeMessage = `Salut ${contact.name.split(" ")[0]}, ca fait un bail ! Je me suis mis a fond dans un reseau d experts sur Dax (Immo, travaux, finance...). Si jamais toi ou un proche cherchez un crack dans un domaine, demande-moi, j ai les meilleurs deals de la ville en ce moment. A plus !`;
-    if (typeof window !== "undefined") {
-      window.open(`https://wa.me/${whatsappPhone}?text=${encodeURIComponent(wakeMessage)}`, "_blank");
-    }
-    updateStatus(surveillanceContactId, "qualified", "Message reveil");
-    setSurveillanceContactId(null);
-    setLastActionMessage(`Message de courtoisie lance pour ${contact.name}.`);
-    goNextCard();
   }
 
   function sendContactIntroMessage(contact: Contact) {
@@ -453,6 +447,7 @@ export default function EclaireurScanFunnelPreviewPage() {
     setSelectedNeed(ALL_NEEDS[0] ?? "Courtier");
     setFunnelNeeds([]);
     setMessageDraft("");
+    setProMessageDraft("");
     setSelectedProId(null);
     setFeaturedProId(null);
     setShowProDetailModal(false);
@@ -484,6 +479,7 @@ export default function EclaireurScanFunnelPreviewPage() {
     setFeaturedProId(null);
     setSelectedTrade("Expert local");
     setMessageDraft("");
+    setProMessageDraft("");
     setReply("waiting");
     setFunnelStep("match");
     setMainTab("daily");
@@ -506,7 +502,7 @@ export default function EclaireurScanFunnelPreviewPage() {
     setContactHasMessage((prev) => ({ ...prev, [activeContactId]: true }));
     setContactResponse((prev) => ({ ...prev, [activeContactId]: "ok" }));
     setContactDispatched((prev) => ({ ...prev, [activeContactId]: true }));
-    setLastActionMessage(`Lead envoye a ${selectedTrade} pour ${activeContact.name} !`);
+    setLastActionMessage(`Lead envoye a ${selectedTrade} pour ${activeContact.name} (message pro pret: "${proMessageDraft || "OK"}").`);
     setFunnelStep(null);
     setShowLeadSentModal(true);
     setShowProDetailModal(false);
@@ -515,8 +511,10 @@ export default function EclaireurScanFunnelPreviewPage() {
   function proceedToMessageWithPro(pro: Pro) {
     setSelectedProId(pro.id);
     setSelectedTrade(pro.name);
-    const draft = `Salut ${activeContact.name.split(" ")[0]}, je pense a toi suite a ton contexte "${selectedMoment}". J ai un pro de confiance sur ${pro.trade} a ${activeContact.city}. Tu veux que je lui demande de te contacter ?`;
-    setMessageDraft(draft);
+    const contactDraft = `Salut ${activeContact.name.split(" ")[0]}, je pense a toi suite a ton contexte "${selectedMoment}". J ai un pro de confiance sur ${pro.trade} a ${activeContact.city}. Tu veux que je lui demande de te contacter ?`;
+    const proDraft = `Salut ${pro.name}, je te partage ${activeContact.name} (${activeContact.city}). Besoin detecte: ${selectedNeed || pro.trade}. Tu peux le/la contacter de ma part via Popey.`;
+    setMessageDraft(contactDraft);
+    setProMessageDraft(proDraft);
     setShowProDetailModal(false);
     setFunnelStep("message");
   }
@@ -808,39 +806,11 @@ export default function EclaireurScanFunnelPreviewPage() {
             <section className="relative z-50 w-full max-w-2xl max-h-[88vh] overflow-y-auto rounded-3xl border border-white/15 bg-[#12161A] p-5 shadow-[0_30px_80px_rgba(0,0,0,0.6)]">
               <div className="mx-auto mb-2 h-1.5 w-12 rounded-full bg-white/20" />
               <p className="text-[11px] font-black uppercase tracking-[0.12em] text-[#EAC886]">Mise sous surveillance</p>
-              <h3 className="mt-2 text-xl font-black">Pas de besoin immediat ? Organisons la suite.</h3>
+              <h3 className="mt-2 text-xl font-black">Pas de besoin immediat pour {surveillanceContact.name.split(" ")[0]} ?</h3>
               <p className="mt-2 text-sm text-white/75">
-                C est peut-etre pas encore le moment pour {surveillanceContact.name.split(" ")[0]}, mais ne le laissons pas s endormir. Choisissez une action
-                pour rester dans son radar.
+                Organisons la suite alors. Qu est-ce qui definit le mieux {surveillanceContact.name.split(" ")[0]} pour rester dans son radar ?
               </p>
-
-              {isColdContact && (
-                <p className="mt-3 rounded-xl border border-[#EAC886]/25 bg-[#1A1510] px-3 py-2 text-xs text-[#F2D9A2]">
-                  💡 Contact froid: un message de reveil est conseille.
-                </p>
-              )}
-
-              <div className="mt-4 grid gap-2 sm:grid-cols-2">
-                <button
-                  type="button"
-                  onClick={() => setSurveillanceMode("funnel")}
-                  className={`h-11 rounded-xl border text-xs font-black uppercase tracking-wide ${
-                    surveillanceMode === "funnel" ? "border-emerald-300/55 bg-emerald-500/12" : "border-white/20 bg-white/5"
-                  }`}
-                >
-                  Entonnoir intelligent
-                </button>
-                <button
-                  type="button"
-                  onClick={sendWakeMessage}
-                  className="h-11 rounded-xl bg-cyan-300 text-black text-xs font-black uppercase tracking-wide"
-                >
-                  💬 Envoyer un message de courtoisie
-                </button>
-              </div>
-
-              {surveillanceMode === "funnel" && (
-                <div className="mt-4">
+              <div className="mt-4">
                   <div className="flex items-center gap-2">
                     <input
                       value={magicSearchTerm}
@@ -875,8 +845,10 @@ export default function EclaireurScanFunnelPreviewPage() {
                           setSelectedSphereId(sphere.id);
                           setSelectedDiagnosticId(null);
                         }}
-                        className={`rounded-2xl border p-3 text-left ${
-                          selectedSphereId === sphere.id ? "border-emerald-300/55 bg-emerald-500/10" : "border-white/15 bg-black/20"
+                        className={`rounded-2xl border p-3 text-left transition ${
+                          selectedSphereId === sphere.id
+                            ? "border-cyan-300/70 bg-gradient-to-br from-cyan-500/20 to-emerald-500/15 shadow-[0_0_30px_rgba(34,211,238,0.25)]"
+                            : "border-white/15 bg-black/20"
                         }`}
                       >
                         <p className="text-sm font-black">
@@ -887,12 +859,6 @@ export default function EclaireurScanFunnelPreviewPage() {
                     ))}
                   </div>
 
-                  {avgSphereCommission && (
-                    <p className="mt-3 rounded-xl border border-emerald-300/25 bg-emerald-500/10 px-3 py-2 text-xs text-emerald-100">
-                      Potentiel moyen sur cette categorie: <span className="font-black">~{avgSphereCommission}€</span> par lead valide. Astuce: priorise les contacts chauds.
-                    </p>
-                  )}
-
                   <div className="mt-3 rounded-2xl border border-white/15 bg-black/20 p-3">
                     <p className="text-xs text-white/70">Qu est-ce qui definit le mieux {surveillanceContact.name.split(" ")[0]} ?</p>
                     <div className="mt-2 flex flex-wrap gap-2">
@@ -901,8 +867,10 @@ export default function EclaireurScanFunnelPreviewPage() {
                           key={d.id}
                           type="button"
                           onClick={() => setSelectedDiagnosticId(d.id)}
-                          className={`rounded-full border px-3 py-2 text-xs font-black uppercase tracking-wide ${
-                            selectedDiagnosticId === d.id ? "border-emerald-300/55 bg-emerald-500/12" : "border-white/20 bg-white/5"
+                          className={`rounded-full border px-3 py-2 text-xs font-black uppercase tracking-wide transition ${
+                            selectedDiagnosticId === d.id
+                              ? "border-[#EAC886]/70 bg-gradient-to-r from-[#EAC886]/30 to-emerald-500/20 text-[#F8E7BF]"
+                              : "border-white/20 bg-white/5"
                           }`}
                         >
                           {d.label}
@@ -934,9 +902,13 @@ export default function EclaireurScanFunnelPreviewPage() {
                         Continuer
                       </button>
                     </div>
+                    {avgSphereCommission && (
+                      <p className="mt-3 rounded-xl border border-emerald-300/25 bg-emerald-500/10 px-3 py-2 text-xs text-emerald-100">
+                        Potentiel moyen sur cette categorie: <span className="font-black">~{avgSphereCommission}€</span> par lead valide. Astuce: priorise les contacts chauds.
+                      </p>
+                    )}
                   </div>
                 </div>
-              )}
             </section>
           </div>
         )}
@@ -982,11 +954,17 @@ export default function EclaireurScanFunnelPreviewPage() {
 
             {funnelStep === "message" && (
               <>
-                <p className="mt-2 text-sm text-white/75">Message pre-rempli</p>
+                <p className="mt-2 text-sm text-white/75">Message pour le contact (WhatsApp)</p>
                 <textarea
                   value={messageDraft}
                   onChange={(event) => setMessageDraft(event.target.value)}
                   className="mt-3 min-h-28 w-full rounded-xl border border-white/20 bg-black/25 px-3 py-2 text-sm"
+                />
+                <p className="mt-3 text-sm text-white/75">Message pour le pro (envoi interne)</p>
+                <textarea
+                  value={proMessageDraft}
+                  onChange={(event) => setProMessageDraft(event.target.value)}
+                  className="mt-2 min-h-24 w-full rounded-xl border border-emerald-300/25 bg-emerald-500/5 px-3 py-2 text-sm"
                 />
                 <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
                   <button
@@ -1005,7 +983,7 @@ export default function EclaireurScanFunnelPreviewPage() {
                     J ai le consentement de {activeContact.name.split(" ")[0]}
                   </button>
                 </div>
-                <p className="mt-2 text-xs text-white/70">Le 1er bouton ouvre WhatsApp. Le 2e envoie le lead au pro avec accord de rappel.</p>
+                <p className="mt-2 text-xs text-white/70">Le 1er bouton envoie le message au contact. Le 2e transmet directement le lead au pro avec le message pro.</p>
               </>
             )}
           </section>
