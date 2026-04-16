@@ -200,6 +200,7 @@ export default function EclaireurScanFunnelPreviewPage() {
   const [tutorialActive, setTutorialActive] = useState(true);
   const [mainTab, setMainTab] = useState<MainTab>("daily");
   const [showProfile, setShowProfile] = useState(false);
+  const [showFavoritesPanel, setShowFavoritesPanel] = useState(false);
   const [funnelStep, setFunnelStep] = useState<FunnelStep | null>(null);
   const [activeContactId, setActiveContactId] = useState(CONTACTS[0].id);
   const [totalContacts] = useState(816);
@@ -234,6 +235,7 @@ export default function EclaireurScanFunnelPreviewPage() {
   const [contactResponse, setContactResponse] = useState<Record<string, ReplyStatus>>({});
   const [contactHasMessage, setContactHasMessage] = useState<Record<string, boolean>>({});
   const [contactDispatched, setContactDispatched] = useState<Record<string, boolean>>({});
+  const [favoriteContactIds, setFavoriteContactIds] = useState<string[]>([]);
   const [showSignalModal, setShowSignalModal] = useState(false);
   const [signalTargetContactId, setSignalTargetContactId] = useState<string | null>(null);
   const [selectedSignalBadges, setSelectedSignalBadges] = useState<string[]>([]);
@@ -269,6 +271,10 @@ export default function EclaireurScanFunnelPreviewPage() {
         return `${contact.name} ${contact.phone} ${contact.city}`.toLowerCase().includes(query);
       }),
     [searchQuery],
+  );
+  const favoriteContacts = useMemo(
+    () => CONTACTS.filter((contact) => favoriteContactIds.includes(contact.id)),
+    [favoriteContactIds],
   );
 
   const prosResults = useMemo(
@@ -436,6 +442,17 @@ export default function EclaireurScanFunnelPreviewPage() {
       [previousCardId]: { status: "new", tags: [] },
     }));
     setLastActionMessage("Derniere action annulee");
+  }
+
+  function toggleFavorite(contactId: string) {
+    const contact = CONTACTS.find((item) => item.id === contactId);
+    const willBeFavorite = !favoriteContactIds.includes(contactId);
+    setFavoriteContactIds((prev) => (prev.includes(contactId) ? prev.filter((id) => id !== contactId) : [...prev, contactId]));
+    setLastActionMessage(
+      willBeFavorite
+        ? `${contact?.name ?? "Contact"} ajoute a tes favoris.`
+        : `${contact?.name ?? "Contact"} retire de tes favoris.`,
+    );
   }
 
   function animateAndThen(direction: "left" | "right" | "up", callback: () => void) {
@@ -653,6 +670,14 @@ export default function EclaireurScanFunnelPreviewPage() {
             </button>
             <button
               type="button"
+              onClick={() => setShowFavoritesPanel((value) => !value)}
+              className="inline-flex items-center gap-1 rounded-full border border-fuchsia-300/35 bg-fuchsia-500/10 px-2 py-2 text-[10px] font-black uppercase tracking-wide text-fuchsia-100"
+            >
+              <span>⭐</span>
+              <span>Mes favoris</span>
+            </button>
+            <button
+              type="button"
               onClick={() => setShowProfile((value) => !value)}
               className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-2 text-xs font-black tracking-wide"
             >
@@ -773,6 +798,37 @@ export default function EclaireurScanFunnelPreviewPage() {
               <p className="rounded-lg border border-white/15 bg-black/25 px-3 py-2">Badge: Eclaireur Bronze</p>
               <p className="rounded-lg border border-white/15 bg-black/25 px-3 py-2">RIB: Configure</p>
             </div>
+          </section>
+        )}
+
+        {showFavoritesPanel && (
+          <section className="rounded-2xl border border-fuchsia-300/30 bg-[#12161A] p-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-black">Mes favoris</h2>
+              <span className="rounded-full border border-white/20 bg-black/20 px-2 py-1 text-[10px] font-black uppercase tracking-wide">
+                {favoriteContacts.length}
+              </span>
+            </div>
+            {favoriteContacts.length === 0 ? (
+              <p className="mt-2 text-sm text-white/70">Ajoute des contacts en favori pour relancer un scan quand tu veux.</p>
+            ) : (
+              <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                {favoriteContacts.map((contact) => (
+                  <button
+                    key={contact.id}
+                    type="button"
+                    onClick={() => {
+                      setShowFavoritesPanel(false);
+                      openFunnelForContact(contact.id);
+                    }}
+                    className="rounded-xl border border-white/15 bg-black/20 p-3 text-left"
+                  >
+                    <p className="text-sm font-black">{contact.name}</p>
+                    <p className="text-xs text-white/70">{contact.city}</p>
+                  </button>
+                ))}
+              </div>
+            )}
           </section>
         )}
 
@@ -901,10 +957,14 @@ export default function EclaireurScanFunnelPreviewPage() {
               <div className="mt-3 sm:mt-4 grid grid-cols-2 sm:grid-cols-6 gap-2 items-center">
                 <button
                   type="button"
-                  onClick={onUndoLast}
-                  className="h-12 rounded-xl border border-white/20 bg-black/25 px-2 text-[11px] font-black uppercase tracking-wide text-amber-300 hover:bg-white/10 active:scale-95 transition"
+                  onClick={() => currentDailyContact && toggleFavorite(currentDailyContact.id)}
+                  className={`h-12 rounded-xl border px-2 text-[11px] font-black uppercase tracking-wide active:scale-95 transition ${
+                    currentDailyContact && favoriteContactIds.includes(currentDailyContact.id)
+                      ? "border-[#EAC886]/45 bg-[#EAC886]/15 text-[#F8E7BF]"
+                      : "border-white/20 bg-black/25 text-amber-300 hover:bg-white/10"
+                  }`}
                 >
-                  ↺ Retour
+                  ⭐ Favori
                 </button>
                 <button
                   type="button"
