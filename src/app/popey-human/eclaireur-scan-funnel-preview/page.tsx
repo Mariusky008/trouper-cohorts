@@ -228,6 +228,7 @@ export default function EclaireurScanFunnelPreviewPage() {
   const [showLeadSentModal, setShowLeadSentModal] = useState(false);
   const [swipeAnim, setSwipeAnim] = useState<"none" | "left" | "right" | "up">("none");
   const [cardIntroAnim, setCardIntroAnim] = useState(false);
+  const [activeDigestPopup, setActiveDigestPopup] = useState<"insight" | "signal" | "saviez" | null>(null);
   const [lastActionMessage, setLastActionMessage] = useState("");
   const [showSearchPanel, setShowSearchPanel] = useState(false);
   const [contactResponse, setContactResponse] = useState<Record<string, ReplyStatus>>({});
@@ -399,6 +400,7 @@ export default function EclaireurScanFunnelPreviewPage() {
   useEffect(() => {
     if (!currentDailyContact) return;
     setCardIntroAnim(true);
+    setActiveDigestPopup(null);
     const timer = setTimeout(() => setCardIntroAnim(false), 260);
     return () => clearTimeout(timer);
   }, [currentCardIndex, currentDailyContact?.id]);
@@ -817,23 +819,73 @@ export default function EclaireurScanFunnelPreviewPage() {
                       {currentDigest?.sourceLabel}
                     </span>
                   </div>
-                  <p className="mt-2 text-3xl sm:text-4xl font-black leading-tight">{currentDailyContact.name}</p>
-                  <p className="mt-1 text-sm text-white/75">
-                    {currentDigest?.job} • {currentDailyContact.city}
-                  </p>
-                  <div className="mt-3 rounded-xl border border-white/15 bg-black/25 p-3 text-left">
-                    <p className="text-[11px] uppercase tracking-[0.12em] text-cyan-200">{currentDigest?.insightTitle}</p>
-                    <p className="mt-1 text-sm font-black">{currentDigest?.insightBody}</p>
+
+                  <div className="mt-4 sm:hidden space-y-2">
+                    <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full border border-white/25 bg-white/10 text-2xl font-black shadow-[0_0_35px_rgba(255,255,255,0.18)]">
+                      {currentDailyContact.name
+                        .split(" ")
+                        .slice(0, 2)
+                        .map((part) => part[0])
+                        .join("")}
+                    </div>
+                    <p className="text-2xl font-black leading-tight">{currentDailyContact.name}</p>
+                    <p className="text-sm text-white/75">{currentDigest?.job} • {currentDailyContact.city}</p>
+                    <button type="button" onClick={() => setActiveDigestPopup("insight")} className="w-full rounded-xl border border-cyan-300/35 bg-cyan-500/10 p-3 text-left">
+                      <p className="text-[11px] uppercase tracking-[0.12em] text-cyan-200">Insight</p>
+                      <p className="text-sm font-black">{currentDigest?.insightTitle}</p>
+                    </button>
+                    <button type="button" onClick={() => setActiveDigestPopup("signal")} className="w-full rounded-xl border border-fuchsia-300/35 bg-fuchsia-500/10 p-3 text-left">
+                      <p className="text-[11px] uppercase tracking-[0.12em] text-fuchsia-200">Signal Popey</p>
+                      <p className="text-sm font-black">{(currentDigest?.lifeBadges ?? []).slice(0, 2).join(" • ")}</p>
+                    </button>
+                    <button type="button" onClick={() => setActiveDigestPopup("saviez")} className="w-full rounded-xl border border-[#EAC886]/35 bg-[#EAC886]/10 p-3 text-left">
+                      <p className="text-[11px] uppercase tracking-[0.12em] text-[#EAC886]">Le saviez-vous ?</p>
+                      <p className="text-sm font-black">{currentDigest?.saviezVous}</p>
+                    </button>
                   </div>
-                  <div className="mt-2 rounded-xl border border-white/15 bg-black/25 p-3 text-left">
-                    <p className="text-[11px] uppercase tracking-[0.12em] text-fuchsia-200">Signal Popey</p>
-                    <p className="mt-1 text-xs text-white/80">Badges: {(currentDigest?.lifeBadges ?? []).join(" | ")}</p>
-                    <p className="mt-1 text-xs text-white/80">Trait: {currentDigest?.trait}</p>
-                    <p className="mt-1 text-xs text-white/80">Info partagee: {currentDigest?.communityNote}</p>
+
+                  <div className="relative mt-5 hidden sm:block h-[360px]">
+                    <button
+                      type="button"
+                      onClick={() => setActiveDigestPopup("insight")}
+                      className="absolute left-3 top-2 w-[36%] rounded-2xl border border-cyan-300/35 bg-cyan-500/12 p-3 text-left shadow-[0_0_35px_rgba(34,211,238,0.18)]"
+                    >
+                      <p className="text-[11px] uppercase tracking-[0.12em] text-cyan-200">Insight</p>
+                      <p className="mt-1 text-sm font-black">{currentDigest?.insightTitle}</p>
+                      <p className="mt-1 text-xs text-white/75 line-clamp-2">{currentDigest?.insightBody}</p>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setActiveDigestPopup("signal")}
+                      className="absolute right-3 top-8 w-[36%] rounded-2xl border border-fuchsia-300/35 bg-fuchsia-500/12 p-3 text-left shadow-[0_0_35px_rgba(232,121,249,0.2)]"
+                    >
+                      <p className="text-[11px] uppercase tracking-[0.12em] text-fuchsia-200">Signal Popey</p>
+                      <p className="mt-1 text-xs text-white/80">Badges: {(currentDigest?.lifeBadges ?? []).slice(0, 2).join(" • ")}</p>
+                      <p className="mt-1 text-xs text-white/80">{currentDigest?.trait}</p>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setActiveDigestPopup("saviez")}
+                      className="absolute bottom-3 left-1/2 w-[48%] -translate-x-1/2 rounded-2xl border border-[#EAC886]/35 bg-[#EAC886]/12 p-3 text-left shadow-[0_0_35px_rgba(234,200,134,0.16)]"
+                    >
+                      <p className="text-[11px] uppercase tracking-[0.12em] text-[#EAC886]">Le saviez-vous ?</p>
+                      <p className="mt-1 text-xs text-white/80 line-clamp-2">{currentDigest?.saviezVous}</p>
+                    </button>
+
+                    <div className="absolute left-1/2 top-[48%] -translate-x-1/2 -translate-y-1/2">
+                      <div className="mx-auto flex h-28 w-28 items-center justify-center rounded-full border border-white/30 bg-white/10 text-3xl font-black shadow-[0_0_55px_rgba(255,255,255,0.2)]">
+                        {currentDailyContact.name
+                          .split(" ")
+                          .slice(0, 2)
+                          .map((part) => part[0])
+                          .join("")}
+                      </div>
+                      <p className="mt-3 text-3xl font-black leading-tight">{currentDailyContact.name}</p>
+                      <p className="mt-1 text-sm text-white/75">{currentDigest?.job} • {currentDailyContact.city}</p>
+                    </div>
                   </div>
-                  <p className="mt-2 rounded-xl border border-white/15 bg-black/20 px-3 py-2 text-xs text-white/75 text-left">
-                    Le saviez-vous ? {currentDigest?.saviezVous}
-                  </p>
                 </article>
               )}
             </div>
@@ -846,49 +898,78 @@ export default function EclaireurScanFunnelPreviewPage() {
             )}
 
             {currentDailyContact && (
-              <div className="mt-2 sm:mt-4 grid grid-cols-6 gap-2 items-center">
+              <div className="mt-3 sm:mt-4 grid grid-cols-2 sm:grid-cols-6 gap-2 items-center">
                 <button
                   type="button"
                   onClick={onUndoLast}
-                  className="h-12 rounded-xl border border-white/20 bg-black/25 px-2 text-[11px] font-black uppercase tracking-wide text-amber-300 active:scale-95 transition"
+                  className="h-12 rounded-xl border border-white/20 bg-black/25 px-2 text-[11px] font-black uppercase tracking-wide text-amber-300 hover:bg-white/10 active:scale-95 transition"
                 >
                   ↺ Retour
                 </button>
                 <button
                   type="button"
                   onClick={onSwipeLeft}
-                  className="h-12 rounded-xl border border-white/20 bg-black/25 px-2 text-[11px] font-black uppercase tracking-wide text-rose-300 active:scale-95 transition"
+                  className="h-12 rounded-xl border border-white/20 bg-black/25 px-2 text-[11px] font-black uppercase tracking-wide text-rose-300 hover:bg-white/10 active:scale-95 transition"
                 >
                   ✕ Passer
                 </button>
                 <button
                   type="button"
                   onClick={onSwipeUp}
-                  className="h-12 rounded-xl border border-cyan-300/35 bg-cyan-500/10 px-2 text-[11px] font-black uppercase tracking-wide text-cyan-200 active:scale-95 transition"
+                  className="h-12 rounded-xl border border-cyan-300/35 bg-gradient-to-r from-cyan-500/20 to-cyan-400/10 px-2 text-[11px] font-black uppercase tracking-wide text-cyan-100 hover:from-cyan-500/30 hover:to-cyan-400/20 active:scale-95 transition"
                 >
                   ⭐ Matcher Pro
                 </button>
                 <button
                   type="button"
                   onClick={onSwipeRight}
-                  className="h-12 rounded-xl border border-emerald-300/35 bg-emerald-500/10 px-2 text-[11px] font-black uppercase tracking-wide text-emerald-200 active:scale-95 transition"
+                  className="h-12 rounded-xl border border-emerald-300/35 bg-gradient-to-r from-emerald-500/20 to-emerald-400/10 px-2 text-[11px] font-black uppercase tracking-wide text-emerald-100 hover:from-emerald-500/30 hover:to-emerald-400/20 active:scale-95 transition"
                 >
                   ✅ Sous radar
                 </button>
                 <button
                   type="button"
                   onClick={() => currentDailyContact && openSignalPopeyForContact(currentDailyContact)}
-                  className="h-12 rounded-xl border border-fuchsia-300/35 bg-fuchsia-500/10 px-2 text-[11px] font-black uppercase tracking-wide text-fuchsia-100 active:scale-95 transition"
+                  className="h-12 rounded-xl border border-fuchsia-300/35 bg-gradient-to-r from-fuchsia-500/20 to-violet-500/15 px-2 text-[11px] font-black uppercase tracking-wide text-fuchsia-100 hover:from-fuchsia-500/30 hover:to-violet-500/25 active:scale-95 transition"
                 >
-                  📝 Signal
+                  📝 Signal Popey
                 </button>
                 <button
                   type="button"
                   onClick={() => currentDailyContact && sendContactIntroMessage(currentDailyContact)}
-                  className="h-12 rounded-xl border border-white/20 bg-black/25 px-2 text-[11px] font-black uppercase tracking-wide text-cyan-200 active:scale-95 transition"
+                  className="h-12 rounded-xl border border-white/20 bg-black/25 px-2 text-[11px] font-black uppercase tracking-wide text-cyan-200 hover:bg-white/10 active:scale-95 transition"
                 >
                   💬 Brise-glace
                 </button>
+              </div>
+            )}
+            {activeDigestPopup && currentDigest && (
+              <div className="mt-3 rounded-2xl border border-white/20 bg-black/30 p-4 text-left">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-black uppercase tracking-[0.12em] text-white/70">
+                    {activeDigestPopup === "insight" ? "Insight detaille" : activeDigestPopup === "signal" ? "Signal Popey detaille" : "Le saviez-vous detaille"}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setActiveDigestPopup(null)}
+                    className="rounded-lg border border-white/20 bg-white/10 px-2 py-1 text-[10px] font-black uppercase tracking-wide"
+                  >
+                    Fermer
+                  </button>
+                </div>
+                {activeDigestPopup === "insight" && (
+                  <p className="mt-2 text-sm text-white/90">{currentDigest.insightBody}</p>
+                )}
+                {activeDigestPopup === "signal" && (
+                  <div className="mt-2 text-sm text-white/90 space-y-1">
+                    <p>Badges: {currentDigest.lifeBadges.join(" | ")}</p>
+                    <p>Trait: {currentDigest.trait}</p>
+                    <p>Info partagee: {currentDigest.communityNote}</p>
+                  </div>
+                )}
+                {activeDigestPopup === "saviez" && (
+                  <p className="mt-2 text-sm text-white/90">{currentDigest.saviezVous}</p>
+                )}
               </div>
             )}
             {lastActionMessage && <p className="mt-2 text-center text-xs text-white/75">{lastActionMessage}</p>}
