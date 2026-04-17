@@ -173,8 +173,8 @@ export default function EntrepreneurSmartScanTestPage() {
   useEffect(() => {
     if (stage !== "scan") return;
     const timer = setInterval(() => {
-      setScanCount((value) => Math.min(totalScanned, value + Math.floor(Math.random() * 26) + 14));
-    }, 120);
+      setScanCount((value) => Math.min(totalScanned, value + Math.floor(Math.random() * 9) + 10));
+    }, 180);
     return () => clearInterval(timer);
   }, [stage]);
 
@@ -240,24 +240,43 @@ export default function EntrepreneurSmartScanTestPage() {
             </div>
             <p className="mt-2 text-xs text-white/70">{scanCount} / {totalScanned} contacts scannes</p>
 
-            <div className="mt-4 grid grid-cols-3 gap-2">
-              <div className="rounded-2xl bg-white/10 p-3 text-center">
-                <p className="text-2xl font-black text-cyan-100">304</p>
-                <p className="mt-1 text-[11px] font-black uppercase tracking-wide text-white/75">profils actifs</p>
-              </div>
-              <div className="rounded-2xl bg-white/10 p-3 text-center">
-                <p className="text-2xl font-black text-indigo-100">488</p>
-                <p className="mt-1 text-[11px] font-black uppercase tracking-wide text-white/75">contacts locaux</p>
-              </div>
-              <div className="rounded-2xl bg-white/10 p-3 text-center">
-                <p className="text-2xl font-black text-orange-100">112</p>
-                <p className="mt-1 text-[11px] font-black uppercase tracking-wide text-white/75">signaux chauds</p>
-              </div>
-            </div>
+            {scanDone ? (
+              <>
+                <div className="mt-4 grid grid-cols-3 gap-2">
+                  <div className="rounded-2xl bg-white/10 p-3 text-center">
+                    <p className="text-2xl font-black text-cyan-100">304</p>
+                    <p className="mt-1 text-[11px] font-black uppercase tracking-wide text-white/75">profils actifs</p>
+                  </div>
+                  <div className="rounded-2xl bg-white/10 p-3 text-center">
+                    <p className="text-2xl font-black text-indigo-100">488</p>
+                    <p className="mt-1 text-[11px] font-black uppercase tracking-wide text-white/75">contacts locaux</p>
+                  </div>
+                  <div className="rounded-2xl bg-white/10 p-3 text-center">
+                    <p className="text-2xl font-black text-orange-100">112</p>
+                    <p className="mt-1 text-[11px] font-black uppercase tracking-wide text-white/75">signaux chauds</p>
+                  </div>
+                </div>
 
-            <p className="mt-4 rounded-xl bg-emerald-400/15 px-3 py-2 text-sm text-emerald-100">
-              Scan termine: {totalScanned} contacts disponibles.
-            </p>
+                <p className="mt-4 rounded-xl bg-emerald-400/15 px-3 py-2 text-sm text-emerald-100">
+                  Scan termine: {totalScanned} contacts disponibles.
+                </p>
+              </>
+            ) : (
+              <div className="mt-4 grid grid-cols-3 gap-2">
+                <div className="rounded-2xl bg-white/10 p-3 text-center animate-pulse">
+                  <p className="text-2xl font-black text-cyan-100/70">•••</p>
+                  <p className="mt-1 text-[11px] font-black uppercase tracking-wide text-white/60">profils actifs</p>
+                </div>
+                <div className="rounded-2xl bg-white/10 p-3 text-center animate-pulse">
+                  <p className="text-2xl font-black text-indigo-100/70">•••</p>
+                  <p className="mt-1 text-[11px] font-black uppercase tracking-wide text-white/60">contacts locaux</p>
+                </div>
+                <div className="rounded-2xl bg-white/10 p-3 text-center animate-pulse">
+                  <p className="text-2xl font-black text-orange-100/70">•••</p>
+                  <p className="mt-1 text-[11px] font-black uppercase tracking-wide text-white/60">signaux chauds</p>
+                </div>
+              </div>
+            )}
 
             <button
               type="button"
