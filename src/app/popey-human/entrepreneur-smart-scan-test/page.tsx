@@ -182,6 +182,7 @@ export default function EntrepreneurSmartScanTestPage() {
   const [responseRate] = useState(38);
   const [showReward, setShowReward] = useState(false);
   const [successPulse, setSuccessPulse] = useState(false);
+  const [showProgressCheck, setShowProgressCheck] = useState(false);
   const [showHistoryPanel, setShowHistoryPanel] = useState(false);
   const [showSearchPanel, setShowSearchPanel] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -246,7 +247,7 @@ export default function EntrepreneurSmartScanTestPage() {
     return "Passer";
   }
 
-  function finalizeAction(action: Exclude<DailyCategory, "qualifier">) {
+  function finalizeAction(action: Exclude<DailyCategory, "qualifier">, advanceDelay = 200) {
     setSelectedAction(action);
     if (action === "eclaireur" || action === "package" || action === "exclients") {
       setSentCount((v) => v + 1);
@@ -269,7 +270,7 @@ export default function EntrepreneurSmartScanTestPage() {
       setIndex((v) => Math.min(CONTACTS.length, v + 1));
       setSelectedAction(null);
       setSelectedVotes([]);
-    }, 200);
+    }, advanceDelay);
   }
 
   function triggerAction(action: DailyCategory) {
@@ -301,8 +302,10 @@ export default function EntrepreneurSmartScanTestPage() {
     if (typeof window !== "undefined") {
       window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(draftMessage)}`, "_blank");
     }
+    setShowProgressCheck(true);
+    setTimeout(() => setShowProgressCheck(false), 650);
     setShowTemplateModal(false);
-    if (selectedAction && selectedAction !== "qualifier") finalizeAction(selectedAction);
+    if (selectedAction && selectedAction !== "qualifier") finalizeAction(selectedAction, 650);
   }
 
   function saveQualifierAndReturn() {
@@ -450,6 +453,11 @@ export default function EntrepreneurSmartScanTestPage() {
                 <div className="absolute inset-[6px] rounded-full bg-[#0B1024] flex items-center justify-center text-center">
                   <p className="text-[10px] font-black leading-tight">{done}/10<br />faits</p>
                 </div>
+                {showProgressCheck && (
+                  <div className="absolute -right-1 -top-1 flex h-6 w-6 items-center justify-center rounded-full border border-emerald-200/50 bg-emerald-400 text-[12px] font-black text-[#10261A] shadow-[0_10px_22px_-10px_rgba(52,211,153,0.95)]">
+                    ✓
+                  </div>
+                )}
               </button>
             </div>
           </div>
@@ -691,24 +699,26 @@ export default function EntrepreneurSmartScanTestPage() {
                 ✕
               </button>
             </div>
-            <div className="mt-2 rounded-2xl border border-white/15 bg-black/25 p-3">
-              <p className="text-[10px] font-black uppercase tracking-[0.12em] text-white/70">Contact concerne</p>
-              <div className="mt-1 flex items-center gap-3">
-                <div className={`h-10 w-10 rounded-full bg-gradient-to-br ${sourceRing} p-[1.5px]`}>
-                  <div className="flex h-full w-full items-center justify-center rounded-full bg-[#0D132D] text-sm font-black">
-                    {current.name
-                      .split(" ")
-                      .map((part) => part[0])
-                      .join("")}
+            {selectedAction === "qualifier" && (
+              <div className="mt-2 rounded-2xl border border-white/15 bg-black/25 p-3">
+                <p className="text-[10px] font-black uppercase tracking-[0.12em] text-white/70">Contact concerne</p>
+                <div className="mt-1 flex items-center gap-3">
+                  <div className={`h-10 w-10 rounded-full bg-gradient-to-br ${sourceRing} p-[1.5px]`}>
+                    <div className="flex h-full w-full items-center justify-center rounded-full bg-[#0D132D] text-sm font-black">
+                      {current.name
+                        .split(" ")
+                        .map((part) => part[0])
+                        .join("")}
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-sm font-black">{current.name}</p>
+                    <p className="text-xs text-white/70">{current.companyHint} • {current.city}</p>
                   </div>
                 </div>
-                <div>
-                  <p className="text-sm font-black">{current.name}</p>
-                  <p className="text-xs text-white/70">{current.companyHint} • {current.city}</p>
-                </div>
+                <p className="mt-1 text-xs text-cyan-100/90">{fusedInsight}</p>
               </div>
-              <p className="mt-1 text-xs text-cyan-100/90">{fusedInsight}</p>
-            </div>
+            )}
             <p className="mt-1 text-sm font-black">{modalTitle(selectedAction)}</p>
             {selectedAction === "qualifier" ? (
               <div className="mt-3 space-y-3">
