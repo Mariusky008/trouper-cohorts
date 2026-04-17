@@ -231,6 +231,9 @@ export default function EclaireurScanFunnelPreviewPage() {
   const [cardIntroAnim, setCardIntroAnim] = useState(false);
   const [showSwipeHints, setShowSwipeHints] = useState(false);
   const [touchStartPoint, setTouchStartPoint] = useState<{ x: number; y: number } | null>(null);
+  const [lastTapAt, setLastTapAt] = useState(0);
+  const [sharedInsightsCount, setSharedInsightsCount] = useState(0);
+  const [showShareReward, setShowShareReward] = useState(false);
   const [lastActionMessage, setLastActionMessage] = useState("");
   const [showSearchPanel, setShowSearchPanel] = useState(false);
   const [contactResponse, setContactResponse] = useState<Record<string, ReplyStatus>>({});
@@ -379,6 +382,9 @@ export default function EclaireurScanFunnelPreviewPage() {
   const currentDigest = currentDailyContact ? dailyDigestByContact[currentDailyContact.id] : null;
   const currentCardTheme = currentDigest ? sourceTheme[currentDigest.sourceType] : "from-[#1B2430] via-[#1A2D32] to-[#172126]";
   const pepitesCount = Math.min(dailyProcessed, 20);
+  const nextContactA = CONTACTS.find((contact) => contact.id === dailyDeckIds[Math.min(currentCardIndex + 1, 19)]) ?? null;
+  const nextContactB = CONTACTS.find((contact) => contact.id === dailyDeckIds[Math.min(currentCardIndex + 2, 19)]) ?? null;
+  const QUICK_SIGNAL_TAGS = ["🍣 Foodie", "🎾 Padel", "💡 Visionnaire", "🔌 Connecteur"] as const;
 
   function findSuggestedPro(need: string) {
     const inCity = PROS.filter((pro) => pro.city === "Dax" || pro.city === activeContact.city);
@@ -570,6 +576,16 @@ export default function EclaireurScanFunnelPreviewPage() {
     const contact = CONTACTS.find((item) => item.id === signalTargetContactId);
     setLastActionMessage(`Signal Popey partage pour ${contact?.name ?? "ce contact"} (anonyme pour la communaute).`);
     setShowSignalModal(false);
+  }
+
+  function quickShareSignalTag(tag: string) {
+    if (!currentDailyContact) return;
+    const normalizedTag = tag.replace(/^.+\s/, "");
+    updateStatus(currentDailyContact.id, contactMeta[currentDailyContact.id]?.status ?? "new", `Life:${normalizedTag}`);
+    setSharedInsightsCount((value) => value + 1);
+    setShowShareReward(true);
+    setLastActionMessage("Merci Eclaireur ! Ton info enrichit la communaute.");
+    setTimeout(() => setShowShareReward(false), 1200);
   }
 
   function openFunnelForContact(contactId: string) {
@@ -836,7 +852,7 @@ export default function EclaireurScanFunnelPreviewPage() {
               <div className="flex items-center justify-between rounded-lg border border-white/15 bg-black/20 px-3 py-2">
                 <p className="text-xs font-black uppercase tracking-wide">Daily</p>
                 <p className="text-xs text-white/80">
-                  Carte {Math.min(currentCardIndex + 1, 20)}/20 • Streak 4j
+                  {Math.min(currentCardIndex + 1, 20)}/20 cartes vues • {sharedInsightsCount} infos partagees
                 </p>
               </div>
               <div className="mt-1 inline-flex items-center rounded-full border border-fuchsia-300/35 bg-fuchsia-500/10 px-3 py-1 text-[11px] font-black uppercase tracking-wide text-fuchsia-100">
@@ -847,7 +863,17 @@ export default function EclaireurScanFunnelPreviewPage() {
               </div>
             </div>
 
-            <div className={`mt-2 sm:mt-3 min-h-[40vh] sm:min-h-[52vh] max-h-[44vh] sm:max-h-none rounded-2xl border border-white/15 bg-gradient-to-br ${currentCardTheme} p-3 sm:p-4 flex flex-col justify-center`}>
+            <div className={`relative overflow-hidden mt-2 sm:mt-3 min-h-[40vh] sm:min-h-[52vh] max-h-[44vh] sm:max-h-none rounded-2xl border border-white/15 bg-gradient-to-br ${currentCardTheme} p-3 sm:p-4 flex flex-col justify-center`}>
+              {currentDailyContact && (
+                <>
+                  <div className="pointer-events-none absolute inset-x-10 top-8 hidden sm:block rounded-[28px] bg-white/6 p-4 opacity-55 blur-[0.2px]">
+                    <p className="text-center text-sm font-black text-white/75">{nextContactB?.name ?? currentDailyContact.name}</p>
+                  </div>
+                  <div className="pointer-events-none absolute inset-x-6 top-5 hidden sm:block rounded-[28px] bg-white/8 p-4 opacity-80">
+                    <p className="text-center text-sm font-black text-white/85">{nextContactA?.name ?? currentDailyContact.name}</p>
+                  </div>
+                </>
+              )}
               {!currentDailyContact ? (
                 <div className="rounded-lg border border-emerald-300/30 bg-emerald-500/10 px-3 py-3 text-center">
                   <p className="text-sm text-emerald-200">Felicitations, mission du jour terminee.</p>
@@ -855,6 +881,14 @@ export default function EclaireurScanFunnelPreviewPage() {
                 </div>
               ) : (
                 <article
+                  onClick={() => {
+                    const now = Date.now();
+                    if (now - lastTapAt < 280 && currentDailyContact) {
+                      toggleFavorite(currentDailyContact.id);
+                      setLastActionMessage(`${currentDailyContact.name} ajoute en favori (double tap).`);
+                    }
+                    setLastTapAt(now);
+                  }}
                   onTouchStart={(event) => {
                     const touch = event.touches[0];
                     if (!touch) return;
@@ -941,6 +975,37 @@ export default function EclaireurScanFunnelPreviewPage() {
                     💬 Brise-glace
                   </button>
                 </div>
+                <div className="sticky bottom-2 mt-3 rounded-2xl bg-black/35 p-2 backdrop-blur-md">
+                  <p className="px-2 text-[10px] font-black uppercase tracking-[0.12em] text-white/70">Et toi, c est quoi son super-pouvoir ?</p>
+                  <div className="mt-2 flex gap-2 overflow-x-auto pb-1">
+                    {QUICK_SIGNAL_TAGS.map((tag) => (
+                      <button
+                        key={tag}
+                        type="button"
+                        onClick={() => quickShareSignalTag(tag)}
+                        className="whitespace-nowrap rounded-full bg-white/85 px-3 py-2 text-[11px] font-black text-[#2B3351] shadow-[0_8px_18px_-12px_rgba(255,255,255,0.9)]"
+                      >
+                        {tag}
+                      </button>
+                    ))}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (!currentDailyContact) return;
+                        setSignalTargetContactId(currentDailyContact.id);
+                        setShowSignalModal(true);
+                      }}
+                      className="rounded-full border border-fuchsia-300/40 bg-fuchsia-500/18 px-3 py-2 text-[11px] font-black text-fuchsia-100"
+                    >
+                      ＋ Note
+                    </button>
+                  </div>
+                </div>
+                {showShareReward && (
+                  <div className="mt-2 text-center">
+                    <p className="text-sm font-black text-emerald-200">🎉 Merci Eclaireur ! Ton info enrichit la communaute.</p>
+                  </div>
+                )}
               </>
             )}
             {lastActionMessage && <p className="mt-2 text-center text-xs text-white/75">{lastActionMessage}</p>}
