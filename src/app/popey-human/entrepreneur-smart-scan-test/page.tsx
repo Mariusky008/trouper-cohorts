@@ -163,7 +163,8 @@ export default function EntrepreneurSmartScanTestPage() {
       : current.communityKnownBy === 2
         ? "from-cyan-300 via-indigo-300 to-fuchsia-300"
         : "from-amber-300 via-orange-300 to-fuchsia-300";
-  const fusedInsight = `${current.name.split(" ")[0]} est un ${current.dominantTags[0]?.replace(/[^\p{L}\s]/gu, "").trim() || "connecteur"} actif cette semaine, ${current.capsule.toLowerCase()}.`;
+  const dominantTheme = current.dominantTags[0]?.replace(/[^\p{L}\s]/gu, "").trim() || "son reseau";
+  const fusedInsight = `${current.name.split(" ")[0]} montre un interet fort pour ${dominantTheme.toLowerCase()} cette semaine, ${current.capsule.toLowerCase()}.`;
   const template = useMemo(
     () => (selectedAction ? buildTemplate(selectedAction, current) : "Choisis une action pour voir le template pre-rempli."),
     [selectedAction, current],
@@ -395,7 +396,7 @@ export default function EntrepreneurSmartScanTestPage() {
                 <button
                   type="button"
                   onClick={() => triggerAction("qualifier")}
-                  className="h-11 rounded-xl border border-white/20 bg-black/25 text-[11px] font-black uppercase tracking-wide text-white/85"
+                  className="h-11 rounded-xl border border-emerald-300/30 bg-emerald-500/10 text-[11px] font-black uppercase tracking-wide text-emerald-100"
                 >
                   ✅ Qualifier
                 </button>
@@ -454,25 +455,40 @@ export default function EntrepreneurSmartScanTestPage() {
               onChange={(event) => setDraftMessage(event.target.value)}
               className="mt-3 min-h-36 w-full rounded-2xl border border-white/15 bg-black/25 px-3 py-3 text-sm"
             />
-            <div className="mt-3 grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => {
-                  setShowTemplateModal(false);
-                  if (selectedAction) finalizeAction(selectedAction);
-                }}
-                className="h-10 rounded-xl border border-white/20 bg-white/10 text-[11px] font-black uppercase tracking-wide text-white/80"
-              >
-                Valider sans envoi
-              </button>
-              <button
-                type="button"
-                onClick={sendOnWhatsApp}
-                className="h-11 rounded-xl bg-gradient-to-r from-emerald-400 to-cyan-300 text-xs font-black uppercase tracking-wide text-[#11252C]"
-              >
-                Envoyer sur WhatsApp
-              </button>
-            </div>
+            {selectedAction === "qualifier" ? (
+              <div className="mt-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowTemplateModal(false);
+                    finalizeAction("qualifier");
+                  }}
+                  className="h-11 w-full rounded-xl bg-gradient-to-r from-emerald-400 to-emerald-300 text-xs font-black uppercase tracking-wide text-[#11252C]"
+                >
+                  Enregistrer la fiche
+                </button>
+              </div>
+            ) : (
+              <div className="mt-3 grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowTemplateModal(false);
+                    if (selectedAction) finalizeAction(selectedAction);
+                  }}
+                  className="h-10 rounded-xl border border-white/20 bg-white/10 text-[11px] font-black uppercase tracking-wide text-white/80"
+                >
+                  Valider sans envoi
+                </button>
+                <button
+                  type="button"
+                  onClick={sendOnWhatsApp}
+                  className="h-11 rounded-xl bg-gradient-to-r from-emerald-400 to-cyan-300 text-xs font-black uppercase tracking-wide text-[#11252C]"
+                >
+                  Envoyer sur WhatsApp
+                </button>
+              </div>
+            )}
           </section>
         </div>
       )}
