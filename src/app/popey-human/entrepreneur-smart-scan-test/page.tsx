@@ -190,6 +190,14 @@ export default function EntrepreneurSmartScanTestPage() {
     to: number;
     final: boolean;
   } | null>(null);
+  const [pendingTransition, setPendingTransition] = useState<{
+    message: string;
+    icon: string;
+    from: number;
+    to: number;
+    final: boolean;
+  } | null>(null);
+  const [pendingFinalizeAction, setPendingFinalizeAction] = useState<Exclude<DailyCategory, "qualifier"> | null>(null);
   const [showHistoryPanel, setShowHistoryPanel] = useState(false);
   const [showSearchPanel, setShowSearchPanel] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -247,11 +255,58 @@ export default function EntrepreneurSmartScanTestPage() {
     setShowTemplateModal(true);
   }, [stage, current.id, qualifierStore, showTemplateModal]);
 
+  useEffect(() => {
+    function flushPendingTransition() {
+      if (!pendingTransition || !pendingFinalizeAction) return;
+      setTransitionScreen(pendingTransition);
+      setTimeout(() => setTransitionScreen(null), 1500);
+      setShowProgressCheck(true);
+      setTimeout(() => setShowProgressCheck(false), 650);
+      finalizeAction(pendingFinalizeAction, 1400);
+      setPendingTransition(null);
+      setPendingFinalizeAction(null);
+    }
+
+    function onFocus() {
+      flushPendingTransition();
+    }
+
+    function onVisibilityChange() {
+      if (typeof document !== "undefined" && document.visibilityState === "visible") {
+        flushPendingTransition();
+      }
+    }
+
+    if (typeof window !== "undefined") {
+      window.addEventListener("focus", onFocus);
+      document.addEventListener("visibilitychange", onVisibilityChange);
+    }
+    return () => {
+      if (typeof window !== "undefined") {
+        window.removeEventListener("focus", onFocus);
+        document.removeEventListener("visibilitychange", onVisibilityChange);
+      }
+    };
+  }, [pendingTransition, pendingFinalizeAction]);
+
   function actionLabel(action: Exclude<DailyCategory, "qualifier">) {
     if (action === "eclaireur") return "Eclaireur";
     if (action === "package") return "Package Croise";
     if (action === "exclients") return "Ex-Clients";
     return "Passer";
+  }
+
+  function createTransitionPayload() {
+    const nextStep = Math.min(10, done + 1);
+    const encouragements = ["Bien joue !", "Une opportunite de plus !", "C est dans la boite 📦", "Contact active ! +1 dans ta sphere 🚀"];
+    const message = nextStep >= 10 ? "Session terminee ! Tu as reveille 10 contacts en 3 minutes." : encouragements[Math.floor(Math.random() * encouragements.length)];
+    return {
+      message,
+      icon: nextStep >= 10 ? "🎆" : "✅",
+      from: done,
+      to: nextStep,
+      final: nextStep >= 10,
+    };
   }
 
   function finalizeAction(action: Exclude<DailyCategory, "qualifier">, advanceDelay = 200) {
@@ -306,24 +361,24 @@ export default function EntrepreneurSmartScanTestPage() {
 
   function sendOnWhatsApp() {
     const cleanPhone = "33600000000";
+    const action = selectedAction;
+    if (!action || action === "qualifier") return;
+    const payload = createTransitionPayload();
+
     if (typeof window !== "undefined") {
       window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(draftMessage)}`, "_blank");
     }
-    const nextStep = Math.min(10, done + 1);
-    const encouragements = ["Bien joue !", "Une opportunite de plus !", "C est dans la boite 📦", "Contact active ! +1 dans ta sphere 🚀"];
-    const message = nextStep >= 10 ? "Session terminee ! Tu as reveille 10 contacts en 3 minutes." : encouragements[Math.floor(Math.random() * encouragements.length)];
-    setTransitionScreen({
-      message,
-      icon: nextStep >= 10 ? "🎆" : "✅",
-      from: done,
-      to: nextStep,
-      final: nextStep >= 10,
-    });
-    setTimeout(() => setTransitionScreen(null), 1500);
-    setShowProgressCheck(true);
-    setTimeout(() => setShowProgressCheck(false), 650);
     setShowTemplateModal(false);
-    if (selectedAction && selectedAction !== "qualifier") finalizeAction(selectedAction, 1400);
+    if (typeof document !== "undefined" && document.visibilityState === "visible") {
+      setTransitionScreen(payload);
+      setTimeout(() => setTransitionScreen(null), 1500);
+      setShowProgressCheck(true);
+      setTimeout(() => setShowProgressCheck(false), 650);
+      finalizeAction(action, 1400);
+      return;
+    }
+    setPendingTransition(payload);
+    setPendingFinalizeAction(action);
   }
 
   function saveQualifierAndReturn() {
@@ -856,8 +911,15 @@ export default function EntrepreneurSmartScanTestPage() {
                 <button
                   type="button"
                   onClick={() => {
+                    const action = selectedAction;
+                    if (!action) return;
+                    const payload = createTransitionPayload();
+                    setTransitionScreen(payload);
+                    setTimeout(() => setTransitionScreen(null), 1500);
+                    setShowProgressCheck(true);
+                    setTimeout(() => setShowProgressCheck(false), 650);
                     setShowTemplateModal(false);
-                    if (selectedAction) finalizeAction(selectedAction);
+                    finalizeAction(action, 1400);
                   }}
                   className="h-10 rounded-xl border border-white/20 bg-white/10 text-[11px] font-black uppercase tracking-wide text-white/80"
                 >
