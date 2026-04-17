@@ -479,10 +479,14 @@ export default function EclaireurScanFunnelPreviewPage() {
 
   function onSwipeRight() {
     if (!currentDailyContact) return;
-    setSurveillanceContactId(currentDailyContact.id);
-    setSelectedSphereId(SPHERES[0].id);
-    setSelectedDiagnosticId(null);
-    setMagicSearchTerm("");
+    animateAndThen("right", () => {
+      updateStatus(currentDailyContact.id, "alert", "Matcher Pro");
+      openFunnelForContact(currentDailyContact.id);
+      setLastActionMessage(`Match pro lance pour ${currentDailyContact.name}.`);
+      if (tutorialExpectedAction === "right") {
+        setDailyTutorialStep((value) => (value + 1) as 0 | 1 | 2 | 3);
+      }
+    });
   }
 
   function launchSmartFunnel(contactId: string, need: string, businessTag: string, relatedNeeds?: string[]) {
@@ -585,9 +589,8 @@ export default function EclaireurScanFunnelPreviewPage() {
   function onSwipeUp() {
     if (!currentDailyContact) return;
     animateAndThen("up", () => {
-      updateStatus(currentDailyContact.id, "alert");
-      openFunnelForContact(currentDailyContact.id);
-      setLastActionMessage(`Alerte immediate lancee pour ${currentDailyContact.name}`);
+      toggleFavorite(currentDailyContact.id);
+      setLastActionMessage(`${currentDailyContact.name} ajoute en favori pour re-scan.`);
       if (tutorialExpectedAction === "up") {
         setDailyTutorialStep((value) => (value + 1) as 0 | 1 | 2 | 3);
       }
@@ -914,8 +917,8 @@ export default function EclaireurScanFunnelPreviewPage() {
             </div>
             {tutorialActive && currentDailyContact && tutorialExpectedAction && (
               <div className="mt-2 rounded-xl border border-cyan-300/35 bg-cyan-500/10 px-3 py-2 text-xs sm:text-sm text-cyan-100">
-                {tutorialExpectedAction === "up" && `${currentDailyContact.name} a un projet urgent ? Clique sur l etoile pour envoyer le prospect a un pro de ta ville.`}
-                {tutorialExpectedAction === "right" && `${currentDailyContact.name} semble prometteur ? Clique ✓ pour le qualifier.`}
+                {tutorialExpectedAction === "up" && `${currentDailyContact.name} t interesse pour plus tard ? Swipe vers le haut pour l ajouter en favori.`}
+                {tutorialExpectedAction === "right" && `${currentDailyContact.name} semble prometteur ? Swipe a droite pour matcher un pro.`}
                 {tutorialExpectedAction === "left" && `${currentDailyContact.name} n a pas de projet pour l instant ? Clique ✕ pour ignorer.`}
               </div>
             )}
@@ -925,25 +928,17 @@ export default function EclaireurScanFunnelPreviewPage() {
                 {showSwipeHints && (
                   <div className="mt-3 flex items-center justify-center gap-2 text-[11px] font-black uppercase tracking-wide">
                     <button type="button" onClick={onSwipeLeft} className="rounded-full bg-white/10 px-3 py-2 text-rose-200">← Passer</button>
-                    <button type="button" onClick={onSwipeRight} className="rounded-full bg-white/10 px-3 py-2 text-emerald-100">→ Sous radar</button>
-                    <button type="button" onClick={onSwipeUp} className="rounded-full bg-white/10 px-3 py-2 text-cyan-100">↑ Matcher Pro</button>
-                    <button type="button" onClick={() => currentDailyContact && toggleFavorite(currentDailyContact.id)} className="rounded-full bg-white/10 px-3 py-2 text-[#F8E7BF]">⭐ Favori</button>
+                    <button type="button" onClick={onSwipeRight} className="rounded-full bg-white/10 px-3 py-2 text-cyan-100">→ Matcher Pro</button>
+                    <button type="button" onClick={onSwipeUp} className="rounded-full bg-white/10 px-3 py-2 text-[#F8E7BF]">↑ Favori</button>
                   </div>
                 )}
-                <div className="mt-3 flex items-center justify-center gap-2">
+                <div className="mt-3 flex items-center justify-center">
                   <button
                     type="button"
                     onClick={() => currentDailyContact && sendContactIntroMessage(currentDailyContact)}
                     className="h-11 rounded-full border border-white/20 bg-white/10 px-4 text-xs font-black uppercase tracking-wide text-cyan-100"
                   >
                     💬 Brise-glace
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => currentDailyContact && openSignalPopeyForContact(currentDailyContact)}
-                    className="h-11 rounded-full border border-fuchsia-300/35 bg-fuchsia-500/12 px-4 text-xs font-black uppercase tracking-wide text-fuchsia-100"
-                  >
-                    ✍️ Signal Popey
                   </button>
                 </div>
               </>
