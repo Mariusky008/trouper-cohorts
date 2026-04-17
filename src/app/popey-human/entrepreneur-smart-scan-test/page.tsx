@@ -691,6 +691,24 @@ export default function EntrepreneurSmartScanTestPage() {
                 ✕
               </button>
             </div>
+            <div className="mt-2 rounded-2xl border border-white/15 bg-black/25 p-3">
+              <p className="text-[10px] font-black uppercase tracking-[0.12em] text-white/70">Contact concerne</p>
+              <div className="mt-1 flex items-center gap-3">
+                <div className={`h-10 w-10 rounded-full bg-gradient-to-br ${sourceRing} p-[1.5px]`}>
+                  <div className="flex h-full w-full items-center justify-center rounded-full bg-[#0D132D] text-sm font-black">
+                    {current.name
+                      .split(" ")
+                      .map((part) => part[0])
+                      .join("")}
+                  </div>
+                </div>
+                <div>
+                  <p className="text-sm font-black">{current.name}</p>
+                  <p className="text-xs text-white/70">{current.companyHint} • {current.city}</p>
+                </div>
+              </div>
+              <p className="mt-1 text-xs text-cyan-100/90">{fusedInsight}</p>
+            </div>
             <p className="mt-1 text-sm font-black">{modalTitle(selectedAction)}</p>
             {selectedAction === "qualifier" ? (
               <div className="mt-3 space-y-3">
