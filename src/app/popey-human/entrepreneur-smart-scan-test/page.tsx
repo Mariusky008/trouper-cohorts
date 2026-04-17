@@ -15,6 +15,19 @@ type DailyContact = {
   dominantTags: string[];
   externalNews: string;
 };
+type QualifierData = {
+  heat: HeatLevel;
+  status: (typeof QUALIFIER_STATUS)[number];
+  tags: string[];
+  customTags: string[];
+  note: string;
+};
+type HistoryEntry = {
+  contactId: string;
+  name: string;
+  action: Exclude<DailyCategory, "qualifier">;
+  at: string;
+};
 
 const CONTACTS: DailyContact[] = [
   {
@@ -169,6 +182,12 @@ export default function EntrepreneurSmartScanTestPage() {
   const [responseRate] = useState(38);
   const [showReward, setShowReward] = useState(false);
   const [successPulse, setSuccessPulse] = useState(false);
+  const [showHistoryPanel, setShowHistoryPanel] = useState(false);
+  const [showSearchPanel, setShowSearchPanel] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
+  const [historyEntries, setHistoryEntries] = useState<HistoryEntry[]>([]);
+  const [qualifierStore, setQualifierStore] = useState<Record<string, QualifierData>>({});
 
   const current = CONTACTS[index] ?? CONTACTS[CONTACTS.length - 1];
   const totalScanned = 816;
@@ -185,6 +204,8 @@ export default function EntrepreneurSmartScanTestPage() {
         : "from-amber-300 via-orange-300 to-fuchsia-300";
   const dominantTheme = current.dominantTags[0]?.replace(/[^\p{L}\s]/gu, "").trim() || "son reseau";
   const fusedInsight = `${current.name.split(" ")[0]} montre un interet fort pour ${dominantTheme.toLowerCase()} cette semaine, ${current.capsule.toLowerCase()}.`;
+  const isQualified = Boolean(qualifierStore[current.id]);
+  const searchResults = CONTACTS.filter((contact) => `${contact.name} ${contact.city} ${contact.companyHint}`.toLowerCase().includes(searchQuery.toLowerCase().trim()));
   const template = useMemo(
     () => (selectedAction ? buildTemplate(selectedAction, current) : "Choisis une action pour voir le template pre-rempli."),
     [selectedAction, current],
@@ -204,7 +225,28 @@ export default function EntrepreneurSmartScanTestPage() {
     return () => clearInterval(timer);
   }, [stage]);
 
-  function finalizeAction(action: DailyCategory) {
+  useEffect(() => {
+    if (stage !== "daily") return;
+    if (showTemplateModal) return;
+    if (qualifierStore[current.id]) return;
+    setSelectedAction("qualifier");
+    setQualifierHeat("tiede");
+    setQualifierStatus("Prospect");
+    setQualifierNote("");
+    setCustomTagInput("");
+    setCustomTags([]);
+    setQualifierTags([]);
+    setShowTemplateModal(true);
+  }, [stage, current.id, qualifierStore, showTemplateModal]);
+
+  function actionLabel(action: Exclude<DailyCategory, "qualifier">) {
+    if (action === "eclaireur") return "Eclaireur";
+    if (action === "package") return "Package Croise";
+    if (action === "exclients") return "Ex-Clients";
+    return "Passer";
+  }
+
+  function finalizeAction(action: Exclude<DailyCategory, "qualifier">) {
     setSelectedAction(action);
     if (action === "eclaireur" || action === "package" || action === "exclients") {
       setSentCount((v) => v + 1);
@@ -214,6 +256,16 @@ export default function EntrepreneurSmartScanTestPage() {
     setTimeout(() => setShowReward(false), 900);
     setTimeout(() => setSuccessPulse(false), 450);
     setTimeout(() => {
+      const now = new Date();
+      setHistoryEntries((prev) => [
+        {
+          contactId: current.id,
+          name: current.name,
+          action,
+          at: `${now.getHours().toString().padStart(2, "0")}:${now.getMinutes().toString().padStart(2, "0")}`,
+        },
+        ...prev,
+      ].slice(0, 50));
       setIndex((v) => Math.min(CONTACTS.length, v + 1));
       setSelectedAction(null);
       setSelectedVotes([]);
@@ -250,7 +302,28 @@ export default function EntrepreneurSmartScanTestPage() {
       window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(draftMessage)}`, "_blank");
     }
     setShowTemplateModal(false);
-    if (selectedAction) finalizeAction(selectedAction);
+    if (selectedAction && selectedAction !== "qualifier") finalizeAction(selectedAction);
+  }
+
+  function saveQualifierAndReturn() {
+    setQualifierStore((prev) => ({
+      ...prev,
+      [current.id]: {
+        heat: qualifierHeat,
+        status: qualifierStatus,
+        tags: qualifierTags,
+        customTags,
+        note: qualifierNote.trim(),
+      },
+    }));
+    setShowTemplateModal(false);
+    setSelectedAction(null);
+    setLastRewardForQualifier();
+  }
+
+  function setLastRewardForQualifier() {
+    setShowReward(true);
+    setTimeout(() => setShowReward(false), 700);
   }
 
   function modalTitle(action: DailyCategory | null) {
@@ -259,6 +332,10 @@ export default function EntrepreneurSmartScanTestPage() {
     if (action === "exclients") return "Script Ex-Clients";
     if (action === "qualifier") return "Qualifier la fiche";
     return "Template";
+  }
+
+  function toggleFavorite(contactId: string) {
+    setFavoriteIds((prev) => (prev.includes(contactId) ? prev.filter((id) => id !== contactId) : [...prev, contactId]));
   }
 
   if (stage === "scan") {
@@ -341,16 +418,39 @@ export default function EntrepreneurSmartScanTestPage() {
               <h1 className="mt-1 text-lg sm:text-2xl font-black">Mini-Agence • Radar Quotidien</h1>
               <p className="mt-0.5 text-[11px] text-white/70">{sentCount} messages envoyes aujourd hui • taux de reponse {responseRate}%</p>
             </div>
-            <div className="relative h-16 w-16 rounded-full">
-              <div
-                className="absolute inset-0 rounded-full"
-                style={{
-                  background: `conic-gradient(#34d399 ${progress * 3.6}deg, rgba(255,255,255,0.15) 0deg)`,
-                }}
-              />
-              <div className="absolute inset-[6px] rounded-full bg-[#0B1024] flex items-center justify-center text-center">
-                <p className="text-[10px] font-black leading-tight">{done}/10<br />faits</p>
-              </div>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setShowHistoryPanel(true)}
+                className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/20 bg-black/25 text-sm"
+                aria-label="Historique"
+              >
+                🕘
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowSearchPanel(true)}
+                className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/20 bg-black/25 text-sm"
+                aria-label="Recherche"
+              >
+                🔍
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowHistoryPanel(true)}
+                className="relative h-16 w-16 rounded-full"
+                aria-label="Progression"
+              >
+                <div
+                  className="absolute inset-0 rounded-full"
+                  style={{
+                    background: `conic-gradient(#34d399 ${progress * 3.6}deg, rgba(255,255,255,0.15) 0deg)`,
+                  }}
+                />
+                <div className="absolute inset-[6px] rounded-full bg-[#0B1024] flex items-center justify-center text-center">
+                  <p className="text-[10px] font-black leading-tight">{done}/10<br />faits</p>
+                </div>
+              </button>
             </div>
           </div>
         </div>
@@ -369,6 +469,16 @@ export default function EntrepreneurSmartScanTestPage() {
               transition={{ duration: 0.25 }}
               className="relative mt-2 rounded-[30px] bg-white/10 p-3 sm:p-4 shadow-[0_30px_70px_-40px_rgba(0,0,0,0.9)] backdrop-blur-2xl"
             >
+              <button
+                type="button"
+                onClick={() => toggleFavorite(current.id)}
+                className={`absolute left-3 top-3 h-9 w-9 rounded-full border text-sm font-black ${
+                  favoriteIds.includes(current.id) ? "border-amber-300/45 bg-amber-300/25 text-amber-100" : "border-white/20 bg-black/30 text-white/80"
+                }`}
+                aria-label="Favori"
+              >
+                ★
+              </button>
               <button
                 type="button"
                 onClick={() => triggerAction("passer")}
@@ -433,6 +543,7 @@ export default function EntrepreneurSmartScanTestPage() {
                 <button
                   type="button"
                   onClick={() => triggerAction("eclaireur")}
+                  disabled={!isQualified}
                   className="h-14 rounded-xl border border-amber-300/45 bg-gradient-to-r from-amber-400/45 to-orange-400/35 text-xs font-black uppercase tracking-wide text-amber-50 shadow-[0_18px_34px_-18px_rgba(251,191,36,0.95)]"
                 >
                   ✨ Eclaireur
@@ -440,6 +551,7 @@ export default function EntrepreneurSmartScanTestPage() {
                 <button
                   type="button"
                   onClick={() => triggerAction("package")}
+                  disabled={!isQualified}
                   className="h-12 rounded-xl border border-fuchsia-300/35 bg-gradient-to-r from-violet-500/30 to-fuchsia-500/25 text-xs font-black uppercase tracking-wide text-fuchsia-100"
                 >
                   🧩 Package Croise
@@ -447,17 +559,16 @@ export default function EntrepreneurSmartScanTestPage() {
                 <button
                   type="button"
                   onClick={() => triggerAction("exclients")}
+                  disabled={!isQualified}
                   className="h-11 rounded-xl border border-cyan-300/30 bg-cyan-500/12 text-[11px] font-black uppercase tracking-wide text-cyan-100"
                 >
                   📣 Ex-Clients (News)
                 </button>
-                <button
-                  type="button"
-                  onClick={() => triggerAction("qualifier")}
-                  className="h-11 rounded-xl border border-emerald-300/30 bg-emerald-500/10 text-[11px] font-black uppercase tracking-wide text-emerald-100"
-                >
-                  ✅ Qualifier
-                </button>
+                {!isQualified && (
+                  <p className="self-center text-[11px] font-black uppercase tracking-wide text-emerald-100/85">
+                    Qualification requise d abord
+                  </p>
+                )}
               </div>
             </motion.article>
 
@@ -493,6 +604,79 @@ export default function EntrepreneurSmartScanTestPage() {
           )}
         </div>
       </div>
+
+      {showHistoryPanel && (
+        <div className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm flex items-start justify-center px-4 pt-16">
+          <section className="w-full max-w-lg rounded-3xl border border-white/15 bg-[#0E1430] p-4">
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-black uppercase tracking-[0.12em] text-cyan-200">Historique recent</p>
+              <button type="button" onClick={() => setShowHistoryPanel(false)} className="h-8 w-8 rounded-full border border-white/20 bg-white/10 text-xs">✕</button>
+            </div>
+            <div className="mt-3 max-h-72 space-y-2 overflow-y-auto">
+              {historyEntries.length === 0 && <p className="text-sm text-white/70">Aucune action recente pour le moment.</p>}
+              {historyEntries.map((entry, idx) => (
+                <button
+                  key={`${entry.contactId}-${entry.at}-${idx}`}
+                  type="button"
+                  onClick={() => {
+                    const nextIndex = CONTACTS.findIndex((contact) => contact.id === entry.contactId);
+                    if (nextIndex >= 0) setIndex(nextIndex);
+                    setShowHistoryPanel(false);
+                  }}
+                  className="w-full rounded-xl border border-white/15 bg-black/25 px-3 py-2 text-left"
+                >
+                  <p className="text-sm font-black">{entry.name}</p>
+                  <p className="text-xs text-white/70">{actionLabel(entry.action)} • {entry.at}</p>
+                </button>
+              ))}
+            </div>
+          </section>
+        </div>
+      )}
+
+      {showSearchPanel && (
+        <div className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm flex items-start justify-center px-4 pt-16">
+          <section className="w-full max-w-lg rounded-3xl border border-white/15 bg-[#0E1430] p-4">
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-black uppercase tracking-[0.12em] text-cyan-200">Recherche / Favoris</p>
+              <button type="button" onClick={() => setShowSearchPanel(false)} className="h-8 w-8 rounded-full border border-white/20 bg-white/10 text-xs">✕</button>
+            </div>
+            <input
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
+              placeholder="Rechercher un contact..."
+              className="mt-3 h-10 w-full rounded-xl border border-white/15 bg-black/25 px-3 text-sm"
+            />
+            <div className="mt-3 max-h-72 space-y-2 overflow-y-auto">
+              {searchResults.map((contact) => (
+                <div key={contact.id} className="rounded-xl border border-white/15 bg-black/25 px-3 py-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const nextIndex = CONTACTS.findIndex((item) => item.id === contact.id);
+                        if (nextIndex >= 0) setIndex(nextIndex);
+                        setShowSearchPanel(false);
+                      }}
+                      className="text-left"
+                    >
+                      <p className="text-sm font-black">{contact.name}</p>
+                      <p className="text-xs text-white/70">{contact.city}</p>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => toggleFavorite(contact.id)}
+                      className={`h-8 w-8 rounded-full border text-xs ${favoriteIds.includes(contact.id) ? "border-amber-300/45 bg-amber-300/20 text-amber-100" : "border-white/20 bg-white/10 text-white/80"}`}
+                    >
+                      ★
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        </div>
+      )}
 
       {showTemplateModal && selectedAction && selectedAction !== "passer" && (
         <div className="fixed inset-0 z-50 bg-black/55 backdrop-blur-sm flex items-center justify-center px-4">
@@ -607,7 +791,7 @@ export default function EntrepreneurSmartScanTestPage() {
                   type="button"
                   onClick={() => {
                     setShowTemplateModal(false);
-                    finalizeAction("qualifier");
+                    saveQualifierAndReturn();
                   }}
                   disabled={!qualifierChanged}
                   className="h-11 w-full rounded-xl bg-gradient-to-r from-emerald-400 to-emerald-300 text-xs font-black uppercase tracking-wide text-[#11252C] disabled:opacity-40"
