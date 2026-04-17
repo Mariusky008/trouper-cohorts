@@ -120,6 +120,20 @@ const CONTACTS: DailyContact[] = [
 ];
 
 const VOTE_TAGS = ["🎾 Padel", "🍷 Gastronomie", "💼 Investisseur", "🔌 Connecteur"] as const;
+const QUALIFIER_TAGS = [
+  { id: "investisseur", label: "💼 Investisseur", count: 3 },
+  { id: "connecteur", label: "🤝 Connecteur", count: 2 },
+  { id: "vendeur", label: "📈 Vendeur Potentiel", count: 1 },
+  { id: "credit", label: "🏦 Projet Credit", count: 2 },
+  { id: "padel", label: "🎾 Padel", count: 2 },
+  { id: "vin", label: "🍷 Gastronomie", count: 1 },
+  { id: "golf", label: "🏌️ Golf", count: 1 },
+  { id: "jeune-couple", label: "💍 Jeune Couple", count: 1 },
+  { id: "travaux", label: "🏗️ Travaux/Renov", count: 2 },
+  { id: "mutation", label: "📦 Mutation", count: 1 },
+] as const;
+const QUALIFIER_STATUS = ["Prospect", "Partenaire", "Ami"] as const;
+type HeatLevel = "froid" | "tiede" | "brulant";
 
 function buildTemplate(action: DailyCategory, contact: DailyContact) {
   if (action === "eclaireur") {
@@ -145,6 +159,12 @@ export default function EntrepreneurSmartScanTestPage() {
   const [draftMessage, setDraftMessage] = useState("");
   const [showTemplateModal, setShowTemplateModal] = useState(false);
   const [selectedVotes, setSelectedVotes] = useState<string[]>([]);
+  const [qualifierHeat, setQualifierHeat] = useState<HeatLevel>("tiede");
+  const [qualifierTags, setQualifierTags] = useState<string[]>([]);
+  const [qualifierStatus, setQualifierStatus] = useState<(typeof QUALIFIER_STATUS)[number]>("Prospect");
+  const [qualifierNote, setQualifierNote] = useState("");
+  const [customTagInput, setCustomTagInput] = useState("");
+  const [customTags, setCustomTags] = useState<string[]>([]);
   const [sentCount, setSentCount] = useState(4);
   const [responseRate] = useState(38);
   const [showReward, setShowReward] = useState(false);
@@ -169,6 +189,12 @@ export default function EntrepreneurSmartScanTestPage() {
     () => (selectedAction ? buildTemplate(selectedAction, current) : "Choisis une action pour voir le template pre-rempli."),
     [selectedAction, current],
   );
+  const qualifierChanged =
+    qualifierHeat !== "tiede" ||
+    qualifierStatus !== "Prospect" ||
+    qualifierTags.length > 0 ||
+    customTags.length > 0 ||
+    qualifierNote.trim().length > 0;
 
   useEffect(() => {
     if (stage !== "scan") return;
@@ -201,7 +227,20 @@ export default function EntrepreneurSmartScanTestPage() {
     }
     const nextDraft = buildTemplate(action, current);
     setSelectedAction(action);
-    setDraftMessage(nextDraft);
+    if (action === "qualifier") {
+      setQualifierHeat("tiede");
+      setQualifierStatus("Prospect");
+      setQualifierNote("");
+      setCustomTagInput("");
+      setCustomTags([]);
+      const preselected = QUALIFIER_TAGS.filter((tag) =>
+        current.dominantTags.some((dominant) => dominant.toLowerCase().includes(tag.id.replace("-", " "))),
+      ).map((tag) => tag.id);
+      setQualifierTags(preselected);
+      setDraftMessage("");
+    } else {
+      setDraftMessage(nextDraft);
+    }
     setShowTemplateModal(true);
   }
 
@@ -218,7 +257,7 @@ export default function EntrepreneurSmartScanTestPage() {
     if (action === "eclaireur") return "Script Eclaireur";
     if (action === "package") return "Script Package Croise";
     if (action === "exclients") return "Script Ex-Clients";
-    if (action === "qualifier") return "Script Qualifier";
+    if (action === "qualifier") return "Qualifier la fiche";
     return "Template";
   }
 
@@ -469,26 +508,121 @@ export default function EntrepreneurSmartScanTestPage() {
               </button>
             </div>
             <p className="mt-1 text-sm font-black">{modalTitle(selectedAction)}</p>
-            <textarea
-              value={draftMessage}
-              onChange={(event) => setDraftMessage(event.target.value)}
-              className="mt-3 min-h-36 w-full rounded-2xl border border-white/15 bg-black/25 px-3 py-3 text-sm"
-            />
             {selectedAction === "qualifier" ? (
-              <div className="mt-3">
+              <div className="mt-3 space-y-3">
+                <div className="rounded-2xl border border-white/15 bg-black/25 p-3">
+                  <p className="text-[11px] font-black uppercase tracking-[0.12em] text-white/70">Temperature du contact</p>
+                  <div className="mt-2 grid grid-cols-3 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setQualifierHeat("froid")}
+                      className={`h-9 rounded-xl text-xs font-black ${qualifierHeat === "froid" ? "bg-cyan-300 text-[#13253D]" : "bg-white/10 text-white/80"}`}
+                    >
+                      ❄️ Froid
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setQualifierHeat("tiede")}
+                      className={`h-9 rounded-xl text-xs font-black ${qualifierHeat === "tiede" ? "bg-amber-300 text-[#2C230E]" : "bg-white/10 text-white/80"}`}
+                    >
+                      ⚡ Tiede
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setQualifierHeat("brulant")}
+                      className={`h-9 rounded-xl text-xs font-black ${qualifierHeat === "brulant" ? "bg-orange-400 text-[#321A0E]" : "bg-white/10 text-white/80"}`}
+                    >
+                      🔥 Brulant
+                    </button>
+                  </div>
+                </div>
+
+                <div className="rounded-2xl border border-white/15 bg-black/25 p-3">
+                  <p className="text-[11px] font-black uppercase tracking-[0.12em] text-white/70">Tags de contribution</p>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {QUALIFIER_TAGS.map((tag) => {
+                      const active = qualifierTags.includes(tag.id);
+                      return (
+                        <button
+                          key={tag.id}
+                          type="button"
+                          onClick={() =>
+                            setQualifierTags((prev) => (prev.includes(tag.id) ? prev.filter((item) => item !== tag.id) : [...prev, tag.id]))
+                          }
+                          className={`rounded-full px-3 py-2 text-[11px] font-black ${
+                            active ? "bg-emerald-400 text-[#173126] shadow-[0_10px_24px_-16px_rgba(52,211,153,0.95)]" : "bg-white/85 text-[#1B1F34]"
+                          }`}
+                        >
+                          {tag.label} ({tag.count})
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <div className="mt-2 flex gap-2">
+                    <input
+                      value={customTagInput}
+                      onChange={(event) => setCustomTagInput(event.target.value)}
+                      placeholder="Ajouter un tag custom"
+                      className="h-9 w-full rounded-xl border border-white/15 bg-black/25 px-3 text-xs"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const value = customTagInput.trim();
+                        if (!value) return;
+                        setCustomTags((prev) => (prev.includes(value) ? prev : [...prev, value]));
+                        setCustomTagInput("");
+                      }}
+                      className="h-9 rounded-xl border border-fuchsia-300/35 bg-fuchsia-500/15 px-3 text-xs font-black"
+                    >
+                      ＋
+                    </button>
+                  </div>
+                  {customTags.length > 0 && <p className="mt-2 text-xs text-fuchsia-100">Custom: {customTags.join(" • ")}</p>}
+                </div>
+
+                <div className="rounded-2xl border border-white/15 bg-black/25 p-3">
+                  <p className="text-[11px] font-black uppercase tracking-[0.12em] text-white/70">Statut relation</p>
+                  <div className="mt-2 grid grid-cols-3 gap-2">
+                    {QUALIFIER_STATUS.map((status) => (
+                      <button
+                        key={status}
+                        type="button"
+                        onClick={() => setQualifierStatus(status)}
+                        className={`h-9 rounded-xl text-xs font-black ${qualifierStatus === status ? "bg-cyan-300 text-[#15243A]" : "bg-white/10 text-white/80"}`}
+                      >
+                        {status}
+                      </button>
+                    ))}
+                  </div>
+                  <input
+                    value={qualifierNote}
+                    onChange={(event) => setQualifierNote(event.target.value)}
+                    placeholder="Ajouter une info cle..."
+                    className="mt-2 h-9 w-full rounded-xl border border-white/15 bg-black/25 px-3 text-xs"
+                  />
+                </div>
+
                 <button
                   type="button"
                   onClick={() => {
                     setShowTemplateModal(false);
                     finalizeAction("qualifier");
                   }}
-                  className="h-11 w-full rounded-xl bg-gradient-to-r from-emerald-400 to-emerald-300 text-xs font-black uppercase tracking-wide text-[#11252C]"
+                  disabled={!qualifierChanged}
+                  className="h-11 w-full rounded-xl bg-gradient-to-r from-emerald-400 to-emerald-300 text-xs font-black uppercase tracking-wide text-[#11252C] disabled:opacity-40"
                 >
                   Enregistrer la fiche
                 </button>
               </div>
             ) : (
-              <div className="mt-3 grid grid-cols-2 gap-2">
+              <>
+                <textarea
+                  value={draftMessage}
+                  onChange={(event) => setDraftMessage(event.target.value)}
+                  className="mt-3 min-h-36 w-full rounded-2xl border border-white/15 bg-black/25 px-3 py-3 text-sm"
+                />
+                <div className="mt-3 grid grid-cols-2 gap-2">
                 <button
                   type="button"
                   onClick={() => {
@@ -506,7 +640,8 @@ export default function EntrepreneurSmartScanTestPage() {
                 >
                   Envoyer sur WhatsApp
                 </button>
-              </div>
+                </div>
+              </>
             )}
           </section>
         </div>
