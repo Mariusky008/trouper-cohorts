@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 type DailyCategory = "passer" | "eclaireur" | "package" | "exclients" | "qualifier";
 
@@ -138,6 +138,8 @@ function buildTemplate(action: DailyCategory, contact: DailyContact) {
 }
 
 export default function EntrepreneurSmartScanTestPage() {
+  const [stage, setStage] = useState<"scan" | "daily">("scan");
+  const [scanCount, setScanCount] = useState(0);
   const [index, setIndex] = useState(0);
   const [selectedAction, setSelectedAction] = useState<DailyCategory | null>(null);
   const [draftMessage, setDraftMessage] = useState("");
@@ -149,6 +151,8 @@ export default function EntrepreneurSmartScanTestPage() {
   const [successPulse, setSuccessPulse] = useState(false);
 
   const current = CONTACTS[index] ?? CONTACTS[CONTACTS.length - 1];
+  const totalScanned = 816;
+  const scanDone = scanCount >= totalScanned;
   const done = Math.min(index, CONTACTS.length);
   const progress = Math.round((done / 10) * 100);
   const heatScore = Math.min(99, 55 + current.communityKnownBy * 10 + (current.externalNews ? 8 : 0));
@@ -164,6 +168,14 @@ export default function EntrepreneurSmartScanTestPage() {
     () => (selectedAction ? buildTemplate(selectedAction, current) : "Choisis une action pour voir le template pre-rempli."),
     [selectedAction, current],
   );
+
+  useEffect(() => {
+    if (stage !== "scan") return;
+    const timer = setInterval(() => {
+      setScanCount((value) => Math.min(totalScanned, value + Math.floor(Math.random() * 26) + 14));
+    }, 120);
+    return () => clearInterval(timer);
+  }, [stage]);
 
   function finalizeAction(action: DailyCategory) {
     setSelectedAction(action);
@@ -207,6 +219,57 @@ export default function EntrepreneurSmartScanTestPage() {
     if (action === "exclients") return "Script Ex-Clients";
     if (action === "qualifier") return "Script Qualifier";
     return "Template";
+  }
+
+  if (stage === "scan") {
+    return (
+      <main className="h-screen overflow-hidden bg-[radial-gradient(circle_at_10%_0%,#10193D_0%,#0C122B_45%,#090B16_100%)] text-white">
+        <div className="mx-auto flex h-full max-w-xl items-center px-4">
+          <section className="w-full rounded-3xl border border-white/10 bg-white/5 p-5 backdrop-blur-xl">
+            <p className="text-xs font-black uppercase tracking-[0.12em] text-cyan-200">Mini-Agence Smart Scan</p>
+            <h1 className="mt-2 text-2xl font-black">Scan de ton telephone en cours...</h1>
+            <p className="mt-1 text-sm text-white/70">Analyse locale securisee, aucun contact en clair n est envoye.</p>
+
+            <div className="mt-4 h-2 overflow-hidden rounded-full bg-white/10">
+              <motion.div
+                className="h-full rounded-full bg-gradient-to-r from-cyan-300 via-indigo-400 to-orange-300"
+                animate={{ width: `${Math.min(100, Math.round((scanCount / totalScanned) * 100))}%` }}
+                transition={{ duration: 0.2 }}
+              />
+            </div>
+            <p className="mt-2 text-xs text-white/70">{scanCount} / {totalScanned} contacts scannes</p>
+
+            <div className="mt-4 grid grid-cols-3 gap-2">
+              <div className="rounded-2xl bg-white/10 p-3 text-center">
+                <p className="text-2xl font-black text-cyan-100">304</p>
+                <p className="mt-1 text-[11px] font-black uppercase tracking-wide text-white/75">profils actifs</p>
+              </div>
+              <div className="rounded-2xl bg-white/10 p-3 text-center">
+                <p className="text-2xl font-black text-indigo-100">488</p>
+                <p className="mt-1 text-[11px] font-black uppercase tracking-wide text-white/75">contacts locaux</p>
+              </div>
+              <div className="rounded-2xl bg-white/10 p-3 text-center">
+                <p className="text-2xl font-black text-orange-100">112</p>
+                <p className="mt-1 text-[11px] font-black uppercase tracking-wide text-white/75">signaux chauds</p>
+              </div>
+            </div>
+
+            <p className="mt-4 rounded-xl bg-emerald-400/15 px-3 py-2 text-sm text-emerald-100">
+              Scan termine: {totalScanned} contacts disponibles.
+            </p>
+
+            <button
+              type="button"
+              disabled={!scanDone}
+              onClick={() => setStage("daily")}
+              className="mt-4 h-12 w-full rounded-xl bg-gradient-to-r from-emerald-400 to-cyan-300 text-sm font-black uppercase tracking-wide text-[#11252C] disabled:opacity-40"
+            >
+              Continuer
+            </button>
+          </section>
+        </div>
+      </main>
+    );
   }
 
   return (
