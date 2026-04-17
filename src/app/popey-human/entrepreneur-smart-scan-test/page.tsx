@@ -167,6 +167,7 @@ function buildTemplate(action: DailyCategory, contact: DailyContact) {
 export default function EntrepreneurSmartScanTestPage() {
   const [stage, setStage] = useState<"scan" | "daily">("scan");
   const [scanCount, setScanCount] = useState(0);
+  const [scanBurst, setScanBurst] = useState(false);
   const [index, setIndex] = useState(0);
   const [selectedAction, setSelectedAction] = useState<DailyCategory | null>(null);
   const [draftMessage, setDraftMessage] = useState("");
@@ -240,6 +241,13 @@ export default function EntrepreneurSmartScanTestPage() {
     }, 180);
     return () => clearInterval(timer);
   }, [stage]);
+
+  useEffect(() => {
+    if (!scanDone) return;
+    setScanBurst(true);
+    const timer = setTimeout(() => setScanBurst(false), 1100);
+    return () => clearTimeout(timer);
+  }, [scanDone]);
 
   useEffect(() => {
     if (stage !== "daily") return;
@@ -424,16 +432,37 @@ export default function EntrepreneurSmartScanTestPage() {
             <p className="mt-1 text-sm text-white/70">Analyse locale securisee, aucun contact en clair n est envoye.</p>
 
             <div className="mt-4 h-2 overflow-hidden rounded-full bg-white/10">
-              <motion.div
-                className="h-full rounded-full bg-gradient-to-r from-cyan-300 via-indigo-400 to-orange-300"
-                animate={{ width: `${Math.min(100, Math.round((scanCount / totalScanned) * 100))}%` }}
-                transition={{ duration: 0.2 }}
-              />
+              <div className="relative h-full w-full">
+                <motion.div
+                  className="h-full rounded-full bg-gradient-to-r from-amber-300 via-orange-400 to-rose-400"
+                  animate={{ width: `${Math.min(100, Math.round((scanCount / totalScanned) * 100))}%` }}
+                  transition={{ duration: 0.2 }}
+                />
+                {!scanDone && (
+                  <motion.div
+                    animate={{ scale: [1, 1.25, 1], opacity: [0.6, 1, 0.6] }}
+                    transition={{ duration: 0.55, repeat: Infinity, ease: "easeInOut" }}
+                    className="absolute top-1/2 h-3 w-3 -translate-y-1/2 rounded-full bg-orange-300 shadow-[0_0_18px_rgba(251,146,60,0.95)]"
+                    style={{ left: `calc(${Math.min(99, Math.round((scanCount / totalScanned) * 100))}% - 6px)` }}
+                  />
+                )}
+              </div>
             </div>
             <p className="mt-2 text-xs text-white/70">{scanCount} / {totalScanned} contacts scannes</p>
+            {!scanDone && <p className="mt-1 text-[11px] uppercase tracking-[0.12em] text-orange-200/90">Meche active...</p>}
 
             {scanDone ? (
               <>
+                {scanBurst && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.85 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="mt-3 rounded-2xl border border-orange-300/35 bg-orange-300/15 p-3 text-center"
+                  >
+                    <p className="text-2xl">💥</p>
+                    <p className="text-sm font-black text-orange-100">Scan termine, intelligence revelee.</p>
+                  </motion.div>
+                )}
                 <div className="mt-4 grid grid-cols-3 gap-2">
                   <div className="rounded-2xl bg-white/10 p-3 text-center">
                     <p className="text-2xl font-black text-cyan-100">304</p>
