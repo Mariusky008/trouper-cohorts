@@ -146,6 +146,7 @@ export default function EntrepreneurSmartScanTestPage() {
   const [sentCount, setSentCount] = useState(4);
   const [responseRate] = useState(38);
   const [showReward, setShowReward] = useState(false);
+  const [successPulse, setSuccessPulse] = useState(false);
 
   const current = CONTACTS[index] ?? CONTACTS[CONTACTS.length - 1];
   const done = Math.min(index, CONTACTS.length);
@@ -170,7 +171,9 @@ export default function EntrepreneurSmartScanTestPage() {
       setSentCount((v) => v + 1);
     }
     setShowReward(true);
+    setSuccessPulse(true);
     setTimeout(() => setShowReward(false), 900);
+    setTimeout(() => setSuccessPulse(false), 450);
     setTimeout(() => {
       setIndex((v) => Math.min(CONTACTS.length, v + 1));
       setSelectedAction(null);
@@ -198,25 +201,33 @@ export default function EntrepreneurSmartScanTestPage() {
     if (selectedAction) finalizeAction(selectedAction);
   }
 
+  function modalTitle(action: DailyCategory | null) {
+    if (action === "eclaireur") return "Script Eclaireur";
+    if (action === "package") return "Script Package Croise";
+    if (action === "exclients") return "Script Ex-Clients";
+    if (action === "qualifier") return "Script Qualifier";
+    return "Template";
+  }
+
   return (
-    <main className="h-screen overflow-hidden bg-[radial-gradient(circle_at_10%_0%,#10193D_0%,#0C122B_45%,#090B16_100%)] text-white">
-      <div className="mx-auto max-w-6xl px-4 py-4 sm:py-6">
-        <div className="rounded-3xl border border-white/10 bg-white/5 p-4 backdrop-blur-xl">
+    <main className="h-screen overflow-y-auto bg-[radial-gradient(circle_at_10%_0%,#10193D_0%,#0C122B_45%,#090B16_100%)] text-white">
+      <div className="mx-auto max-w-6xl px-4 py-3 sm:py-5 pb-20">
+        <div className="rounded-3xl border border-white/10 bg-white/5 p-3 backdrop-blur-xl">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <p className="text-xs font-black uppercase tracking-[0.12em] text-cyan-200">Smart Scan & Daily Action</p>
-              <h1 className="mt-1 text-2xl font-black sm:text-3xl">Mini-Agence • Radar Quotidien</h1>
-              <p className="mt-1 text-xs text-white/70">{sentCount} messages envoyes aujourd hui • taux de reponse {responseRate}%</p>
+              <h1 className="mt-1 text-lg sm:text-2xl font-black">Mini-Agence • Radar Quotidien</h1>
+              <p className="mt-0.5 text-[11px] text-white/70">{sentCount} messages envoyes aujourd hui • taux de reponse {responseRate}%</p>
             </div>
-            <div className="relative h-20 w-20 rounded-full">
+            <div className="relative h-16 w-16 rounded-full">
               <div
                 className="absolute inset-0 rounded-full"
                 style={{
                   background: `conic-gradient(#34d399 ${progress * 3.6}deg, rgba(255,255,255,0.15) 0deg)`,
                 }}
               />
-              <div className="absolute inset-[7px] rounded-full bg-[#0B1024] flex items-center justify-center text-center">
-                <p className="text-[11px] font-black leading-tight">{done}/10<br />faits</p>
+              <div className="absolute inset-[6px] rounded-full bg-[#0B1024] flex items-center justify-center text-center">
+                <p className="text-[10px] font-black leading-tight">{done}/10<br />faits</p>
               </div>
             </div>
           </div>
@@ -232,7 +243,7 @@ export default function EntrepreneurSmartScanTestPage() {
             <motion.article
               key={current.id}
               initial={{ opacity: 0, y: 14, scale: 0.98 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
+              animate={{ opacity: 1, y: 0, scale: successPulse ? 1.01 : 1 }}
               transition={{ duration: 0.25 }}
               className="relative mt-2 rounded-[30px] bg-white/10 p-3 sm:p-4 shadow-[0_30px_70px_-40px_rgba(0,0,0,0.9)] backdrop-blur-2xl"
             >
@@ -300,7 +311,7 @@ export default function EntrepreneurSmartScanTestPage() {
                 <button
                   type="button"
                   onClick={() => triggerAction("eclaireur")}
-                  className="h-13 rounded-xl border border-amber-300/45 bg-gradient-to-r from-amber-400/35 to-orange-400/30 text-xs font-black uppercase tracking-wide text-amber-50 shadow-[0_16px_30px_-18px_rgba(251,191,36,0.95)]"
+                  className="h-14 rounded-xl border border-amber-300/45 bg-gradient-to-r from-amber-400/45 to-orange-400/35 text-xs font-black uppercase tracking-wide text-amber-50 shadow-[0_18px_34px_-18px_rgba(251,191,36,0.95)]"
                 >
                   ✨ Eclaireur
                 </button>
@@ -374,9 +385,7 @@ export default function EntrepreneurSmartScanTestPage() {
                 ✕
               </button>
             </div>
-            <p className="mt-1 text-sm font-black">
-              {selectedAction === "eclaireur" ? "Script Eclaireur" : selectedAction === "package" ? "Script Package Croise" : "Script Ex-Clients"}
-            </p>
+            <p className="mt-1 text-sm font-black">{modalTitle(selectedAction)}</p>
             <textarea
               value={draftMessage}
               onChange={(event) => setDraftMessage(event.target.value)}
@@ -389,7 +398,7 @@ export default function EntrepreneurSmartScanTestPage() {
                   setShowTemplateModal(false);
                   if (selectedAction) finalizeAction(selectedAction);
                 }}
-                className="h-11 rounded-xl border border-white/20 bg-white/10 text-xs font-black uppercase tracking-wide"
+                className="h-10 rounded-xl border border-white/20 bg-white/10 text-[11px] font-black uppercase tracking-wide text-white/80"
               >
                 Valider sans envoi
               </button>
