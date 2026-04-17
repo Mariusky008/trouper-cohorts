@@ -140,6 +140,8 @@ function buildTemplate(action: DailyCategory, contact: DailyContact) {
 export default function EntrepreneurSmartScanTestPage() {
   const [index, setIndex] = useState(0);
   const [selectedAction, setSelectedAction] = useState<DailyCategory | null>(null);
+  const [draftMessage, setDraftMessage] = useState("");
+  const [showTemplateModal, setShowTemplateModal] = useState(false);
   const [selectedVotes, setSelectedVotes] = useState<string[]>([]);
   const [sentCount, setSentCount] = useState(4);
   const [responseRate] = useState(38);
@@ -162,7 +164,7 @@ export default function EntrepreneurSmartScanTestPage() {
     [selectedAction, current],
   );
 
-  function completeCard(action: DailyCategory) {
+  function finalizeAction(action: DailyCategory) {
     setSelectedAction(action);
     if (action === "eclaireur" || action === "package" || action === "exclients") {
       setSentCount((v) => v + 1);
@@ -176,9 +178,29 @@ export default function EntrepreneurSmartScanTestPage() {
     }, 200);
   }
 
+  function triggerAction(action: DailyCategory) {
+    if (action === "passer") {
+      finalizeAction(action);
+      return;
+    }
+    const nextDraft = buildTemplate(action, current);
+    setSelectedAction(action);
+    setDraftMessage(nextDraft);
+    setShowTemplateModal(true);
+  }
+
+  function sendOnWhatsApp() {
+    const cleanPhone = "33600000000";
+    if (typeof window !== "undefined") {
+      window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(draftMessage)}`, "_blank");
+    }
+    setShowTemplateModal(false);
+    if (selectedAction) finalizeAction(selectedAction);
+  }
+
   return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_10%_0%,#10193D_0%,#0C122B_45%,#090B16_100%)] text-white">
-      <div className="mx-auto max-w-6xl px-4 py-8">
+    <main className="h-screen overflow-hidden bg-[radial-gradient(circle_at_10%_0%,#10193D_0%,#0C122B_45%,#090B16_100%)] text-white">
+      <div className="mx-auto max-w-6xl px-4 py-4 sm:py-6">
         <div className="rounded-3xl border border-white/10 bg-white/5 p-4 backdrop-blur-xl">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
@@ -200,8 +222,8 @@ export default function EntrepreneurSmartScanTestPage() {
           </div>
         </div>
 
-        <div className="mt-5 grid gap-4 lg:grid-cols-[1.15fr_0.85fr]">
-          <section className="rounded-3xl border border-white/10 bg-white/5 p-4 backdrop-blur-xl">
+        <div className="mt-4 grid gap-4 lg:grid-cols-[1.15fr_0.85fr]">
+          <section className="rounded-3xl border border-white/10 bg-white/5 p-3 sm:p-4 backdrop-blur-xl">
             <div className="flex items-center justify-between">
               <p className="text-xs font-black uppercase tracking-[0.12em] text-cyan-200">Daily Card</p>
               <span className="rounded-full border border-white/15 bg-black/25 px-2 py-1 text-[10px] font-black uppercase tracking-wide text-white/80">Privacy First</span>
@@ -212,11 +234,11 @@ export default function EntrepreneurSmartScanTestPage() {
               initial={{ opacity: 0, y: 14, scale: 0.98 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               transition={{ duration: 0.25 }}
-              className="relative mt-3 rounded-[32px] bg-white/10 p-4 shadow-[0_30px_70px_-40px_rgba(0,0,0,0.9)] backdrop-blur-2xl"
+              className="relative mt-2 rounded-[30px] bg-white/10 p-3 sm:p-4 shadow-[0_30px_70px_-40px_rgba(0,0,0,0.9)] backdrop-blur-2xl"
             >
               <button
                 type="button"
-                onClick={() => completeCard("passer")}
+                onClick={() => triggerAction("passer")}
                 className="absolute right-3 top-3 h-9 w-9 rounded-full border border-white/20 bg-black/30 text-sm font-black text-white/80"
                 aria-label="Passer"
               >
@@ -224,7 +246,7 @@ export default function EntrepreneurSmartScanTestPage() {
               </button>
 
               <div className="flex flex-col items-center text-center">
-                <div className={`h-24 w-24 rounded-full bg-gradient-to-br ${sourceRing} p-[2px] shadow-[0_0_35px_rgba(56,189,248,0.35)]`}>
+                <div className={`h-20 w-20 rounded-full bg-gradient-to-br ${sourceRing} p-[2px] shadow-[0_0_35px_rgba(56,189,248,0.35)]`}>
                   <div className="flex h-full w-full items-center justify-center rounded-full bg-[#0D132D] text-3xl font-black">
                     {current.name
                       .split(" ")
@@ -232,26 +254,26 @@ export default function EntrepreneurSmartScanTestPage() {
                       .join("")}
                   </div>
                 </div>
-                <p className="mt-3 text-3xl font-black">{current.name}</p>
-                <p className="text-sm text-white/70">{current.companyHint} • {current.city}</p>
-                <div className="mt-2 inline-flex items-center rounded-full border border-orange-300/35 bg-orange-300/10 px-3 py-1 text-[11px] font-black text-orange-100">
+                <p className="mt-2 text-2xl sm:text-3xl font-black">{current.name}</p>
+                <p className="text-xs sm:text-sm text-white/70">{current.companyHint} • {current.city}</p>
+                <div className="mt-1.5 inline-flex items-center rounded-full border border-orange-300/35 bg-orange-300/10 px-3 py-1 text-[10px] font-black text-orange-100">
                   🌡 Score de chaleur: {heatScore}% • {heatLabel}
                 </div>
               </div>
 
-              <div className="mt-4 rounded-2xl bg-white/10 px-4 py-3">
-                <p className="text-sm font-black text-cyan-100">{fusedInsight}</p>
+              <div className="mt-3 rounded-2xl bg-white/10 px-3 py-2.5">
+                <p className="text-xs sm:text-sm font-black text-cyan-100">{fusedInsight}</p>
               </div>
 
-              <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px]">
+              <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[10px]">
                 <span className="rounded-full bg-indigo-500/20 px-2 py-1 font-black text-indigo-100">⏳ {current.capsule}</span>
                 <span className="rounded-full bg-fuchsia-500/20 px-2 py-1 font-black text-fuchsia-100">👥 {current.communityKnownBy} membres</span>
                 <span className="rounded-full bg-cyan-500/20 px-2 py-1 font-black text-cyan-100">🛰 {current.externalNews}</span>
               </div>
 
-              <div className="mt-4">
+              <div className="mt-2">
                 <p className="text-[10px] font-black uppercase tracking-[0.12em] text-white/70">Contribution express</p>
-                <div className="mt-2 flex flex-wrap gap-2">
+                <div className="mt-1.5 flex flex-wrap gap-1.5">
                   {VOTE_TAGS.map((tag) => {
                     const active = selectedVotes.includes(tag);
                     return (
@@ -259,9 +281,10 @@ export default function EntrepreneurSmartScanTestPage() {
                         key={tag}
                         type="button"
                         whileTap={{ scale: 0.93 }}
-                        onClick={() =>
-                          setSelectedVotes((prev) => (prev.includes(tag) ? prev.filter((x) => x !== tag) : [...prev, tag]))
-                        }
+                        onClick={() => {
+                          if (typeof navigator !== "undefined" && "vibrate" in navigator) navigator.vibrate(10);
+                          setSelectedVotes((prev) => (prev.includes(tag) ? prev.filter((x) => x !== tag) : [...prev, tag]));
+                        }}
                         className={`rounded-full px-3 py-2 text-xs font-black transition ${
                           active ? "bg-cyan-300 text-[#1A223D] shadow-[0_10px_25px_-14px_rgba(56,189,248,0.95)]" : "bg-white/85 text-[#1B1F34]"
                         }`}
@@ -273,31 +296,31 @@ export default function EntrepreneurSmartScanTestPage() {
                 </div>
               </div>
 
-              <div className="mt-4 grid gap-2 sm:grid-cols-2">
+              <div className="mt-3 grid gap-2 sm:grid-cols-2">
                 <button
                   type="button"
-                  onClick={() => completeCard("eclaireur")}
-                  className="h-12 rounded-xl border border-amber-300/35 bg-gradient-to-r from-amber-400/25 to-orange-400/20 text-xs font-black uppercase tracking-wide text-amber-100"
+                  onClick={() => triggerAction("eclaireur")}
+                  className="h-13 rounded-xl border border-amber-300/45 bg-gradient-to-r from-amber-400/35 to-orange-400/30 text-xs font-black uppercase tracking-wide text-amber-50 shadow-[0_16px_30px_-18px_rgba(251,191,36,0.95)]"
                 >
                   ✨ Eclaireur
                 </button>
                 <button
                   type="button"
-                  onClick={() => completeCard("package")}
-                  className="h-12 rounded-xl border border-fuchsia-300/35 bg-gradient-to-r from-violet-500/25 to-fuchsia-500/20 text-xs font-black uppercase tracking-wide text-fuchsia-100"
+                  onClick={() => triggerAction("package")}
+                  className="h-12 rounded-xl border border-fuchsia-300/35 bg-gradient-to-r from-violet-500/30 to-fuchsia-500/25 text-xs font-black uppercase tracking-wide text-fuchsia-100"
                 >
                   🧩 Package Croise
                 </button>
                 <button
                   type="button"
-                  onClick={() => completeCard("exclients")}
+                  onClick={() => triggerAction("exclients")}
                   className="h-11 rounded-xl border border-cyan-300/30 bg-cyan-500/12 text-[11px] font-black uppercase tracking-wide text-cyan-100"
                 >
                   📣 Ex-Clients (News)
                 </button>
                 <button
                   type="button"
-                  onClick={() => completeCard("qualifier")}
+                  onClick={() => triggerAction("qualifier")}
                   className="h-11 rounded-xl border border-white/20 bg-black/25 text-[11px] font-black uppercase tracking-wide text-white/85"
                 >
                   ✅ Qualifier
@@ -305,10 +328,11 @@ export default function EntrepreneurSmartScanTestPage() {
               </div>
             </motion.article>
 
-            <p className="mt-2 text-xs text-white/70">Less is more: une carte, une decision, moins de 3 minutes avec le cafe.</p>
+            <p className="mt-2 text-xs text-white/70">Mode tunnel: une carte, une decision, action immediate.</p>
           </section>
 
-          <section className="rounded-3xl border border-white/10 bg-white/5 p-4 backdrop-blur-xl">
+          {done >= 10 && (
+            <section className="rounded-3xl border border-white/10 bg-white/5 p-4 backdrop-blur-xl">
             <p className="text-xs font-black uppercase tracking-[0.12em] text-[#EAC886]">Template Assistant</p>
             <h2 className="mt-1 text-xl font-black">Message pre-rempli</h2>
             <textarea value={template} readOnly className="mt-3 min-h-44 w-full rounded-2xl border border-white/15 bg-black/25 px-3 py-3 text-sm" />
@@ -332,9 +356,54 @@ export default function EntrepreneurSmartScanTestPage() {
                 <p className="mt-1 text-xs text-white/80">Messages collectifs, taux de reponse, et volume d actions partages.</p>
               </div>
             </div>
-          </section>
+            </section>
+          )}
         </div>
       </div>
+
+      {showTemplateModal && selectedAction && selectedAction !== "passer" && (
+        <div className="fixed inset-0 z-50 bg-black/55 backdrop-blur-sm flex items-center justify-center px-4">
+          <section className="w-full max-w-lg rounded-3xl border border-white/15 bg-[#0E1430] p-4">
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-black uppercase tracking-[0.12em] text-cyan-200">Magic Template</p>
+              <button
+                type="button"
+                onClick={() => setShowTemplateModal(false)}
+                className="h-8 w-8 rounded-full border border-white/20 bg-white/10 text-xs"
+              >
+                ✕
+              </button>
+            </div>
+            <p className="mt-1 text-sm font-black">
+              {selectedAction === "eclaireur" ? "Script Eclaireur" : selectedAction === "package" ? "Script Package Croise" : "Script Ex-Clients"}
+            </p>
+            <textarea
+              value={draftMessage}
+              onChange={(event) => setDraftMessage(event.target.value)}
+              className="mt-3 min-h-36 w-full rounded-2xl border border-white/15 bg-black/25 px-3 py-3 text-sm"
+            />
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowTemplateModal(false);
+                  if (selectedAction) finalizeAction(selectedAction);
+                }}
+                className="h-11 rounded-xl border border-white/20 bg-white/10 text-xs font-black uppercase tracking-wide"
+              >
+                Valider sans envoi
+              </button>
+              <button
+                type="button"
+                onClick={sendOnWhatsApp}
+                className="h-11 rounded-xl bg-gradient-to-r from-emerald-400 to-cyan-300 text-xs font-black uppercase tracking-wide text-[#11252C]"
+              >
+                Envoyer sur WhatsApp
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
 
       {showReward && (
         <div className="pointer-events-none fixed inset-x-0 top-16 z-40 flex justify-center">
