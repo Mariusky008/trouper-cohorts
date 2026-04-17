@@ -183,6 +183,13 @@ export default function EntrepreneurSmartScanTestPage() {
   const [showReward, setShowReward] = useState(false);
   const [successPulse, setSuccessPulse] = useState(false);
   const [showProgressCheck, setShowProgressCheck] = useState(false);
+  const [transitionScreen, setTransitionScreen] = useState<{
+    message: string;
+    icon: string;
+    from: number;
+    to: number;
+    final: boolean;
+  } | null>(null);
   const [showHistoryPanel, setShowHistoryPanel] = useState(false);
   const [showSearchPanel, setShowSearchPanel] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -302,10 +309,21 @@ export default function EntrepreneurSmartScanTestPage() {
     if (typeof window !== "undefined") {
       window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(draftMessage)}`, "_blank");
     }
+    const nextStep = Math.min(10, done + 1);
+    const encouragements = ["Bien joue !", "Une opportunite de plus !", "C est dans la boite 📦", "Contact active ! +1 dans ta sphere 🚀"];
+    const message = nextStep >= 10 ? "Session terminee ! Tu as reveille 10 contacts en 3 minutes." : encouragements[Math.floor(Math.random() * encouragements.length)];
+    setTransitionScreen({
+      message,
+      icon: nextStep >= 10 ? "🎆" : "✅",
+      from: done,
+      to: nextStep,
+      final: nextStep >= 10,
+    });
+    setTimeout(() => setTransitionScreen(null), 1500);
     setShowProgressCheck(true);
     setTimeout(() => setShowProgressCheck(false), 650);
     setShowTemplateModal(false);
-    if (selectedAction && selectedAction !== "qualifier") finalizeAction(selectedAction, 650);
+    if (selectedAction && selectedAction !== "qualifier") finalizeAction(selectedAction, 1400);
   }
 
   function saveQualifierAndReturn() {
@@ -687,8 +705,8 @@ export default function EntrepreneurSmartScanTestPage() {
       )}
 
       {showTemplateModal && selectedAction && selectedAction !== "passer" && (
-        <div className="fixed inset-0 z-50 bg-black/55 backdrop-blur-sm flex items-center justify-center px-4">
-          <section className="w-full max-w-lg rounded-3xl border border-white/15 bg-[#0E1430] p-4">
+        <div className="fixed inset-0 z-50 bg-black/55 backdrop-blur-sm flex items-end sm:items-center justify-center px-3 sm:px-4 pb-2 sm:pb-0">
+          <section className="w-full max-w-lg max-h-[92vh] overflow-y-auto rounded-3xl border border-white/15 bg-[#0E1430] p-4">
             <div className="flex items-center justify-between">
               <p className="text-xs font-black uppercase tracking-[0.12em] text-cyan-200">Magic Template</p>
               <button
@@ -856,6 +874,25 @@ export default function EntrepreneurSmartScanTestPage() {
               </>
             )}
           </section>
+        </div>
+      )}
+
+      {transitionScreen && (
+        <div className="fixed inset-0 z-[60] bg-[radial-gradient(circle_at_30%_10%,rgba(52,211,153,0.25),rgba(8,12,28,0.92))] backdrop-blur-sm flex items-center justify-center px-4">
+          <motion.section
+            initial={{ opacity: 0, scale: 0.92, y: 12 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            className="w-full max-w-md rounded-3xl border border-emerald-300/30 bg-[#0D1830]/90 p-5 text-center shadow-[0_30px_70px_-35px_rgba(16,185,129,0.7)]"
+          >
+            <p className="text-4xl">{transitionScreen.icon}</p>
+            <p className="mt-2 text-xl font-black">{transitionScreen.message}</p>
+            <p className="mt-1 text-sm text-emerald-100/85">
+              Progression: {transitionScreen.from}/10 → {transitionScreen.to}/10
+            </p>
+            {transitionScreen.final && (
+              <p className="mt-2 text-sm font-black text-cyan-100">Ta mini-agence est fiere de toi.</p>
+            )}
+          </motion.section>
         </div>
       )}
 
