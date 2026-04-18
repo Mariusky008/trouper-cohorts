@@ -135,16 +135,16 @@ const CONTACTS: DailyContact[] = [
 
 const QUALIFIER_TAGS = [
   { id: "connecteur", label: "🤝 Connecteur", count: 5 },
-  { id: "decideur", label: "� Decideur", count: 3 },
+  { id: "decideur", label: "📈 Decideur", count: 3 },
   { id: "gros-budget", label: "💰 Gros Budget", count: 2 },
-  { id: "expert", label: "🧠 Expert/Savant", count: 2 },
-  { id: "prescription", label: "🔥 Prescription", count: 3 },
-  { id: "institutionnel", label: "� Institutionnel", count: 1 },
+  { id: "expert", label: "🧠 Expert", count: 2 },
+  { id: "prescripteur", label: "🔥 Prescripteur", count: 3 },
+  { id: "institutionnel", label: "🏢 Institutionnel", count: 1 },
   { id: "early", label: "🚀 Early Adopter", count: 2 },
   { id: "influenceur", label: "📢 Influenceur", count: 2 },
-  { id: "operationnel", label: "�️ Operationnel", count: 2 },
+  { id: "operationnel", label: "🛠️ Operationnel", count: 2 },
   { id: "partenaire", label: "💼 Partenaire", count: 2 },
-  { id: "vip", label: "� VIP / Grand Compte", count: 1 },
+  { id: "inconnu", label: "❓ Inconnu", count: 1 },
 ] as const;
 const QUALIFIER_STATUS = ["Prospect", "Partenaire", "Ami"] as const;
 type HeatLevel = "froid" | "tiede" | "brulant";
@@ -184,6 +184,7 @@ export default function EntrepreneurSmartScanTestPage() {
   const [showReward, setShowReward] = useState(false);
   const [successPulse, setSuccessPulse] = useState(false);
   const [showProgressCheck, setShowProgressCheck] = useState(false);
+  const [softLearningHint, setSoftLearningHint] = useState("");
   const [transitionScreen, setTransitionScreen] = useState<{
     message: string;
     icon: string;
@@ -257,6 +258,13 @@ export default function EntrepreneurSmartScanTestPage() {
     qualifierTags.length > 0 ||
     customTags.length > 0 ||
     qualifierNote.trim().length > 0;
+
+  function tagPalette(tagId: string, active: boolean) {
+    if (tagId === "inconnu") return active ? "bg-slate-300 text-slate-900" : "bg-slate-100 text-slate-700";
+    if (["decideur", "gros-budget", "institutionnel"].includes(tagId)) return active ? "bg-blue-300 text-blue-950" : "bg-blue-100 text-blue-900";
+    if (["connecteur", "influenceur", "prescripteur"].includes(tagId)) return active ? "bg-violet-300 text-violet-950" : "bg-violet-100 text-violet-900";
+    return active ? "bg-emerald-300 text-emerald-950" : "bg-emerald-100 text-emerald-900";
+  }
 
   useEffect(() => {
     if (stage !== "scan") return;
@@ -435,6 +443,23 @@ export default function EntrepreneurSmartScanTestPage() {
     setShowTemplateModal(false);
     setSelectedAction(null);
     setLastRewardForQualifier();
+  }
+
+  function skipQualifierUnknown() {
+    setQualifierStore((prev) => ({
+      ...prev,
+      [current.id]: {
+        heat: "tiede",
+        status: "Prospect",
+        tags: [],
+        customTags: [],
+        note: "",
+      },
+    }));
+    setShowTemplateModal(false);
+    setSelectedAction(null);
+    setSoftLearningHint("Profil peu renseigne: sois le premier a le qualifier !");
+    setTimeout(() => setSoftLearningHint(""), 2200);
   }
 
   function setLastRewardForQualifier() {
@@ -631,7 +656,10 @@ export default function EntrepreneurSmartScanTestPage() {
               </button>
 
               <div className="flex flex-col items-center text-center">
-                <div className={`h-20 w-20 rounded-full bg-gradient-to-br ${sourceRing} p-[2px] shadow-[0_0_35px_rgba(56,189,248,0.35)]`}>
+                <div
+                  className={`h-20 w-20 rounded-full bg-gradient-to-br ${sourceRing} p-[2px] shadow-[0_0_35px_rgba(56,189,248,0.35)]`}
+                  style={{ boxShadow: heatScore >= 90 ? "0 0 40px rgba(251,146,60,0.75)" : undefined }}
+                >
                   <div className="flex h-full w-full items-center justify-center rounded-full bg-[#0D132D] text-3xl font-black">
                     {current.name
                       .split(" ")
@@ -641,6 +669,13 @@ export default function EntrepreneurSmartScanTestPage() {
                 </div>
                 <p className="mt-2 text-2xl sm:text-3xl font-black">{current.name}</p>
                 <p className="text-xs sm:text-sm text-white/70">{current.companyHint} • {current.city}</p>
+                <motion.div
+                  animate={{ opacity: [0.65, 1, 0.65] }}
+                  transition={{ duration: 1.4, repeat: Infinity, ease: "easeInOut" }}
+                  className="mt-1 inline-flex items-center rounded-full border border-rose-300/35 bg-rose-400/20 px-2 py-1 text-[10px] font-black text-rose-100"
+                >
+                  🔥 En recherche active
+                </motion.div>
                 <div className="mt-1.5 inline-flex items-center rounded-full border border-orange-300/35 bg-orange-300/10 px-3 py-1 text-[10px] font-black text-orange-100">
                   🌡 Score de chaleur: {heatScore}% • {heatLabel}
                 </div>
@@ -651,9 +686,14 @@ export default function EntrepreneurSmartScanTestPage() {
               </div>
 
               <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[10px]">
-                <span className="rounded-full bg-indigo-500/20 px-2 py-1 font-black text-indigo-100">⏳ {current.capsule}</span>
+                <span className="rounded-full bg-cyan-500/20 px-2 py-1 font-black text-cyan-100">📍 {current.city}</span>
                 <span className="rounded-full bg-fuchsia-500/20 px-2 py-1 font-black text-fuchsia-100">👥 {current.communityKnownBy} membres</span>
-                <span className="rounded-full bg-cyan-500/20 px-2 py-1 font-black text-cyan-100">🛰 {current.externalNews}</span>
+                <span className="rounded-full bg-emerald-500/20 px-2 py-1 font-black text-emerald-100">🛰 {current.externalNews}</span>
+              </div>
+
+              <div className="mt-2 rounded-2xl border border-indigo-300/20 bg-indigo-500/10 px-3 py-2.5 text-left">
+                <p className="text-[10px] font-black uppercase tracking-[0.12em] text-indigo-100">Capsule Temporelle</p>
+                <p className="mt-1 text-xs text-white/85">⏳ Memorise pendant: {current.capsule}</p>
               </div>
 
               <div className="mt-2 rounded-2xl bg-white/10 px-3 py-2.5">
@@ -698,6 +738,9 @@ export default function EntrepreneurSmartScanTestPage() {
                   </p>
                 )}
               </div>
+              {softLearningHint && (
+                <p className="mt-2 rounded-xl bg-white/10 px-3 py-2 text-xs text-cyan-100">{softLearningHint}</p>
+              )}
             </motion.article>
 
             <p className="mt-2 text-xs text-white/70">Mode tunnel: une carte, une decision, action immediate.</p>
@@ -813,7 +856,9 @@ export default function EntrepreneurSmartScanTestPage() {
         <div className="fixed inset-0 z-50 bg-black/55 backdrop-blur-sm flex items-center justify-center px-3 sm:px-4">
           <section className="w-full max-w-lg max-h-[92vh] overflow-y-auto rounded-3xl border border-white/15 bg-[#0E1430] p-4">
             <div className="flex items-center justify-between">
-              <p className="text-xs font-black uppercase tracking-[0.12em] text-cyan-200">Magic Template</p>
+              <p className="text-xs font-black uppercase tracking-[0.12em] text-cyan-200">
+                {selectedAction === "qualifier" ? "Qualification Contact" : "Message pret a envoyer"}
+              </p>
               <button
                 type="button"
                 onClick={() => setShowTemplateModal(false)}
@@ -885,7 +930,7 @@ export default function EntrepreneurSmartScanTestPage() {
                             setQualifierTags((prev) => (prev.includes(tag.id) ? prev.filter((item) => item !== tag.id) : [...prev, tag.id]))
                           }
                           className={`rounded-full px-3 py-2 text-[11px] font-black ${
-                            active ? "bg-emerald-400 text-[#173126] shadow-[0_10px_24px_-16px_rgba(52,211,153,0.95)]" : "bg-white/85 text-[#1B1F34]"
+                            active ? `${tagPalette(tag.id, true)} shadow-[0_10px_24px_-16px_rgba(52,211,153,0.95)]` : tagPalette(tag.id, false)
                           }`}
                         >
                           {tag.label} ({tag.count})
@@ -948,6 +993,13 @@ export default function EntrepreneurSmartScanTestPage() {
                   className="h-11 w-full rounded-xl bg-gradient-to-r from-emerald-400 to-emerald-300 text-xs font-black uppercase tracking-wide text-[#11252C] disabled:opacity-40"
                 >
                   Enregistrer la fiche
+                </button>
+                <button
+                  type="button"
+                  onClick={skipQualifierUnknown}
+                  className="w-full text-center text-xs text-white/70 underline underline-offset-2"
+                >
+                  Je ne connais pas encore ce contact
                 </button>
               </div>
             ) : (
