@@ -185,6 +185,8 @@ export default function EntrepreneurSmartScanTestPage() {
   const [successPulse, setSuccessPulse] = useState(false);
   const [showProgressCheck, setShowProgressCheck] = useState(false);
   const [softLearningHint, setSoftLearningHint] = useState("");
+  const [qualificationPivot, setQualificationPivot] = useState<{ contactId: string; firstName: string; tag: string } | null>(null);
+  const [actionGlowContactId, setActionGlowContactId] = useState<string | null>(null);
   const [transitionScreen, setTransitionScreen] = useState<{
     message: string;
     icon: string;
@@ -294,6 +296,19 @@ export default function EntrepreneurSmartScanTestPage() {
     setQualifierTags([]);
     setShowTemplateModal(true);
   }, [stage, current.id, qualifierStore, showTemplateModal]);
+
+  useEffect(() => {
+    if (!qualificationPivot) return;
+    const timer = setTimeout(() => {
+      setQualificationPivot((pivot) => {
+        if (!pivot) return null;
+        setActionGlowContactId(pivot.contactId);
+        setTimeout(() => setActionGlowContactId((id) => (id === pivot.contactId ? null : id)), 2200);
+        return null;
+      });
+    }, 1800);
+    return () => clearTimeout(timer);
+  }, [qualificationPivot]);
 
   useEffect(() => {
     function flushPendingTransition() {
@@ -430,6 +445,12 @@ export default function EntrepreneurSmartScanTestPage() {
   }
 
   function saveQualifierAndReturn() {
+    const primaryTag =
+      (qualifierTags[0] ? qualifierTagLabelMap[qualifierTags[0]] : undefined) ??
+      (customTags[0] ? customTags[0] : undefined) ??
+      "❓ Inconnu";
+    const firstName = current.name.split(" ")[0];
+
     setQualifierStore((prev) => ({
       ...prev,
       [current.id]: {
@@ -442,6 +463,7 @@ export default function EntrepreneurSmartScanTestPage() {
     }));
     setShowTemplateModal(false);
     setSelectedAction(null);
+    setQualificationPivot({ contactId: current.id, firstName, tag: primaryTag });
     setLastRewardForQualifier();
   }
 
@@ -712,7 +734,9 @@ export default function EntrepreneurSmartScanTestPage() {
                   type="button"
                   onClick={() => triggerAction("eclaireur")}
                   disabled={!isQualified}
-                  className="h-14 rounded-xl border border-amber-300/45 bg-gradient-to-r from-amber-400/45 to-orange-400/35 text-xs font-black uppercase tracking-wide text-amber-50 shadow-[0_18px_34px_-18px_rgba(251,191,36,0.95)]"
+                  className={`h-14 rounded-xl border border-amber-300/45 bg-gradient-to-r from-amber-400/45 to-orange-400/35 text-xs font-black uppercase tracking-wide text-amber-50 shadow-[0_18px_34px_-18px_rgba(251,191,36,0.95)] ${
+                    isQualified && actionGlowContactId === current.id ? "animate-pulse ring-2 ring-amber-300/40" : ""
+                  }`}
                 >
                   ✨ Eclaireur
                 </button>
@@ -720,7 +744,9 @@ export default function EntrepreneurSmartScanTestPage() {
                   type="button"
                   onClick={() => triggerAction("package")}
                   disabled={!isQualified}
-                  className="h-12 rounded-xl border border-fuchsia-300/35 bg-gradient-to-r from-violet-500/30 to-fuchsia-500/25 text-xs font-black uppercase tracking-wide text-fuchsia-100"
+                  className={`h-12 rounded-xl border border-fuchsia-300/35 bg-gradient-to-r from-violet-500/30 to-fuchsia-500/25 text-xs font-black uppercase tracking-wide text-fuchsia-100 ${
+                    isQualified && actionGlowContactId === current.id ? "animate-pulse ring-2 ring-fuchsia-300/35" : ""
+                  }`}
                 >
                   🧩 Package Croise
                 </button>
@@ -728,16 +754,31 @@ export default function EntrepreneurSmartScanTestPage() {
                   type="button"
                   onClick={() => triggerAction("exclients")}
                   disabled={!isQualified}
-                  className="h-11 rounded-xl border border-cyan-300/30 bg-cyan-500/12 text-[11px] font-black uppercase tracking-wide text-cyan-100"
+                  className={`h-11 rounded-xl border border-cyan-300/30 bg-cyan-500/12 text-[11px] font-black uppercase tracking-wide text-cyan-100 ${
+                    isQualified && actionGlowContactId === current.id ? "animate-pulse ring-2 ring-cyan-300/35" : ""
+                  }`}
                 >
                   📣 Ex-Clients (News)
                 </button>
-                {!isQualified && (
+                {isQualified ? (
+                  <p className="self-center rounded-lg bg-emerald-400/15 px-3 py-2 text-[11px] font-black uppercase tracking-wide text-emerald-100">
+                    Qualifie ✅
+                  </p>
+                ) : (
                   <p className="self-center text-[11px] font-black uppercase tracking-wide text-emerald-100/85">
                     Qualification requise d abord
                   </p>
                 )}
               </div>
+              {isQualified && (
+                <button
+                  type="button"
+                  onClick={() => finalizeAction("passer")}
+                  className="mt-2 h-10 w-full rounded-xl border border-white/25 bg-black/30 text-[11px] font-black uppercase tracking-wide text-white/85"
+                >
+                  Passer au prochain contact
+                </button>
+              )}
               {softLearningHint && (
                 <p className="mt-2 rounded-xl bg-white/10 px-3 py-2 text-xs text-cyan-100">{softLearningHint}</p>
               )}
@@ -1053,6 +1094,37 @@ export default function EntrepreneurSmartScanTestPage() {
               </>
             )}
           </section>
+        </div>
+      )}
+
+      {qualificationPivot && (
+        <div className="fixed inset-0 z-[58] bg-[radial-gradient(circle_at_30%_10%,rgba(52,211,153,0.2),rgba(8,12,28,0.9))] backdrop-blur-sm flex items-center justify-center px-4">
+          <motion.section
+            initial={{ opacity: 0, scale: 0.93, y: 10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            className="w-full max-w-md rounded-3xl border border-emerald-300/30 bg-[#0D1830]/90 p-5 text-center shadow-[0_30px_70px_-35px_rgba(16,185,129,0.7)]"
+          >
+            <p className="text-4xl">✅</p>
+            <p className="mt-2 text-xl font-black">Fiche de {qualificationPivot.firstName} qualifiee ! 🚀</p>
+            <p className="mt-1 text-sm text-emerald-100/90">
+              Intelligence partagee: la Mini-Agence sait maintenant que c est un profil "{qualificationPivot.tag}".
+            </p>
+            <p className="mt-2 text-xs font-black uppercase tracking-wide text-cyan-100">Quelle est ta prochaine etape ?</p>
+            <button
+              type="button"
+              onClick={() => {
+                const pivot = qualificationPivot;
+                setQualificationPivot(null);
+                if (pivot) {
+                  setActionGlowContactId(pivot.contactId);
+                  setTimeout(() => setActionGlowContactId((id) => (id === pivot.contactId ? null : id)), 2200);
+                }
+              }}
+              className="mt-3 h-11 w-full rounded-xl bg-gradient-to-r from-cyan-300 to-emerald-300 text-xs font-black uppercase tracking-wide text-[#11252C]"
+            >
+              Voir les actions possibles
+            </button>
+          </motion.section>
         </div>
       )}
 
