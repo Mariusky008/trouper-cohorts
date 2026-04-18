@@ -27,6 +27,7 @@ type HistoryEntry = {
   name: string;
   action: Exclude<DailyCategory, "qualifier">;
   at: string;
+  tagsSummary: string;
 };
 
 const CONTACTS: DailyContact[] = [
@@ -132,18 +133,18 @@ const CONTACTS: DailyContact[] = [
   },
 ];
 
-const VOTE_TAGS = ["🎾 Padel", "🍷 Gastronomie", "💼 Investisseur", "🔌 Connecteur"] as const;
 const QUALIFIER_TAGS = [
-  { id: "investisseur", label: "💼 Investisseur", count: 3 },
-  { id: "connecteur", label: "🤝 Connecteur", count: 2 },
-  { id: "vendeur", label: "📈 Vendeur Potentiel", count: 1 },
-  { id: "credit", label: "🏦 Projet Credit", count: 2 },
-  { id: "padel", label: "🎾 Padel", count: 2 },
-  { id: "vin", label: "🍷 Gastronomie", count: 1 },
-  { id: "golf", label: "🏌️ Golf", count: 1 },
-  { id: "jeune-couple", label: "💍 Jeune Couple", count: 1 },
-  { id: "travaux", label: "🏗️ Travaux/Renov", count: 2 },
-  { id: "mutation", label: "📦 Mutation", count: 1 },
+  { id: "connecteur", label: "🤝 Connecteur", count: 5 },
+  { id: "decideur", label: "� Decideur", count: 3 },
+  { id: "gros-budget", label: "💰 Gros Budget", count: 2 },
+  { id: "expert", label: "🧠 Expert/Savant", count: 2 },
+  { id: "prescription", label: "🔥 Prescription", count: 3 },
+  { id: "institutionnel", label: "� Institutionnel", count: 1 },
+  { id: "early", label: "🚀 Early Adopter", count: 2 },
+  { id: "influenceur", label: "📢 Influenceur", count: 2 },
+  { id: "operationnel", label: "�️ Operationnel", count: 2 },
+  { id: "partenaire", label: "💼 Partenaire", count: 2 },
+  { id: "vip", label: "� VIP / Grand Compte", count: 1 },
 ] as const;
 const QUALIFIER_STATUS = ["Prospect", "Partenaire", "Ami"] as const;
 type HeatLevel = "froid" | "tiede" | "brulant";
@@ -172,7 +173,6 @@ export default function EntrepreneurSmartScanTestPage() {
   const [selectedAction, setSelectedAction] = useState<DailyCategory | null>(null);
   const [draftMessage, setDraftMessage] = useState("");
   const [showTemplateModal, setShowTemplateModal] = useState(false);
-  const [selectedVotes, setSelectedVotes] = useState<string[]>([]);
   const [qualifierHeat, setQualifierHeat] = useState<HeatLevel>("tiede");
   const [qualifierTags, setQualifierTags] = useState<string[]>([]);
   const [qualifierStatus, setQualifierStatus] = useState<(typeof QUALIFIER_STATUS)[number]>("Prospect");
@@ -222,6 +222,30 @@ export default function EntrepreneurSmartScanTestPage() {
   const dominantTheme = current.dominantTags[0]?.replace(/[^\p{L}\s]/gu, "").trim() || "son reseau";
   const fusedInsight = `${current.name.split(" ")[0]} montre un interet fort pour ${dominantTheme.toLowerCase()} cette semaine, ${current.capsule.toLowerCase()}.`;
   const isQualified = Boolean(qualifierStore[current.id]);
+  const qualifierTagLabelMap = useMemo(
+    () => Object.fromEntries(QUALIFIER_TAGS.map((tag) => [tag.id, tag.label])),
+    [],
+  );
+  const adnPopey = useMemo(() => {
+    const entries = current.dominantTags.map((tag, idx) => ({
+      label: tag,
+      count: Math.max(1, current.communityKnownBy + 2 - idx * 2),
+    }));
+    const qualified = qualifierStore[current.id];
+    if (qualified) {
+      qualified.tags.forEach((tagId) => {
+        const found = entries.find((entry) => entry.label === qualifierTagLabelMap[tagId]);
+        if (found) found.count += 1;
+        else if (qualifierTagLabelMap[tagId]) entries.push({ label: qualifierTagLabelMap[tagId], count: 1 });
+      });
+      qualified.customTags.forEach((tag) => {
+        const found = entries.find((entry) => entry.label === tag);
+        if (found) found.count += 1;
+        else entries.push({ label: tag, count: 1 });
+      });
+    }
+    return entries.sort((a, b) => b.count - a.count).slice(0, 3);
+  }, [current, qualifierStore, qualifierTagLabelMap]);
   const searchResults = CONTACTS.filter((contact) => `${contact.name} ${contact.city} ${contact.companyHint}`.toLowerCase().includes(searchQuery.toLowerCase().trim()));
   const template = useMemo(
     () => (selectedAction ? buildTemplate(selectedAction, current) : "Choisis une action pour voir le template pre-rempli."),
@@ -267,10 +291,10 @@ export default function EntrepreneurSmartScanTestPage() {
     function flushPendingTransition() {
       if (!pendingTransition || !pendingFinalizeAction) return;
       setTransitionScreen(pendingTransition);
-      setTimeout(() => setTransitionScreen(null), 1500);
+      setTimeout(() => setTransitionScreen(null), 2000);
       setShowProgressCheck(true);
       setTimeout(() => setShowProgressCheck(false), 650);
-      finalizeAction(pendingFinalizeAction, 1400);
+      finalizeAction(pendingFinalizeAction, 1800);
       setPendingTransition(null);
       setPendingFinalizeAction(null);
     }
@@ -304,9 +328,14 @@ export default function EntrepreneurSmartScanTestPage() {
     return "Passer";
   }
 
-  function createTransitionPayload() {
+  function createTransitionPayload(action: Exclude<DailyCategory, "qualifier">) {
     const nextStep = Math.min(10, done + 1);
-    const encouragements = ["Bien joue !", "Une opportunite de plus !", "C est dans la boite 📦", "Contact active ! +1 dans ta sphere 🚀"];
+    const points = action === "eclaireur" ? 5 : action === "package" ? 4 : action === "exclients" ? 3 : 1;
+    const encouragements = [
+      `Message envoye a ${current.name.split(" ")[0]} ! +${points} points pour ta Mini-Agence. �`,
+      `${current.name.split(" ")[0]} active ! +${points} points pour l equipe.`,
+      `Bien joue, +${points} points dans ta sphere business.`,
+    ];
     const message = nextStep >= 10 ? "Session terminee ! Tu as reveille 10 contacts en 3 minutes." : encouragements[Math.floor(Math.random() * encouragements.length)];
     return {
       message,
@@ -334,12 +363,15 @@ export default function EntrepreneurSmartScanTestPage() {
           name: current.name,
           action,
           at: `${now.getHours().toString().padStart(2, "0")}:${now.getMinutes().toString().padStart(2, "0")}`,
+          tagsSummary: (qualifierStore[current.id]?.tags ?? [])
+            .map((tagId) => qualifierTagLabelMap[tagId] ?? tagId)
+            .slice(0, 2)
+            .join(" • "),
         },
         ...prev,
       ].slice(0, 50));
       setIndex((v) => Math.min(CONTACTS.length, v + 1));
       setSelectedAction(null);
-      setSelectedVotes([]);
     }, advanceDelay);
   }
 
@@ -371,7 +403,7 @@ export default function EntrepreneurSmartScanTestPage() {
     const cleanPhone = "33600000000";
     const action = selectedAction;
     if (!action || action === "qualifier") return;
-    const payload = createTransitionPayload();
+    const payload = createTransitionPayload(action);
 
     if (typeof window !== "undefined") {
       window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(draftMessage)}`, "_blank");
@@ -379,10 +411,10 @@ export default function EntrepreneurSmartScanTestPage() {
     setShowTemplateModal(false);
     if (typeof document !== "undefined" && document.visibilityState === "visible") {
       setTransitionScreen(payload);
-      setTimeout(() => setTransitionScreen(null), 1500);
+      setTimeout(() => setTransitionScreen(null), 2000);
       setShowProgressCheck(true);
       setTimeout(() => setShowProgressCheck(false), 650);
-      finalizeAction(action, 1400);
+      finalizeAction(action, 1800);
       return;
     }
     setPendingTransition(payload);
@@ -569,7 +601,7 @@ export default function EntrepreneurSmartScanTestPage() {
           <section className="rounded-3xl border border-white/10 bg-white/5 p-3 sm:p-4 backdrop-blur-xl">
             <div className="flex items-center justify-between">
               <p className="text-xs font-black uppercase tracking-[0.12em] text-cyan-200">Daily Card</p>
-              <span className="rounded-full border border-white/15 bg-black/25 px-2 py-1 text-[10px] font-black uppercase tracking-wide text-white/80">Privacy First</span>
+              <span className="rounded-full border border-white/15 bg-black/25 px-2 py-1 text-[10px] font-black uppercase tracking-wide text-white/80">🔒 Anonymat communautaire garanti</span>
             </div>
 
             <motion.article
@@ -624,28 +656,14 @@ export default function EntrepreneurSmartScanTestPage() {
                 <span className="rounded-full bg-cyan-500/20 px-2 py-1 font-black text-cyan-100">🛰 {current.externalNews}</span>
               </div>
 
-              <div className="mt-2">
-                <p className="text-[10px] font-black uppercase tracking-[0.12em] text-white/70">Contribution express</p>
+              <div className="mt-2 rounded-2xl bg-white/10 px-3 py-2.5">
+                <p className="text-[10px] font-black uppercase tracking-[0.12em] text-white/70">ADN POPEY</p>
                 <div className="mt-1.5 flex flex-wrap gap-1.5">
-                  {VOTE_TAGS.map((tag) => {
-                    const active = selectedVotes.includes(tag);
-                    return (
-                      <motion.button
-                        key={tag}
-                        type="button"
-                        whileTap={{ scale: 0.93 }}
-                        onClick={() => {
-                          if (typeof navigator !== "undefined" && "vibrate" in navigator) navigator.vibrate(10);
-                          setSelectedVotes((prev) => (prev.includes(tag) ? prev.filter((x) => x !== tag) : [...prev, tag]));
-                        }}
-                        className={`rounded-full px-3 py-2 text-xs font-black transition ${
-                          active ? "bg-cyan-300 text-[#1A223D] shadow-[0_10px_25px_-14px_rgba(56,189,248,0.95)]" : "bg-white/85 text-[#1B1F34]"
-                        }`}
-                      >
-                        {tag}
-                      </motion.button>
-                    );
-                  })}
+                  {adnPopey.map((entry) => (
+                    <span key={entry.label} className="rounded-full bg-white/85 px-3 py-2 text-xs font-black text-[#1B1F34]">
+                      {entry.label} x{entry.count}
+                    </span>
+                  ))}
                 </div>
               </div>
 
@@ -736,7 +754,10 @@ export default function EntrepreneurSmartScanTestPage() {
                   className="w-full rounded-xl border border-white/15 bg-black/25 px-3 py-2 text-left"
                 >
                   <p className="text-sm font-black">{entry.name}</p>
-                  <p className="text-xs text-white/70">{actionLabel(entry.action)} • {entry.at}</p>
+                  <p className="text-xs text-white/70">
+                    {actionLabel(entry.action)} • {entry.at}
+                    {entry.tagsSummary ? ` • ${entry.tagsSummary}` : ""}
+                  </p>
                 </button>
               ))}
             </div>
@@ -942,13 +963,13 @@ export default function EntrepreneurSmartScanTestPage() {
                   onClick={() => {
                     const action = selectedAction;
                     if (!action) return;
-                    const payload = createTransitionPayload();
+                    const payload = createTransitionPayload(action);
                     setTransitionScreen(payload);
-                    setTimeout(() => setTransitionScreen(null), 1500);
+                    setTimeout(() => setTransitionScreen(null), 2000);
                     setShowProgressCheck(true);
                     setTimeout(() => setShowProgressCheck(false), 650);
                     setShowTemplateModal(false);
-                    finalizeAction(action, 1400);
+                    finalizeAction(action, 1800);
                   }}
                   className="h-10 rounded-xl border border-white/20 bg-white/10 text-[11px] font-black uppercase tracking-wide text-white/80"
                 >
