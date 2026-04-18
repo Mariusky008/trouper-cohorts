@@ -1,0 +1,20 @@
+{
+  "name": "Popey Entrepreneur Smart Scan",
+  "short_name": "Smart Scan",
+  "description": "Module Smart Scan & Daily Action pour mini-agence.",
+  "start_url": "/popey-human/entrepreneur-smart-scan-test",
+  "scope": "/popey-human/entrepreneur-smart-scan-test/",
+  "display": "standalone",
+  "background_color": "#0A0B0C",
+  "theme_color": "#32D399",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "orientation": "portrait",
+  "categories": ["business", "productivity"]
+}
