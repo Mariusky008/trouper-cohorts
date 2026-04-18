@@ -810,7 +810,7 @@ export default function EntrepreneurSmartScanTestPage() {
       )}
 
       {showTemplateModal && selectedAction && selectedAction !== "passer" && (
-        <div className="fixed inset-0 z-50 bg-black/55 backdrop-blur-sm flex items-end sm:items-center justify-center px-3 sm:px-4 pb-2 sm:pb-0">
+        <div className="fixed inset-0 z-50 bg-black/55 backdrop-blur-sm flex items-center justify-center px-3 sm:px-4">
           <section className="w-full max-w-lg max-h-[92vh] overflow-y-auto rounded-3xl border border-white/15 bg-[#0E1430] p-4">
             <div className="flex items-center justify-between">
               <p className="text-xs font-black uppercase tracking-[0.12em] text-cyan-200">Magic Template</p>
