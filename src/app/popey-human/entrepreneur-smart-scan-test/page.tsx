@@ -213,6 +213,10 @@ export default function EntrepreneurSmartScanTestPage() {
   const current = CONTACTS[index] ?? CONTACTS[CONTACTS.length - 1];
   const totalScanned = 816;
   const scanDone = scanCount >= totalScanned;
+  const scanProgress = Math.min(1, scanCount / totalScanned);
+  const liveProfiles = Math.min(304, Math.round(304 * scanProgress));
+  const liveLocals = Math.min(488, Math.round(488 * scanProgress));
+  const liveHotSignals = Math.min(112, Math.round(112 * scanProgress));
   const done = Math.min(index, CONTACTS.length);
   const progress = Math.round((done / 10) * 100);
   const heatScore = Math.min(99, 55 + current.communityKnownBy * 10 + (current.externalNews ? 8 : 0));
@@ -267,6 +271,14 @@ export default function EntrepreneurSmartScanTestPage() {
     if (["decideur", "gros-budget", "institutionnel"].includes(tagId)) return active ? "bg-blue-300 text-blue-950" : "bg-blue-100 text-blue-900";
     if (["connecteur", "influenceur", "prescripteur"].includes(tagId)) return active ? "bg-violet-300 text-violet-950" : "bg-violet-100 text-violet-900";
     return active ? "bg-emerald-300 text-emerald-950" : "bg-emerald-100 text-emerald-900";
+  }
+
+  function adnBadgeClass(label: string) {
+    const lower = label.toLowerCase();
+    if (lower.includes("inconnu")) return "bg-slate-200 text-slate-800";
+    if (lower.includes("decideur") || lower.includes("budget") || lower.includes("institutionnel")) return "bg-blue-100 text-blue-900";
+    if (lower.includes("connecteur") || lower.includes("influenceur") || lower.includes("prescripteur")) return "bg-violet-100 text-violet-900";
+    return "bg-emerald-100 text-emerald-900";
   }
 
   useEffect(() => {
@@ -545,52 +557,39 @@ export default function EntrepreneurSmartScanTestPage() {
             <p className="mt-2 text-xs text-white/70">{scanCount} / {totalScanned} contacts scannes</p>
             {!scanDone && <p className="mt-1 text-[11px] uppercase tracking-[0.12em] text-orange-200/90">Meche active...</p>}
 
-            {scanDone ? (
-              <>
-                {scanBurst && (
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.85 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    className="mt-3 rounded-2xl border border-orange-300/35 bg-orange-300/15 p-3 text-center"
-                  >
-                    <p className="text-2xl">💥</p>
-                    <p className="text-sm font-black text-orange-100">Scan termine, intelligence revelee.</p>
-                  </motion.div>
-                )}
-                <div className="mt-4 grid grid-cols-3 gap-2">
-                  <div className="rounded-2xl bg-white/10 p-3 text-center">
-                    <p className="text-2xl font-black text-cyan-100">304</p>
-                    <p className="mt-1 text-[11px] font-black uppercase tracking-wide text-white/75">profils actifs</p>
-                  </div>
-                  <div className="rounded-2xl bg-white/10 p-3 text-center">
-                    <p className="text-2xl font-black text-indigo-100">488</p>
-                    <p className="mt-1 text-[11px] font-black uppercase tracking-wide text-white/75">contacts locaux</p>
-                  </div>
-                  <div className="rounded-2xl bg-white/10 p-3 text-center">
-                    <p className="text-2xl font-black text-orange-100">112</p>
-                    <p className="mt-1 text-[11px] font-black uppercase tracking-wide text-white/75">signaux chauds</p>
-                  </div>
-                </div>
+            {scanDone && scanBurst && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.85 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="mt-3 rounded-2xl border border-orange-300/35 bg-orange-300/15 p-3 text-center"
+              >
+                <p className="text-2xl">💥</p>
+                <p className="text-sm font-black text-orange-100">Scan termine, intelligence revelee.</p>
+              </motion.div>
+            )}
 
+            <div className="mt-4 grid grid-cols-3 gap-2">
+              <div className="rounded-2xl bg-white/10 p-3 text-center">
+                <p className="text-2xl font-black text-cyan-100 tabular-nums">{scanDone ? 304 : liveProfiles}</p>
+                <p className="mt-1 text-[11px] font-black uppercase tracking-wide text-white/75">profils actifs</p>
+              </div>
+              <div className="rounded-2xl bg-white/10 p-3 text-center">
+                <p className="text-2xl font-black text-indigo-100 tabular-nums">{scanDone ? 488 : liveLocals}</p>
+                <p className="mt-1 text-[11px] font-black uppercase tracking-wide text-white/75">contacts locaux</p>
+              </div>
+              <div className="rounded-2xl bg-white/10 p-3 text-center">
+                <p className="text-2xl font-black text-orange-100 tabular-nums">{scanDone ? 112 : liveHotSignals}</p>
+                <p className="mt-1 text-[11px] font-black uppercase tracking-wide text-white/75">signaux chauds</p>
+              </div>
+            </div>
+
+            {scanDone && (
+              <>
                 <p className="mt-4 rounded-xl bg-emerald-400/15 px-3 py-2 text-sm text-emerald-100">
                   Scan termine: {totalScanned} contacts disponibles.
                 </p>
+                <p className="mt-2 text-xs font-black text-cyan-100">Ton reseau est une mine d or: 112 opportunites t attendent ce matin.</p>
               </>
-            ) : (
-              <div className="mt-4 grid grid-cols-3 gap-2">
-                <div className="rounded-2xl bg-white/10 p-3 text-center animate-pulse">
-                  <p className="text-2xl font-black text-cyan-100/70">•••</p>
-                  <p className="mt-1 text-[11px] font-black uppercase tracking-wide text-white/60">profils actifs</p>
-                </div>
-                <div className="rounded-2xl bg-white/10 p-3 text-center animate-pulse">
-                  <p className="text-2xl font-black text-indigo-100/70">•••</p>
-                  <p className="mt-1 text-[11px] font-black uppercase tracking-wide text-white/60">contacts locaux</p>
-                </div>
-                <div className="rounded-2xl bg-white/10 p-3 text-center animate-pulse">
-                  <p className="text-2xl font-black text-orange-100/70">•••</p>
-                  <p className="mt-1 text-[11px] font-black uppercase tracking-wide text-white/60">signaux chauds</p>
-                </div>
-              </div>
             )}
 
             <button
@@ -737,7 +736,7 @@ export default function EntrepreneurSmartScanTestPage() {
                 <p className="text-[10px] font-black uppercase tracking-[0.12em] text-white/70">ADN POPEY</p>
                 <div className="mt-1.5 flex flex-wrap gap-1.5">
                   {adnPopey.map((entry) => (
-                    <span key={entry.label} className="rounded-full bg-white/85 px-3 py-2 text-xs font-black text-[#1B1F34]">
+                    <span key={entry.label} className={`rounded-full px-3 py-2 text-xs font-black ${adnBadgeClass(entry.label)}`}>
                       {entry.label} x{entry.count}
                     </span>
                   ))}
@@ -957,26 +956,26 @@ export default function EntrepreneurSmartScanTestPage() {
             {selectedAction === "qualifier" ? (
               <div className="mt-3 space-y-3">
                 <div className="rounded-2xl border border-white/15 bg-black/25 p-3">
-                  <p className="text-[11px] font-black uppercase tracking-[0.12em] text-white/70">Temperature du contact</p>
+                  <p className="text-[12px] font-black uppercase tracking-[0.14em] text-cyan-100">🌡 Temperature du contact</p>
                   <div className="mt-2 grid grid-cols-3 gap-2">
                     <button
                       type="button"
                       onClick={() => setQualifierHeat("froid")}
-                      className={`h-9 rounded-xl text-xs font-black ${qualifierHeat === "froid" ? "bg-cyan-300 text-[#13253D]" : "bg-white/10 text-white/80"}`}
+                      className={`h-11 rounded-xl text-sm font-black ${qualifierHeat === "froid" ? "bg-cyan-300 text-[#13253D] ring-2 ring-cyan-200/60" : "bg-white/10 text-white/80"}`}
                     >
                       ❄️ Froid
                     </button>
                     <button
                       type="button"
                       onClick={() => setQualifierHeat("tiede")}
-                      className={`h-9 rounded-xl text-xs font-black ${qualifierHeat === "tiede" ? "bg-amber-300 text-[#2C230E]" : "bg-white/10 text-white/80"}`}
+                      className={`h-11 rounded-xl text-sm font-black ${qualifierHeat === "tiede" ? "bg-amber-300 text-[#2C230E] ring-2 ring-amber-200/60" : "bg-white/10 text-white/80"}`}
                     >
                       ⚡ Tiede
                     </button>
                     <button
                       type="button"
                       onClick={() => setQualifierHeat("brulant")}
-                      className={`h-9 rounded-xl text-xs font-black ${qualifierHeat === "brulant" ? "bg-orange-400 text-[#321A0E]" : "bg-white/10 text-white/80"}`}
+                      className={`h-11 rounded-xl text-sm font-black ${qualifierHeat === "brulant" ? "bg-orange-400 text-[#321A0E] ring-2 ring-orange-200/60" : "bg-white/10 text-white/80"}`}
                     >
                       🔥 Brulant
                     </button>
@@ -1071,6 +1070,9 @@ export default function EntrepreneurSmartScanTestPage() {
             ) : (
               <>
                 <p className="mt-1 text-sm font-black">{modalTitle(selectedAction)}</p>
+                <p className="mt-2 inline-flex items-center rounded-lg bg-cyan-400/15 px-2 py-1 text-xs font-black text-cyan-100">
+                  🎯 Base sur le profil: {adnPopey[0]?.label ?? "❓ Inconnu"}
+                </p>
                 <textarea
                   value={draftMessage}
                   onChange={(event) => setDraftMessage(event.target.value)}
