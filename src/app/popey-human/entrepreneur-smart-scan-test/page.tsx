@@ -347,7 +347,7 @@ export default function EntrepreneurSmartScanTestPage() {
 
   function actionLabel(action: Exclude<DailyCategory, "qualifier">) {
     if (action === "eclaireur") return "Eclaireur";
-    if (action === "package") return "Package Croise";
+    if (action === "package") return "Partage Croise";
     if (action === "exclients") return "Ex-Clients";
     return "Passer";
   }
@@ -363,9 +363,9 @@ export default function EntrepreneurSmartScanTestPage() {
             `Bien joue, +${points} points dans ta sphere business.`,
           ]
         : [
-            `Fiche de ${current.name.split(" ")[0]} validee sans envoi. 🗂️`,
-            `${current.name.split(" ")[0]} ajoute a ton historique pour suivi.`,
-            `Action memorisee: tu pourras relancer au bon moment.`,
+            `Aucun message envoye a ${current.name.split(" ")[0]}. Fiche memorisee. 🗂️`,
+            `Valide sans envoi: ${current.name.split(" ")[0]} est ajoute a ton historique.`,
+            `${actionLabel(action)} prepare sans envoi. Tu pourras relancer au bon moment.`,
           ];
     const message = nextStep >= 10 ? "Session terminee ! Tu as reveille 10 contacts en 3 minutes." : encouragements[Math.floor(Math.random() * encouragements.length)];
     return {
@@ -506,7 +506,7 @@ export default function EntrepreneurSmartScanTestPage() {
 
   function modalTitle(action: DailyCategory | null) {
     if (action === "eclaireur") return "Script Eclaireur";
-    if (action === "package") return "Script Package Croise";
+    if (action === "package") return "Script Partage Croise";
     if (action === "exclients") return "Script Ex-Clients";
     if (action === "qualifier") return "Qualifier la fiche";
     return "Template";
@@ -763,7 +763,7 @@ export default function EntrepreneurSmartScanTestPage() {
                     isQualified && actionGlowContactId === current.id ? "animate-pulse ring-2 ring-fuchsia-300/35" : ""
                   }`}
                 >
-                  🧩 Package Croise
+                  🧩 Partage Croise
                 </button>
                 <button
                   type="button"
