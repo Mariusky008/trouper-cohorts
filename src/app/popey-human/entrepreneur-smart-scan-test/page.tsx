@@ -855,39 +855,53 @@ export default function EntrepreneurSmartScanTestPage() {
       {showTemplateModal && selectedAction && selectedAction !== "passer" && (
         <div className="fixed inset-0 z-50 bg-black/55 backdrop-blur-sm flex items-center justify-center px-3 sm:px-4">
           <section className="w-full max-w-lg max-h-[92vh] overflow-y-auto rounded-3xl border border-white/15 bg-[#0E1430] p-4">
-            <div className="flex items-center justify-between">
-              <p className="text-xs font-black uppercase tracking-[0.12em] text-cyan-200">
-                {selectedAction === "qualifier" ? "Qualification Contact" : "Message pret a envoyer"}
+            <div className="relative flex items-center justify-center">
+              <p className="text-sm font-black tracking-[0.05em] text-cyan-200 text-center">
+                {selectedAction === "qualifier" ? "Qualifiez ce contact" : "Message pret a envoyer"}
               </p>
               <button
                 type="button"
                 onClick={() => setShowTemplateModal(false)}
-                className="h-8 w-8 rounded-full border border-white/20 bg-white/10 text-xs"
+                className="absolute right-0 h-8 w-8 rounded-full border border-white/20 bg-white/10 text-xs"
               >
                 ✕
               </button>
             </div>
             {selectedAction === "qualifier" && (
-              <div className="mt-2 rounded-2xl border border-white/15 bg-black/25 p-3">
-                <p className="text-[10px] font-black uppercase tracking-[0.12em] text-white/70">Contact concerne</p>
-                <div className="mt-1 flex items-center gap-3">
-                  <div className={`h-10 w-10 rounded-full bg-gradient-to-br ${sourceRing} p-[1.5px]`}>
-                    <div className="flex h-full w-full items-center justify-center rounded-full bg-[#0D132D] text-sm font-black">
-                      {current.name
-                        .split(" ")
-                        .map((part) => part[0])
-                        .join("")}
+              <div className="mt-3 rounded-[20px] border border-white/15 bg-black/25 p-3">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <div
+                      className={`h-14 w-14 rounded-full bg-gradient-to-br ${sourceRing} p-[2px]`}
+                      style={{ boxShadow: heatScore >= 90 ? "0 0 28px rgba(251,146,60,0.65)" : "0 0 16px rgba(56,189,248,0.45)" }}
+                    >
+                      <div className="flex h-full w-full items-center justify-center rounded-full bg-[#0D132D] text-xl font-black">
+                        {current.name
+                          .split(" ")
+                          .map((part) => part[0])
+                          .join("")}
+                      </div>
+                    </div>
+                    <div className="text-left">
+                      <p className="text-2xl font-black leading-tight">{current.name}</p>
+                      <p className="mt-0.5 text-sm text-white/70">📍 {current.city}</p>
                     </div>
                   </div>
-                  <div>
-                    <p className="text-sm font-black">{current.name}</p>
-                    <p className="text-xs text-white/70">{current.companyHint} • {current.city}</p>
-                  </div>
+                  <span className="rounded-lg border border-cyan-300/35 bg-cyan-400/15 px-2 py-1 text-[11px] font-black text-cyan-100">
+                    🔥 {heatScore}% {heatLabel.toUpperCase()}
+                  </span>
                 </div>
-                <p className="mt-1 text-xs text-cyan-100/90">{fusedInsight}</p>
+
+                <div className="mt-3 h-px bg-white/15" />
+
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <span className="rounded-lg bg-orange-300/15 px-2 py-1 text-xs font-black text-orange-100">🔥 Interet : {dominantTheme}</span>
+                  <span className="rounded-lg bg-white/10 px-2 py-1 text-xs font-black text-white/85">📍 {current.companyHint}</span>
+                </div>
+
+                <p className="mt-3 text-xs italic text-white/75">🤝 Memoire: {current.capsule}</p>
               </div>
             )}
-            <p className="mt-1 text-sm font-black">{modalTitle(selectedAction)}</p>
             {selectedAction === "qualifier" ? (
               <div className="mt-3 space-y-3">
                 <div className="rounded-2xl border border-white/15 bg-black/25 p-3">
@@ -1004,6 +1018,7 @@ export default function EntrepreneurSmartScanTestPage() {
               </div>
             ) : (
               <>
+                <p className="mt-1 text-sm font-black">{modalTitle(selectedAction)}</p>
                 <textarea
                   value={draftMessage}
                   onChange={(event) => setDraftMessage(event.target.value)}
