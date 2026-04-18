@@ -306,7 +306,7 @@ export default function EntrepreneurSmartScanTestPage() {
         setTimeout(() => setActionGlowContactId((id) => (id === pivot.contactId ? null : id)), 2200);
         return null;
       });
-    }, 1800);
+    }, 3200);
     return () => clearTimeout(timer);
   }, [qualificationPivot]);
 
@@ -760,11 +760,7 @@ export default function EntrepreneurSmartScanTestPage() {
                 >
                   📣 Ex-Clients (News)
                 </button>
-                {isQualified ? (
-                  <p className="self-center rounded-lg bg-emerald-400/15 px-3 py-2 text-[11px] font-black uppercase tracking-wide text-emerald-100">
-                    Qualifie ✅
-                  </p>
-                ) : (
+                {!isQualified && (
                   <p className="self-center text-[11px] font-black uppercase tracking-wide text-emerald-100/85">
                     Qualification requise d abord
                   </p>
