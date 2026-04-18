@@ -28,6 +28,7 @@ type HistoryEntry = {
   action: Exclude<DailyCategory, "qualifier">;
   at: string;
   tagsSummary: string;
+  sent: boolean;
 };
 
 const CONTACTS: DailyContact[] = [
@@ -317,7 +318,7 @@ export default function EntrepreneurSmartScanTestPage() {
       setTimeout(() => setTransitionScreen(null), 2000);
       setShowProgressCheck(true);
       setTimeout(() => setShowProgressCheck(false), 650);
-      finalizeAction(pendingFinalizeAction, 1800);
+      finalizeAction(pendingFinalizeAction, 1800, { countAsSent: true, sentInHistory: true });
       setPendingTransition(null);
       setPendingFinalizeAction(null);
     }
@@ -351,14 +352,21 @@ export default function EntrepreneurSmartScanTestPage() {
     return "Passer";
   }
 
-  function createTransitionPayload(action: Exclude<DailyCategory, "qualifier">) {
+  function createTransitionPayload(action: Exclude<DailyCategory, "qualifier">, mode: "sent" | "saved" = "sent") {
     const nextStep = Math.min(10, done + 1);
     const points = action === "eclaireur" ? 5 : action === "package" ? 4 : action === "exclients" ? 3 : 1;
-    const encouragements = [
-      `Message envoye a ${current.name.split(" ")[0]} ! +${points} points pour ta Mini-Agence. �`,
-      `${current.name.split(" ")[0]} active ! +${points} points pour l equipe.`,
-      `Bien joue, +${points} points dans ta sphere business.`,
-    ];
+    const encouragements =
+      mode === "sent"
+        ? [
+            `Message envoye a ${current.name.split(" ")[0]} ! +${points} points pour ta Mini-Agence. 🚀`,
+            `${current.name.split(" ")[0]} active ! +${points} points pour l equipe.`,
+            `Bien joue, +${points} points dans ta sphere business.`,
+          ]
+        : [
+            `Fiche de ${current.name.split(" ")[0]} validee sans envoi. 🗂️`,
+            `${current.name.split(" ")[0]} ajoute a ton historique pour suivi.`,
+            `Action memorisee: tu pourras relancer au bon moment.`,
+          ];
     const message = nextStep >= 10 ? "Session terminee ! Tu as reveille 10 contacts en 3 minutes." : encouragements[Math.floor(Math.random() * encouragements.length)];
     return {
       message,
@@ -369,9 +377,15 @@ export default function EntrepreneurSmartScanTestPage() {
     };
   }
 
-  function finalizeAction(action: Exclude<DailyCategory, "qualifier">, advanceDelay = 200) {
+  function finalizeAction(
+    action: Exclude<DailyCategory, "qualifier">,
+    advanceDelay = 200,
+    options: { countAsSent?: boolean; sentInHistory?: boolean } = {},
+  ) {
     setSelectedAction(action);
-    if (action === "eclaireur" || action === "package" || action === "exclients") {
+    const countAsSent = options.countAsSent ?? true;
+    const sentInHistory = options.sentInHistory ?? countAsSent;
+    if (countAsSent && (action === "eclaireur" || action === "package" || action === "exclients")) {
       setSentCount((v) => v + 1);
     }
     setShowReward(true);
@@ -390,6 +404,7 @@ export default function EntrepreneurSmartScanTestPage() {
             .map((tagId) => qualifierTagLabelMap[tagId] ?? tagId)
             .slice(0, 2)
             .join(" • "),
+          sent: sentInHistory,
         },
         ...prev,
       ].slice(0, 50));
@@ -437,7 +452,7 @@ export default function EntrepreneurSmartScanTestPage() {
       setTimeout(() => setTransitionScreen(null), 2000);
       setShowProgressCheck(true);
       setTimeout(() => setShowProgressCheck(false), 650);
-      finalizeAction(action, 1800);
+      finalizeAction(action, 1800, { countAsSent: true, sentInHistory: true });
       return;
     }
     setPendingTransition(payload);
@@ -835,7 +850,7 @@ export default function EntrepreneurSmartScanTestPage() {
                 >
                   <p className="text-sm font-black">{entry.name}</p>
                   <p className="text-xs text-white/70">
-                    {actionLabel(entry.action)} • {entry.at}
+                    {entry.sent ? "Envoye" : "Valide sans envoi"} • {actionLabel(entry.action)} • {entry.at}
                     {entry.tagsSummary ? ` • ${entry.tagsSummary}` : ""}
                   </p>
                 </button>
@@ -1067,13 +1082,13 @@ export default function EntrepreneurSmartScanTestPage() {
                   onClick={() => {
                     const action = selectedAction;
                     if (!action) return;
-                    const payload = createTransitionPayload(action);
+                    const payload = createTransitionPayload(action, "saved");
                     setTransitionScreen(payload);
                     setTimeout(() => setTransitionScreen(null), 2000);
                     setShowProgressCheck(true);
                     setTimeout(() => setShowProgressCheck(false), 650);
                     setShowTemplateModal(false);
-                    finalizeAction(action, 1800);
+                    finalizeAction(action, 1800, { countAsSent: false, sentInHistory: false });
                   }}
                   className="h-10 rounded-xl border border-white/20 bg-white/10 text-[11px] font-black uppercase tracking-wide text-white/80"
                 >
