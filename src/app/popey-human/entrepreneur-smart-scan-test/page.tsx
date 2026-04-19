@@ -285,6 +285,11 @@ export default function EntrepreneurSmartScanTestPage() {
   const liveEstimatedGain = getEstimatedGain(businessChoice, networkChoice, communityTags);
   const livePotentialLabel = businessChoice || networkChoice || communityTags.length > 0 ? liveEstimatedGain : "?";
   const canSaveQualifier = hasChosenHeat && businessChoice !== null && networkChoice !== null && communityTags.length > 0;
+  const liveQualifierSignals = [
+    businessChoice ? quickLabelMap[businessChoice] : null,
+    networkChoice ? quickLabelMap[networkChoice] : null,
+    ...communityTags.slice(0, 2).map((id) => quickLabelMap[id]),
+  ].filter(Boolean) as string[];
 
   function adnBadgeClass(label: string) {
     const lower = label.toLowerCase();
@@ -1095,16 +1100,32 @@ export default function EntrepreneurSmartScanTestPage() {
                       <p className="mt-0.5 text-sm text-white/70">📍 {current.city}</p>
                     </div>
                   </div>
-                  <span className="rounded-lg border border-cyan-300/35 bg-cyan-400/15 px-2 py-1 text-[11px] font-black text-cyan-100">
-                    🔥 {heatScore}% {heatLabel.toUpperCase()}
-                  </span>
+                  <motion.div
+                    key={`hero-gain-${livePotentialLabel}`}
+                    initial={{ scale: 0.9, opacity: 0.4 }}
+                    animate={{ scale: [1, 1.04, 1], opacity: 1 }}
+                    transition={{ duration: 0.55, ease: "easeOut" }}
+                    className={`rounded-xl border bg-gradient-to-r px-3 py-2 text-center shadow-[0_18px_36px_-22px_rgba(16,185,129,0.8)] ${gainTone(livePotentialLabel)}`}
+                  >
+                    <p className="text-[10px] font-black uppercase tracking-[0.12em]">💰 Gain potentiel</p>
+                    <p className="mt-0.5 text-base font-black">🔥 {livePotentialLabel}</p>
+                  </motion.div>
                 </div>
 
                 <div className="mt-3 h-px bg-white/15" />
 
                 <div className="mt-3 flex flex-wrap items-center gap-2">
-                  <span className="rounded-lg bg-orange-300/15 px-2 py-1 text-xs font-black text-orange-100">🔥 Interet : {dominantTheme}</span>
-                  <span className="rounded-lg bg-white/10 px-2 py-1 text-xs font-black text-white/85">📍 {current.companyHint}</span>
+                  {liveQualifierSignals.length > 0 ? (
+                    liveQualifierSignals.map((signal) => (
+                      <span key={signal} className="rounded-lg bg-cyan-300/15 px-2 py-1 text-xs font-black text-cyan-100">
+                        🧩 {signal}
+                      </span>
+                    ))
+                  ) : (
+                    <span className="rounded-lg bg-slate-300/15 px-2 py-1 text-xs font-black text-slate-100">
+                      ❓ Choisis des signaux communautaires
+                    </span>
+                  )}
                 </div>
 
                 <p className="mt-3 text-xs italic text-white/75">🤝 Memoire: {current.capsule}</p>
@@ -1240,19 +1261,6 @@ export default function EntrepreneurSmartScanTestPage() {
                       );
                     })}
                   </div>
-                </div>
-
-                <div className={`sticky bottom-2 z-10 ml-auto w-fit transition-all duration-300 ${qualifierStep >= 4 ? "opacity-100" : "opacity-35"}`}>
-                  <motion.div
-                    key={`gain-${livePotentialLabel}`}
-                    initial={{ scale: 0.92, opacity: 0.35, y: 12 }}
-                    animate={{ scale: [1, 1.04, 1], opacity: 1, y: 0 }}
-                    transition={{ duration: 0.55, ease: "easeOut" }}
-                    className={`rounded-2xl border bg-gradient-to-r px-4 py-3 text-center shadow-[0_18px_36px_-22px_rgba(16,185,129,0.8)] ${gainTone(livePotentialLabel)}`}
-                  >
-                    <p className="text-[11px] font-black uppercase tracking-[0.12em]">💰 Gain potentiel</p>
-                    <p className="mt-1 text-lg font-black">🔥 {livePotentialLabel}</p>
-                  </motion.div>
                 </div>
 
                 <div ref={saveSectionRef}>
