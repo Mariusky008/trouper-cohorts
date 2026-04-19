@@ -252,25 +252,32 @@ export default function EntrepreneurSmartScanTestPage() {
     [],
   );
   const adnPopey = useMemo(() => {
-    const entries = current.dominantTags.map((tag, idx) => ({
-      label: tag,
-      count: Math.max(1, current.communityKnownBy + 2 - idx * 2),
-    }));
     const qualified = qualifierStore[current.id];
-    if (qualified) {
-      const aggregateIds = [
-        qualified.businessChoice,
-        qualified.networkChoice,
-        ...qualified.communityTags,
-      ].filter(Boolean) as string[];
-      aggregateIds.forEach((tagId) => {
-        const mappedLabel = quickLabelMap[tagId];
-        const found = entries.find((entry) => entry.label === mappedLabel);
-        if (found) found.count += 1;
-        else if (mappedLabel) entries.push({ label: mappedLabel, count: 1 });
-      });
+    if (!qualified) {
+      return [{ label: "❓ A decouvrir", count: 1 }];
     }
-    return entries.sort((a, b) => b.count - a.count).slice(0, 3);
+
+    const aggregateIds = [
+      qualified.businessChoice,
+      qualified.networkChoice,
+      ...qualified.communityTags,
+    ].filter(Boolean) as string[];
+
+    const entries: Array<{ label: string; count: number }> = [];
+    aggregateIds.forEach((tagId, idx) => {
+      const mappedLabel = quickLabelMap[tagId];
+      if (!mappedLabel) return;
+      const found = entries.find((entry) => entry.label === mappedLabel);
+      if (found) {
+        found.count += 1;
+        return;
+      }
+      const socialWeight = Math.max(1, current.communityKnownBy - Math.floor(idx / 2));
+      entries.push({ label: mappedLabel, count: socialWeight });
+    });
+
+    if (entries.length === 0) return [{ label: "❓ A decouvrir", count: 1 }];
+    return entries.slice(0, 3);
   }, [current, qualifierStore, quickLabelMap]);
   const searchResults = CONTACTS.filter((contact) => `${contact.name} ${contact.city} ${contact.companyHint}`.toLowerCase().includes(searchQuery.toLowerCase().trim()));
   const template = useMemo(
