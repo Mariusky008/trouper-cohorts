@@ -727,13 +727,13 @@ export default function EntrepreneurSmartScanTestPage() {
 
   return (
     <main className="h-screen overflow-y-auto bg-[radial-gradient(circle_at_10%_0%,#10193D_0%,#0C122B_45%,#090B16_100%)] text-white">
-      <div className="mx-auto max-w-6xl px-4 py-3 sm:py-5 pb-20">
+      <div className="mx-auto max-w-6xl px-4 pt-14 sm:pt-5 pb-20">
         <div className="rounded-3xl border border-white/10 bg-white/5 p-3 backdrop-blur-xl">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <p className="text-xs font-black uppercase tracking-[0.12em] text-cyan-200">Smart Scan & Daily Action</p>
-              <h1 className="mt-1 text-lg sm:text-2xl font-black">Mini-Agence • Radar Quotidien</h1>
-              <p className="mt-0.5 text-[11px] text-white/70">{sentCount} messages envoyes aujourd hui • taux de reponse {responseRate}%</p>
+              <p className="text-xs font-black uppercase tracking-[0.12em] text-cyan-200">S18 SCAN</p>
+              <h1 className="mt-1 text-lg sm:text-2xl font-black">Ma Mini-Agence • MON Radar Quotidien</h1>
+              <p className="mt-0.5 text-[11px] text-white/70">{sentCount} messages envoyes aujourd hui</p>
             </div>
             <div className="flex items-center gap-2">
               <button
