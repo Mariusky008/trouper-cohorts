@@ -174,6 +174,7 @@ export default function EntrepreneurSmartScanTestPage() {
   const [selectedAction, setSelectedAction] = useState<DailyCategory | null>(null);
   const [draftMessage, setDraftMessage] = useState("");
   const [showTemplateModal, setShowTemplateModal] = useState(false);
+  const [launchingAction, setLaunchingAction] = useState<Exclude<DailyCategory, "passer" | "qualifier"> | null>(null);
   const [qualifierHeat, setQualifierHeat] = useState<HeatLevel>("tiede");
   const [qualifierTags, setQualifierTags] = useState<string[]>([]);
   const [qualifierStatus, setQualifierStatus] = useState<(typeof QUALIFIER_STATUS)[number]>("Prospect");
@@ -426,8 +427,20 @@ export default function EntrepreneurSmartScanTestPage() {
   }
 
   function triggerAction(action: DailyCategory) {
+    if (launchingAction) return;
     if (action === "passer") {
       finalizeAction(action);
+      return;
+    }
+    if (action === "eclaireur" || action === "package" || action === "exclients") {
+      setLaunchingAction(action);
+      setTimeout(() => {
+        setLaunchingAction(null);
+        const nextDraft = buildTemplate(action, current);
+        setSelectedAction(action);
+        setDraftMessage(nextDraft);
+        setShowTemplateModal(true);
+      }, 950);
       return;
     }
     const nextDraft = buildTemplate(action, current);
@@ -742,30 +755,84 @@ export default function EntrepreneurSmartScanTestPage() {
                   type="button"
                   onClick={() => triggerAction("eclaireur")}
                   disabled={!isQualified}
-                  className={`h-14 rounded-xl border border-amber-300/45 bg-gradient-to-r from-amber-400/45 to-orange-400/35 text-xs font-black uppercase tracking-wide text-amber-50 shadow-[0_18px_34px_-18px_rgba(251,191,36,0.95)] ${
+                  className={`relative overflow-hidden h-14 rounded-xl border border-amber-300/45 bg-gradient-to-r from-amber-400/45 to-orange-400/35 text-xs font-black uppercase tracking-wide text-amber-50 shadow-[0_18px_34px_-18px_rgba(251,191,36,0.95)] ${
                     isQualified && actionGlowContactId === current.id ? "animate-pulse ring-2 ring-amber-300/40" : ""
                   }`}
                 >
+                  {launchingAction === "eclaireur" && (
+                    <>
+                      <motion.span
+                        initial={{ opacity: 0.9, scale: 0.2 }}
+                        animate={{ opacity: 0, scale: 3.2 }}
+                        transition={{ duration: 0.85, ease: "easeOut" }}
+                        className="pointer-events-none absolute inset-0 rounded-xl bg-[radial-gradient(circle,rgba(254,240,138,0.75)_0%,rgba(251,191,36,0.25)_35%,transparent_70%)]"
+                      />
+                      <motion.span
+                        initial={{ opacity: 0, scale: 0.5 }}
+                        animate={{ opacity: [0, 1, 0], scale: [0.5, 1.2, 1.5] }}
+                        transition={{ duration: 0.9 }}
+                        className="pointer-events-none absolute inset-0 flex items-center justify-center text-base"
+                      >
+                        ✨💥
+                      </motion.span>
+                    </>
+                  )}
                   ✨ Eclaireur
                 </button>
                 <button
                   type="button"
                   onClick={() => triggerAction("package")}
                   disabled={!isQualified}
-                  className={`h-12 rounded-xl border border-fuchsia-300/35 bg-gradient-to-r from-violet-500/30 to-fuchsia-500/25 text-xs font-black uppercase tracking-wide text-fuchsia-100 ${
+                  className={`relative overflow-hidden h-12 rounded-xl border border-fuchsia-300/35 bg-gradient-to-r from-violet-500/30 to-fuchsia-500/25 text-xs font-black uppercase tracking-wide text-fuchsia-100 ${
                     isQualified && actionGlowContactId === current.id ? "animate-pulse ring-2 ring-fuchsia-300/35" : ""
                   }`}
                 >
+                  {launchingAction === "package" && (
+                    <>
+                      <motion.span
+                        initial={{ opacity: 0.9, scale: 0.2 }}
+                        animate={{ opacity: 0, scale: 3.2 }}
+                        transition={{ duration: 0.85, ease: "easeOut" }}
+                        className="pointer-events-none absolute inset-0 rounded-xl bg-[radial-gradient(circle,rgba(196,181,253,0.75)_0%,rgba(168,85,247,0.25)_35%,transparent_70%)]"
+                      />
+                      <motion.span
+                        initial={{ opacity: 0, scale: 0.5 }}
+                        animate={{ opacity: [0, 1, 0], scale: [0.5, 1.2, 1.5] }}
+                        transition={{ duration: 0.9 }}
+                        className="pointer-events-none absolute inset-0 flex items-center justify-center text-base"
+                      >
+                        ✨💥
+                      </motion.span>
+                    </>
+                  )}
                   🧩 Partage Croise
                 </button>
                 <button
                   type="button"
                   onClick={() => triggerAction("exclients")}
                   disabled={!isQualified}
-                  className={`h-11 rounded-xl border border-cyan-300/30 bg-cyan-500/12 text-[11px] font-black uppercase tracking-wide text-cyan-100 ${
+                  className={`relative overflow-hidden h-11 rounded-xl border border-cyan-300/30 bg-cyan-500/12 text-[11px] font-black uppercase tracking-wide text-cyan-100 ${
                     isQualified && actionGlowContactId === current.id ? "animate-pulse ring-2 ring-cyan-300/35" : ""
                   }`}
                 >
+                  {launchingAction === "exclients" && (
+                    <>
+                      <motion.span
+                        initial={{ opacity: 0.9, scale: 0.2 }}
+                        animate={{ opacity: 0, scale: 3.2 }}
+                        transition={{ duration: 0.85, ease: "easeOut" }}
+                        className="pointer-events-none absolute inset-0 rounded-xl bg-[radial-gradient(circle,rgba(103,232,249,0.75)_0%,rgba(34,211,238,0.25)_35%,transparent_70%)]"
+                      />
+                      <motion.span
+                        initial={{ opacity: 0, scale: 0.5 }}
+                        animate={{ opacity: [0, 1, 0], scale: [0.5, 1.2, 1.5] }}
+                        transition={{ duration: 0.9 }}
+                        className="pointer-events-none absolute inset-0 flex items-center justify-center text-base"
+                      >
+                        ✨💥
+                      </motion.span>
+                    </>
+                  )}
                   📣 Ex-Clients (News)
                 </button>
                 {!isQualified && (
