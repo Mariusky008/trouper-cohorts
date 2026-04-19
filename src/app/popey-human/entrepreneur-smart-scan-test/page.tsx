@@ -152,13 +152,13 @@ type HeatLevel = "froid" | "tiede" | "brulant";
 
 function buildTemplate(action: DailyCategory, contact: DailyContact) {
   if (action === "eclaireur") {
-    return `Salut ${contact.name.split(" ")[0]}, je monte une mini-agence avec un courtier et un notaire de confiance. On cherche des eclaireurs pour nous remonter des infos terrain contre partage. Ca te parle ?`;
+    return `Salut ${contact.name.split(" ")[0]}, je monte une mini-agence avec un courtier et un notaire de confiance. On cherche des eclaireurs pour nous remonter des opportunites terrain. En echange, on partage nos commissions : ca peut vite representer plusieurs centaines ou milliers d'euros pour une simple info. Ca te parle ?`;
   }
   if (action === "package") {
-    return `Bonjour ${contact.name.split(" ")[0]}, je travaille en synergie avec un expert en pret immobilier. Vu le marche actuel, il peut te faire gagner sur ton credit. Je te le presente ?`;
+    return `${contact.name.split(" ")[0]}, j'ai une info pour toi : le marche du credit bouge enfin. Je travaille en synergie avec un expert qui vient de faire gagner plusieurs milliers d'euros sur le cout total du credit d'un de nos clients communs. Je pense qu'il y a un coup a jouer pour toi. Je vous presente ?`;
   }
   if (action === "exclients") {
-    return `Hello ${contact.name.split(" ")[0]}, update secteur: les prix dans ton quartier ont bouge recemment. Si tu veux une actualisation rapide de ton estimation, je te l envoie.`;
+    return `Hello ${contact.name.split(" ")[0]}, petite update immo : ton quartier est devenu super demande ces dernieres semaines. On a des chiffres frais sur les dernieres ventes. Si tu veux voir l'impact sur la valeur de ta maison/appart, dis-le moi, je te fais un point rapide.`;
   }
   if (action === "qualifier") {
     return "Pas d envoi. Qualification communautaire uniquement.";
