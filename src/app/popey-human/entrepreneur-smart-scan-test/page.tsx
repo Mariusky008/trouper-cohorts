@@ -276,6 +276,7 @@ export default function EntrepreneurSmartScanTestPage() {
     networkChoice !== null ||
     communityTags.length > 0;
   const liveEstimatedGain = getEstimatedGain(businessChoice, networkChoice, communityTags);
+  const livePotentialLabel = businessChoice || networkChoice || communityTags.length > 0 ? liveEstimatedGain : "?";
 
   function adnBadgeClass(label: string) {
     const lower = label.toLowerCase();
@@ -381,6 +382,13 @@ export default function EntrepreneurSmartScanTestPage() {
     if (score <= 1) return "Faible";
     if (score <= 4) return "Moyen";
     return "Eleve";
+  }
+
+  function gainTone(label: "Faible" | "Moyen" | "Eleve" | "?") {
+    if (label === "Eleve") return "from-emerald-400/40 to-cyan-300/30 border-emerald-300/50 text-emerald-100";
+    if (label === "Moyen") return "from-amber-400/35 to-orange-300/30 border-amber-300/50 text-amber-100";
+    if (label === "Faible") return "from-slate-400/30 to-slate-500/20 border-slate-300/45 text-slate-100";
+    return "from-indigo-400/25 to-slate-400/20 border-indigo-200/40 text-indigo-100";
   }
 
   function createTransitionPayload(action: Exclude<DailyCategory, "qualifier">, mode: "sent" | "saved" = "sent") {
@@ -1170,14 +1178,18 @@ export default function EntrepreneurSmartScanTestPage() {
                   </div>
                 </div>
 
-                <motion.div
-                  animate={{ scale: [1, 1.02, 1], opacity: [0.92, 1, 0.92] }}
-                  transition={{ duration: 1.2, repeat: Infinity, ease: "easeInOut" }}
-                  className="rounded-2xl border border-emerald-300/35 bg-emerald-400/15 px-3 py-3 text-center shadow-[0_18px_36px_-22px_rgba(16,185,129,0.8)]"
-                >
-                  <p className="text-xs font-black uppercase tracking-[0.12em] text-emerald-100">💰 Gain estime</p>
-                  <p className="mt-1 text-lg font-black text-emerald-50">🔥 {liveEstimatedGain}</p>
-                </motion.div>
+                <div className="sticky bottom-2 z-10 ml-auto w-fit">
+                  <motion.div
+                    key={`gain-${livePotentialLabel}`}
+                    initial={{ scale: 0.92, opacity: 0.35, y: 12 }}
+                    animate={{ scale: [1, 1.04, 1], opacity: 1, y: 0 }}
+                    transition={{ duration: 0.55, ease: "easeOut" }}
+                    className={`rounded-2xl border bg-gradient-to-r px-4 py-3 text-center shadow-[0_18px_36px_-22px_rgba(16,185,129,0.8)] ${gainTone(livePotentialLabel)}`}
+                  >
+                    <p className="text-[11px] font-black uppercase tracking-[0.12em]">💰 Gain potentiel</p>
+                    <p className="mt-1 text-lg font-black">🔥 {livePotentialLabel}</p>
+                  </motion.div>
+                </div>
 
                 <button
                   type="button"
