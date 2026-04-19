@@ -17,10 +17,10 @@ type DailyContact = {
 };
 type QualifierData = {
   heat: HeatLevel;
-  status: (typeof QUALIFIER_STATUS)[number];
-  tags: string[];
-  customTags: string[];
-  note: string;
+  businessChoice: (typeof BUSINESS_OPTIONS)[number]["id"] | null;
+  networkChoice: (typeof NETWORK_OPTIONS)[number]["id"] | null;
+  communityTags: Array<(typeof COMMUNITY_OPTIONS)[number]["id"]>;
+  estimatedGain: "Faible" | "Moyen" | "Eleve";
 };
 type HistoryEntry = {
   contactId: string;
@@ -134,20 +134,27 @@ const CONTACTS: DailyContact[] = [
   },
 ];
 
-const QUALIFIER_TAGS = [
-  { id: "connecteur", label: "🤝 Connecteur", count: 5 },
-  { id: "decideur", label: "📈 Decideur", count: 3 },
-  { id: "gros-budget", label: "💰 Gros Budget", count: 2 },
-  { id: "expert", label: "🧠 Expert", count: 2 },
-  { id: "prescripteur", label: "🔥 Prescripteur", count: 3 },
-  { id: "institutionnel", label: "🏢 Institutionnel", count: 1 },
-  { id: "early", label: "🚀 Early Adopter", count: 2 },
-  { id: "influenceur", label: "📢 Influenceur", count: 2 },
-  { id: "operationnel", label: "🛠️ Operationnel", count: 2 },
-  { id: "partenaire", label: "💼 Partenaire", count: 2 },
-  { id: "inconnu", label: "❓ Inconnu", count: 1 },
+const BUSINESS_OPTIONS = [
+  { id: "can-buy", label: "💸 Peut acheter", score: 2 },
+  { id: "ideal-client", label: "🎯 Client ideal", score: 3 },
+  { id: "identified-need", label: "� Besoin identifie", score: 2 },
+  { id: "no-potential", label: "🚫 Aucun potentiel", score: 0 },
 ] as const;
-const QUALIFIER_STATUS = ["Prospect", "Partenaire", "Ami"] as const;
+const NETWORK_OPTIONS = [
+  { id: "can-refer", label: "� Peut recommander", score: 2 },
+  { id: "opens-doors", label: "🚪 Ouvre des portes", score: 3 },
+  { id: "target-access", label: "� Acces a une cible", score: 2 },
+  { id: "no-lever", label: "❌ Aucun levier", score: 0 },
+] as const;
+const COMMUNITY_OPTIONS = [
+  { id: "serious-work", label: "� Travail serieux", score: 1 },
+  { id: "high-budget", label: "� Gere des budgets eleves", score: 2 },
+  { id: "fast-reply", label: "⚡ Reactif / repond vite", score: 1 },
+  { id: "slow-decider", label: "🐢 Long a decider", score: -1 },
+  { id: "hard-close", label: "🚫 Difficile a closer", score: -2 },
+  { id: "reliable-partner", label: "🤝 Fiable / bon partenaire", score: 1 },
+  { id: "avoid", label: "⚠️ A eviter / complique", score: -3 },
+] as const;
 type HeatLevel = "froid" | "tiede" | "brulant";
 
 function buildTemplate(action: DailyCategory, contact: DailyContact) {
@@ -176,11 +183,9 @@ export default function EntrepreneurSmartScanTestPage() {
   const [showTemplateModal, setShowTemplateModal] = useState(false);
   const [launchingAction, setLaunchingAction] = useState<Exclude<DailyCategory, "passer" | "qualifier"> | null>(null);
   const [qualifierHeat, setQualifierHeat] = useState<HeatLevel>("tiede");
-  const [qualifierTags, setQualifierTags] = useState<string[]>([]);
-  const [qualifierStatus, setQualifierStatus] = useState<(typeof QUALIFIER_STATUS)[number]>("Prospect");
-  const [qualifierNote, setQualifierNote] = useState("");
-  const [customTagInput, setCustomTagInput] = useState("");
-  const [customTags, setCustomTags] = useState<string[]>([]);
+  const [businessChoice, setBusinessChoice] = useState<(typeof BUSINESS_OPTIONS)[number]["id"] | null>(null);
+  const [networkChoice, setNetworkChoice] = useState<(typeof NETWORK_OPTIONS)[number]["id"] | null>(null);
+  const [communityTags, setCommunityTags] = useState<Array<(typeof COMMUNITY_OPTIONS)[number]["id"]>>([]);
   const [sentCount, setSentCount] = useState(4);
   const [responseRate] = useState(38);
   const [showReward, setShowReward] = useState(false);
@@ -231,8 +236,12 @@ export default function EntrepreneurSmartScanTestPage() {
   const dominantTheme = current.dominantTags[0]?.replace(/[^\p{L}\s]/gu, "").trim() || "son reseau";
   const fusedInsight = `${current.name.split(" ")[0]} montre un interet fort pour ${dominantTheme.toLowerCase()} cette semaine, ${current.capsule.toLowerCase()}.`;
   const isQualified = Boolean(qualifierStore[current.id]);
-  const qualifierTagLabelMap = useMemo(
-    () => Object.fromEntries(QUALIFIER_TAGS.map((tag) => [tag.id, tag.label])),
+  const currentEstimatedGain = qualifierStore[current.id]?.estimatedGain ?? null;
+  const quickLabelMap = useMemo(
+    () =>
+      Object.fromEntries(
+        [...BUSINESS_OPTIONS, ...NETWORK_OPTIONS, ...COMMUNITY_OPTIONS].map((item) => [item.id, item.label]),
+      ),
     [],
   );
   const adnPopey = useMemo(() => {
@@ -242,19 +251,20 @@ export default function EntrepreneurSmartScanTestPage() {
     }));
     const qualified = qualifierStore[current.id];
     if (qualified) {
-      qualified.tags.forEach((tagId) => {
-        const found = entries.find((entry) => entry.label === qualifierTagLabelMap[tagId]);
+      const aggregateIds = [
+        qualified.businessChoice,
+        qualified.networkChoice,
+        ...qualified.communityTags,
+      ].filter(Boolean) as string[];
+      aggregateIds.forEach((tagId) => {
+        const mappedLabel = quickLabelMap[tagId];
+        const found = entries.find((entry) => entry.label === mappedLabel);
         if (found) found.count += 1;
-        else if (qualifierTagLabelMap[tagId]) entries.push({ label: qualifierTagLabelMap[tagId], count: 1 });
-      });
-      qualified.customTags.forEach((tag) => {
-        const found = entries.find((entry) => entry.label === tag);
-        if (found) found.count += 1;
-        else entries.push({ label: tag, count: 1 });
+        else if (mappedLabel) entries.push({ label: mappedLabel, count: 1 });
       });
     }
     return entries.sort((a, b) => b.count - a.count).slice(0, 3);
-  }, [current, qualifierStore, qualifierTagLabelMap]);
+  }, [current, qualifierStore, quickLabelMap]);
   const searchResults = CONTACTS.filter((contact) => `${contact.name} ${contact.city} ${contact.companyHint}`.toLowerCase().includes(searchQuery.toLowerCase().trim()));
   const template = useMemo(
     () => (selectedAction ? buildTemplate(selectedAction, current) : "Choisis une action pour voir le template pre-rempli."),
@@ -262,17 +272,10 @@ export default function EntrepreneurSmartScanTestPage() {
   );
   const qualifierChanged =
     qualifierHeat !== "tiede" ||
-    qualifierStatus !== "Prospect" ||
-    qualifierTags.length > 0 ||
-    customTags.length > 0 ||
-    qualifierNote.trim().length > 0;
-
-  function tagPalette(tagId: string, active: boolean) {
-    if (tagId === "inconnu") return active ? "bg-slate-300 text-slate-900" : "bg-slate-100 text-slate-700";
-    if (["decideur", "gros-budget", "institutionnel"].includes(tagId)) return active ? "bg-blue-300 text-blue-950" : "bg-blue-100 text-blue-900";
-    if (["connecteur", "influenceur", "prescripteur"].includes(tagId)) return active ? "bg-violet-300 text-violet-950" : "bg-violet-100 text-violet-900";
-    return active ? "bg-emerald-300 text-emerald-950" : "bg-emerald-100 text-emerald-900";
-  }
+    businessChoice !== null ||
+    networkChoice !== null ||
+    communityTags.length > 0;
+  const liveEstimatedGain = getEstimatedGain(businessChoice, networkChoice, communityTags);
 
   function adnBadgeClass(label: string) {
     const lower = label.toLowerCase();
@@ -303,11 +306,9 @@ export default function EntrepreneurSmartScanTestPage() {
     if (qualifierStore[current.id]) return;
     setSelectedAction("qualifier");
     setQualifierHeat("tiede");
-    setQualifierStatus("Prospect");
-    setQualifierNote("");
-    setCustomTagInput("");
-    setCustomTags([]);
-    setQualifierTags([]);
+    setBusinessChoice(null);
+    setNetworkChoice(null);
+    setCommunityTags([]);
     setShowTemplateModal(true);
   }, [stage, current.id, qualifierStore, showTemplateModal]);
 
@@ -365,6 +366,23 @@ export default function EntrepreneurSmartScanTestPage() {
     return "Passer";
   }
 
+  function getEstimatedGain(
+    business: (typeof BUSINESS_OPTIONS)[number]["id"] | null,
+    network: (typeof NETWORK_OPTIONS)[number]["id"] | null,
+    community: Array<(typeof COMMUNITY_OPTIONS)[number]["id"]>,
+  ): "Faible" | "Moyen" | "Eleve" {
+    const businessScore = BUSINESS_OPTIONS.find((option) => option.id === business)?.score ?? 0;
+    const networkScore = NETWORK_OPTIONS.find((option) => option.id === network)?.score ?? 0;
+    const communityScore = community.reduce(
+      (sum, id) => sum + (COMMUNITY_OPTIONS.find((option) => option.id === id)?.score ?? 0),
+      0,
+    );
+    const score = businessScore + networkScore + communityScore;
+    if (score <= 1) return "Faible";
+    if (score <= 4) return "Moyen";
+    return "Eleve";
+  }
+
   function createTransitionPayload(action: Exclude<DailyCategory, "qualifier">, mode: "sent" | "saved" = "sent") {
     const nextStep = Math.min(10, done + 1);
     const points = action === "eclaireur" ? 5 : action === "package" ? 4 : action === "exclients" ? 3 : 1;
@@ -407,15 +425,18 @@ export default function EntrepreneurSmartScanTestPage() {
     setTimeout(() => setSuccessPulse(false), 450);
     setTimeout(() => {
       const now = new Date();
+      const currentQualifier = qualifierStore[current.id];
+      const summaryBusiness = currentQualifier?.businessChoice ? quickLabelMap[currentQualifier.businessChoice] : "";
+      const summaryNetwork = currentQualifier?.networkChoice ? quickLabelMap[currentQualifier.networkChoice] : "";
+      const summaryCommunity = (currentQualifier?.communityTags ?? []).map((id) => quickLabelMap[id]).slice(0, 1);
       setHistoryEntries((prev) => [
         {
           contactId: current.id,
           name: current.name,
           action,
           at: `${now.getHours().toString().padStart(2, "0")}:${now.getMinutes().toString().padStart(2, "0")}`,
-          tagsSummary: (qualifierStore[current.id]?.tags ?? [])
-            .map((tagId) => qualifierTagLabelMap[tagId] ?? tagId)
-            .slice(0, 2)
+          tagsSummary: [summaryBusiness, summaryNetwork, ...summaryCommunity]
+            .filter(Boolean)
             .join(" • "),
           sent: sentInHistory,
         },
@@ -447,14 +468,9 @@ export default function EntrepreneurSmartScanTestPage() {
     setSelectedAction(action);
     if (action === "qualifier") {
       setQualifierHeat("tiede");
-      setQualifierStatus("Prospect");
-      setQualifierNote("");
-      setCustomTagInput("");
-      setCustomTags([]);
-      const preselected = QUALIFIER_TAGS.filter((tag) =>
-        current.dominantTags.some((dominant) => dominant.toLowerCase().includes(tag.id.replace("-", " "))),
-      ).map((tag) => tag.id);
-      setQualifierTags(preselected);
+      setBusinessChoice(null);
+      setNetworkChoice(null);
+      setCommunityTags([]);
       setDraftMessage("");
     } else {
       setDraftMessage(nextDraft);
@@ -486,19 +502,21 @@ export default function EntrepreneurSmartScanTestPage() {
 
   function saveQualifierAndReturn() {
     const primaryTag =
-      (qualifierTags[0] ? qualifierTagLabelMap[qualifierTags[0]] : undefined) ??
-      (customTags[0] ? customTags[0] : undefined) ??
+      (businessChoice ? quickLabelMap[businessChoice] : undefined) ??
+      (networkChoice ? quickLabelMap[networkChoice] : undefined) ??
+      (communityTags[0] ? quickLabelMap[communityTags[0]] : undefined) ??
       "❓ Inconnu";
     const firstName = current.name.split(" ")[0];
+    const estimatedGain = getEstimatedGain(businessChoice, networkChoice, communityTags);
 
     setQualifierStore((prev) => ({
       ...prev,
       [current.id]: {
         heat: qualifierHeat,
-        status: qualifierStatus,
-        tags: qualifierTags,
-        customTags,
-        note: qualifierNote.trim(),
+        businessChoice,
+        networkChoice,
+        communityTags,
+        estimatedGain,
       },
     }));
     setShowTemplateModal(false);
@@ -512,10 +530,10 @@ export default function EntrepreneurSmartScanTestPage() {
       ...prev,
       [current.id]: {
         heat: "tiede",
-        status: "Prospect",
-        tags: [],
-        customTags: [],
-        note: "",
+        businessChoice: null,
+        networkChoice: null,
+        communityTags: [],
+        estimatedGain: "Faible",
       },
     }));
     setShowTemplateModal(false);
@@ -718,6 +736,15 @@ export default function EntrepreneurSmartScanTestPage() {
                 </div>
                 <p className="mt-2 text-2xl sm:text-3xl font-black">{current.name}</p>
                 <p className="text-xs sm:text-sm text-white/70">{current.companyHint} • {current.city}</p>
+                {currentEstimatedGain && (
+                  <motion.div
+                    animate={{ opacity: [0.75, 1, 0.75] }}
+                    transition={{ duration: 1.3, repeat: Infinity, ease: "easeInOut" }}
+                    className="mt-1 inline-flex items-center rounded-full border border-emerald-300/40 bg-emerald-400/18 px-2.5 py-1 text-[11px] font-black text-emerald-100"
+                  >
+                    💰 Gain estime: 🔥 {currentEstimatedGain}
+                  </motion.div>
+                )}
                 <div className="mt-1.5 inline-flex items-center rounded-full border border-orange-300/35 bg-orange-300/10 px-3 py-1 text-[10px] font-black text-orange-100">
                   🌡 Score de chaleur: {heatScore}% • {heatLabel}
                 </div>
@@ -1083,72 +1110,74 @@ export default function EntrepreneurSmartScanTestPage() {
                 </div>
 
                 <div className="rounded-2xl border border-white/15 bg-black/25 p-3">
-                  <p className="text-[11px] font-black uppercase tracking-[0.12em] text-white/70">Tags de contribution</p>
+                  <p className="text-[11px] font-black uppercase tracking-[0.12em] text-white/70">💰 Business - 1 choix</p>
+                  <p className="mt-1 text-xs text-white/70">Est-ce que ca peut me rapporter de l argent ?</p>
+                  <div className="mt-2 grid grid-cols-2 gap-2">
+                    {BUSINESS_OPTIONS.map((option) => (
+                      <button
+                        key={option.id}
+                        type="button"
+                        onClick={() => setBusinessChoice(option.id)}
+                        className={`h-10 rounded-xl px-2 text-[11px] font-black ${
+                          businessChoice === option.id ? "bg-emerald-300 text-emerald-950 ring-2 ring-emerald-200/70" : "bg-white/10 text-white/85"
+                        }`}
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="rounded-2xl border border-white/15 bg-black/25 p-3">
+                  <p className="text-[11px] font-black uppercase tracking-[0.12em] text-white/70">🤝 Reseau - 1 choix</p>
+                  <p className="mt-1 text-xs text-white/70">Est-ce qu il peut m apporter quelqu un ?</p>
+                  <div className="mt-2 grid grid-cols-2 gap-2">
+                    {NETWORK_OPTIONS.map((option) => (
+                      <button
+                        key={option.id}
+                        type="button"
+                        onClick={() => setNetworkChoice(option.id)}
+                        className={`h-10 rounded-xl px-2 text-[11px] font-black ${
+                          networkChoice === option.id ? "bg-cyan-300 text-cyan-950 ring-2 ring-cyan-200/70" : "bg-white/10 text-white/85"
+                        }`}
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="rounded-2xl border border-white/15 bg-black/25 p-3">
+                  <p className="text-[11px] font-black uppercase tracking-[0.12em] text-white/70">⚡ Contributions rapides - multi</p>
                   <div className="mt-2 flex flex-wrap gap-2">
-                    {QUALIFIER_TAGS.map((tag) => {
-                      const active = qualifierTags.includes(tag.id);
+                    {COMMUNITY_OPTIONS.map((option) => {
+                      const active = communityTags.includes(option.id);
                       return (
                         <button
-                          key={tag.id}
+                          key={option.id}
                           type="button"
                           onClick={() =>
-                            setQualifierTags((prev) => (prev.includes(tag.id) ? prev.filter((item) => item !== tag.id) : [...prev, tag.id]))
+                            setCommunityTags((prev) => (prev.includes(option.id) ? prev.filter((id) => id !== option.id) : [...prev, option.id]))
                           }
                           className={`rounded-full px-3 py-2 text-[11px] font-black transition ${
-                            active
-                              ? `${tagPalette(tag.id, true)} scale-[1.05] ring-4 ring-emerald-300/55 shadow-[0_14px_30px_-14px_rgba(16,185,129,0.95)]`
-                              : tagPalette(tag.id, false)
+                            active ? "bg-violet-300 text-violet-950 ring-2 ring-violet-200/70" : "bg-white/85 text-[#1B1F34]"
                           }`}
                         >
-                          {active ? "✅ " : ""}{tag.label} ({tag.count})
+                          {active ? "✅ " : ""}{option.label}
                         </button>
                       );
                     })}
                   </div>
-                  <div className="mt-2 flex gap-2">
-                    <input
-                      value={customTagInput}
-                      onChange={(event) => setCustomTagInput(event.target.value)}
-                      placeholder="Ajouter un tag custom"
-                      className="h-9 w-full rounded-xl border border-white/15 bg-black/25 px-3 text-xs"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const value = customTagInput.trim();
-                        if (!value) return;
-                        setCustomTags((prev) => (prev.includes(value) ? prev : [...prev, value]));
-                        setCustomTagInput("");
-                      }}
-                      className="h-9 rounded-xl border border-fuchsia-300/35 bg-fuchsia-500/15 px-3 text-xs font-black"
-                    >
-                      ＋
-                    </button>
-                  </div>
-                  {customTags.length > 0 && <p className="mt-2 text-xs text-fuchsia-100">Custom: {customTags.join(" • ")}</p>}
                 </div>
 
-                <div className="rounded-2xl border border-white/15 bg-black/25 p-3">
-                  <p className="text-[11px] font-black uppercase tracking-[0.12em] text-white/70">Statut relation</p>
-                  <div className="mt-2 grid grid-cols-3 gap-2">
-                    {QUALIFIER_STATUS.map((status) => (
-                      <button
-                        key={status}
-                        type="button"
-                        onClick={() => setQualifierStatus(status)}
-                        className={`h-9 rounded-xl text-xs font-black ${qualifierStatus === status ? "bg-cyan-300 text-[#15243A]" : "bg-white/10 text-white/80"}`}
-                      >
-                        {status}
-                      </button>
-                    ))}
-                  </div>
-                  <input
-                    value={qualifierNote}
-                    onChange={(event) => setQualifierNote(event.target.value)}
-                    placeholder="Ajouter une info cle..."
-                    className="mt-2 h-9 w-full rounded-xl border border-white/15 bg-black/25 px-3 text-xs"
-                  />
-                </div>
+                <motion.div
+                  animate={{ scale: [1, 1.02, 1], opacity: [0.92, 1, 0.92] }}
+                  transition={{ duration: 1.2, repeat: Infinity, ease: "easeInOut" }}
+                  className="rounded-2xl border border-emerald-300/35 bg-emerald-400/15 px-3 py-3 text-center shadow-[0_18px_36px_-22px_rgba(16,185,129,0.8)]"
+                >
+                  <p className="text-xs font-black uppercase tracking-[0.12em] text-emerald-100">💰 Gain estime</p>
+                  <p className="mt-1 text-lg font-black text-emerald-50">🔥 {liveEstimatedGain}</p>
+                </motion.div>
 
                 <button
                   type="button"
