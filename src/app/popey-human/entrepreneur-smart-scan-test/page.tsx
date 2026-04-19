@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 type DailyCategory = "passer" | "eclaireur" | "package" | "exclients" | "qualifier";
 
@@ -137,7 +137,7 @@ const CONTACTS: DailyContact[] = [
 const BUSINESS_OPTIONS = [
   { id: "can-buy", label: "💸 Peut acheter", score: 2 },
   { id: "ideal-client", label: "🎯 Client ideal", score: 3 },
-  { id: "identified-need", label: "� Besoin identifie", score: 2 },
+  { id: "identified-need", label: "🔥 Besoin à identifier", score: 2 },
   { id: "no-potential", label: "🚫 Aucun potentiel", score: 0 },
 ] as const;
 const NETWORK_OPTIONS = [
@@ -154,6 +154,7 @@ const COMMUNITY_OPTIONS = [
   { id: "hard-close", label: "🚫 Difficile a closer", score: -2 },
   { id: "reliable-partner", label: "🤝 Fiable / bon partenaire", score: 1 },
   { id: "avoid", label: "⚠️ A eviter / complique", score: -3 },
+  { id: "unknown", label: "❓ Inconnu / a decouvrir", score: 0 },
 ] as const;
 type HeatLevel = "froid" | "tiede" | "brulant";
 
@@ -183,9 +184,15 @@ export default function EntrepreneurSmartScanTestPage() {
   const [showTemplateModal, setShowTemplateModal] = useState(false);
   const [launchingAction, setLaunchingAction] = useState<Exclude<DailyCategory, "passer" | "qualifier"> | null>(null);
   const [qualifierHeat, setQualifierHeat] = useState<HeatLevel>("tiede");
+  const [hasChosenHeat, setHasChosenHeat] = useState(false);
+  const [qualifierStep, setQualifierStep] = useState<1 | 2 | 3 | 4>(1);
   const [businessChoice, setBusinessChoice] = useState<(typeof BUSINESS_OPTIONS)[number]["id"] | null>(null);
   const [networkChoice, setNetworkChoice] = useState<(typeof NETWORK_OPTIONS)[number]["id"] | null>(null);
   const [communityTags, setCommunityTags] = useState<Array<(typeof COMMUNITY_OPTIONS)[number]["id"]>>([]);
+  const businessSectionRef = useRef<HTMLDivElement | null>(null);
+  const networkSectionRef = useRef<HTMLDivElement | null>(null);
+  const communitySectionRef = useRef<HTMLDivElement | null>(null);
+  const saveSectionRef = useRef<HTMLDivElement | null>(null);
   const [sentCount, setSentCount] = useState(4);
   const [responseRate] = useState(38);
   const [showReward, setShowReward] = useState(false);
@@ -277,6 +284,7 @@ export default function EntrepreneurSmartScanTestPage() {
     communityTags.length > 0;
   const liveEstimatedGain = getEstimatedGain(businessChoice, networkChoice, communityTags);
   const livePotentialLabel = businessChoice || networkChoice || communityTags.length > 0 ? liveEstimatedGain : "?";
+  const canSaveQualifier = hasChosenHeat && businessChoice !== null && networkChoice !== null && communityTags.length > 0;
 
   function adnBadgeClass(label: string) {
     const lower = label.toLowerCase();
@@ -307,6 +315,8 @@ export default function EntrepreneurSmartScanTestPage() {
     if (qualifierStore[current.id]) return;
     setSelectedAction("qualifier");
     setQualifierHeat("tiede");
+    setHasChosenHeat(false);
+    setQualifierStep(1);
     setBusinessChoice(null);
     setNetworkChoice(null);
     setCommunityTags([]);
@@ -365,6 +375,10 @@ export default function EntrepreneurSmartScanTestPage() {
     if (action === "package") return "Partage Croise";
     if (action === "exclients") return "Ex-Clients";
     return "Passer";
+  }
+
+  function scrollIntoViewSmooth(ref: React.RefObject<HTMLDivElement | null>) {
+    ref.current?.scrollIntoView({ behavior: "smooth", block: "center" });
   }
 
   function getEstimatedGain(
@@ -476,6 +490,8 @@ export default function EntrepreneurSmartScanTestPage() {
     setSelectedAction(action);
     if (action === "qualifier") {
       setQualifierHeat("tiede");
+      setHasChosenHeat(false);
+      setQualifierStep(1);
       setBusinessChoice(null);
       setNetworkChoice(null);
       setCommunityTags([]);
@@ -549,6 +565,12 @@ export default function EntrepreneurSmartScanTestPage() {
     setSoftLearningHint("Profil peu renseigne: sois le premier a le qualifier !");
     setTimeout(() => setSoftLearningHint(""), 2200);
   }
+
+  useEffect(() => {
+    if (qualifierStep === 4 && canSaveQualifier) {
+      scrollIntoViewSmooth(saveSectionRef);
+    }
+  }, [qualifierStep, canSaveQualifier]);
 
   function setLastRewardForQualifier() {
     setShowReward(true);
@@ -1095,21 +1117,42 @@ export default function EntrepreneurSmartScanTestPage() {
                   <div className="mt-2 grid grid-cols-3 gap-2">
                     <button
                       type="button"
-                      onClick={() => setQualifierHeat("froid")}
+                      onClick={() => {
+                        setQualifierHeat("froid");
+                        if (!hasChosenHeat) {
+                          setHasChosenHeat(true);
+                          setQualifierStep(2);
+                          setTimeout(() => scrollIntoViewSmooth(businessSectionRef), 180);
+                        }
+                      }}
                       className={`h-11 rounded-xl text-sm font-black ${qualifierHeat === "froid" ? "bg-cyan-300 text-[#13253D] ring-2 ring-cyan-200/60" : "bg-white/10 text-white/80"}`}
                     >
                       ❄️ Froid
                     </button>
                     <button
                       type="button"
-                      onClick={() => setQualifierHeat("tiede")}
+                      onClick={() => {
+                        setQualifierHeat("tiede");
+                        if (!hasChosenHeat) {
+                          setHasChosenHeat(true);
+                          setQualifierStep(2);
+                          setTimeout(() => scrollIntoViewSmooth(businessSectionRef), 180);
+                        }
+                      }}
                       className={`h-11 rounded-xl text-sm font-black ${qualifierHeat === "tiede" ? "bg-amber-300 text-[#2C230E] ring-2 ring-amber-200/60" : "bg-white/10 text-white/80"}`}
                     >
                       ⚡ Tiede
                     </button>
                     <button
                       type="button"
-                      onClick={() => setQualifierHeat("brulant")}
+                      onClick={() => {
+                        setQualifierHeat("brulant");
+                        if (!hasChosenHeat) {
+                          setHasChosenHeat(true);
+                          setQualifierStep(2);
+                          setTimeout(() => scrollIntoViewSmooth(businessSectionRef), 180);
+                        }
+                      }}
                       className={`h-11 rounded-xl text-sm font-black ${qualifierHeat === "brulant" ? "bg-orange-400 text-[#321A0E] ring-2 ring-orange-200/60" : "bg-white/10 text-white/80"}`}
                     >
                       🔥 Brulant
@@ -1117,7 +1160,10 @@ export default function EntrepreneurSmartScanTestPage() {
                   </div>
                 </div>
 
-                <div className="rounded-2xl border border-white/15 bg-black/25 p-3">
+                <div
+                  ref={businessSectionRef}
+                  className={`rounded-2xl border border-white/15 bg-black/25 p-3 transition-all duration-300 ${qualifierStep >= 2 ? "opacity-100" : "opacity-35 pointer-events-none"}`}
+                >
                   <p className="text-[11px] font-black uppercase tracking-[0.12em] text-white/70">💰 Business - 1 choix</p>
                   <p className="mt-1 text-xs text-white/70">Est-ce que ca peut me rapporter de l argent ?</p>
                   <div className="mt-2 grid grid-cols-2 gap-2">
@@ -1125,7 +1171,13 @@ export default function EntrepreneurSmartScanTestPage() {
                       <button
                         key={option.id}
                         type="button"
-                        onClick={() => setBusinessChoice(option.id)}
+                        onClick={() => {
+                          setBusinessChoice(option.id);
+                          if (qualifierStep < 3) {
+                            setQualifierStep(3);
+                            setTimeout(() => scrollIntoViewSmooth(networkSectionRef), 180);
+                          }
+                        }}
                         className={`h-10 rounded-xl px-2 text-[11px] font-black ${
                           businessChoice === option.id ? "bg-emerald-300 text-emerald-950 ring-2 ring-emerald-200/70" : "bg-white/10 text-white/85"
                         }`}
@@ -1136,7 +1188,10 @@ export default function EntrepreneurSmartScanTestPage() {
                   </div>
                 </div>
 
-                <div className="rounded-2xl border border-white/15 bg-black/25 p-3">
+                <div
+                  ref={networkSectionRef}
+                  className={`rounded-2xl border border-white/15 bg-black/25 p-3 transition-all duration-300 ${qualifierStep >= 3 ? "opacity-100" : "opacity-35 pointer-events-none"}`}
+                >
                   <p className="text-[11px] font-black uppercase tracking-[0.12em] text-white/70">🤝 Reseau - 1 choix</p>
                   <p className="mt-1 text-xs text-white/70">Est-ce qu il peut m apporter quelqu un ?</p>
                   <div className="mt-2 grid grid-cols-2 gap-2">
@@ -1144,7 +1199,13 @@ export default function EntrepreneurSmartScanTestPage() {
                       <button
                         key={option.id}
                         type="button"
-                        onClick={() => setNetworkChoice(option.id)}
+                        onClick={() => {
+                          setNetworkChoice(option.id);
+                          if (qualifierStep < 4) {
+                            setQualifierStep(4);
+                            setTimeout(() => scrollIntoViewSmooth(communitySectionRef), 180);
+                          }
+                        }}
                         className={`h-10 rounded-xl px-2 text-[11px] font-black ${
                           networkChoice === option.id ? "bg-cyan-300 text-cyan-950 ring-2 ring-cyan-200/70" : "bg-white/10 text-white/85"
                         }`}
@@ -1155,7 +1216,10 @@ export default function EntrepreneurSmartScanTestPage() {
                   </div>
                 </div>
 
-                <div className="rounded-2xl border border-white/15 bg-black/25 p-3">
+                <div
+                  ref={communitySectionRef}
+                  className={`rounded-2xl border border-white/15 bg-black/25 p-3 transition-all duration-300 ${qualifierStep >= 4 ? "opacity-100" : "opacity-35 pointer-events-none"}`}
+                >
                   <p className="text-[11px] font-black uppercase tracking-[0.12em] text-white/70">⚡ Contributions rapides - multi</p>
                   <div className="mt-2 flex flex-wrap gap-2">
                     {COMMUNITY_OPTIONS.map((option) => {
@@ -1178,7 +1242,7 @@ export default function EntrepreneurSmartScanTestPage() {
                   </div>
                 </div>
 
-                <div className="sticky bottom-2 z-10 ml-auto w-fit">
+                <div className={`sticky bottom-2 z-10 ml-auto w-fit transition-all duration-300 ${qualifierStep >= 4 ? "opacity-100" : "opacity-35"}`}>
                   <motion.div
                     key={`gain-${livePotentialLabel}`}
                     initial={{ scale: 0.92, opacity: 0.35, y: 12 }}
@@ -1191,17 +1255,19 @@ export default function EntrepreneurSmartScanTestPage() {
                   </motion.div>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowTemplateModal(false);
-                    saveQualifierAndReturn();
-                  }}
-                  disabled={!qualifierChanged}
-                  className="h-11 w-full rounded-xl bg-gradient-to-r from-emerald-400 to-emerald-300 text-xs font-black uppercase tracking-wide text-[#11252C] disabled:opacity-40"
-                >
-                  Enregistrer la fiche
-                </button>
+                <div ref={saveSectionRef}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowTemplateModal(false);
+                      saveQualifierAndReturn();
+                    }}
+                    disabled={!canSaveQualifier}
+                    className="h-11 w-full rounded-xl bg-gradient-to-r from-emerald-400 to-emerald-300 text-xs font-black uppercase tracking-wide text-[#11252C] disabled:opacity-35"
+                  >
+                    Enregistrer la fiche
+                  </button>
+                </div>
                 <button
                   type="button"
                   onClick={skipQualifierUnknown}
