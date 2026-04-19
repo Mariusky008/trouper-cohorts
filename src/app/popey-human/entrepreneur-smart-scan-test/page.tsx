@@ -745,86 +745,41 @@ export default function EntrepreneurSmartScanTestPage() {
               transition={{ duration: 0.25 }}
               className="relative mt-2 rounded-[30px] bg-white/10 p-3 sm:p-4 shadow-[0_30px_70px_-40px_rgba(0,0,0,0.9)] backdrop-blur-2xl"
             >
-              <button
-                type="button"
-                onClick={() => toggleFavorite(current.id)}
-                className={`absolute left-3 top-3 h-9 w-9 rounded-full border text-sm font-black ${
-                  favoriteIds.includes(current.id) ? "border-amber-300/45 bg-amber-300/25 text-amber-100" : "border-white/20 bg-black/30 text-white/80"
-                }`}
-                aria-label="Favori"
-              >
-                ★
-              </button>
-              <button
-                type="button"
-                onClick={() => triggerAction("passer")}
-                className="absolute right-3 top-3 h-9 w-9 rounded-full border border-white/20 bg-black/30 text-sm font-black text-white/80"
-                aria-label="Passer"
-              >
-                ✕
-              </button>
-
-              <div className="flex flex-col items-center text-center">
+              <div className="flex items-center gap-3">
                 <div
-                  className={`h-20 w-20 rounded-full bg-gradient-to-br ${sourceRing} p-[2px] shadow-[0_0_35px_rgba(56,189,248,0.35)]`}
-                  style={{ boxShadow: heatScore >= 90 ? "0 0 40px rgba(251,146,60,0.75)" : undefined }}
+                  className={`h-14 w-14 rounded-full bg-gradient-to-br ${sourceRing} p-[2px] shadow-[0_0_28px_rgba(56,189,248,0.35)]`}
+                  style={{ boxShadow: heatScore >= 90 ? "0 0 34px rgba(251,146,60,0.65)" : undefined }}
                 >
-                  <div className="flex h-full w-full items-center justify-center rounded-full bg-[#0D132D] text-3xl font-black">
+                  <div className="flex h-full w-full items-center justify-center rounded-full bg-[#0D132D] text-xl font-black">
                     {current.name
                       .split(" ")
                       .map((part) => part[0])
                       .join("")}
                   </div>
                 </div>
-                <p className="mt-2 text-2xl sm:text-3xl font-black">{current.name}</p>
-                <p className="text-xs sm:text-sm text-white/70">{current.companyHint} • {current.city}</p>
-                {currentEstimatedGain && (
-                  <motion.div
-                    animate={{ opacity: [0.75, 1, 0.75] }}
-                    transition={{ duration: 1.3, repeat: Infinity, ease: "easeInOut" }}
-                    className="mt-1 inline-flex items-center rounded-full border border-emerald-300/40 bg-emerald-400/18 px-2.5 py-1 text-[11px] font-black text-emerald-100"
-                  >
-                    💰 Gain estime: 🔥 {currentEstimatedGain}
-                  </motion.div>
-                )}
-                <div className="mt-1.5 inline-flex items-center rounded-full border border-orange-300/35 bg-orange-300/10 px-3 py-1 text-[10px] font-black text-orange-100">
-                  🌡 Score de chaleur: {heatScore}% • {heatLabel}
+                <div className="min-w-0">
+                  <p className="text-xl font-black leading-tight">{current.name}</p>
+                  <p className="text-sm text-white/70">📍 {current.city}</p>
+                  <div className="mt-1 flex flex-wrap gap-1.5">
+                    {adnPopey.slice(0, 2).map((entry) => (
+                      <span key={entry.label} className={`rounded-full px-2 py-1 text-[10px] font-black ${adnBadgeClass(entry.label)}`}>
+                        {entry.label}
+                      </span>
+                    ))}
+                  </div>
                 </div>
               </div>
 
-              <div className="mt-3 rounded-2xl bg-white/10 px-3 py-2.5">
-                <p className="text-xs sm:text-sm font-black text-cyan-100">{fusedInsight}</p>
+              <div className="mt-5 text-center">
+                <p className="text-xl sm:text-2xl font-black">Choisis comment activer {current.name.split(" ")[0]} :</p>
               </div>
 
-              <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[10px]">
-                <span className="rounded-full bg-cyan-500/20 px-2 py-1 font-black text-cyan-100">📍 {current.city}</span>
-                <span className="rounded-full bg-fuchsia-500/20 px-2 py-1 font-black text-fuchsia-100">👥 {current.communityKnownBy} membres Popey ont ce meme contact !</span>
-                <span className="rounded-full bg-emerald-500/20 px-2 py-1 font-black text-emerald-100">🛰 {current.externalNews}</span>
-              </div>
-
-              <div className="mt-2 rounded-2xl border border-indigo-300/20 bg-indigo-500/10 px-3 py-2.5 text-left">
-                <p className="text-[10px] font-black uppercase tracking-[0.12em] text-indigo-100">Capsule Temporelle</p>
-                <p className="mt-1 text-xs text-white/85">⏳ Memorise pendant: {current.capsule}</p>
-              </div>
-
-              <div className="mt-2 rounded-2xl bg-white/10 px-3 py-2.5">
-                <p className="text-[10px] font-black uppercase tracking-[0.12em] text-white/70">ADN POPEY</p>
-                <p className="mt-1 text-xs text-cyan-100">Les utilisateurs Popey pensent que {current.name.split(" ")[0]} est :</p>
-                <div className="mt-1.5 flex flex-wrap gap-1.5">
-                  {adnPopey.map((entry) => (
-                    <span key={entry.label} className={`rounded-full px-3 py-2 text-xs font-black ${adnBadgeClass(entry.label)}`}>
-                      {entry.label} x{entry.count}
-                    </span>
-                  ))}
-                </div>
-              </div>
-
-              <div className="mt-3 grid gap-2 sm:grid-cols-2">
+              <div className="mt-4 grid gap-3">
                 <button
                   type="button"
                   onClick={() => triggerAction("eclaireur")}
                   disabled={!isQualified}
-                  className={`relative overflow-hidden h-14 rounded-xl border border-amber-300/45 bg-gradient-to-r from-amber-400/45 to-orange-400/35 text-xs font-black uppercase tracking-wide text-amber-50 shadow-[0_18px_34px_-18px_rgba(251,191,36,0.95)] ${
+                  className={`relative overflow-hidden h-20 rounded-2xl border border-amber-300/45 bg-gradient-to-r from-amber-400/45 to-orange-400/35 text-amber-50 shadow-[0_18px_34px_-18px_rgba(251,191,36,0.95)] ${
                     isQualified && actionGlowContactId === current.id ? "animate-pulse ring-2 ring-amber-300/40" : ""
                   } ${launchingAction === "eclaireur" ? "scale-[1.03] ring-4 ring-amber-200/65" : ""}`}
                 >
@@ -852,13 +807,14 @@ export default function EntrepreneurSmartScanTestPage() {
                       />
                     </>
                   )}
-                  ✨ Eclaireur
+                  <span className="block text-base font-black uppercase tracking-wide">✨ Eclaireur</span>
+                  <span className="mt-0.5 block text-[11px] font-semibold text-amber-100/90">Partage de commission immo</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => triggerAction("package")}
                   disabled={!isQualified}
-                  className={`relative overflow-hidden h-12 rounded-xl border border-fuchsia-300/35 bg-gradient-to-r from-violet-500/30 to-fuchsia-500/25 text-xs font-black uppercase tracking-wide text-fuchsia-100 ${
+                  className={`relative overflow-hidden h-20 rounded-2xl border border-fuchsia-300/35 bg-gradient-to-r from-violet-500/30 to-fuchsia-500/25 text-fuchsia-100 ${
                     isQualified && actionGlowContactId === current.id ? "animate-pulse ring-2 ring-fuchsia-300/35" : ""
                   } ${launchingAction === "package" ? "scale-[1.03] ring-4 ring-fuchsia-200/65" : ""}`}
                 >
@@ -886,13 +842,14 @@ export default function EntrepreneurSmartScanTestPage() {
                       />
                     </>
                   )}
-                  🧩 Partage Croise
+                  <span className="block text-base font-black uppercase tracking-wide">🧩 Partage Croise</span>
+                  <span className="mt-0.5 block text-[11px] font-semibold text-fuchsia-100/90">Expertise Pret & Notaire</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => triggerAction("exclients")}
                   disabled={!isQualified}
-                  className={`relative overflow-hidden h-11 rounded-xl border border-cyan-300/30 bg-cyan-500/12 text-[11px] font-black uppercase tracking-wide text-cyan-100 ${
+                  className={`relative overflow-hidden h-20 rounded-2xl border border-cyan-300/30 bg-cyan-500/12 text-cyan-100 ${
                     isQualified && actionGlowContactId === current.id ? "animate-pulse ring-2 ring-cyan-300/35" : ""
                   } ${launchingAction === "exclients" ? "scale-[1.03] ring-4 ring-cyan-200/65" : ""}`}
                 >
@@ -920,23 +877,22 @@ export default function EntrepreneurSmartScanTestPage() {
                       />
                     </>
                   )}
-                  📣 Ex-Clients (News)
+                  <span className="block text-base font-black uppercase tracking-wide">📣 Ex-Clients (News)</span>
+                  <span className="mt-0.5 block text-[11px] font-semibold text-cyan-100/90">Update secteur & Estimation</span>
                 </button>
                 {!isQualified && (
-                  <p className="self-center text-[11px] font-black uppercase tracking-wide text-emerald-100/85">
+                  <p className="text-center text-[11px] font-black uppercase tracking-wide text-emerald-100/85">
                     Qualification requise d abord
                   </p>
                 )}
               </div>
-              {isQualified && (
-                <button
-                  type="button"
-                  onClick={() => finalizeAction("passer")}
-                  className="mt-2 h-10 w-full rounded-xl border border-white/25 bg-black/30 text-[11px] font-black uppercase tracking-wide text-white/85"
-                >
-                  Passer au prochain contact
-                </button>
-              )}
+              <button
+                type="button"
+                onClick={() => finalizeAction("passer")}
+                className="mt-3 w-full text-center text-sm text-white/70 underline underline-offset-2"
+              >
+                Passer au contact suivant
+              </button>
               {softLearningHint && (
                 <p className="mt-2 rounded-xl bg-white/10 px-3 py-2 text-xs text-cyan-100">{softLearningHint}</p>
               )}
