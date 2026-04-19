@@ -319,7 +319,7 @@ export default function EntrepreneurSmartScanTestPage() {
         setTimeout(() => setActionGlowContactId((id) => (id === pivot.contactId ? null : id)), 2200);
         return null;
       });
-    }, 3200);
+    }, 5200);
     return () => clearTimeout(timer);
   }, [qualificationPivot]);
 
@@ -327,10 +327,10 @@ export default function EntrepreneurSmartScanTestPage() {
     function flushPendingTransition() {
       if (!pendingTransition || !pendingFinalizeAction) return;
       setTransitionScreen(pendingTransition);
-      setTimeout(() => setTransitionScreen(null), 2000);
+      setTimeout(() => setTransitionScreen(null), 3200);
       setShowProgressCheck(true);
       setTimeout(() => setShowProgressCheck(false), 650);
-      finalizeAction(pendingFinalizeAction, 1800, { countAsSent: true, sentInHistory: true });
+      finalizeAction(pendingFinalizeAction, 3000, { countAsSent: true, sentInHistory: true });
       setPendingTransition(null);
       setPendingFinalizeAction(null);
     }
@@ -461,10 +461,10 @@ export default function EntrepreneurSmartScanTestPage() {
     setShowTemplateModal(false);
     if (typeof document !== "undefined" && document.visibilityState === "visible") {
       setTransitionScreen(payload);
-      setTimeout(() => setTransitionScreen(null), 2000);
+      setTimeout(() => setTransitionScreen(null), 3200);
       setShowProgressCheck(true);
       setTimeout(() => setShowProgressCheck(false), 650);
-      finalizeAction(action, 1800, { countAsSent: true, sentInHistory: true });
+      finalizeAction(action, 3000, { countAsSent: true, sentInHistory: true });
       return;
     }
     setPendingTransition(payload);
@@ -705,13 +705,6 @@ export default function EntrepreneurSmartScanTestPage() {
                 </div>
                 <p className="mt-2 text-2xl sm:text-3xl font-black">{current.name}</p>
                 <p className="text-xs sm:text-sm text-white/70">{current.companyHint} • {current.city}</p>
-                <motion.div
-                  animate={{ opacity: [0.65, 1, 0.65] }}
-                  transition={{ duration: 1.4, repeat: Infinity, ease: "easeInOut" }}
-                  className="mt-1 inline-flex items-center rounded-full border border-rose-300/35 bg-rose-400/20 px-2 py-1 text-[10px] font-black text-rose-100"
-                >
-                  🔥 En recherche active
-                </motion.div>
                 <div className="mt-1.5 inline-flex items-center rounded-full border border-orange-300/35 bg-orange-300/10 px-3 py-1 text-[10px] font-black text-orange-100">
                   🌡 Score de chaleur: {heatScore}% • {heatLabel}
                 </div>
@@ -723,7 +716,7 @@ export default function EntrepreneurSmartScanTestPage() {
 
               <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[10px]">
                 <span className="rounded-full bg-cyan-500/20 px-2 py-1 font-black text-cyan-100">📍 {current.city}</span>
-                <span className="rounded-full bg-fuchsia-500/20 px-2 py-1 font-black text-fuchsia-100">👥 {current.communityKnownBy} membres</span>
+                <span className="rounded-full bg-fuchsia-500/20 px-2 py-1 font-black text-fuchsia-100">👥 {current.communityKnownBy} membres Popey ont ce meme contact !</span>
                 <span className="rounded-full bg-emerald-500/20 px-2 py-1 font-black text-emerald-100">🛰 {current.externalNews}</span>
               </div>
 
@@ -734,6 +727,7 @@ export default function EntrepreneurSmartScanTestPage() {
 
               <div className="mt-2 rounded-2xl bg-white/10 px-3 py-2.5">
                 <p className="text-[10px] font-black uppercase tracking-[0.12em] text-white/70">ADN POPEY</p>
+                <p className="mt-1 text-xs text-cyan-100">Les utilisateurs Popey pensent que {current.name.split(" ")[0]} est :</p>
                 <div className="mt-1.5 flex flex-wrap gap-1.5">
                   {adnPopey.map((entry) => (
                     <span key={entry.label} className={`rounded-full px-3 py-2 text-xs font-black ${adnBadgeClass(entry.label)}`}>
@@ -919,7 +913,7 @@ export default function EntrepreneurSmartScanTestPage() {
               </button>
             </div>
             {selectedAction === "qualifier" && (
-              <div className="mt-3 rounded-[20px] border border-white/15 bg-black/25 p-3">
+              <div className="mt-3 rounded-[20px] border border-cyan-300/25 bg-gradient-to-br from-cyan-500/18 via-[#0E1838] to-[#0A1130] p-3 shadow-[0_18px_40px_-22px_rgba(34,211,238,0.75)]">
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex items-center gap-3">
                     <div
@@ -994,11 +988,13 @@ export default function EntrepreneurSmartScanTestPage() {
                           onClick={() =>
                             setQualifierTags((prev) => (prev.includes(tag.id) ? prev.filter((item) => item !== tag.id) : [...prev, tag.id]))
                           }
-                          className={`rounded-full px-3 py-2 text-[11px] font-black ${
-                            active ? `${tagPalette(tag.id, true)} shadow-[0_10px_24px_-16px_rgba(52,211,153,0.95)]` : tagPalette(tag.id, false)
+                          className={`rounded-full px-3 py-2 text-[11px] font-black transition ${
+                            active
+                              ? `${tagPalette(tag.id, true)} scale-[1.05] ring-4 ring-emerald-300/55 shadow-[0_14px_30px_-14px_rgba(16,185,129,0.95)]`
+                              : tagPalette(tag.id, false)
                           }`}
                         >
-                          {tag.label} ({tag.count})
+                          {active ? "✅ " : ""}{tag.label} ({tag.count})
                         </button>
                       );
                     })}
@@ -1086,11 +1082,11 @@ export default function EntrepreneurSmartScanTestPage() {
                     if (!action) return;
                     const payload = createTransitionPayload(action, "saved");
                     setTransitionScreen(payload);
-                    setTimeout(() => setTransitionScreen(null), 2000);
+                    setTimeout(() => setTransitionScreen(null), 3200);
                     setShowProgressCheck(true);
                     setTimeout(() => setShowProgressCheck(false), 650);
                     setShowTemplateModal(false);
-                    finalizeAction(action, 1800, { countAsSent: false, sentInHistory: false });
+                    finalizeAction(action, 3000, { countAsSent: false, sentInHistory: false });
                   }}
                   className="h-10 rounded-xl border border-white/20 bg-white/10 text-[11px] font-black uppercase tracking-wide text-white/80"
                 >
