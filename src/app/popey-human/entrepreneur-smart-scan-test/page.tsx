@@ -216,11 +216,13 @@ export default function EntrepreneurSmartScanTestPage() {
     final: boolean;
   } | null>(null);
   const [pendingFinalizeAction, setPendingFinalizeAction] = useState<Exclude<DailyCategory, "qualifier"> | null>(null);
+  const [pendingReturnProfileContactId, setPendingReturnProfileContactId] = useState<string | null>(null);
   const [showHistoryPanel, setShowHistoryPanel] = useState(false);
   const [showSearchPanel, setShowSearchPanel] = useState(false);
   const [showContactProfile, setShowContactProfile] = useState(false);
   const [profileContactId, setProfileContactId] = useState<string | null>(null);
   const [showProfileActions, setShowProfileActions] = useState(false);
+  const [actionFromProfileContactId, setActionFromProfileContactId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
   const [historyEntries, setHistoryEntries] = useState<HistoryEntry[]>([]);
@@ -369,9 +371,16 @@ export default function EntrepreneurSmartScanTestPage() {
       setTimeout(() => setTransitionScreen(null), 3200);
       setShowProgressCheck(true);
       setTimeout(() => setShowProgressCheck(false), 650);
-      finalizeAction(pendingFinalizeAction, 3000, { countAsSent: true, sentInHistory: true });
+      finalizeAction(pendingFinalizeAction, 3000, {
+        countAsSent: true,
+        sentInHistory: true,
+        stayOnCurrentContact: Boolean(pendingReturnProfileContactId),
+        returnToProfileContactId: pendingReturnProfileContactId,
+      });
       setPendingTransition(null);
       setPendingFinalizeAction(null);
+      setPendingReturnProfileContactId(null);
+      setActionFromProfileContactId(null);
     }
 
     function onFocus() {
@@ -394,7 +403,7 @@ export default function EntrepreneurSmartScanTestPage() {
         document.removeEventListener("visibilitychange", onVisibilityChange);
       }
     };
-  }, [pendingTransition, pendingFinalizeAction]);
+  }, [pendingTransition, pendingFinalizeAction, pendingReturnProfileContactId]);
 
   function actionLabel(action: Exclude<DailyCategory, "qualifier">) {
     if (action === "eclaireur") return "Eclaireur";
@@ -459,11 +468,13 @@ export default function EntrepreneurSmartScanTestPage() {
   function finalizeAction(
     action: Exclude<DailyCategory, "qualifier">,
     advanceDelay = 200,
-    options: { countAsSent?: boolean; sentInHistory?: boolean } = {},
+    options: { countAsSent?: boolean; sentInHistory?: boolean; stayOnCurrentContact?: boolean; returnToProfileContactId?: string | null } = {},
   ) {
     setSelectedAction(action);
     const countAsSent = options.countAsSent ?? true;
     const sentInHistory = options.sentInHistory ?? countAsSent;
+    const stayOnCurrentContact = options.stayOnCurrentContact ?? false;
+    const returnToProfileContactId = options.returnToProfileContactId ?? null;
     if (countAsSent && (action === "eclaireur" || action === "package" || action === "exclients")) {
       setSentCount((v) => v + 1);
     }
@@ -490,7 +501,13 @@ export default function EntrepreneurSmartScanTestPage() {
         },
         ...prev,
       ].slice(0, 50));
-      setIndex((v) => Math.min(CONTACTS.length, v + 1));
+      if (!stayOnCurrentContact) {
+        setIndex((v) => Math.min(CONTACTS.length, v + 1));
+      }
+      if (returnToProfileContactId) {
+        setProfileContactId(returnToProfileContactId);
+        setShowContactProfile(true);
+      }
       setSelectedAction(null);
     }, advanceDelay);
   }
@@ -543,11 +560,18 @@ export default function EntrepreneurSmartScanTestPage() {
       setTimeout(() => setTransitionScreen(null), 3200);
       setShowProgressCheck(true);
       setTimeout(() => setShowProgressCheck(false), 650);
-      finalizeAction(action, 3000, { countAsSent: true, sentInHistory: true });
+      finalizeAction(action, 3000, {
+        countAsSent: true,
+        sentInHistory: true,
+        stayOnCurrentContact: Boolean(actionFromProfileContactId),
+        returnToProfileContactId: actionFromProfileContactId,
+      });
+      setActionFromProfileContactId(null);
       return;
     }
     setPendingTransition(payload);
     setPendingFinalizeAction(action);
+    setPendingReturnProfileContactId(actionFromProfileContactId);
   }
 
   function saveQualifierAndReturn() {
@@ -626,16 +650,13 @@ export default function EntrepreneurSmartScanTestPage() {
     if (!profileContact) return;
     const nextIndex = CONTACTS.findIndex((contact) => contact.id === profileContact.id);
     if (nextIndex >= 0) setIndex(nextIndex);
+    setActionFromProfileContactId(profileContact.id);
     setShowContactProfile(false);
     setShowSearchPanel(false);
-    setLaunchingAction(action);
-    setTimeout(() => {
-      setLaunchingAction(null);
-      const nextDraft = buildTemplate(action, profileContact);
-      setSelectedAction(action);
-      setDraftMessage(nextDraft);
-      setShowTemplateModal(true);
-    }, 900);
+    const nextDraft = buildTemplate(action, profileContact);
+    setSelectedAction(action);
+    setDraftMessage(nextDraft);
+    setShowTemplateModal(true);
   }
 
   function editProfileQualification() {
@@ -1424,7 +1445,13 @@ export default function EntrepreneurSmartScanTestPage() {
                     setShowProgressCheck(true);
                     setTimeout(() => setShowProgressCheck(false), 650);
                     setShowTemplateModal(false);
-                    finalizeAction(action, 3000, { countAsSent: false, sentInHistory: false });
+                    finalizeAction(action, 3000, {
+                      countAsSent: false,
+                      sentInHistory: false,
+                      stayOnCurrentContact: Boolean(actionFromProfileContactId),
+                      returnToProfileContactId: actionFromProfileContactId,
+                    });
+                    setActionFromProfileContactId(null);
                   }}
                   className="h-10 rounded-xl border border-white/20 bg-white/10 text-[11px] font-black uppercase tracking-wide text-white/80"
                 >
