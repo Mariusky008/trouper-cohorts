@@ -913,7 +913,28 @@ export default function EntrepreneurSmartScanTestPage() {
               </button>
             </div>
             {selectedAction === "qualifier" && (
-              <div className="mt-3 rounded-[20px] border border-cyan-300/25 bg-gradient-to-br from-cyan-500/18 via-[#0E1838] to-[#0A1130] p-3 shadow-[0_18px_40px_-22px_rgba(34,211,238,0.75)]">
+              <motion.div
+                key={`qualifier-hero-${current.id}`}
+                initial={{ y: 10, scale: 0.98, boxShadow: "0 0 0 rgba(0,0,0,0)" }}
+                animate={{
+                  y: [10, -4, 2, -2, 0],
+                  scale: [0.98, 1.01, 1],
+                  boxShadow: [
+                    "0 0 24px rgba(251,146,60,0.45)",
+                    "0 0 32px rgba(249,115,22,0.4)",
+                    "0 18px 40px -22px rgba(34,211,238,0.75)",
+                  ],
+                }}
+                transition={{ duration: 2.8, ease: "easeInOut" }}
+                className="relative mt-3 overflow-hidden rounded-[20px] border border-cyan-300/25 bg-gradient-to-br from-cyan-500/18 via-[#0E1838] to-[#0A1130] p-3 shadow-[0_18px_40px_-22px_rgba(34,211,238,0.75)]"
+              >
+                <motion.div
+                  aria-hidden
+                  className="pointer-events-none absolute inset-0 rounded-[20px] bg-gradient-to-br from-orange-400/40 via-rose-400/30 to-transparent"
+                  initial={{ opacity: 0.85 }}
+                  animate={{ opacity: 0 }}
+                  transition={{ duration: 2.6, ease: "easeOut" }}
+                />
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex items-center gap-3">
                     <div
@@ -945,7 +966,7 @@ export default function EntrepreneurSmartScanTestPage() {
                 </div>
 
                 <p className="mt-3 text-xs italic text-white/75">🤝 Memoire: {current.capsule}</p>
-              </div>
+              </motion.div>
             )}
             {selectedAction === "qualifier" ? (
               <div className="mt-3 space-y-3">
