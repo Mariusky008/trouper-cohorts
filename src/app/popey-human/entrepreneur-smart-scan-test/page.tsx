@@ -218,12 +218,16 @@ export default function EntrepreneurSmartScanTestPage() {
   const [pendingFinalizeAction, setPendingFinalizeAction] = useState<Exclude<DailyCategory, "qualifier"> | null>(null);
   const [showHistoryPanel, setShowHistoryPanel] = useState(false);
   const [showSearchPanel, setShowSearchPanel] = useState(false);
+  const [showContactProfile, setShowContactProfile] = useState(false);
+  const [profileContactId, setProfileContactId] = useState<string | null>(null);
+  const [showProfileActions, setShowProfileActions] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
   const [historyEntries, setHistoryEntries] = useState<HistoryEntry[]>([]);
   const [qualifierStore, setQualifierStore] = useState<Record<string, QualifierData>>({});
 
   const current = CONTACTS[index] ?? CONTACTS[CONTACTS.length - 1];
+  const profileContact = CONTACTS.find((contact) => contact.id === profileContactId) ?? null;
   const totalScanned = 816;
   const scanDone = scanCount >= totalScanned;
   const scanProgress = Math.min(1, scanCount / totalScanned);
@@ -297,6 +301,16 @@ export default function EntrepreneurSmartScanTestPage() {
     networkChoice ? quickLabelMap[networkChoice] : null,
     ...communityTags.slice(0, 2).map((id) => quickLabelMap[id]),
   ].filter(Boolean) as string[];
+  const profileQualifier = profileContact ? qualifierStore[profileContact.id] : undefined;
+  const profileHeat = profileQualifier?.heat ?? "tiede";
+  const profileHistory = profileContact ? historyEntries.filter((entry) => entry.contactId === profileContact.id) : [];
+  const profileLastSent = profileHistory.find((entry) => entry.sent) ?? null;
+  const profileDaysSinceLastSent = profileContact ? 30 + Number(profileContact.id.replace("d", "")) * 17 : 0;
+  const profileVitality = Math.max(0, Math.min(100, 100 - Math.round((profileDaysSinceLastSent / 220) * 100)));
+  const profileVigilanceAlert =
+    profileQualifier &&
+    (profileQualifier.heat === "brulant" || profileQualifier.businessChoice === "ideal-client" || profileQualifier.networkChoice === "opens-doors") &&
+    profileDaysSinceLastSent > 90;
 
   function adnBadgeClass(label: string) {
     const lower = label.toLowerCase();
@@ -599,6 +613,38 @@ export default function EntrepreneurSmartScanTestPage() {
 
   function toggleFavorite(contactId: string) {
     setFavoriteIds((prev) => (prev.includes(contactId) ? prev.filter((id) => id !== contactId) : [...prev, contactId]));
+  }
+
+  function openContactProfile(contactId: string) {
+    setProfileContactId(contactId);
+    setShowProfileActions(false);
+    setShowContactProfile(true);
+    setShowSearchPanel(false);
+  }
+
+  function startActionFromProfile(action: Exclude<DailyCategory, "passer" | "qualifier">) {
+    if (!profileContact) return;
+    const nextIndex = CONTACTS.findIndex((contact) => contact.id === profileContact.id);
+    if (nextIndex >= 0) setIndex(nextIndex);
+    setShowContactProfile(false);
+    setShowSearchPanel(false);
+    setLaunchingAction(action);
+    setTimeout(() => {
+      setLaunchingAction(null);
+      const nextDraft = buildTemplate(action, profileContact);
+      setSelectedAction(action);
+      setDraftMessage(nextDraft);
+      setShowTemplateModal(true);
+    }, 900);
+  }
+
+  function editProfileQualification() {
+    if (!profileContact) return;
+    const nextIndex = CONTACTS.findIndex((contact) => contact.id === profileContact.id);
+    if (nextIndex >= 0) setIndex(nextIndex);
+    setShowContactProfile(false);
+    setShowSearchPanel(false);
+    setTimeout(() => triggerAction("qualifier"), 60);
   }
 
   if (stage === "scan") {
@@ -983,9 +1029,7 @@ export default function EntrepreneurSmartScanTestPage() {
                     <button
                       type="button"
                       onClick={() => {
-                        const nextIndex = CONTACTS.findIndex((item) => item.id === contact.id);
-                        if (nextIndex >= 0) setIndex(nextIndex);
-                        setShowSearchPanel(false);
+                        openContactProfile(contact.id);
                       }}
                       className="text-left"
                     >
@@ -1002,6 +1046,116 @@ export default function EntrepreneurSmartScanTestPage() {
                   </div>
                 </div>
               ))}
+            </div>
+          </section>
+        </div>
+      )}
+
+      {showContactProfile && profileContact && (
+        <div className="fixed inset-0 z-[45] bg-black/60 backdrop-blur-sm flex items-start justify-center px-4 pt-12 pb-6">
+          <section className="w-full max-w-2xl max-h-[88vh] overflow-y-auto rounded-3xl border border-white/15 bg-[#0E1430] p-4">
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-black uppercase tracking-[0.12em] text-cyan-200">Fiche contact • Loupe</p>
+              <button type="button" onClick={() => setShowContactProfile(false)} className="h-8 w-8 rounded-full border border-white/20 bg-white/10 text-xs">✕</button>
+            </div>
+
+            <div className="mt-3 rounded-2xl border border-white/15 bg-black/25 p-3">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div
+                    className={`h-16 w-16 rounded-full bg-gradient-to-br ${
+                      profileHeat === "brulant" ? "from-orange-300 via-rose-300 to-amber-300" : profileHeat === "froid" ? "from-cyan-300 via-blue-300 to-indigo-300" : "from-amber-300 via-yellow-300 to-orange-300"
+                    } p-[2px]`}
+                  >
+                    <div className="flex h-full w-full items-center justify-center rounded-full bg-[#0D132D] text-2xl font-black">
+                      {profileContact.name
+                        .split(" ")
+                        .map((part) => part[0])
+                        .join("")}
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-2xl font-black">{profileContact.name}</p>
+                    <p className="text-sm text-white/75">{profileContact.companyHint} • 📍 {profileContact.city}</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowProfileActions((prev) => !prev)}
+                  className="rounded-xl border border-cyan-300/40 bg-cyan-400/15 px-3 py-2 text-xs font-black text-cyan-100"
+                >
+                  ⚡ Demarrer une action
+                </button>
+              </div>
+              {showProfileActions && (
+                <div className="mt-3 grid gap-2 sm:grid-cols-3">
+                  <button type="button" onClick={() => startActionFromProfile("eclaireur")} className="h-10 rounded-xl bg-amber-400/25 text-xs font-black">✨ Eclaireur</button>
+                  <button type="button" onClick={() => startActionFromProfile("package")} className="h-10 rounded-xl bg-fuchsia-400/25 text-xs font-black">🧩 Pack Croise</button>
+                  <button type="button" onClick={() => startActionFromProfile("exclients")} className="h-10 rounded-xl bg-cyan-400/25 text-xs font-black">📣 News</button>
+                </div>
+              )}
+            </div>
+
+            <div className="mt-3 rounded-2xl border border-white/15 bg-black/25 p-3">
+              <div className="flex items-center justify-between">
+                <p className="text-[11px] font-black uppercase tracking-[0.12em] text-white/70">ADN & Qualification</p>
+                <button type="button" onClick={editProfileQualification} className="text-xs underline underline-offset-2 text-cyan-100">Editer</button>
+              </div>
+              <p className="mt-2 text-sm font-black">Temperature actuelle: {profileHeat === "brulant" ? "🔥 Brulant" : profileHeat === "froid" ? "🧊 Froid" : "⚡ Tiede"}</p>
+              <p className="mt-2 text-xs font-black uppercase tracking-[0.12em] text-white/70">Mes Qualifications</p>
+              <div className="mt-1 flex flex-wrap gap-1.5">
+                {(profileQualifier
+                  ? [profileQualifier.businessChoice, profileQualifier.networkChoice, ...profileQualifier.communityTags]
+                  : []
+                )
+                  .filter(Boolean)
+                  .map((id) => (
+                    <span key={`mine-${String(id)}`} className="rounded-full bg-cyan-300/20 px-2 py-1 text-xs font-black text-cyan-100">
+                      {quickLabelMap[String(id)]}
+                    </span>
+                  ))}
+                {!profileQualifier && <span className="text-xs text-white/70">Aucune qualification perso.</span>}
+              </div>
+              <p className="mt-2 text-xs font-black uppercase tracking-[0.12em] text-white/70">Consensus communautaire</p>
+              <div className="mt-1 flex flex-wrap gap-1.5">
+                {adnPopey.map((entry) => (
+                  <span key={`consensus-${entry.label}`} className={`rounded-full px-2 py-1 text-xs font-black ${adnBadgeClass(entry.label)}`}>
+                    {entry.label} x{entry.count + 1}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            <div className="mt-3 rounded-2xl border border-white/15 bg-black/25 p-3">
+              <p className="text-[11px] font-black uppercase tracking-[0.12em] text-white/70">Historique & Memoire</p>
+              <div className="mt-2 space-y-2 text-sm">
+                <div className="rounded-xl bg-white/5 px-3 py-2">• Ajoute lors de "{profileContact.capsule}"</div>
+                <div className="rounded-xl bg-white/5 px-3 py-2">
+                  • Derniere action: {profileHistory[0] ? `${actionLabel(profileHistory[0].action)} ${profileHistory[0].sent ? "envoye" : "valide sans envoi"} a ${profileHistory[0].at}` : "Aucune action enregistree"}
+                </div>
+                <div className="rounded-xl bg-white/5 px-3 py-2">• Evolution: {profileHeat === "brulant" ? "Passe de Tiede a Brulant lors de la derniere qualification" : "Statut stable"}</div>
+              </div>
+            </div>
+
+            <div className="mt-3 rounded-2xl border border-orange-300/30 bg-orange-400/10 p-3">
+              <p className="text-[11px] font-black uppercase tracking-[0.12em] text-orange-100">Statut de vigilance</p>
+              <p className="mt-1 text-sm">Dernier contact: il y a {profileDaysSinceLastSent} jours</p>
+              <p className="text-sm">Etat de la relation: {profileVitality < 35 ? "En train de refroidir 🧊" : profileVitality < 65 ? "A surveiller 👀" : "Active ✅"}</p>
+              <div className="mt-2 h-2 overflow-hidden rounded-full bg-white/15">
+                <div className="h-full rounded-full bg-gradient-to-r from-orange-300 to-emerald-300" style={{ width: `${profileVitality}%` }} />
+              </div>
+              {profileVigilanceAlert && (
+                <p className="mt-2 text-sm font-black text-orange-100">
+                  ⚠️ Opportunite en sommeil: en ne le relancant pas ce mois-ci, tu laisses potentiellement 3 opportunites d affaires a tes concurrents.
+                </p>
+              )}
+              <button
+                type="button"
+                onClick={() => setShowProfileActions(true)}
+                className="mt-2 h-10 w-full rounded-xl bg-gradient-to-r from-orange-300 to-amber-300 text-xs font-black uppercase tracking-wide text-[#2B1E0A]"
+              >
+                ⚡️ Reveiller le contact
+              </button>
             </div>
           </section>
         </div>
