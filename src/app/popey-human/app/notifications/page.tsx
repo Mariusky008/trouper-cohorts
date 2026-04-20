@@ -109,7 +109,7 @@ export default async function PopeyHumanNotificationsPage({
                 <Link
                   key={notification.id}
                   href={withSelected(notification.id)}
-                  className={`block rounded-xl border px-3 py-3 ${
+                  className={`block rounded-xl border px-3 py-3 transition-all duration-200 ease-out hover:-translate-y-0.5 ${
                     selectedNotification?.id === notification.id
                       ? "border-cyan-300 bg-cyan-500/10"
                       : "border-white/15 bg-black/20"

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getVisibleHumanDirectory } from "@/lib/actions/human-permissions";
-import { GlassCard, ModalCard, uiKit } from "../_components/ui-kit";
+import { GlassCard, ModalCard, uiKit, uiMotion } from "../_components/ui-kit";
 
 function fullName(member: { first_name: string | null; last_name: string | null }) {
   return [member.first_name, member.last_name].filter(Boolean).join(" ").trim() || "Membre Popey";
@@ -51,7 +51,7 @@ export default async function PopeyHumanAnnuairePage({
           {directory.members.map((member) => (
             <GlassCard
               key={member.id}
-              className="rounded-2xl p-0 transition hover:border-cyan-300/45 hover:bg-cyan-500/10"
+              className={`rounded-2xl p-0 hover:bg-cyan-500/10 ${uiMotion.cardHover}`}
             >
               <Link href={`/popey-human/app/annuaire?member=${member.id}`} className="block p-4">
                 <p className="text-lg font-black">{fullName(member)}</p>

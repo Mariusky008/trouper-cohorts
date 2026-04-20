@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useMemo } from "react";
-import { GlassCard, uiKit } from "./ui-kit";
+import { GlassCard, uiKit, uiMotion } from "./ui-kit";
 
 type MemberShellProps = {
   children: React.ReactNode;
@@ -57,7 +57,7 @@ export function PopeyHumanMemberShell({ children }: MemberShellProps) {
             <Link
               key={item.href}
               href={item.href}
-              className={`h-12 rounded-xl text-xs font-black uppercase tracking-wide inline-flex items-center justify-center transition ${
+              className={`h-12 rounded-xl text-xs font-black uppercase tracking-wide inline-flex items-center justify-center transition ${uiMotion.tapScale} ${
                 item.active
                   ? item.label === "Signal"
                     ? "bg-gradient-to-r from-emerald-400 to-cyan-300 text-[#10263A] shadow-[0_14px_28px_-16px_rgba(52,211,153,0.95)]"
