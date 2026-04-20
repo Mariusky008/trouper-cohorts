@@ -17,8 +17,7 @@ type DailyContact = {
 };
 type QualifierData = {
   heat: HeatLevel;
-  businessChoice: (typeof BUSINESS_OPTIONS)[number]["id"] | null;
-  networkChoice: (typeof NETWORK_OPTIONS)[number]["id"] | null;
+  opportunityChoice: (typeof OPPORTUNITY_OPTIONS)[number]["id"] | null;
   communityTags: Array<(typeof COMMUNITY_OPTIONS)[number]["id"]>;
   estimatedGain: "Faible" | "Moyen" | "Eleve";
 };
@@ -134,21 +133,17 @@ const CONTACTS: DailyContact[] = [
   },
 ];
 
-const BUSINESS_OPTIONS = [
+const OPPORTUNITY_OPTIONS = [
   { id: "can-buy", label: "💸 Peut acheter", score: 2 },
   { id: "ideal-client", label: "🎯 Client ideal", score: 3 },
+  { id: "can-refer", label: "🤝 Peut recommander", score: 2 },
+  { id: "opens-doors", label: "🚪 Ouvre des portes", score: 3 },
   { id: "identified-need", label: "🔥 Besoin à identifier", score: 2 },
   { id: "no-potential", label: "🚫 Aucun potentiel", score: 0 },
 ] as const;
-const NETWORK_OPTIONS = [
-  { id: "can-refer", label: "� Peut recommander", score: 2 },
-  { id: "opens-doors", label: "🚪 Ouvre des portes", score: 3 },
-  { id: "target-access", label: "� Acces a une cible", score: 2 },
-  { id: "no-lever", label: "❌ Aucun levier", score: 0 },
-] as const;
 const COMMUNITY_OPTIONS = [
-  { id: "serious-work", label: "� Travail serieux", score: 1 },
-  { id: "high-budget", label: "� Gere des budgets eleves", score: 2 },
+  { id: "serious-work", label: "💼 Travail serieux", score: 1 },
+  { id: "high-budget", label: "💰 Gere des budgets eleves", score: 2 },
   { id: "fast-reply", label: "⚡ Reactif / repond vite", score: 1 },
   { id: "slow-decider", label: "🐢 Long a decider", score: -1 },
   { id: "hard-close", label: "🚫 Difficile a closer", score: -2 },
@@ -186,11 +181,10 @@ export default function EntrepreneurSmartScanTestPage() {
   const [qualifierHeat, setQualifierHeat] = useState<HeatLevel | null>(null);
   const [hasChosenHeat, setHasChosenHeat] = useState(false);
   const [qualifierStep, setQualifierStep] = useState<1 | 2 | 3 | 4>(1);
-  const [businessChoice, setBusinessChoice] = useState<(typeof BUSINESS_OPTIONS)[number]["id"] | null>(null);
-  const [networkChoice, setNetworkChoice] = useState<(typeof NETWORK_OPTIONS)[number]["id"] | null>(null);
+  const [opportunityChoice, setOpportunityChoice] = useState<(typeof OPPORTUNITY_OPTIONS)[number]["id"] | null>(null);
   const [communityTags, setCommunityTags] = useState<Array<(typeof COMMUNITY_OPTIONS)[number]["id"]>>([]);
-  const businessSectionRef = useRef<HTMLDivElement | null>(null);
-  const networkSectionRef = useRef<HTMLDivElement | null>(null);
+  const opportunitySectionRef = useRef<HTMLDivElement | null>(null);
+  const temperatureSectionRef = useRef<HTMLDivElement | null>(null);
   const communitySectionRef = useRef<HTMLDivElement | null>(null);
   const saveSectionRef = useRef<HTMLDivElement | null>(null);
   const [sentCount, setSentCount] = useState(4);
@@ -301,7 +295,7 @@ export default function EntrepreneurSmartScanTestPage() {
   const quickLabelMap = useMemo(
     () =>
       Object.fromEntries(
-        [...BUSINESS_OPTIONS, ...NETWORK_OPTIONS, ...COMMUNITY_OPTIONS].map((item) => [item.id, item.label]),
+        [...OPPORTUNITY_OPTIONS, ...COMMUNITY_OPTIONS].map((item) => [item.id, item.label]),
       ),
     [],
   );
@@ -312,8 +306,7 @@ export default function EntrepreneurSmartScanTestPage() {
     }
 
     const aggregateIds = [
-      qualified.businessChoice,
-      qualified.networkChoice,
+      qualified.opportunityChoice,
       ...qualified.communityTags,
     ].filter(Boolean) as string[];
 
@@ -340,15 +333,13 @@ export default function EntrepreneurSmartScanTestPage() {
   );
   const qualifierChanged =
     qualifierHeat !== null ||
-    businessChoice !== null ||
-    networkChoice !== null ||
+    opportunityChoice !== null ||
     communityTags.length > 0;
-  const liveEstimatedGain = getEstimatedGain(businessChoice, networkChoice, communityTags);
-  const livePotentialLabel = businessChoice || networkChoice || communityTags.length > 0 ? liveEstimatedGain : "?";
-  const canSaveQualifier = hasChosenHeat && businessChoice !== null && networkChoice !== null && communityTags.length > 0;
+  const liveEstimatedGain = getEstimatedGain(opportunityChoice, communityTags);
+  const livePotentialLabel = opportunityChoice || communityTags.length > 0 ? liveEstimatedGain : "?";
+  const canSaveQualifier = hasChosenHeat && opportunityChoice !== null && communityTags.length > 0;
   const liveQualifierSignals = [
-    businessChoice ? quickLabelMap[businessChoice] : null,
-    networkChoice ? quickLabelMap[networkChoice] : null,
+    opportunityChoice ? quickLabelMap[opportunityChoice] : null,
     ...communityTags.slice(0, 2).map((id) => quickLabelMap[id]),
   ].filter(Boolean) as string[];
   const profileQualifier = profileContact ? qualifierStore[profileContact.id] : undefined;
@@ -359,7 +350,7 @@ export default function EntrepreneurSmartScanTestPage() {
   const profileVitality = Math.max(0, Math.min(100, 100 - Math.round((profileDaysSinceLastSent / 220) * 100)));
   const profileVigilanceAlert =
     profileQualifier &&
-    (profileQualifier.heat === "brulant" || profileQualifier.businessChoice === "ideal-client" || profileQualifier.networkChoice === "opens-doors") &&
+    (profileQualifier.heat === "brulant" || profileQualifier.opportunityChoice === "ideal-client" || profileQualifier.opportunityChoice === "opens-doors") &&
     profileDaysSinceLastSent > 90;
 
   function adnBadgeClass(label: string) {
@@ -393,8 +384,7 @@ export default function EntrepreneurSmartScanTestPage() {
     setQualifierHeat(null);
     setHasChosenHeat(false);
     setQualifierStep(1);
-    setBusinessChoice(null);
-    setNetworkChoice(null);
+    setOpportunityChoice(null);
     setCommunityTags([]);
     setShowTemplateModal(true);
   }, [stage, current.id, qualifierStore, showTemplateModal]);
@@ -466,17 +456,15 @@ export default function EntrepreneurSmartScanTestPage() {
   }
 
   function getEstimatedGain(
-    business: (typeof BUSINESS_OPTIONS)[number]["id"] | null,
-    network: (typeof NETWORK_OPTIONS)[number]["id"] | null,
+    opportunity: (typeof OPPORTUNITY_OPTIONS)[number]["id"] | null,
     community: Array<(typeof COMMUNITY_OPTIONS)[number]["id"]>,
   ): "Faible" | "Moyen" | "Eleve" {
-    const businessScore = BUSINESS_OPTIONS.find((option) => option.id === business)?.score ?? 0;
-    const networkScore = NETWORK_OPTIONS.find((option) => option.id === network)?.score ?? 0;
+    const opportunityScore = OPPORTUNITY_OPTIONS.find((option) => option.id === opportunity)?.score ?? 0;
     const communityScore = community.reduce(
       (sum, id) => sum + (COMMUNITY_OPTIONS.find((option) => option.id === id)?.score ?? 0),
       0,
     );
-    const score = businessScore + networkScore + communityScore;
+    const score = opportunityScore + communityScore;
     if (score <= 1) return "Faible";
     if (score <= 4) return "Moyen";
     return "Eleve";
@@ -530,8 +518,7 @@ export default function EntrepreneurSmartScanTestPage() {
     setTimeout(() => {
       const now = new Date();
       const currentQualifier = qualifierStore[current.id];
-      const summaryBusiness = currentQualifier?.businessChoice ? quickLabelMap[currentQualifier.businessChoice] : "";
-      const summaryNetwork = currentQualifier?.networkChoice ? quickLabelMap[currentQualifier.networkChoice] : "";
+      const summaryOpportunity = currentQualifier?.opportunityChoice ? quickLabelMap[currentQualifier.opportunityChoice] : "";
       const summaryCommunity = (currentQualifier?.communityTags ?? []).map((id) => quickLabelMap[id]).slice(0, 1);
       setHistoryEntries((prev) => [
         {
@@ -539,7 +526,7 @@ export default function EntrepreneurSmartScanTestPage() {
           name: current.name,
           action,
           at: `${now.getHours().toString().padStart(2, "0")}:${now.getMinutes().toString().padStart(2, "0")}`,
-          tagsSummary: [summaryBusiness, summaryNetwork, ...summaryCommunity]
+          tagsSummary: [summaryOpportunity, ...summaryCommunity]
             .filter(Boolean)
             .join(" • "),
           sent: sentInHistory,
@@ -580,8 +567,7 @@ export default function EntrepreneurSmartScanTestPage() {
       setQualifierHeat(null);
       setHasChosenHeat(false);
       setQualifierStep(1);
-      setBusinessChoice(null);
-      setNetworkChoice(null);
+      setOpportunityChoice(null);
       setCommunityTags([]);
       setDraftMessage("");
     } else {
@@ -622,19 +608,17 @@ export default function EntrepreneurSmartScanTestPage() {
 
   function saveQualifierAndReturn() {
     const primaryTag =
-      (businessChoice ? quickLabelMap[businessChoice] : undefined) ??
-      (networkChoice ? quickLabelMap[networkChoice] : undefined) ??
+      (opportunityChoice ? quickLabelMap[opportunityChoice] : undefined) ??
       (communityTags[0] ? quickLabelMap[communityTags[0]] : undefined) ??
       "❓ Inconnu";
     const firstName = current.name.split(" ")[0];
-    const estimatedGain = getEstimatedGain(businessChoice, networkChoice, communityTags);
+    const estimatedGain = getEstimatedGain(opportunityChoice, communityTags);
 
     setQualifierStore((prev) => ({
       ...prev,
       [current.id]: {
         heat: qualifierHeat ?? "tiede",
-        businessChoice,
-        networkChoice,
+        opportunityChoice,
         communityTags,
         estimatedGain,
       },
@@ -650,8 +634,7 @@ export default function EntrepreneurSmartScanTestPage() {
       ...prev,
       [current.id]: {
         heat: "tiede",
-        businessChoice: null,
-        networkChoice: null,
+        opportunityChoice: null,
         communityTags: [],
         estimatedGain: "Faible",
       },
@@ -663,7 +646,7 @@ export default function EntrepreneurSmartScanTestPage() {
   }
 
   useEffect(() => {
-    if (qualifierStep === 4 && canSaveQualifier) {
+    if (qualifierStep >= 3 && canSaveQualifier) {
       scrollIntoViewSmooth(saveSectionRef);
     }
   }, [qualifierStep, canSaveQualifier]);
@@ -1190,7 +1173,7 @@ export default function EntrepreneurSmartScanTestPage() {
               <p className="mt-2 text-xs font-black uppercase tracking-[0.12em] text-white/70">Mes Qualifications</p>
               <div className="mt-1 flex flex-wrap gap-1.5">
                 {(profileQualifier
-                  ? [profileQualifier.businessChoice, profileQualifier.networkChoice, ...profileQualifier.communityTags]
+                  ? [profileQualifier.opportunityChoice, ...profileQualifier.communityTags]
                   : []
                 )
                   .filter(Boolean)
@@ -1335,17 +1318,47 @@ export default function EntrepreneurSmartScanTestPage() {
             )}
             {selectedAction === "qualifier" ? (
               <div className="mt-3 space-y-3">
-                <div className="rounded-2xl border border-white/15 bg-black/25 p-3">
+                <div
+                  ref={opportunitySectionRef}
+                  className="rounded-2xl border border-white/15 bg-black/25 p-3 transition-all duration-300"
+                >
+                  <p className="text-[11px] font-black uppercase tracking-[0.12em] text-white/70">� Type d opportunite - 1 choix</p>
+                  <div className="mt-2 grid grid-cols-2 gap-2">
+                    {OPPORTUNITY_OPTIONS.map((option) => (
+                      <button
+                        key={option.id}
+                        type="button"
+                        onClick={() => {
+                          setOpportunityChoice(option.id);
+                          if (qualifierStep < 2) {
+                            setQualifierStep(2);
+                            setTimeout(() => scrollIntoViewSmooth(temperatureSectionRef), 180);
+                          }
+                        }}
+                        className={`h-10 rounded-xl px-2 text-[11px] font-black ${
+                          opportunityChoice === option.id ? "bg-emerald-300 text-emerald-950 ring-2 ring-emerald-200/70" : "bg-white/10 text-white/85"
+                        }`}
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div
+                  ref={temperatureSectionRef}
+                  className={`rounded-2xl border border-white/15 bg-black/25 p-3 transition-all duration-300 ${qualifierStep >= 2 ? "opacity-100" : "opacity-35 pointer-events-none"}`}
+                >
                   <p className="text-[12px] font-black uppercase tracking-[0.14em] text-cyan-100">🌡 Temperature du contact</p>
                   <div className="mt-2 grid grid-cols-3 gap-2">
                     <button
                       type="button"
                       onClick={() => {
                         setQualifierHeat("froid");
-                        if (!hasChosenHeat) {
-                          setHasChosenHeat(true);
-                          setQualifierStep(2);
-                          setTimeout(() => scrollIntoViewSmooth(businessSectionRef), 180);
+                        setHasChosenHeat(true);
+                        if (qualifierStep < 3) {
+                          setQualifierStep(3);
+                          setTimeout(() => scrollIntoViewSmooth(communitySectionRef), 180);
                         }
                       }}
                       className={`h-11 rounded-xl text-sm font-black ${qualifierHeat === "froid" ? "bg-cyan-300 text-[#13253D] ring-2 ring-cyan-200/60" : "bg-white/10 text-white/80"}`}
@@ -1356,10 +1369,10 @@ export default function EntrepreneurSmartScanTestPage() {
                       type="button"
                       onClick={() => {
                         setQualifierHeat("tiede");
-                        if (!hasChosenHeat) {
-                          setHasChosenHeat(true);
-                          setQualifierStep(2);
-                          setTimeout(() => scrollIntoViewSmooth(businessSectionRef), 180);
+                        setHasChosenHeat(true);
+                        if (qualifierStep < 3) {
+                          setQualifierStep(3);
+                          setTimeout(() => scrollIntoViewSmooth(communitySectionRef), 180);
                         }
                       }}
                       className={`h-11 rounded-xl text-sm font-black ${qualifierHeat === "tiede" ? "bg-amber-300 text-[#2C230E] ring-2 ring-amber-200/60" : "bg-white/10 text-white/80"}`}
@@ -1370,10 +1383,10 @@ export default function EntrepreneurSmartScanTestPage() {
                       type="button"
                       onClick={() => {
                         setQualifierHeat("brulant");
-                        if (!hasChosenHeat) {
-                          setHasChosenHeat(true);
-                          setQualifierStep(2);
-                          setTimeout(() => scrollIntoViewSmooth(businessSectionRef), 180);
+                        setHasChosenHeat(true);
+                        if (qualifierStep < 3) {
+                          setQualifierStep(3);
+                          setTimeout(() => scrollIntoViewSmooth(communitySectionRef), 180);
                         }
                       }}
                       className={`h-11 rounded-xl text-sm font-black ${qualifierHeat === "brulant" ? "bg-orange-400 text-[#321A0E] ring-2 ring-orange-200/60" : "bg-white/10 text-white/80"}`}
@@ -1384,64 +1397,8 @@ export default function EntrepreneurSmartScanTestPage() {
                 </div>
 
                 <div
-                  ref={businessSectionRef}
-                  className={`rounded-2xl border border-white/15 bg-black/25 p-3 transition-all duration-300 ${qualifierStep >= 2 ? "opacity-100" : "opacity-35 pointer-events-none"}`}
-                >
-                  <p className="text-[11px] font-black uppercase tracking-[0.12em] text-white/70">💰 Business - 1 choix</p>
-                  <p className="mt-1 text-xs text-white/70">Est-ce que ca peut me rapporter de l argent ?</p>
-                  <div className="mt-2 grid grid-cols-2 gap-2">
-                    {BUSINESS_OPTIONS.map((option) => (
-                      <button
-                        key={option.id}
-                        type="button"
-                        onClick={() => {
-                          setBusinessChoice(option.id);
-                          if (qualifierStep < 3) {
-                            setQualifierStep(3);
-                            setTimeout(() => scrollIntoViewSmooth(networkSectionRef), 180);
-                          }
-                        }}
-                        className={`h-10 rounded-xl px-2 text-[11px] font-black ${
-                          businessChoice === option.id ? "bg-emerald-300 text-emerald-950 ring-2 ring-emerald-200/70" : "bg-white/10 text-white/85"
-                        }`}
-                      >
-                        {option.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div
-                  ref={networkSectionRef}
-                  className={`rounded-2xl border border-white/15 bg-black/25 p-3 transition-all duration-300 ${qualifierStep >= 3 ? "opacity-100" : "opacity-35 pointer-events-none"}`}
-                >
-                  <p className="text-[11px] font-black uppercase tracking-[0.12em] text-white/70">🤝 Reseau - 1 choix</p>
-                  <p className="mt-1 text-xs text-white/70">Est-ce qu il peut m apporter quelqu un ?</p>
-                  <div className="mt-2 grid grid-cols-2 gap-2">
-                    {NETWORK_OPTIONS.map((option) => (
-                      <button
-                        key={option.id}
-                        type="button"
-                        onClick={() => {
-                          setNetworkChoice(option.id);
-                          if (qualifierStep < 4) {
-                            setQualifierStep(4);
-                            setTimeout(() => scrollIntoViewSmooth(communitySectionRef), 180);
-                          }
-                        }}
-                        className={`h-10 rounded-xl px-2 text-[11px] font-black ${
-                          networkChoice === option.id ? "bg-cyan-300 text-cyan-950 ring-2 ring-cyan-200/70" : "bg-white/10 text-white/85"
-                        }`}
-                      >
-                        {option.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div
                   ref={communitySectionRef}
-                  className={`rounded-2xl border border-white/15 bg-black/25 p-3 transition-all duration-300 ${qualifierStep >= 4 ? "opacity-100" : "opacity-35 pointer-events-none"}`}
+                  className={`rounded-2xl border border-white/15 bg-black/25 p-3 transition-all duration-300 ${qualifierStep >= 3 ? "opacity-100" : "opacity-35 pointer-events-none"}`}
                 >
                   <p className="text-[11px] font-black uppercase tracking-[0.12em] text-white/70">⚡ Contributions rapides - multi</p>
                   <div className="mt-2 flex flex-wrap gap-2">
