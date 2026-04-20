@@ -183,7 +183,7 @@ export default function EntrepreneurSmartScanTestPage() {
   const [draftMessage, setDraftMessage] = useState("");
   const [showTemplateModal, setShowTemplateModal] = useState(false);
   const [launchingAction, setLaunchingAction] = useState<Exclude<DailyCategory, "passer" | "qualifier"> | null>(null);
-  const [qualifierHeat, setQualifierHeat] = useState<HeatLevel>("tiede");
+  const [qualifierHeat, setQualifierHeat] = useState<HeatLevel | null>(null);
   const [hasChosenHeat, setHasChosenHeat] = useState(false);
   const [qualifierStep, setQualifierStep] = useState<1 | 2 | 3 | 4>(1);
   const [businessChoice, setBusinessChoice] = useState<(typeof BUSINESS_OPTIONS)[number]["id"] | null>(null);
@@ -291,7 +291,7 @@ export default function EntrepreneurSmartScanTestPage() {
     [selectedAction, current],
   );
   const qualifierChanged =
-    qualifierHeat !== "tiede" ||
+    qualifierHeat !== null ||
     businessChoice !== null ||
     networkChoice !== null ||
     communityTags.length > 0;
@@ -342,7 +342,7 @@ export default function EntrepreneurSmartScanTestPage() {
     if (showTemplateModal) return;
     if (qualifierStore[current.id]) return;
     setSelectedAction("qualifier");
-    setQualifierHeat("tiede");
+    setQualifierHeat(null);
     setHasChosenHeat(false);
     setQualifierStep(1);
     setBusinessChoice(null);
@@ -532,7 +532,7 @@ export default function EntrepreneurSmartScanTestPage() {
     const nextDraft = buildTemplate(action, current);
     setSelectedAction(action);
     if (action === "qualifier") {
-      setQualifierHeat("tiede");
+      setQualifierHeat(null);
       setHasChosenHeat(false);
       setQualifierStep(1);
       setBusinessChoice(null);
@@ -586,7 +586,7 @@ export default function EntrepreneurSmartScanTestPage() {
     setQualifierStore((prev) => ({
       ...prev,
       [current.id]: {
-        heat: qualifierHeat,
+        heat: qualifierHeat ?? "tiede",
         businessChoice,
         networkChoice,
         communityTags,
@@ -798,8 +798,8 @@ export default function EntrepreneurSmartScanTestPage() {
           </div>
         </div>
 
-        <div className="mt-4 grid gap-4 lg:grid-cols-[1.15fr_0.85fr]">
-          <section className="rounded-3xl border border-white/10 bg-white/5 p-3 sm:p-4 backdrop-blur-xl">
+        <div className={`mt-4 ${done >= 10 ? "grid gap-4 lg:grid-cols-[1.15fr_0.85fr]" : "flex justify-center"}`}>
+          <section className={`rounded-3xl border border-white/10 bg-white/5 p-3 sm:p-4 backdrop-blur-xl ${done >= 10 ? "" : "w-full max-w-3xl"}`}>
             <div className="flex items-center justify-between">
               <p className="text-xs font-black uppercase tracking-[0.12em] text-cyan-200">Daily Card</p>
               <span className="rounded-full border border-white/15 bg-black/25 px-2 py-1 text-[10px] font-black uppercase tracking-wide text-white/80">🔒 Anonymat communautaire garanti</span>
@@ -875,7 +875,7 @@ export default function EntrepreneurSmartScanTestPage() {
                     </>
                   )}
                   <span className="block text-base font-black uppercase tracking-wide">✨ Eclaireur</span>
-                  <span className="mt-0.5 block text-[11px] font-semibold text-amber-100/90">Partage de commission immo</span>
+                  <span className="mt-0.5 block text-[11px] font-semibold text-amber-100/90">Apport d affaire & Commission</span>
                 </button>
                 <button
                   type="button"
@@ -910,7 +910,7 @@ export default function EntrepreneurSmartScanTestPage() {
                     </>
                   )}
                   <span className="block text-base font-black uppercase tracking-wide">🧩 Partage Croise</span>
-                  <span className="mt-0.5 block text-[11px] font-semibold text-fuchsia-100/90">Expertise Pret & Notaire</span>
+                  <span className="mt-0.5 block text-[11px] font-semibold text-fuchsia-100/90">Proposition de service</span>
                 </button>
                 <button
                   type="button"
@@ -945,7 +945,7 @@ export default function EntrepreneurSmartScanTestPage() {
                     </>
                   )}
                   <span className="block text-base font-black uppercase tracking-wide">📣 Ex-Clients (News)</span>
-                  <span className="mt-0.5 block text-[11px] font-semibold text-cyan-100/90">Update secteur & Estimation</span>
+                  <span className="mt-0.5 block text-[11px] font-semibold text-cyan-100/90">Veille et relance</span>
                 </button>
                 {!isQualified && (
                   <p className="text-center text-[11px] font-black uppercase tracking-wide text-emerald-100/85">
