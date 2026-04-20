@@ -172,7 +172,6 @@ function buildTemplate(action: DailyCategory, contact: DailyContact) {
 export default function EntrepreneurSmartScanTestPage() {
   const [stage, setStage] = useState<"scan" | "daily">("scan");
   const [scanCount, setScanCount] = useState(0);
-  const [scanBurst, setScanBurst] = useState(false);
   const [index, setIndex] = useState(0);
   const [selectedAction, setSelectedAction] = useState<DailyCategory | null>(null);
   const [draftMessage, setDraftMessage] = useState("");
@@ -368,13 +367,6 @@ export default function EntrepreneurSmartScanTestPage() {
     }, 180);
     return () => clearInterval(timer);
   }, [stage]);
-
-  useEffect(() => {
-    if (!scanDone) return;
-    setScanBurst(true);
-    const timer = setTimeout(() => setScanBurst(false), 1100);
-    return () => clearTimeout(timer);
-  }, [scanDone]);
 
   useEffect(() => {
     if (stage !== "daily") return;
@@ -738,10 +730,11 @@ export default function EntrepreneurSmartScanTestPage() {
             <p className="mt-2 text-xs text-white/70">{scanCount} / {totalScanned} contacts scannes</p>
             {!scanDone && <p className="mt-1 text-[11px] uppercase tracking-[0.12em] text-orange-200/90">Meche active...</p>}
 
-            {scanDone && scanBurst && (
+            {scanDone && (
               <motion.div
-                initial={{ opacity: 0, scale: 0.85 }}
+                initial={{ opacity: 0, scale: 0.92 }}
                 animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.25, ease: "easeOut" }}
                 className="mt-3 rounded-2xl border border-orange-300/35 bg-orange-300/15 p-3 text-center"
               >
                 <p className="text-2xl">💥</p>
@@ -751,22 +744,27 @@ export default function EntrepreneurSmartScanTestPage() {
 
             <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
               {scanCards.map((card, idx) => (
-                <motion.div
-                  key={card.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={scanDone ? { opacity: 1, y: 0 } : { opacity: 1, y: [0, -2, 0] }}
-                  transition={
-                    scanDone
-                      ? { delay: idx * 0.04, duration: 0.25, ease: "easeOut" }
-                      : { delay: idx * 0.05, duration: 1.6, repeat: Infinity, repeatType: "reverse", ease: "easeInOut" }
-                  }
-                  className={`rounded-2xl border bg-gradient-to-br p-3 text-center ${card.color}`}
-                >
-                  <p className="text-xs">{card.icon}</p>
-                  <p className={`text-2xl font-black tabular-nums ${card.valueColor}`}>{card.value}</p>
-                  <p className="mt-1 text-[11px] font-black uppercase tracking-wide text-white/90">{card.title}</p>
-                  <p className="mt-1 text-[10px] text-white/70">{card.subtitle}</p>
-                </motion.div>
+                scanDone ? (
+                  <div key={card.id} className={`rounded-2xl border bg-gradient-to-br p-3 text-center ${card.color}`}>
+                    <p className="text-xs">{card.icon}</p>
+                    <p className={`text-2xl font-black tabular-nums ${card.valueColor}`}>{card.value}</p>
+                    <p className="mt-1 text-[11px] font-black uppercase tracking-wide text-white/90">{card.title}</p>
+                    <p className="mt-1 text-[10px] text-white/70">{card.subtitle}</p>
+                  </div>
+                ) : (
+                  <motion.div
+                    key={card.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: [0, -2, 0] }}
+                    transition={{ delay: idx * 0.05, duration: 1.6, repeat: Infinity, repeatType: "reverse", ease: "easeInOut" }}
+                    className={`rounded-2xl border bg-gradient-to-br p-3 text-center ${card.color}`}
+                  >
+                    <p className="text-xs">{card.icon}</p>
+                    <p className={`text-2xl font-black tabular-nums ${card.valueColor}`}>{card.value}</p>
+                    <p className="mt-1 text-[11px] font-black uppercase tracking-wide text-white/90">{card.title}</p>
+                    <p className="mt-1 text-[10px] text-white/70">{card.subtitle}</p>
+                  </motion.div>
+                )
               ))}
             </div>
 
