@@ -237,6 +237,44 @@ export default function EntrepreneurSmartScanTestPage() {
   const liveLocals = Math.min(488, Math.round(488 * scanProgress));
   const liveHotSignals = Math.min(112, Math.round(112 * scanProgress));
   const liveInReview = Math.min(214, Math.round(214 * scanProgress));
+  const scanCards = [
+    {
+      id: "locals",
+      icon: "📍",
+      value: scanDone ? 488 : liveLocals,
+      title: "Localises",
+      subtitle: "detectes dans ton secteur (64/40)",
+      color: "from-cyan-400/25 to-blue-400/20 border-cyan-300/40",
+      valueColor: "text-cyan-100",
+    },
+    {
+      id: "active",
+      icon: "⚡",
+      value: scanDone ? 304 : liveProfiles,
+      title: "Detectes Actifs",
+      subtitle: "deja identifies dans Popey",
+      color: "from-violet-400/25 to-fuchsia-400/20 border-violet-300/40",
+      valueColor: "text-violet-100",
+    },
+    {
+      id: "hot",
+      icon: "🔥",
+      value: scanDone ? 112 : liveHotSignals,
+      title: "A Fort Potentiel",
+      subtitle: "pas contactes depuis 3 mois",
+      color: "from-amber-400/30 to-orange-400/20 border-amber-300/40",
+      valueColor: "text-amber-100",
+    },
+    {
+      id: "review",
+      icon: "🧠",
+      value: scanDone ? 214 : liveInReview,
+      title: "En cours d analyse",
+      subtitle: "numeros a qualifier",
+      color: "from-emerald-400/25 to-teal-400/20 border-emerald-300/40",
+      valueColor: "text-emerald-100",
+    },
+  ] as const;
   const done = Math.min(index, CONTACTS.length);
   const progress = Math.round((done / 10) * 100);
   const heatScore = Math.min(99, 55 + current.communityKnownBy * 10 + (current.externalNews ? 8 : 0));
@@ -673,12 +711,24 @@ export default function EntrepreneurSmartScanTestPage() {
     return (
       <main className="h-screen overflow-hidden bg-[radial-gradient(circle_at_10%_0%,#10193D_0%,#0C122B_45%,#090B16_100%)] text-white">
         <div className="mx-auto flex h-full max-w-xl items-center px-4">
-          <section className="w-full rounded-3xl border border-white/10 bg-white/5 p-5 backdrop-blur-xl">
+          <section className="relative w-full overflow-hidden rounded-3xl border border-white/10 bg-white/5 p-5 backdrop-blur-xl">
+            <motion.div
+              aria-hidden
+              className="pointer-events-none absolute -right-20 -top-24 h-48 w-48 rounded-full bg-cyan-400/25 blur-3xl"
+              animate={{ scale: [1, 1.2, 1], opacity: [0.25, 0.4, 0.25] }}
+              transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+            />
+            <motion.div
+              aria-hidden
+              className="pointer-events-none absolute -left-20 -bottom-24 h-48 w-48 rounded-full bg-violet-500/20 blur-3xl"
+              animate={{ scale: [1.1, 0.95, 1.1], opacity: [0.2, 0.35, 0.2] }}
+              transition={{ duration: 3.4, repeat: Infinity, ease: "easeInOut" }}
+            />
             <p className="text-xs font-black uppercase tracking-[0.12em] text-cyan-200">Mini-Agence Smart Scan</p>
             <h1 className="mt-2 text-2xl font-black">Scan de ton telephone en cours...</h1>
             <p className="mt-1 text-sm text-white/70">Analyse locale securisee, aucun contact en clair n est envoye.</p>
 
-            <div className="mt-4 h-2 overflow-hidden rounded-full bg-white/10">
+            <div className="mt-4 h-2.5 overflow-hidden rounded-full bg-white/10">
               <div className="relative h-full w-full">
                 <motion.div
                   className="h-full rounded-full bg-gradient-to-r from-amber-300 via-orange-400 to-rose-400"
@@ -710,26 +760,20 @@ export default function EntrepreneurSmartScanTestPage() {
             )}
 
             <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
-              <div className="rounded-2xl bg-white/10 p-3 text-center">
-                <p className="text-2xl font-black text-cyan-100 tabular-nums">{scanDone ? 488 : liveLocals}</p>
-                <p className="mt-1 text-[11px] font-black uppercase tracking-wide text-white/85">Localises</p>
-                <p className="mt-1 text-[10px] text-white/65">Contacts detectes dans ton secteur (64/40).</p>
-              </div>
-              <div className="rounded-2xl bg-white/10 p-3 text-center">
-                <p className="text-2xl font-black text-indigo-100 tabular-nums">{scanDone ? 304 : liveProfiles}</p>
-                <p className="mt-1 text-[11px] font-black uppercase tracking-wide text-white/85">Detectes Actifs</p>
-                <p className="mt-1 text-[10px] text-white/65">Deja identifies comme actifs dans le reseau Popey.</p>
-              </div>
-              <div className="rounded-2xl bg-white/10 p-3 text-center">
-                <p className="text-2xl font-black text-orange-100 tabular-nums">{scanDone ? 112 : liveHotSignals}</p>
-                <p className="mt-1 text-[11px] font-black uppercase tracking-wide text-white/85">A Fort Potentiel</p>
-                <p className="mt-1 text-[10px] text-white/65">Pas contactes depuis 3 mois et dans ton secteur.</p>
-              </div>
-              <div className="rounded-2xl bg-white/10 p-3 text-center">
-                <p className="text-2xl font-black text-emerald-100 tabular-nums">{scanDone ? 214 : liveInReview}</p>
-                <p className="mt-1 text-[11px] font-black uppercase tracking-wide text-white/85">En cours d analyse</p>
-                <p className="mt-1 text-[10px] text-white/65">Ces numeros seront a qualifier.</p>
-              </div>
+              {scanCards.map((card, idx) => (
+                <motion.div
+                  key={card.id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: [0, -2, 0] }}
+                  transition={{ delay: idx * 0.05, duration: 1.6, repeat: Infinity, repeatType: "reverse", ease: "easeInOut" }}
+                  className={`rounded-2xl border bg-gradient-to-br p-3 text-center ${card.color}`}
+                >
+                  <p className="text-xs">{card.icon}</p>
+                  <p className={`text-2xl font-black tabular-nums ${card.valueColor}`}>{card.value}</p>
+                  <p className="mt-1 text-[11px] font-black uppercase tracking-wide text-white/90">{card.title}</p>
+                  <p className="mt-1 text-[10px] text-white/70">{card.subtitle}</p>
+                </motion.div>
+              ))}
             </div>
 
             {scanDone && (
