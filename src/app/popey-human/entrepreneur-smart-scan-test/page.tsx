@@ -236,6 +236,7 @@ export default function EntrepreneurSmartScanTestPage() {
   const liveProfiles = Math.min(304, Math.round(304 * scanProgress));
   const liveLocals = Math.min(488, Math.round(488 * scanProgress));
   const liveHotSignals = Math.min(112, Math.round(112 * scanProgress));
+  const liveInReview = Math.min(214, Math.round(214 * scanProgress));
   const done = Math.min(index, CONTACTS.length);
   const progress = Math.round((done / 10) * 100);
   const heatScore = Math.min(99, 55 + current.communityKnownBy * 10 + (current.externalNews ? 8 : 0));
@@ -708,18 +709,26 @@ export default function EntrepreneurSmartScanTestPage() {
               </motion.div>
             )}
 
-            <div className="mt-4 grid grid-cols-3 gap-2">
+            <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
               <div className="rounded-2xl bg-white/10 p-3 text-center">
-                <p className="text-2xl font-black text-cyan-100 tabular-nums">{scanDone ? 304 : liveProfiles}</p>
-                <p className="mt-1 text-[11px] font-black uppercase tracking-wide text-white/75">profils actifs</p>
+                <p className="text-2xl font-black text-cyan-100 tabular-nums">{scanDone ? 488 : liveLocals}</p>
+                <p className="mt-1 text-[11px] font-black uppercase tracking-wide text-white/85">Localises</p>
+                <p className="mt-1 text-[10px] text-white/65">Contacts detectes dans ton secteur (64/40).</p>
               </div>
               <div className="rounded-2xl bg-white/10 p-3 text-center">
-                <p className="text-2xl font-black text-indigo-100 tabular-nums">{scanDone ? 488 : liveLocals}</p>
-                <p className="mt-1 text-[11px] font-black uppercase tracking-wide text-white/75">contacts locaux</p>
+                <p className="text-2xl font-black text-indigo-100 tabular-nums">{scanDone ? 304 : liveProfiles}</p>
+                <p className="mt-1 text-[11px] font-black uppercase tracking-wide text-white/85">Detectes Actifs</p>
+                <p className="mt-1 text-[10px] text-white/65">Deja identifies comme actifs dans le reseau Popey.</p>
               </div>
               <div className="rounded-2xl bg-white/10 p-3 text-center">
                 <p className="text-2xl font-black text-orange-100 tabular-nums">{scanDone ? 112 : liveHotSignals}</p>
-                <p className="mt-1 text-[11px] font-black uppercase tracking-wide text-white/75">signaux chauds</p>
+                <p className="mt-1 text-[11px] font-black uppercase tracking-wide text-white/85">A Fort Potentiel</p>
+                <p className="mt-1 text-[10px] text-white/65">Pas contactes depuis 3 mois et dans ton secteur.</p>
+              </div>
+              <div className="rounded-2xl bg-white/10 p-3 text-center">
+                <p className="text-2xl font-black text-emerald-100 tabular-nums">{scanDone ? 214 : liveInReview}</p>
+                <p className="mt-1 text-[11px] font-black uppercase tracking-wide text-white/85">En cours d analyse</p>
+                <p className="mt-1 text-[10px] text-white/65">Ces numeros seront a qualifier.</p>
               </div>
             </div>
 
