@@ -47,16 +47,16 @@ export default async function PopeyHumanClientsPage({
   };
 
   return (
-    <section className="space-y-5">
+    <section className="mx-auto w-full max-w-5xl space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <p className="text-xs font-black uppercase tracking-[0.12em] text-[#EAC886]">Clients reçus</p>
+          <p className="text-xs font-black uppercase tracking-[0.12em] text-cyan-200">Clients recus</p>
           <h1 className="text-3xl font-black">Clients</h1>
           <p className="text-sm text-white/75">Touchez un client pour ouvrir sa fiche complète.</p>
         </div>
         <Link
           href="/popey-human/app"
-          className="h-10 rounded-xl px-3 inline-flex items-center text-xs font-black uppercase tracking-wide border border-white/20 bg-white/10 text-white/90"
+          className="h-10 rounded-xl px-3 inline-flex items-center text-xs font-black uppercase tracking-wide border border-white/20 bg-black/25 text-white/90"
         >
           Retour cockpit
         </Link>
@@ -100,7 +100,7 @@ export default async function PopeyHumanClientsPage({
                   ? "border-[#EAC886]/45 bg-[#EAC886]/15"
                   : lead.status === "perdu"
                   ? "border-red-400/40 bg-red-500/10"
-                  : "border-white/15 bg-black/25"
+                  : "border-white/15 bg-white/5 backdrop-blur-xl"
               }`}
             >
               <div className="flex flex-wrap items-start justify-between gap-3">
@@ -117,7 +117,7 @@ export default async function PopeyHumanClientsPage({
                 </div>
                 <Link
                   href={withQuery({ lead: lead.id, sign: "" })}
-                  className="rounded border border-white/20 px-3 py-1.5 text-xs font-semibold"
+                  className="rounded border border-white/20 bg-black/25 px-3 py-1.5 text-xs font-semibold"
                 >
                   Ouvrir fiche
                 </Link>
@@ -127,7 +127,7 @@ export default async function PopeyHumanClientsPage({
                 <form action={takeHumanLeadAction} className="mt-3">
                   <input type="hidden" name="lead_id" value={lead.id} />
                   <input type="hidden" name="current_url" value="/popey-human/app/clients" />
-                  <button className="h-12 w-full rounded-xl bg-emerald-400 text-black text-sm font-black uppercase tracking-wide">
+                  <button className="h-12 w-full rounded-xl bg-gradient-to-r from-emerald-400 to-cyan-300 text-[#10263A] text-sm font-black uppercase tracking-wide">
                     Je prends le deal et je contacte le client
                   </button>
                 </form>
@@ -137,7 +137,7 @@ export default async function PopeyHumanClientsPage({
                 <div className="mt-3 grid grid-cols-2 gap-2">
                   <Link
                     href={withQuery({ lead: lead.id, sign: lead.id })}
-                    className="h-12 rounded-xl bg-[#EAC886] text-black text-sm font-black uppercase tracking-wide inline-flex items-center justify-center"
+                    className="h-12 rounded-xl bg-gradient-to-r from-amber-300 to-yellow-300 text-[#2E240E] text-sm font-black uppercase tracking-wide inline-flex items-center justify-center"
                   >
                     J&apos;ai signé le client
                   </Link>
@@ -167,7 +167,7 @@ export default async function PopeyHumanClientsPage({
 
       {selectedLead && !signLead && (
         <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-[2px] p-4 flex items-center justify-center">
-          <div className="w-full max-w-xl rounded-2xl border border-white/25 bg-[#1B2227] p-5">
+          <div className="w-full max-w-xl rounded-3xl border border-white/20 bg-[#101A38] p-5 shadow-[0_30px_60px_-35px_rgba(0,0,0,0.9)]">
             <div className="flex items-start justify-between gap-3">
               <div>
                 <p className="text-xs uppercase font-black tracking-[0.12em] text-[#EAC886]/80">Fiche client</p>
@@ -199,7 +199,7 @@ export default async function PopeyHumanClientsPage({
               <a
                 href={selectedLead.phone ? `tel:${selectedLead.phone.replaceAll(" ", "")}` : undefined}
                 className={`h-11 rounded-xl inline-flex items-center justify-center text-sm font-black uppercase tracking-wide ${
-                  selectedLead.phone ? "bg-emerald-400 text-black" : "border border-white/20 text-white/45 pointer-events-none"
+                  selectedLead.phone ? "bg-gradient-to-r from-emerald-400 to-cyan-300 text-[#10263A]" : "border border-white/20 text-white/45 pointer-events-none"
                 }`}
               >
                 Appeler le client
@@ -217,7 +217,7 @@ export default async function PopeyHumanClientsPage({
                 <form action={takeHumanLeadAction}>
                   <input type="hidden" name="lead_id" value={selectedLead.id} />
                   <input type="hidden" name="current_url" value={withQuery({ lead: selectedLead.id, sign: "" })} />
-                  <button className="h-11 w-full rounded-xl bg-emerald-400 text-black text-sm font-black uppercase tracking-wide">
+                  <button className="h-11 w-full rounded-xl bg-gradient-to-r from-emerald-400 to-cyan-300 text-[#10263A] text-sm font-black uppercase tracking-wide">
                     Je prends le deal et je contacte le client
                   </button>
                 </form>
@@ -246,7 +246,7 @@ export default async function PopeyHumanClientsPage({
 
       {signLead && signLead.status === "pris" && (
         <div className="fixed inset-0 z-[60] bg-black/50 backdrop-blur-[2px] p-4 flex items-center justify-center">
-          <div className="w-full max-w-lg rounded-2xl border border-white/25 bg-[#1B2227] p-5">
+          <div className="w-full max-w-lg rounded-3xl border border-white/20 bg-[#101A38] p-5 shadow-[0_30px_60px_-35px_rgba(0,0,0,0.9)]">
             <div className="flex items-start justify-between gap-3">
               <div>
                 <p className="text-xs uppercase font-black tracking-[0.12em] text-[#EAC886]/80">Validation signature</p>
@@ -273,7 +273,7 @@ export default async function PopeyHumanClientsPage({
                   placeholder="Ex: 22000"
                 />
               </div>
-              <button className="h-12 w-full rounded-xl bg-emerald-400 text-black text-sm font-black uppercase tracking-wide">
+              <button className="h-12 w-full rounded-xl bg-gradient-to-r from-emerald-400 to-cyan-300 text-[#10263A] text-sm font-black uppercase tracking-wide">
                 Valider et envoyer à l&apos;admin + apporteur
               </button>
             </form>

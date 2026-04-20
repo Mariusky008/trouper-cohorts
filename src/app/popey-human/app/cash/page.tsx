@@ -39,16 +39,16 @@ export default async function PopeyHumanCashPage({
   const cashDisponiblePopey = !summary.error ? summary.commissionsTotals.paid : 0;
 
   return (
-    <section className="space-y-5">
+    <section className="mx-auto w-full max-w-5xl space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <p className="text-xs font-black uppercase tracking-[0.12em] text-emerald-300">Cash Radar</p>
+          <p className="text-xs font-black uppercase tracking-[0.12em] text-cyan-200">Cash Radar</p>
           <h1 className="text-3xl font-black">Cash</h1>
           <p className="text-sm text-white/75">Montants signés, commissions reçues et commissions à payer.</p>
         </div>
         <Link
           href="/popey-human/app"
-          className="h-10 rounded-xl px-3 inline-flex items-center text-xs font-black uppercase tracking-wide border border-white/20 bg-white/10 text-white/90"
+          className="h-10 rounded-xl px-3 inline-flex items-center text-xs font-black uppercase tracking-wide border border-white/20 bg-black/25 text-white/90"
         >
           Retour cockpit
         </Link>
@@ -94,7 +94,7 @@ export default async function PopeyHumanCashPage({
                   placeholder="Montant du virement"
                   className="h-10 w-full rounded-lg border border-cyan-200/40 bg-black/25 px-3 text-sm"
                 />
-                <button className="h-10 w-full rounded-lg bg-cyan-300 text-black text-xs font-black uppercase tracking-wide">
+                <button className="h-10 w-full rounded-lg bg-gradient-to-r from-emerald-400 to-cyan-300 text-[#10263A] text-xs font-black uppercase tracking-wide">
                   Demander un virement Popey
                 </button>
               </form>
@@ -129,7 +129,7 @@ export default async function PopeyHumanCashPage({
             </Link>
           </div>
 
-          <form action={addMyCashEventAction} className="grid gap-3 rounded-xl border border-white/15 bg-black/20 p-4">
+          <form action={addMyCashEventAction} className="grid gap-3 rounded-2xl border border-white/15 bg-white/5 p-4 backdrop-blur-xl">
             <p className="text-xs font-black uppercase tracking-[0.12em] text-white/65">Mouvement manuel</p>
             <div className="grid gap-3 sm:grid-cols-3">
               <select name="kind" required className="w-full rounded border border-white/20 bg-black/25 px-2 py-2 text-sm">
@@ -148,7 +148,7 @@ export default async function PopeyHumanCashPage({
               <input name="source_id" placeholder="Source ID (optionnel)" className="w-full rounded border border-white/20 bg-black/25 px-2 py-2 text-sm" />
             </div>
             <input name="description" required placeholder="Description" className="w-full rounded border border-white/20 bg-black/25 px-2 py-2 text-sm" />
-            <button className="w-fit rounded bg-emerald-400 px-4 py-2 text-sm font-black text-black uppercase tracking-wide">
+            <button className="w-fit rounded bg-gradient-to-r from-emerald-400 to-cyan-300 px-4 py-2 text-sm font-black text-[#10263A] uppercase tracking-wide">
               Ajouter le mouvement
             </button>
           </form>
@@ -157,7 +157,7 @@ export default async function PopeyHumanCashPage({
 
       {modal === "events" && !summary.error && (
         <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-[2px] p-4 flex items-center justify-center">
-          <div className="w-full max-w-3xl rounded-2xl border border-white/25 bg-[#1B2227] p-5">
+          <div className="w-full max-w-3xl rounded-3xl border border-white/20 bg-[#101A38] p-5 shadow-[0_30px_60px_-35px_rgba(0,0,0,0.9)]">
             <div className="flex items-start justify-between gap-3">
               <div>
                 <p className="text-xs uppercase font-black tracking-[0.12em] text-white/65">Mouvements cash</p>
@@ -187,7 +187,7 @@ export default async function PopeyHumanCashPage({
 
       {modal === "inbound" && !summary.error && (
         <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-[2px] p-4 flex items-center justify-center">
-          <div className="w-full max-w-3xl rounded-2xl border border-white/25 bg-[#1B2227] p-5">
+          <div className="w-full max-w-3xl rounded-3xl border border-white/20 bg-[#101A38] p-5 shadow-[0_30px_60px_-35px_rgba(0,0,0,0.9)]">
             <div className="flex items-start justify-between gap-3">
               <div>
                 <p className="text-xs uppercase font-black tracking-[0.12em] text-emerald-300/80">Commissions dues (Inbound)</p>
@@ -225,7 +225,7 @@ export default async function PopeyHumanCashPage({
 
       {modal === "outbound" && !summary.error && (
         <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-[2px] p-4 flex items-center justify-center">
-          <div className="w-full max-w-3xl rounded-2xl border border-white/25 bg-[#1B2227] p-5">
+          <div className="w-full max-w-3xl rounded-3xl border border-white/20 bg-[#101A38] p-5 shadow-[0_30px_60px_-35px_rgba(0,0,0,0.9)]">
             <div className="flex items-start justify-between gap-3">
               <div>
                 <p className="text-xs uppercase font-black tracking-[0.12em] text-[#EAC886]/80">Commissions à payer (Outbound)</p>

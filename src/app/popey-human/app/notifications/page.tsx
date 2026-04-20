@@ -41,33 +41,33 @@ export default async function PopeyHumanNotificationsPage({
   const congratsCount = !feed.error ? feed.notifications.filter((notification) => notification.type === "felicitation").length : 0;
 
   return (
-    <section className="space-y-5">
+    <section className="mx-auto w-full max-w-5xl space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <p className="text-xs font-black uppercase tracking-[0.12em] text-emerald-300">Popey Radar</p>
+          <p className="text-xs font-black uppercase tracking-[0.12em] text-cyan-200">Popey Radar</p>
           <h1 className="text-3xl font-black">Centre de notifications</h1>
           <p className="text-sm text-white/75">Version conversationnelle: cliquez une notif pour l&apos;ouvrir en grand.</p>
         </div>
         <Link
           href="/popey-human/app"
-          className="h-10 rounded-xl px-3 inline-flex items-center text-xs font-black uppercase tracking-wide border border-white/20 bg-white/10 text-white/90"
+          className="h-10 rounded-xl px-3 inline-flex items-center text-xs font-black uppercase tracking-wide border border-white/20 bg-black/25 text-white/90"
         >
           Retour cockpit
         </Link>
       </div>
 
       <div className="grid grid-cols-3 gap-2">
-        <div className="rounded-xl border border-emerald-300/35 bg-emerald-50 px-3 py-2">
-          <p className="text-[10px] uppercase tracking-[0.1em] font-black text-emerald-800">Non lues</p>
-          <p className="text-lg font-black text-emerald-900">{unreadCount}</p>
+        <div className="rounded-xl border border-emerald-300/35 bg-emerald-400/10 px-3 py-2">
+          <p className="text-[10px] uppercase tracking-[0.1em] font-black text-emerald-200">Non lues</p>
+          <p className="text-lg font-black text-emerald-100">{unreadCount}</p>
         </div>
-        <div className="rounded-xl border border-cyan-300/35 bg-cyan-50 px-3 py-2">
-          <p className="text-[10px] uppercase tracking-[0.1em] font-black text-cyan-800">Personnelles</p>
-          <p className="text-lg font-black text-cyan-900">{personalCount}</p>
+        <div className="rounded-xl border border-cyan-300/35 bg-cyan-400/10 px-3 py-2">
+          <p className="text-[10px] uppercase tracking-[0.1em] font-black text-cyan-200">Personnelles</p>
+          <p className="text-lg font-black text-cyan-100">{personalCount}</p>
         </div>
-        <div className="rounded-xl border border-fuchsia-300/35 bg-fuchsia-50 px-3 py-2">
-          <p className="text-[10px] uppercase tracking-[0.1em] font-black text-fuchsia-800">Félicitations</p>
-          <p className="text-lg font-black text-fuchsia-900">{congratsCount}</p>
+        <div className="rounded-xl border border-fuchsia-300/35 bg-fuchsia-400/10 px-3 py-2">
+          <p className="text-[10px] uppercase tracking-[0.1em] font-black text-fuchsia-200">Felicitations</p>
+          <p className="text-lg font-black text-fuchsia-100">{congratsCount}</p>
         </div>
       </div>
 
@@ -80,7 +80,7 @@ export default async function PopeyHumanNotificationsPage({
             key={item.key}
             className={`h-9 rounded-full px-3 text-xs font-black uppercase tracking-wide inline-flex items-center ${
               scope === item.key
-                ? "bg-emerald-400 text-black shadow-[0_10px_24px_-14px_rgba(16,185,129,0.55)]"
+                ? "bg-gradient-to-r from-emerald-400 to-cyan-300 text-[#10263A] shadow-[0_12px_26px_-14px_rgba(16,185,129,0.55)]"
                 : "border border-white/20 bg-black/25 text-white/80"
             }`}
             href={item.href}
@@ -101,7 +101,7 @@ export default async function PopeyHumanNotificationsPage({
 
       {!feed.error && feed.notifications.length > 0 && (
         <div className="grid gap-4 md:grid-cols-[320px_1fr]">
-          <aside className="rounded-2xl border border-white/15 bg-black/25 p-3">
+          <aside className="rounded-3xl border border-white/15 bg-white/5 p-3 backdrop-blur-xl">
             <p className="px-1 text-[11px] font-black uppercase tracking-[0.12em] text-white/65">Flux conversations</p>
             <div className="mt-2 space-y-2 max-h-[62vh] overflow-y-auto pr-1">
               {feed.notifications.map((notification) => (
@@ -110,7 +110,7 @@ export default async function PopeyHumanNotificationsPage({
                   href={withSelected(notification.id)}
                   className={`block rounded-xl border px-3 py-3 ${
                     selectedNotification?.id === notification.id
-                      ? "border-emerald-300 bg-emerald-500/10"
+                      ? "border-cyan-300 bg-cyan-500/10"
                       : "border-white/15 bg-black/20"
                   }`}
                 >
@@ -133,7 +133,7 @@ export default async function PopeyHumanNotificationsPage({
             </div>
           </aside>
 
-          <section className="rounded-2xl border border-white/15 bg-black/25 p-4">
+          <section className="rounded-3xl border border-white/15 bg-white/5 p-4 backdrop-blur-xl">
             {selectedNotification && (
               <>
                 <div className="flex items-start justify-between gap-3">
@@ -180,7 +180,7 @@ export default async function PopeyHumanNotificationsPage({
                         <input type="hidden" name="current_url" value={withSelected(selectedNotification.id)} />
                         <button
                           className={`h-9 rounded-full px-3 text-sm font-black ${
-                            active ? "bg-emerald-400 text-black" : "border border-white/20 bg-black/25 text-white/90"
+                            active ? "bg-gradient-to-r from-emerald-400 to-cyan-300 text-[#10263A]" : "border border-white/20 bg-black/25 text-white/90"
                           }`}
                         >
                           {emoji} {count}
@@ -196,7 +196,7 @@ export default async function PopeyHumanNotificationsPage({
       )}
 
       {!feed.error && (
-        <div className="rounded-2xl border border-white/15 bg-black/25 p-4">
+        <div className="rounded-3xl border border-white/15 bg-white/5 p-4 backdrop-blur-xl">
           <p className="text-sm font-black">Ajouter une félicitation membre</p>
           <form action={createMyHumanCongratsAction} className="mt-3 space-y-2">
             <input type="hidden" name="current_url" value={currentBase} />
@@ -213,7 +213,7 @@ export default async function PopeyHumanNotificationsPage({
               placeholder="Votre message de félicitations..."
               className="w-full rounded-lg border border-white/20 bg-black/30 px-3 py-2 text-sm min-h-24"
             />
-            <button className="h-11 w-full rounded-xl bg-emerald-400 text-black text-sm font-black uppercase tracking-wide">
+            <button className="h-11 w-full rounded-xl bg-gradient-to-r from-emerald-400 to-cyan-300 text-[#10263A] text-sm font-black uppercase tracking-wide">
               Envoyer la félicitation
             </button>
           </form>

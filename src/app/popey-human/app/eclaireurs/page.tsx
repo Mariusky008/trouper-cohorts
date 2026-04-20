@@ -39,16 +39,16 @@ export default async function PopeyHumanScoutsPage({
   });
 
   return (
-    <section className="space-y-5">
+    <section className="mx-auto w-full max-w-5xl space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <p className="text-xs font-black uppercase tracking-[0.12em] text-[#EAC886]/85">Popey Human</p>
+          <p className="text-xs font-black uppercase tracking-[0.12em] text-cyan-200">Popey Human</p>
           <h1 className="text-3xl font-black">Éclaireurs</h1>
           <p className="text-sm text-white/75">Vos apporteurs locaux et leurs alertes en temps réel.</p>
         </div>
         <Link
           href="/popey-human/app"
-          className="h-10 rounded-xl px-3 inline-flex items-center text-xs font-black uppercase tracking-wide border border-white/20 bg-white/10 text-white/90"
+          className="h-10 rounded-xl px-3 inline-flex items-center text-xs font-black uppercase tracking-wide border border-white/20 bg-black/25 text-white/90"
         >
           Retour cockpit
         </Link>
@@ -75,7 +75,7 @@ export default async function PopeyHumanScoutsPage({
 
       {!workspace.error && (
         <div className="grid gap-4 lg:grid-cols-[1fr_1fr]">
-          <div className="rounded-2xl border border-white/15 bg-black/25 p-4 space-y-3">
+          <div className="rounded-3xl border border-white/15 bg-white/5 p-4 space-y-3 backdrop-blur-xl">
             <p className="text-xs uppercase font-black tracking-[0.12em] text-white/65">Inviter un éclaireur</p>
             <form action={createScoutInviteAction} className="space-y-2">
               <input type="hidden" name="current_url" value="/popey-human/app/eclaireurs" />
@@ -93,13 +93,13 @@ export default async function PopeyHumanScoutsPage({
                 placeholder="Taux commission (0.10)"
                 className="h-10 w-full rounded border border-white/20 bg-black/25 px-2 text-sm"
               />
-              <button className="h-10 w-full rounded-lg bg-[#EAC886] text-black text-xs font-black uppercase tracking-wide">
+              <button className="h-10 w-full rounded-lg bg-gradient-to-r from-amber-300 to-yellow-300 text-[#2E240E] text-xs font-black uppercase tracking-wide">
                 Générer le lien éclaireur
               </button>
             </form>
           </div>
 
-          <div className="rounded-2xl border border-white/15 bg-black/25 p-4">
+          <div className="rounded-3xl border border-white/15 bg-white/5 p-4 backdrop-blur-xl">
             <p className="text-xs uppercase font-black tracking-[0.12em] text-white/65">Vos éclaireurs</p>
             <div className="mt-3 space-y-2 max-h-[320px] overflow-y-auto pr-1">
               {workspace.scouts.map((scout) => {
@@ -147,7 +147,7 @@ export default async function PopeyHumanScoutsPage({
       )}
 
       {!workspace.error && (
-        <div className="rounded-2xl border border-white/15 bg-black/25 p-4">
+        <div className="rounded-3xl border border-white/15 bg-white/5 p-4 backdrop-blur-xl">
           <p className="text-xs uppercase font-black tracking-[0.12em] text-white/65">Alertes éclaireurs à traiter</p>
           <div className="mt-3 space-y-3">
             {workspace.referrals.map((referral) => {
@@ -178,7 +178,7 @@ export default async function PopeyHumanScoutsPage({
                           placeholder="Deal estimé (€)"
                           className="h-9 w-full rounded border border-white/20 bg-black/25 px-2 text-xs"
                         />
-                        <button className="h-9 w-full rounded bg-emerald-400 text-black text-xs font-black uppercase">Valider</button>
+                        <button className="h-9 w-full rounded bg-gradient-to-r from-emerald-400 to-cyan-300 text-[#10263A] text-xs font-black uppercase">Valider</button>
                       </form>
                       <form action={rejectScoutReferralAction} className="space-y-2">
                         <input type="hidden" name="referral_id" value={referral.id} />
@@ -206,7 +206,7 @@ export default async function PopeyHumanScoutsPage({
                         className="h-9 rounded border border-white/20 bg-black/25 px-2 text-xs"
                         placeholder="Montant signé"
                       />
-                      <button className="h-9 rounded bg-[#EAC886] px-3 text-black text-xs font-black uppercase">Passer signé</button>
+                      <button className="h-9 rounded bg-gradient-to-r from-amber-300 to-yellow-300 px-3 text-[#2E240E] text-xs font-black uppercase">Passer signé</button>
                     </form>
                   )}
 

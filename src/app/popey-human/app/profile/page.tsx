@@ -17,16 +17,16 @@ export default async function PopeyHumanProfilePage({
   const data = await getMyHumanProfile();
 
   return (
-    <section className="space-y-5 max-w-2xl">
+    <section className="mx-auto w-full max-w-3xl space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <p className="text-xs font-black uppercase tracking-[0.12em] text-emerald-300">Profil & Réglages</p>
+          <p className="text-xs font-black uppercase tracking-[0.12em] text-cyan-200">Profil & Reglages</p>
           <h1 className="text-3xl font-black">Mon profil</h1>
           <p className="text-sm text-white/75">Informations visibles dans l&apos;annuaire du Cercle.</p>
         </div>
         <Link
           href="/popey-human/app"
-          className="h-10 rounded-xl px-3 inline-flex items-center text-xs font-black uppercase tracking-wide border border-white/20 bg-white/10 text-white/90"
+          className="h-10 rounded-xl px-3 inline-flex items-center text-xs font-black uppercase tracking-wide border border-white/20 bg-black/25 text-white/90"
         >
           Retour cockpit
         </Link>
@@ -51,7 +51,7 @@ export default async function PopeyHumanProfilePage({
       )}
 
       {!data.error && data.profile && (
-        <div className="rounded-2xl border border-white/15 bg-black/25 p-5">
+        <div className="rounded-3xl border border-white/15 bg-white/5 p-5 backdrop-blur-xl">
           <p className="text-xs font-black uppercase tracking-[0.12em] text-white/65">Identité Radar</p>
           <h2 className="mt-1 text-2xl font-black">
             {[data.profile.first_name, data.profile.last_name].filter(Boolean).join(" ").trim() || "Membre Popey"}
@@ -69,7 +69,7 @@ export default async function PopeyHumanProfilePage({
           </div>
           <Link
             href="/popey-human/app/profile?edit=1"
-            className="mt-4 h-11 rounded-xl bg-emerald-400 text-black text-sm font-black uppercase tracking-wide inline-flex items-center justify-center px-4 shadow-[0_10px_25px_-15px_rgba(52,211,153,0.85)]"
+            className="mt-4 h-11 rounded-xl bg-gradient-to-r from-emerald-400 to-cyan-300 text-[#10263A] text-sm font-black uppercase tracking-wide inline-flex items-center justify-center px-4 shadow-[0_14px_28px_-18px_rgba(52,211,153,0.9)]"
           >
             Modifier mon profil
           </Link>
@@ -78,10 +78,10 @@ export default async function PopeyHumanProfilePage({
 
       {!data.error && data.profile && edit && (
         <div className="fixed inset-0 z-50 bg-black/55 backdrop-blur-[2px] p-4 flex items-center justify-center">
-          <div className="w-full max-w-2xl rounded-2xl border border-white/25 bg-[#1B2227] p-5">
+          <div className="w-full max-w-2xl rounded-3xl border border-white/20 bg-[#101A38] p-5 shadow-[0_30px_60px_-35px_rgba(0,0,0,0.9)]">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <p className="text-xs uppercase font-black tracking-[0.12em] text-emerald-300/80">Édition profil</p>
+                <p className="text-xs uppercase font-black tracking-[0.12em] text-cyan-200/85">Edition profil</p>
                 <h3 className="mt-1 text-2xl font-black">Mettre à jour mes infos</h3>
               </div>
               <Link href="/popey-human/app/profile" className="text-xs font-black uppercase tracking-wide text-white/70">
@@ -153,7 +153,7 @@ export default async function PopeyHumanProfilePage({
                 </div>
               </div>
 
-              <button className="h-11 rounded-xl bg-emerald-400 px-4 text-sm font-black uppercase tracking-wide text-black">
+              <button className="h-11 rounded-xl bg-gradient-to-r from-emerald-400 to-cyan-300 px-4 text-sm font-black uppercase tracking-wide text-[#10263A]">
                 Enregistrer le profil
               </button>
             </form>
