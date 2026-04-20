@@ -764,8 +764,12 @@ export default function EntrepreneurSmartScanTestPage() {
                 <motion.div
                   key={card.id}
                   initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: [0, -2, 0] }}
-                  transition={{ delay: idx * 0.05, duration: 1.6, repeat: Infinity, repeatType: "reverse", ease: "easeInOut" }}
+                  animate={scanDone ? { opacity: 1, y: 0 } : { opacity: 1, y: [0, -2, 0] }}
+                  transition={
+                    scanDone
+                      ? { delay: idx * 0.04, duration: 0.25, ease: "easeOut" }
+                      : { delay: idx * 0.05, duration: 1.6, repeat: Infinity, repeatType: "reverse", ease: "easeInOut" }
+                  }
                   className={`rounded-2xl border bg-gradient-to-br p-3 text-center ${card.color}`}
                 >
                   <p className="text-xs">{card.icon}</p>
