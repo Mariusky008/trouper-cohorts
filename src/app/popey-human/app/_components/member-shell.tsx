@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useMemo } from "react";
+import { GlassCard, uiKit } from "./ui-kit";
 
 type MemberShellProps = {
   children: React.ReactNode;
@@ -23,7 +24,7 @@ export function PopeyHumanMemberShell({ children }: MemberShellProps) {
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_10%_0%,#10193D_0%,#0C122B_45%,#090B16_100%)] text-white pb-24 md:pb-8">
       <div className="mx-auto max-w-6xl px-4 pt-[calc(env(safe-area-inset-top)+14px)] pb-5 md:px-6 md:pt-8 md:pb-8">
-        <div className="rounded-3xl border border-white/10 bg-white/5 p-3 backdrop-blur-xl">
+        <GlassCard className="border-white/10 p-3">
           <header className="flex flex-wrap items-start justify-between gap-3">
             <div>
               <p className="text-xs font-black uppercase tracking-[0.12em] text-cyan-200">S18 SCAN</p>
@@ -33,19 +34,19 @@ export function PopeyHumanMemberShell({ children }: MemberShellProps) {
             <div className="flex flex-wrap gap-2">
               <Link
                 href="/popey-human/app/annuaire"
-                className="h-10 rounded-xl px-3 inline-flex items-center text-xs font-black uppercase tracking-wide border border-white/20 bg-black/25 text-white/90"
+                className={uiKit.backButton}
               >
                 Annuaire
               </Link>
               <Link
                 href="/popey-human/app/profile"
-                className="h-10 rounded-xl px-3 inline-flex items-center text-xs font-black uppercase tracking-wide border border-white/20 bg-black/25 text-white/90"
+                className={uiKit.backButton}
               >
                 Profil
               </Link>
             </div>
           </header>
-        </div>
+        </GlassCard>
 
         <div className="mt-5">{children}</div>
       </div>
@@ -59,7 +60,7 @@ export function PopeyHumanMemberShell({ children }: MemberShellProps) {
               className={`h-12 rounded-xl text-xs font-black uppercase tracking-wide inline-flex items-center justify-center transition ${
                 item.active
                   ? item.label === "Signal"
-                    ? "bg-gradient-to-r from-emerald-400 to-cyan-300 text-[#11252C] shadow-[0_14px_28px_-16px_rgba(52,211,153,0.95)]"
+                    ? "bg-gradient-to-r from-emerald-400 to-cyan-300 text-[#10263A] shadow-[0_14px_28px_-16px_rgba(52,211,153,0.95)]"
                     : "bg-white text-black"
                   : item.label === "Signal"
                   ? "border border-emerald-300/40 text-emerald-200"

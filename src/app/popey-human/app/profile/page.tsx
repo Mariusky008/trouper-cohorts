@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getMyHumanProfile, updateMyHumanProfileAction } from "@/lib/actions/human-permissions";
+import { GlassCard, ModalCard, uiKit } from "../_components/ui-kit";
 
 export default async function PopeyHumanProfilePage({
   searchParams,
@@ -17,7 +18,7 @@ export default async function PopeyHumanProfilePage({
   const data = await getMyHumanProfile();
 
   return (
-    <section className="mx-auto w-full max-w-3xl space-y-5">
+    <section className={uiKit.pageWrapNarrow}>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="text-xs font-black uppercase tracking-[0.12em] text-cyan-200">Profil & Reglages</p>
@@ -26,7 +27,7 @@ export default async function PopeyHumanProfilePage({
         </div>
         <Link
           href="/popey-human/app"
-          className="h-10 rounded-xl px-3 inline-flex items-center text-xs font-black uppercase tracking-wide border border-white/20 bg-black/25 text-white/90"
+          className={uiKit.backButton}
         >
           Retour cockpit
         </Link>
@@ -51,7 +52,7 @@ export default async function PopeyHumanProfilePage({
       )}
 
       {!data.error && data.profile && (
-        <div className="rounded-3xl border border-white/15 bg-white/5 p-5 backdrop-blur-xl">
+        <GlassCard className="p-5">
           <p className="text-xs font-black uppercase tracking-[0.12em] text-white/65">Identité Radar</p>
           <h2 className="mt-1 text-2xl font-black">
             {[data.profile.first_name, data.profile.last_name].filter(Boolean).join(" ").trim() || "Membre Popey"}
@@ -69,16 +70,16 @@ export default async function PopeyHumanProfilePage({
           </div>
           <Link
             href="/popey-human/app/profile?edit=1"
-            className="mt-4 h-11 rounded-xl bg-gradient-to-r from-emerald-400 to-cyan-300 text-[#10263A] text-sm font-black uppercase tracking-wide inline-flex items-center justify-center px-4 shadow-[0_14px_28px_-18px_rgba(52,211,153,0.9)]"
+            className={`${uiKit.primaryButton} mt-4 inline-flex items-center justify-center px-4 shadow-[0_14px_28px_-18px_rgba(52,211,153,0.9)]`}
           >
             Modifier mon profil
           </Link>
-        </div>
+        </GlassCard>
       )}
 
       {!data.error && data.profile && edit && (
         <div className="fixed inset-0 z-50 bg-black/55 backdrop-blur-[2px] p-4 flex items-center justify-center">
-          <div className="w-full max-w-2xl rounded-3xl border border-white/20 bg-[#101A38] p-5 shadow-[0_30px_60px_-35px_rgba(0,0,0,0.9)]">
+          <ModalCard className="max-w-2xl p-5">
             <div className="flex items-start justify-between gap-3">
               <div>
                 <p className="text-xs uppercase font-black tracking-[0.12em] text-cyan-200/85">Edition profil</p>
@@ -153,11 +154,11 @@ export default async function PopeyHumanProfilePage({
                 </div>
               </div>
 
-              <button className="h-11 rounded-xl bg-gradient-to-r from-emerald-400 to-cyan-300 px-4 text-sm font-black uppercase tracking-wide text-[#10263A]">
+              <button className={`${uiKit.primaryButton} px-4`}>
                 Enregistrer le profil
               </button>
             </form>
-          </div>
+          </ModalCard>
         </div>
       )}
     </section>

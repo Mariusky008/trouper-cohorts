@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { addMyCashEventAction, getMyCashSummary, requestMyCashPayoutAction } from "@/lib/actions/human-cash";
+import { uiKit } from "../_components/ui-kit";
 
 function euros(value: number) {
   return value.toLocaleString("fr-FR", { style: "currency", currency: "EUR" });
@@ -39,7 +40,7 @@ export default async function PopeyHumanCashPage({
   const cashDisponiblePopey = !summary.error ? summary.commissionsTotals.paid : 0;
 
   return (
-    <section className="mx-auto w-full max-w-5xl space-y-5">
+    <section className={uiKit.pageWrap}>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="text-xs font-black uppercase tracking-[0.12em] text-cyan-200">Cash Radar</p>
@@ -48,7 +49,7 @@ export default async function PopeyHumanCashPage({
         </div>
         <Link
           href="/popey-human/app"
-          className="h-10 rounded-xl px-3 inline-flex items-center text-xs font-black uppercase tracking-wide border border-white/20 bg-black/25 text-white/90"
+          className={uiKit.backButton}
         >
           Retour cockpit
         </Link>
@@ -94,7 +95,7 @@ export default async function PopeyHumanCashPage({
                   placeholder="Montant du virement"
                   className="h-10 w-full rounded-lg border border-cyan-200/40 bg-black/25 px-3 text-sm"
                 />
-                <button className="h-10 w-full rounded-lg bg-gradient-to-r from-emerald-400 to-cyan-300 text-[#10263A] text-xs font-black uppercase tracking-wide">
+                <button className="h-10 w-full rounded-lg bg-gradient-to-r from-emerald-400 to-cyan-300 text-[#10263A] text-xs font-black uppercase tracking-wide transition hover:brightness-105">
                   Demander un virement Popey
                 </button>
               </form>
@@ -148,7 +149,7 @@ export default async function PopeyHumanCashPage({
               <input name="source_id" placeholder="Source ID (optionnel)" className="w-full rounded border border-white/20 bg-black/25 px-2 py-2 text-sm" />
             </div>
             <input name="description" required placeholder="Description" className="w-full rounded border border-white/20 bg-black/25 px-2 py-2 text-sm" />
-            <button className="w-fit rounded bg-gradient-to-r from-emerald-400 to-cyan-300 px-4 py-2 text-sm font-black text-[#10263A] uppercase tracking-wide">
+            <button className="w-fit rounded bg-gradient-to-r from-emerald-400 to-cyan-300 px-4 py-2 text-sm font-black text-[#10263A] uppercase tracking-wide transition hover:brightness-105">
               Ajouter le mouvement
             </button>
           </form>

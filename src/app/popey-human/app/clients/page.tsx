@@ -6,6 +6,7 @@ import {
   markHumanLeadSignedAction,
   takeHumanLeadAction,
 } from "@/lib/actions/human-leads";
+import { uiKit } from "../_components/ui-kit";
 
 function statusInlineLabel(status: "nouveau" | "pris" | "signe" | "perdu") {
   if (status === "nouveau") return "À contacter";
@@ -47,7 +48,7 @@ export default async function PopeyHumanClientsPage({
   };
 
   return (
-    <section className="mx-auto w-full max-w-5xl space-y-5">
+    <section className={uiKit.pageWrap}>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="text-xs font-black uppercase tracking-[0.12em] text-cyan-200">Clients recus</p>
@@ -56,7 +57,7 @@ export default async function PopeyHumanClientsPage({
         </div>
         <Link
           href="/popey-human/app"
-          className="h-10 rounded-xl px-3 inline-flex items-center text-xs font-black uppercase tracking-wide border border-white/20 bg-black/25 text-white/90"
+          className={uiKit.backButton}
         >
           Retour cockpit
         </Link>
@@ -127,7 +128,7 @@ export default async function PopeyHumanClientsPage({
                 <form action={takeHumanLeadAction} className="mt-3">
                   <input type="hidden" name="lead_id" value={lead.id} />
                   <input type="hidden" name="current_url" value="/popey-human/app/clients" />
-                  <button className="h-12 w-full rounded-xl bg-gradient-to-r from-emerald-400 to-cyan-300 text-[#10263A] text-sm font-black uppercase tracking-wide">
+                  <button className={`${uiKit.primaryButton} h-12 w-full`}>
                     Je prends le deal et je contacte le client
                   </button>
                 </form>
@@ -217,7 +218,7 @@ export default async function PopeyHumanClientsPage({
                 <form action={takeHumanLeadAction}>
                   <input type="hidden" name="lead_id" value={selectedLead.id} />
                   <input type="hidden" name="current_url" value={withQuery({ lead: selectedLead.id, sign: "" })} />
-                  <button className="h-11 w-full rounded-xl bg-gradient-to-r from-emerald-400 to-cyan-300 text-[#10263A] text-sm font-black uppercase tracking-wide">
+                  <button className={`${uiKit.primaryButton} w-full`}>
                     Je prends le deal et je contacte le client
                   </button>
                 </form>
@@ -273,7 +274,7 @@ export default async function PopeyHumanClientsPage({
                   placeholder="Ex: 22000"
                 />
               </div>
-              <button className="h-12 w-full rounded-xl bg-gradient-to-r from-emerald-400 to-cyan-300 text-[#10263A] text-sm font-black uppercase tracking-wide">
+              <button className={`${uiKit.primaryButton} h-12 w-full`}>
                 Valider et envoyer à l&apos;admin + apporteur
               </button>
             </form>

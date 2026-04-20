@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getVisibleHumanDirectory } from "@/lib/actions/human-permissions";
+import { GlassCard, ModalCard, uiKit } from "../_components/ui-kit";
 
 function fullName(member: { first_name: string | null; last_name: string | null }) {
   return [member.first_name, member.last_name].filter(Boolean).join(" ").trim() || "Membre Popey";
@@ -18,7 +19,7 @@ export default async function PopeyHumanAnnuairePage({
   const selectedMember = !directory.error ? directory.members.find((member) => member.id === selectedMemberId) || null : null;
 
   return (
-    <section className="mx-auto w-full max-w-4xl space-y-5">
+    <section className={uiKit.pageWrapNarrow}>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="text-xs font-black uppercase tracking-[0.12em] text-cyan-200">Annuaire du Cercle</p>
@@ -29,7 +30,7 @@ export default async function PopeyHumanAnnuairePage({
         </div>
         <Link
           href="/popey-human/app"
-          className="h-10 rounded-xl px-3 inline-flex items-center text-xs font-black uppercase tracking-wide border border-white/20 bg-black/25 text-white/90"
+          className={uiKit.backButton}
         >
           Retour cockpit
         </Link>
@@ -48,23 +49,24 @@ export default async function PopeyHumanAnnuairePage({
       {!directory.error && directory.members.length > 0 && (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {directory.members.map((member) => (
-            <Link
+            <GlassCard
               key={member.id}
-              href={`/popey-human/app/annuaire?member=${member.id}`}
-              className="rounded-2xl border border-white/15 bg-white/5 p-4 backdrop-blur-xl transition hover:border-cyan-300/45 hover:bg-cyan-500/10"
+              className="rounded-2xl p-0 transition hover:border-cyan-300/45 hover:bg-cyan-500/10"
             >
-              <p className="text-lg font-black">{fullName(member)}</p>
-              <p className="mt-1 text-sm text-white/75">{member.metier || "Métier non renseigné"}</p>
-              <p className="text-sm text-white/75">{member.ville || "Ville non renseignée"}</p>
-              <p className="mt-2 text-xs text-cyan-200/85 font-black uppercase tracking-[0.12em]">Ouvrir fiche</p>
-            </Link>
+              <Link href={`/popey-human/app/annuaire?member=${member.id}`} className="block p-4">
+                <p className="text-lg font-black">{fullName(member)}</p>
+                <p className="mt-1 text-sm text-white/75">{member.metier || "Métier non renseigné"}</p>
+                <p className="text-sm text-white/75">{member.ville || "Ville non renseignée"}</p>
+                <p className="mt-2 text-xs text-cyan-200/85 font-black uppercase tracking-[0.12em]">Ouvrir fiche</p>
+              </Link>
+            </GlassCard>
           ))}
         </div>
       )}
 
       {selectedMember && (
         <div className="fixed inset-0 z-50 bg-black/55 backdrop-blur-[2px] p-4 flex items-center justify-center">
-          <div className="w-full max-w-lg rounded-3xl border border-white/20 bg-[#101A38] p-5 shadow-[0_30px_60px_-35px_rgba(0,0,0,0.9)]">
+          <ModalCard className="max-w-lg p-5">
             <div className="flex items-start justify-between gap-3">
               <div>
                 <p className="text-xs uppercase font-black tracking-[0.12em] text-cyan-200/85">Fiche membre</p>
@@ -91,7 +93,7 @@ export default async function PopeyHumanAnnuairePage({
               <a
                 href={selectedMember.phone ? `tel:${selectedMember.phone.replaceAll(" ", "")}` : undefined}
                 className={`h-11 rounded-xl inline-flex items-center justify-center text-sm font-black uppercase tracking-wide ${
-                  selectedMember.phone ? "bg-gradient-to-r from-emerald-400 to-cyan-300 text-[#10263A]" : "border border-white/20 text-white/45 pointer-events-none"
+                  selectedMember.phone ? `${uiKit.primaryButton} inline-flex items-center` : "border border-white/20 text-white/45 pointer-events-none"
                 }`}
               >
                 Appeler
@@ -103,7 +105,7 @@ export default async function PopeyHumanAnnuairePage({
                 Envoyer un signal
               </Link>
             </div>
-          </div>
+          </ModalCard>
         </div>
       )}
     </section>

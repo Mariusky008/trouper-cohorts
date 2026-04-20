@@ -3,6 +3,7 @@ import {
   createHumanSignalAction,
 } from "@/lib/actions/human-signals";
 import { TalkieSignalComposer } from "./_components/talkie-signal-composer";
+import { GlassCard } from "../_components/ui-kit";
 
 export default async function PopeyHumanSignalPage({
   searchParams,
@@ -29,18 +30,18 @@ async function PopeyHumanSignalContent({
 
   return (
     <section className="mx-auto w-full max-w-3xl space-y-5">
-      <div className="rounded-3xl border border-white/10 bg-white/5 p-4 backdrop-blur-xl">
+      <GlassCard className="border-white/10 p-4">
         <p className="text-xs font-black uppercase tracking-[0.12em] text-cyan-200">Signal Live</p>
         <h2 className="mt-1 text-2xl font-black">Talkie Walkie Popey</h2>
         <p className="mt-1 text-sm text-white/75">Active un besoin chaud en quelques secondes.</p>
-      </div>
+      </GlassCard>
 
-      <div className="rounded-3xl border border-white/10 bg-white/5 p-4 backdrop-blur-xl">
+      <GlassCard className="border-white/10 p-4">
         <TalkieSignalComposer
           createSignalAction={createHumanSignalAction}
           initialSuccessVisible={signalStatus === "success"}
         />
-      </div>
+      </GlassCard>
 
       {signalStatus === "error" && (
         <p className="rounded border border-red-300/35 bg-red-500/10 px-3 py-2 text-sm text-red-200">

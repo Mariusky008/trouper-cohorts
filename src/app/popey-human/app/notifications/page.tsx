@@ -5,6 +5,7 @@ import {
   markMyHumanNotificationReadAction,
   toggleMyHumanNotificationReactionAction,
 } from "@/lib/actions/human-notifications";
+import { uiKit } from "../_components/ui-kit";
 
 function badgeTone(type: string) {
   if (type === "personnelle") return "bg-cyan-100 text-cyan-800 border-cyan-200";
@@ -41,7 +42,7 @@ export default async function PopeyHumanNotificationsPage({
   const congratsCount = !feed.error ? feed.notifications.filter((notification) => notification.type === "felicitation").length : 0;
 
   return (
-    <section className="mx-auto w-full max-w-5xl space-y-5">
+    <section className={uiKit.pageWrap}>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="text-xs font-black uppercase tracking-[0.12em] text-cyan-200">Popey Radar</p>
@@ -50,7 +51,7 @@ export default async function PopeyHumanNotificationsPage({
         </div>
         <Link
           href="/popey-human/app"
-          className="h-10 rounded-xl px-3 inline-flex items-center text-xs font-black uppercase tracking-wide border border-white/20 bg-black/25 text-white/90"
+          className={uiKit.backButton}
         >
           Retour cockpit
         </Link>
@@ -213,7 +214,7 @@ export default async function PopeyHumanNotificationsPage({
               placeholder="Votre message de félicitations..."
               className="w-full rounded-lg border border-white/20 bg-black/30 px-3 py-2 text-sm min-h-24"
             />
-            <button className="h-11 w-full rounded-xl bg-gradient-to-r from-emerald-400 to-cyan-300 text-[#10263A] text-sm font-black uppercase tracking-wide">
+            <button className={`${uiKit.primaryButton} w-full`}>
               Envoyer la félicitation
             </button>
           </form>

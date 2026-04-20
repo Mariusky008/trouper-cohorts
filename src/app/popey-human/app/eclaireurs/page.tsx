@@ -8,6 +8,7 @@ import {
   validateScoutReferralAction,
 } from "@/lib/actions/human-scouts";
 import { ScoutShareLink } from "@/components/popey-human/scout-share-link";
+import { uiKit } from "../_components/ui-kit";
 
 function euros(value: number) {
   return value.toLocaleString("fr-FR", { style: "currency", currency: "EUR" });
@@ -39,7 +40,7 @@ export default async function PopeyHumanScoutsPage({
   });
 
   return (
-    <section className="mx-auto w-full max-w-5xl space-y-5">
+    <section className={uiKit.pageWrap}>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="text-xs font-black uppercase tracking-[0.12em] text-cyan-200">Popey Human</p>
@@ -48,7 +49,7 @@ export default async function PopeyHumanScoutsPage({
         </div>
         <Link
           href="/popey-human/app"
-          className="h-10 rounded-xl px-3 inline-flex items-center text-xs font-black uppercase tracking-wide border border-white/20 bg-black/25 text-white/90"
+          className={uiKit.backButton}
         >
           Retour cockpit
         </Link>
@@ -178,7 +179,7 @@ export default async function PopeyHumanScoutsPage({
                           placeholder="Deal estimé (€)"
                           className="h-9 w-full rounded border border-white/20 bg-black/25 px-2 text-xs"
                         />
-                        <button className="h-9 w-full rounded bg-gradient-to-r from-emerald-400 to-cyan-300 text-[#10263A] text-xs font-black uppercase">Valider</button>
+                        <button className="h-9 w-full rounded bg-gradient-to-r from-emerald-400 to-cyan-300 text-[#10263A] text-xs font-black uppercase transition hover:brightness-105">Valider</button>
                       </form>
                       <form action={rejectScoutReferralAction} className="space-y-2">
                         <input type="hidden" name="referral_id" value={referral.id} />
@@ -206,7 +207,7 @@ export default async function PopeyHumanScoutsPage({
                         className="h-9 rounded border border-white/20 bg-black/25 px-2 text-xs"
                         placeholder="Montant signé"
                       />
-                      <button className="h-9 rounded bg-gradient-to-r from-amber-300 to-yellow-300 px-3 text-[#2E240E] text-xs font-black uppercase">Passer signé</button>
+                      <button className="h-9 rounded bg-gradient-to-r from-amber-300 to-yellow-300 px-3 text-[#2E240E] text-xs font-black uppercase transition hover:brightness-105">Passer signé</button>
                     </form>
                   )}
 
