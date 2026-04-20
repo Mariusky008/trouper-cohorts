@@ -207,6 +207,15 @@ export default function EntrepreneurSmartScanTestPage() {
     from: number;
     to: number;
     final: boolean;
+    manual?: boolean;
+    ctaLabel?: string;
+  } | null>(null);
+  const [transitionAwaitingConfirm, setTransitionAwaitingConfirm] = useState<{
+    action: Exclude<DailyCategory, "qualifier">;
+    stayOnCurrentContact: boolean;
+    returnToProfileContactId: string | null;
+    countAsSent: boolean;
+    sentInHistory: boolean;
   } | null>(null);
   const [pendingTransition, setPendingTransition] = useState<{
     message: string;
@@ -406,11 +415,13 @@ export default function EntrepreneurSmartScanTestPage() {
   useEffect(() => {
     function flushPendingTransition() {
       if (!pendingTransition || !pendingFinalizeAction) return;
-      setTransitionScreen(pendingTransition);
-      setTimeout(() => setTransitionScreen(null), 3200);
-      setShowProgressCheck(true);
-      setTimeout(() => setShowProgressCheck(false), 650);
-      finalizeAction(pendingFinalizeAction, 3000, {
+      setTransitionScreen({
+        ...pendingTransition,
+        manual: true,
+        ctaLabel: "Passez au prochain profil",
+      });
+      setTransitionAwaitingConfirm({
+        action: pendingFinalizeAction,
         countAsSent: true,
         sentInHistory: true,
         stayOnCurrentContact: Boolean(pendingReturnProfileContactId),
@@ -419,7 +430,6 @@ export default function EntrepreneurSmartScanTestPage() {
       setPendingTransition(null);
       setPendingFinalizeAction(null);
       setPendingReturnProfileContactId(null);
-      setActionFromProfileContactId(null);
     }
 
     function onFocus() {
@@ -484,11 +494,7 @@ export default function EntrepreneurSmartScanTestPage() {
     const points = action === "eclaireur" ? 5 : action === "package" ? 4 : action === "exclients" ? 3 : 1;
     const encouragements =
       mode === "sent"
-        ? [
-            `Message envoye a ${current.name.split(" ")[0]} ! +${points} points pour ta Mini-Agence. 🚀`,
-            `${current.name.split(" ")[0]} active ! +${points} points pour l equipe.`,
-            `Bien joue, +${points} points dans ta sphere business.`,
-          ]
+        ? [`Felicitations ${current.name.split(" ")[0]} a ete active.`]
         : [
             `Aucun message envoye a ${current.name.split(" ")[0]}. Fiche memorisee. 🗂️`,
             `Valide sans envoi: ${current.name.split(" ")[0]} est ajoute a ton historique.`,
@@ -595,17 +601,18 @@ export default function EntrepreneurSmartScanTestPage() {
     }
     setShowTemplateModal(false);
     if (typeof document !== "undefined" && document.visibilityState === "visible") {
-      setTransitionScreen(payload);
-      setTimeout(() => setTransitionScreen(null), 3200);
-      setShowProgressCheck(true);
-      setTimeout(() => setShowProgressCheck(false), 650);
-      finalizeAction(action, 3000, {
+      setTransitionScreen({
+        ...payload,
+        manual: true,
+        ctaLabel: "Passez au prochain profil",
+      });
+      setTransitionAwaitingConfirm({
+        action,
         countAsSent: true,
         sentInHistory: true,
         stayOnCurrentContact: Boolean(actionFromProfileContactId),
         returnToProfileContactId: actionFromProfileContactId,
       });
-      setActionFromProfileContactId(null);
       return;
     }
     setPendingTransition(payload);
@@ -1573,6 +1580,27 @@ export default function EntrepreneurSmartScanTestPage() {
             </p>
             {transitionScreen.final && (
               <p className="mt-2 text-sm font-black text-cyan-100">Ta mini-agence est fiere de toi.</p>
+            )}
+            {transitionScreen.manual && transitionAwaitingConfirm && (
+              <button
+                type="button"
+                onClick={() => {
+                  setShowProgressCheck(true);
+                  setTimeout(() => setShowProgressCheck(false), 650);
+                  finalizeAction(transitionAwaitingConfirm.action, 300, {
+                    countAsSent: transitionAwaitingConfirm.countAsSent,
+                    sentInHistory: transitionAwaitingConfirm.sentInHistory,
+                    stayOnCurrentContact: transitionAwaitingConfirm.stayOnCurrentContact,
+                    returnToProfileContactId: transitionAwaitingConfirm.returnToProfileContactId,
+                  });
+                  setTransitionScreen(null);
+                  setTransitionAwaitingConfirm(null);
+                  setActionFromProfileContactId(null);
+                }}
+                className="mt-3 h-11 w-full rounded-xl bg-gradient-to-r from-cyan-300 to-emerald-300 text-xs font-black uppercase tracking-wide text-[#11252C]"
+              >
+                {transitionScreen.ctaLabel ?? "Passez au prochain profil"}
+              </button>
             )}
           </motion.section>
         </div>
