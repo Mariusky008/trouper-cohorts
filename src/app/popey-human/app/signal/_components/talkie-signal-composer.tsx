@@ -141,9 +141,9 @@ export function TalkieSignalComposer({ createSignalAction, initialSuccessVisible
 
   return (
     <>
-      <div className="flex min-h-[calc(100svh-220px)] flex-col">
+      <div className="flex min-h-[calc(100svh-260px)] flex-col">
         <div className="px-1">
-          <p className="text-xs font-black uppercase tracking-[0.12em] text-emerald-300">Signal vocal</p>
+          <p className="text-xs font-black uppercase tracking-[0.12em] text-cyan-200">Signal vocal</p>
           <h3 className="mt-1 text-2xl font-black">Mode Talkie-Walkie</h3>
           <p className="mt-2 max-w-xl text-sm text-white/80 leading-relaxed">
             Appuyez pour transmettre votre opportunité. Je qualifie le besoin puis j&apos;active les métiers concernés.
@@ -151,13 +151,13 @@ export function TalkieSignalComposer({ createSignalAction, initialSuccessVisible
         </div>
 
         <div className="relative flex flex-1 items-center justify-center">
-          <span className="absolute left-1/2 top-1/2 h-56 w-56 -translate-x-1/2 -translate-y-1/2 rounded-full border border-emerald-300/30 animate-[talkieRing_1.6s_ease-out_infinite]" />
+          <span className="absolute left-1/2 top-1/2 h-56 w-56 -translate-x-1/2 -translate-y-1/2 rounded-full border border-cyan-300/30 animate-[talkieRing_1.6s_ease-out_infinite]" />
           <span
-            className="absolute left-1/2 top-1/2 h-72 w-72 -translate-x-1/2 -translate-y-1/2 rounded-full border border-emerald-300/20 animate-[talkieRing_2.1s_ease-out_infinite]"
+            className="absolute left-1/2 top-1/2 h-72 w-72 -translate-x-1/2 -translate-y-1/2 rounded-full border border-cyan-300/20 animate-[talkieRing_2.1s_ease-out_infinite]"
             style={{ animationDelay: "250ms" }}
           />
           <span
-            className="absolute left-1/2 top-1/2 h-80 w-80 -translate-x-1/2 -translate-y-1/2 rounded-full border border-emerald-300/15 animate-[talkieRing_2.6s_ease-out_infinite]"
+            className="absolute left-1/2 top-1/2 h-80 w-80 -translate-x-1/2 -translate-y-1/2 rounded-full border border-fuchsia-300/15 animate-[talkieRing_2.6s_ease-out_infinite]"
             style={{ animationDelay: "450ms" }}
           />
           <button
@@ -169,7 +169,7 @@ export function TalkieSignalComposer({ createSignalAction, initialSuccessVisible
                 ? "bg-red-500 text-white border-red-300/60"
                 : isPreparing
                 ? "bg-amber-400 text-black border-amber-200/70"
-                : "bg-gradient-to-b from-emerald-400 to-emerald-500 text-black border-emerald-300/60"
+                : "bg-gradient-to-b from-emerald-400 via-cyan-300 to-cyan-400 text-[#10263A] border-cyan-200/70 shadow-[0_24px_48px_-22px_rgba(52,211,153,0.9)]"
             } ${isUploading ? "opacity-60 cursor-not-allowed" : ""}`}
           >
             <span className="pointer-events-none absolute inset-0 rounded-full animate-[talkieGlow_1.6s_ease-in-out_infinite]" />
@@ -201,7 +201,7 @@ export function TalkieSignalComposer({ createSignalAction, initialSuccessVisible
       </div>
       {ackVisible && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-          <div className="w-full max-w-[680px] rounded-3xl border border-white/25 bg-[#101820] p-4 sm:p-6 shadow-[0_0_40px_rgba(0,0,0,0.55)]">
+          <div className="w-full max-w-[680px] rounded-3xl border border-cyan-300/25 bg-[#101820] p-4 sm:p-6 shadow-[0_0_40px_rgba(0,0,0,0.55)]">
             <p className="text-center text-4xl sm:text-5xl leading-none">✅</p>
             <h4 className="mt-3 text-2xl sm:text-4xl font-black text-white">Bien reçu ! 🎙️</h4>
             <p className="mt-3 text-base sm:text-xl leading-relaxed text-white/95">
@@ -213,7 +213,7 @@ export function TalkieSignalComposer({ createSignalAction, initialSuccessVisible
                 setAckVisible(false);
                 router.replace("/popey-human/app/signal");
               }}
-              className="mt-5 h-12 sm:h-14 w-full rounded-full bg-emerald-400 text-lg sm:text-xl font-black uppercase tracking-wide text-black"
+              className="mt-5 h-12 sm:h-14 w-full rounded-full bg-gradient-to-r from-emerald-400 to-cyan-300 text-lg sm:text-xl font-black uppercase tracking-wide text-[#10263A]"
             >
               OK
             </button>
