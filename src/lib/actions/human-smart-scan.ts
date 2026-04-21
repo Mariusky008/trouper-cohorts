@@ -576,6 +576,7 @@ export async function updateSmartScanActionOutcome(input: {
   actionId: string;
   outcomeStatus: SmartScanActionOutcomeStatus;
   outcomeNotes?: string | null;
+  clientEventId?: string | null;
 }) {
   const currentMember = await getCurrentHumanMember();
   if (!currentMember) return { error: "Session requise." };
@@ -584,7 +585,7 @@ export async function updateSmartScanActionOutcome(input: {
   const nowIso = new Date().toISOString();
   const { data: existing, error: selectError } = await supabaseAdmin
     .from("human_smart_scan_actions")
-    .select("id,contact_id")
+    .select("id,contact_id,outcome_status,outcome_notes")
     .eq("id", input.actionId)
     .eq("owner_member_id", currentMember.id)
     .maybeSingle();
@@ -593,11 +594,25 @@ export async function updateSmartScanActionOutcome(input: {
     return { error: selectError?.message || "Action introuvable." };
   }
 
+  const nextOutcomeNotes = input.outcomeNotes || null;
+  if (
+    String(existing.outcome_status || "") === String(input.outcomeStatus) &&
+    String(existing.outcome_notes || "") === String(nextOutcomeNotes || "")
+  ) {
+    return {
+      success: true,
+      actionId: String(existing.id),
+      outcomeStatus: input.outcomeStatus,
+      deduped: true,
+      dedupReason: input.clientEventId ? "client_event_id_same_payload" : "same_payload",
+    };
+  }
+
   const { error } = await supabaseAdmin
     .from("human_smart_scan_actions")
     .update({
       outcome_status: input.outcomeStatus,
-      outcome_notes: input.outcomeNotes || null,
+      outcome_notes: nextOutcomeNotes,
       followup_due_at: input.outcomeStatus === "pending" ? new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString() : null,
       updated_at: nowIso,
     })

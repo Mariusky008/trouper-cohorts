@@ -1011,6 +1011,7 @@ export default function EntrepreneurSmartScanTestPage() {
       await postSmartScan("outcome", {
         actionId: entry.actionId,
         outcomeStatus,
+        clientEventId: `${entry.actionId}:outcome:${outcomeStatus}`,
       });
       await refreshSmartScanSnapshot();
     } catch {

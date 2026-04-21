@@ -20,6 +20,7 @@ export async function POST(request: NextRequest) {
     actionId: body.actionId,
     outcomeStatus: body.outcomeStatus,
     outcomeNotes: body.outcomeNotes || null,
+    clientEventId: body.clientEventId || null,
   });
 
   if ("error" in result) {

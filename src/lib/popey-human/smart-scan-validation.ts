@@ -132,6 +132,7 @@ export const smartScanOutcomeSchema = z
     actionId: z.string().uuid(),
     outcomeStatus: z.enum(OUTCOME_STATUSES),
     outcomeNotes: optionalNullableString(2000),
+    clientEventId: optionalNullableString(160),
   })
   .strict();
 
