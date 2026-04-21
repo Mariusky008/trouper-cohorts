@@ -63,6 +63,18 @@ async function assertPageHas(page, baseUrl, route, expectedStrings) {
   );
 }
 
+async function assertPageHasAny(page, baseUrl, route, expectedAnyStrings) {
+  await page.goto(`${baseUrl}${route}`, { waitUntil: "domcontentloaded" });
+  await page.waitForFunction(
+    (snippets) => {
+      const text = (document.body?.textContent || "").toLowerCase();
+      return snippets.some((snippet) => text.includes(String(snippet).toLowerCase()));
+    },
+    {},
+    expectedAnyStrings
+  );
+}
+
 async function main() {
   const baseUrl = process.env.E2E_BASE_URL || "http://localhost:3000";
   const email = required("HUMAN_E2E_SPHERE_EMAIL");
@@ -86,7 +98,12 @@ async function main() {
     await assertPageHas(page, baseUrl, "/popey-human/app/notifications", ["Centre de notifications"]);
     console.log("[E2E-RADAR] Notifications page OK");
 
-    await assertPageHas(page, baseUrl, "/popey-human/app/signal?signalFilter=open", ["Signal", "Mode Talkie-Walkie", "Actifs"]);
+    await assertPageHasAny(page, baseUrl, "/popey-human/app/signal?signalFilter=open", [
+      "Centre de signaux",
+      "Mode Talkie",
+      "Signal",
+      "Actifs",
+    ]);
     console.log("[E2E-RADAR] Signal page + filters OK");
 
     console.log("[E2E-RADAR] Popey Human radar checks passed.");

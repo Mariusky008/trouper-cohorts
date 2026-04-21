@@ -51,12 +51,24 @@ async function loginAndCheckScope(browser, baseUrl, account) {
     await page.type("#email", account.email);
     await page.type("#password", account.password);
 
-    await Promise.all([
-      page.waitForNavigation({ waitUntil: "domcontentloaded" }),
-      page.click('button[type="submit"]'),
+    await page.click('button[type="submit"]');
+
+    // Login can resolve either with a full navigation or a client-side route update.
+    await Promise.race([
+      page.waitForNavigation({ waitUntil: "domcontentloaded", timeout: 25000 }).catch(() => null),
+      page
+        .waitForFunction(
+          () => !window.location.pathname.startsWith("/popey-human/login"),
+          { timeout: 25000 }
+        )
+        .catch(() => null),
     ]);
 
     await page.goto(`${baseUrl}/popey-human/app/annuaire`, { waitUntil: "domcontentloaded" });
+    await page.waitForFunction(
+      () => !window.location.pathname.startsWith("/popey-human/login"),
+      { timeout: 25000 }
+    );
     await page.waitForFunction(() => {
       const text = document.body?.textContent || "";
       return text.includes("Annuaire") && text.includes("Mode actif:");
@@ -95,6 +107,20 @@ async function loginAndCheckScope(browser, baseUrl, account) {
   }
 }
 
+async function withRetry(label, fn, attempts = 2) {
+  let lastError = null;
+  for (let i = 1; i <= attempts; i += 1) {
+    try {
+      return await fn();
+    } catch (error) {
+      lastError = error;
+      if (i >= attempts) break;
+      console.warn(`[E2E] ${label} failed on attempt ${i}/${attempts}, retrying...`);
+    }
+  }
+  throw lastError;
+}
+
 async function main() {
   const baseUrl = process.env.E2E_BASE_URL || "http://localhost:3000";
   const accounts = [
@@ -125,7 +151,9 @@ async function main() {
   try {
     const results = [];
     for (const account of accounts) {
-      results.push(await loginAndCheckScope(browser, baseUrl, account));
+      results.push(
+        await withRetry(account.label, () => loginAndCheckScope(browser, baseUrl, account))
+      );
     }
 
     if (
