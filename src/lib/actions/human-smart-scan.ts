@@ -103,6 +103,14 @@ type SmartScanConversionStats = {
   }>;
 };
 
+type SmartScanFollowupOpsStats = {
+  copied_today: number;
+  replied_today: number;
+  converted_today: number;
+  not_interested_today: number;
+  ignored_today: number;
+};
+
 type ResultError = { error: string };
 type ContactScoreInputs = {
   trustLevel: SmartScanTrustLevel | null;
@@ -215,6 +223,11 @@ function buildFollowupSuggestion(contactName: string, actionType: SmartScanActio
     return `Salut ${firstName}, je fais un point rapide suite a mon dernier message. Si c est utile, je te partage une synthese concrete en 2 minutes.`;
   }
   return `Salut ${firstName}, je te relance rapidement suite a mon dernier message.`;
+}
+
+function getStartOfUtcDayIso() {
+  const now = new Date();
+  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 0, 0, 0, 0)).toISOString();
 }
 
 export async function saveTrustLevel(input: {
@@ -1061,16 +1074,27 @@ export async function runSmartScanFollowupSweep(limit = 600) {
 
 export async function updateSmartScanFollowupJob(input: {
   actionId: string;
-  status: "processed" | "cancelled";
+  decision: "copied" | "replied" | "converted" | "not_interested" | "ignored";
+  note?: string | null;
 }) {
   const currentMember = await getCurrentHumanMember();
   if (!currentMember) return { error: "Session requise." };
 
   const supabaseAdmin = createAdminClient();
   const nowIso = new Date().toISOString();
+  const decisionToEventType: Record<
+    "copied" | "replied" | "converted" | "not_interested" | "ignored",
+    "copied" | "marked_replied" | "marked_converted" | "marked_not_interested" | "ignored"
+  > = {
+    copied: "copied",
+    replied: "marked_replied",
+    converted: "marked_converted",
+    not_interested: "marked_not_interested",
+    ignored: "ignored",
+  };
   const { data: actionRow, error: actionError } = await supabaseAdmin
     .from("human_smart_scan_actions")
-    .select("id,contact_id,action_type,followup_due_at")
+    .select("id,contact_id,action_type,followup_due_at,status,outcome_status")
     .eq("id", input.actionId)
     .eq("owner_member_id", currentMember.id)
     .maybeSingle();
@@ -1086,6 +1110,41 @@ export async function updateSmartScanFollowupJob(input: {
     .maybeSingle();
 
   const contactName = String(contactRow?.full_name || "Contact");
+  const isTransitionDecision = input.decision !== "copied";
+  if (isTransitionDecision && actionRow.status !== "sent") {
+    return { error: "Transition invalide: action non envoyee sur WhatsApp." };
+  }
+
+  const actionUpdatePayload =
+    input.decision === "replied"
+      ? {
+          outcome_status: "replied" as const,
+          followup_due_at: null,
+          outcome_notes: input.note || null,
+          updated_at: nowIso,
+        }
+      : input.decision === "converted"
+        ? {
+            outcome_status: "converted" as const,
+            followup_due_at: null,
+            outcome_notes: input.note || null,
+            updated_at: nowIso,
+          }
+        : input.decision === "not_interested"
+          ? {
+              outcome_status: "not_interested" as const,
+              followup_due_at: null,
+              outcome_notes: input.note || null,
+              updated_at: nowIso,
+            }
+          : input.decision === "ignored"
+            ? {
+                followup_due_at: null,
+                updated_at: nowIso,
+              }
+            : null;
+
+  const nextJobStatus = input.decision === "ignored" ? "cancelled" : input.decision === "copied" ? "queued" : "processed";
   const { error: upsertError } = await supabaseAdmin
     .from("human_smart_scan_followup_jobs")
     .upsert(
@@ -1094,43 +1153,107 @@ export async function updateSmartScanFollowupJob(input: {
         owner_member_id: currentMember.id,
         contact_id: String(actionRow.contact_id),
         job_type: "auto_followup_48h",
-        status: input.status,
+        status: nextJobStatus,
         suggested_message: buildFollowupSuggestion(contactName, actionRow.action_type as SmartScanActionType),
         scheduled_for: String(actionRow.followup_due_at || nowIso),
-        processed_at: input.status === "processed" ? nowIso : null,
+        processed_at: nextJobStatus === "processed" ? nowIso : null,
         updated_at: nowIso,
       },
       { onConflict: "action_id,job_type" }
     );
   if (upsertError) return { error: upsertError.message };
 
-  const actionUpdatePayload =
-    input.status === "processed"
-      ? {
-          outcome_status: "replied" as const,
-          followup_due_at: null,
-          updated_at: nowIso,
-        }
-      : {
-          followup_due_at: null,
-          updated_at: nowIso,
-        };
+  if (actionUpdatePayload) {
+    const { error: updateActionError } = await supabaseAdmin
+      .from("human_smart_scan_actions")
+      .update(actionUpdatePayload)
+      .eq("id", String(actionRow.id))
+      .eq("owner_member_id", currentMember.id);
+    if (updateActionError) return { error: updateActionError.message };
+  }
 
-  const { error: updateActionError } = await supabaseAdmin
-    .from("human_smart_scan_actions")
-    .update(actionUpdatePayload)
-    .eq("id", String(actionRow.id))
-    .eq("owner_member_id", currentMember.id);
-  if (updateActionError) return { error: updateActionError.message };
+  const { data: jobRow } = await supabaseAdmin
+    .from("human_smart_scan_followup_jobs")
+    .select("id")
+    .eq("action_id", String(actionRow.id))
+    .eq("owner_member_id", currentMember.id)
+    .eq("job_type", "auto_followup_48h")
+    .maybeSingle();
+
+  await supabaseAdmin.from("human_smart_scan_followup_job_events").insert({
+    job_id: jobRow?.id || null,
+    action_id: String(actionRow.id),
+    owner_member_id: currentMember.id,
+    contact_id: String(actionRow.contact_id),
+    operator_member_id: currentMember.id,
+    event_type: decisionToEventType[input.decision],
+    metadata: {
+      decision: input.decision,
+      action_type: actionRow.action_type,
+      note: input.note || null,
+      previous_outcome_status: actionRow.outcome_status || null,
+      next_outcome_status:
+        input.decision === "replied"
+          ? "replied"
+          : input.decision === "converted"
+            ? "converted"
+            : input.decision === "not_interested"
+              ? "not_interested"
+              : actionRow.outcome_status || null,
+    },
+  });
 
   await syncHighPriorityNoResponseAlertForContact(currentMember.id, String(actionRow.contact_id), contactName);
   revalidateSmartScanPaths();
   return {
     success: true,
     actionId: String(actionRow.id),
-    status: input.status,
-    outcomeStatus: input.status === "processed" ? "replied" : null,
+    decision: input.decision,
+    outcomeStatus:
+      input.decision === "replied"
+        ? "replied"
+        : input.decision === "converted"
+          ? "converted"
+          : input.decision === "not_interested"
+            ? "not_interested"
+            : null,
   };
+}
+
+export async function getSmartScanFollowupOpsStatsToday() {
+  const currentMember = await getCurrentHumanMember();
+  if (!currentMember) {
+    return { error: "Session requise.", stats: null as SmartScanFollowupOpsStats | null };
+  }
+
+  const supabaseAdmin = createAdminClient();
+  const since = getStartOfUtcDayIso();
+  const { data, error } = await supabaseAdmin
+    .from("human_smart_scan_followup_job_events")
+    .select("event_type")
+    .eq("owner_member_id", currentMember.id)
+    .gte("created_at", since)
+    .limit(5000);
+  if (error) return { error: error.message, stats: null as SmartScanFollowupOpsStats | null };
+
+  const rows = (data as Array<Record<string, unknown>> | null) || [];
+  const counters: SmartScanFollowupOpsStats = {
+    copied_today: 0,
+    replied_today: 0,
+    converted_today: 0,
+    not_interested_today: 0,
+    ignored_today: 0,
+  };
+  rows.forEach((row) => {
+    const type = String(row.event_type || "");
+    if (type === "copied") counters.copied_today += 1;
+    if (type === "marked_replied") counters.replied_today += 1;
+    if (type === "marked_converted") counters.converted_today += 1;
+    if (type === "marked_not_interested") counters.not_interested_today += 1;
+    if (type === "ignored") counters.ignored_today += 1;
+  });
+
+  return { error: null as string | null, stats: counters };
 }
 
 async function syncHotIdealAlertForContact(ownerMemberId: string, contactId: string, contactName?: string) {

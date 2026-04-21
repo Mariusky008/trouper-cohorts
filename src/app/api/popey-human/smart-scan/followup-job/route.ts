@@ -6,16 +6,18 @@ export const dynamic = "force-dynamic";
 export async function POST(request: NextRequest) {
   const body = (await request.json()) as {
     actionId?: string;
-    status?: "processed" | "cancelled";
+    decision?: "copied" | "replied" | "converted" | "not_interested" | "ignored";
+    note?: string | null;
   };
 
-  if (!body?.actionId || !body?.status) {
-    return NextResponse.json({ error: "actionId et status requis." }, { status: 400 });
+  if (!body?.actionId || !body?.decision) {
+    return NextResponse.json({ error: "actionId et decision requis." }, { status: 400 });
   }
 
   const result = await updateSmartScanFollowupJob({
     actionId: body.actionId,
-    status: body.status,
+    decision: body.decision,
+    note: body.note || null,
   });
 
   if ("error" in result) {

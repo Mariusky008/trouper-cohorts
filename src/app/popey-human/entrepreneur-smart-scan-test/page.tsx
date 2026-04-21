@@ -99,6 +99,13 @@ type BootstrapMetrics = {
     conversions: number;
   }>;
 };
+type BootstrapFollowupOps = {
+  copied_today: number;
+  replied_today: number;
+  converted_today: number;
+  not_interested_today: number;
+  ignored_today: number;
+};
 
 const CONTACTS: DailyContact[] = [
   {
@@ -483,6 +490,7 @@ export default function EntrepreneurSmartScanTestPage() {
     }>
   >([]);
   const [conversionMetrics, setConversionMetrics] = useState<BootstrapMetrics | null>(null);
+  const [followupOpsStats, setFollowupOpsStats] = useState<BootstrapFollowupOps | null>(null);
 
   const current = CONTACTS[index] ?? CONTACTS[CONTACTS.length - 1];
   const profileContact = CONTACTS.find((contact) => contact.id === profileContactId) ?? null;
@@ -829,18 +837,23 @@ export default function EntrepreneurSmartScanTestPage() {
     }
   }
 
-  async function handleFollowupJobAction(actionId: string, status: "processed" | "cancelled") {
+  async function handleFollowupJobAction(
+    actionId: string,
+    decision: "replied" | "converted" | "not_interested" | "ignored"
+  ) {
     try {
-      await postSmartScan("followup-job", { actionId, status });
+      await postSmartScan("followup-job", { actionId, decision });
       await refreshSmartScanSnapshot();
     } catch {
       // Error banner is already handled in postSmartScan.
     }
   }
 
-  async function copyFollowupMessage(message: string) {
+  async function copyFollowupMessage(actionId: string, message: string) {
     try {
       await navigator.clipboard.writeText(message);
+      await postSmartScan("followup-job", { actionId, decision: "copied" });
+      await refreshSmartScanSnapshot();
     } catch {
       setApiErrorMessage("Copie impossible. Tu peux copier le message manuellement.");
     }
@@ -919,6 +932,7 @@ export default function EntrepreneurSmartScanTestPage() {
       alerts: BootstrapAlertRow[];
       followups?: BootstrapFollowupRow[];
       metrics?: BootstrapMetrics | null;
+      followupOps?: BootstrapFollowupOps | null;
     };
 
     const dbToExternalRef = new Map<string, string>();
@@ -1035,6 +1049,7 @@ export default function EntrepreneurSmartScanTestPage() {
     setOpenAlertContactIds(alertContactIds);
     setDueFollowups(nextDueFollowups);
     setConversionMetrics(payload.metrics || null);
+    setFollowupOpsStats(payload.followupOps || null);
     if (payload.session?.opportunities_activated !== undefined) {
       setSentCount(payload.session.opportunities_activated);
     }
@@ -1606,6 +1621,28 @@ export default function EntrepreneurSmartScanTestPage() {
                   {dueFollowups.length}
                 </span>
               </div>
+              <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-5">
+                <div className="rounded-lg border border-white/15 bg-black/20 px-2 py-1.5">
+                  <p className="text-[9px] uppercase tracking-[0.08em] text-white/60">Copies</p>
+                  <p className="text-xs font-black text-cyan-100">{followupOpsStats?.copied_today ?? 0}</p>
+                </div>
+                <div className="rounded-lg border border-white/15 bg-black/20 px-2 py-1.5">
+                  <p className="text-[9px] uppercase tracking-[0.08em] text-white/60">Repondu</p>
+                  <p className="text-xs font-black text-emerald-100">{followupOpsStats?.replied_today ?? 0}</p>
+                </div>
+                <div className="rounded-lg border border-white/15 bg-black/20 px-2 py-1.5">
+                  <p className="text-[9px] uppercase tracking-[0.08em] text-white/60">Converti</p>
+                  <p className="text-xs font-black text-amber-100">{followupOpsStats?.converted_today ?? 0}</p>
+                </div>
+                <div className="rounded-lg border border-white/15 bg-black/20 px-2 py-1.5">
+                  <p className="text-[9px] uppercase tracking-[0.08em] text-white/60">Pas interesse</p>
+                  <p className="text-xs font-black text-rose-100">{followupOpsStats?.not_interested_today ?? 0}</p>
+                </div>
+                <div className="rounded-lg border border-white/15 bg-black/20 px-2 py-1.5">
+                  <p className="text-[9px] uppercase tracking-[0.08em] text-white/60">Ignores</p>
+                  <p className="text-xs font-black text-white">{followupOpsStats?.ignored_today ?? 0}</p>
+                </div>
+              </div>
               <div className="mt-2 space-y-2">
                 {dueFollowups.length === 0 && (
                   <p className="text-xs text-white/70">Aucune relance due pour le moment.</p>
@@ -1628,24 +1665,38 @@ export default function EntrepreneurSmartScanTestPage() {
                       </p>
                     </button>
                     <p className="mt-1 line-clamp-2 text-[10px] text-orange-100/90">{item.suggestedMessage}</p>
-                    <div className="mt-2 grid grid-cols-3 gap-2">
+                    <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-5">
                       <button
                         type="button"
-                        onClick={() => copyFollowupMessage(item.suggestedMessage)}
+                        onClick={() => copyFollowupMessage(item.actionId, item.suggestedMessage)}
                         className="h-8 rounded-lg border border-cyan-300/35 bg-cyan-300/10 text-[10px] font-black uppercase tracking-[0.08em] text-cyan-100"
                       >
                         Copier
                       </button>
                       <button
                         type="button"
-                        onClick={() => handleFollowupJobAction(item.actionId, "processed")}
+                        onClick={() => handleFollowupJobAction(item.actionId, "replied")}
                         className="h-8 rounded-lg border border-emerald-300/35 bg-emerald-300/10 text-[10px] font-black uppercase tracking-[0.08em] text-emerald-100"
                       >
-                        Relance faite
+                        Repondu
                       </button>
                       <button
                         type="button"
-                        onClick={() => handleFollowupJobAction(item.actionId, "cancelled")}
+                        onClick={() => handleFollowupJobAction(item.actionId, "converted")}
+                        className="h-8 rounded-lg border border-amber-300/35 bg-amber-300/10 text-[10px] font-black uppercase tracking-[0.08em] text-amber-100"
+                      >
+                        Converti
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleFollowupJobAction(item.actionId, "not_interested")}
+                        className="h-8 rounded-lg border border-rose-300/35 bg-rose-300/10 text-[10px] font-black uppercase tracking-[0.08em] text-rose-100"
+                      >
+                        Pas interesse
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleFollowupJobAction(item.actionId, "ignored")}
                         className="h-8 rounded-lg border border-white/20 bg-white/10 text-[10px] font-black uppercase tracking-[0.08em] text-white/80"
                       >
                         Ignorer
