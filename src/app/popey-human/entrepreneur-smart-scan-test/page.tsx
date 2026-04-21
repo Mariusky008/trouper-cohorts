@@ -222,7 +222,7 @@ const OPPORTUNITY_UI_RULES: Partial<
 > = {
   "ideal-client": {
     priorityAction: "package",
-    title: "💜 Proposer au Trio immediatement",
+    title: "💜 Proposer un Pack",
     subtitle: "Client ideal detecte",
     cue: "Priorite violette",
   },
@@ -553,6 +553,11 @@ export default function EntrepreneurSmartScanTestPage() {
     profileQualifier &&
     (profileQualifier.heat === "brulant" || profileQualifier.opportunityChoice === "ideal-client" || profileQualifier.opportunityChoice === "opens-doors") &&
     profileDaysSinceLastSent > 90;
+  const dailyGoal = 10;
+  const opportunitiesActivated = Math.min(dailyGoal, sentCount);
+  const remainingForGoal = Math.max(0, dailyGoal - opportunitiesActivated);
+  const missionProgress = Math.round((opportunitiesActivated / dailyGoal) * 100);
+  const latentPotential = remainingForGoal * 75;
 
   function adnBadgeClass(label: string) {
     const lower = label.toLowerCase();
@@ -849,6 +854,14 @@ export default function EntrepreneurSmartScanTestPage() {
     }
   }, [qualifierStep, canSaveQualifier]);
 
+  useEffect(() => {
+    if (!showContactProfile || !profileContact) return;
+    if (trustLevelStore[profileContact.id]) return;
+    setShowContactProfile(false);
+    setTrustPromptContactId(profileContact.id);
+    setShowTrustLevelPrompt(true);
+  }, [showContactProfile, profileContact, trustLevelStore]);
+
   function setLastRewardForQualifier() {
     setShowReward(true);
     setTimeout(() => setShowReward(false), 700);
@@ -1096,50 +1109,64 @@ export default function EntrepreneurSmartScanTestPage() {
     <main className="h-screen overflow-y-auto bg-[radial-gradient(circle_at_10%_0%,#10193D_0%,#0C122B_45%,#090B16_100%)] text-white">
       <div className="mx-auto max-w-6xl px-4 pt-14 sm:pt-5 pb-20">
         <div className="rounded-3xl border border-white/10 bg-white/5 p-3 backdrop-blur-xl">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <p className="text-xs font-black uppercase tracking-[0.12em] text-cyan-200">S18 SCAN</p>
-              <h1 className="mt-1 text-lg sm:text-2xl font-black">Ma Mini-Agence • MON Radar Quotidien</h1>
-              <p className="mt-0.5 text-[11px] text-white/70">{sentCount} messages envoyes aujourd hui</p>
+          <div className="space-y-3">
+            <div className="flex flex-wrap items-end justify-between gap-3">
+              <div>
+                <p className="text-xs font-black uppercase tracking-[0.12em] text-cyan-200">Cockpit Mission Quotidienne</p>
+                <h1 className="mt-1 text-lg sm:text-2xl font-black">Trio Immo-Dax : Radar Active</h1>
+                <p className="mt-0.5 text-[12px] text-white/80">
+                  {opportunitiesActivated} opportunites activees aujourd hui. Encore {remainingForGoal} pour atteindre votre objectif.
+                </p>
+              </div>
+              <p className="rounded-full border border-emerald-300/35 bg-emerald-300/12 px-3 py-1 text-[11px] font-black uppercase tracking-[0.08em] text-emerald-100">
+                Potentiel du jour : ~{latentPotential}€
+              </p>
             </div>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => setShowHistoryPanel(true)}
-                className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/20 bg-black/25 text-sm"
-                aria-label="Historique"
-              >
-                🕘
-              </button>
-              <button
-                type="button"
-                onClick={() => setShowSearchPanel(true)}
-                className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/20 bg-black/25 text-sm"
-                aria-label="Recherche"
-              >
-                🔍
-              </button>
-              <button
-                type="button"
-                onClick={() => setShowHistoryPanel(true)}
-                className="relative h-16 w-16 rounded-full"
-                aria-label="Progression"
-              >
-                <div
-                  className="absolute inset-0 rounded-full"
-                  style={{
-                    background: `conic-gradient(#34d399 ${progress * 3.6}deg, rgba(255,255,255,0.15) 0deg)`,
-                  }}
+
+            <div className="rounded-2xl border border-white/10 bg-black/20 px-3 py-3">
+              <div className="flex items-center justify-between text-[11px] font-black uppercase tracking-[0.1em] text-white/70">
+                <span>Mission quotidienne</span>
+                <span>{opportunitiesActivated}/{dailyGoal}</span>
+              </div>
+              <div className="relative mt-2 h-3 overflow-hidden rounded-full bg-white/10">
+                <motion.div
+                  className="h-full rounded-full bg-gradient-to-r from-orange-300 via-amber-300 to-emerald-300"
+                  animate={{ width: `${missionProgress}%` }}
+                  transition={{ duration: 0.4, ease: "easeOut" }}
                 />
-                <div className="absolute inset-[6px] rounded-full bg-[#0B1024] flex items-center justify-center text-center">
-                  <p className="text-[10px] font-black leading-tight">{done}/10<br />faits</p>
-                </div>
                 {showProgressCheck && (
-                  <div className="absolute -right-1 -top-1 flex h-6 w-6 items-center justify-center rounded-full border border-emerald-200/50 bg-emerald-400 text-[12px] font-black text-[#10261A] shadow-[0_10px_22px_-10px_rgba(52,211,153,0.95)]">
-                    ✓
-                  </div>
+                  <motion.span
+                    initial={{ opacity: 0, scale: 0.6, x: -8 }}
+                    animate={{ opacity: [0, 1, 0], scale: [0.6, 1.2, 0.8], x: 14 }}
+                    transition={{ duration: 0.65, ease: "easeInOut" }}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-[11px]"
+                  >
+                    ✨
+                  </motion.span>
                 )}
-              </button>
+              </div>
+              <p className="mt-2 text-xs text-white/70">Chaque fiche validee rapproche la mission du Trio de sa cible du jour.</p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              <a
+                href="https://www.linkedin.com"
+                target="_blank"
+                rel="noreferrer"
+                className="rounded-xl border border-white/15 bg-black/25 px-3 py-2 text-center text-[11px] font-black uppercase tracking-[0.08em] text-white/85 transition hover:border-cyan-300/45"
+              >
+                LinkedIn
+                <span className="mt-0.5 block text-[10px] font-medium normal-case text-white/65">Ouvrir le reseau pro</span>
+              </a>
+              <a
+                href="https://web.whatsapp.com"
+                target="_blank"
+                rel="noreferrer"
+                className="rounded-xl border border-white/15 bg-black/25 px-3 py-2 text-center text-[11px] font-black uppercase tracking-[0.08em] text-white/85 transition hover:border-emerald-300/45"
+              >
+                Groupe WhatsApp
+                <span className="mt-0.5 block text-[10px] font-medium normal-case text-white/65">Ouvrir la communaute</span>
+              </a>
             </div>
           </div>
         </div>
@@ -1206,8 +1233,8 @@ export default function EntrepreneurSmartScanTestPage() {
               <div className="mt-5 text-center">
                 <p className="text-xl sm:text-2xl font-black">Choisis comment activer {current.name.split(" ")[0]} :</p>
                 {actionEngine.cue && (
-                  <p className="mt-1 text-[11px] font-black uppercase tracking-[0.12em] text-cyan-100">
-                    UI dynamique: {actionEngine.cue}
+                  <p className="mt-1 text-[10px] font-semibold tracking-[0.08em] text-cyan-100/90">
+                    UI dynamique • {actionEngine.cue}
                   </p>
                 )}
               </div>
@@ -1225,7 +1252,7 @@ export default function EntrepreneurSmartScanTestPage() {
                       disabled={!isQualified}
                       className={`relative overflow-hidden h-20 rounded-2xl border ${theme.buttonClass} ${
                         shouldPulse ? theme.idlePulseClass : ""
-                      } ${launching ? theme.launchRingClass : ""} ${button.isPriority ? "ring-2 ring-white/35" : ""}`}
+                      } ${launching ? theme.launchRingClass : ""} ${button.isPriority ? "ring-1 ring-white/30" : ""}`}
                     >
                       {launching && (
                         <>
@@ -1250,11 +1277,6 @@ export default function EntrepreneurSmartScanTestPage() {
                             className="pointer-events-none absolute top-0 h-full w-20 bg-gradient-to-r from-transparent via-white/80 to-transparent blur-sm"
                           />
                         </>
-                      )}
-                      {button.isPriority && (
-                        <span className="absolute right-2 top-2 rounded-full bg-white/85 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-[#181C35]">
-                          Priorite
-                        </span>
                       )}
                       <span className={`block text-base font-black uppercase tracking-wide ${theme.titleClass}`}>{button.title}</span>
                       <span className={`mt-0.5 block text-[11px] font-semibold ${theme.subtitleClass}`}>{button.subtitle}</span>
@@ -1360,6 +1382,7 @@ export default function EntrepreneurSmartScanTestPage() {
                     const nextIndex = CONTACTS.findIndex((contact) => contact.id === entry.contactId);
                     if (nextIndex >= 0) setIndex(nextIndex);
                     setShowHistoryPanel(false);
+                    openContactProfileWithTrustGuard(entry.contactId);
                   }}
                   className="w-full rounded-xl border border-white/15 bg-black/25 px-3 py-2 text-left"
                 >
