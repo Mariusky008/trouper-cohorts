@@ -57,6 +57,11 @@ type BootstrapHistoryRow = {
 type BootstrapSessionRow = {
   opportunities_activated: number;
 };
+type BootstrapAlertRow = {
+  contact_id: string | null;
+  alert_type: "hot_ideal_unshared_24h";
+  status: "open" | "dismissed" | "resolved";
+};
 
 const CONTACTS: DailyContact[] = [
   {
@@ -420,6 +425,8 @@ export default function EntrepreneurSmartScanTestPage() {
   const [historyEntries, setHistoryEntries] = useState<HistoryEntry[]>([]);
   const [qualifierStore, setQualifierStore] = useState<Record<string, QualifierData>>({});
   const [isBootstrapped, setIsBootstrapped] = useState(false);
+  const [openAlertContactIds, setOpenAlertContactIds] = useState<string[]>([]);
+  const [apiErrorMessage, setApiErrorMessage] = useState("");
 
   const current = CONTACTS[index] ?? CONTACTS[CONTACTS.length - 1];
   const profileContact = CONTACTS.find((contact) => contact.id === profileContactId) ?? null;
@@ -546,6 +553,14 @@ export default function EntrepreneurSmartScanTestPage() {
     isPriority: profileActionEngine.priorityAction === action,
   }));
   const staleIdealHotLead = useMemo(() => {
+    const alertContactId = openAlertContactIds[0];
+    if (alertContactId) {
+      const fromAlert = CONTACTS.find((item) => item.id === alertContactId);
+      if (fromAlert) {
+        return { ...fromAlert, qualifier: qualifierStore[alertContactId] };
+      }
+    }
+
     const nowMs = Date.now();
     for (const [contactId, qualifier] of Object.entries(qualifierStore)) {
       if (!qualifier) continue;
@@ -560,7 +575,7 @@ export default function EntrepreneurSmartScanTestPage() {
       return { ...contact, qualifier };
     }
     return null;
-  }, [qualifierStore, historyEntries]);
+  }, [qualifierStore, historyEntries, openAlertContactIds]);
   const profileHeat = profileQualifier?.heat ?? "tiede";
   const profileHistory = profileContact ? historyEntries.filter((entry) => entry.contactId === profileContact.id) : [];
   const profileDaysSinceLastSent = profileContact ? 30 + Number(profileContact.id.replace("d", "")) * 17 : 0;
@@ -723,16 +738,32 @@ export default function EntrepreneurSmartScanTestPage() {
     path: "trust" | "qualification" | "action" | "favorite",
     payload: Record<string, unknown>,
   ) {
-    const response = await fetch(`/api/popey-human/smart-scan/${path}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-    if (!response.ok) {
-      const body = (await response.json().catch(() => ({}))) as { error?: string };
-      throw new Error(body.error || "Erreur API Smart Scan");
+    const maxAttempts = 3;
+    let lastError: Error | null = null;
+
+    for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+      try {
+        const response = await fetch(`/api/popey-human/smart-scan/${path}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        if (!response.ok) {
+          const body = (await response.json().catch(() => ({}))) as { error?: string };
+          throw new Error(body.error || "Erreur API Smart Scan");
+        }
+        setApiErrorMessage("");
+        return response.json();
+      } catch (error) {
+        lastError = error instanceof Error ? error : new Error("Erreur reseau Smart Scan");
+        if (attempt < maxAttempts) {
+          await new Promise((resolve) => setTimeout(resolve, 250 * attempt));
+        }
+      }
     }
-    return response.json();
+
+    setApiErrorMessage("Synchronisation en attente. Les donnees seront retentees automatiquement.");
+    throw lastError || new Error("Erreur API Smart Scan");
   }
 
   async function refreshSmartScanSnapshot() {
@@ -743,6 +774,7 @@ export default function EntrepreneurSmartScanTestPage() {
       qualifications: BootstrapQualificationRow[];
       history: BootstrapHistoryRow[];
       session: BootstrapSessionRow | null;
+      alerts: BootstrapAlertRow[];
     };
 
     const dbToExternalRef = new Map<string, string>();
@@ -802,10 +834,19 @@ export default function EntrepreneurSmartScanTestPage() {
       })
       .filter(Boolean) as HistoryEntry[];
 
+    const dbAlertContactIds = (payload.alerts || [])
+      .filter((alert) => alert.alert_type === "hot_ideal_unshared_24h" && alert.status === "open")
+      .map((alert) => alert.contact_id)
+      .filter(Boolean) as string[];
+    const alertContactIds = dbAlertContactIds
+      .map((dbContactId) => dbToExternalRef.get(dbContactId))
+      .filter(Boolean) as string[];
+
     setTrustLevelStore(nextTrustStore);
     setFavoriteIds(nextFavoriteIds);
     setQualifierStore(nextQualifierStore);
     setHistoryEntries(nextHistoryEntries);
+    setOpenAlertContactIds(alertContactIds);
     if (payload.session?.opportunities_activated !== undefined) {
       setSentCount(payload.session.opportunities_activated);
     }
@@ -870,6 +911,7 @@ export default function EntrepreneurSmartScanTestPage() {
         ...prev,
       ].slice(0, 50));
       const persistedStatus = sentInHistory ? "sent" : "validated_without_send";
+      const clientEventId = `${actionContact.id}:${action}:${nowMs}`;
       void postSmartScan("action", {
         externalContactRef: actionContact.id,
         fullName: actionContact.name,
@@ -879,6 +921,7 @@ export default function EntrepreneurSmartScanTestPage() {
         messageDraft: draftMessage || null,
         sendChannel: sentInHistory ? "whatsapp" : "other",
         status: persistedStatus,
+        clientEventId,
       })
         .then((result: { opportunitiesActivated?: number | null }) => {
           if (typeof result?.opportunitiesActivated === "number") {
@@ -1297,6 +1340,11 @@ export default function EntrepreneurSmartScanTestPage() {
   return (
     <main className="h-screen overflow-y-auto bg-[radial-gradient(circle_at_10%_0%,#10193D_0%,#0C122B_45%,#090B16_100%)] text-white">
       <div className="mx-auto max-w-6xl px-4 pt-14 sm:pt-5 pb-20">
+        {apiErrorMessage && (
+          <div className="mb-3 rounded-xl border border-orange-300/35 bg-orange-300/15 px-3 py-2 text-xs text-orange-100">
+            {apiErrorMessage}
+          </div>
+        )}
         <div className="rounded-3xl border border-white/10 bg-white/5 p-3 backdrop-blur-xl">
           <div className="space-y-3">
             <div className="flex flex-wrap items-end justify-between gap-3">

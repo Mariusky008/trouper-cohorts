@@ -4,16 +4,18 @@ import {
   listHistoryActions,
   listMySmartScanContacts,
   listMySmartScanQualifications,
+  listOpenSmartScanAlerts,
 } from "@/lib/actions/human-smart-scan";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const [sessionResult, contactsResult, qualificationsResult, historyResult] = await Promise.all([
+  const [sessionResult, contactsResult, qualificationsResult, historyResult, alertsResult] = await Promise.all([
     getOrCreateTodaySession(),
     listMySmartScanContacts(800),
     listMySmartScanQualifications(800),
     listHistoryActions(200),
+    listOpenSmartScanAlerts(80),
   ]);
 
   if (sessionResult.error) {
@@ -28,11 +30,15 @@ export async function GET() {
   if (historyResult.error) {
     return NextResponse.json({ error: historyResult.error }, { status: 400 });
   }
+  if (alertsResult.error) {
+    return NextResponse.json({ error: alertsResult.error }, { status: 400 });
+  }
 
   return NextResponse.json({
     session: sessionResult.session,
     contacts: contactsResult.contacts,
     qualifications: qualificationsResult.qualifications,
     history: historyResult.actions,
+    alerts: alertsResult.alerts,
   });
 }

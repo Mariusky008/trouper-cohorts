@@ -14,6 +14,7 @@ export async function POST(request: NextRequest) {
     messageDraft?: string | null;
     sendChannel?: "whatsapp" | "other";
     status?: "drafted" | "sent" | "validated_without_send";
+    clientEventId?: string | null;
   };
 
   if (!body?.actionType || !body?.status) {
@@ -30,6 +31,7 @@ export async function POST(request: NextRequest) {
     messageDraft: body.messageDraft || null,
     sendChannel: body.sendChannel || "whatsapp",
     status: body.status,
+    clientEventId: body.clientEventId || null,
   });
 
   if ("error" in result) {

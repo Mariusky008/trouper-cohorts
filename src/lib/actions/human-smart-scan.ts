@@ -17,6 +17,7 @@ export type SmartScanOpportunityChoice =
   | "no-potential";
 export type SmartScanActionType = "passer" | "eclaireur" | "package" | "exclients";
 export type SmartScanActionStatus = "drafted" | "sent" | "validated_without_send";
+export type SmartScanAlertType = "hot_ideal_unshared_24h";
 
 type SmartScanActionRow = {
   id: string;
@@ -47,6 +48,19 @@ type SessionRow = {
   started_at: string;
   completed_at: string | null;
   metadata: Record<string, unknown> | null;
+  created_at: string;
+  updated_at: string;
+};
+
+type SmartScanAlertRow = {
+  id: string;
+  owner_member_id: string;
+  contact_id: string | null;
+  alert_type: SmartScanAlertType;
+  status: "open" | "dismissed" | "resolved";
+  payload: Record<string, unknown> | null;
+  triggered_at: string;
+  resolved_at: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -219,6 +233,7 @@ export async function saveQualification(input: {
     .upsert(payload, { onConflict: "contact_id,owner_member_id" });
   if (error) return { error: error.message };
 
+  await syncHotIdealAlertForContact(currentMember.id, resolved.id, input.fullName);
   revalidateSmartScanPaths();
   return { success: true, contactId: resolved.id };
 }
@@ -233,6 +248,7 @@ export async function logSmartScanAction(input: {
   messageDraft?: string | null;
   sendChannel?: "whatsapp" | "other";
   status: SmartScanActionStatus;
+  clientEventId?: string | null;
 }) {
   const currentMember = await getCurrentHumanMember();
   if (!currentMember) return { error: "Session requise." };
@@ -252,6 +268,24 @@ export async function logSmartScanAction(input: {
   const shouldSetSentAt = input.status === "sent";
   const shouldSetValidatedAt = input.status === "validated_without_send";
 
+  if (input.clientEventId) {
+    const { data: existingAction } = await supabaseAdmin
+      .from("human_smart_scan_actions")
+      .select("id")
+      .eq("owner_member_id", currentMember.id)
+      .eq("client_event_id", input.clientEventId)
+      .maybeSingle();
+    if (existingAction?.id) {
+      const session = await upsertTodaySessionInternal(currentMember.id);
+      return {
+        success: true,
+        actionId: String(existingAction.id),
+        contactId: resolved.id,
+        opportunitiesActivated: "error" in session ? null : session.opportunities_activated,
+      };
+    }
+  }
+
   const { data: inserted, error } = await supabaseAdmin
     .from("human_smart_scan_actions")
     .insert({
@@ -263,6 +297,7 @@ export async function logSmartScanAction(input: {
       status: input.status,
       sent_at: shouldSetSentAt ? nowIso : null,
       validated_at: shouldSetValidatedAt ? nowIso : null,
+      client_event_id: input.clientEventId || null,
       updated_at: nowIso,
     })
     .select("id")
@@ -277,6 +312,7 @@ export async function logSmartScanAction(input: {
     opportunitiesActivated = "error" in session ? null : session.opportunities_activated;
   }
 
+  await syncHotIdealAlertForContact(currentMember.id, resolved.id, input.fullName);
   revalidateSmartScanPaths();
   return {
     success: true,
@@ -418,6 +454,114 @@ export async function setContactFavorite(input: {
 
   revalidateSmartScanPaths();
   return { success: true, contactId: resolved.id, isFavorite: input.isFavorite };
+}
+
+export async function listOpenSmartScanAlerts(limit = 100) {
+  const currentMember = await getCurrentHumanMember();
+  if (!currentMember) {
+    return { error: "Session requise.", alerts: [] as SmartScanAlertRow[] };
+  }
+
+  const safeLimit = Math.max(1, Math.min(300, Math.trunc(limit)));
+  const supabaseAdmin = createAdminClient();
+  const { data, error } = await supabaseAdmin
+    .from("human_smart_scan_alerts")
+    .select("id,owner_member_id,contact_id,alert_type,status,payload,triggered_at,resolved_at,created_at,updated_at")
+    .eq("owner_member_id", currentMember.id)
+    .eq("status", "open")
+    .order("triggered_at", { ascending: false })
+    .limit(safeLimit);
+
+  if (error) return { error: error.message, alerts: [] as SmartScanAlertRow[] };
+  return { error: null as string | null, alerts: (data as SmartScanAlertRow[] | null) || [] };
+}
+
+async function syncHotIdealAlertForContact(ownerMemberId: string, contactId: string, contactName?: string) {
+  const supabaseAdmin = createAdminClient();
+  const nowIso = new Date().toISOString();
+
+  const { data: qualification } = await supabaseAdmin
+    .from("human_smart_scan_qualifications")
+    .select("heat,opportunity_choice,qualified_at")
+    .eq("owner_member_id", ownerMemberId)
+    .eq("contact_id", contactId)
+    .maybeSingle();
+
+  const isHotIdeal = qualification?.heat === "brulant" && qualification?.opportunity_choice === "ideal-client";
+  const qualifiedAtMs = qualification?.qualified_at ? Date.parse(qualification.qualified_at) : NaN;
+  const isOver24h = Number.isFinite(qualifiedAtMs) && Date.now() - qualifiedAtMs >= 24 * 60 * 60 * 1000;
+
+  let hasPackageAction = false;
+  if (isHotIdeal && qualification?.qualified_at) {
+    const { data: packageAction } = await supabaseAdmin
+      .from("human_smart_scan_actions")
+      .select("id")
+      .eq("owner_member_id", ownerMemberId)
+      .eq("contact_id", contactId)
+      .eq("action_type", "package")
+      .in("status", ["sent", "validated_without_send"])
+      .gte("created_at", qualification.qualified_at)
+      .limit(1)
+      .maybeSingle();
+    hasPackageAction = Boolean(packageAction?.id);
+  }
+
+  const shouldOpenAlert = Boolean(isHotIdeal && isOver24h && !hasPackageAction);
+  const { data: openAlert } = await supabaseAdmin
+    .from("human_smart_scan_alerts")
+    .select("id")
+    .eq("owner_member_id", ownerMemberId)
+    .eq("contact_id", contactId)
+    .eq("alert_type", "hot_ideal_unshared_24h")
+    .eq("status", "open")
+    .order("triggered_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (shouldOpenAlert) {
+    if (openAlert?.id) {
+      await supabaseAdmin
+        .from("human_smart_scan_alerts")
+        .update({
+          payload: {
+            reason: "hot_ideal_unshared_24h",
+            contact_name: contactName || null,
+            qualified_at: qualification?.qualified_at || null,
+          },
+          updated_at: nowIso,
+        })
+        .eq("id", openAlert.id)
+        .eq("owner_member_id", ownerMemberId);
+      return;
+    }
+
+    await supabaseAdmin.from("human_smart_scan_alerts").insert({
+      owner_member_id: ownerMemberId,
+      contact_id: contactId,
+      alert_type: "hot_ideal_unshared_24h",
+      status: "open",
+      payload: {
+        reason: "hot_ideal_unshared_24h",
+        contact_name: contactName || null,
+        qualified_at: qualification?.qualified_at || null,
+      },
+      triggered_at: nowIso,
+      updated_at: nowIso,
+    });
+    return;
+  }
+
+  await supabaseAdmin
+    .from("human_smart_scan_alerts")
+    .update({
+      status: "resolved",
+      resolved_at: nowIso,
+      updated_at: nowIso,
+    })
+    .eq("owner_member_id", ownerMemberId)
+    .eq("contact_id", contactId)
+    .eq("alert_type", "hot_ideal_unshared_24h")
+    .eq("status", "open");
 }
 
 async function upsertTodaySessionInternal(ownerMemberId: string): Promise<SessionRow | ResultError> {
