@@ -21,6 +21,11 @@ export type SmartScanActionStatus = "drafted" | "sent" | "validated_without_send
 export type SmartScanActionOutcomeStatus = "pending" | "replied" | "converted" | "not_interested";
 export type SmartScanAlertType = "hot_ideal_unshared_24h" | "high_priority_no_response_48h";
 export type SmartScanMessageGenerationSource = "ai" | "fallback";
+export type SmartScanAnalyticsEventType =
+  | "contact_opened"
+  | "trust_level_set"
+  | "whatsapp_sent"
+  | "daily_goal_progressed";
 
 type SmartScanActionRow = {
   id: string;
@@ -147,6 +152,28 @@ async function getCurrentHumanMember() {
   return member;
 }
 
+async function logSmartScanAnalyticsEventInternal(input: {
+  eventType: SmartScanAnalyticsEventType;
+  metadata?: Record<string, unknown> | null;
+}) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user?.id) return;
+
+  const { error } = await supabase.from("analytics_events").insert({
+    user_id: user.id,
+    event_type: input.eventType,
+    metadata: input.metadata || {},
+    page: "/popey-human/smart-scan",
+    created_at: new Date().toISOString(),
+  });
+  if (error) {
+    console.error("smart scan analytics event error:", error.message);
+  }
+}
+
 async function resolveContactId(params: {
   ownerMemberId: string;
   contactId?: string;
@@ -269,6 +296,15 @@ export async function saveTrustLevel(input: {
     .eq("id", resolved.id)
     .eq("owner_member_id", currentMember.id);
   if (error) return { error: error.message };
+
+  await logSmartScanAnalyticsEventInternal({
+    eventType: "trust_level_set",
+    metadata: {
+      ownerMemberId: currentMember.id,
+      contactId: resolved.id,
+      trustLevel: input.trustLevel,
+    },
+  });
 
   revalidateSmartScanPaths();
   return { success: true, contactId: resolved.id, trustLevel: input.trustLevel };
@@ -407,6 +443,30 @@ export async function logSmartScanAction(input: {
   } else {
     const session = await upsertTodaySessionInternal(currentMember.id);
     opportunitiesActivated = "error" in session ? null : session.opportunities_activated;
+  }
+
+  if (input.status === "sent" && normalizedSendChannel === "whatsapp") {
+    await logSmartScanAnalyticsEventInternal({
+      eventType: "whatsapp_sent",
+      metadata: {
+        ownerMemberId: currentMember.id,
+        contactId: resolved.id,
+        actionType: input.actionType,
+        actionId: inserted.id,
+      },
+    });
+  }
+
+  if (input.actionType !== "passer" && (input.status === "sent" || input.status === "validated_without_send")) {
+    await logSmartScanAnalyticsEventInternal({
+      eventType: "daily_goal_progressed",
+      metadata: {
+        ownerMemberId: currentMember.id,
+        contactId: resolved.id,
+        actionType: input.actionType,
+        opportunitiesActivated,
+      },
+    });
   }
 
   await syncHotIdealAlertForContact(currentMember.id, resolved.id, input.fullName);
@@ -1319,6 +1379,24 @@ export async function logSmartScanExternalClick(input: {
   if (error) return { error: error.message };
 
   revalidateSmartScanPaths();
+  return { success: true };
+}
+
+export async function logSmartScanAnalyticsEvent(input: {
+  eventType: SmartScanAnalyticsEventType;
+  metadata?: Record<string, unknown> | null;
+}) {
+  const currentMember = await getCurrentHumanMember();
+  if (!currentMember) return { error: "Session requise." };
+
+  await logSmartScanAnalyticsEventInternal({
+    eventType: input.eventType,
+    metadata: {
+      ownerMemberId: currentMember.id,
+      ...(input.metadata || {}),
+    },
+  });
+
   return { success: true };
 }
 

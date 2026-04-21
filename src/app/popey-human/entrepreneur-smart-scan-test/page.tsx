@@ -1191,7 +1191,17 @@ export default function EntrepreneurSmartScanTestPage() {
   }
 
   async function postSmartScan(
-    path: "trust" | "qualification" | "action" | "favorite" | "outcome" | "generate-message" | "followup-job" | "prepare-whatsapp-payload" | "external-click",
+    path:
+      | "trust"
+      | "qualification"
+      | "action"
+      | "favorite"
+      | "outcome"
+      | "generate-message"
+      | "followup-job"
+      | "prepare-whatsapp-payload"
+      | "external-click"
+      | "analytics-event",
     payload: Record<string, unknown>,
   ) {
     const maxAttempts = 3;
@@ -1220,6 +1230,16 @@ export default function EntrepreneurSmartScanTestPage() {
 
     setApiErrorMessage("Synchronisation en attente. Les donnees seront retentees automatiquement.");
     throw lastError || new Error("Erreur API Smart Scan");
+  }
+
+  function trackSmartScanEvent(
+    eventType: "contact_opened" | "trust_level_set" | "whatsapp_sent" | "daily_goal_progressed",
+    metadata: Record<string, unknown>,
+  ) {
+    void postSmartScan("analytics-event", {
+      eventType,
+      metadata,
+    }).catch(() => null);
   }
 
   async function refreshSmartScanSnapshot() {
@@ -1705,10 +1725,16 @@ export default function EntrepreneurSmartScanTestPage() {
   }
 
   function openContactProfile(contactId: string) {
+    const sourcePanel = showSearchPanel ? "search" : showHistoryPanel ? "history" : "other";
     setProfileContactId(contactId);
     setShowProfileActions(false);
     setShowContactProfile(true);
     setShowSearchPanel(false);
+    trackSmartScanEvent("contact_opened", {
+      externalContactRef: contactId,
+      sourcePanel,
+      hasTrustLevel: Boolean(trustLevelStore[contactId]),
+    });
   }
 
   function openContactProfileWithTrustGuard(contactId: string) {
