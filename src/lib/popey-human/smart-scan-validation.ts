@@ -33,6 +33,15 @@ const AI_GENERATION_SOURCES = ["ai", "fallback"] as const;
 
 const optionalNonEmptyString = (max: number) => z.string().trim().min(1).max(max).optional();
 const optionalNullableString = (max: number) => z.string().trim().max(max).nullable().optional();
+const analyticsMetadataValueSchema = z.union([z.string().max(200), z.number(), z.boolean(), z.null()]);
+const analyticsMetadataSchema = z.record(z.string().trim().min(1).max(64), analyticsMetadataValueSchema).superRefine((value, ctx) => {
+  if (Object.keys(value || {}).length > 20) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "metadata trop volumineux",
+    });
+  }
+});
 const optionalIsoDate = z
   .string()
   .datetime({ offset: true })
@@ -122,7 +131,7 @@ export const smartScanExternalClickSchema = z
 export const smartScanAnalyticsEventSchema = z
   .object({
     eventType: z.enum(SMART_SCAN_ANALYTICS_EVENT_TYPES),
-    metadata: z.record(z.string(), z.unknown()).optional(),
+    metadata: analyticsMetadataSchema.optional(),
     clientEventId: optionalNullableString(160),
   })
   .strict();

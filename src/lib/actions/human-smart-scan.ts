@@ -157,6 +157,44 @@ function sanitizeExternalClickTargetUrl(rawUrl: string): string {
   }
 }
 
+const SMART_SCAN_ANALYTICS_ALLOWED_METADATA_KEYS: Record<SmartScanAnalyticsEventType, string[]> = {
+  contact_opened: ["sourcePanel", "hasTrustLevel", "externalContactRef"],
+  trust_level_set: ["trustLevel", "contactId"],
+  whatsapp_sent: ["actionType", "actionId", "contactId"],
+  daily_goal_progressed: ["actionType", "opportunitiesActivated", "contactId"],
+};
+
+function sanitizeSmartScanAnalyticsMetadata(
+  eventType: SmartScanAnalyticsEventType,
+  metadata?: Record<string, unknown> | null,
+  clientEventId?: string | null
+): Record<string, unknown> {
+  const input = metadata || {};
+  const allowedKeys = new Set(SMART_SCAN_ANALYTICS_ALLOWED_METADATA_KEYS[eventType] || []);
+  const output: Record<string, unknown> = {};
+
+  for (const key of Object.keys(input)) {
+    if (!allowedKeys.has(key)) continue;
+    const raw = input[key];
+    if (typeof raw === "string") {
+      output[key] = raw.trim().slice(0, 200);
+      continue;
+    }
+    if (typeof raw === "number") {
+      output[key] = Number.isFinite(raw) ? raw : 0;
+      continue;
+    }
+    if (typeof raw === "boolean" || raw === null) {
+      output[key] = raw;
+    }
+  }
+
+  if (clientEventId) {
+    output.clientEventId = String(clientEventId).trim().slice(0, 160);
+  }
+  return output;
+}
+
 async function getCurrentHumanMember() {
   const supabase = await createClient();
   const {
@@ -192,10 +230,7 @@ async function logSmartScanAnalyticsEventInternal(input: {
   } = await supabase.auth.getUser();
   if (!user?.id) return;
 
-  const metadata = {
-    ...(input.metadata || {}),
-    ...(input.clientEventId ? { clientEventId: input.clientEventId } : {}),
-  };
+  const metadata = sanitizeSmartScanAnalyticsMetadata(input.eventType, input.metadata, input.clientEventId);
 
   if (input.clientEventId) {
     const { data: existingByClientEventId } = await supabase
@@ -1525,10 +1560,7 @@ export async function logSmartScanAnalyticsEvent(input: {
 
   await logSmartScanAnalyticsEventInternal({
     eventType: input.eventType,
-    metadata: {
-      ownerMemberId: currentMember.id,
-      ...(input.metadata || {}),
-    },
+    metadata: input.metadata || {},
     clientEventId: input.clientEventId || null,
   });
 
