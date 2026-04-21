@@ -491,6 +491,7 @@ export default function EntrepreneurSmartScanTestPage() {
   const [dueFollowups, setDueFollowups] = useState<FollowupItem[]>([]);
   const [followupFilter, setFollowupFilter] = useState<"all" | "overdue">("all");
   const [isBatchCopyingFollowups, setIsBatchCopyingFollowups] = useState(false);
+  const [isExportingDailyReport, setIsExportingDailyReport] = useState(false);
   const [conversionMetrics, setConversionMetrics] = useState<BootstrapMetrics | null>(null);
   const [followupOpsStats, setFollowupOpsStats] = useState<BootstrapFollowupOps | null>(null);
 
@@ -680,6 +681,9 @@ export default function EntrepreneurSmartScanTestPage() {
       ? dueFollowups.filter((item) => item.dueAtMs <= nowMs)
       : dueFollowups;
   const displayedDueFollowups = visibleDueFollowups.slice(0, 3);
+  const dailyReportDateLabel = useMemo(() => {
+    return new Date().toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit", year: "numeric" });
+  }, []);
 
   function adnBadgeClass(label: string) {
     const lower = label.toLowerCase();
@@ -890,6 +894,66 @@ export default function EntrepreneurSmartScanTestPage() {
       }
     } finally {
       setIsBatchCopyingFollowups(false);
+    }
+  }
+
+  function buildDailyAdminReportRecord() {
+    return {
+      date: new Date().toISOString().slice(0, 10),
+      sent_today: sentTodayCount,
+      replied_today: responsesTodayCount,
+      converted_today: conversionsTodayCount,
+      conversion_rate_today: conversionRateToday,
+      copied_today: followupOpsStats?.copied_today ?? 0,
+      followup_replied_today: followupOpsStats?.replied_today ?? 0,
+      followup_converted_today: followupOpsStats?.converted_today ?? 0,
+      followup_not_interested_today: followupOpsStats?.not_interested_today ?? 0,
+      followup_ignored_today: followupOpsStats?.ignored_today ?? 0,
+      due_followups_total: dueFollowups.length,
+      overdue_followups_total: overdueFollowupsCount,
+    };
+  }
+
+  async function copyDailyAdminReport() {
+    try {
+      const record = buildDailyAdminReportRecord();
+      const lines = [
+        `Reporting admin Smart Scan - ${dailyReportDateLabel}`,
+        `Envoyes: ${record.sent_today}`,
+        `Repondu: ${record.replied_today}`,
+        `Converti: ${record.converted_today}`,
+        `Taux conversion: ${record.conversion_rate_today}%`,
+        `Copies relance: ${record.copied_today}`,
+        `Relances en retard: ${record.overdue_followups_total}/${record.due_followups_total}`,
+      ];
+      await navigator.clipboard.writeText(lines.join("\n"));
+      setApiErrorMessage("");
+    } catch {
+      setApiErrorMessage("Export impossible. Tu peux faire une capture du bloc reporting.");
+    }
+  }
+
+  function exportDailyAdminReportCsv() {
+    if (isExportingDailyReport) return;
+    try {
+      setIsExportingDailyReport(true);
+      const record = buildDailyAdminReportRecord();
+      const headers = Object.keys(record);
+      const values = headers.map((key) => String(record[key as keyof typeof record]));
+      const csvContent = `${headers.join(",")}\n${values.join(",")}\n`;
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = `smart-scan-admin-report-${record.date}.csv`;
+      document.body.appendChild(anchor);
+      anchor.click();
+      document.body.removeChild(anchor);
+      URL.revokeObjectURL(url);
+    } catch {
+      setApiErrorMessage("Export CSV indisponible pour le moment.");
+    } finally {
+      setIsExportingDailyReport(false);
     }
   }
 
@@ -1636,6 +1700,39 @@ export default function EntrepreneurSmartScanTestPage() {
                 <p className="text-[10px] uppercase tracking-[0.08em] text-white/60">Taux conversion</p>
                 <p className="text-sm font-black text-fuchsia-100">{conversionRateToday}%</p>
               </div>
+            </div>
+            <div className="rounded-xl border border-cyan-300/25 bg-cyan-300/10 px-3 py-2">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-[0.08em] text-cyan-100">Reporting admin (jour)</p>
+                  <p className="text-[11px] text-cyan-50/85">Synthese du {dailyReportDateLabel}</p>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={copyDailyAdminReport}
+                    className="h-8 rounded-lg border border-cyan-200/40 bg-cyan-200/15 px-3 text-[10px] font-black uppercase tracking-[0.08em] text-cyan-100"
+                  >
+                    Copier
+                  </button>
+                  <button
+                    type="button"
+                    onClick={exportDailyAdminReportCsv}
+                    disabled={isExportingDailyReport}
+                    className={`h-8 rounded-lg px-3 text-[10px] font-black uppercase tracking-[0.08em] ${
+                      isExportingDailyReport
+                        ? "cursor-not-allowed border border-white/20 bg-white/10 text-white/60"
+                        : "border border-white/30 bg-black/30 text-white"
+                    }`}
+                  >
+                    {isExportingDailyReport ? "Export..." : "CSV"}
+                  </button>
+                </div>
+              </div>
+              <p className="mt-2 text-[11px] text-cyan-50/80">
+                Envoyes {sentTodayCount} • Repondu {responsesTodayCount} • Converti {conversionsTodayCount} •
+                Relances en retard {overdueFollowupsCount}
+              </p>
             </div>
             <div className="grid gap-2 sm:grid-cols-2">
               <div className="rounded-xl border border-white/10 bg-black/20 px-3 py-2">
