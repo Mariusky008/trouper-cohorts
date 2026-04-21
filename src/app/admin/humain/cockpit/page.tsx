@@ -171,6 +171,9 @@ export default async function AdminHumainCockpitPage({
             <Link href={`/admin/humain/cockpit/export/smart-scan-details${smartScanExportSuffix}`}>Exporter Smart Scan Détail CSV</Link>
           </Button>
           <Button asChild variant="outline">
+            <Link href={`/api/admin/humain/smart-scan/analytics-pii-audit?days=${smartScanDays}`}>Audit PII Smart Scan (JSON)</Link>
+          </Button>
+          <Button asChild variant="outline">
             <Link href="/admin/humain/commissions">Gérer les commissions</Link>
           </Button>
           <Button asChild variant="outline">

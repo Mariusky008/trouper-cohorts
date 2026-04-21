@@ -163,6 +163,7 @@ const SMART_SCAN_ANALYTICS_ALLOWED_METADATA_KEYS: Record<SmartScanAnalyticsEvent
   whatsapp_sent: ["actionType", "actionId", "contactId"],
   daily_goal_progressed: ["actionType", "opportunitiesActivated", "contactId"],
 };
+const SMART_SCAN_ANALYTICS_SUSPECT_KEY_PATTERN = /(phone|email|mail|name|full|prenom|nom|address|adresse|token|password|secret|message|notes?)/i;
 
 function sanitizeSmartScanAnalyticsMetadata(
   eventType: SmartScanAnalyticsEventType,
@@ -1707,6 +1708,100 @@ export async function getSmartScanAdminDailyAnalytics(days = 14) {
 
   const daily = Array.from(byDay.values()).sort((a, b) => String(a.day).localeCompare(String(b.day)));
   return { error: null as string | null, days: safeDays, daily };
+}
+
+export async function getSmartScanAdminPiiAudit(days = 30) {
+  const auth = await requireCurrentAdminUser();
+  if ("error" in auth) {
+    return {
+      error: auth.error,
+      days: 0,
+      scanned: 0,
+      suspect: 0,
+      byEventType: [] as Array<Record<string, unknown>>,
+      samples: [] as Array<Record<string, unknown>>,
+    };
+  }
+
+  const safeDays = Math.max(1, Math.min(120, Math.trunc(days)));
+  const since = getStartOfUtcDayDaysAgoIso(safeDays - 1);
+  const supabaseAdmin = createAdminClient();
+  const { data, error } = await supabaseAdmin
+    .from("analytics_events")
+    .select("id,created_at,event_type,metadata")
+    .eq("page", "/popey-human/smart-scan")
+    .gte("created_at", since)
+    .limit(100000);
+  if (error) {
+    return {
+      error: error.message,
+      days: safeDays,
+      scanned: 0,
+      suspect: 0,
+      byEventType: [] as Array<Record<string, unknown>>,
+      samples: [] as Array<Record<string, unknown>>,
+    };
+  }
+
+  const rows = (data as Array<Record<string, unknown>> | null) || [];
+  const perEvent = new Map<string, { total: number; suspect: number; disallowedKeys: number; suspiciousKeyNames: number }>();
+  const samples: Array<Record<string, unknown>> = [];
+  let suspect = 0;
+
+  rows.forEach((row) => {
+    const eventType = String(row.event_type || "");
+    const metadataRaw = row.metadata;
+    const metadata =
+      metadataRaw && typeof metadataRaw === "object" && !Array.isArray(metadataRaw)
+        ? (metadataRaw as Record<string, unknown>)
+        : {};
+    const keys = Object.keys(metadata);
+    const allowedKeys = new Set((SMART_SCAN_ANALYTICS_ALLOWED_METADATA_KEYS as Record<string, string[]>)[eventType] || []);
+    const disallowed = keys.filter((key) => !allowedKeys.has(key) && key !== "clientEventId");
+    const suspiciousByName = keys.filter((key) => SMART_SCAN_ANALYTICS_SUSPECT_KEY_PATTERN.test(key));
+    const isSuspect = disallowed.length > 0 || suspiciousByName.length > 0;
+
+    const bucket = perEvent.get(eventType) || { total: 0, suspect: 0, disallowedKeys: 0, suspiciousKeyNames: 0 };
+    bucket.total += 1;
+    bucket.disallowedKeys += disallowed.length;
+    bucket.suspiciousKeyNames += suspiciousByName.length;
+    if (isSuspect) bucket.suspect += 1;
+    perEvent.set(eventType, bucket);
+
+    if (isSuspect) {
+      suspect += 1;
+      if (samples.length < 25) {
+        samples.push({
+          id: String(row.id || ""),
+          createdAt: String(row.created_at || ""),
+          eventType,
+          keys,
+          disallowedKeys: disallowed,
+          suspiciousKeyNames: suspiciousByName,
+        });
+      }
+    }
+  });
+
+  const byEventType = Array.from(perEvent.entries())
+    .map(([eventType, stats]) => ({
+      eventType,
+      total: stats.total,
+      suspect: stats.suspect,
+      suspectRate: stats.total > 0 ? Number((stats.suspect / stats.total).toFixed(4)) : 0,
+      disallowedKeys: stats.disallowedKeys,
+      suspiciousKeyNames: stats.suspiciousKeyNames,
+    }))
+    .sort((a, b) => b.suspect - a.suspect || b.total - a.total);
+
+  return {
+    error: null as string | null,
+    days: safeDays,
+    scanned: rows.length,
+    suspect,
+    byEventType,
+    samples,
+  };
 }
 
 async function syncHotIdealAlertForContact(ownerMemberId: string, contactId: string, contactName?: string) {
