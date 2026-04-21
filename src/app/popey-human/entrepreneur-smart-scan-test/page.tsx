@@ -161,6 +161,7 @@ type SmartScanProfileForm = {
 };
 
 const PENDING_WHATSAPP_CONTEXT_KEY = "popey-human:smart-scan:pending-whatsapp-context";
+const SMART_SCAN_SESSION_KEY = "popey-human:smart-scan:scan-session";
 
 const CONTACTS: DailyContact[] = [
   {
@@ -747,6 +748,36 @@ export default function EntrepreneurSmartScanTestPage() {
     });
   }, [historyEntries, historyStatusFilter, historyActionFilter, historyPeriodFilter]);
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const raw = window.localStorage.getItem(SMART_SCAN_SESSION_KEY);
+    if (!raw) return;
+    try {
+      const parsed = JSON.parse(raw) as { stage?: "scan" | "daily"; scanCount?: number };
+      if (parsed.stage === "scan" || parsed.stage === "daily") {
+        setStage(parsed.stage);
+      }
+      if (typeof parsed.scanCount === "number") {
+        const safeCount = Math.max(0, Math.min(totalScanned, Math.round(parsed.scanCount)));
+        setScanCount(safeCount);
+      }
+    } catch {
+      // Ignore invalid local session and keep default values.
+    }
+  }, [totalScanned]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem(
+      SMART_SCAN_SESSION_KEY,
+      JSON.stringify({
+        stage,
+        scanCount,
+        updatedAt: Date.now(),
+      }),
+    );
+  }, [stage, scanCount]);
+
   function adnBadgeClass(label: string) {
     const lower = label.toLowerCase();
     if (lower.includes("inconnu")) return "bg-slate-200 text-slate-800";
@@ -757,11 +788,12 @@ export default function EntrepreneurSmartScanTestPage() {
 
   useEffect(() => {
     if (stage !== "scan") return;
+    if (scanDone) return;
     const timer = setInterval(() => {
       setScanCount((value) => Math.min(totalScanned, value + Math.floor(Math.random() * 9) + 10));
     }, 180);
     return () => clearInterval(timer);
-  }, [stage]);
+  }, [stage, scanDone, totalScanned]);
 
   useEffect(() => {
     let cancelled = false;
@@ -1682,6 +1714,11 @@ export default function EntrepreneurSmartScanTestPage() {
     setShowHistoryPanel(true);
   }
 
+  function resetScanSession() {
+    setScanCount(0);
+    setStage("scan");
+  }
+
   function hydrateProfileForm(profile: SmartScanProfile | null) {
     setProfileForm({
       firstName: profile?.first_name || "",
@@ -1831,6 +1868,13 @@ export default function EntrepreneurSmartScanTestPage() {
                   Scan termine: {totalScanned} contacts disponibles.
                 </p>
                 <p className="mt-2 text-xs font-black text-cyan-100">Ton reseau est une mine d or: 112 opportunites t attendent ce matin.</p>
+                <button
+                  type="button"
+                  onClick={resetScanSession}
+                  className="mt-2 h-9 rounded-xl border border-white/20 bg-white/10 px-3 text-[11px] font-black uppercase tracking-wide text-white/85"
+                >
+                  Recommencer le scan
+                </button>
               </>
             )}
 
