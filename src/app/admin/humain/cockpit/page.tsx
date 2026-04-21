@@ -132,6 +132,7 @@ export default async function AdminHumainCockpitPage({
   const smartScanSentToConversionRate =
     smartScanTotals.actionsSent > 0 ? Math.round((smartScanTotals.outcomesConverted / smartScanTotals.actionsSent) * 100) : 0;
   const smartScanLatestDay = smartScanDaily.length > 0 ? smartScanDaily[smartScanDaily.length - 1] : null;
+  const smartScanRecentDays = smartScanDaily.slice(-7).reverse();
 
   return (
     <section className="space-y-6">
@@ -229,6 +230,44 @@ export default async function AdminHumainCockpitPage({
               toNumber(smartScanLatestDay.analytics_whatsapp_sent) +
               toNumber(smartScanLatestDay.analytics_daily_goal_progressed)}
           </p>
+        )}
+        {!smartScanAnalytics.error && smartScanRecentDays.length > 0 && (
+          <div className="mt-3 overflow-x-auto rounded border">
+            <table className="min-w-full text-xs">
+              <thead className="bg-slate-50 text-slate-600">
+                <tr>
+                  <th className="px-2 py-2 text-left font-semibold">Jour</th>
+                  <th className="px-2 py-2 text-right font-semibold">Actions</th>
+                  <th className="px-2 py-2 text-right font-semibold">Envoyées</th>
+                  <th className="px-2 py-2 text-right font-semibold">Qualif</th>
+                  <th className="px-2 py-2 text-right font-semibold">Conv.</th>
+                  <th className="px-2 py-2 text-right font-semibold">Follow-up</th>
+                  <th className="px-2 py-2 text-right font-semibold">Clics ext.</th>
+                </tr>
+              </thead>
+              <tbody>
+                {smartScanRecentDays.map((row) => (
+                  <tr key={String(row.day)} className="border-t">
+                    <td className="px-2 py-2">{String(row.day)}</td>
+                    <td className="px-2 py-2 text-right">{toNumber(row.actions_total)}</td>
+                    <td className="px-2 py-2 text-right">{toNumber(row.actions_sent)}</td>
+                    <td className="px-2 py-2 text-right">{toNumber(row.qualifications_total)}</td>
+                    <td className="px-2 py-2 text-right">{toNumber(row.outcomes_converted)}</td>
+                    <td className="px-2 py-2 text-right">
+                      {toNumber(row.followup_copied) +
+                        toNumber(row.followup_replied) +
+                        toNumber(row.followup_converted) +
+                        toNumber(row.followup_not_interested) +
+                        toNumber(row.followup_ignored)}
+                    </td>
+                    <td className="px-2 py-2 text-right">
+                      {toNumber(row.external_click_linkedin) + toNumber(row.external_click_whatsapp_group)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
 
