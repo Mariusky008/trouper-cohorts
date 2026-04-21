@@ -31,6 +31,32 @@ type HistoryEntry = {
   tagsSummary: string;
   sent: boolean;
 };
+type BootstrapContactRow = {
+  id: string;
+  external_contact_ref: string | null;
+  is_favorite?: boolean | null;
+  trust_level: TrustLevel | null;
+};
+type BootstrapQualificationRow = {
+  contact_id: string;
+  heat: HeatLevel;
+  opportunity_choice: OpportunityId | null;
+  community_tags: CommunityId[];
+  estimated_gain: "Faible" | "Moyen" | "Eleve";
+  qualified_at: string | null;
+  updated_at: string | null;
+  created_at: string | null;
+};
+type BootstrapHistoryRow = {
+  contact_id: string;
+  contact_name: string;
+  action_type: Exclude<DailyCategory, "qualifier">;
+  status: "drafted" | "sent" | "validated_without_send";
+  created_at: string;
+};
+type BootstrapSessionRow = {
+  opportunities_activated: number;
+};
 
 const CONTACTS: DailyContact[] = [
   {
@@ -347,8 +373,7 @@ export default function EntrepreneurSmartScanTestPage() {
   const temperatureSectionRef = useRef<HTMLDivElement | null>(null);
   const communitySectionRef = useRef<HTMLDivElement | null>(null);
   const saveSectionRef = useRef<HTMLDivElement | null>(null);
-  const [sentCount, setSentCount] = useState(4);
-  const [responseRate] = useState(38);
+  const [sentCount, setSentCount] = useState(0);
   const [showReward, setShowReward] = useState(false);
   const [successPulse, setSuccessPulse] = useState(false);
   const [showProgressCheck, setShowProgressCheck] = useState(false);
@@ -394,6 +419,7 @@ export default function EntrepreneurSmartScanTestPage() {
   const [trustLevelStore, setTrustLevelStore] = useState<Record<string, TrustLevel>>({});
   const [historyEntries, setHistoryEntries] = useState<HistoryEntry[]>([]);
   const [qualifierStore, setQualifierStore] = useState<Record<string, QualifierData>>({});
+  const [isBootstrapped, setIsBootstrapped] = useState(false);
 
   const current = CONTACTS[index] ?? CONTACTS[CONTACTS.length - 1];
   const profileContact = CONTACTS.find((contact) => contact.id === profileContactId) ?? null;
@@ -443,20 +469,15 @@ export default function EntrepreneurSmartScanTestPage() {
     },
   ] as const;
   const done = Math.min(index, CONTACTS.length);
-  const progress = Math.round((done / 10) * 100);
   const heatScore = Math.min(99, 55 + current.communityKnownBy * 10 + (current.externalNews ? 8 : 0));
-  const heatLabel = heatScore >= 90 ? "Brulant" : heatScore >= 75 ? "Chaud" : "Tiede";
   const sourceRing =
     current.communityKnownBy >= 3
       ? "from-emerald-300 via-cyan-300 to-indigo-300"
       : current.communityKnownBy === 2
         ? "from-cyan-300 via-indigo-300 to-fuchsia-300"
         : "from-amber-300 via-orange-300 to-fuchsia-300";
-  const dominantTheme = current.dominantTags[0]?.replace(/[^\p{L}\s]/gu, "").trim() || "son reseau";
-  const fusedInsight = `${current.name.split(" ")[0]} montre un interet fort pour ${dominantTheme.toLowerCase()} cette semaine, ${current.capsule.toLowerCase()}.`;
   const currentQualifier = qualifierStore[current.id];
   const isQualified = Boolean(currentQualifier);
-  const currentEstimatedGain = currentQualifier?.estimatedGain ?? null;
   const actionEngine = useMemo(() => getDynamicActionEngine(currentQualifier), [currentQualifier]);
   const actionButtons = actionEngine.order.map((action) => ({
     action,
@@ -506,10 +527,6 @@ export default function EntrepreneurSmartScanTestPage() {
     [selectedAction, current, currentQualifier],
   );
   const promptContextPreview = buildPromptCompliments(currentQualifier);
-  const qualifierChanged =
-    qualifierHeat !== null ||
-    opportunityChoice !== null ||
-    communityTags.length > 0;
   const liveEstimatedGain = getEstimatedGain(opportunityChoice, communityTags);
   const livePotentialLabel = opportunityChoice || communityTags.length > 0 ? liveEstimatedGain : "?";
   const canSaveQualifier = hasChosenHeat && opportunityChoice !== null && communityTags.length > 0;
@@ -546,7 +563,6 @@ export default function EntrepreneurSmartScanTestPage() {
   }, [qualifierStore, historyEntries]);
   const profileHeat = profileQualifier?.heat ?? "tiede";
   const profileHistory = profileContact ? historyEntries.filter((entry) => entry.contactId === profileContact.id) : [];
-  const profileLastSent = profileHistory.find((entry) => entry.sent) ?? null;
   const profileDaysSinceLastSent = profileContact ? 30 + Number(profileContact.id.replace("d", "")) * 17 : 0;
   const profileVitality = Math.max(0, Math.min(100, 100 - Math.round((profileDaysSinceLastSent / 220) * 100)));
   const profileVigilanceAlert =
@@ -576,7 +592,30 @@ export default function EntrepreneurSmartScanTestPage() {
   }, [stage]);
 
   useEffect(() => {
+    let cancelled = false;
+
+    async function bootstrapSmartScan() {
+      try {
+        await refreshSmartScanSnapshot();
+        if (cancelled) return;
+      } catch {
+        // Keep the existing in-memory UX state when bootstrap API is unavailable.
+      } finally {
+        if (!cancelled) {
+          setIsBootstrapped(true);
+        }
+      }
+    }
+
+    void bootstrapSmartScan();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
     if (stage !== "daily") return;
+    if (!isBootstrapped) return;
     if (showTemplateModal) return;
     if (qualifierStore[current.id]) return;
     setSelectedAction("qualifier");
@@ -586,7 +625,7 @@ export default function EntrepreneurSmartScanTestPage() {
     setOpportunityChoice(null);
     setCommunityTags([]);
     setShowTemplateModal(true);
-  }, [stage, current.id, qualifierStore, showTemplateModal]);
+  }, [stage, current.id, qualifierStore, showTemplateModal, isBootstrapped]);
 
   useEffect(() => {
     if (!qualificationPivot) return;
@@ -676,9 +715,104 @@ export default function EntrepreneurSmartScanTestPage() {
     return "from-indigo-400/25 to-slate-400/20 border-indigo-200/40 text-indigo-100";
   }
 
+  function getContactById(contactId: string) {
+    return CONTACTS.find((contact) => contact.id === contactId) ?? null;
+  }
+
+  async function postSmartScan(
+    path: "trust" | "qualification" | "action" | "favorite",
+    payload: Record<string, unknown>,
+  ) {
+    const response = await fetch(`/api/popey-human/smart-scan/${path}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    if (!response.ok) {
+      const body = (await response.json().catch(() => ({}))) as { error?: string };
+      throw new Error(body.error || "Erreur API Smart Scan");
+    }
+    return response.json();
+  }
+
+  async function refreshSmartScanSnapshot() {
+    const response = await fetch("/api/popey-human/smart-scan/bootstrap", { cache: "no-store" });
+    if (!response.ok) return;
+    const payload = (await response.json()) as {
+      contacts: BootstrapContactRow[];
+      qualifications: BootstrapQualificationRow[];
+      history: BootstrapHistoryRow[];
+      session: BootstrapSessionRow | null;
+    };
+
+    const dbToExternalRef = new Map<string, string>();
+    const nextTrustStore: Record<string, TrustLevel> = {};
+    const nextFavoriteIds: string[] = [];
+    (payload.contacts || []).forEach((contact) => {
+      if (contact.external_contact_ref) {
+        dbToExternalRef.set(contact.id, contact.external_contact_ref);
+        if (contact.is_favorite) {
+          nextFavoriteIds.push(contact.external_contact_ref);
+        }
+        if (
+          contact.trust_level === "family" ||
+          contact.trust_level === "pro-close" ||
+          contact.trust_level === "acquaintance"
+        ) {
+          nextTrustStore[contact.external_contact_ref] = contact.trust_level;
+        }
+      }
+    });
+
+    const nextQualifierStore: Record<string, QualifierData> = {};
+    (payload.qualifications || []).forEach((qualification) => {
+      const externalRef = dbToExternalRef.get(qualification.contact_id);
+      if (!externalRef) return;
+      const timestamp = Date.parse(
+        qualification.qualified_at || qualification.updated_at || qualification.created_at || "",
+      );
+      nextQualifierStore[externalRef] = {
+        heat: qualification.heat,
+        opportunityChoice: qualification.opportunity_choice,
+        communityTags: qualification.community_tags || [],
+        estimatedGain: qualification.estimated_gain,
+        qualifiedAtMs: Number.isFinite(timestamp) ? timestamp : Date.now(),
+      };
+    });
+
+    const nextHistoryEntries: HistoryEntry[] = (payload.history || [])
+      .map((entry) => {
+        const externalRef = dbToExternalRef.get(entry.contact_id);
+        if (!externalRef) return null;
+        const dateMs = Date.parse(entry.created_at);
+        const safeDateMs = Number.isFinite(dateMs) ? dateMs : Date.now();
+        const date = new Date(safeDateMs);
+        return {
+          contactId: externalRef,
+          name: entry.contact_name || getContactById(externalRef)?.name || "Contact",
+          action: entry.action_type,
+          at: `${date.getHours().toString().padStart(2, "0")}:${date
+            .getMinutes()
+            .toString()
+            .padStart(2, "0")}`,
+          atMs: safeDateMs,
+          tagsSummary: "",
+          sent: entry.status === "sent",
+        };
+      })
+      .filter(Boolean) as HistoryEntry[];
+
+    setTrustLevelStore(nextTrustStore);
+    setFavoriteIds(nextFavoriteIds);
+    setQualifierStore(nextQualifierStore);
+    setHistoryEntries(nextHistoryEntries);
+    if (payload.session?.opportunities_activated !== undefined) {
+      setSentCount(payload.session.opportunities_activated);
+    }
+  }
+
   function createTransitionPayload(action: Exclude<DailyCategory, "qualifier">, mode: "sent" | "saved" = "sent") {
     const nextStep = Math.min(10, done + 1);
-    const points = action === "eclaireur" ? 5 : action === "package" ? 4 : action === "exclients" ? 3 : 1;
     const encouragements =
       mode === "sent"
         ? [`Felicitations ${current.name.split(" ")[0]} a ete active.`]
@@ -703,6 +837,8 @@ export default function EntrepreneurSmartScanTestPage() {
     options: { countAsSent?: boolean; sentInHistory?: boolean; stayOnCurrentContact?: boolean; returnToProfileContactId?: string | null } = {},
   ) {
     setSelectedAction(action);
+    const actionContact = current;
+    const actionQualifier = qualifierStore[actionContact.id];
     const countAsSent = options.countAsSent ?? true;
     const sentInHistory = options.sentInHistory ?? countAsSent;
     const stayOnCurrentContact = options.stayOnCurrentContact ?? false;
@@ -717,13 +853,12 @@ export default function EntrepreneurSmartScanTestPage() {
     setTimeout(() => {
       const now = new Date();
       const nowMs = Date.now();
-      const currentQualifier = qualifierStore[current.id];
-      const summaryOpportunity = currentQualifier?.opportunityChoice ? quickLabelMap[currentQualifier.opportunityChoice] : "";
-      const summaryCommunity = (currentQualifier?.communityTags ?? []).map((id) => quickLabelMap[id]).slice(0, 1);
+      const summaryOpportunity = actionQualifier?.opportunityChoice ? quickLabelMap[actionQualifier.opportunityChoice] : "";
+      const summaryCommunity = (actionQualifier?.communityTags ?? []).map((id) => quickLabelMap[id]).slice(0, 1);
       setHistoryEntries((prev) => [
         {
-          contactId: current.id,
-          name: current.name,
+          contactId: actionContact.id,
+          name: actionContact.name,
           action,
           at: `${now.getHours().toString().padStart(2, "0")}:${now.getMinutes().toString().padStart(2, "0")}`,
           atMs: nowMs,
@@ -734,6 +869,24 @@ export default function EntrepreneurSmartScanTestPage() {
         },
         ...prev,
       ].slice(0, 50));
+      const persistedStatus = sentInHistory ? "sent" : "validated_without_send";
+      void postSmartScan("action", {
+        externalContactRef: actionContact.id,
+        fullName: actionContact.name,
+        city: actionContact.city,
+        companyHint: actionContact.companyHint,
+        actionType: action,
+        messageDraft: draftMessage || null,
+        sendChannel: sentInHistory ? "whatsapp" : "other",
+        status: persistedStatus,
+      })
+        .then((result: { opportunitiesActivated?: number | null }) => {
+          if (typeof result?.opportunitiesActivated === "number") {
+            setSentCount(result.opportunitiesActivated);
+          }
+          return refreshSmartScanSnapshot();
+        })
+        .catch(() => null);
       if (!stayOnCurrentContact) {
         setIndex((v) => Math.min(CONTACTS.length, v + 1));
       }
@@ -829,6 +982,18 @@ export default function EntrepreneurSmartScanTestPage() {
     setSelectedAction(null);
     setQualificationPivot({ contactId: current.id, firstName, tag: primaryTag });
     setLastRewardForQualifier();
+    void postSmartScan("qualification", {
+      externalContactRef: current.id,
+      fullName: current.name,
+      city: current.city,
+      companyHint: current.companyHint,
+      heat: qualifierHeat ?? "tiede",
+      opportunityChoice: opportunityChoice ?? null,
+      communityTags,
+      estimatedGain,
+    })
+      .then(() => refreshSmartScanSnapshot())
+      .catch(() => null);
   }
 
   function skipQualifierUnknown() {
@@ -846,6 +1011,18 @@ export default function EntrepreneurSmartScanTestPage() {
     setSelectedAction(null);
     setSoftLearningHint("Profil peu renseigne: sois le premier a le qualifier !");
     setTimeout(() => setSoftLearningHint(""), 2200);
+    void postSmartScan("qualification", {
+      externalContactRef: current.id,
+      fullName: current.name,
+      city: current.city,
+      companyHint: current.companyHint,
+      heat: "tiede",
+      opportunityChoice: null,
+      communityTags: [],
+      estimatedGain: "Faible",
+    })
+      .then(() => refreshSmartScanSnapshot())
+      .catch(() => null);
   }
 
   useEffect(() => {
@@ -876,7 +1053,19 @@ export default function EntrepreneurSmartScanTestPage() {
   }
 
   function toggleFavorite(contactId: string) {
-    setFavoriteIds((prev) => (prev.includes(contactId) ? prev.filter((id) => id !== contactId) : [...prev, contactId]));
+    const contact = getContactById(contactId);
+    if (!contact) return;
+    const nextIsFavorite = !favoriteIds.includes(contactId);
+    setFavoriteIds((prev) => (nextIsFavorite ? [...prev, contactId] : prev.filter((id) => id !== contactId)));
+    void postSmartScan("favorite", {
+      externalContactRef: contact.id,
+      fullName: contact.name,
+      city: contact.city,
+      companyHint: contact.companyHint,
+      isFavorite: nextIsFavorite,
+    })
+      .then(() => refreshSmartScanSnapshot())
+      .catch(() => null);
   }
 
   function openContactProfile(contactId: string) {
@@ -1514,6 +1703,15 @@ export default function EntrepreneurSmartScanTestPage() {
                       ...prev,
                       [contactId]: option.id,
                     }));
+                    void postSmartScan("trust", {
+                      externalContactRef: trustPromptContact.id,
+                      fullName: trustPromptContact.name,
+                      city: trustPromptContact.city,
+                      companyHint: trustPromptContact.companyHint,
+                      trustLevel: option.id,
+                    })
+                      .then(() => refreshSmartScanSnapshot())
+                      .catch(() => null);
                     setShowTrustLevelPrompt(false);
                     setTrustPromptContactId(null);
                     setTimeout(() => openContactProfile(contactId), 20);
