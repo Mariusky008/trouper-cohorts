@@ -596,6 +596,24 @@ function buildDailyContactsFromImport(rows: ImportedContactRow[]): DailyContact[
   }));
 }
 
+function getLocalDayNumber() {
+  const now = new Date();
+  const localMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  return Math.floor(localMidnight.getTime() / (24 * 60 * 60 * 1000));
+}
+
+function buildDailyQueueFromImportedContacts(allContacts: DailyContact[], limit: number, dayNumber: number) {
+  if (allContacts.length <= limit) return allContacts;
+  const safeLimit = Math.max(1, limit);
+  const start = ((dayNumber * safeLimit) % allContacts.length + allContacts.length) % allContacts.length;
+  const queue: DailyContact[] = [];
+  for (let i = 0; i < safeLimit; i += 1) {
+    const contact = allContacts[(start + i) % allContacts.length];
+    if (contact) queue.push(contact);
+  }
+  return queue;
+}
+
 export default function EntrepreneurSmartScanTestPage() {
   const [stage, setStage] = useState<"scan" | "daily">("scan");
   const [scanCount, setScanCount] = useState(0);
@@ -682,11 +700,22 @@ export default function EntrepreneurSmartScanTestPage() {
   const [supportsDirectContactPicker, setSupportsDirectContactPicker] = useState(false);
   const [showImportHelp, setShowImportHelp] = useState(false);
   const contactImportInputRef = useRef<HTMLInputElement | null>(null);
+  const localDayNumber = useMemo(() => getLocalDayNumber(), []);
 
   const hasImportedContacts = importedContacts.length > 0;
   const importedTotalCount = importedContacts.length;
   const dailyQueueCount = hasImportedContacts ? Math.min(DAILY_CONTACT_LIMIT, importedTotalCount) : DAILY_CONTACT_LIMIT;
-  const contactsData = hasImportedContacts ? importedContacts.slice(0, dailyQueueCount) : CONTACTS;
+  const contactsData = hasImportedContacts
+    ? buildDailyQueueFromImportedContacts(importedContacts, dailyQueueCount, localDayNumber)
+    : CONTACTS;
+  const dailyQueueStart = hasImportedContacts && importedTotalCount > 0 ? (localDayNumber * dailyQueueCount) % importedTotalCount : 0;
+  const dailyQueueEnd = hasImportedContacts ? Math.min(importedTotalCount, dailyQueueStart + dailyQueueCount) : 0;
+  const dailyQueueWraps = hasImportedContacts && dailyQueueStart + dailyQueueCount > importedTotalCount;
+  const dailyQueueLabel = !hasImportedContacts
+    ? ""
+    : dailyQueueWraps
+      ? `${dailyQueueStart + 1}-${importedTotalCount} + 1-${(dailyQueueStart + dailyQueueCount) % importedTotalCount}`
+      : `${dailyQueueStart + 1}-${dailyQueueEnd}`;
   const current = contactsData[index] ?? contactsData[contactsData.length - 1];
   const profileContact = contactsData.find((contact) => contact.id === profileContactId) ?? null;
   const totalScanned = hasImportedContacts ? importedTotalCount : 0;
@@ -2286,6 +2315,11 @@ export default function EntrepreneurSmartScanTestPage() {
             {hasImportedContacts && (
               <p className="mt-1 text-[11px] text-cyan-100/90">
                 Import total: {importedTotalCount} • Quota quotidien: {dailyQueueCount} contacts
+              </p>
+            )}
+            {hasImportedContacts && importedTotalCount > DAILY_CONTACT_LIMIT && (
+              <p className="mt-1 text-[11px] text-white/70">
+                Lot du jour: contacts {dailyQueueLabel} (rotation automatique chaque jour)
               </p>
             )}
             {hasImportedContacts && !scanDone && <p className="mt-1 text-[11px] uppercase tracking-[0.12em] text-orange-200/90">Meche active...</p>}
