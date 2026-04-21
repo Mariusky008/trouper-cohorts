@@ -16,6 +16,9 @@ export async function POST(request: NextRequest) {
     status?: "drafted" | "sent" | "validated_without_send";
     clientEventId?: string | null;
     templateVersion?: string | null;
+    aiPromptVersion?: string | null;
+    aiGeneratedAt?: string | null;
+    aiGenerationSource?: "ai" | "fallback" | null;
   };
 
   if (!body?.actionType || !body?.status) {
@@ -34,6 +37,9 @@ export async function POST(request: NextRequest) {
     status: body.status,
     clientEventId: body.clientEventId || null,
     templateVersion: body.templateVersion || null,
+    aiPromptVersion: body.aiPromptVersion || null,
+    aiGeneratedAt: body.aiGeneratedAt || null,
+    aiGenerationSource: body.aiGenerationSource || null,
   });
 
   if ("error" in result) {

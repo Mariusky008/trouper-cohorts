@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { OpenAI } from "openai";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { ensureHumanMemberForUserId } from "@/lib/actions/human-permissions";
@@ -19,6 +20,7 @@ export type SmartScanActionType = "passer" | "eclaireur" | "package" | "exclient
 export type SmartScanActionStatus = "drafted" | "sent" | "validated_without_send";
 export type SmartScanActionOutcomeStatus = "pending" | "replied" | "converted" | "not_interested";
 export type SmartScanAlertType = "hot_ideal_unshared_24h" | "high_priority_no_response_48h";
+export type SmartScanMessageGenerationSource = "ai" | "fallback";
 
 type SmartScanActionRow = {
   id: string;
@@ -315,6 +317,9 @@ export async function logSmartScanAction(input: {
   status: SmartScanActionStatus;
   clientEventId?: string | null;
   templateVersion?: string | null;
+  aiPromptVersion?: string | null;
+  aiGeneratedAt?: string | null;
+  aiGenerationSource?: SmartScanMessageGenerationSource | null;
 }) {
   const currentMember = await getCurrentHumanMember();
   if (!currentMember) return { error: "Session requise." };
@@ -370,6 +375,9 @@ export async function logSmartScanAction(input: {
       followup_due_at: shouldSetWhatsAppOpenedAt ? new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString() : null,
       outcome_status: shouldSetWhatsAppOpenedAt ? "pending" : null,
       client_event_id: input.clientEventId || null,
+      ai_prompt_version: input.aiPromptVersion || null,
+      ai_generated_at: input.aiGeneratedAt || null,
+      ai_generation_source: input.aiGenerationSource || null,
       updated_at: nowIso,
     })
     .select("id")
@@ -431,6 +439,145 @@ export async function updateSmartScanActionOutcome(input: {
   await syncHighPriorityNoResponseAlertForContact(currentMember.id, String(existing.contact_id));
   revalidateSmartScanPaths();
   return { success: true, actionId: String(existing.id), outcomeStatus: input.outcomeStatus };
+}
+
+function buildSmartScanFallbackMessage(input: {
+  firstName: string;
+  actionType: SmartScanActionType;
+  trustLevel?: SmartScanTrustLevel | null;
+  opportunityChoice?: SmartScanOpportunityChoice | null;
+  communityTags?: string[];
+}) {
+  const communityTags = input.communityTags || [];
+  const compliments: string[] = [];
+  if (communityTags.includes("serious-work")) compliments.push("ton professionnalisme");
+  if (communityTags.includes("fast-reply")) compliments.push("ta reactivite");
+  if (communityTags.includes("reliable-partner")) compliments.push("le fait qu on puisse toujours compter sur toi");
+  const complimentsLine = compliments.length > 0 ? `J apprecie vraiment ${compliments.join(" et ")}. ` : "";
+  const trustLine =
+    input.trustLevel === "family"
+      ? "Comme on se connait tres bien, je te contacte en priorite. "
+      : input.trustLevel === "pro-close"
+        ? "On a deja bien collabore, donc je vais droit au but. "
+        : input.trustLevel === "acquaintance"
+          ? "On s est croises et je pense qu on peut creer de la valeur ensemble. "
+          : "";
+
+  if (input.actionType === "eclaireur") {
+    return `Salut ${input.firstName}, ${complimentsLine}${trustLine}je lance un programme d apporteurs d affaires et je veux que tu en sois le premier beneficiaire. Si tu reperes une opportunite, je gere le reste et on partage la commission.`;
+  }
+  if (input.actionType === "package") {
+    return `Salut ${input.firstName}, ${complimentsLine}${trustLine}j ai un pack Trio concret a te proposer. Si tu veux, je te fais une mise en relation rapide pour lancer un premier dossier sans friction.`;
+  }
+  if (input.actionType === "exclients") {
+    return `Salut ${input.firstName}, ${complimentsLine}${trustLine}je prends de tes nouvelles car j ai une piste utile pour toi. Si tu veux, je t envoie une synthese claire en 2 minutes.`;
+  }
+  return `Salut ${input.firstName}, je te fais un retour rapide suite a notre dernier echange.`;
+}
+
+export async function generateSmartScanMessage(input: {
+  contactName: string;
+  actionType: SmartScanActionType;
+  trustLevel?: SmartScanTrustLevel | null;
+  opportunityChoice?: SmartScanOpportunityChoice | null;
+  communityTags?: string[];
+  city?: string | null;
+  companyHint?: string | null;
+}) {
+  const currentMember = await getCurrentHumanMember();
+  if (!currentMember) return { error: "Session requise." };
+
+  const firstName = (input.contactName || "Contact").split(" ")[0] || "Contact";
+  const fallbackMessage = buildSmartScanFallbackMessage({
+    firstName,
+    actionType: input.actionType,
+    trustLevel: input.trustLevel || null,
+    opportunityChoice: input.opportunityChoice || null,
+    communityTags: input.communityTags || [],
+  });
+
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) {
+    return {
+      success: true,
+      message: fallbackMessage,
+      generationSource: "fallback" as SmartScanMessageGenerationSource,
+      promptVersion: "smart_scan_prompt_v1",
+      generatedAt: new Date().toISOString(),
+    };
+  }
+
+  try {
+    const openai = new OpenAI({ apiKey });
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      temperature: 0.65,
+      messages: [
+        {
+          role: "system",
+          content:
+            "Tu rediges des messages WhatsApp business en francais, courts, humains, orientés action. 2-4 phrases max, pas de markdown, pas d emojis excessifs, pas de jargon.",
+        },
+        {
+          role: "user",
+          content: JSON.stringify({
+            objectif: "Generer un message WhatsApp personnalise",
+            prompt_version: "smart_scan_prompt_v1",
+            contact: {
+              prenom: firstName,
+              nom: input.contactName,
+              ville: input.city || null,
+              societe: input.companyHint || null,
+            },
+            action: input.actionType,
+            contexte_qualification: {
+              trust_level: input.trustLevel || null,
+              opportunity_choice: input.opportunityChoice || null,
+              community_tags: input.communityTags || [],
+              mapping: {
+                serious_work: "ton professionnalisme",
+                fast_reply: "ta reactivite",
+                reliable_partner: "le fait qu on puisse toujours compter sur toi",
+              },
+            },
+            contraintes: [
+              "Ton amical et direct",
+              "Clair, concret, orienté prochain pas",
+              "Eviter les promesses vagues",
+              "Conclure par une question simple",
+            ],
+          }),
+        },
+      ],
+    });
+
+    const content = completion.choices?.[0]?.message?.content?.trim();
+    if (!content) {
+      return {
+        success: true,
+        message: fallbackMessage,
+        generationSource: "fallback" as SmartScanMessageGenerationSource,
+        promptVersion: "smart_scan_prompt_v1",
+        generatedAt: new Date().toISOString(),
+      };
+    }
+
+    return {
+      success: true,
+      message: content,
+      generationSource: "ai" as SmartScanMessageGenerationSource,
+      promptVersion: "smart_scan_prompt_v1",
+      generatedAt: new Date().toISOString(),
+    };
+  } catch {
+    return {
+      success: true,
+      message: fallbackMessage,
+      generationSource: "fallback" as SmartScanMessageGenerationSource,
+      promptVersion: "smart_scan_prompt_v1",
+      generatedAt: new Date().toISOString(),
+    };
+  }
 }
 
 export async function getOrCreateTodaySession() {

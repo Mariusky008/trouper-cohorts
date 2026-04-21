@@ -467,6 +467,10 @@ export default function EntrepreneurSmartScanTestPage() {
   const [priorityScoreStore, setPriorityScoreStore] = useState<Record<string, number>>({});
   const [potentialEurStore, setPotentialEurStore] = useState<Record<string, number>>({});
   const [dailyTargetPotential, setDailyTargetPotential] = useState(0);
+  const [isGeneratingMessage, setIsGeneratingMessage] = useState(false);
+  const [aiPromptVersion, setAiPromptVersion] = useState<string | null>(null);
+  const [aiGeneratedAt, setAiGeneratedAt] = useState<string | null>(null);
+  const [aiGenerationSource, setAiGenerationSource] = useState<"ai" | "fallback" | null>(null);
   const [dueFollowups, setDueFollowups] = useState<
     Array<{
       actionId: string;
@@ -794,6 +798,37 @@ export default function EntrepreneurSmartScanTestPage() {
     }
   }
 
+  async function generateAIMessage() {
+    if (!selectedAction || selectedAction === "qualifier" || selectedAction === "passer") return;
+    try {
+      setIsGeneratingMessage(true);
+      const result = (await postSmartScan("generate-message", {
+        contactName: current.name,
+        actionType: selectedAction,
+        trustLevel: trustLevelStore[current.id] || null,
+        opportunityChoice: currentQualifier?.opportunityChoice || null,
+        communityTags: currentQualifier?.communityTags || [],
+        city: current.city,
+        companyHint: current.companyHint,
+      })) as {
+        message?: string;
+        generationSource?: "ai" | "fallback";
+        promptVersion?: string;
+        generatedAt?: string;
+      };
+      if (result?.message) {
+        setDraftMessage(result.message);
+        setAiGenerationSource(result.generationSource || "fallback");
+        setAiPromptVersion(result.promptVersion || "smart_scan_prompt_v1");
+        setAiGeneratedAt(result.generatedAt || new Date().toISOString());
+      }
+    } catch {
+      setAiGenerationSource("fallback");
+    } finally {
+      setIsGeneratingMessage(false);
+    }
+  }
+
   function scrollIntoViewSmooth(ref: React.RefObject<HTMLDivElement | null>) {
     ref.current?.scrollIntoView({ behavior: "smooth", block: "center" });
   }
@@ -825,7 +860,7 @@ export default function EntrepreneurSmartScanTestPage() {
   }
 
   async function postSmartScan(
-    path: "trust" | "qualification" | "action" | "favorite" | "outcome",
+    path: "trust" | "qualification" | "action" | "favorite" | "outcome" | "generate-message",
     payload: Record<string, unknown>,
   ) {
     const maxAttempts = 3;
@@ -1065,6 +1100,9 @@ export default function EntrepreneurSmartScanTestPage() {
         status: persistedStatus,
         clientEventId,
         templateVersion: "v1",
+        aiPromptVersion,
+        aiGeneratedAt,
+        aiGenerationSource,
       })
         .then((result: { opportunitiesActivated?: number | null }) => {
           if (typeof result?.opportunitiesActivated === "number") {
@@ -1097,6 +1135,9 @@ export default function EntrepreneurSmartScanTestPage() {
         const nextDraft = buildTemplate(action, current, currentQualifier);
         setSelectedAction(action);
         setDraftMessage(nextDraft);
+        setAiGenerationSource(null);
+        setAiPromptVersion(null);
+        setAiGeneratedAt(null);
         setShowTemplateModal(true);
       }, 1200);
       return;
@@ -1112,6 +1153,9 @@ export default function EntrepreneurSmartScanTestPage() {
       setDraftMessage("");
     } else {
       setDraftMessage(nextDraft);
+      setAiGenerationSource(null);
+      setAiPromptVersion(null);
+      setAiGeneratedAt(null);
     }
     setShowTemplateModal(true);
   }
@@ -1126,6 +1170,9 @@ export default function EntrepreneurSmartScanTestPage() {
       window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(draftMessage)}`, "_blank");
     }
     setShowTemplateModal(false);
+    setAiGenerationSource(null);
+    setAiPromptVersion(null);
+    setAiGeneratedAt(null);
     if (typeof document !== "undefined" && document.visibilityState === "visible") {
       setTransitionScreen({
         ...payload,
@@ -1284,6 +1331,9 @@ export default function EntrepreneurSmartScanTestPage() {
     const nextDraft = buildTemplate(action, profileContact, profileQualifier);
     setSelectedAction(action);
     setDraftMessage(nextDraft);
+    setAiGenerationSource(null);
+    setAiPromptVersion(null);
+    setAiGeneratedAt(null);
     setShowTemplateModal(true);
   }
 
@@ -2351,6 +2401,21 @@ export default function EntrepreneurSmartScanTestPage() {
                     Variables IA: {promptContextPreview.join(" • ")}
                   </p>
                 )}
+                <div className="mt-2 flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={generateAIMessage}
+                    disabled={isGeneratingMessage}
+                    className="h-9 rounded-xl border border-cyan-300/40 bg-cyan-300/15 px-3 text-[11px] font-black uppercase tracking-[0.08em] text-cyan-100 disabled:opacity-50"
+                  >
+                    {isGeneratingMessage ? "Generation..." : "Generer message IA"}
+                  </button>
+                  {aiGenerationSource && (
+                    <span className="rounded-full border border-white/20 bg-white/10 px-2 py-1 text-[10px] font-black uppercase tracking-[0.08em] text-white/85">
+                      Source: {aiGenerationSource === "ai" ? "IA" : "Fallback"}
+                    </span>
+                  )}
+                </div>
                 <textarea
                   value={draftMessage}
                   onChange={(event) => setDraftMessage(event.target.value)}
