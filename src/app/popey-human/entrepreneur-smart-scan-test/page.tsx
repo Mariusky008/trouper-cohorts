@@ -36,6 +36,9 @@ type BootstrapContactRow = {
   external_contact_ref: string | null;
   is_favorite?: boolean | null;
   trust_level: TrustLevel | null;
+  priority_score?: number | null;
+  potential_eur?: number | null;
+  last_action_at?: string | null;
 };
 type BootstrapQualificationRow = {
   contact_id: string;
@@ -56,6 +59,7 @@ type BootstrapHistoryRow = {
 };
 type BootstrapSessionRow = {
   opportunities_activated: number;
+  target_potential_eur?: number | null;
 };
 type BootstrapAlertRow = {
   contact_id: string | null;
@@ -427,6 +431,9 @@ export default function EntrepreneurSmartScanTestPage() {
   const [isBootstrapped, setIsBootstrapped] = useState(false);
   const [openAlertContactIds, setOpenAlertContactIds] = useState<string[]>([]);
   const [apiErrorMessage, setApiErrorMessage] = useState("");
+  const [priorityScoreStore, setPriorityScoreStore] = useState<Record<string, number>>({});
+  const [potentialEurStore, setPotentialEurStore] = useState<Record<string, number>>({});
+  const [dailyTargetPotential, setDailyTargetPotential] = useState(0);
 
   const current = CONTACTS[index] ?? CONTACTS[CONTACTS.length - 1];
   const profileContact = CONTACTS.find((contact) => contact.id === profileContactId) ?? null;
@@ -525,7 +532,9 @@ export default function EntrepreneurSmartScanTestPage() {
     if (entries.length === 0) return [{ label: "❓ A decouvrir", count: 1 }];
     return entries.slice(0, 3);
   }, [current, qualifierStore, quickLabelMap]);
-  const searchResults = CONTACTS.filter((contact) => `${contact.name} ${contact.city} ${contact.companyHint}`.toLowerCase().includes(searchQuery.toLowerCase().trim()));
+  const searchResults = CONTACTS
+    .filter((contact) => `${contact.name} ${contact.city} ${contact.companyHint}`.toLowerCase().includes(searchQuery.toLowerCase().trim()))
+    .sort((a, b) => (priorityScoreStore[b.id] || 0) - (priorityScoreStore[a.id] || 0));
   const template = useMemo(
     () =>
       selectedAction
@@ -588,7 +597,10 @@ export default function EntrepreneurSmartScanTestPage() {
   const opportunitiesActivated = Math.min(dailyGoal, sentCount);
   const remainingForGoal = Math.max(0, dailyGoal - opportunitiesActivated);
   const missionProgress = Math.round((opportunitiesActivated / dailyGoal) * 100);
-  const latentPotential = remainingForGoal * 75;
+  const latentPotential =
+    dailyTargetPotential > 0
+      ? Math.max(0, Math.round(dailyTargetPotential * (remainingForGoal / dailyGoal)))
+      : remainingForGoal * 75;
 
   function adnBadgeClass(label: string) {
     const lower = label.toLowerCase();
@@ -780,6 +792,8 @@ export default function EntrepreneurSmartScanTestPage() {
     const dbToExternalRef = new Map<string, string>();
     const nextTrustStore: Record<string, TrustLevel> = {};
     const nextFavoriteIds: string[] = [];
+    const nextPriorityScoreStore: Record<string, number> = {};
+    const nextPotentialStore: Record<string, number> = {};
     (payload.contacts || []).forEach((contact) => {
       if (contact.external_contact_ref) {
         dbToExternalRef.set(contact.id, contact.external_contact_ref);
@@ -793,6 +807,8 @@ export default function EntrepreneurSmartScanTestPage() {
         ) {
           nextTrustStore[contact.external_contact_ref] = contact.trust_level;
         }
+        nextPriorityScoreStore[contact.external_contact_ref] = Math.max(0, Math.round(contact.priority_score || 0));
+        nextPotentialStore[contact.external_contact_ref] = Math.max(0, Math.round(contact.potential_eur || 0));
       }
     });
 
@@ -846,9 +862,14 @@ export default function EntrepreneurSmartScanTestPage() {
     setFavoriteIds(nextFavoriteIds);
     setQualifierStore(nextQualifierStore);
     setHistoryEntries(nextHistoryEntries);
+    setPriorityScoreStore(nextPriorityScoreStore);
+    setPotentialEurStore(nextPotentialStore);
     setOpenAlertContactIds(alertContactIds);
     if (payload.session?.opportunities_activated !== undefined) {
       setSentCount(payload.session.opportunities_activated);
+    }
+    if (typeof payload.session?.target_potential_eur === "number") {
+      setDailyTargetPotential(Math.max(0, Math.round(payload.session.target_potential_eur)));
     }
   }
 
@@ -1704,6 +1725,14 @@ export default function EntrepreneurSmartScanTestPage() {
                           ? `Confiance: ${trustLevelLabel(trustLevelStore[contact.id])}`
                           : "Confiance non definie"}
                       </p>
+                      <p className="mt-1 text-[10px] text-white/75">
+                        Priorite: {priorityScoreStore[contact.id] || 0}/100 • Potentiel: ~{potentialEurStore[contact.id] || 0}€
+                      </p>
+                      {(priorityScoreStore[contact.id] || 0) >= 75 && (
+                        <p className="mt-1 inline-flex rounded-full border border-orange-300/35 bg-orange-300/15 px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.08em] text-orange-100">
+                          Priorite Haute
+                        </p>
+                      )}
                     </button>
                     <button
                       type="button"

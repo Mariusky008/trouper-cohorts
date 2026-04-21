@@ -66,6 +66,13 @@ type SmartScanAlertRow = {
 };
 
 type ResultError = { error: string };
+type ContactScoreInputs = {
+  trustLevel: SmartScanTrustLevel | null;
+  heat: SmartScanHeat | null;
+  opportunityChoice: SmartScanOpportunityChoice | null;
+  estimatedGain: SmartScanEstimatedGain | null;
+  lastActionAt: string | null;
+};
 
 function normalizeTrustLevel(level: SmartScanTrustLevel): "family" | "pro_close" | "acquaintance" {
   if (level === "pro-close") return "pro_close";
@@ -333,6 +340,21 @@ export async function getOrCreateTodaySession() {
     return { error: session.error, session: null as SessionRow | null };
   }
 
+  const targetPotential = await computeDailyTargetPotential(currentMember.id);
+  if (targetPotential !== null && Number(session.target_potential_eur) !== targetPotential) {
+    const supabaseAdmin = createAdminClient();
+    await supabaseAdmin
+      .from("human_smart_scan_daily_sessions")
+      .update({
+        target_potential_eur: targetPotential,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", session.id)
+      .eq("owner_member_id", currentMember.id);
+
+    session.target_potential_eur = targetPotential;
+  }
+
   return { error: null as string | null, session };
 }
 
@@ -394,10 +416,79 @@ export async function listMySmartScanContacts(limit = 500) {
 
   if (error) return { error: error.message, contacts: [] as Array<Record<string, unknown>> };
 
-  const contacts = ((data as Array<Record<string, unknown>> | null) || []).map((row) => ({
-    ...row,
-    trust_level: toTrustLevelOutput((row.trust_level as string | null) || null),
-  }));
+  const contactsRaw = (data as Array<Record<string, unknown>> | null) || [];
+  const contactIds = contactsRaw.map((row) => String(row.id));
+
+  const qualificationMap = new Map<
+    string,
+    {
+      heat: SmartScanHeat | null;
+      opportunity_choice: SmartScanOpportunityChoice | null;
+      estimated_gain: SmartScanEstimatedGain | null;
+    }
+  >();
+  const lastActionMap = new Map<string, string>();
+
+  if (contactIds.length > 0) {
+    const { data: qualifications } = await supabaseAdmin
+      .from("human_smart_scan_qualifications")
+      .select("contact_id,heat,opportunity_choice,estimated_gain")
+      .eq("owner_member_id", currentMember.id)
+      .in("contact_id", contactIds);
+
+    ((qualifications as Array<Record<string, unknown>> | null) || []).forEach((row) => {
+      qualificationMap.set(String(row.contact_id), {
+        heat: (row.heat as SmartScanHeat | null) || null,
+        opportunity_choice: (row.opportunity_choice as SmartScanOpportunityChoice | null) || null,
+        estimated_gain: (row.estimated_gain as SmartScanEstimatedGain | null) || null,
+      });
+    });
+
+    const { data: actions } = await supabaseAdmin
+      .from("human_smart_scan_actions")
+      .select("contact_id,created_at")
+      .eq("owner_member_id", currentMember.id)
+      .in("contact_id", contactIds)
+      .order("created_at", { ascending: false })
+      .limit(Math.min(5000, safeLimit * 15));
+
+    ((actions as Array<Record<string, unknown>> | null) || []).forEach((row) => {
+      const contactId = String(row.contact_id);
+      if (!lastActionMap.has(contactId)) {
+        lastActionMap.set(contactId, String(row.created_at));
+      }
+    });
+  }
+
+  const contacts = contactsRaw
+    .map((row) => {
+      const contactId = String(row.id);
+      const trustLevel = toTrustLevelOutput((row.trust_level as string | null) || null);
+      const qualification = qualificationMap.get(contactId);
+      const lastActionAt = lastActionMap.get(contactId) || null;
+      const scoreInputs: ContactScoreInputs = {
+        trustLevel,
+        heat: qualification?.heat || null,
+        opportunityChoice: qualification?.opportunity_choice || null,
+        estimatedGain: qualification?.estimated_gain || null,
+        lastActionAt,
+      };
+      const priorityScore = computePriorityScore(scoreInputs);
+      const potentialEur = computePotentialEur(scoreInputs);
+      return {
+        ...row,
+        trust_level: trustLevel,
+        priority_score: priorityScore,
+        potential_eur: potentialEur,
+        last_action_at: lastActionAt,
+      };
+    })
+    .sort((a, b) => {
+      const scoreDelta = Number((b.priority_score as number) || 0) - Number((a.priority_score as number) || 0);
+      if (scoreDelta !== 0) return scoreDelta;
+      return String(b.updated_at || "").localeCompare(String(a.updated_at || ""));
+    });
+
   return { error: null as string | null, contacts };
 }
 
@@ -593,6 +684,104 @@ async function upsertTodaySessionInternal(ownerMemberId: string): Promise<Sessio
     .single();
   if (insertError || !inserted) return { error: insertError?.message || "Impossible de créer la session du jour." };
   return inserted as SessionRow;
+}
+
+function computePriorityScore(input: ContactScoreInputs) {
+  const trustScore =
+    input.trustLevel === "family" ? 35 : input.trustLevel === "pro-close" ? 24 : input.trustLevel === "acquaintance" ? 10 : 0;
+  const heatScore = input.heat === "brulant" ? 32 : input.heat === "tiede" ? 18 : input.heat === "froid" ? 6 : 0;
+  const opportunityScore =
+    input.opportunityChoice === "ideal-client"
+      ? 30
+      : input.opportunityChoice === "opens-doors"
+        ? 24
+        : input.opportunityChoice === "can-refer"
+          ? 18
+          : input.opportunityChoice === "can-buy"
+            ? 14
+            : input.opportunityChoice === "identified-need"
+              ? 12
+              : input.opportunityChoice === "no-potential"
+                ? -20
+                : 0;
+
+  let recencyScore = 8;
+  if (input.lastActionAt) {
+    const days = Math.floor((Date.now() - Date.parse(input.lastActionAt)) / (24 * 60 * 60 * 1000));
+    if (days <= 7) recencyScore = -4;
+    else if (days <= 30) recencyScore = 0;
+    else recencyScore = 6;
+  }
+
+  const total = trustScore + heatScore + opportunityScore + recencyScore;
+  return Math.max(0, Math.min(100, Math.round(total)));
+}
+
+function computePotentialEur(input: ContactScoreInputs) {
+  const gainBase =
+    input.estimatedGain === "Eleve" ? 320 : input.estimatedGain === "Moyen" ? 180 : input.estimatedGain === "Faible" ? 75 : 95;
+  const trustMultiplier =
+    input.trustLevel === "family" ? 1.6 : input.trustLevel === "pro-close" ? 1.25 : input.trustLevel === "acquaintance" ? 0.85 : 1;
+  const heatMultiplier = input.heat === "brulant" ? 1.4 : input.heat === "tiede" ? 1 : input.heat === "froid" ? 0.7 : 1;
+  return Math.max(0, Math.round(gainBase * trustMultiplier * heatMultiplier));
+}
+
+async function computeDailyTargetPotential(ownerMemberId: string): Promise<number | null> {
+  const supabaseAdmin = createAdminClient();
+  const { data: contacts, error: contactsError } = await supabaseAdmin
+    .from("human_smart_scan_contacts")
+    .select("id,trust_level")
+    .eq("owner_member_id", ownerMemberId)
+    .limit(1000);
+
+  if (contactsError) return null;
+  const contactRows = (contacts as Array<Record<string, unknown>> | null) || [];
+  if (contactRows.length === 0) return 0;
+
+  const contactIds = contactRows.map((row) => String(row.id));
+  const { data: qualifications } = await supabaseAdmin
+    .from("human_smart_scan_qualifications")
+    .select("contact_id,heat,opportunity_choice,estimated_gain")
+    .eq("owner_member_id", ownerMemberId)
+    .in("contact_id", contactIds);
+
+  const { data: packageActions } = await supabaseAdmin
+    .from("human_smart_scan_actions")
+    .select("contact_id")
+    .eq("owner_member_id", ownerMemberId)
+    .eq("action_type", "package")
+    .in("status", ["sent", "validated_without_send"])
+    .in("contact_id", contactIds);
+
+  const qualificationMap = new Map<string, Record<string, unknown>>();
+  ((qualifications as Array<Record<string, unknown>> | null) || []).forEach((row) => {
+    qualificationMap.set(String(row.contact_id), row);
+  });
+  const alreadyActivated = new Set<string>(((packageActions as Array<Record<string, unknown>> | null) || []).map((row) => String(row.contact_id)));
+
+  const potentials = contactRows.map((contact) => {
+    const contactId = String(contact.id);
+    const trustLevel = toTrustLevelOutput((contact.trust_level as string | null) || null);
+    const qual = qualificationMap.get(contactId);
+    return {
+      contactId,
+      potential: alreadyActivated.has(contactId)
+        ? 0
+        : computePotentialEur({
+            trustLevel,
+            heat: (qual?.heat as SmartScanHeat | null) || null,
+            opportunityChoice: (qual?.opportunity_choice as SmartScanOpportunityChoice | null) || null,
+            estimatedGain: (qual?.estimated_gain as SmartScanEstimatedGain | null) || null,
+            lastActionAt: null,
+          }),
+    };
+  });
+
+  const total = potentials
+    .sort((a, b) => b.potential - a.potential)
+    .slice(0, 10)
+    .reduce((sum, row) => sum + row.potential, 0);
+  return Math.max(0, Math.round(total));
 }
 
 async function incrementTodaySessionInternal(ownerMemberId: string): Promise<number | null> {
