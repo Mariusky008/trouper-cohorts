@@ -140,6 +140,23 @@ function toTrustLevelOutput(level: string | null): SmartScanTrustLevel | null {
   return null;
 }
 
+function sanitizeExternalClickTargetUrl(rawUrl: string): string {
+  const trimmed = String(rawUrl || "").trim();
+  if (!trimmed) return "";
+  try {
+    const parsed = new URL(trimmed);
+    // Minimize PII leakage in click logs: keep only origin + pathname.
+    parsed.username = "";
+    parsed.password = "";
+    parsed.search = "";
+    parsed.hash = "";
+    const normalized = `${parsed.origin}${parsed.pathname}`.replace(/\/+$/, "");
+    return normalized.slice(0, 512);
+  } catch {
+    return trimmed.slice(0, 512);
+  }
+}
+
 async function getCurrentHumanMember() {
   const supabase = await createClient();
   const {
@@ -1394,7 +1411,8 @@ export async function updateSmartScanFollowupJob(input: {
       decision: input.decision,
       clientEventId: input.clientEventId || null,
       action_type: actionRow.action_type,
-      note: input.note || null,
+      note_present: Boolean(input.note && String(input.note).trim().length > 0),
+      note_length: Math.min(2000, String(input.note || "").trim().length),
       previous_outcome_status: actionRow.outcome_status || null,
       next_outcome_status:
         input.decision === "replied"
@@ -1470,13 +1488,15 @@ export async function logSmartScanExternalClick(input: {
   if (!currentMember) return { error: "Session requise." };
 
   const supabaseAdmin = createAdminClient();
+  const sanitizedTargetUrl = sanitizeExternalClickTargetUrl(input.targetUrl);
+  if (!sanitizedTargetUrl) return { error: "URL cible invalide." };
   const dedupSince = new Date(Date.now() - 2 * 60 * 1000).toISOString();
   const { data: existingRecent } = await supabaseAdmin
     .from("human_smart_scan_external_click_events")
     .select("id")
     .eq("owner_member_id", currentMember.id)
     .eq("source", input.source)
-    .eq("target_url", input.targetUrl)
+    .eq("target_url", sanitizedTargetUrl)
     .eq("context", input.context || "cockpit")
     .gte("created_at", dedupSince)
     .limit(1)
@@ -1486,7 +1506,7 @@ export async function logSmartScanExternalClick(input: {
   const { error } = await supabaseAdmin.from("human_smart_scan_external_click_events").insert({
     owner_member_id: currentMember.id,
     source: input.source,
-    target_url: input.targetUrl,
+    target_url: sanitizedTargetUrl,
     context: input.context || "cockpit",
   });
   if (error) return { error: error.message };
