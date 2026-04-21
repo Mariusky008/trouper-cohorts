@@ -1874,6 +1874,8 @@ export default function EntrepreneurSmartScanTestPage() {
     }
   }
 
+  const showAdvancedOpsInUserCockpit = false;
+
   if (stage === "scan") {
     return (
       <main className="h-screen overflow-hidden bg-[radial-gradient(circle_at_10%_0%,#10193D_0%,#0C122B_45%,#090B16_100%)] text-white">
@@ -2136,6 +2138,8 @@ export default function EntrepreneurSmartScanTestPage() {
                 Potentiel du jour : ~{latentPotential}€
               </p>
             </div>
+            {showAdvancedOpsInUserCockpit && (
+              <>
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
               <div className="rounded-xl border border-white/10 bg-black/20 px-3 py-2">
                 <p className="text-[10px] uppercase tracking-[0.08em] text-white/60">Envoyes (J)</p>
@@ -2354,6 +2358,8 @@ export default function EntrepreneurSmartScanTestPage() {
               </div>
             </div>
 
+              </>
+            )}
             <div className="rounded-2xl border border-white/10 bg-black/20 px-3 py-3">
               <div className="flex items-center justify-between text-[11px] font-black uppercase tracking-[0.1em] text-white/70">
                 <span>Mission quotidienne</span>
@@ -3003,7 +3009,7 @@ export default function EntrepreneurSmartScanTestPage() {
             <div className="mt-3 rounded-2xl border border-white/15 bg-black/25 p-3">
               <p className="text-[11px] font-black uppercase tracking-[0.12em] text-white/70">Historique & Memoire</p>
               <div className="mt-2 space-y-2 text-sm">
-                <div className="rounded-xl bg-white/5 px-3 py-2">• Ajoute lors de "{profileContact.capsule}"</div>
+                <div className="rounded-xl bg-white/5 px-3 py-2">• Ajoute lors de &quot;{profileContact.capsule}&quot;</div>
                 <div className="rounded-xl bg-white/5 px-3 py-2">
                   • Derniere action: {profileHistory[0] ? `${actionLabel(profileHistory[0].action)} ${profileHistory[0].sent ? "envoye" : "valide sans envoi"} a ${profileHistory[0].at}` : "Aucune action enregistree"}
                 </div>
@@ -3342,7 +3348,7 @@ export default function EntrepreneurSmartScanTestPage() {
             <p className="text-4xl">✅</p>
             <p className="mt-2 text-xl font-black">Fiche de {qualificationPivot.firstName} qualifiee ! 🚀</p>
             <p className="mt-1 text-sm text-emerald-100/90">
-              Intelligence partagee: la Mini-Agence sait maintenant que c est un profil "{qualificationPivot.tag}".
+              Intelligence partagee: la Mini-Agence sait maintenant que c est un profil &quot;{qualificationPivot.tag}&quot;.
             </p>
             <p className="mt-2 text-xs font-black uppercase tracking-wide text-cyan-100">Quelle est ta prochaine etape ?</p>
             <button
