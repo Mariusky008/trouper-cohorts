@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { createClient as createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 type DailyCategory = "passer" | "eclaireur" | "package" | "exclients" | "qualifier";
 
@@ -137,6 +138,22 @@ type PendingWhatsAppContext = {
   awaitingConfirm: TransitionAwaitingConfirmState;
   contactId: string;
   createdAt: number;
+};
+type SmartScanProfile = {
+  id: string;
+  first_name: string | null;
+  last_name: string | null;
+  metier: string | null;
+  ville: string | null;
+  phone: string | null;
+  status: "active" | "paused" | "archived";
+};
+type SmartScanProfileForm = {
+  firstName: string;
+  lastName: string;
+  metier: string;
+  ville: string;
+  phone: string;
 };
 
 const PENDING_WHATSAPP_CONTEXT_KEY = "popey-human:smart-scan:pending-whatsapp-context";
@@ -480,6 +497,17 @@ export default function EntrepreneurSmartScanTestPage() {
   const [historyPeriodFilter, setHistoryPeriodFilter] = useState<"all" | "today" | "7d">("all");
   const [showSearchPanel, setShowSearchPanel] = useState(false);
   const [showMyProfilePanel, setShowMyProfilePanel] = useState(false);
+  const [myProfile, setMyProfile] = useState<SmartScanProfile | null>(null);
+  const [profileForm, setProfileForm] = useState<SmartScanProfileForm>({
+    firstName: "",
+    lastName: "",
+    metier: "",
+    ville: "",
+    phone: "",
+  });
+  const [isProfileLoading, setIsProfileLoading] = useState(false);
+  const [isProfileSaving, setIsProfileSaving] = useState(false);
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [showTrustLevelPrompt, setShowTrustLevelPrompt] = useState(false);
   const [trustPromptContactId, setTrustPromptContactId] = useState<string | null>(null);
   const [showContactProfile, setShowContactProfile] = useState(false);
@@ -751,6 +779,12 @@ export default function EntrepreneurSmartScanTestPage() {
       cancelled = true;
     };
   }, []);
+
+  useEffect(() => {
+    if (!showMyProfilePanel) return;
+    setIsEditingProfile(false);
+    void loadMyProfile();
+  }, [showMyProfilePanel]);
 
   useEffect(() => {
     if (stage !== "daily") return;
@@ -1628,6 +1662,70 @@ export default function EntrepreneurSmartScanTestPage() {
     setShowHistoryPanel(true);
   }
 
+  function hydrateProfileForm(profile: SmartScanProfile | null) {
+    setProfileForm({
+      firstName: profile?.first_name || "",
+      lastName: profile?.last_name || "",
+      metier: profile?.metier || "",
+      ville: profile?.ville || "",
+      phone: profile?.phone || "",
+    });
+  }
+
+  async function loadMyProfile() {
+    try {
+      setIsProfileLoading(true);
+      const response = await fetch("/api/popey-human/smart-scan/profile", { cache: "no-store" });
+      const payload = (await response.json().catch(() => ({}))) as { error?: string; profile?: SmartScanProfile | null };
+      if (!response.ok) {
+        throw new Error(payload.error || "Impossible de charger le profil.");
+      }
+      setMyProfile(payload.profile || null);
+      hydrateProfileForm(payload.profile || null);
+      setApiErrorMessage("");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Impossible de charger le profil.";
+      setApiErrorMessage(message);
+    } finally {
+      setIsProfileLoading(false);
+    }
+  }
+
+  async function saveMyProfile() {
+    try {
+      setIsProfileSaving(true);
+      const response = await fetch("/api/popey-human/smart-scan/profile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(profileForm),
+      });
+      const payload = (await response.json().catch(() => ({}))) as { error?: string; profile?: SmartScanProfile | null };
+      if (!response.ok) {
+        throw new Error(payload.error || "Impossible d enregistrer le profil.");
+      }
+      setMyProfile(payload.profile || null);
+      hydrateProfileForm(payload.profile || null);
+      setIsEditingProfile(false);
+      setApiErrorMessage("");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Impossible d enregistrer le profil.";
+      setApiErrorMessage(message);
+    } finally {
+      setIsProfileSaving(false);
+    }
+  }
+
+  async function signOutFromSmartScan() {
+    try {
+      const supabase = createSupabaseBrowserClient();
+      await supabase.auth.signOut();
+    } finally {
+      if (typeof window !== "undefined") {
+        window.location.href = "/popey-human/login";
+      }
+    }
+  }
+
   if (stage === "scan") {
     return (
       <main className="h-screen overflow-hidden bg-[radial-gradient(circle_at_10%_0%,#10193D_0%,#0C122B_45%,#090B16_100%)] text-white">
@@ -1764,17 +1862,90 @@ export default function EntrepreneurSmartScanTestPage() {
                   ✕
                 </button>
               </div>
-              <div className="mt-3 space-y-2 rounded-2xl border border-white/10 bg-black/25 p-3 text-sm">
-                <p><span className="text-white/60">Nom:</span> Jean-Philippe</p>
-                <p><span className="text-white/60">Prenom:</span> Jean-Philippe</p>
-                <p><span className="text-white/60">Metier:</span> Entrepreneur</p>
-                <p><span className="text-white/60">Ville:</span> Dax</p>
+              <p className="mt-2 text-[11px] text-white/65">Donnees synchronisees depuis Popey Human.</p>
+              {isProfileLoading ? (
+                <div className="mt-3 rounded-2xl border border-white/10 bg-black/25 p-3 text-sm text-white/75">Chargement du profil...</div>
+              ) : (
+                <div className="mt-3 space-y-2 rounded-2xl border border-white/10 bg-black/25 p-3 text-sm">
+                  {isEditingProfile ? (
+                    <>
+                      <input
+                        value={profileForm.lastName}
+                        onChange={(event) => setProfileForm((prev) => ({ ...prev, lastName: event.target.value }))}
+                        placeholder="Nom"
+                        className="h-9 w-full rounded-lg border border-white/15 bg-black/30 px-2 text-sm"
+                      />
+                      <input
+                        value={profileForm.firstName}
+                        onChange={(event) => setProfileForm((prev) => ({ ...prev, firstName: event.target.value }))}
+                        placeholder="Prenom"
+                        className="h-9 w-full rounded-lg border border-white/15 bg-black/30 px-2 text-sm"
+                      />
+                      <input
+                        value={profileForm.metier}
+                        onChange={(event) => setProfileForm((prev) => ({ ...prev, metier: event.target.value }))}
+                        placeholder="Metier"
+                        className="h-9 w-full rounded-lg border border-white/15 bg-black/30 px-2 text-sm"
+                      />
+                      <input
+                        value={profileForm.ville}
+                        onChange={(event) => setProfileForm((prev) => ({ ...prev, ville: event.target.value }))}
+                        placeholder="Ville"
+                        className="h-9 w-full rounded-lg border border-white/15 bg-black/30 px-2 text-sm"
+                      />
+                      <input
+                        value={profileForm.phone}
+                        onChange={(event) => setProfileForm((prev) => ({ ...prev, phone: event.target.value }))}
+                        placeholder="Telephone"
+                        className="h-9 w-full rounded-lg border border-white/15 bg-black/30 px-2 text-sm"
+                      />
+                    </>
+                  ) : (
+                    <>
+                      <p><span className="text-white/60">Nom:</span> {myProfile?.last_name || "-"}</p>
+                      <p><span className="text-white/60">Prenom:</span> {myProfile?.first_name || "-"}</p>
+                      <p><span className="text-white/60">Metier:</span> {myProfile?.metier || "-"}</p>
+                      <p><span className="text-white/60">Ville:</span> {myProfile?.ville || "-"}</p>
+                      <p><span className="text-white/60">Telephone:</span> {myProfile?.phone || "-"}</p>
+                    </>
+                  )}
+                </div>
+              )}
+              <div className="mt-3 grid grid-cols-2 gap-2">
+                {isEditingProfile ? (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        hydrateProfileForm(myProfile);
+                        setIsEditingProfile(false);
+                      }}
+                      className="h-10 rounded-xl border border-white/20 bg-white/10 text-[11px] font-black uppercase tracking-wide text-white/80"
+                    >
+                      Annuler
+                    </button>
+                    <button
+                      type="button"
+                      onClick={saveMyProfile}
+                      disabled={isProfileSaving}
+                      className="h-10 rounded-xl bg-gradient-to-r from-cyan-300 to-emerald-300 text-[11px] font-black uppercase tracking-wide text-[#11252C] disabled:opacity-50"
+                    >
+                      {isProfileSaving ? "Enregistrement..." : "Enregistrer"}
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setIsEditingProfile(true)}
+                    className="col-span-2 h-10 rounded-xl border border-cyan-300/35 bg-cyan-300/10 text-[11px] font-black uppercase tracking-wide text-cyan-100"
+                  >
+                    Modifier le profil
+                  </button>
+                )}
               </div>
               <button
                 type="button"
-                onClick={() => {
-                  if (typeof window !== "undefined") window.location.href = "/popey-human/login";
-                }}
+                onClick={signOutFromSmartScan}
                 className="mt-3 h-11 w-full rounded-xl bg-gradient-to-r from-rose-300 to-orange-300 text-xs font-black uppercase tracking-wide text-[#3A140E]"
               >
                 Deconnexion
@@ -2346,17 +2517,90 @@ export default function EntrepreneurSmartScanTestPage() {
                 ✕
               </button>
             </div>
-            <div className="mt-3 space-y-2 rounded-2xl border border-white/10 bg-black/25 p-3 text-sm">
-              <p><span className="text-white/60">Nom:</span> Jean-Philippe</p>
-              <p><span className="text-white/60">Prenom:</span> Jean-Philippe</p>
-              <p><span className="text-white/60">Metier:</span> Entrepreneur</p>
-              <p><span className="text-white/60">Ville:</span> Dax</p>
+            <p className="mt-2 text-[11px] text-white/65">Donnees synchronisees depuis Popey Human.</p>
+            {isProfileLoading ? (
+              <div className="mt-3 rounded-2xl border border-white/10 bg-black/25 p-3 text-sm text-white/75">Chargement du profil...</div>
+            ) : (
+              <div className="mt-3 space-y-2 rounded-2xl border border-white/10 bg-black/25 p-3 text-sm">
+                {isEditingProfile ? (
+                  <>
+                    <input
+                      value={profileForm.lastName}
+                      onChange={(event) => setProfileForm((prev) => ({ ...prev, lastName: event.target.value }))}
+                      placeholder="Nom"
+                      className="h-9 w-full rounded-lg border border-white/15 bg-black/30 px-2 text-sm"
+                    />
+                    <input
+                      value={profileForm.firstName}
+                      onChange={(event) => setProfileForm((prev) => ({ ...prev, firstName: event.target.value }))}
+                      placeholder="Prenom"
+                      className="h-9 w-full rounded-lg border border-white/15 bg-black/30 px-2 text-sm"
+                    />
+                    <input
+                      value={profileForm.metier}
+                      onChange={(event) => setProfileForm((prev) => ({ ...prev, metier: event.target.value }))}
+                      placeholder="Metier"
+                      className="h-9 w-full rounded-lg border border-white/15 bg-black/30 px-2 text-sm"
+                    />
+                    <input
+                      value={profileForm.ville}
+                      onChange={(event) => setProfileForm((prev) => ({ ...prev, ville: event.target.value }))}
+                      placeholder="Ville"
+                      className="h-9 w-full rounded-lg border border-white/15 bg-black/30 px-2 text-sm"
+                    />
+                    <input
+                      value={profileForm.phone}
+                      onChange={(event) => setProfileForm((prev) => ({ ...prev, phone: event.target.value }))}
+                      placeholder="Telephone"
+                      className="h-9 w-full rounded-lg border border-white/15 bg-black/30 px-2 text-sm"
+                    />
+                  </>
+                ) : (
+                  <>
+                    <p><span className="text-white/60">Nom:</span> {myProfile?.last_name || "-"}</p>
+                    <p><span className="text-white/60">Prenom:</span> {myProfile?.first_name || "-"}</p>
+                    <p><span className="text-white/60">Metier:</span> {myProfile?.metier || "-"}</p>
+                    <p><span className="text-white/60">Ville:</span> {myProfile?.ville || "-"}</p>
+                    <p><span className="text-white/60">Telephone:</span> {myProfile?.phone || "-"}</p>
+                  </>
+                )}
+              </div>
+            )}
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              {isEditingProfile ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      hydrateProfileForm(myProfile);
+                      setIsEditingProfile(false);
+                    }}
+                    className="h-10 rounded-xl border border-white/20 bg-white/10 text-[11px] font-black uppercase tracking-wide text-white/80"
+                  >
+                    Annuler
+                  </button>
+                  <button
+                    type="button"
+                    onClick={saveMyProfile}
+                    disabled={isProfileSaving}
+                    className="h-10 rounded-xl bg-gradient-to-r from-cyan-300 to-emerald-300 text-[11px] font-black uppercase tracking-wide text-[#11252C] disabled:opacity-50"
+                  >
+                    {isProfileSaving ? "Enregistrement..." : "Enregistrer"}
+                  </button>
+                </>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setIsEditingProfile(true)}
+                  className="col-span-2 h-10 rounded-xl border border-cyan-300/35 bg-cyan-300/10 text-[11px] font-black uppercase tracking-wide text-cyan-100"
+                >
+                  Modifier le profil
+                </button>
+              )}
             </div>
             <button
               type="button"
-              onClick={() => {
-                if (typeof window !== "undefined") window.location.href = "/popey-human/login";
-              }}
+              onClick={signOutFromSmartScan}
               className="mt-3 h-11 w-full rounded-xl bg-gradient-to-r from-rose-300 to-orange-300 text-xs font-black uppercase tracking-wide text-[#3A140E]"
             >
               Deconnexion
