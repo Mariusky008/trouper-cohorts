@@ -110,6 +110,10 @@ type SmartScanFollowupOpsStats = {
   not_interested_today: number;
   ignored_today: number;
 };
+type SmartScanExternalClickStatsToday = {
+  linkedin_today: number;
+  whatsapp_group_today: number;
+};
 
 type ResultError = { error: string };
 type ContactScoreInputs = {
@@ -1295,6 +1299,57 @@ export async function getSmartScanFollowupOpsStatsToday() {
   });
 
   return { error: null as string | null, stats: counters };
+}
+
+export async function logSmartScanExternalClick(input: {
+  source: "linkedin" | "whatsapp_group";
+  targetUrl: string;
+  context?: "cockpit" | "profile" | "other";
+}) {
+  const currentMember = await getCurrentHumanMember();
+  if (!currentMember) return { error: "Session requise." };
+
+  const supabaseAdmin = createAdminClient();
+  const { error } = await supabaseAdmin.from("human_smart_scan_external_click_events").insert({
+    owner_member_id: currentMember.id,
+    source: input.source,
+    target_url: input.targetUrl,
+    context: input.context || "cockpit",
+  });
+  if (error) return { error: error.message };
+
+  revalidateSmartScanPaths();
+  return { success: true };
+}
+
+export async function getSmartScanExternalClickStatsToday() {
+  const currentMember = await getCurrentHumanMember();
+  if (!currentMember) {
+    return { error: "Session requise.", stats: null as SmartScanExternalClickStatsToday | null };
+  }
+
+  const supabaseAdmin = createAdminClient();
+  const since = getStartOfUtcDayIso();
+  const { data, error } = await supabaseAdmin
+    .from("human_smart_scan_external_click_events")
+    .select("source")
+    .eq("owner_member_id", currentMember.id)
+    .gte("created_at", since)
+    .limit(5000);
+  if (error) return { error: error.message, stats: null as SmartScanExternalClickStatsToday | null };
+
+  const rows = (data as Array<Record<string, unknown>> | null) || [];
+  const stats: SmartScanExternalClickStatsToday = {
+    linkedin_today: 0,
+    whatsapp_group_today: 0,
+  };
+  rows.forEach((row) => {
+    const source = String(row.source || "");
+    if (source === "linkedin") stats.linkedin_today += 1;
+    if (source === "whatsapp_group") stats.whatsapp_group_today += 1;
+  });
+
+  return { error: null as string | null, stats };
 }
 
 async function syncHotIdealAlertForContact(ownerMemberId: string, contactId: string, contactName?: string) {

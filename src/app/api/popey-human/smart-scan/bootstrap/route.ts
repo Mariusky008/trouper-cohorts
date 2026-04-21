@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import {
+  getSmartScanExternalClickStatsToday,
   getOrCreateTodaySession,
   getSmartScanConversionStats,
   getSmartScanFollowupOpsStatsToday,
@@ -13,7 +14,7 @@ import {
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const [sessionResult, contactsResult, qualificationsResult, historyResult, alertsResult, followupsResult, statsResult, followupOpsResult] = await Promise.all([
+  const [sessionResult, contactsResult, qualificationsResult, historyResult, alertsResult, followupsResult, statsResult, followupOpsResult, externalClicksResult] = await Promise.all([
     getOrCreateTodaySession(),
     listMySmartScanContacts(800),
     listMySmartScanQualifications(800),
@@ -22,6 +23,7 @@ export async function GET() {
     listDueSmartScanFollowups(80),
     getSmartScanConversionStats(14),
     getSmartScanFollowupOpsStatsToday(),
+    getSmartScanExternalClickStatsToday(),
   ]);
 
   if (sessionResult.error) {
@@ -48,6 +50,9 @@ export async function GET() {
   if (followupOpsResult.error) {
     return NextResponse.json({ error: followupOpsResult.error }, { status: 400 });
   }
+  if (externalClicksResult.error) {
+    return NextResponse.json({ error: externalClicksResult.error }, { status: 400 });
+  }
 
   return NextResponse.json({
     session: sessionResult.session,
@@ -58,5 +63,6 @@ export async function GET() {
     followups: followupsResult.followups,
     metrics: statsResult.stats,
     followupOps: followupOpsResult.stats,
+    externalClicks: externalClicksResult.stats,
   });
 }

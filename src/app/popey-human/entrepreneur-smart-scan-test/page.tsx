@@ -107,6 +107,10 @@ type BootstrapFollowupOps = {
   not_interested_today: number;
   ignored_today: number;
 };
+type BootstrapExternalClicks = {
+  linkedin_today: number;
+  whatsapp_group_today: number;
+};
 type FollowupItem = {
   actionId: string;
   contactId: string;
@@ -535,6 +539,7 @@ export default function EntrepreneurSmartScanTestPage() {
   const [isExportingDailyReport, setIsExportingDailyReport] = useState(false);
   const [conversionMetrics, setConversionMetrics] = useState<BootstrapMetrics | null>(null);
   const [followupOpsStats, setFollowupOpsStats] = useState<BootstrapFollowupOps | null>(null);
+  const [externalClickStats, setExternalClickStats] = useState<BootstrapExternalClicks | null>(null);
 
   const current = CONTACTS[index] ?? CONTACTS[CONTACTS.length - 1];
   const profileContact = CONTACTS.find((contact) => contact.id === profileContactId) ?? null;
@@ -1093,7 +1098,7 @@ export default function EntrepreneurSmartScanTestPage() {
   }
 
   async function postSmartScan(
-    path: "trust" | "qualification" | "action" | "favorite" | "outcome" | "generate-message" | "followup-job" | "prepare-whatsapp-payload",
+    path: "trust" | "qualification" | "action" | "favorite" | "outcome" | "generate-message" | "followup-job" | "prepare-whatsapp-payload" | "external-click",
     payload: Record<string, unknown>,
   ) {
     const maxAttempts = 3;
@@ -1136,6 +1141,7 @@ export default function EntrepreneurSmartScanTestPage() {
       followups?: BootstrapFollowupRow[];
       metrics?: BootstrapMetrics | null;
       followupOps?: BootstrapFollowupOps | null;
+      externalClicks?: BootstrapExternalClicks | null;
     };
 
     const dbToExternalRef = new Map<string, string>();
@@ -1254,12 +1260,26 @@ export default function EntrepreneurSmartScanTestPage() {
     setDueFollowups(nextDueFollowups);
     setConversionMetrics(payload.metrics || null);
     setFollowupOpsStats(payload.followupOps || null);
+    setExternalClickStats(payload.externalClicks || null);
     if (payload.session?.opportunities_activated !== undefined) {
       setSentCount(payload.session.opportunities_activated);
     }
     if (typeof payload.session?.target_potential_eur === "number") {
       setDailyTargetPotential(Math.max(0, Math.round(payload.session.target_potential_eur)));
     }
+  }
+
+  function handleExternalConnectorClick(source: "linkedin" | "whatsapp_group", url: string) {
+    if (typeof window !== "undefined") {
+      window.open(url, "_blank", "noopener,noreferrer");
+    }
+    void postSmartScan("external-click", {
+      source,
+      targetUrl: url,
+      context: "cockpit",
+    })
+      .then(() => refreshSmartScanSnapshot())
+      .catch(() => null);
   }
 
   function createTransitionPayload(action: Exclude<DailyCategory, "qualifier">, mode: "sent" | "saved" = "sent") {
@@ -2223,24 +2243,26 @@ export default function EntrepreneurSmartScanTestPage() {
             </div>
 
             <div className="grid grid-cols-2 gap-2">
-              <a
-                href="https://www.linkedin.com"
-                target="_blank"
-                rel="noreferrer"
+              <button
+                type="button"
+                onClick={() => handleExternalConnectorClick("linkedin", "https://www.linkedin.com")}
                 className="rounded-xl border border-white/15 bg-black/25 px-3 py-2 text-center text-[11px] font-black uppercase tracking-[0.08em] text-white/85 transition hover:border-cyan-300/45"
               >
                 LinkedIn
-                <span className="mt-0.5 block text-[10px] font-medium normal-case text-white/65">Ouvrir le reseau pro</span>
-              </a>
-              <a
-                href="https://web.whatsapp.com"
-                target="_blank"
-                rel="noreferrer"
+                <span className="mt-0.5 block text-[10px] font-medium normal-case text-white/65">
+                  Ouvrir le reseau pro • clics J: {externalClickStats?.linkedin_today ?? 0}
+                </span>
+              </button>
+              <button
+                type="button"
+                onClick={() => handleExternalConnectorClick("whatsapp_group", "https://web.whatsapp.com")}
                 className="rounded-xl border border-white/15 bg-black/25 px-3 py-2 text-center text-[11px] font-black uppercase tracking-[0.08em] text-white/85 transition hover:border-emerald-300/45"
               >
                 Groupe WhatsApp
-                <span className="mt-0.5 block text-[10px] font-medium normal-case text-white/65">Ouvrir la communaute</span>
-              </a>
+                <span className="mt-0.5 block text-[10px] font-medium normal-case text-white/65">
+                  Ouvrir la communaute • clics J: {externalClickStats?.whatsapp_group_today ?? 0}
+                </span>
+              </button>
             </div>
           </div>
         </div>
