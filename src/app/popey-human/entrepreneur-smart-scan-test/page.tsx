@@ -681,50 +681,55 @@ export default function EntrepreneurSmartScanTestPage() {
   const [isImportingContacts, setIsImportingContacts] = useState(false);
   const contactImportInputRef = useRef<HTMLInputElement | null>(null);
 
-  const contactsData = importedContacts.length > 0 ? importedContacts : CONTACTS;
+  const hasImportedContacts = importedContacts.length > 0;
+  const contactsData = hasImportedContacts ? importedContacts : CONTACTS;
   const current = contactsData[index] ?? contactsData[contactsData.length - 1];
   const profileContact = contactsData.find((contact) => contact.id === profileContactId) ?? null;
-  const totalScanned = importedContacts.length > 0 ? importedContacts.length : 816;
-  const scanDone = scanCount >= totalScanned;
-  const scanProgress = Math.min(1, scanCount / totalScanned);
-  const liveProfiles = Math.min(304, Math.round(304 * scanProgress));
-  const liveLocals = Math.min(488, Math.round(488 * scanProgress));
-  const liveHotSignals = Math.min(112, Math.round(112 * scanProgress));
-  const liveInReview = Math.min(214, Math.round(214 * scanProgress));
+  const totalScanned = hasImportedContacts ? importedContacts.length : 0;
+  const scanDone = hasImportedContacts && totalScanned > 0 && scanCount >= totalScanned;
+  const scanProgress = totalScanned > 0 ? Math.min(1, scanCount / totalScanned) : 0;
+  const scanProgressPercent = Math.min(100, Math.round(scanProgress * 100));
+  const importedQualifiedCount = importedContacts.filter((contact) => Boolean(qualifierStore[contact.id])).length;
+  const importedFavoriteCount = importedContacts.filter((contact) => favoriteIds.includes(contact.id)).length;
+  const importedReviewCount = Math.max(0, totalScanned - importedQualifiedCount);
+  const liveProfiles = Math.min(totalScanned, Math.round(importedQualifiedCount * scanProgress));
+  const liveLocals = Math.min(totalScanned, Math.round(totalScanned * scanProgress));
+  const liveHotSignals = Math.min(totalScanned, Math.round(importedFavoriteCount * scanProgress));
+  const liveInReview = Math.min(totalScanned, Math.round(importedReviewCount * scanProgress));
   const scanCards = [
     {
       id: "locals",
       icon: "📍",
-      value: scanDone ? 488 : liveLocals,
-      title: "Localises",
-      subtitle: "detectes dans ton secteur (64/40)",
+      value: scanDone ? totalScanned : liveLocals,
+      title: "Importes",
+      subtitle: "contacts reels charges",
       color: "from-cyan-400/25 to-blue-400/20 border-cyan-300/40",
       valueColor: "text-cyan-100",
     },
     {
       id: "active",
       icon: "⚡",
-      value: scanDone ? 304 : liveProfiles,
-      title: "Detectes Actifs",
-      subtitle: "deja identifies dans Popey",
+      value: scanDone ? importedQualifiedCount : liveProfiles,
+      title: "Qualifies",
+      subtitle: "contacts deja qualifies",
       color: "from-violet-400/25 to-fuchsia-400/20 border-violet-300/40",
       valueColor: "text-violet-100",
     },
     {
       id: "hot",
       icon: "🔥",
-      value: scanDone ? 112 : liveHotSignals,
-      title: "A Fort Potentiel",
-      subtitle: "pas contactes depuis 3 mois",
+      value: scanDone ? importedFavoriteCount : liveHotSignals,
+      title: "Favoris",
+      subtitle: "suivi prioritaire",
       color: "from-amber-400/30 to-orange-400/20 border-amber-300/40",
       valueColor: "text-amber-100",
     },
     {
       id: "review",
       icon: "🧠",
-      value: scanDone ? 214 : liveInReview,
-      title: "En cours d analyse",
-      subtitle: "numeros a qualifier",
+      value: scanDone ? importedReviewCount : liveInReview,
+      title: "A qualifier",
+      subtitle: "qualification a faire",
       color: "from-emerald-400/25 to-teal-400/20 border-emerald-300/40",
       valueColor: "text-emerald-100",
     },
@@ -984,12 +989,13 @@ export default function EntrepreneurSmartScanTestPage() {
 
   useEffect(() => {
     if (stage !== "scan") return;
+    if (!hasImportedContacts) return;
     if (scanDone) return;
     const timer = setInterval(() => {
       setScanCount((value) => Math.min(totalScanned, value + Math.floor(Math.random() * 9) + 10));
     }, 180);
     return () => clearInterval(timer);
-  }, [stage, scanDone, totalScanned]);
+  }, [stage, scanDone, totalScanned, hasImportedContacts]);
 
   useEffect(() => {
     let cancelled = false;
@@ -1957,6 +1963,10 @@ export default function EntrepreneurSmartScanTestPage() {
     setShowHistoryPanel(false);
     setShowMyProfilePanel(false);
     if (tab === "scan") {
+      if (!hasImportedContacts) {
+        setApiErrorMessage("Importe d abord ton fichier .vcf ou .csv pour lancer un scan reel.");
+        return;
+      }
       setStage("daily");
       return;
     }
@@ -1966,6 +1976,10 @@ export default function EntrepreneurSmartScanTestPage() {
     }
     if (tab === "search") {
       if (stage === "scan") {
+        if (!hasImportedContacts) {
+          setApiErrorMessage("Importe d abord ton fichier .vcf ou .csv pour utiliser le cockpit.");
+          return;
+        }
         setStage("daily");
         setTimeout(() => setShowSearchPanel(true), 40);
         return;
@@ -1974,6 +1988,10 @@ export default function EntrepreneurSmartScanTestPage() {
       return;
     }
     if (stage === "scan") {
+      if (!hasImportedContacts) {
+        setApiErrorMessage("Importe d abord ton fichier .vcf ou .csv pour utiliser le cockpit.");
+        return;
+      }
       setStage("daily");
       setTimeout(() => setShowHistoryPanel(true), 40);
       return;
@@ -1999,7 +2017,7 @@ export default function EntrepreneurSmartScanTestPage() {
     }
     setImportedContacts(nextContacts);
     setImportSummary(`${nextContacts.length} contacts importes depuis ${file.name}`);
-    setScanCount(nextContacts.length);
+    setScanCount(0);
     setStage("scan");
     setIndex(0);
     setApiErrorMessage("");
@@ -2116,7 +2134,7 @@ export default function EntrepreneurSmartScanTestPage() {
               transition={{ duration: 3.4, repeat: Infinity, ease: "easeInOut" }}
             />
             <p className="text-xs font-black uppercase tracking-[0.12em] text-cyan-200">Mini-Agence Smart Scan</p>
-            <h1 className="mt-2 text-2xl font-black">Scan de ton telephone en cours...</h1>
+            <h1 className="mt-2 text-2xl font-black">{hasImportedContacts ? "Scan de ton telephone en cours..." : "Importe tes contacts pour lancer le scan"}</h1>
             <p className="mt-1 text-sm text-white/70">Analyse locale securisee, aucun contact en clair n est envoye.</p>
             <div className="mt-4 rounded-2xl border border-cyan-200/25 bg-cyan-400/10 p-3">
               <p className="text-xs font-black uppercase tracking-[0.08em] text-cyan-100">Importer mes contacts reels</p>
@@ -2140,6 +2158,11 @@ export default function EntrepreneurSmartScanTestPage() {
                   </button>
                 )}
               </div>
+              {!hasImportedContacts && (
+                <p className="mt-2 rounded-xl border border-amber-200/35 bg-amber-300/15 px-2 py-1 text-[11px] text-amber-100">
+                  Aucun scan simule: importe d abord ton fichier pour activer le vrai flux.
+                </p>
+              )}
               <input
                 ref={contactImportInputRef}
                 type="file"
@@ -2156,21 +2179,23 @@ export default function EntrepreneurSmartScanTestPage() {
               <div className="relative h-full w-full">
                 <motion.div
                   className="h-full rounded-full bg-gradient-to-r from-amber-300 via-orange-400 to-rose-400"
-                  animate={{ width: `${Math.min(100, Math.round((scanCount / totalScanned) * 100))}%` }}
+                  animate={{ width: `${scanProgressPercent}%` }}
                   transition={{ duration: 0.2 }}
                 />
-                {!scanDone && (
+                {hasImportedContacts && !scanDone && (
                   <motion.div
                     animate={{ scale: [1, 1.25, 1], opacity: [0.6, 1, 0.6] }}
                     transition={{ duration: 0.55, repeat: Infinity, ease: "easeInOut" }}
                     className="absolute top-1/2 h-3 w-3 -translate-y-1/2 rounded-full bg-orange-300 shadow-[0_0_18px_rgba(251,146,60,0.95)]"
-                    style={{ left: `calc(${Math.min(99, Math.round((scanCount / totalScanned) * 100))}% - 6px)` }}
+                    style={{ left: `calc(${Math.min(99, scanProgressPercent)}% - 6px)` }}
                   />
                 )}
               </div>
             </div>
-            <p className="mt-2 text-xs text-white/70">{scanCount} / {totalScanned} contacts scannes</p>
-            {!scanDone && <p className="mt-1 text-[11px] uppercase tracking-[0.12em] text-orange-200/90">Meche active...</p>}
+            <p className="mt-2 text-xs text-white/70">
+              {hasImportedContacts ? `${scanCount} / ${totalScanned} contacts scannes` : "Aucun contact importe pour le moment"}
+            </p>
+            {hasImportedContacts && !scanDone && <p className="mt-1 text-[11px] uppercase tracking-[0.12em] text-orange-200/90">Meche active...</p>}
 
             {scanDone && (
               <motion.div
@@ -2186,7 +2211,7 @@ export default function EntrepreneurSmartScanTestPage() {
 
             <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
               {scanCards.map((card, idx) => (
-                scanDone ? (
+                scanDone || !hasImportedContacts ? (
                   <div key={card.id} className={`rounded-2xl border bg-gradient-to-br p-3 text-center ${card.color}`}>
                     <p className="text-xs">{card.icon}</p>
                     <p className={`text-2xl font-black tabular-nums ${card.valueColor}`}>{card.value}</p>
@@ -2215,7 +2240,7 @@ export default function EntrepreneurSmartScanTestPage() {
                 <p className="mt-4 rounded-xl bg-emerald-400/15 px-3 py-2 text-sm text-emerald-100">
                   Scan termine: {totalScanned} contacts disponibles.
                 </p>
-                <p className="mt-2 text-xs font-black text-cyan-100">Ton reseau est une mine d or: 112 opportunites t attendent ce matin.</p>
+                <p className="mt-2 text-xs font-black text-cyan-100">{importedReviewCount} contacts restent a qualifier dans ton import.</p>
                 <button
                   type="button"
                   onClick={resetScanSession}
