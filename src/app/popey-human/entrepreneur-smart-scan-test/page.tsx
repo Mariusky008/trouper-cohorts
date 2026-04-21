@@ -16,6 +16,12 @@ type DailyContact = {
   dominantTags: string[];
   externalNews: string;
 };
+type ImportedContactRow = {
+  fullName: string;
+  phone?: string | null;
+  city?: string | null;
+  companyHint?: string | null;
+};
 type QualifierData = {
   heat: HeatLevel;
   opportunityChoice: (typeof OPPORTUNITY_OPTIONS)[number]["id"] | null;
@@ -162,6 +168,7 @@ type SmartScanProfileForm = {
 
 const PENDING_WHATSAPP_CONTEXT_KEY = "popey-human:smart-scan:pending-whatsapp-context";
 const SMART_SCAN_SESSION_KEY = "popey-human:smart-scan:scan-session";
+const SMART_SCAN_IMPORTED_CONTACTS_KEY = "popey-human:smart-scan:imported-contacts";
 
 const CONTACTS: DailyContact[] = [
   {
@@ -461,6 +468,134 @@ function buildTemplate(action: DailyCategory, contact: DailyContact, qualifier?:
   return "Passe pour ce cycle de 30 jours.";
 }
 
+function parseVcfContacts(raw: string): ImportedContactRow[] {
+  const cards = raw.split(/END:VCARD/i);
+  const rows: ImportedContactRow[] = [];
+  cards.forEach((card) => {
+    const fn = card.match(/(?:^|\n)FN[^:]*:(.+)/i)?.[1]?.trim();
+    const tel = card.match(/(?:^|\n)TEL[^:]*:(.+)/i)?.[1]?.trim();
+    const org = card.match(/(?:^|\n)ORG[^:]*:(.+)/i)?.[1]?.trim();
+    const adr = card.match(/(?:^|\n)ADR[^:]*:(.+)/i)?.[1]?.trim();
+    const city = adr ? adr.split(";")[3]?.trim() || "" : "";
+    if (!fn && !tel) return;
+    rows.push({
+      fullName: fn || tel || "Contact",
+      phone: tel || null,
+      city: city || null,
+      companyHint: org || null,
+    });
+  });
+  return rows;
+}
+
+function splitCsvRow(line: string, delimiter: string): string[] {
+  const cols: string[] = [];
+  let current = "";
+  let inQuotes = false;
+  for (let i = 0; i < line.length; i += 1) {
+    const char = line[i];
+    if (char === '"') {
+      if (inQuotes && line[i + 1] === '"') {
+        current += '"';
+        i += 1;
+      } else {
+        inQuotes = !inQuotes;
+      }
+      continue;
+    }
+    if (char === delimiter && !inQuotes) {
+      cols.push(current.trim());
+      current = "";
+      continue;
+    }
+    current += char;
+  }
+  cols.push(current.trim());
+  return cols.map((col) => col.replace(/^"|"$/g, ""));
+}
+
+function normalizeCsvHeader(value: string) {
+  return value.replace(/^\uFEFF/, "").trim().toLowerCase();
+}
+
+function detectCsvDelimiter(headerLine: string) {
+  const candidates = [",", ";", "\t"];
+  let best = ",";
+  let bestCount = -1;
+  candidates.forEach((delimiter) => {
+    const count = headerLine.split(delimiter).length;
+    if (count > bestCount) {
+      best = delimiter;
+      bestCount = count;
+    }
+  });
+  return best;
+}
+
+function parseCsvContacts(raw: string): ImportedContactRow[] {
+  const lines = raw.split(/\r?\n/).filter((line) => line.trim().length > 0);
+  if (lines.length <= 1) return [];
+  const delimiter = detectCsvDelimiter(lines[0]);
+  const headers = splitCsvRow(lines[0], delimiter).map(normalizeCsvHeader);
+  const idxName = headers.findIndex((h) =>
+    ["name", "nom", "full_name", "display_name", "formatted name"].some((token) => h.includes(token)),
+  );
+  const idxFirstName = headers.findIndex((h) => ["first name", "prenom", "given name"].some((token) => h.includes(token)));
+  const idxLastName = headers.findIndex((h) => ["last name", "nom de famille", "family name"].some((token) => h.includes(token)));
+  const idxPhone = headers.findIndex((h) =>
+    ["phone", "telephone", "mobile", "numero", "num", "tel"].some((token) => h.includes(token)),
+  );
+  const idxCity = headers.findIndex((h) => ["city", "ville", "locality"].some((token) => h.includes(token)));
+  const idxCompany = headers.findIndex((h) => ["company", "societe", "organization", "org", "entreprise"].some((token) => h.includes(token)));
+  const rows: ImportedContactRow[] = [];
+  lines.slice(1).forEach((line) => {
+    const cols = splitCsvRow(line, delimiter);
+    const firstName = idxFirstName >= 0 ? cols[idxFirstName] || "" : "";
+    const lastName = idxLastName >= 0 ? cols[idxLastName] || "" : "";
+    const combinedName = `${firstName} ${lastName}`.trim();
+    const fullName = (idxName >= 0 ? cols[idxName] : "") || combinedName || (idxPhone >= 0 ? cols[idxPhone] : "");
+    if (!fullName) return;
+    rows.push({
+      fullName,
+      phone: idxPhone >= 0 ? cols[idxPhone] || null : null,
+      city: idxCity >= 0 ? cols[idxCity] || null : null,
+      companyHint: idxCompany >= 0 ? cols[idxCompany] || null : null,
+    });
+  });
+  return rows;
+}
+
+function buildDailyContactsFromImport(rows: ImportedContactRow[]): DailyContact[] {
+  const dedup = new Set<string>();
+  const normalized = rows
+    .map((row) => {
+      const name = String(row.fullName || "").trim();
+      const city = String(row.city || "Inconnue").trim() || "Inconnue";
+      const companyHint = String(row.companyHint || "Réseau perso").trim() || "Réseau perso";
+      const phoneDigits = String(row.phone || "").replace(/\D/g, "");
+      const key = `${name.toLowerCase()}|${phoneDigits}`;
+      return { name, city, companyHint, phoneDigits, key };
+    })
+    .filter((row) => row.name.length > 0)
+    .filter((row) => {
+      if (dedup.has(row.key)) return false;
+      dedup.add(row.key);
+      return true;
+    })
+    .slice(0, 10);
+
+  return normalized.map((row, idx) => ({
+    id: `import-${idx + 1}-${row.phoneDigits.slice(-4) || "0000"}`,
+    name: row.name,
+    city: row.city,
+    companyHint: row.companyHint,
+    capsule: "Importe depuis ton telephone",
+    communityKnownBy: Math.max(1, 1 + (idx % 4)),
+    dominantTags: ["📱 Contact importe", "🤝 A qualifier"],
+    externalNews: "Profil importe depuis ton annuaire",
+  }));
+}
+
 export default function EntrepreneurSmartScanTestPage() {
   const [stage, setStage] = useState<"scan" | "daily">("scan");
   const [scanCount, setScanCount] = useState(0);
@@ -541,10 +676,15 @@ export default function EntrepreneurSmartScanTestPage() {
   const [conversionMetrics, setConversionMetrics] = useState<BootstrapMetrics | null>(null);
   const [followupOpsStats, setFollowupOpsStats] = useState<BootstrapFollowupOps | null>(null);
   const [externalClickStats, setExternalClickStats] = useState<BootstrapExternalClicks | null>(null);
+  const [importedContacts, setImportedContacts] = useState<DailyContact[]>([]);
+  const [importSummary, setImportSummary] = useState<string>("");
+  const [isImportingContacts, setIsImportingContacts] = useState(false);
+  const contactImportInputRef = useRef<HTMLInputElement | null>(null);
 
-  const current = CONTACTS[index] ?? CONTACTS[CONTACTS.length - 1];
-  const profileContact = CONTACTS.find((contact) => contact.id === profileContactId) ?? null;
-  const totalScanned = 816;
+  const contactsData = importedContacts.length > 0 ? importedContacts : CONTACTS;
+  const current = contactsData[index] ?? contactsData[contactsData.length - 1];
+  const profileContact = contactsData.find((contact) => contact.id === profileContactId) ?? null;
+  const totalScanned = importedContacts.length > 0 ? importedContacts.length : 816;
   const scanDone = scanCount >= totalScanned;
   const scanProgress = Math.min(1, scanCount / totalScanned);
   const liveProfiles = Math.min(304, Math.round(304 * scanProgress));
@@ -589,7 +729,7 @@ export default function EntrepreneurSmartScanTestPage() {
       valueColor: "text-emerald-100",
     },
   ] as const;
-  const done = Math.min(index, CONTACTS.length);
+  const done = Math.min(index, contactsData.length);
   const heatScore = Math.min(99, 55 + current.communityKnownBy * 10 + (current.externalNews ? 8 : 0));
   const sourceRing =
     current.communityKnownBy >= 3
@@ -639,7 +779,7 @@ export default function EntrepreneurSmartScanTestPage() {
     if (entries.length === 0) return [{ label: "❓ A decouvrir", count: 1 }];
     return entries.slice(0, 3);
   }, [current, qualifierStore, quickLabelMap]);
-  const searchResults = CONTACTS
+  const searchResults = contactsData
     .filter((contact) => `${contact.name} ${contact.city} ${contact.companyHint}`.toLowerCase().includes(searchQuery.toLowerCase().trim()))
     .sort((a, b) => (priorityScoreStore[b.id] || 0) - (priorityScoreStore[a.id] || 0));
   const template = useMemo(
@@ -660,7 +800,7 @@ export default function EntrepreneurSmartScanTestPage() {
   const profileQualifier = profileContact ? qualifierStore[profileContact.id] : undefined;
   const profileTrustLevel = profileContact ? trustLevelStore[profileContact.id] : undefined;
   const trustPromptContact = trustPromptContactId
-    ? CONTACTS.find((contact) => contact.id === trustPromptContactId) ?? null
+    ? contactsData.find((contact) => contact.id === trustPromptContactId) ?? null
     : null;
   const profileActionEngine = useMemo(() => getDynamicActionEngine(profileQualifier), [profileQualifier]);
   const profileActionButtons = profileActionEngine.order.map((action) => ({
@@ -671,7 +811,7 @@ export default function EntrepreneurSmartScanTestPage() {
   const staleIdealHotLead = useMemo(() => {
     const alertContactId = openAlertContactIds[0];
     if (alertContactId) {
-      const fromAlert = CONTACTS.find((item) => item.id === alertContactId);
+      const fromAlert = contactsData.find((item) => item.id === alertContactId);
       if (fromAlert) {
         return { ...fromAlert, qualifier: qualifierStore[alertContactId] };
       }
@@ -686,7 +826,7 @@ export default function EntrepreneurSmartScanTestPage() {
         (entry) => entry.contactId === contactId && entry.action === "package" && entry.atMs >= qualifier.qualifiedAtMs,
       );
       if (hasPackageInTime) continue;
-      const contact = CONTACTS.find((item) => item.id === contactId);
+      const contact = contactsData.find((item) => item.id === contactId);
       if (!contact) continue;
       return { ...contact, qualifier };
     }
@@ -788,6 +928,23 @@ export default function EntrepreneurSmartScanTestPage() {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
+    const raw = window.localStorage.getItem(SMART_SCAN_IMPORTED_CONTACTS_KEY);
+    if (!raw) return;
+    try {
+      const parsed = JSON.parse(raw) as { contacts?: DailyContact[]; summary?: string };
+      if (Array.isArray(parsed.contacts) && parsed.contacts.length > 0) {
+        setImportedContacts(parsed.contacts.slice(0, 10));
+      }
+      if (typeof parsed.summary === "string") {
+        setImportSummary(parsed.summary);
+      }
+    } catch {
+      // Ignore invalid imported contact cache.
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
     window.localStorage.setItem(
       SMART_SCAN_SESSION_KEY,
       JSON.stringify({
@@ -797,6 +954,25 @@ export default function EntrepreneurSmartScanTestPage() {
       }),
     );
   }, [stage, scanCount]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem(
+      SMART_SCAN_IMPORTED_CONTACTS_KEY,
+      JSON.stringify({
+        contacts: importedContacts.slice(0, 10),
+        summary: importSummary,
+        updatedAt: Date.now(),
+      }),
+    );
+  }, [importedContacts, importSummary]);
+
+  useEffect(() => {
+    setIndex((value) => {
+      if (contactsData.length <= 1) return 0;
+      return Math.max(0, Math.min(value, contactsData.length - 1));
+    });
+  }, [contactsData.length]);
 
   function adnBadgeClass(label: string) {
     const lower = label.toLowerCase();
@@ -935,7 +1111,7 @@ export default function EntrepreneurSmartScanTestPage() {
           : readPendingWhatsAppContext();
       if (!restoredContext) return;
 
-      const nextIndex = CONTACTS.findIndex((contact) => contact.id === restoredContext.contactId);
+      const nextIndex = contactsData.findIndex((contact) => contact.id === restoredContext.contactId);
       if (nextIndex >= 0) {
         setIndex(nextIndex);
       }
@@ -1188,7 +1364,7 @@ export default function EntrepreneurSmartScanTestPage() {
   }
 
   function getContactById(contactId: string) {
-    return CONTACTS.find((contact) => contact.id === contactId) ?? null;
+    return contactsData.find((contact) => contact.id === contactId) ?? null;
   }
 
   async function postSmartScan(
@@ -1505,7 +1681,7 @@ export default function EntrepreneurSmartScanTestPage() {
         })
         .catch(() => null);
       if (!stayOnCurrentContact) {
-        setIndex((v) => Math.min(CONTACTS.length, v + 1));
+        setIndex((v) => Math.min(contactsData.length, v + 1));
       }
       if (returnToProfileContactId) {
         setProfileContactId(returnToProfileContactId);
@@ -1753,7 +1929,7 @@ export default function EntrepreneurSmartScanTestPage() {
 
   function startActionFromProfile(action: Exclude<DailyCategory, "passer" | "qualifier">) {
     if (!profileContact) return;
-    const nextIndex = CONTACTS.findIndex((contact) => contact.id === profileContact.id);
+    const nextIndex = contactsData.findIndex((contact) => contact.id === profileContact.id);
     if (nextIndex >= 0) setIndex(nextIndex);
     setActionFromProfileContactId(profileContact.id);
     setShowContactProfile(false);
@@ -1769,7 +1945,7 @@ export default function EntrepreneurSmartScanTestPage() {
 
   function editProfileQualification() {
     if (!profileContact) return;
-    const nextIndex = CONTACTS.findIndex((contact) => contact.id === profileContact.id);
+    const nextIndex = contactsData.findIndex((contact) => contact.id === profileContact.id);
     if (nextIndex >= 0) setIndex(nextIndex);
     setShowContactProfile(false);
     setShowSearchPanel(false);
@@ -1803,6 +1979,52 @@ export default function EntrepreneurSmartScanTestPage() {
       return;
     }
     setShowHistoryPanel(true);
+  }
+
+  function openContactImportPicker() {
+    contactImportInputRef.current?.click();
+  }
+
+  async function importContactsFromFile(file: File) {
+    const lowerName = file.name.toLowerCase();
+    const raw = await file.text();
+    const importedRows =
+      lowerName.endsWith(".vcf") || raw.includes("BEGIN:VCARD")
+        ? parseVcfContacts(raw)
+        : parseCsvContacts(raw);
+    const nextContacts = buildDailyContactsFromImport(importedRows);
+    if (nextContacts.length === 0) {
+      setApiErrorMessage("Aucun contact exploitable detecte dans le fichier.");
+      return;
+    }
+    setImportedContacts(nextContacts);
+    setImportSummary(`${nextContacts.length} contacts importes depuis ${file.name}`);
+    setScanCount(nextContacts.length);
+    setStage("scan");
+    setIndex(0);
+    setApiErrorMessage("");
+  }
+
+  async function handleContactImportChange(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    try {
+      setIsImportingContacts(true);
+      await importContactsFromFile(file);
+    } catch {
+      setApiErrorMessage("Import impossible. Utilise un fichier .vcf ou .csv valide.");
+    } finally {
+      setIsImportingContacts(false);
+      event.target.value = "";
+    }
+  }
+
+  function clearImportedContacts() {
+    setImportedContacts([]);
+    setImportSummary("");
+    setScanCount(0);
+    setIndex(0);
+    setStage("scan");
   }
 
   function resetScanSession() {
@@ -1896,6 +2118,39 @@ export default function EntrepreneurSmartScanTestPage() {
             <p className="text-xs font-black uppercase tracking-[0.12em] text-cyan-200">Mini-Agence Smart Scan</p>
             <h1 className="mt-2 text-2xl font-black">Scan de ton telephone en cours...</h1>
             <p className="mt-1 text-sm text-white/70">Analyse locale securisee, aucun contact en clair n est envoye.</p>
+            <div className="mt-4 rounded-2xl border border-cyan-200/25 bg-cyan-400/10 p-3">
+              <p className="text-xs font-black uppercase tracking-[0.08em] text-cyan-100">Importer mes contacts reels</p>
+              <p className="mt-1 text-[11px] text-white/70">Fichier .vcf ou .csv. Les 10 premiers contacts exploitables sont utilises.</p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={openContactImportPicker}
+                  disabled={isImportingContacts}
+                  className="h-9 rounded-xl border border-cyan-200/35 bg-cyan-300/20 px-3 text-[11px] font-black uppercase tracking-wide text-cyan-50 disabled:opacity-50"
+                >
+                  {isImportingContacts ? "Import en cours..." : "Importer un fichier"}
+                </button>
+                {importedContacts.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={clearImportedContacts}
+                    className="h-9 rounded-xl border border-white/20 bg-white/10 px-3 text-[11px] font-black uppercase tracking-wide text-white/85"
+                  >
+                    Retirer l import
+                  </button>
+                )}
+              </div>
+              <input
+                ref={contactImportInputRef}
+                type="file"
+                accept=".vcf,.csv,text/vcard,text/csv"
+                className="hidden"
+                onChange={(event) => {
+                  void handleContactImportChange(event);
+                }}
+              />
+              {importSummary && <p className="mt-2 text-[11px] text-emerald-100">{importSummary}</p>}
+            </div>
 
             <div className="mt-4 h-2.5 overflow-hidden rounded-full bg-white/10">
               <div className="relative h-full w-full">
@@ -2425,7 +2680,7 @@ export default function EntrepreneurSmartScanTestPage() {
                 <button
                   type="button"
                   onClick={() => {
-                    const nextIndex = CONTACTS.findIndex((contact) => contact.id === staleIdealHotLead.id);
+                    const nextIndex = contactsData.findIndex((contact) => contact.id === staleIdealHotLead.id);
                     if (nextIndex >= 0) setIndex(nextIndex);
                     setActionGlowContactId(staleIdealHotLead.id);
                     setTimeout(() => setActionGlowContactId((id) => (id === staleIdealHotLead.id ? null : id)), 2200);
@@ -2652,7 +2907,7 @@ export default function EntrepreneurSmartScanTestPage() {
                   key={`${entry.contactId}-${entry.at}-${idx}`}
                   type="button"
                   onClick={() => {
-                    const nextIndex = CONTACTS.findIndex((contact) => contact.id === entry.contactId);
+                    const nextIndex = contactsData.findIndex((contact) => contact.id === entry.contactId);
                     if (nextIndex >= 0) setIndex(nextIndex);
                     setShowHistoryPanel(false);
                     openContactProfileWithTrustGuard(entry.contactId);
