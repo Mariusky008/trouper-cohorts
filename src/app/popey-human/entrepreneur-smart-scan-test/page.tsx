@@ -23,6 +23,7 @@ type QualifierData = {
   qualifiedAtMs: number;
 };
 type HistoryEntry = {
+  actionId?: string;
   contactId: string;
   name: string;
   action: Exclude<DailyCategory, "qualifier">;
@@ -30,6 +31,8 @@ type HistoryEntry = {
   atMs: number;
   tagsSummary: string;
   sent: boolean;
+  followupDueAtMs?: number | null;
+  outcomeStatus?: "pending" | "replied" | "converted" | "not_interested" | null;
 };
 type BootstrapContactRow = {
   id: string;
@@ -51,10 +54,13 @@ type BootstrapQualificationRow = {
   created_at: string | null;
 };
 type BootstrapHistoryRow = {
+  id: string;
   contact_id: string;
   contact_name: string;
   action_type: Exclude<DailyCategory, "qualifier">;
   status: "drafted" | "sent" | "validated_without_send";
+  followup_due_at?: string | null;
+  outcome_status?: "pending" | "replied" | "converted" | "not_interested" | null;
   created_at: string;
 };
 type BootstrapSessionRow = {
@@ -63,7 +69,7 @@ type BootstrapSessionRow = {
 };
 type BootstrapAlertRow = {
   contact_id: string | null;
-  alert_type: "hot_ideal_unshared_24h";
+  alert_type: "hot_ideal_unshared_24h" | "high_priority_no_response_48h";
   status: "open" | "dismissed" | "resolved";
 };
 
@@ -601,6 +607,15 @@ export default function EntrepreneurSmartScanTestPage() {
     dailyTargetPotential > 0
       ? Math.max(0, Math.round(dailyTargetPotential * (remainingForGoal / dailyGoal)))
       : remainingForGoal * 75;
+  const todayStartMs = useMemo(() => {
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+    return now.getTime();
+  }, []);
+  const sentTodayCount = historyEntries.filter((entry) => entry.sent && entry.atMs >= todayStartMs).length;
+  const responsesTodayCount = historyEntries.filter((entry) => entry.outcomeStatus === "replied" && entry.atMs >= todayStartMs).length;
+  const conversionsTodayCount = historyEntries.filter((entry) => entry.outcomeStatus === "converted" && entry.atMs >= todayStartMs).length;
+  const conversionRateToday = sentTodayCount > 0 ? Math.round((conversionsTodayCount / sentTodayCount) * 100) : 0;
 
   function adnBadgeClass(label: string) {
     const lower = label.toLowerCase();
@@ -716,6 +731,26 @@ export default function EntrepreneurSmartScanTestPage() {
     return "Passer";
   }
 
+  function outcomeLabel(status?: HistoryEntry["outcomeStatus"]) {
+    if (status === "replied") return "Repondu";
+    if (status === "converted") return "Converti";
+    if (status === "not_interested") return "Pas interesse";
+    return "En attente";
+  }
+
+  async function updateActionOutcome(entry: HistoryEntry, outcomeStatus: "pending" | "replied" | "converted" | "not_interested") {
+    if (!entry.actionId) return;
+    try {
+      await postSmartScan("outcome", {
+        actionId: entry.actionId,
+        outcomeStatus,
+      });
+      await refreshSmartScanSnapshot();
+    } catch {
+      // Keep current state; retry can be triggered by user.
+    }
+  }
+
   function scrollIntoViewSmooth(ref: React.RefObject<HTMLDivElement | null>) {
     ref.current?.scrollIntoView({ behavior: "smooth", block: "center" });
   }
@@ -747,7 +782,7 @@ export default function EntrepreneurSmartScanTestPage() {
   }
 
   async function postSmartScan(
-    path: "trust" | "qualification" | "action" | "favorite",
+    path: "trust" | "qualification" | "action" | "favorite" | "outcome",
     payload: Record<string, unknown>,
   ) {
     const maxAttempts = 3;
@@ -835,7 +870,9 @@ export default function EntrepreneurSmartScanTestPage() {
         const dateMs = Date.parse(entry.created_at);
         const safeDateMs = Number.isFinite(dateMs) ? dateMs : Date.now();
         const date = new Date(safeDateMs);
+        const followupDueMs = entry.followup_due_at ? Date.parse(entry.followup_due_at) : NaN;
         return {
+          actionId: entry.id,
           contactId: externalRef,
           name: entry.contact_name || getContactById(externalRef)?.name || "Contact",
           action: entry.action_type,
@@ -846,6 +883,8 @@ export default function EntrepreneurSmartScanTestPage() {
           atMs: safeDateMs,
           tagsSummary: "",
           sent: entry.status === "sent",
+          followupDueAtMs: Number.isFinite(followupDueMs) ? followupDueMs : null,
+          outcomeStatus: entry.outcome_status || null,
         };
       })
       .filter(Boolean) as HistoryEntry[];
@@ -919,6 +958,7 @@ export default function EntrepreneurSmartScanTestPage() {
       const summaryCommunity = (actionQualifier?.communityTags ?? []).map((id) => quickLabelMap[id]).slice(0, 1);
       setHistoryEntries((prev) => [
         {
+          actionId: undefined,
           contactId: actionContact.id,
           name: actionContact.name,
           action,
@@ -928,6 +968,8 @@ export default function EntrepreneurSmartScanTestPage() {
             .filter(Boolean)
             .join(" • "),
           sent: sentInHistory,
+          followupDueAtMs: sentInHistory ? nowMs + 48 * 60 * 60 * 1000 : null,
+          outcomeStatus: sentInHistory ? ("pending" as const) : null,
         },
         ...prev,
       ].slice(0, 50));
@@ -943,6 +985,7 @@ export default function EntrepreneurSmartScanTestPage() {
         sendChannel: sentInHistory ? "whatsapp" : "other",
         status: persistedStatus,
         clientEventId,
+        templateVersion: "v1",
       })
         .then((result: { opportunitiesActivated?: number | null }) => {
           if (typeof result?.opportunitiesActivated === "number") {
@@ -1380,6 +1423,24 @@ export default function EntrepreneurSmartScanTestPage() {
                 Potentiel du jour : ~{latentPotential}€
               </p>
             </div>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+              <div className="rounded-xl border border-white/10 bg-black/20 px-3 py-2">
+                <p className="text-[10px] uppercase tracking-[0.08em] text-white/60">Envoyes (J)</p>
+                <p className="text-sm font-black text-emerald-100">{sentTodayCount}</p>
+              </div>
+              <div className="rounded-xl border border-white/10 bg-black/20 px-3 py-2">
+                <p className="text-[10px] uppercase tracking-[0.08em] text-white/60">Reponses (J)</p>
+                <p className="text-sm font-black text-cyan-100">{responsesTodayCount}</p>
+              </div>
+              <div className="rounded-xl border border-white/10 bg-black/20 px-3 py-2">
+                <p className="text-[10px] uppercase tracking-[0.08em] text-white/60">Conversions (J)</p>
+                <p className="text-sm font-black text-amber-100">{conversionsTodayCount}</p>
+              </div>
+              <div className="rounded-xl border border-white/10 bg-black/20 px-3 py-2">
+                <p className="text-[10px] uppercase tracking-[0.08em] text-white/60">Taux conversion</p>
+                <p className="text-sm font-black text-fuchsia-100">{conversionRateToday}%</p>
+              </div>
+            </div>
 
             <div className="rounded-2xl border border-white/10 bg-black/20 px-3 py-3">
               <div className="flex items-center justify-between text-[11px] font-black uppercase tracking-[0.1em] text-white/70">
@@ -1646,7 +1707,7 @@ export default function EntrepreneurSmartScanTestPage() {
                 >
                   <p className="text-sm font-black">{entry.name}</p>
                   <p className="text-xs text-white/70">
-                    {entry.sent ? "Envoye" : "Valide sans envoi"} • {actionLabel(entry.action)} • {entry.at}
+                    {entry.sent ? "Envoye" : "Valide sans envoi"} • {actionLabel(entry.action)} • {outcomeLabel(entry.outcomeStatus)} • {entry.at}
                     {entry.tagsSummary ? ` • ${entry.tagsSummary}` : ""}
                   </p>
                 </button>
@@ -1903,6 +1964,20 @@ export default function EntrepreneurSmartScanTestPage() {
                 <div className="rounded-xl bg-white/5 px-3 py-2">
                   • Derniere action: {profileHistory[0] ? `${actionLabel(profileHistory[0].action)} ${profileHistory[0].sent ? "envoye" : "valide sans envoi"} a ${profileHistory[0].at}` : "Aucune action enregistree"}
                 </div>
+                {profileHistory.slice(0, 3).map((entry, idx) => (
+                  <div key={`${entry.contactId}-timeline-${idx}`} className="rounded-xl bg-white/5 px-3 py-2">
+                    • Pipeline: {actionLabel(entry.action)} • {outcomeLabel(entry.outcomeStatus)} • {entry.at}
+                    {entry.followupDueAtMs && entry.followupDueAtMs <= Date.now() && entry.outcomeStatus === "pending" && entry.actionId && (
+                      <button
+                        type="button"
+                        onClick={() => updateActionOutcome(entry, "replied")}
+                        className="ml-2 rounded-lg border border-amber-300/40 bg-amber-300/15 px-2 py-1 text-[10px] font-black uppercase tracking-[0.08em] text-amber-100"
+                      >
+                        Relance J+2 faite
+                      </button>
+                    )}
+                  </div>
+                ))}
                 <div className="rounded-xl bg-white/5 px-3 py-2">• Evolution: {profileHeat === "brulant" ? "Passe de Tiede a Brulant lors de la derniere qualification" : "Statut stable"}</div>
               </div>
             </div>

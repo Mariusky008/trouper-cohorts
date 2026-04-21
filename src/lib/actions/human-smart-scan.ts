@@ -17,7 +17,8 @@ export type SmartScanOpportunityChoice =
   | "no-potential";
 export type SmartScanActionType = "passer" | "eclaireur" | "package" | "exclients";
 export type SmartScanActionStatus = "drafted" | "sent" | "validated_without_send";
-export type SmartScanAlertType = "hot_ideal_unshared_24h";
+export type SmartScanActionOutcomeStatus = "pending" | "replied" | "converted" | "not_interested";
+export type SmartScanAlertType = "hot_ideal_unshared_24h" | "high_priority_no_response_48h";
 
 type SmartScanActionRow = {
   id: string;
@@ -29,6 +30,11 @@ type SmartScanActionRow = {
   status: SmartScanActionStatus;
   sent_at: string | null;
   validated_at: string | null;
+  whatsapp_opened_at: string | null;
+  template_version: string | null;
+  followup_due_at: string | null;
+  outcome_status: SmartScanActionOutcomeStatus | null;
+  outcome_notes: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -241,6 +247,7 @@ export async function saveQualification(input: {
   if (error) return { error: error.message };
 
   await syncHotIdealAlertForContact(currentMember.id, resolved.id, input.fullName);
+  await syncHighPriorityNoResponseAlertForContact(currentMember.id, resolved.id, input.fullName);
   revalidateSmartScanPaths();
   return { success: true, contactId: resolved.id };
 }
@@ -256,6 +263,7 @@ export async function logSmartScanAction(input: {
   sendChannel?: "whatsapp" | "other";
   status: SmartScanActionStatus;
   clientEventId?: string | null;
+  templateVersion?: string | null;
 }) {
   const currentMember = await getCurrentHumanMember();
   if (!currentMember) return { error: "Session requise." };
@@ -272,8 +280,10 @@ export async function logSmartScanAction(input: {
 
   const supabaseAdmin = createAdminClient();
   const nowIso = new Date().toISOString();
+  const normalizedSendChannel = input.sendChannel || "whatsapp";
   const shouldSetSentAt = input.status === "sent";
   const shouldSetValidatedAt = input.status === "validated_without_send";
+  const shouldSetWhatsAppOpenedAt = normalizedSendChannel === "whatsapp" && input.status === "sent";
 
   if (input.clientEventId) {
     const { data: existingAction } = await supabaseAdmin
@@ -300,10 +310,14 @@ export async function logSmartScanAction(input: {
       owner_member_id: currentMember.id,
       action_type: input.actionType,
       message_draft: input.messageDraft || null,
-      send_channel: input.sendChannel || "whatsapp",
+      send_channel: normalizedSendChannel,
       status: input.status,
       sent_at: shouldSetSentAt ? nowIso : null,
       validated_at: shouldSetValidatedAt ? nowIso : null,
+      whatsapp_opened_at: shouldSetWhatsAppOpenedAt ? nowIso : null,
+      template_version: input.templateVersion || "v1",
+      followup_due_at: shouldSetWhatsAppOpenedAt ? new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString() : null,
+      outcome_status: shouldSetWhatsAppOpenedAt ? "pending" : null,
       client_event_id: input.clientEventId || null,
       updated_at: nowIso,
     })
@@ -320,6 +334,7 @@ export async function logSmartScanAction(input: {
   }
 
   await syncHotIdealAlertForContact(currentMember.id, resolved.id, input.fullName);
+  await syncHighPriorityNoResponseAlertForContact(currentMember.id, resolved.id, input.fullName);
   revalidateSmartScanPaths();
   return {
     success: true,
@@ -327,6 +342,44 @@ export async function logSmartScanAction(input: {
     contactId: resolved.id,
     opportunitiesActivated,
   };
+}
+
+export async function updateSmartScanActionOutcome(input: {
+  actionId: string;
+  outcomeStatus: SmartScanActionOutcomeStatus;
+  outcomeNotes?: string | null;
+}) {
+  const currentMember = await getCurrentHumanMember();
+  if (!currentMember) return { error: "Session requise." };
+
+  const supabaseAdmin = createAdminClient();
+  const nowIso = new Date().toISOString();
+  const { data: existing, error: selectError } = await supabaseAdmin
+    .from("human_smart_scan_actions")
+    .select("id,contact_id")
+    .eq("id", input.actionId)
+    .eq("owner_member_id", currentMember.id)
+    .maybeSingle();
+
+  if (selectError || !existing?.id) {
+    return { error: selectError?.message || "Action introuvable." };
+  }
+
+  const { error } = await supabaseAdmin
+    .from("human_smart_scan_actions")
+    .update({
+      outcome_status: input.outcomeStatus,
+      outcome_notes: input.outcomeNotes || null,
+      followup_due_at: input.outcomeStatus === "pending" ? new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString() : null,
+      updated_at: nowIso,
+    })
+    .eq("id", existing.id)
+    .eq("owner_member_id", currentMember.id);
+  if (error) return { error: error.message };
+
+  await syncHighPriorityNoResponseAlertForContact(currentMember.id, String(existing.contact_id));
+  revalidateSmartScanPaths();
+  return { success: true, actionId: String(existing.id), outcomeStatus: input.outcomeStatus };
 }
 
 export async function getOrCreateTodaySession() {
@@ -369,7 +422,7 @@ export async function listHistoryActions(limit = 60) {
   const { data, error } = await supabaseAdmin
     .from("human_smart_scan_actions")
     .select(
-      "id,contact_id,owner_member_id,action_type,message_draft,send_channel,status,sent_at,validated_at,created_at,updated_at,human_smart_scan_contacts!inner(full_name,city)"
+      "id,contact_id,owner_member_id,action_type,message_draft,send_channel,status,sent_at,validated_at,whatsapp_opened_at,template_version,followup_due_at,outcome_status,outcome_notes,created_at,updated_at,human_smart_scan_contacts!inner(full_name,city)"
     )
     .eq("owner_member_id", currentMember.id)
     .order("created_at", { ascending: false })
@@ -389,6 +442,11 @@ export async function listHistoryActions(limit = 60) {
       status: row.status as SmartScanActionStatus,
       sent_at: (row.sent_at as string | null) || null,
       validated_at: (row.validated_at as string | null) || null,
+      whatsapp_opened_at: (row.whatsapp_opened_at as string | null) || null,
+      template_version: (row.template_version as string | null) || null,
+      followup_due_at: (row.followup_due_at as string | null) || null,
+      outcome_status: (row.outcome_status as SmartScanActionOutcomeStatus | null) || null,
+      outcome_notes: (row.outcome_notes as string | null) || null,
       created_at: String(row.created_at),
       updated_at: String(row.updated_at),
       contact_name: contact?.full_name || "Contact",
@@ -652,6 +710,102 @@ async function syncHotIdealAlertForContact(ownerMemberId: string, contactId: str
     .eq("owner_member_id", ownerMemberId)
     .eq("contact_id", contactId)
     .eq("alert_type", "hot_ideal_unshared_24h")
+    .eq("status", "open");
+}
+
+async function syncHighPriorityNoResponseAlertForContact(ownerMemberId: string, contactId: string, contactName?: string) {
+  const supabaseAdmin = createAdminClient();
+  const nowIso = new Date().toISOString();
+
+  const { data: contact } = await supabaseAdmin
+    .from("human_smart_scan_contacts")
+    .select("trust_level")
+    .eq("id", contactId)
+    .eq("owner_member_id", ownerMemberId)
+    .maybeSingle();
+  const { data: qualification } = await supabaseAdmin
+    .from("human_smart_scan_qualifications")
+    .select("heat,opportunity_choice,estimated_gain")
+    .eq("contact_id", contactId)
+    .eq("owner_member_id", ownerMemberId)
+    .maybeSingle();
+
+  const { data: latestAction } = await supabaseAdmin
+    .from("human_smart_scan_actions")
+    .select("id,followup_due_at,outcome_status,sent_at,created_at")
+    .eq("owner_member_id", ownerMemberId)
+    .eq("contact_id", contactId)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  const priorityScore = computePriorityScore({
+    trustLevel: toTrustLevelOutput((contact?.trust_level as string | null) || null),
+    heat: (qualification?.heat as SmartScanHeat | null) || null,
+    opportunityChoice: (qualification?.opportunity_choice as SmartScanOpportunityChoice | null) || null,
+    estimatedGain: (qualification?.estimated_gain as SmartScanEstimatedGain | null) || null,
+    lastActionAt: (latestAction?.created_at as string | null) || null,
+  });
+  const dueAtMs = latestAction?.followup_due_at ? Date.parse(String(latestAction.followup_due_at)) : NaN;
+  const isPending = latestAction?.outcome_status === "pending";
+  const isDue = Number.isFinite(dueAtMs) && Date.now() >= dueAtMs;
+  const shouldOpenAlert = Boolean(priorityScore >= 75 && isPending && isDue);
+
+  const { data: openAlert } = await supabaseAdmin
+    .from("human_smart_scan_alerts")
+    .select("id")
+    .eq("owner_member_id", ownerMemberId)
+    .eq("contact_id", contactId)
+    .eq("alert_type", "high_priority_no_response_48h")
+    .eq("status", "open")
+    .limit(1)
+    .maybeSingle();
+
+  if (shouldOpenAlert) {
+    if (openAlert?.id) {
+      await supabaseAdmin
+        .from("human_smart_scan_alerts")
+        .update({
+          payload: {
+            reason: "high_priority_no_response_48h",
+            contact_name: contactName || null,
+            priority_score: priorityScore,
+            followup_due_at: latestAction?.followup_due_at || null,
+          },
+          updated_at: nowIso,
+        })
+        .eq("id", openAlert.id)
+        .eq("owner_member_id", ownerMemberId);
+      return;
+    }
+
+    await supabaseAdmin.from("human_smart_scan_alerts").insert({
+      owner_member_id: ownerMemberId,
+      contact_id: contactId,
+      alert_type: "high_priority_no_response_48h",
+      status: "open",
+      payload: {
+        reason: "high_priority_no_response_48h",
+        contact_name: contactName || null,
+        priority_score: priorityScore,
+        followup_due_at: latestAction?.followup_due_at || null,
+      },
+      triggered_at: nowIso,
+      updated_at: nowIso,
+    });
+    return;
+  }
+
+  await supabaseAdmin
+    .from("human_smart_scan_alerts")
+    .update({
+      status: "resolved",
+      resolved_at: nowIso,
+      updated_at: nowIso,
+    })
+    .eq("owner_member_id", ownerMemberId)
+    .eq("contact_id", contactId)
+    .eq("alert_type", "high_priority_no_response_48h")
     .eq("status", "open");
 }
 
