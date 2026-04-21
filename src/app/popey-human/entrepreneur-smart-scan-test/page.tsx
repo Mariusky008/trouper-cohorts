@@ -106,6 +106,16 @@ type BootstrapFollowupOps = {
   not_interested_today: number;
   ignored_today: number;
 };
+type FollowupItem = {
+  actionId: string;
+  contactId: string;
+  contactName: string;
+  actionType: Exclude<DailyCategory, "qualifier">;
+  priorityScore: number;
+  dueAtLabel: string;
+  dueAtMs: number;
+  suggestedMessage: string;
+};
 
 const CONTACTS: DailyContact[] = [
   {
@@ -478,17 +488,8 @@ export default function EntrepreneurSmartScanTestPage() {
   const [aiPromptVersion, setAiPromptVersion] = useState<string | null>(null);
   const [aiGeneratedAt, setAiGeneratedAt] = useState<string | null>(null);
   const [aiGenerationSource, setAiGenerationSource] = useState<"ai" | "fallback" | null>(null);
-  const [dueFollowups, setDueFollowups] = useState<
-    Array<{
-      actionId: string;
-      contactId: string;
-      contactName: string;
-      actionType: Exclude<DailyCategory, "qualifier">;
-      priorityScore: number;
-      dueAtLabel: string;
-      suggestedMessage: string;
-    }>
-  >([]);
+  const [dueFollowups, setDueFollowups] = useState<FollowupItem[]>([]);
+  const [followupFilter, setFollowupFilter] = useState<"all" | "overdue">("all");
   const [conversionMetrics, setConversionMetrics] = useState<BootstrapMetrics | null>(null);
   const [followupOpsStats, setFollowupOpsStats] = useState<BootstrapFollowupOps | null>(null);
 
@@ -671,6 +672,12 @@ export default function EntrepreneurSmartScanTestPage() {
     if (!conversionMetrics?.by_action?.length) return null;
     return [...conversionMetrics.by_action].sort((a, b) => b.conversion_rate - a.conversion_rate)[0] || null;
   }, [conversionMetrics]);
+  const nowMs = Date.now();
+  const overdueFollowupsCount = dueFollowups.filter((item) => item.dueAtMs <= nowMs).length;
+  const visibleDueFollowups =
+    followupFilter === "overdue"
+      ? dueFollowups.filter((item) => item.dueAtMs <= nowMs)
+      : dueFollowups;
 
   function adnBadgeClass(label: string) {
     const lower = label.toLowerCase();
@@ -1007,6 +1014,7 @@ export default function EntrepreneurSmartScanTestPage() {
     const alertContactIds = dbAlertContactIds
       .map((dbContactId) => dbToExternalRef.get(dbContactId))
       .filter(Boolean) as string[];
+    const nowMs = Date.now();
     const nextDueFollowups = (payload.followups || [])
       .map((item) => {
         const externalRef = dbToExternalRef.get(item.contact_id);
@@ -1027,18 +1035,18 @@ export default function EntrepreneurSmartScanTestPage() {
           actionType: item.action_type,
           priorityScore: Math.max(0, Math.round(item.priority_score || 0)),
           dueAtLabel,
+          dueAtMs: safeDueMs,
           suggestedMessage: item.suggested_message || "",
         };
       })
-      .filter(Boolean) as Array<{
-      actionId: string;
-      contactId: string;
-      contactName: string;
-      actionType: Exclude<DailyCategory, "qualifier">;
-      priorityScore: number;
-      dueAtLabel: string;
-      suggestedMessage: string;
-    }>;
+      .filter((item): item is FollowupItem => Boolean(item))
+      .sort((a, b) => {
+        const aOverdueMs = Math.max(0, nowMs - a.dueAtMs);
+        const bOverdueMs = Math.max(0, nowMs - b.dueAtMs);
+        if (aOverdueMs !== bOverdueMs) return bOverdueMs - aOverdueMs;
+        if (a.priorityScore !== b.priorityScore) return b.priorityScore - a.priorityScore;
+        return a.dueAtMs - b.dueAtMs;
+      });
 
     setTrustLevelStore(nextTrustStore);
     setFavoriteIds(nextFavoriteIds);
@@ -1621,6 +1629,30 @@ export default function EntrepreneurSmartScanTestPage() {
                   {dueFollowups.length}
                 </span>
               </div>
+              <div className="mt-2 flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setFollowupFilter("all")}
+                  className={`h-7 rounded-full px-3 text-[10px] font-black uppercase tracking-[0.08em] transition ${
+                    followupFilter === "all"
+                      ? "border border-orange-300/45 bg-orange-300/20 text-orange-100"
+                      : "border border-white/20 bg-black/25 text-white/75"
+                  }`}
+                >
+                  Tous ({dueFollowups.length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFollowupFilter("overdue")}
+                  className={`h-7 rounded-full px-3 text-[10px] font-black uppercase tracking-[0.08em] transition ${
+                    followupFilter === "overdue"
+                      ? "border border-rose-300/45 bg-rose-300/20 text-rose-100"
+                      : "border border-white/20 bg-black/25 text-white/75"
+                  }`}
+                >
+                  En retard ({overdueFollowupsCount})
+                </button>
+              </div>
               <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-5">
                 <div className="rounded-lg border border-white/15 bg-black/20 px-2 py-1.5">
                   <p className="text-[9px] uppercase tracking-[0.08em] text-white/60">Copies</p>
@@ -1644,10 +1676,14 @@ export default function EntrepreneurSmartScanTestPage() {
                 </div>
               </div>
               <div className="mt-2 space-y-2">
-                {dueFollowups.length === 0 && (
-                  <p className="text-xs text-white/70">Aucune relance due pour le moment.</p>
+                {visibleDueFollowups.length === 0 && (
+                  <p className="text-xs text-white/70">
+                    {followupFilter === "overdue"
+                      ? "Aucune relance en retard pour le moment."
+                      : "Aucune relance due pour le moment."}
+                  </p>
                 )}
-                {dueFollowups.slice(0, 3).map((item) => (
+                {visibleDueFollowups.slice(0, 3).map((item) => (
                   <div
                     key={item.actionId}
                     className="w-full rounded-xl border border-white/15 bg-black/25 px-3 py-2 text-left"
