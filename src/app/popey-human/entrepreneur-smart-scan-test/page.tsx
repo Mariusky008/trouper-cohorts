@@ -844,6 +844,47 @@ export default function EntrepreneurSmartScanTestPage() {
   }, [showMyProfilePanel]);
 
   useEffect(() => {
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key !== "Escape") return;
+      if (showTemplateModal) {
+        setShowTemplateModal(false);
+        setSelectedAction(null);
+        return;
+      }
+      if (showContactProfile) {
+        setShowContactProfile(false);
+        return;
+      }
+      if (showTrustLevelPrompt) {
+        setShowTrustLevelPrompt(false);
+        setTrustPromptContactId(null);
+        return;
+      }
+      if (showMyProfilePanel) {
+        setShowMyProfilePanel(false);
+        return;
+      }
+      if (showHistoryPanel) {
+        setShowHistoryPanel(false);
+        return;
+      }
+      if (showSearchPanel) {
+        setShowSearchPanel(false);
+      }
+    }
+
+    if (typeof window !== "undefined") {
+      window.addEventListener("keydown", onKeyDown);
+    }
+
+    return () => {
+      if (typeof window !== "undefined") {
+        window.removeEventListener("keydown", onKeyDown);
+      }
+    };
+  }, [showTemplateModal, showContactProfile, showTrustLevelPrompt, showMyProfilePanel, showHistoryPanel, showSearchPanel]);
+
+  useEffect(() => {
     if (stage !== "daily") return;
     if (!isBootstrapped) return;
     if (showTemplateModal) return;
@@ -1709,6 +1750,9 @@ export default function EntrepreneurSmartScanTestPage() {
   }
 
   function handleDockAction(tab: "search" | "scan" | "history" | "profile") {
+    setShowSearchPanel(false);
+    setShowHistoryPanel(false);
+    setShowMyProfilePanel(false);
     if (tab === "scan") {
       setStage("daily");
       return;
@@ -1922,6 +1966,8 @@ export default function EntrepreneurSmartScanTestPage() {
                   key={`scan-dock-${item.id}`}
                   type="button"
                   onClick={() => handleDockAction(item.id as "search" | "scan" | "history" | "profile")}
+                  aria-label={`Ouvrir ${item.label}`}
+                  aria-pressed={isActive}
                   className={`flex h-14 min-w-[72px] flex-col items-center justify-center rounded-2xl px-2 transition ${
                     isActive ? "bg-cyan-300/25 text-cyan-100" : "text-white/80 hover:bg-white/10"
                   }`}
@@ -2513,6 +2559,8 @@ export default function EntrepreneurSmartScanTestPage() {
                 key={`daily-dock-${item.id}`}
                 type="button"
                 onClick={() => handleDockAction(item.id as "search" | "scan" | "history" | "profile")}
+                aria-label={`Ouvrir ${item.label}`}
+                aria-pressed={isActive}
                 className={`flex h-14 min-w-[72px] flex-col items-center justify-center rounded-2xl px-2 transition ${
                   isActive ? "bg-cyan-300/25 text-cyan-100" : "text-white/80 hover:bg-white/10"
                 }`}
