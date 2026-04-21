@@ -72,6 +72,33 @@ type BootstrapAlertRow = {
   alert_type: "hot_ideal_unshared_24h" | "high_priority_no_response_48h";
   status: "open" | "dismissed" | "resolved";
 };
+type BootstrapFollowupRow = {
+  action_id: string;
+  contact_id: string;
+  contact_name: string;
+  action_type: Exclude<DailyCategory, "qualifier">;
+  followup_due_at: string;
+  priority_score: number;
+  suggested_message: string;
+};
+type BootstrapMetrics = {
+  total_sent: number;
+  total_replied: number;
+  total_converted: number;
+  conversion_rate: number;
+  avg_response_delay_hours: number;
+  by_action: Array<{
+    action_type: Exclude<DailyCategory, "qualifier">;
+    sent: number;
+    converted: number;
+    conversion_rate: number;
+  }>;
+  top_converted_contacts: Array<{
+    contact_id: string;
+    contact_name: string;
+    conversions: number;
+  }>;
+};
 
 const CONTACTS: DailyContact[] = [
   {
@@ -440,6 +467,18 @@ export default function EntrepreneurSmartScanTestPage() {
   const [priorityScoreStore, setPriorityScoreStore] = useState<Record<string, number>>({});
   const [potentialEurStore, setPotentialEurStore] = useState<Record<string, number>>({});
   const [dailyTargetPotential, setDailyTargetPotential] = useState(0);
+  const [dueFollowups, setDueFollowups] = useState<
+    Array<{
+      actionId: string;
+      contactId: string;
+      contactName: string;
+      actionType: Exclude<DailyCategory, "qualifier">;
+      priorityScore: number;
+      dueAtLabel: string;
+      suggestedMessage: string;
+    }>
+  >([]);
+  const [conversionMetrics, setConversionMetrics] = useState<BootstrapMetrics | null>(null);
 
   const current = CONTACTS[index] ?? CONTACTS[CONTACTS.length - 1];
   const profileContact = CONTACTS.find((contact) => contact.id === profileContactId) ?? null;
@@ -616,6 +655,10 @@ export default function EntrepreneurSmartScanTestPage() {
   const responsesTodayCount = historyEntries.filter((entry) => entry.outcomeStatus === "replied" && entry.atMs >= todayStartMs).length;
   const conversionsTodayCount = historyEntries.filter((entry) => entry.outcomeStatus === "converted" && entry.atMs >= todayStartMs).length;
   const conversionRateToday = sentTodayCount > 0 ? Math.round((conversionsTodayCount / sentTodayCount) * 100) : 0;
+  const topActionMetric = useMemo(() => {
+    if (!conversionMetrics?.by_action?.length) return null;
+    return [...conversionMetrics.by_action].sort((a, b) => b.conversion_rate - a.conversion_rate)[0] || null;
+  }, [conversionMetrics]);
 
   function adnBadgeClass(label: string) {
     const lower = label.toLowerCase();
@@ -822,6 +865,8 @@ export default function EntrepreneurSmartScanTestPage() {
       history: BootstrapHistoryRow[];
       session: BootstrapSessionRow | null;
       alerts: BootstrapAlertRow[];
+      followups?: BootstrapFollowupRow[];
+      metrics?: BootstrapMetrics | null;
     };
 
     const dbToExternalRef = new Map<string, string>();
@@ -896,6 +941,38 @@ export default function EntrepreneurSmartScanTestPage() {
     const alertContactIds = dbAlertContactIds
       .map((dbContactId) => dbToExternalRef.get(dbContactId))
       .filter(Boolean) as string[];
+    const nextDueFollowups = (payload.followups || [])
+      .map((item) => {
+        const externalRef = dbToExternalRef.get(item.contact_id);
+        if (!externalRef) return null;
+        const dueMs = Date.parse(item.followup_due_at);
+        const safeDueMs = Number.isFinite(dueMs) ? dueMs : Date.now();
+        const dueDate = new Date(safeDueMs);
+        const dueAtLabel = `${dueDate.getDate().toString().padStart(2, "0")}/${(dueDate.getMonth() + 1)
+          .toString()
+          .padStart(2, "0")} ${dueDate.getHours().toString().padStart(2, "0")}:${dueDate
+          .getMinutes()
+          .toString()
+          .padStart(2, "0")}`;
+        return {
+          actionId: item.action_id,
+          contactId: externalRef,
+          contactName: item.contact_name || getContactById(externalRef)?.name || "Contact",
+          actionType: item.action_type,
+          priorityScore: Math.max(0, Math.round(item.priority_score || 0)),
+          dueAtLabel,
+          suggestedMessage: item.suggested_message || "",
+        };
+      })
+      .filter(Boolean) as Array<{
+      actionId: string;
+      contactId: string;
+      contactName: string;
+      actionType: Exclude<DailyCategory, "qualifier">;
+      priorityScore: number;
+      dueAtLabel: string;
+      suggestedMessage: string;
+    }>;
 
     setTrustLevelStore(nextTrustStore);
     setFavoriteIds(nextFavoriteIds);
@@ -904,6 +981,8 @@ export default function EntrepreneurSmartScanTestPage() {
     setPriorityScoreStore(nextPriorityScoreStore);
     setPotentialEurStore(nextPotentialStore);
     setOpenAlertContactIds(alertContactIds);
+    setDueFollowups(nextDueFollowups);
+    setConversionMetrics(payload.metrics || null);
     if (payload.session?.opportunities_activated !== undefined) {
       setSentCount(payload.session.opportunities_activated);
     }
@@ -1439,6 +1518,47 @@ export default function EntrepreneurSmartScanTestPage() {
               <div className="rounded-xl border border-white/10 bg-black/20 px-3 py-2">
                 <p className="text-[10px] uppercase tracking-[0.08em] text-white/60">Taux conversion</p>
                 <p className="text-sm font-black text-fuchsia-100">{conversionRateToday}%</p>
+              </div>
+            </div>
+            <div className="grid gap-2 sm:grid-cols-2">
+              <div className="rounded-xl border border-white/10 bg-black/20 px-3 py-2">
+                <p className="text-[10px] uppercase tracking-[0.08em] text-white/60">Delai reponse moyen (14j)</p>
+                <p className="text-sm font-black text-cyan-100">{conversionMetrics?.avg_response_delay_hours ?? 0}h</p>
+              </div>
+              <div className="rounded-xl border border-white/10 bg-black/20 px-3 py-2">
+                <p className="text-[10px] uppercase tracking-[0.08em] text-white/60">Meilleur canal conversion</p>
+                <p className="text-sm font-black text-emerald-100">
+                  {topActionMetric ? `${actionLabel(topActionMetric.action_type)} • ${topActionMetric.conversion_rate}%` : "N/A"}
+                </p>
+              </div>
+            </div>
+            <div className="rounded-2xl border border-orange-300/30 bg-orange-300/10 px-3 py-3">
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-[11px] font-black uppercase tracking-[0.1em] text-orange-100">A relancer maintenant</p>
+                <span className="rounded-full border border-orange-300/35 bg-orange-300/15 px-2 py-1 text-[10px] font-black text-orange-100">
+                  {dueFollowups.length}
+                </span>
+              </div>
+              <div className="mt-2 space-y-2">
+                {dueFollowups.length === 0 && (
+                  <p className="text-xs text-white/70">Aucune relance due pour le moment.</p>
+                )}
+                {dueFollowups.slice(0, 3).map((item) => (
+                  <button
+                    key={item.actionId}
+                    type="button"
+                    onClick={() => openContactProfileWithTrustGuard(item.contactId)}
+                    className="w-full rounded-xl border border-white/15 bg-black/25 px-3 py-2 text-left transition hover:border-orange-300/40"
+                  >
+                    <p className="text-sm font-black text-white">
+                      {item.contactName} • {actionLabel(item.actionType)}
+                    </p>
+                    <p className="text-[11px] text-white/75">
+                      Priorite {item.priorityScore}/100 • Due: {item.dueAtLabel}
+                    </p>
+                    <p className="mt-1 line-clamp-2 text-[10px] text-orange-100/90">{item.suggestedMessage}</p>
+                  </button>
+                ))}
               </div>
             </div>
 

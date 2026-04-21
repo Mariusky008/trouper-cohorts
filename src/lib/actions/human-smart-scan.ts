@@ -71,6 +71,36 @@ type SmartScanAlertRow = {
   updated_at: string;
 };
 
+type SmartScanDueFollowupItem = {
+  action_id: string;
+  contact_id: string;
+  owner_member_id: string;
+  contact_name: string;
+  action_type: SmartScanActionType;
+  followup_due_at: string;
+  priority_score: number;
+  suggested_message: string;
+};
+
+type SmartScanConversionStats = {
+  total_sent: number;
+  total_replied: number;
+  total_converted: number;
+  conversion_rate: number;
+  avg_response_delay_hours: number;
+  by_action: Array<{
+    action_type: SmartScanActionType;
+    sent: number;
+    converted: number;
+    conversion_rate: number;
+  }>;
+  top_converted_contacts: Array<{
+    contact_id: string;
+    contact_name: string;
+    conversions: number;
+  }>;
+};
+
 type ResultError = { error: string };
 type ContactScoreInputs = {
   trustLevel: SmartScanTrustLevel | null;
@@ -162,6 +192,27 @@ async function resolveContactId(params: {
 function revalidateSmartScanPaths() {
   revalidatePath("/popey-human/smart-scan");
   revalidatePath("/popey-human/entrepreneur-smart-scan-test");
+}
+
+function smartScanActionLabel(action: SmartScanActionType) {
+  if (action === "eclaireur") return "Eclaireur";
+  if (action === "package") return "Partage Croise";
+  if (action === "exclients") return "Ex-Clients";
+  return "Passer";
+}
+
+function buildFollowupSuggestion(contactName: string, actionType: SmartScanActionType) {
+  const firstName = contactName.split(" ")[0] || "toi";
+  if (actionType === "package") {
+    return `Salut ${firstName}, petit suivi de ma proposition pack Trio. Tu veux qu on cale 10 min pour l activer cette semaine ?`;
+  }
+  if (actionType === "eclaireur") {
+    return `Salut ${firstName}, je reviens vers toi sur le programme apporteur d affaires. Si tu as un premier cas, je te fais un retour rapide et clair.`;
+  }
+  if (actionType === "exclients") {
+    return `Salut ${firstName}, je fais un point rapide suite a mon dernier message. Si c est utile, je te partage une synthese concrete en 2 minutes.`;
+  }
+  return `Salut ${firstName}, je te relance rapidement suite a mon dernier message.`;
 }
 
 export async function saveTrustLevel(input: {
@@ -544,7 +595,7 @@ export async function listMySmartScanContacts(limit = 500) {
     .sort((a, b) => {
       const scoreDelta = Number((b.priority_score as number) || 0) - Number((a.priority_score as number) || 0);
       if (scoreDelta !== 0) return scoreDelta;
-      return String(b.updated_at || "").localeCompare(String(a.updated_at || ""));
+      return String(b.last_action_at || "").localeCompare(String(a.last_action_at || ""));
     });
 
   return { error: null as string | null, contacts };
@@ -623,6 +674,242 @@ export async function listOpenSmartScanAlerts(limit = 100) {
 
   if (error) return { error: error.message, alerts: [] as SmartScanAlertRow[] };
   return { error: null as string | null, alerts: (data as SmartScanAlertRow[] | null) || [] };
+}
+
+export async function listDueSmartScanFollowups(limit = 40) {
+  const currentMember = await getCurrentHumanMember();
+  if (!currentMember) {
+    return { error: "Session requise.", followups: [] as SmartScanDueFollowupItem[] };
+  }
+
+  const supabaseAdmin = createAdminClient();
+  const safeLimit = Math.max(1, Math.min(200, Math.trunc(limit)));
+  const nowIso = new Date().toISOString();
+  const { data, error } = await supabaseAdmin
+    .from("human_smart_scan_actions")
+    .select(
+      "id,owner_member_id,contact_id,action_type,followup_due_at,human_smart_scan_contacts!inner(full_name,trust_level)"
+    )
+    .eq("owner_member_id", currentMember.id)
+    .eq("send_channel", "whatsapp")
+    .eq("status", "sent")
+    .eq("outcome_status", "pending")
+    .not("followup_due_at", "is", null)
+    .lte("followup_due_at", nowIso)
+    .order("followup_due_at", { ascending: true })
+    .limit(safeLimit);
+
+  if (error) return { error: error.message, followups: [] as SmartScanDueFollowupItem[] };
+
+  const rows = (data as Array<Record<string, unknown>> | null) || [];
+  const contactIds = rows.map((row) => String(row.contact_id));
+  const qualificationMap = new Map<
+    string,
+    { heat: SmartScanHeat | null; opportunity_choice: SmartScanOpportunityChoice | null; estimated_gain: SmartScanEstimatedGain | null }
+  >();
+  if (contactIds.length > 0) {
+    const { data: qualifications } = await supabaseAdmin
+      .from("human_smart_scan_qualifications")
+      .select("contact_id,heat,opportunity_choice,estimated_gain")
+      .eq("owner_member_id", currentMember.id)
+      .in("contact_id", contactIds);
+    ((qualifications as Array<Record<string, unknown>> | null) || []).forEach((row) => {
+      qualificationMap.set(String(row.contact_id), {
+        heat: (row.heat as SmartScanHeat | null) || null,
+        opportunity_choice: (row.opportunity_choice as SmartScanOpportunityChoice | null) || null,
+        estimated_gain: (row.estimated_gain as SmartScanEstimatedGain | null) || null,
+      });
+    });
+  }
+
+  const followups: SmartScanDueFollowupItem[] = rows.map((row) => {
+    const contact = row.human_smart_scan_contacts as { full_name?: string; trust_level?: string | null } | null;
+    const qual = qualificationMap.get(String(row.contact_id));
+    const priorityScore = computePriorityScore({
+      trustLevel: toTrustLevelOutput((contact?.trust_level as string | null) || null),
+      heat: (qual?.heat as SmartScanHeat | null) || null,
+      opportunityChoice: (qual?.opportunity_choice as SmartScanOpportunityChoice | null) || null,
+      estimatedGain: (qual?.estimated_gain as SmartScanEstimatedGain | null) || null,
+      lastActionAt: String(row.followup_due_at || row.id || ""),
+    });
+    const contactName = contact?.full_name || "Contact";
+    return {
+      action_id: String(row.id),
+      contact_id: String(row.contact_id),
+      owner_member_id: String(row.owner_member_id),
+      contact_name: contactName,
+      action_type: row.action_type as SmartScanActionType,
+      followup_due_at: String(row.followup_due_at),
+      priority_score: priorityScore,
+      suggested_message: buildFollowupSuggestion(contactName, row.action_type as SmartScanActionType),
+    };
+  });
+
+  return {
+    error: null as string | null,
+    followups: followups.sort((a, b) => b.priority_score - a.priority_score),
+  };
+}
+
+export async function getSmartScanConversionStats(days = 7) {
+  const currentMember = await getCurrentHumanMember();
+  if (!currentMember) {
+    return { error: "Session requise.", stats: null as SmartScanConversionStats | null };
+  }
+
+  const safeDays = Math.max(1, Math.min(90, Math.trunc(days)));
+  const since = new Date(Date.now() - safeDays * 24 * 60 * 60 * 1000).toISOString();
+  const supabaseAdmin = createAdminClient();
+  const { data, error } = await supabaseAdmin
+    .from("human_smart_scan_actions")
+    .select("id,action_type,status,outcome_status,sent_at,updated_at,contact_id,human_smart_scan_contacts(full_name)")
+    .eq("owner_member_id", currentMember.id)
+    .eq("status", "sent")
+    .gte("created_at", since)
+    .order("created_at", { ascending: false })
+    .limit(4000);
+  if (error) return { error: error.message, stats: null as SmartScanConversionStats | null };
+
+  const rows = (data as Array<Record<string, unknown>> | null) || [];
+  const totalSent = rows.length;
+  const repliedRows = rows.filter((row) => row.outcome_status === "replied" || row.outcome_status === "converted");
+  const convertedRows = rows.filter((row) => row.outcome_status === "converted");
+  const byActionMap = new Map<
+    SmartScanActionType,
+    {
+      sent: number;
+      converted: number;
+    }
+  >();
+  const responseDelaysHours: number[] = [];
+  const convertedByContact = new Map<string, { contact_name: string; conversions: number }>();
+
+  rows.forEach((row) => {
+    const actionType = row.action_type as SmartScanActionType;
+    const metrics = byActionMap.get(actionType) || { sent: 0, converted: 0 };
+    metrics.sent += 1;
+    if (row.outcome_status === "converted") metrics.converted += 1;
+    byActionMap.set(actionType, metrics);
+
+    if (row.outcome_status === "replied" || row.outcome_status === "converted") {
+      const sentMs = row.sent_at ? Date.parse(String(row.sent_at)) : NaN;
+      const updatedMs = row.updated_at ? Date.parse(String(row.updated_at)) : NaN;
+      if (Number.isFinite(sentMs) && Number.isFinite(updatedMs) && updatedMs >= sentMs) {
+        responseDelaysHours.push((updatedMs - sentMs) / (1000 * 60 * 60));
+      }
+    }
+
+    if (row.outcome_status === "converted") {
+      const contactId = String(row.contact_id);
+      const contactObj = row.human_smart_scan_contacts as { full_name?: string } | null;
+      const existing = convertedByContact.get(contactId) || { contact_name: contactObj?.full_name || "Contact", conversions: 0 };
+      existing.conversions += 1;
+      convertedByContact.set(contactId, existing);
+    }
+  });
+
+  const byAction: SmartScanConversionStats["by_action"] = (["eclaireur", "package", "exclients", "passer"] as SmartScanActionType[])
+    .map((actionType) => {
+      const values = byActionMap.get(actionType) || { sent: 0, converted: 0 };
+      return {
+        action_type: actionType,
+        sent: values.sent,
+        converted: values.converted,
+        conversion_rate: values.sent > 0 ? Math.round((values.converted / values.sent) * 100) : 0,
+      };
+    })
+    .filter((row) => row.sent > 0);
+
+  const avgResponseDelayHours =
+    responseDelaysHours.length > 0
+      ? Number((responseDelaysHours.reduce((sum, hours) => sum + hours, 0) / responseDelaysHours.length).toFixed(1))
+      : 0;
+  const topConvertedContacts = Array.from(convertedByContact.entries())
+    .map(([contactId, values]) => ({
+      contact_id: contactId,
+      contact_name: values.contact_name,
+      conversions: values.conversions,
+    }))
+    .sort((a, b) => b.conversions - a.conversions)
+    .slice(0, 5);
+
+  return {
+    error: null as string | null,
+    stats: {
+      total_sent: totalSent,
+      total_replied: repliedRows.length,
+      total_converted: convertedRows.length,
+      conversion_rate: totalSent > 0 ? Math.round((convertedRows.length / totalSent) * 100) : 0,
+      avg_response_delay_hours: avgResponseDelayHours,
+      by_action: byAction,
+      top_converted_contacts: topConvertedContacts,
+    } as SmartScanConversionStats,
+  };
+}
+
+export async function runSmartScanFollowupSweep(limit = 600) {
+  const supabaseAdmin = createAdminClient();
+  const safeLimit = Math.max(1, Math.min(2000, Math.trunc(limit)));
+  const nowIso = new Date().toISOString();
+
+  const { data: dueActions, error } = await supabaseAdmin
+    .from("human_smart_scan_actions")
+    .select("id,owner_member_id,contact_id,action_type,followup_due_at,human_smart_scan_contacts!inner(full_name)")
+    .eq("send_channel", "whatsapp")
+    .eq("status", "sent")
+    .eq("outcome_status", "pending")
+    .not("followup_due_at", "is", null)
+    .lte("followup_due_at", nowIso)
+    .order("followup_due_at", { ascending: true })
+    .limit(safeLimit);
+  if (error) return { success: false, error: error.message, queued: 0 };
+
+  const rows = (dueActions as Array<Record<string, unknown>> | null) || [];
+  if (rows.length === 0) return { success: true, queued: 0, touchedContacts: 0 };
+
+  const upserts = rows.map((row) => {
+    const contact = row.human_smart_scan_contacts as { full_name?: string } | null;
+    const contactName = contact?.full_name || "Contact";
+    return {
+      action_id: String(row.id),
+      owner_member_id: String(row.owner_member_id),
+      contact_id: String(row.contact_id),
+      job_type: "auto_followup_48h",
+      status: "queued",
+      suggested_message: buildFollowupSuggestion(contactName, row.action_type as SmartScanActionType),
+      scheduled_for: String(row.followup_due_at),
+      metadata: {
+        reason: "pending_no_response_48h",
+        action_label: smartScanActionLabel(row.action_type as SmartScanActionType),
+      },
+      updated_at: nowIso,
+    };
+  });
+
+  const { error: upsertError } = await supabaseAdmin
+    .from("human_smart_scan_followup_jobs")
+    .upsert(upserts, { onConflict: "action_id,job_type" });
+  if (upsertError) return { success: false, error: upsertError.message, queued: 0 };
+
+  const dedupContacts = new Map<string, { ownerMemberId: string; contactId: string; contactName?: string }>();
+  rows.forEach((row) => {
+    const contact = row.human_smart_scan_contacts as { full_name?: string } | null;
+    const key = `${String(row.owner_member_id)}:${String(row.contact_id)}`;
+    dedupContacts.set(key, {
+      ownerMemberId: String(row.owner_member_id),
+      contactId: String(row.contact_id),
+      contactName: contact?.full_name || undefined,
+    });
+  });
+  for (const entry of dedupContacts.values()) {
+    await syncHighPriorityNoResponseAlertForContact(entry.ownerMemberId, entry.contactId, entry.contactName);
+  }
+
+  return {
+    success: true,
+    queued: upserts.length,
+    touchedContacts: dedupContacts.size,
+  };
 }
 
 async function syncHotIdealAlertForContact(ownerMemberId: string, contactId: string, contactName?: string) {
