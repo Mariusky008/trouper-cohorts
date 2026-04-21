@@ -382,6 +382,9 @@ export default function EntrepreneurSmartScanTestPage() {
   const [pendingReturnProfileContactId, setPendingReturnProfileContactId] = useState<string | null>(null);
   const [showHistoryPanel, setShowHistoryPanel] = useState(false);
   const [showSearchPanel, setShowSearchPanel] = useState(false);
+  const [showMyProfilePanel, setShowMyProfilePanel] = useState(false);
+  const [showTrustLevelPrompt, setShowTrustLevelPrompt] = useState(false);
+  const [trustPromptContactId, setTrustPromptContactId] = useState<string | null>(null);
   const [showContactProfile, setShowContactProfile] = useState(false);
   const [profileContactId, setProfileContactId] = useState<string | null>(null);
   const [showProfileActions, setShowProfileActions] = useState(false);
@@ -515,6 +518,10 @@ export default function EntrepreneurSmartScanTestPage() {
     ...communityTags.slice(0, 2).map((id) => quickLabelMap[id]),
   ].filter(Boolean) as string[];
   const profileQualifier = profileContact ? qualifierStore[profileContact.id] : undefined;
+  const profileTrustLevel = profileContact ? trustLevelStore[profileContact.id] : undefined;
+  const trustPromptContact = trustPromptContactId
+    ? CONTACTS.find((contact) => contact.id === trustPromptContactId) ?? null
+    : null;
   const profileActionEngine = useMemo(() => getDynamicActionEngine(profileQualifier), [profileQualifier]);
   const profileActionButtons = profileActionEngine.order.map((action) => ({
     action,
@@ -866,6 +873,19 @@ export default function EntrepreneurSmartScanTestPage() {
     setShowSearchPanel(false);
   }
 
+  function openContactProfileWithTrustGuard(contactId: string) {
+    if (trustLevelStore[contactId]) {
+      openContactProfile(contactId);
+      return;
+    }
+    setTrustPromptContactId(contactId);
+    setShowTrustLevelPrompt(true);
+  }
+
+  function trustLevelLabel(level: TrustLevel) {
+    return TRUST_LEVEL_OPTIONS.find((option) => option.id === level)?.label ?? "A definir";
+  }
+
   function startActionFromProfile(action: Exclude<DailyCategory, "passer" | "qualifier">) {
     if (!profileContact) return;
     const nextIndex = CONTACTS.findIndex((contact) => contact.id === profileContact.id);
@@ -886,6 +906,32 @@ export default function EntrepreneurSmartScanTestPage() {
     setShowContactProfile(false);
     setShowSearchPanel(false);
     setTimeout(() => triggerAction("qualifier"), 60);
+  }
+
+  function handleDockAction(tab: "search" | "scan" | "history" | "profile") {
+    if (tab === "scan") {
+      setStage("daily");
+      return;
+    }
+    if (tab === "profile") {
+      setShowMyProfilePanel(true);
+      return;
+    }
+    if (tab === "search") {
+      if (stage === "scan") {
+        setStage("daily");
+        setTimeout(() => setShowSearchPanel(true), 40);
+        return;
+      }
+      setShowSearchPanel(true);
+      return;
+    }
+    if (stage === "scan") {
+      setStage("daily");
+      setTimeout(() => setShowHistoryPanel(true), 40);
+      return;
+    }
+    setShowHistoryPanel(true);
   }
 
   if (stage === "scan") {
@@ -986,6 +1032,62 @@ export default function EntrepreneurSmartScanTestPage() {
             </button>
           </section>
         </div>
+        <nav className="fixed inset-x-0 bottom-4 z-30 flex justify-center px-4">
+          <div className="flex w-full max-w-md items-center justify-between rounded-[28px] border border-white/20 bg-[#0F1838]/75 px-2 py-2 shadow-[0_22px_48px_-28px_rgba(0,0,0,0.9)] backdrop-blur-2xl">
+            {[
+              { id: "search", icon: "🔍", label: "Recherche" },
+              { id: "scan", icon: "⚡", label: "Scan" },
+              { id: "history", icon: "🕘", label: "Historique" },
+              { id: "profile", icon: "👤", label: "Profil" },
+            ].map((item) => {
+              const isActive = item.id === "scan";
+              return (
+                <button
+                  key={`scan-dock-${item.id}`}
+                  type="button"
+                  onClick={() => handleDockAction(item.id as "search" | "scan" | "history" | "profile")}
+                  className={`flex h-14 min-w-[72px] flex-col items-center justify-center rounded-2xl px-2 transition ${
+                    isActive ? "bg-cyan-300/25 text-cyan-100" : "text-white/80 hover:bg-white/10"
+                  }`}
+                >
+                  <span className="text-sm">{item.icon}</span>
+                  <span className="mt-0.5 text-[10px] font-black uppercase tracking-[0.1em]">{item.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </nav>
+        {showMyProfilePanel && (
+          <div className="fixed inset-0 z-[55] flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm">
+            <section className="w-full max-w-sm rounded-3xl border border-white/20 bg-[#0E1430]/95 p-4">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-black uppercase tracking-[0.12em] text-cyan-200">Profil</p>
+                <button
+                  type="button"
+                  onClick={() => setShowMyProfilePanel(false)}
+                  className="h-8 w-8 rounded-full border border-white/20 bg-white/10 text-xs"
+                >
+                  ✕
+                </button>
+              </div>
+              <div className="mt-3 space-y-2 rounded-2xl border border-white/10 bg-black/25 p-3 text-sm">
+                <p><span className="text-white/60">Nom:</span> Jean-Philippe</p>
+                <p><span className="text-white/60">Prenom:</span> Jean-Philippe</p>
+                <p><span className="text-white/60">Metier:</span> Entrepreneur</p>
+                <p><span className="text-white/60">Ville:</span> Dax</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  if (typeof window !== "undefined") window.location.href = "/popey-human/login";
+                }}
+                className="mt-3 h-11 w-full rounded-xl bg-gradient-to-r from-rose-300 to-orange-300 text-xs font-black uppercase tracking-wide text-[#3A140E]"
+              >
+                Deconnexion
+              </button>
+            </section>
+          </div>
+        )}
       </main>
     );
   }
@@ -1210,6 +1312,37 @@ export default function EntrepreneurSmartScanTestPage() {
         </div>
       </div>
 
+      <nav className="fixed inset-x-0 bottom-4 z-30 flex justify-center px-4">
+        <div className="flex w-full max-w-md items-center justify-between rounded-[28px] border border-white/20 bg-[#0F1838]/75 px-2 py-2 shadow-[0_22px_48px_-28px_rgba(0,0,0,0.9)] backdrop-blur-2xl">
+          {[
+            { id: "search", icon: "🔍", label: "Recherche" },
+            { id: "scan", icon: "⚡", label: "Scan" },
+            { id: "history", icon: "🕘", label: "Historique" },
+            { id: "profile", icon: "👤", label: "Profil" },
+          ].map((item) => {
+            const isActive =
+              (item.id === "search" && showSearchPanel) ||
+              (item.id === "history" && showHistoryPanel) ||
+              (item.id === "profile" && showMyProfilePanel) ||
+              (item.id === "scan" && !showSearchPanel && !showHistoryPanel && !showMyProfilePanel);
+
+            return (
+              <button
+                key={`daily-dock-${item.id}`}
+                type="button"
+                onClick={() => handleDockAction(item.id as "search" | "scan" | "history" | "profile")}
+                className={`flex h-14 min-w-[72px] flex-col items-center justify-center rounded-2xl px-2 transition ${
+                  isActive ? "bg-cyan-300/25 text-cyan-100" : "text-white/80 hover:bg-white/10"
+                }`}
+              >
+                <span className="text-sm">{item.icon}</span>
+                <span className="mt-0.5 text-[10px] font-black uppercase tracking-[0.1em]">{item.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      </nav>
+
       {showHistoryPanel && (
         <div className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm flex items-start justify-center px-4 pt-16">
           <section className="w-full max-w-lg rounded-3xl border border-white/15 bg-[#0E1430] p-4">
@@ -1242,6 +1375,38 @@ export default function EntrepreneurSmartScanTestPage() {
         </div>
       )}
 
+      {showMyProfilePanel && (
+        <div className="fixed inset-0 z-[50] flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm">
+          <section className="w-full max-w-sm rounded-3xl border border-white/20 bg-[#0E1430]/95 p-4">
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-black uppercase tracking-[0.12em] text-cyan-200">Profil</p>
+              <button
+                type="button"
+                onClick={() => setShowMyProfilePanel(false)}
+                className="h-8 w-8 rounded-full border border-white/20 bg-white/10 text-xs"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="mt-3 space-y-2 rounded-2xl border border-white/10 bg-black/25 p-3 text-sm">
+              <p><span className="text-white/60">Nom:</span> Jean-Philippe</p>
+              <p><span className="text-white/60">Prenom:</span> Jean-Philippe</p>
+              <p><span className="text-white/60">Metier:</span> Entrepreneur</p>
+              <p><span className="text-white/60">Ville:</span> Dax</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                if (typeof window !== "undefined") window.location.href = "/popey-human/login";
+              }}
+              className="mt-3 h-11 w-full rounded-xl bg-gradient-to-r from-rose-300 to-orange-300 text-xs font-black uppercase tracking-wide text-[#3A140E]"
+            >
+              Deconnexion
+            </button>
+          </section>
+        </div>
+      )}
+
       {showSearchPanel && (
         <div className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm flex items-start justify-center px-4 pt-16">
           <section className="w-full max-w-lg rounded-3xl border border-white/15 bg-[#0E1430] p-4">
@@ -1268,12 +1433,17 @@ export default function EntrepreneurSmartScanTestPage() {
                     <button
                       type="button"
                       onClick={() => {
-                        openContactProfile(contact.id);
+                        openContactProfileWithTrustGuard(contact.id);
                       }}
-                      className="text-left"
+                      className="text-left flex-1 min-w-0"
                     >
                       <p className="text-sm font-black">{contact.name}</p>
                       <p className="text-xs text-white/70">{contact.city}</p>
+                      <p className="mt-1 text-[10px] text-cyan-100/90">
+                        {trustLevelStore[contact.id]
+                          ? `Confiance: ${trustLevelLabel(trustLevelStore[contact.id])}`
+                          : "Confiance non definie"}
+                      </p>
                     </button>
                     <button
                       type="button"
@@ -1283,44 +1453,54 @@ export default function EntrepreneurSmartScanTestPage() {
                       ★
                     </button>
                   </div>
-                  <div className="mt-2 rounded-xl border border-white/10 bg-white/[0.03] px-2 py-2">
-                    <p className="text-[10px] font-black uppercase tracking-[0.12em] text-white/70">Niveau de confiance</p>
-                    <div className="mt-2 grid gap-1.5">
-                      {TRUST_LEVEL_OPTIONS.map((option) => {
-                        const active = trustLevelStore[contact.id] === option.id;
-                        return (
-                          <button
-                            key={`${contact.id}-${option.id}`}
-                            type="button"
-                            onClick={() =>
-                              setTrustLevelStore((prev) => ({
-                                ...prev,
-                                [contact.id]: option.id,
-                              }))
-                            }
-                            className={`rounded-lg border px-2 py-2 text-left transition ${
-                              active
-                                ? "border-emerald-300/55 bg-emerald-300/20 text-emerald-100 ring-1 ring-emerald-200/65"
-                                : "border-white/15 bg-white/[0.04] text-white/85"
-                            }`}
-                          >
-                            <p className="text-[11px] font-black">
-                              {active ? "✅ " : ""}{option.label}
-                            </p>
-                            <p className="text-[10px] text-white/70">{option.helper}</p>
-                          </button>
-                        );
-                      })}
-                    </div>
-                    <p className="mt-2 text-[10px] font-semibold text-emerald-100/90">
-                      {trustLevelStore[contact.id]
-                        ? `Enregistre: ${
-                            TRUST_LEVEL_OPTIONS.find((option) => option.id === trustLevelStore[contact.id])?.valueHint ?? ""
-                          }`
-                        : "A definir pour guider ton trio."}
-                    </p>
-                  </div>
                 </div>
+              ))}
+            </div>
+          </section>
+        </div>
+      )}
+
+      {showTrustLevelPrompt && trustPromptContact && (
+        <div className="fixed inset-0 z-[46] flex items-center justify-center bg-black/65 px-4 backdrop-blur-sm">
+          <section className="w-full max-w-md rounded-3xl border border-white/20 bg-[#0E1430]/95 p-4">
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-black uppercase tracking-[0.12em] text-cyan-200">Niveau de confiance requis</p>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowTrustLevelPrompt(false);
+                  setTrustPromptContactId(null);
+                }}
+                className="h-8 w-8 rounded-full border border-white/20 bg-white/10 text-xs"
+              >
+                ✕
+              </button>
+            </div>
+            <p className="mt-2 text-sm text-white/85">
+              Pour ouvrir la fiche de <span className="font-black">{trustPromptContact.name}</span>, choisis d abord son niveau de confiance.
+            </p>
+
+            <div className="mt-3 space-y-2">
+              {TRUST_LEVEL_OPTIONS.map((option) => (
+                <button
+                  key={`prompt-${option.id}`}
+                  type="button"
+                  onClick={() => {
+                    const contactId = trustPromptContact.id;
+                    setTrustLevelStore((prev) => ({
+                      ...prev,
+                      [contactId]: option.id,
+                    }));
+                    setShowTrustLevelPrompt(false);
+                    setTrustPromptContactId(null);
+                    setTimeout(() => openContactProfile(contactId), 20);
+                  }}
+                  className="w-full rounded-xl border border-white/15 bg-white/[0.04] px-3 py-3 text-left transition hover:border-emerald-300/45 hover:bg-emerald-300/10"
+                >
+                  <p className="text-sm font-black text-white">{option.label}</p>
+                  <p className="text-xs text-white/70">{option.helper}</p>
+                  <p className="mt-1 text-[10px] font-semibold text-emerald-100/90">{option.valueHint}</p>
+                </button>
               ))}
             </div>
           </section>
@@ -1391,6 +1571,9 @@ export default function EntrepreneurSmartScanTestPage() {
                 <button type="button" onClick={editProfileQualification} className="text-xs underline underline-offset-2 text-cyan-100">Editer</button>
               </div>
               <p className="mt-2 text-sm font-black">Temperature actuelle: {profileHeat === "brulant" ? "🔥 Brulant" : profileHeat === "froid" ? "🧊 Froid" : "⚡ Tiede"}</p>
+              <p className="mt-1 text-sm font-black">
+                Niveau de confiance: {profileTrustLevel ? trustLevelLabel(profileTrustLevel) : "A definir"}
+              </p>
               <p className="mt-2 text-xs font-black uppercase tracking-[0.12em] text-white/70">Mes Qualifications</p>
               <div className="mt-1 flex flex-wrap gap-1.5">
                 {(profileQualifier
