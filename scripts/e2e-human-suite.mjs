@@ -6,6 +6,7 @@ const jsonMode = args.has("--json");
 const checks = [
   { name: "human-access", command: "npm", args: ["run", "e2e:human-access"] },
   { name: "human-radar", command: "npm", args: ["run", "e2e:human-radar"] },
+  { name: "human-smart-scan", command: "npm", args: ["run", "e2e:human-smart-scan"] },
 ];
 
 function runCheck(check) {

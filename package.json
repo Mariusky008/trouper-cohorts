@@ -10,6 +10,7 @@
     "lint": "eslint",
     "e2e:human-access": "node scripts/e2e-human-access.mjs",
     "e2e:human-radar": "node scripts/e2e-human-radar.mjs",
+    "e2e:human-smart-scan": "node scripts/e2e-human-smart-scan.mjs",
     "e2e:human-suite": "node scripts/e2e-human-suite.mjs",
     "e2e:human-ci": "node scripts/e2e-human-suite.mjs --json"
   },
