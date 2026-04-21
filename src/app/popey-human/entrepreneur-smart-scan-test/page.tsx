@@ -694,8 +694,28 @@ export default function EntrepreneurSmartScanTestPage() {
   }, [qualifierStore, historyEntries, openAlertContactIds]);
   const profileHeat = profileQualifier?.heat ?? "tiede";
   const profileHistory = profileContact ? historyEntries.filter((entry) => entry.contactId === profileContact.id) : [];
-  const profileDaysSinceLastSent = profileContact ? 30 + Number(profileContact.id.replace("d", "")) * 17 : 0;
+  const profileLatestSentAtMs = profileHistory.find((entry) => entry.sent)?.atMs ?? null;
+  const profileDaysSinceLastSent = profileLatestSentAtMs
+    ? Math.max(0, Math.floor((Date.now() - profileLatestSentAtMs) / (24 * 60 * 60 * 1000)))
+    : 999;
   const profileVitality = Math.max(0, Math.min(100, 100 - Math.round((profileDaysSinceLastSent / 220) * 100)));
+  const profilePendingDueCount = profileHistory.filter(
+    (entry) => entry.followupDueAtMs && entry.followupDueAtMs <= Date.now() && entry.outcomeStatus === "pending",
+  ).length;
+  const profileConvertedCount = profileHistory.filter((entry) => entry.outcomeStatus === "converted").length;
+  const profileUrgencyLabel =
+    profilePendingDueCount > 0 || profileDaysSinceLastSent > 90
+      ? "Critique"
+      : profileDaysSinceLastSent > 45
+        ? "A surveiller"
+        : "Stable";
+  const profileUrgencyClass =
+    profileUrgencyLabel === "Critique"
+      ? "border-rose-300/40 bg-rose-300/15 text-rose-100"
+      : profileUrgencyLabel === "A surveiller"
+        ? "border-amber-300/40 bg-amber-300/15 text-amber-100"
+        : "border-emerald-300/40 bg-emerald-300/15 text-emerald-100";
+  const profileRecommendedAction = profileActionEngine.priorityAction || "eclaireur";
   const profileVigilanceAlert =
     profileQualifier &&
     (profileQualifier.heat === "brulant" || profileQualifier.opportunityChoice === "ideal-client" || profileQualifier.opportunityChoice === "opens-doors") &&
@@ -2848,6 +2868,28 @@ export default function EntrepreneurSmartScanTestPage() {
                   ))}
                 </div>
               )}
+            </div>
+
+            <div className="mt-3 rounded-2xl border border-white/15 bg-black/25 p-3">
+              <p className="text-[11px] font-black uppercase tracking-[0.12em] text-white/70">Synthese decision</p>
+              <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                <div className={`rounded-xl border px-2 py-1.5 ${profileUrgencyClass}`}>
+                  <p className="text-[9px] uppercase tracking-[0.08em] opacity-80">Urgence</p>
+                  <p className="text-xs font-black">{profileUrgencyLabel}</p>
+                </div>
+                <div className="rounded-xl border border-cyan-300/35 bg-cyan-300/12 px-2 py-1.5 text-cyan-100">
+                  <p className="text-[9px] uppercase tracking-[0.08em] opacity-80">Action reco</p>
+                  <p className="text-xs font-black">{actionLabel(profileRecommendedAction)}</p>
+                </div>
+                <div className="rounded-xl border border-orange-300/35 bg-orange-300/12 px-2 py-1.5 text-orange-100">
+                  <p className="text-[9px] uppercase tracking-[0.08em] opacity-80">Relances dues</p>
+                  <p className="text-xs font-black">{profilePendingDueCount}</p>
+                </div>
+                <div className="rounded-xl border border-emerald-300/35 bg-emerald-300/12 px-2 py-1.5 text-emerald-100">
+                  <p className="text-[9px] uppercase tracking-[0.08em] opacity-80">Converts</p>
+                  <p className="text-xs font-black">{profileConvertedCount}</p>
+                </div>
+              </div>
             </div>
 
             <div className="mt-3 rounded-2xl border border-white/15 bg-black/25 p-3">
