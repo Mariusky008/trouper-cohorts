@@ -20,12 +20,14 @@ type QualifierData = {
   opportunityChoice: (typeof OPPORTUNITY_OPTIONS)[number]["id"] | null;
   communityTags: Array<(typeof COMMUNITY_OPTIONS)[number]["id"]>;
   estimatedGain: "Faible" | "Moyen" | "Eleve";
+  qualifiedAtMs: number;
 };
 type HistoryEntry = {
   contactId: string;
   name: string;
   action: Exclude<DailyCategory, "qualifier">;
   at: string;
+  atMs: number;
   tagsSummary: string;
   sent: boolean;
 };
@@ -152,16 +154,175 @@ const COMMUNITY_OPTIONS = [
   { id: "unknown", label: "❓ Inconnu / a decouvrir", score: 0 },
 ] as const;
 type HeatLevel = "froid" | "tiede" | "brulant";
+type ActivationAction = Exclude<DailyCategory, "passer" | "qualifier">;
+type OpportunityId = (typeof OPPORTUNITY_OPTIONS)[number]["id"];
+type CommunityId = (typeof COMMUNITY_OPTIONS)[number]["id"];
+type TrustLevel = "family" | "pro-close" | "acquaintance";
 
-function buildTemplate(action: DailyCategory, contact: DailyContact) {
+const REMINDER_WINDOW_MS = 24 * 60 * 60 * 1000;
+
+const ACTION_BASE_ORDER: ActivationAction[] = ["eclaireur", "package", "exclients"];
+const ACTION_BASE_COPY: Record<ActivationAction, { title: string; subtitle: string }> = {
+  eclaireur: { title: "✨ Eclaireur", subtitle: "Apport d affaire & Commission" },
+  package: { title: "🧩 Partage Croise", subtitle: "Proposition de service" },
+  exclients: { title: "📣 Ex-Clients (News)", subtitle: "Veille et relance" },
+};
+
+const ACTION_BUTTON_THEMES: Record<
+  ActivationAction,
+  {
+    buttonClass: string;
+    idlePulseClass: string;
+    launchRingClass: string;
+    titleClass: string;
+    subtitleClass: string;
+    burstGradient: string;
+  }
+> = {
+  eclaireur: {
+    buttonClass:
+      "border-amber-300/45 bg-gradient-to-r from-amber-400/45 to-orange-400/35 text-amber-50 shadow-[0_18px_34px_-18px_rgba(251,191,36,0.95)]",
+    idlePulseClass: "animate-pulse ring-2 ring-amber-300/40",
+    launchRingClass: "scale-[1.03] ring-4 ring-amber-200/65",
+    titleClass: "text-amber-50",
+    subtitleClass: "text-amber-100/90",
+    burstGradient:
+      "bg-[radial-gradient(circle,rgba(255,255,255,0.98)_0%,rgba(254,240,138,0.92)_22%,rgba(251,146,60,0.55)_42%,rgba(251,191,36,0.15)_66%,transparent_78%)]",
+  },
+  package: {
+    buttonClass: "border-fuchsia-300/35 bg-gradient-to-r from-violet-500/30 to-fuchsia-500/25 text-fuchsia-100",
+    idlePulseClass: "animate-pulse ring-2 ring-fuchsia-300/35",
+    launchRingClass: "scale-[1.03] ring-4 ring-fuchsia-200/65",
+    titleClass: "text-fuchsia-100",
+    subtitleClass: "text-fuchsia-100/90",
+    burstGradient:
+      "bg-[radial-gradient(circle,rgba(255,255,255,0.98)_0%,rgba(196,181,253,0.92)_22%,rgba(217,70,239,0.55)_42%,rgba(168,85,247,0.15)_66%,transparent_78%)]",
+  },
+  exclients: {
+    buttonClass: "border-cyan-300/30 bg-cyan-500/12 text-cyan-100",
+    idlePulseClass: "animate-pulse ring-2 ring-cyan-300/35",
+    launchRingClass: "scale-[1.03] ring-4 ring-cyan-200/65",
+    titleClass: "text-cyan-100",
+    subtitleClass: "text-cyan-100/90",
+    burstGradient:
+      "bg-[radial-gradient(circle,rgba(255,255,255,0.98)_0%,rgba(103,232,249,0.92)_22%,rgba(34,211,238,0.55)_42%,rgba(56,189,248,0.15)_66%,transparent_78%)]",
+  },
+};
+
+const OPPORTUNITY_UI_RULES: Partial<
+  Record<
+    OpportunityId,
+    {
+      priorityAction: ActivationAction;
+      title: string;
+      subtitle: string;
+      cue: string;
+    }
+  >
+> = {
+  "ideal-client": {
+    priorityAction: "package",
+    title: "💜 Proposer au Trio immediatement",
+    subtitle: "Client ideal detecte",
+    cue: "Priorite violette",
+  },
+  "can-refer": {
+    priorityAction: "eclaireur",
+    title: "🥇 Activer mon Eclaireur",
+    subtitle: "Levier de recommandation direct",
+    cue: "Priorite doree",
+  },
+  "identified-need": {
+    priorityAction: "exclients",
+    title: "🔵 Prendre des nouvelles (Veille)",
+    subtitle: "Besoin a qualifier rapidement",
+    cue: "Priorite bleue",
+  },
+  "opens-doors": {
+    priorityAction: "package",
+    title: "🟣 Demander une mise en relation",
+    subtitle: "Acces reseau a declencher",
+    cue: "Priorite violette",
+  },
+};
+
+const QUALIF_PROMPT_VARIABLES: Partial<Record<CommunityId, string>> = {
+  "serious-work": "ton professionnalisme",
+  "fast-reply": "ta reactivite",
+  "reliable-partner": "le fait qu on puisse toujours compter sur toi",
+};
+
+const TRUST_LEVEL_OPTIONS: Array<{
+  id: TrustLevel;
+  label: string;
+  helper: string;
+  valueHint: string;
+}> = [
+  {
+    id: "family",
+    label: "Ami/Famille",
+    helper: "Je peux l appeler a 21h",
+    valueHint: "Valeur x10 en partage croise",
+  },
+  {
+    id: "pro-close",
+    label: "Pro Proche",
+    helper: "On a deja bosse ensemble",
+    valueHint: "Valeur elevee et relation solide",
+  },
+  {
+    id: "acquaintance",
+    label: "Connaissance",
+    helper: "On s est croises une fois",
+    valueHint: "Valeur initiale plus faible",
+  },
+];
+
+function getDynamicActionEngine(qualifier?: QualifierData) {
+  const byAction: Record<ActivationAction, { title: string; subtitle: string }> = { ...ACTION_BASE_COPY };
+  const rule = qualifier?.opportunityChoice ? OPPORTUNITY_UI_RULES[qualifier.opportunityChoice] : undefined;
+  const priorityAction = rule?.priorityAction;
+  if (rule) {
+    byAction[rule.priorityAction] = {
+      title: rule.title,
+      subtitle: rule.subtitle,
+    };
+  }
+  const order = priorityAction
+    ? [priorityAction, ...ACTION_BASE_ORDER.filter((action) => action !== priorityAction)]
+    : ACTION_BASE_ORDER;
+
+  return {
+    order,
+    byAction,
+    priorityAction,
+    cue: rule?.cue ?? null,
+  };
+}
+
+function buildPromptCompliments(qualifier?: QualifierData) {
+  if (!qualifier) return [];
+  return qualifier.communityTags
+    .map((tag) => QUALIF_PROMPT_VARIABLES[tag])
+    .filter(Boolean) as string[];
+}
+
+function buildTemplate(action: DailyCategory, contact: DailyContact, qualifier?: QualifierData) {
+  const firstName = contact.name.split(" ")[0];
+  const compliments = buildPromptCompliments(qualifier);
+  const complimentsLine =
+    compliments.length > 0
+      ? `J apprecie vraiment ${compliments.join(" et ")}. `
+      : "J aime notre facon de travailler ensemble. ";
+
   if (action === "eclaireur") {
-    return `Salut ${contact.name.split(" ")[0]}, je monte une mini-agence avec un courtier et un notaire de confiance. On cherche des eclaireurs pour nous remonter des opportunites terrain. En echange, on partage nos commissions : ca peut vite representer plusieurs centaines ou milliers d'euros pour une simple info. Ca te parle ?`;
+    return `Salut ${firstName}, ${complimentsLine}Je lance un programme d apporteurs d affaires et je veux que tu en sois le premier beneficiaire. Si tu repere une opportunite, je m occupe du reste et on partage la commission. Tu veux qu on le teste sur un premier cas ?`;
   }
   if (action === "package") {
-    return `${contact.name.split(" ")[0]}, j'ai une info pour toi : le marche du credit bouge enfin. Je travaille en synergie avec un expert qui vient de faire gagner plusieurs milliers d'euros sur le cout total du credit d'un de nos clients communs. Je pense qu'il y a un coup a jouer pour toi. Je vous presente ?`;
+    return `Salut ${firstName}, ${complimentsLine}J ai une opportunite pour notre Trio (immo + courtage + partenaire terrain). Je peux te mettre en relation immediate pour ouvrir le dossier dans de bonnes conditions. Tu veux que je lance la mise en relation maintenant ?`;
   }
   if (action === "exclients") {
-    return `Hello ${contact.name.split(" ")[0]}, petite update immo : ton quartier est devenu super demande ces dernieres semaines. On a des chiffres frais sur les dernieres ventes. Si tu veux voir l'impact sur la valeur de ta maison/appart, dis-le moi, je te fais un point rapide.`;
+    return `Hello ${firstName}, ${complimentsLine}Je prends des nouvelles car j ai vu des mouvements qui peuvent te concerner. Si tu veux, je te fais un point rapide et utile pour voir s il y a une opportunite a activer ensemble.`;
   }
   if (action === "qualifier") {
     return "Pas d envoi. Qualification communautaire uniquement.";
@@ -227,6 +388,7 @@ export default function EntrepreneurSmartScanTestPage() {
   const [actionFromProfileContactId, setActionFromProfileContactId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
+  const [trustLevelStore, setTrustLevelStore] = useState<Record<string, TrustLevel>>({});
   const [historyEntries, setHistoryEntries] = useState<HistoryEntry[]>([]);
   const [qualifierStore, setQualifierStore] = useState<Record<string, QualifierData>>({});
 
@@ -289,8 +451,15 @@ export default function EntrepreneurSmartScanTestPage() {
         : "from-amber-300 via-orange-300 to-fuchsia-300";
   const dominantTheme = current.dominantTags[0]?.replace(/[^\p{L}\s]/gu, "").trim() || "son reseau";
   const fusedInsight = `${current.name.split(" ")[0]} montre un interet fort pour ${dominantTheme.toLowerCase()} cette semaine, ${current.capsule.toLowerCase()}.`;
-  const isQualified = Boolean(qualifierStore[current.id]);
-  const currentEstimatedGain = qualifierStore[current.id]?.estimatedGain ?? null;
+  const currentQualifier = qualifierStore[current.id];
+  const isQualified = Boolean(currentQualifier);
+  const currentEstimatedGain = currentQualifier?.estimatedGain ?? null;
+  const actionEngine = useMemo(() => getDynamicActionEngine(currentQualifier), [currentQualifier]);
+  const actionButtons = actionEngine.order.map((action) => ({
+    action,
+    ...actionEngine.byAction[action],
+    isPriority: actionEngine.priorityAction === action,
+  }));
   const quickLabelMap = useMemo(
     () =>
       Object.fromEntries(
@@ -327,9 +496,13 @@ export default function EntrepreneurSmartScanTestPage() {
   }, [current, qualifierStore, quickLabelMap]);
   const searchResults = CONTACTS.filter((contact) => `${contact.name} ${contact.city} ${contact.companyHint}`.toLowerCase().includes(searchQuery.toLowerCase().trim()));
   const template = useMemo(
-    () => (selectedAction ? buildTemplate(selectedAction, current) : "Choisis une action pour voir le template pre-rempli."),
-    [selectedAction, current],
+    () =>
+      selectedAction
+        ? buildTemplate(selectedAction, current, currentQualifier)
+        : "Choisis une action pour voir le template pre-rempli.",
+    [selectedAction, current, currentQualifier],
   );
+  const promptContextPreview = buildPromptCompliments(currentQualifier);
   const qualifierChanged =
     qualifierHeat !== null ||
     opportunityChoice !== null ||
@@ -342,6 +515,28 @@ export default function EntrepreneurSmartScanTestPage() {
     ...communityTags.slice(0, 2).map((id) => quickLabelMap[id]),
   ].filter(Boolean) as string[];
   const profileQualifier = profileContact ? qualifierStore[profileContact.id] : undefined;
+  const profileActionEngine = useMemo(() => getDynamicActionEngine(profileQualifier), [profileQualifier]);
+  const profileActionButtons = profileActionEngine.order.map((action) => ({
+    action,
+    ...profileActionEngine.byAction[action],
+    isPriority: profileActionEngine.priorityAction === action,
+  }));
+  const staleIdealHotLead = useMemo(() => {
+    const nowMs = Date.now();
+    for (const [contactId, qualifier] of Object.entries(qualifierStore)) {
+      if (!qualifier) continue;
+      if (qualifier.heat !== "brulant" || qualifier.opportunityChoice !== "ideal-client") continue;
+      if (nowMs - qualifier.qualifiedAtMs < REMINDER_WINDOW_MS) continue;
+      const hasPackageInTime = historyEntries.some(
+        (entry) => entry.contactId === contactId && entry.action === "package" && entry.atMs >= qualifier.qualifiedAtMs,
+      );
+      if (hasPackageInTime) continue;
+      const contact = CONTACTS.find((item) => item.id === contactId);
+      if (!contact) continue;
+      return { ...contact, qualifier };
+    }
+    return null;
+  }, [qualifierStore, historyEntries]);
   const profileHeat = profileQualifier?.heat ?? "tiede";
   const profileHistory = profileContact ? historyEntries.filter((entry) => entry.contactId === profileContact.id) : [];
   const profileLastSent = profileHistory.find((entry) => entry.sent) ?? null;
@@ -509,6 +704,7 @@ export default function EntrepreneurSmartScanTestPage() {
     setTimeout(() => setSuccessPulse(false), 450);
     setTimeout(() => {
       const now = new Date();
+      const nowMs = Date.now();
       const currentQualifier = qualifierStore[current.id];
       const summaryOpportunity = currentQualifier?.opportunityChoice ? quickLabelMap[currentQualifier.opportunityChoice] : "";
       const summaryCommunity = (currentQualifier?.communityTags ?? []).map((id) => quickLabelMap[id]).slice(0, 1);
@@ -518,6 +714,7 @@ export default function EntrepreneurSmartScanTestPage() {
           name: current.name,
           action,
           at: `${now.getHours().toString().padStart(2, "0")}:${now.getMinutes().toString().padStart(2, "0")}`,
+          atMs: nowMs,
           tagsSummary: [summaryOpportunity, ...summaryCommunity]
             .filter(Boolean)
             .join(" • "),
@@ -546,14 +743,14 @@ export default function EntrepreneurSmartScanTestPage() {
       setLaunchingAction(action);
       setTimeout(() => {
         setLaunchingAction(null);
-        const nextDraft = buildTemplate(action, current);
+        const nextDraft = buildTemplate(action, current, currentQualifier);
         setSelectedAction(action);
         setDraftMessage(nextDraft);
         setShowTemplateModal(true);
       }, 1200);
       return;
     }
-    const nextDraft = buildTemplate(action, current);
+    const nextDraft = buildTemplate(action, current, currentQualifier);
     setSelectedAction(action);
     if (action === "qualifier") {
       setQualifierHeat(null);
@@ -613,6 +810,7 @@ export default function EntrepreneurSmartScanTestPage() {
         opportunityChoice,
         communityTags,
         estimatedGain,
+        qualifiedAtMs: Date.now(),
       },
     }));
     setShowTemplateModal(false);
@@ -629,6 +827,7 @@ export default function EntrepreneurSmartScanTestPage() {
         opportunityChoice: null,
         communityTags: [],
         estimatedGain: "Faible",
+        qualifiedAtMs: Date.now(),
       },
     }));
     setShowTemplateModal(false);
@@ -674,7 +873,7 @@ export default function EntrepreneurSmartScanTestPage() {
     setActionFromProfileContactId(profileContact.id);
     setShowContactProfile(false);
     setShowSearchPanel(false);
-    const nextDraft = buildTemplate(action, profileContact);
+    const nextDraft = buildTemplate(action, profileContact, profileQualifier);
     setSelectedAction(action);
     setDraftMessage(nextDraft);
     setShowTemplateModal(true);
@@ -849,6 +1048,26 @@ export default function EntrepreneurSmartScanTestPage() {
               <p className="text-xs font-black uppercase tracking-[0.12em] text-cyan-200">Daily Card</p>
               <span className="rounded-full border border-white/15 bg-black/25 px-2 py-1 text-[10px] font-black uppercase tracking-wide text-white/80">🔒 Anonymat communautaire garanti</span>
             </div>
+            {staleIdealHotLead && (
+              <div className="mt-3 rounded-2xl border border-orange-300/35 bg-orange-300/15 px-3 py-3">
+                <p className="text-[10px] font-black uppercase tracking-[0.12em] text-orange-100">COO Alert • 24h</p>
+                <p className="mt-1 text-sm text-white/90">
+                  Attention, {staleIdealHotLead.name} est un client ideal brulant sans Partage Croise sous 24h.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const nextIndex = CONTACTS.findIndex((contact) => contact.id === staleIdealHotLead.id);
+                    if (nextIndex >= 0) setIndex(nextIndex);
+                    setActionGlowContactId(staleIdealHotLead.id);
+                    setTimeout(() => setActionGlowContactId((id) => (id === staleIdealHotLead.id ? null : id)), 2200);
+                  }}
+                  className="mt-2 h-9 rounded-xl bg-gradient-to-r from-violet-300 to-fuchsia-300 px-3 text-[11px] font-black uppercase tracking-wide text-[#271234]"
+                >
+                  Activer maintenant
+                </button>
+              </div>
+            )}
 
             <motion.article
               key={current.id}
@@ -884,114 +1103,62 @@ export default function EntrepreneurSmartScanTestPage() {
 
               <div className="mt-5 text-center">
                 <p className="text-xl sm:text-2xl font-black">Choisis comment activer {current.name.split(" ")[0]} :</p>
+                {actionEngine.cue && (
+                  <p className="mt-1 text-[11px] font-black uppercase tracking-[0.12em] text-cyan-100">
+                    UI dynamique: {actionEngine.cue}
+                  </p>
+                )}
               </div>
 
               <div className="mt-4 grid gap-3">
-                <button
-                  type="button"
-                  onClick={() => triggerAction("eclaireur")}
-                  disabled={!isQualified}
-                  className={`relative overflow-hidden h-20 rounded-2xl border border-amber-300/45 bg-gradient-to-r from-amber-400/45 to-orange-400/35 text-amber-50 shadow-[0_18px_34px_-18px_rgba(251,191,36,0.95)] ${
-                    isQualified && actionGlowContactId === current.id ? "animate-pulse ring-2 ring-amber-300/40" : ""
-                  } ${launchingAction === "eclaireur" ? "scale-[1.03] ring-4 ring-amber-200/65" : ""}`}
-                >
-                  {launchingAction === "eclaireur" && (
-                    <>
-                      <motion.span
-                        initial={{ opacity: 1, scale: 0.25 }}
-                        animate={{ opacity: 0, scale: 4.8 }}
-                        transition={{ duration: 1.05, ease: "easeOut" }}
-                        className="pointer-events-none absolute inset-[-18%] rounded-xl bg-[radial-gradient(circle,rgba(255,255,255,0.98)_0%,rgba(254,240,138,0.92)_22%,rgba(251,146,60,0.55)_42%,rgba(251,191,36,0.15)_66%,transparent_78%)]"
-                      />
-                      <motion.span
-                        initial={{ opacity: 0, scale: 0.35 }}
-                        animate={{ opacity: [0, 1, 0], scale: [0.35, 1.45, 2.1] }}
-                        transition={{ duration: 1.1 }}
-                        className="pointer-events-none absolute inset-0 flex items-center justify-center text-2xl"
-                      >
-                        ✨💥
-                      </motion.span>
-                      <motion.span
-                        initial={{ x: -220, opacity: 0 }}
-                        animate={{ x: 280, opacity: [0, 1, 0] }}
-                        transition={{ duration: 0.9, ease: "easeInOut" }}
-                        className="pointer-events-none absolute top-0 h-full w-20 bg-gradient-to-r from-transparent via-white/80 to-transparent blur-sm"
-                      />
-                    </>
-                  )}
-                  <span className="block text-base font-black uppercase tracking-wide">✨ Eclaireur</span>
-                  <span className="mt-0.5 block text-[11px] font-semibold text-amber-100/90">Apport d affaire & Commission</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => triggerAction("package")}
-                  disabled={!isQualified}
-                  className={`relative overflow-hidden h-20 rounded-2xl border border-fuchsia-300/35 bg-gradient-to-r from-violet-500/30 to-fuchsia-500/25 text-fuchsia-100 ${
-                    isQualified && actionGlowContactId === current.id ? "animate-pulse ring-2 ring-fuchsia-300/35" : ""
-                  } ${launchingAction === "package" ? "scale-[1.03] ring-4 ring-fuchsia-200/65" : ""}`}
-                >
-                  {launchingAction === "package" && (
-                    <>
-                      <motion.span
-                        initial={{ opacity: 1, scale: 0.25 }}
-                        animate={{ opacity: 0, scale: 4.8 }}
-                        transition={{ duration: 1.05, ease: "easeOut" }}
-                        className="pointer-events-none absolute inset-[-18%] rounded-xl bg-[radial-gradient(circle,rgba(255,255,255,0.98)_0%,rgba(196,181,253,0.92)_22%,rgba(217,70,239,0.55)_42%,rgba(168,85,247,0.15)_66%,transparent_78%)]"
-                      />
-                      <motion.span
-                        initial={{ opacity: 0, scale: 0.35 }}
-                        animate={{ opacity: [0, 1, 0], scale: [0.35, 1.45, 2.1] }}
-                        transition={{ duration: 1.1 }}
-                        className="pointer-events-none absolute inset-0 flex items-center justify-center text-2xl"
-                      >
-                        ✨💥
-                      </motion.span>
-                      <motion.span
-                        initial={{ x: -220, opacity: 0 }}
-                        animate={{ x: 280, opacity: [0, 1, 0] }}
-                        transition={{ duration: 0.9, ease: "easeInOut" }}
-                        className="pointer-events-none absolute top-0 h-full w-20 bg-gradient-to-r from-transparent via-white/80 to-transparent blur-sm"
-                      />
-                    </>
-                  )}
-                  <span className="block text-base font-black uppercase tracking-wide">🧩 Partage Croise</span>
-                  <span className="mt-0.5 block text-[11px] font-semibold text-fuchsia-100/90">Proposition de service</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => triggerAction("exclients")}
-                  disabled={!isQualified}
-                  className={`relative overflow-hidden h-20 rounded-2xl border border-cyan-300/30 bg-cyan-500/12 text-cyan-100 ${
-                    isQualified && actionGlowContactId === current.id ? "animate-pulse ring-2 ring-cyan-300/35" : ""
-                  } ${launchingAction === "exclients" ? "scale-[1.03] ring-4 ring-cyan-200/65" : ""}`}
-                >
-                  {launchingAction === "exclients" && (
-                    <>
-                      <motion.span
-                        initial={{ opacity: 1, scale: 0.25 }}
-                        animate={{ opacity: 0, scale: 4.8 }}
-                        transition={{ duration: 1.05, ease: "easeOut" }}
-                        className="pointer-events-none absolute inset-[-18%] rounded-xl bg-[radial-gradient(circle,rgba(255,255,255,0.98)_0%,rgba(103,232,249,0.92)_22%,rgba(34,211,238,0.55)_42%,rgba(56,189,248,0.15)_66%,transparent_78%)]"
-                      />
-                      <motion.span
-                        initial={{ opacity: 0, scale: 0.35 }}
-                        animate={{ opacity: [0, 1, 0], scale: [0.35, 1.45, 2.1] }}
-                        transition={{ duration: 1.1 }}
-                        className="pointer-events-none absolute inset-0 flex items-center justify-center text-2xl"
-                      >
-                        ✨💥
-                      </motion.span>
-                      <motion.span
-                        initial={{ x: -220, opacity: 0 }}
-                        animate={{ x: 280, opacity: [0, 1, 0] }}
-                        transition={{ duration: 0.9, ease: "easeInOut" }}
-                        className="pointer-events-none absolute top-0 h-full w-20 bg-gradient-to-r from-transparent via-white/80 to-transparent blur-sm"
-                      />
-                    </>
-                  )}
-                  <span className="block text-base font-black uppercase tracking-wide">📣 Ex-Clients (News)</span>
-                  <span className="mt-0.5 block text-[11px] font-semibold text-cyan-100/90">Veille et relance</span>
-                </button>
+                {actionButtons.map((button) => {
+                  const theme = ACTION_BUTTON_THEMES[button.action];
+                  const launching = launchingAction === button.action;
+                  const shouldPulse = isQualified && (actionGlowContactId === current.id || button.isPriority);
+                  return (
+                    <button
+                      key={button.action}
+                      type="button"
+                      onClick={() => triggerAction(button.action)}
+                      disabled={!isQualified}
+                      className={`relative overflow-hidden h-20 rounded-2xl border ${theme.buttonClass} ${
+                        shouldPulse ? theme.idlePulseClass : ""
+                      } ${launching ? theme.launchRingClass : ""} ${button.isPriority ? "ring-2 ring-white/35" : ""}`}
+                    >
+                      {launching && (
+                        <>
+                          <motion.span
+                            initial={{ opacity: 1, scale: 0.25 }}
+                            animate={{ opacity: 0, scale: 4.8 }}
+                            transition={{ duration: 1.05, ease: "easeOut" }}
+                            className={`pointer-events-none absolute inset-[-18%] rounded-xl ${theme.burstGradient}`}
+                          />
+                          <motion.span
+                            initial={{ opacity: 0, scale: 0.35 }}
+                            animate={{ opacity: [0, 1, 0], scale: [0.35, 1.45, 2.1] }}
+                            transition={{ duration: 1.1 }}
+                            className="pointer-events-none absolute inset-0 flex items-center justify-center text-2xl"
+                          >
+                            ✨💥
+                          </motion.span>
+                          <motion.span
+                            initial={{ x: -220, opacity: 0 }}
+                            animate={{ x: 280, opacity: [0, 1, 0] }}
+                            transition={{ duration: 0.9, ease: "easeInOut" }}
+                            className="pointer-events-none absolute top-0 h-full w-20 bg-gradient-to-r from-transparent via-white/80 to-transparent blur-sm"
+                          />
+                        </>
+                      )}
+                      {button.isPriority && (
+                        <span className="absolute right-2 top-2 rounded-full bg-white/85 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-[#181C35]">
+                          Priorite
+                        </span>
+                      )}
+                      <span className={`block text-base font-black uppercase tracking-wide ${theme.titleClass}`}>{button.title}</span>
+                      <span className={`mt-0.5 block text-[11px] font-semibold ${theme.subtitleClass}`}>{button.subtitle}</span>
+                    </button>
+                  );
+                })}
                 {!isQualified && (
                   <p className="text-center text-[11px] font-black uppercase tracking-wide text-emerald-100/85">
                     Qualification requise d abord
@@ -1088,6 +1255,12 @@ export default function EntrepreneurSmartScanTestPage() {
               placeholder="Rechercher un contact..."
               className="mt-3 h-10 w-full rounded-xl border border-white/15 bg-black/25 px-3 text-sm"
             />
+            <div className="mt-2 rounded-xl border border-cyan-300/25 bg-cyan-300/10 px-3 py-2">
+              <p className="text-[10px] font-black uppercase tracking-[0.12em] text-cyan-100">Niveau de confiance</p>
+              <p className="mt-1 text-xs text-white/80">
+                Cette jauge est enregistree par contact pour qualifier la force de la relation avant partage croise.
+              </p>
+            </div>
             <div className="mt-3 max-h-72 space-y-2 overflow-y-auto">
               {searchResults.map((contact) => (
                 <div key={contact.id} className="rounded-xl border border-white/15 bg-black/25 px-3 py-2">
@@ -1109,6 +1282,43 @@ export default function EntrepreneurSmartScanTestPage() {
                     >
                       ★
                     </button>
+                  </div>
+                  <div className="mt-2 rounded-xl border border-white/10 bg-white/[0.03] px-2 py-2">
+                    <p className="text-[10px] font-black uppercase tracking-[0.12em] text-white/70">Niveau de confiance</p>
+                    <div className="mt-2 grid gap-1.5">
+                      {TRUST_LEVEL_OPTIONS.map((option) => {
+                        const active = trustLevelStore[contact.id] === option.id;
+                        return (
+                          <button
+                            key={`${contact.id}-${option.id}`}
+                            type="button"
+                            onClick={() =>
+                              setTrustLevelStore((prev) => ({
+                                ...prev,
+                                [contact.id]: option.id,
+                              }))
+                            }
+                            className={`rounded-lg border px-2 py-2 text-left transition ${
+                              active
+                                ? "border-emerald-300/55 bg-emerald-300/20 text-emerald-100 ring-1 ring-emerald-200/65"
+                                : "border-white/15 bg-white/[0.04] text-white/85"
+                            }`}
+                          >
+                            <p className="text-[11px] font-black">
+                              {active ? "✅ " : ""}{option.label}
+                            </p>
+                            <p className="text-[10px] text-white/70">{option.helper}</p>
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <p className="mt-2 text-[10px] font-semibold text-emerald-100/90">
+                      {trustLevelStore[contact.id]
+                        ? `Enregistre: ${
+                            TRUST_LEVEL_OPTIONS.find((option) => option.id === trustLevelStore[contact.id])?.valueHint ?? ""
+                          }`
+                        : "A definir pour guider ton trio."}
+                    </p>
                   </div>
                 </div>
               ))}
@@ -1155,9 +1365,22 @@ export default function EntrepreneurSmartScanTestPage() {
               </div>
               {showProfileActions && (
                 <div className="mt-3 grid gap-2 sm:grid-cols-3">
-                  <button type="button" onClick={() => startActionFromProfile("eclaireur")} className="h-10 rounded-xl bg-amber-400/25 text-xs font-black">✨ Eclaireur</button>
-                  <button type="button" onClick={() => startActionFromProfile("package")} className="h-10 rounded-xl bg-fuchsia-400/25 text-xs font-black">🧩 Pack Croise</button>
-                  <button type="button" onClick={() => startActionFromProfile("exclients")} className="h-10 rounded-xl bg-cyan-400/25 text-xs font-black">📣 News</button>
+                  {profileActionButtons.map((button) => (
+                    <button
+                      key={`profile-action-${button.action}`}
+                      type="button"
+                      onClick={() => startActionFromProfile(button.action)}
+                      className={`h-10 rounded-xl text-xs font-black ${
+                        button.action === "eclaireur"
+                          ? "bg-amber-400/25"
+                          : button.action === "package"
+                            ? "bg-fuchsia-400/25"
+                            : "bg-cyan-400/25"
+                      } ${button.isPriority ? "ring-2 ring-white/35" : ""}`}
+                    >
+                      {button.title}
+                    </button>
+                  ))}
                 </div>
               )}
             </div>
@@ -1447,6 +1670,11 @@ export default function EntrepreneurSmartScanTestPage() {
                 <p className="mt-2 inline-flex items-center rounded-lg bg-cyan-400/15 px-2 py-1 text-xs font-black text-cyan-100">
                   🎯 Base sur le profil: {adnPopey[0]?.label ?? "❓ Inconnu"}
                 </p>
+                {promptContextPreview.length > 0 && (
+                  <p className="mt-2 rounded-lg border border-emerald-300/30 bg-emerald-300/10 px-2 py-1 text-xs text-emerald-100">
+                    Variables IA: {promptContextPreview.join(" • ")}
+                  </p>
+                )}
                 <textarea
                   value={draftMessage}
                   onChange={(event) => setDraftMessage(event.target.value)}
