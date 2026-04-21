@@ -1,11 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ensureHumanMemberForUserId } from "@/lib/actions/human-permissions";
+import { smartScanFeatureFlags } from "@/lib/popey-human/smart-scan-config";
+import { smartScanProfileUpdateSchema } from "@/lib/popey-human/smart-scan-validation";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
+  if (!smartScanFeatureFlags.enabled) {
+    return NextResponse.json({ error: "Smart Scan desactive." }, { status: 503 });
+  }
+
   const supabase = await createClient();
   const {
     data: { user },
@@ -37,6 +43,10 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+  if (!smartScanFeatureFlags.enabled) {
+    return NextResponse.json({ error: "Smart Scan desactive." }, { status: 503 });
+  }
+
   const supabase = await createClient();
   const {
     data: { user },
@@ -51,13 +61,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Profil Popey Human introuvable." }, { status: 404 });
   }
 
-  const body = (await request.json().catch(() => ({}))) as {
-    firstName?: string;
-    lastName?: string;
-    metier?: string;
-    ville?: string;
-    phone?: string;
-  };
+  const parsed = smartScanProfileUpdateSchema.safeParse(await request.json().catch(() => null));
+  if (!parsed.success) {
+    return NextResponse.json({ error: "Payload profil invalide." }, { status: 400 });
+  }
+  const body = parsed.data;
 
   const supabaseAdmin = createAdminClient();
   const payload = {

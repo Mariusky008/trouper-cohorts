@@ -1,21 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 import { setContactFavorite } from "@/lib/actions/human-smart-scan";
+import { smartScanFeatureFlags } from "@/lib/popey-human/smart-scan-config";
+import { smartScanFavoriteSchema } from "@/lib/popey-human/smart-scan-validation";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(request: NextRequest) {
-  const body = (await request.json()) as {
-    contactId?: string;
-    externalContactRef?: string;
-    fullName?: string;
-    city?: string | null;
-    companyHint?: string | null;
-    isFavorite?: boolean;
-  };
-
-  if (typeof body?.isFavorite !== "boolean") {
-    return NextResponse.json({ error: "isFavorite requis." }, { status: 400 });
+  if (!smartScanFeatureFlags.enabled) {
+    return NextResponse.json({ error: "Smart Scan desactive." }, { status: 503 });
   }
+
+  const parsed = smartScanFavoriteSchema.safeParse(await request.json().catch(() => null));
+  if (!parsed.success) {
+    return NextResponse.json({ error: "Payload favorite invalide." }, { status: 400 });
+  }
+  const body = parsed.data;
 
   const result = await setContactFavorite({
     contactId: body.contactId,

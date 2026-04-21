@@ -1,11 +1,27 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { getAdminHumanDashboard } from "@/lib/actions/human-admin-dashboard";
+import { getSmartScanAdminDailyAnalytics } from "@/lib/actions/human-smart-scan";
 import { buildAdminHumanHref, pickParam } from "@/lib/url/admin-human-navigation";
 
 function euros(value: number) {
   return value.toLocaleString("fr-FR", { style: "currency", currency: "EUR" });
 }
+
+function toNumber(value: unknown) {
+  const num = Number(value);
+  return Number.isFinite(num) ? num : 0;
+}
+
+type SmartScanTotals = {
+  actionsTotal: number;
+  actionsSent: number;
+  qualificationsTotal: number;
+  outcomesConverted: number;
+  followupOps: number;
+  externalClicks: number;
+  analyticsEvents: number;
+};
 
 export default async function AdminHumainCockpitPage({
   searchParams,
@@ -23,6 +39,7 @@ export default async function AdminHumainCockpitPage({
     clientsPage?: string;
     notificationsSort?: string;
     notificationsPage?: string;
+    smartScanDays?: string;
   }>;
 }) {
   const params = (await searchParams) || {};
@@ -30,10 +47,15 @@ export default async function AdminHumainCockpitPage({
   const end = pickParam(params, ["cockpitEnd", "end"], "");
   const topSort = pickParam(params, ["topSort"], "value_desc");
   const signalSort = pickParam(params, ["signalSort"], "value_desc");
+  const smartScanDaysRaw = pickParam(params, ["smartScanDays"], "14");
+  const smartScanDays = Math.max(1, Math.min(90, Number(smartScanDaysRaw) || 14));
   const topPage = Math.max(1, Number(params.topPage || "1") || 1);
   const signalPage = Math.max(1, Number(params.signalPage || "1") || 1);
   const topPageSize = 5;
-  const data = await getAdminHumanDashboard({ startDate: start, endDate: end });
+  const [data, smartScanAnalytics] = await Promise.all([
+    getAdminHumanDashboard({ startDate: start, endDate: end }),
+    getSmartScanAdminDailyAnalytics(smartScanDays),
+  ]);
   const exportQuery = new URLSearchParams();
   if (start) exportQuery.set("start", start);
   if (end) exportQuery.set("end", end);
@@ -46,6 +68,7 @@ export default async function AdminHumainCockpitPage({
     topPage: String(topPage),
     signalSort,
     signalPage: String(signalPage),
+    smartScanDays: String(smartScanDays),
   };
   const cockpitHref = (updates: Record<string, string>) =>
     buildAdminHumanHref("/admin/humain/cockpit", sharedParams, { ...updates, start: "", end: "" });
@@ -75,6 +98,40 @@ export default async function AdminHumainCockpitPage({
   const safeSignalPage = Math.min(signalPage, totalSignalPages);
   const pagedTopLeads = sortedTopLeads.slice((safeTopPage - 1) * topPageSize, safeTopPage * topPageSize);
   const pagedTopSignals = sortedTopSignals.slice((safeSignalPage - 1) * topPageSize, safeSignalPage * topPageSize);
+  const smartScanDaily = (smartScanAnalytics.daily as Array<Record<string, unknown>>) || [];
+  const smartScanTotals = smartScanDaily.reduce<SmartScanTotals>(
+    (acc, row) => {
+      acc.actionsTotal += toNumber(row.actions_total);
+      acc.actionsSent += toNumber(row.actions_sent);
+      acc.qualificationsTotal += toNumber(row.qualifications_total);
+      acc.outcomesConverted += toNumber(row.outcomes_converted);
+      acc.followupOps +=
+        toNumber(row.followup_copied) +
+        toNumber(row.followup_replied) +
+        toNumber(row.followup_converted) +
+        toNumber(row.followup_not_interested) +
+        toNumber(row.followup_ignored);
+      acc.externalClicks += toNumber(row.external_click_linkedin) + toNumber(row.external_click_whatsapp_group);
+      acc.analyticsEvents +=
+        toNumber(row.analytics_contact_opened) +
+        toNumber(row.analytics_trust_level_set) +
+        toNumber(row.analytics_whatsapp_sent) +
+        toNumber(row.analytics_daily_goal_progressed);
+      return acc;
+    },
+    {
+      actionsTotal: 0,
+      actionsSent: 0,
+      qualificationsTotal: 0,
+      outcomesConverted: 0,
+      followupOps: 0,
+      externalClicks: 0,
+      analyticsEvents: 0,
+    }
+  );
+  const smartScanSentToConversionRate =
+    smartScanTotals.actionsSent > 0 ? Math.round((smartScanTotals.outcomesConverted / smartScanTotals.actionsSent) * 100) : 0;
+  const smartScanLatestDay = smartScanDaily.length > 0 ? smartScanDaily[smartScanDaily.length - 1] : null;
 
   return (
     <section className="space-y-6">
@@ -114,6 +171,65 @@ export default async function AdminHumainCockpitPage({
 
       <div className="rounded-xl border bg-white p-4 text-sm text-muted-foreground">
         Exports disponibles: leads, signaux, cash et commissions au format CSV. Les téléchargements sont réservés aux admins.
+      </div>
+
+      <div className="rounded-xl border bg-white p-4">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <h2 className="text-lg font-black">Smart Scan KPI</h2>
+            <p className="text-xs text-muted-foreground">Agrégats journaliers Smart Scan admin.</p>
+          </div>
+          <div className="flex gap-2 text-xs">
+            <Link className="rounded border px-2 py-1" href={cockpitHref({ smartScanDays: "7" })}>
+              7 jours
+            </Link>
+            <Link className="rounded border px-2 py-1" href={cockpitHref({ smartScanDays: "14" })}>
+              14 jours
+            </Link>
+            <Link className="rounded border px-2 py-1" href={cockpitHref({ smartScanDays: "30" })}>
+              30 jours
+            </Link>
+          </div>
+        </div>
+        {smartScanAnalytics.error && (
+          <p className="mt-2 text-sm text-red-600">
+            Smart Scan indisponible: {smartScanAnalytics.error}
+          </p>
+        )}
+        {!smartScanAnalytics.error && (
+          <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="rounded border p-3">
+              <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Actions ({smartScanDays}j)</p>
+              <p className="mt-1 text-2xl font-black">{smartScanTotals.actionsTotal}</p>
+              <p className="text-xs text-muted-foreground">Envoyées: {smartScanTotals.actionsSent}</p>
+            </div>
+            <div className="rounded border p-3">
+              <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Qualifications</p>
+              <p className="mt-1 text-2xl font-black">{smartScanTotals.qualificationsTotal}</p>
+              <p className="text-xs text-muted-foreground">Conversions: {smartScanTotals.outcomesConverted}</p>
+            </div>
+            <div className="rounded border p-3">
+              <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Taux Conversion</p>
+              <p className="mt-1 text-2xl font-black">{smartScanSentToConversionRate}%</p>
+              <p className="text-xs text-muted-foreground">Base: actions envoyées</p>
+            </div>
+            <div className="rounded border p-3">
+              <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Ops & Tracking</p>
+              <p className="mt-1 text-2xl font-black">{smartScanTotals.followupOps + smartScanTotals.externalClicks}</p>
+              <p className="text-xs text-muted-foreground">
+                Follow-up: {smartScanTotals.followupOps} • Clics: {smartScanTotals.externalClicks}
+              </p>
+            </div>
+          </div>
+        )}
+        {!smartScanAnalytics.error && smartScanLatestDay && (
+          <p className="mt-2 text-xs text-muted-foreground">
+            Dernier jour: {String(smartScanLatestDay.day)} • Events analytics: {toNumber(smartScanLatestDay.analytics_contact_opened) +
+              toNumber(smartScanLatestDay.analytics_trust_level_set) +
+              toNumber(smartScanLatestDay.analytics_whatsapp_sent) +
+              toNumber(smartScanLatestDay.analytics_daily_goal_progressed)}
+          </p>
+        )}
       </div>
 
       <form className="grid gap-3 rounded-xl border bg-white p-4 sm:grid-cols-[1fr_1fr_auto_auto] sm:items-end">

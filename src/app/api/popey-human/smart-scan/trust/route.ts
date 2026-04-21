@@ -1,21 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 import { saveTrustLevel } from "@/lib/actions/human-smart-scan";
+import { smartScanFeatureFlags } from "@/lib/popey-human/smart-scan-config";
+import { smartScanTrustSchema } from "@/lib/popey-human/smart-scan-validation";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(request: NextRequest) {
-  const body = (await request.json()) as {
-    contactId?: string;
-    externalContactRef?: string;
-    fullName?: string;
-    city?: string | null;
-    companyHint?: string | null;
-    trustLevel?: "family" | "pro-close" | "acquaintance";
-  };
-
-  if (!body?.trustLevel) {
-    return NextResponse.json({ error: "trustLevel requis." }, { status: 400 });
+  if (!smartScanFeatureFlags.enabled) {
+    return NextResponse.json({ error: "Smart Scan desactive." }, { status: 503 });
   }
+
+  const parsed = smartScanTrustSchema.safeParse(await request.json().catch(() => null));
+  if (!parsed.success) {
+    return NextResponse.json({ error: "Payload trust invalide." }, { status: 400 });
+  }
+  const body = parsed.data;
 
   const result = await saveTrustLevel({
     contactId: body.contactId,

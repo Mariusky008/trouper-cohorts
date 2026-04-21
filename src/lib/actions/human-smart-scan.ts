@@ -5,6 +5,10 @@ import { OpenAI } from "openai";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { ensureHumanMemberForUserId } from "@/lib/actions/human-permissions";
+import {
+  smartScanFeatureFlags,
+  type SmartScanAnalyticsEventType,
+} from "@/lib/popey-human/smart-scan-config";
 
 export type SmartScanTrustLevel = "family" | "pro-close" | "acquaintance";
 export type SmartScanHeat = "froid" | "tiede" | "brulant";
@@ -21,11 +25,6 @@ export type SmartScanActionStatus = "drafted" | "sent" | "validated_without_send
 export type SmartScanActionOutcomeStatus = "pending" | "replied" | "converted" | "not_interested";
 export type SmartScanAlertType = "hot_ideal_unshared_24h" | "high_priority_no_response_48h";
 export type SmartScanMessageGenerationSource = "ai" | "fallback";
-export type SmartScanAnalyticsEventType =
-  | "contact_opened"
-  | "trust_level_set"
-  | "whatsapp_sent"
-  | "daily_goal_progressed";
 
 type SmartScanActionRow = {
   id: string;
@@ -152,9 +151,23 @@ async function getCurrentHumanMember() {
   return member;
 }
 
+async function requireCurrentAdminUser() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user?.id) return { error: "Session requise." } as const;
+
+  const supabaseAdmin = createAdminClient();
+  const { data: adminRow } = await supabaseAdmin.from("admins").select("user_id").eq("user_id", user.id).maybeSingle();
+  if (!adminRow?.user_id) return { error: "Acces admin requis." } as const;
+  return { userId: user.id } as const;
+}
+
 async function logSmartScanAnalyticsEventInternal(input: {
   eventType: SmartScanAnalyticsEventType;
   metadata?: Record<string, unknown> | null;
+  clientEventId?: string | null;
 }) {
   const supabase = await createClient();
   const {
@@ -162,10 +175,41 @@ async function logSmartScanAnalyticsEventInternal(input: {
   } = await supabase.auth.getUser();
   if (!user?.id) return;
 
+  const metadata = {
+    ...(input.metadata || {}),
+    ...(input.clientEventId ? { clientEventId: input.clientEventId } : {}),
+  };
+
+  if (input.clientEventId) {
+    const { data: existingByClientEventId } = await supabase
+      .from("analytics_events")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("event_type", input.eventType)
+      .eq("page", "/popey-human/smart-scan")
+      .eq("metadata->>clientEventId", input.clientEventId)
+      .limit(1)
+      .maybeSingle();
+    if (existingByClientEventId?.id) return;
+  } else {
+    const dedupSince = new Date(Date.now() - 2 * 60 * 1000).toISOString();
+    const { data: existingRecent } = await supabase
+      .from("analytics_events")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("event_type", input.eventType)
+      .eq("page", "/popey-human/smart-scan")
+      .eq("metadata", metadata)
+      .gte("created_at", dedupSince)
+      .limit(1)
+      .maybeSingle();
+    if (existingRecent?.id) return;
+  }
+
   const { error } = await supabase.from("analytics_events").insert({
     user_id: user.id,
     event_type: input.eventType,
-    metadata: input.metadata || {},
+    metadata,
     page: "/popey-human/smart-scan",
     created_at: new Date().toISOString(),
   });
@@ -259,6 +303,13 @@ function buildFollowupSuggestion(contactName: string, actionType: SmartScanActio
 function getStartOfUtcDayIso() {
   const now = new Date();
   return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 0, 0, 0, 0)).toISOString();
+}
+
+function getStartOfUtcDayDaysAgoIso(daysAgo: number) {
+  const now = new Date();
+  const base = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 0, 0, 0, 0));
+  base.setUTCDate(base.getUTCDate() - Math.max(0, Math.trunc(daysAgo)));
+  return base.toISOString();
 }
 
 export async function saveTrustLevel(input: {
@@ -604,6 +655,7 @@ export async function generateSmartScanMessage(input: {
 }) {
   const currentMember = await getCurrentHumanMember();
   if (!currentMember) return { error: "Session requise." };
+  const promptVersion = smartScanFeatureFlags.promptVersion;
 
   const firstName = (input.contactName || "Contact").split(" ")[0] || "Contact";
   const fallbackMessage = buildSmartScanFallbackMessage({
@@ -620,7 +672,7 @@ export async function generateSmartScanMessage(input: {
       success: true,
       message: fallbackMessage,
       generationSource: "fallback" as SmartScanMessageGenerationSource,
-      promptVersion: "smart_scan_prompt_v1",
+      promptVersion,
       generatedAt: new Date().toISOString(),
     };
   }
@@ -640,7 +692,7 @@ export async function generateSmartScanMessage(input: {
           role: "user",
           content: JSON.stringify({
             objectif: "Generer un message WhatsApp personnalise",
-            prompt_version: "smart_scan_prompt_v1",
+            prompt_version: promptVersion,
             contact: {
               prenom: firstName,
               nom: input.contactName,
@@ -675,7 +727,7 @@ export async function generateSmartScanMessage(input: {
         success: true,
         message: fallbackMessage,
         generationSource: "fallback" as SmartScanMessageGenerationSource,
-        promptVersion: "smart_scan_prompt_v1",
+        promptVersion,
         generatedAt: new Date().toISOString(),
       };
     }
@@ -684,7 +736,7 @@ export async function generateSmartScanMessage(input: {
       success: true,
       message: content,
       generationSource: "ai" as SmartScanMessageGenerationSource,
-      promptVersion: "smart_scan_prompt_v1",
+      promptVersion,
       generatedAt: new Date().toISOString(),
     };
   } catch {
@@ -692,7 +744,7 @@ export async function generateSmartScanMessage(input: {
       success: true,
       message: fallbackMessage,
       generationSource: "fallback" as SmartScanMessageGenerationSource,
-      promptVersion: "smart_scan_prompt_v1",
+      promptVersion,
       generatedAt: new Date().toISOString(),
     };
   }
@@ -1181,6 +1233,7 @@ export async function updateSmartScanFollowupJob(input: {
   actionId: string;
   decision: "copied" | "replied" | "converted" | "not_interested" | "ignored";
   note?: string | null;
+  clientEventId?: string | null;
 }) {
   const currentMember = await getCurrentHumanMember();
   if (!currentMember) return { error: "Session requise." };
@@ -1197,6 +1250,7 @@ export async function updateSmartScanFollowupJob(input: {
     not_interested: "marked_not_interested",
     ignored: "ignored",
   };
+  const eventType = decisionToEventType[input.decision];
   const { data: actionRow, error: actionError } = await supabaseAdmin
     .from("human_smart_scan_actions")
     .select("id,contact_id,action_type,followup_due_at,status,outcome_status")
@@ -1218,6 +1272,35 @@ export async function updateSmartScanFollowupJob(input: {
   const isTransitionDecision = input.decision !== "copied";
   if (isTransitionDecision && actionRow.status !== "sent") {
     return { error: "Transition invalide: action non envoyee sur WhatsApp." };
+  }
+
+  if (input.clientEventId) {
+    const { data: existingByClientEventId } = await supabaseAdmin
+      .from("human_smart_scan_followup_job_events")
+      .select("id")
+      .eq("owner_member_id", currentMember.id)
+      .eq("action_id", String(actionRow.id))
+      .eq("event_type", eventType)
+      .eq("metadata->>clientEventId", input.clientEventId)
+      .limit(1)
+      .maybeSingle();
+    if (existingByClientEventId?.id) {
+      return { success: true, actionId: String(actionRow.id), decision: input.decision, deduped: true };
+    }
+  } else {
+    const dedupSince = new Date(Date.now() - 2 * 60 * 1000).toISOString();
+    const { data: recentSameEvent } = await supabaseAdmin
+      .from("human_smart_scan_followup_job_events")
+      .select("id")
+      .eq("owner_member_id", currentMember.id)
+      .eq("action_id", String(actionRow.id))
+      .eq("event_type", eventType)
+      .gte("created_at", dedupSince)
+      .limit(1)
+      .maybeSingle();
+    if (recentSameEvent?.id) {
+      return { success: true, actionId: String(actionRow.id), decision: input.decision, deduped: true };
+    }
   }
 
   const actionUpdatePayload =
@@ -1291,9 +1374,10 @@ export async function updateSmartScanFollowupJob(input: {
     owner_member_id: currentMember.id,
     contact_id: String(actionRow.contact_id),
     operator_member_id: currentMember.id,
-    event_type: decisionToEventType[input.decision],
+    event_type: eventType,
     metadata: {
       decision: input.decision,
+      clientEventId: input.clientEventId || null,
       action_type: actionRow.action_type,
       note: input.note || null,
       previous_outcome_status: actionRow.outcome_status || null,
@@ -1365,11 +1449,25 @@ export async function logSmartScanExternalClick(input: {
   source: "linkedin" | "whatsapp_group";
   targetUrl: string;
   context?: "cockpit" | "profile" | "other";
+  clientEventId?: string | null;
 }) {
   const currentMember = await getCurrentHumanMember();
   if (!currentMember) return { error: "Session requise." };
 
   const supabaseAdmin = createAdminClient();
+  const dedupSince = new Date(Date.now() - 2 * 60 * 1000).toISOString();
+  const { data: existingRecent } = await supabaseAdmin
+    .from("human_smart_scan_external_click_events")
+    .select("id")
+    .eq("owner_member_id", currentMember.id)
+    .eq("source", input.source)
+    .eq("target_url", input.targetUrl)
+    .eq("context", input.context || "cockpit")
+    .gte("created_at", dedupSince)
+    .limit(1)
+    .maybeSingle();
+  if (existingRecent?.id) return { success: true, deduped: true };
+
   const { error } = await supabaseAdmin.from("human_smart_scan_external_click_events").insert({
     owner_member_id: currentMember.id,
     source: input.source,
@@ -1385,6 +1483,7 @@ export async function logSmartScanExternalClick(input: {
 export async function logSmartScanAnalyticsEvent(input: {
   eventType: SmartScanAnalyticsEventType;
   metadata?: Record<string, unknown> | null;
+  clientEventId?: string | null;
 }) {
   const currentMember = await getCurrentHumanMember();
   if (!currentMember) return { error: "Session requise." };
@@ -1395,6 +1494,7 @@ export async function logSmartScanAnalyticsEvent(input: {
       ownerMemberId: currentMember.id,
       ...(input.metadata || {}),
     },
+    clientEventId: input.clientEventId || null,
   });
 
   return { success: true };
@@ -1428,6 +1528,118 @@ export async function getSmartScanExternalClickStatsToday() {
   });
 
   return { error: null as string | null, stats };
+}
+
+export async function getSmartScanAdminDailyAnalytics(days = 14) {
+  const auth = await requireCurrentAdminUser();
+  if ("error" in auth) {
+    return { error: auth.error, days: 0, daily: [] as Array<Record<string, unknown>> };
+  }
+
+  const safeDays = Math.max(1, Math.min(90, Math.trunc(days)));
+  const since = getStartOfUtcDayDaysAgoIso(safeDays - 1);
+  const supabaseAdmin = createAdminClient();
+
+  const [actionsRes, qualificationsRes, followupRes, externalRes, analyticsRes] = await Promise.all([
+    supabaseAdmin
+      .from("human_smart_scan_actions")
+      .select("created_at,status,outcome_status")
+      .gte("created_at", since)
+      .limit(100000),
+    supabaseAdmin.from("human_smart_scan_qualifications").select("created_at").gte("created_at", since).limit(100000),
+    supabaseAdmin.from("human_smart_scan_followup_job_events").select("created_at,event_type").gte("created_at", since).limit(100000),
+    supabaseAdmin.from("human_smart_scan_external_click_events").select("created_at,source").gte("created_at", since).limit(100000),
+    supabaseAdmin
+      .from("analytics_events")
+      .select("created_at,event_type")
+      .eq("page", "/popey-human/smart-scan")
+      .gte("created_at", since)
+      .limit(100000),
+  ]);
+
+  const firstError = [actionsRes.error, qualificationsRes.error, followupRes.error, externalRes.error, analyticsRes.error].find(Boolean);
+  if (firstError) {
+    return { error: firstError.message, days: safeDays, daily: [] as Array<Record<string, unknown>> };
+  }
+
+  const byDay = new Map<string, Record<string, number | string>>();
+  const getDayBucket = (raw: unknown) => {
+    const iso = String(raw || "");
+    const day = iso.slice(0, 10);
+    const key = /^\d{4}-\d{2}-\d{2}$/.test(day) ? day : new Date().toISOString().slice(0, 10);
+    if (!byDay.has(key)) {
+      byDay.set(key, {
+        day: key,
+        actions_total: 0,
+        actions_sent: 0,
+        actions_validated_without_send: 0,
+        outcomes_replied: 0,
+        outcomes_converted: 0,
+        outcomes_not_interested: 0,
+        qualifications_total: 0,
+        followup_copied: 0,
+        followup_replied: 0,
+        followup_converted: 0,
+        followup_not_interested: 0,
+        followup_ignored: 0,
+        external_click_linkedin: 0,
+        external_click_whatsapp_group: 0,
+        analytics_contact_opened: 0,
+        analytics_trust_level_set: 0,
+        analytics_whatsapp_sent: 0,
+        analytics_daily_goal_progressed: 0,
+      });
+    }
+    return byDay.get(key)!;
+  };
+
+  ((actionsRes.data as Array<Record<string, unknown>> | null) || []).forEach((row) => {
+    const bucket = getDayBucket(row.created_at);
+    bucket.actions_total = Number(bucket.actions_total) + 1;
+    const status = String(row.status || "");
+    if (status === "sent") bucket.actions_sent = Number(bucket.actions_sent) + 1;
+    if (status === "validated_without_send") {
+      bucket.actions_validated_without_send = Number(bucket.actions_validated_without_send) + 1;
+    }
+    const outcome = String(row.outcome_status || "");
+    if (outcome === "replied") bucket.outcomes_replied = Number(bucket.outcomes_replied) + 1;
+    if (outcome === "converted") bucket.outcomes_converted = Number(bucket.outcomes_converted) + 1;
+    if (outcome === "not_interested") bucket.outcomes_not_interested = Number(bucket.outcomes_not_interested) + 1;
+  });
+
+  ((qualificationsRes.data as Array<Record<string, unknown>> | null) || []).forEach((row) => {
+    const bucket = getDayBucket(row.created_at);
+    bucket.qualifications_total = Number(bucket.qualifications_total) + 1;
+  });
+
+  ((followupRes.data as Array<Record<string, unknown>> | null) || []).forEach((row) => {
+    const bucket = getDayBucket(row.created_at);
+    const type = String(row.event_type || "");
+    if (type === "copied") bucket.followup_copied = Number(bucket.followup_copied) + 1;
+    if (type === "marked_replied") bucket.followup_replied = Number(bucket.followup_replied) + 1;
+    if (type === "marked_converted") bucket.followup_converted = Number(bucket.followup_converted) + 1;
+    if (type === "marked_not_interested") bucket.followup_not_interested = Number(bucket.followup_not_interested) + 1;
+    if (type === "ignored") bucket.followup_ignored = Number(bucket.followup_ignored) + 1;
+  });
+
+  ((externalRes.data as Array<Record<string, unknown>> | null) || []).forEach((row) => {
+    const bucket = getDayBucket(row.created_at);
+    const source = String(row.source || "");
+    if (source === "linkedin") bucket.external_click_linkedin = Number(bucket.external_click_linkedin) + 1;
+    if (source === "whatsapp_group") bucket.external_click_whatsapp_group = Number(bucket.external_click_whatsapp_group) + 1;
+  });
+
+  ((analyticsRes.data as Array<Record<string, unknown>> | null) || []).forEach((row) => {
+    const bucket = getDayBucket(row.created_at);
+    const type = String(row.event_type || "");
+    if (type === "contact_opened") bucket.analytics_contact_opened = Number(bucket.analytics_contact_opened) + 1;
+    if (type === "trust_level_set") bucket.analytics_trust_level_set = Number(bucket.analytics_trust_level_set) + 1;
+    if (type === "whatsapp_sent") bucket.analytics_whatsapp_sent = Number(bucket.analytics_whatsapp_sent) + 1;
+    if (type === "daily_goal_progressed") bucket.analytics_daily_goal_progressed = Number(bucket.analytics_daily_goal_progressed) + 1;
+  });
+
+  const daily = Array.from(byDay.values()).sort((a, b) => String(a.day).localeCompare(String(b.day)));
+  return { error: null as string | null, days: safeDays, daily };
 }
 
 async function syncHotIdealAlertForContact(ownerMemberId: string, contactId: string, contactName?: string) {

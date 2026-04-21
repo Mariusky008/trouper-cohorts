@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { smartScanFeatureFlags } from "@/lib/popey-human/smart-scan-config";
 import {
   getSmartScanExternalClickStatsToday,
   getOrCreateTodaySession,
@@ -14,6 +15,10 @@ import {
 export const dynamic = "force-dynamic";
 
 export async function GET() {
+  if (!smartScanFeatureFlags.enabled) {
+    return NextResponse.json({ error: "Smart Scan desactive." }, { status: 503 });
+  }
+
   const [sessionResult, contactsResult, qualificationsResult, historyResult, alertsResult, followupsResult, statsResult, followupOpsResult, externalClicksResult] = await Promise.all([
     getOrCreateTodaySession(),
     listMySmartScanContacts(800),
