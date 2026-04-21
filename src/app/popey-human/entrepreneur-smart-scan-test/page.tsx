@@ -169,6 +169,7 @@ type SmartScanProfileForm = {
 const PENDING_WHATSAPP_CONTEXT_KEY = "popey-human:smart-scan:pending-whatsapp-context";
 const SMART_SCAN_SESSION_KEY = "popey-human:smart-scan:scan-session";
 const SMART_SCAN_IMPORTED_CONTACTS_KEY = "popey-human:smart-scan:imported-contacts";
+const DAILY_CONTACT_LIMIT = 10;
 
 const CONTACTS: DailyContact[] = [
   {
@@ -581,8 +582,7 @@ function buildDailyContactsFromImport(rows: ImportedContactRow[]): DailyContact[
       if (dedup.has(row.key)) return false;
       dedup.add(row.key);
       return true;
-    })
-    .slice(0, 10);
+    });
 
   return normalized.map((row, idx) => ({
     id: `import-${idx + 1}-${row.phoneDigits.slice(-4) || "0000"}`,
@@ -684,10 +684,12 @@ export default function EntrepreneurSmartScanTestPage() {
   const contactImportInputRef = useRef<HTMLInputElement | null>(null);
 
   const hasImportedContacts = importedContacts.length > 0;
-  const contactsData = hasImportedContacts ? importedContacts : CONTACTS;
+  const importedTotalCount = importedContacts.length;
+  const dailyQueueCount = hasImportedContacts ? Math.min(DAILY_CONTACT_LIMIT, importedTotalCount) : DAILY_CONTACT_LIMIT;
+  const contactsData = hasImportedContacts ? importedContacts.slice(0, dailyQueueCount) : CONTACTS;
   const current = contactsData[index] ?? contactsData[contactsData.length - 1];
   const profileContact = contactsData.find((contact) => contact.id === profileContactId) ?? null;
-  const totalScanned = hasImportedContacts ? importedContacts.length : 0;
+  const totalScanned = hasImportedContacts ? importedTotalCount : 0;
   const scanDone = hasImportedContacts && totalScanned > 0 && scanCount >= totalScanned;
   const scanProgress = totalScanned > 0 ? Math.min(1, scanCount / totalScanned) : 0;
   const scanProgressPercent = Math.min(100, Math.round(scanProgress * 100));
@@ -702,7 +704,7 @@ export default function EntrepreneurSmartScanTestPage() {
     {
       id: "locals",
       icon: "📍",
-      value: scanDone ? totalScanned : liveLocals,
+      value: scanDone ? importedTotalCount : liveLocals,
       title: "Importes",
       subtitle: "contacts reels charges",
       color: "from-cyan-400/25 to-blue-400/20 border-cyan-300/40",
@@ -867,7 +869,7 @@ export default function EntrepreneurSmartScanTestPage() {
     profileQualifier &&
     (profileQualifier.heat === "brulant" || profileQualifier.opportunityChoice === "ideal-client" || profileQualifier.opportunityChoice === "opens-doors") &&
     profileDaysSinceLastSent > 90;
-  const dailyGoal = 10;
+  const dailyGoal = dailyQueueCount;
   const opportunitiesActivated = Math.min(dailyGoal, sentCount);
   const remainingForGoal = Math.max(0, dailyGoal - opportunitiesActivated);
   const missionProgress = Math.round((opportunitiesActivated / dailyGoal) * 100);
@@ -940,7 +942,7 @@ export default function EntrepreneurSmartScanTestPage() {
     try {
       const parsed = JSON.parse(raw) as { contacts?: DailyContact[]; summary?: string };
       if (Array.isArray(parsed.contacts) && parsed.contacts.length > 0) {
-        setImportedContacts(parsed.contacts.slice(0, 10));
+        setImportedContacts(parsed.contacts);
       }
       if (typeof parsed.summary === "string") {
         setImportSummary(parsed.summary);
@@ -967,7 +969,7 @@ export default function EntrepreneurSmartScanTestPage() {
     window.localStorage.setItem(
       SMART_SCAN_IMPORTED_CONTACTS_KEY,
       JSON.stringify({
-        contacts: importedContacts.slice(0, 10),
+        contacts: importedContacts,
         summary: importSummary,
         updatedAt: Date.now(),
       }),
@@ -1591,7 +1593,7 @@ export default function EntrepreneurSmartScanTestPage() {
   }
 
   function createTransitionPayload(action: Exclude<DailyCategory, "qualifier">, mode: "sent" | "saved" = "sent") {
-    const nextStep = Math.min(10, done + 1);
+    const nextStep = Math.min(dailyQueueCount, done + 1);
     const encouragements =
       mode === "sent"
         ? [`Felicitations ${current.name.split(" ")[0]} a ete active.`]
@@ -1600,13 +1602,16 @@ export default function EntrepreneurSmartScanTestPage() {
             `Valide sans envoi: ${current.name.split(" ")[0]} est ajoute a ton historique.`,
             `${actionLabel(action)} prepare sans envoi. Tu pourras relancer au bon moment.`,
           ];
-    const message = nextStep >= 10 ? "Session terminee ! Tu as reveille 10 contacts en 3 minutes." : encouragements[Math.floor(Math.random() * encouragements.length)];
+    const message =
+      nextStep >= dailyQueueCount
+        ? `Session terminee ! Tu as reveille ${dailyQueueCount} contacts aujourd hui.`
+        : encouragements[Math.floor(Math.random() * encouragements.length)];
     return {
       message,
-      icon: nextStep >= 10 ? "🎆" : "✅",
+      icon: nextStep >= dailyQueueCount ? "🎆" : "✅",
       from: done,
       to: nextStep,
-      final: nextStep >= 10,
+      final: nextStep >= dailyQueueCount,
     };
   }
 
@@ -2187,7 +2192,9 @@ export default function EntrepreneurSmartScanTestPage() {
             <p className="mt-1 text-sm text-white/70">Analyse locale securisee, aucun contact en clair n est envoye.</p>
             <div className="mt-4 rounded-2xl border border-cyan-200/25 bg-cyan-400/10 p-3">
               <p className="text-xs font-black uppercase tracking-[0.08em] text-cyan-100">Importer mes contacts reels</p>
-              <p className="mt-1 text-[11px] text-white/70">Fichier .vcf ou .csv. Les 10 premiers contacts exploitables sont utilises.</p>
+              <p className="mt-1 text-[11px] text-white/70">
+                Fichier .vcf ou .csv. Tous les contacts sont importes, mais seulement {DAILY_CONTACT_LIMIT} sont traites par jour.
+              </p>
               <div className="mt-2 flex flex-wrap gap-2">
                 <button
                   type="button"
@@ -2276,6 +2283,11 @@ export default function EntrepreneurSmartScanTestPage() {
             <p className="mt-2 text-xs text-white/70">
               {hasImportedContacts ? `${scanCount} / ${totalScanned} contacts scannes` : "Aucun contact importe pour le moment"}
             </p>
+            {hasImportedContacts && (
+              <p className="mt-1 text-[11px] text-cyan-100/90">
+                Import total: {importedTotalCount} • Quota quotidien: {dailyQueueCount} contacts
+              </p>
+            )}
             {hasImportedContacts && !scanDone && <p className="mt-1 text-[11px] uppercase tracking-[0.12em] text-orange-200/90">Meche active...</p>}
 
             {scanDone && (
@@ -2319,7 +2331,7 @@ export default function EntrepreneurSmartScanTestPage() {
             {scanDone && (
               <>
                 <p className="mt-4 rounded-xl bg-emerald-400/15 px-3 py-2 text-sm text-emerald-100">
-                  Scan termine: {totalScanned} contacts disponibles.
+                  Scan termine: {importedTotalCount} contacts importes, {dailyQueueCount} a traiter aujourd hui.
                 </p>
                 <p className="mt-2 text-xs font-black text-cyan-100">{importedReviewCount} contacts restent a qualifier dans ton import.</p>
                 <button
@@ -2492,7 +2504,7 @@ export default function EntrepreneurSmartScanTestPage() {
                 <p className="text-xs font-black uppercase tracking-[0.12em] text-cyan-200">Cockpit Mission Quotidienne</p>
                 <h1 className="mt-1 text-lg sm:text-2xl font-black">Trio Immo-Dax : Radar Active</h1>
                 <p className="mt-0.5 text-[12px] text-white/80">
-                  {opportunitiesActivated} opportunites activees aujourd hui. Encore {remainingForGoal} pour atteindre votre objectif.
+                  {opportunitiesActivated} opportunites activees aujourd hui. Encore {remainingForGoal} sur {dailyQueueCount} pour atteindre votre objectif.
                 </p>
               </div>
               <p className="rounded-full border border-emerald-300/35 bg-emerald-300/12 px-3 py-1 text-[11px] font-black uppercase tracking-[0.08em] text-emerald-100">
@@ -2904,7 +2916,7 @@ export default function EntrepreneurSmartScanTestPage() {
             <p className="mt-2 text-xs text-white/70">Mode tunnel: une carte, une decision, action immediate.</p>
           </section>
 
-          {done >= 10 && (
+              {done >= dailyQueueCount && (
             <section className="rounded-3xl border border-white/10 bg-white/5 p-4 backdrop-blur-xl">
             <p className="text-xs font-black uppercase tracking-[0.12em] text-[#EAC886]">Template Assistant</p>
             <h2 className="mt-1 text-xl font-black">Message pre-rempli</h2>
@@ -2922,7 +2934,7 @@ export default function EntrepreneurSmartScanTestPage() {
             <div className="mt-3 grid gap-2 sm:grid-cols-2">
               <div className="rounded-2xl bg-indigo-500/15 p-3">
                 <p className="text-[10px] font-black uppercase tracking-[0.12em] text-indigo-100">Workflow Tech</p>
-                <p className="mt-1 text-xs text-white/80">Permission contacts → Moteur Daily 10 → Swipe/actions → Push relance.</p>
+                <p className="mt-1 text-xs text-white/80">Permission contacts → Moteur Daily {DAILY_CONTACT_LIMIT} → Swipe/actions → Push relance.</p>
               </div>
               <div className="rounded-2xl bg-fuchsia-500/15 p-3">
                 <p className="text-[10px] font-black uppercase tracking-[0.12em] text-fuchsia-100">Mini-Agence</p>
