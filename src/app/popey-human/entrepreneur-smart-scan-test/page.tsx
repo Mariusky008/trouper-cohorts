@@ -829,6 +829,23 @@ export default function EntrepreneurSmartScanTestPage() {
     }
   }
 
+  async function handleFollowupJobAction(actionId: string, status: "processed" | "cancelled") {
+    try {
+      await postSmartScan("followup-job", { actionId, status });
+      await refreshSmartScanSnapshot();
+    } catch {
+      // Error banner is already handled in postSmartScan.
+    }
+  }
+
+  async function copyFollowupMessage(message: string) {
+    try {
+      await navigator.clipboard.writeText(message);
+    } catch {
+      setApiErrorMessage("Copie impossible. Tu peux copier le message manuellement.");
+    }
+  }
+
   function scrollIntoViewSmooth(ref: React.RefObject<HTMLDivElement | null>) {
     ref.current?.scrollIntoView({ behavior: "smooth", block: "center" });
   }
@@ -860,7 +877,7 @@ export default function EntrepreneurSmartScanTestPage() {
   }
 
   async function postSmartScan(
-    path: "trust" | "qualification" | "action" | "favorite" | "outcome" | "generate-message",
+    path: "trust" | "qualification" | "action" | "favorite" | "outcome" | "generate-message" | "followup-job",
     payload: Record<string, unknown>,
   ) {
     const maxAttempts = 3;
@@ -1594,20 +1611,47 @@ export default function EntrepreneurSmartScanTestPage() {
                   <p className="text-xs text-white/70">Aucune relance due pour le moment.</p>
                 )}
                 {dueFollowups.slice(0, 3).map((item) => (
-                  <button
+                  <div
                     key={item.actionId}
-                    type="button"
-                    onClick={() => openContactProfileWithTrustGuard(item.contactId)}
-                    className="w-full rounded-xl border border-white/15 bg-black/25 px-3 py-2 text-left transition hover:border-orange-300/40"
+                    className="w-full rounded-xl border border-white/15 bg-black/25 px-3 py-2 text-left"
                   >
-                    <p className="text-sm font-black text-white">
-                      {item.contactName} • {actionLabel(item.actionType)}
-                    </p>
-                    <p className="text-[11px] text-white/75">
-                      Priorite {item.priorityScore}/100 • Due: {item.dueAtLabel}
-                    </p>
+                    <button
+                      type="button"
+                      onClick={() => openContactProfileWithTrustGuard(item.contactId)}
+                      className="w-full text-left"
+                    >
+                      <p className="text-sm font-black text-white">
+                        {item.contactName} • {actionLabel(item.actionType)}
+                      </p>
+                      <p className="text-[11px] text-white/75">
+                        Priorite {item.priorityScore}/100 • Due: {item.dueAtLabel}
+                      </p>
+                    </button>
                     <p className="mt-1 line-clamp-2 text-[10px] text-orange-100/90">{item.suggestedMessage}</p>
-                  </button>
+                    <div className="mt-2 grid grid-cols-3 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => copyFollowupMessage(item.suggestedMessage)}
+                        className="h-8 rounded-lg border border-cyan-300/35 bg-cyan-300/10 text-[10px] font-black uppercase tracking-[0.08em] text-cyan-100"
+                      >
+                        Copier
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleFollowupJobAction(item.actionId, "processed")}
+                        className="h-8 rounded-lg border border-emerald-300/35 bg-emerald-300/10 text-[10px] font-black uppercase tracking-[0.08em] text-emerald-100"
+                      >
+                        Relance faite
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleFollowupJobAction(item.actionId, "cancelled")}
+                        className="h-8 rounded-lg border border-white/20 bg-white/10 text-[10px] font-black uppercase tracking-[0.08em] text-white/80"
+                      >
+                        Ignorer
+                      </button>
+                    </div>
+                  </div>
                 ))}
               </div>
             </div>

@@ -1059,6 +1059,80 @@ export async function runSmartScanFollowupSweep(limit = 600) {
   };
 }
 
+export async function updateSmartScanFollowupJob(input: {
+  actionId: string;
+  status: "processed" | "cancelled";
+}) {
+  const currentMember = await getCurrentHumanMember();
+  if (!currentMember) return { error: "Session requise." };
+
+  const supabaseAdmin = createAdminClient();
+  const nowIso = new Date().toISOString();
+  const { data: actionRow, error: actionError } = await supabaseAdmin
+    .from("human_smart_scan_actions")
+    .select("id,contact_id,action_type,followup_due_at")
+    .eq("id", input.actionId)
+    .eq("owner_member_id", currentMember.id)
+    .maybeSingle();
+  if (actionError || !actionRow?.id) {
+    return { error: actionError?.message || "Action introuvable." };
+  }
+
+  const { data: contactRow } = await supabaseAdmin
+    .from("human_smart_scan_contacts")
+    .select("full_name")
+    .eq("id", String(actionRow.contact_id))
+    .eq("owner_member_id", currentMember.id)
+    .maybeSingle();
+
+  const contactName = String(contactRow?.full_name || "Contact");
+  const { error: upsertError } = await supabaseAdmin
+    .from("human_smart_scan_followup_jobs")
+    .upsert(
+      {
+        action_id: String(actionRow.id),
+        owner_member_id: currentMember.id,
+        contact_id: String(actionRow.contact_id),
+        job_type: "auto_followup_48h",
+        status: input.status,
+        suggested_message: buildFollowupSuggestion(contactName, actionRow.action_type as SmartScanActionType),
+        scheduled_for: String(actionRow.followup_due_at || nowIso),
+        processed_at: input.status === "processed" ? nowIso : null,
+        updated_at: nowIso,
+      },
+      { onConflict: "action_id,job_type" }
+    );
+  if (upsertError) return { error: upsertError.message };
+
+  const actionUpdatePayload =
+    input.status === "processed"
+      ? {
+          outcome_status: "replied" as const,
+          followup_due_at: null,
+          updated_at: nowIso,
+        }
+      : {
+          followup_due_at: null,
+          updated_at: nowIso,
+        };
+
+  const { error: updateActionError } = await supabaseAdmin
+    .from("human_smart_scan_actions")
+    .update(actionUpdatePayload)
+    .eq("id", String(actionRow.id))
+    .eq("owner_member_id", currentMember.id);
+  if (updateActionError) return { error: updateActionError.message };
+
+  await syncHighPriorityNoResponseAlertForContact(currentMember.id, String(actionRow.contact_id), contactName);
+  revalidateSmartScanPaths();
+  return {
+    success: true,
+    actionId: String(actionRow.id),
+    status: input.status,
+    outcomeStatus: input.status === "processed" ? "replied" : null,
+  };
+}
+
 async function syncHotIdealAlertForContact(ownerMemberId: string, contactId: string, contactName?: string) {
   const supabaseAdmin = createAdminClient();
   const nowIso = new Date().toISOString();
