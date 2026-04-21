@@ -60,6 +60,9 @@ export default async function AdminHumainCockpitPage({
   if (start) exportQuery.set("start", start);
   if (end) exportQuery.set("end", end);
   const exportSuffix = exportQuery.toString() ? `?${exportQuery.toString()}` : "";
+  const smartScanExportQuery = new URLSearchParams();
+  smartScanExportQuery.set("days", String(smartScanDays));
+  const smartScanExportSuffix = `?${smartScanExportQuery.toString()}`;
   const sharedParams = {
     ...params,
     cockpitStart: start,
@@ -160,6 +163,9 @@ export default async function AdminHumainCockpitPage({
           </Button>
           <Button asChild variant="outline">
             <Link href={`/admin/humain/cockpit/export/commissions${exportSuffix}`}>Exporter Commissions CSV</Link>
+          </Button>
+          <Button asChild variant="outline">
+            <Link href={`/admin/humain/cockpit/export/smart-scan${smartScanExportSuffix}`}>Exporter Smart Scan CSV</Link>
           </Button>
           <Button asChild variant="outline">
             <Link href="/admin/humain/commissions">Gérer les commissions</Link>
