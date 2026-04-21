@@ -679,6 +679,8 @@ export default function EntrepreneurSmartScanTestPage() {
   const [importedContacts, setImportedContacts] = useState<DailyContact[]>([]);
   const [importSummary, setImportSummary] = useState<string>("");
   const [isImportingContacts, setIsImportingContacts] = useState(false);
+  const [supportsDirectContactPicker, setSupportsDirectContactPicker] = useState(false);
+  const [showImportHelp, setShowImportHelp] = useState(false);
   const contactImportInputRef = useRef<HTMLInputElement | null>(null);
 
   const hasImportedContacts = importedContacts.length > 0;
@@ -978,6 +980,16 @@ export default function EntrepreneurSmartScanTestPage() {
       return Math.max(0, Math.min(value, contactsData.length - 1));
     });
   }, [contactsData.length]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const nav = navigator as Navigator & {
+      contacts?: {
+        select?: (properties: string[], options?: { multiple?: boolean }) => Promise<Array<{ name?: string[]; tel?: string[] }>>;
+      };
+    };
+    setSupportsDirectContactPicker(typeof nav.contacts?.select === "function");
+  }, []);
 
   function adnBadgeClass(label: string) {
     const lower = label.toLowerCase();
@@ -2037,6 +2049,43 @@ export default function EntrepreneurSmartScanTestPage() {
     }
   }
 
+  async function importContactsFromDirectPicker() {
+    const nav = navigator as Navigator & {
+      contacts?: {
+        select?: (properties: string[], options?: { multiple?: boolean }) => Promise<Array<{ name?: string[]; tel?: string[] }>>;
+      };
+    };
+    if (typeof nav.contacts?.select !== "function") {
+      setApiErrorMessage("Acces direct indisponible sur ce navigateur. Utilise l import .vcf/.csv.");
+      return;
+    }
+    try {
+      setIsImportingContacts(true);
+      const picked = await nav.contacts.select(["name", "tel"], { multiple: true });
+      const rows: ImportedContactRow[] = picked.map((entry) => ({
+        fullName: entry.name?.[0]?.trim() || entry.tel?.[0]?.trim() || "Contact",
+        phone: entry.tel?.[0]?.trim() || null,
+        city: null,
+        companyHint: "Import direct telephone",
+      }));
+      const nextContacts = buildDailyContactsFromImport(rows);
+      if (nextContacts.length === 0) {
+        setApiErrorMessage("Aucun contact exploitable recupere en acces direct.");
+        return;
+      }
+      setImportedContacts(nextContacts);
+      setImportSummary(`${nextContacts.length} contacts importes via acces direct`);
+      setScanCount(0);
+      setStage("scan");
+      setIndex(0);
+      setApiErrorMessage("");
+    } catch {
+      setApiErrorMessage("Acces direct refuse ou indisponible. Utilise l import .vcf/.csv.");
+    } finally {
+      setIsImportingContacts(false);
+    }
+  }
+
   function clearImportedContacts() {
     setImportedContacts([]);
     setImportSummary("");
@@ -2148,6 +2197,25 @@ export default function EntrepreneurSmartScanTestPage() {
                 >
                   {isImportingContacts ? "Import en cours..." : "Importer un fichier"}
                 </button>
+                {supportsDirectContactPicker && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      void importContactsFromDirectPicker();
+                    }}
+                    disabled={isImportingContacts}
+                    className="h-9 rounded-xl border border-emerald-200/35 bg-emerald-300/20 px-3 text-[11px] font-black uppercase tracking-wide text-emerald-50 disabled:opacity-50"
+                  >
+                    Tester acces direct
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setShowImportHelp((value) => !value)}
+                  className="h-9 rounded-xl border border-white/20 bg-white/10 px-3 text-[11px] font-black uppercase tracking-wide text-white/85"
+                >
+                  {showImportHelp ? "Masquer aide" : "Comment exporter ?"}
+                </button>
                 {importedContacts.length > 0 && (
                   <button
                     type="button"
@@ -2172,6 +2240,19 @@ export default function EntrepreneurSmartScanTestPage() {
                   void handleContactImportChange(event);
                 }}
               />
+              {showImportHelp && (
+                <div className="mt-2 rounded-xl border border-white/15 bg-[#0B1734]/65 px-3 py-2 text-[11px] text-white/80">
+                  <p className="font-black text-cyan-100">iPhone (iCloud)</p>
+                  <p className="mt-1">1) Va sur iCloud Contacts puis exporte en vCard (.vcf).</p>
+                  <p>2) Enregistre le fichier dans Fichiers.</p>
+                  <p>3) Reviens ici et clique Importer un fichier.</p>
+                  <p className="mt-2 font-black text-cyan-100">Android (Google Contacts)</p>
+                  <p className="mt-1">1) Ouvre Google Contacts puis Exporter (vCard ou CSV).</p>
+                  <p>2) Enregistre le fichier sur ton telephone.</p>
+                  <p>3) Reviens ici et importe le fichier.</p>
+                  <p className="mt-2 text-amber-100">Note: en mode web, l acces direct au carnet natif depend du navigateur.</p>
+                </div>
+              )}
               {importSummary && <p className="mt-2 text-[11px] text-emerald-100">{importSummary}</p>}
             </div>
 

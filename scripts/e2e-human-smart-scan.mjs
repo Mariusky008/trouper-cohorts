@@ -75,6 +75,37 @@ async function hasText(page, snippet) {
   }, snippet);
 }
 
+async function importContactsIfNeeded(page) {
+  const needsImport = await hasText(page, "aucun contact importe");
+  if (!needsImport) return;
+
+  const fixtureDir = path.resolve(process.cwd(), "scripts", "fixtures");
+  if (!fs.existsSync(fixtureDir)) {
+    fs.mkdirSync(fixtureDir, { recursive: true });
+  }
+  const fixturePath = path.resolve(fixtureDir, "e2e-smart-scan-contacts.csv");
+  const fixtureCsv = [
+    "name,phone,city,company",
+    "Nicolas Test,+33601010101,Dax,Test Habitat",
+    "Claire Test,+33602020202,Saint-Paul-les-Dax,Test Conseil",
+    "Julien Test,+33603030303,Dax,Test Services",
+  ].join("\n");
+  fs.writeFileSync(fixturePath, fixtureCsv, "utf8");
+
+  const input = await page.$('input[type="file"]');
+  if (!input) {
+    throw new Error("Unable to find file input for contact import.");
+  }
+  await input.uploadFile(fixturePath);
+  await ensureText(page, ["contacts importes"]);
+  await page.waitForFunction(() => {
+    const button = Array.from(document.querySelectorAll("button")).find((item) =>
+      (item.textContent || "").toLowerCase().includes("continuer"),
+    );
+    return Boolean(button && !button.disabled);
+  });
+}
+
 async function login(page, baseUrl, email, password) {
   await page.goto(`${baseUrl}/popey-human/login`, { waitUntil: "domcontentloaded" });
   await page.waitForSelector("#email");
@@ -103,8 +134,15 @@ async function main() {
     await ensureText(page, ["mini-agence smart scan"]);
     console.log("[E2E-SMART-SCAN] Smart Scan page OK");
 
-    const onScanStage = await hasText(page, "scan de ton telephone en cours");
-    if (onScanStage) {
+    const onDailyStage = await hasText(page, "cockpit mission quotidienne");
+    if (!onDailyStage) {
+      await importContactsIfNeeded(page);
+      await page.waitForFunction(() => {
+        const button = Array.from(document.querySelectorAll("button")).find((item) =>
+          (item.textContent || "").toLowerCase().includes("continuer"),
+        );
+        return Boolean(button);
+      });
       await clickButtonContaining(page, ["continuer"]);
       await ensureText(page, ["cockpit mission quotidienne"]);
       console.log("[E2E-SMART-SCAN] Scan -> Daily transition OK");
