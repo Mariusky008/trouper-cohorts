@@ -116,6 +116,30 @@ type FollowupItem = {
   dueAtMs: number;
   suggestedMessage: string;
 };
+type TransitionScreenState = {
+  message: string;
+  icon: string;
+  from: number;
+  to: number;
+  final: boolean;
+  manual?: boolean;
+  ctaLabel?: string;
+};
+type TransitionAwaitingConfirmState = {
+  action: Exclude<DailyCategory, "qualifier">;
+  stayOnCurrentContact: boolean;
+  returnToProfileContactId: string | null;
+  countAsSent: boolean;
+  sentInHistory: boolean;
+};
+type PendingWhatsAppContext = {
+  transition: TransitionScreenState;
+  awaitingConfirm: TransitionAwaitingConfirmState;
+  contactId: string;
+  createdAt: number;
+};
+
+const PENDING_WHATSAPP_CONTEXT_KEY = "popey-human:smart-scan:pending-whatsapp-context";
 
 const CONTACTS: DailyContact[] = [
   {
@@ -439,22 +463,8 @@ export default function EntrepreneurSmartScanTestPage() {
   const [softLearningHint, setSoftLearningHint] = useState("");
   const [qualificationPivot, setQualificationPivot] = useState<{ contactId: string; firstName: string; tag: string } | null>(null);
   const [actionGlowContactId, setActionGlowContactId] = useState<string | null>(null);
-  const [transitionScreen, setTransitionScreen] = useState<{
-    message: string;
-    icon: string;
-    from: number;
-    to: number;
-    final: boolean;
-    manual?: boolean;
-    ctaLabel?: string;
-  } | null>(null);
-  const [transitionAwaitingConfirm, setTransitionAwaitingConfirm] = useState<{
-    action: Exclude<DailyCategory, "qualifier">;
-    stayOnCurrentContact: boolean;
-    returnToProfileContactId: string | null;
-    countAsSent: boolean;
-    sentInHistory: boolean;
-  } | null>(null);
+  const [transitionScreen, setTransitionScreen] = useState<TransitionScreenState | null>(null);
+  const [transitionAwaitingConfirm, setTransitionAwaitingConfirm] = useState<TransitionAwaitingConfirmState | null>(null);
   const [pendingTransition, setPendingTransition] = useState<{
     message: string;
     icon: string;
@@ -752,22 +762,38 @@ export default function EntrepreneurSmartScanTestPage() {
 
   useEffect(() => {
     function flushPendingTransition() {
-      if (!pendingTransition || !pendingFinalizeAction) return;
-      setTransitionScreen({
-        ...pendingTransition,
-        manual: true,
-        ctaLabel: "Passez au prochain profil",
-      });
-      setTransitionAwaitingConfirm({
-        action: pendingFinalizeAction,
-        countAsSent: true,
-        sentInHistory: true,
-        stayOnCurrentContact: Boolean(pendingReturnProfileContactId),
-        returnToProfileContactId: pendingReturnProfileContactId,
-      });
+      const inMemoryAvailable = Boolean(pendingTransition && pendingFinalizeAction);
+      const restoredContext =
+        inMemoryAvailable
+          ? {
+              transition: {
+                ...pendingTransition!,
+                manual: true,
+                ctaLabel: "Passez au prochain profil",
+              },
+              awaitingConfirm: {
+                action: pendingFinalizeAction!,
+                countAsSent: true,
+                sentInHistory: true,
+                stayOnCurrentContact: Boolean(pendingReturnProfileContactId),
+                returnToProfileContactId: pendingReturnProfileContactId,
+              },
+              contactId: current.id,
+              createdAt: Date.now(),
+            }
+          : readPendingWhatsAppContext();
+      if (!restoredContext) return;
+
+      const nextIndex = CONTACTS.findIndex((contact) => contact.id === restoredContext.contactId);
+      if (nextIndex >= 0) {
+        setIndex(nextIndex);
+      }
+      setTransitionScreen(restoredContext.transition);
+      setTransitionAwaitingConfirm(restoredContext.awaitingConfirm);
       setPendingTransition(null);
       setPendingFinalizeAction(null);
       setPendingReturnProfileContactId(null);
+      clearPendingWhatsAppContext();
     }
 
     function onFocus() {
@@ -781,6 +807,7 @@ export default function EntrepreneurSmartScanTestPage() {
     }
 
     if (typeof window !== "undefined") {
+      flushPendingTransition();
       window.addEventListener("focus", onFocus);
       document.addEventListener("visibilitychange", onVisibilityChange);
     }
@@ -790,7 +817,7 @@ export default function EntrepreneurSmartScanTestPage() {
         document.removeEventListener("visibilitychange", onVisibilityChange);
       }
     };
-  }, [pendingTransition, pendingFinalizeAction, pendingReturnProfileContactId]);
+  }, [pendingTransition, pendingFinalizeAction, pendingReturnProfileContactId, current.id]);
 
   function actionLabel(action: Exclude<DailyCategory, "qualifier">) {
     if (action === "eclaireur") return "Eclaireur";
@@ -1013,7 +1040,7 @@ export default function EntrepreneurSmartScanTestPage() {
   }
 
   async function postSmartScan(
-    path: "trust" | "qualification" | "action" | "favorite" | "outcome" | "generate-message" | "followup-job",
+    path: "trust" | "qualification" | "action" | "favorite" | "outcome" | "generate-message" | "followup-job" | "prepare-whatsapp-payload",
     payload: Record<string, unknown>,
   ) {
     const maxAttempts = 3;
@@ -1202,6 +1229,29 @@ export default function EntrepreneurSmartScanTestPage() {
     };
   }
 
+  function savePendingWhatsAppContext(context: PendingWhatsAppContext) {
+    if (typeof window === "undefined") return;
+    window.sessionStorage.setItem(PENDING_WHATSAPP_CONTEXT_KEY, JSON.stringify(context));
+  }
+
+  function clearPendingWhatsAppContext() {
+    if (typeof window === "undefined") return;
+    window.sessionStorage.removeItem(PENDING_WHATSAPP_CONTEXT_KEY);
+  }
+
+  function readPendingWhatsAppContext() {
+    if (typeof window === "undefined") return null;
+    const raw = window.sessionStorage.getItem(PENDING_WHATSAPP_CONTEXT_KEY);
+    if (!raw) return null;
+    try {
+      const parsed = JSON.parse(raw) as PendingWhatsAppContext;
+      if (!parsed?.transition || !parsed?.awaitingConfirm || !parsed?.contactId) return null;
+      return parsed;
+    } catch {
+      return null;
+    }
+  }
+
   function finalizeAction(
     action: Exclude<DailyCategory, "qualifier">,
     advanceDelay = 200,
@@ -1316,34 +1366,65 @@ export default function EntrepreneurSmartScanTestPage() {
     setShowTemplateModal(true);
   }
 
-  function sendOnWhatsApp() {
+  async function sendOnWhatsApp() {
     const cleanPhone = "33600000000";
     const action = selectedAction;
     if (!action || action === "qualifier") return;
     const payload = createTransitionPayload(action);
+    const awaitingConfirm: TransitionAwaitingConfirmState = {
+      action,
+      countAsSent: true,
+      sentInHistory: true,
+      stayOnCurrentContact: Boolean(actionFromProfileContactId),
+      returnToProfileContactId: actionFromProfileContactId,
+    };
+    let whatsappUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(draftMessage)}`;
+
+    try {
+      const prepared = (await postSmartScan("prepare-whatsapp-payload", {
+        externalContactRef: current.id,
+        fullName: current.name,
+        city: current.city,
+        companyHint: current.companyHint,
+        actionType: action,
+        messageDraft: draftMessage,
+        phoneE164: cleanPhone,
+      })) as { whatsappUrl?: string };
+      if (prepared?.whatsappUrl) {
+        whatsappUrl = prepared.whatsappUrl;
+      }
+    } catch {
+      // Fallback URL is already set and can still be used.
+    }
 
     if (typeof window !== "undefined") {
-      window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(draftMessage)}`, "_blank");
+      window.open(whatsappUrl, "_blank");
     }
     setShowTemplateModal(false);
     setAiGenerationSource(null);
     setAiPromptVersion(null);
     setAiGeneratedAt(null);
     if (typeof document !== "undefined" && document.visibilityState === "visible") {
+      clearPendingWhatsAppContext();
       setTransitionScreen({
         ...payload,
         manual: true,
         ctaLabel: "Passez au prochain profil",
       });
-      setTransitionAwaitingConfirm({
-        action,
-        countAsSent: true,
-        sentInHistory: true,
-        stayOnCurrentContact: Boolean(actionFromProfileContactId),
-        returnToProfileContactId: actionFromProfileContactId,
-      });
+      setTransitionAwaitingConfirm(awaitingConfirm);
       return;
     }
+
+    savePendingWhatsAppContext({
+      transition: {
+        ...payload,
+        manual: true,
+        ctaLabel: "Passez au prochain profil",
+      },
+      awaitingConfirm,
+      contactId: current.id,
+      createdAt: Date.now(),
+    });
     setPendingTransition(payload);
     setPendingFinalizeAction(action);
     setPendingReturnProfileContactId(actionFromProfileContactId);

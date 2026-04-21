@@ -416,6 +416,47 @@ export async function logSmartScanAction(input: {
   };
 }
 
+export async function prepareSmartScanWhatsAppPayload(input: {
+  contactId?: string;
+  externalContactRef?: string;
+  fullName?: string;
+  city?: string | null;
+  companyHint?: string | null;
+  actionType: SmartScanActionType;
+  messageDraft: string;
+  phoneE164?: string | null;
+}) {
+  const currentMember = await getCurrentHumanMember();
+  if (!currentMember) return { error: "Session requise." };
+
+  const resolved = await resolveContactId({
+    ownerMemberId: currentMember.id,
+    contactId: input.contactId,
+    externalContactRef: input.externalContactRef,
+    fullName: input.fullName,
+    city: input.city,
+    companyHint: input.companyHint,
+  });
+  if ("error" in resolved) return resolved;
+
+  const message = (input.messageDraft || "").trim();
+  if (!message) return { error: "Le message WhatsApp est requis." };
+
+  const normalizedPhone = (input.phoneE164 || "33600000000").replace(/\D/g, "");
+  if (!normalizedPhone || normalizedPhone.length < 8) {
+    return { error: "Numero WhatsApp invalide." };
+  }
+
+  const whatsappUrl = `https://wa.me/${normalizedPhone}?text=${encodeURIComponent(message)}`;
+  return {
+    success: true,
+    contactId: resolved.id,
+    actionType: input.actionType,
+    whatsappUrl,
+    preparedAt: new Date().toISOString(),
+  };
+}
+
 export async function updateSmartScanActionOutcome(input: {
   actionId: string;
   outcomeStatus: SmartScanActionOutcomeStatus;
