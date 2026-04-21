@@ -806,6 +806,27 @@ export default function EntrepreneurSmartScanTestPage() {
     return "En attente";
   }
 
+  function followupUrgencyBadge(item: FollowupItem) {
+    const overdueMs = Date.now() - item.dueAtMs;
+    if (overdueMs <= 0) {
+      return {
+        label: "A venir",
+        className: "border-white/20 bg-white/10 text-white/85",
+      };
+    }
+    const overdueHours = Math.max(1, Math.round(overdueMs / (60 * 60 * 1000)));
+    if (overdueHours >= 24) {
+      return {
+        label: `Retard ${overdueHours}h`,
+        className: "border-rose-300/45 bg-rose-300/20 text-rose-100",
+      };
+    }
+    return {
+      label: `Retard ${overdueHours}h`,
+      className: "border-amber-300/45 bg-amber-300/20 text-amber-100",
+    };
+  }
+
   async function updateActionOutcome(entry: HistoryEntry, outcomeStatus: "pending" | "replied" | "converted" | "not_interested") {
     if (!entry.actionId) return;
     try {
@@ -854,6 +875,10 @@ export default function EntrepreneurSmartScanTestPage() {
     actionId: string,
     decision: "replied" | "converted" | "not_interested" | "ignored"
   ) {
+    if (decision === "ignored" && typeof window !== "undefined") {
+      const confirmed = window.confirm("Confirmer l action Ignorer ? Cette relance sortira de la file prioritaire.");
+      if (!confirmed) return;
+    }
     try {
       await postSmartScan("followup-job", { actionId, decision });
       await refreshSmartScanSnapshot();
@@ -1815,11 +1840,16 @@ export default function EntrepreneurSmartScanTestPage() {
               </div>
               <div className="mt-2 space-y-2">
                 {visibleDueFollowups.length === 0 && (
-                  <p className="text-xs text-white/70">
-                    {followupFilter === "overdue"
-                      ? "Aucune relance en retard pour le moment."
-                      : "Aucune relance due pour le moment."}
-                  </p>
+                  <div className="rounded-lg border border-white/15 bg-black/25 px-3 py-2">
+                    <p className="text-xs text-white/80">
+                      {followupFilter === "overdue"
+                        ? "Aucune relance en retard pour le moment."
+                        : "Aucune relance due pour le moment."}
+                    </p>
+                    <p className="mt-1 text-[11px] text-white/60">
+                      Astuce: utilise “Tous” pour revoir la file complete ou relance le sweep cron si necessaire.
+                    </p>
+                  </div>
                 )}
                 {displayedDueFollowups.map((item) => (
                   <div
@@ -1838,7 +1868,17 @@ export default function EntrepreneurSmartScanTestPage() {
                         Priorite {item.priorityScore}/100 • Due: {item.dueAtLabel}
                       </p>
                     </button>
-                    <p className="mt-1 line-clamp-2 text-[10px] text-orange-100/90">{item.suggestedMessage}</p>
+                    <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                      <span className={`rounded-full border px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.08em] ${followupUrgencyBadge(item).className}`}>
+                        {followupUrgencyBadge(item).label}
+                      </span>
+                      <span className="rounded-full border border-cyan-300/35 bg-cyan-300/15 px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.08em] text-cyan-100">
+                        Outcome pending
+                      </span>
+                    </div>
+                    <p className="mt-1 line-clamp-2 text-[10px] text-orange-100/90">
+                      {item.suggestedMessage || "Message suggere indisponible pour cette relance."}
+                    </p>
                     <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-5">
                       <button
                         type="button"
