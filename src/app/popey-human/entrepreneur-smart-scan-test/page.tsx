@@ -475,6 +475,9 @@ export default function EntrepreneurSmartScanTestPage() {
   const [pendingFinalizeAction, setPendingFinalizeAction] = useState<Exclude<DailyCategory, "qualifier"> | null>(null);
   const [pendingReturnProfileContactId, setPendingReturnProfileContactId] = useState<string | null>(null);
   const [showHistoryPanel, setShowHistoryPanel] = useState(false);
+  const [historyStatusFilter, setHistoryStatusFilter] = useState<"all" | "sent" | "validated">("all");
+  const [historyActionFilter, setHistoryActionFilter] = useState<"all" | Exclude<DailyCategory, "qualifier">>("all");
+  const [historyPeriodFilter, setHistoryPeriodFilter] = useState<"all" | "today" | "7d">("all");
   const [showSearchPanel, setShowSearchPanel] = useState(false);
   const [showMyProfilePanel, setShowMyProfilePanel] = useState(false);
   const [showTrustLevelPrompt, setShowTrustLevelPrompt] = useState(false);
@@ -694,6 +697,22 @@ export default function EntrepreneurSmartScanTestPage() {
   const dailyReportDateLabel = useMemo(() => {
     return new Date().toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit", year: "numeric" });
   }, []);
+  const filteredHistoryEntries = useMemo(() => {
+    const now = Date.now();
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const todayStartMs = todayStart.getTime();
+    const last7dMs = now - 7 * 24 * 60 * 60 * 1000;
+
+    return historyEntries.filter((entry) => {
+      if (historyStatusFilter === "sent" && !entry.sent) return false;
+      if (historyStatusFilter === "validated" && entry.sent) return false;
+      if (historyActionFilter !== "all" && entry.action !== historyActionFilter) return false;
+      if (historyPeriodFilter === "today" && entry.atMs < todayStartMs) return false;
+      if (historyPeriodFilter === "7d" && entry.atMs < last7dMs) return false;
+      return true;
+    });
+  }, [historyEntries, historyStatusFilter, historyActionFilter, historyPeriodFilter]);
 
   function adnBadgeClass(label: string) {
     const lower = label.toLowerCase();
@@ -2256,9 +2275,41 @@ export default function EntrepreneurSmartScanTestPage() {
               <p className="text-xs font-black uppercase tracking-[0.12em] text-cyan-200">Historique recent</p>
               <button type="button" onClick={() => setShowHistoryPanel(false)} className="h-8 w-8 rounded-full border border-white/20 bg-white/10 text-xs">✕</button>
             </div>
+            <div className="mt-3 grid grid-cols-3 gap-2">
+              <select
+                value={historyStatusFilter}
+                onChange={(event) => setHistoryStatusFilter(event.target.value as "all" | "sent" | "validated")}
+                className="h-9 rounded-lg border border-white/15 bg-black/25 px-2 text-[11px]"
+              >
+                <option value="all">Statut: Tous</option>
+                <option value="sent">Statut: Envoye</option>
+                <option value="validated">Statut: Valide</option>
+              </select>
+              <select
+                value={historyActionFilter}
+                onChange={(event) => setHistoryActionFilter(event.target.value as "all" | Exclude<DailyCategory, "qualifier">)}
+                className="h-9 rounded-lg border border-white/15 bg-black/25 px-2 text-[11px]"
+              >
+                <option value="all">Action: Toutes</option>
+                <option value="eclaireur">Eclaireur</option>
+                <option value="package">Partage Croise</option>
+                <option value="exclients">Ex-Clients</option>
+                <option value="passer">Passer</option>
+              </select>
+              <select
+                value={historyPeriodFilter}
+                onChange={(event) => setHistoryPeriodFilter(event.target.value as "all" | "today" | "7d")}
+                className="h-9 rounded-lg border border-white/15 bg-black/25 px-2 text-[11px]"
+              >
+                <option value="all">Periode: Tout</option>
+                <option value="today">Periode: Aujourd hui</option>
+                <option value="7d">Periode: 7 jours</option>
+              </select>
+            </div>
+            <p className="mt-2 text-[11px] text-white/65">{filteredHistoryEntries.length} element(s) apres filtres</p>
             <div className="mt-3 max-h-72 space-y-2 overflow-y-auto">
-              {historyEntries.length === 0 && <p className="text-sm text-white/70">Aucune action recente pour le moment.</p>}
-              {historyEntries.map((entry, idx) => (
+              {filteredHistoryEntries.length === 0 && <p className="text-sm text-white/70">Aucune action pour ces filtres.</p>}
+              {filteredHistoryEntries.map((entry, idx) => (
                 <button
                   key={`${entry.contactId}-${entry.at}-${idx}`}
                   type="button"
