@@ -490,6 +490,7 @@ export default function EntrepreneurSmartScanTestPage() {
   const [aiGenerationSource, setAiGenerationSource] = useState<"ai" | "fallback" | null>(null);
   const [dueFollowups, setDueFollowups] = useState<FollowupItem[]>([]);
   const [followupFilter, setFollowupFilter] = useState<"all" | "overdue">("all");
+  const [isBatchCopyingFollowups, setIsBatchCopyingFollowups] = useState(false);
   const [conversionMetrics, setConversionMetrics] = useState<BootstrapMetrics | null>(null);
   const [followupOpsStats, setFollowupOpsStats] = useState<BootstrapFollowupOps | null>(null);
 
@@ -678,6 +679,7 @@ export default function EntrepreneurSmartScanTestPage() {
     followupFilter === "overdue"
       ? dueFollowups.filter((item) => item.dueAtMs <= nowMs)
       : dueFollowups;
+  const displayedDueFollowups = visibleDueFollowups.slice(0, 3);
 
   function adnBadgeClass(label: string) {
     const lower = label.toLowerCase();
@@ -863,6 +865,31 @@ export default function EntrepreneurSmartScanTestPage() {
       await refreshSmartScanSnapshot();
     } catch {
       setApiErrorMessage("Copie impossible. Tu peux copier le message manuellement.");
+    }
+  }
+
+  async function markVisibleFollowupsAsCopied() {
+    const targetItems = displayedDueFollowups;
+    if (targetItems.length === 0 || isBatchCopyingFollowups) return;
+    const confirmationText = `Marquer ${targetItems.length} relance(s) affichee(s) comme copiees ?`;
+    if (typeof window !== "undefined" && !window.confirm(confirmationText)) return;
+
+    setIsBatchCopyingFollowups(true);
+    let failedCount = 0;
+    try {
+      for (const item of targetItems) {
+        try {
+          await postSmartScan("followup-job", { actionId: item.actionId, decision: "copied" });
+        } catch {
+          failedCount += 1;
+        }
+      }
+      await refreshSmartScanSnapshot();
+      if (failedCount > 0) {
+        setApiErrorMessage(`${failedCount} relance(s) n ont pas pu etre marquee(s) comme copiees.`);
+      }
+    } finally {
+      setIsBatchCopyingFollowups(false);
     }
   }
 
@@ -1633,6 +1660,7 @@ export default function EntrepreneurSmartScanTestPage() {
                 <button
                   type="button"
                   onClick={() => setFollowupFilter("all")}
+                  disabled={isBatchCopyingFollowups}
                   className={`h-7 rounded-full px-3 text-[10px] font-black uppercase tracking-[0.08em] transition ${
                     followupFilter === "all"
                       ? "border border-orange-300/45 bg-orange-300/20 text-orange-100"
@@ -1644,6 +1672,7 @@ export default function EntrepreneurSmartScanTestPage() {
                 <button
                   type="button"
                   onClick={() => setFollowupFilter("overdue")}
+                  disabled={isBatchCopyingFollowups}
                   className={`h-7 rounded-full px-3 text-[10px] font-black uppercase tracking-[0.08em] transition ${
                     followupFilter === "overdue"
                       ? "border border-rose-300/45 bg-rose-300/20 text-rose-100"
@@ -1651,6 +1680,18 @@ export default function EntrepreneurSmartScanTestPage() {
                   }`}
                 >
                   En retard ({overdueFollowupsCount})
+                </button>
+                <button
+                  type="button"
+                  onClick={markVisibleFollowupsAsCopied}
+                  disabled={isBatchCopyingFollowups || displayedDueFollowups.length === 0}
+                  className={`h-7 rounded-full px-3 text-[10px] font-black uppercase tracking-[0.08em] transition ${
+                    isBatchCopyingFollowups || displayedDueFollowups.length === 0
+                      ? "cursor-not-allowed border border-cyan-200/20 bg-cyan-200/10 text-cyan-100/60"
+                      : "border border-cyan-300/45 bg-cyan-300/20 text-cyan-100 hover:bg-cyan-300/30"
+                  }`}
+                >
+                  {isBatchCopyingFollowups ? "Traitement..." : `Tout copier (${displayedDueFollowups.length})`}
                 </button>
               </div>
               <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-5">
@@ -1683,7 +1724,7 @@ export default function EntrepreneurSmartScanTestPage() {
                       : "Aucune relance due pour le moment."}
                   </p>
                 )}
-                {visibleDueFollowups.slice(0, 3).map((item) => (
+                {displayedDueFollowups.map((item) => (
                   <div
                     key={item.actionId}
                     className="w-full rounded-xl border border-white/15 bg-black/25 px-3 py-2 text-left"
@@ -1705,6 +1746,7 @@ export default function EntrepreneurSmartScanTestPage() {
                       <button
                         type="button"
                         onClick={() => copyFollowupMessage(item.actionId, item.suggestedMessage)}
+                        disabled={isBatchCopyingFollowups}
                         className="h-8 rounded-lg border border-cyan-300/35 bg-cyan-300/10 text-[10px] font-black uppercase tracking-[0.08em] text-cyan-100"
                       >
                         Copier
@@ -1712,6 +1754,7 @@ export default function EntrepreneurSmartScanTestPage() {
                       <button
                         type="button"
                         onClick={() => handleFollowupJobAction(item.actionId, "replied")}
+                        disabled={isBatchCopyingFollowups}
                         className="h-8 rounded-lg border border-emerald-300/35 bg-emerald-300/10 text-[10px] font-black uppercase tracking-[0.08em] text-emerald-100"
                       >
                         Repondu
@@ -1719,6 +1762,7 @@ export default function EntrepreneurSmartScanTestPage() {
                       <button
                         type="button"
                         onClick={() => handleFollowupJobAction(item.actionId, "converted")}
+                        disabled={isBatchCopyingFollowups}
                         className="h-8 rounded-lg border border-amber-300/35 bg-amber-300/10 text-[10px] font-black uppercase tracking-[0.08em] text-amber-100"
                       >
                         Converti
@@ -1726,6 +1770,7 @@ export default function EntrepreneurSmartScanTestPage() {
                       <button
                         type="button"
                         onClick={() => handleFollowupJobAction(item.actionId, "not_interested")}
+                        disabled={isBatchCopyingFollowups}
                         className="h-8 rounded-lg border border-rose-300/35 bg-rose-300/10 text-[10px] font-black uppercase tracking-[0.08em] text-rose-100"
                       >
                         Pas interesse
@@ -1733,6 +1778,7 @@ export default function EntrepreneurSmartScanTestPage() {
                       <button
                         type="button"
                         onClick={() => handleFollowupJobAction(item.actionId, "ignored")}
+                        disabled={isBatchCopyingFollowups}
                         className="h-8 rounded-lg border border-white/20 bg-white/10 text-[10px] font-black uppercase tracking-[0.08em] text-white/80"
                       >
                         Ignorer
