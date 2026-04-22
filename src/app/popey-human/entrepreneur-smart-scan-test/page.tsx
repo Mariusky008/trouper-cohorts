@@ -1767,7 +1767,7 @@ export default function EntrepreneurSmartScanTestPage() {
         })
         .catch(() => null);
       if (!stayOnCurrentContact) {
-        setIndex((v) => Math.min(contactsData.length, v + 1));
+        setIndex((v) => Math.min(Math.max(0, contactsData.length - 1), v + 1));
       }
       if (returnToProfileContactId) {
         setProfileContactId(returnToProfileContactId);
@@ -2166,6 +2166,27 @@ export default function EntrepreneurSmartScanTestPage() {
     setScanCount(0);
     setIndex(0);
     setStage("scan");
+    if (typeof window !== "undefined") {
+      window.localStorage.removeItem(SMART_SCAN_IMPORTED_CONTACTS_KEY);
+      window.localStorage.removeItem(SMART_SCAN_SESSION_KEY);
+      window.sessionStorage.removeItem(PENDING_WHATSAPP_CONTEXT_KEY);
+    }
+  }
+
+  function restartDailyQueueFromFirstContact() {
+    if (!hasImportedContacts) {
+      setApiErrorMessage("Importe d abord tes contacts pour lancer la file quotidienne.");
+      return;
+    }
+    setIndex(0);
+    setStage("daily");
+    setShowMyProfilePanel(false);
+    setApiErrorMessage("");
+  }
+
+  function openImportFromProfile() {
+    setShowMyProfilePanel(false);
+    openContactImportPicker();
   }
 
   function resetScanSession() {
@@ -2554,6 +2575,29 @@ export default function EntrepreneurSmartScanTestPage() {
                   </button>
                 )}
               </div>
+              <div className="mt-3 grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={openImportFromProfile}
+                  className="h-10 rounded-xl border border-cyan-300/35 bg-cyan-300/10 text-[11px] font-black uppercase tracking-wide text-cyan-100"
+                >
+                  Reimporter contacts
+                </button>
+                <button
+                  type="button"
+                  onClick={clearImportedContacts}
+                  className="h-10 rounded-xl border border-orange-300/35 bg-orange-300/10 text-[11px] font-black uppercase tracking-wide text-orange-100"
+                >
+                  Supprimer import
+                </button>
+              </div>
+              <button
+                type="button"
+                onClick={restartDailyQueueFromFirstContact}
+                className="mt-2 h-10 w-full rounded-xl border border-white/20 bg-white/10 text-[11px] font-black uppercase tracking-wide text-white/85"
+              >
+                Revenir au 1er contact du jour
+              </button>
               <button
                 type="button"
                 onClick={signOutFromSmartScan}
@@ -3228,6 +3272,29 @@ export default function EntrepreneurSmartScanTestPage() {
                 </button>
               )}
             </div>
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={openImportFromProfile}
+                className="h-10 rounded-xl border border-cyan-300/35 bg-cyan-300/10 text-[11px] font-black uppercase tracking-wide text-cyan-100"
+              >
+                Reimporter contacts
+              </button>
+              <button
+                type="button"
+                onClick={clearImportedContacts}
+                className="h-10 rounded-xl border border-orange-300/35 bg-orange-300/10 text-[11px] font-black uppercase tracking-wide text-orange-100"
+              >
+                Supprimer import
+              </button>
+            </div>
+            <button
+              type="button"
+              onClick={restartDailyQueueFromFirstContact}
+              className="mt-2 h-10 w-full rounded-xl border border-white/20 bg-white/10 text-[11px] font-black uppercase tracking-wide text-white/85"
+            >
+              Revenir au 1er contact du jour
+            </button>
             <button
               type="button"
               onClick={signOutFromSmartScan}
@@ -3892,6 +3959,15 @@ export default function EntrepreneurSmartScanTestPage() {
           </motion.div>
         </div>
       )}
+      <input
+        ref={contactImportInputRef}
+        type="file"
+        accept=".vcf,.csv,text/vcard,text/csv"
+        className="hidden"
+        onChange={(event) => {
+          void handleContactImportChange(event);
+        }}
+      />
     </main>
   );
 }
