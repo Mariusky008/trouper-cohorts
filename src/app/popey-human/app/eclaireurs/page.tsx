@@ -28,6 +28,15 @@ function referralPipelineStep(status: string) {
   return 0;
 }
 
+function referralStatusLabel(status: string) {
+  if (status === "submitted") return "Reçu";
+  if (status === "validated") return "RDV";
+  if (status === "offered") return "Offre";
+  if (status === "converted") return "Signé";
+  if (status === "rejected") return "Refusé";
+  return status;
+}
+
 export default async function PopeyHumanScoutsPage({
   searchParams,
 }: {
@@ -180,7 +189,7 @@ export default async function PopeyHumanScoutsPage({
                     {referral.contact_name} • {referral.project_type || "Projet non précisé"}
                   </p>
                   <p className="text-xs text-white/70">
-                    Éclaireur: {scout ? scoutLabel(scout) : referral.scout_id} • Statut: {referral.status}
+                    Éclaireur: {scout ? scoutLabel(scout) : referral.scout_id} • Statut: {referralStatusLabel(referral.status)}
                   </p>
                   {referral.contact_phone && <p className="text-xs text-white/70">Tél: {referral.contact_phone}</p>}
                   {referral.comment && <p className="text-xs text-white/75 mt-1">{referral.comment}</p>}

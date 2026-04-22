@@ -10,19 +10,11 @@ function euros(value: number) {
   return value.toLocaleString("fr-FR", { style: "currency", currency: "EUR" });
 }
 
-function clamp(value: number, min: number, max: number) {
-  return Math.min(max, Math.max(min, value));
-}
-
-function isWinningStatus(status: string) {
-  return status === "offered" || status === "converted";
-}
-
 function referralStatusLabel(status: string) {
-  if (status === "submitted") return "Envoyée";
-  if (status === "validated") return "RDV pris";
-  if (status === "offered") return "Offre envoyée";
-  if (status === "converted") return "Signée";
+  if (status === "submitted") return "Reçu";
+  if (status === "validated") return "RDV";
+  if (status === "offered") return "Offre";
+  if (status === "converted") return "Signé";
   if (status === "rejected") return "Refusée";
   return status;
 }
@@ -64,23 +56,7 @@ export default async function PopeyHumanScoutPortalPage({
   const wonFromReferrals = referrals.reduce((sum, referral) => sum + Number(referral.final_commission || 0), 0);
   const effectivePending = Math.max(pendingFromScout, potentialFromReferrals);
   const effectivePaid = Math.max(paidFromScout, wonFromReferrals);
-  const total = effectivePending + effectivePaid;
-  const level = 1 + Math.floor(total / 500);
-  const nextMilestone = (level + 1) * 500;
-  const levelProgress = clamp(((total - level * 500) / 500) * 100, 0, 100);
-  const sortedByDate = [...referrals].sort((a, b) => +new Date(b.created_at) - +new Date(a.created_at));
-  let currentStreak = 0;
-  for (const referral of sortedByDate) {
-    if (!isWinningStatus(referral.status)) break;
-    currentStreak += 1;
-  }
-  const weeklyWins = sortedByDate.filter(
-    (referral) =>
-      isWinningStatus(referral.status) &&
-      Date.now() - +new Date(referral.created_at) <= 1000 * 60 * 60 * 24 * 7
-  ).length;
-  const weeklyBadge =
-    weeklyWins >= 6 ? "Pluie d'Or" : weeklyWins >= 3 ? "Sprinter" : weeklyWins >= 1 ? "En feu" : "Starter";
+  const signedAmount = wonFromReferrals;
   const sponsorName = data.sponsor?.name || data.sponsorName || "Popey Human";
   const historyHref = `/popey-human/eclaireur/${token}?tab=history`;
   const alertHref = `/popey-human/eclaireur/${token}?tab=alert`;
@@ -114,54 +90,32 @@ export default async function PopeyHumanScoutPortalPage({
                   <div className="pointer-events-none absolute -bottom-8 -left-10 h-32 w-32 rounded-full bg-emerald-400/20 blur-2xl" />
                   <div className="relative flex items-start justify-between gap-3">
                     <div>
-                      <p className="text-[11px] font-black uppercase tracking-[0.12em] text-[#EAC886]/85">Tableau des gains</p>
+                      <p className="text-[11px] font-black uppercase tracking-[0.12em] text-[#EAC886]/85">Commissions Éclaireur</p>
                       <h2 className="mt-1 text-2xl font-black leading-tight">
                         {data.scout.first_name || "Éclaireur"} {data.scout.last_name || ""} • {data.scout.status}
                       </h2>
                     </div>
-                    <div className="rounded-xl border border-[#EAC886]/45 bg-[#EAC886]/15 px-3 py-2 text-right">
-                      <p className="text-[10px] font-black uppercase tracking-[0.12em] text-[#EAC886]/85">Niveau</p>
-                      <p className="text-xl font-black text-[#EAC886]">#{level}</p>
-                    </div>
+                    <span className="rounded-xl border border-[#EAC886]/45 bg-[#EAC886]/15 px-3 py-2 text-[10px] font-black uppercase tracking-[0.12em] text-[#EAC886]/90">
+                      Vue simplifiée
+                    </span>
                   </div>
                   <div className="grid gap-2 sm:grid-cols-3">
                     <div className="rounded-xl border border-emerald-300/30 bg-emerald-500/10 p-3">
-                      <p className="text-[10px] uppercase font-black tracking-[0.1em] text-emerald-200/90">Potentiel en jeu</p>
+                      <p className="text-[10px] uppercase font-black tracking-[0.1em] text-emerald-200/90">Prévisionnel</p>
                       <p className="mt-1 text-xl font-black text-emerald-200">{euros(effectivePending)}</p>
                     </div>
                     <div className="rounded-xl border border-cyan-300/30 bg-cyan-500/10 p-3">
-                      <p className="text-[10px] uppercase font-black tracking-[0.1em] text-cyan-200/90">Gains encaissés</p>
-                      <p className="mt-1 text-xl font-black text-cyan-200">{euros(effectivePaid)}</p>
+                      <p className="text-[10px] uppercase font-black tracking-[0.1em] text-cyan-200/90">Signé</p>
+                      <p className="mt-1 text-xl font-black text-cyan-200">{euros(signedAmount)}</p>
                     </div>
                     <div className="rounded-xl border border-[#EAC886]/35 bg-[#EAC886]/10 p-3">
-                      <p className="text-[10px] uppercase font-black tracking-[0.1em] text-[#EAC886]/90">Commission</p>
-                      <p className="mt-1 text-xl font-black text-[#EAC886]">{Math.round(Number(data.scout.commission_rate || 0) * 100)}%</p>
+                      <p className="text-[10px] uppercase font-black tracking-[0.1em] text-[#EAC886]/90">Payé</p>
+                      <p className="mt-1 text-xl font-black text-[#EAC886]">{euros(effectivePaid)}</p>
                     </div>
                   </div>
-                  <div className="rounded-xl border border-white/15 bg-black/30 p-3">
-                    <div className="flex items-center justify-between gap-2 text-[11px] font-black uppercase tracking-[0.1em]">
-                      <span className="text-white/70">Progression vers niveau {level + 1}</span>
-                      <span className="text-[#EAC886]">{euros(nextMilestone)}</span>
-                    </div>
-                    <div className="mt-2 h-2 rounded-full bg-white/10 overflow-hidden">
-                      <div
-                        className="h-full rounded-full bg-gradient-to-r from-emerald-300 via-[#EAC886] to-cyan-300 animate-pulse"
-                        style={{ width: `${levelProgress}%` }}
-                      />
-                    </div>
-                  </div>
-                  <div className="grid gap-2 sm:grid-cols-2">
-                    <div className="rounded-xl border border-emerald-300/35 bg-emerald-500/12 p-3">
-                      <p className="text-[10px] uppercase font-black tracking-[0.1em] text-emerald-200/85">Streak actuel</p>
-                      <p className="mt-1 text-2xl font-black text-emerald-200">{currentStreak}x</p>
-                      <p className="text-[11px] text-emerald-100/80">Alertes qualifiées d&apos;affilée</p>
-                    </div>
-                    <div className="rounded-xl border border-[#EAC886]/45 bg-[#EAC886]/12 p-3">
-                      <p className="text-[10px] uppercase font-black tracking-[0.1em] text-[#EAC886]/90">Badge hebdo</p>
-                      <p className="mt-1 text-2xl font-black text-[#EAC886] animate-pulse">{weeklyBadge}</p>
-                      <p className="text-[11px] text-[#EAC886]/75">{weeklyWins} victoire(s) cette semaine</p>
-                    </div>
-                  </div>
+                  <p className="text-xs text-white/70">
+                    Répartition claire: ce qui peut tomber (`Prévisionnel`), ce qui est confirmé (`Signé`), et ce qui est déjà versé (`Payé`).
+                  </p>
                 </section>
 
                 {data.scout.status !== "active" && (
