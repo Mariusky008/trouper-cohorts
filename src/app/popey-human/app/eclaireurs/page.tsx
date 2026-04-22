@@ -5,6 +5,7 @@ import {
   getMyScoutWorkspace,
   markScoutReferralOfferedAction,
   markScoutReferralPaidAction,
+  refreshScoutInviteAction,
   rejectScoutReferralAction,
   validateScoutReferralAction,
 } from "@/lib/actions/human-scouts";
@@ -147,6 +148,13 @@ export default async function PopeyHumanScoutsPage({
                         )}
                       </>
                     )}
+                    <form action={refreshScoutInviteAction} className="mt-2">
+                      <input type="hidden" name="scout_id" value={scout.id} />
+                      <input type="hidden" name="current_url" value="/popey-human/app/eclaireurs" />
+                      <button className="h-8 rounded border border-cyan-300/40 px-2 text-[10px] font-black uppercase tracking-wide text-cyan-100">
+                        Regenerer lien (30j)
+                      </button>
+                    </form>
                   </div>
                 );
               })}

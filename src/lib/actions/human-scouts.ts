@@ -112,13 +112,30 @@ export async function getMyScoutWorkspace() {
 
   const scouts = (scoutsData as HumanScout[] | null) || [];
   const referrals = (referralsData as HumanScoutReferral[] | null) || [];
+  const rawInvites = ((invitesData as HumanScoutInvite[] | null) || []).slice();
   const inviteByScoutId: Record<string, HumanScoutInvite | null> = {};
-  ((invitesData as HumanScoutInvite[] | null) || []).forEach((invite) => {
+  rawInvites.forEach((invite) => {
     if (!invite.scout_id) return;
     if (!inviteByScoutId[invite.scout_id]) {
       inviteByScoutId[invite.scout_id] = invite;
     }
   });
+
+  // Garantit un lien magique utilisable pour chaque éclaireur (auto-création/renouvellement si manquant ou expiré).
+  for (const scout of scouts) {
+    const existing = inviteByScoutId[scout.id];
+    const isExpired = existing ? new Date(existing.expires_at).getTime() <= Date.now() : true;
+    if (existing && !isExpired) continue;
+
+    const createdInvite = await createScoutInviteRecord({
+      supabaseAdmin,
+      ownerMemberId: member.myMember.id,
+      scoutId: scout.id,
+    });
+    if (createdInvite) {
+      inviteByScoutId[scout.id] = createdInvite;
+    }
+  }
 
   return {
     error: null as string | null,
@@ -165,46 +182,12 @@ export async function createScoutInvite(formData: FormData) {
     .single();
   if (scoutError || !scoutRow) return { error: scoutError?.message || "Impossible de créer l'éclaireur." };
 
-  const token = randomUUID().replaceAll("-", "");
-  const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24 * 30).toISOString();
-  let inviteInserted = false;
-  let inviteErrorMessage = "";
-  for (let attempt = 0; attempt < 10; attempt++) {
-    const shortCode = generateScoutShortCode();
-    const { error: inviteError } = await supabaseAdmin.from("human_scout_invites").insert({
-      owner_member_id: member.myMember.id,
-      scout_id: scoutRow.id,
-      invite_token: token,
-      short_code: shortCode,
-      expires_at: expiresAt,
-    });
-
-    if (!inviteError) {
-      inviteInserted = true;
-      break;
-    }
-
-    inviteErrorMessage = inviteError.message;
-    if (inviteError.message.toLowerCase().includes("column") && inviteError.message.toLowerCase().includes("short_code")) {
-      const { error: fallbackInviteError } = await supabaseAdmin.from("human_scout_invites").insert({
-        owner_member_id: member.myMember.id,
-        scout_id: scoutRow.id,
-        invite_token: token,
-        expires_at: expiresAt,
-      });
-      if (!fallbackInviteError) {
-        inviteInserted = true;
-        break;
-      }
-      inviteErrorMessage = fallbackInviteError.message;
-      break;
-    }
-
-    if (!inviteError.message.toLowerCase().includes("short_code")) {
-      break;
-    }
-  }
-  if (!inviteInserted) return { error: inviteErrorMessage || "Impossible de générer un code court unique." };
+  const invite = await createScoutInviteRecord({
+    supabaseAdmin,
+    ownerMemberId: member.myMember.id,
+    scoutId: scoutRow.id,
+  });
+  if (!invite) return { error: "Impossible de générer un lien magique éclaireur." };
 
   revalidatePath("/popey-human/app/eclaireurs");
   revalidatePath("/admin/humain/eclaireurs");
@@ -216,6 +199,41 @@ export async function createScoutInviteAction(formData: FormData): Promise<void>
   const result = await createScoutInvite(formData);
   if ("error" in result) redirect(withScoutStatus(currentUrl, "error", result.error || "Action impossible."));
   redirect(withScoutStatus(currentUrl, "success", "Éclaireur invité."));
+}
+
+export async function refreshScoutInvite(formData: FormData) {
+  const member = await requireMemberUser();
+  if ("error" in member) return { error: member.error };
+
+  const scoutId = String(formData.get("scout_id") || "").trim();
+  if (!scoutId) return { error: "Éclaireur invalide." };
+
+  const supabaseAdmin = createAdminClient();
+  const { data: scout } = await supabaseAdmin
+    .from("human_scouts")
+    .select("id,owner_member_id")
+    .eq("id", scoutId)
+    .eq("owner_member_id", member.myMember.id)
+    .maybeSingle();
+  if (!scout) return { error: "Éclaireur introuvable." };
+
+  const invite = await createScoutInviteRecord({
+    supabaseAdmin,
+    ownerMemberId: member.myMember.id,
+    scoutId: scout.id,
+  });
+  if (!invite) return { error: "Impossible de régénérer le lien magique." };
+
+  revalidatePath("/popey-human/app/eclaireurs");
+  revalidatePath("/admin/humain/eclaireurs");
+  return { success: true };
+}
+
+export async function refreshScoutInviteAction(formData: FormData): Promise<void> {
+  const currentUrl = String(formData.get("current_url") || "/popey-human/app/eclaireurs");
+  const result = await refreshScoutInvite(formData);
+  if ("error" in result) redirect(withScoutStatus(currentUrl, "error", result.error || "Action impossible."));
+  redirect(withScoutStatus(currentUrl, "success", "Lien magique régénéré."));
 }
 
 export async function validateScoutReferral(formData: FormData) {
@@ -1043,6 +1061,67 @@ function normalizePhone(input: string) {
 function generateScoutShortCode() {
   const raw = randomUUID().replaceAll("-", "").toUpperCase();
   return `${raw.slice(0, 4)}-${raw.slice(4, 8)}`;
+}
+
+async function createScoutInviteRecord(input: {
+  supabaseAdmin: ReturnType<typeof createAdminClient>;
+  ownerMemberId: string;
+  scoutId: string;
+}): Promise<HumanScoutInvite | null> {
+  const token = randomUUID().replaceAll("-", "");
+  const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24 * 30).toISOString();
+  let inviteInserted = false;
+  let shortCodeEnabled = true;
+
+  for (let attempt = 0; attempt < 10; attempt++) {
+    const shortCode = generateScoutShortCode();
+    const payload: Record<string, unknown> = {
+      owner_member_id: input.ownerMemberId,
+      scout_id: input.scoutId,
+      invite_token: token,
+      expires_at: expiresAt,
+    };
+    if (shortCodeEnabled) payload.short_code = shortCode;
+
+    const { error: inviteError } = await input.supabaseAdmin.from("human_scout_invites").insert(payload);
+    if (!inviteError) {
+      inviteInserted = true;
+      break;
+    }
+
+    const message = inviteError.message.toLowerCase();
+    if (message.includes("column") && message.includes("short_code")) {
+      shortCodeEnabled = false;
+      continue;
+    }
+    if (!message.includes("short_code")) {
+      return null;
+    }
+  }
+
+  if (!inviteInserted) return null;
+
+  const { data: createdInviteWithCode } = await input.supabaseAdmin
+    .from("human_scout_invites")
+    .select("id,owner_member_id,scout_id,invite_token,short_code,expires_at,accepted_at,created_at")
+    .eq("invite_token", token)
+    .maybeSingle();
+
+  if (createdInviteWithCode) {
+    return createdInviteWithCode as HumanScoutInvite;
+  }
+
+  const { data: createdInviteFallback } = await input.supabaseAdmin
+    .from("human_scout_invites")
+    .select("id,owner_member_id,scout_id,invite_token,expires_at,accepted_at,created_at")
+    .eq("invite_token", token)
+    .maybeSingle();
+
+  if (!createdInviteFallback) return null;
+  return {
+    ...(createdInviteFallback as Omit<HumanScoutInvite, "short_code">),
+    short_code: null,
+  };
 }
 
 function normalizeScoutShortCode(value: string) {
