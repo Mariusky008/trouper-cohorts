@@ -207,6 +207,7 @@ type SmartScanSelfScoutLink = {
   shortUrl: string | null;
   inviteToken: string | null;
   fullUrl: string | null;
+  previewUrl?: string | null;
 };
 type SmartScanEclaireurLink = {
   shortCode: string | null;
@@ -2384,16 +2385,27 @@ export default function EntrepreneurSmartScanTestPage() {
     }
     setApiErrorMessage("");
     setSelectedImportedScoutId("");
-    void promoteToEclaireur(contact.id);
+    void promoteToEclaireur(contact.id).then(() => {
+      setApiErrorMessage("Eclaireur ajoute.");
+      setTimeout(() => setApiErrorMessage(""), 1400);
+    });
   }
 
   async function ensureEclaireurLink(contactId: string) {
+    const fullContact = getContactById(contactId);
+    const contact = fullContact || eclaireurDirectory[contactId] || null;
     try {
       setLoadingEclaireurLinkContactId(contactId);
       const response = await fetch("/api/popey-human/smart-scan/eclaireur-link", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ contactId }),
+        body: JSON.stringify({
+          contactId,
+          externalContactRef: contactId,
+          fullName: contact?.name || "",
+          city: contact?.city || null,
+          phoneE164: fullContact?.phone ? normalizePhoneForWhatsApp(fullContact.phone) || fullContact.phone : null,
+        }),
       });
       const payload = (await response.json().catch(() => ({}))) as {
         error?: string;
@@ -2427,7 +2439,7 @@ export default function EntrepreneurSmartScanTestPage() {
     if (!url) return;
     try {
       setCopyingEclaireurLinkContactId(contactId);
-      await navigator.clipboard.writeText(url);
+      await copyTextToClipboard(url);
       setApiErrorMessage("Lien eclaireur copie.");
       setTimeout(() => setApiErrorMessage(""), 1200);
     } catch {
@@ -2840,6 +2852,7 @@ export default function EntrepreneurSmartScanTestPage() {
         shortUrl?: string | null;
         inviteToken?: string | null;
         fullUrl?: string | null;
+        previewUrl?: string | null;
       };
       if (!profileResponse.ok) {
         throw new Error(profilePayload.error || "Impossible de charger le profil.");
@@ -2854,6 +2867,7 @@ export default function EntrepreneurSmartScanTestPage() {
         shortUrl: linkPayload.shortUrl || null,
         inviteToken: linkPayload.inviteToken || null,
         fullUrl: linkPayload.fullUrl || null,
+        previewUrl: linkPayload.previewUrl || null,
       });
       setApiErrorMessage("");
     } catch (error) {
@@ -2864,11 +2878,32 @@ export default function EntrepreneurSmartScanTestPage() {
     }
   }
 
+  async function copyTextToClipboard(text: string) {
+    if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text);
+      return;
+    }
+    const textarea = document.createElement("textarea");
+    textarea.value = text;
+    textarea.setAttribute("readonly", "");
+    textarea.style.position = "fixed";
+    textarea.style.opacity = "0";
+    textarea.style.pointerEvents = "none";
+    document.body.appendChild(textarea);
+    textarea.focus();
+    textarea.select();
+    const ok = document.execCommand("copy");
+    document.body.removeChild(textarea);
+    if (!ok) {
+      throw new Error("copy-failed");
+    }
+  }
+
   async function copySelfScoutLink(url: string | null) {
     if (!url) return;
     try {
       setIsCopyingSelfScoutLink(true);
-      await navigator.clipboard.writeText(url);
+      await copyTextToClipboard(url);
       setApiErrorMessage("Lien Eclaireur copie.");
       setTimeout(() => setApiErrorMessage(""), 1400);
     } catch {
@@ -3272,11 +3307,12 @@ export default function EntrepreneurSmartScanTestPage() {
                       Code court: <span className="font-black tracking-wider">{selfScoutLink.shortCode}</span>
                     </p>
                   ) : null}
-                  {selfScoutLink.shortUrl ? (
-                    <p className="mt-1 break-all text-[11px] text-cyan-100/90">{selfScoutLink.shortUrl}</p>
-                  ) : null}
-                  {selfScoutLink.fullUrl ? (
+                  {selfScoutLink.shortUrl ? <p className="mt-1 break-all text-[11px] text-cyan-100/90">{selfScoutLink.shortUrl}</p> : null}
+                  {selfScoutLink.fullUrl && selfScoutLink.fullUrl !== selfScoutLink.shortUrl ? (
                     <p className="mt-1 break-all text-[11px] text-emerald-100/85">{selfScoutLink.fullUrl}</p>
+                  ) : null}
+                  {selfScoutLink.previewUrl ? (
+                    <p className="mt-1 break-all text-[10px] text-white/65">Preview design: {selfScoutLink.previewUrl}</p>
                   ) : null}
                   <button
                     type="button"
@@ -4019,11 +4055,12 @@ export default function EntrepreneurSmartScanTestPage() {
                     Code court: <span className="font-black tracking-wider">{selfScoutLink.shortCode}</span>
                   </p>
                 ) : null}
-                {selfScoutLink.shortUrl ? (
-                  <p className="mt-1 break-all text-[11px] text-cyan-100/90">{selfScoutLink.shortUrl}</p>
-                ) : null}
-                {selfScoutLink.fullUrl ? (
+                {selfScoutLink.shortUrl ? <p className="mt-1 break-all text-[11px] text-cyan-100/90">{selfScoutLink.shortUrl}</p> : null}
+                {selfScoutLink.fullUrl && selfScoutLink.fullUrl !== selfScoutLink.shortUrl ? (
                   <p className="mt-1 break-all text-[11px] text-emerald-100/85">{selfScoutLink.fullUrl}</p>
+                ) : null}
+                {selfScoutLink.previewUrl ? (
+                  <p className="mt-1 break-all text-[10px] text-white/65">Preview design: {selfScoutLink.previewUrl}</p>
                 ) : null}
                 <button
                   type="button"

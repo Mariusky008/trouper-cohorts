@@ -299,28 +299,57 @@ export async function createScoutInviteFromSmartScanContact(formData: FormData) 
   return { success: true };
 }
 
-export async function generateScoutLinkFromSmartScanContact(input: { contactId: string }) {
+export async function generateScoutLinkFromSmartScanContact(input: {
+  contactId?: string;
+  externalContactRef?: string;
+  fullName?: string;
+  city?: string | null;
+  phoneE164?: string | null;
+}) {
   const member = await requireMemberUser();
   if ("error" in member) return { error: member.error };
   const contactId = String(input.contactId || "").trim();
-  if (!contactId) return { error: "Contact Smart Scan invalide." };
+  const externalContactRef = String(input.externalContactRef || "").trim();
+  if (!contactId && !externalContactRef && !String(input.fullName || "").trim()) {
+    return { error: "Contact Smart Scan invalide." };
+  }
 
   const supabaseAdmin = createAdminClient();
-  const { data: contact, error: contactError } = await supabaseAdmin
-    .from("human_smart_scan_contacts")
-    .select("id,owner_member_id,full_name,city,phone_e164")
-    .eq("id", contactId)
-    .eq("owner_member_id", member.myMember.id)
-    .maybeSingle();
-  if (contactError) return { error: contactError.message };
-  if (!contact) return { error: "Contact Smart Scan introuvable." };
+  type SmartScanContactRow = {
+    id: string;
+    owner_member_id: string;
+    full_name: string | null;
+    city: string | null;
+    phone_e164: string | null;
+  };
+  let contact: SmartScanContactRow | null = null;
+  if (contactId) {
+    const { data, error } = await supabaseAdmin
+      .from("human_smart_scan_contacts")
+      .select("id,owner_member_id,full_name,city,phone_e164")
+      .eq("id", contactId)
+      .eq("owner_member_id", member.myMember.id)
+      .maybeSingle();
+    if (error) return { error: error.message };
+    contact = (data as SmartScanContactRow | null) || null;
+  }
+  if (!contact && externalContactRef) {
+    const { data, error } = await supabaseAdmin
+      .from("human_smart_scan_contacts")
+      .select("id,owner_member_id,full_name,city,phone_e164")
+      .eq("external_contact_ref", externalContactRef)
+      .eq("owner_member_id", member.myMember.id)
+      .maybeSingle();
+    if (error) return { error: error.message };
+    contact = (data as SmartScanContactRow | null) || null;
+  }
 
-  const fullName = String(contact.full_name || "").trim();
+  const fullName = String(contact?.full_name || input.fullName || "").trim();
   const nameParts = fullName ? fullName.split(/\s+/) : [];
   const firstName = nameParts[0] || "";
   const lastName = nameParts.slice(1).join(" ");
-  const city = String(contact.city || "").trim();
-  const phone = String(contact.phone_e164 || "").trim();
+  const city = String(contact?.city || input.city || "").trim();
+  const phone = String(contact?.phone_e164 || input.phoneE164 || "").trim();
 
   let scoutId = "";
   if (phone) {

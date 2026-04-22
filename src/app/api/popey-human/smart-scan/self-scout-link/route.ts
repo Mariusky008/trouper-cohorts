@@ -14,21 +14,19 @@ export async function GET() {
     return NextResponse.json({ error: data.error }, { status: 400 });
   }
 
-  const previewBaseUrl = "https://www.popey.academy/popey-human/eclaireur-webapp-preview";
-  const legacyShortUrl = data.shortCode ? `https://www.popey.academy/popey-human/eclaireur?code=${data.shortCode}` : null;
-  const legacyFullUrl = data.inviteToken ? `https://www.popey.academy/popey-human/eclaireur/${data.inviteToken}` : null;
+  const shortUrl = data.shortCode ? `https://www.popey.academy/popey-human/eclaireur?code=${data.shortCode}` : null;
+  const fullUrl = data.inviteToken ? `https://www.popey.academy/popey-human/eclaireur/${data.inviteToken}` : null;
   const previewUrl = data.shortCode
-    ? `${previewBaseUrl}?code=${encodeURIComponent(data.shortCode)}`
+    ? `https://www.popey.academy/popey-human/eclaireur-webapp-preview?code=${encodeURIComponent(data.shortCode)}`
     : data.inviteToken
-      ? `${previewBaseUrl}?token=${encodeURIComponent(data.inviteToken)}`
-      : previewBaseUrl;
+      ? `https://www.popey.academy/popey-human/eclaireur-webapp-preview?token=${encodeURIComponent(data.inviteToken)}`
+      : "https://www.popey.academy/popey-human/eclaireur-webapp-preview";
 
   return NextResponse.json({
     shortCode: data.shortCode || null,
-    shortUrl: previewUrl,
+    shortUrl,
     inviteToken: data.inviteToken || null,
-    fullUrl: previewUrl,
-    legacyShortUrl,
-    legacyFullUrl,
+    fullUrl,
+    previewUrl,
   });
 }
