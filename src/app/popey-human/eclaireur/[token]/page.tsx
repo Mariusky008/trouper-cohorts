@@ -15,13 +15,13 @@ function clamp(value: number, min: number, max: number) {
 }
 
 function isWinningStatus(status: string) {
-  return status === "validated" || status === "converted";
+  return status === "offered" || status === "converted";
 }
 
 function referralStatusLabel(status: string) {
   if (status === "submitted") return "Envoyée";
-  if (status === "qualified") return "Qualifiée";
-  if (status === "validated") return "Validée";
+  if (status === "validated") return "RDV pris";
+  if (status === "offered") return "Offre envoyée";
   if (status === "converted") return "Signée";
   if (status === "rejected") return "Refusée";
   return status;
@@ -29,8 +29,8 @@ function referralStatusLabel(status: string) {
 
 function referralStatusClass(status: string) {
   if (status === "converted") return "border-cyan-300/45 bg-cyan-500/15 text-cyan-100";
+  if (status === "offered") return "border-fuchsia-300/45 bg-fuchsia-500/15 text-fuchsia-100";
   if (status === "validated") return "border-emerald-300/45 bg-emerald-500/15 text-emerald-100";
-  if (status === "qualified") return "border-amber-300/45 bg-amber-500/15 text-amber-100";
   if (status === "rejected") return "border-red-300/45 bg-red-500/15 text-red-100";
   return "border-white/20 bg-white/8 text-white/85";
 }
@@ -233,12 +233,12 @@ export default async function PopeyHumanScoutPortalPage({
                     <p className="mt-1 text-xl font-black text-emerald-100">{data.referrals.filter((r) => r.status === "converted").length}</p>
                   </div>
                   <div className="rounded-xl border border-cyan-300/30 bg-cyan-500/10 p-3">
-                    <p className="text-[10px] font-black uppercase tracking-[0.1em] text-cyan-200/90">Validées</p>
-                    <p className="mt-1 text-xl font-black text-cyan-100">{data.referrals.filter((r) => r.status === "validated").length}</p>
+                    <p className="text-[10px] font-black uppercase tracking-[0.1em] text-cyan-200/90">Offres</p>
+                    <p className="mt-1 text-xl font-black text-cyan-100">{data.referrals.filter((r) => r.status === "offered").length}</p>
                   </div>
                   <div className="rounded-xl border border-white/20 bg-white/5 p-3">
                     <p className="text-[10px] font-black uppercase tracking-[0.1em] text-white/80">En cours</p>
-                    <p className="mt-1 text-xl font-black text-white">{data.referrals.filter((r) => !["converted", "validated", "rejected"].includes(r.status)).length}</p>
+                    <p className="mt-1 text-xl font-black text-white">{data.referrals.filter((r) => !["converted", "offered", "rejected"].includes(r.status)).length}</p>
                   </div>
                 </div>
 

@@ -8,7 +8,7 @@ import { createClient } from "@/lib/supabase/server";
 import { ensureHumanMemberForUserId } from "@/lib/actions/human-permissions";
 
 type ScoutStatus = "invited" | "active" | "paused" | "archived";
-type ReferralStatus = "submitted" | "validated" | "rejected" | "converted" | "cancelled";
+type ReferralStatus = "submitted" | "validated" | "offered" | "rejected" | "converted" | "cancelled";
 
 type HumanScout = {
   id: string;
@@ -55,6 +55,7 @@ type HumanScoutReferral = {
   final_commission: number | null;
   commission_rate_snapshot: number | null;
   validated_at: string | null;
+  offered_at: string | null;
   converted_at: string | null;
   paid_at: string | null;
   created_at: string;
@@ -82,7 +83,7 @@ export async function getMyScoutWorkspace() {
     supabaseAdmin
       .from("human_scout_referrals")
       .select(
-        "id,owner_member_id,scout_id,lead_id,contact_name,contact_phone,contact_phone_normalized,project_type,comment,status,rejection_reason,estimated_deal_value,estimated_commission,final_signed_amount,final_commission,commission_rate_snapshot,validated_at,converted_at,paid_at,created_at,updated_at"
+        "id,owner_member_id,scout_id,lead_id,contact_name,contact_phone,contact_phone_normalized,project_type,comment,status,rejection_reason,estimated_deal_value,estimated_commission,final_signed_amount,final_commission,commission_rate_snapshot,validated_at,offered_at,converted_at,paid_at,created_at,updated_at"
       )
       .eq("owner_member_id", member.myMember.id)
       .order("created_at", { ascending: false })
@@ -285,6 +286,7 @@ export async function validateScoutReferral(formData: FormData) {
       commission_rate_snapshot: rate,
       rejection_reason: null,
       validated_at: nowIso,
+      offered_at: null,
       updated_at: nowIso,
     })
     .eq("id", referralId);
@@ -302,8 +304,8 @@ export async function validateScoutReferral(formData: FormData) {
   });
 
   await notifyMember(member.myMember.id, {
-    title: `Referral validé: ${referral.contact_name}`,
-    message: "Le lead éclaireur est maintenant pris en charge.",
+    title: `RDV lancé: ${referral.contact_name}`,
+    message: "Le lead éclaireur est pris en charge. Passez-le à l'étape Offre quand la proposition est envoyée.",
     impact: `scout:validated:${referralId}`,
   });
 
@@ -368,6 +370,59 @@ export async function rejectScoutReferralAction(formData: FormData): Promise<voi
   redirect(withScoutStatus(currentUrl, "success", "Referral rejeté."));
 }
 
+export async function markScoutReferralOffered(formData: FormData) {
+  const member = await requireMemberUser();
+  if ("error" in member) return { error: member.error };
+
+  const referralId = String(formData.get("referral_id") || "").trim();
+  if (!referralId) return { error: "Referral invalide." };
+
+  const supabaseAdmin = createAdminClient();
+  const { data: referral } = await supabaseAdmin
+    .from("human_scout_referrals")
+    .select("id,owner_member_id,scout_id,status")
+    .eq("id", referralId)
+    .eq("owner_member_id", member.myMember.id)
+    .maybeSingle();
+  if (!referral) return { error: "Referral introuvable." };
+  if (referral.status !== "validated") return { error: "Seuls les referrals au statut RDV peuvent passer en offre." };
+
+  const nowIso = new Date().toISOString();
+  const { error } = await supabaseAdmin
+    .from("human_scout_referrals")
+    .update({
+      status: "offered",
+      offered_at: nowIso,
+      updated_at: nowIso,
+    })
+    .eq("id", referralId);
+  if (error) return { error: error.message };
+
+  await logScoutEvent({
+    supabaseAdmin,
+    scoutId: referral.scout_id,
+    eventType: "referral_offered",
+    payload: { referral_id: referralId },
+  });
+
+  await notifyMember(member.myMember.id, {
+    title: "Offre envoyée",
+    message: "Le statut partagé côté Éclaireur est passé à Offre.",
+    impact: `scout:offered:${referralId}`,
+  });
+
+  revalidatePath("/popey-human/app/eclaireurs");
+  revalidatePath("/admin/humain/eclaireurs");
+  return { success: true };
+}
+
+export async function markScoutReferralOfferedAction(formData: FormData): Promise<void> {
+  const currentUrl = String(formData.get("current_url") || "/popey-human/app/eclaireurs");
+  const result = await markScoutReferralOffered(formData);
+  if ("error" in result) redirect(withScoutStatus(currentUrl, "error", result.error || "Action impossible."));
+  redirect(withScoutStatus(currentUrl, "success", "Referral passé à l'étape Offre."));
+}
+
 export async function convertScoutReferral(formData: FormData) {
   const member = await requireMemberUser();
   if ("error" in member) return { error: member.error };
@@ -386,7 +441,7 @@ export async function convertScoutReferral(formData: FormData) {
     .eq("owner_member_id", member.myMember.id)
     .maybeSingle();
   if (!referral) return { error: "Referral introuvable." };
-  if (referral.status !== "validated") return { error: "Seuls les referrals validés peuvent être convertis." };
+  if (referral.status !== "offered") return { error: "Seuls les referrals au statut Offre peuvent être signés." };
 
   const rate = Number(referral.commission_rate_snapshot || 0.1);
   const finalCommission = Math.round(signedAmount * rate * 100) / 100;
@@ -606,7 +661,7 @@ export async function getScoutPortalByToken(token: string) {
     supabaseAdmin
       .from("human_scout_referrals")
       .select(
-        "id,owner_member_id,scout_id,lead_id,contact_name,contact_phone,contact_phone_normalized,project_type,comment,status,rejection_reason,estimated_deal_value,estimated_commission,final_signed_amount,final_commission,commission_rate_snapshot,validated_at,converted_at,paid_at,created_at,updated_at"
+        "id,owner_member_id,scout_id,lead_id,contact_name,contact_phone,contact_phone_normalized,project_type,comment,status,rejection_reason,estimated_deal_value,estimated_commission,final_signed_amount,final_commission,commission_rate_snapshot,validated_at,offered_at,converted_at,paid_at,created_at,updated_at"
       )
       .eq("scout_id", inviteTyped.scout_id)
       .order("created_at", { ascending: false })
@@ -813,7 +868,7 @@ export async function getAdminScoutSnapshot() {
     supabaseAdmin
       .from("human_scout_referrals")
       .select(
-        "id,owner_member_id,scout_id,lead_id,contact_name,contact_phone,contact_phone_normalized,project_type,comment,status,rejection_reason,estimated_deal_value,estimated_commission,final_signed_amount,final_commission,commission_rate_snapshot,validated_at,converted_at,paid_at,created_at,updated_at"
+        "id,owner_member_id,scout_id,lead_id,contact_name,contact_phone,contact_phone_normalized,project_type,comment,status,rejection_reason,estimated_deal_value,estimated_commission,final_signed_amount,final_commission,commission_rate_snapshot,validated_at,offered_at,converted_at,paid_at,created_at,updated_at"
       )
       .order("created_at", { ascending: false })
       .limit(1200),

@@ -3,6 +3,7 @@ import {
   convertScoutReferralAction,
   createScoutInviteAction,
   getMyScoutWorkspace,
+  markScoutReferralOfferedAction,
   markScoutReferralPaidAction,
   rejectScoutReferralAction,
   validateScoutReferralAction,
@@ -21,7 +22,8 @@ function scoutLabel(input: { first_name: string | null; last_name: string | null
 
 function referralPipelineStep(status: string) {
   if (status === "converted") return 3;
-  if (status === "validated") return 2;
+  if (status === "offered") return 2;
+  if (status === "validated") return 1;
   return 0;
 }
 
@@ -214,7 +216,7 @@ export default async function PopeyHumanScoutsPage({
                           className="h-9 w-full rounded border border-white/20 bg-black/25 px-2 text-xs"
                         />
                         <button className="h-9 w-full rounded bg-gradient-to-r from-emerald-400 to-cyan-300 text-[#10263A] text-xs font-black uppercase transition hover:brightness-105">
-                          Marquer RDV / Offre
+                          Marquer RDV
                         </button>
                       </form>
                       <form action={rejectScoutReferralAction} className="space-y-2">
@@ -231,6 +233,16 @@ export default async function PopeyHumanScoutsPage({
                   )}
 
                   {referral.status === "validated" && (
+                    <form action={markScoutReferralOfferedAction} className="mt-2">
+                      <input type="hidden" name="referral_id" value={referral.id} />
+                      <input type="hidden" name="current_url" value="/popey-human/app/eclaireurs" />
+                      <button className="h-9 rounded border border-emerald-300/40 px-3 text-emerald-200 text-xs font-black uppercase">
+                        Marquer offre envoyee
+                      </button>
+                    </form>
+                  )}
+
+                  {referral.status === "offered" && (
                     <form action={convertScoutReferralAction} className="mt-2 grid gap-2 sm:grid-cols-[1fr_auto]">
                       <input type="hidden" name="referral_id" value={referral.id} />
                       <input type="hidden" name="current_url" value="/popey-human/app/eclaireurs" />
