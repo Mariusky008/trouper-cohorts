@@ -64,6 +64,13 @@ type SessionRow = {
   updated_at: string;
 };
 
+type SessionProgressMetadata = {
+  queueIndex: number;
+  queueSize: number;
+  importedTotal?: number;
+  updatedAt: string;
+};
+
 type SmartScanAlertRow = {
   id: string;
   owner_member_id: string;
@@ -903,7 +910,7 @@ export async function listMySmartScanContacts(limit = 500) {
   const supabaseAdmin = createAdminClient();
   const { data, error } = await supabaseAdmin
     .from("human_smart_scan_contacts")
-    .select("id,external_contact_ref,full_name,city,company_hint,is_favorite,trust_level,trust_level_set_at,created_at,updated_at")
+    .select("id,external_contact_ref,full_name,city,company_hint,is_favorite,trust_level,trust_level_set_at,source,phone_e164,import_index,created_at,updated_at")
     .eq("owner_member_id", currentMember.id)
     .order("updated_at", { ascending: false })
     .limit(safeLimit);
@@ -2017,6 +2024,179 @@ async function upsertTodaySessionInternal(ownerMemberId: string): Promise<Sessio
     .single();
   if (insertError || !inserted) return { error: insertError?.message || "Impossible de créer la session du jour." };
   return inserted as SessionRow;
+}
+
+function readSessionProgressMetadata(metadata: unknown): SessionProgressMetadata | null {
+  if (!metadata || typeof metadata !== "object" || Array.isArray(metadata)) return null;
+  const value = (metadata as Record<string, unknown>).smartScanProgress;
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const queueIndex = Number((value as Record<string, unknown>).queueIndex);
+  const queueSize = Number((value as Record<string, unknown>).queueSize);
+  const importedTotalRaw = (value as Record<string, unknown>).importedTotal;
+  const importedTotal = importedTotalRaw === undefined ? undefined : Number(importedTotalRaw);
+  const updatedAt = String((value as Record<string, unknown>).updatedAt || "");
+  if (!Number.isFinite(queueIndex) || !Number.isFinite(queueSize)) return null;
+  if (queueIndex < 0 || queueSize <= 0) return null;
+  return {
+    queueIndex: Math.round(queueIndex),
+    queueSize: Math.round(queueSize),
+    importedTotal: Number.isFinite(importedTotal) ? Math.max(0, Math.round(importedTotal as number)) : undefined,
+    updatedAt,
+  };
+}
+
+export async function saveSmartScanSessionProgress(input: {
+  queueIndex: number;
+  queueSize: number;
+  importedTotal?: number;
+}) {
+  const currentMember = await getCurrentHumanMember();
+  if (!currentMember) return { error: "Session requise." };
+
+  const session = await upsertTodaySessionInternal(currentMember.id);
+  if ("error" in session) return { error: session.error };
+
+  const nowIso = new Date().toISOString();
+  const existingMetadata =
+    session.metadata && typeof session.metadata === "object" && !Array.isArray(session.metadata)
+      ? (session.metadata as Record<string, unknown>)
+      : {};
+  const nextProgress: SessionProgressMetadata = {
+    queueIndex: Math.max(0, Math.round(input.queueIndex)),
+    queueSize: Math.max(1, Math.round(input.queueSize)),
+    importedTotal: input.importedTotal === undefined ? undefined : Math.max(0, Math.round(input.importedTotal)),
+    updatedAt: nowIso,
+  };
+  const nextMetadata = {
+    ...existingMetadata,
+    smartScanProgress: nextProgress,
+  };
+
+  const supabaseAdmin = createAdminClient();
+  const { error } = await supabaseAdmin
+    .from("human_smart_scan_daily_sessions")
+    .update({
+      metadata: nextMetadata,
+      updated_at: nowIso,
+    })
+    .eq("id", session.id)
+    .eq("owner_member_id", currentMember.id);
+  if (error) return { error: error.message };
+
+  return { success: true as const, progress: nextProgress };
+}
+
+export async function importSmartScanContacts(input: {
+  source: "file" | "direct-picker";
+  contacts: Array<{
+    externalContactRef: string;
+    fullName: string;
+    city?: string | null;
+    companyHint?: string | null;
+    phoneE164?: string | null;
+    importIndex?: number;
+  }>;
+}) {
+  const currentMember = await getCurrentHumanMember();
+  if (!currentMember) return { error: "Session requise." };
+  if (!Array.isArray(input.contacts) || input.contacts.length === 0) {
+    return { error: "Aucun contact a importer." };
+  }
+
+  const batchId = `batch-${Date.now()}`;
+  const nowIso = new Date().toISOString();
+  const supabaseAdmin = createAdminClient();
+  const payload = input.contacts.map((contact, idx) => ({
+    owner_member_id: currentMember.id,
+    external_contact_ref: String(contact.externalContactRef).trim().slice(0, 160),
+    full_name: String(contact.fullName).trim().slice(0, 160),
+    city: contact.city ? String(contact.city).trim().slice(0, 120) : null,
+    company_hint: contact.companyHint ? String(contact.companyHint).trim().slice(0, 160) : null,
+    phone_e164: contact.phoneE164 ? String(contact.phoneE164).trim().slice(0, 32) : null,
+    source: input.source === "file" ? "import_file" : "import_picker",
+    import_batch_id: batchId,
+    import_index: Math.max(0, Math.round(contact.importIndex ?? idx)),
+    last_imported_at: nowIso,
+    updated_at: nowIso,
+  }));
+
+  const { error } = await supabaseAdmin
+    .from("human_smart_scan_contacts")
+    .upsert(payload, { onConflict: "owner_member_id,external_contact_ref" });
+  if (error) return { error: error.message };
+
+  const session = await upsertTodaySessionInternal(currentMember.id);
+  if (!("error" in session)) {
+    const existingMetadata =
+      session.metadata && typeof session.metadata === "object" && !Array.isArray(session.metadata)
+        ? (session.metadata as Record<string, unknown>)
+        : {};
+    await supabaseAdmin
+      .from("human_smart_scan_daily_sessions")
+      .update({
+        metadata: {
+          ...existingMetadata,
+          smartScanProgress: {
+            queueIndex: 0,
+            queueSize: 10,
+            importedTotal: input.contacts.length,
+            updatedAt: nowIso,
+          },
+        },
+        updated_at: nowIso,
+      })
+      .eq("id", session.id)
+      .eq("owner_member_id", currentMember.id);
+  }
+
+  return { success: true as const, imported: input.contacts.length };
+}
+
+export async function getSmartScanSessionProgress() {
+  const currentMember = await getCurrentHumanMember();
+  if (!currentMember) return { error: "Session requise.", progress: null as SessionProgressMetadata | null };
+  const session = await upsertTodaySessionInternal(currentMember.id);
+  if ("error" in session) return { error: session.error, progress: null as SessionProgressMetadata | null };
+  return { error: null as string | null, progress: readSessionProgressMetadata(session.metadata) };
+}
+
+export async function clearImportedSmartScanContacts() {
+  const currentMember = await getCurrentHumanMember();
+  if (!currentMember) return { error: "Session requise." };
+  const supabaseAdmin = createAdminClient();
+  const nowIso = new Date().toISOString();
+
+  const { error } = await supabaseAdmin
+    .from("human_smart_scan_contacts")
+    .delete()
+    .eq("owner_member_id", currentMember.id)
+    .in("source", ["import_file", "import_picker"]);
+  if (error) return { error: error.message };
+
+  const session = await upsertTodaySessionInternal(currentMember.id);
+  if (!("error" in session)) {
+    const existingMetadata =
+      session.metadata && typeof session.metadata === "object" && !Array.isArray(session.metadata)
+        ? (session.metadata as Record<string, unknown>)
+        : {};
+    await supabaseAdmin
+      .from("human_smart_scan_daily_sessions")
+      .update({
+        metadata: {
+          ...existingMetadata,
+          smartScanProgress: {
+            queueIndex: 0,
+            queueSize: 10,
+            importedTotal: 0,
+            updatedAt: nowIso,
+          },
+        },
+        updated_at: nowIso,
+      })
+      .eq("id", session.id)
+      .eq("owner_member_id", currentMember.id);
+  }
+  return { success: true as const };
 }
 
 function computePriorityScore(input: ContactScoreInputs) {

@@ -161,3 +161,32 @@ export const smartScanProfileUpdateSchema = z
     phone: z.string().trim().max(32).optional(),
   })
   .strict();
+
+export const smartScanImportContactsSchema = z
+  .object({
+    source: z.enum(["file", "direct-picker"]),
+    contacts: z
+      .array(
+        z
+          .object({
+            externalContactRef: z.string().trim().min(1).max(160),
+            fullName: z.string().trim().min(1).max(160),
+            city: z.string().trim().max(120).nullable().optional(),
+            companyHint: z.string().trim().max(160).nullable().optional(),
+            phoneE164: z.string().trim().max(32).nullable().optional(),
+            importIndex: z.number().int().min(0).max(50000).optional(),
+          })
+          .strict(),
+      )
+      .min(1)
+      .max(5000),
+  })
+  .strict();
+
+export const smartScanSessionProgressSchema = z
+  .object({
+    queueIndex: z.number().int().min(0).max(50000),
+    queueSize: z.number().int().min(1).max(1000),
+    importedTotal: z.number().int().min(0).max(100000).optional(),
+  })
+  .strict();

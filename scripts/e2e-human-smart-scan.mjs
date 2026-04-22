@@ -37,12 +37,19 @@ function loadEnvFile(fileName) {
 
 async function clickButtonContaining(page, snippets, timeoutMs = 15000) {
   const deadline = Date.now() + timeoutMs;
-  const normalizedSnippets = snippets.map((snippet) => snippet.toLowerCase());
+  const normalizedSnippets = snippets.map((snippet) => normalizeText(snippet));
   while (Date.now() < deadline) {
     const clicked = await page.evaluate((parts) => {
+      const normalize = (value) =>
+        (value || "")
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .toLowerCase()
+          .replace(/\s+/g, " ")
+          .trim();
       const buttons = Array.from(document.querySelectorAll("button"));
       for (const button of buttons) {
-        const text = (button.textContent || "").toLowerCase().replace(/\s+/g, " ").trim();
+        const text = normalize(button.textContent || "");
         if (!text) continue;
         if (parts.some((part) => text.includes(part)) && !(button).disabled) {
           button.click();
@@ -60,19 +67,37 @@ async function clickButtonContaining(page, snippets, timeoutMs = 15000) {
 async function ensureText(page, snippets, timeoutMs = 20000) {
   await page.waitForFunction(
     (parts) => {
-      const text = (document.body?.textContent || "").toLowerCase();
+      const text = (document.body?.textContent || "")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase();
       return parts.every((part) => text.includes(part));
     },
     { timeout: timeoutMs },
-    snippets.map((s) => s.toLowerCase())
+    snippets.map((s) =>
+      s
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase(),
+    )
   );
 }
 
 async function hasText(page, snippet) {
   return page.evaluate((part) => {
-    const text = (document.body?.textContent || "").toLowerCase();
+    const text = (document.body?.textContent || "")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase();
     return text.includes(part.toLowerCase());
-  }, snippet);
+  }, normalizeText(snippet));
+}
+
+function normalizeText(value) {
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
 }
 
 async function importContactsIfNeeded(page) {

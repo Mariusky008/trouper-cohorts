@@ -45,6 +45,12 @@ type HistoryEntry = {
 type BootstrapContactRow = {
   id: string;
   external_contact_ref: string | null;
+  full_name?: string | null;
+  city?: string | null;
+  company_hint?: string | null;
+  source?: string | null;
+  phone_e164?: string | null;
+  import_index?: number | null;
   is_favorite?: boolean | null;
   trust_level: TrustLevel | null;
   priority_score?: number | null;
@@ -72,6 +78,7 @@ type BootstrapHistoryRow = {
   created_at: string;
 };
 type BootstrapSessionRow = {
+  metadata?: Record<string, unknown> | null;
   opportunities_activated: number;
   target_potential_eur?: number | null;
 };
@@ -718,6 +725,7 @@ export default function EntrepreneurSmartScanTestPage() {
   const [showImportHelp, setShowImportHelp] = useState(false);
   const [isCockpitCollapsed, setIsCockpitCollapsed] = useState(true);
   const [hasHydratedLocalSession, setHasHydratedLocalSession] = useState(false);
+  const [hasHydratedServerProgress, setHasHydratedServerProgress] = useState(false);
   const [modalErrorMessage, setModalErrorMessage] = useState("");
   const contactImportInputRef = useRef<HTMLInputElement | null>(null);
   const localDayNumber = useMemo(() => getLocalDayNumber(), []);
@@ -1073,6 +1081,17 @@ export default function EntrepreneurSmartScanTestPage() {
     }, 180);
     return () => clearInterval(timer);
   }, [stage, scanDone, totalScanned, hasImportedContacts]);
+
+  useEffect(() => {
+    if (!hasHydratedServerProgress) return;
+    if (!hasImportedContacts) return;
+    if (stage !== "daily") return;
+    void postSmartScan("session-progress", {
+      queueIndex: index,
+      queueSize: dailyQueueCount,
+      importedTotal: importedTotalCount,
+    }).catch(() => null);
+  }, [hasHydratedServerProgress, hasImportedContacts, stage, index, dailyQueueCount, importedTotalCount]);
 
   useEffect(() => {
     let cancelled = false;
@@ -1456,6 +1475,9 @@ export default function EntrepreneurSmartScanTestPage() {
       | "qualification"
       | "action"
       | "favorite"
+      | "import-contacts"
+      | "clear-import"
+      | "session-progress"
       | "outcome"
       | "generate-message"
       | "followup-job"
@@ -1504,7 +1526,12 @@ export default function EntrepreneurSmartScanTestPage() {
 
   async function refreshSmartScanSnapshot() {
     const response = await fetch("/api/popey-human/smart-scan/bootstrap", { cache: "no-store" });
-    if (!response.ok) return;
+    if (!response.ok) {
+      if (response.status === 401 && typeof window !== "undefined") {
+        window.location.href = "/popey-human/login";
+      }
+      return;
+    }
     const payload = (await response.json()) as {
       contacts: BootstrapContactRow[];
       qualifications: BootstrapQualificationRow[];
@@ -1522,6 +1549,7 @@ export default function EntrepreneurSmartScanTestPage() {
     const nextFavoriteIds: string[] = [];
     const nextPriorityScoreStore: Record<string, number> = {};
     const nextPotentialStore: Record<string, number> = {};
+    const persistedImportedRows: Array<{ index: number; contact: DailyContact }> = [];
     (payload.contacts || []).forEach((contact) => {
       if (contact.external_contact_ref) {
         dbToExternalRef.set(contact.id, contact.external_contact_ref);
@@ -1537,6 +1565,22 @@ export default function EntrepreneurSmartScanTestPage() {
         }
         nextPriorityScoreStore[contact.external_contact_ref] = Math.max(0, Math.round(contact.priority_score || 0));
         nextPotentialStore[contact.external_contact_ref] = Math.max(0, Math.round(contact.potential_eur || 0));
+        if (contact.source && contact.source.startsWith("import")) {
+          persistedImportedRows.push({
+            index: Number.isFinite(Number(contact.import_index)) ? Number(contact.import_index) : 999999,
+            contact: {
+              id: contact.external_contact_ref,
+              name: contact.full_name || contact.external_contact_ref || "Contact",
+              phone: contact.phone_e164 || null,
+              city: contact.city || "Inconnue",
+              companyHint: contact.company_hint || "Reseau perso",
+              capsule: "Importe depuis ton telephone",
+              communityKnownBy: 1,
+              dominantTags: ["📱 Contact importe", "🤝 A qualifier"],
+              externalNews: "Profil importe depuis ton annuaire",
+            },
+          });
+        }
       }
     });
 
@@ -1629,6 +1673,12 @@ export default function EntrepreneurSmartScanTestPage() {
     setHistoryEntries(nextHistoryEntries);
     setPriorityScoreStore(nextPriorityScoreStore);
     setPotentialEurStore(nextPotentialStore);
+    if (persistedImportedRows.length > 0) {
+      const hydratedContacts = persistedImportedRows
+        .sort((a, b) => a.index - b.index)
+        .map((row) => row.contact);
+      setImportedContacts(hydratedContacts);
+    }
     setOpenAlertContactIds(alertContactIds);
     setDueFollowups(nextDueFollowups);
     setConversionMetrics(payload.metrics || null);
@@ -1639,6 +1689,24 @@ export default function EntrepreneurSmartScanTestPage() {
     }
     if (typeof payload.session?.target_potential_eur === "number") {
       setDailyTargetPotential(Math.max(0, Math.round(payload.session.target_potential_eur)));
+    }
+    if (!hasHydratedServerProgress) {
+      const sessionMetadata =
+        payload.session?.metadata && typeof payload.session.metadata === "object" && !Array.isArray(payload.session.metadata)
+          ? payload.session.metadata
+          : null;
+      const progress =
+        sessionMetadata &&
+        "smartScanProgress" in sessionMetadata &&
+        sessionMetadata.smartScanProgress &&
+        typeof sessionMetadata.smartScanProgress === "object" &&
+        !Array.isArray(sessionMetadata.smartScanProgress)
+          ? (sessionMetadata.smartScanProgress as { queueIndex?: unknown })
+          : null;
+      if (progress && typeof progress.queueIndex === "number" && Number.isFinite(progress.queueIndex)) {
+        setIndex(Math.max(0, Math.round(progress.queueIndex)));
+      }
+      setHasHydratedServerProgress(true);
     }
   }
 
@@ -2099,7 +2167,27 @@ export default function EntrepreneurSmartScanTestPage() {
     setScanCount(0);
     setStage("scan");
     setIndex(0);
+    setHasHydratedServerProgress(true);
     setApiErrorMessage("");
+    void postSmartScan("import-contacts", {
+      source: "file",
+      contacts: nextContacts.map((contact, idx) => ({
+        externalContactRef: contact.id,
+        fullName: contact.name,
+        city: contact.city || null,
+        companyHint: contact.companyHint || null,
+        phoneE164: normalizePhoneForWhatsApp(contact.phone) || contact.phone || null,
+        importIndex: idx,
+      })),
+    })
+      .then(() =>
+        postSmartScan("session-progress", {
+          queueIndex: 0,
+          queueSize: dailyQueueCount,
+          importedTotal: nextContacts.length,
+        }),
+      )
+      .catch(() => null);
   }
 
   async function handleContactImportChange(event: React.ChangeEvent<HTMLInputElement>) {
@@ -2145,7 +2233,27 @@ export default function EntrepreneurSmartScanTestPage() {
       setScanCount(0);
       setStage("scan");
       setIndex(0);
+      setHasHydratedServerProgress(true);
       setApiErrorMessage("");
+      void postSmartScan("import-contacts", {
+        source: "direct-picker",
+        contacts: nextContacts.map((contact, idx) => ({
+          externalContactRef: contact.id,
+          fullName: contact.name,
+          city: contact.city || null,
+          companyHint: contact.companyHint || null,
+          phoneE164: normalizePhoneForWhatsApp(contact.phone) || contact.phone || null,
+          importIndex: idx,
+        })),
+      })
+        .then(() =>
+          postSmartScan("session-progress", {
+            queueIndex: 0,
+            queueSize: dailyQueueCount,
+            importedTotal: nextContacts.length,
+          }),
+        )
+        .catch(() => null);
     } catch {
       setApiErrorMessage("Acces direct refuse ou indisponible. Utilise l import .vcf/.csv.");
     } finally {
@@ -2159,11 +2267,13 @@ export default function EntrepreneurSmartScanTestPage() {
     setScanCount(0);
     setIndex(0);
     setStage("scan");
+    setHasHydratedServerProgress(true);
     if (typeof window !== "undefined") {
       window.localStorage.removeItem(SMART_SCAN_IMPORTED_CONTACTS_KEY);
       window.localStorage.removeItem(SMART_SCAN_SESSION_KEY);
       window.sessionStorage.removeItem(PENDING_WHATSAPP_CONTEXT_KEY);
     }
+    void postSmartScan("clear-import", {}).catch(() => null);
   }
 
   function restartDailyQueueFromFirstContact() {
