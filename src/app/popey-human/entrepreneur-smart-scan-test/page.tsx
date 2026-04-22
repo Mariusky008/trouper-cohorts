@@ -471,7 +471,9 @@ function buildTemplate(action: DailyCategory, contact: DailyContact, qualifier?:
 }
 
 function parseVcfContacts(raw: string): ImportedContactRow[] {
-  const cards = raw.split(/END:VCARD/i);
+  // RFC6350 line folding: a newline followed by space/tab continues the previous line.
+  const unfoldedRaw = raw.replace(/\r?\n[ \t]/g, "");
+  const cards = unfoldedRaw.split(/END:VCARD/i);
   const rows: ImportedContactRow[] = [];
   cards.forEach((card) => {
     const fn = card.match(/(?:^|\n)FN[^:]*:(.+)/i)?.[1]?.trim();
@@ -716,6 +718,7 @@ export default function EntrepreneurSmartScanTestPage() {
   const [showImportHelp, setShowImportHelp] = useState(false);
   const [isCockpitCollapsed, setIsCockpitCollapsed] = useState(true);
   const [hasHydratedLocalSession, setHasHydratedLocalSession] = useState(false);
+  const [modalErrorMessage, setModalErrorMessage] = useState("");
   const contactImportInputRef = useRef<HTMLInputElement | null>(null);
   const localDayNumber = useMemo(() => getLocalDayNumber(), []);
 
@@ -1785,6 +1788,7 @@ export default function EntrepreneurSmartScanTestPage() {
       setTimeout(() => {
         setLaunchingAction(null);
         const nextDraft = buildTemplate(action, current, currentQualifier);
+        setModalErrorMessage("");
         setSelectedAction(action);
         setDraftMessage(nextDraft);
         setAiGenerationSource(null);
@@ -1817,9 +1821,10 @@ export default function EntrepreneurSmartScanTestPage() {
     const action = selectedAction;
     if (!action || action === "qualifier") return;
     if (!cleanPhone) {
-      setApiErrorMessage("Numero WhatsApp manquant pour ce contact. Ajoute un numero valide dans ton fichier import.");
+      setModalErrorMessage("Contact WhatsApp manquant. Reimporte ton fichier pour inclure les numeros (format international conseille).");
       return;
     }
+    setModalErrorMessage("");
     const payload = createTransitionPayload(action);
     const awaitingConfirm: TransitionAwaitingConfirmState = {
       action,
@@ -3522,7 +3527,10 @@ export default function EntrepreneurSmartScanTestPage() {
               </p>
               <button
                 type="button"
-                onClick={() => setShowTemplateModal(false)}
+                  onClick={() => {
+                    setModalErrorMessage("");
+                    setShowTemplateModal(false);
+                  }}
                 className="absolute right-0 h-8 w-8 rounded-full border border-white/20 bg-white/10 text-xs"
               >
                 ✕
@@ -3790,6 +3798,11 @@ export default function EntrepreneurSmartScanTestPage() {
                   Envoyer sur WhatsApp
                 </button>
                 </div>
+                {modalErrorMessage && (
+                  <p className="mt-2 rounded-xl border border-rose-300/35 bg-rose-300/15 px-3 py-2 text-xs text-rose-100">
+                    {modalErrorMessage}
+                  </p>
+                )}
               </>
             )}
           </section>
