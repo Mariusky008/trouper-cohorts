@@ -176,6 +176,8 @@ type SmartScanProfile = {
   first_name: string | null;
   last_name: string | null;
   metier: string | null;
+  buddy_name: string | null;
+  buddy_metier: string | null;
   ville: string | null;
   phone: string | null;
   status: "active" | "paused" | "archived";
@@ -184,6 +186,8 @@ type SmartScanProfileForm = {
   firstName: string;
   lastName: string;
   metier: string;
+  buddyName: string;
+  buddyMetier: string;
   ville: string;
   phone: string;
 };
@@ -470,18 +474,9 @@ function buildPromptCompliments(qualifier?: QualifierData) {
 }
 
 function resolveAllianceMetiers(ownerProfile?: SmartScanProfile | null) {
-  const rawMetier = String(ownerProfile?.metier || "").trim();
-  if (!rawMetier) {
-    return { metier1: "expert metier", metier2: "partenaire complementaire" };
-  }
-  const parts = rawMetier
-    .split(/\+|\/|,| et /i)
-    .map((part) => part.trim())
-    .filter(Boolean);
-  if (parts.length >= 2) {
-    return { metier1: parts[0], metier2: parts[1] };
-  }
-  return { metier1: rawMetier, metier2: "partenaire complementaire" };
+  const metier1 = String(ownerProfile?.metier || "").trim() || "expert metier";
+  const metier2 = String(ownerProfile?.buddy_metier || "").trim() || "partenaire complementaire";
+  return { metier1, metier2 };
 }
 
 function buildTemplate(
@@ -730,6 +725,8 @@ export default function EntrepreneurSmartScanTestPage() {
     firstName: "",
     lastName: "",
     metier: "",
+    buddyName: "",
+    buddyMetier: "",
     ville: "",
     phone: "",
   });
@@ -2527,6 +2524,8 @@ export default function EntrepreneurSmartScanTestPage() {
       firstName: profile?.first_name || "",
       lastName: profile?.last_name || "",
       metier: profile?.metier || "",
+      buddyName: profile?.buddy_name || "",
+      buddyMetier: profile?.buddy_metier || "",
       ville: profile?.ville || "",
       phone: profile?.phone || "",
     });
@@ -2844,7 +2843,19 @@ export default function EntrepreneurSmartScanTestPage() {
                       <input
                         value={profileForm.metier}
                         onChange={(event) => setProfileForm((prev) => ({ ...prev, metier: event.target.value }))}
-                        placeholder="Metier"
+                        placeholder="Mon metier"
+                        className="h-9 w-full rounded-lg border border-white/15 bg-black/30 px-2 text-sm"
+                      />
+                      <input
+                        value={profileForm.buddyName}
+                        onChange={(event) => setProfileForm((prev) => ({ ...prev, buddyName: event.target.value }))}
+                        placeholder="Nom du binome"
+                        className="h-9 w-full rounded-lg border border-white/15 bg-black/30 px-2 text-sm"
+                      />
+                      <input
+                        value={profileForm.buddyMetier}
+                        onChange={(event) => setProfileForm((prev) => ({ ...prev, buddyMetier: event.target.value }))}
+                        placeholder="Metier du binome"
                         className="h-9 w-full rounded-lg border border-white/15 bg-black/30 px-2 text-sm"
                       />
                       <input
@@ -2864,7 +2875,9 @@ export default function EntrepreneurSmartScanTestPage() {
                     <>
                       <p><span className="text-white/60">Nom:</span> {myProfile?.last_name || "-"}</p>
                       <p><span className="text-white/60">Prenom:</span> {myProfile?.first_name || "-"}</p>
-                      <p><span className="text-white/60">Metier:</span> {myProfile?.metier || "-"}</p>
+                      <p><span className="text-white/60">Mon metier:</span> {myProfile?.metier || "-"}</p>
+                      <p><span className="text-white/60">Nom du binome:</span> {myProfile?.buddy_name || "-"}</p>
+                      <p><span className="text-white/60">Metier du binome:</span> {myProfile?.buddy_metier || "-"}</p>
                       <p><span className="text-white/60">Ville:</span> {myProfile?.ville || "-"}</p>
                       <p><span className="text-white/60">Telephone:</span> {myProfile?.phone || "-"}</p>
                     </>
@@ -3476,7 +3489,19 @@ export default function EntrepreneurSmartScanTestPage() {
                     <input
                       value={profileForm.metier}
                       onChange={(event) => setProfileForm((prev) => ({ ...prev, metier: event.target.value }))}
-                      placeholder="Metier"
+                      placeholder="Mon metier"
+                      className="h-9 w-full rounded-lg border border-white/15 bg-black/30 px-2 text-sm"
+                    />
+                    <input
+                      value={profileForm.buddyName}
+                      onChange={(event) => setProfileForm((prev) => ({ ...prev, buddyName: event.target.value }))}
+                      placeholder="Nom du binome"
+                      className="h-9 w-full rounded-lg border border-white/15 bg-black/30 px-2 text-sm"
+                    />
+                    <input
+                      value={profileForm.buddyMetier}
+                      onChange={(event) => setProfileForm((prev) => ({ ...prev, buddyMetier: event.target.value }))}
+                      placeholder="Metier du binome"
                       className="h-9 w-full rounded-lg border border-white/15 bg-black/30 px-2 text-sm"
                     />
                     <input
@@ -3496,7 +3521,9 @@ export default function EntrepreneurSmartScanTestPage() {
                   <>
                     <p><span className="text-white/60">Nom:</span> {myProfile?.last_name || "-"}</p>
                     <p><span className="text-white/60">Prenom:</span> {myProfile?.first_name || "-"}</p>
-                    <p><span className="text-white/60">Metier:</span> {myProfile?.metier || "-"}</p>
+                    <p><span className="text-white/60">Mon metier:</span> {myProfile?.metier || "-"}</p>
+                    <p><span className="text-white/60">Nom du binome:</span> {myProfile?.buddy_name || "-"}</p>
+                    <p><span className="text-white/60">Metier du binome:</span> {myProfile?.buddy_metier || "-"}</p>
                     <p><span className="text-white/60">Ville:</span> {myProfile?.ville || "-"}</p>
                     <p><span className="text-white/60">Telephone:</span> {myProfile?.phone || "-"}</p>
                   </>

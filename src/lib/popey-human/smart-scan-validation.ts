@@ -157,6 +157,8 @@ export const smartScanProfileUpdateSchema = z
     firstName: z.string().trim().max(80).optional(),
     lastName: z.string().trim().max(80).optional(),
     metier: z.string().trim().max(140).optional(),
+    buddyName: z.string().trim().max(120).optional(),
+    buddyMetier: z.string().trim().max(140).optional(),
     ville: z.string().trim().max(120).optional(),
     phone: z.string().trim().max(32).optional(),
   })

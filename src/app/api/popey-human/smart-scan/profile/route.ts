@@ -29,7 +29,7 @@ export async function GET() {
   const supabaseAdmin = createAdminClient();
   const { data, error } = await supabaseAdmin
     .from("human_members")
-    .select("id,first_name,last_name,metier,ville,phone,status")
+    .select("id,first_name,last_name,metier,buddy_name,buddy_metier,ville,phone,status")
     .eq("id", member.id)
     .maybeSingle();
 
@@ -72,6 +72,8 @@ export async function POST(request: NextRequest) {
     first_name: String(body.firstName || "").trim() || null,
     last_name: String(body.lastName || "").trim() || null,
     metier: String(body.metier || "").trim() || null,
+    buddy_name: String(body.buddyName || "").trim() || null,
+    buddy_metier: String(body.buddyMetier || "").trim() || null,
     ville: String(body.ville || "").trim() || null,
     phone: String(body.phone || "").trim() || null,
     updated_at: new Date().toISOString(),
@@ -81,7 +83,7 @@ export async function POST(request: NextRequest) {
     .from("human_members")
     .update(payload)
     .eq("id", member.id)
-    .select("id,first_name,last_name,metier,ville,phone,status")
+    .select("id,first_name,last_name,metier,buddy_name,buddy_metier,ville,phone,status")
     .maybeSingle();
 
   if (error) {
