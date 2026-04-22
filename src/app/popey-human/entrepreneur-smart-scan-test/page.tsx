@@ -178,6 +178,11 @@ type SmartScanProfile = {
   metier: string | null;
   buddy_name: string | null;
   buddy_metier: string | null;
+  trio_name: string | null;
+  trio_metier: string | null;
+  eclaireur_reward_mode: "percent" | "fixed" | null;
+  eclaireur_reward_percent: number | null;
+  eclaireur_reward_fixed_eur: number | null;
   ville: string | null;
   phone: string | null;
   status: "active" | "paused" | "archived";
@@ -188,6 +193,11 @@ type SmartScanProfileForm = {
   metier: string;
   buddyName: string;
   buddyMetier: string;
+  trioName: string;
+  trioMetier: string;
+  eclaireurRewardMode: "percent" | "fixed";
+  eclaireurRewardPercent: string;
+  eclaireurRewardFixedEur: string;
   ville: string;
   phone: string;
 };
@@ -474,9 +484,22 @@ function buildPromptCompliments(qualifier?: QualifierData) {
 }
 
 function resolveAllianceMetiers(ownerProfile?: SmartScanProfile | null) {
-  const metier1 = String(ownerProfile?.metier || "").trim() || "expert metier";
-  const metier2 = String(ownerProfile?.buddy_metier || "").trim() || "partenaire complementaire";
+  const metier1 = String(ownerProfile?.buddy_metier || "").trim() || "partenaire binome";
+  const metier2 = String(ownerProfile?.trio_metier || "").trim() || "partenaire trio";
   return { metier1, metier2 };
+}
+
+function resolveEclaireurRewardSentence(ownerProfile?: SmartScanProfile | null) {
+  const mode = ownerProfile?.eclaireur_reward_mode;
+  const percent = Number(ownerProfile?.eclaireur_reward_percent || 0);
+  const fixed = Number(ownerProfile?.eclaireur_reward_fixed_eur || 0);
+  if (mode === "fixed" && Number.isFinite(fixed) && fixed > 0) {
+    return `et tu touches un fixe de ${Math.round(fixed)} euros sur chaque affaire conclue.`;
+  }
+  if (Number.isFinite(percent) && percent > 0) {
+    return `et tu touches ${Math.round(percent)}% sur chaque affaire conclue.`;
+  }
+  return "et tu touches un pourcentage sur chaque affaire conclue.";
 }
 
 function buildTemplate(
@@ -495,11 +518,12 @@ function buildTemplate(
   if (action === "eclaireur") {
     const { metier1, metier2 } = resolveAllianceMetiers(ownerProfile);
     const secteur = String(ownerProfile?.ville || contact.city || "ton secteur").trim() || "ton secteur";
+    const rewardLine = resolveEclaireurRewardSentence(ownerProfile);
     return `Salut ${firstName}, je te contacte car je viens de structurer une alliance strategique avec deux partenaires (un ${metier1} et un ${metier2}).
 
 On a decide de mettre en place un systeme d antennes locales pour nous remonter des opportunites de terrain. J ai tout de suite pense a toi car tu as le profil ideal pour etre notre Eclaireur sur ${secteur}.
 
-Le deal est simple : tu nous identifies un besoin, on gere 100% du dossier avec notre expertise, et tu touches un pourcentage sur chaque affaire conclue. Ca peut vite representer un complement de revenu tres serieux a la fin du mois sans que tu n aies a travailler sur les dossiers.
+Le deal est simple : tu nous identifies un besoin, on gere 100% du dossier avec notre expertise, ${rewardLine} Ca peut vite representer un complement de revenu tres serieux a la fin du mois sans que tu n aies a travailler sur les dossiers.
 
 Est-ce que tu serais ouvert a ce qu on teste ca sur un premier cas ?`;
   }
@@ -727,6 +751,11 @@ export default function EntrepreneurSmartScanTestPage() {
     metier: "",
     buddyName: "",
     buddyMetier: "",
+    trioName: "",
+    trioMetier: "",
+    eclaireurRewardMode: "percent",
+    eclaireurRewardPercent: "",
+    eclaireurRewardFixedEur: "",
     ville: "",
     phone: "",
   });
@@ -2526,6 +2555,17 @@ export default function EntrepreneurSmartScanTestPage() {
       metier: profile?.metier || "",
       buddyName: profile?.buddy_name || "",
       buddyMetier: profile?.buddy_metier || "",
+      trioName: profile?.trio_name || "",
+      trioMetier: profile?.trio_metier || "",
+      eclaireurRewardMode: profile?.eclaireur_reward_mode === "fixed" ? "fixed" : "percent",
+      eclaireurRewardPercent:
+        profile?.eclaireur_reward_percent !== null && profile?.eclaireur_reward_percent !== undefined
+          ? String(profile.eclaireur_reward_percent)
+          : "",
+      eclaireurRewardFixedEur:
+        profile?.eclaireur_reward_fixed_eur !== null && profile?.eclaireur_reward_fixed_eur !== undefined
+          ? String(profile.eclaireur_reward_fixed_eur)
+          : "",
       ville: profile?.ville || "",
       phone: profile?.phone || "",
     });
@@ -2859,6 +2899,46 @@ export default function EntrepreneurSmartScanTestPage() {
                         className="h-9 w-full rounded-lg border border-white/15 bg-black/30 px-2 text-sm"
                       />
                       <input
+                        value={profileForm.trioName}
+                        onChange={(event) => setProfileForm((prev) => ({ ...prev, trioName: event.target.value }))}
+                        placeholder="Nom du trio"
+                        className="h-9 w-full rounded-lg border border-white/15 bg-black/30 px-2 text-sm"
+                      />
+                      <input
+                        value={profileForm.trioMetier}
+                        onChange={(event) => setProfileForm((prev) => ({ ...prev, trioMetier: event.target.value }))}
+                        placeholder="Metier du trio"
+                        className="h-9 w-full rounded-lg border border-white/15 bg-black/30 px-2 text-sm"
+                      />
+                      <select
+                        value={profileForm.eclaireurRewardMode}
+                        onChange={(event) =>
+                          setProfileForm((prev) => ({
+                            ...prev,
+                            eclaireurRewardMode: event.target.value === "fixed" ? "fixed" : "percent",
+                          }))
+                        }
+                        className="h-9 w-full rounded-lg border border-white/15 bg-black/30 px-2 text-sm"
+                      >
+                        <option value="percent">Remuneration eclaireur: %</option>
+                        <option value="fixed">Remuneration eclaireur: fixe €</option>
+                      </select>
+                      {profileForm.eclaireurRewardMode === "percent" ? (
+                        <input
+                          value={profileForm.eclaireurRewardPercent}
+                          onChange={(event) => setProfileForm((prev) => ({ ...prev, eclaireurRewardPercent: event.target.value }))}
+                          placeholder="Pourcentage ex: 10"
+                          className="h-9 w-full rounded-lg border border-white/15 bg-black/30 px-2 text-sm"
+                        />
+                      ) : (
+                        <input
+                          value={profileForm.eclaireurRewardFixedEur}
+                          onChange={(event) => setProfileForm((prev) => ({ ...prev, eclaireurRewardFixedEur: event.target.value }))}
+                          placeholder="Fixe en euros ex: 300"
+                          className="h-9 w-full rounded-lg border border-white/15 bg-black/30 px-2 text-sm"
+                        />
+                      )}
+                      <input
                         value={profileForm.ville}
                         onChange={(event) => setProfileForm((prev) => ({ ...prev, ville: event.target.value }))}
                         placeholder="Ville"
@@ -2878,6 +2958,18 @@ export default function EntrepreneurSmartScanTestPage() {
                       <p><span className="text-white/60">Mon metier:</span> {myProfile?.metier || "-"}</p>
                       <p><span className="text-white/60">Nom du binome:</span> {myProfile?.buddy_name || "-"}</p>
                       <p><span className="text-white/60">Metier du binome:</span> {myProfile?.buddy_metier || "-"}</p>
+                      <p><span className="text-white/60">Nom du trio:</span> {myProfile?.trio_name || "-"}</p>
+                      <p><span className="text-white/60">Metier du trio:</span> {myProfile?.trio_metier || "-"}</p>
+                      <p>
+                        <span className="text-white/60">Remuneration eclaireur:</span>{" "}
+                        {myProfile?.eclaireur_reward_mode === "fixed"
+                          ? myProfile?.eclaireur_reward_fixed_eur
+                            ? `${myProfile.eclaireur_reward_fixed_eur}€ fixe`
+                            : "-"
+                          : myProfile?.eclaireur_reward_percent
+                            ? `${myProfile.eclaireur_reward_percent}%`
+                            : "-"}
+                      </p>
                       <p><span className="text-white/60">Ville:</span> {myProfile?.ville || "-"}</p>
                       <p><span className="text-white/60">Telephone:</span> {myProfile?.phone || "-"}</p>
                     </>
@@ -3505,6 +3597,46 @@ export default function EntrepreneurSmartScanTestPage() {
                       className="h-9 w-full rounded-lg border border-white/15 bg-black/30 px-2 text-sm"
                     />
                     <input
+                      value={profileForm.trioName}
+                      onChange={(event) => setProfileForm((prev) => ({ ...prev, trioName: event.target.value }))}
+                      placeholder="Nom du trio"
+                      className="h-9 w-full rounded-lg border border-white/15 bg-black/30 px-2 text-sm"
+                    />
+                    <input
+                      value={profileForm.trioMetier}
+                      onChange={(event) => setProfileForm((prev) => ({ ...prev, trioMetier: event.target.value }))}
+                      placeholder="Metier du trio"
+                      className="h-9 w-full rounded-lg border border-white/15 bg-black/30 px-2 text-sm"
+                    />
+                    <select
+                      value={profileForm.eclaireurRewardMode}
+                      onChange={(event) =>
+                        setProfileForm((prev) => ({
+                          ...prev,
+                          eclaireurRewardMode: event.target.value === "fixed" ? "fixed" : "percent",
+                        }))
+                      }
+                      className="h-9 w-full rounded-lg border border-white/15 bg-black/30 px-2 text-sm"
+                    >
+                      <option value="percent">Remuneration eclaireur: %</option>
+                      <option value="fixed">Remuneration eclaireur: fixe €</option>
+                    </select>
+                    {profileForm.eclaireurRewardMode === "percent" ? (
+                      <input
+                        value={profileForm.eclaireurRewardPercent}
+                        onChange={(event) => setProfileForm((prev) => ({ ...prev, eclaireurRewardPercent: event.target.value }))}
+                        placeholder="Pourcentage ex: 10"
+                        className="h-9 w-full rounded-lg border border-white/15 bg-black/30 px-2 text-sm"
+                      />
+                    ) : (
+                      <input
+                        value={profileForm.eclaireurRewardFixedEur}
+                        onChange={(event) => setProfileForm((prev) => ({ ...prev, eclaireurRewardFixedEur: event.target.value }))}
+                        placeholder="Fixe en euros ex: 300"
+                        className="h-9 w-full rounded-lg border border-white/15 bg-black/30 px-2 text-sm"
+                      />
+                    )}
+                    <input
                       value={profileForm.ville}
                       onChange={(event) => setProfileForm((prev) => ({ ...prev, ville: event.target.value }))}
                       placeholder="Ville"
@@ -3524,6 +3656,18 @@ export default function EntrepreneurSmartScanTestPage() {
                     <p><span className="text-white/60">Mon metier:</span> {myProfile?.metier || "-"}</p>
                     <p><span className="text-white/60">Nom du binome:</span> {myProfile?.buddy_name || "-"}</p>
                     <p><span className="text-white/60">Metier du binome:</span> {myProfile?.buddy_metier || "-"}</p>
+                    <p><span className="text-white/60">Nom du trio:</span> {myProfile?.trio_name || "-"}</p>
+                    <p><span className="text-white/60">Metier du trio:</span> {myProfile?.trio_metier || "-"}</p>
+                    <p>
+                      <span className="text-white/60">Remuneration eclaireur:</span>{" "}
+                      {myProfile?.eclaireur_reward_mode === "fixed"
+                        ? myProfile?.eclaireur_reward_fixed_eur
+                          ? `${myProfile.eclaireur_reward_fixed_eur}€ fixe`
+                          : "-"
+                        : myProfile?.eclaireur_reward_percent
+                          ? `${myProfile.eclaireur_reward_percent}%`
+                          : "-"}
+                    </p>
                     <p><span className="text-white/60">Ville:</span> {myProfile?.ville || "-"}</p>
                     <p><span className="text-white/60">Telephone:</span> {myProfile?.phone || "-"}</p>
                   </>

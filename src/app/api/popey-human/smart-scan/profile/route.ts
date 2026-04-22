@@ -29,7 +29,7 @@ export async function GET() {
   const supabaseAdmin = createAdminClient();
   const { data, error } = await supabaseAdmin
     .from("human_members")
-    .select("id,first_name,last_name,metier,buddy_name,buddy_metier,ville,phone,status")
+    .select("id,first_name,last_name,metier,buddy_name,buddy_metier,trio_name,trio_metier,eclaireur_reward_mode,eclaireur_reward_percent,eclaireur_reward_fixed_eur,ville,phone,status")
     .eq("id", member.id)
     .maybeSingle();
 
@@ -68,12 +68,19 @@ export async function POST(request: NextRequest) {
   const body = parsed.data;
 
   const supabaseAdmin = createAdminClient();
+  const rewardPercent = Number.parseFloat(String(body.eclaireurRewardPercent || "").replace(",", "."));
+  const rewardFixedEur = Number.parseFloat(String(body.eclaireurRewardFixedEur || "").replace(",", "."));
   const payload = {
     first_name: String(body.firstName || "").trim() || null,
     last_name: String(body.lastName || "").trim() || null,
     metier: String(body.metier || "").trim() || null,
     buddy_name: String(body.buddyName || "").trim() || null,
     buddy_metier: String(body.buddyMetier || "").trim() || null,
+    trio_name: String(body.trioName || "").trim() || null,
+    trio_metier: String(body.trioMetier || "").trim() || null,
+    eclaireur_reward_mode: body.eclaireurRewardMode === "fixed" ? "fixed" : "percent",
+    eclaireur_reward_percent: Number.isFinite(rewardPercent) && rewardPercent > 0 ? rewardPercent : null,
+    eclaireur_reward_fixed_eur: Number.isFinite(rewardFixedEur) && rewardFixedEur > 0 ? rewardFixedEur : null,
     ville: String(body.ville || "").trim() || null,
     phone: String(body.phone || "").trim() || null,
     updated_at: new Date().toISOString(),
@@ -83,7 +90,7 @@ export async function POST(request: NextRequest) {
     .from("human_members")
     .update(payload)
     .eq("id", member.id)
-    .select("id,first_name,last_name,metier,buddy_name,buddy_metier,ville,phone,status")
+    .select("id,first_name,last_name,metier,buddy_name,buddy_metier,trio_name,trio_metier,eclaireur_reward_mode,eclaireur_reward_percent,eclaireur_reward_fixed_eur,ville,phone,status")
     .maybeSingle();
 
   if (error) {

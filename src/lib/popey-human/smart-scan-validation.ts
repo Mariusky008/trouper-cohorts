@@ -159,6 +159,11 @@ export const smartScanProfileUpdateSchema = z
     metier: z.string().trim().max(140).optional(),
     buddyName: z.string().trim().max(120).optional(),
     buddyMetier: z.string().trim().max(140).optional(),
+    trioName: z.string().trim().max(120).optional(),
+    trioMetier: z.string().trim().max(140).optional(),
+    eclaireurRewardMode: z.enum(["percent", "fixed"]).optional(),
+    eclaireurRewardPercent: z.string().trim().max(16).optional(),
+    eclaireurRewardFixedEur: z.string().trim().max(16).optional(),
     ville: z.string().trim().max(120).optional(),
     phone: z.string().trim().max(32).optional(),
   })
