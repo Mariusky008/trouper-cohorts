@@ -3742,10 +3742,21 @@ export default function EntrepreneurSmartScanTestPage() {
 
       {showSearchPanel && (
         <div className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm flex items-start justify-center px-0 pt-0 pb-0 sm:px-4 sm:pt-16 sm:pb-0">
-          <section className="h-[100dvh] max-h-[100dvh] w-full overflow-y-auto rounded-none border-0 bg-[#0E1430] p-4 sm:h-auto sm:max-h-[90vh] sm:max-w-lg sm:rounded-3xl sm:border sm:border-white/15">
-            <div className="flex items-center justify-between">
+          <section
+            className="h-[100dvh] max-h-[100dvh] w-full overflow-y-auto rounded-none border-0 bg-[#0E1430] p-4 pb-8 sm:h-auto sm:max-h-[90vh] sm:max-w-lg sm:rounded-3xl sm:border sm:border-white/15"
+            style={{ paddingTop: "calc(env(safe-area-inset-top) + 12px)" }}
+          >
+            <div className="sticky top-0 z-20 -mx-4 bg-[#0E1430] px-4 pb-2">
+              <div className="flex items-center justify-between">
               <p className="text-xs font-black uppercase tracking-[0.12em] text-cyan-200">Recherche</p>
-              <button type="button" onClick={() => setShowSearchPanel(false)} className="h-8 w-8 rounded-full border border-white/20 bg-white/10 text-xs">✕</button>
+                <button
+                  type="button"
+                  onClick={() => setShowSearchPanel(false)}
+                  className="relative z-30 h-9 w-9 rounded-full border border-white/20 bg-white/10 text-xs"
+                >
+                  ✕
+                </button>
+              </div>
             </div>
             <div className="mt-3 grid grid-cols-2 gap-2">
               <button
@@ -3915,20 +3926,25 @@ export default function EntrepreneurSmartScanTestPage() {
 
       {showEclaireursPanel && (
         <div className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm flex items-start justify-center px-0 pt-0 pb-0 sm:px-4 sm:pt-16 sm:pb-0">
-          <section className="h-[100dvh] max-h-[100dvh] w-full overflow-y-auto rounded-none border-0 bg-[#0E1430] p-4 sm:h-auto sm:max-h-[90vh] sm:max-w-lg sm:rounded-3xl sm:border sm:border-white/15">
-            <div className="flex items-center justify-between">
-              <p className="text-xs font-black uppercase tracking-[0.12em] text-cyan-200">Mes Eclaireurs</p>
-              <button
-                type="button"
-                onClick={() => {
-                  setShowEclaireursPanel(false);
-                  setSelectedEclaireurTemplateContactId(null);
-                  setEclaireurTemplates([]);
-                }}
-                className="h-8 w-8 rounded-full border border-white/20 bg-white/10 text-xs"
-              >
-                ✕
-              </button>
+          <section
+            className="h-[100dvh] max-h-[100dvh] w-full overflow-y-auto rounded-none border-0 bg-[#0E1430] p-4 pb-8 sm:h-auto sm:max-h-[90vh] sm:max-w-lg sm:rounded-3xl sm:border sm:border-white/15"
+            style={{ paddingTop: "calc(env(safe-area-inset-top) + 12px)" }}
+          >
+            <div className="sticky top-0 z-20 -mx-4 bg-[#0E1430] px-4 pb-2">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-black uppercase tracking-[0.12em] text-cyan-200">Mes Eclaireurs</p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowEclaireursPanel(false);
+                    setSelectedEclaireurTemplateContactId(null);
+                    setEclaireurTemplates([]);
+                  }}
+                  className="relative z-30 h-9 w-9 rounded-full border border-white/20 bg-white/10 text-xs"
+                >
+                  ✕
+                </button>
+              </div>
             </div>
             <div className="mt-3 grid grid-cols-2 gap-2">
               <select
