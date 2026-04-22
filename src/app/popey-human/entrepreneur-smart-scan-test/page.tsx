@@ -191,6 +191,7 @@ type SmartScanProfileForm = {
 const PENDING_WHATSAPP_CONTEXT_KEY = "popey-human:smart-scan:pending-whatsapp-context";
 const SMART_SCAN_SESSION_KEY = "popey-human:smart-scan:scan-session";
 const SMART_SCAN_IMPORTED_CONTACTS_KEY = "popey-human:smart-scan:imported-contacts";
+const SMART_SCAN_ECLAIREURS_KEY = "popey-human:smart-scan:eclaireurs";
 const DAILY_CONTACT_LIMIT = 10;
 
 const CONTACTS: DailyContact[] = [
@@ -687,6 +688,7 @@ export default function EntrepreneurSmartScanTestPage() {
   } | null>(null);
   const [pendingFinalizeAction, setPendingFinalizeAction] = useState<Exclude<DailyCategory, "qualifier"> | null>(null);
   const [pendingReturnProfileContactId, setPendingReturnProfileContactId] = useState<string | null>(null);
+  const [qualifierAutoOpenPausedUntilMs, setQualifierAutoOpenPausedUntilMs] = useState(0);
   const [showHistoryPanel, setShowHistoryPanel] = useState(false);
   const [searchInnerTab, setSearchInnerTab] = useState<"search" | "history">("search");
   const [historyStatusFilter, setHistoryStatusFilter] = useState<"all" | "sent" | "validated">("all");
@@ -749,6 +751,7 @@ export default function EntrepreneurSmartScanTestPage() {
   const [hasHydratedLocalSession, setHasHydratedLocalSession] = useState(false);
   const [hasHydratedServerProgress, setHasHydratedServerProgress] = useState(false);
   const [modalErrorMessage, setModalErrorMessage] = useState("");
+  const [dismissedQualifierContactId, setDismissedQualifierContactId] = useState<string | null>(null);
   const contactImportInputRef = useRef<HTMLInputElement | null>(null);
   const localDayNumber = useMemo(() => getLocalDayNumber(), []);
 
@@ -871,7 +874,16 @@ export default function EntrepreneurSmartScanTestPage() {
   const searchResults = contactsData
     .filter((contact) => `${contact.name} ${contact.city} ${contact.companyHint}`.toLowerCase().includes(searchQuery.toLowerCase().trim()))
     .sort((a, b) => (priorityScoreStore[b.id] || 0) - (priorityScoreStore[a.id] || 0));
-  const eclaireursList = Object.values(eclaireurDirectory).sort((a, b) => {
+  const eclaireursList = eclaireurIds
+    .map((id) => {
+      const fromTodayQueue = contactsData.find((contact) => contact.id === id);
+      if (fromTodayQueue) {
+        return { id: fromTodayQueue.id, name: fromTodayQueue.name, city: fromTodayQueue.city };
+      }
+      return eclaireurDirectory[id] || null;
+    })
+    .filter((contact): contact is { id: string; name: string; city: string } => Boolean(contact))
+    .sort((a, b) => {
       const statsA = eclaireurStatsStore[a.id];
       const statsB = eclaireurStatsStore[b.id];
       if (eclaireurSort === "leads_sent") {
@@ -1044,6 +1056,22 @@ export default function EntrepreneurSmartScanTestPage() {
     } finally {
       setHasHydratedLocalSession(true);
     }
+    try {
+      const rawEclaireurs = window.localStorage.getItem(SMART_SCAN_ECLAIREURS_KEY);
+      if (rawEclaireurs) {
+        const parsed = JSON.parse(rawEclaireurs) as { ids?: string[] };
+        if (Array.isArray(parsed.ids)) {
+          const safeIds = parsed.ids
+            .map((value) => String(value || "").trim())
+            .filter(Boolean);
+          if (safeIds.length > 0) {
+            setEclaireurIds(Array.from(new Set(safeIds)));
+          }
+        }
+      }
+    } catch {
+      // Ignore invalid local eclaireurs cache.
+    }
   }, []);
 
   useEffect(() => {
@@ -1076,6 +1104,17 @@ export default function EntrepreneurSmartScanTestPage() {
       }),
     );
   }, [importedContacts, importSummary]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem(
+      SMART_SCAN_ECLAIREURS_KEY,
+      JSON.stringify({
+        ids: eclaireurIds,
+        updatedAt: Date.now(),
+      }),
+    );
+  }, [eclaireurIds]);
 
   useEffect(() => {
     setIndex((value) => {
@@ -1196,6 +1235,8 @@ export default function EntrepreneurSmartScanTestPage() {
     if (stage !== "daily") return;
     if (!isBootstrapped) return;
     if (showTemplateModal) return;
+    if (Date.now() < qualifierAutoOpenPausedUntilMs) return;
+    if (dismissedQualifierContactId === current.id) return;
     if (qualifierStore[current.id]) return;
     setSelectedAction("qualifier");
     setQualifierHeat(null);
@@ -1204,7 +1245,13 @@ export default function EntrepreneurSmartScanTestPage() {
     setOpportunityChoice(null);
     setCommunityTags([]);
     setShowTemplateModal(true);
-  }, [stage, current.id, qualifierStore, showTemplateModal, isBootstrapped]);
+  }, [stage, current.id, qualifierStore, showTemplateModal, isBootstrapped, dismissedQualifierContactId, qualifierAutoOpenPausedUntilMs]);
+
+  useEffect(() => {
+    if (!dismissedQualifierContactId) return;
+    if (dismissedQualifierContactId === current.id) return;
+    setDismissedQualifierContactId(null);
+  }, [current.id, dismissedQualifierContactId]);
 
   useEffect(() => {
     if (!qualificationPivot) return;
@@ -1711,7 +1758,6 @@ export default function EntrepreneurSmartScanTestPage() {
     setHistoryEntries(nextHistoryEntries);
     setPriorityScoreStore(nextPriorityScoreStore);
     setPotentialEurStore(nextPotentialStore);
-    setEclaireurIds(nextEclaireurIds);
     if (persistedImportedRows.length > 0) {
       const hydratedContacts = persistedImportedRows
         .sort((a, b) => a.index - b.index)
@@ -1741,6 +1787,10 @@ export default function EntrepreneurSmartScanTestPage() {
         lastNewsAtMs: Number.isFinite(lastNewsMs) ? lastNewsMs : 0,
       };
     });
+    const nextEclaireurIdsFromDirectory = Object.keys(nextEclaireurDirectory);
+    setEclaireurIds((previous) =>
+      Array.from(new Set([...previous, ...nextEclaireurIds, ...nextEclaireurIdsFromDirectory])),
+    );
     setEclaireurStatsStore(nextEclaireurStatsStore);
     setEclaireurDirectory(nextEclaireurDirectory);
     if (payload.session?.opportunities_activated !== undefined) {
@@ -2137,9 +2187,11 @@ export default function EntrepreneurSmartScanTestPage() {
 
   async function openEclaireurTemplates(contactId: string) {
     const contact = getContactById(contactId);
-    if (!contact) return;
+    const fallback = eclaireurDirectory[contactId] || null;
+    const contactName = contact?.name || fallback?.name || "";
+    if (!contactName) return;
     const res = (await postSmartScan("eclaireur-templates", {
-      contactName: contact.name,
+      contactName,
       metier: myProfile?.metier || null,
     })) as { templates?: Array<{ id: string; label: string; message: string }> };
     setSelectedEclaireurTemplateContactId(contactId);
@@ -2149,6 +2201,10 @@ export default function EntrepreneurSmartScanTestPage() {
   function leaveScanTunnelToNeutral() {
     if (hasImportedContacts) {
       setStage("daily");
+    }
+    if (selectedAction === "qualifier") {
+      setDismissedQualifierContactId(current.id);
+      setQualifierAutoOpenPausedUntilMs(Date.now() + 1500);
     }
     setShowTemplateModal(false);
     setShowSearchPanel(false);
@@ -2222,6 +2278,7 @@ export default function EntrepreneurSmartScanTestPage() {
         setApiErrorMessage("Importe d abord ton fichier .vcf ou .csv pour lancer un scan reel.");
         return;
       }
+      setDismissedQualifierContactId(null);
       setStage("daily");
       return;
     }
@@ -2394,9 +2451,13 @@ export default function EntrepreneurSmartScanTestPage() {
     setIndex(0);
     setStage("scan");
     setHasHydratedServerProgress(true);
+    setEclaireurIds([]);
+    setEclaireurDirectory({});
+    setEclaireurStatsStore({});
     if (typeof window !== "undefined") {
       window.localStorage.removeItem(SMART_SCAN_IMPORTED_CONTACTS_KEY);
       window.localStorage.removeItem(SMART_SCAN_SESSION_KEY);
+      window.localStorage.removeItem(SMART_SCAN_ECLAIREURS_KEY);
       window.sessionStorage.removeItem(PENDING_WHATSAPP_CONTEXT_KEY);
     }
     void postSmartScan("clear-import", {}).catch(() => null);
