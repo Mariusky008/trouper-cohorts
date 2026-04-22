@@ -891,6 +891,9 @@ export default function EntrepreneurSmartScanTestPage() {
       }
       return (statsB?.lastNewsAtMs || 0) - (statsA?.lastNewsAtMs || 0);
     });
+  const selectedEclaireurTemplateContact = selectedEclaireurTemplateContactId
+    ? eclaireursList.find((contact) => contact.id === selectedEclaireurTemplateContactId) || eclaireurDirectory[selectedEclaireurTemplateContactId] || null
+    : null;
   const template = useMemo(
     () =>
       selectedAction
@@ -1193,6 +1196,11 @@ export default function EntrepreneurSmartScanTestPage() {
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
       if (event.key !== "Escape") return;
+      if (selectedEclaireurTemplateContactId) {
+        setSelectedEclaireurTemplateContactId(null);
+        setEclaireurTemplates([]);
+        return;
+      }
       if (showTemplateModal) {
         setShowTemplateModal(false);
         setSelectedAction(null);
@@ -1229,7 +1237,7 @@ export default function EntrepreneurSmartScanTestPage() {
         window.removeEventListener("keydown", onKeyDown);
       }
     };
-  }, [showTemplateModal, showContactProfile, showTrustLevelPrompt, showMyProfilePanel, showHistoryPanel, showSearchPanel]);
+  }, [showTemplateModal, showContactProfile, showTrustLevelPrompt, showMyProfilePanel, showHistoryPanel, showSearchPanel, selectedEclaireurTemplateContactId]);
 
   useEffect(() => {
     if (stage !== "daily") return;
@@ -2273,6 +2281,8 @@ export default function EntrepreneurSmartScanTestPage() {
     setShowHistoryPanel(false);
     setShowEclaireursPanel(false);
     setShowMyProfilePanel(false);
+    setSelectedEclaireurTemplateContactId(null);
+    setEclaireurTemplates([]);
     if (tab === "scan") {
       if (!hasImportedContacts) {
         setApiErrorMessage("Importe d abord ton fichier .vcf ou .csv pour lancer un scan reel.");
@@ -3532,8 +3542,8 @@ export default function EntrepreneurSmartScanTestPage() {
       )}
 
       {showSearchPanel && (
-        <div className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm flex items-start justify-center px-3 pt-4 pb-24 sm:px-4 sm:pt-16 sm:pb-0">
-          <section className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-3xl border border-white/15 bg-[#0E1430] p-4">
+        <div className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm flex items-start justify-center px-0 pt-0 pb-0 sm:px-4 sm:pt-16 sm:pb-0">
+          <section className="h-[100dvh] max-h-[100dvh] w-full overflow-y-auto rounded-none border-0 bg-[#0E1430] p-4 sm:h-auto sm:max-h-[90vh] sm:max-w-lg sm:rounded-3xl sm:border sm:border-white/15">
             <div className="flex items-center justify-between">
               <p className="text-xs font-black uppercase tracking-[0.12em] text-cyan-200">Recherche</p>
               <button type="button" onClick={() => setShowSearchPanel(false)} className="h-8 w-8 rounded-full border border-white/20 bg-white/10 text-xs">✕</button>
@@ -3576,7 +3586,7 @@ export default function EntrepreneurSmartScanTestPage() {
                 Cette jauge est enregistree par contact pour qualifier la force de la relation avant partage croise.
               </p>
             </div>
-            <div className="mt-3 max-h-[60vh] space-y-2 overflow-y-auto">
+            <div className="mt-3 max-h-[calc(100dvh-260px)] space-y-2 overflow-y-auto sm:max-h-[60vh]">
               {searchResults.map((contact) => (
                 <div key={contact.id} className="rounded-xl border border-white/15 bg-black/25 px-3 py-2">
                   <div className="flex items-center justify-between gap-2">
@@ -3655,7 +3665,7 @@ export default function EntrepreneurSmartScanTestPage() {
                   </select>
                 </div>
                 <p className="mt-2 text-[11px] text-white/65">{filteredHistoryEntries.length} element(s) apres filtres</p>
-                <div className="mt-3 max-h-[60vh] space-y-2 overflow-y-auto">
+                <div className="mt-3 max-h-[calc(100dvh-280px)] space-y-2 overflow-y-auto sm:max-h-[60vh]">
                   {filteredHistoryEntries.length === 0 && <p className="text-sm text-white/70">Aucune action pour ces filtres.</p>}
                   {filteredHistoryEntries.map((entry, idx) => {
                     const eligibleToPromote = entry.sent && entry.action === "eclaireur" && !eclaireurIds.includes(entry.contactId);
@@ -3705,11 +3715,21 @@ export default function EntrepreneurSmartScanTestPage() {
       )}
 
       {showEclaireursPanel && (
-        <div className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm flex items-start justify-center px-3 pt-4 pb-24 sm:px-4 sm:pt-16 sm:pb-0">
-          <section className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-3xl border border-white/15 bg-[#0E1430] p-4">
+        <div className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm flex items-start justify-center px-0 pt-0 pb-0 sm:px-4 sm:pt-16 sm:pb-0">
+          <section className="h-[100dvh] max-h-[100dvh] w-full overflow-y-auto rounded-none border-0 bg-[#0E1430] p-4 sm:h-auto sm:max-h-[90vh] sm:max-w-lg sm:rounded-3xl sm:border sm:border-white/15">
             <div className="flex items-center justify-between">
               <p className="text-xs font-black uppercase tracking-[0.12em] text-cyan-200">Mes Eclaireurs</p>
-              <button type="button" onClick={() => setShowEclaireursPanel(false)} className="h-8 w-8 rounded-full border border-white/20 bg-white/10 text-xs">✕</button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowEclaireursPanel(false);
+                  setSelectedEclaireurTemplateContactId(null);
+                  setEclaireurTemplates([]);
+                }}
+                className="h-8 w-8 rounded-full border border-white/20 bg-white/10 text-xs"
+              >
+                ✕
+              </button>
             </div>
             <div className="mt-3 grid grid-cols-2 gap-2">
               <select
@@ -3724,7 +3744,7 @@ export default function EntrepreneurSmartScanTestPage() {
                 {eclaireursList.length} eclaireur(s)
               </div>
             </div>
-            <div className="mt-3 max-h-[58vh] space-y-2 overflow-y-auto">
+            <div className="mt-3 max-h-[calc(100dvh-190px)] space-y-2 overflow-y-auto sm:max-h-[58vh]">
               {eclaireursList.length === 0 && <p className="text-sm text-white/70">Aucun eclaireur actif pour l instant.</p>}
               {eclaireursList.map((contact) => {
                 const stats = eclaireurStatsStore[contact.id] || { leadsDetected: 0, leadsSigned: 0, commissionTotalEur: 0, lastNewsAtMs: 0 };
@@ -3754,29 +3774,48 @@ export default function EntrepreneurSmartScanTestPage() {
                 );
               })}
             </div>
-            {selectedEclaireurTemplateContactId && eclaireurTemplates.length > 0 && (
-              <div className="mt-3 rounded-2xl border border-cyan-300/25 bg-cyan-300/10 p-3">
-                <p className="text-[10px] font-black uppercase tracking-[0.12em] text-cyan-100">Messages Eclaireur</p>
-                <div className="mt-2 space-y-2">
-                  {eclaireurTemplates.map((item) => (
-                    <button
-                      key={`eclaireur-template-${item.id}`}
-                      type="button"
-                      onClick={() => {
-                        setSelectedAction("eclaireur");
-                        setDraftMessage(item.message);
-                        setShowTemplateModal(true);
-                        setShowEclaireursPanel(false);
-                      }}
-                      className="w-full rounded-xl border border-white/15 bg-black/25 px-3 py-2 text-left"
-                    >
-                      <p className="text-[11px] font-black uppercase tracking-[0.08em] text-cyan-100">{item.label}</p>
-                      <p className="mt-1 text-xs text-white/85">{item.message}</p>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
+          </section>
+        </div>
+      )}
+
+      {selectedEclaireurTemplateContactId && eclaireurTemplates.length > 0 && (
+        <div className="fixed inset-0 z-[44] flex items-center justify-center bg-black/65 px-3 backdrop-blur-sm sm:px-4">
+          <section className="w-full max-w-lg max-h-[88vh] overflow-y-auto rounded-3xl border border-cyan-300/25 bg-[#0E1430] p-4">
+            <div className="flex items-center justify-between">
+              <p className="text-[11px] font-black uppercase tracking-[0.12em] text-cyan-100">
+                Messages Eclaireur{selectedEclaireurTemplateContact ? ` • ${selectedEclaireurTemplateContact.name}` : ""}
+              </p>
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedEclaireurTemplateContactId(null);
+                  setEclaireurTemplates([]);
+                }}
+                className="h-8 w-8 rounded-full border border-white/20 bg-white/10 text-xs"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="mt-3 space-y-2">
+              {eclaireurTemplates.map((item) => (
+                <button
+                  key={`eclaireur-template-${item.id}`}
+                  type="button"
+                  onClick={() => {
+                    setSelectedAction("eclaireur");
+                    setDraftMessage(item.message);
+                    setShowTemplateModal(true);
+                    setShowEclaireursPanel(false);
+                    setSelectedEclaireurTemplateContactId(null);
+                    setEclaireurTemplates([]);
+                  }}
+                  className="w-full rounded-xl border border-white/15 bg-black/25 px-3 py-2 text-left"
+                >
+                  <p className="text-[11px] font-black uppercase tracking-[0.08em] text-cyan-100">{item.label}</p>
+                  <p className="mt-1 text-xs text-white/85">{item.message}</p>
+                </button>
+              ))}
+            </div>
           </section>
         </div>
       )}
