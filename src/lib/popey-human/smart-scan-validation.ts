@@ -190,3 +190,13 @@ export const smartScanSessionProgressSchema = z
     importedTotal: z.number().int().min(0).max(100000).optional(),
   })
   .strict();
+
+export const smartScanPromoteEclaireurSchema = z
+  .object({
+    contactId: z.string().uuid().optional(),
+    externalContactRef: optionalNonEmptyString(160),
+    fullName: optionalNonEmptyString(160),
+    city: optionalNullableString(120),
+    companyHint: optionalNullableString(160),
+  })
+  .strict();

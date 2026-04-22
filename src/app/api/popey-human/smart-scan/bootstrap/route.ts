@@ -10,6 +10,7 @@ import {
   listMySmartScanContacts,
   listMySmartScanQualifications,
   listOpenSmartScanAlerts,
+  listMyEclaireurs,
 } from "@/lib/actions/human-smart-scan";
 
 export const dynamic = "force-dynamic";
@@ -19,7 +20,7 @@ export async function GET() {
     return NextResponse.json({ error: "Smart Scan desactive." }, { status: 503 });
   }
 
-  const [sessionResult, contactsResult, qualificationsResult, historyResult, alertsResult, followupsResult, statsResult, followupOpsResult, externalClicksResult] = await Promise.all([
+  const [sessionResult, contactsResult, qualificationsResult, historyResult, alertsResult, followupsResult, statsResult, followupOpsResult, externalClicksResult, eclaireursResult] = await Promise.all([
     getOrCreateTodaySession(),
     listMySmartScanContacts(800),
     listMySmartScanQualifications(800),
@@ -29,6 +30,7 @@ export async function GET() {
     getSmartScanConversionStats(14),
     getSmartScanFollowupOpsStatsToday(),
     getSmartScanExternalClickStatsToday(),
+    listMyEclaireurs(500),
   ]);
 
   if (sessionResult.error) {
@@ -58,6 +60,9 @@ export async function GET() {
   if (externalClicksResult.error) {
     return NextResponse.json({ error: externalClicksResult.error }, { status: 400 });
   }
+  if (eclaireursResult.error) {
+    return NextResponse.json({ error: eclaireursResult.error }, { status: 400 });
+  }
 
   return NextResponse.json({
     session: sessionResult.session,
@@ -69,5 +74,6 @@ export async function GET() {
     metrics: statsResult.stats,
     followupOps: followupOpsResult.stats,
     externalClicks: externalClicksResult.stats,
+    eclaireurs: eclaireursResult.eclaireurs,
   });
 }

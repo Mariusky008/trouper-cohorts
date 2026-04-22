@@ -2199,6 +2199,129 @@ export async function clearImportedSmartScanContacts() {
   return { success: true as const };
 }
 
+export async function promoteContactToEclaireur(input: {
+  contactId?: string;
+  externalContactRef?: string;
+  fullName?: string;
+  city?: string | null;
+  companyHint?: string | null;
+}) {
+  const currentMember = await getCurrentHumanMember();
+  if (!currentMember) return { error: "Session requise." };
+
+  const resolved = await resolveContactId({
+    ownerMemberId: currentMember.id,
+    contactId: input.contactId,
+    externalContactRef: input.externalContactRef,
+    fullName: input.fullName,
+    city: input.city,
+    companyHint: input.companyHint,
+  });
+  if ("error" in resolved) return resolved;
+
+  const nowIso = new Date().toISOString();
+  const supabaseAdmin = createAdminClient();
+  const { error: updateError } = await supabaseAdmin
+    .from("human_smart_scan_contacts")
+    .update({
+      is_eclaireur_active: true,
+      eclaireur_activated_at: nowIso,
+      updated_at: nowIso,
+    })
+    .eq("id", resolved.id)
+    .eq("owner_member_id", currentMember.id);
+  if (updateError) return { error: updateError.message };
+
+  await supabaseAdmin.from("human_smart_scan_eclaireur_events").insert({
+    owner_member_id: currentMember.id,
+    contact_id: resolved.id,
+    event_type: "promoted",
+    amount_eur: 0,
+    metadata: { source: "history" },
+    updated_at: nowIso,
+  });
+
+  return { success: true as const, contactId: resolved.id };
+}
+
+export async function listMyEclaireurs(limit = 300) {
+  const currentMember = await getCurrentHumanMember();
+  if (!currentMember) return { error: "Session requise.", eclaireurs: [] as Array<Record<string, unknown>> };
+  const safeLimit = Math.max(1, Math.min(1000, Math.trunc(limit)));
+  const supabaseAdmin = createAdminClient();
+  const { data: contacts, error } = await supabaseAdmin
+    .from("human_smart_scan_contacts")
+    .select("id,external_contact_ref,full_name,city,company_hint,eclaireur_activated_at,updated_at")
+    .eq("owner_member_id", currentMember.id)
+    .eq("is_eclaireur_active", true)
+    .order("eclaireur_activated_at", { ascending: false })
+    .limit(safeLimit);
+  if (error) return { error: error.message, eclaireurs: [] as Array<Record<string, unknown>> };
+
+  const rows = (contacts as Array<Record<string, unknown>> | null) || [];
+  const contactIds = rows.map((row) => String(row.id));
+  const statsMap = new Map<string, { leads_detected: number; leads_signed: number; commission_total_eur: number }>();
+  if (contactIds.length > 0) {
+    const { data: events } = await supabaseAdmin
+      .from("human_smart_scan_eclaireur_events")
+      .select("contact_id,event_type,amount_eur")
+      .eq("owner_member_id", currentMember.id)
+      .in("contact_id", contactIds)
+      .limit(5000);
+    ((events as Array<Record<string, unknown>> | null) || []).forEach((eventRow) => {
+      const contactId = String(eventRow.contact_id);
+      const entry = statsMap.get(contactId) || { leads_detected: 0, leads_signed: 0, commission_total_eur: 0 };
+      const eventType = String(eventRow.event_type || "");
+      if (eventType === "lead_detected") entry.leads_detected += 1;
+      if (eventType === "lead_signed") entry.leads_signed += 1;
+      if (eventType === "commission_paid") {
+        const amount = Number(eventRow.amount_eur || 0);
+        if (Number.isFinite(amount)) entry.commission_total_eur += amount;
+      }
+      statsMap.set(contactId, entry);
+    });
+  }
+
+  return {
+    error: null as string | null,
+    eclaireurs: rows.map((row) => {
+      const contactId = String(row.id);
+      const stats = statsMap.get(contactId) || { leads_detected: 0, leads_signed: 0, commission_total_eur: 0 };
+      return {
+        ...row,
+        leads_detected: stats.leads_detected,
+        leads_signed: stats.leads_signed,
+        commission_total_eur: Math.round(stats.commission_total_eur),
+      };
+    }),
+  };
+}
+
+export async function getEclaireurMessageTemplates(input: { contactName: string; metier?: string | null }) {
+  const firstName = String(input.contactName || "Partenaire").trim().split(" ")[0] || "Partenaire";
+  const metier = String(input.metier || "complementaires").trim() || "complementaires";
+  return {
+    error: null as string | null,
+    templates: [
+      {
+        id: "quoi-de-neuf",
+        label: "Quoi de neuf ?",
+        message: `Salut ${firstName}, ca fait un mois ! Des nouveaux projets dans ton entourage en ce moment ?`,
+      },
+      {
+        id: "recompense",
+        label: "Recompense",
+        message: `Merci pour la mise en relation ! C est signe, je t envoie ta commission des que je recois le virement.`,
+      },
+      {
+        id: "briefing",
+        label: "Briefing",
+        message: `Ce mois-ci avec mon Trio, on cherche surtout des profils ${metier}. Si tu entends parler de quelque chose, pense a moi !`,
+      },
+    ],
+  };
+}
+
 function computePriorityScore(input: ContactScoreInputs) {
   const trustScore =
     input.trustLevel === "family" ? 35 : input.trustLevel === "pro-close" ? 24 : input.trustLevel === "acquaintance" ? 10 : 0;

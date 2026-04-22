@@ -52,6 +52,8 @@ type BootstrapContactRow = {
   phone_e164?: string | null;
   import_index?: number | null;
   is_favorite?: boolean | null;
+  is_eclaireur_active?: boolean | null;
+  eclaireur_activated_at?: string | null;
   trust_level: TrustLevel | null;
   priority_score?: number | null;
   potential_eur?: number | null;
@@ -124,6 +126,18 @@ type BootstrapFollowupOps = {
 type BootstrapExternalClicks = {
   linkedin_today: number;
   whatsapp_group_today: number;
+};
+type BootstrapEclaireurRow = {
+  id: string;
+  external_contact_ref: string | null;
+  full_name?: string | null;
+  city?: string | null;
+  company_hint?: string | null;
+  eclaireur_activated_at?: string | null;
+  updated_at?: string | null;
+  leads_detected?: number | null;
+  leads_signed?: number | null;
+  commission_total_eur?: number | null;
 };
 type FollowupItem = {
   actionId: string;
@@ -674,10 +688,12 @@ export default function EntrepreneurSmartScanTestPage() {
   const [pendingFinalizeAction, setPendingFinalizeAction] = useState<Exclude<DailyCategory, "qualifier"> | null>(null);
   const [pendingReturnProfileContactId, setPendingReturnProfileContactId] = useState<string | null>(null);
   const [showHistoryPanel, setShowHistoryPanel] = useState(false);
+  const [searchInnerTab, setSearchInnerTab] = useState<"search" | "history">("search");
   const [historyStatusFilter, setHistoryStatusFilter] = useState<"all" | "sent" | "validated">("all");
   const [historyActionFilter, setHistoryActionFilter] = useState<"all" | Exclude<DailyCategory, "qualifier">>("all");
   const [historyPeriodFilter, setHistoryPeriodFilter] = useState<"all" | "today" | "7d">("all");
   const [showSearchPanel, setShowSearchPanel] = useState(false);
+  const [showEclaireursPanel, setShowEclaireursPanel] = useState(false);
   const [showMyProfilePanel, setShowMyProfilePanel] = useState(false);
   const [myProfile, setMyProfile] = useState<SmartScanProfile | null>(null);
   const [profileForm, setProfileForm] = useState<SmartScanProfileForm>({
@@ -718,6 +734,11 @@ export default function EntrepreneurSmartScanTestPage() {
   const [conversionMetrics, setConversionMetrics] = useState<BootstrapMetrics | null>(null);
   const [followupOpsStats, setFollowupOpsStats] = useState<BootstrapFollowupOps | null>(null);
   const [externalClickStats, setExternalClickStats] = useState<BootstrapExternalClicks | null>(null);
+  const [eclaireurIds, setEclaireurIds] = useState<string[]>([]);
+  const [eclaireurStatsStore, setEclaireurStatsStore] = useState<Record<string, { leadsDetected: number; leadsSigned: number; commissionTotalEur: number; lastNewsAtMs: number }>>({});
+  const [eclaireurSort, setEclaireurSort] = useState<"last_news" | "leads_sent">("last_news");
+  const [selectedEclaireurTemplateContactId, setSelectedEclaireurTemplateContactId] = useState<string | null>(null);
+  const [eclaireurTemplates, setEclaireurTemplates] = useState<Array<{ id: string; label: string; message: string }>>([]);
   const [importedContacts, setImportedContacts] = useState<DailyContact[]>([]);
   const [importSummary, setImportSummary] = useState<string>("");
   const [isImportingContacts, setIsImportingContacts] = useState(false);
@@ -849,6 +870,16 @@ export default function EntrepreneurSmartScanTestPage() {
   const searchResults = contactsData
     .filter((contact) => `${contact.name} ${contact.city} ${contact.companyHint}`.toLowerCase().includes(searchQuery.toLowerCase().trim()))
     .sort((a, b) => (priorityScoreStore[b.id] || 0) - (priorityScoreStore[a.id] || 0));
+  const eclaireursList = contactsData
+    .filter((contact) => eclaireurIds.includes(contact.id))
+    .sort((a, b) => {
+      const statsA = eclaireurStatsStore[a.id];
+      const statsB = eclaireurStatsStore[b.id];
+      if (eclaireurSort === "leads_sent") {
+        return (statsB?.leadsDetected || 0) - (statsA?.leadsDetected || 0);
+      }
+      return (statsB?.lastNewsAtMs || 0) - (statsA?.lastNewsAtMs || 0);
+    });
   const template = useMemo(
     () =>
       selectedAction
@@ -1478,12 +1509,15 @@ export default function EntrepreneurSmartScanTestPage() {
       | "import-contacts"
       | "clear-import"
       | "session-progress"
+      | "promote-eclaireur"
+      | "eclaireur-templates"
       | "outcome"
       | "generate-message"
       | "followup-job"
       | "prepare-whatsapp-payload"
       | "external-click"
-      | "analytics-event",
+      | "analytics-event"
+      | "eclaireurs",
     payload: Record<string, unknown>,
   ) {
     const maxAttempts = 3;
@@ -1542,6 +1576,7 @@ export default function EntrepreneurSmartScanTestPage() {
       metrics?: BootstrapMetrics | null;
       followupOps?: BootstrapFollowupOps | null;
       externalClicks?: BootstrapExternalClicks | null;
+      eclaireurs?: BootstrapEclaireurRow[];
     };
 
     const dbToExternalRef = new Map<string, string>();
@@ -1549,6 +1584,7 @@ export default function EntrepreneurSmartScanTestPage() {
     const nextFavoriteIds: string[] = [];
     const nextPriorityScoreStore: Record<string, number> = {};
     const nextPotentialStore: Record<string, number> = {};
+    const nextEclaireurIds: string[] = [];
     const persistedImportedRows: Array<{ index: number; contact: DailyContact }> = [];
     (payload.contacts || []).forEach((contact) => {
       if (contact.external_contact_ref) {
@@ -1565,6 +1601,9 @@ export default function EntrepreneurSmartScanTestPage() {
         }
         nextPriorityScoreStore[contact.external_contact_ref] = Math.max(0, Math.round(contact.priority_score || 0));
         nextPotentialStore[contact.external_contact_ref] = Math.max(0, Math.round(contact.potential_eur || 0));
+        if (contact.is_eclaireur_active) {
+          nextEclaireurIds.push(contact.external_contact_ref);
+        }
         if (contact.source && contact.source.startsWith("import")) {
           persistedImportedRows.push({
             index: Number.isFinite(Number(contact.import_index)) ? Number(contact.import_index) : 999999,
@@ -1673,6 +1712,7 @@ export default function EntrepreneurSmartScanTestPage() {
     setHistoryEntries(nextHistoryEntries);
     setPriorityScoreStore(nextPriorityScoreStore);
     setPotentialEurStore(nextPotentialStore);
+    setEclaireurIds(nextEclaireurIds);
     if (persistedImportedRows.length > 0) {
       const hydratedContacts = persistedImportedRows
         .sort((a, b) => a.index - b.index)
@@ -1684,6 +1724,19 @@ export default function EntrepreneurSmartScanTestPage() {
     setConversionMetrics(payload.metrics || null);
     setFollowupOpsStats(payload.followupOps || null);
     setExternalClickStats(payload.externalClicks || null);
+    const nextEclaireurStatsStore: Record<string, { leadsDetected: number; leadsSigned: number; commissionTotalEur: number; lastNewsAtMs: number }> = {};
+    (payload.eclaireurs || []).forEach((row) => {
+      if (!row.external_contact_ref) return;
+      const lastNewsSource = row.updated_at || row.eclaireur_activated_at || "";
+      const lastNewsMs = Date.parse(lastNewsSource);
+      nextEclaireurStatsStore[row.external_contact_ref] = {
+        leadsDetected: Math.max(0, Math.round(Number(row.leads_detected || 0))),
+        leadsSigned: Math.max(0, Math.round(Number(row.leads_signed || 0))),
+        commissionTotalEur: Math.max(0, Math.round(Number(row.commission_total_eur || 0))),
+        lastNewsAtMs: Number.isFinite(lastNewsMs) ? lastNewsMs : 0,
+      };
+    });
+    setEclaireurStatsStore(nextEclaireurStatsStore);
     if (payload.session?.opportunities_activated !== undefined) {
       setSentCount(payload.session.opportunities_activated);
     }
@@ -2054,8 +2107,33 @@ export default function EntrepreneurSmartScanTestPage() {
       .catch(() => null);
   }
 
+  async function promoteToEclaireur(contactId: string) {
+    const contact = getContactById(contactId);
+    if (!contact) return;
+    setEclaireurIds((prev) => (prev.includes(contactId) ? prev : [...prev, contactId]));
+    void postSmartScan("promote-eclaireur", {
+      externalContactRef: contact.id,
+      fullName: contact.name,
+      city: contact.city,
+      companyHint: contact.companyHint,
+    })
+      .then(() => refreshSmartScanSnapshot())
+      .catch(() => null);
+  }
+
+  async function openEclaireurTemplates(contactId: string) {
+    const contact = getContactById(contactId);
+    if (!contact) return;
+    const res = (await postSmartScan("eclaireur-templates", {
+      contactName: contact.name,
+      metier: myProfile?.metier || null,
+    })) as { templates?: Array<{ id: string; label: string; message: string }> };
+    setSelectedEclaireurTemplateContactId(contactId);
+    setEclaireurTemplates(res.templates || []);
+  }
+
   function openContactProfile(contactId: string) {
-    const sourcePanel = showSearchPanel ? "search" : showHistoryPanel ? "history" : "other";
+    const sourcePanel = showSearchPanel ? (searchInnerTab === "history" ? "history" : "search") : showHistoryPanel ? "history" : "other";
     setProfileContactId(contactId);
     setShowProfileActions(false);
     setShowContactProfile(true);
@@ -2105,9 +2183,10 @@ export default function EntrepreneurSmartScanTestPage() {
     setTimeout(() => triggerAction("qualifier"), 60);
   }
 
-  function handleDockAction(tab: "search" | "scan" | "history" | "profile") {
+  function handleDockAction(tab: "search" | "scan" | "eclaireurs" | "profile") {
     setShowSearchPanel(false);
     setShowHistoryPanel(false);
+    setShowEclaireursPanel(false);
     setShowMyProfilePanel(false);
     if (tab === "scan") {
       if (!hasImportedContacts) {
@@ -2131,7 +2210,21 @@ export default function EntrepreneurSmartScanTestPage() {
         setTimeout(() => setShowSearchPanel(true), 40);
         return;
       }
+      setSearchInnerTab("search");
       setShowSearchPanel(true);
+      return;
+    }
+    if (tab === "eclaireurs") {
+      if (stage === "scan") {
+        if (!hasImportedContacts) {
+          setApiErrorMessage("Importe d abord ton fichier .vcf ou .csv pour utiliser le cockpit.");
+          return;
+        }
+        setStage("daily");
+        setTimeout(() => setShowEclaireursPanel(true), 40);
+        return;
+      }
+      setShowEclaireursPanel(true);
       return;
     }
     if (stage === "scan") {
@@ -2140,10 +2233,14 @@ export default function EntrepreneurSmartScanTestPage() {
         return;
       }
       setStage("daily");
-      setTimeout(() => setShowHistoryPanel(true), 40);
+      setTimeout(() => {
+        setSearchInnerTab("history");
+        setShowSearchPanel(true);
+      }, 40);
       return;
     }
-    setShowHistoryPanel(true);
+    setSearchInnerTab("history");
+    setShowSearchPanel(true);
   }
 
   function openContactImportPicker() {
@@ -2559,18 +2656,18 @@ export default function EntrepreneurSmartScanTestPage() {
         </div>
         <nav className="fixed inset-x-0 bottom-4 z-30 flex justify-center px-4">
           <div className="flex w-full max-w-md items-center justify-between rounded-[28px] border border-white/20 bg-[#0F1838]/75 px-2 py-2 shadow-[0_22px_48px_-28px_rgba(0,0,0,0.9)] backdrop-blur-2xl">
-            {[
+            {([
               { id: "search", icon: "🔍", label: "Recherche" },
               { id: "scan", icon: "⚡", label: "Scan" },
-              { id: "history", icon: "🕘", label: "Historique" },
+              { id: "eclaireurs", icon: "📡", label: "Eclaireurs" },
               { id: "profile", icon: "👤", label: "Profil" },
-            ].map((item) => {
+            ] as const).map((item) => {
               const isActive = item.id === "scan";
               return (
                 <button
                   key={`scan-dock-${item.id}`}
                   type="button"
-                  onClick={() => handleDockAction(item.id as "search" | "scan" | "history" | "profile")}
+                  onClick={() => handleDockAction(item.id as "search" | "scan" | "eclaireurs" | "profile")}
                   aria-label={`Ouvrir ${item.label}`}
                   aria-pressed={isActive}
                   className={`flex h-14 min-w-[72px] flex-col items-center justify-center rounded-2xl px-2 transition ${
@@ -3185,15 +3282,15 @@ export default function EntrepreneurSmartScanTestPage() {
 
       <nav className="fixed inset-x-0 bottom-4 z-30 flex justify-center px-4">
         <div className="flex w-full max-w-md items-center justify-between rounded-[28px] border border-white/20 bg-[#0F1838]/75 px-2 py-2 shadow-[0_22px_48px_-28px_rgba(0,0,0,0.9)] backdrop-blur-2xl">
-          {[
+          {([
             { id: "search", icon: "🔍", label: "Recherche" },
             { id: "scan", icon: "⚡", label: "Scan" },
-            { id: "history", icon: "🕘", label: "Historique" },
+            { id: "eclaireurs", icon: "📡", label: "Eclaireurs" },
             { id: "profile", icon: "👤", label: "Profil" },
-          ].map((item) => {
+          ] as const).map((item) => {
             const isActive =
               (item.id === "search" && showSearchPanel) ||
-              (item.id === "history" && showHistoryPanel) ||
+              (item.id === "eclaireurs" && showEclaireursPanel) ||
               (item.id === "profile" && showMyProfilePanel) ||
               (item.id === "scan" && !showSearchPanel && !showHistoryPanel && !showMyProfilePanel);
 
@@ -3201,7 +3298,7 @@ export default function EntrepreneurSmartScanTestPage() {
               <button
                 key={`daily-dock-${item.id}`}
                 type="button"
-                onClick={() => handleDockAction(item.id as "search" | "scan" | "history" | "profile")}
+                onClick={() => handleDockAction(item.id as "search" | "scan" | "eclaireurs" | "profile")}
                 aria-label={`Ouvrir ${item.label}`}
                 aria-pressed={isActive}
                 className={`flex h-14 min-w-[72px] flex-col items-center justify-center rounded-2xl px-2 transition ${
@@ -3215,71 +3312,6 @@ export default function EntrepreneurSmartScanTestPage() {
           })}
         </div>
       </nav>
-
-      {showHistoryPanel && (
-        <div className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm flex items-start justify-center px-4 pt-16">
-          <section className="w-full max-w-lg rounded-3xl border border-white/15 bg-[#0E1430] p-4">
-            <div className="flex items-center justify-between">
-              <p className="text-xs font-black uppercase tracking-[0.12em] text-cyan-200">Historique recent</p>
-              <button type="button" onClick={() => setShowHistoryPanel(false)} className="h-8 w-8 rounded-full border border-white/20 bg-white/10 text-xs">✕</button>
-            </div>
-            <div className="mt-3 grid grid-cols-3 gap-2">
-              <select
-                value={historyStatusFilter}
-                onChange={(event) => setHistoryStatusFilter(event.target.value as "all" | "sent" | "validated")}
-                className="h-9 rounded-lg border border-white/15 bg-black/25 px-2 text-[11px]"
-              >
-                <option value="all">Statut: Tous</option>
-                <option value="sent">Statut: Envoye</option>
-                <option value="validated">Statut: Valide</option>
-              </select>
-              <select
-                value={historyActionFilter}
-                onChange={(event) => setHistoryActionFilter(event.target.value as "all" | Exclude<DailyCategory, "qualifier">)}
-                className="h-9 rounded-lg border border-white/15 bg-black/25 px-2 text-[11px]"
-              >
-                <option value="all">Action: Toutes</option>
-                <option value="eclaireur">Eclaireur</option>
-                <option value="package">Partage Croise</option>
-                <option value="exclients">Ex-Clients</option>
-                <option value="passer">Passer</option>
-              </select>
-              <select
-                value={historyPeriodFilter}
-                onChange={(event) => setHistoryPeriodFilter(event.target.value as "all" | "today" | "7d")}
-                className="h-9 rounded-lg border border-white/15 bg-black/25 px-2 text-[11px]"
-              >
-                <option value="all">Periode: Tout</option>
-                <option value="today">Periode: Aujourd hui</option>
-                <option value="7d">Periode: 7 jours</option>
-              </select>
-            </div>
-            <p className="mt-2 text-[11px] text-white/65">{filteredHistoryEntries.length} element(s) apres filtres</p>
-            <div className="mt-3 max-h-72 space-y-2 overflow-y-auto">
-              {filteredHistoryEntries.length === 0 && <p className="text-sm text-white/70">Aucune action pour ces filtres.</p>}
-              {filteredHistoryEntries.map((entry, idx) => (
-                <button
-                  key={`${entry.contactId}-${entry.at}-${idx}`}
-                  type="button"
-                  onClick={() => {
-                    const nextIndex = contactsData.findIndex((contact) => contact.id === entry.contactId);
-                    if (nextIndex >= 0) setIndex(nextIndex);
-                    setShowHistoryPanel(false);
-                    openContactProfileWithTrustGuard(entry.contactId);
-                  }}
-                  className="w-full rounded-xl border border-white/15 bg-black/25 px-3 py-2 text-left"
-                >
-                  <p className="text-sm font-black">{entry.name}</p>
-                  <p className="text-xs text-white/70">
-                    {entry.sent ? "Envoye" : "Valide sans envoi"} • {actionLabel(entry.action)} • {outcomeLabel(entry.outcomeStatus)} • {entry.at}
-                    {entry.tagsSummary ? ` • ${entry.tagsSummary}` : ""}
-                  </p>
-                </button>
-              ))}
-            </div>
-          </section>
-        </div>
-      )}
 
       {showMyProfilePanel && (
         <div className="fixed inset-0 z-[50] flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm">
@@ -3413,9 +3445,35 @@ export default function EntrepreneurSmartScanTestPage() {
         <div className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm flex items-start justify-center px-4 pt-16">
           <section className="w-full max-w-lg rounded-3xl border border-white/15 bg-[#0E1430] p-4">
             <div className="flex items-center justify-between">
-              <p className="text-xs font-black uppercase tracking-[0.12em] text-cyan-200">Recherche / Favoris</p>
+              <p className="text-xs font-black uppercase tracking-[0.12em] text-cyan-200">Recherche</p>
               <button type="button" onClick={() => setShowSearchPanel(false)} className="h-8 w-8 rounded-full border border-white/20 bg-white/10 text-xs">✕</button>
             </div>
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setSearchInnerTab("search")}
+                className={`h-9 rounded-lg border text-[11px] font-black uppercase tracking-wide ${
+                  searchInnerTab === "search"
+                    ? "border-cyan-300/45 bg-cyan-300/20 text-cyan-100"
+                    : "border-white/15 bg-black/25 text-white/70"
+                }`}
+              >
+                Recherche
+              </button>
+              <button
+                type="button"
+                onClick={() => setSearchInnerTab("history")}
+                className={`h-9 rounded-lg border text-[11px] font-black uppercase tracking-wide ${
+                  searchInnerTab === "history"
+                    ? "border-cyan-300/45 bg-cyan-300/20 text-cyan-100"
+                    : "border-white/15 bg-black/25 text-white/70"
+                }`}
+              >
+                Historique
+              </button>
+            </div>
+            {searchInnerTab === "search" ? (
+              <>
             <input
               value={searchQuery}
               onChange={(event) => setSearchQuery(event.target.value)}
@@ -3454,6 +3512,11 @@ export default function EntrepreneurSmartScanTestPage() {
                           Priorite Haute
                         </p>
                       )}
+                      {eclaireurIds.includes(contact.id) && (
+                        <p className="mt-1 inline-flex rounded-full border border-emerald-300/35 bg-emerald-300/15 px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.08em] text-emerald-100">
+                          📡 Eclaireur actif
+                        </p>
+                      )}
                     </button>
                     <button
                       type="button"
@@ -3466,6 +3529,163 @@ export default function EntrepreneurSmartScanTestPage() {
                 </div>
               ))}
             </div>
+              </>
+            ) : (
+              <>
+                <div className="mt-3 grid grid-cols-3 gap-2">
+                  <select
+                    value={historyStatusFilter}
+                    onChange={(event) => setHistoryStatusFilter(event.target.value as "all" | "sent" | "validated")}
+                    className="h-9 rounded-lg border border-white/15 bg-black/25 px-2 text-[11px]"
+                  >
+                    <option value="all">Statut: Tous</option>
+                    <option value="sent">Statut: Envoye</option>
+                    <option value="validated">Statut: Valide</option>
+                  </select>
+                  <select
+                    value={historyActionFilter}
+                    onChange={(event) => setHistoryActionFilter(event.target.value as "all" | Exclude<DailyCategory, "qualifier">)}
+                    className="h-9 rounded-lg border border-white/15 bg-black/25 px-2 text-[11px]"
+                  >
+                    <option value="all">Action: Toutes</option>
+                    <option value="eclaireur">Eclaireur</option>
+                    <option value="package">Partage Croise</option>
+                    <option value="exclients">Ex-Clients</option>
+                    <option value="passer">Passer</option>
+                  </select>
+                  <select
+                    value={historyPeriodFilter}
+                    onChange={(event) => setHistoryPeriodFilter(event.target.value as "all" | "today" | "7d")}
+                    className="h-9 rounded-lg border border-white/15 bg-black/25 px-2 text-[11px]"
+                  >
+                    <option value="all">Periode: Tout</option>
+                    <option value="today">Periode: Aujourd hui</option>
+                    <option value="7d">Periode: 7 jours</option>
+                  </select>
+                </div>
+                <p className="mt-2 text-[11px] text-white/65">{filteredHistoryEntries.length} element(s) apres filtres</p>
+                <div className="mt-3 max-h-72 space-y-2 overflow-y-auto">
+                  {filteredHistoryEntries.length === 0 && <p className="text-sm text-white/70">Aucune action pour ces filtres.</p>}
+                  {filteredHistoryEntries.map((entry, idx) => {
+                    const eligibleToPromote = entry.sent && entry.action === "eclaireur" && !eclaireurIds.includes(entry.contactId);
+                    return (
+                      <div key={`${entry.contactId}-${entry.at}-${idx}`} className="rounded-xl border border-white/15 bg-black/25 px-3 py-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const nextIndex = contactsData.findIndex((contact) => contact.id === entry.contactId);
+                            if (nextIndex >= 0) setIndex(nextIndex);
+                            openContactProfileWithTrustGuard(entry.contactId);
+                          }}
+                          className="w-full text-left"
+                        >
+                          <p className="text-sm font-black">{entry.name}</p>
+                          <p className="text-xs text-white/70">
+                            {entry.sent ? "Envoye" : "Valide sans envoi"} • {actionLabel(entry.action)} • {outcomeLabel(entry.outcomeStatus)} • {entry.at}
+                            {entry.tagsSummary ? ` • ${entry.tagsSummary}` : ""}
+                          </p>
+                        </button>
+                        <div className="mt-2 flex items-center justify-between gap-2">
+                          {eclaireurIds.includes(entry.contactId) ? (
+                            <span className="inline-flex rounded-full border border-emerald-300/35 bg-emerald-300/15 px-2 py-1 text-[10px] font-black uppercase tracking-[0.08em] text-emerald-100">
+                              📡 Eclaireur actif
+                            </span>
+                          ) : (
+                            <span className="text-[10px] text-white/60">Prospect</span>
+                          )}
+                          {eligibleToPromote && (
+                            <button
+                              type="button"
+                              onClick={() => promoteToEclaireur(entry.contactId)}
+                              className="rounded-lg border border-emerald-300/45 bg-emerald-300/15 px-2 py-1 text-[10px] font-black uppercase tracking-[0.08em] text-emerald-100"
+                            >
+                              ⭐ Promouvoir en Eclaireur
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
+            )}
+          </section>
+        </div>
+      )}
+
+      {showEclaireursPanel && (
+        <div className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm flex items-start justify-center px-4 pt-16">
+          <section className="w-full max-w-lg rounded-3xl border border-white/15 bg-[#0E1430] p-4">
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-black uppercase tracking-[0.12em] text-cyan-200">Mes Eclaireurs</p>
+              <button type="button" onClick={() => setShowEclaireursPanel(false)} className="h-8 w-8 rounded-full border border-white/20 bg-white/10 text-xs">✕</button>
+            </div>
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              <select
+                value={eclaireurSort}
+                onChange={(event) => setEclaireurSort(event.target.value as "last_news" | "leads_sent")}
+                className="h-9 rounded-lg border border-white/15 bg-black/25 px-2 text-[11px]"
+              >
+                <option value="last_news">Trier: Derniere nouvelle</option>
+                <option value="leads_sent">Trier: Leads envoyes</option>
+              </select>
+              <div className="flex items-center justify-center rounded-lg border border-white/15 bg-black/25 px-2 text-[11px] text-white/75">
+                {eclaireursList.length} eclaireur(s)
+              </div>
+            </div>
+            <div className="mt-3 max-h-56 space-y-2 overflow-y-auto">
+              {eclaireursList.length === 0 && <p className="text-sm text-white/70">Aucun eclaireur actif pour l instant.</p>}
+              {eclaireursList.map((contact) => {
+                const stats = eclaireurStatsStore[contact.id] || { leadsDetected: 0, leadsSigned: 0, commissionTotalEur: 0, lastNewsAtMs: 0 };
+                return (
+                  <div key={`eclaireur-${contact.id}`} className="rounded-xl border border-emerald-300/25 bg-emerald-300/10 px-3 py-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <button
+                        type="button"
+                        onClick={() => openContactProfileWithTrustGuard(contact.id)}
+                        className="min-w-0 flex-1 text-left"
+                      >
+                        <p className="truncate text-sm font-black text-emerald-50">{contact.name}</p>
+                        <p className="text-[11px] text-emerald-100/80">{contact.city}</p>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => openEclaireurTemplates(contact.id)}
+                        className="rounded-lg border border-cyan-300/35 bg-cyan-300/15 px-2 py-1 text-[10px] font-black uppercase tracking-[0.08em] text-cyan-100"
+                      >
+                        Messages
+                      </button>
+                    </div>
+                    <p className="mt-1 text-[10px] text-white/80">
+                      Leads detectes: {stats.leadsDetected} • Leads signes: {stats.leadsSigned} • Commission: {stats.commissionTotalEur}€
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
+            {selectedEclaireurTemplateContactId && eclaireurTemplates.length > 0 && (
+              <div className="mt-3 rounded-2xl border border-cyan-300/25 bg-cyan-300/10 p-3">
+                <p className="text-[10px] font-black uppercase tracking-[0.12em] text-cyan-100">Messages Eclaireur</p>
+                <div className="mt-2 space-y-2">
+                  {eclaireurTemplates.map((item) => (
+                    <button
+                      key={`eclaireur-template-${item.id}`}
+                      type="button"
+                      onClick={() => {
+                        setSelectedAction("eclaireur");
+                        setDraftMessage(item.message);
+                        setShowTemplateModal(true);
+                        setShowEclaireursPanel(false);
+                      }}
+                      className="w-full rounded-xl border border-white/15 bg-black/25 px-3 py-2 text-left"
+                    >
+                      <p className="text-[11px] font-black uppercase tracking-[0.08em] text-cyan-100">{item.label}</p>
+                      <p className="mt-1 text-xs text-white/85">{item.message}</p>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </section>
         </div>
       )}
