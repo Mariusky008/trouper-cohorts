@@ -3307,12 +3307,10 @@ export default function EntrepreneurSmartScanTestPage() {
                       Code court: <span className="font-black tracking-wider">{selfScoutLink.shortCode}</span>
                     </p>
                   ) : null}
+                  <p className="mt-1 text-[10px] font-black uppercase tracking-[0.08em] text-white/70">Lien actif (web app fonctionnelle)</p>
                   {selfScoutLink.shortUrl ? <p className="mt-1 break-all text-[11px] text-cyan-100/90">{selfScoutLink.shortUrl}</p> : null}
                   {selfScoutLink.fullUrl && selfScoutLink.fullUrl !== selfScoutLink.shortUrl ? (
                     <p className="mt-1 break-all text-[11px] text-emerald-100/85">{selfScoutLink.fullUrl}</p>
-                  ) : null}
-                  {selfScoutLink.previewUrl ? (
-                    <p className="mt-1 break-all text-[10px] text-white/65">Preview design: {selfScoutLink.previewUrl}</p>
                   ) : null}
                   <button
                     type="button"
@@ -3320,8 +3318,14 @@ export default function EntrepreneurSmartScanTestPage() {
                     disabled={isCopyingSelfScoutLink}
                     className="mt-2 h-8 rounded-lg border border-cyan-300/40 bg-cyan-300/15 px-3 text-[10px] font-black uppercase tracking-[0.08em] text-cyan-100 disabled:opacity-60"
                   >
-                    {isCopyingSelfScoutLink ? "Copie..." : "Copier mon lien"}
+                    {isCopyingSelfScoutLink ? "Copie..." : "Copier lien actif"}
                   </button>
+                  {selfScoutLink.previewUrl ? (
+                    <div className="mt-2 rounded-lg border border-white/15 bg-black/20 px-2 py-2">
+                      <p className="text-[10px] font-black uppercase tracking-[0.08em] text-white/70">Lien preview design (maquette)</p>
+                      <p className="mt-1 break-all text-[10px] text-white/65">{selfScoutLink.previewUrl}</p>
+                    </div>
+                  ) : null}
                 </div>
               )}
               <div className="mt-3 grid grid-cols-2 gap-2">
@@ -4055,12 +4059,10 @@ export default function EntrepreneurSmartScanTestPage() {
                     Code court: <span className="font-black tracking-wider">{selfScoutLink.shortCode}</span>
                   </p>
                 ) : null}
+                <p className="mt-1 text-[10px] font-black uppercase tracking-[0.08em] text-white/70">Lien actif (web app fonctionnelle)</p>
                 {selfScoutLink.shortUrl ? <p className="mt-1 break-all text-[11px] text-cyan-100/90">{selfScoutLink.shortUrl}</p> : null}
                 {selfScoutLink.fullUrl && selfScoutLink.fullUrl !== selfScoutLink.shortUrl ? (
                   <p className="mt-1 break-all text-[11px] text-emerald-100/85">{selfScoutLink.fullUrl}</p>
-                ) : null}
-                {selfScoutLink.previewUrl ? (
-                  <p className="mt-1 break-all text-[10px] text-white/65">Preview design: {selfScoutLink.previewUrl}</p>
                 ) : null}
                 <button
                   type="button"
@@ -4068,8 +4070,14 @@ export default function EntrepreneurSmartScanTestPage() {
                   disabled={isCopyingSelfScoutLink}
                   className="mt-2 h-8 rounded-lg border border-cyan-300/40 bg-cyan-300/15 px-3 text-[10px] font-black uppercase tracking-[0.08em] text-cyan-100 disabled:opacity-60"
                 >
-                  {isCopyingSelfScoutLink ? "Copie..." : "Copier mon lien"}
+                  {isCopyingSelfScoutLink ? "Copie..." : "Copier lien actif"}
                 </button>
+                {selfScoutLink.previewUrl ? (
+                  <div className="mt-2 rounded-lg border border-white/15 bg-black/20 px-2 py-2">
+                    <p className="text-[10px] font-black uppercase tracking-[0.08em] text-white/70">Lien preview design (maquette)</p>
+                    <p className="mt-1 break-all text-[10px] text-white/65">{selfScoutLink.previewUrl}</p>
+                  </div>
+                ) : null}
               </div>
             )}
             <div className="mt-3 grid grid-cols-2 gap-2">
