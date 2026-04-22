@@ -202,6 +202,12 @@ type SmartScanProfileForm = {
   ville: string;
   phone: string;
 };
+type SmartScanSelfScoutLink = {
+  shortCode: string | null;
+  shortUrl: string | null;
+  inviteToken: string | null;
+  fullUrl: string | null;
+};
 
 const PENDING_WHATSAPP_CONTEXT_KEY = "popey-human:smart-scan:pending-whatsapp-context";
 const SMART_SCAN_SESSION_KEY = "popey-human:smart-scan:scan-session";
@@ -748,6 +754,7 @@ export default function EntrepreneurSmartScanTestPage() {
   const [showEclaireursPanel, setShowEclaireursPanel] = useState(false);
   const [showMyProfilePanel, setShowMyProfilePanel] = useState(false);
   const [myProfile, setMyProfile] = useState<SmartScanProfile | null>(null);
+  const [selfScoutLink, setSelfScoutLink] = useState<SmartScanSelfScoutLink | null>(null);
   const [profileForm, setProfileForm] = useState<SmartScanProfileForm>({
     firstName: "",
     lastName: "",
@@ -764,6 +771,7 @@ export default function EntrepreneurSmartScanTestPage() {
   });
   const [isProfileLoading, setIsProfileLoading] = useState(false);
   const [isProfileSaving, setIsProfileSaving] = useState(false);
+  const [isCopyingSelfScoutLink, setIsCopyingSelfScoutLink] = useState(false);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [showTrustLevelPrompt, setShowTrustLevelPrompt] = useState(false);
   const [trustPromptContactId, setTrustPromptContactId] = useState<string | null>(null);
@@ -2765,19 +2773,52 @@ export default function EntrepreneurSmartScanTestPage() {
   async function loadMyProfile() {
     try {
       setIsProfileLoading(true);
-      const response = await fetch("/api/popey-human/smart-scan/profile", { cache: "no-store" });
-      const payload = (await response.json().catch(() => ({}))) as { error?: string; profile?: SmartScanProfile | null };
-      if (!response.ok) {
-        throw new Error(payload.error || "Impossible de charger le profil.");
+      const [profileResponse, linkResponse] = await Promise.all([
+        fetch("/api/popey-human/smart-scan/profile", { cache: "no-store" }),
+        fetch("/api/popey-human/smart-scan/self-scout-link", { cache: "no-store" }),
+      ]);
+      const profilePayload = (await profileResponse.json().catch(() => ({}))) as { error?: string; profile?: SmartScanProfile | null };
+      const linkPayload = (await linkResponse.json().catch(() => ({}))) as {
+        error?: string;
+        shortCode?: string | null;
+        shortUrl?: string | null;
+        inviteToken?: string | null;
+        fullUrl?: string | null;
+      };
+      if (!profileResponse.ok) {
+        throw new Error(profilePayload.error || "Impossible de charger le profil.");
       }
-      setMyProfile(payload.profile || null);
-      hydrateProfileForm(payload.profile || null);
+      if (!linkResponse.ok) {
+        throw new Error(linkPayload.error || "Impossible de charger le lien Eclaireur.");
+      }
+      setMyProfile(profilePayload.profile || null);
+      hydrateProfileForm(profilePayload.profile || null);
+      setSelfScoutLink({
+        shortCode: linkPayload.shortCode || null,
+        shortUrl: linkPayload.shortUrl || null,
+        inviteToken: linkPayload.inviteToken || null,
+        fullUrl: linkPayload.fullUrl || null,
+      });
       setApiErrorMessage("");
     } catch (error) {
       const message = error instanceof Error ? error.message : "Impossible de charger le profil.";
       setApiErrorMessage(message);
     } finally {
       setIsProfileLoading(false);
+    }
+  }
+
+  async function copySelfScoutLink(url: string | null) {
+    if (!url) return;
+    try {
+      setIsCopyingSelfScoutLink(true);
+      await navigator.clipboard.writeText(url);
+      setApiErrorMessage("Lien Eclaireur copie.");
+      setTimeout(() => setApiErrorMessage(""), 1400);
+    } catch {
+      setApiErrorMessage("Impossible de copier le lien.");
+    } finally {
+      setIsCopyingSelfScoutLink(false);
     }
   }
 
@@ -3165,6 +3206,30 @@ export default function EntrepreneurSmartScanTestPage() {
                       <p><span className="text-white/60">Telephone:</span> {myProfile?.phone || "-"}</p>
                     </>
                   )}
+                </div>
+              )}
+              {!isProfileLoading && selfScoutLink && (
+                <div className="mt-3 rounded-xl border border-cyan-300/30 bg-cyan-300/10 px-3 py-2">
+                  <p className="text-[10px] font-black uppercase tracking-[0.1em] text-cyan-100">Mon lien Eclaireur perso</p>
+                  {selfScoutLink.shortCode ? (
+                    <p className="mt-1 text-[11px] text-[#EAC886]">
+                      Code court: <span className="font-black tracking-wider">{selfScoutLink.shortCode}</span>
+                    </p>
+                  ) : null}
+                  {selfScoutLink.shortUrl ? (
+                    <p className="mt-1 break-all text-[11px] text-cyan-100/90">{selfScoutLink.shortUrl}</p>
+                  ) : null}
+                  {selfScoutLink.fullUrl ? (
+                    <p className="mt-1 break-all text-[11px] text-emerald-100/85">{selfScoutLink.fullUrl}</p>
+                  ) : null}
+                  <button
+                    type="button"
+                    onClick={() => copySelfScoutLink(selfScoutLink.shortUrl || selfScoutLink.fullUrl)}
+                    disabled={isCopyingSelfScoutLink}
+                    className="mt-2 h-8 rounded-lg border border-cyan-300/40 bg-cyan-300/15 px-3 text-[10px] font-black uppercase tracking-[0.08em] text-cyan-100 disabled:opacity-60"
+                  >
+                    {isCopyingSelfScoutLink ? "Copie..." : "Copier mon lien"}
+                  </button>
                 </div>
               )}
               <div className="mt-3 grid grid-cols-2 gap-2">
@@ -3888,6 +3953,30 @@ export default function EntrepreneurSmartScanTestPage() {
                     <p><span className="text-white/60">Telephone:</span> {myProfile?.phone || "-"}</p>
                   </>
                 )}
+              </div>
+            )}
+            {!isProfileLoading && selfScoutLink && (
+              <div className="mt-3 rounded-xl border border-cyan-300/30 bg-cyan-300/10 px-3 py-2">
+                <p className="text-[10px] font-black uppercase tracking-[0.1em] text-cyan-100">Mon lien Eclaireur perso</p>
+                {selfScoutLink.shortCode ? (
+                  <p className="mt-1 text-[11px] text-[#EAC886]">
+                    Code court: <span className="font-black tracking-wider">{selfScoutLink.shortCode}</span>
+                  </p>
+                ) : null}
+                {selfScoutLink.shortUrl ? (
+                  <p className="mt-1 break-all text-[11px] text-cyan-100/90">{selfScoutLink.shortUrl}</p>
+                ) : null}
+                {selfScoutLink.fullUrl ? (
+                  <p className="mt-1 break-all text-[11px] text-emerald-100/85">{selfScoutLink.fullUrl}</p>
+                ) : null}
+                <button
+                  type="button"
+                  onClick={() => copySelfScoutLink(selfScoutLink.shortUrl || selfScoutLink.fullUrl)}
+                  disabled={isCopyingSelfScoutLink}
+                  className="mt-2 h-8 rounded-lg border border-cyan-300/40 bg-cyan-300/15 px-3 text-[10px] font-black uppercase tracking-[0.08em] text-cyan-100 disabled:opacity-60"
+                >
+                  {isCopyingSelfScoutLink ? "Copie..." : "Copier mon lien"}
+                </button>
               </div>
             )}
             <div className="mt-3 grid grid-cols-2 gap-2">
