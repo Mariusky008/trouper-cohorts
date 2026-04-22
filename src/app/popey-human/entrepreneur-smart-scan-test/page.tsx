@@ -3672,7 +3672,7 @@ export default function EntrepreneurSmartScanTestPage() {
                     <div className="flex items-center justify-between gap-2">
                       <button
                         type="button"
-                        onClick={() => openContactProfileWithTrustGuard(contact.id)}
+                        onClick={() => openEclaireurTemplates(contact.id)}
                         className="min-w-0 flex-1 text-left"
                       >
                         <p className="truncate text-sm font-black text-emerald-50">{contact.name}</p>
