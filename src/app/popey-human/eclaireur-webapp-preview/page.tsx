@@ -229,7 +229,7 @@ export default function EclaireurWebappPreviewPage() {
       isLoadingPortal,
       isSubmitting,
       latestReferral,
-      മെtiers,
+      metiers,
       metier,
       portalData?.sponsorName,
       portalError,
