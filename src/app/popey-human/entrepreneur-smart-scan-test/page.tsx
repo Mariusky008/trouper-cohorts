@@ -810,6 +810,10 @@ export default function EntrepreneurSmartScanTestPage() {
   const [modalErrorMessage, setModalErrorMessage] = useState("");
   const [modalInfoMessage, setModalInfoMessage] = useState("");
   const [dismissedQualifierContactId, setDismissedQualifierContactId] = useState<string | null>(null);
+  const [selectedImportedScoutId, setSelectedImportedScoutId] = useState("");
+  const [manualScoutName, setManualScoutName] = useState("");
+  const [manualScoutCity, setManualScoutCity] = useState("");
+  const [manualScoutPhone, setManualScoutPhone] = useState("");
   const contactImportInputRef = useRef<HTMLInputElement | null>(null);
   const localDayNumber = useMemo(() => getLocalDayNumber(), []);
 
@@ -951,6 +955,14 @@ export default function EntrepreneurSmartScanTestPage() {
       }
       return inactivityA - inactivityB;
     });
+  const importedScoutCandidates = importedContacts
+    .filter((contact) => !eclaireurIds.includes(contact.id))
+    .map((contact) => ({
+      id: contact.id,
+      label: [contact.name, contact.city || null, contact.phone || null].filter(Boolean).join(" • "),
+    }));
+  const eclaireurFinalizedCount = Object.values(eclaireurStatsStore).reduce((sum, item) => sum + Number(item?.leadsSigned || 0), 0);
+  const eclaireurNetworkRemaining = Math.max(0, 5 - eclaireurFinalizedCount);
   const selectedEclaireurTemplateContact = selectedEclaireurTemplateContactId
     ? eclaireursList.find((contact) => contact.id === selectedEclaireurTemplateContactId) || eclaireurDirectory[selectedEclaireurTemplateContactId] || null
     : null;
@@ -1638,7 +1650,7 @@ export default function EntrepreneurSmartScanTestPage() {
   }
 
   function getContactById(contactId: string) {
-    return contactsData.find((contact) => contact.id === contactId) ?? null;
+    return contactsData.find((contact) => contact.id === contactId) ?? importedContacts.find((contact) => contact.id === contactId) ?? null;
   }
 
   function resolveMessageDraft(action: ActivationAction, fallbackDraft: string) {
@@ -2302,8 +2314,8 @@ export default function EntrepreneurSmartScanTestPage() {
       .catch(() => null);
   }
 
-  async function promoteToEclaireur(contactId: string) {
-    const contact = getContactById(contactId);
+  function promoteContactToEclaireur(contact: DailyContact) {
+    const contactId = contact.id;
     if (!contact) return;
     setEclaireurIds((prev) => (prev.includes(contactId) ? prev : [...prev, contactId]));
     setEclaireurDirectory((prev) => ({
@@ -2329,12 +2341,96 @@ export default function EntrepreneurSmartScanTestPage() {
         },
       };
     });
+  }
+
+  async function promoteToEclaireur(contactId: string) {
+    const contact = getContactById(contactId);
+    if (!contact) return;
+    promoteContactToEclaireur(contact);
     void postSmartScan("promote-eclaireur", {
       externalContactRef: contact.id,
       fullName: contact.name,
       city: contact.city,
       companyHint: contact.companyHint,
     })
+      .then(() => refreshSmartScanSnapshot())
+      .catch(() => null);
+  }
+
+  function addScoutFromImportedSelection() {
+    const selectedId = selectedImportedScoutId.trim();
+    if (!selectedId) {
+      setApiErrorMessage("Choisis d'abord un contact importé.");
+      return;
+    }
+    const contact = importedContacts.find((item) => item.id === selectedId);
+    if (!contact) {
+      setApiErrorMessage("Contact importé introuvable.");
+      return;
+    }
+    setApiErrorMessage("");
+    setSelectedImportedScoutId("");
+    void promoteToEclaireur(contact.id);
+  }
+
+  function importSingleContactManually() {
+    const name = manualScoutName.trim();
+    const city = manualScoutCity.trim() || "Inconnue";
+    const phone = manualScoutPhone.trim();
+    if (!name) {
+      setApiErrorMessage("Renseigne au moins le nom du contact.");
+      return;
+    }
+    const manualId = `manual-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+    const newContact: DailyContact = {
+      id: manualId,
+      name,
+      phone: phone || null,
+      city,
+      companyHint: "Ajout manuel",
+      capsule: "Ajoute manuellement",
+      communityKnownBy: 1,
+      dominantTags: ["✍️ Ajout manuel", "🤝 A qualifier"],
+      externalNews: "Contact ajouté manuellement depuis le profil",
+    };
+
+    setImportedContacts((prev) => [newContact, ...prev]);
+    setImportSummary((prev) => (prev ? `${prev} • +1 manuel` : "1 contact ajoute manuellement"));
+    setStage("daily");
+    setApiErrorMessage("");
+    setManualScoutName("");
+    setManualScoutCity("");
+    setManualScoutPhone("");
+    promoteContactToEclaireur(newContact);
+
+    void postSmartScan("import-contacts", {
+      source: "manual-single",
+      contacts: [
+        {
+          externalContactRef: newContact.id,
+          fullName: newContact.name,
+          city: newContact.city || null,
+          companyHint: newContact.companyHint || null,
+          phoneE164: normalizePhoneForWhatsApp(newContact.phone) || newContact.phone || null,
+          importIndex: 0,
+        },
+      ],
+    })
+      .then(() =>
+        postSmartScan("session-progress", {
+          queueIndex: 0,
+          queueSize: dailyQueueCount,
+          importedTotal: importedTotalCount + 1,
+        }),
+      )
+      .then(() =>
+        postSmartScan("promote-eclaireur", {
+          externalContactRef: newContact.id,
+          fullName: newContact.name,
+          city: newContact.city,
+          companyHint: newContact.companyHint,
+        }),
+      )
       .then(() => refreshSmartScanSnapshot())
       .catch(() => null);
   }
@@ -3119,13 +3215,38 @@ export default function EntrepreneurSmartScanTestPage() {
                   Supprimer import
                 </button>
               </div>
-              <button
-                type="button"
-                onClick={restartDailyQueueFromFirstContact}
-                className="mt-2 h-10 w-full rounded-xl border border-white/20 bg-white/10 text-[11px] font-black uppercase tracking-wide text-white/85"
-              >
-                Revenir au 1er contact du jour
-              </button>
+              <p className="mt-2 rounded-xl border border-white/20 bg-white/10 px-3 py-2 text-[11px] font-black uppercase tracking-wide text-white/85">
+                Importer un seul contact manuellement
+              </p>
+              <div className="mt-2 grid gap-2">
+                <input
+                  value={manualScoutName}
+                  onChange={(event) => setManualScoutName(event.target.value)}
+                  placeholder="Nom du contact"
+                  className="h-9 rounded-lg border border-white/15 bg-black/30 px-2 text-sm"
+                />
+                <div className="grid grid-cols-2 gap-2">
+                  <input
+                    value={manualScoutCity}
+                    onChange={(event) => setManualScoutCity(event.target.value)}
+                    placeholder="Ville"
+                    className="h-9 rounded-lg border border-white/15 bg-black/30 px-2 text-sm"
+                  />
+                  <input
+                    value={manualScoutPhone}
+                    onChange={(event) => setManualScoutPhone(event.target.value)}
+                    placeholder="Telephone"
+                    className="h-9 rounded-lg border border-white/15 bg-black/30 px-2 text-sm"
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={importSingleContactManually}
+                  className="h-9 rounded-xl border border-emerald-300/35 bg-emerald-300/15 text-[11px] font-black uppercase tracking-wide text-emerald-100"
+                >
+                  Ajouter ce contact + eclaireur
+                </button>
+              </div>
               <button
                 type="button"
                 onClick={signOutFromSmartScan}
@@ -3817,13 +3938,38 @@ export default function EntrepreneurSmartScanTestPage() {
                 Supprimer import
               </button>
             </div>
-            <button
-              type="button"
-              onClick={restartDailyQueueFromFirstContact}
-              className="mt-2 h-10 w-full rounded-xl border border-white/20 bg-white/10 text-[11px] font-black uppercase tracking-wide text-white/85"
-            >
-              Revenir au 1er contact du jour
-            </button>
+            <p className="mt-2 rounded-xl border border-white/20 bg-white/10 px-3 py-2 text-[11px] font-black uppercase tracking-wide text-white/85">
+              Importer un seul contact manuellement
+            </p>
+            <div className="mt-2 grid gap-2">
+              <input
+                value={manualScoutName}
+                onChange={(event) => setManualScoutName(event.target.value)}
+                placeholder="Nom du contact"
+                className="h-9 rounded-lg border border-white/15 bg-black/30 px-2 text-sm"
+              />
+              <div className="grid grid-cols-2 gap-2">
+                <input
+                  value={manualScoutCity}
+                  onChange={(event) => setManualScoutCity(event.target.value)}
+                  placeholder="Ville"
+                  className="h-9 rounded-lg border border-white/15 bg-black/30 px-2 text-sm"
+                />
+                <input
+                  value={manualScoutPhone}
+                  onChange={(event) => setManualScoutPhone(event.target.value)}
+                  placeholder="Telephone"
+                  className="h-9 rounded-lg border border-white/15 bg-black/30 px-2 text-sm"
+                />
+              </div>
+              <button
+                type="button"
+                onClick={importSingleContactManually}
+                className="h-9 rounded-xl border border-emerald-300/35 bg-emerald-300/15 text-[11px] font-black uppercase tracking-wide text-emerald-100"
+              >
+                Ajouter ce contact + eclaireur
+              </button>
+            </div>
             <button
               type="button"
               onClick={signOutFromSmartScan}
@@ -4053,6 +4199,38 @@ export default function EntrepreneurSmartScanTestPage() {
               <div className="flex items-center justify-center rounded-lg border border-white/15 bg-black/25 px-2 text-[11px] text-white/75">
                 {eclaireursList.length} eclaireur(s)
               </div>
+            </div>
+            <div className="mt-2 rounded-xl border border-fuchsia-300/35 bg-fuchsia-300/10 px-3 py-2">
+              <p className="text-[10px] font-black uppercase tracking-[0.08em] text-fuchsia-100">🚀 Mon Réseau Eclaireurs = 0</p>
+              <p className="mt-1 text-[11px] text-fuchsia-100/90">
+                🎯 A partir de 5 opportunites finalisees, tu debloques ton reseau d eclaireurs et tu touches 3% de commissions.
+              </p>
+              <p className="mt-1 text-[10px] text-fuchsia-100/80">
+                {eclaireurNetworkRemaining > 0
+                  ? `🔥 Encore ${eclaireurNetworkRemaining} opportunite(s) finalisee(s) pour y pretendre.`
+                  : "✅ Objectif atteint, badge reseau debloque."}
+              </p>
+            </div>
+            <div className="mt-2 grid gap-2 sm:grid-cols-[1fr_auto]">
+              <select
+                value={selectedImportedScoutId}
+                onChange={(event) => setSelectedImportedScoutId(event.target.value)}
+                className="h-9 rounded-lg border border-white/15 bg-black/25 px-2 text-[11px]"
+              >
+                <option value="">Ajouter depuis mes contacts importes</option>
+                {importedScoutCandidates.map((item) => (
+                  <option key={`imported-scout-${item.id}`} value={item.id}>
+                    {item.label}
+                  </option>
+                ))}
+              </select>
+              <button
+                type="button"
+                onClick={addScoutFromImportedSelection}
+                className="h-9 rounded-lg border border-cyan-300/35 bg-cyan-300/15 px-3 text-[10px] font-black uppercase tracking-[0.08em] text-cyan-100"
+              >
+                Ajouter +
+              </button>
             </div>
             <div className="mt-3 max-h-[calc(100dvh-190px)] space-y-2 overflow-y-auto sm:max-h-[58vh]">
               {eclaireursList.length === 0 && <p className="text-sm text-white/70">Aucun eclaireur actif pour l instant.</p>}
