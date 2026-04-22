@@ -208,6 +208,11 @@ type SmartScanSelfScoutLink = {
   inviteToken: string | null;
   fullUrl: string | null;
 };
+type SmartScanEclaireurLink = {
+  shortCode: string | null;
+  shortUrl: string | null;
+  fullUrl: string | null;
+};
 
 const PENDING_WHATSAPP_CONTEXT_KEY = "popey-human:smart-scan:pending-whatsapp-context";
 const SMART_SCAN_SESSION_KEY = "popey-human:smart-scan:scan-session";
@@ -822,6 +827,9 @@ export default function EntrepreneurSmartScanTestPage() {
   const [manualScoutName, setManualScoutName] = useState("");
   const [manualScoutCity, setManualScoutCity] = useState("");
   const [manualScoutPhone, setManualScoutPhone] = useState("");
+  const [eclaireurLinksByContactId, setEclaireurLinksByContactId] = useState<Record<string, SmartScanEclaireurLink>>({});
+  const [loadingEclaireurLinkContactId, setLoadingEclaireurLinkContactId] = useState<string | null>(null);
+  const [copyingEclaireurLinkContactId, setCopyingEclaireurLinkContactId] = useState<string | null>(null);
   const contactImportInputRef = useRef<HTMLInputElement | null>(null);
   const localDayNumber = useMemo(() => getLocalDayNumber(), []);
 
@@ -969,8 +977,6 @@ export default function EntrepreneurSmartScanTestPage() {
       id: contact.id,
       label: [contact.name, contact.city || null, contact.phone || null].filter(Boolean).join(" • "),
     }));
-  const eclaireurFinalizedCount = Object.values(eclaireurStatsStore).reduce((sum, item) => sum + Number(item?.leadsSigned || 0), 0);
-  const eclaireurNetworkRemaining = Math.max(0, 5 - eclaireurFinalizedCount);
   const selectedEclaireurTemplateContact = selectedEclaireurTemplateContactId
     ? eclaireursList.find((contact) => contact.id === selectedEclaireurTemplateContactId) || eclaireurDirectory[selectedEclaireurTemplateContactId] || null
     : null;
@@ -2379,6 +2385,56 @@ export default function EntrepreneurSmartScanTestPage() {
     setApiErrorMessage("");
     setSelectedImportedScoutId("");
     void promoteToEclaireur(contact.id);
+  }
+
+  async function ensureEclaireurLink(contactId: string) {
+    try {
+      setLoadingEclaireurLinkContactId(contactId);
+      const response = await fetch("/api/popey-human/smart-scan/eclaireur-link", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ contactId }),
+      });
+      const payload = (await response.json().catch(() => ({}))) as {
+        error?: string;
+        shortCode?: string | null;
+        shortUrl?: string | null;
+        fullUrl?: string | null;
+      };
+      if (!response.ok) {
+        throw new Error(payload.error || "Impossible de generer le lien eclaireur.");
+      }
+      setEclaireurLinksByContactId((prev) => ({
+        ...prev,
+        [contactId]: {
+          shortCode: payload.shortCode || null,
+          shortUrl: payload.shortUrl || null,
+          fullUrl: payload.fullUrl || null,
+        },
+      }));
+      setApiErrorMessage("");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Impossible de generer le lien eclaireur.";
+      setApiErrorMessage(message);
+    } finally {
+      setLoadingEclaireurLinkContactId((prev) => (prev === contactId ? null : prev));
+    }
+  }
+
+  async function copyEclaireurLink(contactId: string) {
+    const link = eclaireurLinksByContactId[contactId];
+    const url = link?.shortUrl || link?.fullUrl || null;
+    if (!url) return;
+    try {
+      setCopyingEclaireurLinkContactId(contactId);
+      await navigator.clipboard.writeText(url);
+      setApiErrorMessage("Lien eclaireur copie.");
+      setTimeout(() => setApiErrorMessage(""), 1200);
+    } catch {
+      setApiErrorMessage("Impossible de copier le lien eclaireur.");
+    } finally {
+      setCopyingEclaireurLinkContactId((prev) => (prev === contactId ? null : prev));
+    }
   }
 
   function importSingleContactManually() {
@@ -4289,17 +4345,6 @@ export default function EntrepreneurSmartScanTestPage() {
                 {eclaireursList.length} eclaireur(s)
               </div>
             </div>
-            <div className="mt-2 rounded-xl border border-fuchsia-300/35 bg-fuchsia-300/10 px-3 py-2">
-              <p className="text-[10px] font-black uppercase tracking-[0.08em] text-fuchsia-100">🚀 Mon Réseau Eclaireurs = 0</p>
-              <p className="mt-1 text-[11px] text-fuchsia-100/90">
-                🎯 A partir de 5 opportunites finalisees, tu debloques ton reseau d eclaireurs et tu touches 3% de commissions.
-              </p>
-              <p className="mt-1 text-[10px] text-fuchsia-100/80">
-                {eclaireurNetworkRemaining > 0
-                  ? `🔥 Encore ${eclaireurNetworkRemaining} opportunite(s) finalisee(s) pour y pretendre.`
-                  : "✅ Objectif atteint, badge reseau debloque."}
-              </p>
-            </div>
             <div className="mt-2 grid gap-2 sm:grid-cols-[1fr_auto]">
               <select
                 value={selectedImportedScoutId}
@@ -4350,6 +4395,38 @@ export default function EntrepreneurSmartScanTestPage() {
                         ? "Activation: jamais activee"
                         : `Activation: il y a ${daysSinceActivation} jour${daysSinceActivation > 1 ? "s" : ""}`}
                     </p>
+                    {eclaireurLinksByContactId[contact.id] ? (
+                      <div className="mt-2 rounded-lg border border-cyan-300/30 bg-cyan-300/10 px-2 py-2">
+                        {eclaireurLinksByContactId[contact.id]?.shortCode ? (
+                          <p className="text-[10px] text-[#EAC886]">
+                            Code court: <span className="font-black tracking-wider">{eclaireurLinksByContactId[contact.id]?.shortCode}</span>
+                          </p>
+                        ) : null}
+                        {eclaireurLinksByContactId[contact.id]?.shortUrl ? (
+                          <p className="mt-1 break-all text-[10px] text-cyan-100">{eclaireurLinksByContactId[contact.id]?.shortUrl}</p>
+                        ) : null}
+                        {eclaireurLinksByContactId[contact.id]?.fullUrl ? (
+                          <p className="mt-1 break-all text-[10px] text-emerald-100/85">{eclaireurLinksByContactId[contact.id]?.fullUrl}</p>
+                        ) : null}
+                        <button
+                          type="button"
+                          onClick={() => copyEclaireurLink(contact.id)}
+                          disabled={copyingEclaireurLinkContactId === contact.id}
+                          className="mt-2 h-7 rounded-lg border border-cyan-300/35 bg-cyan-300/15 px-2 text-[10px] font-black uppercase tracking-[0.08em] text-cyan-100 disabled:opacity-60"
+                        >
+                          {copyingEclaireurLinkContactId === contact.id ? "Copie..." : "Copier le lien"}
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => ensureEclaireurLink(contact.id)}
+                        disabled={loadingEclaireurLinkContactId === contact.id}
+                        className="mt-2 h-7 rounded-lg border border-cyan-300/35 bg-cyan-300/15 px-2 text-[10px] font-black uppercase tracking-[0.08em] text-cyan-100 disabled:opacity-60"
+                      >
+                        {loadingEclaireurLinkContactId === contact.id ? "Generation..." : "Generer lien eclaireur"}
+                      </button>
+                    )}
                   </div>
                 );
               })}

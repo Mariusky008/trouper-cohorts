@@ -234,10 +234,24 @@ function ScreenSubmitOpportunity() {
 }
 
 function ScreenTrackingCommission() {
+  const finalizedCount = 0;
+  const remaining = Math.max(0, 5 - finalizedCount);
   return (
     <div className="h-full rounded-[24px] border border-fuchsia-300/30 bg-[radial-gradient(120%_120%_at_0%_0%,rgba(131,51,173,0.45)_0%,rgba(36,21,55,0.9)_48%,rgba(14,12,24,1)_100%)] p-4">
       <p className="text-[10px] font-black uppercase tracking-[0.14em] text-fuchsia-200/90">Suivi dossier</p>
       <h2 className="mt-2 text-2xl font-black leading-tight">Transparence totale</h2>
+
+      <div className="mt-3 rounded-2xl border border-fuchsia-300/40 bg-fuchsia-300/12 p-3">
+        <p className="text-[10px] font-black uppercase tracking-[0.12em] text-fuchsia-100">🚀 MON RESEAU ECLAIREURS = 0</p>
+        <p className="mt-1 text-xs text-fuchsia-100/90">
+          🎯 A partir de 5 opportunites finalisees, tu debloques ton reseau d eclaireurs et tu touches 3% de commissions.
+        </p>
+        <p className="mt-1 text-[11px] font-semibold text-fuchsia-100/90">
+          {remaining > 0
+            ? `🔥 Encore ${remaining} opportunite(s) finalisee(s) pour y pretendre.`
+            : "✅ Objectif atteint, badge reseau debloque."}
+        </p>
+      </div>
 
       <div className="mt-4 rounded-2xl border border-white/15 bg-black/25 p-3">
         <p className="text-sm font-black">Dossier: Nicolas Martin</p>

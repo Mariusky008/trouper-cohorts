@@ -14,13 +14,21 @@ export async function GET() {
     return NextResponse.json({ error: data.error }, { status: 400 });
   }
 
-  const shortUrl = data.shortCode ? `https://www.popey.academy/popey-human/eclaireur?code=${data.shortCode}` : null;
-  const fullUrl = data.inviteToken ? `https://www.popey.academy/popey-human/eclaireur/${data.inviteToken}` : null;
+  const previewBaseUrl = "https://www.popey.academy/popey-human/eclaireur-webapp-preview";
+  const legacyShortUrl = data.shortCode ? `https://www.popey.academy/popey-human/eclaireur?code=${data.shortCode}` : null;
+  const legacyFullUrl = data.inviteToken ? `https://www.popey.academy/popey-human/eclaireur/${data.inviteToken}` : null;
+  const previewUrl = data.shortCode
+    ? `${previewBaseUrl}?code=${encodeURIComponent(data.shortCode)}`
+    : data.inviteToken
+      ? `${previewBaseUrl}?token=${encodeURIComponent(data.inviteToken)}`
+      : previewBaseUrl;
 
   return NextResponse.json({
     shortCode: data.shortCode || null,
-    shortUrl,
+    shortUrl: previewUrl,
     inviteToken: data.inviteToken || null,
-    fullUrl,
+    fullUrl: previewUrl,
+    legacyShortUrl,
+    legacyFullUrl,
   });
 }

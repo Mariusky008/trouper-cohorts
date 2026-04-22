@@ -299,6 +299,103 @@ export async function createScoutInviteFromSmartScanContact(formData: FormData) 
   return { success: true };
 }
 
+export async function generateScoutLinkFromSmartScanContact(input: { contactId: string }) {
+  const member = await requireMemberUser();
+  if ("error" in member) return { error: member.error };
+  const contactId = String(input.contactId || "").trim();
+  if (!contactId) return { error: "Contact Smart Scan invalide." };
+
+  const supabaseAdmin = createAdminClient();
+  const { data: contact, error: contactError } = await supabaseAdmin
+    .from("human_smart_scan_contacts")
+    .select("id,owner_member_id,full_name,city,phone_e164")
+    .eq("id", contactId)
+    .eq("owner_member_id", member.myMember.id)
+    .maybeSingle();
+  if (contactError) return { error: contactError.message };
+  if (!contact) return { error: "Contact Smart Scan introuvable." };
+
+  const fullName = String(contact.full_name || "").trim();
+  const nameParts = fullName ? fullName.split(/\s+/) : [];
+  const firstName = nameParts[0] || "";
+  const lastName = nameParts.slice(1).join(" ");
+  const city = String(contact.city || "").trim();
+  const phone = String(contact.phone_e164 || "").trim();
+
+  let scoutId = "";
+  if (phone) {
+    const { data: existingByPhone } = await supabaseAdmin
+      .from("human_scouts")
+      .select("id")
+      .eq("owner_member_id", member.myMember.id)
+      .eq("phone", phone)
+      .order("created_at", { ascending: true })
+      .limit(1);
+    scoutId = String(((existingByPhone as Array<{ id: string }> | null) || [])[0]?.id || "");
+  }
+  if (!scoutId && fullName) {
+    const { data: existingByName } = await supabaseAdmin
+      .from("human_scouts")
+      .select("id")
+      .eq("owner_member_id", member.myMember.id)
+      .ilike("first_name", firstName || fullName)
+      .ilike("last_name", lastName || "%")
+      .limit(1);
+    scoutId = String(((existingByName as Array<{ id: string }> | null) || [])[0]?.id || "");
+  }
+
+  if (!scoutId) {
+    const { data: createdScout, error: scoutError } = await supabaseAdmin
+      .from("human_scouts")
+      .insert({
+        owner_member_id: member.myMember.id,
+        first_name: firstName || fullName || null,
+        last_name: lastName || null,
+        ville: city || null,
+        phone: phone || null,
+        status: "invited",
+        commission_rate: 0.1,
+        total_paid: 0,
+        pending_earnings: 0,
+        updated_at: new Date().toISOString(),
+      })
+      .select("id")
+      .single();
+    if (scoutError || !createdScout) return { error: scoutError?.message || "Impossible de créer l'éclaireur." };
+    scoutId = String(createdScout.id);
+  } else {
+    await supabaseAdmin
+      .from("human_scouts")
+      .update({
+        ville: city || null,
+        phone: phone || null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", scoutId)
+      .eq("owner_member_id", member.myMember.id);
+  }
+
+  const invite = await createScoutInviteRecord({
+    supabaseAdmin,
+    ownerMemberId: member.myMember.id,
+    scoutId,
+  });
+  if (!invite) return { error: "Impossible de générer le lien magique éclaireur." };
+
+  const shortUrl = invite.short_code ? `https://www.popey.academy/popey-human/eclaireur?code=${invite.short_code}` : null;
+  const fullUrl = `https://www.popey.academy/popey-human/eclaireur/${invite.invite_token}`;
+
+  revalidatePath("/popey-human/app/eclaireurs");
+  return {
+    success: true as const,
+    scoutId,
+    inviteToken: invite.invite_token,
+    shortCode: invite.short_code || null,
+    shortUrl,
+    fullUrl,
+  };
+}
+
 export async function createScoutInviteFromSmartScanContactAction(formData: FormData): Promise<void> {
   const currentUrl = String(formData.get("current_url") || "/popey-human/app/eclaireurs");
   const result = await createScoutInviteFromSmartScanContact(formData);
