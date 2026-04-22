@@ -24,9 +24,11 @@ export async function GET() {
 
   return NextResponse.json({
     shortCode: data.shortCode || null,
-    shortUrl,
+    shortUrl: previewUrl,
     inviteToken: data.inviteToken || null,
-    fullUrl,
+    fullUrl: previewUrl,
     previewUrl,
+    legacyShortUrl: shortUrl,
+    legacyFullUrl: fullUrl,
   });
 }

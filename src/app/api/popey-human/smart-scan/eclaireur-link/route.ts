@@ -33,5 +33,16 @@ export async function POST(request: NextRequest) {
   if ("error" in result) {
     return NextResponse.json({ error: result.error }, { status: 400 });
   }
-  return NextResponse.json(result);
+  const previewUrl = result.shortCode
+    ? `https://www.popey.academy/popey-human/eclaireur-webapp-preview?code=${encodeURIComponent(result.shortCode)}`
+    : result.inviteToken
+      ? `https://www.popey.academy/popey-human/eclaireur-webapp-preview?token=${encodeURIComponent(result.inviteToken)}`
+      : "https://www.popey.academy/popey-human/eclaireur-webapp-preview";
+  return NextResponse.json({
+    ...result,
+    legacyShortUrl: result.shortUrl,
+    legacyFullUrl: result.fullUrl,
+    shortUrl: previewUrl,
+    fullUrl: previewUrl,
+  });
 }

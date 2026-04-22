@@ -208,11 +208,15 @@ type SmartScanSelfScoutLink = {
   inviteToken: string | null;
   fullUrl: string | null;
   previewUrl?: string | null;
+  legacyShortUrl?: string | null;
+  legacyFullUrl?: string | null;
 };
 type SmartScanEclaireurLink = {
   shortCode: string | null;
   shortUrl: string | null;
   fullUrl: string | null;
+  legacyShortUrl?: string | null;
+  legacyFullUrl?: string | null;
 };
 
 const PENDING_WHATSAPP_CONTEXT_KEY = "popey-human:smart-scan:pending-whatsapp-context";
@@ -972,7 +976,7 @@ export default function EntrepreneurSmartScanTestPage() {
       }
       return inactivityA - inactivityB;
     });
-  const importedScoutCandidates = importedContacts
+  const importedScoutCandidates = contactsData
     .filter((contact) => !eclaireurIds.includes(contact.id))
     .map((contact) => ({
       id: contact.id,
@@ -2362,14 +2366,17 @@ export default function EntrepreneurSmartScanTestPage() {
     const contact = getContactById(contactId);
     if (!contact) return;
     promoteContactToEclaireur(contact);
-    void postSmartScan("promote-eclaireur", {
-      externalContactRef: contact.id,
-      fullName: contact.name,
-      city: contact.city,
-      companyHint: contact.companyHint,
-    })
-      .then(() => refreshSmartScanSnapshot())
-      .catch(() => null);
+    try {
+      await postSmartScan("promote-eclaireur", {
+        externalContactRef: contact.id,
+        fullName: contact.name,
+        city: contact.city,
+        companyHint: contact.companyHint,
+      });
+      await refreshSmartScanSnapshot();
+    } catch {
+      setApiErrorMessage("Ajout eclaireur impossible pour ce contact.");
+    }
   }
 
   function addScoutFromImportedSelection() {
@@ -2378,7 +2385,7 @@ export default function EntrepreneurSmartScanTestPage() {
       setApiErrorMessage("Choisis d'abord un contact importé.");
       return;
     }
-    const contact = importedContacts.find((item) => item.id === selectedId);
+    const contact = getContactById(selectedId);
     if (!contact) {
       setApiErrorMessage("Contact importé introuvable.");
       return;
@@ -2386,6 +2393,7 @@ export default function EntrepreneurSmartScanTestPage() {
     setApiErrorMessage("");
     setSelectedImportedScoutId("");
     void promoteToEclaireur(contact.id).then(() => {
+      void ensureEclaireurLink(contact.id);
       setApiErrorMessage("Eclaireur ajoute.");
       setTimeout(() => setApiErrorMessage(""), 1400);
     });
@@ -2412,6 +2420,8 @@ export default function EntrepreneurSmartScanTestPage() {
         shortCode?: string | null;
         shortUrl?: string | null;
         fullUrl?: string | null;
+        legacyShortUrl?: string | null;
+        legacyFullUrl?: string | null;
       };
       if (!response.ok) {
         throw new Error(payload.error || "Impossible de generer le lien eclaireur.");
@@ -2422,6 +2432,8 @@ export default function EntrepreneurSmartScanTestPage() {
           shortCode: payload.shortCode || null,
           shortUrl: payload.shortUrl || null,
           fullUrl: payload.fullUrl || null,
+          legacyShortUrl: payload.legacyShortUrl || null,
+          legacyFullUrl: payload.legacyFullUrl || null,
         },
       }));
       setApiErrorMessage("");
@@ -2853,6 +2865,8 @@ export default function EntrepreneurSmartScanTestPage() {
         inviteToken?: string | null;
         fullUrl?: string | null;
         previewUrl?: string | null;
+        legacyShortUrl?: string | null;
+        legacyFullUrl?: string | null;
       };
       if (!profileResponse.ok) {
         throw new Error(profilePayload.error || "Impossible de charger le profil.");
@@ -2868,6 +2882,8 @@ export default function EntrepreneurSmartScanTestPage() {
         inviteToken: linkPayload.inviteToken || null,
         fullUrl: linkPayload.fullUrl || null,
         previewUrl: linkPayload.previewUrl || null,
+        legacyShortUrl: linkPayload.legacyShortUrl || null,
+        legacyFullUrl: linkPayload.legacyFullUrl || null,
       });
       setApiErrorMessage("");
     } catch (error) {
@@ -3307,7 +3323,7 @@ export default function EntrepreneurSmartScanTestPage() {
                       Code court: <span className="font-black tracking-wider">{selfScoutLink.shortCode}</span>
                     </p>
                   ) : null}
-                  <p className="mt-1 text-[10px] font-black uppercase tracking-[0.08em] text-white/70">Lien actif (web app fonctionnelle)</p>
+                  <p className="mt-1 text-[10px] font-black uppercase tracking-[0.08em] text-white/70">Lien actif (nouveau design)</p>
                   {selfScoutLink.shortUrl ? <p className="mt-1 break-all text-[11px] text-cyan-100/90">{selfScoutLink.shortUrl}</p> : null}
                   {selfScoutLink.fullUrl && selfScoutLink.fullUrl !== selfScoutLink.shortUrl ? (
                     <p className="mt-1 break-all text-[11px] text-emerald-100/85">{selfScoutLink.fullUrl}</p>
@@ -3318,12 +3334,12 @@ export default function EntrepreneurSmartScanTestPage() {
                     disabled={isCopyingSelfScoutLink}
                     className="mt-2 h-8 rounded-lg border border-cyan-300/40 bg-cyan-300/15 px-3 text-[10px] font-black uppercase tracking-[0.08em] text-cyan-100 disabled:opacity-60"
                   >
-                    {isCopyingSelfScoutLink ? "Copie..." : "Copier lien actif"}
+                    {isCopyingSelfScoutLink ? "Copie..." : "Copier lien nouveau design"}
                   </button>
-                  {selfScoutLink.previewUrl ? (
+                  {selfScoutLink.legacyShortUrl || selfScoutLink.legacyFullUrl ? (
                     <div className="mt-2 rounded-lg border border-white/15 bg-black/20 px-2 py-2">
-                      <p className="text-[10px] font-black uppercase tracking-[0.08em] text-white/70">Lien preview design (maquette)</p>
-                      <p className="mt-1 break-all text-[10px] text-white/65">{selfScoutLink.previewUrl}</p>
+                      <p className="text-[10px] font-black uppercase tracking-[0.08em] text-white/70">Lien ancien portail</p>
+                      <p className="mt-1 break-all text-[10px] text-white/65">{selfScoutLink.legacyShortUrl || selfScoutLink.legacyFullUrl}</p>
                     </div>
                   ) : null}
                 </div>
@@ -4059,7 +4075,7 @@ export default function EntrepreneurSmartScanTestPage() {
                     Code court: <span className="font-black tracking-wider">{selfScoutLink.shortCode}</span>
                   </p>
                 ) : null}
-                <p className="mt-1 text-[10px] font-black uppercase tracking-[0.08em] text-white/70">Lien actif (web app fonctionnelle)</p>
+                <p className="mt-1 text-[10px] font-black uppercase tracking-[0.08em] text-white/70">Lien actif (nouveau design)</p>
                 {selfScoutLink.shortUrl ? <p className="mt-1 break-all text-[11px] text-cyan-100/90">{selfScoutLink.shortUrl}</p> : null}
                 {selfScoutLink.fullUrl && selfScoutLink.fullUrl !== selfScoutLink.shortUrl ? (
                   <p className="mt-1 break-all text-[11px] text-emerald-100/85">{selfScoutLink.fullUrl}</p>
@@ -4070,12 +4086,12 @@ export default function EntrepreneurSmartScanTestPage() {
                   disabled={isCopyingSelfScoutLink}
                   className="mt-2 h-8 rounded-lg border border-cyan-300/40 bg-cyan-300/15 px-3 text-[10px] font-black uppercase tracking-[0.08em] text-cyan-100 disabled:opacity-60"
                 >
-                  {isCopyingSelfScoutLink ? "Copie..." : "Copier lien actif"}
+                  {isCopyingSelfScoutLink ? "Copie..." : "Copier lien nouveau design"}
                 </button>
-                {selfScoutLink.previewUrl ? (
+                {selfScoutLink.legacyShortUrl || selfScoutLink.legacyFullUrl ? (
                   <div className="mt-2 rounded-lg border border-white/15 bg-black/20 px-2 py-2">
-                    <p className="text-[10px] font-black uppercase tracking-[0.08em] text-white/70">Lien preview design (maquette)</p>
-                    <p className="mt-1 break-all text-[10px] text-white/65">{selfScoutLink.previewUrl}</p>
+                    <p className="text-[10px] font-black uppercase tracking-[0.08em] text-white/70">Lien ancien portail</p>
+                    <p className="mt-1 break-all text-[10px] text-white/65">{selfScoutLink.legacyShortUrl || selfScoutLink.legacyFullUrl}</p>
                   </div>
                 ) : null}
               </div>
