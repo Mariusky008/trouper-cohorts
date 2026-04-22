@@ -218,6 +218,15 @@ type SmartScanEclaireurLink = {
   legacyShortUrl?: string | null;
   legacyFullUrl?: string | null;
 };
+type SmartScanIncomingReferral = {
+  id: string;
+  scout_id: string;
+  contact_name: string;
+  project_type: string | null;
+  status: string;
+  created_at: string;
+  scout_name: string | null;
+};
 
 const PENDING_WHATSAPP_CONTEXT_KEY = "popey-human:smart-scan:pending-whatsapp-context";
 const SMART_SCAN_SESSION_KEY = "popey-human:smart-scan:scan-session";
@@ -832,9 +841,14 @@ export default function EntrepreneurSmartScanTestPage() {
   const [manualScoutName, setManualScoutName] = useState("");
   const [manualScoutCity, setManualScoutCity] = useState("");
   const [manualScoutPhone, setManualScoutPhone] = useState("");
+  const [manualScoutFirstName, setManualScoutFirstName] = useState("");
+  const [manualScoutLastName, setManualScoutLastName] = useState("");
+  const [manualScoutMetier, setManualScoutMetier] = useState("");
   const [eclaireurLinksByContactId, setEclaireurLinksByContactId] = useState<Record<string, SmartScanEclaireurLink>>({});
   const [loadingEclaireurLinkContactId, setLoadingEclaireurLinkContactId] = useState<string | null>(null);
   const [copyingEclaireurLinkContactId, setCopyingEclaireurLinkContactId] = useState<string | null>(null);
+  const [incomingReferrals, setIncomingReferrals] = useState<SmartScanIncomingReferral[]>([]);
+  const [isIncomingReferralsLoading, setIsIncomingReferralsLoading] = useState(false);
   const contactImportInputRef = useRef<HTMLInputElement | null>(null);
   const localDayNumber = useMemo(() => getLocalDayNumber(), []);
 
@@ -992,6 +1006,37 @@ export default function EntrepreneurSmartScanTestPage() {
       setSelectedImportedScoutId(importedScoutCandidates[0].id);
     }
   }, [importedScoutCandidates, selectedImportedScoutId]);
+
+  useEffect(() => {
+    if (!showEclaireursPanel) return;
+    let cancelled = false;
+    async function loadIncomingReferrals() {
+      try {
+        setIsIncomingReferralsLoading(true);
+        const response = await fetch("/api/popey-human/smart-scan/scout-referrals", { method: "GET", cache: "no-store" });
+        const payload = (await response.json().catch(() => ({}))) as { error?: string; referrals?: SmartScanIncomingReferral[] };
+        if (!response.ok) {
+          throw new Error(payload.error || "Impossible de charger les opportunites entrantes.");
+        }
+        if (!cancelled) {
+          setIncomingReferrals(payload.referrals || []);
+        }
+      } catch (error) {
+        if (!cancelled) {
+          const message = error instanceof Error ? error.message : "Impossible de charger les opportunites entrantes.";
+          setApiErrorMessage(message);
+        }
+      } finally {
+        if (!cancelled) {
+          setIsIncomingReferralsLoading(false);
+        }
+      }
+    }
+    void loadIncomingReferrals();
+    return () => {
+      cancelled = true;
+    };
+  }, [showEclaireursPanel]);
   const template = useMemo(
     () =>
       selectedAction
@@ -2387,6 +2432,22 @@ export default function EntrepreneurSmartScanTestPage() {
   }
 
   function addScoutFromImportedSelection() {
+    const hasManualDraft =
+      manualScoutFirstName.trim().length > 0 ||
+      manualScoutLastName.trim().length > 0 ||
+      manualScoutMetier.trim().length > 0 ||
+      manualScoutCity.trim().length > 0 ||
+      manualScoutPhone.trim().length > 0;
+    if (hasManualDraft) {
+      void importSingleContactManually({
+        firstName: manualScoutFirstName,
+        lastName: manualScoutLastName,
+        metier: manualScoutMetier,
+        city: manualScoutCity,
+        phone: manualScoutPhone,
+      });
+      return;
+    }
     if (!hasImportedScoutCandidates) {
       setApiErrorMessage("Aucun contact disponible a ajouter pour le moment.");
       return;
@@ -2396,7 +2457,7 @@ export default function EntrepreneurSmartScanTestPage() {
       setApiErrorMessage("Choisis d'abord un contact importé.");
       return;
     }
-    const contact = getContactById(selectedId);
+    const contact = getContactById(selectedId) || getContactById(importedScoutCandidates[0]?.id || "");
     if (!contact) {
       setApiErrorMessage("Contact importé introuvable.");
       return;
@@ -2482,10 +2543,20 @@ export default function EntrepreneurSmartScanTestPage() {
     }
   }
 
-  function importSingleContactManually() {
-    const name = manualScoutName.trim();
-    const city = manualScoutCity.trim() || "Inconnue";
-    const phone = manualScoutPhone.trim();
+  async function importSingleContactManually(options?: {
+    firstName?: string;
+    lastName?: string;
+    metier?: string;
+    city?: string;
+    phone?: string;
+  }) {
+    const firstName = String(options?.firstName || "").trim();
+    const lastName = String(options?.lastName || "").trim();
+    const fallbackName = manualScoutName.trim();
+    const name = [firstName, lastName].filter(Boolean).join(" ").trim() || fallbackName;
+    const metier = String(options?.metier || "").trim();
+    const city = String(options?.city ?? manualScoutCity).trim() || "Inconnue";
+    const phone = String(options?.phone ?? manualScoutPhone).trim();
     if (!name) {
       setApiErrorMessage("Renseigne au moins le nom du contact.");
       return;
@@ -2496,7 +2567,7 @@ export default function EntrepreneurSmartScanTestPage() {
       name,
       phone: phone || null,
       city,
-      companyHint: "Ajout manuel",
+      companyHint: metier || "Ajout manuel",
       capsule: "Ajoute manuellement",
       communityKnownBy: 1,
       dominantTags: ["✍️ Ajout manuel", "🤝 A qualifier"],
@@ -2510,38 +2581,42 @@ export default function EntrepreneurSmartScanTestPage() {
     setManualScoutName("");
     setManualScoutCity("");
     setManualScoutPhone("");
+    setManualScoutFirstName("");
+    setManualScoutLastName("");
+    setManualScoutMetier("");
     promoteContactToEclaireur(newContact);
-
-    void postSmartScan("import-contacts", {
-      source: "manual-single",
-      contacts: [
-        {
-          externalContactRef: newContact.id,
-          fullName: newContact.name,
-          city: newContact.city || null,
-          companyHint: newContact.companyHint || null,
-          phoneE164: normalizePhoneForWhatsApp(newContact.phone) || newContact.phone || null,
-          importIndex: 0,
-        },
-      ],
-    })
-      .then(() =>
-        postSmartScan("session-progress", {
-          queueIndex: 0,
-          queueSize: dailyQueueCount,
-          importedTotal: importedTotalCount + 1,
-        }),
-      )
-      .then(() =>
-        postSmartScan("promote-eclaireur", {
-          externalContactRef: newContact.id,
-          fullName: newContact.name,
-          city: newContact.city,
-          companyHint: newContact.companyHint,
-        }),
-      )
-      .then(() => refreshSmartScanSnapshot())
-      .catch(() => null);
+    try {
+      await postSmartScan("import-contacts", {
+        source: "manual-single",
+        contacts: [
+          {
+            externalContactRef: newContact.id,
+            fullName: newContact.name,
+            city: newContact.city || null,
+            companyHint: newContact.companyHint || null,
+            phoneE164: normalizePhoneForWhatsApp(newContact.phone) || newContact.phone || null,
+            importIndex: 0,
+          },
+        ],
+      });
+      await postSmartScan("session-progress", {
+        queueIndex: 0,
+        queueSize: dailyQueueCount,
+        importedTotal: importedTotalCount + 1,
+      });
+      await postSmartScan("promote-eclaireur", {
+        externalContactRef: newContact.id,
+        fullName: newContact.name,
+        city: newContact.city,
+        companyHint: newContact.companyHint,
+      });
+      await refreshSmartScanSnapshot();
+      await ensureEclaireurLink(newContact.id, { autoCopy: true });
+      setApiErrorMessage("Eclaireur manuel ajoute et lien copie.");
+      setTimeout(() => setApiErrorMessage(""), 1600);
+    } catch {
+      setApiErrorMessage("Ajout manuel effectue mais synchronisation serveur incomplète.");
+    }
   }
 
   async function openEclaireurTemplates(contactId: string) {
@@ -3209,14 +3284,17 @@ export default function EntrepreneurSmartScanTestPage() {
           </div>
         </nav>
         {showMyProfilePanel && (
-          <div className="fixed inset-0 z-[55] flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm">
-            <section className="w-full max-w-sm rounded-3xl border border-white/20 bg-[#0E1430]/95 p-4">
-              <div className="flex items-center justify-between">
+          <div className="fixed inset-0 z-[55] flex items-start justify-center bg-black/60 px-4 pb-4 backdrop-blur-sm">
+            <section
+              className="mt-2 w-full max-w-sm max-h-[calc(100dvh-24px)] overflow-y-auto rounded-3xl border border-white/20 bg-[#0E1430]/95 p-4"
+              style={{ paddingTop: "calc(env(safe-area-inset-top) + 10px)" }}
+            >
+              <div className="sticky top-0 z-10 -mx-4 flex items-center justify-between bg-[#0E1430]/95 px-4 pb-2">
                 <p className="text-xs font-black uppercase tracking-[0.12em] text-cyan-200">Profil</p>
                 <button
                   type="button"
                   onClick={() => setShowMyProfilePanel(false)}
-                  className="h-8 w-8 rounded-full border border-white/20 bg-white/10 text-xs"
+                  className="relative z-20 h-11 w-11 rounded-full border border-white/25 bg-white/15 text-sm"
                 >
                   ✕
                 </button>
@@ -3351,18 +3429,12 @@ export default function EntrepreneurSmartScanTestPage() {
                   ) : null}
                   <button
                     type="button"
-                    onClick={() => copySelfScoutLink(selfScoutLink.shortUrl || selfScoutLink.fullUrl)}
+                    onClick={() => copySelfScoutLink(selfScoutLink.previewUrl || selfScoutLink.shortUrl || selfScoutLink.fullUrl)}
                     disabled={isCopyingSelfScoutLink}
                     className="mt-2 h-8 rounded-lg border border-cyan-300/40 bg-cyan-300/15 px-3 text-[10px] font-black uppercase tracking-[0.08em] text-cyan-100 disabled:opacity-60"
                   >
                     {isCopyingSelfScoutLink ? "Copie..." : "Copier lien nouveau design"}
                   </button>
-                  {selfScoutLink.legacyShortUrl || selfScoutLink.legacyFullUrl ? (
-                    <div className="mt-2 rounded-lg border border-white/15 bg-black/20 px-2 py-2">
-                      <p className="text-[10px] font-black uppercase tracking-[0.08em] text-white/70">Lien ancien portail</p>
-                      <p className="mt-1 break-all text-[10px] text-white/65">{selfScoutLink.legacyShortUrl || selfScoutLink.legacyFullUrl}</p>
-                    </div>
-                  ) : null}
                 </div>
               )}
               <div className="mt-3 grid grid-cols-2 gap-2">
@@ -3439,7 +3511,9 @@ export default function EntrepreneurSmartScanTestPage() {
                 </div>
                 <button
                   type="button"
-                  onClick={importSingleContactManually}
+                  onClick={() => {
+                    void importSingleContactManually();
+                  }}
                   className="h-9 rounded-xl border border-emerald-300/35 bg-emerald-300/15 text-[11px] font-black uppercase tracking-wide text-emerald-100"
                 >
                   Ajouter ce contact + eclaireur
@@ -3961,14 +4035,17 @@ export default function EntrepreneurSmartScanTestPage() {
       </nav>
 
       {showMyProfilePanel && (
-        <div className="fixed inset-0 z-[50] flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm">
-          <section className="w-full max-w-sm rounded-3xl border border-white/20 bg-[#0E1430]/95 p-4">
-            <div className="flex items-center justify-between">
+        <div className="fixed inset-0 z-[50] flex items-start justify-center bg-black/60 px-4 pb-4 backdrop-blur-sm">
+          <section
+            className="mt-2 w-full max-w-sm max-h-[calc(100dvh-24px)] overflow-y-auto rounded-3xl border border-white/20 bg-[#0E1430]/95 p-4"
+            style={{ paddingTop: "calc(env(safe-area-inset-top) + 10px)" }}
+          >
+            <div className="sticky top-0 z-10 -mx-4 flex items-center justify-between bg-[#0E1430]/95 px-4 pb-2">
               <p className="text-xs font-black uppercase tracking-[0.12em] text-cyan-200">Profil</p>
               <button
                 type="button"
                 onClick={() => setShowMyProfilePanel(false)}
-                className="h-8 w-8 rounded-full border border-white/20 bg-white/10 text-xs"
+                className="relative z-20 h-11 w-11 rounded-full border border-white/25 bg-white/15 text-sm"
               >
                 ✕
               </button>
@@ -4103,18 +4180,12 @@ export default function EntrepreneurSmartScanTestPage() {
                 ) : null}
                 <button
                   type="button"
-                  onClick={() => copySelfScoutLink(selfScoutLink.shortUrl || selfScoutLink.fullUrl)}
+                  onClick={() => copySelfScoutLink(selfScoutLink.previewUrl || selfScoutLink.shortUrl || selfScoutLink.fullUrl)}
                   disabled={isCopyingSelfScoutLink}
                   className="mt-2 h-8 rounded-lg border border-cyan-300/40 bg-cyan-300/15 px-3 text-[10px] font-black uppercase tracking-[0.08em] text-cyan-100 disabled:opacity-60"
                 >
                   {isCopyingSelfScoutLink ? "Copie..." : "Copier lien nouveau design"}
                 </button>
-                {selfScoutLink.legacyShortUrl || selfScoutLink.legacyFullUrl ? (
-                  <div className="mt-2 rounded-lg border border-white/15 bg-black/20 px-2 py-2">
-                    <p className="text-[10px] font-black uppercase tracking-[0.08em] text-white/70">Lien ancien portail</p>
-                    <p className="mt-1 break-all text-[10px] text-white/65">{selfScoutLink.legacyShortUrl || selfScoutLink.legacyFullUrl}</p>
-                  </div>
-                ) : null}
               </div>
             )}
             <div className="mt-3 grid grid-cols-2 gap-2">
@@ -4191,7 +4262,9 @@ export default function EntrepreneurSmartScanTestPage() {
               </div>
               <button
                 type="button"
-                onClick={importSingleContactManually}
+                onClick={() => {
+                  void importSingleContactManually();
+                }}
                 className="h-9 rounded-xl border border-emerald-300/35 bg-emerald-300/15 text-[11px] font-black uppercase tracking-wide text-emerald-100"
               >
                 Ajouter ce contact + eclaireur
@@ -4443,11 +4516,46 @@ export default function EntrepreneurSmartScanTestPage() {
               <button
                 type="button"
                 onClick={addScoutFromImportedSelection}
-                disabled={!hasImportedScoutCandidates}
+                disabled={!hasImportedScoutCandidates && !manualScoutFirstName.trim() && !manualScoutLastName.trim() && !manualScoutMetier.trim() && !manualScoutCity.trim() && !manualScoutPhone.trim()}
                 className="h-9 rounded-lg border border-cyan-300/35 bg-cyan-300/15 px-3 text-[10px] font-black uppercase tracking-[0.08em] text-cyan-100"
               >
                 Ajouter +
               </button>
+            </div>
+            <div className="mt-2 rounded-lg border border-white/15 bg-black/20 p-2">
+              <p className="text-[10px] font-black uppercase tracking-[0.08em] text-white/70">Ou ajouter manuellement (ajout + eclaireur direct)</p>
+              <div className="mt-2 grid grid-cols-2 gap-2">
+                <input
+                  value={manualScoutFirstName}
+                  onChange={(event) => setManualScoutFirstName(event.target.value)}
+                  placeholder="Prenom"
+                  className="h-8 rounded-lg border border-white/15 bg-black/30 px-2 text-[11px]"
+                />
+                <input
+                  value={manualScoutLastName}
+                  onChange={(event) => setManualScoutLastName(event.target.value)}
+                  placeholder="Nom"
+                  className="h-8 rounded-lg border border-white/15 bg-black/30 px-2 text-[11px]"
+                />
+                <input
+                  value={manualScoutMetier}
+                  onChange={(event) => setManualScoutMetier(event.target.value)}
+                  placeholder="Metier"
+                  className="h-8 rounded-lg border border-white/15 bg-black/30 px-2 text-[11px]"
+                />
+                <input
+                  value={manualScoutCity}
+                  onChange={(event) => setManualScoutCity(event.target.value)}
+                  placeholder="Ville"
+                  className="h-8 rounded-lg border border-white/15 bg-black/30 px-2 text-[11px]"
+                />
+                <input
+                  value={manualScoutPhone}
+                  onChange={(event) => setManualScoutPhone(event.target.value)}
+                  placeholder="Telephone"
+                  className="col-span-2 h-8 rounded-lg border border-white/15 bg-black/30 px-2 text-[11px]"
+                />
+              </div>
             </div>
             <p className="mt-1 text-[10px] text-white/70">
               {hasImportedScoutCandidates
@@ -4457,6 +4565,25 @@ export default function EntrepreneurSmartScanTestPage() {
             {apiErrorMessage ? (
               <p className="mt-2 rounded-lg border border-amber-300/35 bg-amber-300/10 px-2 py-1 text-[11px] text-amber-100">{apiErrorMessage}</p>
             ) : null}
+            <div className="mt-2 rounded-xl border border-fuchsia-300/30 bg-fuchsia-300/10 px-3 py-2">
+              <p className="text-[10px] font-black uppercase tracking-[0.08em] text-fuchsia-100">Opportunites entrantes Eclaireurs</p>
+              {isIncomingReferralsLoading ? (
+                <p className="mt-1 text-[11px] text-white/70">Chargement...</p>
+              ) : incomingReferrals.length === 0 ? (
+                <p className="mt-1 text-[11px] text-white/70">Aucune opportunite recu pour le moment.</p>
+              ) : (
+                <div className="mt-2 space-y-1">
+                  {incomingReferrals.slice(0, 4).map((item) => (
+                    <div key={`incoming-${item.id}`} className="rounded-lg border border-white/15 bg-black/20 px-2 py-1">
+                      <p className="text-[11px] font-black text-white">{item.contact_name}</p>
+                      <p className="text-[10px] text-white/70">
+                        {item.scout_name || "Eclaireur"} • {item.project_type || "Projet non precise"} • {item.status}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
             <div className="mt-3 max-h-[calc(100dvh-190px)] space-y-2 overflow-y-auto sm:max-h-[58vh]">
               {eclaireursList.length === 0 && <p className="text-sm text-white/70">Aucun eclaireur actif pour l instant.</p>}
               {eclaireursList.map((contact) => {
