@@ -2410,9 +2410,10 @@ export default function EntrepreneurSmartScanTestPage() {
     });
   }
 
-  async function ensureEclaireurLink(contactId: string) {
+  async function ensureEclaireurLink(contactId: string, options?: { autoCopy?: boolean }) {
     const fullContact = getContactById(contactId);
     const contact = fullContact || eclaireurDirectory[contactId] || null;
+    const autoCopy = options?.autoCopy === true;
     try {
       setLoadingEclaireurLinkContactId(contactId);
       const response = await fetch("/api/popey-human/smart-scan/eclaireur-link", {
@@ -2447,13 +2448,21 @@ export default function EntrepreneurSmartScanTestPage() {
           legacyFullUrl: payload.legacyFullUrl || null,
         },
       }));
-      setApiErrorMessage("Lien eclaireur genere.");
-      setTimeout(() => setApiErrorMessage(""), 1200);
+      const generatedUrl = payload.shortUrl || payload.fullUrl || null;
+      if (autoCopy && generatedUrl) {
+        setCopyingEclaireurLinkContactId(contactId);
+        await copyTextToClipboard(generatedUrl);
+        setApiErrorMessage("Lien eclaireur genere et copie.");
+      } else {
+        setApiErrorMessage("Lien eclaireur genere.");
+      }
+      setTimeout(() => setApiErrorMessage(""), 1500);
     } catch (error) {
       const message = error instanceof Error ? error.message : "Impossible de generer le lien eclaireur.";
       setApiErrorMessage(message);
     } finally {
       setLoadingEclaireurLinkContactId((prev) => (prev === contactId ? null : prev));
+      setCopyingEclaireurLinkContactId((prev) => (prev === contactId ? null : prev));
     }
   }
 
@@ -4502,11 +4511,15 @@ export default function EntrepreneurSmartScanTestPage() {
                     ) : (
                       <button
                         type="button"
-                        onClick={() => ensureEclaireurLink(contact.id)}
+                        onClick={() => ensureEclaireurLink(contact.id, { autoCopy: true })}
                         disabled={loadingEclaireurLinkContactId === contact.id}
                         className="mt-2 h-7 rounded-lg border border-cyan-300/35 bg-cyan-300/15 px-2 text-[10px] font-black uppercase tracking-[0.08em] text-cyan-100 disabled:opacity-60"
                       >
-                        {loadingEclaireurLinkContactId === contact.id ? "Generation..." : "Generer lien eclaireur"}
+                        {loadingEclaireurLinkContactId === contact.id
+                          ? "Generation..."
+                          : copyingEclaireurLinkContactId === contact.id
+                            ? "Copie..."
+                            : "Generer lien eclaireur"}
                       </button>
                     )}
                   </div>
