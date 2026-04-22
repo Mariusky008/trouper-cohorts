@@ -1784,6 +1784,8 @@ export default function EntrepreneurSmartScanTestPage() {
       return;
     }
     if (action === "eclaireur" || action === "package" || action === "exclients") {
+      // Daily-card action: clear any stale profile-origin context.
+      setActionFromProfileContactId(null);
       setLaunchingAction(action);
       setTimeout(() => {
         setLaunchingAction(null);
@@ -1826,12 +1828,13 @@ export default function EntrepreneurSmartScanTestPage() {
     }
     setModalErrorMessage("");
     const payload = createTransitionPayload(action);
+    const profileOriginContactId = actionFromProfileContactId === current.id ? actionFromProfileContactId : null;
     const awaitingConfirm: TransitionAwaitingConfirmState = {
       action,
       countAsSent: true,
       sentInHistory: true,
-      stayOnCurrentContact: Boolean(actionFromProfileContactId),
-      returnToProfileContactId: actionFromProfileContactId,
+      stayOnCurrentContact: Boolean(profileOriginContactId),
+      returnToProfileContactId: profileOriginContactId,
     };
     let whatsappUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(draftMessage)}`;
 
@@ -1852,25 +1855,11 @@ export default function EntrepreneurSmartScanTestPage() {
       // Fallback URL is already set and can still be used.
     }
 
-    if (typeof window !== "undefined") {
-      window.open(whatsappUrl, "_blank");
-    }
     setShowTemplateModal(false);
     setAiGenerationSource(null);
     setAiPromptVersion(null);
     setAiGeneratedAt(null);
-    if (typeof document !== "undefined" && document.visibilityState === "visible") {
-      clearPendingWhatsAppContext();
-      setTransitionScreen({
-        ...payload,
-        manual: true,
-        ctaLabel: "Passez au prochain profil",
-      });
-      setTransitionAwaitingConfirm(awaitingConfirm);
-      return;
-    }
-
-    savePendingWhatsAppContext({
+    const pendingContext: PendingWhatsAppContext = {
       transition: {
         ...payload,
         manual: true,
@@ -1879,10 +1868,14 @@ export default function EntrepreneurSmartScanTestPage() {
       awaitingConfirm,
       contactId: current.id,
       createdAt: Date.now(),
-    });
+    };
+    savePendingWhatsAppContext(pendingContext);
     setPendingTransition(payload);
     setPendingFinalizeAction(action);
-    setPendingReturnProfileContactId(actionFromProfileContactId);
+    setPendingReturnProfileContactId(profileOriginContactId);
+    if (typeof window !== "undefined") {
+      window.open(whatsappUrl, "_blank");
+    }
   }
 
   function saveQualifierAndReturn() {
