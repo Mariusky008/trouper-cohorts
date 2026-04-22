@@ -3,6 +3,24 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 
+const OPPORTUNITY_TARGETS = {
+  Dax: [
+    { metier: "Courtier", rewardType: "percent", rewardValue: 12, delayDays: 45 },
+    { metier: "Agent immo", rewardType: "percent", rewardValue: 10, delayDays: 50 },
+    { metier: "Diagnostiqueur", rewardType: "fixed", rewardValue: 180, delayDays: 30 },
+  ],
+  "Saint-Paul-les-Dax": [
+    { metier: "Courtier", rewardType: "percent", rewardValue: 11, delayDays: 40 },
+    { metier: "Agent immo", rewardType: "fixed", rewardValue: 350, delayDays: 55 },
+    { metier: "Diagnostiqueur", rewardType: "fixed", rewardValue: 160, delayDays: 28 },
+  ],
+  Narrosse: [
+    { metier: "Courtier", rewardType: "percent", rewardValue: 9, delayDays: 48 },
+    { metier: "Agent immo", rewardType: "percent", rewardValue: 8, delayDays: 60 },
+    { metier: "Diagnostiqueur", rewardType: "fixed", rewardValue: 140, delayDays: 35 },
+  ],
+} as const;
+
 export default function EclaireurWebappPreviewPage() {
   const [activeScreen, setActiveScreen] = useState(0);
   const [touchStartX, setTouchStartX] = useState<number | null>(null);
@@ -10,7 +28,7 @@ export default function EclaireurWebappPreviewPage() {
 
   const screens = useMemo(
     () => [
-      { label: "Ecran 1 - Lien Magique", content: <ScreenMagicLink /> },
+      { label: "Ecran 1 - Onboarding Express", content: <ScreenMagicLink /> },
       { label: "Ecran 2 - Depot Opportunity", content: <ScreenSubmitOpportunity /> },
       { label: "Ecran 3 - Suivi & Commission", content: <ScreenTrackingCommission /> },
     ],
@@ -120,9 +138,12 @@ function ScreenMagicLink() {
       <p className="mt-2 text-sm text-white/80">Tu nous envoies une opportunite, on traite le dossier, tu suis tout en direct.</p>
 
       <div className="mt-4 rounded-2xl border border-white/20 bg-black/25 p-3">
-        <p className="text-[10px] uppercase tracking-[0.12em] text-white/70">Ton lien magique actif</p>
-        <p className="mt-1 text-sm font-black text-cyan-100">popey.academy/eclaireur/AB12-CD34</p>
-        <p className="mt-1 text-xs text-white/70">Aucune connexion complexe, acces direct en 1 tap.</p>
+        <p className="text-[10px] uppercase tracking-[0.12em] text-white/70">Comment ca marche</p>
+        <ul className="mt-2 space-y-1.5 text-xs text-white/80">
+          <li>1. Tu detectes un besoin dans ton entourage.</li>
+          <li>2. Tu soumets l opportunite en moins de 30 secondes.</li>
+          <li>3. Tu suis le statut et ta commission en temps reel.</li>
+        </ul>
       </div>
 
       <div className="mt-4 grid grid-cols-2 gap-2">
@@ -138,13 +159,60 @@ function ScreenMagicLink() {
 }
 
 function ScreenSubmitOpportunity() {
+  const cities = useMemo(() => Object.keys(OPPORTUNITY_TARGETS) as Array<keyof typeof OPPORTUNITY_TARGETS>, []);
+  const [city, setCity] = useState<keyof typeof OPPORTUNITY_TARGETS>(cities[0]);
+  const metiers = useMemo(() => OPPORTUNITY_TARGETS[city].map((item) => item.metier), [city]);
+  const [metier, setMetier] = useState<string>(metiers[0]);
+
+  const selectedTarget = useMemo(() => {
+    return OPPORTUNITY_TARGETS[city].find((item) => item.metier === metier) || OPPORTUNITY_TARGETS[city][0];
+  }, [city, metier]);
+
+  const rewardLabel =
+    selectedTarget.rewardType === "percent"
+      ? `${selectedTarget.rewardValue}%`
+      : `fixe ${selectedTarget.rewardValue} EUR`;
+
+  function handleCityChange(nextCity: keyof typeof OPPORTUNITY_TARGETS) {
+    setCity(nextCity);
+    const firstMetier = OPPORTUNITY_TARGETS[nextCity][0]?.metier || "";
+    setMetier(firstMetier);
+  }
+
   return (
     <div className="h-full rounded-[24px] border border-emerald-300/30 bg-[radial-gradient(120%_120%_at_0%_0%,rgba(24,120,78,0.45)_0%,rgba(16,35,34,0.9)_48%,rgba(9,15,18,1)_100%)] p-4">
       <p className="text-[10px] font-black uppercase tracking-[0.14em] text-emerald-200/90">Nouvelle opportunite</p>
       <h2 className="mt-2 text-2xl font-black leading-tight">Formulaire 30 secondes</h2>
 
       <div className="mt-4 space-y-2">
-        <InputMock label="Pour qui ?" value="Trio Habitat (Immo + Courtier + Travaux)" />
+        <div>
+          <p className="mb-1 text-[10px] font-black uppercase tracking-[0.12em] text-white/70">Pour qui ? - Metier</p>
+          <select
+            value={metier}
+            onChange={(event) => setMetier(event.target.value)}
+            className="h-11 w-full rounded-xl border border-white/20 bg-black/25 px-3 text-sm text-white/90"
+          >
+            {metiers.map((item) => (
+              <option key={item} value={item} className="bg-[#0C1224]">
+                {item}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <p className="mb-1 text-[10px] font-black uppercase tracking-[0.12em] text-white/70">Ville cible</p>
+          <select
+            value={city}
+            onChange={(event) => handleCityChange(event.target.value as keyof typeof OPPORTUNITY_TARGETS)}
+            className="h-11 w-full rounded-xl border border-white/20 bg-black/25 px-3 text-sm text-white/90"
+          >
+            {cities.map((item) => (
+              <option key={item} value={item} className="bg-[#0C1224]">
+                {item}
+              </option>
+            ))}
+          </select>
+        </div>
         <InputMock label="Nom du contact" value="Nicolas Martin" />
         <InputMock label="Telephone" value="06 24 78 14 32" />
         <InputMock label="Projet detecte" value="Veut acheter avant l ete" />
@@ -152,7 +220,9 @@ function ScreenSubmitOpportunity() {
 
       <div className="mt-4 rounded-2xl border border-[#EAC886]/40 bg-[#EAC886]/12 p-3">
         <p className="text-[10px] font-black uppercase tracking-[0.12em] text-[#F8E7BF]">Motivation instantanee</p>
-        <p className="mt-1 text-sm font-bold text-[#F8E7BF]">Commission affichee: 12% | Delai moyen: 45 jours</p>
+        <p className="mt-1 text-sm font-bold text-[#F8E7BF]">
+          Commission affichee: {rewardLabel} | Delai moyen: {selectedTarget.delayDays} jours
+        </p>
       </div>
 
       <button className="mt-4 h-12 w-full rounded-2xl bg-gradient-to-r from-emerald-300 via-emerald-400 to-cyan-300 text-sm font-black uppercase tracking-wide text-black">
@@ -182,9 +252,16 @@ function ScreenTrackingCommission() {
         <TimelineItem label="Signature finale" date="En attente" />
       </ul>
 
+      <div className="mt-3 rounded-2xl border border-cyan-300/35 bg-cyan-500/12 p-3">
+        <p className="text-[10px] font-black uppercase tracking-[0.12em] text-cyan-100">Synchronisation membre metier</p>
+        <p className="mt-1 text-xs text-cyan-100/90">
+          Ces statuts sont traites et mis a jour dans la web app membre metier, puis synchronises automatiquement ici cote Eclaireur.
+        </p>
+      </div>
+
       <div className="mt-4 grid grid-cols-2 gap-2">
         <button className="h-10 rounded-xl border border-white/20 bg-white/10 text-xs font-black uppercase tracking-wide">Voir details</button>
-        <button className="h-10 rounded-xl bg-fuchsia-300 text-xs font-black uppercase tracking-wide text-black">Relancer membre</button>
+        <button className="h-10 rounded-xl bg-fuchsia-300 text-xs font-black uppercase tracking-wide text-black">Message WhatsApp</button>
       </div>
     </div>
   );
