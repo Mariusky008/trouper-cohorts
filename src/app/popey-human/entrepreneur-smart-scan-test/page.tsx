@@ -793,7 +793,7 @@ export default function EntrepreneurSmartScanTestPage() {
   const [eclaireurIds, setEclaireurIds] = useState<string[]>([]);
   const [eclaireurStatsStore, setEclaireurStatsStore] = useState<Record<string, { leadsDetected: number; leadsSigned: number; commissionTotalEur: number; lastNewsAtMs: number }>>({});
   const [eclaireurDirectory, setEclaireurDirectory] = useState<Record<string, { id: string; name: string; city: string }>>({});
-  const [eclaireurSort, setEclaireurSort] = useState<"last_news" | "leads_sent">("last_news");
+  const [eclaireurSort, setEclaireurSort] = useState<"inactive_oldest" | "inactive_recent">("inactive_oldest");
   const [selectedEclaireurTemplateContactId, setSelectedEclaireurTemplateContactId] = useState<string | null>(null);
   const [eclaireurTemplates, setEclaireurTemplates] = useState<Array<{ id: string; label: string; message: string }>>([]);
   const [importedContacts, setImportedContacts] = useState<DailyContact[]>([]);
@@ -940,10 +940,12 @@ export default function EntrepreneurSmartScanTestPage() {
     .sort((a, b) => {
       const statsA = eclaireurStatsStore[a.id];
       const statsB = eclaireurStatsStore[b.id];
-      if (eclaireurSort === "leads_sent") {
-        return (statsB?.leadsDetected || 0) - (statsA?.leadsDetected || 0);
+      const inactivityA = statsA?.lastNewsAtMs || 0;
+      const inactivityB = statsB?.lastNewsAtMs || 0;
+      if (eclaireurSort === "inactive_recent") {
+        return inactivityB - inactivityA;
       }
-      return (statsB?.lastNewsAtMs || 0) - (statsA?.lastNewsAtMs || 0);
+      return inactivityA - inactivityB;
     });
   const selectedEclaireurTemplateContact = selectedEclaireurTemplateContactId
     ? eclaireursList.find((contact) => contact.id === selectedEclaireurTemplateContactId) || eclaireurDirectory[selectedEclaireurTemplateContactId] || null
@@ -3949,11 +3951,11 @@ export default function EntrepreneurSmartScanTestPage() {
             <div className="mt-3 grid grid-cols-2 gap-2">
               <select
                 value={eclaireurSort}
-                onChange={(event) => setEclaireurSort(event.target.value as "last_news" | "leads_sent")}
+                onChange={(event) => setEclaireurSort(event.target.value as "inactive_oldest" | "inactive_recent")}
                 className="h-9 rounded-lg border border-white/15 bg-black/25 px-2 text-[11px]"
               >
-                <option value="last_news">Trier: Derniere nouvelle</option>
-                <option value="leads_sent">Trier: Leads envoyes</option>
+                <option value="inactive_oldest">Trier: Inactifs les plus anciens</option>
+                <option value="inactive_recent">Trier: Inactifs recents</option>
               </select>
               <div className="flex items-center justify-center rounded-lg border border-white/15 bg-black/25 px-2 text-[11px] text-white/75">
                 {eclaireursList.length} eclaireur(s)
@@ -3963,6 +3965,7 @@ export default function EntrepreneurSmartScanTestPage() {
               {eclaireursList.length === 0 && <p className="text-sm text-white/70">Aucun eclaireur actif pour l instant.</p>}
               {eclaireursList.map((contact) => {
                 const stats = eclaireurStatsStore[contact.id] || { leadsDetected: 0, leadsSigned: 0, commissionTotalEur: 0, lastNewsAtMs: 0 };
+                const daysSinceActivation = stats.lastNewsAtMs > 0 ? Math.max(0, Math.floor((Date.now() - stats.lastNewsAtMs) / (24 * 60 * 60 * 1000))) : null;
                 return (
                   <div key={`eclaireur-${contact.id}`} className="rounded-xl border border-emerald-300/25 bg-emerald-300/10 px-3 py-2">
                     <div className="flex items-center justify-between gap-2">
@@ -3983,7 +3986,9 @@ export default function EntrepreneurSmartScanTestPage() {
                       </button>
                     </div>
                     <p className="mt-1 text-[10px] text-white/80">
-                      Leads detectes: {stats.leadsDetected} • Leads signes: {stats.leadsSigned} • Commission: {stats.commissionTotalEur}€
+                      {daysSinceActivation === null
+                        ? "Activation: jamais activee"
+                        : `Activation: il y a ${daysSinceActivation} jour${daysSinceActivation > 1 ? "s" : ""}`}
                     </p>
                   </div>
                 );
