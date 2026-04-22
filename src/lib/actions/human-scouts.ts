@@ -16,6 +16,7 @@ type HumanScout = {
   user_id: string | null;
   first_name: string | null;
   last_name: string | null;
+  ville: string | null;
   phone: string | null;
   email: string | null;
   status: ScoutStatus;
@@ -77,7 +78,7 @@ export async function getMyScoutWorkspace() {
   const [{ data: scoutsData }, { data: referralsData }] = await Promise.all([
     supabaseAdmin
       .from("human_scouts")
-      .select("id,owner_member_id,user_id,first_name,last_name,phone,email,status,commission_rate,total_paid,pending_earnings,created_at,updated_at")
+      .select("id,owner_member_id,user_id,first_name,last_name,ville,phone,email,status,commission_rate,total_paid,pending_earnings,created_at,updated_at")
       .eq("owner_member_id", member.myMember.id)
       .order("created_at", { ascending: false }),
     supabaseAdmin
@@ -151,6 +152,7 @@ export async function createScoutInvite(formData: FormData) {
 
   const firstName = String(formData.get("first_name") || "").trim();
   const lastName = String(formData.get("last_name") || "").trim();
+  const ville = String(formData.get("ville") || "").trim();
   const phone = String(formData.get("phone") || "").trim();
   const email = String(formData.get("email") || "").trim().toLowerCase();
   const commissionRateRaw = String(formData.get("commission_rate") || "0.10").trim();
@@ -170,6 +172,7 @@ export async function createScoutInvite(formData: FormData) {
       owner_member_id: member.myMember.id,
       first_name: firstName || null,
       last_name: lastName || null,
+      ville: ville || null,
       phone: phone || null,
       email: email || null,
       status: "invited",
@@ -199,6 +202,102 @@ export async function createScoutInviteAction(formData: FormData): Promise<void>
   const result = await createScoutInvite(formData);
   if ("error" in result) redirect(withScoutStatus(currentUrl, "error", result.error || "Action impossible."));
   redirect(withScoutStatus(currentUrl, "success", "Éclaireur invité."));
+}
+
+export async function getMySelfScoutPortalLink() {
+  const member = await requireMemberUser();
+  if ("error" in member) {
+    return {
+      error: member.error,
+      scoutId: null as string | null,
+      inviteToken: null as string | null,
+      shortCode: null as string | null,
+    };
+  }
+
+  const supabaseAdmin = createAdminClient();
+  const { data: ownerMember } = await supabaseAdmin
+    .from("human_members")
+    .select("id,first_name,last_name,ville,phone")
+    .eq("id", member.myMember.id)
+    .maybeSingle();
+
+  let selfScout: HumanScout | null = null;
+  const { data: existingScouts } = await supabaseAdmin
+    .from("human_scouts")
+    .select("id,owner_member_id,user_id,first_name,last_name,ville,phone,email,status,commission_rate,total_paid,pending_earnings,created_at,updated_at")
+    .eq("owner_member_id", member.myMember.id)
+    .eq("user_id", member.user.id)
+    .order("created_at", { ascending: true })
+    .limit(1);
+
+  selfScout = ((existingScouts as HumanScout[] | null) || [])[0] || null;
+
+  if (!selfScout) {
+    const nowIso = new Date().toISOString();
+    const { data: insertedScout, error: insertError } = await supabaseAdmin
+      .from("human_scouts")
+      .insert({
+        owner_member_id: member.myMember.id,
+        user_id: member.user.id,
+        first_name: ownerMember?.first_name || null,
+        last_name: ownerMember?.last_name || null,
+        ville: ownerMember?.ville || null,
+        phone: ownerMember?.phone || null,
+        email: member.user.email || null,
+        status: "active",
+        commission_rate: 0.1,
+        total_paid: 0,
+        pending_earnings: 0,
+        updated_at: nowIso,
+      })
+      .select("id,owner_member_id,user_id,first_name,last_name,ville,phone,email,status,commission_rate,total_paid,pending_earnings,created_at,updated_at")
+      .single();
+    if (insertError || !insertedScout) {
+      return {
+        error: insertError?.message || "Impossible de créer votre accès Éclaireur personnel.",
+        scoutId: null as string | null,
+        inviteToken: null as string | null,
+        shortCode: null as string | null,
+      };
+    }
+    selfScout = insertedScout as HumanScout;
+  }
+
+  const { data: existingInvites } = await supabaseAdmin
+    .from("human_scout_invites")
+    .select("id,owner_member_id,scout_id,invite_token,short_code,expires_at,accepted_at,created_at")
+    .eq("owner_member_id", member.myMember.id)
+    .eq("scout_id", selfScout.id)
+    .order("created_at", { ascending: false })
+    .limit(1);
+
+  const latestInvite = ((existingInvites as HumanScoutInvite[] | null) || [])[0] || null;
+  const isExpired = latestInvite ? new Date(latestInvite.expires_at).getTime() <= Date.now() : true;
+  let resolvedInvite: HumanScoutInvite | null = latestInvite;
+  if (!resolvedInvite || isExpired) {
+    resolvedInvite = await createScoutInviteRecord({
+      supabaseAdmin,
+      ownerMemberId: member.myMember.id,
+      scoutId: selfScout.id,
+    });
+  }
+
+  if (!resolvedInvite) {
+    return {
+      error: "Impossible de générer votre lien Éclaireur personnel.",
+      scoutId: selfScout.id,
+      inviteToken: null as string | null,
+      shortCode: null as string | null,
+    };
+  }
+
+  return {
+    error: null as string | null,
+    scoutId: selfScout.id,
+    inviteToken: resolvedInvite.invite_token,
+    shortCode: resolvedInvite.short_code || null,
+  };
 }
 
 export async function refreshScoutInvite(formData: FormData) {
@@ -673,7 +772,7 @@ export async function getScoutPortalByToken(token: string) {
   const [{ data: scout }, { data: referrals }] = await Promise.all([
     supabaseAdmin
       .from("human_scouts")
-      .select("id,owner_member_id,user_id,first_name,last_name,phone,email,status,commission_rate,total_paid,pending_earnings,created_at,updated_at")
+      .select("id,owner_member_id,user_id,first_name,last_name,ville,phone,email,status,commission_rate,total_paid,pending_earnings,created_at,updated_at")
       .eq("id", inviteTyped.scout_id)
       .maybeSingle(),
     supabaseAdmin
@@ -879,7 +978,7 @@ export async function getAdminScoutSnapshot() {
   const [{ data: scoutsData }, { data: membersData }, { data: profilesData }, { data: referralsData }] = await Promise.all([
     supabaseAdmin
       .from("human_scouts")
-      .select("id,owner_member_id,user_id,first_name,last_name,phone,email,status,commission_rate,total_paid,pending_earnings,created_at,updated_at")
+      .select("id,owner_member_id,user_id,first_name,last_name,ville,phone,email,status,commission_rate,total_paid,pending_earnings,created_at,updated_at")
       .order("created_at", { ascending: false }),
     supabaseAdmin.from("human_members").select("id,user_id,first_name,last_name"),
     supabaseAdmin.from("profiles").select("id,display_name,trade"),
@@ -977,7 +1076,7 @@ export async function adminSendScoutNudge(formData: FormData) {
   if (mode === "single") {
     const { data: scout } = await supabaseAdmin
       .from("human_scouts")
-      .select("id,owner_member_id,user_id,first_name,last_name,phone,email,status,commission_rate,total_paid,pending_earnings,created_at,updated_at")
+      .select("id,owner_member_id,user_id,first_name,last_name,ville,phone,email,status,commission_rate,total_paid,pending_earnings,created_at,updated_at")
       .eq("id", scoutId)
       .maybeSingle();
     if (!scout) return { error: "Éclaireur introuvable." };
@@ -985,7 +1084,7 @@ export async function adminSendScoutNudge(formData: FormData) {
   } else {
     const { data: scoutsData } = await supabaseAdmin
       .from("human_scouts")
-      .select("id,owner_member_id,user_id,first_name,last_name,phone,email,status,commission_rate,total_paid,pending_earnings,created_at,updated_at")
+      .select("id,owner_member_id,user_id,first_name,last_name,ville,phone,email,status,commission_rate,total_paid,pending_earnings,created_at,updated_at")
       .eq("status", "active");
     const allScouts = (scoutsData as HumanScout[] | null) || [];
     const cutoff = Date.now() - 1000 * 60 * 60 * 24 * 14;

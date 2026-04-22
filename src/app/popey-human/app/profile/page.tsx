@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { getMyHumanProfile, updateMyHumanProfileAction } from "@/lib/actions/human-permissions";
+import { getMySelfScoutPortalLink } from "@/lib/actions/human-scouts";
+import { ScoutShareLink } from "@/components/popey-human/scout-share-link";
 import { GlassCard, ModalCard, uiKit } from "../_components/ui-kit";
 
 export default async function PopeyHumanProfilePage({
@@ -15,7 +17,7 @@ export default async function PopeyHumanProfilePage({
   const edit = params.edit === "1";
   const profileStatus = typeof params.profileStatus === "string" ? params.profileStatus : "";
   const profileMessage = typeof params.profileMessage === "string" ? params.profileMessage : "";
-  const data = await getMyHumanProfile();
+  const [data, selfScoutLink] = await Promise.all([getMyHumanProfile(), getMySelfScoutPortalLink()]);
 
   return (
     <section className={uiKit.pageWrapNarrow}>
@@ -74,6 +76,46 @@ export default async function PopeyHumanProfilePage({
           >
             Modifier mon profil
           </Link>
+        </GlassCard>
+      )}
+
+      {!data.error && data.profile && (
+        <GlassCard className="p-5">
+          <p className="text-xs font-black uppercase tracking-[0.12em] text-white/65">Mon lien Éclaireur perso</p>
+          <h2 className="mt-1 text-xl font-black">Faire mes recommandations en tant qu&apos;apporteur</h2>
+          <p className="mt-2 text-sm text-white/75">
+            Utilisez ce lien pour soumettre vos propres opportunités vers d&apos;autres métiers (en tant que vous-même Éclaireur).
+          </p>
+          {selfScoutLink.error ? (
+            <p className="mt-3 rounded border border-red-300/35 bg-red-500/10 px-3 py-2 text-sm text-red-200">{selfScoutLink.error}</p>
+          ) : (
+            <div className="mt-3 space-y-2">
+              {selfScoutLink.shortCode ? (
+                <p className="text-xs text-[#EAC886]">
+                  Code court: <span className="font-black tracking-wider">{selfScoutLink.shortCode}</span>
+                </p>
+              ) : null}
+              {selfScoutLink.inviteToken ? (
+                <>
+                  <p className="text-xs break-all text-emerald-300/85">
+                    Lien complet: https://www.popey.academy/popey-human/eclaireur/{selfScoutLink.inviteToken}
+                  </p>
+                  {selfScoutLink.shortCode ? (
+                    <>
+                      <p className="text-xs text-[#EAC886]/85">
+                        Accès simple: https://www.popey.academy/popey-human/eclaireur?code={selfScoutLink.shortCode}
+                      </p>
+                      <ScoutShareLink url={`https://www.popey.academy/popey-human/eclaireur?code=${selfScoutLink.shortCode}`} />
+                    </>
+                  ) : (
+                    <ScoutShareLink url={`https://www.popey.academy/popey-human/eclaireur/${selfScoutLink.inviteToken}`} />
+                  )}
+                </>
+              ) : (
+                <p className="text-sm text-white/75">Lien en préparation… rechargez la page.</p>
+              )}
+            </div>
+          )}
         </GlassCard>
       )}
 

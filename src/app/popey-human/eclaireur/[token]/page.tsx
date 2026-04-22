@@ -57,6 +57,10 @@ export default async function PopeyHumanScoutPortalPage({
   const effectivePending = Math.max(pendingFromScout, potentialFromReferrals);
   const effectivePaid = Math.max(paidFromScout, wonFromReferrals);
   const signedAmount = wonFromReferrals;
+  const finalizedCount = referrals.filter((referral) => referral.status === "converted").length;
+  const networkUnlocked = finalizedCount >= 5;
+  const remainingBeforeNetwork = Math.max(0, 5 - finalizedCount);
+  const scoutNetworkCount = 0;
   const sponsorName = data.sponsor?.name || data.sponsorName || "Popey Human";
   const historyHref = `/popey-human/eclaireur/${token}?tab=history`;
   const alertHref = `/popey-human/eclaireur/${token}?tab=alert`;
@@ -115,6 +119,23 @@ export default async function PopeyHumanScoutPortalPage({
                   </div>
                   <p className="text-xs text-white/70">
                     Répartition claire: ce qui peut tomber (`Prévisionnel`), ce qui est confirmé (`Signé`), et ce qui est déjà versé (`Payé`).
+                  </p>
+                </section>
+
+                <section className="rounded-2xl border border-fuchsia-300/35 bg-fuchsia-500/10 p-4">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <p className="text-[11px] font-black uppercase tracking-[0.1em] text-fuchsia-100">🚀 Badge évolution</p>
+                    <span className="rounded-full border border-fuchsia-200/40 bg-fuchsia-300/15 px-3 py-1 text-[10px] font-black uppercase tracking-[0.1em] text-fuchsia-100">
+                      Mon Réseau Éclaireurs = {scoutNetworkCount}
+                    </span>
+                  </div>
+                  <p className="mt-2 text-sm text-fuchsia-100/90">
+                    🎯 À partir de <span className="font-black">5 opportunités finalisées</span>, vous pouvez créer votre propre réseau d&apos;Éclaireurs et toucher <span className="font-black">3% de commissions</span>.
+                  </p>
+                  <p className="mt-2 text-xs text-fuchsia-100/80">
+                    {networkUnlocked
+                      ? "✅ Objectif atteint: votre badge réseau est débloqué."
+                      : `🔥 Encore ${remainingBeforeNetwork} opportunité(s) finalisée(s) pour débloquer le réseau.`}
                   </p>
                 </section>
 

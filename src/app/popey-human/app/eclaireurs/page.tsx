@@ -95,7 +95,10 @@ export default async function PopeyHumanScoutsPage({
       {!workspace.error && (
         <div className="grid gap-4 lg:grid-cols-[1fr_1fr]">
           <div className="rounded-3xl border border-white/15 bg-white/5 p-4 space-y-3 backdrop-blur-xl">
-            <p className="text-xs uppercase font-black tracking-[0.12em] text-white/65">Inviter un éclaireur</p>
+            <p className="text-xs uppercase font-black tracking-[0.12em] text-white/65">Ajouter un éclaireur manuel</p>
+            <p className="text-xs text-white/70">
+              Ajoutez un contact non qualifié en 1 clic (solution rapide): il apparaîtra tout de suite dans votre liste Éclaireurs.
+            </p>
             <form action={createScoutInviteAction} className="space-y-2">
               <input type="hidden" name="current_url" value="/popey-human/app/eclaireurs" />
               <div className="grid gap-2 sm:grid-cols-2">
@@ -103,9 +106,10 @@ export default async function PopeyHumanScoutsPage({
                 <input name="last_name" placeholder="Nom" className="h-10 rounded border border-white/20 bg-black/25 px-2 text-sm" />
               </div>
               <div className="grid gap-2 sm:grid-cols-2">
+                <input name="ville" placeholder="Ville" className="h-10 rounded border border-white/20 bg-black/25 px-2 text-sm" />
                 <input name="phone" placeholder="Téléphone" className="h-10 rounded border border-white/20 bg-black/25 px-2 text-sm" />
-                <input name="email" placeholder="Email" className="h-10 rounded border border-white/20 bg-black/25 px-2 text-sm" />
               </div>
+              <input name="email" placeholder="Email (optionnel)" className="h-10 w-full rounded border border-white/20 bg-black/25 px-2 text-sm" />
               <input
                 name="commission_rate"
                 defaultValue="0.10"
@@ -133,6 +137,7 @@ export default async function PopeyHumanScoutsPage({
                       Taux: {Math.round(Number(scout.commission_rate || 0) * 100)}% • Latent: {euros(Number(scout.pending_earnings || 0))} • Encaissé:{" "}
                       {euros(Number(scout.total_paid || 0))}
                     </p>
+                    {scout.ville ? <p className="text-xs text-white/65">Ville: {scout.ville}</p> : null}
                     <p className="text-xs text-white/65">Referrals: {referrals.length}</p>
                     {invite && (
                       <>
