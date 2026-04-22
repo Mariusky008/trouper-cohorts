@@ -3532,8 +3532,8 @@ export default function EntrepreneurSmartScanTestPage() {
       )}
 
       {showSearchPanel && (
-        <div className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm flex items-start justify-center px-4 pt-16">
-          <section className="w-full max-w-lg rounded-3xl border border-white/15 bg-[#0E1430] p-4">
+        <div className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm flex items-start justify-center px-3 pt-4 pb-24 sm:px-4 sm:pt-16 sm:pb-0">
+          <section className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-3xl border border-white/15 bg-[#0E1430] p-4">
             <div className="flex items-center justify-between">
               <p className="text-xs font-black uppercase tracking-[0.12em] text-cyan-200">Recherche</p>
               <button type="button" onClick={() => setShowSearchPanel(false)} className="h-8 w-8 rounded-full border border-white/20 bg-white/10 text-xs">✕</button>
@@ -3576,7 +3576,7 @@ export default function EntrepreneurSmartScanTestPage() {
                 Cette jauge est enregistree par contact pour qualifier la force de la relation avant partage croise.
               </p>
             </div>
-            <div className="mt-3 max-h-72 space-y-2 overflow-y-auto">
+            <div className="mt-3 max-h-[60vh] space-y-2 overflow-y-auto">
               {searchResults.map((contact) => (
                 <div key={contact.id} className="rounded-xl border border-white/15 bg-black/25 px-3 py-2">
                   <div className="flex items-center justify-between gap-2">
@@ -3655,7 +3655,7 @@ export default function EntrepreneurSmartScanTestPage() {
                   </select>
                 </div>
                 <p className="mt-2 text-[11px] text-white/65">{filteredHistoryEntries.length} element(s) apres filtres</p>
-                <div className="mt-3 max-h-72 space-y-2 overflow-y-auto">
+                <div className="mt-3 max-h-[60vh] space-y-2 overflow-y-auto">
                   {filteredHistoryEntries.length === 0 && <p className="text-sm text-white/70">Aucune action pour ces filtres.</p>}
                   {filteredHistoryEntries.map((entry, idx) => {
                     const eligibleToPromote = entry.sent && entry.action === "eclaireur" && !eclaireurIds.includes(entry.contactId);
@@ -3705,8 +3705,8 @@ export default function EntrepreneurSmartScanTestPage() {
       )}
 
       {showEclaireursPanel && (
-        <div className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm flex items-start justify-center px-4 pt-16">
-          <section className="w-full max-w-lg rounded-3xl border border-white/15 bg-[#0E1430] p-4">
+        <div className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm flex items-start justify-center px-3 pt-4 pb-24 sm:px-4 sm:pt-16 sm:pb-0">
+          <section className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-3xl border border-white/15 bg-[#0E1430] p-4">
             <div className="flex items-center justify-between">
               <p className="text-xs font-black uppercase tracking-[0.12em] text-cyan-200">Mes Eclaireurs</p>
               <button type="button" onClick={() => setShowEclaireursPanel(false)} className="h-8 w-8 rounded-full border border-white/20 bg-white/10 text-xs">✕</button>
@@ -3724,7 +3724,7 @@ export default function EntrepreneurSmartScanTestPage() {
                 {eclaireursList.length} eclaireur(s)
               </div>
             </div>
-            <div className="mt-3 max-h-56 space-y-2 overflow-y-auto">
+            <div className="mt-3 max-h-[58vh] space-y-2 overflow-y-auto">
               {eclaireursList.length === 0 && <p className="text-sm text-white/70">Aucun eclaireur actif pour l instant.</p>}
               {eclaireursList.map((contact) => {
                 const stats = eclaireurStatsStore[contact.id] || { leadsDetected: 0, leadsSigned: 0, commissionTotalEur: 0, lastNewsAtMs: 0 };
