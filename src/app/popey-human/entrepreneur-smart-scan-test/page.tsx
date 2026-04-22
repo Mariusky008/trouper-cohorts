@@ -736,6 +736,7 @@ export default function EntrepreneurSmartScanTestPage() {
   const [externalClickStats, setExternalClickStats] = useState<BootstrapExternalClicks | null>(null);
   const [eclaireurIds, setEclaireurIds] = useState<string[]>([]);
   const [eclaireurStatsStore, setEclaireurStatsStore] = useState<Record<string, { leadsDetected: number; leadsSigned: number; commissionTotalEur: number; lastNewsAtMs: number }>>({});
+  const [eclaireurDirectory, setEclaireurDirectory] = useState<Record<string, { id: string; name: string; city: string }>>({});
   const [eclaireurSort, setEclaireurSort] = useState<"last_news" | "leads_sent">("last_news");
   const [selectedEclaireurTemplateContactId, setSelectedEclaireurTemplateContactId] = useState<string | null>(null);
   const [eclaireurTemplates, setEclaireurTemplates] = useState<Array<{ id: string; label: string; message: string }>>([]);
@@ -870,9 +871,7 @@ export default function EntrepreneurSmartScanTestPage() {
   const searchResults = contactsData
     .filter((contact) => `${contact.name} ${contact.city} ${contact.companyHint}`.toLowerCase().includes(searchQuery.toLowerCase().trim()))
     .sort((a, b) => (priorityScoreStore[b.id] || 0) - (priorityScoreStore[a.id] || 0));
-  const eclaireursList = contactsData
-    .filter((contact) => eclaireurIds.includes(contact.id))
-    .sort((a, b) => {
+  const eclaireursList = Object.values(eclaireurDirectory).sort((a, b) => {
       const statsA = eclaireurStatsStore[a.id];
       const statsB = eclaireurStatsStore[b.id];
       if (eclaireurSort === "leads_sent") {
@@ -1725,10 +1724,16 @@ export default function EntrepreneurSmartScanTestPage() {
     setFollowupOpsStats(payload.followupOps || null);
     setExternalClickStats(payload.externalClicks || null);
     const nextEclaireurStatsStore: Record<string, { leadsDetected: number; leadsSigned: number; commissionTotalEur: number; lastNewsAtMs: number }> = {};
+    const nextEclaireurDirectory: Record<string, { id: string; name: string; city: string }> = {};
     (payload.eclaireurs || []).forEach((row) => {
       if (!row.external_contact_ref) return;
       const lastNewsSource = row.updated_at || row.eclaireur_activated_at || "";
       const lastNewsMs = Date.parse(lastNewsSource);
+      nextEclaireurDirectory[row.external_contact_ref] = {
+        id: row.external_contact_ref,
+        name: row.full_name || row.external_contact_ref,
+        city: row.city || "Inconnue",
+      };
       nextEclaireurStatsStore[row.external_contact_ref] = {
         leadsDetected: Math.max(0, Math.round(Number(row.leads_detected || 0))),
         leadsSigned: Math.max(0, Math.round(Number(row.leads_signed || 0))),
@@ -1737,6 +1742,7 @@ export default function EntrepreneurSmartScanTestPage() {
       };
     });
     setEclaireurStatsStore(nextEclaireurStatsStore);
+    setEclaireurDirectory(nextEclaireurDirectory);
     if (payload.session?.opportunities_activated !== undefined) {
       setSentCount(payload.session.opportunities_activated);
     }
@@ -2111,6 +2117,14 @@ export default function EntrepreneurSmartScanTestPage() {
     const contact = getContactById(contactId);
     if (!contact) return;
     setEclaireurIds((prev) => (prev.includes(contactId) ? prev : [...prev, contactId]));
+    setEclaireurDirectory((prev) => ({
+      ...prev,
+      [contactId]: {
+        id: contact.id,
+        name: contact.name,
+        city: contact.city,
+      },
+    }));
     void postSmartScan("promote-eclaireur", {
       externalContactRef: contact.id,
       fullName: contact.name,
@@ -2130,6 +2144,21 @@ export default function EntrepreneurSmartScanTestPage() {
     })) as { templates?: Array<{ id: string; label: string; message: string }> };
     setSelectedEclaireurTemplateContactId(contactId);
     setEclaireurTemplates(res.templates || []);
+  }
+
+  function leaveScanTunnelToNeutral() {
+    if (hasImportedContacts) {
+      setStage("daily");
+    }
+    setShowTemplateModal(false);
+    setShowSearchPanel(false);
+    setShowHistoryPanel(false);
+    setShowEclaireursPanel(false);
+    setShowContactProfile(false);
+    setShowTrustLevelPrompt(false);
+    setShowMyProfilePanel(false);
+    setSelectedAction(null);
+    setModalErrorMessage("");
   }
 
   function openContactProfile(contactId: string) {
@@ -3520,10 +3549,11 @@ export default function EntrepreneurSmartScanTestPage() {
                     </button>
                     <button
                       type="button"
-                      onClick={() => toggleFavorite(contact.id)}
-                      className={`h-8 w-8 rounded-full border text-xs ${favoriteIds.includes(contact.id) ? "border-amber-300/45 bg-amber-300/20 text-amber-100" : "border-white/20 bg-white/10 text-white/80"}`}
+                      onClick={() => promoteToEclaireur(contact.id)}
+                      className={`h-8 min-w-[36px] rounded-full border px-2 text-[11px] font-black ${eclaireurIds.includes(contact.id) ? "border-emerald-300/45 bg-emerald-300/20 text-emerald-100" : "border-white/20 bg-white/10 text-white/80"}`}
+                      aria-label={eclaireurIds.includes(contact.id) ? "Eclaireur actif" : "Promouvoir en Eclaireur"}
                     >
-                      ★
+                      📡
                     </button>
                   </div>
                 </div>
@@ -3918,8 +3948,7 @@ export default function EntrepreneurSmartScanTestPage() {
               <button
                 type="button"
                   onClick={() => {
-                    setModalErrorMessage("");
-                    setShowTemplateModal(false);
+                    leaveScanTunnelToNeutral();
                   }}
                 className="absolute right-0 h-8 w-8 rounded-full border border-white/20 bg-white/10 text-xs"
               >
