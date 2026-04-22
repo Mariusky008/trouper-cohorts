@@ -134,6 +134,7 @@ type BootstrapEclaireurRow = {
   city?: string | null;
   company_hint?: string | null;
   eclaireur_activated_at?: string | null;
+  last_whatsapp_sent_at?: string | null;
   updated_at?: string | null;
   leads_detected?: number | null;
   leads_signed?: number | null;
@@ -206,6 +207,7 @@ const PENDING_WHATSAPP_CONTEXT_KEY = "popey-human:smart-scan:pending-whatsapp-co
 const SMART_SCAN_SESSION_KEY = "popey-human:smart-scan:scan-session";
 const SMART_SCAN_IMPORTED_CONTACTS_KEY = "popey-human:smart-scan:imported-contacts";
 const SMART_SCAN_ECLAIREURS_KEY = "popey-human:smart-scan:eclaireurs";
+const SMART_SCAN_DEFAULT_MESSAGES_KEY = "popey-human:smart-scan:default-messages";
 const DAILY_CONTACT_LIMIT = 10;
 
 const CONTACTS: DailyContact[] = [
@@ -707,6 +709,7 @@ export default function EntrepreneurSmartScanTestPage() {
   const [selectedAction, setSelectedAction] = useState<DailyCategory | null>(null);
   const [draftMessage, setDraftMessage] = useState("");
   const [showTemplateModal, setShowTemplateModal] = useState(false);
+  const [defaultMessageStore, setDefaultMessageStore] = useState<Partial<Record<ActivationAction, string>>>({});
   const [launchingAction, setLaunchingAction] = useState<Exclude<DailyCategory, "passer" | "qualifier"> | null>(null);
   const [qualifierHeat, setQualifierHeat] = useState<HeatLevel | null>(null);
   const [hasChosenHeat, setHasChosenHeat] = useState(false);
@@ -805,6 +808,7 @@ export default function EntrepreneurSmartScanTestPage() {
   const [hasHydratedLocalSession, setHasHydratedLocalSession] = useState(false);
   const [hasHydratedServerProgress, setHasHydratedServerProgress] = useState(false);
   const [modalErrorMessage, setModalErrorMessage] = useState("");
+  const [modalInfoMessage, setModalInfoMessage] = useState("");
   const [dismissedQualifierContactId, setDismissedQualifierContactId] = useState<string | null>(null);
   const contactImportInputRef = useRef<HTMLInputElement | null>(null);
   const localDayNumber = useMemo(() => getLocalDayNumber(), []);
@@ -1131,6 +1135,22 @@ export default function EntrepreneurSmartScanTestPage() {
     } catch {
       // Ignore invalid local eclaireurs cache.
     }
+    try {
+      const rawDefaults = window.localStorage.getItem(SMART_SCAN_DEFAULT_MESSAGES_KEY);
+      if (rawDefaults) {
+        const parsed = JSON.parse(rawDefaults) as Record<string, unknown>;
+        const nextDefaults: Partial<Record<ActivationAction, string>> = {};
+        ACTION_BASE_ORDER.forEach((action) => {
+          const rawValue = parsed?.[action];
+          if (typeof rawValue === "string" && rawValue.trim().length > 0) {
+            nextDefaults[action] = rawValue;
+          }
+        });
+        setDefaultMessageStore(nextDefaults);
+      }
+    } catch {
+      // Ignore invalid local default message cache.
+    }
   }, []);
 
   useEffect(() => {
@@ -1174,6 +1194,17 @@ export default function EntrepreneurSmartScanTestPage() {
       }),
     );
   }, [eclaireurIds]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem(
+      SMART_SCAN_DEFAULT_MESSAGES_KEY,
+      JSON.stringify({
+        ...defaultMessageStore,
+        updatedAt: Date.now(),
+      }),
+    );
+  }, [defaultMessageStore]);
 
   useEffect(() => {
     setIndex((value) => {
@@ -1610,6 +1641,14 @@ export default function EntrepreneurSmartScanTestPage() {
     return contactsData.find((contact) => contact.id === contactId) ?? null;
   }
 
+  function resolveMessageDraft(action: ActivationAction, fallbackDraft: string) {
+    const savedDraft = defaultMessageStore[action];
+    if (typeof savedDraft === "string" && savedDraft.trim().length > 0) {
+      return savedDraft;
+    }
+    return fallbackDraft;
+  }
+
   async function postSmartScan(
     path:
       | "trust"
@@ -1837,7 +1876,7 @@ export default function EntrepreneurSmartScanTestPage() {
     const nextEclaireurDirectory: Record<string, { id: string; name: string; city: string }> = {};
     (payload.eclaireurs || []).forEach((row) => {
       if (!row.external_contact_ref) return;
-      const lastNewsSource = row.updated_at || row.eclaireur_activated_at || "";
+      const lastNewsSource = row.last_whatsapp_sent_at || row.updated_at || row.eclaireur_activated_at || "";
       const lastNewsMs = Date.parse(lastNewsSource);
       nextEclaireurDirectory[row.external_contact_ref] = {
         id: row.external_contact_ref,
@@ -2030,8 +2069,10 @@ export default function EntrepreneurSmartScanTestPage() {
       setLaunchingAction(action);
       setTimeout(() => {
         setLaunchingAction(null);
-        const nextDraft = buildTemplate(action, current, currentQualifier, myProfile);
+        const fallbackDraft = buildTemplate(action, current, currentQualifier, myProfile);
+        const nextDraft = resolveMessageDraft(action, fallbackDraft);
         setModalErrorMessage("");
+        setModalInfoMessage("");
         setSelectedAction(action);
         setDraftMessage(nextDraft);
         setAiGenerationSource(null);
@@ -2117,6 +2158,40 @@ export default function EntrepreneurSmartScanTestPage() {
     if (typeof window !== "undefined") {
       window.open(whatsappUrl, "_blank");
     }
+    if (eclaireurIds.includes(current.id)) {
+      setEclaireurStatsStore((prev) => {
+        const existing = prev[current.id] || {
+          leadsDetected: 0,
+          leadsSigned: 0,
+          commissionTotalEur: 0,
+          lastNewsAtMs: 0,
+        };
+        return {
+          ...prev,
+          [current.id]: {
+            ...existing,
+            lastNewsAtMs: Date.now(),
+          },
+        };
+      });
+    }
+  }
+
+  function saveCurrentMessageAsDefault() {
+    const action = selectedAction;
+    if (!action || action === "qualifier" || action === "passer") return;
+    const cleanDraft = String(draftMessage || "").trim();
+    if (!cleanDraft) {
+      setModalErrorMessage("Le message est vide. Ecris un texte avant de l enregistrer par defaut.");
+      return;
+    }
+    setDefaultMessageStore((prev) => ({
+      ...prev,
+      [action]: cleanDraft,
+    }));
+    setModalErrorMessage("");
+    setModalInfoMessage(`Message par defaut enregistre pour ${modalTitle(action)}.`);
+    setTimeout(() => setModalInfoMessage(""), 2200);
   }
 
   function saveQualifierAndReturn() {
@@ -2239,6 +2314,21 @@ export default function EntrepreneurSmartScanTestPage() {
         city: contact.city,
       },
     }));
+    setEclaireurStatsStore((prev) => {
+      const existing = prev[contactId] || {
+        leadsDetected: 0,
+        leadsSigned: 0,
+        commissionTotalEur: 0,
+        lastNewsAtMs: 0,
+      };
+      return {
+        ...prev,
+        [contactId]: {
+          ...existing,
+          lastNewsAtMs: Date.now(),
+        },
+      };
+    });
     void postSmartScan("promote-eclaireur", {
       externalContactRef: contact.id,
       fullName: contact.name,
@@ -2279,6 +2369,7 @@ export default function EntrepreneurSmartScanTestPage() {
     setShowMyProfilePanel(false);
     setSelectedAction(null);
     setModalErrorMessage("");
+    setModalInfoMessage("");
   }
 
   function openContactProfile(contactId: string) {
@@ -2314,9 +2405,11 @@ export default function EntrepreneurSmartScanTestPage() {
     setActionFromProfileContactId(profileContact.id);
     setShowContactProfile(false);
     setShowSearchPanel(false);
-    const nextDraft = buildTemplate(action, profileContact, profileQualifier, myProfile);
+    const fallbackDraft = buildTemplate(action, profileContact, profileQualifier, myProfile);
+    const nextDraft = resolveMessageDraft(action, fallbackDraft);
     setSelectedAction(action);
     setDraftMessage(nextDraft);
+    setModalInfoMessage("");
     setAiGenerationSource(null);
     setAiPromptVersion(null);
     setAiGeneratedAt(null);
@@ -4023,7 +4116,8 @@ export default function EntrepreneurSmartScanTestPage() {
                   type="button"
                   onClick={() => {
                     setSelectedAction("eclaireur");
-                    setDraftMessage(item.message);
+                    setDraftMessage(resolveMessageDraft("eclaireur", item.message));
+                    setModalInfoMessage("");
                     setShowTemplateModal(true);
                     setShowEclaireursPanel(false);
                     setSelectedEclaireurTemplateContactId(null);
@@ -4500,6 +4594,13 @@ export default function EntrepreneurSmartScanTestPage() {
                     </span>
                   )}
                 </div>
+                <button
+                  type="button"
+                  onClick={saveCurrentMessageAsDefault}
+                  className="mt-2 h-9 rounded-xl border border-emerald-300/40 bg-emerald-300/15 px-3 text-[11px] font-black uppercase tracking-[0.08em] text-emerald-100"
+                >
+                  Enregistrer comme message par defaut
+                </button>
                 <textarea
                   value={draftMessage}
                   onChange={(event) => setDraftMessage(event.target.value)}
@@ -4540,6 +4641,11 @@ export default function EntrepreneurSmartScanTestPage() {
                 {modalErrorMessage && (
                   <p className="mt-2 rounded-xl border border-rose-300/35 bg-rose-300/15 px-3 py-2 text-xs text-rose-100">
                     {modalErrorMessage}
+                  </p>
+                )}
+                {modalInfoMessage && (
+                  <p className="mt-2 rounded-xl border border-emerald-300/35 bg-emerald-300/15 px-3 py-2 text-xs text-emerald-100">
+                    {modalInfoMessage}
                   </p>
                 )}
               </>

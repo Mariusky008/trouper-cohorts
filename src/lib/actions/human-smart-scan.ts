@@ -2261,6 +2261,7 @@ export async function listMyEclaireurs(limit = 300) {
   const rows = (contacts as Array<Record<string, unknown>> | null) || [];
   const contactIds = rows.map((row) => String(row.id));
   const statsMap = new Map<string, { leads_detected: number; leads_signed: number; commission_total_eur: number }>();
+  const lastWhatsAppSentAtMap = new Map<string, string>();
   if (contactIds.length > 0) {
     const { data: events } = await supabaseAdmin
       .from("human_smart_scan_eclaireur_events")
@@ -2280,6 +2281,23 @@ export async function listMyEclaireurs(limit = 300) {
       }
       statsMap.set(contactId, entry);
     });
+
+    const { data: whatsappActions } = await supabaseAdmin
+      .from("human_smart_scan_actions")
+      .select("contact_id,sent_at,created_at")
+      .eq("owner_member_id", currentMember.id)
+      .eq("status", "sent")
+      .eq("send_channel", "whatsapp")
+      .in("contact_id", contactIds)
+      .order("created_at", { ascending: false })
+      .limit(5000);
+    ((whatsappActions as Array<Record<string, unknown>> | null) || []).forEach((actionRow) => {
+      const contactId = String(actionRow.contact_id || "");
+      if (!contactId || lastWhatsAppSentAtMap.has(contactId)) return;
+      const source = String(actionRow.sent_at || actionRow.created_at || "");
+      if (!source) return;
+      lastWhatsAppSentAtMap.set(contactId, source);
+    });
   }
 
   return {
@@ -2292,6 +2310,7 @@ export async function listMyEclaireurs(limit = 300) {
         leads_detected: stats.leads_detected,
         leads_signed: stats.leads_signed,
         commission_total_eur: Math.round(stats.commission_total_eur),
+        last_whatsapp_sent_at: lastWhatsAppSentAtMap.get(contactId) || null,
       };
     }),
   };
