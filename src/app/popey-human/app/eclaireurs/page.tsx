@@ -19,6 +19,12 @@ function scoutLabel(input: { first_name: string | null; last_name: string | null
   return full || input.email || input.phone || "Éclaireur";
 }
 
+function referralPipelineStep(status: string) {
+  if (status === "converted") return 3;
+  if (status === "validated") return 2;
+  return 0;
+}
+
 export default async function PopeyHumanScoutsPage({
   searchParams,
 }: {
@@ -118,6 +124,7 @@ export default async function PopeyHumanScoutsPage({
                     <p className="text-xs text-white/65">Referrals: {referrals.length}</p>
                     {invite && (
                       <>
+                        <p className="mt-2 text-[10px] font-black uppercase tracking-[0.12em] text-cyan-200/90">Lien magique Éclaireur</p>
                         {invite.short_code ? (
                           <p className="mt-1 text-[11px] text-[#EAC886]">
                             Code court: <span className="font-black tracking-wider">{invite.short_code}</span>
@@ -149,10 +156,14 @@ export default async function PopeyHumanScoutsPage({
 
       {!workspace.error && (
         <div className="rounded-3xl border border-white/15 bg-white/5 p-4 backdrop-blur-xl">
-          <p className="text-xs uppercase font-black tracking-[0.12em] text-white/65">Alertes éclaireurs à traiter</p>
+          <p className="text-xs uppercase font-black tracking-[0.12em] text-white/65">Opportunités entrantes</p>
+          <p className="mt-1 text-xs text-white/75">
+            Zone membre métier: vous traitez ici les dossiers et les statuts sont synchronisés côté Éclaireur.
+          </p>
           <div className="mt-3 space-y-3">
             {workspace.referrals.map((referral) => {
               const scout = workspace.scouts.find((item) => item.id === referral.scout_id) || null;
+              const step = referralPipelineStep(referral.status);
               return (
                 <article key={referral.id} className="rounded-lg border border-white/15 bg-black/25 p-3">
                   <p className="text-sm font-black">
@@ -164,6 +175,29 @@ export default async function PopeyHumanScoutsPage({
                   {referral.contact_phone && <p className="text-xs text-white/70">Tél: {referral.contact_phone}</p>}
                   {referral.comment && <p className="text-xs text-white/75 mt-1">{referral.comment}</p>}
                   {referral.rejection_reason && <p className="text-xs text-red-300 mt-1">Motif rejet: {referral.rejection_reason}</p>}
+
+                  <div className="mt-2 rounded-lg border border-cyan-300/25 bg-cyan-500/10 px-2 py-2">
+                    <p className="text-[10px] font-black uppercase tracking-[0.12em] text-cyan-100/90">Statut partagé Éclaireur</p>
+                    <div className="mt-2 grid grid-cols-4 gap-1 text-[10px] font-black uppercase tracking-[0.08em]">
+                      {[
+                        { id: "recu", label: "Reçu", idx: 0 },
+                        { id: "rdv", label: "RDV", idx: 1 },
+                        { id: "offre", label: "Offre", idx: 2 },
+                        { id: "signe", label: "Signé", idx: 3 },
+                      ].map((item) => (
+                        <span
+                          key={`${referral.id}-${item.id}`}
+                          className={`rounded-md border px-1 py-1 text-center ${
+                            item.idx <= step
+                              ? "border-emerald-300/45 bg-emerald-300/25 text-emerald-100"
+                              : "border-white/20 bg-white/5 text-white/65"
+                          }`}
+                        >
+                          {item.label}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
 
                   {referral.status === "submitted" && (
                     <div className="mt-2 grid gap-2 lg:grid-cols-2">
@@ -179,7 +213,9 @@ export default async function PopeyHumanScoutsPage({
                           placeholder="Deal estimé (€)"
                           className="h-9 w-full rounded border border-white/20 bg-black/25 px-2 text-xs"
                         />
-                        <button className="h-9 w-full rounded bg-gradient-to-r from-emerald-400 to-cyan-300 text-[#10263A] text-xs font-black uppercase transition hover:brightness-105">Valider</button>
+                        <button className="h-9 w-full rounded bg-gradient-to-r from-emerald-400 to-cyan-300 text-[#10263A] text-xs font-black uppercase transition hover:brightness-105">
+                          Marquer RDV / Offre
+                        </button>
                       </form>
                       <form action={rejectScoutReferralAction} className="space-y-2">
                         <input type="hidden" name="referral_id" value={referral.id} />
@@ -207,7 +243,9 @@ export default async function PopeyHumanScoutsPage({
                         className="h-9 rounded border border-white/20 bg-black/25 px-2 text-xs"
                         placeholder="Montant signé"
                       />
-                      <button className="h-9 rounded bg-gradient-to-r from-amber-300 to-yellow-300 px-3 text-[#2E240E] text-xs font-black uppercase transition hover:brightness-105">Passer signé</button>
+                      <button className="h-9 rounded bg-gradient-to-r from-amber-300 to-yellow-300 px-3 text-[#2E240E] text-xs font-black uppercase transition hover:brightness-105">
+                        Marquer signé
+                      </button>
                     </form>
                   )}
 
