@@ -2,6 +2,7 @@ import Link from "next/link";
 import {
   convertScoutReferralAction,
   createScoutInviteAction,
+  createScoutInviteFromSmartScanContactAction,
   getMyScoutWorkspace,
   markScoutReferralOfferedAction,
   markScoutReferralPaidAction,
@@ -9,6 +10,7 @@ import {
   rejectScoutReferralAction,
   validateScoutReferralAction,
 } from "@/lib/actions/human-scouts";
+import { listMySmartScanContacts } from "@/lib/actions/human-smart-scan";
 import { ScoutShareLink } from "@/components/popey-human/scout-share-link";
 import { uiKit } from "../_components/ui-kit";
 
@@ -48,7 +50,20 @@ export default async function PopeyHumanScoutsPage({
   const params = (await searchParams) || {};
   const scoutStatus = typeof params.scoutStatus === "string" ? params.scoutStatus : "";
   const scoutMessage = typeof params.scoutMessage === "string" ? params.scoutMessage : "";
-  const workspace = await getMyScoutWorkspace();
+  const [workspace, smartScanContacts] = await Promise.all([getMyScoutWorkspace(), listMySmartScanContacts(200)]);
+  const importedContactOptions = ((smartScanContacts.contacts as Array<Record<string, unknown>> | undefined) || [])
+    .filter((row) => String(row.full_name || "").trim().length > 0)
+    .map((row) => {
+      const id = String(row.id || "");
+      const fullName = String(row.full_name || "").trim();
+      const city = String(row.city || "").trim();
+      const phone = String(row.phone_e164 || "").trim();
+      return {
+        id,
+        label: [fullName, city || null, phone || null].filter(Boolean).join(" • "),
+      };
+    })
+    .filter((item) => item.id);
 
   const referralsByScoutId = new Map<string, typeof workspace.referrals>();
   workspace.referrals.forEach((referral) => {
@@ -95,6 +110,42 @@ export default async function PopeyHumanScoutsPage({
       {!workspace.error && (
         <div className="grid gap-4 lg:grid-cols-[1fr_1fr]">
           <div className="rounded-3xl border border-white/15 bg-white/5 p-4 space-y-3 backdrop-blur-xl">
+            <p className="text-xs uppercase font-black tracking-[0.12em] text-white/65">Ajouter depuis mes contacts importés</p>
+            <p className="text-xs text-white/70">
+              Sélectionnez un contact de votre répertoire Smart Scan pour l’ajouter en éclaireur immédiatement.
+            </p>
+            <form action={createScoutInviteFromSmartScanContactAction} className="space-y-2">
+              <input type="hidden" name="current_url" value="/popey-human/app/eclaireurs" />
+              <select
+                name="smart_scan_contact_id"
+                required
+                defaultValue=""
+                className="h-10 w-full rounded border border-white/20 bg-black/25 px-2 text-sm"
+              >
+                <option value="" disabled>
+                  Choisir un contact importé
+                </option>
+                {importedContactOptions.map((contact) => (
+                  <option key={contact.id} value={contact.id}>
+                    {contact.label}
+                  </option>
+                ))}
+              </select>
+              <input
+                name="commission_rate"
+                defaultValue="0.10"
+                placeholder="Taux commission (0.10)"
+                className="h-10 w-full rounded border border-white/20 bg-black/25 px-2 text-sm"
+              />
+              <button className="h-10 w-full rounded-lg border border-cyan-300/45 bg-cyan-500/20 text-cyan-100 text-xs font-black uppercase tracking-wide">
+                Ajouter depuis contacts
+              </button>
+            </form>
+            {importedContactOptions.length === 0 && (
+              <p className="text-xs text-white/60">Aucun contact importé disponible pour l’instant.</p>
+            )}
+
+            <div className="h-px bg-white/10" />
             <p className="text-xs uppercase font-black tracking-[0.12em] text-white/65">Ajouter un éclaireur manuel</p>
             <p className="text-xs text-white/70">
               Ajoutez un contact non qualifié en 1 clic (solution rapide): il apparaîtra tout de suite dans votre liste Éclaireurs.

@@ -204,6 +204,108 @@ export async function createScoutInviteAction(formData: FormData): Promise<void>
   redirect(withScoutStatus(currentUrl, "success", "Éclaireur invité."));
 }
 
+export async function createScoutInviteFromSmartScanContact(formData: FormData) {
+  const member = await requireMemberUser();
+  if ("error" in member) return { error: member.error };
+
+  const contactId = String(formData.get("smart_scan_contact_id") || "").trim();
+  const commissionRateRaw = String(formData.get("commission_rate") || "0.10").trim();
+  const commissionRate = Number(commissionRateRaw);
+  if (!contactId) return { error: "Contact Smart Scan invalide." };
+  if (!Number.isFinite(commissionRate) || commissionRate < 0 || commissionRate > 1) {
+    return { error: "Taux de commission invalide (0 à 1)." };
+  }
+
+  const supabaseAdmin = createAdminClient();
+  const { data: contact, error: contactError } = await supabaseAdmin
+    .from("human_smart_scan_contacts")
+    .select("id,owner_member_id,full_name,city,phone_e164")
+    .eq("id", contactId)
+    .eq("owner_member_id", member.myMember.id)
+    .maybeSingle();
+  if (contactError) return { error: contactError.message };
+  if (!contact) return { error: "Contact Smart Scan introuvable." };
+
+  const fullName = String(contact.full_name || "").trim();
+  const nameParts = fullName ? fullName.split(/\s+/) : [];
+  const firstName = nameParts[0] || "";
+  const lastName = nameParts.slice(1).join(" ");
+  const city = String(contact.city || "").trim();
+  const phone = String(contact.phone_e164 || "").trim();
+
+  let existingScoutId = "";
+  if (phone) {
+    const { data: existingByPhone } = await supabaseAdmin
+      .from("human_scouts")
+      .select("id")
+      .eq("owner_member_id", member.myMember.id)
+      .eq("phone", phone)
+      .order("created_at", { ascending: true })
+      .limit(1);
+    existingScoutId = String(((existingByPhone as Array<{ id: string }> | null) || [])[0]?.id || "");
+  }
+  if (!existingScoutId && fullName) {
+    const { data: existingByName } = await supabaseAdmin
+      .from("human_scouts")
+      .select("id")
+      .eq("owner_member_id", member.myMember.id)
+      .ilike("first_name", firstName || fullName)
+      .ilike("last_name", lastName || "%")
+      .limit(1);
+    existingScoutId = String(((existingByName as Array<{ id: string }> | null) || [])[0]?.id || "");
+  }
+
+  let scoutId = existingScoutId;
+  if (!scoutId) {
+    const { data: createdScout, error: scoutError } = await supabaseAdmin
+      .from("human_scouts")
+      .insert({
+        owner_member_id: member.myMember.id,
+        first_name: firstName || fullName || null,
+        last_name: lastName || null,
+        ville: city || null,
+        phone: phone || null,
+        status: "invited",
+        commission_rate: commissionRate,
+        total_paid: 0,
+        pending_earnings: 0,
+        updated_at: new Date().toISOString(),
+      })
+      .select("id")
+      .single();
+    if (scoutError || !createdScout) return { error: scoutError?.message || "Impossible de créer l'éclaireur." };
+    scoutId = String(createdScout.id);
+  } else {
+    await supabaseAdmin
+      .from("human_scouts")
+      .update({
+        ville: city || null,
+        phone: phone || null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", scoutId)
+      .eq("owner_member_id", member.myMember.id);
+  }
+
+  const invite = await createScoutInviteRecord({
+    supabaseAdmin,
+    ownerMemberId: member.myMember.id,
+    scoutId,
+  });
+  if (!invite) return { error: "Impossible de générer le lien magique éclaireur." };
+
+  revalidatePath("/popey-human/app/eclaireurs");
+  revalidatePath("/admin/humain/eclaireurs");
+  return { success: true };
+}
+
+export async function createScoutInviteFromSmartScanContactAction(formData: FormData): Promise<void> {
+  const currentUrl = String(formData.get("current_url") || "/popey-human/app/eclaireurs");
+  const result = await createScoutInviteFromSmartScanContact(formData);
+  if ("error" in result) redirect(withScoutStatus(currentUrl, "error", result.error || "Action impossible."));
+  redirect(withScoutStatus(currentUrl, "success", "Éclaireur ajouté depuis vos contacts importés."));
+}
+
 export async function getMySelfScoutPortalLink() {
   const member = await requireMemberUser();
   if ("error" in member) {
