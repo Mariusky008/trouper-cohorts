@@ -982,9 +982,16 @@ export default function EntrepreneurSmartScanTestPage() {
       id: contact.id,
       label: [contact.name, contact.city || null, contact.phone || null].filter(Boolean).join(" • "),
     }));
+  const hasImportedScoutCandidates = importedScoutCandidates.length > 0;
   const selectedEclaireurTemplateContact = selectedEclaireurTemplateContactId
     ? eclaireursList.find((contact) => contact.id === selectedEclaireurTemplateContactId) || eclaireurDirectory[selectedEclaireurTemplateContactId] || null
     : null;
+
+  useEffect(() => {
+    if (!selectedImportedScoutId && importedScoutCandidates[0]?.id) {
+      setSelectedImportedScoutId(importedScoutCandidates[0].id);
+    }
+  }, [importedScoutCandidates, selectedImportedScoutId]);
   const template = useMemo(
     () =>
       selectedAction
@@ -2380,6 +2387,10 @@ export default function EntrepreneurSmartScanTestPage() {
   }
 
   function addScoutFromImportedSelection() {
+    if (!hasImportedScoutCandidates) {
+      setApiErrorMessage("Aucun contact disponible a ajouter pour le moment.");
+      return;
+    }
     const selectedId = selectedImportedScoutId.trim();
     if (!selectedId) {
       setApiErrorMessage("Choisis d'abord un contact importé.");
@@ -2436,7 +2447,8 @@ export default function EntrepreneurSmartScanTestPage() {
           legacyFullUrl: payload.legacyFullUrl || null,
         },
       }));
-      setApiErrorMessage("");
+      setApiErrorMessage("Lien eclaireur genere.");
+      setTimeout(() => setApiErrorMessage(""), 1200);
     } catch (error) {
       const message = error instanceof Error ? error.message : "Impossible de generer le lien eclaireur.";
       setApiErrorMessage(message);
@@ -4422,11 +4434,20 @@ export default function EntrepreneurSmartScanTestPage() {
               <button
                 type="button"
                 onClick={addScoutFromImportedSelection}
+                disabled={!hasImportedScoutCandidates}
                 className="h-9 rounded-lg border border-cyan-300/35 bg-cyan-300/15 px-3 text-[10px] font-black uppercase tracking-[0.08em] text-cyan-100"
               >
                 Ajouter +
               </button>
             </div>
+            <p className="mt-1 text-[10px] text-white/70">
+              {hasImportedScoutCandidates
+                ? `${importedScoutCandidates.length} contact(s) pret(s) a ajouter`
+                : "Aucun nouveau contact disponible ici. Utilise l ajout manuel dans Profil."}
+            </p>
+            {apiErrorMessage ? (
+              <p className="mt-2 rounded-lg border border-amber-300/35 bg-amber-300/10 px-2 py-1 text-[11px] text-amber-100">{apiErrorMessage}</p>
+            ) : null}
             <div className="mt-3 max-h-[calc(100dvh-190px)] space-y-2 overflow-y-auto sm:max-h-[58vh]">
               {eclaireursList.length === 0 && <p className="text-sm text-white/70">Aucun eclaireur actif pour l instant.</p>}
               {eclaireursList.map((contact) => {

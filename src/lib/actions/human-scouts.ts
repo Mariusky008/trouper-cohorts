@@ -315,6 +315,7 @@ export async function generateScoutLinkFromSmartScanContact(input: {
   }
 
   const supabaseAdmin = createAdminClient();
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(contactId);
   type SmartScanContactRow = {
     id: string;
     owner_member_id: string;
@@ -323,7 +324,7 @@ export async function generateScoutLinkFromSmartScanContact(input: {
     phone_e164: string | null;
   };
   let contact: SmartScanContactRow | null = null;
-  if (contactId) {
+  if (contactId && isUuid) {
     const { data, error } = await supabaseAdmin
       .from("human_smart_scan_contacts")
       .select("id,owner_member_id,full_name,city,phone_e164")
