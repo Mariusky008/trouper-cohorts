@@ -1025,6 +1025,115 @@ export async function adminSendScoutNudgeAction(formData: FormData): Promise<voi
   redirect(withScoutStatus(currentUrl, "success", `${result.count} éclaireur(s) relancé(s).`));
 }
 
+export async function runScoutReferralStatusNudgeSweep(input?: { hoursThreshold?: number; limit?: number }) {
+  const supabaseAdmin = createAdminClient();
+  const rawHours = Number(input?.hoursThreshold ?? process.env.SCOUT_REFERRAL_NUDGE_HOURS ?? 24);
+  const hoursThreshold = Number.isFinite(rawHours) ? Math.min(168, Math.max(1, Math.round(rawHours))) : 24;
+  const rawLimit = Number(input?.limit ?? 500);
+  const limit = Number.isFinite(rawLimit) ? Math.min(2000, Math.max(1, Math.round(rawLimit))) : 500;
+  const cutoffIso = new Date(Date.now() - hoursThreshold * 60 * 60 * 1000).toISOString();
+  const staleStatuses: ReferralStatus[] = ["submitted", "validated", "offered"];
+
+  const { data: staleReferralsData, error: staleError } = await supabaseAdmin
+    .from("human_scout_referrals")
+    .select("id,owner_member_id,scout_id,contact_name,status,updated_at")
+    .in("status", staleStatuses)
+    .lte("updated_at", cutoffIso)
+    .order("updated_at", { ascending: true })
+    .limit(limit);
+  if (staleError) return { success: false as const, error: staleError.message };
+
+  const staleReferrals =
+    ((staleReferralsData as Array<{
+      id: string;
+      owner_member_id: string;
+      scout_id: string;
+      contact_name: string;
+      status: ReferralStatus;
+      updated_at: string;
+    }> | null) || []);
+
+  if (staleReferrals.length === 0) {
+    return { success: true as const, scanned: 0, nudged: 0, skippedAlreadyNudged: 0, hoursThreshold };
+  }
+
+  const scoutIds = Array.from(new Set(staleReferrals.map((item) => item.scout_id)));
+  const { data: scoutRows } = await supabaseAdmin
+    .from("human_scouts")
+    .select("id,first_name,last_name,email,phone")
+    .in("id", scoutIds);
+  const scoutById = new Map(
+    (((scoutRows as Array<{ id: string; first_name: string | null; last_name: string | null; email: string | null; phone: string | null }> | null) || []).map((row) => [row.id, row]))
+  );
+
+  const sinceIso = new Date(Date.now() - 1000 * 60 * 60 * 24 * 45).toISOString();
+  const { data: nudgeLogs } = await supabaseAdmin
+    .from("human_scout_notification_log")
+    .select("event_type,payload_json")
+    .eq("event_type", "referral_status_nudge")
+    .gte("created_at", sinceIso)
+    .limit(100000);
+
+  const nudgedKeys = new Set<string>();
+  (((nudgeLogs as Array<{ event_type: string; payload_json: Record<string, unknown> | null }> | null) || [])).forEach((row) => {
+    const payload = row.payload_json || {};
+    const referralId = typeof payload.referral_id === "string" ? payload.referral_id : "";
+    const status = typeof payload.status === "string" ? payload.status : "";
+    if (referralId && status) nudgedKeys.add(`${referralId}:${status}`);
+  });
+
+  let nudged = 0;
+  let skippedAlreadyNudged = 0;
+
+  for (const referral of staleReferrals) {
+    const dedupeKey = `${referral.id}:${referral.status}`;
+    if (nudgedKeys.has(dedupeKey)) {
+      skippedAlreadyNudged += 1;
+      continue;
+    }
+
+    const scout = scoutById.get(referral.scout_id);
+    const scoutName = [scout?.first_name, scout?.last_name].filter(Boolean).join(" ").trim() || scout?.email || scout?.phone || "Éclaireur";
+    const statusLabel =
+      referral.status === "submitted"
+        ? "Reçu"
+        : referral.status === "validated"
+          ? "RDV"
+          : referral.status === "offered"
+            ? "Offre"
+            : referral.status;
+
+    await notifyMember(referral.owner_member_id, {
+      title: `Relance opportunité: ${referral.contact_name}`,
+      message: `${scoutName} attend une mise à jour sur le statut "${statusLabel}" depuis plus de ${hoursThreshold}h.`,
+      impact: `scout:status-nudge:${referral.id}:${referral.status}`,
+    });
+
+    await logScoutEvent({
+      supabaseAdmin,
+      scoutId: referral.scout_id,
+      eventType: "referral_status_nudge",
+      payload: {
+        referral_id: referral.id,
+        status: referral.status,
+        threshold_hours: hoursThreshold,
+        owner_member_id: referral.owner_member_id,
+      },
+    });
+
+    nudgedKeys.add(dedupeKey);
+    nudged += 1;
+  }
+
+  return {
+    success: true as const,
+    scanned: staleReferrals.length,
+    nudged,
+    skippedAlreadyNudged,
+    hoursThreshold,
+  };
+}
+
 async function notifyMember(
   memberId: string,
   input: { title: string; message: string; impact: string }
