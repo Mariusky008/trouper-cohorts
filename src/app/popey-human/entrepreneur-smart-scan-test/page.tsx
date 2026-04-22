@@ -9,6 +9,7 @@ type DailyCategory = "passer" | "eclaireur" | "package" | "exclients" | "qualifi
 type DailyContact = {
   id: string;
   name: string;
+  phone?: string | null;
   city: string;
   companyHint: string;
   capsule: string;
@@ -574,8 +575,9 @@ function buildDailyContactsFromImport(rows: ImportedContactRow[]): DailyContact[
       const city = String(row.city || "Inconnue").trim() || "Inconnue";
       const companyHint = String(row.companyHint || "Réseau perso").trim() || "Réseau perso";
       const phoneDigits = String(row.phone || "").replace(/\D/g, "");
+      const phoneRaw = String(row.phone || "").trim();
       const key = `${name.toLowerCase()}|${phoneDigits}`;
-      return { name, city, companyHint, phoneDigits, key };
+      return { name, city, companyHint, phoneDigits, phoneRaw, key };
     })
     .filter((row) => row.name.length > 0)
     .filter((row) => {
@@ -587,6 +589,7 @@ function buildDailyContactsFromImport(rows: ImportedContactRow[]): DailyContact[
   return normalized.map((row, idx) => ({
     id: `import-${idx + 1}-${row.phoneDigits.slice(-4) || "0000"}`,
     name: row.name,
+    phone: row.phoneRaw || null,
     city: row.city,
     companyHint: row.companyHint,
     capsule: "Importe depuis ton telephone",
@@ -594,6 +597,18 @@ function buildDailyContactsFromImport(rows: ImportedContactRow[]): DailyContact[
     dominantTags: ["📱 Contact importe", "🤝 A qualifier"],
     externalNews: "Profil importe depuis ton annuaire",
   }));
+}
+
+function normalizePhoneForWhatsApp(phone?: string | null) {
+  const raw = String(phone || "").trim();
+  if (!raw) return null;
+  const digits = raw.replace(/\D/g, "");
+  if (!digits) return null;
+  if (digits.startsWith("00")) return digits.slice(2);
+  if (digits.startsWith("33")) return digits;
+  if (digits.startsWith("0") && digits.length >= 9) return `33${digits.slice(1)}`;
+  if (digits.length < 8) return null;
+  return digits;
 }
 
 function getLocalDayNumber() {
@@ -699,6 +714,8 @@ export default function EntrepreneurSmartScanTestPage() {
   const [isImportingContacts, setIsImportingContacts] = useState(false);
   const [supportsDirectContactPicker, setSupportsDirectContactPicker] = useState(false);
   const [showImportHelp, setShowImportHelp] = useState(false);
+  const [isCockpitCollapsed, setIsCockpitCollapsed] = useState(true);
+  const [hasHydratedLocalSession, setHasHydratedLocalSession] = useState(false);
   const contactImportInputRef = useRef<HTMLInputElement | null>(null);
   const localDayNumber = useMemo(() => getLocalDayNumber(), []);
 
@@ -725,6 +742,7 @@ export default function EntrepreneurSmartScanTestPage() {
   const importedQualifiedCount = importedContacts.filter((contact) => Boolean(qualifierStore[contact.id])).length;
   const importedFavoriteCount = importedContacts.filter((contact) => favoriteIds.includes(contact.id)).length;
   const importedReviewCount = Math.max(0, totalScanned - importedQualifiedCount);
+  const globalProcessedCount = hasImportedContacts ? Math.min(importedTotalCount, importedQualifiedCount + Math.min(index, dailyQueueCount)) : 0;
   const liveProfiles = Math.min(totalScanned, Math.round(importedQualifiedCount * scanProgress));
   const liveLocals = Math.min(totalScanned, Math.round(totalScanned * scanProgress));
   const liveHotSignals = Math.min(totalScanned, Math.round(importedFavoriteCount * scanProgress));
@@ -948,50 +966,63 @@ export default function EntrepreneurSmartScanTestPage() {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const raw = window.localStorage.getItem(SMART_SCAN_SESSION_KEY);
-    if (!raw) return;
+    let restoredImportedCount = 0;
     try {
-      const parsed = JSON.parse(raw) as { stage?: "scan" | "daily"; scanCount?: number };
-      if (parsed.stage === "scan" || parsed.stage === "daily") {
-        setStage(parsed.stage);
-      }
-      if (typeof parsed.scanCount === "number") {
-        const safeCount = Math.max(0, Math.min(totalScanned, Math.round(parsed.scanCount)));
-        setScanCount(safeCount);
-      }
-    } catch {
-      // Ignore invalid local session and keep default values.
-    }
-  }, [totalScanned]);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const raw = window.localStorage.getItem(SMART_SCAN_IMPORTED_CONTACTS_KEY);
-    if (!raw) return;
-    try {
-      const parsed = JSON.parse(raw) as { contacts?: DailyContact[]; summary?: string };
-      if (Array.isArray(parsed.contacts) && parsed.contacts.length > 0) {
-        setImportedContacts(parsed.contacts);
-      }
-      if (typeof parsed.summary === "string") {
-        setImportSummary(parsed.summary);
+      const rawImported = window.localStorage.getItem(SMART_SCAN_IMPORTED_CONTACTS_KEY);
+      if (rawImported) {
+        const parsedImported = JSON.parse(rawImported) as { contacts?: DailyContact[]; summary?: string };
+        if (Array.isArray(parsedImported.contacts) && parsedImported.contacts.length > 0) {
+          restoredImportedCount = parsedImported.contacts.length;
+          setImportedContacts(parsedImported.contacts);
+        }
+        if (typeof parsedImported.summary === "string") {
+          setImportSummary(parsedImported.summary);
+        }
       }
     } catch {
       // Ignore invalid imported contact cache.
     }
+
+    try {
+      const rawSession = window.localStorage.getItem(SMART_SCAN_SESSION_KEY);
+      if (rawSession) {
+        const parsedSession = JSON.parse(rawSession) as { stage?: "scan" | "daily"; scanCount?: number; index?: number };
+        if (parsedSession.stage === "scan" || parsedSession.stage === "daily") {
+          setStage(parsedSession.stage);
+        }
+        if (typeof parsedSession.scanCount === "number") {
+          const safeCount = Math.max(0, Math.round(parsedSession.scanCount));
+          setScanCount(restoredImportedCount > 0 ? Math.min(restoredImportedCount, safeCount) : safeCount);
+        }
+        if (typeof parsedSession.index === "number") {
+          setIndex(Math.max(0, Math.round(parsedSession.index)));
+        }
+      }
+    } catch {
+      // Ignore invalid local session and keep default values.
+    } finally {
+      setHasHydratedLocalSession(true);
+    }
   }, []);
 
   useEffect(() => {
+    if (totalScanned <= 0) return;
+    setScanCount((value) => Math.max(0, Math.min(value, totalScanned)));
+  }, [totalScanned]);
+
+  useEffect(() => {
+    if (!hasHydratedLocalSession) return;
     if (typeof window === "undefined") return;
     window.localStorage.setItem(
       SMART_SCAN_SESSION_KEY,
       JSON.stringify({
         stage,
         scanCount,
+        index,
         updatedAt: Date.now(),
       }),
     );
-  }, [stage, scanCount]);
+  }, [stage, scanCount, index, hasHydratedLocalSession]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -1782,9 +1813,13 @@ export default function EntrepreneurSmartScanTestPage() {
   }
 
   async function sendOnWhatsApp() {
-    const cleanPhone = "33600000000";
+    const cleanPhone = normalizePhoneForWhatsApp(current.phone);
     const action = selectedAction;
     if (!action || action === "qualifier") return;
+    if (!cleanPhone) {
+      setApiErrorMessage("Numero WhatsApp manquant pour ce contact. Ajoute un numero valide dans ton fichier import.");
+      return;
+    }
     const payload = createTransitionPayload(action);
     const awaitingConfirm: TransitionAwaitingConfirmState = {
       action,
@@ -2201,8 +2236,8 @@ export default function EntrepreneurSmartScanTestPage() {
 
   if (stage === "scan") {
     return (
-      <main className="h-screen overflow-hidden bg-[radial-gradient(circle_at_10%_0%,#10193D_0%,#0C122B_45%,#090B16_100%)] text-white">
-        <div className="mx-auto flex h-full max-w-xl items-center px-4">
+      <main className="min-h-screen overflow-y-auto bg-[radial-gradient(circle_at_10%_0%,#10193D_0%,#0C122B_45%,#090B16_100%)] text-white pb-24">
+        <div className="mx-auto flex min-h-screen max-w-xl items-start px-4 pt-4 pb-24 sm:items-center">
           <section className="relative w-full overflow-hidden rounded-3xl border border-white/10 bg-white/5 p-5 backdrop-blur-xl">
             <motion.div
               aria-hidden
@@ -2317,6 +2352,11 @@ export default function EntrepreneurSmartScanTestPage() {
                 Import total: {importedTotalCount} • Quota quotidien: {dailyQueueCount} contacts
               </p>
             )}
+            {hasImportedContacts && (
+              <p className="mt-1 text-[11px] text-cyan-100/90">
+                Progression globale: {globalProcessedCount}/{importedTotalCount} • Aujourd hui: {Math.min(index, dailyQueueCount)}/{dailyQueueCount}
+              </p>
+            )}
             {hasImportedContacts && importedTotalCount > DAILY_CONTACT_LIMIT && (
               <p className="mt-1 text-[11px] text-white/70">
                 Lot du jour: contacts {dailyQueueLabel} (rotation automatique chaque jour)
@@ -2382,7 +2422,7 @@ export default function EntrepreneurSmartScanTestPage() {
               type="button"
               disabled={!scanDone}
               onClick={() => setStage("daily")}
-              className="mt-4 h-12 w-full rounded-xl bg-gradient-to-r from-emerald-400 to-cyan-300 text-sm font-black uppercase tracking-wide text-[#11252C] disabled:opacity-40"
+              className="mt-4 mb-20 h-12 w-full rounded-xl bg-gradient-to-r from-emerald-400 to-cyan-300 text-sm font-black uppercase tracking-wide text-[#11252C] disabled:opacity-40"
             >
               Continuer
             </button>
@@ -2545,6 +2585,16 @@ export default function EntrepreneurSmartScanTestPage() {
                 Potentiel du jour : ~{latentPotential}€
               </p>
             </div>
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={() => setIsCockpitCollapsed((value) => !value)}
+                className="h-8 rounded-full border border-white/20 bg-white/10 px-3 text-[10px] font-black uppercase tracking-[0.08em] text-white/85"
+              >
+                {isCockpitCollapsed ? "Deplier cockpit" : "Replier cockpit"}
+              </button>
+            </div>
+            <div className={isCockpitCollapsed ? "hidden" : "space-y-3"}>
             {showAdvancedOpsInUserCockpit && (
               <>
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
@@ -2814,11 +2864,12 @@ export default function EntrepreneurSmartScanTestPage() {
                 </span>
               </button>
             </div>
+            </div>
           </div>
         </div>
 
-        <div className={`mt-4 ${done >= 10 ? "grid gap-4 lg:grid-cols-[1.15fr_0.85fr]" : "flex justify-center"}`}>
-          <section className={`rounded-3xl border border-white/10 bg-white/5 p-3 sm:p-4 backdrop-blur-xl ${done >= 10 ? "" : "w-full max-w-3xl"}`}>
+        <div className={`mt-4 ${done >= dailyQueueCount ? "grid gap-4 lg:grid-cols-[1.15fr_0.85fr]" : "flex justify-center"}`}>
+          <section className={`rounded-3xl border border-white/10 bg-white/5 p-3 sm:p-4 backdrop-blur-xl ${done >= dailyQueueCount ? "" : "w-full max-w-3xl"}`}>
             <div className="flex items-center justify-between">
               <p className="text-xs font-black uppercase tracking-[0.12em] text-cyan-200">Daily Card</p>
               <span className="rounded-full border border-white/15 bg-black/25 px-2 py-1 text-[10px] font-black uppercase tracking-wide text-white/80">🔒 Anonymat communautaire garanti</span>
