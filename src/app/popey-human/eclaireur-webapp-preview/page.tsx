@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useSearchParams } from "next/navigation";
 
@@ -38,10 +37,14 @@ export default function EclaireurWebappPreviewPage() {
   const [estimatedDealValue, setEstimatedDealValue] = useState("");
   const [projectTypeCustom, setProjectTypeCustom] = useState("");
   const [portalData, setPortalData] = useState<{
+    inviteToken: string | null;
+    shortCode: string | null;
     sponsorName: string | null;
+    sponsorPhone: string | null;
     referrals: Array<{
       id: string;
       contact_name: string;
+      contact_phone: string;
       project_type: string | null;
       status: string;
       estimated_commission: number | null;
@@ -63,10 +66,14 @@ export default function EclaireurWebappPreviewPage() {
       const response = await fetch(`/api/popey-human/eclaireur-preview/portal?token=${encodeURIComponent(tokenOrCode)}`, { cache: "no-store" });
       const payload = (await response.json().catch(() => ({}))) as {
         error?: string;
+        inviteToken?: string | null;
+        shortCode?: string | null;
         sponsorName?: string | null;
+        sponsorPhone?: string | null;
         referrals?: Array<{
           id: string;
           contact_name: string;
+          contact_phone: string;
           project_type: string | null;
           status: string;
           estimated_commission: number | null;
@@ -81,7 +88,10 @@ export default function EclaireurWebappPreviewPage() {
         throw new Error(payload.error || "Impossible de charger le portail.");
       }
       setPortalData({
+        inviteToken: payload.inviteToken || null,
+        shortCode: payload.shortCode || null,
         sponsorName: payload.sponsorName || null,
+        sponsorPhone: payload.sponsorPhone || null,
         referrals: payload.referrals || [],
       });
       setPortalError("");
@@ -120,6 +130,16 @@ export default function EclaireurWebappPreviewPage() {
   const potential = referrals.reduce((sum, item) => sum + Number(item.estimated_commission || 0), 0);
   const finalized = referrals.filter((item) => item.status === "converted").length;
   const remaining = Math.max(0, 5 - finalized);
+  const liveToken = portalData?.inviteToken || (/^[a-f0-9]{16,64}$/i.test(tokenOrCode) ? tokenOrCode.toLowerCase() : "");
+  const detailsHref = liveToken ? `/popey-human/eclaireur/${encodeURIComponent(liveToken)}?tab=history` : null;
+  const whatsappHref = useMemo(() => {
+    const phone = (portalData?.sponsorPhone || "").replace(/\D/g, "");
+    if (!phone) return null;
+    const text = latestReferral
+      ? `Salut, je te relance sur l opportunite ${latestReferral.contact_name}.`
+      : "Salut, je souhaite te contacter depuis mon portail eclaireur.";
+    return `https://wa.me/${phone}?text=${encodeURIComponent(text)}`;
+  }, [latestReferral, portalData?.sponsorPhone]);
 
   async function submitOpportunity() {
     if (!tokenOrCode) {
@@ -215,6 +235,8 @@ export default function EclaireurWebappPreviewPage() {
             latestReferral={latestReferral}
             finalized={finalized}
             remaining={remaining}
+            detailsHref={detailsHref}
+            whatsappHref={whatsappHref}
           />
         ),
       },
@@ -261,23 +283,6 @@ export default function EclaireurWebappPreviewPage() {
   return (
     <main className="min-h-screen bg-[#05070D] text-white">
       <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
-        <header className="mb-8 rounded-3xl border border-cyan-300/25 bg-[radial-gradient(140%_120%_at_0%_0%,rgba(35,75,153,0.55)_0%,rgba(16,25,48,0.88)_52%,rgba(6,9,17,1)_100%)] p-5 sm:p-7 shadow-[0_24px_70px_-40px_rgba(56,189,248,0.8)]">
-          <p className="text-[11px] font-black uppercase tracking-[0.14em] text-cyan-200/85">Preview UX - Web App Eclaireur</p>
-          <h1 className="mt-2 text-3xl font-black tracking-tight sm:text-4xl">Version visuelle ultra simple</h1>
-          <p className="mt-2 max-w-3xl text-sm text-white/80 sm:text-base">
-            Nouveau design branche backend: lien magique, depot d opportunite reel, suivi statut + commission.
-          </p>
-          <div className="mt-4 flex flex-wrap gap-2">
-            <Link
-              href="/popey-human/eclaireur"
-              className="rounded-xl border border-white/20 bg-white/10 px-4 py-2 text-xs font-black uppercase tracking-wide text-white/90"
-            >
-              Portail Eclaireur actuel
-            </Link>
-            <span className="rounded-xl border border-emerald-300/35 bg-emerald-500/15 px-4 py-2 text-xs font-black uppercase tracking-wide text-emerald-100">Backend actif</span>
-          </div>
-        </header>
-
         <section className="mx-auto max-w-xl">
           <div className="mb-3 flex items-center justify-between rounded-2xl border border-white/15 bg-white/5 p-2">
             <button
@@ -444,7 +449,13 @@ function ScreenSubmitOpportunity({
       <p className="text-[10px] font-black uppercase tracking-[0.14em] text-emerald-200/90">Nouvelle opportunite</p>
       <h2 className="mt-2 text-2xl font-black leading-tight">Formulaire 30 secondes</h2>
 
-      <div className="mt-4 space-y-2">
+      <form
+        className="mt-4 space-y-2"
+        onSubmit={(event) => {
+          event.preventDefault();
+          onSubmit();
+        }}
+      >
         <div>
           <p className="mb-1 text-[10px] font-black uppercase tracking-[0.12em] text-white/70">Pour qui ? - Metier</p>
           <select
@@ -488,7 +499,7 @@ function ScreenSubmitOpportunity({
         <InputMock label="Commentaire libre">
           <textarea value={comment} onChange={(event) => setComment(event.target.value)} placeholder="Contexte, urgence..." className="min-h-20 w-full rounded-xl border border-white/20 bg-black/25 px-3 py-2 text-sm text-white/90" />
         </InputMock>
-      </div>
+      </form>
 
       <div className="mt-4 rounded-2xl border border-[#EAC886]/40 bg-[#EAC886]/12 p-3">
         <p className="text-[10px] font-black uppercase tracking-[0.12em] text-[#F8E7BF]">Motivation instantanee</p>
@@ -498,7 +509,7 @@ function ScreenSubmitOpportunity({
       </div>
 
       <button
-        type="button"
+        type="submit"
         onClick={onSubmit}
         disabled={isSubmitting || !tokenOrCode}
         className="mt-4 h-12 w-full rounded-2xl bg-gradient-to-r from-emerald-300 via-emerald-400 to-cyan-300 text-sm font-black uppercase tracking-wide text-black disabled:opacity-50"
@@ -515,6 +526,8 @@ function ScreenTrackingCommission({
   latestReferral,
   finalized,
   remaining,
+  detailsHref,
+  whatsappHref,
 }: {
   latestReferral: {
     id: string;
@@ -530,6 +543,8 @@ function ScreenTrackingCommission({
   } | null;
   finalized: number;
   remaining: number;
+  detailsHref: string | null;
+  whatsappHref: string | null;
 }) {
   const statusStep = latestReferral?.status === "converted" ? 3 : latestReferral?.status === "offered" ? 2 : latestReferral?.status === "validated" ? 1 : 0;
   const timeline = [
@@ -590,8 +605,24 @@ function ScreenTrackingCommission({
       </div>
 
       <div className="mt-4 grid grid-cols-2 gap-2">
-        <button className="h-10 rounded-xl border border-white/20 bg-white/10 text-xs font-black uppercase tracking-wide">Voir details</button>
-        <button className="h-10 rounded-xl bg-fuchsia-300 text-xs font-black uppercase tracking-wide text-black">Message WhatsApp</button>
+        {detailsHref ? (
+          <a href={detailsHref} className="h-10 rounded-xl border border-white/20 bg-white/10 text-xs font-black uppercase tracking-wide inline-flex items-center justify-center">
+            Voir details
+          </a>
+        ) : (
+          <span className="h-10 rounded-xl border border-white/20 bg-white/10 text-xs font-black uppercase tracking-wide inline-flex items-center justify-center opacity-60">
+            Voir details
+          </span>
+        )}
+        {whatsappHref ? (
+          <a href={whatsappHref} target="_blank" rel="noreferrer" className="h-10 rounded-xl bg-fuchsia-300 text-xs font-black uppercase tracking-wide text-black inline-flex items-center justify-center">
+            Message WhatsApp
+          </a>
+        ) : (
+          <span className="h-10 rounded-xl bg-fuchsia-300/50 text-xs font-black uppercase tracking-wide text-black inline-flex items-center justify-center opacity-70">
+            Message WhatsApp
+          </span>
+        )}
       </div>
       <p className="mt-2 text-[11px] text-white/60">Opportunites finalisees: {finalized}</p>
     </div>

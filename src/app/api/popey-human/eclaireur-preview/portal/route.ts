@@ -18,6 +18,7 @@ export async function GET(request: NextRequest) {
     error: null,
     scout: data.scout,
     sponsorName: data.sponsorName || null,
+    sponsorPhone: data.sponsor?.phone || null,
     referrals: data.referrals || [],
     inviteToken: data.invite?.invite_token || null,
     shortCode: data.invite?.short_code || null,
