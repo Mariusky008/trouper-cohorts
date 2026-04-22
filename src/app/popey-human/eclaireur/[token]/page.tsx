@@ -35,6 +35,13 @@ function referralStatusClass(status: string) {
   return "border-white/20 bg-white/8 text-white/85";
 }
 
+function referralTimelineStep(status: string) {
+  if (status === "converted") return 3;
+  if (status === "offered") return 2;
+  if (status === "validated") return 1;
+  return 0;
+}
+
 export default async function PopeyHumanScoutPortalPage({
   params,
   searchParams,
@@ -245,6 +252,39 @@ export default async function PopeyHumanScoutPortalPage({
                 <div className="mt-4 space-y-3">
                   {data.referrals.map((referral) => (
                     <article key={referral.id} className="rounded-xl border border-white/15 bg-black/25 px-3 py-3 sm:px-4">
+                      {(() => {
+                        const step = referralTimelineStep(referral.status);
+                        const timeline = [
+                          { id: "recu", label: "Reçu", idx: 0, at: referral.created_at },
+                          { id: "rdv", label: "RDV", idx: 1, at: referral.validated_at },
+                          { id: "offre", label: "Offre", idx: 2, at: referral.offered_at },
+                          { id: "signe", label: "Signé", idx: 3, at: referral.converted_at },
+                        ];
+                        return (
+                          <div className="mb-2 rounded-lg border border-cyan-300/25 bg-cyan-500/10 px-2 py-2">
+                            <p className="text-[10px] font-black uppercase tracking-[0.1em] text-cyan-200/90">
+                              Suivi synchronisé membre
+                            </p>
+                            <div className="mt-2 grid grid-cols-4 gap-1">
+                              {timeline.map((item) => (
+                                <div
+                                  key={`${referral.id}-${item.id}`}
+                                  className={`rounded-md border px-1 py-1 text-center ${
+                                    item.idx <= step
+                                      ? "border-emerald-300/45 bg-emerald-500/20 text-emerald-100"
+                                      : "border-white/20 bg-white/5 text-white/65"
+                                  }`}
+                                >
+                                  <p className="text-[10px] font-black uppercase tracking-[0.08em]">{item.label}</p>
+                                  <p className="mt-0.5 text-[9px] text-white/70">
+                                    {item.at ? new Date(item.at).toLocaleDateString("fr-FR") : "—"}
+                                  </p>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      })()}
                       <div className="flex flex-wrap items-start justify-between gap-2">
                         <p className="text-base sm:text-lg font-black leading-tight">
                           {referral.contact_name}
