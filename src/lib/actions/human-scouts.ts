@@ -1149,18 +1149,22 @@ export async function submitScoutReferralFromToken(formData: FormData) {
     return { error: "Ce contact est déjà suivi par le membre. Merci d'envoyer un autre lead." };
   }
 
-  const { error } = await supabaseAdmin.from("human_scout_referrals").insert({
-    owner_member_id: invite.owner_member_id,
-    scout_id: invite.scout_id,
-    contact_name: contactName,
-    contact_phone: contactPhone,
-    contact_phone_normalized: normalizedPhone,
-    project_type: projectType || null,
-    comment: comment || null,
-    status: "submitted",
-    estimated_deal_value: estimatedDealValue,
-    updated_at: new Date().toISOString(),
-  });
+  const { data: insertedReferral, error } = await supabaseAdmin
+    .from("human_scout_referrals")
+    .insert({
+      owner_member_id: invite.owner_member_id,
+      scout_id: invite.scout_id,
+      contact_name: contactName,
+      contact_phone: contactPhone,
+      contact_phone_normalized: normalizedPhone,
+      project_type: projectType || null,
+      comment: comment || null,
+      status: "submitted",
+      estimated_deal_value: estimatedDealValue,
+      updated_at: new Date().toISOString(),
+    })
+    .select("id")
+    .single();
   if (error) return { error: error.message };
 
   await logScoutEvent({
@@ -1183,7 +1187,7 @@ export async function submitScoutReferralFromToken(formData: FormData) {
   revalidatePath(`/popey-human/eclaireur/${token}`);
   revalidatePath("/popey-human/app/eclaireurs");
   revalidatePath("/admin/humain/eclaireurs");
-  return { success: true };
+  return { success: true, referralId: insertedReferral?.id || null };
 }
 
 export async function submitScoutReferralFromTokenAction(formData: FormData): Promise<void> {

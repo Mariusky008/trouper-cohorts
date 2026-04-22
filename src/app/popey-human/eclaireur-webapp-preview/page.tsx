@@ -31,6 +31,7 @@ export default function EclaireurWebappPreviewPage() {
   const [portalError, setPortalError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitMessage, setSubmitMessage] = useState("");
+  const [lastReferralId, setLastReferralId] = useState<string | null>(null);
   const [contactName, setContactName] = useState("");
   const [contactPhone, setContactPhone] = useState("");
   const [comment, setComment] = useState("");
@@ -41,6 +42,7 @@ export default function EclaireurWebappPreviewPage() {
     shortCode: string | null;
     sponsorName: string | null;
     sponsorPhone: string | null;
+    availableTargets: Array<{ label: string; type: "metier" | "member" }>;
     referrals: Array<{
       id: string;
       contact_name: string;
@@ -70,6 +72,7 @@ export default function EclaireurWebappPreviewPage() {
         shortCode?: string | null;
         sponsorName?: string | null;
         sponsorPhone?: string | null;
+        availableTargets?: Array<{ label: string; type: "metier" | "member" }>;
         referrals?: Array<{
           id: string;
           contact_name: string;
@@ -92,6 +95,7 @@ export default function EclaireurWebappPreviewPage() {
         shortCode: payload.shortCode || null,
         sponsorName: payload.sponsorName || null,
         sponsorPhone: payload.sponsorPhone || null,
+        availableTargets: payload.availableTargets || [],
         referrals: payload.referrals || [],
       });
       setPortalError("");
@@ -110,19 +114,26 @@ export default function EclaireurWebappPreviewPage() {
   }, [tokenOrCode]);
 
   const [city, setCity] = useState<keyof typeof OPPORTUNITY_TARGETS>("Dax");
-  const metiers = useMemo(() => OPPORTUNITY_TARGETS[city].map((item) => item.metier), [city]);
+  const fallbackMetiers = useMemo(() => OPPORTUNITY_TARGETS[city].map((item) => item.metier), [city]);
+  const availableMetiers = useMemo(() => {
+    const fromMember = (portalData?.availableTargets || []).map((item) => item.label.trim()).filter(Boolean);
+    if (fromMember.length > 0) {
+      return Array.from(new Set(fromMember));
+    }
+    return fallbackMetiers;
+  }, [fallbackMetiers, portalData?.availableTargets]);
   const [metier, setMetier] = useState<string>(OPPORTUNITY_TARGETS.Dax[0].metier);
 
   useEffect(() => {
-    if (!metiers.includes(metier)) {
-      setMetier(metiers[0] || "");
+    if (!availableMetiers.includes(metier)) {
+      setMetier(availableMetiers[0] || "");
     }
-  }, [metier, metiers]);
+  }, [availableMetiers, metier]);
 
   const selectedTarget = useMemo(() => {
     return OPPORTUNITY_TARGETS[city].find((item) => item.metier === metier) || OPPORTUNITY_TARGETS[city][0];
   }, [city, metier]);
-  const projectType = projectTypeCustom.trim() || metier;
+  const projectType = [metier.trim(), projectTypeCustom.trim()].filter(Boolean).join(" • ");
   const rewardLabel = selectedTarget.rewardType === "percent" ? `${selectedTarget.rewardValue}%` : `fixe ${selectedTarget.rewardValue} EUR`;
 
   const referrals = portalData?.referrals || [];
@@ -164,11 +175,12 @@ export default function EclaireurWebappPreviewPage() {
           comment,
         }),
       });
-      const payload = (await response.json().catch(() => ({}))) as { error?: string };
+      const payload = (await response.json().catch(() => ({}))) as { error?: string; referralId?: string | null };
       if (!response.ok) {
         throw new Error(payload.error || "Envoi impossible.");
       }
       setSubmitMessage("Alerte envoyee avec succes.");
+      setLastReferralId(payload.referralId || null);
       setContactName("");
       setContactPhone("");
       setComment("");
@@ -179,6 +191,7 @@ export default function EclaireurWebappPreviewPage() {
     } catch (error) {
       const message = error instanceof Error ? error.message : "Envoi impossible.";
       setSubmitMessage(message);
+      setLastReferralId(null);
     } finally {
       setIsSubmitting(false);
     }
@@ -196,6 +209,7 @@ export default function EclaireurWebappPreviewPage() {
             sponsorName={portalData?.sponsorName || null}
             dossiersEnCours={referrals.length}
             commissionPrevisionnelle={potential}
+            onGoSubmit={() => setActiveScreen(1)}
           />
         ),
       },
@@ -209,7 +223,7 @@ export default function EclaireurWebappPreviewPage() {
             metier={metier}
             setMetier={setMetier}
             cities={Object.keys(OPPORTUNITY_TARGETS) as Array<keyof typeof OPPORTUNITY_TARGETS>}
-            metiers={metiers}
+            metiers={availableMetiers}
             rewardLabel={rewardLabel}
             delayDays={selectedTarget.delayDays}
             contactName={contactName}
@@ -223,6 +237,7 @@ export default function EclaireurWebappPreviewPage() {
             comment={comment}
             setComment={setComment}
             submitMessage={submitMessage}
+            lastReferralId={lastReferralId}
             isSubmitting={isSubmitting}
             onSubmit={submitOpportunity}
           />
@@ -251,7 +266,7 @@ export default function EclaireurWebappPreviewPage() {
       isLoadingPortal,
       isSubmitting,
       latestReferral,
-      metiers,
+      availableMetiers,
       metier,
       portalData?.sponsorName,
       portalError,
@@ -262,6 +277,7 @@ export default function EclaireurWebappPreviewPage() {
       rewardLabel,
       selectedTarget.delayDays,
       submitMessage,
+      lastReferralId,
       tokenOrCode,
     ],
   );
@@ -348,6 +364,7 @@ function ScreenMagicLink({
   sponsorName,
   dossiersEnCours,
   commissionPrevisionnelle,
+  onGoSubmit,
 }: {
   tokenOrCode: string;
   isLoadingPortal: boolean;
@@ -355,6 +372,7 @@ function ScreenMagicLink({
   sponsorName: string | null;
   dossiersEnCours: number;
   commissionPrevisionnelle: number;
+  onGoSubmit: () => void;
 }) {
   const commissionLabel = commissionPrevisionnelle.toLocaleString("fr-FR", { style: "currency", currency: "EUR" });
   return (
@@ -390,7 +408,11 @@ function ScreenMagicLink({
       )}
       {portalError ? <p className="mt-2 rounded-xl border border-red-300/35 bg-red-500/10 px-3 py-2 text-[11px] text-red-100">{portalError}</p> : null}
 
-      <button className="mt-5 h-12 w-full rounded-2xl bg-gradient-to-r from-cyan-300 via-sky-300 to-emerald-300 text-sm font-black uppercase tracking-wide text-black shadow-[0_18px_30px_-20px_rgba(34,211,238,0.9)]">
+      <button
+        type="button"
+        onClick={onGoSubmit}
+        className="mt-5 h-12 w-full rounded-2xl bg-gradient-to-r from-cyan-300 via-sky-300 to-emerald-300 text-sm font-black uppercase tracking-wide text-black shadow-[0_18px_30px_-20px_rgba(34,211,238,0.9)]"
+      >
         Soumettre une opportunite
       </button>
     </div>
@@ -418,6 +440,7 @@ function ScreenSubmitOpportunity({
   comment,
   setComment,
   submitMessage,
+  lastReferralId,
   isSubmitting,
   onSubmit,
 }: {
@@ -441,6 +464,7 @@ function ScreenSubmitOpportunity({
   comment: string;
   setComment: (value: string) => void;
   submitMessage: string;
+  lastReferralId: string | null;
   isSubmitting: boolean;
   onSubmit: () => void;
 }) {
@@ -517,6 +541,11 @@ function ScreenSubmitOpportunity({
         {isSubmitting ? "Envoi..." : "Envoyer l opportunite"}
       </button>
       {submitMessage ? <p className="mt-2 rounded-xl border border-white/20 bg-black/25 px-3 py-2 text-xs text-white/80">{submitMessage}</p> : null}
+      {lastReferralId ? (
+        <p className="mt-2 rounded-xl border border-emerald-300/35 bg-emerald-500/10 px-3 py-2 text-xs text-emerald-100">
+          Enregistre ✅ ID opportunite: {lastReferralId}
+        </p>
+      ) : null}
       <p className="mt-2 text-center text-xs text-white/65">Un bon d apport numerique est cree automatiquement.</p>
     </div>
   );

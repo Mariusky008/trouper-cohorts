@@ -42,5 +42,5 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: result.error || "Envoi impossible." }, { status: 400 });
   }
 
-  return NextResponse.json({ success: true });
+  return NextResponse.json({ success: true, referralId: result.referralId || null });
 }
