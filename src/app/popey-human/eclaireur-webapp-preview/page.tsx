@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 const OPPORTUNITY_TARGETS = {
   Dax: [
@@ -22,6 +22,7 @@ const OPPORTUNITY_TARGETS = {
 } as const;
 
 export default function EclaireurWebappPreviewPage() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const tokenOrCode = (searchParams.get("token") || searchParams.get("code") || "").trim();
   const [activeScreen, setActiveScreen] = useState(0);
@@ -37,6 +38,7 @@ export default function EclaireurWebappPreviewPage() {
   const [comment, setComment] = useState("");
   const [estimatedDealValue, setEstimatedDealValue] = useState("");
   const [projectTypeCustom, setProjectTypeCustom] = useState("");
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [portalData, setPortalData] = useState<{
     inviteToken: string | null;
     shortCode: string | null;
@@ -107,6 +109,12 @@ export default function EclaireurWebappPreviewPage() {
       setIsLoadingPortal(false);
     }
   }
+
+  useEffect(() => {
+    if (!tokenOrCode) {
+      router.replace("/popey-human/eclaireur");
+    }
+  }, [router, tokenOrCode]);
 
   useEffect(() => {
     void loadPortal();
@@ -250,7 +258,7 @@ export default function EclaireurWebappPreviewPage() {
             latestReferral={latestReferral}
             finalized={finalized}
             remaining={remaining}
-            detailsHref={detailsHref}
+            onOpenDetails={() => setShowDetailsModal(true)}
             whatsappHref={whatsappHref}
           />
         ),
@@ -353,6 +361,54 @@ export default function EclaireurWebappPreviewPage() {
           </div>
         </section>
       </div>
+      {showDetailsModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 px-3 backdrop-blur-sm">
+          <section className="w-full max-w-lg rounded-2xl border border-white/20 bg-[#0B1224] p-4">
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-black uppercase tracking-[0.12em] text-cyan-100">Detail de l opportunite</p>
+              <button
+                type="button"
+                onClick={() => setShowDetailsModal(false)}
+                className="h-8 w-8 rounded-full border border-white/20 bg-white/10 text-xs"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="mt-3 rounded-xl border border-white/15 bg-black/25 px-3 py-3 text-sm">
+              <p><span className="text-white/65">Contact:</span> {latestReferral?.contact_name || "Aucune opportunite envoyee"}</p>
+              <p><span className="text-white/65">Projet:</span> {latestReferral?.project_type || "-"}</p>
+              <p>
+                <span className="text-white/65">Statut:</span>{" "}
+                {latestReferral?.status === "converted"
+                  ? "Signe"
+                  : latestReferral?.status === "offered"
+                    ? "Offre"
+                    : latestReferral?.status === "validated"
+                      ? "RDV"
+                      : latestReferral?.status === "submitted"
+                        ? "Recu"
+                        : "En attente"}
+              </p>
+              <p>
+                <span className="text-white/65">Commission:</span>{" "}
+                {latestReferral?.final_commission
+                  ? `${Number(latestReferral.final_commission).toLocaleString("fr-FR")} EUR`
+                  : latestReferral?.estimated_commission
+                    ? `${Number(latestReferral.estimated_commission).toLocaleString("fr-FR")} EUR previsionnel`
+                    : "En attente"}
+              </p>
+              {detailsHref ? (
+                <a
+                  href={detailsHref}
+                  className="mt-3 inline-flex h-9 items-center rounded-lg border border-cyan-300/35 bg-cyan-300/15 px-3 text-[11px] font-black uppercase tracking-[0.08em] text-cyan-100"
+                >
+                  Ouvrir historique complet
+                </a>
+              ) : null}
+            </div>
+          </section>
+        </div>
+      )}
     </main>
   );
 }
@@ -555,7 +611,7 @@ function ScreenTrackingCommission({
   latestReferral,
   finalized,
   remaining,
-  detailsHref,
+  onOpenDetails,
   whatsappHref,
 }: {
   latestReferral: {
@@ -572,7 +628,7 @@ function ScreenTrackingCommission({
   } | null;
   finalized: number;
   remaining: number;
-  detailsHref: string | null;
+  onOpenDetails: () => void;
   whatsappHref: string | null;
 }) {
   const statusStep = latestReferral?.status === "converted" ? 3 : latestReferral?.status === "offered" ? 2 : latestReferral?.status === "validated" ? 1 : 0;
@@ -634,15 +690,13 @@ function ScreenTrackingCommission({
       </div>
 
       <div className="mt-4 grid grid-cols-2 gap-2">
-        {detailsHref ? (
-          <a href={detailsHref} className="h-10 rounded-xl border border-white/20 bg-white/10 text-xs font-black uppercase tracking-wide inline-flex items-center justify-center">
-            Voir details
-          </a>
-        ) : (
-          <span className="h-10 rounded-xl border border-white/20 bg-white/10 text-xs font-black uppercase tracking-wide inline-flex items-center justify-center opacity-60">
-            Voir details
-          </span>
-        )}
+        <button
+          type="button"
+          onClick={onOpenDetails}
+          className="h-10 rounded-xl border border-white/20 bg-white/10 text-xs font-black uppercase tracking-wide"
+        >
+          Voir details
+        </button>
         {whatsappHref ? (
           <a href={whatsappHref} target="_blank" rel="noreferrer" className="h-10 rounded-xl bg-fuchsia-300 text-xs font-black uppercase tracking-wide text-black inline-flex items-center justify-center">
             Message WhatsApp
