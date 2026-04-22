@@ -469,7 +469,27 @@ function buildPromptCompliments(qualifier?: QualifierData) {
     .filter(Boolean) as string[];
 }
 
-function buildTemplate(action: DailyCategory, contact: DailyContact, qualifier?: QualifierData) {
+function resolveAllianceMetiers(ownerProfile?: SmartScanProfile | null) {
+  const rawMetier = String(ownerProfile?.metier || "").trim();
+  if (!rawMetier) {
+    return { metier1: "expert metier", metier2: "partenaire complementaire" };
+  }
+  const parts = rawMetier
+    .split(/\+|\/|,| et /i)
+    .map((part) => part.trim())
+    .filter(Boolean);
+  if (parts.length >= 2) {
+    return { metier1: parts[0], metier2: parts[1] };
+  }
+  return { metier1: rawMetier, metier2: "partenaire complementaire" };
+}
+
+function buildTemplate(
+  action: DailyCategory,
+  contact: DailyContact,
+  qualifier?: QualifierData,
+  ownerProfile?: SmartScanProfile | null,
+) {
   const firstName = contact.name.split(" ")[0];
   const compliments = buildPromptCompliments(qualifier);
   const complimentsLine =
@@ -478,7 +498,15 @@ function buildTemplate(action: DailyCategory, contact: DailyContact, qualifier?:
       : "J aime notre facon de travailler ensemble. ";
 
   if (action === "eclaireur") {
-    return `Salut ${firstName}, ${complimentsLine}Je lance un programme d apporteurs d affaires et je veux que tu en sois le premier beneficiaire. Si tu repere une opportunite, je m occupe du reste et on partage la commission. Tu veux qu on le teste sur un premier cas ?`;
+    const { metier1, metier2 } = resolveAllianceMetiers(ownerProfile);
+    const secteur = String(ownerProfile?.ville || contact.city || "ton secteur").trim() || "ton secteur";
+    return `Salut ${firstName}, je te contacte car je viens de structurer une alliance strategique avec deux partenaires (un ${metier1} et un ${metier2}).
+
+On a decide de mettre en place un systeme d antennes locales pour nous remonter des opportunites de terrain. J ai tout de suite pense a toi car tu as le profil ideal pour etre notre Eclaireur sur ${secteur}.
+
+Le deal est simple : tu nous identifies un besoin, on gere 100% du dossier avec notre expertise, et tu touches un pourcentage sur chaque affaire conclue. Ca peut vite representer un complement de revenu tres serieux a la fin du mois sans que tu n aies a travailler sur les dossiers.
+
+Est-ce que tu serais ouvert a ce qu on teste ca sur un premier cas ?`;
   }
   if (action === "package") {
     return `Salut ${firstName}, ${complimentsLine}J ai une opportunite pour notre Trio (immo + courtage + partenaire terrain). Je peux te mettre en relation immediate pour ouvrir le dossier dans de bonnes conditions. Tu veux que je lance la mise en relation maintenant ?`;
@@ -897,9 +925,9 @@ export default function EntrepreneurSmartScanTestPage() {
   const template = useMemo(
     () =>
       selectedAction
-        ? buildTemplate(selectedAction, current, currentQualifier)
+        ? buildTemplate(selectedAction, current, currentQualifier, myProfile)
         : "Choisis une action pour voir le template pre-rempli.",
-    [selectedAction, current, currentQualifier],
+    [selectedAction, current, currentQualifier, myProfile],
   );
   const promptContextPreview = buildPromptCompliments(currentQualifier);
   const liveEstimatedGain = getEstimatedGain(opportunityChoice, communityTags);
@@ -1974,7 +2002,7 @@ export default function EntrepreneurSmartScanTestPage() {
       setLaunchingAction(action);
       setTimeout(() => {
         setLaunchingAction(null);
-        const nextDraft = buildTemplate(action, current, currentQualifier);
+        const nextDraft = buildTemplate(action, current, currentQualifier, myProfile);
         setModalErrorMessage("");
         setSelectedAction(action);
         setDraftMessage(nextDraft);
@@ -1985,7 +2013,7 @@ export default function EntrepreneurSmartScanTestPage() {
       }, 1200);
       return;
     }
-    const nextDraft = buildTemplate(action, current, currentQualifier);
+    const nextDraft = buildTemplate(action, current, currentQualifier, myProfile);
     setSelectedAction(action);
     if (action === "qualifier") {
       setQualifierHeat(null);
@@ -2258,7 +2286,7 @@ export default function EntrepreneurSmartScanTestPage() {
     setActionFromProfileContactId(profileContact.id);
     setShowContactProfile(false);
     setShowSearchPanel(false);
-    const nextDraft = buildTemplate(action, profileContact, profileQualifier);
+    const nextDraft = buildTemplate(action, profileContact, profileQualifier, myProfile);
     setSelectedAction(action);
     setDraftMessage(nextDraft);
     setAiGenerationSource(null);
