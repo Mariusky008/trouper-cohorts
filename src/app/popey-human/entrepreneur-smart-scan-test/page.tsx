@@ -929,7 +929,6 @@ export default function EntrepreneurSmartScanTestPage() {
   const [allianceInvites, setAllianceInvites] = useState<SmartScanAllianceInvite[]>([]);
   const [isAllianceInvitesLoading, setIsAllianceInvitesLoading] = useState(false);
   const [allianceSort, setAllianceSort] = useState<"probability" | "fit" | "distance" | "recent">("probability");
-  const [isAllianceFollowupSendingId, setIsAllianceFollowupSendingId] = useState<string | null>(null);
   const [isAlliancesLoading, setIsAlliancesLoading] = useState(false);
   const [isAlliancesSearching, setIsAlliancesSearching] = useState(false);
   const [allianceCity, setAllianceCity] = useState("");
@@ -1129,20 +1128,6 @@ export default function EntrepreneurSmartScanTestPage() {
     }
     return list.sort((a, b) => (b.partnership_probability || 0) - (a.partnership_probability || 0));
   }, [allianceProspects, allianceSort]);
-  const relanceCandidates = useMemo(() => {
-    const now = Date.now();
-    return allianceInvites
-      .filter((invite) => invite.status === "sent" || invite.status === "clicked")
-      .map((invite) => {
-        const linkedProspect = allianceProspects.find((prospect) => prospect.id === invite.prospect_id) || null;
-        const referenceDate = invite.clicked_at || invite.sent_at || invite.created_at;
-        const ageDays = Math.max(0, Math.floor((now - new Date(referenceDate || invite.created_at).getTime()) / (24 * 60 * 60 * 1000)));
-        const mode: "sent" | "clicked" = invite.status === "clicked" ? "clicked" : "sent";
-        return { invite, linkedProspect, ageDays, mode };
-      })
-      .filter((item) => item.ageDays >= (item.mode === "clicked" ? 4 : 2))
-      .slice(0, 5);
-  }, [allianceInvites, allianceProspects]);
   const scopedActionContact = actionFromProfileContactId
     ? allContactsData.find((contact) => contact.id === actionFromProfileContactId) || current
     : current;
@@ -3246,46 +3231,6 @@ export default function EntrepreneurSmartScanTestPage() {
     } catch (error) {
       const message = error instanceof Error ? error.message : "Invitation alliance impossible.";
       setApiErrorMessage(message);
-    }
-  }
-
-  function buildAllianceFollowupMessage(prospect: SmartScanAllianceProspect, mode: "sent" | "clicked") {
-    const firstName = prospect.full_name.split(" ")[0] || prospect.full_name;
-    const myName = [myProfile?.first_name, myProfile?.last_name].filter(Boolean).join(" ").trim() || "Je";
-    const myMetier = myProfile?.metier || allianceSourceMetier || "professionnel local";
-    if (mode === "clicked") {
-      return `Hello ${firstName}, merci pour ton retour sur mon invitation. Si tu veux, on se cale un appel de 10 min pour definir un partenariat simple de recommandations entre ${myMetier} et ${prospect.metier}.`;
-    }
-    return `Bonjour ${firstName}, petit rappel de mon message: je suis ${myName}, ${myMetier}. Je cherche un partenaire local en synergie pour echanger des recommandations qualifiees. Ouvert a en parler cette semaine ?`;
-  }
-
-  async function sendAllianceFollowup(prospect: SmartScanAllianceProspect, mode: "sent" | "clicked") {
-    try {
-      setIsAllianceFollowupSendingId(prospect.id);
-      const messageDraft = buildAllianceFollowupMessage(prospect, mode);
-      const response = await fetch("/api/popey-human/smart-scan/alliances/invite", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          prospectId: prospect.id,
-          channel: "whatsapp",
-          messageDraft,
-        }),
-      });
-      const payload = (await response.json().catch(() => ({}))) as { error?: string; whatsappUrl?: string | null };
-      if (!response.ok) {
-        throw new Error(payload.error || "Relance impossible.");
-      }
-      if (payload.whatsappUrl && typeof window !== "undefined") {
-        window.open(payload.whatsappUrl, "_blank", "noopener,noreferrer");
-      }
-      await loadAllianceInvites();
-      await loadAllianceProspectsSnapshot();
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "Relance impossible.";
-      setApiErrorMessage(message);
-    } finally {
-      setIsAllianceFollowupSendingId(null);
     }
   }
 
@@ -5527,32 +5472,6 @@ export default function EntrepreneurSmartScanTestPage() {
               </select>
             </div>
 
-            {relanceCandidates.length > 0 && (
-              <div className="mt-2 rounded-xl border border-amber-300/30 bg-amber-300/10 p-2">
-                <p className="text-[10px] font-black uppercase tracking-[0.08em] text-amber-100">Relances intelligentes</p>
-                <div className="mt-1 space-y-1">
-                  {relanceCandidates.map((item) => (
-                    <div key={`relance-${item.invite.id}`} className="flex items-center justify-between gap-2 rounded-lg border border-white/15 bg-black/20 px-2 py-1.5">
-                      <p className="min-w-0 truncate text-[10px] text-white/85">
-                        {item.invite.prospect_name} • J+{item.ageDays} • {item.mode === "clicked" ? "a clique" : "pas de clic"}
-                      </p>
-                      <button
-                        type="button"
-                        disabled={!item.linkedProspect || isAllianceFollowupSendingId === item.invite.prospect_id}
-                        onClick={() => {
-                          if (!item.linkedProspect) return;
-                          void sendAllianceFollowup(item.linkedProspect, item.mode);
-                        }}
-                        className="rounded-md border border-amber-300/35 bg-amber-300/15 px-2 py-1 text-[10px] font-black uppercase tracking-[0.08em] text-amber-100 disabled:opacity-50"
-                      >
-                        {isAllianceFollowupSendingId === item.invite.prospect_id ? "Relance..." : "Relancer"}
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
             <div className="mt-2 space-y-2">
               {isAlliancesLoading && <p className="text-sm text-white/70">Chargement des alliances...</p>}
               {!isAlliancesLoading && allianceProspects.length === 0 ? (
@@ -5590,38 +5509,22 @@ export default function EntrepreneurSmartScanTestPage() {
                       Clics {prospect.invite_clicked_count || 0}
                     </span>
                   </div>
-                  <div className="mt-2 flex items-center justify-between gap-2">
+                  <div className="mt-2 space-y-2">
                     <p className="truncate text-[10px] text-white/70">{prospect.phone_e164 || "Telephone non disponible"}</p>
-                    <div className="flex items-center gap-1">
-                      <button
-                        type="button"
-                        disabled={prospect.source_mode === "fallback"}
-                        onClick={() => {
-                          if (prospect.source_mode === "fallback") {
-                            setApiErrorMessage("Prospect en mode simulation. Configure le provider B2B pour obtenir des numeros reels WhatsApp.");
-                            return;
-                          }
-                          void inviteAllianceProspect(prospect);
-                        }}
-                        className="rounded-lg border border-fuchsia-300/35 bg-fuchsia-300/15 px-2 py-1 text-[10px] font-black uppercase tracking-[0.08em] text-fuchsia-100 disabled:opacity-50"
-                      >
-                        {prospect.source_mode === "fallback" ? "Demo" : "Inviter"}
-                      </button>
-                      <button
-                        type="button"
-                        disabled={isAllianceFollowupSendingId === prospect.id || prospect.source_mode === "fallback"}
-                        onClick={() => {
-                          if (prospect.source_mode === "fallback") {
-                            setApiErrorMessage("Relance indisponible en mode simulation. Configure le provider B2B.");
-                            return;
-                          }
-                          void sendAllianceFollowup(prospect, "sent");
-                        }}
-                        className="rounded-lg border border-amber-300/35 bg-amber-300/15 px-2 py-1 text-[10px] font-black uppercase tracking-[0.08em] text-amber-100 disabled:opacity-60"
-                      >
-                        {isAllianceFollowupSendingId === prospect.id ? "..." : "Relance"}
-                      </button>
-                    </div>
+                    <button
+                      type="button"
+                      disabled={prospect.source_mode === "fallback"}
+                      onClick={() => {
+                        if (prospect.source_mode === "fallback") {
+                          setApiErrorMessage("Prospect en mode simulation. Configure le provider B2B pour obtenir des numeros reels WhatsApp.");
+                          return;
+                        }
+                        void inviteAllianceProspect(prospect);
+                      }}
+                      className="h-11 w-full rounded-xl border border-fuchsia-300/35 bg-fuchsia-300/20 px-3 text-[11px] font-black uppercase tracking-[0.08em] text-fuchsia-100 disabled:opacity-50"
+                    >
+                      {prospect.source_mode === "fallback" ? "Demo" : "Message"}
+                    </button>
                   </div>
                 </article>
               ))}
