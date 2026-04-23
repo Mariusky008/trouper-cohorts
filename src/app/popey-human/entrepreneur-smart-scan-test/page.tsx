@@ -873,6 +873,7 @@ export default function EntrepreneurSmartScanTestPage() {
   const [incomingSignedAmount, setIncomingSignedAmount] = useState("");
   const [isIncomingReferralStatusUpdating, setIsIncomingReferralStatusUpdating] = useState(false);
   const [isRemovingEclaireurId, setIsRemovingEclaireurId] = useState<string | null>(null);
+  const [showQualificationNeededPopup, setShowQualificationNeededPopup] = useState(false);
   const contactImportInputRef = useRef<HTMLInputElement | null>(null);
   const localDayNumber = useMemo(() => getLocalDayNumber(), []);
 
@@ -2189,6 +2190,11 @@ export default function EntrepreneurSmartScanTestPage() {
       return;
     }
     if (action === "eclaireur" || action === "package" || action === "exclients") {
+      if (!isQualified) {
+        setShowQualificationNeededPopup(true);
+        setTimeout(() => setShowQualificationNeededPopup(false), 1700);
+        return;
+      }
       // Daily-card action: clear any stale profile-origin context.
       setActionFromProfileContactId(null);
       setLaunchingAction(action);
@@ -2580,7 +2586,13 @@ export default function EntrepreneurSmartScanTestPage() {
       setTimeout(() => setApiErrorMessage(""), 1800);
       await refreshSmartScanSnapshot();
     } catch (error) {
-      setApiErrorMessage(error instanceof Error ? error.message : "Suppression eclaireur impossible.");
+      const message = error instanceof Error ? error.message : "Suppression eclaireur impossible.";
+      if (message.includes("is_eclaireur_active")) {
+        setEclaireurIds((prev) => prev.filter((id) => id !== contactId));
+        setApiErrorMessage("Retire localement. Migration SQL serveur requise pour synchroniser la suppression.");
+      } else {
+        setApiErrorMessage(message);
+      }
     } finally {
       setIsRemovingEclaireurId(null);
     }
@@ -4034,7 +4046,6 @@ export default function EntrepreneurSmartScanTestPage() {
                       key={button.action}
                       type="button"
                       onClick={() => triggerAction(button.action)}
-                      disabled={!isQualified}
                       className={`relative overflow-hidden h-20 rounded-2xl border ${theme.buttonClass} ${
                         shouldPulse ? theme.idlePulseClass : ""
                       } ${launching ? theme.launchRingClass : ""} ${button.isPriority ? "ring-1 ring-white/30" : ""}`}
@@ -4069,29 +4080,24 @@ export default function EntrepreneurSmartScanTestPage() {
                   );
                 })}
               </div>
-              {!isQualified && (
-                <div className="pointer-events-none mt-1 flex justify-center">
-                  <span className="inline-flex rounded-full border border-emerald-300/35 bg-emerald-300/12 px-2 py-1 text-[10px] font-black uppercase tracking-[0.08em] text-emerald-100">
-                    Qualification requise
-                  </span>
-                </div>
-              )}
-              <button
-                type="button"
-                onClick={() => finalizeAction("passer")}
-                className="mt-3 w-full text-center text-sm text-white/70 underline underline-offset-2"
-              >
-                Passer au contact suivant
-              </button>
-              {!isQualified && (
+              <div className={`mt-3 grid gap-2 ${!isQualified ? "grid-cols-2" : "grid-cols-1"}`}>
                 <button
                   type="button"
-                  onClick={() => triggerAction("qualifier")}
-                  className="mx-auto mt-2 h-9 rounded-full border border-emerald-300/45 bg-emerald-300/15 px-4 text-[10px] font-black uppercase tracking-[0.08em] text-emerald-100"
+                  onClick={() => finalizeAction("passer")}
+                  className="h-9 rounded-full border border-cyan-300/35 bg-cyan-300/15 px-4 text-[10px] font-black uppercase tracking-[0.08em] text-cyan-100"
                 >
-                  Qualifier
+                  Passer
                 </button>
-              )}
+                {!isQualified && (
+                  <button
+                    type="button"
+                    onClick={() => triggerAction("qualifier")}
+                    className="h-9 rounded-full border border-cyan-300/35 bg-cyan-300/15 px-4 text-[10px] font-black uppercase tracking-[0.08em] text-cyan-100"
+                  >
+                    Qualifier
+                  </button>
+                )}
+              </div>
               {softLearningHint && (
                 <p className="mt-2 rounded-xl bg-white/10 px-3 py-2 text-xs text-cyan-100">{softLearningHint}</p>
               )}
@@ -4162,6 +4168,14 @@ export default function EntrepreneurSmartScanTestPage() {
           })}
         </div>
       </nav>
+
+      {showQualificationNeededPopup && (
+        <div className="pointer-events-none fixed inset-x-0 bottom-24 z-[74] flex justify-center px-4">
+          <div className="rounded-full border border-amber-300/45 bg-amber-300/20 px-4 py-2 text-[11px] font-black uppercase tracking-[0.08em] text-amber-100 shadow-[0_18px_44px_-20px_rgba(251,191,36,0.7)]">
+            Qualifie ce contact d abord
+          </div>
+        </div>
+      )}
 
       {showMyProfilePanel && (
         <div className="fixed inset-0 z-[50] flex items-start justify-center bg-black/60 px-4 pb-4 backdrop-blur-sm">
@@ -4600,7 +4614,7 @@ export default function EntrepreneurSmartScanTestPage() {
             className="h-[calc(100dvh-92px)] max-h-[calc(100dvh-92px)] w-full overflow-y-auto rounded-none border-0 bg-[#0E1430] p-4 pb-32 sm:h-auto sm:max-h-[90vh] sm:max-w-lg sm:rounded-3xl sm:border sm:border-white/15"
             style={{ paddingTop: "calc(env(safe-area-inset-top) + 12px)" }}
           >
-            <div className="-mx-4 px-4 pb-2">
+            <div className="sticky top-0 z-20 -mx-4 bg-[#0E1430] px-4 pb-2">
               <div className="flex items-center justify-between">
                 <p className="text-xs font-black uppercase tracking-[0.12em] text-cyan-200">Mes Eclaireurs</p>
                 <button
@@ -4649,7 +4663,7 @@ export default function EntrepreneurSmartScanTestPage() {
                 </div>
               )}
             </div>
-            <div className="mt-3 space-y-2">
+            <div className="mt-3 max-h-[calc(100dvh-350px)] space-y-2 overflow-y-auto sm:max-h-[58vh]">
               {eclaireursList.length === 0 && <p className="text-sm text-white/70">Aucun eclaireur actif pour l instant.</p>}
               {eclaireursList.map((contact) => {
                 const stats = eclaireurStatsStore[contact.id] || { leadsDetected: 0, leadsSigned: 0, commissionTotalEur: 0, lastNewsAtMs: 0 };
