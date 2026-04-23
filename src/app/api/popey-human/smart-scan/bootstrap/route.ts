@@ -22,8 +22,8 @@ export async function GET() {
 
   const [sessionResult, contactsResult, qualificationsResult, historyResult, alertsResult, followupsResult, statsResult, followupOpsResult, externalClicksResult, eclaireursResult] = await Promise.all([
     getOrCreateTodaySession(),
-    listMySmartScanContacts(800),
-    listMySmartScanQualifications(800),
+    listMySmartScanContacts(5000),
+    listMySmartScanQualifications(5000),
     listHistoryActions(1000),
     listOpenSmartScanAlerts(80),
     listDueSmartScanFollowups(80),

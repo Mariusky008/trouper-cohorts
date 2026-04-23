@@ -748,22 +748,16 @@ function buildDailyQueueFromImportedContacts(
 ) {
   if (allContacts.length === 0) return [];
   const safeLimit = Math.max(1, limit);
-  const start = ((dayNumber * safeLimit) % allContacts.length + allContacts.length) % allContacts.length;
+  const availableContacts = excludedContactIds?.size
+    ? allContacts.filter((contact) => !excludedContactIds.has(contact.id))
+    : allContacts;
+  const source = availableContacts.length > 0 ? availableContacts : allContacts;
+  const start = ((dayNumber * safeLimit) % source.length + source.length) % source.length;
   const queue: DailyContact[] = [];
-  for (let i = 0; i < allContacts.length && queue.length < safeLimit; i += 1) {
-    const contact = allContacts[(start + i) % allContacts.length];
+  for (let i = 0; i < source.length; i += 1) {
+    const contact = source[(start + i) % source.length];
     if (!contact) continue;
-    if (excludedContactIds?.has(contact.id)) continue;
     queue.push(contact);
-  }
-  if (queue.length === 0) {
-    // If all contacts are currently parked ("passer"), recycle a fresh rotation
-    // instead of locking the user on a single fallback card.
-    for (let i = 0; i < allContacts.length && queue.length < safeLimit; i += 1) {
-      const contact = allContacts[(start + i) % allContacts.length];
-      if (!contact) continue;
-      queue.push(contact);
-    }
   }
   return queue;
 }

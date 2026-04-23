@@ -906,13 +906,13 @@ export async function listHistoryActions(limit = 60) {
   return { error: null as string | null, actions };
 }
 
-export async function listMySmartScanContacts(limit = 500) {
+export async function listMySmartScanContacts(limit = 2000) {
   const currentMember = await getCurrentHumanMember();
   if (!currentMember) {
     return { error: "Session requise.", contacts: [] as Array<Record<string, unknown>> };
   }
 
-  const safeLimit = Math.max(1, Math.min(1000, Math.trunc(limit)));
+  const safeLimit = Math.max(1, Math.min(5000, Math.trunc(limit)));
   const supabaseAdmin = createAdminClient();
   const { data, error } = await supabaseAdmin
     .from("human_smart_scan_contacts")
@@ -1001,13 +1001,13 @@ export async function listMySmartScanContacts(limit = 500) {
   return { error: null as string | null, contacts };
 }
 
-export async function listMySmartScanQualifications(limit = 500) {
+export async function listMySmartScanQualifications(limit = 2000) {
   const currentMember = await getCurrentHumanMember();
   if (!currentMember) {
     return { error: "Session requise.", qualifications: [] as Array<Record<string, unknown>> };
   }
 
-  const safeLimit = Math.max(1, Math.min(1000, Math.trunc(limit)));
+  const safeLimit = Math.max(1, Math.min(5000, Math.trunc(limit)));
   const supabaseAdmin = createAdminClient();
   const { data, error } = await supabaseAdmin
     .from("human_smart_scan_qualifications")
