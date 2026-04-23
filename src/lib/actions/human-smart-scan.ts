@@ -910,7 +910,9 @@ export async function listMySmartScanContacts(limit = 500) {
   const supabaseAdmin = createAdminClient();
   const { data, error } = await supabaseAdmin
     .from("human_smart_scan_contacts")
-    .select("id,external_contact_ref,full_name,city,company_hint,is_favorite,trust_level,trust_level_set_at,source,phone_e164,import_index,created_at,updated_at")
+    .select(
+      "id,external_contact_ref,full_name,city,company_hint,is_favorite,is_eclaireur_active,eclaireur_activated_at,trust_level,trust_level_set_at,source,phone_e164,import_index,created_at,updated_at",
+    )
     .eq("owner_member_id", currentMember.id)
     .order("updated_at", { ascending: false })
     .limit(safeLimit);

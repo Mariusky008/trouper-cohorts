@@ -222,10 +222,19 @@ type SmartScanIncomingReferral = {
   id: string;
   scout_id: string;
   contact_name: string;
+  contact_phone: string | null;
   project_type: string | null;
+  comment: string | null;
   status: string;
+  rejection_reason?: string | null;
   created_at: string;
+  validated_at?: string | null;
+  offered_at?: string | null;
+  converted_at?: string | null;
+  updated_at?: string;
   scout_name: string | null;
+  scout_phone?: string | null;
+  scout_ville?: string | null;
 };
 
 const PENDING_WHATSAPP_CONTEXT_KEY = "popey-human:smart-scan:pending-whatsapp-context";
@@ -709,6 +718,15 @@ function normalizePhoneForWhatsApp(phone?: string | null) {
   return digits;
 }
 
+function referralStatusLabel(status: string) {
+  if (status === "submitted") return "Opportunite recue";
+  if (status === "validated") return "RDV pris";
+  if (status === "offered") return "Offre envoyee";
+  if (status === "converted") return "Signature finale";
+  if (status === "rejected") return "Refusee";
+  return status || "Inconnu";
+}
+
 function getLocalDayNumber() {
   const now = new Date();
   const localMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -849,6 +867,9 @@ export default function EntrepreneurSmartScanTestPage() {
   const [copyingEclaireurLinkContactId, setCopyingEclaireurLinkContactId] = useState<string | null>(null);
   const [incomingReferrals, setIncomingReferrals] = useState<SmartScanIncomingReferral[]>([]);
   const [isIncomingReferralsLoading, setIsIncomingReferralsLoading] = useState(false);
+  const [selectedIncomingReferralId, setSelectedIncomingReferralId] = useState<string | null>(null);
+  const [incomingSignedAmount, setIncomingSignedAmount] = useState("");
+  const [isIncomingReferralStatusUpdating, setIsIncomingReferralStatusUpdating] = useState(false);
   const contactImportInputRef = useRef<HTMLInputElement | null>(null);
   const localDayNumber = useMemo(() => getLocalDayNumber(), []);
 
@@ -990,7 +1011,8 @@ export default function EntrepreneurSmartScanTestPage() {
       }
       return inactivityA - inactivityB;
     });
-  const importedScoutCandidates = contactsData
+  const scoutCandidateSource = importedContacts.length > 0 ? importedContacts : contactsData;
+  const importedScoutCandidates = scoutCandidateSource
     .filter((contact) => !eclaireurIds.includes(contact.id))
     .map((contact) => ({
       id: contact.id,
@@ -999,6 +1021,9 @@ export default function EntrepreneurSmartScanTestPage() {
   const hasImportedScoutCandidates = importedScoutCandidates.length > 0;
   const selectedEclaireurTemplateContact = selectedEclaireurTemplateContactId
     ? eclaireursList.find((contact) => contact.id === selectedEclaireurTemplateContactId) || eclaireurDirectory[selectedEclaireurTemplateContactId] || null
+    : null;
+  const selectedIncomingReferral = selectedIncomingReferralId
+    ? incomingReferrals.find((item) => item.id === selectedIncomingReferralId) || null
     : null;
 
   useEffect(() => {
@@ -1818,40 +1843,43 @@ export default function EntrepreneurSmartScanTestPage() {
     const nextPotentialStore: Record<string, number> = {};
     const nextEclaireurIds: string[] = [];
     const persistedImportedRows: Array<{ index: number; contact: DailyContact }> = [];
-    (payload.contacts || []).forEach((contact) => {
-      if (contact.external_contact_ref) {
-        dbToExternalRef.set(contact.id, contact.external_contact_ref);
-        if (contact.is_favorite) {
-          nextFavoriteIds.push(contact.external_contact_ref);
-        }
-        if (
-          contact.trust_level === "family" ||
-          contact.trust_level === "pro-close" ||
-          contact.trust_level === "acquaintance"
-        ) {
-          nextTrustStore[contact.external_contact_ref] = contact.trust_level;
-        }
-        nextPriorityScoreStore[contact.external_contact_ref] = Math.max(0, Math.round(contact.priority_score || 0));
-        nextPotentialStore[contact.external_contact_ref] = Math.max(0, Math.round(contact.potential_eur || 0));
-        if (contact.is_eclaireur_active) {
-          nextEclaireurIds.push(contact.external_contact_ref);
-        }
-        if (contact.source && contact.source.startsWith("import")) {
-          persistedImportedRows.push({
-            index: Number.isFinite(Number(contact.import_index)) ? Number(contact.import_index) : 999999,
-            contact: {
-              id: contact.external_contact_ref,
-              name: contact.full_name || contact.external_contact_ref || "Contact",
-              phone: contact.phone_e164 || null,
-              city: contact.city || "Inconnue",
-              companyHint: contact.company_hint || "Reseau perso",
-              capsule: "Importe depuis ton telephone",
-              communityKnownBy: 1,
-              dominantTags: ["📱 Contact importe", "🤝 A qualifier"],
-              externalNews: "Profil importe depuis ton annuaire",
-            },
-          });
-        }
+    const seenExternalRefs = new Set<string>();
+    (payload.contacts || []).forEach((contact, idx) => {
+      const externalRef = String(contact.external_contact_ref || contact.id || "").trim();
+      if (!externalRef) return;
+      dbToExternalRef.set(contact.id, externalRef);
+      if (contact.is_favorite) {
+        nextFavoriteIds.push(externalRef);
+      }
+      if (
+        contact.trust_level === "family" ||
+        contact.trust_level === "pro-close" ||
+        contact.trust_level === "acquaintance"
+      ) {
+        nextTrustStore[externalRef] = contact.trust_level;
+      }
+      nextPriorityScoreStore[externalRef] = Math.max(0, Math.round(contact.priority_score || 0));
+      nextPotentialStore[externalRef] = Math.max(0, Math.round(contact.potential_eur || 0));
+      if (contact.is_eclaireur_active) {
+        nextEclaireurIds.push(externalRef);
+      }
+      if (!seenExternalRefs.has(externalRef)) {
+        const hasImportIndex = Number.isFinite(Number(contact.import_index));
+        persistedImportedRows.push({
+          index: hasImportIndex ? Number(contact.import_index) : 100000 + idx,
+          contact: {
+            id: externalRef,
+            name: contact.full_name || externalRef || "Contact",
+            phone: contact.phone_e164 || null,
+            city: contact.city || "Inconnue",
+            companyHint: contact.company_hint || "Reseau perso",
+            capsule: "Importe depuis ton telephone",
+            communityKnownBy: 1,
+            dominantTags: ["📱 Contact importe", "🤝 A qualifier"],
+            externalNews: "Profil importe depuis ton annuaire",
+          },
+        });
+        seenExternalRefs.add(externalRef);
       }
     });
 
@@ -1958,15 +1986,16 @@ export default function EntrepreneurSmartScanTestPage() {
     const nextEclaireurStatsStore: Record<string, { leadsDetected: number; leadsSigned: number; commissionTotalEur: number; lastNewsAtMs: number }> = {};
     const nextEclaireurDirectory: Record<string, { id: string; name: string; city: string }> = {};
     (payload.eclaireurs || []).forEach((row) => {
-      if (!row.external_contact_ref) return;
+      const externalRef = String(row.external_contact_ref || row.id || "").trim();
+      if (!externalRef) return;
       const lastNewsSource = row.last_whatsapp_sent_at || row.updated_at || row.eclaireur_activated_at || "";
       const lastNewsMs = Date.parse(lastNewsSource);
-      nextEclaireurDirectory[row.external_contact_ref] = {
-        id: row.external_contact_ref,
-        name: row.full_name || row.external_contact_ref,
+      nextEclaireurDirectory[externalRef] = {
+        id: externalRef,
+        name: row.full_name || externalRef,
         city: row.city || "Inconnue",
       };
-      nextEclaireurStatsStore[row.external_contact_ref] = {
+      nextEclaireurStatsStore[externalRef] = {
         leadsDetected: Math.max(0, Math.round(Number(row.leads_detected || 0))),
         leadsSigned: Math.max(0, Math.round(Number(row.leads_signed || 0))),
         commissionTotalEur: Math.max(0, Math.round(Number(row.commission_total_eur || 0))),
@@ -2471,6 +2500,52 @@ export default function EntrepreneurSmartScanTestPage() {
     });
   }
 
+  async function updateIncomingReferralStatus(targetStatus: "validated" | "offered" | "converted") {
+    const referral = selectedIncomingReferral;
+    if (!referral) return;
+    try {
+      setIsIncomingReferralStatusUpdating(true);
+      const response = await fetch("/api/popey-human/smart-scan/scout-referrals/status", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          referralId: referral.id,
+          targetStatus,
+          signedAmount: targetStatus === "converted" ? Number(incomingSignedAmount || 0) : null,
+        }),
+      });
+      const payload = (await response.json().catch(() => ({}))) as { error?: string };
+      if (!response.ok) {
+        throw new Error(payload.error || "Impossible de mettre a jour ce statut.");
+      }
+      setApiErrorMessage(`Statut mis a jour: ${referralStatusLabel(targetStatus)}.`);
+      setTimeout(() => setApiErrorMessage(""), 1800);
+      const refreshed = await fetch("/api/popey-human/smart-scan/scout-referrals", { method: "GET", cache: "no-store" });
+      if (refreshed.ok) {
+        const data = (await refreshed.json().catch(() => ({}))) as { referrals?: SmartScanIncomingReferral[] };
+        setIncomingReferrals(data.referrals || []);
+      }
+      await refreshSmartScanSnapshot();
+    } catch (error) {
+      setApiErrorMessage(error instanceof Error ? error.message : "Impossible de mettre a jour ce statut.");
+    } finally {
+      setIsIncomingReferralStatusUpdating(false);
+    }
+  }
+
+  function openIncomingReferralWhatsApp(item: SmartScanIncomingReferral) {
+    const phone = normalizePhoneForWhatsApp(item.scout_phone || null);
+    if (!phone) {
+      setApiErrorMessage("Numero WhatsApp eclaireur introuvable.");
+      return;
+    }
+    const statusText = referralStatusLabel(item.status);
+    const message = `Salut ${item.scout_name || "Eclaireur"}, update dossier ${item.contact_name}: ${statusText}.`;
+    if (typeof window !== "undefined") {
+      window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, "_blank", "noopener,noreferrer");
+    }
+  }
+
   async function ensureEclaireurLink(contactId: string, options?: { autoCopy?: boolean }) {
     const fullContact = getContactById(contactId);
     const contact = fullContact || eclaireurDirectory[contactId] || null;
@@ -2577,6 +2652,8 @@ export default function EntrepreneurSmartScanTestPage() {
     setImportedContacts((prev) => [newContact, ...prev]);
     setImportSummary((prev) => (prev ? `${prev} • +1 manuel` : "1 contact ajoute manuellement"));
     setStage("daily");
+    setQualifierAutoOpenPausedUntilMs(Date.now() + 8000);
+    setShowEclaireursPanel(true);
     setApiErrorMessage("");
     setManualScoutName("");
     setManualScoutCity("");
@@ -2615,7 +2692,7 @@ export default function EntrepreneurSmartScanTestPage() {
       setApiErrorMessage("Eclaireur manuel ajoute et lien copie.");
       setTimeout(() => setApiErrorMessage(""), 1600);
     } catch {
-      setApiErrorMessage("Ajout manuel effectue mais synchronisation serveur incomplète.");
+      setApiErrorMessage("Eclaireur ajoute. Synchronisation serveur en cours.");
     }
   }
 
@@ -2644,6 +2721,7 @@ export default function EntrepreneurSmartScanTestPage() {
     setShowSearchPanel(false);
     setShowHistoryPanel(false);
     setShowEclaireursPanel(false);
+    setSelectedIncomingReferralId(null);
     setShowContactProfile(false);
     setShowTrustLevelPrompt(false);
     setShowMyProfilePanel(false);
@@ -4478,6 +4556,7 @@ export default function EntrepreneurSmartScanTestPage() {
                   type="button"
                   onClick={() => {
                     setShowEclaireursPanel(false);
+                    setSelectedIncomingReferralId(null);
                     setSelectedEclaireurTemplateContactId(null);
                     setEclaireurTemplates([]);
                   }}
@@ -4574,12 +4653,20 @@ export default function EntrepreneurSmartScanTestPage() {
               ) : (
                 <div className="mt-2 space-y-1">
                   {incomingReferrals.slice(0, 4).map((item) => (
-                    <div key={`incoming-${item.id}`} className="rounded-lg border border-white/15 bg-black/20 px-2 py-1">
+                    <button
+                      key={`incoming-${item.id}`}
+                      type="button"
+                      onClick={() => {
+                        setSelectedIncomingReferralId(item.id);
+                        setIncomingSignedAmount("");
+                      }}
+                      className="w-full rounded-lg border border-white/15 bg-black/20 px-2 py-1 text-left transition hover:border-fuchsia-300/45 hover:bg-fuchsia-300/10"
+                    >
                       <p className="text-[11px] font-black text-white">{item.contact_name}</p>
                       <p className="text-[10px] text-white/70">
-                        {item.scout_name || "Eclaireur"} • {item.project_type || "Projet non precise"} • {item.status}
+                        {item.scout_name || "Eclaireur"} • {item.project_type || "Projet non precise"} • {referralStatusLabel(item.status)}
                       </p>
-                    </div>
+                    </button>
                   ))}
                 </div>
               )}
@@ -4653,6 +4740,93 @@ export default function EntrepreneurSmartScanTestPage() {
                 );
               })}
             </div>
+          </section>
+        </div>
+      )}
+
+      {selectedIncomingReferral && (
+        <div className="fixed inset-0 z-[45] flex items-end justify-center bg-black/65 px-0 backdrop-blur-sm sm:items-center sm:px-4">
+          <section className="w-full max-h-[92vh] overflow-y-auto rounded-t-3xl border border-white/15 bg-[#0E1430] p-4 sm:max-w-lg sm:rounded-3xl">
+            <div className="flex items-center justify-between">
+              <p className="text-[11px] font-black uppercase tracking-[0.12em] text-fuchsia-100">Detail opportunite eclaireur</p>
+              <button
+                type="button"
+                onClick={() => setSelectedIncomingReferralId(null)}
+                className="h-8 w-8 rounded-full border border-white/20 bg-white/10 text-xs"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="mt-3 rounded-xl border border-white/15 bg-black/25 px-3 py-2 text-[12px] text-white/90">
+              <p>
+                <span className="text-white/65">Contact:</span> {selectedIncomingReferral.contact_name}
+              </p>
+              <p>
+                <span className="text-white/65">Eclaireur:</span> {selectedIncomingReferral.scout_name || "Eclaireur"}
+              </p>
+              <p>
+                <span className="text-white/65">Ville eclaireur:</span> {selectedIncomingReferral.scout_ville || "Non renseignee"}
+              </p>
+              <p>
+                <span className="text-white/65">Projet:</span> {selectedIncomingReferral.project_type || "Non precise"}
+              </p>
+              <p>
+                <span className="text-white/65">Statut:</span> {referralStatusLabel(selectedIncomingReferral.status)}
+              </p>
+              {selectedIncomingReferral.comment ? (
+                <p className="mt-2 rounded-lg border border-white/10 bg-black/25 px-2 py-1 text-[11px] text-white/85">
+                  {selectedIncomingReferral.comment}
+                </p>
+              ) : null}
+            </div>
+            <div className="mt-3 grid gap-2 sm:grid-cols-2">
+              <button
+                type="button"
+                onClick={() => openIncomingReferralWhatsApp(selectedIncomingReferral)}
+                className="h-9 rounded-lg border border-emerald-300/35 bg-emerald-300/15 px-3 text-[10px] font-black uppercase tracking-[0.08em] text-emerald-100"
+              >
+                Message WhatsApp
+              </button>
+              {selectedIncomingReferral.status === "submitted" ? (
+                <button
+                  type="button"
+                  onClick={() => void updateIncomingReferralStatus("validated")}
+                  disabled={isIncomingReferralStatusUpdating}
+                  className="h-9 rounded-lg border border-cyan-300/35 bg-cyan-300/15 px-3 text-[10px] font-black uppercase tracking-[0.08em] text-cyan-100 disabled:opacity-60"
+                >
+                  {isIncomingReferralStatusUpdating ? "MAJ..." : "Marquer RDV pris"}
+                </button>
+              ) : null}
+              {selectedIncomingReferral.status === "validated" ? (
+                <button
+                  type="button"
+                  onClick={() => void updateIncomingReferralStatus("offered")}
+                  disabled={isIncomingReferralStatusUpdating}
+                  className="h-9 rounded-lg border border-cyan-300/35 bg-cyan-300/15 px-3 text-[10px] font-black uppercase tracking-[0.08em] text-cyan-100 disabled:opacity-60"
+                >
+                  {isIncomingReferralStatusUpdating ? "MAJ..." : "Marquer Offre envoyee"}
+                </button>
+              ) : null}
+            </div>
+            {selectedIncomingReferral.status === "offered" ? (
+              <div className="mt-2 grid gap-2 sm:grid-cols-[1fr_auto]">
+                <input
+                  value={incomingSignedAmount}
+                  onChange={(event) => setIncomingSignedAmount(event.target.value)}
+                  placeholder="Montant signe (€)"
+                  inputMode="decimal"
+                  className="h-9 rounded-lg border border-white/15 bg-black/25 px-3 text-[11px]"
+                />
+                <button
+                  type="button"
+                  onClick={() => void updateIncomingReferralStatus("converted")}
+                  disabled={isIncomingReferralStatusUpdating}
+                  className="h-9 rounded-lg border border-fuchsia-300/35 bg-fuchsia-300/15 px-3 text-[10px] font-black uppercase tracking-[0.08em] text-fuchsia-100 disabled:opacity-60"
+                >
+                  {isIncomingReferralStatusUpdating ? "MAJ..." : "Signature finale"}
+                </button>
+              </div>
+            ) : null}
           </section>
         </div>
       )}
