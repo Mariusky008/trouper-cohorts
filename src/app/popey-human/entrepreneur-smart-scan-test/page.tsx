@@ -253,9 +253,18 @@ type SmartScanAllianceProspect = {
   fit_score: number;
   fit_reasons?: string[] | null;
   status: "new" | "contacted" | "replied" | "partnered" | "dismissed";
+  invite_sent_count?: number;
+  invite_clicked_count?: number;
+  invite_signed_up_count?: number;
+  last_invite_status?: "drafted" | "sent" | "clicked" | "signed_up" | "declined" | null;
+  last_invite_at?: string | null;
+  partnership_probability?: number;
+  created_at?: string;
+  updated_at?: string;
 };
 type SmartScanAllianceInvite = {
   id: string;
+  prospect_id: string;
   prospect_name: string;
   prospect_metier: string;
   prospect_city: string | null;
@@ -918,6 +927,8 @@ export default function EntrepreneurSmartScanTestPage() {
   const [allianceProspects, setAllianceProspects] = useState<SmartScanAllianceProspect[]>([]);
   const [allianceInvites, setAllianceInvites] = useState<SmartScanAllianceInvite[]>([]);
   const [isAllianceInvitesLoading, setIsAllianceInvitesLoading] = useState(false);
+  const [allianceSort, setAllianceSort] = useState<"probability" | "fit" | "distance" | "recent">("probability");
+  const [isAllianceFollowupSendingId, setIsAllianceFollowupSendingId] = useState<string | null>(null);
   const [isAlliancesLoading, setIsAlliancesLoading] = useState(false);
   const [isAlliancesSearching, setIsAlliancesSearching] = useState(false);
   const [allianceCity, setAllianceCity] = useState("");
@@ -1096,6 +1107,41 @@ export default function EntrepreneurSmartScanTestPage() {
   const selectedIncomingReferral = selectedIncomingReferralId
     ? incomingReferrals.find((item) => item.id === selectedIncomingReferralId) || null
     : null;
+  const sortedAllianceProspects = useMemo(() => {
+    const list = [...allianceProspects];
+    if (allianceSort === "fit") {
+      return list.sort((a, b) => (b.fit_score || 0) - (a.fit_score || 0));
+    }
+    if (allianceSort === "distance") {
+      return list.sort((a, b) => {
+        const da = Number.isFinite(Number(a.distance_km)) ? Number(a.distance_km) : 9999;
+        const db = Number.isFinite(Number(b.distance_km)) ? Number(b.distance_km) : 9999;
+        return da - db;
+      });
+    }
+    if (allianceSort === "recent") {
+      return list.sort((a, b) => {
+        const ta = new Date(a.last_invite_at || a.updated_at || a.created_at || 0).getTime();
+        const tb = new Date(b.last_invite_at || b.updated_at || b.created_at || 0).getTime();
+        return tb - ta;
+      });
+    }
+    return list.sort((a, b) => (b.partnership_probability || 0) - (a.partnership_probability || 0));
+  }, [allianceProspects, allianceSort]);
+  const relanceCandidates = useMemo(() => {
+    const now = Date.now();
+    return allianceInvites
+      .filter((invite) => invite.status === "sent" || invite.status === "clicked")
+      .map((invite) => {
+        const linkedProspect = allianceProspects.find((prospect) => prospect.id === invite.prospect_id) || null;
+        const referenceDate = invite.clicked_at || invite.sent_at || invite.created_at;
+        const ageDays = Math.max(0, Math.floor((now - new Date(referenceDate || invite.created_at).getTime()) / (24 * 60 * 60 * 1000)));
+        const mode: "sent" | "clicked" = invite.status === "clicked" ? "clicked" : "sent";
+        return { invite, linkedProspect, ageDays, mode };
+      })
+      .filter((item) => item.ageDays >= (item.mode === "clicked" ? 4 : 2))
+      .slice(0, 5);
+  }, [allianceInvites, allianceProspects]);
   const scopedActionContact = actionFromProfileContactId
     ? allContactsData.find((contact) => contact.id === actionFromProfileContactId) || current
     : current;
@@ -3086,6 +3132,21 @@ export default function EntrepreneurSmartScanTestPage() {
     return `Bonjour ${prospect.full_name}, je suis ${myName}, ${myMetier} sur ${city}. Je cherche un partenaire en synergie pour s echanger des recommandations qualifiees. J utilise Popey pour identifier des opportunites et je peux t envoyer des dossiers pertinents. Ouvert a un appel court cette semaine ?`;
   }
 
+  async function loadAllianceProspectsSnapshot() {
+    const response = await fetch("/api/popey-human/smart-scan/alliances/prospects", {
+      method: "GET",
+      cache: "no-store",
+    });
+    const payload = (await response.json().catch(() => ({}))) as {
+      error?: string;
+      prospects?: SmartScanAllianceProspect[];
+    };
+    if (!response.ok) {
+      throw new Error(payload.error || "Impossible de charger les alliances externes.");
+    }
+    setAllianceProspects(payload.prospects || []);
+  }
+
   async function runAllianceSearch() {
     try {
       setIsAlliancesSearching(true);
@@ -3151,9 +3212,50 @@ export default function EntrepreneurSmartScanTestPage() {
         currentList.map((item) => (item.id === prospect.id ? { ...item, status: "contacted" } : item)),
       );
       await loadAllianceInvites();
+      await loadAllianceProspectsSnapshot();
     } catch (error) {
       const message = error instanceof Error ? error.message : "Invitation alliance impossible.";
       setApiErrorMessage(message);
+    }
+  }
+
+  function buildAllianceFollowupMessage(prospect: SmartScanAllianceProspect, mode: "sent" | "clicked") {
+    const firstName = prospect.full_name.split(" ")[0] || prospect.full_name;
+    const myName = [myProfile?.first_name, myProfile?.last_name].filter(Boolean).join(" ").trim() || "Je";
+    const myMetier = myProfile?.metier || allianceSourceMetier || "professionnel local";
+    if (mode === "clicked") {
+      return `Hello ${firstName}, merci pour ton retour sur mon invitation. Si tu veux, on se cale un appel de 10 min pour definir un partenariat simple de recommandations entre ${myMetier} et ${prospect.metier}.`;
+    }
+    return `Bonjour ${firstName}, petit rappel de mon message: je suis ${myName}, ${myMetier}. Je cherche un partenaire local en synergie pour echanger des recommandations qualifiees. Ouvert a en parler cette semaine ?`;
+  }
+
+  async function sendAllianceFollowup(prospect: SmartScanAllianceProspect, mode: "sent" | "clicked") {
+    try {
+      setIsAllianceFollowupSendingId(prospect.id);
+      const messageDraft = buildAllianceFollowupMessage(prospect, mode);
+      const response = await fetch("/api/popey-human/smart-scan/alliances/invite", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          prospectId: prospect.id,
+          channel: "whatsapp",
+          messageDraft,
+        }),
+      });
+      const payload = (await response.json().catch(() => ({}))) as { error?: string; whatsappUrl?: string | null };
+      if (!response.ok) {
+        throw new Error(payload.error || "Relance impossible.");
+      }
+      if (payload.whatsappUrl && typeof window !== "undefined") {
+        window.open(payload.whatsappUrl, "_blank", "noopener,noreferrer");
+      }
+      await loadAllianceInvites();
+      await loadAllianceProspectsSnapshot();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Relance impossible.";
+      setApiErrorMessage(message);
+    } finally {
+      setIsAllianceFollowupSendingId(null);
     }
   }
 
@@ -5376,7 +5478,46 @@ export default function EntrepreneurSmartScanTestPage() {
               )}
             </div>
 
-            <p className="mt-3 text-[11px] text-white/65">{allianceProspects.length} prospect(s) alliance trouve(s)</p>
+            <div className="mt-3 flex items-center justify-between gap-2">
+              <p className="text-[11px] text-white/65">{allianceProspects.length} prospect(s) alliance trouve(s)</p>
+              <select
+                value={allianceSort}
+                onChange={(event) => setAllianceSort(event.target.value as "probability" | "fit" | "distance" | "recent")}
+                className="h-8 rounded-lg border border-white/20 bg-black/25 px-2 text-[10px]"
+              >
+                <option value="probability">Tri: Probabilite</option>
+                <option value="fit">Tri: Fit score</option>
+                <option value="distance">Tri: Distance</option>
+                <option value="recent">Tri: Recents</option>
+              </select>
+            </div>
+
+            {relanceCandidates.length > 0 && (
+              <div className="mt-2 rounded-xl border border-amber-300/30 bg-amber-300/10 p-2">
+                <p className="text-[10px] font-black uppercase tracking-[0.08em] text-amber-100">Relances intelligentes</p>
+                <div className="mt-1 space-y-1">
+                  {relanceCandidates.map((item) => (
+                    <div key={`relance-${item.invite.id}`} className="flex items-center justify-between gap-2 rounded-lg border border-white/15 bg-black/20 px-2 py-1.5">
+                      <p className="min-w-0 truncate text-[10px] text-white/85">
+                        {item.invite.prospect_name} • J+{item.ageDays} • {item.mode === "clicked" ? "a clique" : "pas de clic"}
+                      </p>
+                      <button
+                        type="button"
+                        disabled={!item.linkedProspect || isAllianceFollowupSendingId === item.invite.prospect_id}
+                        onClick={() => {
+                          if (!item.linkedProspect) return;
+                          void sendAllianceFollowup(item.linkedProspect, item.mode);
+                        }}
+                        className="rounded-md border border-amber-300/35 bg-amber-300/15 px-2 py-1 text-[10px] font-black uppercase tracking-[0.08em] text-amber-100 disabled:opacity-50"
+                      >
+                        {isAllianceFollowupSendingId === item.invite.prospect_id ? "Relance..." : "Relancer"}
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div className="mt-2 space-y-2">
               {isAlliancesLoading && <p className="text-sm text-white/70">Chargement des alliances...</p>}
               {!isAlliancesLoading && allianceProspects.length === 0 ? (
@@ -5384,7 +5525,7 @@ export default function EntrepreneurSmartScanTestPage() {
                   Aucun prospect pour le moment. Lance une recherche avec ville + metiers cibles.
                 </p>
               ) : null}
-              {allianceProspects.map((prospect) => (
+              {sortedAllianceProspects.map((prospect) => (
                 <article key={`alliance-prospect-${prospect.id}`} className="rounded-xl border border-white/15 bg-black/25 px-3 py-2">
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
@@ -5398,17 +5539,40 @@ export default function EntrepreneurSmartScanTestPage() {
                       Score {prospect.fit_score}/100
                     </span>
                   </div>
+                  <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                    <span className="rounded-full border border-cyan-300/30 bg-cyan-300/12 px-2 py-0.5 text-[10px] font-black text-cyan-100">
+                      Probabilite {prospect.partnership_probability || 0}%
+                    </span>
+                    <span className="rounded-full border border-fuchsia-300/30 bg-fuchsia-300/12 px-2 py-0.5 text-[10px] font-black text-fuchsia-100">
+                      Invites {prospect.invite_sent_count || 0}
+                    </span>
+                    <span className="rounded-full border border-amber-300/30 bg-amber-300/12 px-2 py-0.5 text-[10px] font-black text-amber-100">
+                      Clics {prospect.invite_clicked_count || 0}
+                    </span>
+                  </div>
                   <div className="mt-2 flex items-center justify-between gap-2">
                     <p className="truncate text-[10px] text-white/70">{prospect.phone_e164 || "Telephone non disponible"}</p>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        void inviteAllianceProspect(prospect);
-                      }}
-                      className="rounded-lg border border-fuchsia-300/35 bg-fuchsia-300/15 px-2 py-1 text-[10px] font-black uppercase tracking-[0.08em] text-fuchsia-100"
-                    >
-                      Inviter a une alliance
-                    </button>
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          void inviteAllianceProspect(prospect);
+                        }}
+                        className="rounded-lg border border-fuchsia-300/35 bg-fuchsia-300/15 px-2 py-1 text-[10px] font-black uppercase tracking-[0.08em] text-fuchsia-100"
+                      >
+                        Inviter
+                      </button>
+                      <button
+                        type="button"
+                        disabled={isAllianceFollowupSendingId === prospect.id}
+                        onClick={() => {
+                          void sendAllianceFollowup(prospect, "sent");
+                        }}
+                        className="rounded-lg border border-amber-300/35 bg-amber-300/15 px-2 py-1 text-[10px] font-black uppercase tracking-[0.08em] text-amber-100 disabled:opacity-60"
+                      >
+                        {isAllianceFollowupSendingId === prospect.id ? "..." : "Relance"}
+                      </button>
+                    </div>
                   </div>
                 </article>
               ))}

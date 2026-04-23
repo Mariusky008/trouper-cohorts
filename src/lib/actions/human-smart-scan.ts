@@ -2526,6 +2526,12 @@ type AllianceProspectRecord = {
   fit_score: number;
   fit_reasons: string[] | null;
   status: "new" | "contacted" | "replied" | "partnered" | "dismissed";
+  invite_sent_count?: number;
+  invite_clicked_count?: number;
+  invite_signed_up_count?: number;
+  last_invite_status?: "drafted" | "sent" | "clicked" | "signed_up" | "declined" | null;
+  last_invite_at?: string | null;
+  partnership_probability?: number;
   fetched_at: string;
   created_at: string;
   updated_at: string;
@@ -2592,6 +2598,95 @@ function computeAllianceFitScore(input: {
     reasons.push("reputation");
   }
   return { score: Math.max(0, Math.min(100, Math.round(score))), reasons };
+}
+
+function computePartnershipProbability(input: {
+  fitScore: number;
+  inviteSentCount: number;
+  inviteClickedCount: number;
+  inviteSignedUpCount: number;
+  lastInviteStatus: "drafted" | "sent" | "clicked" | "signed_up" | "declined" | null;
+}): number {
+  if (input.inviteSignedUpCount > 0 || input.lastInviteStatus === "signed_up") return 100;
+  let score = Math.round(input.fitScore * 0.62);
+  score += Math.min(18, input.inviteClickedCount * 9);
+  score += Math.min(10, input.inviteSentCount * 2);
+  if (input.lastInviteStatus === "declined") score -= 22;
+  if (input.inviteSentCount > 0 && input.inviteClickedCount === 0) {
+    score -= Math.min(20, input.inviteSentCount * 5);
+  }
+  return Math.max(0, Math.min(100, score));
+}
+
+async function enrichAllianceProspectsWithInviteStats(
+  ownerMemberId: string,
+  prospects: AllianceProspectRecord[],
+): Promise<AllianceProspectRecord[]> {
+  if (prospects.length === 0) return prospects;
+  const prospectIds = prospects.map((row) => row.id);
+  const supabaseAdmin = createAdminClient();
+  const { data: invites } = await supabaseAdmin
+    .from("human_smart_scan_alliance_invites")
+    .select("prospect_id,status,created_at")
+    .eq("owner_member_id", ownerMemberId)
+    .in("prospect_id", prospectIds)
+    .order("created_at", { ascending: false });
+
+  const statsByProspect = new Map<
+    string,
+    {
+      sent: number;
+      clicked: number;
+      signedUp: number;
+      lastStatus: "drafted" | "sent" | "clicked" | "signed_up" | "declined" | null;
+      lastAt: string | null;
+    }
+  >();
+
+  (invites || []).forEach((invite) => {
+    const prospectId = String(invite.prospect_id || "");
+    if (!prospectId) return;
+    const previous = statsByProspect.get(prospectId) || {
+      sent: 0,
+      clicked: 0,
+      signedUp: 0,
+      lastStatus: null,
+      lastAt: null,
+    };
+    if (invite.status === "sent") previous.sent += 1;
+    if (invite.status === "clicked") previous.clicked += 1;
+    if (invite.status === "signed_up") previous.signedUp += 1;
+    if (!previous.lastAt) {
+      previous.lastAt = invite.created_at || null;
+      previous.lastStatus = (invite.status as "drafted" | "sent" | "clicked" | "signed_up" | "declined" | null) || null;
+    }
+    statsByProspect.set(prospectId, previous);
+  });
+
+  return prospects.map((prospect) => {
+    const stats = statsByProspect.get(prospect.id) || {
+      sent: 0,
+      clicked: 0,
+      signedUp: 0,
+      lastStatus: null,
+      lastAt: null,
+    };
+    return {
+      ...prospect,
+      invite_sent_count: stats.sent,
+      invite_clicked_count: stats.clicked,
+      invite_signed_up_count: stats.signedUp,
+      last_invite_status: stats.lastStatus,
+      last_invite_at: stats.lastAt,
+      partnership_probability: computePartnershipProbability({
+        fitScore: prospect.fit_score,
+        inviteSentCount: stats.sent,
+        inviteClickedCount: stats.clicked,
+        inviteSignedUpCount: stats.signedUp,
+        lastInviteStatus: stats.lastStatus,
+      }),
+    };
+  });
 }
 
 async function searchB2BProvider(input: {
@@ -2748,7 +2843,11 @@ export async function searchAllianceProspects(input: {
   if (listError) {
     return { error: listError.message, prospects: [] as AllianceProspectRecord[] };
   }
-  return { error: null as string | null, prospects: (prospects as AllianceProspectRecord[] | null) || [] };
+  const hydrated = await enrichAllianceProspectsWithInviteStats(
+    currentMember.id,
+    (prospects as AllianceProspectRecord[] | null) || [],
+  );
+  return { error: null as string | null, prospects: hydrated };
 }
 
 export async function listAllianceProspects(limit = 80) {
@@ -2767,7 +2866,11 @@ export async function listAllianceProspects(limit = 80) {
     .limit(safeLimit);
 
   if (error) return { error: error.message, prospects: [] as AllianceProspectRecord[] };
-  return { error: null as string | null, prospects: (data as AllianceProspectRecord[] | null) || [] };
+  const hydrated = await enrichAllianceProspectsWithInviteStats(
+    currentMember.id,
+    (data as AllianceProspectRecord[] | null) || [],
+  );
+  return { error: null as string | null, prospects: hydrated };
 }
 
 export async function createAllianceInvite(input: {
