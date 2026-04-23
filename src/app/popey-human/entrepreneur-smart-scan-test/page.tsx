@@ -1231,9 +1231,9 @@ export default function EntrepreneurSmartScanTestPage() {
   const template = useMemo(
     () =>
       selectedAction
-        ? buildTemplate(selectedAction, current, currentQualifier, myProfile)
+        ? buildTemplate(selectedAction, scopedActionContact, scopedActionQualifier, myProfile)
         : "Choisis une action pour voir le template pre-rempli.",
-    [selectedAction, current, currentQualifier, myProfile],
+    [selectedAction, scopedActionContact, scopedActionQualifier, myProfile],
   );
   const promptContextPreview = buildPromptCompliments(currentQualifier);
   const liveEstimatedGain = getEstimatedGain(opportunityChoice, communityTags);
@@ -2037,12 +2037,39 @@ export default function EntrepreneurSmartScanTestPage() {
     return contactsData.find((contact) => contact.id === contactId) ?? importedContacts.find((contact) => contact.id === contactId) ?? null;
   }
 
-  function resolveMessageDraft(action: ActivationAction, fallbackDraft: string) {
+  function getContactFirstName(contact: { name: string }) {
+    const firstName = String(contact.name || "").trim().split(/\s+/)[0] || "toi";
+    return firstName;
+  }
+
+  function personalizeDraftWithContact(draft: string, contact: { name: string }) {
+    const firstName = getContactFirstName(contact);
+    let text = String(draft || "");
+    text = text
+      .replace(/\{\{\s*prenom\s*\}\}/gi, firstName)
+      .replace(/\{\{\s*firstname\s*\}\}/gi, firstName)
+      .replace(/\{\s*prenom\s*\}/gi, firstName);
+    // If a saved template starts with "Bonjour X", force X to current contact first name.
+    text = text.replace(/\b(Bonjour|Salut|Hello|Coucou)\s+[^\s,!.?:;]+/i, `$1 ${firstName}`);
+    return text;
+  }
+
+  function normalizeDraftForDefault(draft: string, contact: { name: string }) {
+    const firstName = getContactFirstName(contact);
+    let text = String(draft || "");
+    text = text.replace(new RegExp(`\\b(Bonjour|Salut|Hello|Coucou)\\s+${firstName}\\b`, "i"), "$1 {{prenom}}");
+    if (!/\{\{\s*prenom\s*\}\}/i.test(text)) {
+      text = text.replace(/\b(Bonjour|Salut|Hello|Coucou)\s+[^\s,!.?:;]+/i, "$1 {{prenom}}");
+    }
+    return text;
+  }
+
+  function resolveMessageDraft(action: ActivationAction, fallbackDraft: string, contact: { name: string }) {
     const savedDraft = defaultMessageStore[action];
     if (typeof savedDraft === "string" && savedDraft.trim().length > 0) {
-      return savedDraft;
+      return personalizeDraftWithContact(savedDraft, contact);
     }
-    return fallbackDraft;
+    return personalizeDraftWithContact(fallbackDraft, contact);
   }
 
   async function postSmartScan(
@@ -2511,8 +2538,8 @@ export default function EntrepreneurSmartScanTestPage() {
       setLaunchingAction(action);
       setTimeout(() => {
         setLaunchingAction(null);
-        const fallbackDraft = buildTemplate(action, current, currentQualifier, myProfile);
-        const nextDraft = resolveMessageDraft(action, fallbackDraft);
+        const fallbackDraft = buildTemplate(action, scopedActionContact, scopedActionQualifier, myProfile);
+        const nextDraft = resolveMessageDraft(action, fallbackDraft, scopedActionContact);
         setModalErrorMessage("");
         setModalInfoMessage("");
         setSelectedAction(action);
@@ -2524,7 +2551,7 @@ export default function EntrepreneurSmartScanTestPage() {
       }, 1200);
       return;
     }
-    const nextDraft = buildTemplate(action, current, currentQualifier, myProfile);
+    const nextDraft = buildTemplate(action, scopedActionContact, scopedActionQualifier, myProfile);
     setSelectedAction(action);
     if (action === "qualifier") {
       setQualifierHeat(null);
@@ -2634,10 +2661,12 @@ export default function EntrepreneurSmartScanTestPage() {
       setModalErrorMessage("Le message est vide. Ecris un texte avant de l enregistrer par defaut.");
       return;
     }
+    const normalizedDefault = normalizeDraftForDefault(cleanDraft, scopedActionContact);
     setDefaultMessageStore((prev) => ({
       ...prev,
-      [action]: cleanDraft,
+      [action]: normalizedDefault,
     }));
+    setDraftMessage(personalizeDraftWithContact(normalizedDefault, scopedActionContact));
     setModalErrorMessage("");
     setModalInfoMessage(`Message par defaut enregistre pour ${modalTitle(action)}.`);
     setTimeout(() => setModalInfoMessage(""), 2200);
@@ -3299,7 +3328,7 @@ export default function EntrepreneurSmartScanTestPage() {
     setShowContactProfile(false);
     setShowSearchPanel(false);
     const fallbackDraft = buildTemplate(action, profileContact, profileQualifier, myProfile);
-    const nextDraft = resolveMessageDraft(action, fallbackDraft);
+    const nextDraft = resolveMessageDraft(action, fallbackDraft, profileContact);
     setSelectedAction(action);
     setDraftMessage(nextDraft);
     setModalInfoMessage("");
@@ -5809,7 +5838,7 @@ export default function EntrepreneurSmartScanTestPage() {
                   type="button"
                   onClick={() => {
                     setSelectedAction("eclaireur");
-                    setDraftMessage(resolveMessageDraft("eclaireur", item.message));
+                    setDraftMessage(resolveMessageDraft("eclaireur", item.message, selectedEclaireurTemplateContact || scopedActionContact));
                     setModalInfoMessage("");
                     setShowTemplateModal(true);
                     setShowEclaireursPanel(false);
