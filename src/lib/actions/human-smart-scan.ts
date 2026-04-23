@@ -2837,3 +2837,136 @@ export async function createAllianceInvite(input: {
     whatsappUrl,
   };
 }
+
+type AllianceInviteRow = {
+  id: string;
+  owner_member_id: string;
+  prospect_id: string;
+  channel: "whatsapp" | "sms" | "email" | "other";
+  message_draft: string | null;
+  onboarding_token: string;
+  onboarding_link: string | null;
+  status: "drafted" | "sent" | "clicked" | "signed_up" | "declined";
+  sent_at: string | null;
+  clicked_at: string | null;
+  signed_up_member_id: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export async function listAllianceInvites(limit = 120) {
+  const currentMember = await getCurrentHumanMember();
+  if (!currentMember) {
+    return { error: "Session requise.", invites: [] as Array<AllianceInviteRow & { prospect_name: string; prospect_metier: string; prospect_city: string | null }> };
+  }
+  const safeLimit = Math.max(1, Math.min(300, Math.trunc(limit)));
+  const supabaseAdmin = createAdminClient();
+  const { data, error } = await supabaseAdmin
+    .from("human_smart_scan_alliance_invites")
+    .select(
+      "id,owner_member_id,prospect_id,channel,message_draft,onboarding_token,onboarding_link,status,sent_at,clicked_at,signed_up_member_id,created_at,updated_at,human_smart_scan_alliance_prospects!inner(full_name,metier,city)",
+    )
+    .eq("owner_member_id", currentMember.id)
+    .order("created_at", { ascending: false })
+    .limit(safeLimit);
+  if (error) return { error: error.message, invites: [] as Array<AllianceInviteRow & { prospect_name: string; prospect_metier: string; prospect_city: string | null }> };
+
+  const invites = ((data || []) as Array<AllianceInviteRow & { human_smart_scan_alliance_prospects?: { full_name?: string | null; metier?: string | null; city?: string | null } | null }>)
+    .map((row) => ({
+      ...row,
+      prospect_name: row.human_smart_scan_alliance_prospects?.full_name || "Prospect",
+      prospect_metier: row.human_smart_scan_alliance_prospects?.metier || "Metier",
+      prospect_city: row.human_smart_scan_alliance_prospects?.city || null,
+    }));
+  return { error: null as string | null, invites };
+}
+
+export async function getAllianceInvitePortalByToken(token: string) {
+  const normalizedToken = String(token || "").trim().toLowerCase();
+  if (!normalizedToken) {
+    return { error: "Invitation invalide.", invite: null as (AllianceInviteRow & { prospect_name: string; prospect_metier: string; prospect_city: string | null; sponsor_name: string | null; sponsor_metier: string | null; sponsor_city: string | null }) | null };
+  }
+
+  const supabaseAdmin = createAdminClient();
+  const { data, error } = await supabaseAdmin
+    .from("human_smart_scan_alliance_invites")
+    .select(
+      "id,owner_member_id,prospect_id,channel,message_draft,onboarding_token,onboarding_link,status,sent_at,clicked_at,signed_up_member_id,created_at,updated_at,human_smart_scan_alliance_prospects!inner(full_name,metier,city)",
+    )
+    .eq("onboarding_token", normalizedToken)
+    .maybeSingle();
+
+  if (error) return { error: error.message, invite: null as (AllianceInviteRow & { prospect_name: string; prospect_metier: string; prospect_city: string | null; sponsor_name: string | null; sponsor_metier: string | null; sponsor_city: string | null }) | null };
+  if (!data) return { error: "Invitation introuvable.", invite: null as (AllianceInviteRow & { prospect_name: string; prospect_metier: string; prospect_city: string | null; sponsor_name: string | null; sponsor_metier: string | null; sponsor_city: string | null }) | null };
+
+  const invite = data as AllianceInviteRow & { human_smart_scan_alliance_prospects?: { full_name?: string | null; metier?: string | null; city?: string | null } | null };
+  const nowIso = new Date().toISOString();
+  if (!invite.clicked_at || invite.status === "sent") {
+    await supabaseAdmin
+      .from("human_smart_scan_alliance_invites")
+      .update({
+        clicked_at: nowIso,
+        status: invite.status === "signed_up" ? "signed_up" : "clicked",
+        updated_at: nowIso,
+      })
+      .eq("id", invite.id);
+  }
+
+  const { data: ownerMember } = await supabaseAdmin
+    .from("human_members")
+    .select("first_name,last_name,metier,ville")
+    .eq("id", invite.owner_member_id)
+    .maybeSingle();
+  const sponsorName = [ownerMember?.first_name, ownerMember?.last_name].filter(Boolean).join(" ").trim() || null;
+
+  return {
+    error: null as string | null,
+    invite: {
+      ...invite,
+      prospect_name: invite.human_smart_scan_alliance_prospects?.full_name || "Prospect",
+      prospect_metier: invite.human_smart_scan_alliance_prospects?.metier || "Metier",
+      prospect_city: invite.human_smart_scan_alliance_prospects?.city || null,
+      sponsor_name: sponsorName,
+      sponsor_metier: ownerMember?.metier || null,
+      sponsor_city: ownerMember?.ville || null,
+    },
+  };
+}
+
+export async function claimAllianceInviteSignedUp(token: string) {
+  const normalizedToken = String(token || "").trim().toLowerCase();
+  if (!normalizedToken) return { error: "Token invitation invalide." };
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Session requise." };
+
+  const currentMember = await ensureHumanMemberForUserId(user.id);
+  if (!currentMember) return { error: "Profil Popey Human introuvable." };
+
+  const supabaseAdmin = createAdminClient();
+  const { data: invite, error: inviteError } = await supabaseAdmin
+    .from("human_smart_scan_alliance_invites")
+    .select("id,owner_member_id,status")
+    .eq("onboarding_token", normalizedToken)
+    .maybeSingle();
+  if (inviteError) return { error: inviteError.message };
+  if (!invite) return { error: "Invitation introuvable." };
+
+  const nowIso = new Date().toISOString();
+  const { error: updateError } = await supabaseAdmin
+    .from("human_smart_scan_alliance_invites")
+    .update({
+      status: "signed_up",
+      signed_up_member_id: currentMember.id,
+      clicked_at: nowIso,
+      updated_at: nowIso,
+    })
+    .eq("id", invite.id);
+  if (updateError) return { error: updateError.message };
+
+  revalidatePath("/popey-human/entrepreneur-smart-scan-test");
+  return { success: true as const, ownerMemberId: invite.owner_member_id };
+}

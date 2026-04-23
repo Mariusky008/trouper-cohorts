@@ -254,6 +254,16 @@ type SmartScanAllianceProspect = {
   fit_reasons?: string[] | null;
   status: "new" | "contacted" | "replied" | "partnered" | "dismissed";
 };
+type SmartScanAllianceInvite = {
+  id: string;
+  prospect_name: string;
+  prospect_metier: string;
+  prospect_city: string | null;
+  status: "drafted" | "sent" | "clicked" | "signed_up" | "declined";
+  created_at: string;
+  clicked_at?: string | null;
+  sent_at?: string | null;
+};
 
 const PENDING_WHATSAPP_CONTEXT_KEY = "popey-human:smart-scan:pending-whatsapp-context";
 const SMART_SCAN_SESSION_KEY = "popey-human:smart-scan:scan-session";
@@ -906,6 +916,8 @@ export default function EntrepreneurSmartScanTestPage() {
   const [showQualificationNeededPopup, setShowQualificationNeededPopup] = useState(false);
   const [copiedHistoryEntryKey, setCopiedHistoryEntryKey] = useState<string | null>(null);
   const [allianceProspects, setAllianceProspects] = useState<SmartScanAllianceProspect[]>([]);
+  const [allianceInvites, setAllianceInvites] = useState<SmartScanAllianceInvite[]>([]);
+  const [isAllianceInvitesLoading, setIsAllianceInvitesLoading] = useState(false);
   const [isAlliancesLoading, setIsAlliancesLoading] = useState(false);
   const [isAlliancesSearching, setIsAlliancesSearching] = useState(false);
   const [allianceCity, setAllianceCity] = useState("");
@@ -1164,6 +1176,7 @@ export default function EntrepreneurSmartScanTestPage() {
       }
     }
     void loadAlliancesProspects();
+    void loadAllianceInvites();
     return () => {
       cancelled = true;
     };
@@ -3100,6 +3113,7 @@ export default function EntrepreneurSmartScanTestPage() {
         throw new Error(payload.error || "Recherche alliances impossible.");
       }
       setAllianceProspects(payload.prospects || []);
+      await loadAllianceInvites();
       setApiErrorMessage("");
     } catch (error) {
       const message = error instanceof Error ? error.message : "Recherche alliances impossible.";
@@ -3136,9 +3150,33 @@ export default function EntrepreneurSmartScanTestPage() {
       setAllianceProspects((currentList) =>
         currentList.map((item) => (item.id === prospect.id ? { ...item, status: "contacted" } : item)),
       );
+      await loadAllianceInvites();
     } catch (error) {
       const message = error instanceof Error ? error.message : "Invitation alliance impossible.";
       setApiErrorMessage(message);
+    }
+  }
+
+  async function loadAllianceInvites() {
+    try {
+      setIsAllianceInvitesLoading(true);
+      const response = await fetch("/api/popey-human/smart-scan/alliances/invites", {
+        method: "GET",
+        cache: "no-store",
+      });
+      const payload = (await response.json().catch(() => ({}))) as {
+        error?: string;
+        invites?: SmartScanAllianceInvite[];
+      };
+      if (!response.ok) {
+        throw new Error(payload.error || "Impossible de charger le pipeline alliances.");
+      }
+      setAllianceInvites(payload.invites || []);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Impossible de charger le pipeline alliances.";
+      setApiErrorMessage(message);
+    } finally {
+      setIsAllianceInvitesLoading(false);
     }
   }
 
@@ -5287,6 +5325,55 @@ export default function EntrepreneurSmartScanTestPage() {
               >
                 {isAlliancesSearching ? "Recherche en cours..." : "Lancer recherche B2B"}
               </button>
+            </div>
+
+            <div className="mt-3 rounded-2xl border border-fuchsia-300/30 bg-fuchsia-300/10 p-3">
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-[10px] font-black uppercase tracking-[0.1em] text-fuchsia-100">Pipeline alliances (Lot 2)</p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    void loadAllianceInvites();
+                  }}
+                  className="h-7 rounded-lg border border-white/20 bg-white/10 px-2 text-[10px] font-black uppercase tracking-[0.08em] text-white/85"
+                >
+                  Refresh
+                </button>
+              </div>
+              <div className="mt-2 grid grid-cols-4 gap-2">
+                <div className="rounded-lg border border-white/20 bg-black/25 px-2 py-2 text-center">
+                  <p className="text-[9px] uppercase font-black tracking-[0.08em] text-white/70">Total</p>
+                  <p className="text-sm font-black text-white">{allianceInvites.length}</p>
+                </div>
+                <div className="rounded-lg border border-cyan-300/35 bg-cyan-300/12 px-2 py-2 text-center">
+                  <p className="text-[9px] uppercase font-black tracking-[0.08em] text-cyan-100">Envoye</p>
+                  <p className="text-sm font-black text-cyan-100">{allianceInvites.filter((item) => item.status === "sent").length}</p>
+                </div>
+                <div className="rounded-lg border border-amber-300/35 bg-amber-300/12 px-2 py-2 text-center">
+                  <p className="text-[9px] uppercase font-black tracking-[0.08em] text-amber-100">Clique</p>
+                  <p className="text-sm font-black text-amber-100">{allianceInvites.filter((item) => item.status === "clicked").length}</p>
+                </div>
+                <div className="rounded-lg border border-emerald-300/35 bg-emerald-300/12 px-2 py-2 text-center">
+                  <p className="text-[9px] uppercase font-black tracking-[0.08em] text-emerald-100">Inscrit</p>
+                  <p className="text-sm font-black text-emerald-100">{allianceInvites.filter((item) => item.status === "signed_up").length}</p>
+                </div>
+              </div>
+              {isAllianceInvitesLoading ? (
+                <p className="mt-2 text-[11px] text-white/70">Chargement pipeline...</p>
+              ) : (
+                <div className="mt-2 space-y-1">
+                  {allianceInvites.slice(0, 4).map((invite) => (
+                    <div key={`alliance-invite-${invite.id}`} className="rounded-lg border border-white/15 bg-black/25 px-2 py-1.5">
+                      <p className="text-[11px] font-black text-white">{invite.prospect_name}</p>
+                      <p className="text-[10px] text-white/70">
+                        {invite.prospect_metier}
+                        {invite.prospect_city ? ` • ${invite.prospect_city}` : ""}
+                        {` • ${invite.status}`}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             <p className="mt-3 text-[11px] text-white/65">{allianceProspects.length} prospect(s) alliance trouve(s)</p>
