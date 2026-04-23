@@ -246,6 +246,7 @@ type SmartScanIncomingReferral = {
 const PENDING_WHATSAPP_CONTEXT_KEY = "popey-human:smart-scan:pending-whatsapp-context";
 const SMART_SCAN_SESSION_KEY = "popey-human:smart-scan:scan-session";
 const SMART_SCAN_IMPORTED_CONTACTS_KEY = "popey-human:smart-scan:imported-contacts";
+const SMART_SCAN_IMPORTED_CONTACTS_BACKUP_KEY = "popey-human:smart-scan:imported-contacts-backup";
 const SMART_SCAN_ECLAIREURS_KEY = "popey-human:smart-scan:eclaireurs";
 const SMART_SCAN_DEFAULT_MESSAGES_KEY = "popey-human:smart-scan:default-messages";
 const SMART_SCAN_PASSED_CONTACTS_KEY = "popey-human:smart-scan:passed-contacts";
@@ -1284,6 +1285,21 @@ export default function EntrepreneurSmartScanTestPage() {
     } catch {
       // Ignore invalid imported contact cache.
     }
+    try {
+      const rawImportedBackup = window.localStorage.getItem(SMART_SCAN_IMPORTED_CONTACTS_BACKUP_KEY);
+      if (rawImportedBackup) {
+        const parsedBackup = JSON.parse(rawImportedBackup) as { contacts?: DailyContact[]; summary?: string };
+        if (Array.isArray(parsedBackup.contacts) && parsedBackup.contacts.length > restoredImportedCount) {
+          restoredImportedCount = parsedBackup.contacts.length;
+          setImportedContacts(parsedBackup.contacts);
+          if (typeof parsedBackup.summary === "string" && parsedBackup.summary.trim().length > 0) {
+            setImportSummary(parsedBackup.summary);
+          }
+        }
+      }
+    } catch {
+      // Ignore invalid imported contact backup cache.
+    }
 
     try {
       const rawSession = window.localStorage.getItem(SMART_SCAN_SESSION_KEY);
@@ -1380,6 +1396,34 @@ export default function EntrepreneurSmartScanTestPage() {
         updatedAt: Date.now(),
       }),
     );
+  }, [importedContacts, importSummary]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const nextPayload = {
+      contacts: importedContacts,
+      summary: importSummary,
+      updatedAt: Date.now(),
+    };
+    try {
+      const rawBackup = window.localStorage.getItem(SMART_SCAN_IMPORTED_CONTACTS_BACKUP_KEY);
+      if (!rawBackup) {
+        if (importedContacts.length > 0) {
+          window.localStorage.setItem(SMART_SCAN_IMPORTED_CONTACTS_BACKUP_KEY, JSON.stringify(nextPayload));
+        }
+        return;
+      }
+      const parsedBackup = JSON.parse(rawBackup) as { contacts?: DailyContact[] };
+      const backupCount = Array.isArray(parsedBackup.contacts) ? parsedBackup.contacts.length : 0;
+      const shouldPromoteBackup = importedContacts.length >= backupCount;
+      if (shouldPromoteBackup) {
+        window.localStorage.setItem(SMART_SCAN_IMPORTED_CONTACTS_BACKUP_KEY, JSON.stringify(nextPayload));
+      }
+    } catch {
+      if (importedContacts.length > 0) {
+        window.localStorage.setItem(SMART_SCAN_IMPORTED_CONTACTS_BACKUP_KEY, JSON.stringify(nextPayload));
+      }
+    }
   }, [importedContacts, importSummary]);
 
   useEffect(() => {
@@ -3174,6 +3218,7 @@ export default function EntrepreneurSmartScanTestPage() {
     setEclaireurStatsStore({});
     if (typeof window !== "undefined") {
       window.localStorage.removeItem(SMART_SCAN_IMPORTED_CONTACTS_KEY);
+      window.localStorage.removeItem(SMART_SCAN_IMPORTED_CONTACTS_BACKUP_KEY);
       window.localStorage.removeItem(SMART_SCAN_SESSION_KEY);
       window.localStorage.removeItem(SMART_SCAN_ECLAIREURS_KEY);
       window.localStorage.removeItem(SMART_SCAN_PASSED_CONTACTS_KEY);
