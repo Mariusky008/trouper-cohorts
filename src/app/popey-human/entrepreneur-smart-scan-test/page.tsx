@@ -1506,6 +1506,17 @@ export default function EntrepreneurSmartScanTestPage() {
   }, [hasHydratedServerProgress, hasImportedContacts, stage, index, dailyQueueCount, importedTotalCount]);
 
   useEffect(() => {
+    if (!isBootstrapped) return;
+    if (hasImportedContacts) return;
+    if (stage !== "scan") {
+      setStage("scan");
+    }
+    setShowSearchPanel(false);
+    setShowHistoryPanel(false);
+    setShowEclaireursPanel(false);
+  }, [isBootstrapped, hasImportedContacts, stage]);
+
+  useEffect(() => {
     let cancelled = false;
 
     async function bootstrapSmartScan() {
@@ -3112,25 +3123,28 @@ export default function EntrepreneurSmartScanTestPage() {
     setPassedContactIds([]);
     setHasHydratedServerProgress(true);
     setApiErrorMessage("");
-    void postSmartScan("import-contacts", {
-      source: "file",
-      contacts: nextContacts.map((contact, idx) => ({
-        externalContactRef: contact.id,
-        fullName: contact.name,
-        city: contact.city || null,
-        companyHint: contact.companyHint || null,
-        phoneE164: normalizePhoneForWhatsApp(contact.phone) || contact.phone || null,
-        importIndex: idx,
-      })),
-    })
-      .then(() =>
-        postSmartScan("session-progress", {
-          queueIndex: 0,
-          queueSize: dailyQueueCount,
-          importedTotal: nextContacts.length,
-        }),
-      )
-      .catch(() => null);
+    try {
+      await postSmartScan("import-contacts", {
+        source: "file",
+        contacts: nextContacts.map((contact, idx) => ({
+          externalContactRef: contact.id,
+          fullName: contact.name,
+          city: contact.city || null,
+          companyHint: contact.companyHint || null,
+          phoneE164: normalizePhoneForWhatsApp(contact.phone) || contact.phone || null,
+          importIndex: idx,
+        })),
+      });
+      await postSmartScan("session-progress", {
+        queueIndex: 0,
+        queueSize: dailyQueueCount,
+        importedTotal: nextContacts.length,
+      });
+      await refreshSmartScanSnapshot();
+    } catch {
+      // Keep local import, but clearly signal that server persistence failed.
+      setApiErrorMessage("Import local ok mais sauvegarde serveur echouee. Reessaie l import depuis Profil.");
+    }
   }
 
   async function handleContactImportChange(event: React.ChangeEvent<HTMLInputElement>) {
@@ -3179,25 +3193,27 @@ export default function EntrepreneurSmartScanTestPage() {
       setPassedContactIds([]);
       setHasHydratedServerProgress(true);
       setApiErrorMessage("");
-      void postSmartScan("import-contacts", {
-        source: "direct-picker",
-        contacts: nextContacts.map((contact, idx) => ({
-          externalContactRef: contact.id,
-          fullName: contact.name,
-          city: contact.city || null,
-          companyHint: contact.companyHint || null,
-          phoneE164: normalizePhoneForWhatsApp(contact.phone) || contact.phone || null,
-          importIndex: idx,
-        })),
-      })
-        .then(() =>
-          postSmartScan("session-progress", {
-            queueIndex: 0,
-            queueSize: dailyQueueCount,
-            importedTotal: nextContacts.length,
-          }),
-        )
-        .catch(() => null);
+      try {
+        await postSmartScan("import-contacts", {
+          source: "direct-picker",
+          contacts: nextContacts.map((contact, idx) => ({
+            externalContactRef: contact.id,
+            fullName: contact.name,
+            city: contact.city || null,
+            companyHint: contact.companyHint || null,
+            phoneE164: normalizePhoneForWhatsApp(contact.phone) || contact.phone || null,
+            importIndex: idx,
+          })),
+        });
+        await postSmartScan("session-progress", {
+          queueIndex: 0,
+          queueSize: dailyQueueCount,
+          importedTotal: nextContacts.length,
+        });
+        await refreshSmartScanSnapshot();
+      } catch {
+        setApiErrorMessage("Import local ok mais sauvegarde serveur echouee. Reessaie l import depuis Profil.");
+      }
     } catch {
       setApiErrorMessage("Acces direct refuse ou indisponible. Utilise l import .vcf/.csv.");
     } finally {
