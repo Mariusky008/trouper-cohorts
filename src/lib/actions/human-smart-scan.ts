@@ -2511,3 +2511,329 @@ async function incrementTodaySessionInternal(ownerMemberId: string): Promise<num
 
   return nextActivated;
 }
+
+type AllianceProspectRecord = {
+  id: string;
+  owner_member_id: string;
+  provider: string;
+  provider_prospect_ref: string | null;
+  full_name: string;
+  metier: string;
+  city: string | null;
+  phone_e164: string | null;
+  distance_km: number | null;
+  rating: number | null;
+  fit_score: number;
+  fit_reasons: string[] | null;
+  status: "new" | "contacted" | "replied" | "partnered" | "dismissed";
+  fetched_at: string;
+  created_at: string;
+  updated_at: string;
+};
+
+function normalizeAlliancePhone(rawValue?: string | null): string | null {
+  const raw = String(rawValue || "").trim();
+  if (!raw) return null;
+  const digits = raw.replace(/\D/g, "");
+  if (!digits) return null;
+  if (digits.startsWith("00")) return `+${digits.slice(2)}`;
+  if (digits.startsWith("33")) return `+${digits}`;
+  if (digits.startsWith("0") && digits.length >= 9) return `+33${digits.slice(1)}`;
+  if (digits.length >= 8) return `+${digits}`;
+  return null;
+}
+
+function resolveDefaultAllianceTargets(sourceMetier?: string | null): string[] {
+  const normalized = String(sourceMetier || "").toLowerCase().trim();
+  if (!normalized) return ["courtier", "notaire", "conciergerie"];
+  if (normalized.includes("immo")) return ["courtier", "notaire", "diagnostiqueur", "conciergerie"];
+  if (normalized.includes("coach")) return ["rh", "manager", "kine", "nutritionniste"];
+  if (normalized.includes("courtier")) return ["agent immobilier", "notaire", "gestionnaire patrimoine"];
+  if (normalized.includes("freelance") || normalized.includes("web")) return ["agence marketing", "commercial b2b", "cabinet rh"];
+  return ["courtier", "notaire", "conciergerie"];
+}
+
+function computeAllianceFitScore(input: {
+  sourceMetier?: string | null;
+  targetMetiers: string[];
+  prospectMetier?: string | null;
+  hasPhone: boolean;
+  distanceKm?: number | null;
+  rating?: number | null;
+}): { score: number; reasons: string[] } {
+  const normalizedProspectMetier = String(input.prospectMetier || "").toLowerCase();
+  const targetHit = input.targetMetiers.some((target) => normalizedProspectMetier.includes(target.toLowerCase()));
+  let score = 0;
+  const reasons: string[] = [];
+  if (targetHit) {
+    score += 45;
+    reasons.push("metier_synergique");
+  }
+  if (input.hasPhone) {
+    score += 15;
+    reasons.push("phone_direct");
+  }
+  const distance = Number(input.distanceKm || 0);
+  if (Number.isFinite(distance) && distance > 0) {
+    if (distance <= 3) {
+      score += 25;
+      reasons.push("proximite_forte");
+    } else if (distance <= 10) {
+      score += 15;
+      reasons.push("proximite_locale");
+    } else if (distance <= 25) {
+      score += 8;
+      reasons.push("proximite_regionale");
+    }
+  }
+  const rating = Number(input.rating || 0);
+  if (Number.isFinite(rating) && rating >= 4) {
+    score += 10;
+    reasons.push("reputation");
+  }
+  return { score: Math.max(0, Math.min(100, Math.round(score))), reasons };
+}
+
+async function searchB2BProvider(input: {
+  city: string;
+  sourceMetier?: string | null;
+  targetMetiers: string[];
+  radiusKm: number;
+  limit: number;
+}) {
+  const providerUrl = String(process.env.ALLIANCES_B2B_PROVIDER_URL || "").trim();
+  const providerKey = String(process.env.ALLIANCES_B2B_PROVIDER_API_KEY || "").trim();
+  if (!providerUrl || !providerKey) {
+    return { error: "Provider B2B non configure. Renseigne ALLIANCES_B2B_PROVIDER_URL + ALLIANCES_B2B_PROVIDER_API_KEY." };
+  }
+
+  const response = await fetch(providerUrl, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${providerKey}`,
+    },
+    body: JSON.stringify({
+      city: input.city,
+      sourceMetier: input.sourceMetier || null,
+      targetMetiers: input.targetMetiers,
+      radiusKm: input.radiusKm,
+      limit: input.limit,
+    }),
+    cache: "no-store",
+  });
+
+  const payload = (await response.json().catch(() => ({}))) as {
+    error?: string;
+    prospects?: Array<{
+      externalId?: string | null;
+      name?: string | null;
+      metier?: string | null;
+      city?: string | null;
+      phone?: string | null;
+      distanceKm?: number | null;
+      rating?: number | null;
+      payload?: Record<string, unknown> | null;
+    }>;
+  };
+
+  if (!response.ok) {
+    return { error: payload.error || "Provider B2B indisponible." };
+  }
+  return { error: null as string | null, prospects: payload.prospects || [] };
+}
+
+export async function searchAllianceProspects(input: {
+  provider?: "b2b";
+  city: string;
+  sourceMetier?: string | null;
+  targetMetiers?: string[];
+  radiusKm?: number;
+  limit?: number;
+}) {
+  const currentMember = await getCurrentHumanMember();
+  if (!currentMember) return { error: "Session requise.", prospects: [] as AllianceProspectRecord[] };
+
+  const provider = "b2b";
+  const city = String(input.city || "").trim();
+  if (!city) return { error: "Ville requise.", prospects: [] as AllianceProspectRecord[] };
+  const sourceMetier = String(input.sourceMetier || "").trim() || null;
+  const targetMetiers = (input.targetMetiers || []).map((item) => String(item || "").trim()).filter(Boolean);
+  const normalizedTargets = targetMetiers.length > 0 ? targetMetiers : resolveDefaultAllianceTargets(sourceMetier);
+  const radiusKm = Math.max(1, Math.min(100, Math.round(input.radiusKm || 15)));
+  const limit = Math.max(1, Math.min(120, Math.round(input.limit || 40)));
+
+  const providerResult = await searchB2BProvider({
+    city,
+    sourceMetier,
+    targetMetiers: normalizedTargets,
+    radiusKm,
+    limit,
+  });
+  if (providerResult.error) {
+    return { error: providerResult.error, prospects: [] as AllianceProspectRecord[] };
+  }
+
+  const supabaseAdmin = createAdminClient();
+  const nowIso = new Date().toISOString();
+  const providerProspects = providerResult.prospects || [];
+  const upsertPayload = providerProspects
+    .map((row, index) => {
+      const fullName = String(row.name || "").trim();
+      const metier = String(row.metier || "").trim();
+      if (!fullName || !metier) return null;
+      const normalizedPhone = normalizeAlliancePhone(row.phone);
+      const fit = computeAllianceFitScore({
+        sourceMetier,
+        targetMetiers: normalizedTargets,
+        prospectMetier: metier,
+        hasPhone: Boolean(normalizedPhone),
+        distanceKm: Number(row.distanceKm || 0),
+        rating: Number(row.rating || 0),
+      });
+      return {
+        owner_member_id: currentMember.id,
+        provider,
+        provider_prospect_ref: String(row.externalId || `${fullName.toLowerCase()}-${index}`).slice(0, 180),
+        full_name: fullName.slice(0, 180),
+        metier: metier.slice(0, 180),
+        city: String(row.city || city || "").trim().slice(0, 120) || null,
+        phone_e164: normalizedPhone,
+        distance_km: Number.isFinite(Number(row.distanceKm)) ? Number(row.distanceKm) : null,
+        rating: Number.isFinite(Number(row.rating)) ? Number(row.rating) : null,
+        fit_score: fit.score,
+        fit_reasons: fit.reasons,
+        status: "new",
+        source_payload: row.payload || {},
+        fetched_at: nowIso,
+        updated_at: nowIso,
+      };
+    })
+    .filter((row): row is NonNullable<typeof row> => Boolean(row));
+
+  if (upsertPayload.length > 0) {
+    const { error: upsertError } = await supabaseAdmin
+      .from("human_smart_scan_alliance_prospects")
+      .upsert(upsertPayload, { onConflict: "owner_member_id,provider,provider_prospect_ref" });
+    if (upsertError) {
+      return { error: upsertError.message, prospects: [] as AllianceProspectRecord[] };
+    }
+  }
+
+  await supabaseAdmin.from("human_smart_scan_alliance_search_runs").insert({
+    owner_member_id: currentMember.id,
+    provider,
+    city,
+    source_metier: sourceMetier,
+    target_metiers: normalizedTargets,
+    radius_km: radiusKm,
+    total_found: upsertPayload.length,
+    metadata: {
+      limit,
+    },
+    created_at: nowIso,
+    updated_at: nowIso,
+  });
+
+  const { data: prospects, error: listError } = await supabaseAdmin
+    .from("human_smart_scan_alliance_prospects")
+    .select(
+      "id,owner_member_id,provider,provider_prospect_ref,full_name,metier,city,phone_e164,distance_km,rating,fit_score,fit_reasons,status,fetched_at,created_at,updated_at",
+    )
+    .eq("owner_member_id", currentMember.id)
+    .order("fit_score", { ascending: false })
+    .order("fetched_at", { ascending: false })
+    .limit(limit);
+
+  if (listError) {
+    return { error: listError.message, prospects: [] as AllianceProspectRecord[] };
+  }
+  return { error: null as string | null, prospects: (prospects as AllianceProspectRecord[] | null) || [] };
+}
+
+export async function listAllianceProspects(limit = 80) {
+  const currentMember = await getCurrentHumanMember();
+  if (!currentMember) return { error: "Session requise.", prospects: [] as AllianceProspectRecord[] };
+  const safeLimit = Math.max(1, Math.min(200, Math.trunc(limit)));
+  const supabaseAdmin = createAdminClient();
+  const { data, error } = await supabaseAdmin
+    .from("human_smart_scan_alliance_prospects")
+    .select(
+      "id,owner_member_id,provider,provider_prospect_ref,full_name,metier,city,phone_e164,distance_km,rating,fit_score,fit_reasons,status,fetched_at,created_at,updated_at",
+    )
+    .eq("owner_member_id", currentMember.id)
+    .order("fit_score", { ascending: false })
+    .order("fetched_at", { ascending: false })
+    .limit(safeLimit);
+
+  if (error) return { error: error.message, prospects: [] as AllianceProspectRecord[] };
+  return { error: null as string | null, prospects: (data as AllianceProspectRecord[] | null) || [] };
+}
+
+export async function createAllianceInvite(input: {
+  prospectId: string;
+  messageDraft: string;
+  channel?: "whatsapp" | "sms" | "email" | "other";
+}) {
+  const currentMember = await getCurrentHumanMember();
+  if (!currentMember) return { error: "Session requise." };
+
+  const supabaseAdmin = createAdminClient();
+  const { data: prospect, error: prospectError } = await supabaseAdmin
+    .from("human_smart_scan_alliance_prospects")
+    .select("id,owner_member_id,full_name,phone_e164")
+    .eq("id", input.prospectId)
+    .eq("owner_member_id", currentMember.id)
+    .maybeSingle();
+
+  if (prospectError) return { error: prospectError.message };
+  if (!prospect?.id) return { error: "Prospect introuvable." };
+
+  const token = `alliance_${crypto.randomUUID().replace(/-/g, "")}`;
+  const appBaseUrl = String(process.env.NEXT_PUBLIC_SITE_URL || "https://www.popey.academy").replace(/\/+$/, "");
+  const onboardingLink = `${appBaseUrl}/popey-human/alliance-invite/${token}`;
+  const nowIso = new Date().toISOString();
+  const channel = input.channel || "whatsapp";
+
+  const { data: invite, error: inviteError } = await supabaseAdmin
+    .from("human_smart_scan_alliance_invites")
+    .insert({
+      owner_member_id: currentMember.id,
+      prospect_id: prospect.id,
+      channel,
+      message_draft: String(input.messageDraft || "").trim(),
+      onboarding_token: token,
+      onboarding_link: onboardingLink,
+      status: "sent",
+      sent_at: nowIso,
+      created_at: nowIso,
+      updated_at: nowIso,
+    })
+    .select("id,onboarding_token,onboarding_link")
+    .maybeSingle();
+
+  if (inviteError) return { error: inviteError.message };
+
+  await supabaseAdmin
+    .from("human_smart_scan_alliance_prospects")
+    .update({
+      status: "contacted",
+      updated_at: nowIso,
+    })
+    .eq("id", prospect.id)
+    .eq("owner_member_id", currentMember.id);
+
+  const phone = String(prospect.phone_e164 || "").replace(/^\+/, "");
+  const message = `${String(input.messageDraft || "").trim()}\n\n${onboardingLink}`;
+  const whatsappUrl = phone
+    ? `https://wa.me/${encodeURIComponent(phone)}?text=${encodeURIComponent(message)}`
+    : null;
+
+  return {
+    success: true as const,
+    inviteId: invite?.id || null,
+    onboardingToken: invite?.onboarding_token || token,
+    onboardingLink: invite?.onboarding_link || onboardingLink,
+    whatsappUrl,
+  };
+}

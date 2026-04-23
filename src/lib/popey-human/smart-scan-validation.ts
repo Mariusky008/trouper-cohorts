@@ -30,6 +30,8 @@ const EXTERNAL_CLICK_SOURCES = ["linkedin", "whatsapp_group"] as const;
 const EXTERNAL_CLICK_CONTEXTS = ["cockpit", "profile", "other"] as const;
 const SEND_CHANNELS = ["whatsapp", "other"] as const;
 const AI_GENERATION_SOURCES = ["ai", "fallback"] as const;
+const ALLIANCE_PROVIDERS = ["b2b"] as const;
+const ALLIANCE_INVITE_CHANNELS = ["whatsapp", "sms", "email", "other"] as const;
 
 const optionalNonEmptyString = (max: number) => z.string().trim().min(1).max(max).optional();
 const optionalNullableString = (max: number) => z.string().trim().max(max).nullable().optional();
@@ -205,5 +207,24 @@ export const smartScanPromoteEclaireurSchema = z
     fullName: optionalNonEmptyString(160),
     city: optionalNullableString(120),
     companyHint: optionalNullableString(160),
+  })
+  .strict();
+
+export const smartScanAllianceSearchSchema = z
+  .object({
+    provider: z.enum(ALLIANCE_PROVIDERS).optional(),
+    city: z.string().trim().min(1).max(120),
+    sourceMetier: z.string().trim().max(140).optional().nullable(),
+    targetMetiers: z.array(z.string().trim().min(1).max(140)).max(24).optional(),
+    radiusKm: z.number().int().min(1).max(100).optional(),
+    limit: z.number().int().min(1).max(120).optional(),
+  })
+  .strict();
+
+export const smartScanAllianceInviteSchema = z
+  .object({
+    prospectId: z.string().uuid(),
+    channel: z.enum(ALLIANCE_INVITE_CHANNELS).optional(),
+    messageDraft: z.string().trim().min(1).max(3000),
   })
   .strict();

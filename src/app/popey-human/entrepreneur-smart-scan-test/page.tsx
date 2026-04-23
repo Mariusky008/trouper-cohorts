@@ -242,6 +242,18 @@ type SmartScanIncomingReferral = {
   scout_phone?: string | null;
   scout_ville?: string | null;
 };
+type SmartScanAllianceProspect = {
+  id: string;
+  full_name: string;
+  metier: string;
+  city: string | null;
+  phone_e164: string | null;
+  distance_km: number | null;
+  rating: number | null;
+  fit_score: number;
+  fit_reasons?: string[] | null;
+  status: "new" | "contacted" | "replied" | "partnered" | "dismissed";
+};
 
 const PENDING_WHATSAPP_CONTEXT_KEY = "popey-human:smart-scan:pending-whatsapp-context";
 const SMART_SCAN_SESSION_KEY = "popey-human:smart-scan:scan-session";
@@ -807,6 +819,7 @@ export default function EntrepreneurSmartScanTestPage() {
   const [historyPeriodFilter, setHistoryPeriodFilter] = useState<"all" | "today" | "7d">("all");
   const [showSearchPanel, setShowSearchPanel] = useState(false);
   const [showEclaireursPanel, setShowEclaireursPanel] = useState(false);
+  const [showAlliancesPanel, setShowAlliancesPanel] = useState(false);
   const [showMyProfilePanel, setShowMyProfilePanel] = useState(false);
   const [myProfile, setMyProfile] = useState<SmartScanProfile | null>(null);
   const [selfScoutLink, setSelfScoutLink] = useState<SmartScanSelfScoutLink | null>(null);
@@ -892,6 +905,13 @@ export default function EntrepreneurSmartScanTestPage() {
   const [isRemovingEclaireurId, setIsRemovingEclaireurId] = useState<string | null>(null);
   const [showQualificationNeededPopup, setShowQualificationNeededPopup] = useState(false);
   const [copiedHistoryEntryKey, setCopiedHistoryEntryKey] = useState<string | null>(null);
+  const [allianceProspects, setAllianceProspects] = useState<SmartScanAllianceProspect[]>([]);
+  const [isAlliancesLoading, setIsAlliancesLoading] = useState(false);
+  const [isAlliancesSearching, setIsAlliancesSearching] = useState(false);
+  const [allianceCity, setAllianceCity] = useState("");
+  const [allianceSourceMetier, setAllianceSourceMetier] = useState("");
+  const [allianceTargetMetiersInput, setAllianceTargetMetiersInput] = useState("");
+  const [allianceRadiusKm, setAllianceRadiusKm] = useState("15");
   const contactImportInputRef = useRef<HTMLInputElement | null>(null);
   const localDayNumber = useMemo(() => getLocalDayNumber(), []);
 
@@ -1105,6 +1125,49 @@ export default function EntrepreneurSmartScanTestPage() {
       cancelled = true;
     };
   }, [showEclaireursPanel]);
+
+  useEffect(() => {
+    if (!myProfile) return;
+    setAllianceCity((currentCity) => currentCity || myProfile.ville || "");
+    setAllianceSourceMetier((currentMetier) => currentMetier || myProfile.metier || "");
+  }, [myProfile]);
+
+  useEffect(() => {
+    if (!showAlliancesPanel) return;
+    let cancelled = false;
+    async function loadAlliancesProspects() {
+      try {
+        setIsAlliancesLoading(true);
+        const response = await fetch("/api/popey-human/smart-scan/alliances/prospects", {
+          method: "GET",
+          cache: "no-store",
+        });
+        const payload = (await response.json().catch(() => ({}))) as {
+          error?: string;
+          prospects?: SmartScanAllianceProspect[];
+        };
+        if (!response.ok) {
+          throw new Error(payload.error || "Impossible de charger les alliances externes.");
+        }
+        if (!cancelled) {
+          setAllianceProspects(payload.prospects || []);
+        }
+      } catch (error) {
+        if (!cancelled) {
+          const message = error instanceof Error ? error.message : "Impossible de charger les alliances externes.";
+          setApiErrorMessage(message);
+        }
+      } finally {
+        if (!cancelled) {
+          setIsAlliancesLoading(false);
+        }
+      }
+    }
+    void loadAlliancesProspects();
+    return () => {
+      cancelled = true;
+    };
+  }, [showAlliancesPanel]);
   const template = useMemo(
     () =>
       selectedAction
@@ -2967,6 +3030,7 @@ export default function EntrepreneurSmartScanTestPage() {
     setShowSearchPanel(false);
     setShowHistoryPanel(false);
     setShowEclaireursPanel(false);
+    setShowAlliancesPanel(false);
     setSelectedIncomingReferralId(null);
     setShowContactProfile(false);
     setShowTrustLevelPrompt(false);
@@ -3000,6 +3064,82 @@ export default function EntrepreneurSmartScanTestPage() {
 
   function trustLevelLabel(level: TrustLevel) {
     return TRUST_LEVEL_OPTIONS.find((option) => option.id === level)?.label ?? "A definir";
+  }
+
+  function buildAllianceInviteMessage(prospect: SmartScanAllianceProspect) {
+    const myName = [myProfile?.first_name, myProfile?.last_name].filter(Boolean).join(" ").trim() || "Je";
+    const myMetier = myProfile?.metier || allianceSourceMetier || "professionnel local";
+    const city = allianceCity || myProfile?.ville || "ma ville";
+    return `Bonjour ${prospect.full_name}, je suis ${myName}, ${myMetier} sur ${city}. Je cherche un partenaire en synergie pour s echanger des recommandations qualifiees. J utilise Popey pour identifier des opportunites et je peux t envoyer des dossiers pertinents. Ouvert a un appel court cette semaine ?`;
+  }
+
+  async function runAllianceSearch() {
+    try {
+      setIsAlliancesSearching(true);
+      const targetMetiers = allianceTargetMetiersInput
+        .split(",")
+        .map((item) => item.trim())
+        .filter(Boolean);
+      const response = await fetch("/api/popey-human/smart-scan/alliances/search", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          provider: "b2b",
+          city: allianceCity,
+          sourceMetier: allianceSourceMetier || null,
+          targetMetiers,
+          radiusKm: Number.parseInt(allianceRadiusKm || "15", 10) || 15,
+          limit: 80,
+        }),
+      });
+      const payload = (await response.json().catch(() => ({}))) as {
+        error?: string;
+        prospects?: SmartScanAllianceProspect[];
+      };
+      if (!response.ok) {
+        throw new Error(payload.error || "Recherche alliances impossible.");
+      }
+      setAllianceProspects(payload.prospects || []);
+      setApiErrorMessage("");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Recherche alliances impossible.";
+      setApiErrorMessage(message);
+    } finally {
+      setIsAlliancesSearching(false);
+    }
+  }
+
+  async function inviteAllianceProspect(prospect: SmartScanAllianceProspect) {
+    try {
+      const messageDraft = buildAllianceInviteMessage(prospect);
+      const response = await fetch("/api/popey-human/smart-scan/alliances/invite", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          prospectId: prospect.id,
+          channel: "whatsapp",
+          messageDraft,
+        }),
+      });
+      const payload = (await response.json().catch(() => ({}))) as {
+        error?: string;
+        whatsappUrl?: string | null;
+      };
+      if (!response.ok) {
+        throw new Error(payload.error || "Invitation alliance impossible.");
+      }
+      if (payload.whatsappUrl && typeof window !== "undefined") {
+        window.open(payload.whatsappUrl, "_blank", "noopener,noreferrer");
+      } else {
+        setApiErrorMessage("Invitation creee. Numero manquant pour ouverture WhatsApp directe.");
+      }
+      setAllianceProspects((currentList) =>
+        currentList.map((item) => (item.id === prospect.id ? { ...item, status: "contacted" } : item)),
+      );
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Invitation alliance impossible.";
+      setApiErrorMessage(message);
+    }
   }
 
   function startActionFromProfile(action: Exclude<DailyCategory, "passer" | "qualifier">) {
@@ -3037,10 +3177,11 @@ export default function EntrepreneurSmartScanTestPage() {
     setTimeout(() => triggerAction("qualifier"), 60);
   }
 
-  function handleDockAction(tab: "search" | "scan" | "eclaireurs" | "profile") {
+  function handleDockAction(tab: "search" | "scan" | "eclaireurs" | "alliances" | "profile") {
     setShowSearchPanel(false);
     setShowHistoryPanel(false);
     setShowEclaireursPanel(false);
+    setShowAlliancesPanel(false);
     setShowMyProfilePanel(false);
     setSelectedEclaireurTemplateContactId(null);
     setEclaireurTemplates([]);
@@ -3082,6 +3223,19 @@ export default function EntrepreneurSmartScanTestPage() {
         return;
       }
       setShowEclaireursPanel(true);
+      return;
+    }
+    if (tab === "alliances") {
+      if (stage === "scan") {
+        if (!hasImportedContacts) {
+          setApiErrorMessage("Importe d abord ton fichier .vcf ou .csv pour utiliser le cockpit.");
+          return;
+        }
+        setStage("daily");
+        setTimeout(() => setShowAlliancesPanel(true), 40);
+        return;
+      }
+      setShowAlliancesPanel(true);
       return;
     }
     if (stage === "scan") {
@@ -3603,6 +3757,7 @@ export default function EntrepreneurSmartScanTestPage() {
             {([
               { id: "search", icon: "🔍", label: "Recherche" },
               { id: "scan", icon: "⚡", label: "Scan" },
+              { id: "alliances", icon: "🤝", label: "Alliances" },
               { id: "eclaireurs", icon: "📡", label: "Eclaireurs" },
               { id: "profile", icon: "👤", label: "Profil" },
             ] as const).map((item) => {
@@ -3611,7 +3766,7 @@ export default function EntrepreneurSmartScanTestPage() {
                 <button
                   key={`scan-dock-${item.id}`}
                   type="button"
-                  onClick={() => handleDockAction(item.id as "search" | "scan" | "eclaireurs" | "profile")}
+                  onClick={() => handleDockAction(item.id as "search" | "scan" | "eclaireurs" | "alliances" | "profile")}
                   aria-label={`Ouvrir ${item.label}`}
                   aria-pressed={isActive}
                   className={`flex h-14 min-w-[72px] flex-col items-center justify-center rounded-2xl px-2 transition ${
@@ -4343,20 +4498,27 @@ export default function EntrepreneurSmartScanTestPage() {
           {([
             { id: "search", icon: "🔍", label: "Recherche" },
             { id: "scan", icon: "⚡", label: "Scan" },
+            { id: "alliances", icon: "🤝", label: "Alliances" },
             { id: "eclaireurs", icon: "📡", label: "Eclaireurs" },
             { id: "profile", icon: "👤", label: "Profil" },
           ] as const).map((item) => {
             const isActive =
               (item.id === "search" && showSearchPanel) ||
+              (item.id === "alliances" && showAlliancesPanel) ||
               (item.id === "eclaireurs" && showEclaireursPanel) ||
               (item.id === "profile" && showMyProfilePanel) ||
-              (item.id === "scan" && !showSearchPanel && !showHistoryPanel && !showMyProfilePanel && !showEclaireursPanel);
+              (item.id === "scan" &&
+                !showSearchPanel &&
+                !showHistoryPanel &&
+                !showMyProfilePanel &&
+                !showEclaireursPanel &&
+                !showAlliancesPanel);
 
             return (
               <button
                 key={`daily-dock-${item.id}`}
                 type="button"
-                onClick={() => handleDockAction(item.id as "search" | "scan" | "eclaireurs" | "profile")}
+                onClick={() => handleDockAction(item.id as "search" | "scan" | "eclaireurs" | "alliances" | "profile")}
                 aria-label={`Ouvrir ${item.label}`}
                 aria-pressed={isActive}
                 className={`flex h-14 min-w-[72px] flex-col items-center justify-center rounded-2xl px-2 transition ${
@@ -5059,6 +5221,110 @@ export default function EntrepreneurSmartScanTestPage() {
                 );
               })}
             </div>
+            </div>
+          </section>
+        </div>
+      )}
+
+      {showAlliancesPanel && (
+        <div className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm flex items-start justify-center px-0 pt-0 pb-0 sm:px-4 sm:pt-16 sm:pb-0">
+          <section
+            className="h-[calc(100dvh-92px)] max-h-[calc(100dvh-92px)] w-full overflow-y-auto rounded-none border-0 bg-[#0E1430] p-4 pb-28 sm:h-auto sm:max-h-[90vh] sm:max-w-lg sm:rounded-3xl sm:border sm:border-white/15"
+            style={{ paddingTop: "calc(env(safe-area-inset-top) + 12px)" }}
+          >
+            <div className="sticky top-0 z-20 -mx-4 bg-[#0E1430] px-4 pb-2">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-black uppercase tracking-[0.12em] text-cyan-200">Alliances</p>
+                <button
+                  type="button"
+                  onClick={() => setShowAlliancesPanel(false)}
+                  className="relative z-30 h-9 w-9 rounded-full border border-white/20 bg-white/10 text-xs"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+
+            <div className="mt-3 rounded-2xl border border-cyan-300/30 bg-cyan-300/10 p-3">
+              <p className="text-[10px] font-black uppercase tracking-[0.1em] text-cyan-100">Recrutement externe premium</p>
+              <p className="mt-1 text-[11px] text-white/80">
+                Trouve des metiers en synergie dans ta ville et invite-les en 1 clic sur WhatsApp.
+              </p>
+              <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                <input
+                  value={allianceCity}
+                  onChange={(event) => setAllianceCity(event.target.value)}
+                  placeholder="Ville"
+                  className="h-9 rounded-lg border border-white/15 bg-black/25 px-2 text-[11px]"
+                />
+                <input
+                  value={allianceRadiusKm}
+                  onChange={(event) => setAllianceRadiusKm(event.target.value)}
+                  placeholder="Rayon km"
+                  inputMode="numeric"
+                  className="h-9 rounded-lg border border-white/15 bg-black/25 px-2 text-[11px]"
+                />
+                <input
+                  value={allianceSourceMetier}
+                  onChange={(event) => setAllianceSourceMetier(event.target.value)}
+                  placeholder="Ton metier"
+                  className="h-9 rounded-lg border border-white/15 bg-black/25 px-2 text-[11px] sm:col-span-2"
+                />
+                <input
+                  value={allianceTargetMetiersInput}
+                  onChange={(event) => setAllianceTargetMetiersInput(event.target.value)}
+                  placeholder="Metiers cibles (courtier, notaire, ...)"
+                  className="h-9 rounded-lg border border-white/15 bg-black/25 px-2 text-[11px] sm:col-span-2"
+                />
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  void runAllianceSearch();
+                }}
+                disabled={isAlliancesSearching || !allianceCity.trim()}
+                className="mt-2 h-10 w-full rounded-xl border border-emerald-300/40 bg-emerald-300/15 text-[11px] font-black uppercase tracking-[0.08em] text-emerald-100 disabled:opacity-60"
+              >
+                {isAlliancesSearching ? "Recherche en cours..." : "Lancer recherche B2B"}
+              </button>
+            </div>
+
+            <p className="mt-3 text-[11px] text-white/65">{allianceProspects.length} prospect(s) alliance trouve(s)</p>
+            <div className="mt-2 space-y-2">
+              {isAlliancesLoading && <p className="text-sm text-white/70">Chargement des alliances...</p>}
+              {!isAlliancesLoading && allianceProspects.length === 0 ? (
+                <p className="rounded-xl border border-white/15 bg-black/25 px-3 py-2 text-sm text-white/75">
+                  Aucun prospect pour le moment. Lance une recherche avec ville + metiers cibles.
+                </p>
+              ) : null}
+              {allianceProspects.map((prospect) => (
+                <article key={`alliance-prospect-${prospect.id}`} className="rounded-xl border border-white/15 bg-black/25 px-3 py-2">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-black text-white">{prospect.full_name}</p>
+                      <p className="text-[11px] text-cyan-100">{prospect.metier}</p>
+                      <p className="text-[10px] text-white/70">
+                        {prospect.city || "Ville inconnue"} {prospect.distance_km ? `• ${prospect.distance_km} km` : ""}
+                      </p>
+                    </div>
+                    <span className="rounded-full border border-emerald-300/35 bg-emerald-300/12 px-2 py-0.5 text-[10px] font-black text-emerald-100">
+                      Score {prospect.fit_score}/100
+                    </span>
+                  </div>
+                  <div className="mt-2 flex items-center justify-between gap-2">
+                    <p className="truncate text-[10px] text-white/70">{prospect.phone_e164 || "Telephone non disponible"}</p>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        void inviteAllianceProspect(prospect);
+                      }}
+                      className="rounded-lg border border-fuchsia-300/35 bg-fuchsia-300/15 px-2 py-1 text-[10px] font-black uppercase tracking-[0.08em] text-fuchsia-100"
+                    >
+                      Inviter a une alliance
+                    </button>
+                  </div>
+                </article>
+              ))}
             </div>
           </section>
         </div>
