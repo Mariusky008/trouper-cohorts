@@ -823,7 +823,6 @@ export default function EntrepreneurSmartScanTestPage() {
   const [historyEntries, setHistoryEntries] = useState<HistoryEntry[]>([]);
   const [qualifierStore, setQualifierStore] = useState<Record<string, QualifierData>>({});
   const [isBootstrapped, setIsBootstrapped] = useState(false);
-  const [openAlertContactIds, setOpenAlertContactIds] = useState<string[]>([]);
   const [apiErrorMessage, setApiErrorMessage] = useState("");
   const [priorityScoreStore, setPriorityScoreStore] = useState<Record<string, number>>({});
   const [potentialEurStore, setPotentialEurStore] = useState<Record<string, number>>({});
@@ -1094,30 +1093,17 @@ export default function EntrepreneurSmartScanTestPage() {
     ...profileActionEngine.byAction[action],
     isPriority: profileActionEngine.priorityAction === action,
   }));
-  const staleIdealHotLead = useMemo(() => {
-    const alertContactId = openAlertContactIds[0];
-    if (alertContactId) {
-      const fromAlert = allContactsData.find((item) => item.id === alertContactId);
-      if (fromAlert) {
-        return { ...fromAlert, qualifier: qualifierStore[alertContactId] };
-      }
-    }
-
-    const nowMs = Date.now();
-    for (const [contactId, qualifier] of Object.entries(qualifierStore)) {
-      if (!qualifier) continue;
-      if (qualifier.heat !== "brulant" || qualifier.opportunityChoice !== "ideal-client") continue;
-      if (nowMs - qualifier.qualifiedAtMs < REMINDER_WINDOW_MS) continue;
-      const hasPackageInTime = historyEntries.some(
-        (entry) => entry.contactId === contactId && entry.action === "package" && entry.atMs >= qualifier.qualifiedAtMs,
-      );
-      if (hasPackageInTime) continue;
-      const contact = allContactsData.find((item) => item.id === contactId);
-      if (!contact) continue;
-      return { ...contact, qualifier };
-    }
-    return null;
-  }, [qualifierStore, historyEntries, openAlertContactIds, allContactsData]);
+  const currentCooAlert = useMemo(() => {
+    const qualifier = qualifierStore[current.id];
+    if (!qualifier) return null;
+    if (qualifier.heat !== "brulant" || qualifier.opportunityChoice !== "ideal-client") return null;
+    if (Date.now() - qualifier.qualifiedAtMs < REMINDER_WINDOW_MS) return null;
+    const hasPackageInTime = historyEntries.some(
+      (entry) => entry.contactId === current.id && entry.action === "package" && entry.atMs >= qualifier.qualifiedAtMs,
+    );
+    if (hasPackageInTime) return null;
+    return { name: current.name };
+  }, [current.id, current.name, qualifierStore, historyEntries]);
   const profileHeat = profileQualifier?.heat ?? "tiede";
   const profileHistory = profileContact ? historyEntries.filter((entry) => entry.contactId === profileContact.id) : [];
   const profileLatestSentAtMs = profileHistory.find((entry) => entry.sent)?.atMs ?? null;
@@ -1939,13 +1925,6 @@ export default function EntrepreneurSmartScanTestPage() {
       })
       .filter(Boolean) as HistoryEntry[];
 
-    const dbAlertContactIds = (payload.alerts || [])
-      .filter((alert) => alert.alert_type === "hot_ideal_unshared_24h" && alert.status === "open")
-      .map((alert) => alert.contact_id)
-      .filter(Boolean) as string[];
-    const alertContactIds = dbAlertContactIds
-      .map((dbContactId) => dbToExternalRef.get(dbContactId))
-      .filter(Boolean) as string[];
     const nowMs = Date.now();
     const nextDueFollowups = (payload.followups || [])
       .map((item) => {
@@ -1992,7 +1971,6 @@ export default function EntrepreneurSmartScanTestPage() {
         .map((row) => row.contact);
       setImportedContacts(hydratedContacts);
     }
-    setOpenAlertContactIds(alertContactIds);
     setDueFollowups(nextDueFollowups);
     setConversionMetrics(payload.metrics || null);
     setFollowupOpsStats(payload.followupOps || null);
@@ -3996,23 +3974,22 @@ export default function EntrepreneurSmartScanTestPage() {
               <p className="text-xs font-black uppercase tracking-[0.12em] text-cyan-200">Daily Card</p>
               <span className="rounded-full border border-white/15 bg-black/25 px-2 py-1 text-[10px] font-black uppercase tracking-wide text-white/80">🔒 Anonymat communautaire garanti</span>
             </div>
-            {staleIdealHotLead && (
+            {currentCooAlert && (
               <div className="mt-3 rounded-2xl border border-orange-300/35 bg-orange-300/15 px-3 py-3">
                 <p className="text-[10px] font-black uppercase tracking-[0.12em] text-orange-100">COO Alert • 24h</p>
                 <p className="mt-1 text-sm text-white/90">
-                  Attention, {staleIdealHotLead.name} est un client ideal brulant sans Partage Croise sous 24h.
+                  Attention, {currentCooAlert.name} est un client ideal brulant sans Partage Croise sous 24h.
                 </p>
                 <button
                   type="button"
                   onClick={() => {
-                    const nextIndex = contactsData.findIndex((contact) => contact.id === staleIdealHotLead.id);
-                    if (nextIndex >= 0) setIndex(nextIndex);
-                    setActionGlowContactId(staleIdealHotLead.id);
-                    setTimeout(() => setActionGlowContactId((id) => (id === staleIdealHotLead.id ? null : id)), 2200);
+                    setActionGlowContactId(current.id);
+                    setTimeout(() => setActionGlowContactId((id) => (id === current.id ? null : id)), 2200);
+                    triggerAction("package");
                   }}
                   className="mt-2 h-9 rounded-xl bg-gradient-to-r from-violet-300 to-fuchsia-300 px-3 text-[11px] font-black uppercase tracking-wide text-[#271234]"
                 >
-                  Activer maintenant
+                  Ouvrir partage croise
                 </button>
               </div>
             )}
