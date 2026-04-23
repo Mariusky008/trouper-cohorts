@@ -2373,7 +2373,8 @@ export default function EntrepreneurSmartScanTestPage() {
       finalizeAction(action, 200, {
         countAsSent: false,
         sentInHistory: false,
-        wrapOnEnd: true,
+        stayOnCurrentContact: true,
+        wrapOnEnd: false,
       });
       return;
     }
