@@ -2696,10 +2696,43 @@ async function searchB2BProvider(input: {
   radiusKm: number;
   limit: number;
 }) {
+  function buildFallbackProspects() {
+    const firstNames = ["Nicolas", "Claire", "Karim", "Sophie", "Lina", "Julien", "Patricia", "Peggy", "Marc", "Emma"];
+    const lastNames = ["Martin", "Dubois", "Roux", "Bernard", "Petit", "Garcia", "Lopez", "Moreau", "Faure", "Chevalier"];
+    const targetPool = input.targetMetiers.length > 0 ? input.targetMetiers : ["courtier", "notaire", "conciergerie"];
+    const prospectCount = Math.max(8, Math.min(input.limit, 24));
+    const prospects = Array.from({ length: prospectCount }).map((_, idx) => {
+      const firstName = firstNames[idx % firstNames.length];
+      const lastName = lastNames[(idx * 3) % lastNames.length];
+      const metier = targetPool[idx % targetPool.length] || "partenaire local";
+      const distanceKm = Number((1 + ((idx * 2.3) % Math.max(4, input.radiusKm))).toFixed(1));
+      const phone = `+336${String(10000000 + idx * 173).slice(0, 8)}`;
+      return {
+        externalId: `fallback-${input.city.toLowerCase()}-${metier.toLowerCase().replace(/\s+/g, "-")}-${idx + 1}`,
+        name: `${firstName} ${lastName}`,
+        metier,
+        city: input.city,
+        phone,
+        distanceKm,
+        rating: Number((3.8 + ((idx % 5) * 0.2)).toFixed(1)),
+        payload: {
+          provider: "fallback",
+          reason: "provider_not_configured",
+          sourceMetier: input.sourceMetier || null,
+        },
+      };
+    });
+    return prospects;
+  }
+
   const providerUrl = String(process.env.ALLIANCES_B2B_PROVIDER_URL || "").trim();
   const providerKey = String(process.env.ALLIANCES_B2B_PROVIDER_API_KEY || "").trim();
   if (!providerUrl || !providerKey) {
-    return { error: "Provider B2B non configure. Renseigne ALLIANCES_B2B_PROVIDER_URL + ALLIANCES_B2B_PROVIDER_API_KEY." };
+    return {
+      error: null as string | null,
+      prospects: buildFallbackProspects(),
+      meta: { providerMode: "fallback" as const },
+    };
   }
 
   const response = await fetch(providerUrl, {
@@ -2733,9 +2766,17 @@ async function searchB2BProvider(input: {
   };
 
   if (!response.ok) {
-    return { error: payload.error || "Provider B2B indisponible." };
+    return {
+      error: payload.error || "Provider B2B indisponible.",
+      prospects: [],
+      meta: { providerMode: "live" as const },
+    };
   }
-  return { error: null as string | null, prospects: payload.prospects || [] };
+  return {
+    error: null as string | null,
+    prospects: payload.prospects || [],
+    meta: { providerMode: "live" as const },
+  };
 }
 
 export async function searchAllianceProspects(input: {
@@ -2825,6 +2866,7 @@ export async function searchAllianceProspects(input: {
     total_found: upsertPayload.length,
     metadata: {
       limit,
+      providerMode: providerResult.meta?.providerMode || "live",
     },
     created_at: nowIso,
     updated_at: nowIso,

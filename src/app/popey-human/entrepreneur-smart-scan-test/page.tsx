@@ -5427,6 +5427,11 @@ export default function EntrepreneurSmartScanTestPage() {
               >
                 {isAlliancesSearching ? "Recherche en cours..." : "Lancer recherche B2B"}
               </button>
+              {apiErrorMessage ? (
+                <p className="mt-2 rounded-lg border border-amber-300/35 bg-amber-300/10 px-2 py-1 text-[11px] text-amber-100">
+                  {apiErrorMessage}
+                </p>
+              ) : null}
             </div>
 
             <div className="mt-3 rounded-2xl border border-fuchsia-300/30 bg-fuchsia-300/10 p-3">
