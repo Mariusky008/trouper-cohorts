@@ -756,8 +756,13 @@ function buildDailyQueueFromImportedContacts(
     queue.push(contact);
   }
   if (queue.length === 0) {
-    const fallback = allContacts[start];
-    if (fallback) queue.push(fallback);
+    // If all contacts are currently parked ("passer"), recycle a fresh rotation
+    // instead of locking the user on a single fallback card.
+    for (let i = 0; i < allContacts.length && queue.length < safeLimit; i += 1) {
+      const contact = allContacts[(start + i) % allContacts.length];
+      if (!contact) continue;
+      queue.push(contact);
+    }
   }
   return queue;
 }
@@ -1176,6 +1181,7 @@ export default function EntrepreneurSmartScanTestPage() {
     dailyGoal,
     Math.max(activatedFromHistory, sentCount),
   );
+  const showCompletionAssistant = false;
   const remainingForGoal = Math.max(0, dailyGoal - opportunitiesActivated);
   const missionProgress = Math.round((opportunitiesActivated / dailyGoal) * 100);
   const done = opportunitiesActivated;
@@ -4195,7 +4201,7 @@ export default function EntrepreneurSmartScanTestPage() {
             <p className="mt-2 text-xs text-white/70">Mode tunnel: une carte, une decision, action immediate.</p>
           </section>
 
-              {done >= dailyQueueCount && (
+              {showCompletionAssistant && done >= dailyQueueCount && (
             <section className="rounded-3xl border border-white/10 bg-white/5 p-4 backdrop-blur-xl">
             <p className="text-xs font-black uppercase tracking-[0.12em] text-[#EAC886]">Template Assistant</p>
             <h2 className="mt-1 text-xl font-black">Message pre-rempli</h2>
