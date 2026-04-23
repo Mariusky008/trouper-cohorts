@@ -951,7 +951,7 @@ export default function EntrepreneurSmartScanTestPage() {
         ? "from-cyan-300 via-indigo-300 to-fuchsia-300"
         : "from-amber-300 via-orange-300 to-fuchsia-300";
   const currentQualifier = qualifierStore[current.id];
-  const isQualified = Boolean(currentQualifier);
+  const isQualified = Boolean(currentQualifier?.opportunityChoice && currentQualifier.communityTags.length > 0);
   const actionEngine = useMemo(() => getDynamicActionEngine(currentQualifier), [currentQualifier]);
   const actionButtons = actionEngine.order.map((action) => ({
     action,
@@ -2226,7 +2226,8 @@ export default function EntrepreneurSmartScanTestPage() {
     const cleanPhone = normalizePhoneForWhatsApp(scopedActionContact.phone);
     const action = selectedAction;
     if (!action || action === "qualifier") return;
-    if (!qualifierStore[scopedActionContact.id]) {
+    const scopedQualifier = qualifierStore[scopedActionContact.id];
+    if (!scopedQualifier?.opportunityChoice || scopedQualifier.communityTags.length === 0) {
       setShowTemplateModal(false);
       setShowQualificationNeededPopup(true);
       return;
@@ -2806,7 +2807,7 @@ export default function EntrepreneurSmartScanTestPage() {
 
   function startActionFromProfile(action: Exclude<DailyCategory, "passer" | "qualifier">) {
     if (!profileContact) return;
-    if (!profileQualifier) {
+    if (!profileQualifier?.opportunityChoice || profileQualifier.communityTags.length === 0) {
       const nextIndex = contactsData.findIndex((contact) => contact.id === profileContact.id);
       if (nextIndex >= 0) setIndex(nextIndex);
       setShowContactProfile(false);
