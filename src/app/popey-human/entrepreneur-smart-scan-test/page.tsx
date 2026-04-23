@@ -161,6 +161,7 @@ type TransitionScreenState = {
 };
 type TransitionAwaitingConfirmState = {
   action: Exclude<DailyCategory, "qualifier">;
+  actionContactId: string;
   stayOnCurrentContact: boolean;
   returnToProfileContactId: string | null;
   countAsSent: boolean;
@@ -862,6 +863,7 @@ export default function EntrepreneurSmartScanTestPage() {
   const [manualScoutFirstName, setManualScoutFirstName] = useState("");
   const [manualScoutLastName, setManualScoutLastName] = useState("");
   const [manualScoutMetier, setManualScoutMetier] = useState("");
+  const [showAddScoutModal, setShowAddScoutModal] = useState(false);
   const [eclaireurLinksByContactId, setEclaireurLinksByContactId] = useState<Record<string, SmartScanEclaireurLink>>({});
   const [loadingEclaireurLinkContactId, setLoadingEclaireurLinkContactId] = useState<string | null>(null);
   const [copyingEclaireurLinkContactId, setCopyingEclaireurLinkContactId] = useState<string | null>(null);
@@ -1026,6 +1028,10 @@ export default function EntrepreneurSmartScanTestPage() {
   const selectedIncomingReferral = selectedIncomingReferralId
     ? incomingReferrals.find((item) => item.id === selectedIncomingReferralId) || null
     : null;
+  const scopedActionContact = actionFromProfileContactId
+    ? allContactsData.find((contact) => contact.id === actionFromProfileContactId) || current
+    : current;
+  const scopedActionQualifier = qualifierStore[scopedActionContact.id];
 
   useEffect(() => {
     if (!selectedImportedScoutId && importedScoutCandidates[0]?.id) {
@@ -1481,6 +1487,7 @@ export default function EntrepreneurSmartScanTestPage() {
               },
               awaitingConfirm: {
                 action: pendingFinalizeAction!,
+                actionContactId: current.id,
                 countAsSent: true,
                 sentInHistory: true,
                 stayOnCurrentContact: Boolean(pendingReturnProfileContactId),
@@ -1581,13 +1588,13 @@ export default function EntrepreneurSmartScanTestPage() {
     try {
       setIsGeneratingMessage(true);
       const result = (await postSmartScan("generate-message", {
-        contactName: current.name,
+        contactName: scopedActionContact.name,
         actionType: selectedAction,
-        trustLevel: trustLevelStore[current.id] || null,
-        opportunityChoice: currentQualifier?.opportunityChoice || null,
-        communityTags: currentQualifier?.communityTags || [],
-        city: current.city,
-        companyHint: current.companyHint,
+        trustLevel: trustLevelStore[scopedActionContact.id] || null,
+        opportunityChoice: scopedActionQualifier?.opportunityChoice || null,
+        communityTags: scopedActionQualifier?.communityTags || [],
+        city: scopedActionContact.city,
+        companyHint: scopedActionContact.companyHint,
       })) as {
         message?: string;
         generationSource?: "ai" | "fallback";
@@ -2095,10 +2102,16 @@ export default function EntrepreneurSmartScanTestPage() {
   function finalizeAction(
     action: Exclude<DailyCategory, "qualifier">,
     advanceDelay = 200,
-    options: { countAsSent?: boolean; sentInHistory?: boolean; stayOnCurrentContact?: boolean; returnToProfileContactId?: string | null } = {},
+    options: {
+      countAsSent?: boolean;
+      sentInHistory?: boolean;
+      stayOnCurrentContact?: boolean;
+      returnToProfileContactId?: string | null;
+      actionContact?: DailyContact;
+    } = {},
   ) {
     setSelectedAction(action);
-    const actionContact = current;
+    const actionContact = options.actionContact || current;
     const actionQualifier = qualifierStore[actionContact.id];
     const countAsSent = options.countAsSent ?? true;
     const sentInHistory = options.sentInHistory ?? countAsSent;
@@ -2212,7 +2225,7 @@ export default function EntrepreneurSmartScanTestPage() {
   }
 
   async function sendOnWhatsApp() {
-    const cleanPhone = normalizePhoneForWhatsApp(current.phone);
+    const cleanPhone = normalizePhoneForWhatsApp(scopedActionContact.phone);
     const action = selectedAction;
     if (!action || action === "qualifier") return;
     if (!cleanPhone) {
@@ -2221,9 +2234,10 @@ export default function EntrepreneurSmartScanTestPage() {
     }
     setModalErrorMessage("");
     const payload = createTransitionPayload(action);
-    const profileOriginContactId = actionFromProfileContactId === current.id ? actionFromProfileContactId : null;
+    const profileOriginContactId = actionFromProfileContactId === scopedActionContact.id ? actionFromProfileContactId : null;
     const awaitingConfirm: TransitionAwaitingConfirmState = {
       action,
+      actionContactId: scopedActionContact.id,
       countAsSent: true,
       sentInHistory: true,
       stayOnCurrentContact: Boolean(profileOriginContactId),
@@ -2233,10 +2247,10 @@ export default function EntrepreneurSmartScanTestPage() {
 
     try {
       const prepared = (await postSmartScan("prepare-whatsapp-payload", {
-        externalContactRef: current.id,
-        fullName: current.name,
-        city: current.city,
-        companyHint: current.companyHint,
+        externalContactRef: scopedActionContact.id,
+        fullName: scopedActionContact.name,
+        city: scopedActionContact.city,
+        companyHint: scopedActionContact.companyHint,
         actionType: action,
         messageDraft: draftMessage,
         phoneE164: cleanPhone,
@@ -2259,7 +2273,7 @@ export default function EntrepreneurSmartScanTestPage() {
         ctaLabel: "Passez au prochain profil",
       },
       awaitingConfirm,
-      contactId: current.id,
+      contactId: scopedActionContact.id,
       createdAt: Date.now(),
     };
     savePendingWhatsAppContext(pendingContext);
@@ -2269,9 +2283,9 @@ export default function EntrepreneurSmartScanTestPage() {
     if (typeof window !== "undefined") {
       window.open(whatsappUrl, "_blank");
     }
-    if (eclaireurIds.includes(current.id)) {
+    if (eclaireurIds.includes(scopedActionContact.id)) {
       setEclaireurStatsStore((prev) => {
-        const existing = prev[current.id] || {
+        const existing = prev[scopedActionContact.id] || {
           leadsDetected: 0,
           leadsSigned: 0,
           commissionTotalEur: 0,
@@ -2279,7 +2293,7 @@ export default function EntrepreneurSmartScanTestPage() {
         };
         return {
           ...prev,
-          [current.id]: {
+          [scopedActionContact.id]: {
             ...existing,
             lastNewsAtMs: Date.now(),
           },
@@ -4562,98 +4576,25 @@ export default function EntrepreneurSmartScanTestPage() {
                 <p className="text-xs font-black uppercase tracking-[0.12em] text-cyan-200">Mes Eclaireurs</p>
                 <button
                   type="button"
-                  onClick={() => {
-                    setShowEclaireursPanel(false);
-                    setSelectedIncomingReferralId(null);
-                    setSelectedEclaireurTemplateContactId(null);
-                    setEclaireurTemplates([]);
-                  }}
-                  className="relative z-30 h-9 w-9 rounded-full border border-white/20 bg-white/10 text-xs"
+                  onClick={() => setShowAddScoutModal(true)}
+                  className="relative z-30 h-9 w-9 rounded-full border border-cyan-300/40 bg-cyan-300/15 text-base font-black text-cyan-100"
+                  aria-label="Ajouter un eclaireur"
                 >
-                  ✕
+                  +
                 </button>
               </div>
             </div>
-            <div className="mt-3 grid grid-cols-2 gap-2">
-              <select
-                value={eclaireurSort}
-                onChange={(event) => setEclaireurSort(event.target.value as "inactive_oldest" | "inactive_recent")}
-                className="h-9 rounded-lg border border-white/15 bg-black/25 px-2 text-[11px]"
-              >
-                <option value="inactive_oldest">Trier: Inactifs les plus anciens</option>
-                <option value="inactive_recent">Trier: Inactifs recents</option>
-              </select>
-              <div className="flex items-center justify-center rounded-lg border border-white/15 bg-black/25 px-2 text-[11px] text-white/75">
-                {eclaireursList.length} eclaireur(s)
-              </div>
-            </div>
-            <div className="mt-2 grid gap-2 sm:grid-cols-[1fr_auto]">
-              <select
-                value={selectedImportedScoutId}
-                onChange={(event) => setSelectedImportedScoutId(event.target.value)}
-                className="h-9 rounded-lg border border-white/15 bg-black/25 px-2 text-[11px]"
-              >
-                <option value="">Ajouter depuis mes contacts importes</option>
-                {importedScoutCandidates.map((item) => (
-                  <option key={`imported-scout-${item.id}`} value={item.id}>
-                    {item.label}
-                  </option>
-                ))}
-              </select>
-              <button
-                type="button"
-                onClick={addScoutFromImportedSelection}
-                disabled={!hasImportedScoutCandidates && !manualScoutFirstName.trim() && !manualScoutLastName.trim() && !manualScoutMetier.trim() && !manualScoutCity.trim() && !manualScoutPhone.trim()}
-                className="h-9 rounded-lg border border-cyan-300/35 bg-cyan-300/15 px-3 text-[10px] font-black uppercase tracking-[0.08em] text-cyan-100"
-              >
-                Ajouter +
-              </button>
-            </div>
-            <div className="mt-2 rounded-lg border border-white/15 bg-black/20 p-2">
-              <p className="text-[10px] font-black uppercase tracking-[0.08em] text-white/70">Ou ajouter manuellement (ajout + eclaireur direct)</p>
-              <div className="mt-2 grid grid-cols-2 gap-2">
-                <input
-                  value={manualScoutFirstName}
-                  onChange={(event) => setManualScoutFirstName(event.target.value)}
-                  placeholder="Prenom"
-                  className="h-8 rounded-lg border border-white/15 bg-black/30 px-2 text-[11px]"
-                />
-                <input
-                  value={manualScoutLastName}
-                  onChange={(event) => setManualScoutLastName(event.target.value)}
-                  placeholder="Nom"
-                  className="h-8 rounded-lg border border-white/15 bg-black/30 px-2 text-[11px]"
-                />
-                <input
-                  value={manualScoutMetier}
-                  onChange={(event) => setManualScoutMetier(event.target.value)}
-                  placeholder="Metier"
-                  className="h-8 rounded-lg border border-white/15 bg-black/30 px-2 text-[11px]"
-                />
-                <input
-                  value={manualScoutCity}
-                  onChange={(event) => setManualScoutCity(event.target.value)}
-                  placeholder="Ville"
-                  className="h-8 rounded-lg border border-white/15 bg-black/30 px-2 text-[11px]"
-                />
-                <input
-                  value={manualScoutPhone}
-                  onChange={(event) => setManualScoutPhone(event.target.value)}
-                  placeholder="Telephone"
-                  className="col-span-2 h-8 rounded-lg border border-white/15 bg-black/30 px-2 text-[11px]"
-                />
-              </div>
-            </div>
-            <p className="mt-1 text-[10px] text-white/70">
-              {hasImportedScoutCandidates
-                ? `${importedScoutCandidates.length} contact(s) pret(s) a ajouter`
-                : "Aucun nouveau contact disponible ici. Utilise l ajout manuel dans Profil."}
-            </p>
             {apiErrorMessage ? (
               <p className="mt-2 rounded-lg border border-amber-300/35 bg-amber-300/10 px-2 py-1 text-[11px] text-amber-100">{apiErrorMessage}</p>
             ) : null}
-            <div className="mt-2 rounded-xl border border-fuchsia-300/30 bg-fuchsia-300/10 px-3 py-2">
-              <p className="text-[10px] font-black uppercase tracking-[0.08em] text-fuchsia-100">Opportunites entrantes Eclaireurs</p>
+            <div className="mt-3 rounded-2xl border border-fuchsia-300/40 bg-[radial-gradient(circle_at_15%_0%,rgba(217,70,239,0.26),rgba(11,17,40,0.96))] px-3 py-3 shadow-[0_20px_80px_-35px_rgba(217,70,239,0.8)]">
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-[11px] font-black uppercase tracking-[0.1em] text-fuchsia-100">🔥 Opportunites entrantes Eclaireurs</p>
+                <span className="inline-flex rounded-full border border-fuchsia-200/35 bg-fuchsia-200/20 px-2 py-0.5 text-[10px] font-black text-fuchsia-50">
+                  {incomingReferrals.length} alerte(s)
+                </span>
+              </div>
+              <p className="mt-1 text-[11px] text-fuchsia-100/85">Traite ces opportunites en priorite: RDV, offre puis signature finale.</p>
               {isIncomingReferralsLoading ? (
                 <p className="mt-1 text-[11px] text-white/70">Chargement...</p>
               ) : incomingReferrals.length === 0 ? (
@@ -4668,10 +4609,10 @@ export default function EntrepreneurSmartScanTestPage() {
                         setSelectedIncomingReferralId(item.id);
                         setIncomingSignedAmount("");
                       }}
-                      className="w-full rounded-lg border border-white/15 bg-black/20 px-2 py-1 text-left transition hover:border-fuchsia-300/45 hover:bg-fuchsia-300/10"
+                      className="w-full rounded-xl border border-fuchsia-200/25 bg-black/30 px-3 py-2 text-left transition hover:border-fuchsia-300/55 hover:bg-fuchsia-300/12"
                     >
-                      <p className="text-[11px] font-black text-white">{item.contact_name}</p>
-                      <p className="text-[10px] text-white/70">
+                      <p className="text-[12px] font-black text-white">{item.contact_name}</p>
+                      <p className="text-[10px] text-white/75">
                         {item.scout_name || "Eclaireur"} • {item.project_type || "Projet non precise"} • {referralStatusLabel(item.status)}
                       </p>
                     </button>
@@ -4679,7 +4620,7 @@ export default function EntrepreneurSmartScanTestPage() {
                 </div>
               )}
             </div>
-            <div className="mt-3 max-h-[calc(100dvh-330px)] space-y-2 overflow-y-auto sm:max-h-[58vh]">
+            <div className="mt-3 max-h-[calc(100dvh-300px)] space-y-2 overflow-y-auto sm:max-h-[58vh]">
               {eclaireursList.length === 0 && <p className="text-sm text-white/70">Aucun eclaireur actif pour l instant.</p>}
               {eclaireursList.map((contact) => {
                 const stats = eclaireurStatsStore[contact.id] || { leadsDetected: 0, leadsSigned: 0, commissionTotalEur: 0, lastNewsAtMs: 0 };
@@ -4748,6 +4689,72 @@ export default function EntrepreneurSmartScanTestPage() {
                 );
               })}
             </div>
+          </section>
+        </div>
+      )}
+
+      {showAddScoutModal && (
+        <div className="fixed inset-0 z-[64] flex items-center justify-center bg-black/70 px-3 backdrop-blur-sm sm:px-4">
+          <section className="w-full max-w-lg rounded-3xl border border-cyan-300/30 bg-[#0E1430] p-4">
+            <div className="flex items-center justify-between">
+              <p className="text-[11px] font-black uppercase tracking-[0.1em] text-cyan-100">Ajouter un Eclaireur</p>
+              <button
+                type="button"
+                onClick={() => setShowAddScoutModal(false)}
+                className="h-8 w-8 rounded-full border border-white/20 bg-white/10 text-xs"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              <input
+                value={manualScoutFirstName}
+                onChange={(event) => setManualScoutFirstName(event.target.value)}
+                placeholder="Prenom"
+                className="h-9 rounded-lg border border-white/15 bg-black/30 px-2 text-[11px]"
+              />
+              <input
+                value={manualScoutLastName}
+                onChange={(event) => setManualScoutLastName(event.target.value)}
+                placeholder="Nom"
+                className="h-9 rounded-lg border border-white/15 bg-black/30 px-2 text-[11px]"
+              />
+              <input
+                value={manualScoutMetier}
+                onChange={(event) => setManualScoutMetier(event.target.value)}
+                placeholder="Metier"
+                className="h-9 rounded-lg border border-white/15 bg-black/30 px-2 text-[11px]"
+              />
+              <input
+                value={manualScoutCity}
+                onChange={(event) => setManualScoutCity(event.target.value)}
+                placeholder="Ville"
+                className="h-9 rounded-lg border border-white/15 bg-black/30 px-2 text-[11px]"
+              />
+              <input
+                value={manualScoutPhone}
+                onChange={(event) => setManualScoutPhone(event.target.value)}
+                placeholder="Telephone"
+                className="col-span-2 h-9 rounded-lg border border-white/15 bg-black/30 px-2 text-[11px]"
+              />
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setShowAddScoutModal(false);
+                void importSingleContactManually({
+                  firstName: manualScoutFirstName,
+                  lastName: manualScoutLastName,
+                  metier: manualScoutMetier,
+                  city: manualScoutCity,
+                  phone: manualScoutPhone,
+                });
+              }}
+              disabled={!manualScoutFirstName.trim() && !manualScoutLastName.trim()}
+              className="mt-3 h-10 w-full rounded-xl border border-cyan-300/40 bg-cyan-300/20 text-[11px] font-black uppercase tracking-[0.08em] text-cyan-100 disabled:opacity-60"
+            >
+              Ajouter + Eclaireur
+            </button>
           </section>
         </div>
       )}
@@ -5350,11 +5357,11 @@ export default function EntrepreneurSmartScanTestPage() {
               <>
                 <p className="mt-1 text-sm font-black">{modalTitle(selectedAction)}</p>
                 <p className="mt-2 inline-flex items-center rounded-lg bg-cyan-400/15 px-2 py-1 text-xs font-black text-cyan-100">
-                  🎯 Base sur le profil: {adnPopey[0]?.label ?? "❓ Inconnu"}
+                  🎯 Base sur le profil: {(scopedActionQualifier?.opportunityChoice && quickLabelMap[scopedActionQualifier.opportunityChoice]) || "❓ Inconnu"}
                 </p>
-                {promptContextPreview.length > 0 && (
+                {buildPromptCompliments(scopedActionQualifier).length > 0 && (
                   <p className="mt-2 rounded-lg border border-emerald-300/30 bg-emerald-300/10 px-2 py-1 text-xs text-emerald-100">
-                    Variables IA: {promptContextPreview.join(" • ")}
+                    Variables IA: {buildPromptCompliments(scopedActionQualifier).join(" • ")}
                   </p>
                 )}
                 <div className="mt-2 flex items-center gap-2">
@@ -5401,6 +5408,7 @@ export default function EntrepreneurSmartScanTestPage() {
                       sentInHistory: false,
                       stayOnCurrentContact: Boolean(actionFromProfileContactId),
                       returnToProfileContactId: actionFromProfileContactId,
+                      actionContact: scopedActionContact,
                     });
                     setActionFromProfileContactId(null);
                   }}
@@ -5489,6 +5497,8 @@ export default function EntrepreneurSmartScanTestPage() {
                     sentInHistory: transitionAwaitingConfirm.sentInHistory,
                     stayOnCurrentContact: transitionAwaitingConfirm.stayOnCurrentContact,
                     returnToProfileContactId: transitionAwaitingConfirm.returnToProfileContactId,
+                      actionContact:
+                        allContactsData.find((contact) => contact.id === transitionAwaitingConfirm.actionContactId) || current,
                   });
                   setTransitionScreen(null);
                   setTransitionAwaitingConfirm(null);
