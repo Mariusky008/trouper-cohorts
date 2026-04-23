@@ -168,6 +168,7 @@ export default function AccueilTestPage() {
                 onError={() => setHeroVideoError(true)}
                 poster="/logo.png"
               >
+                <source src="/app.mov" type="video/quicktime" />
                 <source src="/media/popey-hero-demo.mp4" type="video/mp4" />
               </video>
             ) : (
@@ -190,7 +191,7 @@ export default function AccueilTestPage() {
               </div>
             )}
             <p className="mt-2 text-[10px] text-white/65">
-              Video source: <span className="font-black text-cyan-100">/public/media/popey-hero-demo.mp4</span>
+              Video source: <span className="font-black text-cyan-100">/public/app.mov</span>
             </p>
           </div>
         </section>
