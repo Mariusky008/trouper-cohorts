@@ -2697,85 +2697,100 @@ async function searchB2BProvider(input: {
   radiusKm: number;
   limit: number;
 }) {
-  function buildFallbackProspects() {
-    const firstNames = ["Nicolas", "Claire", "Karim", "Sophie", "Lina", "Julien", "Patricia", "Peggy", "Marc", "Emma"];
-    const lastNames = ["Martin", "Dubois", "Roux", "Bernard", "Petit", "Garcia", "Lopez", "Moreau", "Faure", "Chevalier"];
-    const targetPool = input.targetMetiers.length > 0 ? input.targetMetiers : ["courtier", "notaire", "conciergerie"];
-    const prospectCount = Math.max(8, Math.min(input.limit, 24));
-    const prospects = Array.from({ length: prospectCount }).map((_, idx) => {
-      const firstName = firstNames[idx % firstNames.length];
-      const lastName = lastNames[(idx * 3) % lastNames.length];
-      const metier = targetPool[idx % targetPool.length] || "partenaire local";
-      const distanceKm = Number((1 + ((idx * 2.3) % Math.max(4, input.radiusKm))).toFixed(1));
-      const marker = (input.sourceMetier || input.targetMetiers.join("-") || "alliance").replace(/\s+/g, "-").toLowerCase();
-      return {
-        externalId: `fallback-${input.city.toLowerCase()}-${marker}-${metier.toLowerCase().replace(/\s+/g, "-")}-${idx + 1}`,
-        name: `${firstName} ${lastName} (${metier})`,
-        metier,
-        city: input.city,
-        phone: null,
-        distanceKm,
-        rating: Number((3.8 + ((idx % 5) * 0.2)).toFixed(1)),
-        payload: {
-          provider: "fallback",
-          reason: "provider_not_configured",
-          sourceMetier: input.sourceMetier || null,
-        },
-      };
-    });
-    return prospects;
-  }
-
-  const providerUrl = String(process.env.ALLIANCES_B2B_PROVIDER_URL || "").trim();
-  const providerKey = String(process.env.ALLIANCES_B2B_PROVIDER_API_KEY || "").trim();
-  if (!providerUrl || !providerKey) {
+  const apifyToken = String(process.env.APIFY_TOKEN || "").trim();
+  const apifyTaskSlug = String(process.env.APIFY_TASK_SLUG || "").trim();
+  if (!apifyToken || !apifyTaskSlug) {
     return {
-      error: null as string | null,
-      prospects: buildFallbackProspects(),
-      meta: { providerMode: "fallback" as const },
-    };
-  }
-
-  const response = await fetch(providerUrl, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${providerKey}`,
-    },
-    body: JSON.stringify({
-      city: input.city,
-      sourceMetier: input.sourceMetier || null,
-      targetMetiers: input.targetMetiers,
-      radiusKm: input.radiusKm,
-      limit: input.limit,
-    }),
-    cache: "no-store",
-  });
-
-  const payload = (await response.json().catch(() => ({}))) as {
-    error?: string;
-    prospects?: Array<{
-      externalId?: string | null;
-      name?: string | null;
-      metier?: string | null;
-      city?: string | null;
-      phone?: string | null;
-      distanceKm?: number | null;
-      rating?: number | null;
-      payload?: Record<string, unknown> | null;
-    }>;
-  };
-
-  if (!response.ok) {
-    return {
-      error: payload.error || "Provider B2B indisponible.",
+      error: "Provider Apify non configure. Ajoute APIFY_TOKEN et APIFY_TASK_SLUG.",
       prospects: [],
       meta: { providerMode: "live" as const },
     };
   }
+
+  const taskId = apifyTaskSlug.includes("/") ? apifyTaskSlug.replace("/", "~") : apifyTaskSlug;
+  const endpoint = `https://api.apify.com/v2/actor-tasks/${encodeURIComponent(taskId)}/run-sync-get-dataset-items`;
+  const response = await fetch(endpoint, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apifyToken}`,
+    },
+    body: JSON.stringify({
+      searchStringsArray: input.targetMetiers.slice(0, 10),
+      locationQuery: input.city,
+      maxCrawledPlacesPerSearch: Math.max(5, Math.min(120, input.limit)),
+      language: "fr",
+      maxImages: 0,
+      includeWebResults: false,
+      skipClosedPlaces: true,
+      additionalInfo: false,
+    }),
+    cache: "no-store",
+  });
+
+  const payload = (await response.json().catch(() => [])) as unknown;
+
+  if (!response.ok) {
+    const payloadError =
+      payload && typeof payload === "object" && !Array.isArray(payload) && "error" in payload
+        ? String((payload as { error?: unknown }).error || "")
+        : "";
+    return {
+      error: payloadError || `Provider Apify indisponible (HTTP ${response.status}).`,
+      prospects: [],
+      meta: { providerMode: "live" as const },
+    };
+  }
+
+  const rows = Array.isArray(payload) ? payload : [];
+  function pickString(row: Record<string, unknown>, keys: string[]): string {
+    for (const key of keys) {
+      const value = row[key];
+      if (typeof value === "string" && value.trim()) return value.trim();
+    }
+    return "";
+  }
+  function pickNumber(row: Record<string, unknown>, keys: string[]): number | null {
+    for (const key of keys) {
+      const raw = row[key];
+      if (typeof raw === "number" && Number.isFinite(raw)) return raw;
+      if (typeof raw === "string") {
+        const parsed = Number(raw);
+        if (Number.isFinite(parsed)) return parsed;
+      }
+    }
+    return null;
+  }
+
+  const prospects = rows
+    .map((item, idx) => {
+      const row = (item && typeof item === "object" ? item : {}) as Record<string, unknown>;
+      const name = pickString(row, ["title", "name", "placeName", "displayName", "businessName"]);
+      const metier = pickString(row, ["categoryName", "category", "searchString"]) || input.targetMetiers[idx % Math.max(input.targetMetiers.length, 1)] || "partenaire local";
+      if (!name || !metier) return null;
+      const city = pickString(row, ["city", "locationCity", "addressCity"]) || input.city;
+      const externalId = pickString(row, ["placeId", "cid", "url", "googleMapsUrl"]) || `${name.toLowerCase()}-${metier.toLowerCase()}-${idx + 1}`;
+      const phone = pickString(row, ["phone", "phoneUnformatted", "phoneNumber", "phoneInternational"]);
+      return {
+        externalId,
+        name,
+        metier,
+        city,
+        phone: phone || null,
+        distanceKm: pickNumber(row, ["distanceKm", "distance", "distanceInKm"]),
+        rating: pickNumber(row, ["totalScore", "rating", "stars"]),
+        payload: {
+          provider: "apify",
+          task: apifyTaskSlug,
+          sourceMetier: input.sourceMetier || null,
+        } as Record<string, unknown>,
+      };
+    })
+    .filter((row): row is NonNullable<typeof row> => Boolean(row));
+
   return {
     error: null as string | null,
-    prospects: payload.prospects || [],
+    prospects,
     meta: { providerMode: "live" as const },
   };
 }
