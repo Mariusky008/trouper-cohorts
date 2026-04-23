@@ -75,6 +75,7 @@ type BootstrapHistoryRow = {
   id: string;
   contact_id: string;
   contact_name: string;
+  contact_external_ref?: string | null;
   action_type: Exclude<DailyCategory, "qualifier">;
   status: "drafted" | "sent" | "validated_without_send";
   message_draft?: string | null;
@@ -1982,7 +1983,7 @@ export default function EntrepreneurSmartScanTestPage() {
 
     const nextHistoryEntries: HistoryEntry[] = (payload.history || [])
       .map((entry) => {
-        const externalRef = dbToExternalRef.get(entry.contact_id);
+        const externalRef = dbToExternalRef.get(entry.contact_id) || String(entry.contact_external_ref || "").trim();
         if (!externalRef) return null;
         const dateMs = Date.parse(entry.created_at);
         const safeDateMs = Number.isFinite(dateMs) ? dateMs : Date.now();

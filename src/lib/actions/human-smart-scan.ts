@@ -48,6 +48,7 @@ type SmartScanActionRow = {
 type SmartScanHistoryItem = SmartScanActionRow & {
   contact_name: string;
   contact_city: string | null;
+  contact_external_ref: string | null;
 };
 
 type SessionRow = {
@@ -865,7 +866,7 @@ export async function listHistoryActions(limit = 60) {
   const { data, error } = await supabaseAdmin
     .from("human_smart_scan_actions")
     .select(
-      "id,contact_id,owner_member_id,action_type,message_draft,send_channel,status,sent_at,validated_at,whatsapp_opened_at,template_version,followup_due_at,outcome_status,outcome_notes,created_at,updated_at,human_smart_scan_contacts!inner(full_name,city)"
+      "id,contact_id,owner_member_id,action_type,message_draft,send_channel,status,sent_at,validated_at,whatsapp_opened_at,template_version,followup_due_at,outcome_status,outcome_notes,created_at,updated_at,human_smart_scan_contacts!inner(full_name,city,external_contact_ref)"
     )
     .eq("owner_member_id", currentMember.id)
     .order("created_at", { ascending: false })
@@ -874,7 +875,11 @@ export async function listHistoryActions(limit = 60) {
   if (error) return { error: error.message, actions: [] as SmartScanHistoryItem[] };
 
   const actions: SmartScanHistoryItem[] = ((data as Array<Record<string, unknown>> | null) || []).map((row) => {
-    const contact = row.human_smart_scan_contacts as { full_name?: string; city?: string | null } | null;
+    const contact = row.human_smart_scan_contacts as {
+      full_name?: string;
+      city?: string | null;
+      external_contact_ref?: string | null;
+    } | null;
     return {
       id: String(row.id),
       contact_id: String(row.contact_id),
@@ -894,6 +899,7 @@ export async function listHistoryActions(limit = 60) {
       updated_at: String(row.updated_at),
       contact_name: contact?.full_name || "Contact",
       contact_city: contact?.city || null,
+      contact_external_ref: contact?.external_contact_ref || null,
     };
   });
 
