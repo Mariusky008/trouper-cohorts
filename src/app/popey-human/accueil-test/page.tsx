@@ -10,7 +10,7 @@ const flowCards = [
     line: "Message pret a envoyer (service ou apporteur d affaire)",
     tone: "from-amber-300/35 to-amber-300/10",
   },
-  { icon: "🔵", title: "OPPORTUNITES", line: "Tes contacts pensent a toi", tone: "from-cyan-300/35 to-cyan-300/10" },
+  { icon: "🔵", title: "OPPORTUNITES", line: "Tes contacts t envoient des opportunites (car ils y gagnent)", tone: "from-cyan-300/35 to-cyan-300/10" },
   { icon: "🟣", title: "CASH", line: "Tu suis et encaisses", tone: "from-fuchsia-300/35 to-fuchsia-300/10" },
 ] as const;
 
@@ -32,6 +32,7 @@ function getTargets(metier: string) {
 export default function AccueilTestPage() {
   const [metier, setMetier] = useState("");
   const [activatedContacts, setActivatedContacts] = useState(25);
+  const [heroVideoError, setHeroVideoError] = useState(false);
 
   const targets = useMemo(() => getTargets(metier), [metier]);
   const activeConnectors = Math.round(activatedContacts * 0.32);
@@ -44,12 +45,14 @@ export default function AccueilTestPage() {
         <section className="grid items-center gap-6 rounded-3xl border border-white/15 bg-white/5 p-6 shadow-[0_24px_80px_-36px_rgba(16,185,129,0.6)] lg:grid-cols-[1.05fr_0.95fr] sm:p-8">
           <div>
             <p className="inline-flex rounded-full border border-emerald-300/35 bg-emerald-300/15 px-3 py-1 text-[11px] font-black uppercase tracking-[0.14em] text-emerald-100">
-              Popey - Landing test v3
+              Popey - Landing test v4
             </p>
             <h1 className="mt-4 text-4xl font-black leading-[0.95] sm:text-6xl">
               Ton telephone contient deja tes prochains clients.
             </h1>
-            <p className="mt-3 text-lg font-semibold text-cyan-100">On te montre qui contacter et quoi leur dire.</p>
+            <p className="mt-3 text-lg font-semibold text-cyan-100">
+              On te montre qui contacter, quoi leur dire, et pourquoi ils vont t envoyer des clients.
+            </p>
             <p className="mt-4 max-w-2xl text-base leading-7 text-white/85">
               Des personnes autour de toi entendent parler de clients tous les jours. Aujourd hui, tu ne touches rien.
             </p>
@@ -70,27 +73,42 @@ export default function AccueilTestPage() {
           </div>
 
           <div id="hero-demo" className="rounded-3xl border border-cyan-300/35 bg-[#0A1434]/80 p-4 shadow-[0_30px_90px_-45px_rgba(34,211,238,0.8)]">
-            <p className="text-[10px] font-black uppercase tracking-[0.16em] text-cyan-100">Demo animee (simulation realiste)</p>
-            <div className="mt-3 space-y-2 rounded-2xl border border-white/10 bg-black/35 p-3 font-mono text-[11px]">
-              <p className="animate-pulse text-cyan-100">Scan en cours...</p>
-              <p className="rounded-xl border border-emerald-300/25 bg-emerald-300/10 px-2 py-1 text-emerald-100">✔ 542 contacts detectes</p>
-              <p className="rounded-xl border border-emerald-300/25 bg-emerald-300/10 px-2 py-1 text-emerald-100">✔ 138 dans ta ville</p>
-              <p className="rounded-xl border border-amber-300/25 bg-amber-300/10 px-2 py-1 text-amber-100">✔ 17 contacts utiles identifies</p>
-              <div className="rounded-xl border border-cyan-300/25 bg-cyan-300/10 px-2 py-2">
-                <p className="font-black text-cyan-100">Nicolas B.</p>
-                <p className="text-white/80">Peut t envoyer des clients immo</p>
-                <p className="mt-1 inline-flex rounded-full border border-cyan-200/40 bg-cyan-200/15 px-2 py-0.5 text-[10px] font-black">
-                  [Activer]
-                </p>
-                <p className="mt-1 text-white/85">Message pret a envoyer</p>
+            <p className="text-[10px] font-black uppercase tracking-[0.16em] text-cyan-100">Demo video 30 sec</p>
+            {!heroVideoError ? (
+              <video
+                className="mt-3 h-[360px] w-full rounded-2xl border border-white/10 bg-black/45 object-cover"
+                autoPlay
+                muted
+                loop
+                playsInline
+                controls
+                onError={() => setHeroVideoError(true)}
+                poster="/logo.png"
+              >
+                <source src="/media/popey-hero-demo.mp4" type="video/mp4" />
+              </video>
+            ) : (
+              <div className="mt-3 space-y-2 rounded-2xl border border-white/10 bg-black/35 p-3 font-mono text-[11px]">
+                <p className="animate-pulse text-cyan-100">Scan en cours...</p>
+                <p className="rounded-xl border border-emerald-300/25 bg-emerald-300/10 px-2 py-1 text-emerald-100">✔ 542 contacts detectes</p>
+                <p className="rounded-xl border border-emerald-300/25 bg-emerald-300/10 px-2 py-1 text-emerald-100">✔ 138 dans ta ville</p>
+                <p className="rounded-xl border border-amber-300/25 bg-amber-300/10 px-2 py-1 text-amber-100">✔ 17 contacts utiles identifies</p>
+                <div className="rounded-xl border border-cyan-300/25 bg-cyan-300/10 px-2 py-2">
+                  <p className="font-black text-cyan-100">Nicolas B.</p>
+                  <p className="text-white/80">Peut t envoyer des clients immo</p>
+                  <p className="mt-1 inline-flex rounded-full border border-cyan-200/40 bg-cyan-200/15 px-2 py-0.5 text-[10px] font-black">[Activer]</p>
+                  <p className="mt-1 text-white/85">Message pret a envoyer</p>
+                </div>
+                <div className="rounded-xl border border-fuchsia-300/25 bg-fuchsia-300/10 px-2 py-2">
+                  <p className="text-fuchsia-100">[2h plus tard] 🔔 Nicolas t a envoye un contact</p>
+                  <p className="text-white/85">→ RDV pris</p>
+                  <p className="text-white/85">→ Commission en cours</p>
+                </div>
               </div>
-              <div className="rounded-xl border border-fuchsia-300/25 bg-fuchsia-300/10 px-2 py-2">
-                <p className="text-fuchsia-100">[2h plus tard] 🔔 Nicolas t a envoye un contact</p>
-                <p className="text-white/85">→ RDV pris</p>
-                <p className="text-white/85">→ Commission en cours</p>
-              </div>
-            </div>
-            <p className="mt-2 text-[10px] text-white/65">Version finale: remplacer ce bloc par une video 15-30 sec en autoplay mute loop.</p>
+            )}
+            <p className="mt-2 text-[10px] text-white/65">
+              Video source: <span className="font-black text-cyan-100">/public/media/popey-hero-demo.mp4</span>
+            </p>
           </div>
         </section>
 
@@ -141,6 +159,47 @@ export default function AccueilTestPage() {
           </div>
         </section>
 
+        <section className="rounded-3xl border border-fuchsia-300/30 bg-fuchsia-300/10 p-6">
+          <h2 className="text-2xl font-black sm:text-4xl">Pourquoi quelqu un t enverrait un client ?</h2>
+          <div className="mt-4 grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
+            <div className="space-y-3">
+              <div className="rounded-2xl border border-amber-300/35 bg-amber-300/10 p-4">
+                <p className="text-sm font-black text-amber-100">💸 1. Ils gagnent de l argent</p>
+                <p className="mt-1 text-sm text-white/90">Ils touchent une commission a chaque opportunite. Exemple: tu me recommandes, tu touches 10%.</p>
+              </div>
+              <div className="rounded-2xl border border-cyan-300/35 bg-cyan-300/10 p-4">
+                <p className="text-sm font-black text-cyan-100">🤝 2. C est simple (aucun effort)</p>
+                <p className="mt-1 text-sm text-white/90">Pas de prospection, pas de vente, pas de suivi. Juste: j ai pense a toi.</p>
+              </div>
+              <div className="rounded-2xl border border-emerald-300/35 bg-emerald-300/10 p-4">
+                <p className="text-sm font-black text-emerald-100">📲 3. Tout est automatise</p>
+                <p className="mt-1 text-sm text-white/90">Suivi en temps reel, statut clair, commission versee automatiquement. Ils n ont rien a reclamer.</p>
+              </div>
+              <p className="text-lg font-black text-fuchsia-100">Ils ne t aident pas. Ils y gagnent.</p>
+            </div>
+            <div className="rounded-2xl border border-white/15 bg-black/25 p-4 shadow-[0_20px_50px_-30px_rgba(34,211,238,0.8)]">
+              <p className="text-[11px] font-black uppercase tracking-[0.12em] text-cyan-100">Ecran eclaireur (mockup)</p>
+              <div className="mt-3 space-y-2 rounded-xl border border-white/15 bg-[#09152F] p-3 text-sm">
+                <p className="font-black text-white">Opportunite envoyee: Nicolas</p>
+                <p className="text-cyan-100">Statut: RDV pris</p>
+                <p className="text-cyan-100">Statut: Offre envoyee</p>
+                <p className="text-emerald-100">Statut: Deal signe</p>
+                <p className="rounded-lg border border-amber-300/35 bg-amber-300/10 px-2 py-1 font-black text-amber-100">
+                  💰 Commission: +800 EUR en attente
+                </p>
+              </div>
+            </div>
+          </div>
+          <div className="mt-5 rounded-2xl border border-white/15 bg-black/25 p-4">
+            <p className="text-lg font-black text-white">De leur cote, ca prend 10 secondes.</p>
+            <p className="mt-2 text-sm text-white/90">Ils pensent a quelqu un → ils ouvrent Popey → ils envoient le contact. Termine.</p>
+          </div>
+          <div className="mt-3 rounded-2xl border border-rose-300/35 bg-rose-300/10 p-4">
+            <p className="text-sm font-black text-rose-100">Ils n ont rien a gerer.</p>
+            <p className="mt-1 text-sm text-white/90">Pas de relance, pas de negociation, pas de gestion client. Tout est gere cote pro.</p>
+          </div>
+        </section>
+
         <section className="rounded-3xl border border-amber-300/30 bg-amber-300/10 p-6">
           <p className="text-xs font-black uppercase tracking-[0.12em] text-amber-100">Preuves visuelles</p>
           <div className="mt-3 grid gap-3 sm:grid-cols-3">
@@ -163,7 +222,7 @@ export default function AccueilTestPage() {
           <h2 className="text-2xl font-black sm:text-4xl">Concretement, ca peut donner ca :</h2>
           <p className="mt-3 text-sm text-white/90">
             Tu actives <span className="font-black">{activatedContacts} contacts</span> → {activeConnectors} deviennent actifs → 1 opportunite / semaine
-            = {monthlyOpportunities} / mois.
+            = {monthlyOpportunities} / mois, sans prospection.
           </p>
           <p className="mt-2 text-sm text-white/90">
             Si 1 client = 800 EUR → <span className="font-black text-emerald-100">{monthlyRevenue.toLocaleString("fr-FR")} EUR / mois</span>.
@@ -199,6 +258,7 @@ export default function AccueilTestPage() {
             <li>Tu choisis qui tu contactes.</li>
             <li>Aucun message sans validation.</li>
             <li>Tu peux arreter a tout moment.</li>
+            <li>Tu gardes le controle total.</li>
           </ul>
         </section>
 
@@ -222,7 +282,7 @@ export default function AccueilTestPage() {
             href="/popey-human/smart-scan"
             className="mx-auto mt-6 inline-flex h-12 items-center justify-center rounded-xl border border-emerald-300/40 bg-emerald-300/25 px-7 text-sm font-black uppercase tracking-[0.08em] text-emerald-50 transition hover:bg-emerald-300/35"
           >
-            Scanner mon telephone maintenant
+            Voir mes opportunites cachees
           </a>
           <p className="mt-3 text-xs text-emerald-100/90">Ca prend 30 secondes. Aucun engagement.</p>
         </section>
