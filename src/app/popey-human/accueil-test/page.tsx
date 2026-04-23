@@ -21,6 +21,13 @@ const metierMap: Array<{ keys: string[]; targets: string[] }> = [
   { keys: ["courtier", "banque", "finance"], targets: ["Agents immo", "Notaires", "Gestionnaires patrimoine"] },
 ];
 
+type MetierEconomics = {
+  label: string;
+  valeurClientEur: number;
+  formuleClient: string;
+  commissionExamples: string[];
+};
+
 function getTargets(metier: string) {
   const normalized = metier.toLowerCase().trim();
   if (!normalized) return [];
@@ -35,6 +42,68 @@ function getAiDraft(metier: string, targets: string[]) {
   return `Salut Pierre, en tant que ${normalized}, j ai identifie que ton reseau ${targets[0]} + ${targets[1]} + ${targets[2]} peut me recommander des clients qualifies.`;
 }
 
+function getMetierEconomics(metier: string): MetierEconomics {
+  const normalized = metier.toLowerCase().trim();
+  if (!normalized || normalized.includes("coach")) {
+    return {
+      label: "Coach sportif",
+      valeurClientEur: 280,
+      formuleClient: "70 EUR x 4 seances / mois = 280 EUR par nouveau client",
+      commissionExamples: [
+        "Coach sportif: 280 EUR de valeur client -> commission eclaireur 15% = 42 EUR",
+        "Pack premium coaching: 480 EUR -> commission eclaireur 15% = 72 EUR",
+        "Programme duo: 760 EUR -> commission eclaireur 10% = 76 EUR",
+      ],
+    };
+  }
+  if (normalized.includes("immo") || normalized.includes("immobilier") || normalized.includes("agent")) {
+    return {
+      label: "Agent immo",
+      valeurClientEur: 3000,
+      formuleClient: "1 vente / mandat peut representer env. 3 000 EUR de commission nette",
+      commissionExamples: [
+        "Agent immo: 3 000 EUR de commission -> eclaireur 10% = 300 EUR",
+        "Mandat premium: 8 000 EUR -> eclaireur 10% = 800 EUR",
+        "Vente haut de gamme: 12 000 EUR -> eclaireur 10% = 1 200 EUR",
+      ],
+    };
+  }
+  if (normalized.includes("courtier") || normalized.includes("banque") || normalized.includes("finance")) {
+    return {
+      label: "Courtier",
+      valeurClientEur: 1200,
+      formuleClient: "1 dossier finance valide peut representer env. 1 200 EUR",
+      commissionExamples: [
+        "Courtier: 1 200 EUR de commission -> eclaireur 12% = 144 EUR",
+        "Dossier premium: 2 400 EUR -> eclaireur 12% = 288 EUR",
+        "Dossier pro: 4 000 EUR -> eclaireur 12% = 480 EUR",
+      ],
+    };
+  }
+  if (normalized.includes("dev") || normalized.includes("developpeur") || normalized.includes("freelance") || normalized.includes("web")) {
+    return {
+      label: "Freelance",
+      valeurClientEur: 900,
+      formuleClient: "1 mission recurrente peut representer env. 900 EUR / mois",
+      commissionExamples: [
+        "Freelance: 900 EUR / mois -> eclaireur 12% = 108 EUR",
+        "Mission maintenance: 1 400 EUR -> eclaireur 12% = 168 EUR",
+        "Mission build: 2 500 EUR -> eclaireur 10% = 250 EUR",
+      ],
+    };
+  }
+  return {
+    label: "Ton metier",
+    valeurClientEur: 800,
+    formuleClient: "Base estimee: 800 EUR de valeur par nouveau client",
+    commissionExamples: [
+      "Service local: 800 EUR -> eclaireur 10% = 80 EUR",
+      "Offre medium: 1 500 EUR -> eclaireur 10% = 150 EUR",
+      "Offre premium: 3 000 EUR -> eclaireur 10% = 300 EUR",
+    ],
+  };
+}
+
 export default function AccueilTestPage() {
   const [metier, setMetier] = useState("");
   const [activatedContacts, setActivatedContacts] = useState(25);
@@ -42,15 +111,16 @@ export default function AccueilTestPage() {
   const [heroVideoError, setHeroVideoError] = useState(false);
 
   const targets = useMemo(() => getTargets(metier), [metier]);
+  const metierEconomics = useMemo(() => getMetierEconomics(metier), [metier]);
   const heroContacts = Math.max(0, Number(heroContactsInput.replace(/[^\d]/g, "")) || 0);
   const projectedActivated = Math.max(8, Math.round(heroContacts * 0.06));
   const projectedScouts = Math.max(3, Math.round(projectedActivated * 0.33));
   const projectedMonthlyOpps = Math.max(1, Math.round(projectedScouts * 0.4));
-  const projectedMonthlyRevenue = projectedMonthlyOpps * 800;
+  const projectedMonthlyRevenue = projectedMonthlyOpps * metierEconomics.valeurClientEur;
   const aiDraft = useMemo(() => getAiDraft(metier, targets), [metier, targets]);
   const activeConnectors = Math.round(activatedContacts * 0.32);
   const monthlyOpportunities = Math.max(4, Math.round(activeConnectors * 0.55));
-  const monthlyRevenue = monthlyOpportunities * 800;
+  const monthlyRevenue = monthlyOpportunities * metierEconomics.valeurClientEur;
 
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_top,#172554_0%,#0f172a_48%,#090b16_100%)] text-white">
@@ -104,6 +174,10 @@ export default function AccueilTestPage() {
                   </p>
                   <p className="mt-1 text-[11px] text-white/80">
                     {heroContacts.toLocaleString("fr-FR")} contacts → {projectedActivated} actives → {projectedScouts} eclaireurs → {projectedMonthlyOpps} opportunites/mois
+                  </p>
+                  <p className="mt-2 text-[11px] text-emerald-100">
+                    Exemple {metierEconomics.label}: {metierEconomics.formuleClient}. Donc {projectedMonthlyOpps} opportunites x{" "}
+                    {metierEconomics.valeurClientEur.toLocaleString("fr-FR")} EUR = {projectedMonthlyRevenue.toLocaleString("fr-FR")} EUR/mois.
                   </p>
                 </div>
               </div>
@@ -159,6 +233,9 @@ export default function AccueilTestPage() {
             <p className="text-xs font-black uppercase tracking-[0.12em] text-emerald-100">Apres Popey</p>
             <p className="mt-2 text-sm text-white/90">
               500 contacts → {activatedContacts} actives → {activeConnectors} reguliers → {monthlyOpportunities} opportunites / mois
+            </p>
+            <p className="mt-1 text-xs text-emerald-100">
+              Base metier: {metierEconomics.valeurClientEur.toLocaleString("fr-FR")} EUR / nouveau client ({metierEconomics.label})
             </p>
             <input
               type="range"
@@ -296,7 +373,10 @@ export default function AccueilTestPage() {
               </div>
             </div>
           </div>
-          <p className="mt-3 text-sm text-white/90">Sans prospection: si 1 client = 800 EUR, tu peux viser {monthlyRevenue.toLocaleString("fr-FR")} EUR / mois.</p>
+          <p className="mt-3 text-sm text-white/90">
+            Cas {metierEconomics.label}: {metierEconomics.formuleClient}. Avec {monthlyOpportunities} opportunites/mois, objectif possible:{" "}
+            {monthlyRevenue.toLocaleString("fr-FR")} EUR / mois.
+          </p>
         </section>
 
         <section className="rounded-3xl border border-cyan-300/25 bg-cyan-300/10 p-6">
@@ -337,24 +417,6 @@ export default function AccueilTestPage() {
           ) : null}
         </section>
 
-        <section className="rounded-3xl border border-amber-300/30 bg-amber-300/10 p-6">
-          <h2 className="text-2xl font-black sm:text-4xl">Membres de l Empire</h2>
-          <p className="mt-2 text-sm text-white/90">Infrastructure pro, suivi clair, automatisation complete pour un cout accessible.</p>
-          <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_auto] sm:items-center">
-            <div className="rounded-2xl border border-white/15 bg-black/25 p-4">
-              <p className="text-[11px] font-black uppercase tracking-[0.1em] text-amber-100">Cout d exploitation estime</p>
-              <p className="mt-1 text-3xl font-black text-amber-100">~14 EUR / mois</p>
-              <p className="mt-1 text-xs text-white/75">Accessible, transparent, pense pour scaler sans equipe commerciale lourde.</p>
-            </div>
-            <a
-              href="/popey-human/smart-scan"
-              className="inline-flex h-12 items-center justify-center rounded-xl border border-amber-300/40 bg-amber-300/20 px-6 text-sm font-black uppercase tracking-[0.08em] text-amber-100 transition hover:bg-amber-300/30"
-            >
-              Activer mon radar maintenant
-            </a>
-          </div>
-        </section>
-
         <section className="rounded-3xl border border-white/15 bg-white/5 p-6">
           <h2 className="text-2xl font-black sm:text-4xl">Pas de spam. Pas de forcing.</h2>
           <ul className="mt-3 space-y-2 text-sm leading-6 text-white/90 sm:text-base">
@@ -375,6 +437,16 @@ export default function AccueilTestPage() {
             <li>Creer des opportunites</li>
             <li>Etre recompense</li>
           </ul>
+          <div className="mt-4 grid gap-3 sm:grid-cols-3">
+            {metierEconomics.commissionExamples.map((item) => (
+              <article key={item} className="rounded-2xl border border-white/15 bg-black/25 p-3">
+                <p className="text-sm font-black text-fuchsia-100">{item}</p>
+              </article>
+            ))}
+          </div>
+          <p className="mt-3 text-sm text-white/90">
+            Tu peux definir une regle simple: 10% a 15% de commission eclaireur, claire des le debut.
+          </p>
           <p className="mt-4 text-lg font-black text-fuchsia-100">Tu passes de receveur a connecteur.</p>
         </section>
 
