@@ -738,14 +738,25 @@ function getLocalDayNumber() {
   return Math.floor(localMidnight.getTime() / (24 * 60 * 60 * 1000));
 }
 
-function buildDailyQueueFromImportedContacts(allContacts: DailyContact[], limit: number, dayNumber: number) {
-  if (allContacts.length <= limit) return allContacts;
+function buildDailyQueueFromImportedContacts(
+  allContacts: DailyContact[],
+  limit: number,
+  dayNumber: number,
+  excludedContactIds?: Set<string>,
+) {
+  if (allContacts.length === 0) return [];
   const safeLimit = Math.max(1, limit);
   const start = ((dayNumber * safeLimit) % allContacts.length + allContacts.length) % allContacts.length;
   const queue: DailyContact[] = [];
-  for (let i = 0; i < safeLimit; i += 1) {
+  for (let i = 0; i < allContacts.length && queue.length < safeLimit; i += 1) {
     const contact = allContacts[(start + i) % allContacts.length];
-    if (contact) queue.push(contact);
+    if (!contact) continue;
+    if (excludedContactIds?.has(contact.id)) continue;
+    queue.push(contact);
+  }
+  if (queue.length === 0) {
+    const fallback = allContacts[start];
+    if (fallback) queue.push(fallback);
   }
   return queue;
 }
@@ -877,6 +888,7 @@ export default function EntrepreneurSmartScanTestPage() {
   const [isIncomingReferralStatusUpdating, setIsIncomingReferralStatusUpdating] = useState(false);
   const [isRemovingEclaireurId, setIsRemovingEclaireurId] = useState<string | null>(null);
   const [showQualificationNeededPopup, setShowQualificationNeededPopup] = useState(false);
+  const [copiedHistoryEntryKey, setCopiedHistoryEntryKey] = useState<string | null>(null);
   const contactImportInputRef = useRef<HTMLInputElement | null>(null);
   const localDayNumber = useMemo(() => getLocalDayNumber(), []);
 
@@ -884,8 +896,22 @@ export default function EntrepreneurSmartScanTestPage() {
   const importedTotalCount = importedContacts.length;
   const dailyQueueCount = hasImportedContacts ? Math.min(DAILY_CONTACT_LIMIT, importedTotalCount) : DAILY_CONTACT_LIMIT;
   const allContactsData = hasImportedContacts ? importedContacts : CONTACTS;
+  const parkedContactIds = useMemo(() => {
+    const latestActionByContact = new Map<string, { action: HistoryEntry["action"]; atMs: number }>();
+    historyEntries.forEach((entry) => {
+      const previous = latestActionByContact.get(entry.contactId);
+      if (!previous || entry.atMs > previous.atMs) {
+        latestActionByContact.set(entry.contactId, { action: entry.action, atMs: entry.atMs });
+      }
+    });
+    return new Set(
+      Array.from(latestActionByContact.entries())
+        .filter(([, value]) => value.action === "passer")
+        .map(([contactId]) => contactId),
+    );
+  }, [historyEntries]);
   const contactsData = hasImportedContacts
-    ? buildDailyQueueFromImportedContacts(importedContacts, dailyQueueCount, localDayNumber)
+    ? buildDailyQueueFromImportedContacts(importedContacts, dailyQueueCount, localDayNumber, parkedContactIds)
     : CONTACTS;
   const dailyQueueStart = hasImportedContacts && importedTotalCount > 0 ? (localDayNumber * dailyQueueCount) % importedTotalCount : 0;
   const dailyQueueEnd = hasImportedContacts ? Math.min(importedTotalCount, dailyQueueStart + dailyQueueCount) : 0;
@@ -1731,6 +1757,22 @@ export default function EntrepreneurSmartScanTestPage() {
       setApiErrorMessage("");
     } catch {
       setApiErrorMessage("Export impossible. Tu peux faire une capture du bloc reporting.");
+    }
+  }
+
+  async function copyHistoryMessage(entry: HistoryEntry) {
+    const text = String(entry.messageDraft || "").trim();
+    if (!text) {
+      setApiErrorMessage("Aucun texte disponible a copier pour cette action.");
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(text);
+      const key = `${entry.actionId || entry.contactId}:${entry.atMs}`;
+      setCopiedHistoryEntryKey(key);
+      setTimeout(() => setCopiedHistoryEntryKey((currentKey) => (currentKey === key ? null : currentKey)), 1600);
+    } catch {
+      setApiErrorMessage("Copie impossible. Autorise l acces presse-papiers puis reessaie.");
     }
   }
 
@@ -4651,14 +4693,30 @@ export default function EntrepreneurSmartScanTestPage() {
                 </p>
                 <div className="mt-3 max-h-[calc(100dvh-350px)] space-y-3 overflow-y-auto pb-2 sm:max-h-[60vh]">
                   {historyTimelineDays.length === 0 && <p className="text-sm text-white/70">Aucune action pour ces filtres.</p>}
-                  {historyTimelineDays.map((day) => (
-                    <section key={`history-day-${day.dayStartMs}`} className="rounded-2xl border border-white/15 bg-black/25 p-2">
-                      <div className="sticky top-0 z-10 rounded-xl border border-cyan-300/25 bg-cyan-300/10 px-2 py-1">
-                        <p className="text-[11px] font-black uppercase tracking-[0.08em] text-cyan-100">{day.dayLabel}</p>
-                      </div>
-                      <div className="mt-2 space-y-2">
-                        {day.entries.map((entry, idx) => {
+                  {historyTimelineDays.map((day) => {
+                    const daySentCount = day.entries.filter((entry) => entry.sent).length;
+                    const dayNotSentCount = day.entries.length - daySentCount;
+                    const dayConvertedCount = day.entries.filter((entry) => entry.outcomeStatus === "converted").length;
+                    return (
+                      <section key={`history-day-${day.dayStartMs}`} className="rounded-2xl border border-white/15 bg-black/25 p-2">
+                        <div className="sticky top-0 z-10 rounded-xl border border-cyan-300/25 bg-cyan-300/10 px-2 py-1">
+                          <p className="text-[11px] font-black uppercase tracking-[0.08em] text-cyan-100">{day.dayLabel}</p>
+                          <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                            <span className="rounded-full border border-emerald-300/35 bg-emerald-300/12 px-2 py-0.5 text-[10px] font-black text-emerald-100">
+                              {daySentCount} envoye(s)
+                            </span>
+                            <span className="rounded-full border border-white/20 bg-white/10 px-2 py-0.5 text-[10px] font-black text-white/85">
+                              {dayNotSentCount} non envoye(s)
+                            </span>
+                            <span className="rounded-full border border-fuchsia-300/35 bg-fuchsia-300/12 px-2 py-0.5 text-[10px] font-black text-fuchsia-100">
+                              {dayConvertedCount} converti(s)
+                            </span>
+                          </div>
+                        </div>
+                        <div className="mt-2 space-y-2">
+                          {day.entries.map((entry, idx) => {
                           const eligibleToPromote = entry.sent && entry.action === "eclaireur" && !eclaireurIds.includes(entry.contactId);
+                          const historyKey = `${entry.actionId || entry.contactId}:${entry.atMs}`;
                           return (
                             <article key={`${entry.contactId}-${entry.atMs}-${idx}`} className="rounded-xl border border-white/15 bg-[#101938] px-3 py-2">
                               <div className="flex items-start justify-between gap-2">
@@ -4698,9 +4756,20 @@ export default function EntrepreneurSmartScanTestPage() {
                                 )}
                               </div>
                               <div className="mt-2 rounded-lg border border-white/15 bg-black/25 px-2 py-2">
-                                <p className="text-[10px] font-black uppercase tracking-[0.08em] text-white/70">
-                                  {entry.sent ? "Texte envoye" : "Texte prepare (non envoye)"}
-                                </p>
+                                <div className="flex items-center justify-between gap-2">
+                                  <p className="text-[10px] font-black uppercase tracking-[0.08em] text-white/70">
+                                    {entry.sent ? "Texte envoye" : "Texte prepare (non envoye)"}
+                                  </p>
+                                  {entry.sent && entry.messageDraft?.trim()?.length ? (
+                                    <button
+                                      type="button"
+                                      onClick={() => copyHistoryMessage(entry)}
+                                      className="rounded-lg border border-cyan-300/35 bg-cyan-300/12 px-2 py-1 text-[10px] font-black uppercase tracking-[0.08em] text-cyan-100"
+                                    >
+                                      {copiedHistoryEntryKey === historyKey ? "Copie ✓" : "Copier le texte"}
+                                    </button>
+                                  ) : null}
+                                </div>
                                 <p className="mt-1 whitespace-pre-wrap text-xs text-white/88">
                                   {entry.messageDraft?.trim()?.length
                                     ? entry.messageDraft
@@ -4728,9 +4797,10 @@ export default function EntrepreneurSmartScanTestPage() {
                             </article>
                           );
                         })}
-                      </div>
-                    </section>
-                  ))}
+                        </div>
+                      </section>
+                    );
+                  })}
                 </div>
               </>
             )}
