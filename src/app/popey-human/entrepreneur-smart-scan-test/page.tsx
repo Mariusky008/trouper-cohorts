@@ -944,7 +944,6 @@ export default function EntrepreneurSmartScanTestPage() {
       valueColor: "text-emerald-100",
     },
   ] as const;
-  const done = Math.min(index, contactsData.length);
   const heatScore = Math.min(99, 55 + current.communityKnownBy * 10 + (current.externalNews ? 8 : 0));
   const sourceRing =
     current.communityKnownBy >= 3
@@ -1147,20 +1146,27 @@ export default function EntrepreneurSmartScanTestPage() {
     profileQualifier &&
     (profileQualifier.heat === "brulant" || profileQualifier.opportunityChoice === "ideal-client" || profileQualifier.opportunityChoice === "opens-doors") &&
     profileDaysSinceLastSent > 90;
-  const dailyGoal = dailyQueueCount;
-  const opportunitiesActivated = Math.min(dailyGoal, sentCount);
-  const remainingForGoal = Math.max(0, dailyGoal - opportunitiesActivated);
-  const missionProgress = Math.round((opportunitiesActivated / dailyGoal) * 100);
-  const latentPotential =
-    dailyTargetPotential > 0
-      ? Math.max(0, Math.round(dailyTargetPotential * (remainingForGoal / dailyGoal)))
-      : remainingForGoal * 75;
   const todayStartMs = useMemo(() => {
     const now = new Date();
     now.setHours(0, 0, 0, 0);
     return now.getTime();
   }, []);
-  const sentTodayCount = historyEntries.filter((entry) => entry.sent && entry.atMs >= todayStartMs).length;
+  const dailyGoal = dailyQueueCount;
+  const activatedFromHistory = historyEntries.filter(
+    (entry) => entry.sent && entry.atMs >= todayStartMs && entry.action !== "passer",
+  ).length;
+  const opportunitiesActivated = Math.min(
+    dailyGoal,
+    Math.max(activatedFromHistory, sentCount),
+  );
+  const remainingForGoal = Math.max(0, dailyGoal - opportunitiesActivated);
+  const missionProgress = Math.round((opportunitiesActivated / dailyGoal) * 100);
+  const done = opportunitiesActivated;
+  const latentPotential =
+    dailyTargetPotential > 0
+      ? Math.max(0, Math.round(dailyTargetPotential * (remainingForGoal / dailyGoal)))
+      : remainingForGoal * 75;
+  const sentTodayCount = activatedFromHistory;
   const responsesTodayCount = historyEntries.filter((entry) => entry.outcomeStatus === "replied" && entry.atMs >= todayStartMs).length;
   const conversionsTodayCount = historyEntries.filter((entry) => entry.outcomeStatus === "converted" && entry.atMs >= todayStartMs).length;
   const conversionRateToday = sentTodayCount > 0 ? Math.round((conversionsTodayCount / sentTodayCount) * 100) : 0;
@@ -2055,8 +2061,12 @@ export default function EntrepreneurSmartScanTestPage() {
       .catch(() => null);
   }
 
-  function createTransitionPayload(action: Exclude<DailyCategory, "qualifier">, mode: "sent" | "saved" = "sent") {
-    const nextStep = Math.min(dailyQueueCount, done + 1);
+  function createTransitionPayload(
+    action: Exclude<DailyCategory, "qualifier">,
+    mode: "sent" | "saved" = "sent",
+    stepDelta = 1,
+  ) {
+    const nextStep = Math.min(dailyQueueCount, done + stepDelta);
     const encouragements =
       mode === "sent"
         ? [`Felicitations ${current.name.split(" ")[0]} a ete active.`]
@@ -2066,15 +2076,15 @@ export default function EntrepreneurSmartScanTestPage() {
             `${actionLabel(action)} prepare sans envoi. Tu pourras relancer au bon moment.`,
           ];
     const message =
-      nextStep >= dailyQueueCount
+      stepDelta > 0 && nextStep >= dailyQueueCount
         ? `Session terminee ! Tu as reveille ${dailyQueueCount} contacts aujourd hui.`
         : encouragements[Math.floor(Math.random() * encouragements.length)];
     return {
       message,
-      icon: nextStep >= dailyQueueCount ? "🎆" : "✅",
+      icon: stepDelta > 0 && nextStep >= dailyQueueCount ? "🎆" : "✅",
       from: done,
       to: nextStep,
-      final: nextStep >= dailyQueueCount,
+      final: stepDelta > 0 && nextStep >= dailyQueueCount,
     };
   }
 
@@ -2108,6 +2118,7 @@ export default function EntrepreneurSmartScanTestPage() {
       countAsSent?: boolean;
       sentInHistory?: boolean;
       stayOnCurrentContact?: boolean;
+      wrapOnEnd?: boolean;
       returnToProfileContactId?: string | null;
       actionContact?: DailyContact;
     } = {},
@@ -2118,14 +2129,17 @@ export default function EntrepreneurSmartScanTestPage() {
     const countAsSent = options.countAsSent ?? true;
     const sentInHistory = options.sentInHistory ?? countAsSent;
     const stayOnCurrentContact = options.stayOnCurrentContact ?? false;
+    const wrapOnEnd = options.wrapOnEnd ?? action === "passer";
     const returnToProfileContactId = options.returnToProfileContactId ?? null;
     if (countAsSent && (action === "eclaireur" || action === "package" || action === "exclients")) {
       setSentCount((v) => v + 1);
     }
-    setShowReward(true);
-    setSuccessPulse(true);
-    setTimeout(() => setShowReward(false), 900);
-    setTimeout(() => setSuccessPulse(false), 450);
+    if (countAsSent) {
+      setShowReward(true);
+      setSuccessPulse(true);
+      setTimeout(() => setShowReward(false), 900);
+      setTimeout(() => setSuccessPulse(false), 450);
+    }
     setTimeout(() => {
       const now = new Date();
       const nowMs = Date.now();
@@ -2173,7 +2187,11 @@ export default function EntrepreneurSmartScanTestPage() {
         })
         .catch(() => null);
       if (!stayOnCurrentContact) {
-        setIndex((v) => Math.min(Math.max(0, contactsData.length - 1), v + 1));
+        setIndex((v) => {
+          if (contactsData.length <= 1) return 0;
+          if (wrapOnEnd) return (v + 1) % contactsData.length;
+          return Math.min(Math.max(0, contactsData.length - 1), v + 1);
+        });
       }
       if (returnToProfileContactId) {
         setProfileContactId(returnToProfileContactId);
@@ -2186,7 +2204,11 @@ export default function EntrepreneurSmartScanTestPage() {
   function triggerAction(action: DailyCategory) {
     if (launchingAction) return;
     if (action === "passer") {
-      finalizeAction(action);
+      finalizeAction(action, 200, {
+        countAsSent: false,
+        sentInHistory: false,
+        wrapOnEnd: true,
+      });
       return;
     }
     if (action === "eclaireur" || action === "package" || action === "exclients") {
@@ -5450,7 +5472,7 @@ export default function EntrepreneurSmartScanTestPage() {
                   onClick={() => {
                     const action = selectedAction;
                     if (!action) return;
-                    const payload = createTransitionPayload(action, "saved");
+                    const payload = createTransitionPayload(action, "saved", 0);
                     setTransitionScreen(payload);
                     setTimeout(() => setTransitionScreen(null), 3200);
                     setShowProgressCheck(true);
