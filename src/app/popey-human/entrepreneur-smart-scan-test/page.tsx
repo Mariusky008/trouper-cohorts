@@ -4814,57 +4814,59 @@ export default function EntrepreneurSmartScanTestPage() {
             className="h-[calc(100dvh-92px)] max-h-[calc(100dvh-92px)] w-full overflow-hidden rounded-none border-0 bg-[#0E1430] p-4 sm:h-auto sm:max-h-[90vh] sm:max-w-lg sm:rounded-3xl sm:border sm:border-white/15"
             style={{ paddingTop: "calc(env(safe-area-inset-top) + 12px)" }}
           >
-            <div className="flex h-full min-h-0 flex-col">
-            <div className="z-20 rounded-xl bg-[#0E1430]/95 pb-2 backdrop-blur">
-              <div className="flex items-center justify-between">
-                <p className="text-xs font-black uppercase tracking-[0.12em] text-cyan-200">Mes Eclaireurs</p>
-                <button
-                  type="button"
-                  onClick={() => setShowAddScoutModal(true)}
-                  className="relative z-30 h-9 w-9 rounded-full border border-cyan-300/40 bg-cyan-300/15 text-base font-black text-cyan-100"
-                  aria-label="Ajouter un eclaireur"
-                >
-                  +
-                </button>
-              </div>
-            </div>
-            {apiErrorMessage ? (
-              <p className="mt-2 shrink-0 rounded-lg border border-amber-300/35 bg-amber-300/10 px-2 py-1 text-[11px] text-amber-100">{apiErrorMessage}</p>
-            ) : null}
-            <div className="mt-3 shrink-0 rounded-2xl border border-fuchsia-300/40 bg-[radial-gradient(circle_at_15%_0%,rgba(217,70,239,0.26),rgba(11,17,40,0.96))] px-3 py-3 shadow-[0_20px_80px_-35px_rgba(217,70,239,0.8)]">
-              <div className="flex items-center justify-between gap-2">
-                <p className="text-[11px] font-black uppercase tracking-[0.1em] text-fuchsia-100">🔥 Opportunites entrantes Eclaireurs</p>
-                <span className="inline-flex rounded-full border border-fuchsia-200/35 bg-fuchsia-200/20 px-2 py-0.5 text-[10px] font-black text-fuchsia-50">
-                  {incomingReferrals.length} alerte(s)
-                </span>
-              </div>
-              <p className="mt-1 text-[11px] text-fuchsia-100/85">Traite ces opportunites en priorite: RDV, offre puis signature finale.</p>
-              {isIncomingReferralsLoading ? (
-                <p className="mt-1 text-[11px] text-white/70">Chargement...</p>
-              ) : incomingReferrals.length === 0 ? (
-                <p className="mt-1 text-[11px] text-white/70">Aucune opportunite recu pour le moment.</p>
-              ) : (
-                <div className="mt-2 space-y-1">
-                  {incomingReferrals.slice(0, 4).map((item) => (
-                    <button
-                      key={`incoming-${item.id}`}
-                      type="button"
-                      onClick={() => {
-                        setSelectedIncomingReferralId(item.id);
-                        setIncomingSignedAmount("");
-                      }}
-                      className="w-full rounded-xl border border-fuchsia-200/25 bg-black/30 px-3 py-2 text-left transition hover:border-fuchsia-300/55 hover:bg-fuchsia-300/12"
-                    >
-                      <p className="text-[12px] font-black text-white">{item.contact_name}</p>
-                      <p className="text-[10px] text-white/75">
-                        {item.scout_name || "Eclaireur"} • {item.project_type || "Projet non precise"} • {referralStatusLabel(item.status)}
-                      </p>
-                    </button>
-                  ))}
+            <div className="h-full min-h-0 overflow-y-auto overscroll-contain">
+            <div className="sticky top-0 z-30 -mx-1 rounded-xl bg-[#0E1430]/95 px-1 pb-3 backdrop-blur">
+              <div className="rounded-xl bg-[#0E1430]/95 pb-2">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-black uppercase tracking-[0.12em] text-cyan-200">Mes Eclaireurs</p>
+                  <button
+                    type="button"
+                    onClick={() => setShowAddScoutModal(true)}
+                    className="relative z-30 h-9 w-9 rounded-full border border-cyan-300/40 bg-cyan-300/15 text-base font-black text-cyan-100"
+                    aria-label="Ajouter un eclaireur"
+                  >
+                    +
+                  </button>
                 </div>
-              )}
+              </div>
+              {apiErrorMessage ? (
+                <p className="mt-2 rounded-lg border border-amber-300/35 bg-amber-300/10 px-2 py-1 text-[11px] text-amber-100">{apiErrorMessage}</p>
+              ) : null}
+              <div className="mt-2 rounded-2xl border border-fuchsia-300/40 bg-[radial-gradient(circle_at_15%_0%,rgba(217,70,239,0.26),rgba(11,17,40,0.96))] px-3 py-3 shadow-[0_20px_80px_-35px_rgba(217,70,239,0.8)]">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-[11px] font-black uppercase tracking-[0.1em] text-fuchsia-100">🔥 Opportunites entrantes Eclaireurs</p>
+                  <span className="inline-flex rounded-full border border-fuchsia-200/35 bg-fuchsia-200/20 px-2 py-0.5 text-[10px] font-black text-fuchsia-50">
+                    {incomingReferrals.length} alerte(s)
+                  </span>
+                </div>
+                <p className="mt-1 text-[11px] text-fuchsia-100/85">Traite ces opportunites en priorite: RDV, offre puis signature finale.</p>
+                {isIncomingReferralsLoading ? (
+                  <p className="mt-1 text-[11px] text-white/70">Chargement...</p>
+                ) : incomingReferrals.length === 0 ? (
+                  <p className="mt-1 text-[11px] text-white/70">Aucune opportunite recu pour le moment.</p>
+                ) : (
+                  <div className="mt-2 space-y-1">
+                    {incomingReferrals.slice(0, 4).map((item) => (
+                      <button
+                        key={`incoming-${item.id}`}
+                        type="button"
+                        onClick={() => {
+                          setSelectedIncomingReferralId(item.id);
+                          setIncomingSignedAmount("");
+                        }}
+                        className="w-full rounded-xl border border-fuchsia-200/25 bg-black/30 px-3 py-2 text-left transition hover:border-fuchsia-300/55 hover:bg-fuchsia-300/12"
+                      >
+                        <p className="text-[12px] font-black text-white">{item.contact_name}</p>
+                        <p className="text-[10px] text-white/75">
+                          {item.scout_name || "Eclaireur"} • {item.project_type || "Projet non precise"} • {referralStatusLabel(item.status)}
+                        </p>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
-            <div className="mt-3 min-h-0 flex-1 space-y-2 overflow-y-auto pb-24">
+            <div className="mt-3 space-y-2 pb-24">
               {eclaireursList.length === 0 && <p className="text-sm text-white/70">Aucun eclaireur actif pour l instant.</p>}
               {eclaireursList.map((contact) => {
                 const stats = eclaireurStatsStore[contact.id] || { leadsDetected: 0, leadsSigned: 0, commissionTotalEur: 0, lastNewsAtMs: 0 };
