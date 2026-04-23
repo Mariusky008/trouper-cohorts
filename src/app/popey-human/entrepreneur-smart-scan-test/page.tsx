@@ -39,6 +39,8 @@ type HistoryEntry = {
   atMs: number;
   tagsSummary: string;
   sent: boolean;
+  messageDraft?: string | null;
+  sendChannel?: "whatsapp" | "other" | null;
   followupDueAtMs?: number | null;
   outcomeStatus?: "pending" | "replied" | "converted" | "not_interested" | null;
 };
@@ -75,6 +77,8 @@ type BootstrapHistoryRow = {
   contact_name: string;
   action_type: Exclude<DailyCategory, "qualifier">;
   status: "drafted" | "sent" | "validated_without_send";
+  message_draft?: string | null;
+  send_channel?: "whatsapp" | "other" | null;
   followup_due_at?: string | null;
   outcome_status?: "pending" | "replied" | "converted" | "not_interested" | null;
   created_at: string;
@@ -1186,6 +1190,49 @@ export default function EntrepreneurSmartScanTestPage() {
       return true;
     });
   }, [historyEntries, historyStatusFilter, historyActionFilter, historyPeriodFilter]);
+  const historyTimelineDays = useMemo(() => {
+    const dayFormatter = new Intl.DateTimeFormat("fr-FR", {
+      weekday: "long",
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
+    const timeFormatter = new Intl.DateTimeFormat("fr-FR", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+    const buckets = new Map<
+      number,
+      {
+        dayStartMs: number;
+        dayLabel: string;
+        entries: Array<HistoryEntry & { timeLabel: string }>;
+      }
+    >();
+    [...filteredHistoryEntries]
+      .sort((a, b) => b.atMs - a.atMs)
+      .forEach((entry) => {
+        const date = new Date(entry.atMs);
+        const dayStartDate = new Date(entry.atMs);
+        dayStartDate.setHours(0, 0, 0, 0);
+        const dayStartMs = dayStartDate.getTime();
+        const rawLabel = dayFormatter.format(date);
+        const dayLabel = rawLabel.charAt(0).toUpperCase() + rawLabel.slice(1);
+        const group =
+          buckets.get(dayStartMs) ||
+          {
+            dayStartMs,
+            dayLabel,
+            entries: [],
+          };
+        group.entries.push({
+          ...entry,
+          timeLabel: timeFormatter.format(date),
+        });
+        buckets.set(dayStartMs, group);
+      });
+    return Array.from(buckets.values()).sort((a, b) => b.dayStartMs - a.dayStartMs);
+  }, [filteredHistoryEntries]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -1911,6 +1958,8 @@ export default function EntrepreneurSmartScanTestPage() {
           atMs: safeDateMs,
           tagsSummary: "",
           sent: entry.status === "sent",
+          messageDraft: entry.message_draft || null,
+          sendChannel: (entry.send_channel as "whatsapp" | "other" | null) || null,
           followupDueAtMs: Number.isFinite(followupDueMs) ? followupDueMs : null,
           outcomeStatus: entry.outcome_status || null,
         };
@@ -2113,11 +2162,11 @@ export default function EntrepreneurSmartScanTestPage() {
     setTimeout(() => {
       const now = new Date();
       const nowMs = Date.now();
+      const sendChannel: HistoryEntry["sendChannel"] = sentInHistory ? "whatsapp" : "other";
       const summaryOpportunity = actionQualifier?.opportunityChoice ? quickLabelMap[actionQualifier.opportunityChoice] : "";
       const summaryCommunity = (actionQualifier?.communityTags ?? []).map((id) => quickLabelMap[id]).slice(0, 1);
       setHistoryEntries((prev) => [
         {
-          actionId: undefined,
           contactId: actionContact.id,
           name: actionContact.name,
           action,
@@ -2127,6 +2176,8 @@ export default function EntrepreneurSmartScanTestPage() {
             .filter(Boolean)
             .join(" • "),
           sent: sentInHistory,
+          messageDraft: draftMessage || null,
+          sendChannel,
           followupDueAtMs: sentInHistory ? nowMs + 48 * 60 * 60 * 1000 : null,
           outcomeStatus: sentInHistory ? ("pending" as const) : null,
         },
@@ -2141,7 +2192,7 @@ export default function EntrepreneurSmartScanTestPage() {
         companyHint: actionContact.companyHint,
         actionType: action,
         messageDraft: draftMessage || null,
-        sendChannel: sentInHistory ? "whatsapp" : "other",
+        sendChannel: sendChannel || "other",
         status: persistedStatus,
         clientEventId,
         templateVersion: "v1",
@@ -4595,49 +4646,91 @@ export default function EntrepreneurSmartScanTestPage() {
                     <option value="7d">Periode: 7 jours</option>
                   </select>
                 </div>
-                <p className="mt-2 text-[11px] text-white/65">{filteredHistoryEntries.length} element(s) apres filtres</p>
-                <div className="mt-3 max-h-[calc(100dvh-350px)] space-y-2 overflow-y-auto sm:max-h-[60vh]">
-                  {filteredHistoryEntries.length === 0 && <p className="text-sm text-white/70">Aucune action pour ces filtres.</p>}
-                  {filteredHistoryEntries.map((entry, idx) => {
-                    const eligibleToPromote = entry.sent && entry.action === "eclaireur" && !eclaireurIds.includes(entry.contactId);
-                    return (
-                      <div key={`${entry.contactId}-${entry.at}-${idx}`} className="rounded-xl border border-white/15 bg-black/25 px-3 py-2">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const nextIndex = allContactsData.findIndex((contact) => contact.id === entry.contactId);
-                            if (nextIndex >= 0) setIndex(nextIndex);
-                            openContactProfileWithTrustGuard(entry.contactId);
-                          }}
-                          className="w-full text-left"
-                        >
-                          <p className="text-sm font-black">{entry.name}</p>
-                          <p className="text-xs text-white/70">
-                            {entry.sent ? "Envoye" : "Valide sans envoi"} • {actionLabel(entry.action)} • {outcomeLabel(entry.outcomeStatus)} • {entry.at}
-                            {entry.tagsSummary ? ` • ${entry.tagsSummary}` : ""}
-                          </p>
-                        </button>
-                        <div className="mt-2 flex items-center justify-between gap-2">
-                          {eclaireurIds.includes(entry.contactId) ? (
-                            <span className="inline-flex rounded-full border border-emerald-300/35 bg-emerald-300/15 px-2 py-1 text-[10px] font-black uppercase tracking-[0.08em] text-emerald-100">
-                              📡 Eclaireur actif
-                            </span>
-                          ) : (
-                            <span className="text-[10px] text-white/60">Prospect</span>
-                          )}
-                          {eligibleToPromote && (
-                            <button
-                              type="button"
-                              onClick={() => promoteToEclaireur(entry.contactId)}
-                              className="rounded-lg border border-emerald-300/45 bg-emerald-300/15 px-2 py-1 text-[10px] font-black uppercase tracking-[0.08em] text-emerald-100"
-                            >
-                              ⭐ Promouvoir en Eclaireur
-                            </button>
-                          )}
-                        </div>
+                <p className="mt-2 text-[11px] text-white/65">
+                  {filteredHistoryEntries.length} action(s) • lecture chronologique par jour
+                </p>
+                <div className="mt-3 max-h-[calc(100dvh-350px)] space-y-3 overflow-y-auto pb-2 sm:max-h-[60vh]">
+                  {historyTimelineDays.length === 0 && <p className="text-sm text-white/70">Aucune action pour ces filtres.</p>}
+                  {historyTimelineDays.map((day) => (
+                    <section key={`history-day-${day.dayStartMs}`} className="rounded-2xl border border-white/15 bg-black/25 p-2">
+                      <div className="sticky top-0 z-10 rounded-xl border border-cyan-300/25 bg-cyan-300/10 px-2 py-1">
+                        <p className="text-[11px] font-black uppercase tracking-[0.08em] text-cyan-100">{day.dayLabel}</p>
                       </div>
-                    );
-                  })}
+                      <div className="mt-2 space-y-2">
+                        {day.entries.map((entry, idx) => {
+                          const eligibleToPromote = entry.sent && entry.action === "eclaireur" && !eclaireurIds.includes(entry.contactId);
+                          return (
+                            <article key={`${entry.contactId}-${entry.atMs}-${idx}`} className="rounded-xl border border-white/15 bg-[#101938] px-3 py-2">
+                              <div className="flex items-start justify-between gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const nextIndex = allContactsData.findIndex((contact) => contact.id === entry.contactId);
+                                    if (nextIndex >= 0) setIndex(nextIndex);
+                                    openContactProfileWithTrustGuard(entry.contactId);
+                                  }}
+                                  className="min-w-0 flex-1 text-left"
+                                >
+                                  <p className="truncate text-sm font-black text-white">{entry.name}</p>
+                                  <p className="mt-0.5 text-[10px] text-white/70">{entry.timeLabel}</p>
+                                </button>
+                                <span
+                                  className={`rounded-full border px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.08em] ${
+                                    entry.sent
+                                      ? "border-emerald-300/35 bg-emerald-300/15 text-emerald-100"
+                                      : "border-white/20 bg-white/10 text-white/80"
+                                  }`}
+                                >
+                                  {entry.sent ? "Envoye" : "Non envoye"}
+                                </span>
+                              </div>
+                              <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                                <span className="rounded-full border border-cyan-300/35 bg-cyan-300/15 px-2 py-0.5 text-[10px] font-black text-cyan-100">
+                                  {actionLabel(entry.action)}
+                                </span>
+                                <span className="rounded-full border border-fuchsia-300/35 bg-fuchsia-300/15 px-2 py-0.5 text-[10px] font-black text-fuchsia-100">
+                                  {outcomeLabel(entry.outcomeStatus)}
+                                </span>
+                                {entry.sendChannel === "whatsapp" && (
+                                  <span className="rounded-full border border-emerald-300/35 bg-emerald-300/12 px-2 py-0.5 text-[10px] font-black text-emerald-100">
+                                    WhatsApp
+                                  </span>
+                                )}
+                              </div>
+                              <div className="mt-2 rounded-lg border border-white/15 bg-black/25 px-2 py-2">
+                                <p className="text-[10px] font-black uppercase tracking-[0.08em] text-white/70">
+                                  {entry.sent ? "Texte envoye" : "Texte prepare (non envoye)"}
+                                </p>
+                                <p className="mt-1 whitespace-pre-wrap text-xs text-white/88">
+                                  {entry.messageDraft?.trim()?.length
+                                    ? entry.messageDraft
+                                    : "Aucun texte conserve pour cette action."}
+                                </p>
+                              </div>
+                              <div className="mt-2 flex items-center justify-between gap-2">
+                                {eclaireurIds.includes(entry.contactId) ? (
+                                  <span className="inline-flex rounded-full border border-emerald-300/35 bg-emerald-300/15 px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.08em] text-emerald-100">
+                                    📡 Eclaireur actif
+                                  </span>
+                                ) : (
+                                  <span className="text-[10px] text-white/60">Prospect</span>
+                                )}
+                                {eligibleToPromote && (
+                                  <button
+                                    type="button"
+                                    onClick={() => promoteToEclaireur(entry.contactId)}
+                                    className="rounded-lg border border-emerald-300/45 bg-emerald-300/15 px-2 py-1 text-[10px] font-black uppercase tracking-[0.08em] text-emerald-100"
+                                  >
+                                    ⭐ Promouvoir en Eclaireur
+                                  </button>
+                                )}
+                              </div>
+                            </article>
+                          );
+                        })}
+                      </div>
+                    </section>
+                  ))}
                 </div>
               </>
             )}
