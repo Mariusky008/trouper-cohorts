@@ -4105,7 +4105,7 @@ export default function EntrepreneurSmartScanTestPage() {
               <div className={`mt-3 grid gap-2 ${!isQualified ? "grid-cols-2" : "grid-cols-1"}`}>
                 <button
                   type="button"
-                  onClick={() => finalizeAction("passer")}
+                  onClick={() => triggerAction("passer")}
                   className="h-9 rounded-full border border-cyan-300/35 bg-cyan-300/15 px-4 text-[10px] font-black uppercase tracking-[0.08em] text-cyan-100"
                 >
                   Passer
