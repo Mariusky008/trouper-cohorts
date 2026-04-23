@@ -29,12 +29,25 @@ function getTargets(metier: string) {
   return ["Secretaires", "Prescripteurs locaux", "Apporteurs de confiance"];
 }
 
+function getAiDraft(metier: string, targets: string[]) {
+  const normalized = metier.trim();
+  if (!normalized || targets.length < 3) return "";
+  return `Salut Pierre, en tant que ${normalized}, j ai identifie que ton reseau ${targets[0]} + ${targets[1]} + ${targets[2]} peut me recommander des clients qualifies.`;
+}
+
 export default function AccueilTestPage() {
   const [metier, setMetier] = useState("");
   const [activatedContacts, setActivatedContacts] = useState(25);
+  const [heroContactsInput, setHeroContactsInput] = useState("500");
   const [heroVideoError, setHeroVideoError] = useState(false);
 
   const targets = useMemo(() => getTargets(metier), [metier]);
+  const heroContacts = Math.max(0, Number(heroContactsInput.replace(/[^\d]/g, "")) || 0);
+  const projectedActivated = Math.max(8, Math.round(heroContacts * 0.06));
+  const projectedScouts = Math.max(3, Math.round(projectedActivated * 0.33));
+  const projectedMonthlyOpps = Math.max(1, Math.round(projectedScouts * 0.4));
+  const projectedMonthlyRevenue = projectedMonthlyOpps * 800;
+  const aiDraft = useMemo(() => getAiDraft(metier, targets), [metier, targets]);
   const activeConnectors = Math.round(activatedContacts * 0.32);
   const monthlyOpportunities = Math.max(4, Math.round(activeConnectors * 0.55));
   const monthlyRevenue = monthlyOpportunities * 800;
@@ -69,6 +82,31 @@ export default function AccueilTestPage() {
               >
                 Voir la demo (30 sec)
               </a>
+            </div>
+            <div className="mt-5 rounded-2xl border border-emerald-300/35 bg-emerald-300/10 p-4">
+              <p className="text-[10px] font-black uppercase tracking-[0.14em] text-emerald-100">Projection perso instantanee</p>
+              <div className="mt-2 flex flex-col gap-3 sm:flex-row sm:items-end">
+                <label className="block text-xs font-bold text-white/90">
+                  Combien de contacts as-tu ?
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    value={heroContactsInput}
+                    onChange={(event) => setHeroContactsInput(event.target.value)}
+                    placeholder="500"
+                    className="mt-1 h-10 w-full rounded-xl border border-emerald-300/35 bg-black/25 px-3 text-base font-black text-emerald-100 sm:w-40"
+                  />
+                </label>
+                <div className="flex-1 rounded-xl border border-cyan-300/35 bg-black/30 px-3 py-2">
+                  <p className="text-[10px] uppercase tracking-[0.12em] text-cyan-100">Estimation Popey</p>
+                  <p className="text-2xl font-black leading-none text-emerald-200 [text-shadow:0_0_16px_rgba(16,185,129,0.8)]">
+                    {projectedMonthlyRevenue.toLocaleString("fr-FR")} EUR / mois
+                  </p>
+                  <p className="mt-1 text-[11px] text-white/80">
+                    {heroContacts.toLocaleString("fr-FR")} contacts → {projectedActivated} actives → {projectedScouts} eclaireurs → {projectedMonthlyOpps} opportunites/mois
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -188,6 +226,13 @@ export default function AccueilTestPage() {
                   💰 Commission: +800 EUR en attente
                 </p>
               </div>
+              <div className="mt-3 rounded-xl border border-emerald-300/35 bg-emerald-300/10 p-3">
+                <p className="text-[10px] font-black uppercase tracking-[0.12em] text-emerald-100">Push en direct</p>
+                <p className="mt-1 rounded-lg border border-emerald-200/30 bg-black/30 px-2 py-2 text-sm font-black text-emerald-100 animate-pulse">
+                  🔔 Nicolas vient de gagner 200 EUR grace a vous
+                </p>
+                <p className="mt-1 text-xs text-white/80">Le systeme de commission est visible, clair et motive l eclaireur.</p>
+              </div>
             </div>
           </div>
           <div className="mt-5 rounded-2xl border border-white/15 bg-black/25 p-4">
@@ -220,13 +265,38 @@ export default function AccueilTestPage() {
 
         <section className="rounded-3xl border border-emerald-300/25 bg-emerald-300/10 p-6">
           <h2 className="text-2xl font-black sm:text-4xl">Concretement, ca peut donner ca :</h2>
-          <p className="mt-3 text-sm text-white/90">
-            Tu actives <span className="font-black">{activatedContacts} contacts</span> → {activeConnectors} deviennent actifs → 1 opportunite / semaine
-            = {monthlyOpportunities} / mois, sans prospection.
-          </p>
-          <p className="mt-2 text-sm text-white/90">
-            Si 1 client = 800 EUR → <span className="font-black text-emerald-100">{monthlyRevenue.toLocaleString("fr-FR")} EUR / mois</span>.
-          </p>
+          <p className="mt-2 text-sm text-white/90">Infographie live: contacts actives → eclaireurs reguliers → opportunites → revenus.</p>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            <div className="rounded-2xl border border-white/15 bg-black/25 p-3">
+              <p className="text-[11px] font-black uppercase tracking-[0.1em] text-emerald-100">1. Contacts actives</p>
+              <p className="mt-1 text-xl font-black text-white">{activatedContacts}</p>
+              <div className="mt-2 h-2 overflow-hidden rounded-full bg-white/10">
+                <div className="h-full rounded-full bg-emerald-300 transition-all duration-500" style={{ width: `${Math.min(100, activatedContacts * 2)}%` }} />
+              </div>
+            </div>
+            <div className="rounded-2xl border border-white/15 bg-black/25 p-3">
+              <p className="text-[11px] font-black uppercase tracking-[0.1em] text-cyan-100">2. Eclaireurs reguliers</p>
+              <p className="mt-1 text-xl font-black text-white">{activeConnectors}</p>
+              <div className="mt-2 h-2 overflow-hidden rounded-full bg-white/10">
+                <div className="h-full rounded-full bg-cyan-300 transition-all duration-500" style={{ width: `${Math.min(100, activeConnectors * 4)}%` }} />
+              </div>
+            </div>
+            <div className="rounded-2xl border border-white/15 bg-black/25 p-3">
+              <p className="text-[11px] font-black uppercase tracking-[0.1em] text-fuchsia-100">3. Opportunites / mois</p>
+              <p className="mt-1 text-xl font-black text-white">{monthlyOpportunities}</p>
+              <div className="mt-2 h-2 overflow-hidden rounded-full bg-white/10">
+                <div className="h-full rounded-full bg-fuchsia-300 transition-all duration-500" style={{ width: `${Math.min(100, monthlyOpportunities * 12)}%` }} />
+              </div>
+            </div>
+            <div className="rounded-2xl border border-white/15 bg-black/25 p-3">
+              <p className="text-[11px] font-black uppercase tracking-[0.1em] text-amber-100">4. Revenus / mois</p>
+              <p className="mt-1 text-xl font-black text-amber-100">{monthlyRevenue.toLocaleString("fr-FR")} EUR</p>
+              <div className="mt-2 h-2 overflow-hidden rounded-full bg-white/10">
+                <div className="h-full rounded-full bg-amber-300 transition-all duration-500" style={{ width: `${Math.min(100, monthlyRevenue / 80)}%` }} />
+              </div>
+            </div>
+          </div>
+          <p className="mt-3 text-sm text-white/90">Sans prospection: si 1 client = 800 EUR, tu peux viser {monthlyRevenue.toLocaleString("fr-FR")} EUR / mois.</p>
         </section>
 
         <section className="rounded-3xl border border-cyan-300/25 bg-cyan-300/10 p-6">
@@ -249,6 +319,39 @@ export default function AccueilTestPage() {
             ) : (
               <p className="text-sm text-white/75">Ecris ton metier pour voir les partenaires utiles.</p>
             )}
+          </div>
+          {targets.length >= 3 ? (
+            <>
+              <div className="mt-4 rounded-2xl border border-cyan-300/35 bg-black/25 p-4">
+                <p className="text-[11px] font-black uppercase tracking-[0.1em] text-cyan-100">Trio ideal</p>
+                <p className="mt-1 text-base font-black text-white">
+                  {metier.trim() || "Ton metier"} + {targets[0]} + {targets[1]}
+                </p>
+                <p className="mt-1 text-sm text-white/80">Rencontre naturelle entre expertise, prescripteur et relais terrain.</p>
+              </div>
+              <div className="mt-3 rounded-2xl border border-emerald-300/35 bg-emerald-300/10 p-4">
+                <p className="text-[11px] font-black uppercase tracking-[0.1em] text-emerald-100">Message pre-rempli IA Popey</p>
+                <p className="mt-2 rounded-xl border border-emerald-200/25 bg-black/30 px-3 py-3 text-sm text-emerald-50">{aiDraft}</p>
+              </div>
+            </>
+          ) : null}
+        </section>
+
+        <section className="rounded-3xl border border-amber-300/30 bg-amber-300/10 p-6">
+          <h2 className="text-2xl font-black sm:text-4xl">Membres de l Empire</h2>
+          <p className="mt-2 text-sm text-white/90">Infrastructure pro, suivi clair, automatisation complete pour un cout accessible.</p>
+          <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_auto] sm:items-center">
+            <div className="rounded-2xl border border-white/15 bg-black/25 p-4">
+              <p className="text-[11px] font-black uppercase tracking-[0.1em] text-amber-100">Cout d exploitation estime</p>
+              <p className="mt-1 text-3xl font-black text-amber-100">~14 EUR / mois</p>
+              <p className="mt-1 text-xs text-white/75">Accessible, transparent, pense pour scaler sans equipe commerciale lourde.</p>
+            </div>
+            <a
+              href="/popey-human/smart-scan"
+              className="inline-flex h-12 items-center justify-center rounded-xl border border-amber-300/40 bg-amber-300/20 px-6 text-sm font-black uppercase tracking-[0.08em] text-amber-100 transition hover:bg-amber-300/30"
+            >
+              Activer mon radar maintenant
+            </a>
           </div>
         </section>
 
@@ -282,7 +385,7 @@ export default function AccueilTestPage() {
             href="/popey-human/smart-scan"
             className="mx-auto mt-6 inline-flex h-12 items-center justify-center rounded-xl border border-emerald-300/40 bg-emerald-300/25 px-7 text-sm font-black uppercase tracking-[0.08em] text-emerald-50 transition hover:bg-emerald-300/35"
           >
-            Voir mes opportunites cachees
+            Decouvrir mon tresor cache
           </a>
           <p className="mt-3 text-xs text-emerald-100/90">Ca prend 30 secondes. Aucun engagement.</p>
         </section>
