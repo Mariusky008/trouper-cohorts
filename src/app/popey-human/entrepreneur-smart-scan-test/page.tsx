@@ -259,6 +259,7 @@ type SmartScanAllianceProspect = {
   last_invite_status?: "drafted" | "sent" | "clicked" | "signed_up" | "declined" | null;
   last_invite_at?: string | null;
   partnership_probability?: number;
+  source_mode?: "live" | "fallback";
   created_at?: string;
   updated_at?: string;
 };
@@ -5548,6 +5549,11 @@ export default function EntrepreneurSmartScanTestPage() {
                     <span className="rounded-full border border-cyan-300/30 bg-cyan-300/12 px-2 py-0.5 text-[10px] font-black text-cyan-100">
                       Probabilite {prospect.partnership_probability || 0}%
                     </span>
+                    {prospect.source_mode === "fallback" ? (
+                      <span className="rounded-full border border-amber-300/30 bg-amber-300/12 px-2 py-0.5 text-[10px] font-black text-amber-100">
+                        Mode simulation
+                      </span>
+                    ) : null}
                     <span className="rounded-full border border-fuchsia-300/30 bg-fuchsia-300/12 px-2 py-0.5 text-[10px] font-black text-fuchsia-100">
                       Invites {prospect.invite_sent_count || 0}
                     </span>
@@ -5560,17 +5566,26 @@ export default function EntrepreneurSmartScanTestPage() {
                     <div className="flex items-center gap-1">
                       <button
                         type="button"
+                        disabled={prospect.source_mode === "fallback"}
                         onClick={() => {
+                          if (prospect.source_mode === "fallback") {
+                            setApiErrorMessage("Prospect en mode simulation. Configure le provider B2B pour obtenir des numeros reels WhatsApp.");
+                            return;
+                          }
                           void inviteAllianceProspect(prospect);
                         }}
-                        className="rounded-lg border border-fuchsia-300/35 bg-fuchsia-300/15 px-2 py-1 text-[10px] font-black uppercase tracking-[0.08em] text-fuchsia-100"
+                        className="rounded-lg border border-fuchsia-300/35 bg-fuchsia-300/15 px-2 py-1 text-[10px] font-black uppercase tracking-[0.08em] text-fuchsia-100 disabled:opacity-50"
                       >
-                        Inviter
+                        {prospect.source_mode === "fallback" ? "Demo" : "Inviter"}
                       </button>
                       <button
                         type="button"
-                        disabled={isAllianceFollowupSendingId === prospect.id}
+                        disabled={isAllianceFollowupSendingId === prospect.id || prospect.source_mode === "fallback"}
                         onClick={() => {
+                          if (prospect.source_mode === "fallback") {
+                            setApiErrorMessage("Relance indisponible en mode simulation. Configure le provider B2B.");
+                            return;
+                          }
                           void sendAllianceFollowup(prospect, "sent");
                         }}
                         className="rounded-lg border border-amber-300/35 bg-amber-300/15 px-2 py-1 text-[10px] font-black uppercase tracking-[0.08em] text-amber-100 disabled:opacity-60"
