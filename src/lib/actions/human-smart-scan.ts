@@ -2848,11 +2848,24 @@ export async function searchAllianceProspects(input: {
     .filter((row): row is NonNullable<typeof row> => Boolean(row));
 
   if (upsertPayload.length > 0) {
-    const { error: upsertError } = await supabaseAdmin
+    const refs = upsertPayload.map((row) => row.provider_prospect_ref).filter(Boolean);
+    if (refs.length > 0) {
+      const { error: deleteError } = await supabaseAdmin
+        .from("human_smart_scan_alliance_prospects")
+        .delete()
+        .eq("owner_member_id", currentMember.id)
+        .eq("provider", provider)
+        .in("provider_prospect_ref", refs);
+      if (deleteError) {
+        return { error: deleteError.message, prospects: [] as AllianceProspectRecord[] };
+      }
+    }
+
+    const { error: insertError } = await supabaseAdmin
       .from("human_smart_scan_alliance_prospects")
-      .upsert(upsertPayload, { onConflict: "owner_member_id,provider,provider_prospect_ref" });
-    if (upsertError) {
-      return { error: upsertError.message, prospects: [] as AllianceProspectRecord[] };
+      .insert(upsertPayload);
+    if (insertError) {
+      return { error: insertError.message, prospects: [] as AllianceProspectRecord[] };
     }
   }
 
