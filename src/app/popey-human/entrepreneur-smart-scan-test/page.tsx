@@ -4164,32 +4164,52 @@ export default function EntrepreneurSmartScanTestPage() {
       </nav>
 
       {showQualificationNeededPopup && (
-        <div className="fixed inset-0 z-[74] flex items-center justify-center bg-black/55 px-4">
-          <section className="w-full max-w-sm rounded-3xl border border-amber-300/35 bg-[#0E1834]/95 p-4 shadow-[0_24px_70px_-30px_rgba(251,191,36,0.85)]">
-            <p className="text-[11px] font-black uppercase tracking-[0.1em] text-amber-100">Qualification requise</p>
-            <p className="mt-2 text-sm text-white/90">
-              Ce contact n est pas encore qualifie. Qualifie-le d abord pour debloquer l envoi WhatsApp.
-            </p>
-            <div className="mt-4 grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => setShowQualificationNeededPopup(false)}
-                className="h-10 rounded-xl border border-white/20 bg-white/10 text-[11px] font-black uppercase tracking-[0.08em] text-white/85"
-              >
-                Plus tard
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setShowQualificationNeededPopup(false);
-                  triggerAction("qualifier");
-                }}
-                className="h-10 rounded-xl border border-emerald-300/40 bg-emerald-300/20 text-[11px] font-black uppercase tracking-[0.08em] text-emerald-100"
-              >
-                Qualifier
-              </button>
+        <div className="fixed inset-0 z-[74] flex items-end justify-center bg-black/60 px-4 pb-6 pt-10 sm:items-center sm:pb-4">
+          <button
+            type="button"
+            aria-label="Fermer la popup qualification"
+            onClick={() => setShowQualificationNeededPopup(false)}
+            className="absolute inset-0"
+          />
+          <motion.section
+            initial={{ opacity: 0, y: 20, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 0.2, ease: "easeOut" }}
+            className="relative w-full max-w-sm rounded-3xl border border-amber-300/35 bg-[#0E1834]/95 p-4 shadow-[0_24px_70px_-30px_rgba(251,191,36,0.85)]"
+          >
+            <button
+              type="button"
+              aria-label="Fermer"
+              onClick={() => setShowQualificationNeededPopup(false)}
+              className="absolute right-3 top-3 h-8 w-8 rounded-full border border-white/20 bg-white/10 text-xs text-white/80"
+            >
+              ✕
+            </button>
+            <div className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-amber-300/40 bg-amber-300/15 text-lg">
+              ⚠️
             </div>
-          </section>
+            <p className="mt-3 text-[11px] font-black uppercase tracking-[0.1em] text-amber-100">Qualification requise</p>
+            <p className="mt-2 text-sm text-white/90">
+              <span className="font-black text-white">{current.name}</span> n est pas encore qualifie. Qualifie ce contact pour debloquer l envoi WhatsApp.
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                setShowQualificationNeededPopup(false);
+                triggerAction("qualifier");
+              }}
+              className="mt-4 h-11 w-full rounded-xl border border-emerald-300/40 bg-gradient-to-r from-emerald-300/25 to-cyan-300/25 text-[11px] font-black uppercase tracking-[0.08em] text-emerald-100"
+            >
+              Qualifier ce contact
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowQualificationNeededPopup(false)}
+              className="mt-2 h-10 w-full rounded-xl border border-white/20 bg-white/10 text-[11px] font-black uppercase tracking-[0.08em] text-white/85"
+            >
+              Continuer sans qualifier
+            </button>
+          </motion.section>
         </div>
       )}
 
