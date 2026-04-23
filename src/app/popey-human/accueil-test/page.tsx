@@ -123,54 +123,64 @@ export default function AccueilTestPage() {
   const monthlyRevenue = monthlyOpportunities * metierEconomics.valeurClientEur;
 
   return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_top,#172554_0%,#0f172a_48%,#090b16_100%)] text-white">
-      <div className="mx-auto w-full max-w-6xl space-y-8 px-4 pb-24 pt-10 sm:px-6 lg:px-8">
-        <section className="grid items-center gap-6 rounded-3xl border border-white/15 bg-white/5 p-6 shadow-[0_24px_80px_-36px_rgba(16,185,129,0.6)] lg:grid-cols-[1.05fr_0.95fr] sm:p-8">
+    <main className="min-h-screen bg-[radial-gradient(circle_at_top,#8BE9FF_0%,#32B3F2_28%,#1B3E98_62%,#0A1030_100%)] text-white">
+      <div className="mx-auto w-full max-w-6xl space-y-8 px-4 pb-24 pt-8 sm:px-6 lg:px-8">
+        <section className="grid items-center gap-6 rounded-[34px] border border-white/30 bg-[linear-gradient(160deg,rgba(255,255,255,0.35),rgba(255,255,255,0.06))] p-5 shadow-[0_30px_90px_-35px_rgba(6,182,212,0.85)] lg:grid-cols-[1.05fr_0.95fr] sm:p-8">
           <div>
-            <p className="inline-flex rounded-full border border-emerald-300/35 bg-emerald-300/15 px-3 py-1 text-[11px] font-black uppercase tracking-[0.14em] text-emerald-100">
-              Popey - Landing test v4
+            <p className="inline-flex rounded-full border border-cyan-200/40 bg-cyan-100/20 px-3 py-1 text-[11px] font-black uppercase tracking-[0.14em] text-white">
+              ✨ Popey - Landing test v7
             </p>
             <h1 className="mt-4 text-4xl font-black leading-[0.95] sm:text-6xl">
-              Ton telephone contient deja tes prochains clients.
+              Tes prochains clients sont deja dans ton telephone 📱
             </h1>
-            <p className="mt-3 text-lg font-semibold text-cyan-100">
-              On te montre qui contacter, quoi leur dire, et pourquoi ils vont t envoyer des clients.
+            <p className="mt-3 text-lg font-semibold text-cyan-50">
+              On te montre qui contacter, quoi leur dire, et pourquoi ils vont t envoyer des clients 🚀
             </p>
-            <p className="mt-4 max-w-2xl text-base leading-7 text-white/85">
-              Des personnes autour de toi entendent parler de clients tous les jours. Aujourd hui, tu ne touches rien.
+            <p className="mt-4 max-w-2xl text-base leading-7 text-white/95">
+              Des personnes autour de toi entendent parler de clients tous les jours. Aujourd hui, tu ne touches rien. Demain, ton reseau peut devenir ton moteur de croissance.
             </p>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <span className="rounded-full border border-white/40 bg-white/15 px-3 py-1 text-xs font-black">💙 Pour toi</span>
+              <span className="rounded-full border border-white/30 bg-white/10 px-3 py-1 text-xs font-black">🔥 Opportunites</span>
+              <span className="rounded-full border border-white/30 bg-white/10 px-3 py-1 text-xs font-black">💸 Commission</span>
+              <span className="rounded-full border border-white/30 bg-white/10 px-3 py-1 text-xs font-black">🤝 Reseau actif</span>
+            </div>
             <div className="mt-7 flex flex-col gap-3 sm:flex-row">
               <a
                 href="/popey-human/smart-scan"
-                className="inline-flex h-12 items-center justify-center rounded-xl border border-emerald-300/35 bg-emerald-300/20 px-6 text-sm font-black uppercase tracking-[0.08em] text-emerald-100 transition hover:bg-emerald-300/30"
+                className="inline-flex h-12 items-center justify-center rounded-full border border-emerald-200/50 bg-emerald-300/35 px-6 text-sm font-black uppercase tracking-[0.08em] text-white transition hover:bg-emerald-300/45"
               >
-                Voir qui peut m apporter des clients
+                Activer mon radar 🚀
               </a>
               <a
                 href="#hero-demo"
-                className="inline-flex h-12 items-center justify-center rounded-xl border border-white/20 bg-white/10 px-6 text-sm font-black uppercase tracking-[0.08em] text-white/90 transition hover:bg-white/15"
+                className="inline-flex h-12 items-center justify-center rounded-full border border-white/40 bg-white/15 px-6 text-sm font-black uppercase tracking-[0.08em] text-white transition hover:bg-white/20"
               >
-                Voir la demo (30 sec)
+                Voir la demo (30 sec) ▶
               </a>
             </div>
           </div>
 
-          <div id="hero-demo" className="rounded-3xl border border-cyan-300/35 bg-[#0A1434]/80 p-4 shadow-[0_30px_90px_-45px_rgba(34,211,238,0.8)]">
-            <p className="text-[10px] font-black uppercase tracking-[0.16em] text-cyan-100">Demo video 30 sec</p>
+          <div id="hero-demo" className="rounded-3xl border border-cyan-200/45 bg-[linear-gradient(160deg,rgba(10,20,70,0.95),rgba(8,14,45,0.88))] p-4 shadow-[0_30px_90px_-45px_rgba(34,211,238,0.9)]">
+            <p className="text-[10px] font-black uppercase tracking-[0.16em] text-cyan-100">🎬 Demo video 30 sec</p>
             {!heroVideoError ? (
-              <video
-                className="mt-3 h-[360px] w-full rounded-2xl border border-white/10 bg-black/45 object-cover"
-                autoPlay
-                muted
-                loop
-                playsInline
-                controls
-                onError={() => setHeroVideoError(true)}
-                poster="/logo.png"
-              >
-                <source src="/app.mp4" type="video/mp4" />
-                <source src="/app.mov" type="video/quicktime" />
-              </video>
+              <div className="mt-3 overflow-hidden rounded-2xl border border-white/15 bg-[#040B24]">
+                <div className="mx-auto aspect-[9/16] w-full max-w-[290px]">
+                  <video
+                    className="h-full w-full object-contain"
+                    autoPlay
+                    muted
+                    loop
+                    playsInline
+                    controls
+                    onError={() => setHeroVideoError(true)}
+                    poster="/logo.png"
+                  >
+                    <source src="/app.mp4" type="video/mp4" />
+                    <source src="/app.mov" type="video/quicktime" />
+                  </video>
+                </div>
+              </div>
             ) : (
               <div className="mt-3 space-y-2 rounded-2xl border border-white/10 bg-black/35 p-3 font-mono text-[11px]">
                 <p className="animate-pulse text-cyan-100">Scan en cours...</p>
@@ -196,11 +206,11 @@ export default function AccueilTestPage() {
           </div>
         </section>
 
-        <section className="rounded-3xl border border-cyan-300/35 bg-[radial-gradient(circle_at_10%_0%,rgba(34,211,238,0.2),rgba(9,20,52,0.9))] p-4 sm:p-6">
+        <section className="rounded-3xl border border-cyan-200/35 bg-[radial-gradient(circle_at_10%_0%,rgba(34,211,238,0.32),rgba(9,20,52,0.86))] p-4 sm:p-6">
           <div className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
             <div className="rounded-2xl border border-white/15 bg-black/25 p-3.5 sm:p-5">
               <div className="flex items-center justify-between gap-2">
-                <p className="text-[10px] font-black uppercase tracking-[0.14em] text-cyan-100">Projection perso instantanee</p>
+                <p className="text-[10px] font-black uppercase tracking-[0.14em] text-cyan-100">💡 Projection perso instantanee</p>
                 <span className="rounded-full border border-emerald-300/35 bg-emerald-300/15 px-2 py-0.5 text-[10px] font-black text-emerald-100">
                   {metierEconomics.label}
                 </span>
@@ -228,7 +238,7 @@ export default function AccueilTestPage() {
               </p>
             </div>
             <div className="rounded-2xl border border-emerald-300/35 bg-[#07132f] p-3.5 sm:p-5">
-              <p className="text-[10px] font-black uppercase tracking-[0.14em] text-emerald-100">Estimation Popey</p>
+              <p className="text-[10px] font-black uppercase tracking-[0.14em] text-emerald-100">🎯 Estimation Popey</p>
               <p className="mt-2 text-4xl font-black leading-[0.9] text-emerald-200 [text-shadow:0_0_20px_rgba(16,185,129,0.9)] sm:text-6xl">
                 {projectedMonthlyRevenue.toLocaleString("fr-FR")}
               </p>
@@ -240,16 +250,16 @@ export default function AccueilTestPage() {
           </div>
         </section>
 
-        <section className="rounded-3xl border border-white/15 bg-white/5 p-4 sm:p-6">
-          <p className="text-[10px] font-black uppercase tracking-[0.14em] text-cyan-100">Avant / Apres Popey</p>
+        <section className="rounded-3xl border border-white/20 bg-[linear-gradient(180deg,rgba(255,255,255,0.18),rgba(255,255,255,0.05))] p-4 sm:p-6">
+          <p className="text-[10px] font-black uppercase tracking-[0.14em] text-cyan-100">⚡ Avant / Apres Popey</p>
           <div className="mt-3 grid gap-4 lg:grid-cols-2">
-            <article className="rounded-2xl border border-rose-300/30 bg-gradient-to-br from-rose-300/20 to-[#2b0f24] p-4 sm:p-5">
+            <article className="rounded-2xl border border-rose-300/35 bg-gradient-to-br from-rose-300/30 to-[#2b0f24] p-4 sm:p-5">
               <p className="text-xs font-black uppercase tracking-[0.12em] text-rose-100">Avant</p>
               <p className="mt-3 text-2xl font-black text-white sm:text-3xl">500 contacts</p>
               <p className="mt-1 text-lg font-black text-rose-100">0 opportunite</p>
               <p className="mt-3 text-[13px] leading-5 text-white/80 sm:text-sm">Beaucoup de reseau, peu de systeme, peu de revenus repetables.</p>
             </article>
-            <article className="rounded-2xl border border-emerald-300/35 bg-gradient-to-br from-emerald-300/20 via-cyan-300/10 to-[#0a1638] p-4 shadow-[0_25px_70px_-35px_rgba(16,185,129,0.9)] sm:p-5">
+            <article className="rounded-2xl border border-emerald-300/40 bg-gradient-to-br from-emerald-300/30 via-cyan-300/15 to-[#0a1638] p-4 shadow-[0_25px_70px_-35px_rgba(16,185,129,0.95)] sm:p-5">
               <p className="text-xs font-black uppercase tracking-[0.12em] text-emerald-100">Apres Popey</p>
               <p className="mt-2 text-[13px] font-bold leading-5 text-white/90 sm:text-sm">
                 500 contacts → {activatedContacts} actives → {activeConnectors} reguliers → {monthlyOpportunities} opportunites / mois
@@ -265,8 +275,8 @@ export default function AccueilTestPage() {
               </div>
             </article>
           </div>
-          <div className="mt-4 rounded-2xl border border-cyan-300/30 bg-cyan-300/10 p-3 sm:p-4">
-            <p className="text-xs font-black uppercase tracking-[0.12em] text-cyan-100">Simulation rapide</p>
+          <div className="mt-4 rounded-2xl border border-cyan-300/35 bg-cyan-300/12 p-3 sm:p-4">
+            <p className="text-xs font-black uppercase tracking-[0.12em] text-cyan-100">🎛️ Simulation rapide</p>
             <input
               type="range"
               min={10}
@@ -278,18 +288,18 @@ export default function AccueilTestPage() {
           </div>
         </section>
 
-        <section className="rounded-3xl border border-white/15 bg-white/5 p-6">
-          <h2 className="text-2xl font-black sm:text-4xl">Ton reseau devient une equipe commerciale.</h2>
+        <section className="rounded-3xl border border-white/20 bg-white/8 p-6">
+          <h2 className="text-2xl font-black sm:text-4xl">🎉 Ton reseau devient une equipe commerciale.</h2>
           <ul className="mt-4 space-y-2 text-sm text-white/88 sm:text-base">
             <li>1. On identifie les bonnes personnes (service + apporteur d affaire).</li>
             <li>2. On te dit quoi leur envoyer.</li>
             <li>3. Tu recois des opportunites.</li>
           </ul>
-          <p className="mt-4 text-lg font-black text-cyan-100">Tu ne prospectes plus. Tu actives.</p>
+          <p className="mt-4 text-lg font-black text-cyan-100">Tu ne prospectes plus. Tu actives. ✨</p>
         </section>
 
         <section>
-          <p className="text-xs font-black uppercase tracking-[0.12em] text-cyan-200">Comment ca marche</p>
+          <p className="text-xs font-black uppercase tracking-[0.12em] text-cyan-200">🧩 Comment ca marche</p>
           <div className="mt-3 grid gap-4 lg:grid-cols-4 sm:grid-cols-2">
             {flowCards.map((step) => (
               <article
@@ -304,8 +314,8 @@ export default function AccueilTestPage() {
           </div>
         </section>
 
-        <section className="rounded-3xl border border-fuchsia-300/30 bg-fuchsia-300/10 p-6">
-          <h2 className="text-2xl font-black sm:text-4xl">Pourquoi quelqu un t enverrait un client ?</h2>
+        <section className="rounded-3xl border border-fuchsia-300/35 bg-fuchsia-300/12 p-6">
+          <h2 className="text-2xl font-black sm:text-4xl">💜 Pourquoi quelqu un t enverrait un client ?</h2>
           <div className="mt-4 grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
             <div className="space-y-3">
               <div className="rounded-2xl border border-amber-300/35 bg-amber-300/10 p-4">
@@ -352,8 +362,8 @@ export default function AccueilTestPage() {
           </div>
         </section>
 
-        <section className="rounded-3xl border border-amber-300/30 bg-amber-300/10 p-6">
-          <p className="text-xs font-black uppercase tracking-[0.12em] text-amber-100">Preuves visuelles</p>
+        <section className="rounded-3xl border border-amber-300/35 bg-amber-300/12 p-6">
+          <p className="text-xs font-black uppercase tracking-[0.12em] text-amber-100">📸 Preuves visuelles</p>
           <div className="mt-3 grid gap-3 sm:grid-cols-3">
             <div className="rounded-2xl border border-white/15 bg-black/25 p-4 shadow-[0_18px_40px_-24px_rgba(34,211,238,0.9)]">
               <p className="text-[11px] font-black text-cyan-100">📱 Nicolas t a envoye un contact qu il te recommande</p>
@@ -370,8 +380,8 @@ export default function AccueilTestPage() {
           </div>
         </section>
 
-        <section className="rounded-3xl border border-emerald-300/25 bg-emerald-300/10 p-6">
-          <h2 className="text-2xl font-black sm:text-4xl">Concretement, ca peut donner ca :</h2>
+        <section className="rounded-3xl border border-emerald-300/35 bg-emerald-300/12 p-6">
+          <h2 className="text-2xl font-black sm:text-4xl">📈 Concretement, ca peut donner ca :</h2>
           <p className="mt-2 text-sm text-white/90">Infographie live: contacts actives → eclaireurs reguliers → opportunites → revenus.</p>
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
             <div className="rounded-2xl border border-white/15 bg-black/25 p-3">
@@ -409,8 +419,8 @@ export default function AccueilTestPage() {
           </p>
         </section>
 
-        <section className="rounded-3xl border border-cyan-300/25 bg-cyan-300/10 p-6">
-          <h2 className="text-2xl font-black sm:text-4xl">Quel est ton metier ?</h2>
+        <section className="rounded-3xl border border-cyan-300/35 bg-cyan-300/12 p-6">
+          <h2 className="text-2xl font-black sm:text-4xl">🧠 Quel est ton metier ?</h2>
           <p className="mt-2 text-sm text-white/88">On te montre qui activer en priorite.</p>
           <input
             value={metier}
@@ -447,8 +457,8 @@ export default function AccueilTestPage() {
           ) : null}
         </section>
 
-        <section className="rounded-3xl border border-white/15 bg-white/5 p-6">
-          <h2 className="text-2xl font-black sm:text-4xl">Pas de spam. Pas de forcing.</h2>
+        <section className="rounded-3xl border border-white/20 bg-white/8 p-6">
+          <h2 className="text-2xl font-black sm:text-4xl">🛡️ Pas de spam. Pas de forcing.</h2>
           <ul className="mt-3 space-y-2 text-sm leading-6 text-white/90 sm:text-base">
             <li>Tu choisis qui tu contactes.</li>
             <li>Aucun message sans validation.</li>
@@ -457,8 +467,8 @@ export default function AccueilTestPage() {
           </ul>
         </section>
 
-        <section className="rounded-3xl border border-fuchsia-300/25 bg-fuchsia-300/10 p-6">
-          <h2 className="text-2xl font-black sm:text-4xl">Et si toi aussi tu renvoyais des opportunites ?</h2>
+        <section className="rounded-3xl border border-fuchsia-300/35 bg-fuchsia-300/12 p-6">
+          <h2 className="text-2xl font-black sm:text-4xl">💫 Et si toi aussi tu renvoyais des opportunites ?</h2>
           <p className="mt-3 text-sm leading-7 text-white/90 sm:text-base">
             Quand quelqu un t envoie un client, tu comprends vite qu il y a des opportunites partout.
           </p>
@@ -480,14 +490,14 @@ export default function AccueilTestPage() {
           <p className="mt-4 text-lg font-black text-fuchsia-100">Tu passes de receveur a connecteur.</p>
         </section>
 
-        <section className="rounded-3xl border border-emerald-300/30 bg-emerald-300/15 p-6 text-center sm:p-8">
-          <p className="text-xs font-black uppercase tracking-[0.12em] text-emerald-100">CTA final</p>
+        <section className="rounded-3xl border border-emerald-300/40 bg-[linear-gradient(160deg,rgba(16,185,129,0.35),rgba(16,185,129,0.18))] p-6 text-center sm:p-8">
+          <p className="text-xs font-black uppercase tracking-[0.12em] text-emerald-50">CTA final</p>
           <h2 className="mt-2 text-3xl font-black sm:text-5xl">Tes prochains clients sont deja dans ton telephone.</h2>
           <a
             href="/popey-human/smart-scan"
-            className="mx-auto mt-6 inline-flex h-12 items-center justify-center rounded-xl border border-emerald-300/40 bg-emerald-300/25 px-7 text-sm font-black uppercase tracking-[0.08em] text-emerald-50 transition hover:bg-emerald-300/35"
+            className="mx-auto mt-6 inline-flex h-12 items-center justify-center rounded-full border border-emerald-100/60 bg-emerald-200/25 px-7 text-sm font-black uppercase tracking-[0.08em] text-white transition hover:bg-emerald-200/35"
           >
-            Decouvrir mon tresor cache
+            Decouvrir mon tresor cache 💎
           </a>
           <p className="mt-3 text-xs text-emerald-100/90">Ca prend 30 secondes. Aucun engagement.</p>
         </section>
