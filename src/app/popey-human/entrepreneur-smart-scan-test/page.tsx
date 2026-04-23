@@ -1434,19 +1434,11 @@ export default function EntrepreneurSmartScanTestPage() {
   }, [showTemplateModal, showContactProfile, showTrustLevelPrompt, showMyProfilePanel, showHistoryPanel, showSearchPanel, selectedEclaireurTemplateContactId]);
 
   useEffect(() => {
+    // UX rule: do not auto-open qualification on app load.
+    // Qualification is prompted only when user clicks an activation CTA.
     if (stage !== "daily") return;
     if (!isBootstrapped) return;
-    if (showTemplateModal) return;
-    if (Date.now() < qualifierAutoOpenPausedUntilMs) return;
-    if (dismissedQualifierContactId === current.id) return;
-    if (qualifierStore[current.id]) return;
-    setSelectedAction("qualifier");
-    setQualifierHeat(null);
-    setHasChosenHeat(false);
-    setQualifierStep(1);
-    setOpportunityChoice(null);
-    setCommunityTags([]);
-    setShowTemplateModal(true);
+    return;
   }, [stage, current.id, qualifierStore, showTemplateModal, isBootstrapped, dismissedQualifierContactId, qualifierAutoOpenPausedUntilMs]);
 
   useEffect(() => {
@@ -2192,7 +2184,6 @@ export default function EntrepreneurSmartScanTestPage() {
     if (action === "eclaireur" || action === "package" || action === "exclients") {
       if (!isQualified) {
         setShowQualificationNeededPopup(true);
-        setTimeout(() => setShowQualificationNeededPopup(false), 1700);
         return;
       }
       // Daily-card action: clear any stale profile-origin context.
@@ -2235,6 +2226,11 @@ export default function EntrepreneurSmartScanTestPage() {
     const cleanPhone = normalizePhoneForWhatsApp(scopedActionContact.phone);
     const action = selectedAction;
     if (!action || action === "qualifier") return;
+    if (!qualifierStore[scopedActionContact.id]) {
+      setShowTemplateModal(false);
+      setShowQualificationNeededPopup(true);
+      return;
+    }
     if (!cleanPhone) {
       setModalErrorMessage("Contact WhatsApp manquant. Reimporte ton fichier pour inclure les numeros (format international conseille).");
       return;
@@ -2810,6 +2806,14 @@ export default function EntrepreneurSmartScanTestPage() {
 
   function startActionFromProfile(action: Exclude<DailyCategory, "passer" | "qualifier">) {
     if (!profileContact) return;
+    if (!profileQualifier) {
+      const nextIndex = contactsData.findIndex((contact) => contact.id === profileContact.id);
+      if (nextIndex >= 0) setIndex(nextIndex);
+      setShowContactProfile(false);
+      setShowSearchPanel(false);
+      setShowQualificationNeededPopup(true);
+      return;
+    }
     const nextIndex = contactsData.findIndex((contact) => contact.id === profileContact.id);
     if (nextIndex >= 0) setIndex(nextIndex);
     setActionFromProfileContactId(profileContact.id);
@@ -4079,7 +4083,7 @@ export default function EntrepreneurSmartScanTestPage() {
                   );
                 })}
               </div>
-              <div className={`mt-3 grid gap-2 ${!isQualified ? "grid-cols-2" : "grid-cols-1"}`}>
+              <div className="mt-3 grid gap-2 grid-cols-1">
                 <button
                   type="button"
                   onClick={() => triggerAction("passer")}
@@ -4087,15 +4091,6 @@ export default function EntrepreneurSmartScanTestPage() {
                 >
                   Passer
                 </button>
-                {!isQualified && (
-                  <button
-                    type="button"
-                    onClick={() => triggerAction("qualifier")}
-                    className="h-9 rounded-full border border-cyan-300/35 bg-cyan-300/15 px-4 text-[10px] font-black uppercase tracking-[0.08em] text-cyan-100"
-                  >
-                    Qualifier
-                  </button>
-                )}
               </div>
               {softLearningHint && (
                 <p className="mt-2 rounded-xl bg-white/10 px-3 py-2 text-xs text-cyan-100">{softLearningHint}</p>
@@ -4169,10 +4164,32 @@ export default function EntrepreneurSmartScanTestPage() {
       </nav>
 
       {showQualificationNeededPopup && (
-        <div className="pointer-events-none fixed inset-x-0 bottom-24 z-[74] flex justify-center px-4">
-          <div className="rounded-full border border-amber-300/45 bg-amber-300/20 px-4 py-2 text-[11px] font-black uppercase tracking-[0.08em] text-amber-100 shadow-[0_18px_44px_-20px_rgba(251,191,36,0.7)]">
-            Qualifie ce contact d abord
-          </div>
+        <div className="fixed inset-0 z-[74] flex items-center justify-center bg-black/55 px-4">
+          <section className="w-full max-w-sm rounded-3xl border border-amber-300/35 bg-[#0E1834]/95 p-4 shadow-[0_24px_70px_-30px_rgba(251,191,36,0.85)]">
+            <p className="text-[11px] font-black uppercase tracking-[0.1em] text-amber-100">Qualification requise</p>
+            <p className="mt-2 text-sm text-white/90">
+              Ce contact n est pas encore qualifie. Qualifie-le d abord pour debloquer l envoi WhatsApp.
+            </p>
+            <div className="mt-4 grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setShowQualificationNeededPopup(false)}
+                className="h-10 rounded-xl border border-white/20 bg-white/10 text-[11px] font-black uppercase tracking-[0.08em] text-white/85"
+              >
+                Plus tard
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowQualificationNeededPopup(false);
+                  triggerAction("qualifier");
+                }}
+                className="h-10 rounded-xl border border-emerald-300/40 bg-emerald-300/20 text-[11px] font-black uppercase tracking-[0.08em] text-emerald-100"
+              >
+                Qualifier
+              </button>
+            </div>
+          </section>
         </div>
       )}
 
