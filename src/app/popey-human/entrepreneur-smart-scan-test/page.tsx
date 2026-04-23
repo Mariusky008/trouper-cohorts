@@ -4811,10 +4811,11 @@ export default function EntrepreneurSmartScanTestPage() {
       {showEclaireursPanel && (
         <div className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm flex items-start justify-center px-0 pt-0 pb-0 sm:px-4 sm:pt-16 sm:pb-0">
           <section
-            className="h-[calc(100dvh-92px)] max-h-[calc(100dvh-92px)] w-full overflow-y-auto rounded-none border-0 bg-[#0E1430] p-4 pb-32 sm:h-auto sm:max-h-[90vh] sm:max-w-lg sm:rounded-3xl sm:border sm:border-white/15"
+            className="h-[calc(100dvh-92px)] max-h-[calc(100dvh-92px)] w-full overflow-hidden rounded-none border-0 bg-[#0E1430] p-4 sm:h-auto sm:max-h-[90vh] sm:max-w-lg sm:rounded-3xl sm:border sm:border-white/15"
             style={{ paddingTop: "calc(env(safe-area-inset-top) + 12px)" }}
           >
-            <div className="sticky top-0 z-20 -mx-4 bg-[#0E1430] px-4 pb-2">
+            <div className="flex h-full min-h-0 flex-col">
+            <div className="z-20 rounded-xl bg-[#0E1430]/95 pb-2 backdrop-blur">
               <div className="flex items-center justify-between">
                 <p className="text-xs font-black uppercase tracking-[0.12em] text-cyan-200">Mes Eclaireurs</p>
                 <button
@@ -4828,9 +4829,9 @@ export default function EntrepreneurSmartScanTestPage() {
               </div>
             </div>
             {apiErrorMessage ? (
-              <p className="mt-2 rounded-lg border border-amber-300/35 bg-amber-300/10 px-2 py-1 text-[11px] text-amber-100">{apiErrorMessage}</p>
+              <p className="mt-2 shrink-0 rounded-lg border border-amber-300/35 bg-amber-300/10 px-2 py-1 text-[11px] text-amber-100">{apiErrorMessage}</p>
             ) : null}
-            <div className="mt-3 rounded-2xl border border-fuchsia-300/40 bg-[radial-gradient(circle_at_15%_0%,rgba(217,70,239,0.26),rgba(11,17,40,0.96))] px-3 py-3 shadow-[0_20px_80px_-35px_rgba(217,70,239,0.8)]">
+            <div className="mt-3 shrink-0 rounded-2xl border border-fuchsia-300/40 bg-[radial-gradient(circle_at_15%_0%,rgba(217,70,239,0.26),rgba(11,17,40,0.96))] px-3 py-3 shadow-[0_20px_80px_-35px_rgba(217,70,239,0.8)]">
               <div className="flex items-center justify-between gap-2">
                 <p className="text-[11px] font-black uppercase tracking-[0.1em] text-fuchsia-100">🔥 Opportunites entrantes Eclaireurs</p>
                 <span className="inline-flex rounded-full border border-fuchsia-200/35 bg-fuchsia-200/20 px-2 py-0.5 text-[10px] font-black text-fuchsia-50">
@@ -4863,7 +4864,7 @@ export default function EntrepreneurSmartScanTestPage() {
                 </div>
               )}
             </div>
-            <div className="mt-3 max-h-[calc(100dvh-350px)] space-y-2 overflow-y-auto sm:max-h-[58vh]">
+            <div className="mt-3 min-h-0 flex-1 space-y-2 overflow-y-auto pb-24">
               {eclaireursList.length === 0 && <p className="text-sm text-white/70">Aucun eclaireur actif pour l instant.</p>}
               {eclaireursList.map((contact) => {
                 const stats = eclaireurStatsStore[contact.id] || { leadsDetected: 0, leadsSigned: 0, commissionTotalEur: 0, lastNewsAtMs: 0 };
@@ -4941,6 +4942,7 @@ export default function EntrepreneurSmartScanTestPage() {
                   </div>
                 );
               })}
+            </div>
             </div>
           </section>
         </div>
