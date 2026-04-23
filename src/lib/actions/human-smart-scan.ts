@@ -2246,6 +2246,50 @@ export async function promoteContactToEclaireur(input: {
   return { success: true as const, contactId: resolved.id };
 }
 
+export async function removeContactFromEclaireurs(input: {
+  contactId?: string;
+  externalContactRef?: string;
+  fullName?: string;
+  city?: string | null;
+  companyHint?: string | null;
+}) {
+  const currentMember = await getCurrentHumanMember();
+  if (!currentMember) return { error: "Session requise." };
+
+  const resolved = await resolveContactId({
+    ownerMemberId: currentMember.id,
+    contactId: input.contactId,
+    externalContactRef: input.externalContactRef,
+    fullName: input.fullName,
+    city: input.city,
+    companyHint: input.companyHint,
+  });
+  if ("error" in resolved) return resolved;
+
+  const nowIso = new Date().toISOString();
+  const supabaseAdmin = createAdminClient();
+  const { error: updateError } = await supabaseAdmin
+    .from("human_smart_scan_contacts")
+    .update({
+      is_eclaireur_active: false,
+      updated_at: nowIso,
+    })
+    .eq("id", resolved.id)
+    .eq("owner_member_id", currentMember.id);
+  if (updateError) return { error: updateError.message };
+
+  await supabaseAdmin.from("human_smart_scan_eclaireur_events").insert({
+    owner_member_id: currentMember.id,
+    contact_id: resolved.id,
+    event_type: "removed",
+    amount_eur: 0,
+    metadata: { source: "smart_scan_panel" },
+    updated_at: nowIso,
+  });
+
+  return { success: true as const, contactId: resolved.id };
+}
+
 export async function listMyEclaireurs(limit = 300) {
   const currentMember = await getCurrentHumanMember();
   if (!currentMember) return { error: "Session requise.", eclaireurs: [] as Array<Record<string, unknown>> };

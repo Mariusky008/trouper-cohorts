@@ -872,6 +872,7 @@ export default function EntrepreneurSmartScanTestPage() {
   const [selectedIncomingReferralId, setSelectedIncomingReferralId] = useState<string | null>(null);
   const [incomingSignedAmount, setIncomingSignedAmount] = useState("");
   const [isIncomingReferralStatusUpdating, setIsIncomingReferralStatusUpdating] = useState(false);
+  const [isRemovingEclaireurId, setIsRemovingEclaireurId] = useState<string | null>(null);
   const contactImportInputRef = useRef<HTMLInputElement | null>(null);
   const localDayNumber = useMemo(() => getLocalDayNumber(), []);
 
@@ -2559,6 +2560,32 @@ export default function EntrepreneurSmartScanTestPage() {
     }
   }
 
+  async function removeEclaireur(contactId: string) {
+    if (!contactId || isRemovingEclaireurId) return;
+    const confirmed = typeof window === "undefined" ? true : window.confirm("Retirer cet eclaireur de la liste ?");
+    if (!confirmed) return;
+    try {
+      setIsRemovingEclaireurId(contactId);
+      const response = await fetch("/api/popey-human/smart-scan/remove-eclaireur", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ externalContactRef: contactId }),
+      });
+      const payload = (await response.json().catch(() => ({}))) as { error?: string };
+      if (!response.ok) {
+        throw new Error(payload.error || "Suppression eclaireur impossible.");
+      }
+      setEclaireurIds((prev) => prev.filter((id) => id !== contactId));
+      setApiErrorMessage("Eclaireur retire de la liste.");
+      setTimeout(() => setApiErrorMessage(""), 1800);
+      await refreshSmartScanSnapshot();
+    } catch (error) {
+      setApiErrorMessage(error instanceof Error ? error.message : "Suppression eclaireur impossible.");
+    } finally {
+      setIsRemovingEclaireurId(null);
+    }
+  }
+
   async function ensureEclaireurLink(contactId: string, options?: { autoCopy?: boolean }) {
     const fullContact = getContactById(contactId);
     const contact = fullContact || eclaireurDirectory[contactId] || null;
@@ -3642,18 +3669,18 @@ export default function EntrepreneurSmartScanTestPage() {
                   {opportunitiesActivated} opportunites activees aujourd hui. Encore {remainingForGoal} sur {dailyQueueCount} pour atteindre votre objectif.
                 </p>
               </div>
-              <p className="rounded-full border border-emerald-300/35 bg-emerald-300/12 px-3 py-1 text-[11px] font-black uppercase tracking-[0.08em] text-emerald-100">
-                Potentiel du jour : ~{latentPotential}€
-              </p>
-            </div>
-            <div className="flex justify-end">
-              <button
-                type="button"
-                onClick={() => setIsCockpitCollapsed((value) => !value)}
-                className="h-8 rounded-full border border-white/20 bg-white/10 px-3 text-[10px] font-black uppercase tracking-[0.08em] text-white/85"
-              >
-                {isCockpitCollapsed ? "Deplier cockpit" : "Replier cockpit"}
-              </button>
+              <div className="flex flex-wrap items-center gap-2">
+                <p className="rounded-full border border-emerald-300/35 bg-emerald-300/12 px-3 py-1 text-[11px] font-black uppercase tracking-[0.08em] text-emerald-100">
+                  Potentiel du jour : ~{latentPotential}€
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setIsCockpitCollapsed((value) => !value)}
+                  className="h-8 rounded-full border border-white/20 bg-white/10 px-3 text-[10px] font-black uppercase tracking-[0.08em] text-white/85"
+                >
+                  {isCockpitCollapsed ? "Deplier cockpit" : "Replier cockpit"}
+                </button>
+              </div>
             </div>
             <div className={isCockpitCollapsed ? "hidden" : "space-y-3"}>
             {showAdvancedOpsInUserCockpit && (
@@ -4041,12 +4068,14 @@ export default function EntrepreneurSmartScanTestPage() {
                     </button>
                   );
                 })}
-                {!isQualified && (
-                  <p className="text-center text-[11px] font-black uppercase tracking-wide text-emerald-100/85">
-                    Qualification requise d abord
-                  </p>
-                )}
               </div>
+              {!isQualified && (
+                <div className="pointer-events-none mt-1 flex justify-center">
+                  <span className="inline-flex rounded-full border border-emerald-300/35 bg-emerald-300/12 px-2 py-1 text-[10px] font-black uppercase tracking-[0.08em] text-emerald-100">
+                    Qualification requise
+                  </span>
+                </div>
+              )}
               <button
                 type="button"
                 onClick={() => finalizeAction("passer")}
@@ -4058,9 +4087,9 @@ export default function EntrepreneurSmartScanTestPage() {
                 <button
                   type="button"
                   onClick={() => triggerAction("qualifier")}
-                  className="mt-2 h-10 w-full rounded-xl border border-emerald-300/45 bg-emerald-300/15 text-[11px] font-black uppercase tracking-[0.08em] text-emerald-100"
+                  className="mx-auto mt-2 h-9 rounded-full border border-emerald-300/45 bg-emerald-300/15 px-4 text-[10px] font-black uppercase tracking-[0.08em] text-emerald-100"
                 >
-                  Qualifier ce contact maintenant
+                  Qualifier
                 </button>
               )}
               {softLearningHint && (
@@ -4113,7 +4142,7 @@ export default function EntrepreneurSmartScanTestPage() {
               (item.id === "search" && showSearchPanel) ||
               (item.id === "eclaireurs" && showEclaireursPanel) ||
               (item.id === "profile" && showMyProfilePanel) ||
-              (item.id === "scan" && !showSearchPanel && !showHistoryPanel && !showMyProfilePanel);
+              (item.id === "scan" && !showSearchPanel && !showHistoryPanel && !showMyProfilePanel && !showEclaireursPanel);
 
             return (
               <button
@@ -4568,10 +4597,10 @@ export default function EntrepreneurSmartScanTestPage() {
       {showEclaireursPanel && (
         <div className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm flex items-start justify-center px-0 pt-0 pb-0 sm:px-4 sm:pt-16 sm:pb-0">
           <section
-            className="h-[calc(100dvh-92px)] max-h-[calc(100dvh-92px)] w-full overflow-y-auto rounded-none border-0 bg-[#0E1430] p-4 pb-28 sm:h-auto sm:max-h-[90vh] sm:max-w-lg sm:rounded-3xl sm:border sm:border-white/15"
+            className="h-[calc(100dvh-92px)] max-h-[calc(100dvh-92px)] w-full overflow-y-auto rounded-none border-0 bg-[#0E1430] p-4 pb-32 sm:h-auto sm:max-h-[90vh] sm:max-w-lg sm:rounded-3xl sm:border sm:border-white/15"
             style={{ paddingTop: "calc(env(safe-area-inset-top) + 12px)" }}
           >
-            <div className="sticky top-0 z-20 -mx-4 bg-[#0E1430] px-4 pb-2">
+            <div className="-mx-4 px-4 pb-2">
               <div className="flex items-center justify-between">
                 <p className="text-xs font-black uppercase tracking-[0.12em] text-cyan-200">Mes Eclaireurs</p>
                 <button
@@ -4620,7 +4649,7 @@ export default function EntrepreneurSmartScanTestPage() {
                 </div>
               )}
             </div>
-            <div className="mt-3 max-h-[calc(100dvh-300px)] space-y-2 overflow-y-auto sm:max-h-[58vh]">
+            <div className="mt-3 space-y-2">
               {eclaireursList.length === 0 && <p className="text-sm text-white/70">Aucun eclaireur actif pour l instant.</p>}
               {eclaireursList.map((contact) => {
                 const stats = eclaireurStatsStore[contact.id] || { leadsDetected: 0, leadsSigned: 0, commissionTotalEur: 0, lastNewsAtMs: 0 };
@@ -4636,13 +4665,23 @@ export default function EntrepreneurSmartScanTestPage() {
                         <p className="truncate text-sm font-black text-emerald-50">{contact.name}</p>
                         <p className="text-[11px] text-emerald-100/80">{contact.city}</p>
                       </button>
-                      <button
-                        type="button"
-                        onClick={() => openEclaireurTemplates(contact.id)}
-                        className="rounded-lg border border-cyan-300/35 bg-cyan-300/15 px-2 py-1 text-[10px] font-black uppercase tracking-[0.08em] text-cyan-100"
-                      >
-                        Messages
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => openEclaireurTemplates(contact.id)}
+                          className="rounded-lg border border-cyan-300/35 bg-cyan-300/15 px-2 py-1 text-[10px] font-black uppercase tracking-[0.08em] text-cyan-100"
+                        >
+                          Messages
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => void removeEclaireur(contact.id)}
+                          disabled={isRemovingEclaireurId === contact.id}
+                          className="rounded-lg border border-rose-300/35 bg-rose-300/15 px-2 py-1 text-[10px] font-black uppercase tracking-[0.08em] text-rose-100 disabled:opacity-60"
+                        >
+                          {isRemovingEclaireurId === contact.id ? "Retrait..." : "Supprimer"}
+                        </button>
+                      </div>
                     </div>
                     <p className="mt-1 text-[10px] text-white/80">
                       {daysSinceActivation === null
