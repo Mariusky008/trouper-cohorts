@@ -861,7 +861,7 @@ export async function listHistoryActions(limit = 60) {
     return { error: "Session requise.", actions: [] as SmartScanHistoryItem[] };
   }
 
-  const safeLimit = Math.max(1, Math.min(200, Math.trunc(limit)));
+  const safeLimit = Math.max(1, Math.min(2000, Math.trunc(limit)));
   const supabaseAdmin = createAdminClient();
   const { data, error } = await supabaseAdmin
     .from("human_smart_scan_actions")

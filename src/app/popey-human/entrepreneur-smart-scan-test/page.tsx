@@ -248,6 +248,7 @@ const SMART_SCAN_SESSION_KEY = "popey-human:smart-scan:scan-session";
 const SMART_SCAN_IMPORTED_CONTACTS_KEY = "popey-human:smart-scan:imported-contacts";
 const SMART_SCAN_ECLAIREURS_KEY = "popey-human:smart-scan:eclaireurs";
 const SMART_SCAN_DEFAULT_MESSAGES_KEY = "popey-human:smart-scan:default-messages";
+const SMART_SCAN_PASSED_CONTACTS_KEY = "popey-human:smart-scan:passed-contacts";
 const DAILY_CONTACT_LIMIT = 10;
 
 const CONTACTS: DailyContact[] = [
@@ -842,6 +843,7 @@ export default function EntrepreneurSmartScanTestPage() {
   const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
   const [trustLevelStore, setTrustLevelStore] = useState<Record<string, TrustLevel>>({});
   const [historyEntries, setHistoryEntries] = useState<HistoryEntry[]>([]);
+  const [passedContactIds, setPassedContactIds] = useState<string[]>([]);
   const [qualifierStore, setQualifierStore] = useState<Record<string, QualifierData>>({});
   const [isBootstrapped, setIsBootstrapped] = useState(false);
   const [apiErrorMessage, setApiErrorMessage] = useState("");
@@ -910,15 +912,18 @@ export default function EntrepreneurSmartScanTestPage() {
         latestActionByContact.set(entry.contactId, { action: entry.action, atMs: entry.atMs });
       }
     });
+    const fromHistory = Array.from(latestActionByContact.entries())
+      .filter(([, value]) => value.action === "passer")
+      .map(([contactId]) => contactId);
     return new Set(
-      Array.from(latestActionByContact.entries())
-        .filter(([, value]) => value.action === "passer")
-        .map(([contactId]) => contactId),
+      [
+        ...fromHistory,
+        ...passedContactIds,
+      ].filter(Boolean),
     );
-  }, [historyEntries]);
-  const contactsData = hasImportedContacts
-    ? buildDailyQueueFromImportedContacts(importedContacts, dailyQueueCount, localDayNumber, parkedContactIds)
-    : CONTACTS;
+  }, [historyEntries, passedContactIds]);
+  const contactsData =
+    buildDailyQueueFromImportedContacts(allContactsData, dailyQueueCount, localDayNumber, parkedContactIds);
   const dailyQueueStart = hasImportedContacts && importedTotalCount > 0 ? (localDayNumber * dailyQueueCount) % importedTotalCount : 0;
   const dailyQueueEnd = hasImportedContacts ? Math.min(importedTotalCount, dailyQueueStart + dailyQueueCount) : 0;
   const dailyQueueWraps = hasImportedContacts && dailyQueueStart + dailyQueueCount > importedTotalCount;
@@ -1338,6 +1343,18 @@ export default function EntrepreneurSmartScanTestPage() {
     } catch {
       // Ignore invalid local default message cache.
     }
+    try {
+      const rawPassed = window.localStorage.getItem(SMART_SCAN_PASSED_CONTACTS_KEY);
+      if (rawPassed) {
+        const parsed = JSON.parse(rawPassed) as { ids?: string[] };
+        if (Array.isArray(parsed.ids)) {
+          const safeIds = parsed.ids.map((value) => String(value || "").trim()).filter(Boolean);
+          setPassedContactIds(Array.from(new Set(safeIds)));
+        }
+      }
+    } catch {
+      // Ignore invalid local passed-contact cache.
+    }
   }, []);
 
   useEffect(() => {
@@ -1392,6 +1409,17 @@ export default function EntrepreneurSmartScanTestPage() {
       }),
     );
   }, [defaultMessageStore]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem(
+      SMART_SCAN_PASSED_CONTACTS_KEY,
+      JSON.stringify({
+        ids: passedContactIds,
+        updatedAt: Date.now(),
+      }),
+    );
+  }, [passedContactIds]);
 
   useEffect(() => {
     setIndex((value) => {
@@ -2059,7 +2087,20 @@ export default function EntrepreneurSmartScanTestPage() {
       const hydratedContacts = persistedImportedRows
         .sort((a, b) => a.index - b.index)
         .map((row) => row.contact);
-      setImportedContacts(hydratedContacts);
+      setImportedContacts((previous) => {
+        if (previous.length === 0) return hydratedContacts;
+        const suspiciousShrink =
+          previous.length >= 120 && hydratedContacts.length > 0 && hydratedContacts.length <= Math.floor(previous.length * 0.4);
+        if (!suspiciousShrink) return hydratedContacts;
+        const fromHydrated = new Map(hydratedContacts.map((contact) => [contact.id, contact]));
+        const merged = previous.map((contact) => fromHydrated.get(contact.id) || contact);
+        hydratedContacts.forEach((contact) => {
+          if (!merged.some((item) => item.id === contact.id)) {
+            merged.push(contact);
+          }
+        });
+        return merged;
+      });
     }
     setDueFollowups(nextDueFollowups);
     setConversionMetrics(payload.metrics || null);
@@ -2231,7 +2272,12 @@ export default function EntrepreneurSmartScanTestPage() {
           outcomeStatus: sentInHistory ? ("pending" as const) : null,
         },
         ...prev,
-      ].slice(0, 50));
+      ].slice(0, 500));
+      if (action === "passer") {
+        setPassedContactIds((previous) => Array.from(new Set([actionContact.id, ...previous])));
+      } else {
+        setPassedContactIds((previous) => previous.filter((id) => id !== actionContact.id));
+      }
       const persistedStatus = sentInHistory ? "sent" : "validated_without_send";
       const clientEventId = `${actionContact.id}:${action}:${nowMs}`;
       void postSmartScan("action", {
@@ -2274,6 +2320,7 @@ export default function EntrepreneurSmartScanTestPage() {
   function triggerAction(action: DailyCategory) {
     if (launchingAction) return;
     if (action === "passer") {
+      setPassedContactIds((previous) => Array.from(new Set([current.id, ...previous])));
       finalizeAction(action, 200, {
         countAsSent: false,
         sentInHistory: false,
@@ -3024,6 +3071,7 @@ export default function EntrepreneurSmartScanTestPage() {
     setScanCount(0);
     setStage("scan");
     setIndex(0);
+    setPassedContactIds([]);
     setHasHydratedServerProgress(true);
     setApiErrorMessage("");
     void postSmartScan("import-contacts", {
@@ -3090,6 +3138,7 @@ export default function EntrepreneurSmartScanTestPage() {
       setScanCount(0);
       setStage("scan");
       setIndex(0);
+      setPassedContactIds([]);
       setHasHydratedServerProgress(true);
       setApiErrorMessage("");
       void postSmartScan("import-contacts", {
@@ -3124,6 +3173,7 @@ export default function EntrepreneurSmartScanTestPage() {
     setScanCount(0);
     setIndex(0);
     setStage("scan");
+    setPassedContactIds([]);
     setHasHydratedServerProgress(true);
     setEclaireurIds([]);
     setEclaireurDirectory({});
@@ -3132,6 +3182,7 @@ export default function EntrepreneurSmartScanTestPage() {
       window.localStorage.removeItem(SMART_SCAN_IMPORTED_CONTACTS_KEY);
       window.localStorage.removeItem(SMART_SCAN_SESSION_KEY);
       window.localStorage.removeItem(SMART_SCAN_ECLAIREURS_KEY);
+      window.localStorage.removeItem(SMART_SCAN_PASSED_CONTACTS_KEY);
       window.sessionStorage.removeItem(PENDING_WHATSAPP_CONTEXT_KEY);
     }
     void postSmartScan("clear-import", {}).catch(() => null);

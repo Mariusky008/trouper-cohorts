@@ -24,7 +24,7 @@ export async function GET() {
     getOrCreateTodaySession(),
     listMySmartScanContacts(800),
     listMySmartScanQualifications(800),
-    listHistoryActions(200),
+    listHistoryActions(1000),
     listOpenSmartScanAlerts(80),
     listDueSmartScanFollowups(80),
     getSmartScanConversionStats(14),
