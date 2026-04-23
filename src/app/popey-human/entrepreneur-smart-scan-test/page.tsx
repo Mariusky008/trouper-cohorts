@@ -876,6 +876,7 @@ export default function EntrepreneurSmartScanTestPage() {
   const hasImportedContacts = importedContacts.length > 0;
   const importedTotalCount = importedContacts.length;
   const dailyQueueCount = hasImportedContacts ? Math.min(DAILY_CONTACT_LIMIT, importedTotalCount) : DAILY_CONTACT_LIMIT;
+  const allContactsData = hasImportedContacts ? importedContacts : CONTACTS;
   const contactsData = hasImportedContacts
     ? buildDailyQueueFromImportedContacts(importedContacts, dailyQueueCount, localDayNumber)
     : CONTACTS;
@@ -888,7 +889,7 @@ export default function EntrepreneurSmartScanTestPage() {
       ? `${dailyQueueStart + 1}-${importedTotalCount} + 1-${(dailyQueueStart + dailyQueueCount) % importedTotalCount}`
       : `${dailyQueueStart + 1}-${dailyQueueEnd}`;
   const current = contactsData[index] ?? contactsData[contactsData.length - 1];
-  const profileContact = contactsData.find((contact) => contact.id === profileContactId) ?? null;
+  const profileContact = allContactsData.find((contact) => contact.id === profileContactId) ?? null;
   const totalScanned = hasImportedContacts ? importedTotalCount : 0;
   const scanDone = hasImportedContacts && totalScanned > 0 && scanCount >= totalScanned;
   const scanProgress = totalScanned > 0 ? Math.min(1, scanCount / totalScanned) : 0;
@@ -989,14 +990,14 @@ export default function EntrepreneurSmartScanTestPage() {
     if (entries.length === 0) return [{ label: "❓ A decouvrir", count: 1 }];
     return entries.slice(0, 3);
   }, [current, qualifierStore, quickLabelMap]);
-  const searchResults = contactsData
+  const searchResults = allContactsData
     .filter((contact) => `${contact.name} ${contact.city} ${contact.companyHint}`.toLowerCase().includes(searchQuery.toLowerCase().trim()))
     .sort((a, b) => (priorityScoreStore[b.id] || 0) - (priorityScoreStore[a.id] || 0));
   const eclaireursList = eclaireurIds
     .map((id) => {
-      const fromTodayQueue = contactsData.find((contact) => contact.id === id);
-      if (fromTodayQueue) {
-        return { id: fromTodayQueue.id, name: fromTodayQueue.name, city: fromTodayQueue.city };
+      const fromAllContacts = allContactsData.find((contact) => contact.id === id);
+      if (fromAllContacts) {
+        return { id: fromAllContacts.id, name: fromAllContacts.name, city: fromAllContacts.city };
       }
       return eclaireurDirectory[id] || null;
     })
@@ -1011,7 +1012,7 @@ export default function EntrepreneurSmartScanTestPage() {
       }
       return inactivityA - inactivityB;
     });
-  const scoutCandidateSource = importedContacts.length > 0 ? importedContacts : contactsData;
+  const scoutCandidateSource = importedContacts.length > 0 ? importedContacts : allContactsData;
   const importedScoutCandidates = scoutCandidateSource
     .filter((contact) => !eclaireurIds.includes(contact.id))
     .map((contact) => ({
@@ -1079,9 +1080,7 @@ export default function EntrepreneurSmartScanTestPage() {
   ].filter(Boolean) as string[];
   const profileQualifier = profileContact ? qualifierStore[profileContact.id] : undefined;
   const profileTrustLevel = profileContact ? trustLevelStore[profileContact.id] : undefined;
-  const trustPromptContact = trustPromptContactId
-    ? contactsData.find((contact) => contact.id === trustPromptContactId) ?? null
-    : null;
+  const trustPromptContact = trustPromptContactId ? allContactsData.find((contact) => contact.id === trustPromptContactId) ?? null : null;
   const profileActionEngine = useMemo(() => getDynamicActionEngine(profileQualifier), [profileQualifier]);
   const profileActionButtons = profileActionEngine.order.map((action) => ({
     action,
@@ -1091,7 +1090,7 @@ export default function EntrepreneurSmartScanTestPage() {
   const staleIdealHotLead = useMemo(() => {
     const alertContactId = openAlertContactIds[0];
     if (alertContactId) {
-      const fromAlert = contactsData.find((item) => item.id === alertContactId);
+      const fromAlert = allContactsData.find((item) => item.id === alertContactId);
       if (fromAlert) {
         return { ...fromAlert, qualifier: qualifierStore[alertContactId] };
       }
@@ -1106,12 +1105,12 @@ export default function EntrepreneurSmartScanTestPage() {
         (entry) => entry.contactId === contactId && entry.action === "package" && entry.atMs >= qualifier.qualifiedAtMs,
       );
       if (hasPackageInTime) continue;
-      const contact = contactsData.find((item) => item.id === contactId);
+      const contact = allContactsData.find((item) => item.id === contactId);
       if (!contact) continue;
       return { ...contact, qualifier };
     }
     return null;
-  }, [qualifierStore, historyEntries, openAlertContactIds]);
+  }, [qualifierStore, historyEntries, openAlertContactIds, allContactsData]);
   const profileHeat = profileQualifier?.heat ?? "tiede";
   const profileHistory = profileContact ? historyEntries.filter((entry) => entry.contactId === profileContact.id) : [];
   const profileLatestSentAtMs = profileHistory.find((entry) => entry.sent)?.atMs ?? null;
@@ -3984,7 +3983,7 @@ export default function EntrepreneurSmartScanTestPage() {
                 )}
               </div>
 
-              <div className="mt-4 grid gap-3">
+            <div className="mt-4 grid gap-3">
                 {actionButtons.map((button) => {
                   const theme = ACTION_BUTTON_THEMES[button.action];
                   const launching = launchingAction === button.action;
@@ -4041,6 +4040,15 @@ export default function EntrepreneurSmartScanTestPage() {
               >
                 Passer au contact suivant
               </button>
+              {!isQualified && (
+                <button
+                  type="button"
+                  onClick={() => triggerAction("qualifier")}
+                  className="mt-2 h-10 w-full rounded-xl border border-emerald-300/45 bg-emerald-300/15 text-[11px] font-black uppercase tracking-[0.08em] text-emerald-100"
+                >
+                  Qualifier ce contact maintenant
+                </button>
+              )}
               {softLearningHint && (
                 <p className="mt-2 rounded-xl bg-white/10 px-3 py-2 text-xs text-cyan-100">{softLearningHint}</p>
               )}
@@ -4079,7 +4087,7 @@ export default function EntrepreneurSmartScanTestPage() {
         </div>
       </div>
 
-      <nav className="fixed inset-x-0 bottom-4 z-30 flex justify-center px-4">
+      <nav className="fixed inset-x-0 bottom-4 z-[70] flex justify-center px-4">
         <div className="flex w-full max-w-md items-center justify-between rounded-[28px] border border-white/20 bg-[#0F1838]/75 px-2 py-2 shadow-[0_22px_48px_-28px_rgba(0,0,0,0.9)] backdrop-blur-2xl">
           {([
             { id: "search", icon: "🔍", label: "Recherche" },
@@ -4362,7 +4370,7 @@ export default function EntrepreneurSmartScanTestPage() {
       {showSearchPanel && (
         <div className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm flex items-start justify-center px-0 pt-0 pb-0 sm:px-4 sm:pt-16 sm:pb-0">
           <section
-            className="h-[100dvh] max-h-[100dvh] w-full overflow-y-auto rounded-none border-0 bg-[#0E1430] p-4 pb-8 sm:h-auto sm:max-h-[90vh] sm:max-w-lg sm:rounded-3xl sm:border sm:border-white/15"
+            className="h-[calc(100dvh-92px)] max-h-[calc(100dvh-92px)] w-full overflow-y-auto rounded-none border-0 bg-[#0E1430] p-4 pb-28 sm:h-auto sm:max-h-[90vh] sm:max-w-lg sm:rounded-3xl sm:border sm:border-white/15"
             style={{ paddingTop: "calc(env(safe-area-inset-top) + 12px)" }}
           >
             <div className="sticky top-0 z-20 -mx-4 bg-[#0E1430] px-4 pb-2">
@@ -4494,7 +4502,7 @@ export default function EntrepreneurSmartScanTestPage() {
                   </select>
                 </div>
                 <p className="mt-2 text-[11px] text-white/65">{filteredHistoryEntries.length} element(s) apres filtres</p>
-                <div className="mt-3 max-h-[calc(100dvh-280px)] space-y-2 overflow-y-auto sm:max-h-[60vh]">
+                <div className="mt-3 max-h-[calc(100dvh-350px)] space-y-2 overflow-y-auto sm:max-h-[60vh]">
                   {filteredHistoryEntries.length === 0 && <p className="text-sm text-white/70">Aucune action pour ces filtres.</p>}
                   {filteredHistoryEntries.map((entry, idx) => {
                     const eligibleToPromote = entry.sent && entry.action === "eclaireur" && !eclaireurIds.includes(entry.contactId);
@@ -4503,7 +4511,7 @@ export default function EntrepreneurSmartScanTestPage() {
                         <button
                           type="button"
                           onClick={() => {
-                            const nextIndex = contactsData.findIndex((contact) => contact.id === entry.contactId);
+                            const nextIndex = allContactsData.findIndex((contact) => contact.id === entry.contactId);
                             if (nextIndex >= 0) setIndex(nextIndex);
                             openContactProfileWithTrustGuard(entry.contactId);
                           }}
@@ -4546,7 +4554,7 @@ export default function EntrepreneurSmartScanTestPage() {
       {showEclaireursPanel && (
         <div className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm flex items-start justify-center px-0 pt-0 pb-0 sm:px-4 sm:pt-16 sm:pb-0">
           <section
-            className="h-[100dvh] max-h-[100dvh] w-full overflow-y-auto rounded-none border-0 bg-[#0E1430] p-4 pb-8 sm:h-auto sm:max-h-[90vh] sm:max-w-lg sm:rounded-3xl sm:border sm:border-white/15"
+            className="h-[calc(100dvh-92px)] max-h-[calc(100dvh-92px)] w-full overflow-y-auto rounded-none border-0 bg-[#0E1430] p-4 pb-28 sm:h-auto sm:max-h-[90vh] sm:max-w-lg sm:rounded-3xl sm:border sm:border-white/15"
             style={{ paddingTop: "calc(env(safe-area-inset-top) + 12px)" }}
           >
             <div className="sticky top-0 z-20 -mx-4 bg-[#0E1430] px-4 pb-2">
@@ -4671,7 +4679,7 @@ export default function EntrepreneurSmartScanTestPage() {
                 </div>
               )}
             </div>
-            <div className="mt-3 max-h-[calc(100dvh-190px)] space-y-2 overflow-y-auto sm:max-h-[58vh]">
+            <div className="mt-3 max-h-[calc(100dvh-330px)] space-y-2 overflow-y-auto sm:max-h-[58vh]">
               {eclaireursList.length === 0 && <p className="text-sm text-white/70">Aucun eclaireur actif pour l instant.</p>}
               {eclaireursList.map((contact) => {
                 const stats = eclaireurStatsStore[contact.id] || { leadsDetected: 0, leadsSigned: 0, commissionTotalEur: 0, lastNewsAtMs: 0 };
@@ -4745,10 +4753,17 @@ export default function EntrepreneurSmartScanTestPage() {
       )}
 
       {selectedIncomingReferral && (
-        <div className="fixed inset-0 z-[45] flex items-end justify-center bg-black/65 px-0 backdrop-blur-sm sm:items-center sm:px-4">
-          <section className="w-full max-h-[92vh] overflow-y-auto rounded-t-3xl border border-white/15 bg-[#0E1430] p-4 sm:max-w-lg sm:rounded-3xl">
-            <div className="flex items-center justify-between">
-              <p className="text-[11px] font-black uppercase tracking-[0.12em] text-fuchsia-100">Detail opportunite eclaireur</p>
+        <div className="fixed inset-0 z-[62] flex items-center justify-center bg-black/72 px-3 backdrop-blur-md sm:px-4">
+          <section className="w-full max-h-[88vh] max-w-2xl overflow-y-auto rounded-3xl border border-emerald-300/35 bg-[#0B1230] p-5 shadow-[0_30px_120px_-35px_rgba(16,185,129,0.75)] sm:p-6">
+            <div className="rounded-2xl border border-emerald-300/35 bg-[radial-gradient(circle_at_20%_0%,rgba(16,185,129,0.26),rgba(8,12,28,0.94))] p-4">
+              <p className="text-[10px] font-black uppercase tracking-[0.16em] text-emerald-100">Bonne nouvelle</p>
+              <p className="mt-1 text-2xl font-black text-white">Nouvelle opportunite Eclaireur</p>
+              <p className="mt-1 text-sm text-emerald-100/85">
+                {selectedIncomingReferral.contact_name} • {selectedIncomingReferral.project_type || "Projet non precise"}
+              </p>
+            </div>
+            <div className="mt-4 flex items-center justify-between">
+              <p className="text-[11px] font-black uppercase tracking-[0.12em] text-fuchsia-100">Pipeline de suivi</p>
               <button
                 type="button"
                 onClick={() => setSelectedIncomingReferralId(null)}
@@ -4757,7 +4772,30 @@ export default function EntrepreneurSmartScanTestPage() {
                 ✕
               </button>
             </div>
-            <div className="mt-3 rounded-xl border border-white/15 bg-black/25 px-3 py-2 text-[12px] text-white/90">
+            <div className="mt-3 grid grid-cols-2 gap-2 text-[10px] font-black uppercase tracking-[0.08em] sm:grid-cols-4">
+              {[
+                { id: "submitted", label: "Opportunite recue" },
+                { id: "validated", label: "RDV pris" },
+                { id: "offered", label: "Offre envoyee" },
+                { id: "converted", label: "Signature finale" },
+              ].map((step, idx, arr) => {
+                const currentIdx = arr.findIndex((item) => item.id === selectedIncomingReferral.status);
+                const isActive = idx <= (currentIdx >= 0 ? currentIdx : 0);
+                return (
+                  <div
+                    key={`incoming-step-${step.id}`}
+                    className={`rounded-xl border px-2 py-2 text-center ${
+                      isActive
+                        ? "border-emerald-300/45 bg-emerald-300/20 text-emerald-100"
+                        : "border-white/15 bg-black/25 text-white/60"
+                    }`}
+                  >
+                    {step.label}
+                  </div>
+                );
+              })}
+            </div>
+            <div className="mt-3 rounded-xl border border-white/15 bg-black/25 px-3 py-3 text-[12px] text-white/90">
               <p>
                 <span className="text-white/65">Contact:</span> {selectedIncomingReferral.contact_name}
               </p>
@@ -4783,16 +4821,16 @@ export default function EntrepreneurSmartScanTestPage() {
               <button
                 type="button"
                 onClick={() => openIncomingReferralWhatsApp(selectedIncomingReferral)}
-                className="h-9 rounded-lg border border-emerald-300/35 bg-emerald-300/15 px-3 text-[10px] font-black uppercase tracking-[0.08em] text-emerald-100"
+                className="h-10 rounded-xl border border-emerald-300/35 bg-emerald-300/15 px-3 text-[10px] font-black uppercase tracking-[0.08em] text-emerald-100"
               >
-                Message WhatsApp
+                Alerter Eclaireur (WhatsApp)
               </button>
               {selectedIncomingReferral.status === "submitted" ? (
                 <button
                   type="button"
                   onClick={() => void updateIncomingReferralStatus("validated")}
                   disabled={isIncomingReferralStatusUpdating}
-                  className="h-9 rounded-lg border border-cyan-300/35 bg-cyan-300/15 px-3 text-[10px] font-black uppercase tracking-[0.08em] text-cyan-100 disabled:opacity-60"
+                  className="h-10 rounded-xl border border-cyan-300/35 bg-cyan-300/15 px-3 text-[10px] font-black uppercase tracking-[0.08em] text-cyan-100 disabled:opacity-60"
                 >
                   {isIncomingReferralStatusUpdating ? "MAJ..." : "Marquer RDV pris"}
                 </button>
@@ -4802,7 +4840,7 @@ export default function EntrepreneurSmartScanTestPage() {
                   type="button"
                   onClick={() => void updateIncomingReferralStatus("offered")}
                   disabled={isIncomingReferralStatusUpdating}
-                  className="h-9 rounded-lg border border-cyan-300/35 bg-cyan-300/15 px-3 text-[10px] font-black uppercase tracking-[0.08em] text-cyan-100 disabled:opacity-60"
+                  className="h-10 rounded-xl border border-cyan-300/35 bg-cyan-300/15 px-3 text-[10px] font-black uppercase tracking-[0.08em] text-cyan-100 disabled:opacity-60"
                 >
                   {isIncomingReferralStatusUpdating ? "MAJ..." : "Marquer Offre envoyee"}
                 </button>
@@ -4815,13 +4853,13 @@ export default function EntrepreneurSmartScanTestPage() {
                   onChange={(event) => setIncomingSignedAmount(event.target.value)}
                   placeholder="Montant signe (€)"
                   inputMode="decimal"
-                  className="h-9 rounded-lg border border-white/15 bg-black/25 px-3 text-[11px]"
+                  className="h-10 rounded-xl border border-white/15 bg-black/25 px-3 text-[11px]"
                 />
                 <button
                   type="button"
                   onClick={() => void updateIncomingReferralStatus("converted")}
                   disabled={isIncomingReferralStatusUpdating}
-                  className="h-9 rounded-lg border border-fuchsia-300/35 bg-fuchsia-300/15 px-3 text-[10px] font-black uppercase tracking-[0.08em] text-fuchsia-100 disabled:opacity-60"
+                  className="h-10 rounded-xl border border-fuchsia-300/35 bg-fuchsia-300/15 px-3 text-[10px] font-black uppercase tracking-[0.08em] text-fuchsia-100 disabled:opacity-60"
                 >
                   {isIncomingReferralStatusUpdating ? "MAJ..." : "Signature finale"}
                 </button>
