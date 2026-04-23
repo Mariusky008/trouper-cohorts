@@ -195,9 +195,9 @@ export default function AccueilTestPage() {
           </div>
         </section>
 
-        <section className="rounded-3xl border border-cyan-300/35 bg-[radial-gradient(circle_at_10%_0%,rgba(34,211,238,0.2),rgba(9,20,52,0.9))] p-5 sm:p-6">
+        <section className="rounded-3xl border border-cyan-300/35 bg-[radial-gradient(circle_at_10%_0%,rgba(34,211,238,0.2),rgba(9,20,52,0.9))] p-4 sm:p-6">
           <div className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
-            <div className="rounded-2xl border border-white/15 bg-black/25 p-4 sm:p-5">
+            <div className="rounded-2xl border border-white/15 bg-black/25 p-3.5 sm:p-5">
               <div className="flex items-center justify-between gap-2">
                 <p className="text-[10px] font-black uppercase tracking-[0.14em] text-cyan-100">Projection perso instantanee</p>
                 <span className="rounded-full border border-emerald-300/35 bg-emerald-300/15 px-2 py-0.5 text-[10px] font-black text-emerald-100">
@@ -212,51 +212,51 @@ export default function AccueilTestPage() {
                   value={heroContactsInput}
                   onChange={(event) => setHeroContactsInput(event.target.value)}
                   placeholder="500"
-                  className="mt-2 h-11 w-full rounded-xl border border-cyan-300/35 bg-[#0E1B45] px-3 text-2xl font-black text-cyan-100"
+                  className="mt-2 h-11 w-full rounded-xl border border-cyan-300/35 bg-[#0E1B45] px-3 text-xl font-black text-cyan-100 sm:text-2xl"
                 />
               </label>
-              <div className="mt-4 grid gap-2 text-[11px] font-black text-white/90 sm:grid-cols-4">
+              <div className="mt-4 grid grid-cols-2 gap-2 text-[11px] font-black text-white/90 sm:grid-cols-4">
                 <p className="rounded-xl border border-white/15 bg-white/5 px-2 py-2 text-center">{heroContacts.toLocaleString("fr-FR")} contacts</p>
                 <p className="rounded-xl border border-white/15 bg-white/5 px-2 py-2 text-center">{projectedActivated} actives</p>
                 <p className="rounded-xl border border-white/15 bg-white/5 px-2 py-2 text-center">{projectedScouts} eclaireurs</p>
                 <p className="rounded-xl border border-white/15 bg-white/5 px-2 py-2 text-center">{projectedMonthlyOpps} opportunites/mois</p>
               </div>
-              <p className="mt-3 text-xs text-emerald-100">
+              <p className="mt-3 text-[11px] leading-5 text-emerald-100 sm:text-xs">
                 Exemple {metierEconomics.label}: {metierEconomics.formuleClient}. Donc {projectedMonthlyOpps} opportunites x{" "}
                 {metierEconomics.valeurClientEur.toLocaleString("fr-FR")} EUR = {projectedMonthlyRevenue.toLocaleString("fr-FR")} EUR/mois.
               </p>
             </div>
-            <div className="rounded-2xl border border-emerald-300/35 bg-[#07132f] p-4 sm:p-5">
+            <div className="rounded-2xl border border-emerald-300/35 bg-[#07132f] p-3.5 sm:p-5">
               <p className="text-[10px] font-black uppercase tracking-[0.14em] text-emerald-100">Estimation Popey</p>
-              <p className="mt-2 text-5xl font-black leading-[0.9] text-emerald-200 [text-shadow:0_0_20px_rgba(16,185,129,0.9)] sm:text-6xl">
+              <p className="mt-2 text-4xl font-black leading-[0.9] text-emerald-200 [text-shadow:0_0_20px_rgba(16,185,129,0.9)] sm:text-6xl">
                 {projectedMonthlyRevenue.toLocaleString("fr-FR")}
               </p>
-              <p className="mt-1 text-2xl font-black text-emerald-100">EUR / mois</p>
-              <p className="mt-3 rounded-xl border border-emerald-200/25 bg-emerald-300/10 px-3 py-2 text-sm font-semibold text-emerald-50">
+              <p className="mt-1 text-xl font-black text-emerald-100 sm:text-2xl">EUR / mois</p>
+              <p className="mt-3 rounded-xl border border-emerald-200/25 bg-emerald-300/10 px-3 py-2 text-[13px] font-semibold leading-5 text-emerald-50 sm:text-sm">
                 Tu ne prospectes plus: ton reseau t apporte des opportunites en continu.
               </p>
             </div>
           </div>
         </section>
 
-        <section className="rounded-3xl border border-white/15 bg-white/5 p-5 sm:p-6">
+        <section className="rounded-3xl border border-white/15 bg-white/5 p-4 sm:p-6">
           <p className="text-[10px] font-black uppercase tracking-[0.14em] text-cyan-100">Avant / Apres Popey</p>
           <div className="mt-3 grid gap-4 lg:grid-cols-2">
-            <article className="rounded-2xl border border-rose-300/30 bg-gradient-to-br from-rose-300/20 to-[#2b0f24] p-5">
+            <article className="rounded-2xl border border-rose-300/30 bg-gradient-to-br from-rose-300/20 to-[#2b0f24] p-4 sm:p-5">
               <p className="text-xs font-black uppercase tracking-[0.12em] text-rose-100">Avant</p>
-              <p className="mt-3 text-3xl font-black text-white">500 contacts</p>
+              <p className="mt-3 text-2xl font-black text-white sm:text-3xl">500 contacts</p>
               <p className="mt-1 text-lg font-black text-rose-100">0 opportunite</p>
-              <p className="mt-3 text-sm text-white/80">Beaucoup de reseau, peu de systeme, peu de revenus repetables.</p>
+              <p className="mt-3 text-[13px] leading-5 text-white/80 sm:text-sm">Beaucoup de reseau, peu de systeme, peu de revenus repetables.</p>
             </article>
-            <article className="rounded-2xl border border-emerald-300/35 bg-gradient-to-br from-emerald-300/20 via-cyan-300/10 to-[#0a1638] p-5 shadow-[0_25px_70px_-35px_rgba(16,185,129,0.9)]">
+            <article className="rounded-2xl border border-emerald-300/35 bg-gradient-to-br from-emerald-300/20 via-cyan-300/10 to-[#0a1638] p-4 shadow-[0_25px_70px_-35px_rgba(16,185,129,0.9)] sm:p-5">
               <p className="text-xs font-black uppercase tracking-[0.12em] text-emerald-100">Apres Popey</p>
-              <p className="mt-2 text-sm font-bold text-white/90">
+              <p className="mt-2 text-[13px] font-bold leading-5 text-white/90 sm:text-sm">
                 500 contacts → {activatedContacts} actives → {activeConnectors} reguliers → {monthlyOpportunities} opportunites / mois
               </p>
-              <p className="mt-3 text-4xl font-black leading-none text-emerald-200 [text-shadow:0_0_16px_rgba(16,185,129,0.8)]">
+              <p className="mt-3 text-3xl font-black leading-none text-emerald-200 [text-shadow:0_0_16px_rgba(16,185,129,0.8)] sm:text-4xl">
                 {monthlyRevenue.toLocaleString("fr-FR")} EUR
               </p>
-              <p className="mt-1 text-sm font-bold text-emerald-100">
+              <p className="mt-1 text-[13px] font-bold leading-5 text-emerald-100 sm:text-sm">
                 Base metier: {metierEconomics.valeurClientEur.toLocaleString("fr-FR")} EUR / client ({metierEconomics.label})
               </p>
               <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/10">
@@ -264,7 +264,7 @@ export default function AccueilTestPage() {
               </div>
             </article>
           </div>
-          <div className="mt-4 rounded-2xl border border-cyan-300/30 bg-cyan-300/10 p-4">
+          <div className="mt-4 rounded-2xl border border-cyan-300/30 bg-cyan-300/10 p-3 sm:p-4">
             <p className="text-xs font-black uppercase tracking-[0.12em] text-cyan-100">Simulation rapide</p>
             <input
               type="range"
