@@ -4168,6 +4168,9 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
       setApiErrorMessage("Selectionne type + temperature pour continuer.");
       return;
     }
+    // Ne bloque jamais le flow onboarding sur une erreur reseau.
+    setOnboardingStep(4);
+    setApiErrorMessage("");
     try {
       setIsOnboardingSaving(true);
       await postSmartScan("qualification", {
@@ -4177,14 +4180,11 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
         companyHint: onboardingFirstContact.companyHint || null,
         heat: onboardingQualificationHeat,
         opportunityChoice: onboardingQualificationType,
-        communityTags: ["unknown"],
-        estimatedGain: getEstimatedGain(onboardingQualificationType, ["unknown"]),
+        communityTags: [COMMUNITY_OPTIONS[0].id],
+        estimatedGain: getEstimatedGain(onboardingQualificationType, [COMMUNITY_OPTIONS[0].id]),
       });
-      setOnboardingStep(4);
-      setApiErrorMessage("");
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Impossible d enregistrer la qualification.";
-      setApiErrorMessage(message);
+      console.warn("onboarding qualification persistence failed", error);
     } finally {
       setIsOnboardingSaving(false);
     }
@@ -4313,11 +4313,11 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
   const onboardingProgress = `${onboardingStep}/4`;
   const onboardingCanContinueSector =
     onboardingSelectedSectorId !== "other_custom" || String(onboardingCustomMetier || "").trim().length > 1;
-  const onboardingCanContinueImport = importedContacts.length >= 3;
+  const onboardingCanContinueImport = importedContacts.length >= 1;
   const onboardingCanContinueQualification = Boolean(onboardingQualificationType && onboardingQualificationHeat);
   const onboardingJ0Overlay = showOnboardingJ0 ? (
-    <div className="fixed inset-0 z-[80] bg-[radial-gradient(circle_at_20%_0%,rgba(56,189,248,0.18),rgba(9,11,22,0.96))] backdrop-blur-md px-4 py-5">
-      <section className="mx-auto w-full max-w-xl rounded-3xl border border-cyan-200/25 bg-[#0B1734]/90 p-4">
+    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-[radial-gradient(circle_at_20%_0%,rgba(56,189,248,0.18),rgba(9,11,22,0.96))] px-4 py-5 backdrop-blur-md">
+      <section className="mx-auto max-h-[92dvh] min-h-[74dvh] w-full max-w-2xl overflow-y-auto rounded-3xl border border-cyan-200/25 bg-[#0B1734]/92 p-5 sm:p-6">
         <div className="flex items-center justify-between">
           <p className="text-xs font-black uppercase tracking-[0.12em] text-cyan-200">Onboarding J0</p>
           <span className="rounded-full border border-white/20 bg-white/10 px-2 py-0.5 text-[10px] font-black text-white/85">{onboardingProgress}</span>
@@ -4370,10 +4370,10 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
         )}
         {onboardingStep === 2 && (
           <div className="mt-3">
-            <p className="text-xl font-black">Importe tes 3 premiers contacts</p>
-            <p className="mt-1 text-sm text-white/75">Ils deviennent tes premiers prospects activables.</p>
+            <p className="text-2xl font-black">Commencons avec 1 de tes contacts</p>
+            <p className="mt-1 text-sm text-white/75">Ton premier prospect activable</p>
             <div className="mt-3 rounded-xl border border-cyan-300/25 bg-cyan-300/10 px-3 py-2">
-              <p className="text-sm font-black text-cyan-100">{importedContacts.length}/3 importes</p>
+              <p className="text-sm font-black text-cyan-100">{Math.min(importedContacts.length, 1)}/1 importe</p>
             </div>
             <button
               type="button"
@@ -4395,7 +4395,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
         {onboardingStep === 3 && (
           <div className="mt-3">
             <p className="text-xl font-black">Qualification express du 1er contact</p>
-            <p className="mt-1 text-sm text-white/75">{onboardingFirstContact?.name || "Premier contact"}</p>
+            <p className="mt-1 text-sm text-white/75">{onboardingFirstContact?.name || "Premier contact"} • Exemple sur 1 seul contact</p>
             <div className="mt-3 grid grid-cols-2 gap-2">
               {OPPORTUNITY_OPTIONS.map((option) => (
                 <button
