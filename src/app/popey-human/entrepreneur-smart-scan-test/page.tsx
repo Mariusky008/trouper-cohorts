@@ -1144,6 +1144,7 @@ export default function EntrepreneurSmartScanTestPage() {
   const [isInternalInvitesLoading, setIsInternalInvitesLoading] = useState(false);
   const [showInternalInvitesModal, setShowInternalInvitesModal] = useState(false);
   const [showOnboardingJ0, setShowOnboardingJ0] = useState(false);
+  const [onboardingFlowLocked, setOnboardingFlowLocked] = useState(false);
   const [onboardingStep, setOnboardingStep] = useState<1 | 2 | 3 | 4>(1);
   const [onboardingSectorQuery, setOnboardingSectorQuery] = useState("");
   const [onboardingSectors, setOnboardingSectors] = useState<SectorVocabularyListItem[]>([]);
@@ -1245,6 +1246,10 @@ export default function EntrepreneurSmartScanTestPage() {
   const onboardingHasExactSectorMatch = onboardingSectorCatalog.some((sector) =>
     sector.label.toLowerCase() === onboardingSectorQuery.trim().toLowerCase(),
   );
+  const onboardingShowOtherOption =
+    onboardingSectorQuery.trim().length > 0 &&
+    onboardingFilteredSectors.length === 0 &&
+    !onboardingHasExactSectorMatch;
   const publicProfileSlug = String(myProfile?.public_slug || profileForm.publicSlug || "").trim();
   const publicProfileUrl = publicProfileSlug ? `https://popey.link/${publicProfileSlug}` : "";
   const totalScanned = hasImportedContacts ? importedTotalCount : 0;
@@ -1956,7 +1961,7 @@ export default function EntrepreneurSmartScanTestPage() {
 
     async function bootstrapSmartScan() {
       try {
-        await refreshSmartScanSnapshot();
+        await Promise.all([refreshSmartScanSnapshot(), loadMyProfile()]);
         if (cancelled) return;
       } catch {
         // Keep the existing in-memory UX state when bootstrap API is unavailable.
@@ -1998,17 +2003,15 @@ export default function EntrepreneurSmartScanTestPage() {
       myProfile.metier_label,
     ].every((value) => String(value || "").trim().length === 0);
     const needsOnboarding = !myProfile.onboarding_completed_at || isProfileMostlyEmpty;
-    if (!needsOnboarding) {
-      setShowOnboardingJ0(false);
-      return;
-    }
-    if (!showOnboardingJ0) {
+    if (showOnboardingJ0 || onboardingFlowLocked) return;
+    if (needsOnboarding) {
       setShowOnboardingJ0(true);
+      setOnboardingFlowLocked(true);
       setOnboardingStep(1);
       setOnboardingStartedAtMs(Date.now());
       void loadOnboardingSectors();
     }
-  }, [myProfile, showOnboardingJ0]);
+  }, [myProfile, showOnboardingJ0, onboardingFlowLocked]);
 
   useEffect(() => {
     if (!showOnboardingJ0 || onboardingStep !== 4) return;
@@ -4366,6 +4369,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
         },
       }).catch(() => null);
       setShowOnboardingJ0(false);
+      setOnboardingFlowLocked(false);
       setApiErrorMessage("");
       await refreshSmartScanSnapshot();
     } catch (error) {
@@ -4499,7 +4503,11 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                 <button
                   key={sector.sector_id}
                   type="button"
-                  onClick={() => setOnboardingSelectedSectorId(sector.sector_id)}
+                  onClick={() => {
+                    setOnboardingSelectedSectorId(sector.sector_id);
+                    setOnboardingSectorQuery(sector.label);
+                    if (sector.sector_id !== "other_custom") setOnboardingCustomMetier("");
+                  }}
                   className={`w-full rounded-xl border px-4 py-3 text-left text-sm font-semibold ${
                     onboardingSelectedSectorId === sector.sector_id
                       ? "border-cyan-300/45 bg-cyan-300/15 text-cyan-100"
@@ -4509,7 +4517,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                   {sector.label}
                 </button>
               ))}
-              {onboardingSectorQuery.trim().length > 0 && !onboardingHasExactSectorMatch && (
+              {onboardingShowOtherOption && (
                 <button
                   type="button"
                   onClick={() => {
