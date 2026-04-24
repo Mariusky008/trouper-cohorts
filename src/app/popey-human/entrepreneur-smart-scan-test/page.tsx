@@ -257,6 +257,96 @@ type SectorVocabularyListItem = {
   pipeline_steps: string[];
   is_active?: boolean;
 };
+const ONBOARDING_SECTOR_CATALOG: Array<{ sector_id: string; label: string }> = [
+  { sector_id: "coach_sport", label: "Coach sportif" },
+  { sector_id: "coach_biz", label: "Coach business" },
+  { sector_id: "coach_vie", label: "Coach de vie" },
+  { sector_id: "hypno", label: "Hypnotherapeute" },
+  { sector_id: "sophrologie", label: "Sophrologue" },
+  { sector_id: "psycho", label: "Psychologue liberal" },
+  { sector_id: "psy_therapeute", label: "Psychotherapeute" },
+  { sector_id: "kine", label: "Kinesitherapeute" },
+  { sector_id: "osteo", label: "Osteopathe" },
+  { sector_id: "naturo", label: "Naturopathe" },
+  { sector_id: "nutrition", label: "Nutritionniste" },
+  { sector_id: "dietetique", label: "Dieteticien" },
+  { sector_id: "massage", label: "Praticien massage bien-etre" },
+  { sector_id: "yoga", label: "Professeur de yoga" },
+  { sector_id: "pilates", label: "Professeur de Pilates" },
+  { sector_id: "estheticienne", label: "Estheticienne" },
+  { sector_id: "coiffeur", label: "Coiffeur independant" },
+  { sector_id: "maquilleuse", label: "Maquilleuse professionnelle" },
+  { sector_id: "onglerie", label: "Prothesiste ongulaire" },
+  { sector_id: "immo", label: "Agent immobilier" },
+  { sector_id: "chasseur_immo", label: "Chasseur immobilier" },
+  { sector_id: "courtier_immo", label: "Courtier immobilier" },
+  { sector_id: "diagnostiqueur", label: "Diagnostiqueur immobilier" },
+  { sector_id: "archi_interieur", label: "Architecte d interieur" },
+  { sector_id: "courtier_credit", label: "Courtier en credit" },
+  { sector_id: "cgp", label: "Conseiller en gestion de patrimoine" },
+  { sector_id: "courtier_assurance", label: "Courtier assurance" },
+  { sector_id: "expert_comptable", label: "Expert-comptable" },
+  { sector_id: "comptable", label: "Comptable independant" },
+  { sector_id: "avocat", label: "Avocat independant" },
+  { sector_id: "notaire", label: "Notaire" },
+  { sector_id: "huissier", label: "Huissier de justice" },
+  { sector_id: "mediateur", label: "Mediateur" },
+  { sector_id: "formateur", label: "Formateur professionnel" },
+  { sector_id: "prof_particulier", label: "Professeur particulier" },
+  { sector_id: "consultant_rh", label: "Consultant RH" },
+  { sector_id: "consultant_marketing", label: "Consultant marketing" },
+  { sector_id: "community_manager", label: "Community manager freelance" },
+  { sector_id: "copywriter", label: "Copywriter" },
+  { sector_id: "graphiste", label: "Graphiste freelance" },
+  { sector_id: "photographe", label: "Photographe professionnel" },
+  { sector_id: "videaste", label: "Videaste / realisateur" },
+  { sector_id: "webdesigner", label: "Web designer freelance" },
+  { sector_id: "developpeur", label: "Developpeur freelance" },
+  { sector_id: "seo", label: "Consultant SEO" },
+  { sector_id: "ads", label: "Expert publicite digitale" },
+  { sector_id: "veterinaire", label: "Veterinaire liberal" },
+  { sector_id: "toiletteur", label: "Toiletteur animalier" },
+  { sector_id: "wedding_planner", label: "Wedding planner" },
+  { sector_id: "traiteur", label: "Traiteur independant" },
+  { sector_id: "dj", label: "DJ / Animateur" },
+  { sector_id: "aide_domicile", label: "Aide a domicile" },
+  { sector_id: "garde_enfants", label: "Garde d enfants / nounou" },
+  { sector_id: "plombier", label: "Plombier independant" },
+  { sector_id: "electricien", label: "Electricien independant" },
+  { sector_id: "menuisier", label: "Menuisier / ebeniste" },
+  { sector_id: "peintre", label: "Peintre en batiment" },
+  { sector_id: "jardinier", label: "Jardinier independant" },
+  { sector_id: "serrurier", label: "Serrurier" },
+  { sector_id: "carreleur", label: "Carreleur" },
+  { sector_id: "couvreur", label: "Couvreur" },
+  { sector_id: "infirmier", label: "Infirmier liberal" },
+  { sector_id: "sage_femme", label: "Sage-femme liberale" },
+  { sector_id: "podologue", label: "Podologue" },
+  { sector_id: "opticien", label: "Opticien independant" },
+  { sector_id: "consultant_it", label: "Consultant IT" },
+  { sector_id: "data_analyst", label: "Data analyst freelance" },
+  { sector_id: "cybersecurite", label: "Expert cybersecurite" },
+  { sector_id: "ia_consultant", label: "Consultant IA / automatisation" },
+  { sector_id: "no_code", label: "Expert no-code / automation" },
+  { sector_id: "other_custom", label: "Autre metier" },
+];
+const ONBOARDING_FEATURED_SECTOR_IDS = [
+  "developpeur",
+  "consultant_marketing",
+  "coach_sport",
+  "hypno",
+  "nutrition",
+  "dietetique",
+  "immo",
+  "courtier_immo",
+  "avocat",
+  "notaire",
+  "electricien",
+  "plombier",
+  "estheticienne",
+  "kine",
+  "other_custom",
+];
 type SmartScanSelfScoutLink = {
   shortCode: string | null;
   shortUrl: string | null;
@@ -1109,11 +1199,52 @@ export default function EntrepreneurSmartScanTestPage() {
   const current = contactsData[index] ?? contactsData[contactsData.length - 1];
   const profileContact = allContactsData.find((contact) => contact.id === profileContactId) ?? null;
   const onboardingFirstContact = importedContacts[0] || allContactsData[0] || null;
-  const onboardingFilteredSectors = onboardingSectors.filter((sector) => {
+  const onboardingSectorCatalog = useMemo(() => {
+    const byId = new Map<string, SectorVocabularyListItem>();
+    onboardingSectors.forEach((sector) => {
+      byId.set(sector.sector_id, sector);
+    });
+    ONBOARDING_SECTOR_CATALOG.forEach((sector) => {
+      if (byId.has(sector.sector_id)) return;
+      byId.set(sector.sector_id, {
+        sector_id: sector.sector_id,
+        label: sector.label,
+        pipeline_steps: [],
+        is_active: true,
+      });
+    });
+    if (!byId.has("other_custom")) {
+      byId.set("other_custom", {
+        sector_id: "other_custom",
+        label: "Autre metier",
+        pipeline_steps: [],
+        is_active: true,
+      });
+    }
+    return Array.from(byId.values());
+  }, [onboardingSectors]);
+  const onboardingFilteredSectors = onboardingSectorCatalog.filter((sector) => {
     const needle = onboardingSectorQuery.trim().toLowerCase();
     if (!needle) return true;
     return sector.label.toLowerCase().includes(needle) || sector.sector_id.toLowerCase().includes(needle);
   });
+  const onboardingDisplayedSectors =
+    onboardingSectorQuery.trim().length > 0
+      ? onboardingFilteredSectors
+      : [...onboardingFilteredSectors]
+          .sort(
+            (a, b) => {
+              const indexA = ONBOARDING_FEATURED_SECTOR_IDS.indexOf(a.sector_id);
+              const indexB = ONBOARDING_FEATURED_SECTOR_IDS.indexOf(b.sector_id);
+              const safeA = indexA === -1 ? 999 : indexA;
+              const safeB = indexB === -1 ? 999 : indexB;
+              return safeA - safeB;
+            },
+          )
+          .slice(0, 15);
+  const onboardingHasExactSectorMatch = onboardingSectorCatalog.some((sector) =>
+    sector.label.toLowerCase() === onboardingSectorQuery.trim().toLowerCase(),
+  );
   const publicProfileSlug = String(myProfile?.public_slug || profileForm.publicSlug || "").trim();
   const publicProfileUrl = publicProfileSlug ? `https://popey.link/${publicProfileSlug}` : "";
   const totalScanned = hasImportedContacts ? importedTotalCount : 0;
@@ -4089,11 +4220,11 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
   }
 
   function getOnboardingMetierLabel() {
-    if (onboardingSelectedSectorId === "other_custom") {
-      return String(onboardingCustomMetier || "").trim();
+    const selected = onboardingSectorCatalog.find((item) => item.sector_id === onboardingSelectedSectorId);
+    if (selected && onboardingSelectedSectorId !== "other_custom") {
+      return selected.label;
     }
-    const selected = onboardingSectors.find((item) => item.sector_id === onboardingSelectedSectorId);
-    return selected?.label || "";
+    return String(onboardingCustomMetier || onboardingSectorQuery || "").trim();
   }
 
   async function saveOnboardingSectorStep() {
@@ -4108,8 +4239,9 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
         `${String(myProfile?.first_name || profileForm.firstName || "membre").trim()}-${metierLabel}`,
       );
       const fallbackSlugSuffix = String(myProfile?.id || "").slice(0, 6) || "popey";
+      const knownServerSector = onboardingSectors.some((item) => item.sector_id === onboardingSelectedSectorId);
       const payload = {
-        sectorId: onboardingSelectedSectorId,
+        sectorId: knownServerSector ? onboardingSelectedSectorId : "other_custom",
         metierLabel,
         metier: metierLabel,
         publicSlug: `${fallbackSlugBase || "membre"}-${fallbackSlugSuffix}`.slice(0, 120),
@@ -4303,7 +4435,8 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
   const showAdvancedOpsInUserCockpit = false;
   const onboardingProgress = `${onboardingStep}/4`;
   const onboardingCanContinueSector =
-    onboardingSelectedSectorId !== "other_custom" || String(onboardingCustomMetier || "").trim().length > 1;
+    onboardingSelectedSectorId !== "other_custom" ||
+    String(onboardingCustomMetier || onboardingSectorQuery || "").trim().length > 1;
   const onboardingCanContinueImport = importedContacts.length >= 1;
   const onboardingCanContinueQualification = Boolean(onboardingQualificationType && onboardingQualificationHeat);
   const onboardingJ0Overlay = showOnboardingJ0 ? (
@@ -4319,12 +4452,20 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
             <p className="mt-1 text-sm text-white/75">Ce choix personnalise le vocabulaire de toute l app.</p>
             <input
               value={onboardingSectorQuery}
-              onChange={(event) => setOnboardingSectorQuery(event.target.value)}
+              onChange={(event) => {
+                const value = event.target.value;
+                setOnboardingSectorQuery(value);
+                const exact = onboardingSectorCatalog.find((sector) => sector.label.toLowerCase() === value.trim().toLowerCase());
+                if (exact) {
+                  setOnboardingSelectedSectorId(exact.sector_id);
+                  if (exact.sector_id !== "other_custom") setOnboardingCustomMetier("");
+                }
+              }}
               placeholder="Rechercher un secteur"
               className="mt-3 h-11 w-full rounded-xl border border-white/20 bg-black/25 px-3 text-sm"
             />
             <div className="mt-2 max-h-64 space-y-2 overflow-y-auto pr-1">
-              {onboardingFilteredSectors.map((sector) => (
+              {onboardingDisplayedSectors.map((sector) => (
                 <button
                   key={sector.sector_id}
                   type="button"
@@ -4338,6 +4479,18 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                   {sector.label}
                 </button>
               ))}
+              {onboardingSectorQuery.trim().length > 0 && !onboardingHasExactSectorMatch && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setOnboardingSelectedSectorId("other_custom");
+                    setOnboardingCustomMetier(onboardingSectorQuery.trim());
+                  }}
+                  className="w-full rounded-xl border border-amber-300/30 bg-amber-300/10 px-3 py-2 text-left text-sm font-semibold text-amber-100"
+                >
+                  Utiliser "{onboardingSectorQuery.trim()}" (Autre metier)
+                </button>
+              )}
             </div>
             {onboardingSelectedSectorId === "other_custom" && (
               <input
