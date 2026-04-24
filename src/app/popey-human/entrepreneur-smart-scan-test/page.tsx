@@ -5379,13 +5379,9 @@ export default function EntrepreneurSmartScanTestPage() {
             <div className="sticky top-0 z-20 -mx-4 bg-[#0E1430] px-4 pb-2">
               <div className="flex items-center justify-between">
                 <p className="text-xs font-black uppercase tracking-[0.12em] text-cyan-200">Alliances</p>
-                <button
-                  type="button"
-                  onClick={() => setShowAlliancesPanel(false)}
-                  className="relative z-30 h-9 w-9 rounded-full border border-white/20 bg-white/10 text-xs"
-                >
-                  ✕
-                </button>
+                <div className="rounded-full border border-fuchsia-300/35 bg-fuchsia-300/15 px-3 py-1 text-[10px] font-black uppercase tracking-[0.08em] text-fuchsia-100">
+                  Mes alliances ({allianceInvites.length})
+                </div>
               </div>
             </div>
 
@@ -5440,7 +5436,7 @@ export default function EntrepreneurSmartScanTestPage() {
 
             <div className="mt-3 rounded-2xl border border-fuchsia-300/30 bg-fuchsia-300/10 p-3">
               <div className="flex items-center justify-between gap-2">
-                <p className="text-[10px] font-black uppercase tracking-[0.1em] text-fuchsia-100">Pipeline alliances (Lot 2)</p>
+                <p className="text-[10px] font-black uppercase tracking-[0.1em] text-fuchsia-100">Mes alliances sollicitees</p>
                 <button
                   type="button"
                   onClick={() => {
@@ -5473,7 +5469,12 @@ export default function EntrepreneurSmartScanTestPage() {
                 <p className="mt-2 text-[11px] text-white/70">Chargement pipeline...</p>
               ) : (
                 <div className="mt-2 space-y-1">
-                  {allianceInvites.slice(0, 4).map((invite) => (
+                  {allianceInvites.length === 0 ? (
+                    <p className="rounded-lg border border-white/15 bg-black/25 px-2 py-1.5 text-[10px] text-white/70">
+                      Aucune alliance sollicitee pour le moment.
+                    </p>
+                  ) : null}
+                  {allianceInvites.map((invite) => (
                     <div key={`alliance-invite-${invite.id}`} className="rounded-lg border border-white/15 bg-black/25 px-2 py-1.5">
                       <p className="text-[11px] font-black text-white">{invite.prospect_name}</p>
                       <p className="text-[10px] text-white/70">
