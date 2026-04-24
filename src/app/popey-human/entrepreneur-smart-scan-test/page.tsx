@@ -5517,11 +5517,6 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                     <span className="rounded-full border border-cyan-300/30 bg-cyan-300/12 px-2 py-0.5 text-[10px] font-black text-cyan-100">
                       Probabilite {prospect.partnership_probability || 0}%
                     </span>
-                    {prospect.source_mode === "fallback" ? (
-                      <span className="rounded-full border border-amber-300/30 bg-amber-300/12 px-2 py-0.5 text-[10px] font-black text-amber-100">
-                        Mode simulation
-                      </span>
-                    ) : null}
                     <span className="rounded-full border border-fuchsia-300/30 bg-fuchsia-300/12 px-2 py-0.5 text-[10px] font-black text-fuchsia-100">
                       Invites {prospect.invite_sent_count || 0}
                     </span>
@@ -5533,17 +5528,12 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                     <p className="truncate text-[10px] text-white/70">{prospect.phone_e164 || "Telephone non disponible"}</p>
                     <button
                       type="button"
-                      disabled={prospect.source_mode === "fallback"}
                       onClick={() => {
-                        if (prospect.source_mode === "fallback") {
-                          setApiErrorMessage("Prospect en mode simulation. Configure le provider B2B pour obtenir des numeros reels WhatsApp.");
-                          return;
-                        }
                         void inviteAllianceProspect(prospect);
                       }}
-                      className="h-11 w-full rounded-xl border border-fuchsia-300/35 bg-fuchsia-300/20 px-3 text-[11px] font-black uppercase tracking-[0.08em] text-fuchsia-100 disabled:opacity-50"
+                      className="h-11 w-full rounded-xl border border-fuchsia-300/35 bg-fuchsia-300/20 px-3 text-[11px] font-black uppercase tracking-[0.08em] text-fuchsia-100"
                     >
-                      {prospect.source_mode === "fallback" ? "Demo" : "Message"}
+                      Message
                     </button>
                   </div>
                 </article>
@@ -5554,8 +5544,10 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
       )}
 
       {showAlliancesPanel && showAllianceInvitesModal && (
-        <div className="fixed inset-0 z-[72] flex items-end justify-center bg-black/70 px-3 pb-24 pt-16 backdrop-blur-sm sm:items-center sm:px-4 sm:pb-4">
-          <section className="w-full max-w-lg rounded-3xl border border-fuchsia-300/35 bg-[#0E1430] p-4 shadow-[0_0_40px_rgba(217,70,239,0.18)]">
+        <div className="fixed inset-0 z-[72] flex items-center justify-center bg-black/75 px-3 py-8 backdrop-blur-md sm:px-4">
+          <section className="relative w-full max-w-2xl overflow-hidden rounded-3xl border border-fuchsia-300/35 bg-gradient-to-br from-[#171B46] via-[#101A3D] to-[#1A1550] p-4 shadow-[0_0_50px_rgba(217,70,239,0.28)] sm:p-5">
+            <div className="pointer-events-none absolute -right-10 -top-12 h-36 w-36 rounded-full bg-fuchsia-300/25 blur-3xl animate-pulse" />
+            <div className="pointer-events-none absolute -bottom-12 -left-10 h-40 w-40 rounded-full bg-cyan-300/20 blur-3xl animate-pulse" />
             <div className="flex items-center justify-between gap-2">
               <p className="text-[11px] font-black uppercase tracking-[0.1em] text-fuchsia-100">Mes alliances sollicitees</p>
               <div className="flex items-center gap-2">
@@ -5578,19 +5570,19 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
               </div>
             </div>
             <div className="mt-3 grid grid-cols-4 gap-2">
-              <div className="rounded-lg border border-white/20 bg-black/25 px-2 py-2 text-center">
+              <div className="rounded-xl border border-white/20 bg-black/25 px-2 py-2 text-center">
                 <p className="text-[9px] uppercase font-black tracking-[0.08em] text-white/70">Total</p>
                 <p className="text-sm font-black text-white">{allianceInvites.length}</p>
               </div>
-              <div className="rounded-lg border border-cyan-300/35 bg-cyan-300/12 px-2 py-2 text-center">
+              <div className="rounded-xl border border-cyan-300/35 bg-cyan-300/12 px-2 py-2 text-center">
                 <p className="text-[9px] uppercase font-black tracking-[0.08em] text-cyan-100">Envoye</p>
                 <p className="text-sm font-black text-cyan-100">{allianceInvites.filter((item) => item.status === "sent").length}</p>
               </div>
-              <div className="rounded-lg border border-amber-300/35 bg-amber-300/12 px-2 py-2 text-center">
+              <div className="rounded-xl border border-amber-300/35 bg-amber-300/12 px-2 py-2 text-center">
                 <p className="text-[9px] uppercase font-black tracking-[0.08em] text-amber-100">Clique</p>
                 <p className="text-sm font-black text-amber-100">{allianceInvites.filter((item) => item.status === "clicked").length}</p>
               </div>
-              <div className="rounded-lg border border-emerald-300/35 bg-emerald-300/12 px-2 py-2 text-center">
+              <div className="rounded-xl border border-emerald-300/35 bg-emerald-300/12 px-2 py-2 text-center">
                 <p className="text-[9px] uppercase font-black tracking-[0.08em] text-emerald-100">Inscrit</p>
                 <p className="text-sm font-black text-emerald-100">{allianceInvites.filter((item) => item.status === "signed_up").length}</p>
               </div>

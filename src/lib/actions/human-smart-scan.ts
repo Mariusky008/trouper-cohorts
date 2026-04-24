@@ -2697,6 +2697,31 @@ async function searchB2BProvider(input: {
   radiusKm: number;
   limit: number;
 }) {
+  function buildDemoProspects(reason: string) {
+    const firstNames = ["Nicolas", "Camille", "Lucas", "Sofia", "Theo", "Lina", "Hugo", "Sarah", "Leo", "Jade"];
+    const lastNames = ["Martin", "Bernard", "Dubois", "Petit", "Robert", "Moreau", "Roux", "Fontaine", "Mercier", "Garnier"];
+    const baseMetier = String(input.targetMetiers[0] || input.sourceMetier || "partenaire local").trim() || "partenaire local";
+    const count = Math.max(6, Math.min(10, input.limit || 10));
+    return Array.from({ length: count }).map((_, idx) => {
+      const firstName = firstNames[idx % firstNames.length];
+      const lastName = lastNames[(idx * 3) % lastNames.length];
+      return {
+        externalId: `demo-${input.city.toLowerCase().replace(/\s+/g, "-")}-${baseMetier.toLowerCase().replace(/\s+/g, "-")}-${idx + 1}`,
+        name: `${firstName} ${lastName}`,
+        metier: baseMetier,
+        city: input.city,
+        phone: "+33662499645",
+        distanceKm: Number((1 + ((idx * 1.7) % Math.max(3, input.radiusKm || 15))).toFixed(1)),
+        rating: Number((4.1 + ((idx % 4) * 0.2)).toFixed(1)),
+        payload: {
+          provider: "demo",
+          reason,
+          sourceMetier: input.sourceMetier || null,
+        } as Record<string, unknown>,
+      };
+    });
+  }
+
   function toErrorMessage(value: unknown): string {
     if (!value) return "";
     if (typeof value === "string") return value.trim();
@@ -2724,9 +2749,9 @@ async function searchB2BProvider(input: {
   const apifyTaskSlug = String(process.env.APIFY_TASK_SLUG || "").trim();
   if (!apifyToken || !apifyTaskSlug) {
     return {
-      error: "Provider Apify non configure. Ajoute APIFY_TOKEN et APIFY_TASK_SLUG.",
-      prospects: [],
-      meta: { providerMode: "live" as const },
+      error: null as string | null,
+      prospects: buildDemoProspects("provider_demo_mode"),
+      meta: { providerMode: "fallback" as const },
     };
   }
 
@@ -2754,11 +2779,14 @@ async function searchB2BProvider(input: {
   const payload = (await response.json().catch(() => [])) as unknown;
 
   if (!response.ok) {
-    const payloadError = toErrorMessage(payload);
+    const payloadError = toErrorMessage(payload).toLowerCase();
+    const reason = payloadError.includes("usage") || payloadError.includes("quota") || payloadError.includes("exceed")
+      ? "provider_quota_demo"
+      : "provider_error_demo";
     return {
-      error: payloadError || `Provider Apify indisponible (HTTP ${response.status}).`,
-      prospects: [],
-      meta: { providerMode: "live" as const },
+      error: null as string | null,
+      prospects: buildDemoProspects(reason),
+      meta: { providerMode: "fallback" as const },
     };
   }
 
@@ -2971,10 +2999,14 @@ export async function searchAllianceProspects(input: {
   if (listError) {
     return { error: listError.message, prospects: [] as AllianceProspectRecord[] };
   }
-  const baseProspects = ((prospects as Array<AllianceProspectRecord & { source_payload?: Record<string, unknown> | null }> | null) || []).map((row) => ({
-    ...row,
-    source_mode: (row.source_payload?.reason === "provider_not_configured" ? "fallback" : "live") as "fallback" | "live",
-  }));
+  const baseProspects = ((prospects as Array<AllianceProspectRecord & { source_payload?: Record<string, unknown> | null }> | null) || []).map((row) => {
+    const reason = String(row.source_payload?.reason || "");
+    const isFallback = reason === "provider_not_configured" || reason === "provider_demo_mode" || reason === "provider_quota_demo" || reason === "provider_error_demo";
+    return {
+      ...row,
+      source_mode: (isFallback ? "fallback" : "live") as "fallback" | "live",
+    };
+  });
   const hydrated = await enrichAllianceProspectsWithInviteStats(
     currentMember.id,
     baseProspects,
@@ -2998,10 +3030,14 @@ export async function listAllianceProspects(limit = 80) {
     .limit(safeLimit);
 
   if (error) return { error: error.message, prospects: [] as AllianceProspectRecord[] };
-  const baseProspects = ((data as Array<AllianceProspectRecord & { source_payload?: Record<string, unknown> | null }> | null) || []).map((row) => ({
-    ...row,
-    source_mode: (row.source_payload?.reason === "provider_not_configured" ? "fallback" : "live") as "fallback" | "live",
-  }));
+  const baseProspects = ((data as Array<AllianceProspectRecord & { source_payload?: Record<string, unknown> | null }> | null) || []).map((row) => {
+    const reason = String(row.source_payload?.reason || "");
+    const isFallback = reason === "provider_not_configured" || reason === "provider_demo_mode" || reason === "provider_quota_demo" || reason === "provider_error_demo";
+    return {
+      ...row,
+      source_mode: (isFallback ? "fallback" : "live") as "fallback" | "live",
+    };
+  });
   const hydrated = await enrichAllianceProspectsWithInviteStats(
     currentMember.id,
     baseProspects,
