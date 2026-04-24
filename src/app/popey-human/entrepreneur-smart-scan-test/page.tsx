@@ -964,6 +964,7 @@ export default function EntrepreneurSmartScanTestPage() {
   const [allianceSourceMetier, setAllianceSourceMetier] = useState("");
   const [allianceTargetMetiersInput, setAllianceTargetMetiersInput] = useState("");
   const [allianceRadiusKm, setAllianceRadiusKm] = useState("15");
+  const [showAllianceInvitesModal, setShowAllianceInvitesModal] = useState(false);
   const contactImportInputRef = useRef<HTMLInputElement | null>(null);
   const localDayNumber = useMemo(() => getLocalDayNumber(), []);
 
@@ -3335,6 +3336,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
     setShowHistoryPanel(false);
     setShowEclaireursPanel(false);
     setShowAlliancesPanel(false);
+    setShowAllianceInvitesModal(false);
     setShowMyProfilePanel(false);
     setSelectedEclaireurTemplateContactId(null);
     setEclaireurTemplates([]);
@@ -5388,42 +5390,75 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
             <div className="sticky top-0 z-20 -mx-4 bg-[#0E1430] px-4 pb-2">
               <div className="flex items-center justify-between">
                 <p className="text-xs font-black uppercase tracking-[0.12em] text-cyan-200">Alliances</p>
-                <div className="rounded-full border border-fuchsia-300/35 bg-fuchsia-300/15 px-3 py-1 text-[10px] font-black uppercase tracking-[0.08em] text-fuchsia-100">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowAllianceInvitesModal(true);
+                    void loadAllianceInvites();
+                  }}
+                  className="rounded-full border border-fuchsia-300/35 bg-fuchsia-300/15 px-3 py-1 text-[10px] font-black uppercase tracking-[0.08em] text-fuchsia-100 transition hover:scale-[1.02] hover:bg-fuchsia-300/20"
+                >
                   Mes alliances ({allianceInvites.length})
-                </div>
+                </button>
               </div>
             </div>
 
-            <div className="mt-3 rounded-2xl border border-cyan-300/30 bg-cyan-300/10 p-3">
-              <p className="text-[10px] font-black uppercase tracking-[0.1em] text-cyan-100">Recrutement externe premium</p>
-              <p className="mt-1 text-[11px] text-white/80">
-                Trouve des metiers en synergie dans ta ville et invite-les en 1 clic sur WhatsApp.
-              </p>
-              <div className="mt-2 grid gap-2 sm:grid-cols-2">
+            <div className="relative mt-3 overflow-hidden rounded-3xl border border-cyan-300/45 bg-gradient-to-br from-cyan-300/20 via-[#12204A] to-fuchsia-300/20 p-4 shadow-[0_0_40px_rgba(56,189,248,0.16)]">
+              <div className="pointer-events-none absolute -right-8 -top-10 h-32 w-32 rounded-full bg-cyan-300/25 blur-2xl animate-pulse" />
+              <div className="pointer-events-none absolute -bottom-10 -left-6 h-28 w-28 rounded-full bg-fuchsia-300/25 blur-2xl animate-pulse" />
+              <div className="relative">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-[0.12em] text-cyan-100">Recrutement externe premium</p>
+                    <h3 className="mt-1 text-lg font-black text-white sm:text-xl">Fais decoller ton business avec des alliances locales</h3>
+                    <p className="mt-1 text-[12px] text-white/85">
+                      Lance une recherche ciblee, contacte les bons pros, et transforme-les en apporteurs actifs.
+                    </p>
+                  </div>
+                  <span className="rounded-full border border-emerald-300/45 bg-emerald-300/15 px-2 py-1 text-[10px] font-black uppercase tracking-[0.08em] text-emerald-100">
+                    Boost
+                  </span>
+                </div>
+                <div className="mt-3 grid grid-cols-3 gap-2">
+                  <div className="rounded-xl border border-white/15 bg-black/25 px-2 py-2 text-center">
+                    <p className="text-[9px] uppercase tracking-[0.08em] text-white/60">Objectif</p>
+                    <p className="text-[11px] font-black text-white">10 prospects</p>
+                  </div>
+                  <div className="rounded-xl border border-cyan-300/35 bg-cyan-300/12 px-2 py-2 text-center">
+                    <p className="text-[9px] uppercase tracking-[0.08em] text-cyan-100">Canal</p>
+                    <p className="text-[11px] font-black text-cyan-100">WhatsApp</p>
+                  </div>
+                  <div className="rounded-xl border border-fuchsia-300/35 bg-fuchsia-300/12 px-2 py-2 text-center">
+                    <p className="text-[9px] uppercase tracking-[0.08em] text-fuchsia-100">Suivi</p>
+                    <p className="text-[11px] font-black text-fuchsia-100">Mes alliances</p>
+                  </div>
+                </div>
+              </div>
+              <div className="relative mt-4 grid gap-2 sm:grid-cols-2">
                 <input
                   value={allianceCity}
                   onChange={(event) => setAllianceCity(event.target.value)}
                   placeholder="Ville"
-                  className="h-9 rounded-lg border border-white/15 bg-black/25 px-2 text-[11px]"
+                  className="h-11 rounded-xl border border-white/20 bg-black/35 px-3 text-[12px] placeholder:text-white/45"
                 />
                 <input
                   value={allianceRadiusKm}
                   onChange={(event) => setAllianceRadiusKm(event.target.value)}
                   placeholder="Rayon km"
                   inputMode="numeric"
-                  className="h-9 rounded-lg border border-white/15 bg-black/25 px-2 text-[11px]"
+                  className="h-11 rounded-xl border border-white/20 bg-black/35 px-3 text-[12px] placeholder:text-white/45"
                 />
                 <input
                   value={allianceSourceMetier}
                   onChange={(event) => setAllianceSourceMetier(event.target.value)}
                   placeholder="Ton metier"
-                  className="h-9 rounded-lg border border-white/15 bg-black/25 px-2 text-[11px] sm:col-span-2"
+                  className="h-11 rounded-xl border border-white/20 bg-black/35 px-3 text-[12px] placeholder:text-white/45 sm:col-span-2"
                 />
                 <input
                   value={allianceTargetMetiersInput}
                   onChange={(event) => setAllianceTargetMetiersInput(event.target.value)}
                   placeholder="Metiers cibles (courtier, notaire, ...)"
-                  className="h-9 rounded-lg border border-white/15 bg-black/25 px-2 text-[11px] sm:col-span-2"
+                  className="h-11 rounded-xl border border-white/20 bg-black/35 px-3 text-[12px] placeholder:text-white/45 sm:col-span-2"
                 />
               </div>
               <button
@@ -5432,7 +5467,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                   void runAllianceSearch();
                 }}
                 disabled={isAlliancesSearching || !allianceCity.trim()}
-                className="mt-2 h-10 w-full rounded-xl border border-emerald-300/40 bg-emerald-300/15 text-[11px] font-black uppercase tracking-[0.08em] text-emerald-100 disabled:opacity-60"
+                className="relative mt-3 h-12 w-full overflow-hidden rounded-2xl border border-emerald-300/50 bg-gradient-to-r from-emerald-300/30 to-cyan-300/30 text-[12px] font-black uppercase tracking-[0.08em] text-white transition hover:brightness-110 disabled:opacity-60"
               >
                 {isAlliancesSearching ? "Recherche en cours..." : "Lancer recherche B2B"}
               </button>
@@ -5441,60 +5476,6 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                   {apiErrorMessage}
                 </p>
               ) : null}
-            </div>
-
-            <div className="mt-3 rounded-2xl border border-fuchsia-300/30 bg-fuchsia-300/10 p-3">
-              <div className="flex items-center justify-between gap-2">
-                <p className="text-[10px] font-black uppercase tracking-[0.1em] text-fuchsia-100">Mes alliances sollicitees</p>
-                <button
-                  type="button"
-                  onClick={() => {
-                    void loadAllianceInvites();
-                  }}
-                  className="h-7 rounded-lg border border-white/20 bg-white/10 px-2 text-[10px] font-black uppercase tracking-[0.08em] text-white/85"
-                >
-                  Refresh
-                </button>
-              </div>
-              <div className="mt-2 grid grid-cols-4 gap-2">
-                <div className="rounded-lg border border-white/20 bg-black/25 px-2 py-2 text-center">
-                  <p className="text-[9px] uppercase font-black tracking-[0.08em] text-white/70">Total</p>
-                  <p className="text-sm font-black text-white">{allianceInvites.length}</p>
-                </div>
-                <div className="rounded-lg border border-cyan-300/35 bg-cyan-300/12 px-2 py-2 text-center">
-                  <p className="text-[9px] uppercase font-black tracking-[0.08em] text-cyan-100">Envoye</p>
-                  <p className="text-sm font-black text-cyan-100">{allianceInvites.filter((item) => item.status === "sent").length}</p>
-                </div>
-                <div className="rounded-lg border border-amber-300/35 bg-amber-300/12 px-2 py-2 text-center">
-                  <p className="text-[9px] uppercase font-black tracking-[0.08em] text-amber-100">Clique</p>
-                  <p className="text-sm font-black text-amber-100">{allianceInvites.filter((item) => item.status === "clicked").length}</p>
-                </div>
-                <div className="rounded-lg border border-emerald-300/35 bg-emerald-300/12 px-2 py-2 text-center">
-                  <p className="text-[9px] uppercase font-black tracking-[0.08em] text-emerald-100">Inscrit</p>
-                  <p className="text-sm font-black text-emerald-100">{allianceInvites.filter((item) => item.status === "signed_up").length}</p>
-                </div>
-              </div>
-              {isAllianceInvitesLoading ? (
-                <p className="mt-2 text-[11px] text-white/70">Chargement pipeline...</p>
-              ) : (
-                <div className="mt-2 space-y-1">
-                  {allianceInvites.length === 0 ? (
-                    <p className="rounded-lg border border-white/15 bg-black/25 px-2 py-1.5 text-[10px] text-white/70">
-                      Aucune alliance sollicitee pour le moment.
-                    </p>
-                  ) : null}
-                  {allianceInvites.map((invite) => (
-                    <div key={`alliance-invite-${invite.id}`} className="rounded-lg border border-white/15 bg-black/25 px-2 py-1.5">
-                      <p className="text-[11px] font-black text-white">{invite.prospect_name}</p>
-                      <p className="text-[10px] text-white/70">
-                        {invite.prospect_metier}
-                        {invite.prospect_city ? ` • ${invite.prospect_city}` : ""}
-                        {` • ${invite.status}`}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              )}
             </div>
 
             <div className="mt-3 flex items-center justify-between gap-2">
@@ -5568,6 +5549,73 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                 </article>
               ))}
             </div>
+          </section>
+        </div>
+      )}
+
+      {showAlliancesPanel && showAllianceInvitesModal && (
+        <div className="fixed inset-0 z-[72] flex items-end justify-center bg-black/70 px-3 pb-24 pt-16 backdrop-blur-sm sm:items-center sm:px-4 sm:pb-4">
+          <section className="w-full max-w-lg rounded-3xl border border-fuchsia-300/35 bg-[#0E1430] p-4 shadow-[0_0_40px_rgba(217,70,239,0.18)]">
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-[11px] font-black uppercase tracking-[0.1em] text-fuchsia-100">Mes alliances sollicitees</p>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    void loadAllianceInvites();
+                  }}
+                  className="h-8 rounded-lg border border-white/20 bg-white/10 px-2 text-[10px] font-black uppercase tracking-[0.08em] text-white/85"
+                >
+                  Refresh
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowAllianceInvitesModal(false)}
+                  className="h-8 w-8 rounded-full border border-white/20 bg-white/10 text-xs"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+            <div className="mt-3 grid grid-cols-4 gap-2">
+              <div className="rounded-lg border border-white/20 bg-black/25 px-2 py-2 text-center">
+                <p className="text-[9px] uppercase font-black tracking-[0.08em] text-white/70">Total</p>
+                <p className="text-sm font-black text-white">{allianceInvites.length}</p>
+              </div>
+              <div className="rounded-lg border border-cyan-300/35 bg-cyan-300/12 px-2 py-2 text-center">
+                <p className="text-[9px] uppercase font-black tracking-[0.08em] text-cyan-100">Envoye</p>
+                <p className="text-sm font-black text-cyan-100">{allianceInvites.filter((item) => item.status === "sent").length}</p>
+              </div>
+              <div className="rounded-lg border border-amber-300/35 bg-amber-300/12 px-2 py-2 text-center">
+                <p className="text-[9px] uppercase font-black tracking-[0.08em] text-amber-100">Clique</p>
+                <p className="text-sm font-black text-amber-100">{allianceInvites.filter((item) => item.status === "clicked").length}</p>
+              </div>
+              <div className="rounded-lg border border-emerald-300/35 bg-emerald-300/12 px-2 py-2 text-center">
+                <p className="text-[9px] uppercase font-black tracking-[0.08em] text-emerald-100">Inscrit</p>
+                <p className="text-sm font-black text-emerald-100">{allianceInvites.filter((item) => item.status === "signed_up").length}</p>
+              </div>
+            </div>
+            {isAllianceInvitesLoading ? (
+              <p className="mt-3 text-[11px] text-white/70">Chargement de tes alliances...</p>
+            ) : (
+              <div className="mt-3 max-h-[46vh] space-y-1 overflow-y-auto pr-1">
+                {allianceInvites.length === 0 ? (
+                  <p className="rounded-lg border border-white/15 bg-black/25 px-2 py-2 text-[10px] text-white/70">
+                    Aucune alliance sollicitee pour le moment.
+                  </p>
+                ) : null}
+                {allianceInvites.map((invite) => (
+                  <div key={`alliance-modal-invite-${invite.id}`} className="rounded-lg border border-white/15 bg-black/25 px-2 py-1.5">
+                    <p className="text-[11px] font-black text-white">{invite.prospect_name}</p>
+                    <p className="text-[10px] text-white/70">
+                      {invite.prospect_metier}
+                      {invite.prospect_city ? ` • ${invite.prospect_city}` : ""}
+                      {` • ${invite.status}`}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
           </section>
         </div>
       )}
