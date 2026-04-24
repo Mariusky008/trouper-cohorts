@@ -426,6 +426,8 @@ const SMART_SCAN_ECLAIREURS_KEY = "popey-human:smart-scan:eclaireurs";
 const SMART_SCAN_DEFAULT_MESSAGES_KEY = "popey-human:smart-scan:default-messages";
 const SMART_SCAN_PASSED_CONTACTS_KEY = "popey-human:smart-scan:passed-contacts";
 const DAILY_CONTACT_LIMIT = 10;
+const PROFILE_REQUEST_TIMEOUT_MS = 12000;
+const PROFILE_BOOTSTRAP_FALLBACK_MS = 14000;
 
 const CONTACTS: DailyContact[] = [
   {
@@ -1978,6 +1980,17 @@ export default function EntrepreneurSmartScanTestPage() {
       cancelled = true;
     };
   }, []);
+
+  useEffect(() => {
+    if (hasProfileBootstrapResolved) return;
+    const timeoutId = window.setTimeout(() => {
+      setHasProfileBootstrapResolved(true);
+      setApiErrorMessage((prev) =>
+        prev || "Chargement plus long que prevu. Tu peux continuer, la synchronisation reprend en arriere-plan.",
+      );
+    }, PROFILE_BOOTSTRAP_FALLBACK_MS);
+    return () => window.clearTimeout(timeoutId);
+  }, [hasProfileBootstrapResolved]);
 
   useEffect(() => {
     if (!showMyProfilePanel) return;
@@ -4184,11 +4197,15 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
   }
 
   async function loadMyProfile() {
+    const profileController = new AbortController();
+    const linkController = new AbortController();
+    const profileTimeoutId = window.setTimeout(() => profileController.abort(), PROFILE_REQUEST_TIMEOUT_MS);
+    const linkTimeoutId = window.setTimeout(() => linkController.abort(), PROFILE_REQUEST_TIMEOUT_MS);
     try {
       setIsProfileLoading(true);
       const [profileResponse, linkResponse] = await Promise.all([
-        fetch("/api/popey-human/smart-scan/profile", { cache: "no-store" }),
-        fetch("/api/popey-human/smart-scan/self-scout-link", { cache: "no-store" }),
+        fetch("/api/popey-human/smart-scan/profile", { cache: "no-store", signal: profileController.signal }),
+        fetch("/api/popey-human/smart-scan/self-scout-link", { cache: "no-store", signal: linkController.signal }),
       ]);
       const profilePayload = (await profileResponse.json().catch(() => ({}))) as { error?: string; profile?: SmartScanProfile | null };
       const linkPayload = (await linkResponse.json().catch(() => ({}))) as {
@@ -4220,9 +4237,16 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
       });
       setApiErrorMessage("");
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Impossible de charger le profil.";
+      const message =
+        error instanceof DOMException && error.name === "AbortError"
+          ? "Le serveur met trop de temps a repondre. On continue sans bloquer l ecran."
+          : error instanceof Error
+            ? error.message
+            : "Impossible de charger le profil.";
       setApiErrorMessage(message);
     } finally {
+      window.clearTimeout(profileTimeoutId);
+      window.clearTimeout(linkTimeoutId);
       setIsProfileLoading(false);
       setHasProfileBootstrapResolved(true);
     }
@@ -4757,10 +4781,32 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
     return (
       <main className="min-h-screen bg-[radial-gradient(circle_at_10%_0%,#10193D_0%,#0C122B_45%,#090B16_100%)] text-white">
         <div className="mx-auto flex min-h-screen max-w-xl items-center justify-center px-6">
-          <section className="w-full rounded-3xl border border-cyan-200/20 bg-[#0B1734]/90 p-6 text-center backdrop-blur-xl">
+          <section className="relative w-full overflow-hidden rounded-3xl border border-cyan-200/20 bg-[#0B1734]/90 p-6 text-center backdrop-blur-xl">
+            <motion.div
+              aria-hidden
+              className="pointer-events-none absolute -left-8 -top-10 h-28 w-28 rounded-full bg-cyan-300/20 blur-2xl"
+              animate={{ opacity: [0.2, 0.45, 0.2], scale: [0.92, 1.08, 0.92] }}
+              transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
+            />
+            <motion.div
+              aria-hidden
+              className="pointer-events-none absolute -bottom-12 right-0 h-32 w-32 rounded-full bg-indigo-300/15 blur-2xl"
+              animate={{ opacity: [0.15, 0.35, 0.15], scale: [1.05, 0.9, 1.05] }}
+              transition={{ duration: 2.8, repeat: Infinity, ease: "easeInOut" }}
+            />
             <p className="text-xs font-black uppercase tracking-[0.12em] text-cyan-200">Popey Human</p>
             <p className="mt-2 text-xl font-black">Preparation de ton onboarding...</p>
             <p className="mt-1 text-sm text-white/75">On charge ton profil pour demarrer directement sur le bon flow.</p>
+            <div className="mt-4 flex items-center justify-center gap-1.5">
+              {[0, 1, 2].map((dot) => (
+                <motion.span
+                  key={`bootstrap-dot-${dot}`}
+                  className="h-1.5 w-1.5 rounded-full bg-cyan-200/80"
+                  animate={{ opacity: [0.2, 1, 0.2], y: [0, -2, 0] }}
+                  transition={{ duration: 1, repeat: Infinity, delay: dot * 0.15, ease: "easeInOut" }}
+                />
+              ))}
+            </div>
           </section>
         </div>
       </main>
