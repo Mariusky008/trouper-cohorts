@@ -710,6 +710,10 @@ function resolveAllianceMetiers(ownerProfile?: SmartScanProfile | null) {
   return { metier1, metier2 };
 }
 
+function resolveOwnerMetierLabel(ownerProfile?: SmartScanProfile | null, fallback = "professionnel") {
+  return String(ownerProfile?.metier_label || ownerProfile?.metier || "").trim() || fallback;
+}
+
 function resolveEclaireurRewardSentence(ownerProfile?: SmartScanProfile | null) {
   const mode = ownerProfile?.eclaireur_reward_mode;
   const percent = Number(ownerProfile?.eclaireur_reward_percent || 0);
@@ -730,6 +734,7 @@ function buildTemplate(
   ownerProfile?: SmartScanProfile | null,
 ) {
   const firstName = contact.name.split(" ")[0];
+  const ownerMetier = resolveOwnerMetierLabel(ownerProfile, "professionnel");
   const compliments = buildPromptCompliments(qualifier);
   const complimentsLine =
     compliments.length > 0
@@ -740,7 +745,7 @@ function buildTemplate(
     const { metier1, metier2 } = resolveAllianceMetiers(ownerProfile);
     const secteur = String(ownerProfile?.ville || contact.city || "ton secteur").trim() || "ton secteur";
     const rewardLine = resolveEclaireurRewardSentence(ownerProfile);
-    return `Salut ${firstName}, je te contacte car je viens de structurer une alliance strategique avec deux partenaires (un ${metier1} et un ${metier2}).
+    return `Salut ${firstName}, je suis ${ownerMetier} et je viens de structurer une alliance strategique avec deux partenaires (un ${metier1} et un ${metier2}).
 
 On a decide de mettre en place un systeme d antennes locales pour nous remonter des opportunites de terrain. J ai tout de suite pense a toi car tu as le profil ideal pour etre notre Eclaireur sur ${secteur}.
 
@@ -749,10 +754,10 @@ Le deal est simple : tu nous identifies un besoin, on gere 100% du dossier avec 
 Est-ce que tu serais ouvert a ce qu on teste ca sur un premier cas ?`;
   }
   if (action === "package") {
-    return `Salut ${firstName}, ${complimentsLine}J ai une opportunite pour notre Trio (immo + courtage + partenaire terrain). Je peux te mettre en relation immediate pour ouvrir le dossier dans de bonnes conditions. Tu veux que je lance la mise en relation maintenant ?`;
+    return `Salut ${firstName}, ${complimentsLine}Je suis ${ownerMetier} et j ai une opportunite concrete a activer avec mon reseau local. Je peux te mettre en relation immediate pour ouvrir le dossier dans de bonnes conditions. Tu veux que je lance la mise en relation maintenant ?`;
   }
   if (action === "exclients") {
-    return `Hello ${firstName}, ${complimentsLine}Je prends des nouvelles car j ai vu des mouvements qui peuvent te concerner. Si tu veux, je te fais un point rapide et utile pour voir s il y a une opportunite a activer ensemble.`;
+    return `Hello ${firstName}, ${complimentsLine}En tant que ${ownerMetier}, je prends des nouvelles car j ai vu des mouvements qui peuvent te concerner. Si tu veux, je te fais un point rapide et utile pour voir s il y a une opportunite a activer ensemble.`;
   }
   if (action === "qualifier") {
     return "Pas d envoi. Qualification communautaire uniquement.";
@@ -1487,7 +1492,7 @@ export default function EntrepreneurSmartScanTestPage() {
   useEffect(() => {
     if (!myProfile) return;
     setAllianceCity((currentCity) => currentCity || myProfile.ville || "");
-    setAllianceSourceMetier((currentMetier) => currentMetier || myProfile.metier || "");
+    setAllianceSourceMetier((currentMetier) => currentMetier || resolveOwnerMetierLabel(myProfile, ""));
   }, [myProfile]);
 
   useEffect(() => {
@@ -2044,7 +2049,7 @@ export default function EntrepreneurSmartScanTestPage() {
     const contactFirstName = String(onboardingFirstContact?.name || "").trim().split(" ")[0] || "Claire";
     const senderName = String(myProfile?.first_name || "").trim() || "Jean-Philippe";
     const senderCity = String(myProfile?.ville || "").trim() || "Dax";
-    const senderMetier = String(myProfile?.metier || "").trim() || "Agent immobilier";
+    const senderMetier = resolveOwnerMetierLabel(myProfile, "Agent immobilier");
     const seed = `Bonjour ${contactFirstName}, je suis ${senderName}, ${senderMetier} a ${senderCity}.
 
 Je te partage un exemple simple de message Popey pour lancer une prise de contact.
@@ -3606,7 +3611,7 @@ Ceci est une demonstration educative: aucun message n est envoye automatiquement
     if (!contactName) return;
     const res = (await postSmartScan("eclaireur-templates", {
       contactName,
-      metier: myProfile?.metier || null,
+      metier: resolveOwnerMetierLabel(myProfile, "") || null,
     })) as { templates?: Array<{ id: string; label: string; message: string }> };
     setSelectedEclaireurTemplateContactId(contactId);
     setEclaireurTemplates(res.templates || []);
@@ -3663,7 +3668,7 @@ Ceci est une demonstration educative: aucun message n est envoye automatiquement
   function buildAllianceInviteMessage(prospect: SmartScanAllianceProspect) {
     const firstName = prospect.full_name.split(" ")[0] || prospect.full_name;
     const myFirstName = (myProfile?.first_name || profileForm.firstName || "").trim();
-    const myMetier = myProfile?.metier || allianceSourceMetier || "professionnel";
+    const myMetier = String(allianceSourceMetier || "").trim() || resolveOwnerMetierLabel(myProfile, "professionnel");
     const city = allianceCity || myProfile?.ville || "ma ville";
     const intro = myFirstName ? `je suis ${myFirstName}, ${myMetier} a ${city}.` : `je suis ${myMetier} a ${city}.`;
     return `Bonjour ${firstName}, ${intro}
