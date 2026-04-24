@@ -4443,16 +4443,24 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
   const onboardingCanContinueImport = importedContacts.length >= 1;
   const onboardingCanContinueQualification = Boolean(onboardingQualificationType && onboardingQualificationHeat);
   const onboardingJ0Overlay = showOnboardingJ0 ? (
-    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-[radial-gradient(circle_at_20%_0%,rgba(56,189,248,0.18),rgba(9,11,22,0.96))] px-4 py-5 backdrop-blur-md">
-      <section className="mx-auto max-h-[92dvh] min-h-[74dvh] w-full max-w-2xl overflow-y-auto rounded-3xl border border-cyan-200/25 bg-[#0B1734]/92 p-5 sm:p-6">
+    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-[radial-gradient(circle_at_20%_0%,rgba(56,189,248,0.22),rgba(9,11,22,0.97))] px-4 py-5 backdrop-blur-md">
+      <section className="mx-auto max-h-[94dvh] min-h-[78dvh] w-full max-w-3xl overflow-y-auto rounded-3xl border border-cyan-200/30 bg-[#0B1734]/95 p-6 sm:p-7">
         <div className="flex items-center justify-between">
           <p className="text-xs font-black uppercase tracking-[0.12em] text-cyan-200">Onboarding J0</p>
           <span className="rounded-full border border-white/20 bg-white/10 px-2 py-0.5 text-[10px] font-black text-white/85">{onboardingProgress}</span>
         </div>
+        <div className="mt-3 grid grid-cols-4 gap-2">
+          {[1, 2, 3, 4].map((stepIndex) => (
+            <div
+              key={`onboarding-progress-${stepIndex}`}
+              className={`h-1.5 rounded-full ${stepIndex <= onboardingStep ? "bg-cyan-300" : "bg-white/15"}`}
+            />
+          ))}
+        </div>
         {onboardingStep === 1 && (
-          <div className="mt-3">
-            <p className="text-xl font-black">Quel est ton metier ?</p>
-            <p className="mt-1 text-sm text-white/75">Ce choix personnalise le vocabulaire de toute l app.</p>
+          <div className="mt-5">
+            <p className="text-3xl font-black tracking-tight">Quel est ton metier ?</p>
+            <p className="mt-2 text-base text-white/80">Ce choix personnalise le vocabulaire de toute l app.</p>
             <input
               value={onboardingSectorQuery}
               onChange={(event) => {
@@ -4465,15 +4473,15 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                 }
               }}
               placeholder="Rechercher un secteur"
-              className="mt-3 h-11 w-full rounded-xl border border-white/20 bg-black/25 px-3 text-sm"
+              className="mt-4 h-12 w-full rounded-2xl border border-white/20 bg-black/25 px-4 text-base"
             />
-            <div className="mt-2 max-h-64 space-y-2 overflow-y-auto pr-1">
+            <div className="mt-3 max-h-64 space-y-2 overflow-y-auto pr-1">
               {onboardingDisplayedSectors.map((sector) => (
                 <button
                   key={sector.sector_id}
                   type="button"
                   onClick={() => setOnboardingSelectedSectorId(sector.sector_id)}
-                  className={`w-full rounded-xl border px-3 py-2 text-left text-sm font-semibold ${
+                  className={`w-full rounded-xl border px-4 py-3 text-left text-sm font-semibold ${
                     onboardingSelectedSectorId === sector.sector_id
                       ? "border-cyan-300/45 bg-cyan-300/15 text-cyan-100"
                       : "border-white/15 bg-white/5 text-white/85"
@@ -4489,7 +4497,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                     setOnboardingSelectedSectorId("other_custom");
                     setOnboardingCustomMetier(onboardingSectorQuery.trim());
                   }}
-                  className="w-full rounded-xl border border-amber-300/30 bg-amber-300/10 px-3 py-2 text-left text-sm font-semibold text-amber-100"
+                  className="w-full rounded-xl border border-amber-300/30 bg-amber-300/10 px-4 py-3 text-left text-sm font-semibold text-amber-100"
                 >
                   Utiliser "{onboardingSectorQuery.trim()}" (Autre metier)
                 </button>
@@ -4500,7 +4508,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                 value={onboardingCustomMetier}
                 onChange={(event) => setOnboardingCustomMetier(event.target.value)}
                 placeholder="Ton metier exact"
-                className="mt-2 h-11 w-full rounded-xl border border-white/20 bg-black/25 px-3 text-sm"
+                className="mt-3 h-12 w-full rounded-2xl border border-white/20 bg-black/25 px-4 text-base"
               />
             )}
             <button
@@ -4509,26 +4517,26 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                 void saveOnboardingSectorStep();
               }}
               disabled={!onboardingCanContinueSector || isOnboardingSaving}
-              className="mt-3 h-11 w-full rounded-xl bg-gradient-to-r from-cyan-300 to-emerald-300 text-sm font-black text-[#10263A] disabled:opacity-45"
+              className="mt-4 h-12 w-full rounded-2xl bg-gradient-to-r from-cyan-300 to-emerald-300 text-base font-black text-[#10263A] disabled:opacity-45"
             >
               Continuer
             </button>
           </div>
         )}
         {onboardingStep === 2 && (
-          <div className="mt-3">
+          <div className="mt-5">
             <p className="text-2xl font-black">Commencons avec 1 de tes contacts</p>
-            <p className="mt-1 text-sm text-white/75">Ton premier prospect activable</p>
+            <p className="mt-2 text-base text-white/80">Ton premier prospect activable</p>
             <p className="mt-2 text-[11px] font-black uppercase tracking-[0.09em] text-cyan-100/95">
               Mode demo educatif: aucun message n est envoye ici.
             </p>
-            <div className="mt-3 rounded-xl border border-cyan-300/25 bg-cyan-300/10 px-3 py-2">
-              <p className="text-sm font-black text-cyan-100">{Math.min(importedContacts.length, 1)}/1 importe</p>
+            <div className="mt-4 rounded-2xl border border-cyan-300/25 bg-cyan-300/10 px-4 py-3">
+              <p className="text-base font-black text-cyan-100">{Math.min(importedContacts.length, 1)}/1 importe</p>
             </div>
             <button
               type="button"
               onClick={openContactImportPicker}
-              className="mt-3 h-11 w-full rounded-xl border border-cyan-300/35 bg-cyan-300/18 text-sm font-black text-cyan-100"
+              className="mt-4 h-12 w-full rounded-2xl border border-cyan-300/35 bg-cyan-300/18 text-base font-black text-cyan-100"
             >
               Importer mes contacts
             </button>
@@ -4536,28 +4544,28 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
               type="button"
               onClick={() => setOnboardingStep(3)}
               disabled={!onboardingCanContinueImport}
-              className="mt-2 h-11 w-full rounded-xl bg-gradient-to-r from-cyan-300 to-emerald-300 text-sm font-black text-[#10263A] disabled:opacity-45"
+              className="mt-3 h-12 w-full rounded-2xl bg-gradient-to-r from-cyan-300 to-emerald-300 text-base font-black text-[#10263A] disabled:opacity-45"
             >
               Continuer
             </button>
           </div>
         )}
         {onboardingStep === 3 && (
-          <div className="mt-3">
-            <p className="text-xl font-black">Qualification express du 1er contact</p>
-            <p className="mt-1 text-sm text-white/75">{onboardingFirstContact?.name || "Premier contact"} • Exemple sur 1 seul contact</p>
+          <div className="mt-5">
+            <p className="text-2xl font-black">Qualification express du 1er contact</p>
+            <p className="mt-2 text-base text-white/80">{onboardingFirstContact?.name || "Premier contact"} • Exemple sur 1 seul contact</p>
             <p className="mt-2 text-[11px] font-black uppercase tracking-[0.09em] text-cyan-100/95">
               Demonstration uniquement, sans envoi reel.
             </p>
-            <div className="mt-3 rounded-2xl border border-white/15 bg-white/5 p-2">
-              <p className="px-2 pb-2 text-[10px] font-black uppercase tracking-[0.1em] text-cyan-100/90">1. Type d opportunite</p>
-              <div className="grid grid-cols-2 gap-2">
+            <div className="mt-4 rounded-2xl border border-white/20 bg-white/6 p-3">
+              <p className="px-2 pb-3 text-[11px] font-black uppercase tracking-[0.1em] text-cyan-100/90">1. Type d opportunite</p>
+              <div className="grid grid-cols-2 gap-2.5">
               {OPPORTUNITY_OPTIONS.map((option) => (
                 <button
                   key={`onboarding-op-${option.id}`}
                   type="button"
                   onClick={() => setOnboardingQualificationType(option.id)}
-                  className={`rounded-full px-3 py-2 text-[11px] font-black ${
+                  className={`h-11 rounded-full px-3 py-2 text-[12px] font-black ${
                     onboardingQualificationType === option.id ? "bg-emerald-300 text-emerald-950" : "bg-white/10 text-white/85"
                   }`}
                 >
@@ -4566,15 +4574,15 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
               ))}
               </div>
             </div>
-            <div className="mt-2 rounded-2xl border border-cyan-300/25 bg-cyan-300/8 p-2">
-              <p className="px-2 pb-2 text-[10px] font-black uppercase tracking-[0.1em] text-cyan-100/95">2. Temperature du contact</p>
-              <div className="grid grid-cols-3 gap-2">
+            <div className="mt-3 rounded-2xl border border-cyan-300/30 bg-cyan-300/12 p-3">
+              <p className="px-2 pb-3 text-[11px] font-black uppercase tracking-[0.1em] text-cyan-100/95">2. Temperature du contact</p>
+              <div className="grid grid-cols-3 gap-2.5">
                 {(["froid", "tiede", "brulant"] as HeatLevel[]).map((heat) => (
                   <button
                     key={`onboarding-heat-${heat}`}
                     type="button"
                     onClick={() => setOnboardingQualificationHeat(heat)}
-                    className={`h-10 rounded-full text-[12px] font-black ${
+                    className={`h-11 rounded-full text-[13px] font-black ${
                       onboardingQualificationHeat === heat ? "bg-cyan-300 text-[#13253D]" : "bg-white/10 text-white/85"
                     }`}
                   >
@@ -4589,17 +4597,17 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                 void saveOnboardingQualificationStep();
               }}
               disabled={!onboardingCanContinueQualification || isOnboardingSaving}
-              className="mt-3 h-11 w-full rounded-xl bg-gradient-to-r from-cyan-300 to-emerald-300 text-sm font-black text-[#10263A] disabled:opacity-45"
+              className="mt-4 h-12 w-full rounded-2xl bg-gradient-to-r from-cyan-300 to-emerald-300 text-base font-black text-[#10263A] disabled:opacity-45"
             >
               Continuer
             </button>
           </div>
         )}
         {onboardingStep === 4 && (
-          <div className="mt-3">
-            <p className="text-xl font-black">Exemple de message (educatif)</p>
-            <p className="mt-1 text-sm text-white/75">Aucun message ne sera envoye pendant cet onboarding.</p>
-            <div className="mt-3 rounded-xl border border-white/20 bg-black/25 px-3 py-3 text-[20px] leading-relaxed text-white whitespace-pre-wrap sm:text-base">
+          <div className="mt-5">
+            <p className="text-2xl font-black">Exemple de message (educatif)</p>
+            <p className="mt-2 text-base text-white/80">Aucun message ne sera envoye pendant cet onboarding.</p>
+            <div className="mt-4 rounded-2xl border border-white/20 bg-black/25 px-4 py-4 text-[20px] leading-relaxed text-white whitespace-pre-wrap sm:text-[17px]">
               {onboardingMessageDraft}
             </div>
             <button
@@ -4608,7 +4616,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                 void completeOnboardingWithFirstMessage();
               }}
               disabled={!onboardingMessageDraft.trim() || isOnboardingSaving}
-              className="mt-3 h-11 w-full rounded-xl bg-gradient-to-r from-emerald-300 to-cyan-300 text-sm font-black text-[#10263A] disabled:opacity-45"
+              className="mt-4 h-12 w-full rounded-2xl bg-gradient-to-r from-emerald-300 to-cyan-300 text-base font-black text-[#10263A] disabled:opacity-45"
             >
               Terminer la demo pour voir la suite
             </button>
