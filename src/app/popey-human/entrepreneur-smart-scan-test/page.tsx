@@ -1988,7 +1988,16 @@ export default function EntrepreneurSmartScanTestPage() {
 
   useEffect(() => {
     if (!myProfile) return;
-    const needsOnboarding = !myProfile.onboarding_completed_at;
+    const isProfileMostlyEmpty = [
+      myProfile.first_name,
+      myProfile.last_name,
+      myProfile.metier,
+      myProfile.ville,
+      myProfile.phone,
+      myProfile.sector_id,
+      myProfile.metier_label,
+    ].every((value) => String(value || "").trim().length === 0);
+    const needsOnboarding = !myProfile.onboarding_completed_at || isProfileMostlyEmpty;
     if (!needsOnboarding) {
       setShowOnboardingJ0(false);
       return;
@@ -2010,11 +2019,9 @@ export default function EntrepreneurSmartScanTestPage() {
     const senderMetier = String(myProfile?.metier || "").trim() || "Agent immobilier";
     const seed = `Bonjour ${contactFirstName}, je suis ${senderName}, ${senderMetier} a ${senderCity}.
 
-Je te partage un exemple de message Popey pour lancer une prise de contact.
+Je te partage un exemple simple de message Popey pour lancer une prise de contact.
 
-Ce texte est uniquement pedagogique pendant l onboarding: aucun message n est envoye automatiquement.
-
-Si tu es partant, je t explique ensuite la suite en 2 minutes.`;
+Ceci est une demonstration educative: aucun message n est envoye automatiquement.`;
     setOnboardingMessageDraft(seed);
   }, [showOnboardingJ0, onboardingStep, onboardingMessageDraft, myProfile, onboardingFirstContact]);
 
@@ -4340,11 +4347,15 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
     }
     try {
       setIsOnboardingSaving(true);
-      await fetch("/api/popey-human/smart-scan/profile", {
+      const response = await fetch("/api/popey-human/smart-scan/profile", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ onboardingCompleted: true }),
       });
+      const body = (await response.json().catch(() => ({}))) as { error?: string; profile?: SmartScanProfile | null };
+      if (!response.ok) throw new Error(body.error || "Impossible de terminer l onboarding.");
+      setMyProfile(body.profile || null);
+      hydrateProfileForm(body.profile || null);
       void postSmartScan("analytics-event", {
         eventType: "onboarding_completed",
         metadata: {
@@ -4457,6 +4468,14 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
             />
           ))}
         </div>
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.div
+            key={`onboarding-step-${onboardingStep}`}
+            initial={{ opacity: 0, y: 20, scale: 0.985 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -10, scale: 0.99 }}
+            transition={{ duration: 0.24, ease: "easeOut" }}
+          >
         {onboardingStep === 1 && (
           <div className="mt-5">
             <p className="text-3xl font-black tracking-tight">Quel est ton metier ?</p>
@@ -4607,7 +4626,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
           <div className="mt-5">
             <p className="text-2xl font-black">Exemple de message (educatif)</p>
             <p className="mt-2 text-base text-white/80">Aucun message ne sera envoye pendant cet onboarding.</p>
-            <div className="mt-4 rounded-2xl border border-white/20 bg-black/25 px-4 py-4 text-[20px] leading-relaxed text-white whitespace-pre-wrap sm:text-[17px]">
+            <div className="mt-4 rounded-2xl border border-white/20 bg-black/25 px-4 py-4 text-[17px] leading-relaxed text-white whitespace-pre-wrap sm:text-base">
               {onboardingMessageDraft}
             </div>
             <button
@@ -4622,6 +4641,8 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
             </button>
           </div>
         )}
+          </motion.div>
+        </AnimatePresence>
       </section>
     </div>
   ) : null;
