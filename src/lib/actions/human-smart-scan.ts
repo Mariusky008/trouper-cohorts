@@ -2710,7 +2710,7 @@ async function searchB2BProvider(input: {
         name: `${firstName} ${lastName}`,
         metier: baseMetier,
         city: input.city,
-        phone: "+33662499645",
+        phone: "+33768233347",
         distanceKm: Number((1 + ((idx * 1.7) % Math.max(3, input.radiusKm || 15))).toFixed(1)),
         rating: Number((4.1 + ((idx % 4) * 0.2)).toFixed(1)),
         payload: {
