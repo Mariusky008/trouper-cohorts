@@ -144,6 +144,7 @@ type BootstrapEclaireurRow = {
   leads_detected?: number | null;
   leads_signed?: number | null;
   commission_total_eur?: number | null;
+  scout_type?: "perso" | "pro" | null;
 };
 type FollowupItem = {
   actionId: string;
@@ -922,7 +923,7 @@ export default function EntrepreneurSmartScanTestPage() {
   const [externalClickStats, setExternalClickStats] = useState<BootstrapExternalClicks | null>(null);
   const [eclaireurIds, setEclaireurIds] = useState<string[]>([]);
   const [eclaireurStatsStore, setEclaireurStatsStore] = useState<Record<string, { leadsDetected: number; leadsSigned: number; commissionTotalEur: number; lastNewsAtMs: number }>>({});
-  const [eclaireurDirectory, setEclaireurDirectory] = useState<Record<string, { id: string; name: string; city: string }>>({});
+  const [eclaireurDirectory, setEclaireurDirectory] = useState<Record<string, { id: string; name: string; city: string; scoutType: "perso" | "pro" }>>({});
   const [eclaireurSort, setEclaireurSort] = useState<"inactive_oldest" | "inactive_recent">("inactive_oldest");
   const [selectedEclaireurTemplateContactId, setSelectedEclaireurTemplateContactId] = useState<string | null>(null);
   const [eclaireurTemplates, setEclaireurTemplates] = useState<Array<{ id: string; label: string; message: string }>>([]);
@@ -1117,11 +1118,16 @@ export default function EntrepreneurSmartScanTestPage() {
     .map((id) => {
       const fromAllContacts = allContactsData.find((contact) => contact.id === id);
       if (fromAllContacts) {
-        return { id: fromAllContacts.id, name: fromAllContacts.name, city: fromAllContacts.city };
+        return {
+          id: fromAllContacts.id,
+          name: fromAllContacts.name,
+          city: fromAllContacts.city,
+          scoutType: eclaireurDirectory[id]?.scoutType || "perso" as "perso" | "pro",
+        };
       }
       return eclaireurDirectory[id] || null;
     })
-    .filter((contact): contact is { id: string; name: string; city: string } => Boolean(contact))
+    .filter((contact): contact is { id: string; name: string; city: string; scoutType: "perso" | "pro" } => Boolean(contact))
     .sort((a, b) => {
       const statsA = eclaireurStatsStore[a.id];
       const statsB = eclaireurStatsStore[b.id];
@@ -2360,7 +2366,7 @@ export default function EntrepreneurSmartScanTestPage() {
     setFollowupOpsStats(payload.followupOps || null);
     setExternalClickStats(payload.externalClicks || null);
     const nextEclaireurStatsStore: Record<string, { leadsDetected: number; leadsSigned: number; commissionTotalEur: number; lastNewsAtMs: number }> = {};
-    const nextEclaireurDirectory: Record<string, { id: string; name: string; city: string }> = {};
+    const nextEclaireurDirectory: Record<string, { id: string; name: string; city: string; scoutType: "perso" | "pro" }> = {};
     (payload.eclaireurs || []).forEach((row) => {
       const externalRef = String(row.external_contact_ref || row.id || "").trim();
       if (!externalRef) return;
@@ -2370,6 +2376,7 @@ export default function EntrepreneurSmartScanTestPage() {
         id: externalRef,
         name: row.full_name || externalRef,
         city: row.city || "Inconnue",
+        scoutType: row.scout_type === "pro" ? "pro" : "perso",
       };
       nextEclaireurStatsStore[externalRef] = {
         leadsDetected: Math.max(0, Math.round(Number(row.leads_detected || 0))),
@@ -2844,6 +2851,7 @@ export default function EntrepreneurSmartScanTestPage() {
         id: contact.id,
         name: contact.name,
         city: contact.city,
+        scoutType: "perso" as const,
       },
     }));
     setEclaireurStatsStore((prev) => {
@@ -5425,18 +5433,35 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
               {eclaireursList.map((contact) => {
                 const stats = eclaireurStatsStore[contact.id] || { leadsDetected: 0, leadsSigned: 0, commissionTotalEur: 0, lastNewsAtMs: 0 };
                 const daysSinceActivation = stats.lastNewsAtMs > 0 ? Math.max(0, Math.floor((Date.now() - stats.lastNewsAtMs) / (24 * 60 * 60 * 1000))) : null;
+                const isProScout = contact.scoutType === "pro";
                 return (
-                  <div key={`eclaireur-${contact.id}`} className="rounded-xl border border-emerald-300/25 bg-emerald-300/10 px-3 py-2">
+                  <div
+                    key={`eclaireur-${contact.id}`}
+                    className={`rounded-xl border px-3 py-2 ${
+                      isProScout
+                        ? "border-violet-300/35 bg-violet-300/12 shadow-[0_0_20px_rgba(167,139,250,0.18)]"
+                        : "border-cyan-300/30 bg-cyan-300/10"
+                    }`}
+                  >
                     <div className="flex items-center justify-between gap-2">
                       <button
                         type="button"
                         onClick={() => openEclaireurTemplates(contact.id)}
                         className="min-w-0 flex-1 text-left"
                       >
-                        <p className="truncate text-sm font-black text-emerald-50">{contact.name}</p>
-                        <p className="text-[11px] text-emerald-100/80">{contact.city}</p>
+                        <p className={`truncate text-sm font-black ${isProScout ? "text-violet-50" : "text-cyan-50"}`}>{contact.name}</p>
+                        <p className={`text-[11px] ${isProScout ? "text-violet-100/80" : "text-cyan-100/80"}`}>{contact.city}</p>
                       </button>
                       <div className="flex items-center gap-2">
+                        <span
+                          className={`rounded-full border px-2 py-1 text-[9px] font-black uppercase tracking-[0.08em] ${
+                            isProScout
+                              ? "border-violet-300/45 bg-violet-300/20 text-violet-100"
+                              : "border-cyan-300/45 bg-cyan-300/20 text-cyan-100"
+                          }`}
+                        >
+                          {isProScout ? "🤝 Pro" : "👥 Perso"}
+                        </span>
                         <button
                           type="button"
                           onClick={() => openEclaireurTemplates(contact.id)}

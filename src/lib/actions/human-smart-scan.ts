@@ -2312,8 +2312,28 @@ export async function listMyEclaireurs(limit = 300) {
 
   const rows = (contacts as Array<Record<string, unknown>> | null) || [];
   const contactIds = rows.map((row) => String(row.id));
+  const normalizePhoneKey = (value: unknown) => {
+    const raw = String(value || "").trim();
+    if (!raw) return "";
+    const digits = raw.replace(/\D/g, "");
+    if (!digits) return "";
+    if (digits.startsWith("33")) return digits;
+    if (digits.startsWith("0")) return `33${digits.slice(1)}`;
+    return digits;
+  };
   const statsMap = new Map<string, { leads_detected: number; leads_signed: number; commission_total_eur: number }>();
   const lastWhatsAppSentAtMap = new Map<string, string>();
+  const scoutTypeByPhone = new Map<string, "perso" | "pro">();
+  const { data: scoutsData } = await supabaseAdmin
+    .from("human_scouts")
+    .select("phone,scout_type")
+    .eq("owner_member_id", currentMember.id)
+    .limit(1200);
+  ((scoutsData as Array<{ phone: string | null; scout_type: "perso" | "pro" | null }> | null) || []).forEach((row) => {
+    const key = normalizePhoneKey(row.phone);
+    if (!key) return;
+    scoutTypeByPhone.set(key, row.scout_type === "pro" ? "pro" : "perso");
+  });
   if (contactIds.length > 0) {
     const { data: events } = await supabaseAdmin
       .from("human_smart_scan_eclaireur_events")
@@ -2363,6 +2383,7 @@ export async function listMyEclaireurs(limit = 300) {
         leads_signed: stats.leads_signed,
         commission_total_eur: Math.round(stats.commission_total_eur),
         last_whatsapp_sent_at: lastWhatsAppSentAtMap.get(contactId) || null,
+        scout_type: scoutTypeByPhone.get(normalizePhoneKey(row.phone_e164)) || "perso",
       };
     }),
   };
