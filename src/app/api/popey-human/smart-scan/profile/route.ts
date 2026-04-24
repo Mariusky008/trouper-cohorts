@@ -7,6 +7,17 @@ import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
+function normalizePublicSlug(input: string) {
+  const base = String(input || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9-]+/g, "-")
+    .replace(/-{2,}/g, "-")
+    .replace(/^-+|-+$/g, "");
+  return base.slice(0, 120);
+}
+
 export async function GET() {
   if (!smartScanFeatureFlags.enabled) {
     return NextResponse.json({ error: "Smart Scan desactive." }, { status: 503 });
@@ -29,7 +40,7 @@ export async function GET() {
   const supabaseAdmin = createAdminClient();
   const { data, error } = await supabaseAdmin
     .from("human_members")
-    .select("id,first_name,last_name,metier,buddy_name,buddy_metier,trio_name,trio_metier,eclaireur_reward_mode,eclaireur_reward_percent,eclaireur_reward_fixed_eur,ville,phone,status")
+    .select("id,first_name,last_name,metier,buddy_name,buddy_metier,trio_name,trio_metier,eclaireur_reward_mode,eclaireur_reward_percent,eclaireur_reward_fixed_eur,ville,phone,status,sector_id,metier_label,public_slug,offre_decouverte,bio,contact_link,onboarding_completed_at")
     .eq("id", member.id)
     .maybeSingle();
 
@@ -83,6 +94,18 @@ export async function POST(request: NextRequest) {
     eclaireur_reward_fixed_eur: Number.isFinite(rewardFixedEur) && rewardFixedEur > 0 ? rewardFixedEur : null,
     ville: String(body.ville || "").trim() || null,
     phone: String(body.phone || "").trim() || null,
+    sector_id: String(body.sectorId || "").trim() || null,
+    metier_label: String(body.metierLabel || "").trim() || null,
+    public_slug: (() => {
+      const raw = String(body.publicSlug || "").trim();
+      if (!raw) return null;
+      const normalized = normalizePublicSlug(raw);
+      return normalized || null;
+    })(),
+    offre_decouverte: String(body.offreDecouverte || "").trim() || null,
+    bio: String(body.bio || "").trim() || null,
+    contact_link: String(body.contactLink || "").trim() || null,
+    onboarding_completed_at: body.onboardingCompleted ? new Date().toISOString() : null,
     updated_at: new Date().toISOString(),
   };
 
@@ -90,7 +113,7 @@ export async function POST(request: NextRequest) {
     .from("human_members")
     .update(payload)
     .eq("id", member.id)
-    .select("id,first_name,last_name,metier,buddy_name,buddy_metier,trio_name,trio_metier,eclaireur_reward_mode,eclaireur_reward_percent,eclaireur_reward_fixed_eur,ville,phone,status")
+    .select("id,first_name,last_name,metier,buddy_name,buddy_metier,trio_name,trio_metier,eclaireur_reward_mode,eclaireur_reward_percent,eclaireur_reward_fixed_eur,ville,phone,status,sector_id,metier_label,public_slug,offre_decouverte,bio,contact_link,onboarding_completed_at")
     .maybeSingle();
 
   if (error) {

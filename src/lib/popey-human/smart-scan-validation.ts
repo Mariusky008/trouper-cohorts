@@ -168,6 +168,13 @@ export const smartScanProfileUpdateSchema = z
     eclaireurRewardFixedEur: z.string().trim().max(16).optional(),
     ville: z.string().trim().max(120).optional(),
     phone: z.string().trim().max(32).optional(),
+    sectorId: z.string().trim().max(80).optional(),
+    metierLabel: z.string().trim().max(160).optional(),
+    publicSlug: z.string().trim().max(160).optional(),
+    offreDecouverte: z.string().trim().max(160).optional(),
+    bio: z.string().trim().max(600).optional(),
+    contactLink: z.string().trim().max(400).optional(),
+    onboardingCompleted: z.boolean().optional(),
   })
   .strict();
 
