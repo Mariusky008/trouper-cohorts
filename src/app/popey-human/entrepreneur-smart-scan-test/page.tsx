@@ -974,6 +974,10 @@ export default function EntrepreneurSmartScanTestPage() {
   const [showInternalInvitesModal, setShowInternalInvitesModal] = useState(false);
   const [revealedAllianceProspectIds, setRevealedAllianceProspectIds] = useState<string[]>([]);
   const [isAllianceRevealRunning, setIsAllianceRevealRunning] = useState(false);
+  const [showAllianceMessageModal, setShowAllianceMessageModal] = useState(false);
+  const [selectedAllianceProspect, setSelectedAllianceProspect] = useState<SmartScanAllianceProspect | null>(null);
+  const [allianceMessageDraft, setAllianceMessageDraft] = useState("");
+  const [isAllianceMessageSending, setIsAllianceMessageSending] = useState(false);
   const allianceRevealTimeoutsRef = useRef<number[]>([]);
   const contactImportInputRef = useRef<HTMLInputElement | null>(null);
   const localDayNumber = useMemo(() => getLocalDayNumber(), []);
@@ -3323,9 +3327,26 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
     }
   }
 
-  async function inviteAllianceProspect(prospect: SmartScanAllianceProspect) {
+  function openAllianceMessageEditor(prospect: SmartScanAllianceProspect) {
+    setSelectedAllianceProspect(prospect);
+    setAllianceMessageDraft(buildAllianceInviteMessage(prospect));
+    setShowAllianceMessageModal(true);
+    setModalErrorMessage("");
+    setModalInfoMessage("");
+  }
+
+  function closeAllianceMessageEditor() {
+    setShowAllianceMessageModal(false);
+    setSelectedAllianceProspect(null);
+    setAllianceMessageDraft("");
+  }
+
+  async function inviteAllianceProspect(prospect: SmartScanAllianceProspect, messageDraftInput: string) {
     try {
-      const messageDraft = buildAllianceInviteMessage(prospect);
+      const messageDraft = String(messageDraftInput || "").trim();
+      if (!messageDraft) {
+        throw new Error("Le message est vide. Ajoute un texte avant envoi.");
+      }
       const response = await fetch("/api/popey-human/smart-scan/alliances/invite", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -3359,6 +3380,23 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
     } catch (error) {
       const message = error instanceof Error ? error.message : "Invitation alliance impossible.";
       setApiErrorMessage(message);
+      setModalErrorMessage(message);
+      throw error;
+    }
+  }
+
+  async function sendAllianceMessageFromModal() {
+    if (!selectedAllianceProspect) return;
+    try {
+      setIsAllianceMessageSending(true);
+      setModalErrorMessage("");
+      await inviteAllianceProspect(selectedAllianceProspect, allianceMessageDraft);
+      closeAllianceMessageEditor();
+      setModalInfoMessage("Message pret dans WhatsApp. Tu peux l envoyer quand tu veux.");
+    } catch {
+      // Errors are surfaced via modalErrorMessage/apiErrorMessage.
+    } finally {
+      setIsAllianceMessageSending(false);
     }
   }
 
@@ -3450,6 +3488,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
     setShowAlliancesPanel(false);
     setShowAllianceInvitesModal(false);
     setShowInternalInvitesModal(false);
+    setShowAllianceMessageModal(false);
     setShowMyProfilePanel(false);
     setSelectedEclaireurTemplateContactId(null);
     setEclaireurTemplates([]);
@@ -5724,7 +5763,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                     <button
                       type="button"
                       onClick={() => {
-                        void inviteAllianceProspect(prospect);
+                        openAllianceMessageEditor(prospect);
                       }}
                       className="h-11 w-full rounded-xl border border-fuchsia-300/35 bg-fuchsia-300/20 px-3 text-[11px] font-black uppercase tracking-[0.08em] text-fuchsia-100"
                     >
@@ -6255,6 +6294,59 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
               >
                 ⚡️ Reveiller le contact
               </button>
+            </div>
+          </section>
+        </div>
+      )}
+
+      {showAlliancesPanel && showAllianceMessageModal && selectedAllianceProspect && (
+        <div className="fixed inset-0 z-[74] flex items-center justify-center bg-black/75 px-3 py-8 backdrop-blur-md sm:px-4">
+          <section className="relative w-full max-w-xl overflow-hidden rounded-3xl border border-fuchsia-300/35 bg-gradient-to-br from-[#171B46] via-[#101A3D] to-[#1A1550] p-4 shadow-[0_0_50px_rgba(217,70,239,0.28)] sm:p-5">
+            <div className="pointer-events-none absolute -right-10 -top-12 h-36 w-36 rounded-full bg-fuchsia-300/25 blur-3xl animate-pulse" />
+            <div className="pointer-events-none absolute -bottom-12 -left-10 h-40 w-40 rounded-full bg-cyan-300/20 blur-3xl animate-pulse" />
+            <div className="relative">
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <p className="text-[11px] font-black uppercase tracking-[0.1em] text-fuchsia-100">Message WhatsApp</p>
+                  <p className="mt-1 text-sm font-black text-white">{selectedAllianceProspect.full_name}</p>
+                  <p className="text-[11px] text-cyan-100">{selectedAllianceProspect.metier} • {selectedAllianceProspect.city || "Ville inconnue"}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={closeAllianceMessageEditor}
+                  className="h-8 w-8 rounded-full border border-white/20 bg-white/10 text-xs text-white/85"
+                  aria-label="Fermer"
+                >
+                  ✕
+                </button>
+              </div>
+              <p className="mt-2 text-[11px] text-white/70">Tu peux relire et modifier le message avant ouverture de WhatsApp.</p>
+              <textarea
+                value={allianceMessageDraft}
+                onChange={(event) => setAllianceMessageDraft(event.target.value)}
+                rows={10}
+                className="mt-3 w-full resize-none rounded-2xl border border-white/20 bg-black/30 px-3 py-2 text-[12px] text-white placeholder:text-white/45"
+                placeholder="Ecris ton message..."
+              />
+              <div className="mt-3 flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={closeAllianceMessageEditor}
+                  className="h-10 rounded-xl border border-white/20 bg-white/10 px-3 text-[11px] font-black uppercase tracking-[0.08em] text-white/80"
+                >
+                  Annuler
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    void sendAllianceMessageFromModal();
+                  }}
+                  disabled={isAllianceMessageSending || !String(allianceMessageDraft || "").trim()}
+                  className="h-10 flex-1 rounded-xl border border-fuchsia-300/35 bg-fuchsia-300/20 px-3 text-[11px] font-black uppercase tracking-[0.08em] text-fuchsia-100 disabled:opacity-60"
+                >
+                  {isAllianceMessageSending ? "Preparation..." : "Ouvrir WhatsApp avec ce message"}
+                </button>
+              </div>
             </div>
           </section>
         </div>
