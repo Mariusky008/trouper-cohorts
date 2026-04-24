@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createClient as createSupabaseBrowserClient } from "@/lib/supabase/client";
 
@@ -838,13 +838,11 @@ export default function EntrepreneurSmartScanTestPage() {
   const [launchingAction, setLaunchingAction] = useState<Exclude<DailyCategory, "passer" | "qualifier"> | null>(null);
   const [qualifierHeat, setQualifierHeat] = useState<HeatLevel | null>(null);
   const [hasChosenHeat, setHasChosenHeat] = useState(false);
-  const [qualifierStep, setQualifierStep] = useState<1 | 2 | 3 | 4>(1);
+  const [qualifierStep, setQualifierStep] = useState<1 | 2 | 3>(1);
+  const [qualifierDirection, setQualifierDirection] = useState<1 | -1>(1);
+  const [communityTagPage, setCommunityTagPage] = useState(0);
   const [opportunityChoice, setOpportunityChoice] = useState<(typeof OPPORTUNITY_OPTIONS)[number]["id"] | null>(null);
   const [communityTags, setCommunityTags] = useState<Array<(typeof COMMUNITY_OPTIONS)[number]["id"]>>([]);
-  const opportunitySectionRef = useRef<HTMLDivElement | null>(null);
-  const temperatureSectionRef = useRef<HTMLDivElement | null>(null);
-  const communitySectionRef = useRef<HTMLDivElement | null>(null);
-  const saveSectionRef = useRef<HTMLDivElement | null>(null);
   const [sentCount, setSentCount] = useState(0);
   const [showReward, setShowReward] = useState(false);
   const [successPulse, setSuccessPulse] = useState(false);
@@ -954,6 +952,12 @@ export default function EntrepreneurSmartScanTestPage() {
   const [selectedIncomingReferralId, setSelectedIncomingReferralId] = useState<string | null>(null);
   const [incomingSignedAmount, setIncomingSignedAmount] = useState("");
   const [isIncomingReferralStatusUpdating, setIsIncomingReferralStatusUpdating] = useState(false);
+  const [showPotentialBreakdownSheet, setShowPotentialBreakdownSheet] = useState(false);
+  const [showGainPotentialSheet, setShowGainPotentialSheet] = useState(false);
+  const [gainTooltipOpenCount, setGainTooltipOpenCount] = useState(0);
+  const [showMessagePersonalizationField, setShowMessagePersonalizationField] = useState(false);
+  const [messagePersonalizationNote, setMessagePersonalizationNote] = useState("");
+  const [isEditingMessageDraft, setIsEditingMessageDraft] = useState(false);
   const [isRemovingEclaireurId, setIsRemovingEclaireurId] = useState<string | null>(null);
   const [showQualificationNeededPopup, setShowQualificationNeededPopup] = useState(false);
   const [copiedHistoryEntryKey, setCopiedHistoryEntryKey] = useState<string | null>(null);
@@ -1081,6 +1085,7 @@ export default function EntrepreneurSmartScanTestPage() {
     ...actionEngine.byAction[action],
     isPriority: actionEngine.priorityAction === action,
   }));
+  const primaryDailyAction = actionEngine.priorityAction || actionEngine.order[0];
   const quickLabelMap = useMemo(
     () =>
       Object.fromEntries(
@@ -1299,10 +1304,15 @@ export default function EntrepreneurSmartScanTestPage() {
         : "Choisis une action pour voir le template pre-rempli.",
     [selectedAction, scopedActionContact, scopedActionQualifier, myProfile],
   );
-  const promptContextPreview = buildPromptCompliments(currentQualifier);
   const liveEstimatedGain = getEstimatedGain(opportunityChoice, communityTags);
   const livePotentialLabel = opportunityChoice || communityTags.length > 0 ? liveEstimatedGain : "?";
   const canSaveQualifier = hasChosenHeat && opportunityChoice !== null && communityTags.length > 0;
+  const qualifierOpportunityOptions = useMemo(() => [...OPPORTUNITY_OPTIONS], []);
+  const qualifierProgressPercent = Math.round((qualifierStep / 3) * 100);
+  const selectedActionFirstName = scopedActionContact.name.split(" ")[0] || "ce contact";
+  const gainTooltipHintVisible = gainTooltipOpenCount < 3;
+  const communityTagPageCount = Math.ceil(COMMUNITY_OPTIONS.length / 6);
+  const visibleCommunityOptions = COMMUNITY_OPTIONS.slice(communityTagPage * 6, communityTagPage * 6 + 6);
   const liveQualifierSignals = [
     opportunityChoice ? quickLabelMap[opportunityChoice] : null,
     ...communityTags.slice(0, 2).map((id) => quickLabelMap[id]),
@@ -1376,6 +1386,10 @@ export default function EntrepreneurSmartScanTestPage() {
     dailyTargetPotential > 0
       ? Math.max(0, Math.round(dailyTargetPotential * (remainingForGoal / dailyGoal)))
       : remainingForGoal * 75;
+  const dailyPotentialAverage =
+    dailyQueueCount > 0
+      ? Math.max(0, Math.round(latentPotential / dailyQueueCount))
+      : 0;
   const sentTodayCount = activatedFromHistory;
   const responsesTodayCount = historyEntries.filter((entry) => entry.outcomeStatus === "replied" && entry.atMs >= todayStartMs).length;
   const conversionsTodayCount = historyEntries.filter((entry) => entry.outcomeStatus === "converted" && entry.atMs >= todayStartMs).length;
@@ -2071,10 +2085,6 @@ export default function EntrepreneurSmartScanTestPage() {
     }
   }
 
-  function scrollIntoViewSmooth(ref: React.RefObject<HTMLDivElement | null>) {
-    ref.current?.scrollIntoView({ behavior: "smooth", block: "center" });
-  }
-
   function getEstimatedGain(
     opportunity: (typeof OPPORTUNITY_OPTIONS)[number]["id"] | null,
     community: Array<(typeof COMMUNITY_OPTIONS)[number]["id"]>,
@@ -2583,6 +2593,11 @@ export default function EntrepreneurSmartScanTestPage() {
 
   function triggerAction(action: DailyCategory) {
     if (launchingAction) return;
+    if (typeof navigator !== "undefined" && typeof navigator.vibrate === "function") {
+      navigator.vibrate(20);
+    }
+    setSuccessPulse(true);
+    setTimeout(() => setSuccessPulse(false), 180);
     if (action === "passer") {
       setPassedContactIds((previous) => Array.from(new Set([current.id, ...previous])));
       finalizeAction(action, 200, {
@@ -2622,6 +2637,8 @@ export default function EntrepreneurSmartScanTestPage() {
       setQualifierHeat(null);
       setHasChosenHeat(false);
       setQualifierStep(1);
+      setQualifierDirection(1);
+      setCommunityTagPage(0);
       setOpportunityChoice(null);
       setCommunityTags([]);
       setDraftMessage("");
@@ -2630,6 +2647,9 @@ export default function EntrepreneurSmartScanTestPage() {
       setAiGenerationSource(null);
       setAiPromptVersion(null);
       setAiGeneratedAt(null);
+      setShowMessagePersonalizationField(false);
+      setMessagePersonalizationNote("");
+      setIsEditingMessageDraft(false);
     }
     setShowTemplateModal(true);
   }
@@ -2803,10 +2823,27 @@ export default function EntrepreneurSmartScanTestPage() {
   }
 
   useEffect(() => {
-    if (qualifierStep >= 3 && canSaveQualifier) {
-      scrollIntoViewSmooth(saveSectionRef);
+    if (typeof window === "undefined") return;
+    const raw = window.localStorage.getItem("popey:gain-potential-tooltip-opens");
+    const parsed = Number(raw || "0");
+    if (Number.isFinite(parsed) && parsed > 0) {
+      setGainTooltipOpenCount(parsed);
     }
-  }, [qualifierStep, canSaveQualifier]);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem("popey:gain-potential-tooltip-opens", String(gainTooltipOpenCount));
+  }, [gainTooltipOpenCount]);
+
+  useEffect(() => {
+    if (selectedAction !== "qualifier" || !showTemplateModal) return;
+    if (qualifierStep !== 1) return;
+    if (qualifierOpportunityOptions.length !== 1) return;
+    setOpportunityChoice(qualifierOpportunityOptions[0].id);
+    setQualifierDirection(1);
+    setQualifierStep(2);
+  }, [selectedAction, showTemplateModal, qualifierStep, qualifierOpportunityOptions]);
 
   useEffect(() => {
     if (!showContactProfile || !profileContact) return;
@@ -2827,6 +2864,11 @@ export default function EntrepreneurSmartScanTestPage() {
     if (action === "exclients") return "Script Ex-Clients";
     if (action === "qualifier") return "Qualifier la fiche";
     return "Template";
+  }
+
+  function openGainPotentialHelp() {
+    setShowGainPotentialSheet(true);
+    setGainTooltipOpenCount((prev) => prev + 1);
   }
 
   function toggleFavorite(contactId: string) {
@@ -4357,7 +4399,13 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
               </div>
               <div className="flex flex-wrap items-center gap-2">
                 <p className="rounded-full border border-emerald-300/35 bg-emerald-300/12 px-3 py-1 text-[11px] font-black uppercase tracking-[0.08em] text-emerald-100">
-                  Potentiel du jour : ~{latentPotential}€
+                  <button
+                    type="button"
+                    onClick={() => setShowPotentialBreakdownSheet(true)}
+                    className="rounded-full text-[11px] font-black uppercase tracking-[0.08em] text-emerald-100"
+                  >
+                    Potentiel du jour : ~{latentPotential}€
+                  </button>
                 </p>
                 <button
                   type="button"
@@ -4713,15 +4761,20 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                 {actionButtons.map((button) => {
                   const theme = ACTION_BUTTON_THEMES[button.action];
                   const launching = launchingAction === button.action;
-                  const shouldPulse = isQualified && (actionGlowContactId === current.id || button.isPriority);
+                  const isPrimary = button.action === primaryDailyAction;
+                  const shouldPulse = isQualified && (actionGlowContactId === current.id || isPrimary);
                   return (
                     <button
                       key={button.action}
                       type="button"
                       onClick={() => triggerAction(button.action)}
-                      className={`relative overflow-hidden h-20 rounded-2xl border ${theme.buttonClass} ${
+                      className={`relative overflow-hidden rounded-2xl border transition ${
+                        isPrimary
+                          ? `h-20 ${theme.buttonClass}`
+                          : "h-16 border-white/25 bg-white/5 text-white/80 opacity-75 hover:opacity-95"
+                      } ${
                         shouldPulse ? theme.idlePulseClass : ""
-                      } ${launching ? theme.launchRingClass : ""} ${button.isPriority ? "ring-1 ring-white/30" : ""}`}
+                      } ${launching ? theme.launchRingClass : ""} ${isPrimary ? "ring-1 ring-white/30" : ""}`}
                     >
                       {launching && (
                         <>
@@ -4747,8 +4800,12 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                           />
                         </>
                       )}
-                      <span className={`block text-base font-black uppercase tracking-wide ${theme.titleClass}`}>{button.title}</span>
-                      <span className={`mt-0.5 block text-[11px] font-semibold ${theme.subtitleClass}`}>{button.subtitle}</span>
+                      <span className={`block ${isPrimary ? "text-base" : "text-[13px]"} font-black uppercase tracking-wide ${isPrimary ? theme.titleClass : "text-white/90"}`}>
+                        {button.title}
+                      </span>
+                      <span className={`mt-0.5 block text-[11px] font-semibold ${isPrimary ? theme.subtitleClass : "text-white/70"}`}>
+                        {button.subtitle}
+                      </span>
                     </button>
                   );
                 })}
@@ -6357,7 +6414,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
           <section className="w-full max-w-lg max-h-[92vh] overflow-y-auto rounded-3xl border border-white/15 bg-[#0E1430] p-4">
             <div className="relative flex items-center justify-center">
               <p className="text-sm font-black tracking-[0.05em] text-cyan-200 text-center">
-                {selectedAction === "qualifier" ? "Qualifiez ce contact" : "Message pret a envoyer"}
+                {selectedAction === "qualifier" ? "Qualifiez ce contact" : `Message pour ${selectedActionFirstName}`}
               </p>
               <button
                 type="button"
@@ -6410,8 +6467,10 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                       <p className="mt-0.5 text-sm text-white/70">📍 {current.city}</p>
                     </div>
                   </div>
-                  <motion.div
+                  <motion.button
                     key={`hero-gain-${livePotentialLabel}`}
+                    type="button"
+                    onClick={openGainPotentialHelp}
                     initial={{ scale: 0.9, opacity: 0.4 }}
                     animate={{ scale: [1, 1.04, 1], opacity: 1 }}
                     transition={{ duration: 0.55, ease: "easeOut" }}
@@ -6419,7 +6478,10 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                   >
                     <p className="text-[10px] font-black uppercase tracking-[0.12em]">💰 Gain potentiel</p>
                     <p className="mt-0.5 text-base font-black">🔥 {livePotentialLabel}</p>
-                  </motion.div>
+                    {gainTooltipHintVisible && (
+                      <p className="mt-1 text-[10px] font-semibold text-white/85">Touchez pour comprendre</p>
+                    )}
+                  </motion.button>
                 </div>
 
                 <div className="mt-3 h-px bg-white/15" />
@@ -6443,123 +6505,200 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
             )}
             {selectedAction === "qualifier" ? (
               <div className="mt-3 space-y-3">
-                <div
-                  ref={opportunitySectionRef}
-                  className="rounded-2xl border border-white/15 bg-black/25 p-3 transition-all duration-300"
-                >
-                  <p className="text-[11px] font-black uppercase tracking-[0.12em] text-white/70">� Type d opportunite - 1 choix</p>
-                  <div className="mt-2 grid grid-cols-2 gap-2">
-                    {OPPORTUNITY_OPTIONS.map((option) => (
-                      <button
-                        key={option.id}
-                        type="button"
-                        onClick={() => {
-                          setOpportunityChoice(option.id);
-                          if (qualifierStep < 2) {
-                            setQualifierStep(2);
-                            setTimeout(() => scrollIntoViewSmooth(temperatureSectionRef), 180);
-                          }
-                        }}
-                        className={`h-10 rounded-xl px-2 text-[11px] font-black ${
-                          opportunityChoice === option.id ? "bg-emerald-300 text-emerald-950 ring-2 ring-emerald-200/70" : "bg-white/10 text-white/85"
-                        }`}
-                      >
-                        {option.label}
-                      </button>
+                <div className="rounded-2xl border border-white/15 bg-black/25 p-3">
+                  <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-[0.12em] text-white/65">
+                    <span>Etape {qualifierStep}/3</span>
+                    <span>{qualifierProgressPercent}%</span>
+                  </div>
+                  <div className="mt-2 grid grid-cols-3 gap-2">
+                    {[1, 2, 3].map((step) => (
+                      <div
+                        key={`qualifier-step-${step}`}
+                        className={`h-1.5 rounded-full ${step <= qualifierStep ? "bg-emerald-300" : "bg-white/15"}`}
+                      />
                     ))}
                   </div>
                 </div>
-
-                <div
-                  ref={temperatureSectionRef}
-                  className={`rounded-2xl border border-white/15 bg-black/25 p-3 transition-all duration-300 ${qualifierStep >= 2 ? "opacity-100" : "opacity-35 pointer-events-none"}`}
-                >
-                  <p className="text-[12px] font-black uppercase tracking-[0.14em] text-cyan-100">🌡 Temperature du contact</p>
-                  <div className="mt-2 grid grid-cols-3 gap-2">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setQualifierHeat("froid");
-                        setHasChosenHeat(true);
-                        if (qualifierStep < 3) {
-                          setQualifierStep(3);
-                          setTimeout(() => scrollIntoViewSmooth(communitySectionRef), 180);
-                        }
-                      }}
-                      className={`h-11 rounded-xl text-sm font-black ${qualifierHeat === "froid" ? "bg-cyan-300 text-[#13253D] ring-2 ring-cyan-200/60" : "bg-white/10 text-white/80"}`}
+                <AnimatePresence mode="wait" initial={false}>
+                  {qualifierStep === 1 && (
+                    <motion.div
+                      key="qualifier-step-1"
+                      initial={{ opacity: 0, x: qualifierDirection > 0 ? 36 : -36 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: qualifierDirection > 0 ? -36 : 36 }}
+                      transition={{ duration: 0.22, ease: "easeOut" }}
+                      className="rounded-2xl border border-white/15 bg-black/25 p-3"
                     >
-                      ❄️ Froid
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setQualifierHeat("tiede");
-                        setHasChosenHeat(true);
-                        if (qualifierStep < 3) {
-                          setQualifierStep(3);
-                          setTimeout(() => scrollIntoViewSmooth(communitySectionRef), 180);
-                        }
-                      }}
-                      className={`h-11 rounded-xl text-sm font-black ${qualifierHeat === "tiede" ? "bg-amber-300 text-[#2C230E] ring-2 ring-amber-200/60" : "bg-white/10 text-white/80"}`}
+                      <p className="text-[12px] font-black uppercase tracking-[0.12em] text-cyan-100">Etape 1 · Type d opportunite</p>
+                      <p className="mt-1 text-[11px] text-white/70">Choisis 1 seule option.</p>
+                      <div className="mt-2 grid grid-cols-2 gap-2">
+                        {qualifierOpportunityOptions.map((option) => (
+                          <button
+                            key={option.id}
+                            type="button"
+                            onClick={() => {
+                              setOpportunityChoice(option.id);
+                              setQualifierDirection(1);
+                              setQualifierStep(2);
+                            }}
+                            className={`h-11 rounded-[22px] px-[14px] text-[14px] font-black ${
+                              opportunityChoice === option.id
+                                ? "bg-emerald-300 text-emerald-950 ring-2 ring-emerald-200/70"
+                                : "bg-white/10 text-white/85"
+                            }`}
+                          >
+                            {option.label}
+                          </button>
+                        ))}
+                      </div>
+                    </motion.div>
+                  )}
+                  {qualifierStep === 2 && (
+                    <motion.div
+                      key="qualifier-step-2"
+                      initial={{ opacity: 0, x: qualifierDirection > 0 ? 36 : -36 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: qualifierDirection > 0 ? -36 : 36 }}
+                      transition={{ duration: 0.22, ease: "easeOut" }}
+                      className="rounded-2xl border border-white/15 bg-black/25 p-3"
                     >
-                      ⚡ Tiede
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setQualifierHeat("brulant");
-                        setHasChosenHeat(true);
-                        if (qualifierStep < 3) {
-                          setQualifierStep(3);
-                          setTimeout(() => scrollIntoViewSmooth(communitySectionRef), 180);
-                        }
-                      }}
-                      className={`h-11 rounded-xl text-sm font-black ${qualifierHeat === "brulant" ? "bg-orange-400 text-[#321A0E] ring-2 ring-orange-200/60" : "bg-white/10 text-white/80"}`}
-                    >
-                      🔥 Brulant
-                    </button>
-                  </div>
-                </div>
-
-                <div
-                  ref={communitySectionRef}
-                  className={`rounded-2xl border border-white/15 bg-black/25 p-3 transition-all duration-300 ${qualifierStep >= 3 ? "opacity-100" : "opacity-35 pointer-events-none"}`}
-                >
-                  <p className="text-[11px] font-black uppercase tracking-[0.12em] text-white/70">⚡ Contributions rapides - multi</p>
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {COMMUNITY_OPTIONS.map((option) => {
-                      const active = communityTags.includes(option.id);
-                      return (
+                      <p className="text-[12px] font-black uppercase tracking-[0.12em] text-cyan-100">Etape 2 · Temperature du contact</p>
+                      <div className="mt-2 flex items-center gap-2">
                         <button
-                          key={option.id}
                           type="button"
-                          onClick={() =>
-                            setCommunityTags((prev) => (prev.includes(option.id) ? prev.filter((id) => id !== option.id) : [...prev, option.id]))
-                          }
-                          className={`rounded-full px-3 py-2 text-[11px] font-black transition ${
-                            active ? "bg-violet-300 text-violet-950 ring-2 ring-violet-200/70" : "bg-white/85 text-[#1B1F34]"
+                          onClick={() => {
+                            setQualifierHeat("froid");
+                            setHasChosenHeat(true);
+                            setQualifierDirection(1);
+                            setCommunityTagPage(0);
+                            setQualifierStep(3);
+                          }}
+                          className={`h-10 flex-1 rounded-full px-2 text-center text-[13px] font-black ${
+                            qualifierHeat === "froid" ? "bg-cyan-300 text-[#13253D]" : "bg-white/10 text-white/80"
                           }`}
                         >
-                          {active ? "✅ " : ""}{option.label}
+                          ❄️ Froid
                         </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                <div ref={saveSectionRef}>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowTemplateModal(false);
-                      saveQualifierAndReturn();
-                    }}
-                    disabled={!canSaveQualifier}
-                    className="h-11 w-full rounded-xl bg-gradient-to-r from-emerald-400 to-emerald-300 text-xs font-black uppercase tracking-wide text-[#11252C] disabled:opacity-35"
-                  >
-                    Enregistrer la fiche
-                  </button>
-                </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setQualifierHeat("tiede");
+                            setHasChosenHeat(true);
+                            setQualifierDirection(1);
+                            setCommunityTagPage(0);
+                            setQualifierStep(3);
+                          }}
+                          className={`h-10 flex-1 rounded-full px-2 text-center text-[13px] font-black ${
+                            qualifierHeat === "tiede" ? "bg-amber-300 text-[#2C230E]" : "bg-white/10 text-white/80"
+                          }`}
+                        >
+                          ⚡ Tiede
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setQualifierHeat("brulant");
+                            setHasChosenHeat(true);
+                            setQualifierDirection(1);
+                            setCommunityTagPage(0);
+                            setQualifierStep(3);
+                          }}
+                          className={`h-10 flex-1 rounded-full px-2 text-center text-[13px] font-black ${
+                            qualifierHeat === "brulant" ? "bg-orange-400 text-[#321A0E]" : "bg-white/10 text-white/80"
+                          }`}
+                        >
+                          🔥 Brulant
+                        </button>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setQualifierDirection(-1);
+                          setQualifierStep(1);
+                        }}
+                        className="mt-3 h-10 rounded-xl border border-white/20 bg-white/10 px-3 text-[11px] font-black uppercase tracking-[0.08em] text-white/85"
+                      >
+                        Retour etape 1
+                      </button>
+                    </motion.div>
+                  )}
+                  {qualifierStep === 3 && (
+                    <motion.div
+                      key="qualifier-step-3"
+                      initial={{ opacity: 0, x: qualifierDirection > 0 ? 36 : -36 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: qualifierDirection > 0 ? -36 : 36 }}
+                      transition={{ duration: 0.22, ease: "easeOut" }}
+                      className="rounded-2xl border border-white/15 bg-black/25 p-3"
+                    >
+                      <p className="text-[12px] font-black uppercase tracking-[0.12em] text-cyan-100">Etape 3 · Tags comportementaux</p>
+                      <p className="mt-1 text-[11px] text-white/70">Ajoute le contexte utile (multi-selection).</p>
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {visibleCommunityOptions.map((option) => {
+                          const active = communityTags.includes(option.id);
+                          return (
+                            <button
+                              key={option.id}
+                              type="button"
+                              onClick={() =>
+                                setCommunityTags((prev) => (prev.includes(option.id) ? prev.filter((id) => id !== option.id) : [...prev, option.id]))
+                              }
+                              className={`rounded-full px-3 py-2 text-[11px] font-black transition ${
+                                active ? "bg-violet-300 text-violet-950 ring-2 ring-violet-200/70" : "bg-white/85 text-[#1B1F34]"
+                              }`}
+                            >
+                              {active ? "✅ " : ""}
+                              {option.label}
+                            </button>
+                          );
+                        })}
+                      </div>
+                      {communityTagPageCount > 1 && (
+                        <div className="mt-2 flex items-center justify-between gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setCommunityTagPage((prev) => Math.max(0, prev - 1))}
+                            disabled={communityTagPage === 0}
+                            className="h-8 rounded-lg border border-white/20 bg-white/10 px-3 text-[10px] font-black uppercase tracking-[0.08em] text-white/80 disabled:opacity-40"
+                          >
+                            Precedent
+                          </button>
+                          <p className="text-[10px] font-black uppercase tracking-[0.08em] text-white/70">
+                            Tags {communityTagPage + 1}/{communityTagPageCount}
+                          </p>
+                          <button
+                            type="button"
+                            onClick={() => setCommunityTagPage((prev) => Math.min(communityTagPageCount - 1, prev + 1))}
+                            disabled={communityTagPage >= communityTagPageCount - 1}
+                            className="h-8 rounded-lg border border-white/20 bg-white/10 px-3 text-[10px] font-black uppercase tracking-[0.08em] text-white/80 disabled:opacity-40"
+                          >
+                            Suivant
+                          </button>
+                        </div>
+                      )}
+                      <div className="mt-3 grid grid-cols-1 gap-2">
+                        <button
+                          type="button"
+                          onClick={saveQualifierAndReturn}
+                          disabled={!canSaveQualifier}
+                          className="h-11 w-full rounded-xl bg-gradient-to-r from-emerald-400 to-emerald-300 text-xs font-black uppercase tracking-wide text-[#11252C] disabled:opacity-35"
+                        >
+                          Enregistrer la fiche
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setQualifierDirection(-1);
+                            setQualifierStep(2);
+                          }}
+                          className="h-10 rounded-xl border border-white/20 bg-white/10 px-3 text-[11px] font-black uppercase tracking-[0.08em] text-white/85"
+                        >
+                          Retour etape 2
+                        </button>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
                 <button
                   type="button"
                   onClick={skipQualifierUnknown}
@@ -6576,7 +6715,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                 </p>
                 {buildPromptCompliments(scopedActionQualifier).length > 0 && (
                   <p className="mt-2 rounded-lg border border-emerald-300/30 bg-emerald-300/10 px-2 py-1 text-xs text-emerald-100">
-                    Variables IA: {buildPromptCompliments(scopedActionQualifier).join(" • ")}
+                    Signaux automatiques: {buildPromptCompliments(scopedActionQualifier).join(" • ")}
                   </p>
                 )}
                 <div className="mt-2 flex items-center gap-2">
@@ -6596,16 +6735,65 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                 </div>
                 <button
                   type="button"
+                  onClick={() => setShowMessagePersonalizationField((prev) => !prev)}
+                  className="mt-2 h-9 rounded-xl border border-white/20 bg-white/10 px-3 text-[11px] font-black uppercase tracking-[0.08em] text-white/85"
+                >
+                  Personnaliser le message (optionnel)
+                </button>
+                {showMessagePersonalizationField && (
+                  <div className="mt-2 space-y-2">
+                    <textarea
+                      value={messagePersonalizationNote}
+                      onChange={(event) => setMessagePersonalizationNote(event.target.value)}
+                      placeholder="Ex: elle cherche un coach pour la rentree"
+                      className="min-h-20 w-full rounded-xl border border-white/20 bg-black/30 px-3 py-2 text-sm"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const note = String(messagePersonalizationNote || "").trim();
+                        if (!note) return;
+                        if (draftMessage.includes(note)) return;
+                        setDraftMessage((prev) => `${String(prev || "").trim()}\n\nDetail a mentionner: ${note}`.trim());
+                        setMessagePersonalizationNote("");
+                        setIsEditingMessageDraft(true);
+                      }}
+                      className="h-9 rounded-xl border border-violet-300/35 bg-violet-300/15 px-3 text-[11px] font-black uppercase tracking-[0.08em] text-violet-100"
+                    >
+                      Ajouter ce detail au message
+                    </button>
+                  </div>
+                )}
+                <button
+                  type="button"
                   onClick={saveCurrentMessageAsDefault}
                   className="mt-2 h-9 rounded-xl border border-emerald-300/40 bg-emerald-300/15 px-3 text-[11px] font-black uppercase tracking-[0.08em] text-emerald-100"
                 >
                   Enregistrer comme message par defaut
                 </button>
-                <textarea
-                  value={draftMessage}
-                  onChange={(event) => setDraftMessage(event.target.value)}
-                  className="mt-3 min-h-36 w-full rounded-2xl border border-white/15 bg-black/25 px-3 py-3 text-sm"
-                />
+                <div className="mt-3 rounded-2xl border border-white/15 bg-black/25 p-3">
+                  <div className="mb-2 flex items-center justify-between">
+                    <p className="text-[11px] font-black uppercase tracking-[0.1em] text-white/70">Apercu du message</p>
+                    <button
+                      type="button"
+                      onClick={() => setIsEditingMessageDraft((prev) => !prev)}
+                      className="h-8 rounded-lg border border-cyan-300/35 bg-cyan-300/15 px-3 text-[10px] font-black uppercase tracking-[0.08em] text-cyan-100"
+                    >
+                      {isEditingMessageDraft ? "Voir apercu" : "Modifier"}
+                    </button>
+                  </div>
+                  {isEditingMessageDraft ? (
+                    <textarea
+                      value={draftMessage}
+                      onChange={(event) => setDraftMessage(event.target.value)}
+                      className="min-h-[140px] w-full rounded-xl border border-white/20 bg-black/35 px-3 py-3 text-[15px] leading-relaxed text-white"
+                    />
+                  ) : (
+                    <div className="min-h-[140px] max-h-[220px] overflow-y-auto rounded-xl border border-white/10 bg-black/20 px-3 py-3 text-[15px] leading-relaxed text-white/95 whitespace-pre-wrap">
+                      {draftMessage}
+                    </div>
+                  )}
+                </div>
                 <div className="mt-3 grid grid-cols-2 gap-2">
                 <button
                   type="button"
@@ -6627,14 +6815,14 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                     });
                     setActionFromProfileContactId(null);
                   }}
-                  className="h-10 rounded-xl border border-white/20 bg-white/10 text-[11px] font-black uppercase tracking-wide text-white/80"
+                  className="h-11 rounded-xl border border-white/40 bg-transparent px-5 text-[11px] font-black uppercase tracking-wide text-white/90"
                 >
-                  Valider sans envoi
+                  Enregistrer sans envoyer
                 </button>
                 <button
                   type="button"
                   onClick={sendOnWhatsApp}
-                  className="h-11 rounded-xl bg-gradient-to-r from-emerald-400 to-cyan-300 text-xs font-black uppercase tracking-wide text-[#11252C]"
+                  className="h-11 rounded-xl bg-gradient-to-r from-emerald-400 to-cyan-300 px-6 text-xs font-black uppercase tracking-wide text-[#11252C]"
                 >
                   Envoyer sur WhatsApp
                 </button>
@@ -6683,6 +6871,52 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
               Voir les actions possibles
             </button>
           </motion.section>
+        </div>
+      )}
+
+      {showPotentialBreakdownSheet && (
+        <div className="fixed inset-0 z-[56] bg-black/55 backdrop-blur-sm flex items-end justify-center px-3 pb-4 sm:items-center sm:pb-0">
+          <section className="w-full max-w-md rounded-3xl border border-emerald-300/30 bg-[#0E1430] p-4">
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-black text-emerald-100">Potentiel du jour</p>
+              <button
+                type="button"
+                onClick={() => setShowPotentialBreakdownSheet(false)}
+                className="h-8 w-8 rounded-full border border-white/20 bg-white/10 text-xs"
+              >
+                ✕
+              </button>
+            </div>
+            <p className="mt-2 text-sm text-white/85">
+              Estimation: {dailyQueueCount} contacts x ~{dailyPotentialAverage}€ de commission moyenne.
+            </p>
+            <p className="mt-1 text-xs text-white/70">
+              Potentiel restant aujourd hui: ~{latentPotential}€. Cette valeur se met a jour avec ta progression.
+            </p>
+          </section>
+        </div>
+      )}
+
+      {showGainPotentialSheet && (
+        <div className="fixed inset-0 z-[56] bg-black/55 backdrop-blur-sm flex items-end justify-center px-3 pb-4 sm:items-center sm:pb-0">
+          <section className="w-full max-w-md rounded-3xl border border-amber-300/35 bg-[#0E1430] p-4">
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-black text-amber-100">Gain potentiel 🔥</p>
+              <button
+                type="button"
+                onClick={() => setShowGainPotentialSheet(false)}
+                className="h-8 w-8 rounded-full border border-white/20 bg-white/10 text-xs"
+              >
+                ✕
+              </button>
+            </div>
+            <p className="mt-2 text-sm text-white/85">
+              Le niveau est calcule via le type d opportunite + les tags comportementaux que tu selectionnes.
+            </p>
+            <p className="mt-1 text-xs text-white/70">
+              Plus le signal est fort (client ideal, recommandation fiable, etc.), plus le gain estime monte.
+            </p>
+          </section>
         </div>
       )}
 
