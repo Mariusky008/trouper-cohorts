@@ -303,6 +303,7 @@ type SmartScanAllianceInvite = {
   clicked_at?: string | null;
   sent_at?: string | null;
 };
+type AllianceDirectoryMode = "external" | "internal";
 
 const PENDING_WHATSAPP_CONTEXT_KEY = "popey-human:smart-scan:pending-whatsapp-context";
 const SMART_SCAN_SESSION_KEY = "popey-human:smart-scan:scan-session";
@@ -960,11 +961,15 @@ export default function EntrepreneurSmartScanTestPage() {
   const [allianceSort, setAllianceSort] = useState<"probability" | "fit" | "distance" | "recent">("probability");
   const [isAlliancesLoading, setIsAlliancesLoading] = useState(false);
   const [isAlliancesSearching, setIsAlliancesSearching] = useState(false);
+  const [allianceDirectoryMode, setAllianceDirectoryMode] = useState<AllianceDirectoryMode>("external");
   const [allianceCity, setAllianceCity] = useState("");
   const [allianceSourceMetier, setAllianceSourceMetier] = useState("");
   const [allianceTargetMetiersInput, setAllianceTargetMetiersInput] = useState("");
   const [allianceRadiusKm, setAllianceRadiusKm] = useState("15");
   const [showAllianceInvitesModal, setShowAllianceInvitesModal] = useState(false);
+  const [internalAllianceInvites, setInternalAllianceInvites] = useState<SmartScanAllianceInvite[]>([]);
+  const [isInternalInvitesLoading, setIsInternalInvitesLoading] = useState(false);
+  const [showInternalInvitesModal, setShowInternalInvitesModal] = useState(false);
   const [revealedAllianceProspectIds, setRevealedAllianceProspectIds] = useState<string[]>([]);
   const [isAllianceRevealRunning, setIsAllianceRevealRunning] = useState(false);
   const allianceRevealTimeoutsRef = useRef<number[]>([]);
@@ -1166,6 +1171,7 @@ export default function EntrepreneurSmartScanTestPage() {
     const visible = new Set(revealedAllianceProspectIds);
     return sortedAllianceProspects.filter((item) => visible.has(item.id));
   }, [isAllianceRevealRunning, revealedAllianceProspectIds, sortedAllianceProspects]);
+  const activeAllianceInvites = allianceDirectoryMode === "internal" ? internalAllianceInvites : allianceInvites;
   const scopedActionContact = actionFromProfileContactId
     ? allContactsData.find((contact) => contact.id === actionFromProfileContactId) || current
     : current;
@@ -1220,7 +1226,8 @@ export default function EntrepreneurSmartScanTestPage() {
     async function loadAlliancesProspects() {
       try {
         setIsAlliancesLoading(true);
-        const response = await fetch("/api/popey-human/smart-scan/alliances/prospects", {
+        const provider = allianceDirectoryMode === "internal" ? "internal" : "b2b";
+        const response = await fetch(`/api/popey-human/smart-scan/alliances/prospects?provider=${provider}`, {
           method: "GET",
           cache: "no-store",
         });
@@ -1246,11 +1253,15 @@ export default function EntrepreneurSmartScanTestPage() {
       }
     }
     void loadAlliancesProspects();
-    void loadAllianceInvites();
+    if (allianceDirectoryMode === "internal") {
+      void loadInternalAllianceInvites();
+    } else {
+      void loadAllianceInvites();
+    }
     return () => {
       cancelled = true;
     };
-  }, [showAlliancesPanel]);
+  }, [showAlliancesPanel, allianceDirectoryMode]);
   const template = useMemo(
     () =>
       selectedAction
@@ -3207,10 +3218,13 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
   }, []);
 
   async function loadAllianceProspectsSnapshot() {
-    const response = await fetch("/api/popey-human/smart-scan/alliances/prospects", {
+    const response = await fetch(
+      `/api/popey-human/smart-scan/alliances/prospects?provider=${allianceDirectoryMode === "internal" ? "internal" : "b2b"}`,
+      {
       method: "GET",
       cache: "no-store",
-    });
+      },
+    );
     const payload = (await response.json().catch(() => ({}))) as {
       error?: string;
       prospects?: SmartScanAllianceProspect[];
@@ -3236,7 +3250,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          provider: "b2b",
+          provider: allianceDirectoryMode === "internal" ? "internal" : "b2b",
           city: allianceCity,
           sourceMetier: allianceSourceMetier || null,
           targetMetiers,
@@ -3266,7 +3280,11 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
           allianceRevealTimeoutsRef.current.push(timeoutId);
         });
       }
-      await loadAllianceInvites();
+      if (allianceDirectoryMode === "internal") {
+        await loadInternalAllianceInvites();
+      } else {
+        await loadAllianceInvites();
+      }
       setApiErrorMessage("");
     } catch (error) {
       const message = error instanceof Error ? error.message : "Recherche alliances impossible.";
@@ -3304,7 +3322,11 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
       setAllianceProspects((currentList) =>
         currentList.map((item) => (item.id === prospect.id ? { ...item, status: "contacted" } : item)),
       );
-      await loadAllianceInvites();
+      if (allianceDirectoryMode === "internal") {
+        await loadInternalAllianceInvites();
+      } else {
+        await loadAllianceInvites();
+      }
       await loadAllianceProspectsSnapshot();
     } catch (error) {
       const message = error instanceof Error ? error.message : "Invitation alliance impossible.";
@@ -3332,6 +3354,29 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
       setApiErrorMessage(message);
     } finally {
       setIsAllianceInvitesLoading(false);
+    }
+  }
+
+  async function loadInternalAllianceInvites() {
+    try {
+      setIsInternalInvitesLoading(true);
+      const response = await fetch("/api/popey-human/smart-scan/alliances/invites?provider=internal", {
+        method: "GET",
+        cache: "no-store",
+      });
+      const payload = (await response.json().catch(() => ({}))) as {
+        error?: string;
+        invites?: SmartScanAllianceInvite[];
+      };
+      if (!response.ok) {
+        throw new Error(payload.error || "Impossible de charger les demandes internes.");
+      }
+      setInternalAllianceInvites(payload.invites || []);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Impossible de charger les demandes internes.";
+      setApiErrorMessage(message);
+    } finally {
+      setIsInternalInvitesLoading(false);
     }
   }
 
@@ -3376,6 +3421,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
     setShowEclaireursPanel(false);
     setShowAlliancesPanel(false);
     setShowAllianceInvitesModal(false);
+    setShowInternalInvitesModal(false);
     setShowMyProfilePanel(false);
     setSelectedEclaireurTemplateContactId(null);
     setEclaireurTemplates([]);
@@ -5432,12 +5478,41 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                 <button
                   type="button"
                   onClick={() => {
-                    setShowAllianceInvitesModal(true);
-                    void loadAllianceInvites();
+                    if (allianceDirectoryMode === "internal") {
+                      setShowInternalInvitesModal(true);
+                      void loadInternalAllianceInvites();
+                    } else {
+                      setShowAllianceInvitesModal(true);
+                      void loadAllianceInvites();
+                    }
                   }}
                   className="rounded-full border border-fuchsia-300/35 bg-fuchsia-300/15 px-3 py-1 text-[10px] font-black uppercase tracking-[0.08em] text-fuchsia-100 transition hover:scale-[1.02] hover:bg-fuchsia-300/20"
                 >
-                  Mes alliances ({allianceInvites.length})
+                  {allianceDirectoryMode === "internal" ? "Mes demandes internes" : "Mes alliances"} ({activeAllianceInvites.length})
+                </button>
+              </div>
+              <div className="mt-2 inline-flex rounded-full border border-white/15 bg-black/20 p-1">
+                <button
+                  type="button"
+                  onClick={() => setAllianceDirectoryMode("external")}
+                  className={`h-8 rounded-full px-3 text-[10px] font-black uppercase tracking-[0.08em] transition ${
+                    allianceDirectoryMode === "external"
+                      ? "bg-cyan-300/30 text-cyan-100"
+                      : "text-white/70 hover:text-white"
+                  }`}
+                >
+                  Externe
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAllianceDirectoryMode("internal")}
+                  className={`h-8 rounded-full px-3 text-[10px] font-black uppercase tracking-[0.08em] transition ${
+                    allianceDirectoryMode === "internal"
+                      ? "bg-emerald-300/30 text-emerald-100"
+                      : "text-white/70 hover:text-white"
+                  }`}
+                >
+                  Interne Popey
                 </button>
               </div>
             </div>
@@ -5448,10 +5523,14 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
               <div className="relative">
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <p className="text-[10px] font-black uppercase tracking-[0.12em] text-cyan-100">Recrutement externe premium</p>
+                    <p className="text-[10px] font-black uppercase tracking-[0.12em] text-cyan-100">
+                      {allianceDirectoryMode === "internal" ? "Annuaire interne Popey" : "Recrutement externe premium"}
+                    </p>
                     <h3 className="mt-1 text-lg font-black text-white sm:text-xl">Fais decoller ton business avec des alliances locales</h3>
                     <p className="mt-1 text-[12px] text-white/85">
-                      Lance une recherche ciblee, contacte les bons pros, et transforme-les en apporteurs actifs.
+                      {allianceDirectoryMode === "internal"
+                        ? "Trouve des membres Popey deja inscrits, en synergie avec ton metier, puis envoie ta demande WhatsApp en 1 clic."
+                        : "Lance une recherche ciblee, contacte les bons pros, et transforme-les en apporteurs actifs."}
                     </p>
                   </div>
                   <span className="rounded-full border border-emerald-300/45 bg-emerald-300/15 px-2 py-1 text-[10px] font-black uppercase tracking-[0.08em] text-emerald-100">
@@ -5469,7 +5548,9 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                   </div>
                   <div className="rounded-xl border border-fuchsia-300/35 bg-fuchsia-300/12 px-2 py-2 text-center">
                     <p className="text-[9px] uppercase tracking-[0.08em] text-fuchsia-100">Suivi</p>
-                    <p className="text-[11px] font-black text-fuchsia-100">Mes alliances</p>
+                    <p className="text-[11px] font-black text-fuchsia-100">
+                      {allianceDirectoryMode === "internal" ? "Demandes internes" : "Mes alliances"}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -5508,7 +5589,11 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                 disabled={isAlliancesSearching || !allianceCity.trim()}
                 className="relative mt-3 h-12 w-full overflow-hidden rounded-2xl border border-emerald-300/50 bg-gradient-to-r from-emerald-300/30 to-cyan-300/30 text-[12px] font-black uppercase tracking-[0.08em] text-white transition hover:brightness-110 disabled:opacity-60"
               >
-                {isAlliancesSearching ? "Recherche en cours..." : "Lancer recherche B2B"}
+                {isAlliancesSearching
+                  ? "Recherche en cours..."
+                  : allianceDirectoryMode === "internal"
+                    ? "Lancer recherche interne Popey"
+                    : "Lancer recherche B2B"}
               </button>
               {apiErrorMessage ? (
                 <p className="mt-2 rounded-lg border border-amber-300/35 bg-amber-300/10 px-2 py-1 text-[11px] text-amber-100">
@@ -5549,7 +5634,10 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
                       <p className="truncate text-sm font-black text-white">{prospect.full_name}</p>
-                      <p className="text-[11px] text-cyan-100">{prospect.metier}</p>
+                      <p className="text-[11px] text-cyan-100">
+                        {prospect.metier}
+                        {allianceDirectoryMode === "internal" ? " • Membre Popey" : ""}
+                      </p>
                       <p className="text-[10px] text-white/70">
                         {prospect.city || "Ville inconnue"} {prospect.distance_km ? `• ${prospect.distance_km} km` : ""}
                       </p>
@@ -5588,18 +5676,24 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
         </div>
       )}
 
-      {showAlliancesPanel && showAllianceInvitesModal && (
+      {showAlliancesPanel && (showAllianceInvitesModal || showInternalInvitesModal) && (
         <div className="fixed inset-0 z-[72] flex items-center justify-center bg-black/75 px-3 py-8 backdrop-blur-md sm:px-4">
           <section className="relative w-full max-w-2xl overflow-hidden rounded-3xl border border-fuchsia-300/35 bg-gradient-to-br from-[#171B46] via-[#101A3D] to-[#1A1550] p-4 shadow-[0_0_50px_rgba(217,70,239,0.28)] sm:p-5">
             <div className="pointer-events-none absolute -right-10 -top-12 h-36 w-36 rounded-full bg-fuchsia-300/25 blur-3xl animate-pulse" />
             <div className="pointer-events-none absolute -bottom-12 -left-10 h-40 w-40 rounded-full bg-cyan-300/20 blur-3xl animate-pulse" />
             <div className="flex items-center justify-between gap-2">
-              <p className="text-[11px] font-black uppercase tracking-[0.1em] text-fuchsia-100">Mes alliances sollicitees</p>
+              <p className="text-[11px] font-black uppercase tracking-[0.1em] text-fuchsia-100">
+                {allianceDirectoryMode === "internal" ? "Mes demandes internes" : "Mes alliances sollicitees"}
+              </p>
               <div className="flex items-center gap-2">
                 <button
                   type="button"
                   onClick={() => {
-                    void loadAllianceInvites();
+                    if (allianceDirectoryMode === "internal") {
+                      void loadInternalAllianceInvites();
+                    } else {
+                      void loadAllianceInvites();
+                    }
                   }}
                   className="h-8 rounded-lg border border-white/20 bg-white/10 px-2 text-[10px] font-black uppercase tracking-[0.08em] text-white/85"
                 >
@@ -5607,7 +5701,10 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                 </button>
                 <button
                   type="button"
-                  onClick={() => setShowAllianceInvitesModal(false)}
+                  onClick={() => {
+                    setShowAllianceInvitesModal(false);
+                    setShowInternalInvitesModal(false);
+                  }}
                   className="h-8 w-8 rounded-full border border-white/20 bg-white/10 text-xs"
                 >
                   ✕
@@ -5617,31 +5714,31 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
             <div className="mt-3 grid grid-cols-4 gap-2">
               <div className="rounded-xl border border-white/20 bg-black/25 px-2 py-2 text-center">
                 <p className="text-[9px] uppercase font-black tracking-[0.08em] text-white/70">Total</p>
-                <p className="text-sm font-black text-white">{allianceInvites.length}</p>
+                <p className="text-sm font-black text-white">{activeAllianceInvites.length}</p>
               </div>
               <div className="rounded-xl border border-cyan-300/35 bg-cyan-300/12 px-2 py-2 text-center">
                 <p className="text-[9px] uppercase font-black tracking-[0.08em] text-cyan-100">Envoye</p>
-                <p className="text-sm font-black text-cyan-100">{allianceInvites.filter((item) => item.status === "sent").length}</p>
+                <p className="text-sm font-black text-cyan-100">{activeAllianceInvites.filter((item) => item.status === "sent").length}</p>
               </div>
               <div className="rounded-xl border border-amber-300/35 bg-amber-300/12 px-2 py-2 text-center">
                 <p className="text-[9px] uppercase font-black tracking-[0.08em] text-amber-100">Clique</p>
-                <p className="text-sm font-black text-amber-100">{allianceInvites.filter((item) => item.status === "clicked").length}</p>
+                <p className="text-sm font-black text-amber-100">{activeAllianceInvites.filter((item) => item.status === "clicked").length}</p>
               </div>
               <div className="rounded-xl border border-emerald-300/35 bg-emerald-300/12 px-2 py-2 text-center">
                 <p className="text-[9px] uppercase font-black tracking-[0.08em] text-emerald-100">Inscrit</p>
-                <p className="text-sm font-black text-emerald-100">{allianceInvites.filter((item) => item.status === "signed_up").length}</p>
+                <p className="text-sm font-black text-emerald-100">{activeAllianceInvites.filter((item) => item.status === "signed_up").length}</p>
               </div>
             </div>
-            {isAllianceInvitesLoading ? (
+            {(allianceDirectoryMode === "internal" ? isInternalInvitesLoading : isAllianceInvitesLoading) ? (
               <p className="mt-3 text-[11px] text-white/70">Chargement de tes alliances...</p>
             ) : (
               <div className="mt-3 max-h-[46vh] space-y-1 overflow-y-auto pr-1">
-                {allianceInvites.length === 0 ? (
+                {activeAllianceInvites.length === 0 ? (
                   <p className="rounded-lg border border-white/15 bg-black/25 px-2 py-2 text-[10px] text-white/70">
                     Aucune alliance sollicitee pour le moment.
                   </p>
                 ) : null}
-                {allianceInvites.map((invite) => (
+                {activeAllianceInvites.map((invite) => (
                   <div key={`alliance-modal-invite-${invite.id}`} className="rounded-lg border border-white/15 bg-black/25 px-2 py-1.5">
                     <p className="text-[11px] font-black text-white">{invite.prospect_name}</p>
                     <p className="text-[10px] text-white/70">

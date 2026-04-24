@@ -30,7 +30,7 @@ const EXTERNAL_CLICK_SOURCES = ["linkedin", "whatsapp_group"] as const;
 const EXTERNAL_CLICK_CONTEXTS = ["cockpit", "profile", "other"] as const;
 const SEND_CHANNELS = ["whatsapp", "other"] as const;
 const AI_GENERATION_SOURCES = ["ai", "fallback"] as const;
-const ALLIANCE_PROVIDERS = ["b2b"] as const;
+const ALLIANCE_PROVIDERS = ["b2b", "internal"] as const;
 const ALLIANCE_INVITE_CHANNELS = ["whatsapp", "sms", "email", "other"] as const;
 
 const optionalNonEmptyString = (max: number) => z.string().trim().min(1).max(max).optional();

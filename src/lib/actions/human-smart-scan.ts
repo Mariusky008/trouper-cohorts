@@ -2550,6 +2550,14 @@ function normalizeAlliancePhone(rawValue?: string | null): string | null {
   return null;
 }
 
+function normalizeTextValue(value: string | null | undefined) {
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
+}
+
 function resolveDefaultAllianceTargets(sourceMetier?: string | null): string[] {
   const normalized = String(sourceMetier || "").toLowerCase().trim();
   if (!normalized) return ["courtier", "notaire", "conciergerie"];
@@ -2843,8 +2851,99 @@ async function searchB2BProvider(input: {
   };
 }
 
+async function searchInternalMembersProvider(input: {
+  currentMemberId: string;
+  city: string;
+  sourceMetier: string | null;
+  targetMetiers: string[];
+  radiusKm: number;
+  limit: number;
+}) {
+  const supabaseAdmin = createAdminClient();
+  const baseLimit = Math.max(10, input.limit * 5);
+  const { data, error } = await supabaseAdmin
+    .from("human_members")
+    .select("id,first_name,last_name,metier,ville,phone,updated_at")
+    .neq("id", input.currentMemberId)
+    .not("metier", "is", null)
+    .order("updated_at", { ascending: false })
+    .limit(baseLimit);
+  if (error) {
+    return {
+      error: error.message,
+      prospects: [] as Array<{
+        externalId: string;
+        name: string;
+        metier: string;
+        city: string;
+        phone: string | null;
+        distanceKm: number | null;
+        rating: number | null;
+        payload: Record<string, unknown>;
+      }>,
+      meta: { providerMode: "live" as const },
+    };
+  }
+
+  const cityNeedle = normalizeTextValue(input.city);
+  const targetNeedles = input.targetMetiers.map((item) => normalizeTextValue(item)).filter(Boolean);
+  const sourceNeedle = normalizeTextValue(input.sourceMetier || "");
+  const rows = ((data as Array<{
+    id: string;
+    first_name: string | null;
+    last_name: string | null;
+    metier: string | null;
+    ville: string | null;
+    phone: string | null;
+  }> | null) || []);
+  const scored = rows
+    .map((row) => {
+      const metier = String(row.metier || "").trim();
+      if (!metier) return null;
+      const metierNeedle = normalizeTextValue(metier);
+      const city = String(row.ville || input.city || "").trim() || input.city;
+      const cityRowNeedle = normalizeTextValue(city);
+      const name = [row.first_name, row.last_name].filter(Boolean).join(" ").trim() || "Membre Popey";
+      const targetMatchScore = targetNeedles.some((target) => metierNeedle.includes(target) || target.includes(metierNeedle)) ? 3 : 0;
+      const cityMatchScore = cityNeedle && cityRowNeedle
+        ? cityNeedle === cityRowNeedle
+          ? 3
+          : cityRowNeedle.includes(cityNeedle) || cityNeedle.includes(cityRowNeedle)
+            ? 2
+            : 0
+        : 1;
+      const sourcePenalty = sourceNeedle && metierNeedle === sourceNeedle ? -2 : 0;
+      const score = targetMatchScore + cityMatchScore + sourcePenalty;
+      return {
+        score,
+        row: {
+          externalId: `member_${row.id}`,
+          name,
+          metier,
+          city,
+          phone: String(row.phone || "").trim() || null,
+          distanceKm: null,
+          rating: null,
+          payload: {
+            provider: "internal",
+            member_id: row.id,
+          } as Record<string, unknown>,
+        },
+      };
+    })
+    .filter((item): item is NonNullable<typeof item> => Boolean(item))
+    .sort((a, b) => b.score - a.score);
+
+  const prospects = scored.slice(0, input.limit).map((entry) => entry.row);
+  return {
+    error: null as string | null,
+    prospects,
+    meta: { providerMode: "live" as const },
+  };
+}
+
 export async function searchAllianceProspects(input: {
-  provider?: "b2b";
+  provider?: "b2b" | "internal";
   city: string;
   sourceMetier?: string | null;
   targetMetiers?: string[];
@@ -2854,7 +2953,7 @@ export async function searchAllianceProspects(input: {
   const currentMember = await getCurrentHumanMember();
   if (!currentMember) return { error: "Session requise.", prospects: [] as AllianceProspectRecord[] };
 
-  const provider = "b2b";
+  const provider = input.provider === "internal" ? "internal" : "b2b";
   const city = String(input.city || "").trim();
   if (!city) return { error: "Ville requise.", prospects: [] as AllianceProspectRecord[] };
   const sourceMetier = String(input.sourceMetier || "").trim() || null;
@@ -2863,13 +2962,23 @@ export async function searchAllianceProspects(input: {
   const radiusKm = Math.max(1, Math.min(100, Math.round(input.radiusKm || 15)));
   const limit = Math.max(1, Math.min(10, Math.round(input.limit || 10)));
 
-  const providerResult = await searchB2BProvider({
-    city,
-    sourceMetier,
-    targetMetiers: normalizedTargets,
-    radiusKm,
-    limit,
-  });
+  const providerResult =
+    provider === "internal"
+      ? await searchInternalMembersProvider({
+        currentMemberId: currentMember.id,
+        city,
+        sourceMetier,
+        targetMetiers: normalizedTargets,
+        radiusKm,
+        limit,
+      })
+      : await searchB2BProvider({
+        city,
+        sourceMetier,
+        targetMetiers: normalizedTargets,
+        radiusKm,
+        limit,
+      });
   if (providerResult.error) {
     return { error: providerResult.error, prospects: [] as AllianceProspectRecord[] };
   }
@@ -3014,12 +3123,12 @@ export async function searchAllianceProspects(input: {
   return { error: null as string | null, prospects: hydrated };
 }
 
-export async function listAllianceProspects(limit = 80) {
+export async function listAllianceProspects(limit = 80, provider?: "b2b" | "internal") {
   const currentMember = await getCurrentHumanMember();
   if (!currentMember) return { error: "Session requise.", prospects: [] as AllianceProspectRecord[] };
   const safeLimit = Math.max(1, Math.min(200, Math.trunc(limit)));
   const supabaseAdmin = createAdminClient();
-  const { data, error } = await supabaseAdmin
+  let query = supabaseAdmin
     .from("human_smart_scan_alliance_prospects")
     .select(
       "id,owner_member_id,provider,provider_prospect_ref,full_name,metier,city,phone_e164,distance_km,rating,fit_score,fit_reasons,status,source_payload,fetched_at,created_at,updated_at",
@@ -3028,6 +3137,10 @@ export async function listAllianceProspects(limit = 80) {
     .order("fit_score", { ascending: false })
     .order("fetched_at", { ascending: false })
     .limit(safeLimit);
+  if (provider) {
+    query = query.eq("provider", provider);
+  }
+  const { data, error } = await query;
 
   if (error) return { error: error.message, prospects: [] as AllianceProspectRecord[] };
   const baseProspects = ((data as Array<AllianceProspectRecord & { source_payload?: Record<string, unknown> | null }> | null) || []).map((row) => {
@@ -3227,7 +3340,7 @@ type AllianceInviteRow = {
   updated_at: string;
 };
 
-export async function listAllianceInvites(limit = 120) {
+export async function listAllianceInvites(limit = 120, provider?: "b2b" | "internal") {
   const currentMember = await getCurrentHumanMember();
   if (!currentMember) {
     return { error: "Session requise.", invites: [] as Array<AllianceInviteRow & { prospect_name: string; prospect_metier: string; prospect_city: string | null }> };
@@ -3237,14 +3350,15 @@ export async function listAllianceInvites(limit = 120) {
   const { data, error } = await supabaseAdmin
     .from("human_smart_scan_alliance_invites")
     .select(
-      "id,owner_member_id,prospect_id,channel,message_draft,onboarding_token,onboarding_link,status,sent_at,clicked_at,signed_up_member_id,created_at,updated_at,human_smart_scan_alliance_prospects!inner(full_name,metier,city)",
+      "id,owner_member_id,prospect_id,channel,message_draft,onboarding_token,onboarding_link,status,sent_at,clicked_at,signed_up_member_id,created_at,updated_at,human_smart_scan_alliance_prospects!inner(full_name,metier,city,provider)",
     )
     .eq("owner_member_id", currentMember.id)
     .order("created_at", { ascending: false })
     .limit(safeLimit);
   if (error) return { error: error.message, invites: [] as Array<AllianceInviteRow & { prospect_name: string; prospect_metier: string; prospect_city: string | null }> };
 
-  const invites = ((data || []) as Array<AllianceInviteRow & { human_smart_scan_alliance_prospects?: { full_name?: string | null; metier?: string | null; city?: string | null } | null }>)
+  const invites = ((data || []) as Array<AllianceInviteRow & { human_smart_scan_alliance_prospects?: { full_name?: string | null; metier?: string | null; city?: string | null; provider?: string | null } | null }>)
+    .filter((row) => !provider || String(row.human_smart_scan_alliance_prospects?.provider || "b2b") === provider)
     .map((row) => ({
       ...row,
       prospect_name: row.human_smart_scan_alliance_prospects?.full_name || "Prospect",
