@@ -3170,10 +3170,19 @@ export default function EntrepreneurSmartScanTestPage() {
   }
 
   function buildAllianceInviteMessage(prospect: SmartScanAllianceProspect) {
-    const myName = [myProfile?.first_name, myProfile?.last_name].filter(Boolean).join(" ").trim() || "Je";
-    const myMetier = myProfile?.metier || allianceSourceMetier || "professionnel local";
+    const firstName = prospect.full_name.split(" ")[0] || prospect.full_name;
+    const myFirstName = myProfile?.first_name?.trim() || [myProfile?.first_name, myProfile?.last_name].filter(Boolean).join(" ").trim() || "moi";
+    const myMetier = myProfile?.metier || allianceSourceMetier || "professionnel";
     const city = allianceCity || myProfile?.ville || "ma ville";
-    return `Bonjour ${prospect.full_name}, je suis ${myName}, ${myMetier} sur ${city}. Je cherche un partenaire en synergie pour s echanger des recommandations qualifiees. J utilise Popey pour identifier des opportunites et je peux t envoyer des dossiers pertinents. Ouvert a un appel court cette semaine ?`;
+    return `Bonjour ${firstName}, je suis ${myFirstName}, ${myMetier} a ${city}.
+
+Je me permets de t ecrire car on croise souvent des personnes qui auraient besoin d un autre pro de confiance, et je pense que nos activites peuvent se completer.
+
+Je te propose un test simple : tu me recommandes a une personne, je lui fais une seance totalement gratuitement, et tu juges librement.
+
+Si l experience est bonne, on garde le contact pour de futures recommandations.
+
+Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommandation.`;
   }
 
   async function loadAllianceProspectsSnapshot() {

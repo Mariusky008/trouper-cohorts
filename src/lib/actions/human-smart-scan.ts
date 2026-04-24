@@ -3016,17 +3016,19 @@ export async function createAllianceInvite(input: {
 }) {
   const currentMember = await getCurrentHumanMember();
   if (!currentMember) return { error: "Session requise." };
+  const ownerMemberId = currentMember.id;
 
   const supabaseAdmin = createAdminClient();
   const { data: prospect, error: prospectError } = await supabaseAdmin
     .from("human_smart_scan_alliance_prospects")
-    .select("id,owner_member_id,full_name,phone_e164")
+    .select("id,owner_member_id,full_name,phone_e164,city")
     .eq("id", input.prospectId)
-    .eq("owner_member_id", currentMember.id)
+    .eq("owner_member_id", ownerMemberId)
     .maybeSingle();
 
   if (prospectError) return { error: prospectError.message };
   if (!prospect?.id) return { error: "Prospect introuvable." };
+  const prospectRow = prospect;
 
   const token = `alliance_${crypto.randomUUID().replace(/-/g, "")}`;
   const appBaseUrl = String(process.env.NEXT_PUBLIC_SITE_URL || "https://www.popey.academy").replace(/\/+$/, "");
@@ -3034,11 +3036,100 @@ export async function createAllianceInvite(input: {
   const nowIso = new Date().toISOString();
   const channel = input.channel || "whatsapp";
 
+  function splitName(fullName: string) {
+    const parts = String(fullName || "").trim().split(/\s+/).filter(Boolean);
+    return {
+      firstName: parts[0] || null,
+      lastName: parts.slice(1).join(" ") || null,
+    };
+  }
+  function generateScoutShortCode() {
+    const raw = crypto.randomUUID().replace(/-/g, "").toUpperCase();
+    return `${raw.slice(0, 4)}-${raw.slice(4, 8)}`;
+  }
+  async function ensureScoutInviteToken() {
+    const phone = String(prospectRow.phone_e164 || "").trim();
+    const nameParts = splitName(String(prospectRow.full_name || ""));
+    let scoutId = "";
+    if (phone) {
+      const { data: existingByPhone } = await supabaseAdmin
+        .from("human_scouts")
+        .select("id")
+        .eq("owner_member_id", ownerMemberId)
+        .eq("phone", phone)
+        .order("created_at", { ascending: true })
+        .limit(1);
+      scoutId = String(((existingByPhone as Array<{ id: string }> | null) || [])[0]?.id || "");
+    }
+    if (!scoutId && nameParts.firstName) {
+      const { data: existingByName } = await supabaseAdmin
+        .from("human_scouts")
+        .select("id")
+        .eq("owner_member_id", ownerMemberId)
+        .ilike("first_name", nameParts.firstName)
+        .ilike("last_name", nameParts.lastName || "%")
+        .order("created_at", { ascending: true })
+        .limit(1);
+      scoutId = String(((existingByName as Array<{ id: string }> | null) || [])[0]?.id || "");
+    }
+    if (!scoutId) {
+      const { data: createdScout, error: scoutError } = await supabaseAdmin
+        .from("human_scouts")
+        .insert({
+          owner_member_id: ownerMemberId,
+          first_name: nameParts.firstName,
+          last_name: nameParts.lastName,
+          ville: String(prospectRow.city || "").trim() || null,
+          phone: phone || null,
+          status: "invited",
+          commission_rate: 0.1,
+          total_paid: 0,
+          pending_earnings: 0,
+          updated_at: nowIso,
+        })
+        .select("id")
+        .single();
+      if (scoutError || !createdScout?.id) {
+        return null;
+      }
+      scoutId = String(createdScout.id);
+    }
+
+    const inviteToken = crypto.randomUUID().replace(/-/g, "").toLowerCase();
+    const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24 * 30).toISOString();
+    let inserted = false;
+    for (let attempt = 0; attempt < 10; attempt += 1) {
+      const shortCode = generateScoutShortCode();
+      const { error: insertInviteError } = await supabaseAdmin
+        .from("human_scout_invites")
+        .insert({
+          owner_member_id: ownerMemberId,
+          scout_id: scoutId,
+          invite_token: inviteToken,
+          short_code: shortCode,
+          expires_at: expiresAt,
+        });
+      if (!insertInviteError) {
+        inserted = true;
+        break;
+      }
+      const lower = String(insertInviteError.message || "").toLowerCase();
+      if (!lower.includes("short_code")) return null;
+    }
+    if (!inserted) return null;
+    return inviteToken;
+  }
+
+  const scoutInviteToken = await ensureScoutInviteToken();
+  const scoutPortalLink = scoutInviteToken
+    ? `${appBaseUrl}/popey-human/eclaireur-webapp-preview?token=${encodeURIComponent(scoutInviteToken)}`
+    : onboardingLink;
+
   const { data: invite, error: inviteError } = await supabaseAdmin
     .from("human_smart_scan_alliance_invites")
     .insert({
-      owner_member_id: currentMember.id,
-      prospect_id: prospect.id,
+      owner_member_id: ownerMemberId,
+      prospect_id: prospectRow.id,
       channel,
       message_draft: String(input.messageDraft || "").trim(),
       onboarding_token: token,
@@ -3059,11 +3150,11 @@ export async function createAllianceInvite(input: {
       status: "contacted",
       updated_at: nowIso,
     })
-    .eq("id", prospect.id)
-    .eq("owner_member_id", currentMember.id);
+    .eq("id", prospectRow.id)
+    .eq("owner_member_id", ownerMemberId);
 
-  const phone = String(prospect.phone_e164 || "").replace(/^\+/, "");
-  const message = `${String(input.messageDraft || "").trim()}\n\n${onboardingLink}`;
+  const phone = String(prospectRow.phone_e164 || "").replace(/^\+/, "");
+  const message = `${String(input.messageDraft || "").trim()}\n\n${scoutPortalLink}`;
   const whatsappUrl = phone
     ? `https://wa.me/${encodeURIComponent(phone)}?text=${encodeURIComponent(message)}`
     : null;
@@ -3073,6 +3164,7 @@ export async function createAllianceInvite(input: {
     inviteId: invite?.id || null,
     onboardingToken: invite?.onboarding_token || token,
     onboardingLink: invite?.onboarding_link || onboardingLink,
+    scoutPortalLink,
     whatsappUrl,
   };
 }
