@@ -307,6 +307,8 @@ type SmartScanAllianceInvite = {
 };
 type AllianceDirectoryMode = "external" | "internal";
 
+type HistoryVisualStatus = "sent" | "pending" | "converted";
+
 const PENDING_WHATSAPP_CONTEXT_KEY = "popey-human:smart-scan:pending-whatsapp-context";
 const SMART_SCAN_SESSION_KEY = "popey-human:smart-scan:scan-session";
 const SMART_SCAN_IMPORTED_CONTACTS_KEY = "popey-human:smart-scan:imported-contacts";
@@ -799,6 +801,39 @@ function referralStatusLabel(status: string) {
   return status || "Inconnu";
 }
 
+function formatDateTimeShort(value?: string | null) {
+  if (!value) return "Date inconnue";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Date inconnue";
+  const day = date.toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit" });
+  const time = date.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+  return `${day} a ${time}`;
+}
+
+function allianceMetierTone(metier: string) {
+  const raw = String(metier || "").toLowerCase();
+  if (/notaire|avocat|jurid|comptable|fiscal/.test(raw)) {
+    return "border-violet-300/35 bg-violet-300/15 text-violet-100";
+  }
+  if (/nutrition|coach|therap|psych|sante|kine|soin/.test(raw)) {
+    return "border-emerald-300/35 bg-emerald-300/15 text-emerald-100";
+  }
+  if (/dev|informat|web|seo|marketing|design/.test(raw)) {
+    return "border-cyan-300/35 bg-cyan-300/15 text-cyan-100";
+  }
+  if (/immo|courtier|banque|finance|assurance/.test(raw)) {
+    return "border-amber-300/35 bg-amber-300/15 text-amber-100";
+  }
+  return "border-white/25 bg-white/10 text-white/85";
+}
+
+function historyMessageSnippet(message?: string | null) {
+  const normalized = String(message || "").replace(/\s+/g, " ").trim();
+  if (!normalized) return "Aucun texte conserve pour cette action.";
+  if (normalized.length <= 60) return normalized;
+  return `${normalized.slice(0, 60)}...`;
+}
+
 function getLocalDayNumber() {
   const now = new Date();
   const localMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -901,6 +936,7 @@ export default function EntrepreneurSmartScanTestPage() {
   const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
   const [trustLevelStore, setTrustLevelStore] = useState<Record<string, TrustLevel>>({});
   const [historyEntries, setHistoryEntries] = useState<HistoryEntry[]>([]);
+  const [expandedHistoryEntryKeys, setExpandedHistoryEntryKeys] = useState<string[]>([]);
   const [passedContactIds, setPassedContactIds] = useState<string[]>([]);
   const [qualifierStore, setQualifierStore] = useState<Record<string, QualifierData>>({});
   const [isBootstrapped, setIsBootstrapped] = useState(false);
@@ -952,6 +988,11 @@ export default function EntrepreneurSmartScanTestPage() {
   const [selectedIncomingReferralId, setSelectedIncomingReferralId] = useState<string | null>(null);
   const [incomingSignedAmount, setIncomingSignedAmount] = useState("");
   const [isIncomingReferralStatusUpdating, setIsIncomingReferralStatusUpdating] = useState(false);
+  const [showAllianceMetricsInfo, setShowAllianceMetricsInfo] = useState(false);
+  const [showBoostInfo, setShowBoostInfo] = useState(false);
+  const [showAddScoutTooltip, setShowAddScoutTooltip] = useState(false);
+  const [hasSeenAddScoutTooltip, setHasSeenAddScoutTooltip] = useState(false);
+  const [recoAlertPulse, setRecoAlertPulse] = useState(false);
   const [showPotentialBreakdownSheet, setShowPotentialBreakdownSheet] = useState(false);
   const [showGainPotentialSheet, setShowGainPotentialSheet] = useState(false);
   const [gainTooltipOpenCount, setGainTooltipOpenCount] = useState(0);
@@ -1467,6 +1508,13 @@ export default function EntrepreneurSmartScanTestPage() {
       });
     return Array.from(buckets.values()).sort((a, b) => b.dayStartMs - a.dayStartMs);
   }, [filteredHistoryEntries]);
+  const historyFiltersActiveCount =
+    (historyStatusFilter !== "all" ? 1 : 0) +
+    (historyActionFilter !== "all" ? 1 : 0) +
+    (historyPeriodFilter !== "all" ? 1 : 0);
+  const isHistoryStatusFilterActive = historyStatusFilter !== "all";
+  const isHistoryActionFilterActive = historyActionFilter !== "all";
+  const isHistoryPeriodFilterActive = historyPeriodFilter !== "all";
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -1892,6 +1940,38 @@ export default function EntrepreneurSmartScanTestPage() {
     return "En attente";
   }
 
+  function historyStatusMeta(entry: HistoryEntry): { key: HistoryVisualStatus; label: string; icon: string; className: string; leftBar: string } {
+    if (entry.outcomeStatus === "converted") {
+      return {
+        key: "converted",
+        label: "Converti",
+        icon: "⭐",
+        className: "border-[#7F77DD]/45 bg-[#7F77DD]/20 text-violet-100",
+        leftBar: "bg-[#7F77DD]",
+      };
+    }
+    if (entry.sent) {
+      return {
+        key: "sent",
+        label: "Envoye",
+        icon: "✓",
+        className: "border-[#1D9E75]/45 bg-[#1D9E75]/20 text-emerald-100",
+        leftBar: "bg-[#1D9E75]",
+      };
+    }
+    return {
+      key: "pending",
+      label: "Non envoye",
+      icon: "🕒",
+      className: "border-[#888780]/45 bg-[#888780]/25 text-white/90",
+      leftBar: "bg-[#888780]",
+    };
+  }
+
+  function toggleHistoryEntryExpanded(key: string) {
+    setExpandedHistoryEntryKeys((prev) => (prev.includes(key) ? prev.filter((item) => item !== key) : [...prev, key]));
+  }
+
   function followupUrgencyBadge(item: FollowupItem) {
     const overdueMs = Date.now() - item.dueAtMs;
     if (overdueMs <= 0) {
@@ -2059,6 +2139,35 @@ export default function EntrepreneurSmartScanTestPage() {
     } catch {
       setApiErrorMessage("Copie impossible. Autorise l acces presse-papiers puis reessaie.");
     }
+  }
+
+  function removeHistoryEntry(entry: HistoryEntry) {
+    const key = `${entry.actionId || entry.contactId}:${entry.atMs}`;
+    setHistoryEntries((prev) =>
+      prev.filter((item) => {
+        if (entry.actionId && item.actionId) return item.actionId !== entry.actionId;
+        return !(item.contactId === entry.contactId && item.atMs === entry.atMs);
+      }),
+    );
+    setExpandedHistoryEntryKeys((prev) => prev.filter((item) => item !== key));
+  }
+
+  function resendHistoryEntry(entry: HistoryEntry) {
+    if (entry.action === "passer") {
+      setApiErrorMessage("Aucun renvoi pour l action Passer.");
+      return;
+    }
+    const targetContact = getContactById(entry.contactId);
+    if (!targetContact) {
+      setApiErrorMessage("Contact introuvable pour renvoi.");
+      return;
+    }
+    const nextIndex = allContactsData.findIndex((contact) => contact.id === targetContact.id);
+    if (nextIndex >= 0) setIndex(nextIndex);
+    setSelectedAction(entry.action);
+    const fallbackDraft = buildTemplate(entry.action, targetContact, qualifierStore[targetContact.id], myProfile);
+    setDraftMessage(entry.messageDraft?.trim() || fallbackDraft);
+    setShowTemplateModal(true);
   }
 
   function exportDailyAdminReportCsv() {
@@ -2835,6 +2944,34 @@ export default function EntrepreneurSmartScanTestPage() {
     if (typeof window === "undefined") return;
     window.localStorage.setItem("popey:gain-potential-tooltip-opens", String(gainTooltipOpenCount));
   }, [gainTooltipOpenCount]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const raw = window.localStorage.getItem("popey:add-scout-tooltip-seen");
+    setHasSeenAddScoutTooltip(raw === "1");
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem("popey:add-scout-tooltip-seen", hasSeenAddScoutTooltip ? "1" : "0");
+  }, [hasSeenAddScoutTooltip]);
+
+  useEffect(() => {
+    if (!showEclaireursPanel) return;
+    if (!hasSeenAddScoutTooltip) {
+      setShowAddScoutTooltip(true);
+      const timer = window.setTimeout(() => setShowAddScoutTooltip(false), 3000);
+      return () => window.clearTimeout(timer);
+    }
+    return undefined;
+  }, [showEclaireursPanel, hasSeenAddScoutTooltip]);
+
+  useEffect(() => {
+    if (!showEclaireursPanel) return;
+    setRecoAlertPulse(true);
+    const timer = window.setTimeout(() => setRecoAlertPulse(false), 1100);
+    return () => window.clearTimeout(timer);
+  }, [showEclaireursPanel, eclaireurHeaderStats.alertesCount]);
 
   useEffect(() => {
     if (selectedAction !== "qualifier" || !showTemplateModal) return;
@@ -5297,36 +5434,53 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
               </>
             ) : (
               <>
-                <div className="mt-3 grid grid-cols-3 gap-2">
-                  <select
-                    value={historyStatusFilter}
-                    onChange={(event) => setHistoryStatusFilter(event.target.value as "all" | "sent" | "validated")}
-                    className="h-9 rounded-lg border border-white/15 bg-black/25 px-2 text-[11px]"
-                  >
-                    <option value="all">Statut: Tous</option>
-                    <option value="sent">Statut: Envoye</option>
-                    <option value="validated">Statut: Valide</option>
-                  </select>
-                  <select
-                    value={historyActionFilter}
-                    onChange={(event) => setHistoryActionFilter(event.target.value as "all" | Exclude<DailyCategory, "qualifier">)}
-                    className="h-9 rounded-lg border border-white/15 bg-black/25 px-2 text-[11px]"
-                  >
-                    <option value="all">Action: Toutes</option>
-                    <option value="eclaireur">Eclaireur</option>
-                    <option value="package">Partage Croise</option>
-                    <option value="exclients">Ex-Clients</option>
-                    <option value="passer">Passer</option>
-                  </select>
-                  <select
-                    value={historyPeriodFilter}
-                    onChange={(event) => setHistoryPeriodFilter(event.target.value as "all" | "today" | "7d")}
-                    className="h-9 rounded-lg border border-white/15 bg-black/25 px-2 text-[11px]"
-                  >
-                    <option value="all">Periode: Tout</option>
-                    <option value="today">Periode: Aujourd hui</option>
-                    <option value="7d">Periode: 7 jours</option>
-                  </select>
+                <div className="mt-3 flex items-center justify-between gap-2">
+                  <p className="text-[11px] font-black uppercase tracking-[0.08em] text-white/75">Filtres</p>
+                  {historyFiltersActiveCount > 0 && (
+                    <span className="rounded-full border border-cyan-300/35 bg-cyan-300/18 px-2 py-0.5 text-[10px] font-black text-cyan-100">
+                      {historyFiltersActiveCount} actif(s)
+                    </span>
+                  )}
+                </div>
+                <div className="mt-2 grid grid-cols-3 gap-2">
+                  <div className={`relative rounded-lg border ${isHistoryStatusFilterActive ? "border-cyan-300/45 bg-cyan-300/12" : "border-white/15 bg-black/25"}`}>
+                    {isHistoryStatusFilterActive && <span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-cyan-300" />}
+                    <select
+                      value={historyStatusFilter}
+                      onChange={(event) => setHistoryStatusFilter(event.target.value as "all" | "sent" | "validated")}
+                      className="h-9 w-full rounded-lg bg-transparent px-2 text-[11px]"
+                    >
+                      <option value="all">Statut: Tous</option>
+                      <option value="sent">Statut: Envoye</option>
+                      <option value="validated">Statut: Valide</option>
+                    </select>
+                  </div>
+                  <div className={`relative rounded-lg border ${isHistoryActionFilterActive ? "border-cyan-300/45 bg-cyan-300/12" : "border-white/15 bg-black/25"}`}>
+                    {isHistoryActionFilterActive && <span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-cyan-300" />}
+                    <select
+                      value={historyActionFilter}
+                      onChange={(event) => setHistoryActionFilter(event.target.value as "all" | Exclude<DailyCategory, "qualifier">)}
+                      className="h-9 w-full rounded-lg bg-transparent px-2 text-[11px]"
+                    >
+                      <option value="all">Action: Toutes</option>
+                      <option value="eclaireur">Eclaireur</option>
+                      <option value="package">Partage Croise</option>
+                      <option value="exclients">Ex-Clients</option>
+                      <option value="passer">Passer</option>
+                    </select>
+                  </div>
+                  <div className={`relative rounded-lg border ${isHistoryPeriodFilterActive ? "border-cyan-300/45 bg-cyan-300/12" : "border-white/15 bg-black/25"}`}>
+                    {isHistoryPeriodFilterActive && <span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-cyan-300" />}
+                    <select
+                      value={historyPeriodFilter}
+                      onChange={(event) => setHistoryPeriodFilter(event.target.value as "all" | "today" | "7d")}
+                      className="h-9 w-full rounded-lg bg-transparent px-2 text-[11px]"
+                    >
+                      <option value="all">Periode: Tout</option>
+                      <option value="today">Periode: Aujourd hui</option>
+                      <option value="7d">Periode: 7 jours</option>
+                    </select>
+                  </div>
                 </div>
                 <p className="mt-2 text-[11px] text-white/65">
                   {filteredHistoryEntries.length} action(s) • lecture chronologique par jour
@@ -5355,88 +5509,110 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                         </div>
                         <div className="mt-2 space-y-2">
                           {day.entries.map((entry, idx) => {
-                          const eligibleToPromote = entry.sent && entry.action === "eclaireur" && !eclaireurIds.includes(entry.contactId);
-                          const historyKey = `${entry.actionId || entry.contactId}:${entry.atMs}`;
-                          return (
-                            <article key={`${entry.contactId}-${entry.atMs}-${idx}`} className="rounded-xl border border-white/15 bg-[#101938] px-3 py-2">
-                              <div className="flex items-start justify-between gap-2">
+                            const eligibleToPromote = entry.sent && entry.action === "eclaireur" && !eclaireurIds.includes(entry.contactId);
+                            const historyKey = `${entry.actionId || entry.contactId}:${entry.atMs}`;
+                            const isExpanded = expandedHistoryEntryKeys.includes(historyKey);
+                            const status = historyStatusMeta(entry);
+                            return (
+                              <article
+                                key={`${entry.contactId}-${entry.atMs}-${idx}`}
+                                className="relative overflow-hidden rounded-xl border border-white/15 bg-[#101938] px-3 py-2"
+                                style={{ borderLeftWidth: "3px" }}
+                              >
+                                <span className={`absolute inset-y-0 left-0 w-[3px] ${status.leftBar}`} />
                                 <button
                                   type="button"
-                                  onClick={() => {
-                                    const nextIndex = allContactsData.findIndex((contact) => contact.id === entry.contactId);
-                                    if (nextIndex >= 0) setIndex(nextIndex);
-                                    openContactProfileWithTrustGuard(entry.contactId);
-                                  }}
-                                  className="min-w-0 flex-1 text-left"
+                                  onClick={() => toggleHistoryEntryExpanded(historyKey)}
+                                  className="w-full text-left"
                                 >
-                                  <p className="truncate text-sm font-black text-white">{entry.name}</p>
-                                  <p className="mt-0.5 text-[10px] text-white/70">{entry.timeLabel}</p>
+                                  <div className="flex items-start justify-between gap-2">
+                                    <p className="min-w-0 truncate text-sm font-black text-white">{entry.name}</p>
+                                    <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.08em] ${status.className}`}>
+                                      <span>{status.icon}</span>
+                                      <span>{status.label}</span>
+                                    </span>
+                                  </div>
+                                  <p className="mt-1 text-[10px] text-white/72">{actionLabel(entry.action)} • {entry.timeLabel}</p>
+                                  <div className="mt-1 flex items-center justify-between gap-2">
+                                    <p className="line-clamp-1 text-xs text-white/85">{historyMessageSnippet(entry.messageDraft)}</p>
+                                    <span className="text-sm text-white/55">{isExpanded ? "⌄" : "›"}</span>
+                                  </div>
                                 </button>
-                                <span
-                                  className={`rounded-full border px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.08em] ${
-                                    entry.sent
-                                      ? "border-emerald-300/35 bg-emerald-300/15 text-emerald-100"
-                                      : "border-white/20 bg-white/10 text-white/80"
-                                  }`}
-                                >
-                                  {entry.sent ? "Envoye" : "Non envoye"}
-                                </span>
-                              </div>
-                              <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                                <span className="rounded-full border border-cyan-300/35 bg-cyan-300/15 px-2 py-0.5 text-[10px] font-black text-cyan-100">
-                                  {actionLabel(entry.action)}
-                                </span>
-                                <span className="rounded-full border border-fuchsia-300/35 bg-fuchsia-300/15 px-2 py-0.5 text-[10px] font-black text-fuchsia-100">
-                                  {outcomeLabel(entry.outcomeStatus)}
-                                </span>
-                                {entry.sendChannel === "whatsapp" && (
-                                  <span className="rounded-full border border-emerald-300/35 bg-emerald-300/12 px-2 py-0.5 text-[10px] font-black text-emerald-100">
-                                    WhatsApp
-                                  </span>
-                                )}
-                              </div>
-                              <div className="mt-2 rounded-lg border border-white/15 bg-black/25 px-2 py-2">
-                                <div className="flex items-center justify-between gap-2">
-                                  <p className="text-[10px] font-black uppercase tracking-[0.08em] text-white/70">
-                                    {entry.sent ? "Texte envoye" : "Texte prepare (non envoye)"}
-                                  </p>
-                                  {entry.sent && entry.messageDraft?.trim()?.length ? (
-                                    <button
-                                      type="button"
-                                      onClick={() => copyHistoryMessage(entry)}
-                                      className="rounded-lg border border-cyan-300/35 bg-cyan-300/12 px-2 py-1 text-[10px] font-black uppercase tracking-[0.08em] text-cyan-100"
+                                <AnimatePresence initial={false}>
+                                  {isExpanded && (
+                                    <motion.div
+                                      initial={{ height: 0, opacity: 0 }}
+                                      animate={{ height: "auto", opacity: 1 }}
+                                      exit={{ height: 0, opacity: 0 }}
+                                      transition={{ duration: 0.2, ease: "easeOut" }}
+                                      className="overflow-hidden"
                                     >
-                                      {copiedHistoryEntryKey === historyKey ? "Copie ✓" : "Copier le texte"}
-                                    </button>
-                                  ) : null}
-                                </div>
-                                <p className="mt-1 whitespace-pre-wrap text-xs text-white/88">
-                                  {entry.messageDraft?.trim()?.length
-                                    ? entry.messageDraft
-                                    : "Aucun texte conserve pour cette action."}
-                                </p>
-                              </div>
-                              <div className="mt-2 flex items-center justify-between gap-2">
-                                {eclaireurIds.includes(entry.contactId) ? (
-                                  <span className="inline-flex rounded-full border border-emerald-300/35 bg-emerald-300/15 px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.08em] text-emerald-100">
-                                    📡 Eclaireur actif
-                                  </span>
-                                ) : (
-                                  <span className="text-[10px] text-white/60">Prospect</span>
-                                )}
-                                {eligibleToPromote && (
-                                  <button
-                                    type="button"
-                                    onClick={() => promoteToEclaireur(entry.contactId)}
-                                    className="rounded-lg border border-emerald-300/45 bg-emerald-300/15 px-2 py-1 text-[10px] font-black uppercase tracking-[0.08em] text-emerald-100"
-                                  >
-                                    ⭐ Promouvoir en Eclaireur
-                                  </button>
-                                )}
-                              </div>
-                            </article>
-                          );
-                        })}
+                                      <div className="mt-2 rounded-lg border border-white/15 bg-black/25 px-2 py-2">
+                                        <p className="text-[10px] font-black uppercase tracking-[0.08em] text-white/70">Message complet</p>
+                                        <p className="mt-1 whitespace-pre-wrap text-xs text-white/88">
+                                          {entry.messageDraft?.trim()?.length
+                                            ? entry.messageDraft
+                                            : "Aucun texte conserve pour cette action."}
+                                        </p>
+                                      </div>
+                                      <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                                        <button
+                                          type="button"
+                                          onClick={() => resendHistoryEntry(entry)}
+                                          className="rounded-lg border border-cyan-300/35 bg-cyan-300/12 px-2 py-1 text-[10px] font-black uppercase tracking-[0.08em] text-cyan-100"
+                                        >
+                                          Renvoyer
+                                        </button>
+                                        <button
+                                          type="button"
+                                          onClick={() => updateActionOutcome(entry, "converted")}
+                                          className="rounded-lg border border-violet-300/35 bg-violet-300/15 px-2 py-1 text-[10px] font-black uppercase tracking-[0.08em] text-violet-100"
+                                        >
+                                          Marquer converti
+                                        </button>
+                                        <button
+                                          type="button"
+                                          onClick={() => removeHistoryEntry(entry)}
+                                          className="rounded-lg border border-rose-300/35 bg-rose-300/15 px-2 py-1 text-[10px] font-black uppercase tracking-[0.08em] text-rose-100"
+                                        >
+                                          Supprimer
+                                        </button>
+                                        {entry.messageDraft?.trim()?.length ? (
+                                          <button
+                                            type="button"
+                                            onClick={() => copyHistoryMessage(entry)}
+                                            className="rounded-lg border border-emerald-300/35 bg-emerald-300/12 px-2 py-1 text-[10px] font-black uppercase tracking-[0.08em] text-emerald-100"
+                                          >
+                                            {copiedHistoryEntryKey === historyKey ? "Copie ✓" : "Copier"}
+                                          </button>
+                                        ) : null}
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            const nextIndex = allContactsData.findIndex((contact) => contact.id === entry.contactId);
+                                            if (nextIndex >= 0) setIndex(nextIndex);
+                                            openContactProfileWithTrustGuard(entry.contactId);
+                                          }}
+                                          className="rounded-lg border border-white/20 bg-white/10 px-2 py-1 text-[10px] font-black uppercase tracking-[0.08em] text-white/85"
+                                        >
+                                          Ouvrir fiche
+                                        </button>
+                                        {eligibleToPromote && (
+                                          <button
+                                            type="button"
+                                            onClick={() => promoteToEclaireur(entry.contactId)}
+                                            className="rounded-lg border border-emerald-300/45 bg-emerald-300/15 px-2 py-1 text-[10px] font-black uppercase tracking-[0.08em] text-emerald-100"
+                                          >
+                                            ⭐ Promouvoir eclaireur
+                                          </button>
+                                        )}
+                                      </div>
+                                    </motion.div>
+                                  )}
+                                </AnimatePresence>
+                              </article>
+                            );
+                          })}
                         </div>
                       </section>
                     );
@@ -5459,14 +5635,25 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
               <div className="rounded-xl bg-[#0E1430]/95 pb-2">
                 <div className="flex items-center justify-between">
                   <p className="text-xs font-black uppercase tracking-[0.12em] text-cyan-200">Mes Eclaireurs</p>
-                  <button
-                    type="button"
-                    onClick={() => setShowAddScoutModal(true)}
-                    className="relative z-30 h-9 w-9 rounded-full border border-cyan-300/40 bg-cyan-300/15 text-base font-black text-cyan-100"
-                    aria-label="Ajouter un eclaireur"
-                  >
-                    +
-                  </button>
+                  <div className="relative">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowAddScoutTooltip(false);
+                        setHasSeenAddScoutTooltip(true);
+                        setShowAddScoutModal(true);
+                      }}
+                      className="relative z-30 h-9 w-9 rounded-full border border-cyan-300/40 bg-cyan-300/15 text-base font-black text-cyan-100"
+                      aria-label="Ajouter un eclaireur"
+                    >
+                      +
+                    </button>
+                    {showAddScoutTooltip && (
+                      <div className="pointer-events-none absolute right-0 top-11 whitespace-nowrap rounded-lg border border-cyan-300/35 bg-[#0E183A] px-2 py-1 text-[10px] font-black text-cyan-100">
+                        Ajouter un eclaireur
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
               <div className="mt-2 grid grid-cols-2 gap-2">
@@ -5482,9 +5669,10 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                   <p className="text-[9px] font-black uppercase tracking-[0.08em] text-fuchsia-100">Total Eclaireurs</p>
                   <p className="text-lg font-black text-fuchsia-50">{eclaireurHeaderStats.totalCount}</p>
                 </div>
-                <div className="rounded-xl border border-amber-300/30 bg-amber-300/12 px-2 py-2 text-center">
+                <div className={`rounded-xl border border-amber-300/40 bg-amber-200/20 px-2 py-2 text-center ${recoAlertPulse ? "animate-pulse" : ""}`}>
                   <p className="text-[9px] font-black uppercase tracking-[0.08em] text-amber-100">Total Reco (alertes)</p>
-                  <p className="text-lg font-black text-amber-50">{eclaireurHeaderStats.alertesCount}</p>
+                  <p className="text-2xl font-black text-amber-50">{eclaireurHeaderStats.alertesCount}</p>
+                  <p className="text-[10px] font-black text-amber-100/90">alerte(s)</p>
                 </div>
               </div>
               {apiErrorMessage ? (
@@ -5514,10 +5702,22 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                         }}
                         className="w-full rounded-xl border border-fuchsia-200/25 bg-black/30 px-3 py-2 text-left transition hover:border-fuchsia-300/55 hover:bg-fuchsia-300/12"
                       >
-                        <p className="text-[12px] font-black text-white">{item.contact_name}</p>
-                        <p className="text-[10px] text-white/75">
-                          {item.scout_name || "Eclaireur"} ({item.scout_type === "pro" ? "Pro" : "Perso"}) • {item.project_type || "Projet non precise"} • {referralStatusLabel(item.status)}
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="text-[12px] font-black text-white">{item.contact_name}</p>
+                          <span
+                            className={`rounded-full border px-2 py-0.5 text-[10px] font-black ${
+                              item.status === "offered"
+                                ? "border-violet-300/35 bg-violet-300/15 text-violet-100"
+                                : "border-emerald-300/35 bg-emerald-300/15 text-emerald-100"
+                            }`}
+                          >
+                            {item.status === "offered" ? "Offre envoyee 🟣" : "Opportunite recue 🟢"}
+                          </span>
+                        </div>
+                        <p className="mt-1 text-[10px] text-white/75">
+                          {item.status === "offered" ? "🧾" : "📥"} {item.scout_name || "Eclaireur"} ({item.scout_type === "pro" ? "Pro" : "Perso"}) • {referralStatusLabel(item.status)}
                         </p>
+                        <p className="text-[10px] text-white/65">{formatDateTimeShort(item.updated_at || item.created_at)}</p>
                       </button>
                     ))}
                   </div>
@@ -5579,6 +5779,9 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                       {daysSinceActivation === null
                         ? "Activation: jamais activee"
                         : `Activation: il y a ${daysSinceActivation} jour${daysSinceActivation > 1 ? "s" : ""}`}
+                    </p>
+                    <p className="mt-1 text-[12px] text-white/72">
+                      {stats.leadsDetected} reco • {stats.leadsSigned} abouties • {Math.round(stats.commissionTotalEur || 0)}€ generes
                     </p>
                     {eclaireurLinksByContactId[contact.id] ? (
                       <div className="mt-2 rounded-lg border border-cyan-300/30 bg-cyan-300/10 px-2 py-2">
@@ -5674,6 +5877,11 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                   Interne Popey
                 </button>
               </div>
+              <p className="mt-2 text-[11px] text-white/70">
+                {allianceDirectoryMode === "external"
+                  ? "Externes: pros locaux via annuaire public."
+                  : "Interne: membres Popey actifs."}
+              </p>
             </div>
 
             <div className="relative mt-3 overflow-hidden rounded-3xl border border-cyan-300/45 bg-gradient-to-br from-cyan-300/20 via-[#12204A] to-fuchsia-300/20 p-4 shadow-[0_0_40px_rgba(56,189,248,0.16)]">
@@ -5692,9 +5900,13 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                         : "Lance une recherche ciblee, contacte les bons pros, et transforme-les en apporteurs actifs."}
                     </p>
                   </div>
-                  <span className="rounded-full border border-emerald-300/45 bg-emerald-300/15 px-2 py-1 text-[10px] font-black uppercase tracking-[0.08em] text-emerald-100">
-                    Boost
-                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setShowBoostInfo(true)}
+                    className="rounded-full border border-amber-300/45 bg-amber-300/15 px-2 py-1 text-[10px] font-black uppercase tracking-[0.08em] text-amber-100"
+                  >
+                    BOOST • Premium
+                  </button>
                 </div>
                 <div className="mt-3 grid grid-cols-3 gap-2">
                   <div className="rounded-xl border border-white/15 bg-black/25 px-2 py-2 text-center">
@@ -5713,31 +5925,43 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                 <p className="mt-2 text-[10px] text-white/65">Eclaireur = apporteur d affaires.</p>
               </div>
               <div className="relative mt-4 grid gap-2 sm:grid-cols-2">
-                <input
-                  value={allianceCity}
-                  onChange={(event) => setAllianceCity(event.target.value)}
-                  placeholder="Ville"
-                  className="h-11 rounded-xl border border-white/20 bg-black/35 px-3 text-[12px] placeholder:text-white/45"
-                />
-                <input
-                  value={allianceRadiusKm}
-                  onChange={(event) => setAllianceRadiusKm(event.target.value)}
-                  placeholder="Rayon km"
-                  inputMode="numeric"
-                  className="h-11 rounded-xl border border-white/20 bg-black/35 px-3 text-[12px] placeholder:text-white/45"
-                />
-                <input
-                  value={allianceSourceMetier}
-                  onChange={(event) => setAllianceSourceMetier(event.target.value)}
-                  placeholder="Ton metier"
-                  className="h-11 rounded-xl border border-white/20 bg-black/35 px-3 text-[12px] placeholder:text-white/45 sm:col-span-2"
-                />
-                <input
-                  value={allianceTargetMetiersInput}
-                  onChange={(event) => setAllianceTargetMetiersInput(event.target.value)}
-                  placeholder="Metiers cibles (courtier, notaire, ...)"
-                  className="h-11 rounded-xl border border-white/20 bg-black/35 px-3 text-[12px] placeholder:text-white/45 sm:col-span-2"
-                />
+                <div>
+                  <p className="mb-1 text-[11px] text-white/65">Ville</p>
+                  <input
+                    value={allianceCity}
+                    onChange={(event) => setAllianceCity(event.target.value)}
+                    placeholder="Ville (ex: Dax)"
+                    className="h-11 w-full rounded-xl border border-white/20 bg-black/35 px-3 text-[12px] placeholder:text-white/45"
+                  />
+                </div>
+                <div>
+                  <p className="mb-1 text-[11px] text-white/65">Rayon (km)</p>
+                  <input
+                    value={allianceRadiusKm}
+                    onChange={(event) => setAllianceRadiusKm(event.target.value)}
+                    placeholder="15"
+                    inputMode="numeric"
+                    className="h-11 w-full rounded-xl border border-white/20 bg-black/35 px-3 text-[12px] placeholder:text-white/45"
+                  />
+                </div>
+                <div className="sm:col-span-2">
+                  <p className="mb-1 text-[11px] text-white/65">Ton metier</p>
+                  <input
+                    value={allianceSourceMetier}
+                    onChange={(event) => setAllianceSourceMetier(event.target.value)}
+                    placeholder="Ton metier"
+                    className="h-11 w-full rounded-xl border border-white/20 bg-black/35 px-3 text-[12px] placeholder:text-white/45"
+                  />
+                </div>
+                <div className="sm:col-span-2">
+                  <p className="mb-1 text-[11px] text-white/65">Metiers cibles</p>
+                  <input
+                    value={allianceTargetMetiersInput}
+                    onChange={(event) => setAllianceTargetMetiersInput(event.target.value)}
+                    placeholder="courtier, notaire, ..."
+                    className="h-11 w-full rounded-xl border border-white/20 bg-black/35 px-3 text-[12px] placeholder:text-white/45"
+                  />
+                </div>
               </div>
               <button
                 type="button"
@@ -5791,18 +6015,34 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
-                      <p className="truncate text-sm font-black text-white">{prospect.full_name}</p>
-                      <p className="text-[11px] text-cyan-100">
-                        {prospect.metier}
-                        {allianceDirectoryMode === "internal" ? " • Membre Popey" : ""}
-                      </p>
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <p className="truncate text-sm font-black text-white">{prospect.full_name}</p>
+                        <span className={`rounded-full border px-2 py-0.5 text-[10px] font-black ${allianceMetierTone(prospect.metier)}`}>
+                          {prospect.metier}
+                        </span>
+                        {allianceDirectoryMode === "internal" ? (
+                          <span className="rounded-full border border-emerald-300/35 bg-emerald-300/12 px-2 py-0.5 text-[10px] font-black text-emerald-100">
+                            Membre Popey
+                          </span>
+                        ) : null}
+                      </div>
                       <p className="text-[10px] text-white/70">
                         {prospect.city || "Ville inconnue"} {prospect.distance_km ? `• ${prospect.distance_km} km` : ""}
                       </p>
                     </div>
-                    <span className="rounded-full border border-emerald-300/35 bg-emerald-300/12 px-2 py-0.5 text-[10px] font-black text-emerald-100">
-                      Score {prospect.fit_score}/100
-                    </span>
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => setShowAllianceMetricsInfo(true)}
+                        className="h-6 w-6 rounded-full border border-white/25 bg-white/10 text-[10px] font-black text-white/90"
+                        aria-label="Aide score et probabilite"
+                      >
+                        ⓘ
+                      </button>
+                      <span className="rounded-full border border-emerald-300/35 bg-emerald-300/12 px-2 py-0.5 text-[10px] font-black text-emerald-100">
+                        Score {prospect.fit_score}/100
+                      </span>
+                    </div>
                   </div>
                   <div className="mt-1 flex flex-wrap items-center gap-1.5">
                     <span className="rounded-full border border-cyan-300/30 bg-cyan-300/12 px-2 py-0.5 text-[10px] font-black text-cyan-100">
@@ -5815,6 +6055,9 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                       Clics {prospect.invite_clicked_count || 0}
                     </span>
                   </div>
+                  <p className="mt-1 text-[10px] text-white/65">
+                    Score = adequation profil • Probabilite = chance de reponse estimee
+                  </p>
                   <div className="mt-2 space-y-2">
                     <p className="truncate text-[10px] text-white/70">{prospect.phone_e164 || "Telephone non disponible"}</p>
                     <button
@@ -6915,6 +7158,49 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
             </p>
             <p className="mt-1 text-xs text-white/70">
               Plus le signal est fort (client ideal, recommandation fiable, etc.), plus le gain estime monte.
+            </p>
+          </section>
+        </div>
+      )}
+
+      {showAllianceMetricsInfo && (
+        <div className="fixed inset-0 z-[56] bg-black/55 backdrop-blur-sm flex items-end justify-center px-3 pb-4 sm:items-center sm:pb-0">
+          <section className="w-full max-w-md rounded-3xl border border-cyan-300/35 bg-[#0E1430] p-4">
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-black text-cyan-100">Score et probabilite</p>
+              <button
+                type="button"
+                onClick={() => setShowAllianceMetricsInfo(false)}
+                className="h-8 w-8 rounded-full border border-white/20 bg-white/10 text-xs"
+              >
+                ✕
+              </button>
+            </div>
+            <p className="mt-2 text-sm text-white/85">
+              Le score mesure l adequation du profil avec ton besoin.
+            </p>
+            <p className="mt-1 text-sm text-white/85">
+              La probabilite estime ses chances de repondre.
+            </p>
+          </section>
+        </div>
+      )}
+
+      {showBoostInfo && (
+        <div className="fixed inset-0 z-[56] bg-black/55 backdrop-blur-sm flex items-end justify-center px-3 pb-4 sm:items-center sm:pb-0">
+          <section className="w-full max-w-md rounded-3xl border border-amber-300/35 bg-[#0E1430] p-4">
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-black text-amber-100">BOOST Premium</p>
+              <button
+                type="button"
+                onClick={() => setShowBoostInfo(false)}
+                className="h-8 w-8 rounded-full border border-white/20 bg-white/10 text-xs"
+              >
+                ✕
+              </button>
+            </div>
+            <p className="mt-2 text-sm text-white/85">
+              Le Boost propulse ton profil en tete des resultats des autres membres Popey.
             </p>
           </section>
         </div>
