@@ -965,6 +965,9 @@ export default function EntrepreneurSmartScanTestPage() {
   const [allianceTargetMetiersInput, setAllianceTargetMetiersInput] = useState("");
   const [allianceRadiusKm, setAllianceRadiusKm] = useState("15");
   const [showAllianceInvitesModal, setShowAllianceInvitesModal] = useState(false);
+  const [revealedAllianceProspectIds, setRevealedAllianceProspectIds] = useState<string[]>([]);
+  const [isAllianceRevealRunning, setIsAllianceRevealRunning] = useState(false);
+  const allianceRevealTimeoutsRef = useRef<number[]>([]);
   const contactImportInputRef = useRef<HTMLInputElement | null>(null);
   const localDayNumber = useMemo(() => getLocalDayNumber(), []);
 
@@ -1158,6 +1161,11 @@ export default function EntrepreneurSmartScanTestPage() {
     }
     return list.sort((a, b) => (b.partnership_probability || 0) - (a.partnership_probability || 0));
   }, [allianceProspects, allianceSort]);
+  const displayedAllianceProspects = useMemo(() => {
+    if (!isAllianceRevealRunning) return sortedAllianceProspects;
+    const visible = new Set(revealedAllianceProspectIds);
+    return sortedAllianceProspects.filter((item) => visible.has(item.id));
+  }, [isAllianceRevealRunning, revealedAllianceProspectIds, sortedAllianceProspects]);
   const scopedActionContact = actionFromProfileContactId
     ? allContactsData.find((contact) => contact.id === actionFromProfileContactId) || current
     : current;
@@ -3172,10 +3180,11 @@ export default function EntrepreneurSmartScanTestPage() {
 
   function buildAllianceInviteMessage(prospect: SmartScanAllianceProspect) {
     const firstName = prospect.full_name.split(" ")[0] || prospect.full_name;
-    const myFirstName = myProfile?.first_name?.trim() || [myProfile?.first_name, myProfile?.last_name].filter(Boolean).join(" ").trim() || "moi";
+    const myFirstName = (myProfile?.first_name || profileForm.firstName || "").trim();
     const myMetier = myProfile?.metier || allianceSourceMetier || "professionnel";
     const city = allianceCity || myProfile?.ville || "ma ville";
-    return `Bonjour ${firstName}, je suis ${myFirstName}, ${myMetier} a ${city}.
+    const intro = myFirstName ? `je suis ${myFirstName}, ${myMetier} a ${city}.` : `je suis ${myMetier} a ${city}.`;
+    return `Bonjour ${firstName}, ${intro}
 
 Je me permets de t ecrire car on croise souvent des personnes qui auraient besoin d un autre pro de confiance, et je pense que nos activites peuvent se completer.
 
@@ -3185,6 +3194,17 @@ Si l experience est bonne, on garde le contact pour de futures recommandations.
 
 Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommandation.`;
   }
+
+  function clearAllianceRevealQueue() {
+    allianceRevealTimeoutsRef.current.forEach((timeoutId) => window.clearTimeout(timeoutId));
+    allianceRevealTimeoutsRef.current = [];
+  }
+
+  useEffect(() => {
+    return () => {
+      clearAllianceRevealQueue();
+    };
+  }, []);
 
   async function loadAllianceProspectsSnapshot() {
     const response = await fetch("/api/popey-human/smart-scan/alliances/prospects", {
@@ -3204,6 +3224,10 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
   async function runAllianceSearch() {
     try {
       setIsAlliancesSearching(true);
+      clearAllianceRevealQueue();
+      setIsAllianceRevealRunning(true);
+      setRevealedAllianceProspectIds([]);
+      setAllianceProspects([]);
       const targetMetiers = allianceTargetMetiersInput
         .split(",")
         .map((item) => item.trim())
@@ -3227,12 +3251,27 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
       if (!response.ok) {
         throw new Error(toUiErrorMessage(payload.error, "Recherche alliances impossible."));
       }
-      setAllianceProspects(payload.prospects || []);
+      const nextProspects = payload.prospects || [];
+      setAllianceProspects(nextProspects);
+      if (nextProspects.length === 0) {
+        setIsAllianceRevealRunning(false);
+      } else {
+        nextProspects.forEach((prospect, idx) => {
+          const timeoutId = window.setTimeout(() => {
+            setRevealedAllianceProspectIds((previous) => (previous.includes(prospect.id) ? previous : [...previous, prospect.id]));
+            if (idx === nextProspects.length - 1) {
+              setIsAllianceRevealRunning(false);
+            }
+          }, idx * 140);
+          allianceRevealTimeoutsRef.current.push(timeoutId);
+        });
+      }
       await loadAllianceInvites();
       setApiErrorMessage("");
     } catch (error) {
       const message = error instanceof Error ? error.message : "Recherche alliances impossible.";
       setApiErrorMessage(message);
+      setIsAllianceRevealRunning(false);
     } finally {
       setIsAlliancesSearching(false);
     }
@@ -5499,8 +5538,14 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                   Aucun prospect pour le moment. Lance une recherche avec ville + metiers cibles.
                 </p>
               ) : null}
-              {sortedAllianceProspects.map((prospect) => (
-                <article key={`alliance-prospect-${prospect.id}`} className="rounded-xl border border-white/15 bg-black/25 px-3 py-2">
+              {displayedAllianceProspects.map((prospect) => (
+                <motion.article
+                  key={`alliance-prospect-${prospect.id}`}
+                  initial={{ opacity: 0, y: 18, scale: 0.985 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  transition={{ duration: 0.28, ease: "easeOut" }}
+                  className="rounded-xl border border-white/15 bg-black/25 px-3 py-2"
+                >
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
                       <p className="truncate text-sm font-black text-white">{prospect.full_name}</p>
@@ -5536,7 +5581,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                       Message
                     </button>
                   </div>
-                </article>
+                </motion.article>
               ))}
             </div>
           </section>

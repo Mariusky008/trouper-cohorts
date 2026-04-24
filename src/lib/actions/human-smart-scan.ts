@@ -3134,22 +3134,28 @@ export async function createAllianceInvite(input: {
     const inviteToken = crypto.randomUUID().replace(/-/g, "").toLowerCase();
     const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24 * 30).toISOString();
     let inserted = false;
+    let shortCodeEnabled = true;
     for (let attempt = 0; attempt < 10; attempt += 1) {
-      const shortCode = generateScoutShortCode();
+      const shortCode = shortCodeEnabled ? generateScoutShortCode() : null;
+      const payload: Record<string, unknown> = {
+        owner_member_id: ownerMemberId,
+        scout_id: scoutId,
+        invite_token: inviteToken,
+        expires_at: expiresAt,
+      };
+      if (shortCodeEnabled && shortCode) payload.short_code = shortCode;
       const { error: insertInviteError } = await supabaseAdmin
         .from("human_scout_invites")
-        .insert({
-          owner_member_id: ownerMemberId,
-          scout_id: scoutId,
-          invite_token: inviteToken,
-          short_code: shortCode,
-          expires_at: expiresAt,
-        });
+        .insert(payload);
       if (!insertInviteError) {
         inserted = true;
         break;
       }
       const lower = String(insertInviteError.message || "").toLowerCase();
+      if (lower.includes("column") && lower.includes("short_code")) {
+        shortCodeEnabled = false;
+        continue;
+      }
       if (!lower.includes("short_code")) return null;
     }
     if (!inserted) return null;
