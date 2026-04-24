@@ -11,8 +11,23 @@ export default async function proxy(request: NextRequest) {
   }
 
   const { response, user } = await updateSession(request);
+  const host = request.headers.get("host") || "";
   const pathname = request.nextUrl.pathname;
   const scoutPortalMatch = pathname.match(/^\/popey-human\/eclaireur\/([^/?#]+)/);
+
+  const isPopeyLinkHost = /(^|\.)popey\.link$/i.test(host);
+  const canRewritePopeyLinkPath =
+    pathname !== "/" &&
+    !pathname.startsWith("/popey-link") &&
+    !pathname.startsWith("/api") &&
+    !pathname.startsWith("/_next") &&
+    !/\.[a-z0-9]+$/i.test(pathname);
+
+  if (isPopeyLinkHost && canRewritePopeyLinkPath) {
+    const rewriteUrl = request.nextUrl.clone();
+    rewriteUrl.pathname = `/popey-link${pathname}`;
+    return copyResponseCookies(NextResponse.rewrite(rewriteUrl), response);
+  }
 
   const isHumanMemberArea = pathname.startsWith("/popey-human/app");
   const isHumanAdminArea = pathname.startsWith("/admin/humain");
