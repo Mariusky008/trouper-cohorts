@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
   const supabaseAdmin = createAdminClient();
   const rewardPercent = Number.parseFloat(String(body.eclaireurRewardPercent || "").replace(",", "."));
   const rewardFixedEur = Number.parseFloat(String(body.eclaireurRewardFixedEur || "").replace(",", "."));
-  const payload = {
+  const payload: Record<string, unknown> = {
     first_name: String(body.firstName || "").trim() || null,
     last_name: String(body.lastName || "").trim() || null,
     metier: String(body.metier || "").trim() || null,
@@ -105,9 +105,11 @@ export async function POST(request: NextRequest) {
     offre_decouverte: String(body.offreDecouverte || "").trim() || null,
     bio: String(body.bio || "").trim() || null,
     contact_link: String(body.contactLink || "").trim() || null,
-    onboarding_completed_at: body.onboardingCompleted ? new Date().toISOString() : null,
     updated_at: new Date().toISOString(),
   };
+  if (typeof body.onboardingCompleted === "boolean") {
+    payload.onboarding_completed_at = body.onboardingCompleted ? new Date().toISOString() : null;
+  }
 
   const { data, error } = await supabaseAdmin
     .from("human_members")

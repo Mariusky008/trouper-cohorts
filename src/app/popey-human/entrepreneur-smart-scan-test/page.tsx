@@ -2004,16 +2004,19 @@ export default function EntrepreneurSmartScanTestPage() {
   useEffect(() => {
     if (!showOnboardingJ0 || onboardingStep !== 4) return;
     if (onboardingMessageDraft.trim()) return;
-    const senderName = String(myProfile?.first_name || "").trim() || "{{ton_prenom}}";
-    const senderCity = String(myProfile?.ville || "").trim() || "{{ta_ville}}";
-    const senderMetier = String(myProfile?.metier || "").trim() || "{{ton_metier}}";
-    const seed = `Bonjour {{prenom_contact}}, je suis ${senderName}, ${senderMetier} a ${senderCity}.
+    const contactFirstName = String(onboardingFirstContact?.name || "").trim().split(" ")[0] || "Claire";
+    const senderName = String(myProfile?.first_name || "").trim() || "Jean-Philippe";
+    const senderCity = String(myProfile?.ville || "").trim() || "Dax";
+    const senderMetier = String(myProfile?.metier || "").trim() || "Agent immobilier";
+    const seed = `Bonjour ${contactFirstName}, je suis ${senderName}, ${senderMetier} a ${senderCity}.
 
 Je te partage un exemple de message Popey pour lancer une prise de contact.
 
-Ce texte est uniquement pedagogique pendant l onboarding: aucun message n est envoye automatiquement.`;
+Ce texte est uniquement pedagogique pendant l onboarding: aucun message n est envoye automatiquement.
+
+Si tu es partant, je t explique ensuite la suite en 2 minutes.`;
     setOnboardingMessageDraft(seed);
-  }, [showOnboardingJ0, onboardingStep, onboardingMessageDraft, myProfile]);
+  }, [showOnboardingJ0, onboardingStep, onboardingMessageDraft, myProfile, onboardingFirstContact]);
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
@@ -4546,7 +4549,9 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
             <p className="mt-2 text-[11px] font-black uppercase tracking-[0.09em] text-cyan-100/95">
               Demonstration uniquement, sans envoi reel.
             </p>
-            <div className="mt-3 grid grid-cols-2 gap-2">
+            <div className="mt-3 rounded-2xl border border-white/15 bg-white/5 p-2">
+              <p className="px-2 pb-2 text-[10px] font-black uppercase tracking-[0.1em] text-cyan-100/90">1. Type d opportunite</p>
+              <div className="grid grid-cols-2 gap-2">
               {OPPORTUNITY_OPTIONS.map((option) => (
                 <button
                   key={`onboarding-op-${option.id}`}
@@ -4559,20 +4564,24 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                   {option.label}
                 </button>
               ))}
+              </div>
             </div>
-            <div className="mt-2 grid grid-cols-3 gap-2">
-              {(["froid", "tiede", "brulant"] as HeatLevel[]).map((heat) => (
-                <button
-                  key={`onboarding-heat-${heat}`}
-                  type="button"
-                  onClick={() => setOnboardingQualificationHeat(heat)}
-                  className={`h-10 rounded-full text-[12px] font-black ${
-                    onboardingQualificationHeat === heat ? "bg-cyan-300 text-[#13253D]" : "bg-white/10 text-white/85"
-                  }`}
-                >
-                  {heat === "froid" ? "❄️ Froid" : heat === "tiede" ? "⚡ Tiede" : "🔥 Brulant"}
-                </button>
-              ))}
+            <div className="mt-2 rounded-2xl border border-cyan-300/25 bg-cyan-300/8 p-2">
+              <p className="px-2 pb-2 text-[10px] font-black uppercase tracking-[0.1em] text-cyan-100/95">2. Temperature du contact</p>
+              <div className="grid grid-cols-3 gap-2">
+                {(["froid", "tiede", "brulant"] as HeatLevel[]).map((heat) => (
+                  <button
+                    key={`onboarding-heat-${heat}`}
+                    type="button"
+                    onClick={() => setOnboardingQualificationHeat(heat)}
+                    className={`h-10 rounded-full text-[12px] font-black ${
+                      onboardingQualificationHeat === heat ? "bg-cyan-300 text-[#13253D]" : "bg-white/10 text-white/85"
+                    }`}
+                  >
+                    {heat === "froid" ? "❄️ Froid" : heat === "tiede" ? "⚡ Tiede" : "🔥 Brulant"}
+                  </button>
+                ))}
+              </div>
             </div>
             <button
               type="button"
@@ -4590,11 +4599,9 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
           <div className="mt-3">
             <p className="text-xl font-black">Exemple de message (educatif)</p>
             <p className="mt-1 text-sm text-white/75">Aucun message ne sera envoye pendant cet onboarding.</p>
-            <textarea
-              value={onboardingMessageDraft}
-              onChange={(event) => setOnboardingMessageDraft(event.target.value)}
-              className="mt-3 min-h-[160px] w-full rounded-xl border border-white/20 bg-black/25 px-3 py-3 text-sm"
-            />
+            <div className="mt-3 rounded-xl border border-white/20 bg-black/25 px-3 py-3 text-[20px] leading-relaxed text-white whitespace-pre-wrap sm:text-base">
+              {onboardingMessageDraft}
+            </div>
             <button
               type="button"
               onClick={() => {
