@@ -3207,7 +3207,7 @@ export default function EntrepreneurSmartScanTestPage() {
           sourceMetier: allianceSourceMetier || null,
           targetMetiers,
           radiusKm: Number.parseInt(allianceRadiusKm || "15", 10) || 15,
-          limit: 80,
+          limit: 10,
         }),
       });
       const payload = (await response.json().catch(() => ({}))) as {

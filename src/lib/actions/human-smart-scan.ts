@@ -2741,7 +2741,7 @@ async function searchB2BProvider(input: {
     body: JSON.stringify({
       searchStringsArray: input.targetMetiers.slice(0, 10),
       locationQuery: input.city,
-      maxCrawledPlacesPerSearch: Math.max(5, Math.min(120, input.limit)),
+      maxCrawledPlacesPerSearch: Math.max(1, Math.min(10, input.limit)),
       language: "fr",
       maxImages: 0,
       includeWebResults: false,
@@ -2833,7 +2833,7 @@ export async function searchAllianceProspects(input: {
   const targetMetiers = (input.targetMetiers || []).map((item) => String(item || "").trim()).filter(Boolean);
   const normalizedTargets = targetMetiers.length > 0 ? targetMetiers : resolveDefaultAllianceTargets(sourceMetier);
   const radiusKm = Math.max(1, Math.min(100, Math.round(input.radiusKm || 15)));
-  const limit = Math.max(1, Math.min(120, Math.round(input.limit || 40)));
+  const limit = Math.max(1, Math.min(10, Math.round(input.limit || 10)));
 
   const providerResult = await searchB2BProvider({
     city,
