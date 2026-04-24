@@ -3,6 +3,7 @@ export const SMART_SCAN_ANALYTICS_EVENT_TYPES = [
   "trust_level_set",
   "whatsapp_sent",
   "daily_goal_progressed",
+  "onboarding_completed",
 ] as const;
 
 export type SmartScanAnalyticsEventType = (typeof SMART_SCAN_ANALYTICS_EVENT_TYPES)[number];

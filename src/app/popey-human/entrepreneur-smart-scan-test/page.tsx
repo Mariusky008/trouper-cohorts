@@ -222,6 +222,13 @@ type SmartScanProfile = {
   eclaireur_reward_fixed_eur: number | null;
   ville: string | null;
   phone: string | null;
+  sector_id?: string | null;
+  metier_label?: string | null;
+  public_slug?: string | null;
+  offre_decouverte?: string | null;
+  bio?: string | null;
+  contact_link?: string | null;
+  onboarding_completed_at?: string | null;
   status: "active" | "paused" | "archived";
 };
 type SmartScanProfileForm = {
@@ -237,6 +244,18 @@ type SmartScanProfileForm = {
   eclaireurRewardFixedEur: string;
   ville: string;
   phone: string;
+  sectorId?: string;
+  metierLabel?: string;
+  publicSlug?: string;
+  offreDecouverte?: string;
+  bio?: string;
+  contactLink?: string;
+};
+type SectorVocabularyListItem = {
+  sector_id: string;
+  label: string;
+  pipeline_steps: string[];
+  is_active?: boolean;
 };
 type SmartScanSelfScoutLink = {
   shortCode: string | null;
@@ -921,6 +940,12 @@ export default function EntrepreneurSmartScanTestPage() {
     eclaireurRewardFixedEur: "",
     ville: "",
     phone: "",
+    sectorId: "",
+    metierLabel: "",
+    publicSlug: "",
+    offreDecouverte: "",
+    bio: "",
+    contactLink: "",
   });
   const [isProfileLoading, setIsProfileLoading] = useState(false);
   const [isProfileSaving, setIsProfileSaving] = useState(false);
@@ -1017,6 +1042,17 @@ export default function EntrepreneurSmartScanTestPage() {
   const [internalAllianceInvites, setInternalAllianceInvites] = useState<SmartScanAllianceInvite[]>([]);
   const [isInternalInvitesLoading, setIsInternalInvitesLoading] = useState(false);
   const [showInternalInvitesModal, setShowInternalInvitesModal] = useState(false);
+  const [showOnboardingJ0, setShowOnboardingJ0] = useState(false);
+  const [onboardingStep, setOnboardingStep] = useState<1 | 2 | 3 | 4>(1);
+  const [onboardingSectorQuery, setOnboardingSectorQuery] = useState("");
+  const [onboardingSectors, setOnboardingSectors] = useState<SectorVocabularyListItem[]>([]);
+  const [onboardingSelectedSectorId, setOnboardingSelectedSectorId] = useState("other_custom");
+  const [onboardingCustomMetier, setOnboardingCustomMetier] = useState("");
+  const [onboardingQualificationType, setOnboardingQualificationType] = useState<OpportunityId | null>(null);
+  const [onboardingQualificationHeat, setOnboardingQualificationHeat] = useState<HeatLevel | null>(null);
+  const [onboardingMessageDraft, setOnboardingMessageDraft] = useState("");
+  const [onboardingStartedAtMs, setOnboardingStartedAtMs] = useState(0);
+  const [isOnboardingSaving, setIsOnboardingSaving] = useState(false);
   const [revealedAllianceProspectIds, setRevealedAllianceProspectIds] = useState<string[]>([]);
   const [isAllianceRevealRunning, setIsAllianceRevealRunning] = useState(false);
   const [showAllianceMessageModal, setShowAllianceMessageModal] = useState(false);
@@ -1061,6 +1097,12 @@ export default function EntrepreneurSmartScanTestPage() {
       : `${dailyQueueStart + 1}-${dailyQueueEnd}`;
   const current = contactsData[index] ?? contactsData[contactsData.length - 1];
   const profileContact = allContactsData.find((contact) => contact.id === profileContactId) ?? null;
+  const onboardingFirstContact = importedContacts[0] || allContactsData[0] || null;
+  const onboardingFilteredSectors = onboardingSectors.filter((sector) => {
+    const needle = onboardingSectorQuery.trim().toLowerCase();
+    if (!needle) return true;
+    return sector.label.toLowerCase().includes(needle) || sector.sector_id.toLowerCase().includes(needle);
+  });
   const totalScanned = hasImportedContacts ? importedTotalCount : 0;
   const scanDone = hasImportedContacts && totalScanned > 0 && scanCount >= totalScanned;
   const scanProgress = totalScanned > 0 ? Math.min(1, scanCount / totalScanned) : 0;
@@ -1794,6 +1836,36 @@ export default function EntrepreneurSmartScanTestPage() {
   }, [showMyProfilePanel]);
 
   useEffect(() => {
+    if (!isBootstrapped) return;
+    if (myProfile) return;
+    if (isProfileLoading) return;
+    void loadMyProfile();
+  }, [isBootstrapped, myProfile, isProfileLoading]);
+
+  useEffect(() => {
+    if (!myProfile) return;
+    const needsOnboarding = !myProfile.onboarding_completed_at;
+    if (!needsOnboarding) {
+      setShowOnboardingJ0(false);
+      return;
+    }
+    if (!showOnboardingJ0) {
+      setShowOnboardingJ0(true);
+      setOnboardingStep(1);
+      setOnboardingStartedAtMs(Date.now());
+      void loadOnboardingSectors();
+    }
+  }, [myProfile, showOnboardingJ0]);
+
+  useEffect(() => {
+    if (!showOnboardingJ0 || onboardingStep !== 4) return;
+    if (!onboardingFirstContact) return;
+    if (onboardingMessageDraft.trim()) return;
+    const seed = buildTemplate("eclaireur", onboardingFirstContact, undefined, myProfile);
+    setOnboardingMessageDraft(seed);
+  }, [showOnboardingJ0, onboardingStep, onboardingFirstContact, onboardingMessageDraft, myProfile]);
+
+  useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
       if (event.key !== "Escape") return;
       if (selectedEclaireurTemplateContactId) {
@@ -2304,7 +2376,7 @@ export default function EntrepreneurSmartScanTestPage() {
   }
 
   function trackSmartScanEvent(
-    eventType: "contact_opened" | "trust_level_set" | "whatsapp_sent" | "daily_goal_progressed",
+    eventType: "contact_opened" | "trust_level_set" | "whatsapp_sent" | "daily_goal_progressed" | "onboarding_completed",
     metadata: Record<string, unknown>,
   ) {
     void postSmartScan("analytics-event", {
@@ -3925,6 +3997,12 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
           : "",
       ville: profile?.ville || "",
       phone: profile?.phone || "",
+      sectorId: profile?.sector_id || "",
+      metierLabel: profile?.metier_label || "",
+      publicSlug: profile?.public_slug || "",
+      offreDecouverte: profile?.offre_decouverte || "",
+      bio: profile?.bio || "",
+      contactLink: profile?.contact_link || "",
     });
   }
 
@@ -3969,6 +4047,141 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
       setApiErrorMessage(message);
     } finally {
       setIsProfileLoading(false);
+    }
+  }
+
+  async function loadOnboardingSectors() {
+    try {
+      const response = await fetch("/api/vocabulary", { cache: "no-store" });
+      const payload = (await response.json().catch(() => ({}))) as {
+        error?: string;
+        sectors?: SectorVocabularyListItem[];
+        defaultSectorId?: string;
+      };
+      if (!response.ok) throw new Error(payload.error || "Impossible de charger les secteurs.");
+      setOnboardingSectors(payload.sectors || []);
+      if (payload.defaultSectorId) {
+        setOnboardingSelectedSectorId((prev) => prev || payload.defaultSectorId || "other_custom");
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Impossible de charger les secteurs.";
+      setApiErrorMessage(message);
+    }
+  }
+
+  function getOnboardingMetierLabel() {
+    if (onboardingSelectedSectorId === "other_custom") {
+      return String(onboardingCustomMetier || "").trim();
+    }
+    const selected = onboardingSectors.find((item) => item.sector_id === onboardingSelectedSectorId);
+    return selected?.label || "";
+  }
+
+  async function saveOnboardingSectorStep() {
+    const metierLabel = getOnboardingMetierLabel();
+    if (!metierLabel) {
+      setApiErrorMessage("Choisis un metier ou renseigne ton metier libre.");
+      return;
+    }
+    try {
+      setIsOnboardingSaving(true);
+      const payload = {
+        sectorId: onboardingSelectedSectorId,
+        metierLabel,
+        metier: metierLabel,
+      };
+      const response = await fetch("/api/popey-human/smart-scan/profile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const body = (await response.json().catch(() => ({}))) as { error?: string; profile?: SmartScanProfile | null };
+      if (!response.ok) throw new Error(body.error || "Impossible d enregistrer le metier.");
+      setMyProfile(body.profile || null);
+      hydrateProfileForm(body.profile || null);
+      setOnboardingStep(2);
+      setApiErrorMessage("");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Impossible d enregistrer le metier.";
+      setApiErrorMessage(message);
+    } finally {
+      setIsOnboardingSaving(false);
+    }
+  }
+
+  async function saveOnboardingQualificationStep() {
+    if (!onboardingFirstContact || !onboardingQualificationType || !onboardingQualificationHeat) {
+      setApiErrorMessage("Selectionne type + temperature pour continuer.");
+      return;
+    }
+    try {
+      setIsOnboardingSaving(true);
+      await postSmartScan("qualification", {
+        contactId: onboardingFirstContact.id,
+        fullName: onboardingFirstContact.name,
+        city: onboardingFirstContact.city || null,
+        companyHint: onboardingFirstContact.companyHint || null,
+        heat: onboardingQualificationHeat,
+        opportunityChoice: onboardingQualificationType,
+        communityTags: ["unknown"],
+        estimatedGain: getEstimatedGain(onboardingQualificationType, ["unknown"]),
+      });
+      setOnboardingStep(4);
+      setApiErrorMessage("");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Impossible d enregistrer la qualification.";
+      setApiErrorMessage(message);
+    } finally {
+      setIsOnboardingSaving(false);
+    }
+  }
+
+  async function completeOnboardingWithFirstMessage() {
+    if (!onboardingFirstContact) return;
+    const elapsedSeconds = Math.max(1, Math.round((Date.now() - onboardingStartedAtMs) / 1000));
+    const message = String(onboardingMessageDraft || "").trim();
+    if (!message) {
+      setApiErrorMessage("Genere ou ecris le message avant envoi.");
+      return;
+    }
+    try {
+      setIsOnboardingSaving(true);
+      await postSmartScan("action", {
+        contactId: onboardingFirstContact.id,
+        fullName: onboardingFirstContact.name,
+        city: onboardingFirstContact.city || null,
+        companyHint: onboardingFirstContact.companyHint || null,
+        actionType: "eclaireur",
+        messageDraft: message,
+        sendChannel: "whatsapp",
+        status: "sent",
+      });
+      await fetch("/api/popey-human/smart-scan/profile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ onboardingCompleted: true }),
+      });
+      void postSmartScan("analytics-event", {
+        eventType: "onboarding_completed",
+        metadata: {
+          sector: onboardingSelectedSectorId,
+          firstMessageSent: true,
+          timeToFirstMessage: elapsedSeconds,
+        },
+      }).catch(() => null);
+      const waPhone = String(onboardingFirstContact.phone || "").replace(/\D/g, "");
+      const url = waPhone
+        ? `https://wa.me/${encodeURIComponent(waPhone)}?text=${encodeURIComponent(message)}`
+        : `https://wa.me/?text=${encodeURIComponent(message)}`;
+      if (typeof window !== "undefined") window.open(url, "_blank", "noopener,noreferrer");
+      setShowOnboardingJ0(false);
+      setApiErrorMessage("");
+      await refreshSmartScanSnapshot();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Impossible de terminer l onboarding.";
+      setApiErrorMessage(message);
+    } finally {
+      setIsOnboardingSaving(false);
     }
   }
 
@@ -4043,6 +4256,156 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
   }
 
   const showAdvancedOpsInUserCockpit = false;
+  const onboardingProgress = `${onboardingStep}/4`;
+  const onboardingCanContinueSector =
+    onboardingSelectedSectorId !== "other_custom" || String(onboardingCustomMetier || "").trim().length > 1;
+  const onboardingCanContinueImport = importedContacts.length >= 3;
+  const onboardingCanContinueQualification = Boolean(onboardingQualificationType && onboardingQualificationHeat);
+  const onboardingJ0Overlay = showOnboardingJ0 ? (
+    <div className="fixed inset-0 z-[80] bg-[radial-gradient(circle_at_20%_0%,rgba(56,189,248,0.18),rgba(9,11,22,0.96))] backdrop-blur-md px-4 py-5">
+      <section className="mx-auto w-full max-w-xl rounded-3xl border border-cyan-200/25 bg-[#0B1734]/90 p-4">
+        <div className="flex items-center justify-between">
+          <p className="text-xs font-black uppercase tracking-[0.12em] text-cyan-200">Onboarding J0</p>
+          <span className="rounded-full border border-white/20 bg-white/10 px-2 py-0.5 text-[10px] font-black text-white/85">{onboardingProgress}</span>
+        </div>
+        {onboardingStep === 1 && (
+          <div className="mt-3">
+            <p className="text-xl font-black">Quel est ton metier ?</p>
+            <p className="mt-1 text-sm text-white/75">Ce choix personnalise le vocabulaire de toute l app.</p>
+            <input
+              value={onboardingSectorQuery}
+              onChange={(event) => setOnboardingSectorQuery(event.target.value)}
+              placeholder="Rechercher un secteur"
+              className="mt-3 h-11 w-full rounded-xl border border-white/20 bg-black/25 px-3 text-sm"
+            />
+            <div className="mt-2 max-h-64 space-y-2 overflow-y-auto pr-1">
+              {onboardingFilteredSectors.map((sector) => (
+                <button
+                  key={sector.sector_id}
+                  type="button"
+                  onClick={() => setOnboardingSelectedSectorId(sector.sector_id)}
+                  className={`w-full rounded-xl border px-3 py-2 text-left text-sm font-semibold ${
+                    onboardingSelectedSectorId === sector.sector_id
+                      ? "border-cyan-300/45 bg-cyan-300/15 text-cyan-100"
+                      : "border-white/15 bg-white/5 text-white/85"
+                  }`}
+                >
+                  {sector.label}
+                </button>
+              ))}
+            </div>
+            {onboardingSelectedSectorId === "other_custom" && (
+              <input
+                value={onboardingCustomMetier}
+                onChange={(event) => setOnboardingCustomMetier(event.target.value)}
+                placeholder="Ton metier exact"
+                className="mt-2 h-11 w-full rounded-xl border border-white/20 bg-black/25 px-3 text-sm"
+              />
+            )}
+            <button
+              type="button"
+              onClick={() => {
+                void saveOnboardingSectorStep();
+              }}
+              disabled={!onboardingCanContinueSector || isOnboardingSaving}
+              className="mt-3 h-11 w-full rounded-xl bg-gradient-to-r from-cyan-300 to-emerald-300 text-sm font-black text-[#10263A] disabled:opacity-45"
+            >
+              Continuer
+            </button>
+          </div>
+        )}
+        {onboardingStep === 2 && (
+          <div className="mt-3">
+            <p className="text-xl font-black">Importe tes 3 premiers contacts</p>
+            <p className="mt-1 text-sm text-white/75">Ils deviennent tes premiers prospects activables.</p>
+            <div className="mt-3 rounded-xl border border-cyan-300/25 bg-cyan-300/10 px-3 py-2">
+              <p className="text-sm font-black text-cyan-100">{importedContacts.length}/3 importes</p>
+            </div>
+            <button
+              type="button"
+              onClick={openContactImportPicker}
+              className="mt-3 h-11 w-full rounded-xl border border-cyan-300/35 bg-cyan-300/18 text-sm font-black text-cyan-100"
+            >
+              Importer mes contacts
+            </button>
+            <button
+              type="button"
+              onClick={() => setOnboardingStep(3)}
+              disabled={!onboardingCanContinueImport}
+              className="mt-2 h-11 w-full rounded-xl bg-gradient-to-r from-cyan-300 to-emerald-300 text-sm font-black text-[#10263A] disabled:opacity-45"
+            >
+              Continuer
+            </button>
+          </div>
+        )}
+        {onboardingStep === 3 && (
+          <div className="mt-3">
+            <p className="text-xl font-black">Qualification express du 1er contact</p>
+            <p className="mt-1 text-sm text-white/75">{onboardingFirstContact?.name || "Premier contact"}</p>
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              {OPPORTUNITY_OPTIONS.map((option) => (
+                <button
+                  key={`onboarding-op-${option.id}`}
+                  type="button"
+                  onClick={() => setOnboardingQualificationType(option.id)}
+                  className={`rounded-full px-3 py-2 text-[11px] font-black ${
+                    onboardingQualificationType === option.id ? "bg-emerald-300 text-emerald-950" : "bg-white/10 text-white/85"
+                  }`}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+            <div className="mt-2 grid grid-cols-3 gap-2">
+              {(["froid", "tiede", "brulant"] as HeatLevel[]).map((heat) => (
+                <button
+                  key={`onboarding-heat-${heat}`}
+                  type="button"
+                  onClick={() => setOnboardingQualificationHeat(heat)}
+                  className={`h-10 rounded-full text-[12px] font-black ${
+                    onboardingQualificationHeat === heat ? "bg-cyan-300 text-[#13253D]" : "bg-white/10 text-white/85"
+                  }`}
+                >
+                  {heat === "froid" ? "❄️ Froid" : heat === "tiede" ? "⚡ Tiede" : "🔥 Brulant"}
+                </button>
+              ))}
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                void saveOnboardingQualificationStep();
+              }}
+              disabled={!onboardingCanContinueQualification || isOnboardingSaving}
+              className="mt-3 h-11 w-full rounded-xl bg-gradient-to-r from-cyan-300 to-emerald-300 text-sm font-black text-[#10263A] disabled:opacity-45"
+            >
+              Continuer
+            </button>
+          </div>
+        )}
+        {onboardingStep === 4 && (
+          <div className="mt-3">
+            <p className="text-xl font-black">Envoie ton 1er message</p>
+            <p className="mt-1 text-sm text-white/75">Objectif: succes vecu avant de fermer l app.</p>
+            <textarea
+              value={onboardingMessageDraft}
+              onChange={(event) => setOnboardingMessageDraft(event.target.value)}
+              className="mt-3 min-h-[160px] w-full rounded-xl border border-white/20 bg-black/25 px-3 py-3 text-sm"
+            />
+            <button
+              type="button"
+              onClick={() => {
+                void completeOnboardingWithFirstMessage();
+              }}
+              disabled={!onboardingMessageDraft.trim() || isOnboardingSaving}
+              className="mt-3 h-11 w-full rounded-xl bg-gradient-to-r from-emerald-300 to-cyan-300 text-sm font-black text-[#10263A] disabled:opacity-45"
+            >
+              Envoyer sur WhatsApp
+            </button>
+          </div>
+        )}
+      </section>
+    </div>
+  ) : null;
 
   if (stage === "scan") {
     return (
@@ -4512,6 +4875,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
             </section>
           </div>
         )}
+        {onboardingJ0Overlay}
       </main>
     );
   }
@@ -7269,6 +7633,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
           void handleContactImportChange(event);
         }}
       />
+      {onboardingJ0Overlay}
     </main>
   );
 }
