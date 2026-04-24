@@ -155,6 +155,35 @@ type FollowupItem = {
   dueAtMs: number;
   suggestedMessage: string;
 };
+
+function toUiErrorMessage(value: unknown, fallback: string): string {
+  if (!value) return fallback;
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    return trimmed || fallback;
+  }
+  if (typeof value === "number" || typeof value === "boolean") return String(value);
+  if (Array.isArray(value)) {
+    const merged = value
+      .map((item) => toUiErrorMessage(item, ""))
+      .filter(Boolean)
+      .join(" | ");
+    return merged || fallback;
+  }
+  if (typeof value === "object") {
+    const record = value as Record<string, unknown>;
+    const direct = [record.message, record.error, record.detail, record.details]
+      .map((item) => toUiErrorMessage(item, ""))
+      .find(Boolean);
+    if (direct) return direct;
+    try {
+      return JSON.stringify(record);
+    } catch {
+      return fallback;
+    }
+  }
+  return fallback;
+}
 type TransitionScreenState = {
   message: string;
   icon: string;
@@ -3182,11 +3211,11 @@ export default function EntrepreneurSmartScanTestPage() {
         }),
       });
       const payload = (await response.json().catch(() => ({}))) as {
-        error?: string;
+        error?: unknown;
         prospects?: SmartScanAllianceProspect[];
       };
       if (!response.ok) {
-        throw new Error(payload.error || "Recherche alliances impossible.");
+        throw new Error(toUiErrorMessage(payload.error, "Recherche alliances impossible."));
       }
       setAllianceProspects(payload.prospects || []);
       await loadAllianceInvites();

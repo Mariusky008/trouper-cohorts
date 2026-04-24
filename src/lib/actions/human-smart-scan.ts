@@ -2697,6 +2697,29 @@ async function searchB2BProvider(input: {
   radiusKm: number;
   limit: number;
 }) {
+  function toErrorMessage(value: unknown): string {
+    if (!value) return "";
+    if (typeof value === "string") return value.trim();
+    if (typeof value === "number" || typeof value === "boolean") return String(value);
+    if (Array.isArray(value)) {
+      return value.map((item) => toErrorMessage(item)).filter(Boolean).join(" | ").slice(0, 600);
+    }
+    if (typeof value === "object") {
+      const record = value as Record<string, unknown>;
+      const candidates = ["message", "error", "detail", "details", "statusMessage", "description"];
+      for (const key of candidates) {
+        const message = toErrorMessage(record[key]);
+        if (message) return message;
+      }
+      try {
+        return JSON.stringify(record).slice(0, 600);
+      } catch {
+        return "";
+      }
+    }
+    return "";
+  }
+
   const apifyToken = String(process.env.APIFY_TOKEN || "").trim();
   const apifyTaskSlug = String(process.env.APIFY_TASK_SLUG || "").trim();
   if (!apifyToken || !apifyTaskSlug) {
@@ -2731,10 +2754,7 @@ async function searchB2BProvider(input: {
   const payload = (await response.json().catch(() => [])) as unknown;
 
   if (!response.ok) {
-    const payloadError =
-      payload && typeof payload === "object" && !Array.isArray(payload) && "error" in payload
-        ? String((payload as { error?: unknown }).error || "")
-        : "";
+    const payloadError = toErrorMessage(payload);
     return {
       error: payloadError || `Provider Apify indisponible (HTTP ${response.status}).`,
       prospects: [],
