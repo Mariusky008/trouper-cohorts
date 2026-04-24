@@ -79,34 +79,38 @@ export async function POST(request: NextRequest) {
   const body = parsed.data;
 
   const supabaseAdmin = createAdminClient();
-  const rewardPercent = Number.parseFloat(String(body.eclaireurRewardPercent || "").replace(",", "."));
-  const rewardFixedEur = Number.parseFloat(String(body.eclaireurRewardFixedEur || "").replace(",", "."));
   const payload: Record<string, unknown> = {
-    first_name: String(body.firstName || "").trim() || null,
-    last_name: String(body.lastName || "").trim() || null,
-    metier: String(body.metier || "").trim() || null,
-    buddy_name: String(body.buddyName || "").trim() || null,
-    buddy_metier: String(body.buddyMetier || "").trim() || null,
-    trio_name: String(body.trioName || "").trim() || null,
-    trio_metier: String(body.trioMetier || "").trim() || null,
-    eclaireur_reward_mode: body.eclaireurRewardMode === "fixed" ? "fixed" : "percent",
-    eclaireur_reward_percent: Number.isFinite(rewardPercent) && rewardPercent > 0 ? rewardPercent : null,
-    eclaireur_reward_fixed_eur: Number.isFinite(rewardFixedEur) && rewardFixedEur > 0 ? rewardFixedEur : null,
-    ville: String(body.ville || "").trim() || null,
-    phone: String(body.phone || "").trim() || null,
-    sector_id: String(body.sectorId || "").trim() || null,
-    metier_label: String(body.metierLabel || "").trim() || null,
-    public_slug: (() => {
-      const raw = String(body.publicSlug || "").trim();
-      if (!raw) return null;
-      const normalized = normalizePublicSlug(raw);
-      return normalized || null;
-    })(),
-    offre_decouverte: String(body.offreDecouverte || "").trim() || null,
-    bio: String(body.bio || "").trim() || null,
-    contact_link: String(body.contactLink || "").trim() || null,
     updated_at: new Date().toISOString(),
   };
+  if ("firstName" in body) payload.first_name = String(body.firstName || "").trim() || null;
+  if ("lastName" in body) payload.last_name = String(body.lastName || "").trim() || null;
+  if ("metier" in body) payload.metier = String(body.metier || "").trim() || null;
+  if ("buddyName" in body) payload.buddy_name = String(body.buddyName || "").trim() || null;
+  if ("buddyMetier" in body) payload.buddy_metier = String(body.buddyMetier || "").trim() || null;
+  if ("trioName" in body) payload.trio_name = String(body.trioName || "").trim() || null;
+  if ("trioMetier" in body) payload.trio_metier = String(body.trioMetier || "").trim() || null;
+  if ("eclaireurRewardMode" in body) {
+    payload.eclaireur_reward_mode = body.eclaireurRewardMode === "fixed" ? "fixed" : "percent";
+  }
+  if ("eclaireurRewardPercent" in body) {
+    const rewardPercent = Number.parseFloat(String(body.eclaireurRewardPercent || "").replace(",", "."));
+    payload.eclaireur_reward_percent = Number.isFinite(rewardPercent) && rewardPercent > 0 ? rewardPercent : null;
+  }
+  if ("eclaireurRewardFixedEur" in body) {
+    const rewardFixedEur = Number.parseFloat(String(body.eclaireurRewardFixedEur || "").replace(",", "."));
+    payload.eclaireur_reward_fixed_eur = Number.isFinite(rewardFixedEur) && rewardFixedEur > 0 ? rewardFixedEur : null;
+  }
+  if ("ville" in body) payload.ville = String(body.ville || "").trim() || null;
+  if ("phone" in body) payload.phone = String(body.phone || "").trim() || null;
+  if ("sectorId" in body) payload.sector_id = String(body.sectorId || "").trim() || null;
+  if ("metierLabel" in body) payload.metier_label = String(body.metierLabel || "").trim() || null;
+  if ("publicSlug" in body) {
+    const raw = String(body.publicSlug || "").trim();
+    payload.public_slug = raw ? normalizePublicSlug(raw) || null : null;
+  }
+  if ("offreDecouverte" in body) payload.offre_decouverte = String(body.offreDecouverte || "").trim() || null;
+  if ("bio" in body) payload.bio = String(body.bio || "").trim() || null;
+  if ("contactLink" in body) payload.contact_link = String(body.contactLink || "").trim() || null;
   if (typeof body.onboardingCompleted === "boolean") {
     payload.onboarding_completed_at = body.onboardingCompleted ? new Date().toISOString() : null;
   }
