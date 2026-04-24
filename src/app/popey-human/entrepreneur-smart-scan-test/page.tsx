@@ -4321,8 +4321,13 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
     const lastName = String(profileForm.lastName || "").trim();
     const ville = String(profileForm.ville || "").trim();
     const phone = String(profileForm.phone || "").trim();
+    const rewardPercent = Number.parseFloat(String(profileForm.eclaireurRewardPercent || "").replace(",", "."));
     if (!firstName || !lastName || !ville || !phone) {
       setApiErrorMessage("Renseigne prenom, nom, ville et telephone pour continuer.");
+      return;
+    }
+    if (!Number.isFinite(rewardPercent) || rewardPercent <= 0 || rewardPercent > 100) {
+      setApiErrorMessage("Indique le pourcentage de retribution eclaireur (entre 1 et 100).");
       return;
     }
     try {
@@ -4335,6 +4340,8 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
           lastName,
           ville,
           phone,
+          eclaireurRewardMode: "percent",
+          eclaireurRewardPercent: rewardPercent,
         }),
       });
       const body = (await response.json().catch(() => ({}))) as { error?: string; profile?: SmartScanProfile | null };
@@ -4531,7 +4538,9 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
     String(profileForm.firstName || "").trim().length > 1 &&
     String(profileForm.lastName || "").trim().length > 1 &&
     String(profileForm.ville || "").trim().length > 1 &&
-    String(profileForm.phone || "").trim().length > 5;
+    String(profileForm.phone || "").trim().length > 5 &&
+    Number.isFinite(Number.parseFloat(String(profileForm.eclaireurRewardPercent || "").replace(",", "."))) &&
+    Number.parseFloat(String(profileForm.eclaireurRewardPercent || "").replace(",", ".")) > 0;
   const onboardingCanContinueImport = importedContacts.length >= 1;
   const onboardingCanContinueQualification = Boolean(onboardingQualificationType && onboardingQualificationHeat);
   const onboardingJ0Overlay = showOnboardingJ0 ? (
@@ -4656,6 +4665,31 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                 placeholder="Telephone"
                 className="h-12 w-full rounded-2xl border border-white/20 bg-black/25 px-4 text-base"
               />
+              <div className="sm:col-span-2 rounded-2xl border border-amber-300/35 bg-amber-300/10 p-3">
+                <p className="text-[11px] font-black uppercase tracking-[0.09em] text-amber-100">
+                  Info primordiale
+                </p>
+                <p className="mt-1 text-sm text-white/85">Quel pourcentage redistribues-tu a tes eclaireurs ?</p>
+                <div className="mt-2 flex items-center gap-2">
+                  <input
+                    value={profileForm.eclaireurRewardPercent}
+                    onChange={(event) =>
+                      setProfileForm((prev) => ({
+                        ...prev,
+                        eclaireurRewardMode: "percent",
+                        eclaireurRewardPercent: event.target.value,
+                      }))
+                    }
+                    type="number"
+                    min={1}
+                    max={100}
+                    step={1}
+                    placeholder="Ex: 10"
+                    className="h-11 w-28 rounded-xl border border-white/20 bg-black/25 px-3 text-base"
+                  />
+                  <span className="text-lg font-black text-amber-100">%</span>
+                </div>
+              </div>
             </div>
             <button
               type="button"
