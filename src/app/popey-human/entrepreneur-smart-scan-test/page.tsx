@@ -853,6 +853,17 @@ function historyMessageSnippet(message?: string | null) {
   return `${normalized.slice(0, 60)}...`;
 }
 
+function normalizePublicSlugInput(input: string) {
+  return String(input || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9-]+/g, "-")
+    .replace(/-{2,}/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 120);
+}
+
 function getLocalDayNumber() {
   const now = new Date();
   const localMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -1103,6 +1114,8 @@ export default function EntrepreneurSmartScanTestPage() {
     if (!needle) return true;
     return sector.label.toLowerCase().includes(needle) || sector.sector_id.toLowerCase().includes(needle);
   });
+  const publicProfileSlug = String(myProfile?.public_slug || profileForm.publicSlug || "").trim();
+  const publicProfileUrl = publicProfileSlug ? `https://popey.link/${publicProfileSlug}` : "";
   const totalScanned = hasImportedContacts ? importedTotalCount : 0;
   const scanDone = hasImportedContacts && totalScanned > 0 && scanCount >= totalScanned;
   const scanProgress = totalScanned > 0 ? Math.min(1, scanCount / totalScanned) : 0;
@@ -4085,10 +4098,16 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
     }
     try {
       setIsOnboardingSaving(true);
+      const fallbackSlugBase = normalizePublicSlugInput(
+        `${String(myProfile?.first_name || profileForm.firstName || "membre").trim()}-${metierLabel}`,
+      );
+      const fallbackSlugSuffix = String(myProfile?.id || "").slice(0, 6) || "popey";
       const payload = {
         sectorId: onboardingSelectedSectorId,
         metierLabel,
         metier: metierLabel,
+        publicSlug: `${fallbackSlugBase || "membre"}-${fallbackSlugSuffix}`.slice(0, 120),
+        offreDecouverte: profileForm.offreDecouverte || "1 seance offerte",
       };
       const response = await fetch("/api/popey-human/smart-scan/profile", {
         method: "POST",
@@ -4106,6 +4125,41 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
       setApiErrorMessage(message);
     } finally {
       setIsOnboardingSaving(false);
+    }
+  }
+
+  async function sharePublicProfile(channel: "copy" | "whatsapp" | "linkedin" | "instagram") {
+    try {
+      if (!publicProfileUrl) {
+        setApiErrorMessage("Definis d abord un slug public dans ton profil.");
+        return;
+      }
+      const text = `Decouvre mon profil Popey: ${publicProfileUrl}`;
+      if (channel === "copy") {
+        await copyTextToClipboard(publicProfileUrl);
+        setApiErrorMessage("Lien public copie.");
+        setTimeout(() => setApiErrorMessage(""), 1200);
+        return;
+      }
+      if (channel === "whatsapp") {
+        window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank", "noopener,noreferrer");
+        return;
+      }
+      if (channel === "linkedin") {
+        window.open(
+          `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(publicProfileUrl)}`,
+          "_blank",
+          "noopener,noreferrer",
+        );
+        return;
+      }
+      window.open(
+        `https://www.instagram.com/?url=${encodeURIComponent(publicProfileUrl)}`,
+        "_blank",
+        "noopener,noreferrer",
+      );
+    } catch {
+      setApiErrorMessage("Impossible de partager le lien public.");
     }
   }
 
@@ -5600,6 +5654,50 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                 >
                   {isCopyingSelfScoutLink ? "Copie..." : "Copier lien nouveau design"}
                 </button>
+              </div>
+            )}
+            {!isProfileLoading && (
+              <div className="mt-3 rounded-xl border border-violet-300/30 bg-violet-300/10 px-3 py-2">
+                <p className="text-[10px] font-black uppercase tracking-[0.1em] text-violet-100">Mon profil public popey.link</p>
+                <p className="mt-1 break-all text-[11px] text-violet-100/90">{publicProfileUrl || "Definis un slug public pour activer le partage."}</p>
+                <div className="mt-2 grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      void sharePublicProfile("whatsapp");
+                    }}
+                    className="h-8 rounded-lg border border-emerald-300/35 bg-emerald-300/15 text-[10px] font-black uppercase tracking-[0.08em] text-emerald-100"
+                  >
+                    WhatsApp
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      void sharePublicProfile("linkedin");
+                    }}
+                    className="h-8 rounded-lg border border-cyan-300/35 bg-cyan-300/15 text-[10px] font-black uppercase tracking-[0.08em] text-cyan-100"
+                  >
+                    LinkedIn
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      void sharePublicProfile("instagram");
+                    }}
+                    className="h-8 rounded-lg border border-pink-300/35 bg-pink-300/15 text-[10px] font-black uppercase tracking-[0.08em] text-pink-100"
+                  >
+                    Instagram
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      void sharePublicProfile("copy");
+                    }}
+                    className="h-8 rounded-lg border border-white/25 bg-white/10 text-[10px] font-black uppercase tracking-[0.08em] text-white/90"
+                  >
+                    Copier
+                  </button>
+                </div>
               </div>
             )}
             <div className="mt-3 grid grid-cols-2 gap-2">
