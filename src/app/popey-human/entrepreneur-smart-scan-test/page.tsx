@@ -1145,7 +1145,7 @@ export default function EntrepreneurSmartScanTestPage() {
   const [showInternalInvitesModal, setShowInternalInvitesModal] = useState(false);
   const [showOnboardingJ0, setShowOnboardingJ0] = useState(false);
   const [onboardingFlowLocked, setOnboardingFlowLocked] = useState(false);
-  const [onboardingStep, setOnboardingStep] = useState<1 | 2 | 3 | 4>(1);
+  const [onboardingStep, setOnboardingStep] = useState<1 | 2 | 3 | 4 | 5>(1);
   const [onboardingSectorQuery, setOnboardingSectorQuery] = useState("");
   const [onboardingSectors, setOnboardingSectors] = useState<SectorVocabularyListItem[]>([]);
   const [onboardingSelectedSectorId, setOnboardingSelectedSectorId] = useState("other_custom");
@@ -1155,6 +1155,7 @@ export default function EntrepreneurSmartScanTestPage() {
   const [onboardingMessageDraft, setOnboardingMessageDraft] = useState("");
   const [onboardingStartedAtMs, setOnboardingStartedAtMs] = useState(0);
   const [isOnboardingSaving, setIsOnboardingSaving] = useState(false);
+  const [hasProfileBootstrapResolved, setHasProfileBootstrapResolved] = useState(false);
   const [revealedAllianceProspectIds, setRevealedAllianceProspectIds] = useState<string[]>([]);
   const [isAllianceRevealRunning, setIsAllianceRevealRunning] = useState(false);
   const [showAllianceMessageModal, setShowAllianceMessageModal] = useState(false);
@@ -2012,6 +2013,19 @@ export default function EntrepreneurSmartScanTestPage() {
       void loadOnboardingSectors();
     }
   }, [myProfile, showOnboardingJ0, onboardingFlowLocked]);
+
+  const isProfileMissingCoreData = useMemo(() => {
+    if (!myProfile) return true;
+    return [
+      myProfile.first_name,
+      myProfile.last_name,
+      myProfile.metier,
+      myProfile.ville,
+      myProfile.phone,
+      myProfile.sector_id,
+      myProfile.metier_label,
+    ].some((value) => String(value || "").trim().length === 0);
+  }, [myProfile]);
 
   useEffect(() => {
     if (!showOnboardingJ0 || onboardingStep !== 4) return;
@@ -4210,6 +4224,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
       setApiErrorMessage(message);
     } finally {
       setIsProfileLoading(false);
+      setHasProfileBootstrapResolved(true);
     }
   }
 
@@ -4279,6 +4294,41 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
     }
   }
 
+  async function saveOnboardingPrimaryInfoStep() {
+    const firstName = String(profileForm.firstName || "").trim();
+    const lastName = String(profileForm.lastName || "").trim();
+    const ville = String(profileForm.ville || "").trim();
+    const phone = String(profileForm.phone || "").trim();
+    if (!firstName || !lastName || !ville || !phone) {
+      setApiErrorMessage("Renseigne prenom, nom, ville et telephone pour continuer.");
+      return;
+    }
+    try {
+      setIsOnboardingSaving(true);
+      const response = await fetch("/api/popey-human/smart-scan/profile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          firstName,
+          lastName,
+          ville,
+          phone,
+        }),
+      });
+      const body = (await response.json().catch(() => ({}))) as { error?: string; profile?: SmartScanProfile | null };
+      if (!response.ok) throw new Error(body.error || "Impossible d enregistrer les infos principales.");
+      setMyProfile(body.profile || null);
+      hydrateProfileForm(body.profile || null);
+      setOnboardingStep(3);
+      setApiErrorMessage("");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Impossible d enregistrer les infos principales.";
+      setApiErrorMessage(message);
+    } finally {
+      setIsOnboardingSaving(false);
+    }
+  }
+
   async function sharePublicProfile(channel: "copy" | "whatsapp" | "linkedin" | "instagram") {
     try {
       if (!publicProfileUrl) {
@@ -4320,7 +4370,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
       return;
     }
     // Ne bloque jamais le flow onboarding sur une erreur reseau.
-    setOnboardingStep(4);
+    setOnboardingStep(5);
     setApiErrorMessage("");
     try {
       setIsOnboardingSaving(true);
@@ -4451,10 +4501,15 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
   }
 
   const showAdvancedOpsInUserCockpit = false;
-  const onboardingProgress = `${onboardingStep}/4`;
+  const onboardingProgress = `${onboardingStep}/5`;
   const onboardingCanContinueSector =
     onboardingSelectedSectorId !== "other_custom" ||
     String(onboardingCustomMetier || onboardingSectorQuery || "").trim().length > 1;
+  const onboardingCanContinuePrimaryInfo =
+    String(profileForm.firstName || "").trim().length > 1 &&
+    String(profileForm.lastName || "").trim().length > 1 &&
+    String(profileForm.ville || "").trim().length > 1 &&
+    String(profileForm.phone || "").trim().length > 5;
   const onboardingCanContinueImport = importedContacts.length >= 1;
   const onboardingCanContinueQualification = Boolean(onboardingQualificationType && onboardingQualificationHeat);
   const onboardingJ0Overlay = showOnboardingJ0 ? (
@@ -4464,8 +4519,8 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
           <p className="text-xs font-black uppercase tracking-[0.12em] text-cyan-200">Onboarding J0</p>
           <span className="rounded-full border border-white/20 bg-white/10 px-2 py-0.5 text-[10px] font-black text-white/85">{onboardingProgress}</span>
         </div>
-        <div className="mt-3 grid grid-cols-4 gap-2">
-          {[1, 2, 3, 4].map((stepIndex) => (
+        <div className="mt-3 grid grid-cols-5 gap-2">
+          {[1, 2, 3, 4, 5].map((stepIndex) => (
             <div
               key={`onboarding-progress-${stepIndex}`}
               className={`h-1.5 rounded-full ${stepIndex <= onboardingStep ? "bg-cyan-300" : "bg-white/15"}`}
@@ -4552,6 +4607,48 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
         )}
         {onboardingStep === 2 && (
           <div className="mt-5">
+            <p className="text-2xl font-black">Renseigne tes infos principales</p>
+            <p className="mt-2 text-base text-white/80">Avant la demo, complete ton profil de base.</p>
+            <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <input
+                value={profileForm.firstName}
+                onChange={(event) => setProfileForm((prev) => ({ ...prev, firstName: event.target.value }))}
+                placeholder="Prenom"
+                className="h-12 w-full rounded-2xl border border-white/20 bg-black/25 px-4 text-base"
+              />
+              <input
+                value={profileForm.lastName}
+                onChange={(event) => setProfileForm((prev) => ({ ...prev, lastName: event.target.value }))}
+                placeholder="Nom"
+                className="h-12 w-full rounded-2xl border border-white/20 bg-black/25 px-4 text-base"
+              />
+              <input
+                value={profileForm.ville}
+                onChange={(event) => setProfileForm((prev) => ({ ...prev, ville: event.target.value }))}
+                placeholder="Ville"
+                className="h-12 w-full rounded-2xl border border-white/20 bg-black/25 px-4 text-base"
+              />
+              <input
+                value={profileForm.phone}
+                onChange={(event) => setProfileForm((prev) => ({ ...prev, phone: event.target.value }))}
+                placeholder="Telephone"
+                className="h-12 w-full rounded-2xl border border-white/20 bg-black/25 px-4 text-base"
+              />
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                void saveOnboardingPrimaryInfoStep();
+              }}
+              disabled={!onboardingCanContinuePrimaryInfo || isOnboardingSaving}
+              className="mt-4 h-12 w-full rounded-2xl bg-gradient-to-r from-cyan-300 to-emerald-300 text-base font-black text-[#10263A] disabled:opacity-45"
+            >
+              Continuer
+            </button>
+          </div>
+        )}
+        {onboardingStep === 3 && (
+          <div className="mt-5">
             <p className="text-2xl font-black">Commencons avec 1 de tes contacts</p>
             <p className="mt-2 text-base text-white/80">Ton premier prospect activable</p>
             <p className="mt-2 text-[11px] font-black uppercase tracking-[0.09em] text-cyan-100/95">
@@ -4569,7 +4666,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
             </button>
             <button
               type="button"
-              onClick={() => setOnboardingStep(3)}
+              onClick={() => setOnboardingStep(4)}
               disabled={!onboardingCanContinueImport}
               className="mt-3 h-12 w-full rounded-2xl bg-gradient-to-r from-cyan-300 to-emerald-300 text-base font-black text-[#10263A] disabled:opacity-45"
             >
@@ -4577,7 +4674,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
             </button>
           </div>
         )}
-        {onboardingStep === 3 && (
+        {onboardingStep === 4 && (
           <div className="mt-5">
             <p className="text-2xl font-black">Qualification express du 1er contact</p>
             <p className="mt-2 text-base text-white/80">{onboardingFirstContact?.name || "Premier contact"} • Exemple sur 1 seul contact</p>
@@ -4630,7 +4727,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
             </button>
           </div>
         )}
-        {onboardingStep === 4 && (
+        {onboardingStep === 5 && (
           <div className="mt-5">
             <p className="text-2xl font-black">Exemple de message (educatif)</p>
             <p className="mt-2 text-base text-white/80">Aucun message ne sera envoye pendant cet onboarding.</p>
@@ -4654,6 +4751,21 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
       </section>
     </div>
   ) : null;
+
+  const shouldBlockBeforeMain = !hasProfileBootstrapResolved || (isProfileMissingCoreData && !showOnboardingJ0 && !apiErrorMessage);
+  if (shouldBlockBeforeMain) {
+    return (
+      <main className="min-h-screen bg-[radial-gradient(circle_at_10%_0%,#10193D_0%,#0C122B_45%,#090B16_100%)] text-white">
+        <div className="mx-auto flex min-h-screen max-w-xl items-center justify-center px-6">
+          <section className="w-full rounded-3xl border border-cyan-200/20 bg-[#0B1734]/90 p-6 text-center backdrop-blur-xl">
+            <p className="text-xs font-black uppercase tracking-[0.12em] text-cyan-200">Popey Human</p>
+            <p className="mt-2 text-xl font-black">Preparation de ton onboarding...</p>
+            <p className="mt-1 text-sm text-white/75">On charge ton profil pour demarrer directement sur le bon flow.</p>
+          </section>
+        </div>
+      </main>
+    );
+  }
 
   if (stage === "scan") {
     return (
