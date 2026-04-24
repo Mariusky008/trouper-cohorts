@@ -7369,7 +7369,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
 
       {showAlliancesPanel && showAllianceMessageModal && selectedAllianceProspect && (
         <div className="fixed inset-0 z-[74] flex items-center justify-center bg-black/75 px-3 py-6 backdrop-blur-md sm:px-4">
-          <section className="relative w-full max-w-2xl overflow-hidden rounded-3xl border border-fuchsia-300/35 bg-gradient-to-br from-[#171B46] via-[#101A3D] to-[#1A1550] p-4 shadow-[0_0_50px_rgba(217,70,239,0.28)] sm:p-5">
+          <section className="relative w-full max-w-3xl overflow-hidden rounded-3xl border border-fuchsia-300/35 bg-gradient-to-br from-[#171B46] via-[#101A3D] to-[#1A1550] p-4 shadow-[0_0_50px_rgba(217,70,239,0.28)] sm:p-5">
             <div className="pointer-events-none absolute -right-10 -top-12 h-36 w-36 rounded-full bg-fuchsia-300/25 blur-3xl animate-pulse" />
             <div className="pointer-events-none absolute -bottom-12 -left-10 h-40 w-40 rounded-full bg-cyan-300/20 blur-3xl animate-pulse" />
             <div className="relative">
@@ -7392,8 +7392,8 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
               <textarea
                 value={allianceMessageDraft}
                 onChange={(event) => setAllianceMessageDraft(event.target.value)}
-                rows={14}
-                className="mt-3 w-full resize-none rounded-2xl border border-white/20 bg-black/30 px-3 py-2 text-[13px] leading-relaxed text-white placeholder:text-white/45"
+                rows={18}
+                className="mt-3 h-[46vh] min-h-[300px] w-full resize-none rounded-2xl border border-white/20 bg-black/30 px-3 py-2 text-[13px] leading-relaxed text-white placeholder:text-white/45"
                 placeholder="Ecris ton message..."
               />
               <div className="mt-3 flex items-center gap-2">
@@ -7886,7 +7886,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
       )}
 
       {showPotentialBreakdownSheet && (
-        <div className="fixed inset-0 z-[56] bg-black/55 backdrop-blur-sm flex items-end justify-center px-3 pb-4 sm:items-center sm:pb-0">
+        <div className="fixed inset-0 z-[56] bg-black/55 backdrop-blur-sm flex items-center justify-center px-3 py-6">
           <section className="w-full max-w-md rounded-3xl border border-emerald-300/30 bg-[#0E1430] p-4">
             <div className="flex items-center justify-between">
               <p className="text-sm font-black text-emerald-100">Potentiel du jour</p>
@@ -7932,7 +7932,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
       )}
 
       {showAllianceMetricsInfo && (
-        <div className="fixed inset-0 z-[56] bg-black/55 backdrop-blur-sm flex items-end justify-center px-3 pb-4 sm:items-center sm:pb-0">
+        <div className="fixed inset-0 z-[56] bg-black/55 backdrop-blur-sm flex items-center justify-center px-3 py-6">
           <section className="w-full max-w-md rounded-3xl border border-cyan-300/35 bg-[#0E1430] p-4">
             <div className="flex items-center justify-between">
               <p className="text-sm font-black text-cyan-100">Score et probabilite</p>
