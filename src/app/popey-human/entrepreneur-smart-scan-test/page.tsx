@@ -270,6 +270,7 @@ type SmartScanIncomingReferral = {
   scout_name: string | null;
   scout_phone?: string | null;
   scout_ville?: string | null;
+  scout_type?: "perso" | "pro" | null;
 };
 type SmartScanAllianceProspect = {
   id: string;
@@ -1145,6 +1146,25 @@ export default function EntrepreneurSmartScanTestPage() {
   const selectedIncomingReferral = selectedIncomingReferralId
     ? incomingReferrals.find((item) => item.id === selectedIncomingReferralId) || null
     : null;
+  const eclaireurHeaderStats = useMemo(() => {
+    const proIds = new Set<string>();
+    const persoIds = new Set<string>();
+    incomingReferrals.forEach((item) => {
+      const scoutId = String(item.scout_id || "").trim();
+      if (!scoutId) return;
+      if (item.scout_type === "pro") {
+        proIds.add(scoutId);
+      } else {
+        persoIds.add(scoutId);
+      }
+    });
+    return {
+      proCount: proIds.size,
+      persoCount: persoIds.size,
+      totalCount: proIds.size + persoIds.size,
+      alertesCount: incomingReferrals.length,
+    };
+  }, [incomingReferrals]);
   const sortedAllianceProspects = useMemo(() => {
     const list = [...allianceProspects];
     if (allianceSort === "fit") {
@@ -5345,6 +5365,24 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                   </button>
                 </div>
               </div>
+              <div className="mt-2 grid grid-cols-2 gap-2">
+                <div className="rounded-xl border border-cyan-300/30 bg-cyan-300/12 px-2 py-2 text-center">
+                  <p className="text-[9px] font-black uppercase tracking-[0.08em] text-cyan-100">Eclaireurs Pro</p>
+                  <p className="text-lg font-black text-cyan-50">{eclaireurHeaderStats.proCount}</p>
+                </div>
+                <div className="rounded-xl border border-emerald-300/30 bg-emerald-300/12 px-2 py-2 text-center">
+                  <p className="text-[9px] font-black uppercase tracking-[0.08em] text-emerald-100">Eclaireurs Perso</p>
+                  <p className="text-lg font-black text-emerald-50">{eclaireurHeaderStats.persoCount}</p>
+                </div>
+                <div className="rounded-xl border border-fuchsia-300/30 bg-fuchsia-300/12 px-2 py-2 text-center">
+                  <p className="text-[9px] font-black uppercase tracking-[0.08em] text-fuchsia-100">Total Eclaireurs</p>
+                  <p className="text-lg font-black text-fuchsia-50">{eclaireurHeaderStats.totalCount}</p>
+                </div>
+                <div className="rounded-xl border border-amber-300/30 bg-amber-300/12 px-2 py-2 text-center">
+                  <p className="text-[9px] font-black uppercase tracking-[0.08em] text-amber-100">Total Reco (alertes)</p>
+                  <p className="text-lg font-black text-amber-50">{eclaireurHeaderStats.alertesCount}</p>
+                </div>
+              </div>
               {apiErrorMessage ? (
                 <p className="mt-2 rounded-lg border border-amber-300/35 bg-amber-300/10 px-2 py-1 text-[11px] text-amber-100">{apiErrorMessage}</p>
               ) : null}
@@ -5374,7 +5412,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                       >
                         <p className="text-[12px] font-black text-white">{item.contact_name}</p>
                         <p className="text-[10px] text-white/75">
-                          {item.scout_name || "Eclaireur"} • {item.project_type || "Projet non precise"} • {referralStatusLabel(item.status)}
+                          {item.scout_name || "Eclaireur"} ({item.scout_type === "pro" ? "Pro" : "Perso"}) • {item.project_type || "Projet non precise"} • {referralStatusLabel(item.status)}
                         </p>
                       </button>
                     ))}
@@ -5539,20 +5577,19 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                 </div>
                 <div className="mt-3 grid grid-cols-3 gap-2">
                   <div className="rounded-xl border border-white/15 bg-black/25 px-2 py-2 text-center">
-                    <p className="text-[9px] uppercase tracking-[0.08em] text-white/60">Objectif</p>
-                    <p className="text-[11px] font-black text-white">10 prospects</p>
+                    <p className="text-[9px] uppercase tracking-[0.08em] text-white/60">Objectif 1</p>
+                    <p className="text-[11px] font-black text-white">10 Eclaireurs Pro</p>
                   </div>
                   <div className="rounded-xl border border-cyan-300/35 bg-cyan-300/12 px-2 py-2 text-center">
-                    <p className="text-[9px] uppercase tracking-[0.08em] text-cyan-100">Canal</p>
-                    <p className="text-[11px] font-black text-cyan-100">WhatsApp</p>
+                    <p className="text-[9px] uppercase tracking-[0.08em] text-cyan-100">Objectif 2</p>
+                    <p className="text-[11px] font-black text-cyan-100">10 Eclaireurs Perso</p>
                   </div>
                   <div className="rounded-xl border border-fuchsia-300/35 bg-fuchsia-300/12 px-2 py-2 text-center">
-                    <p className="text-[9px] uppercase tracking-[0.08em] text-fuchsia-100">Suivi</p>
-                    <p className="text-[11px] font-black text-fuchsia-100">
-                      {allianceDirectoryMode === "internal" ? "Demandes internes" : "Mes alliances"}
-                    </p>
+                    <p className="text-[9px] uppercase tracking-[0.08em] text-fuchsia-100">Objectif final</p>
+                    <p className="text-[11px] font-black text-fuchsia-100">20 reco / mois</p>
                   </div>
                 </div>
+                <p className="mt-2 text-[10px] text-white/65">Eclaireur = apporteur d affaires.</p>
               </div>
               <div className="relative mt-4 grid gap-2 sm:grid-cols-2">
                 <input

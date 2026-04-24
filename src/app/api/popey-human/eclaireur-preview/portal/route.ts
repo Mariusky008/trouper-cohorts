@@ -50,6 +50,7 @@ export async function GET(request: NextRequest) {
   return NextResponse.json({
     error: null,
     scout: data.scout,
+    scoutType: data.scout?.scout_type || "perso",
     sponsorName: data.sponsorName || null,
     sponsorPhone: data.sponsor?.phone || null,
     availableTargets,

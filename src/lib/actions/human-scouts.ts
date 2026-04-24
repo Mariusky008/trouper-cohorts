@@ -14,6 +14,7 @@ type HumanScout = {
   id: string;
   owner_member_id: string;
   user_id: string | null;
+  scout_type?: "perso" | "pro" | null;
   first_name: string | null;
   last_name: string | null;
   ville: string | null;
@@ -170,6 +171,7 @@ export async function createScoutInvite(formData: FormData) {
     .from("human_scouts")
     .insert({
       owner_member_id: member.myMember.id,
+      scout_type: "perso",
       first_name: firstName || null,
       last_name: lastName || null,
       ville: ville || null,
@@ -261,6 +263,7 @@ export async function createScoutInviteFromSmartScanContact(formData: FormData) 
       .from("human_scouts")
       .insert({
         owner_member_id: member.myMember.id,
+        scout_type: "perso",
         first_name: firstName || fullName || null,
         last_name: lastName || null,
         ville: city || null,
@@ -379,6 +382,7 @@ export async function generateScoutLinkFromSmartScanContact(input: {
       .from("human_scouts")
       .insert({
         owner_member_id: member.myMember.id,
+        scout_type: "perso",
         first_name: firstName || fullName || null,
         last_name: lastName || null,
         ville: city || null,
@@ -469,6 +473,7 @@ export async function getMySelfScoutPortalLink() {
       .insert({
         owner_member_id: member.myMember.id,
         user_id: member.user.id,
+        scout_type: "perso",
         first_name: ownerMember?.first_name || null,
         last_name: ownerMember?.last_name || null,
         ville: ownerMember?.ville || null,
@@ -1001,7 +1006,7 @@ export async function getScoutPortalByToken(token: string) {
   const [{ data: scout }, { data: referrals }] = await Promise.all([
     supabaseAdmin
       .from("human_scouts")
-      .select("id,owner_member_id,user_id,first_name,last_name,ville,phone,email,status,commission_rate,total_paid,pending_earnings,created_at,updated_at")
+      .select("id,owner_member_id,user_id,scout_type,first_name,last_name,ville,phone,email,status,commission_rate,total_paid,pending_earnings,created_at,updated_at")
       .eq("id", inviteTyped.scout_id)
       .maybeSingle(),
     supabaseAdmin

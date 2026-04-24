@@ -42,7 +42,7 @@ export async function GET() {
   if (scoutIds.length > 0) {
     const { data: scouts } = await supabaseAdmin
       .from("human_scouts")
-      .select("id,first_name,last_name,email,phone,ville")
+      .select("id,first_name,last_name,email,phone,ville,scout_type")
       .in("id", scoutIds);
     const rows = (scouts || []) as Array<{
       id: string;
@@ -51,6 +51,7 @@ export async function GET() {
       email: string | null;
       phone: string | null;
       ville: string | null;
+      scout_type: "perso" | "pro" | null;
     }>;
     scoutNameById = new Map(
       rows.map((item) => {
@@ -60,6 +61,7 @@ export async function GET() {
     );
     const scoutPhoneById = new Map(rows.map((item) => [item.id, item.phone || null]));
     const scoutVilleById = new Map(rows.map((item) => [item.id, item.ville || null]));
+    const scoutTypeById = new Map(rows.map((item) => [item.id, item.scout_type || "perso"]));
 
     return NextResponse.json({
       referrals: ((referrals || []) as Array<{
@@ -81,6 +83,7 @@ export async function GET() {
         scout_name: scoutNameById.get(row.scout_id) || null,
         scout_phone: scoutPhoneById.get(row.scout_id) || null,
         scout_ville: scoutVilleById.get(row.scout_id) || null,
+        scout_type: scoutTypeById.get(row.scout_id) || "perso",
       })),
     });
   }
@@ -103,6 +106,7 @@ export async function GET() {
     }>).map((row) => ({
       ...row,
       scout_name: scoutNameById.get(row.scout_id) || null,
+      scout_type: "perso",
     })),
   });
 }

@@ -44,6 +44,7 @@ export default function EclaireurWebappPreviewPage() {
     shortCode: string | null;
     sponsorName: string | null;
     sponsorPhone: string | null;
+    scoutType: "perso" | "pro";
     availableTargets: Array<{ label: string; type: "metier" | "member" }>;
     referrals: Array<{
       id: string;
@@ -74,6 +75,7 @@ export default function EclaireurWebappPreviewPage() {
         shortCode?: string | null;
         sponsorName?: string | null;
         sponsorPhone?: string | null;
+        scoutType?: "perso" | "pro";
         availableTargets?: Array<{ label: string; type: "metier" | "member" }>;
         referrals?: Array<{
           id: string;
@@ -97,6 +99,7 @@ export default function EclaireurWebappPreviewPage() {
         shortCode: payload.shortCode || null,
         sponsorName: payload.sponsorName || null,
         sponsorPhone: payload.sponsorPhone || null,
+        scoutType: payload.scoutType === "pro" ? "pro" : "perso",
         availableTargets: payload.availableTargets || [],
         referrals: payload.referrals || [],
       });
@@ -215,6 +218,7 @@ export default function EclaireurWebappPreviewPage() {
             isLoadingPortal={isLoadingPortal}
             portalError={portalError}
             sponsorName={portalData?.sponsorName || null}
+            scoutType={portalData?.scoutType || "perso"}
             dossiersEnCours={referrals.length}
             commissionPrevisionnelle={potential}
             onGoSubmit={() => setActiveScreen(1)}
@@ -418,6 +422,7 @@ function ScreenMagicLink({
   isLoadingPortal,
   portalError,
   sponsorName,
+  scoutType,
   dossiersEnCours,
   commissionPrevisionnelle,
   onGoSubmit,
@@ -426,6 +431,7 @@ function ScreenMagicLink({
   isLoadingPortal: boolean;
   portalError: string;
   sponsorName: string | null;
+  scoutType: "perso" | "pro";
   dossiersEnCours: number;
   commissionPrevisionnelle: number;
   onGoSubmit: () => void;
@@ -434,7 +440,9 @@ function ScreenMagicLink({
   return (
     <div className="relative h-full overflow-hidden rounded-[24px] border border-cyan-300/35 bg-[radial-gradient(120%_120%_at_0%_0%,rgba(46,132,255,0.35)_0%,rgba(20,33,73,0.9)_45%,rgba(12,17,32,1)_100%)] p-4">
       <div className="absolute -right-10 -top-10 h-24 w-24 rounded-full bg-cyan-300/35 blur-3xl" />
-      <p className="text-[10px] font-black uppercase tracking-[0.14em] text-cyan-100/90">Bienvenue Eclaireur</p>
+      <p className="text-[10px] font-black uppercase tracking-[0.14em] text-cyan-100/90">
+        Bienvenue Eclaireur {scoutType === "pro" ? "Pro" : "Perso"}
+      </p>
       <h2 className="mt-2 text-2xl font-black leading-tight">Salut Sarah, ton reseau vaut de l or</h2>
       <p className="mt-2 text-sm text-white/80">Tu nous envoies une opportunite, on traite le dossier, tu suis tout en direct.</p>
 

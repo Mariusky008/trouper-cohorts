@@ -3226,6 +3226,7 @@ export async function createAllianceInvite(input: {
         .from("human_scouts")
         .insert({
           owner_member_id: ownerMemberId,
+          scout_type: "pro",
           first_name: nameParts.firstName,
           last_name: nameParts.lastName,
           ville: String(prospectRow.city || "").trim() || null,
@@ -3243,6 +3244,15 @@ export async function createAllianceInvite(input: {
       }
       scoutId = String(createdScout.id);
     }
+
+    await supabaseAdmin
+      .from("human_scouts")
+      .update({
+        scout_type: "pro",
+        updated_at: nowIso,
+      })
+      .eq("id", scoutId)
+      .eq("owner_member_id", ownerMemberId);
 
     const inviteToken = crypto.randomUUID().replace(/-/g, "").toLowerCase();
     const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24 * 30).toISOString();
