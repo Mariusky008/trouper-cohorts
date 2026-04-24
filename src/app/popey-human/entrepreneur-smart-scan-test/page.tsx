@@ -2006,7 +2006,19 @@ export default function EntrepreneurSmartScanTestPage() {
   }, [isBootstrapped, myProfile, isProfileLoading]);
 
   useEffect(() => {
-    if (!myProfile) return;
+    if (!hasProfileBootstrapResolved) return;
+    if (showOnboardingJ0 || onboardingFlowLocked) return;
+
+    if (!myProfile) {
+      // Filet de securite: ne jamais bloquer l utilisateur sur l ecran de preparation.
+      setShowOnboardingJ0(true);
+      setOnboardingFlowLocked(true);
+      setOnboardingStep(1);
+      setOnboardingStartedAtMs(Date.now());
+      void loadOnboardingSectors();
+      return;
+    }
+
     const isProfileMostlyEmpty = [
       myProfile.first_name,
       myProfile.last_name,
@@ -2017,7 +2029,6 @@ export default function EntrepreneurSmartScanTestPage() {
       myProfile.metier_label,
     ].every((value) => String(value || "").trim().length === 0);
     const needsOnboarding = !myProfile.onboarding_completed_at || isProfileMostlyEmpty;
-    if (showOnboardingJ0 || onboardingFlowLocked) return;
     if (needsOnboarding) {
       setShowOnboardingJ0(true);
       setOnboardingFlowLocked(true);
@@ -2025,20 +2036,7 @@ export default function EntrepreneurSmartScanTestPage() {
       setOnboardingStartedAtMs(Date.now());
       void loadOnboardingSectors();
     }
-  }, [myProfile, showOnboardingJ0, onboardingFlowLocked]);
-
-  const isProfileMissingCoreData = useMemo(() => {
-    if (!myProfile) return true;
-    return [
-      myProfile.first_name,
-      myProfile.last_name,
-      myProfile.metier,
-      myProfile.ville,
-      myProfile.phone,
-      myProfile.sector_id,
-      myProfile.metier_label,
-    ].some((value) => String(value || "").trim().length === 0);
-  }, [myProfile]);
+  }, [hasProfileBootstrapResolved, myProfile, showOnboardingJ0, onboardingFlowLocked]);
 
   useEffect(() => {
     if (!showOnboardingJ0 || onboardingStep !== 4) return;
@@ -4776,7 +4774,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
     </div>
   ) : null;
 
-  const shouldBlockBeforeMain = !hasProfileBootstrapResolved || (isProfileMissingCoreData && !showOnboardingJ0 && !apiErrorMessage);
+  const shouldBlockBeforeMain = !hasProfileBootstrapResolved && !showOnboardingJ0;
   if (shouldBlockBeforeMain) {
     return (
       <main className="min-h-screen bg-[radial-gradient(circle_at_10%_0%,#10193D_0%,#0C122B_45%,#090B16_100%)] text-white">
