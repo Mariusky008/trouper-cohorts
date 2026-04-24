@@ -2019,7 +2019,7 @@ export default function EntrepreneurSmartScanTestPage() {
       return;
     }
 
-    const isProfileMostlyEmpty = [
+    const isProfileMissingCoreData = [
       myProfile.first_name,
       myProfile.last_name,
       myProfile.metier,
@@ -2027,8 +2027,8 @@ export default function EntrepreneurSmartScanTestPage() {
       myProfile.phone,
       myProfile.sector_id,
       myProfile.metier_label,
-    ].every((value) => String(value || "").trim().length === 0);
-    const needsOnboarding = !myProfile.onboarding_completed_at || isProfileMostlyEmpty;
+    ].some((value) => String(value || "").trim().length === 0);
+    const needsOnboarding = !myProfile.onboarding_completed_at || isProfileMissingCoreData;
     if (needsOnboarding) {
       setShowOnboardingJ0(true);
       setOnboardingFlowLocked(true);
