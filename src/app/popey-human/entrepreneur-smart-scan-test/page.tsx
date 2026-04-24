@@ -1872,11 +1872,17 @@ export default function EntrepreneurSmartScanTestPage() {
 
   useEffect(() => {
     if (!showOnboardingJ0 || onboardingStep !== 4) return;
-    if (!onboardingFirstContact) return;
     if (onboardingMessageDraft.trim()) return;
-    const seed = buildTemplate("eclaireur", onboardingFirstContact, undefined, myProfile);
+    const senderName = String(myProfile?.first_name || "").trim() || "{{ton_prenom}}";
+    const senderCity = String(myProfile?.ville || "").trim() || "{{ta_ville}}";
+    const senderMetier = String(myProfile?.metier || "").trim() || "{{ton_metier}}";
+    const seed = `Bonjour {{prenom_contact}}, je suis ${senderName}, ${senderMetier} a ${senderCity}.
+
+Je te partage un exemple de message Popey pour lancer une prise de contact.
+
+Ce texte est uniquement pedagogique pendant l onboarding: aucun message n est envoye automatiquement.`;
     setOnboardingMessageDraft(seed);
-  }, [showOnboardingJ0, onboardingStep, onboardingFirstContact, onboardingMessageDraft, myProfile]);
+  }, [showOnboardingJ0, onboardingStep, onboardingMessageDraft, myProfile]);
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
@@ -4191,25 +4197,14 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
   }
 
   async function completeOnboardingWithFirstMessage() {
-    if (!onboardingFirstContact) return;
     const elapsedSeconds = Math.max(1, Math.round((Date.now() - onboardingStartedAtMs) / 1000));
     const message = String(onboardingMessageDraft || "").trim();
     if (!message) {
-      setApiErrorMessage("Genere ou ecris le message avant envoi.");
+      setApiErrorMessage("Genere ou ecris le message exemple.");
       return;
     }
     try {
       setIsOnboardingSaving(true);
-      await postSmartScan("action", {
-        contactId: onboardingFirstContact.id,
-        fullName: onboardingFirstContact.name,
-        city: onboardingFirstContact.city || null,
-        companyHint: onboardingFirstContact.companyHint || null,
-        actionType: "eclaireur",
-        messageDraft: message,
-        sendChannel: "whatsapp",
-        status: "sent",
-      });
       await fetch("/api/popey-human/smart-scan/profile", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -4219,15 +4214,11 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
         eventType: "onboarding_completed",
         metadata: {
           sector: onboardingSelectedSectorId,
-          firstMessageSent: true,
+          firstMessageSent: false,
+          onboardingMode: "demo_only",
           timeToFirstMessage: elapsedSeconds,
         },
       }).catch(() => null);
-      const waPhone = String(onboardingFirstContact.phone || "").replace(/\D/g, "");
-      const url = waPhone
-        ? `https://wa.me/${encodeURIComponent(waPhone)}?text=${encodeURIComponent(message)}`
-        : `https://wa.me/?text=${encodeURIComponent(message)}`;
-      if (typeof window !== "undefined") window.open(url, "_blank", "noopener,noreferrer");
       setShowOnboardingJ0(false);
       setApiErrorMessage("");
       await refreshSmartScanSnapshot();
@@ -4372,6 +4363,9 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
           <div className="mt-3">
             <p className="text-2xl font-black">Commencons avec 1 de tes contacts</p>
             <p className="mt-1 text-sm text-white/75">Ton premier prospect activable</p>
+            <p className="mt-2 text-[11px] font-black uppercase tracking-[0.09em] text-cyan-100/95">
+              Mode demo educatif: aucun message n est envoye ici.
+            </p>
             <div className="mt-3 rounded-xl border border-cyan-300/25 bg-cyan-300/10 px-3 py-2">
               <p className="text-sm font-black text-cyan-100">{Math.min(importedContacts.length, 1)}/1 importe</p>
             </div>
@@ -4396,6 +4390,9 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
           <div className="mt-3">
             <p className="text-xl font-black">Qualification express du 1er contact</p>
             <p className="mt-1 text-sm text-white/75">{onboardingFirstContact?.name || "Premier contact"} • Exemple sur 1 seul contact</p>
+            <p className="mt-2 text-[11px] font-black uppercase tracking-[0.09em] text-cyan-100/95">
+              Demonstration uniquement, sans envoi reel.
+            </p>
             <div className="mt-3 grid grid-cols-2 gap-2">
               {OPPORTUNITY_OPTIONS.map((option) => (
                 <button
@@ -4438,8 +4435,8 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
         )}
         {onboardingStep === 4 && (
           <div className="mt-3">
-            <p className="text-xl font-black">Envoie ton 1er message</p>
-            <p className="mt-1 text-sm text-white/75">Objectif: succes vecu avant de fermer l app.</p>
+            <p className="text-xl font-black">Exemple de message (educatif)</p>
+            <p className="mt-1 text-sm text-white/75">Aucun message ne sera envoye pendant cet onboarding.</p>
             <textarea
               value={onboardingMessageDraft}
               onChange={(event) => setOnboardingMessageDraft(event.target.value)}
@@ -4453,7 +4450,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
               disabled={!onboardingMessageDraft.trim() || isOnboardingSaving}
               className="mt-3 h-11 w-full rounded-xl bg-gradient-to-r from-emerald-300 to-cyan-300 text-sm font-black text-[#10263A] disabled:opacity-45"
             >
-              Envoyer sur WhatsApp
+              Terminer la demo pour voir la suite
             </button>
           </div>
         )}
