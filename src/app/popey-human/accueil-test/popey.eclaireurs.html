@@ -1,0 +1,1224 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Popey Éclaireur — Ton carnet d'adresses vaut de l'or</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,700;0,9..144,900;1,9..144,400;1,9..144,700&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --cream:#FBF8F3; --paper:#F4EFE6; --paper2:#EDE5D8;
+  --ink:#1A1410; --ink2:#2C2420; --ink3:#4A3F38;
+  --border:rgba(26,20,16,0.1); --border2:rgba(26,20,16,0.18);
+  --gold:#C8922A; --gold-light:#FDF3E0; --gold-dim:rgba(200,146,42,0.12);
+  --green:#2A7A4B; --green-light:#E8F5EE; --green-dim:rgba(42,122,75,0.1);
+  --red:#C0392B; --red-light:#FDECEA;
+  --blue:#1B4F8A; --blue-light:#EAF1FB;
+  --text:var(--ink); --text-sec:var(--ink3); --text-ter:rgba(26,20,16,0.4);
+  --font-d:'Fraunces',serif; --font-b:'Instrument Sans',sans-serif;
+  --shadow-sm:0 2px 8px rgba(26,20,16,0.06);
+  --shadow-md:0 8px 32px rgba(26,20,16,0.1);
+  --shadow-lg:0 24px 64px rgba(26,20,16,0.14);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--cream);color:var(--text);font-family:var(--font-b);font-size:16px;line-height:1.6;overflow-x:hidden}
+
+/* NAV */
+nav{position:fixed;top:0;left:0;right:0;z-index:200;display:flex;align-items:center;justify-content:space-between;padding:16px 56px;background:rgba(251,248,243,0.92);backdrop-filter:blur(20px);border-bottom:1px solid var(--border)}
+.nav-brand{display:flex;align-items:baseline;gap:10px}
+.nav-logo{font-family:var(--font-d);font-weight:900;font-size:24px;color:var(--ink);letter-spacing:-.5px}
+.nav-badge{font-size:11px;font-weight:600;color:var(--gold);letter-spacing:.04em;text-transform:uppercase;border:1px solid var(--gold);padding:2px 8px;border-radius:20px}
+.nav-cta{background:var(--ink);color:var(--cream);padding:11px 24px;border-radius:4px;font-size:13px;font-weight:600;text-decoration:none;letter-spacing:.02em;transition:all .2s}
+.nav-cta:hover{background:var(--gold);transform:translateY(-1px)}
+
+/* HERO */
+.hero{min-height:100vh;display:flex;align-items:center;padding:120px 0 80px;position:relative;overflow:hidden}
+.hero-bg-text{position:absolute;bottom:-60px;left:-20px;font-family:var(--font-d);font-size:clamp(140px,20vw,280px);font-weight:900;color:transparent;-webkit-text-stroke:1px rgba(26,20,16,0.06);line-height:1;pointer-events:none;user-select:none;letter-spacing:-5px}
+.hero-dots{position:absolute;top:0;right:0;width:400px;height:400px;opacity:.04;background-image:radial-gradient(circle,var(--ink) 1px,transparent 1px);background-size:24px 24px}
+
+.hero-inner{max-width:1200px;margin:0 auto;padding:0 56px;display:grid;grid-template-columns:1.1fr 1fr;gap:80px;align-items:center;position:relative;z-index:1}
+.hero-left{}
+.hero-tag{display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--green);margin-bottom:24px;opacity:0;animation:slideIn .6s .1s ease forwards}
+.hero-tag-dot{width:8px;height:8px;border-radius:50%;background:var(--green);animation:pulse 2s infinite}
+.hero-title{font-family:var(--font-d);font-size:clamp(52px,5.5vw,80px);line-height:1.0;font-weight:900;letter-spacing:-2px;margin-bottom:12px;opacity:0;animation:slideIn .7s .2s ease forwards}
+.hero-title .italic{font-style:italic;color:var(--gold)}
+.hero-title .strike{position:relative;color:var(--text-ter)}
+.hero-title .strike::after{content:'';position:absolute;left:0;top:50%;width:100%;height:3px;background:var(--red);transform:rotate(-2deg)}
+.hero-title .big{display:block;font-size:clamp(72px,8vw,110px);color:var(--ink)}
+.hero-sub{font-size:18px;color:var(--text-sec);line-height:1.7;font-weight:400;margin-bottom:36px;max-width:460px;opacity:0;animation:slideIn .7s .3s ease forwards}
+.hero-sub strong{color:var(--ink);font-weight:600}
+
+.hero-earn{display:inline-flex;align-items:baseline;gap:6px;background:var(--gold-light);border:1.5px solid var(--gold);border-radius:8px;padding:12px 20px;margin-bottom:32px;opacity:0;animation:slideIn .7s .35s ease forwards}
+.hero-earn-num{font-family:var(--font-d);font-size:40px;font-weight:900;color:var(--gold);line-height:1}
+.hero-earn-text{font-size:13px;color:var(--ink3);line-height:1.3}
+
+.hero-ctas{display:flex;gap:12px;flex-wrap:wrap;opacity:0;animation:slideIn .7s .45s ease forwards}
+.btn-main{display:inline-flex;align-items:center;gap:8px;background:var(--ink);color:var(--cream);padding:16px 30px;border-radius:4px;font-size:14px;font-weight:600;text-decoration:none;transition:all .25s;letter-spacing:.02em}
+.btn-main:hover{background:var(--gold);transform:translateY(-2px);box-shadow:0 12px 32px rgba(200,146,42,.3)}
+.btn-ghost{display:inline-flex;align-items:center;gap:8px;background:transparent;color:var(--text-sec);padding:16px 22px;border-radius:4px;font-size:14px;font-weight:500;text-decoration:none;border:1.5px solid var(--border2);transition:all .2s}
+.btn-ghost:hover{border-color:var(--ink);color:var(--ink)}
+
+.hero-proof{display:flex;align-items:center;gap:12px;margin-top:24px;font-size:12px;color:var(--text-ter);opacity:0;animation:slideIn .7s .55s ease forwards}
+.proof-avs{display:flex}
+.proof-av{width:26px;height:26px;border-radius:50%;background:var(--paper2);border:2px solid var(--cream);margin-left:-6px;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:var(--ink3)}
+.proof-av:first-child{margin-left:0}
+
+/* HERO RIGHT — earnings card */
+.hero-right{opacity:0;animation:slideIn .8s .4s ease forwards}
+.earnings-card{background:var(--cream);border:1.5px solid var(--border2);border-radius:20px;padding:28px;box-shadow:var(--shadow-lg);position:relative}
+.ec-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+.ec-title{font-family:var(--font-d);font-size:15px;font-weight:700;color:var(--ink)}
+.ec-live{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:600;color:var(--green);background:var(--green-light);padding:4px 10px;border-radius:20px}
+.ec-live-dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 2s infinite}
+.ec-month{font-size:12px;color:var(--text-ter);margin-bottom:4px}
+.ec-total{font-family:var(--font-d);font-size:52px;font-weight:900;color:var(--green);line-height:1;margin-bottom:4px}
+.ec-vs{font-size:12px;color:var(--text-ter);margin-bottom:20px}
+.ec-vs span{color:var(--green);font-weight:600}
+.ec-list{display:flex;flex-direction:column;gap:8px;margin-bottom:20px}
+.ec-item{display:flex;align-items:center;gap:12px;padding:10px 12px;background:var(--paper);border-radius:10px}
+.ec-item-av{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0}
+.ec-item-name{font-size:13px;font-weight:600;color:var(--ink);flex:1}
+.ec-item-status{font-size:11px;color:var(--text-ter)}
+.ec-item-amount{font-size:14px;font-weight:700}
+.amount-paid{color:var(--green)}
+.amount-pending{color:var(--gold)}
+.ec-bar-label{display:flex;justify-content:space-between;font-size:11px;color:var(--text-ter);margin-bottom:6px}
+.ec-bar{height:6px;background:var(--paper2);border-radius:3px;overflow:hidden}
+.ec-bar-fill{height:6px;border-radius:3px;background:linear-gradient(90deg,var(--green),#4CAF82);width:0;animation:fillBar 1.5s .8s ease forwards}
+@keyframes fillBar{to{width:68%}}
+.ec-bar-sub{font-size:11px;color:var(--text-ter);margin-top:6px}
+.ec-bar-sub span{color:var(--gold);font-weight:600}
+
+/* TICKER */
+.ticker{background:var(--ink);color:var(--cream);padding:14px 0;overflow:hidden;white-space:nowrap}
+.ticker-inner{display:inline-flex;animation:scroll 20s linear infinite}
+.ticker-item{display:inline-flex;align-items:center;gap:8px;padding:0 40px;font-size:13px;font-weight:500;opacity:.9}
+.ticker-dot{width:5px;height:5px;border-radius:50%;background:var(--gold);flex-shrink:0}
+@keyframes scroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+
+/* SECTIONS */
+section{padding:100px 56px}
+.container{max-width:1100px;margin:0 auto}
+.section-tag{display:inline-flex;align-items:center;gap:8px;font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);margin-bottom:16px}
+.section-tag::before{content:'';display:block;width:20px;height:2px;background:var(--gold)}
+.section-title{font-family:var(--font-d);font-size:clamp(38px,4.5vw,64px);font-weight:900;line-height:1.0;letter-spacing:-1.5px;margin-bottom:16px}
+.section-title .italic{font-style:italic;color:var(--gold)}
+.section-sub{font-size:17px;color:var(--text-sec);line-height:1.7;font-weight:400;max-width:520px}
+
+/* PROBLEM */
+.problem-section{background:var(--paper);border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+.problem-grid{display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:center;margin-top:56px}
+.p-items{display:flex;flex-direction:column;gap:20px}
+.p-item{display:flex;gap:16px;align-items:flex-start}
+.p-item-ic{width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.p-item-title{font-size:15px;font-weight:600;margin-bottom:4px}
+.p-item-text{font-size:13px;color:var(--text-sec);line-height:1.5}
+.p-visual{background:var(--cream);border:1.5px solid var(--border2);border-radius:20px;padding:28px;box-shadow:var(--shadow-md)}
+.pv-label{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text-ter);margin-bottom:16px}
+.pv-bar-row{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.pv-bar-label{font-size:13px;color:var(--ink);min-width:130px;font-weight:500}
+.pv-bar-bg{flex:1;height:8px;background:var(--paper2);border-radius:4px;overflow:hidden}
+.pv-bar-fill{height:8px;border-radius:4px;transition:width 1s ease}
+.pv-bar-val{font-size:12px;font-weight:700;min-width:30px;text-align:right}
+.pv-insight{background:var(--gold-light);border:1px solid var(--gold);border-radius:10px;padding:14px;margin-top:16px;font-size:13px;color:var(--ink);line-height:1.5}
+.pv-insight strong{color:var(--gold)}
+
+/* HOW */
+.how-section{}
+.how-steps{display:grid;grid-template-columns:repeat(4,1fr);gap:2px;margin-top:56px;background:var(--border);border-radius:16px;overflow:hidden}
+.how-step{background:var(--cream);padding:28px 24px;transition:background .3s;cursor:default}
+.how-step:hover{background:var(--paper)}
+.how-step-num{font-family:var(--font-d);font-size:48px;font-weight:900;color:var(--paper2);line-height:1;margin-bottom:16px}
+.how-step-icon{font-size:28px;margin-bottom:12px;display:block}
+.how-step-title{font-size:15px;font-weight:600;margin-bottom:8px;color:var(--ink)}
+.how-step-text{font-size:13px;color:var(--text-sec);line-height:1.6}
+.how-step-time{font-size:11px;font-weight:700;color:var(--gold);margin-top:10px}
+
+/* SIMULATOR */
+.sim-section{background:var(--paper);border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+.sim-box{background:var(--cream);border:1.5px solid var(--border2);border-radius:20px;overflow:visible;box-shadow:var(--shadow-lg);margin-top:48px}
+.sim-step-block{padding:28px 36px;border-bottom:1px solid var(--border)}
+.sim-step-block:last-child{border-bottom:none}
+.sim-step-head{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+.sim-step-n{width:26px;height:26px;border-radius:50%;background:var(--ink);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--cream);flex-shrink:0}
+.sim-step-label{font-size:13px;font-weight:600;color:var(--ink)}
+.sim-sliders{display:grid;grid-template-columns:repeat(3,1fr);gap:24px}
+.sl-item{}
+.sl-label-row{display:flex;justify-content:space-between;margin-bottom:10px}
+.sl-label-text{font-size:13px;color:var(--text-sec)}
+.sl-val{font-size:13px;font-weight:700;color:var(--gold)}
+.sl-track{height:4px;background:var(--paper2);border-radius:10px;position:relative;cursor:pointer}
+.sl-fill{position:absolute;left:0;top:0;height:4px;border-radius:10px;background:linear-gradient(90deg,var(--gold),#E0A93C)}
+.sl-thumb{position:absolute;top:50%;transform:translate(-50%,-50%);width:16px;height:16px;border-radius:50%;background:var(--gold);box-shadow:0 2px 8px rgba(200,146,42,.4);cursor:grab;border:2px solid var(--cream)}
+.sim-results{background:linear-gradient(135deg,var(--gold-light),var(--cream));padding:28px 36px;border-top:1px solid rgba(200,146,42,.2)}
+.sim-results-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px}
+.sr-card{background:var(--cream);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center;box-shadow:var(--shadow-sm)}
+.sr-card.main{border-color:var(--gold);border-width:2px;background:var(--gold)}
+.sr-num{font-family:var(--font-d);font-size:34px;font-weight:900;line-height:1;margin-bottom:4px}
+.sr-card:not(.main) .sr-num{color:var(--gold)}
+.sr-card.main .sr-num{color:var(--ink)}
+.sr-label{font-size:11px;line-height:1.3}
+.sr-card:not(.main) .sr-label{color:var(--text-sec)}
+.sr-card.main .sr-label{color:rgba(26,20,16,.7)}
+
+/* PROFILES */
+.profiles-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:48px}
+.profile-card{background:var(--paper);border:1px solid var(--border);border-radius:18px;padding:26px;transition:all .3s;cursor:default}
+.profile-card:hover{box-shadow:var(--shadow-md);border-color:var(--border2);transform:translateY(-4px);background:var(--cream)}
+.profile-av{width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--font-d);font-size:18px;font-weight:900;margin-bottom:14px}
+.profile-name{font-size:15px;font-weight:600;margin-bottom:2px}
+.profile-situation{font-size:12px;color:var(--text-ter);margin-bottom:14px}
+.profile-tag{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;padding:4px 10px;border-radius:20px;margin-bottom:14px}
+.profile-text{font-size:13px;color:var(--text-sec);line-height:1.6;margin-bottom:14px}
+.profile-result{padding:12px 16px;border-radius:10px;font-size:13px;font-weight:600;display:flex;align-items:center;gap:8px}
+
+/* TESTIMONIALS */
+.testi-section{background:var(--ink);color:var(--cream)}
+.testi-title{font-family:var(--font-d);font-size:clamp(36px,4.5vw,60px);font-weight:900;letter-spacing:-1.5px;line-height:1;margin-bottom:16px}
+.testi-title .italic{font-style:italic;color:var(--gold)}
+.testi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:48px}
+.testi-card{background:rgba(255,255,255,.05);border:0.5px solid rgba(255,255,255,.1);border-radius:16px;padding:26px;transition:all .3s}
+.testi-card:hover{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.18)}
+.testi-stars{color:var(--gold);font-size:13px;letter-spacing:2px;margin-bottom:12px}
+.testi-text{font-size:14px;color:rgba(255,255,255,.65);line-height:1.7;margin-bottom:18px;font-style:italic}
+.testi-author{display:flex;align-items:center;gap:10px}
+.testi-av{width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;font-family:var(--font-d);font-size:12px;font-weight:900;color:var(--gold)}
+.testi-name{font-size:13px;font-weight:600;color:var(--cream)}
+.testi-role{font-size:11px;color:rgba(255,255,255,.35)}
+.testi-earn{font-size:13px;font-weight:700;color:var(--gold);margin-top:8px}
+
+/* FAQ */
+.faq-section{background:var(--paper);border-top:1px solid var(--border)}
+.faq-list{max-width:680px;margin:44px auto 0}
+.faq-item{border-bottom:1px solid var(--border)}
+.faq-q{width:100%;background:none;border:none;color:var(--ink);font-family:var(--font-b);font-size:15px;font-weight:500;text-align:left;padding:20px 0;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:14px;transition:color .2s}
+.faq-q:hover{color:var(--gold)}
+.faq-arrow{width:26px;height:26px;border-radius:50%;background:var(--paper2);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;transition:transform .3s,background .2s}
+.faq-item.open .faq-arrow{transform:rotate(45deg);background:var(--gold-light);color:var(--gold)}
+.faq-a{font-size:13px;color:var(--text-sec);line-height:1.7;max-height:0;overflow:hidden;transition:max-height .35s ease,padding .35s}
+.faq-item.open .faq-a{max-height:200px;padding-bottom:20px}
+
+/* CTA FINAL */
+.cta-section{padding:120px 56px;background:var(--cream);text-align:center;position:relative;overflow:hidden}
+.cta-bg-text{position:absolute;bottom:-80px;left:50%;transform:translateX(-50%);font-family:var(--font-d);font-size:clamp(120px,18vw,240px);font-weight:900;color:transparent;-webkit-text-stroke:1px rgba(26,20,16,0.04);white-space:nowrap;pointer-events:none}
+.cta-title{font-family:var(--font-d);font-size:clamp(44px,6vw,84px);font-weight:900;line-height:.95;letter-spacing:-2px;margin-bottom:20px;position:relative;z-index:1}
+.cta-title .italic{font-style:italic;color:var(--gold)}
+.cta-sub{font-size:18px;color:var(--text-sec);margin-bottom:40px;max-width:480px;margin-left:auto;margin-right:auto;font-weight:400;line-height:1.6;position:relative;z-index:1}
+.cta-btns{position:relative;z-index:1;display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+
+footer{background:var(--ink);padding:32px 56px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px}
+.footer-logo{font-family:var(--font-d);font-size:20px;font-weight:900;color:var(--cream);letter-spacing:-.5px}
+.footer-badge{font-size:10px;color:rgba(255,255,255,.3);margin-top:2px;letter-spacing:.06em;text-transform:uppercase}
+.footer-links{display:flex;gap:24px}
+.footer-links a{font-size:12px;color:rgba(255,255,255,.35);text-decoration:none;transition:color .2s}
+.footer-links a:hover{color:rgba(255,255,255,.7)}
+.footer-copy{font-size:11px;color:rgba(255,255,255,.25)}
+
+@keyframes slideIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.reveal{opacity:0;transform:translateY(28px);transition:opacity .65s ease,transform .65s ease}
+.reveal.visible{opacity:1;transform:translateY(0)}
+.rd1{transition-delay:.1s}.rd2{transition-delay:.2s}.rd3{transition-delay:.3s}
+
+@media(max-width:1024px){
+  nav{padding:14px 20px}
+  .hero-inner{grid-template-columns:1fr;gap:40px;padding:0 20px}
+  .hero-right{display:none}
+  section{padding:70px 20px}
+  .problem-grid,.how-steps,.profiles-grid,.testi-grid{grid-template-columns:1fr}
+  .how-steps{gap:0;border-radius:12px}
+  .sim-sliders{grid-template-columns:1fr}
+  .sim-results-grid{grid-template-columns:1fr 1fr}
+  .sim-step-block{padding:20px}
+  .sim-results{padding:20px}
+  footer{flex-direction:column;text-align:center;padding:28px 20px}
+  .cta-section{padding:80px 20px}
+}
+
+/* ── MODAL ONBOARDING ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(26,20,16,0.6);backdrop-filter:blur(8px);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;pointer-events:none;transition:opacity .3s}
+.modal-overlay.open{opacity:1;pointer-events:all}
+.modal{background:var(--cream);border-radius:24px;width:100%;max-width:520px;box-shadow:0 32px 80px rgba(26,20,16,.2);overflow:hidden;transform:translateY(20px);transition:transform .3s}
+.modal-overlay.open .modal{transform:translateY(0)}
+.modal-step{display:none;flex-direction:column}
+.modal-step.active{display:flex}
+.modal-header{padding:28px 32px 0;display:flex;align-items:center;justify-content:space-between}
+.modal-progress{display:flex;gap:6px}
+.modal-dot{width:28px;height:4px;border-radius:2px;background:var(--paper2);transition:background .3s}
+.modal-dot.done{background:var(--gold)}
+.modal-close{width:32px;height:32px;border-radius:50%;background:var(--paper);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;color:var(--ink3);transition:background .2s}
+.modal-close:hover{background:var(--paper2)}
+.modal-body{padding:28px 32px 32px}
+.modal-tag{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--gold);margin-bottom:10px}
+.modal-title{font-family:var(--font-d);font-size:26px;font-weight:900;letter-spacing:-.5px;line-height:1.15;margin-bottom:8px;color:var(--ink)}
+.modal-title .italic{font-style:italic;color:var(--gold)}
+.modal-sub{font-size:14px;color:var(--text-sec);line-height:1.6;margin-bottom:24px}
+.modal-field{margin-bottom:14px}
+.modal-label{font-size:12px;font-weight:600;color:var(--ink3);margin-bottom:6px;display:block;letter-spacing:.02em}
+.modal-input{width:100%;background:var(--paper);border:1.5px solid var(--border2);border-radius:10px;padding:13px 16px;font-family:var(--font-b);font-size:14px;color:var(--ink);outline:none;transition:border-color .2s}
+.modal-input:focus{border-color:var(--gold);background:var(--cream)}
+.modal-input::placeholder{color:var(--text-ter)}
+.modal-select{width:100%;background:var(--paper);border:1.5px solid var(--border2);border-radius:10px;padding:13px 16px;font-family:var(--font-b);font-size:14px;color:var(--ink);outline:none;appearance:none;cursor:pointer;transition:border-color .2s}
+.modal-select:focus{border-color:var(--gold)}
+.modal-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.modal-btn{width:100%;padding:15px;background:var(--ink);color:var(--cream);border:none;border-radius:10px;font-family:var(--font-b);font-size:14px;font-weight:600;cursor:pointer;transition:all .2s;letter-spacing:.02em}
+.modal-btn:hover{background:var(--gold);transform:translateY(-1px)}
+.modal-btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
+.modal-skip{text-align:center;margin-top:12px;font-size:12px;color:var(--text-ter);cursor:pointer;transition:color .2s}
+.modal-skip:hover{color:var(--gold)}
+
+/* STEP 3 — Profils pros suggérés */
+.pro-cards{display:flex;flex-direction:column;gap:10px;margin-bottom:20px}
+.pro-card{background:var(--paper);border:1.5px solid var(--border);border-radius:14px;padding:14px 16px;cursor:pointer;transition:all .2s;position:relative}
+.pro-card:hover{border-color:var(--gold);background:var(--cream)}
+.pro-card.selected{border-color:var(--gold);border-width:2px;background:var(--gold-light)}
+.pro-card-check{position:absolute;top:12px;right:14px;width:22px;height:22px;border-radius:50%;border:1.5px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:11px;transition:all .2s}
+.pro-card.selected .pro-card-check{background:var(--gold);border-color:var(--gold);color:#fff}
+.pro-card-top{display:flex;align-items:center;gap:12px;margin-bottom:6px}
+.pro-card-av{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--font-d);font-size:14px;font-weight:900;flex-shrink:0}
+.pro-card-name{font-size:14px;font-weight:600;color:var(--ink)}
+.pro-card-metier{font-size:11px;color:var(--text-ter)}
+.pro-card-match{display:flex;align-items:center;gap:8px;margin-top:4px}
+.pro-card-bar{flex:1;height:4px;background:var(--paper2);border-radius:2px;overflow:hidden}
+.pro-card-fill{height:4px;border-radius:2px;background:linear-gradient(90deg,var(--green),#4CAF82)}
+.pro-card-pct{font-size:11px;font-weight:700;color:var(--green)}
+.pro-card-earn{font-size:11px;color:var(--text-sec);margin-left:auto}
+.pro-card-why{font-size:12px;color:var(--text-sec);line-height:1.4;margin-top:6px;padding-top:6px;border-top:1px solid var(--border)}
+
+/* STEP 4 — Succès */
+.success-anim{text-align:center;padding:20px 0}
+.success-icon{font-size:56px;margin-bottom:16px;display:block;animation:pop .5s ease}
+@keyframes pop{0%{transform:scale(0)}80%{transform:scale(1.15)}100%{transform:scale(1)}}
+.success-title{font-family:var(--font-d);font-size:28px;font-weight:900;color:var(--ink);margin-bottom:8px;letter-spacing:-.5px}
+.success-sub{font-size:14px;color:var(--text-sec);line-height:1.6;margin-bottom:20px}
+.success-earn{display:inline-flex;align-items:baseline;gap:6px;background:var(--gold-light);border:1.5px solid var(--gold);border-radius:8px;padding:10px 18px;margin-bottom:24px}
+.success-earn-num{font-family:var(--font-d);font-size:32px;font-weight:900;color:var(--gold);line-height:1}
+.success-earn-text{font-size:12px;color:var(--ink3)}
+.success-pros{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:20px}
+.success-pro-chip{display:flex;align-items:center;gap:6px;background:var(--paper);border:1px solid var(--border);border-radius:20px;padding:5px 12px;font-size:12px;font-weight:500}
+
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-brand">
+    <div class="nav-logo">Popey</div>
+    <div class="nav-badge">Éclaireur</div>
+  </div>
+  <a href="#inscription" class="nav-cta">Commencer à gagner →</a>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-bg-text">RÉSEAU</div>
+  <div class="hero-dots"></div>
+  <div class="hero-inner">
+    <div class="hero-left">
+      <div class="hero-tag"><span class="hero-tag-dot"></span>Popey · Programme Éclaireur</div>
+      <h1 class="hero-title">
+        Ton carnet<br>d'adresses<br>
+        <span class="italic">vaut de l'or.</span>
+        <span class="big">Encaisse-le.</span>
+      </h1>
+      <p class="hero-sub">Tu connais des gens. Ces gens ont des besoins. Des professionnels locaux paient pour les rencontrer. <strong>Popey fait le lien — toi tu encaisses la commission.</strong></p>
+
+      <div class="hero-earn">
+        <div class="hero-earn-num">340€</div>
+        <div class="hero-earn-text">gagnés en moyenne<br>par mois par nos éclaireurs actifs</div>
+      </div>
+
+      <div class="hero-ctas">
+        <button onclick="openModal()" class="btn-main" style="border:none;cursor:pointer">Je veux gagner de l'argent →</button>
+        <a href="#comment" class="btn-ghost">Comment ça marche ?</a>
+      </div>
+
+      <div class="hero-proof">
+        <div class="proof-avs">
+          <div class="proof-av">SC</div><div class="proof-av">MR</div><div class="proof-av">AL</div><div class="proof-av">JP</div><div class="proof-av">+</div>
+        </div>
+        <span>+2 400 éclaireurs actifs · Sans compétence particulière · Depuis leur téléphone</span>
+      </div>
+    </div>
+
+    <div class="hero-right">
+      <div class="earnings-card">
+        <div class="ec-header">
+          <div class="ec-title">Tableau de bord Éclaireur</div>
+          <div class="ec-live"><span class="ec-live-dot"></span>En direct</div>
+        </div>
+        <div class="ec-month">Avril 2026 — commissions</div>
+        <div class="ec-total">+340€</div>
+        <div class="ec-vs">vs le mois dernier <span>+12%</span></div>
+        <div class="ec-list">
+          <div class="ec-item">
+            <div class="ec-item-av" style="background:#E8F5EE;color:#2A7A4B">JM</div>
+            <div>
+              <div class="ec-item-name">Jean-Marc → Coach sportif</div>
+              <div class="ec-item-status">Client signé · 1re séance faite</div>
+            </div>
+            <div class="ec-item-amount amount-paid">+40€</div>
+          </div>
+          <div class="ec-item">
+            <div class="ec-item-av" style="background:#FDF3E0;color:#C8922A">SL</div>
+            <div>
+              <div class="ec-item-name">Sophie → Hypnothérapeute</div>
+              <div class="ec-item-status">RDV pris · en cours</div>
+            </div>
+            <div class="ec-item-amount amount-pending">+20€</div>
+          </div>
+          <div class="ec-item">
+            <div class="ec-item-av" style="background:#EAF1FB;color:#1B4F8A">PT</div>
+            <div>
+              <div class="ec-item-name">Pierre → Agent immo</div>
+              <div class="ec-item-status">Mandat signé · commission versée</div>
+            </div>
+            <div class="ec-item-amount amount-paid">+280€</div>
+          </div>
+        </div>
+        <div class="ec-bar-label"><span>Objectif mensuel</span><span>340€ / 500€</span></div>
+        <div class="ec-bar"><div class="ec-bar-fill"></div></div>
+        <div class="ec-bar-sub">Plus que <span>3 recommandations</span> pour atteindre ton objectif</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TICKER -->
+<div class="ticker">
+  <div class="ticker-inner">
+    <span class="ticker-item"><span class="ticker-dot"></span>Sophie vient de gagner 20€ pour avoir recommandé une nutritionniste</span>
+    <span class="ticker-item"><span class="ticker-dot"></span>Marc a touché 280€ grâce à une mise en relation immobilière</span>
+    <span class="ticker-item"><span class="ticker-dot"></span>Clara a gagné 340€ ce mois sans quitter son canapé</span>
+    <span class="ticker-item"><span class="ticker-dot"></span>Thomas vient de recommander un ostéo — commission de 15€ en route</span>
+    <span class="ticker-item"><span class="ticker-dot"></span>Julie a recommandé son coach sportif à 3 amis — 60€ encaissés</span>
+    <span class="ticker-item"><span class="ticker-dot"></span>Sophie vient de gagner 20€ pour avoir recommandé une nutritionniste</span>
+    <span class="ticker-item"><span class="ticker-dot"></span>Marc a touché 280€ grâce à une mise en relation immobilière</span>
+    <span class="ticker-item"><span class="ticker-dot"></span>Clara a gagné 340€ ce mois sans quitter son canapé</span>
+    <span class="ticker-item"><span class="ticker-dot"></span>Thomas vient de recommander un ostéo — commission de 15€ en route</span>
+    <span class="ticker-item"><span class="ticker-dot"></span>Julie a recommandé son coach sportif à 3 amis — 60€ encaissés</span>
+  </div>
+</div>
+
+<!-- PROBLEM -->
+<section class="problem-section">
+  <div class="container">
+    <div class="reveal">
+      <div class="section-tag">Le constat</div>
+      <h2 class="section-title">Tu recommandes déjà.<br><span class="italic">Gratuitement.</span></h2>
+      <p class="section-sub">Tu conseilles tes amis tous les jours. "Tu devrais voir ce coach", "je connais un bon ostéo", "appelle cet agent immo". Ces recommandations valent de l'argent — mais tu ne l'as jamais su.</p>
+    </div>
+    <div class="problem-grid">
+      <div class="p-items reveal rd1">
+        <div class="p-item">
+          <div class="p-item-ic" style="background:#FDF3E0">💬</div>
+          <div>
+            <div class="p-item-title">Tu recommandes sans le savoir</div>
+            <div class="p-item-text">En moyenne une personne fait 3 à 5 recommandations par semaine à son entourage. Coach sportif, plombier, agent immo, nutritionniste... Des mises en relation que des pros paient cher pour obtenir.</div>
+          </div>
+        </div>
+        <div class="p-item">
+          <div class="p-item-ic" style="background:#E8F5EE">📱</div>
+          <div>
+            <div class="p-item-title">Ton téléphone est une mine inexploitée</div>
+            <div class="p-item-text">Tu as 150 à 500 contacts. Chacun a des besoins. Des professionnels locaux cherchent exactement ces gens-là et sont prêts à payer pour les rencontrer.</div>
+          </div>
+        </div>
+        <div class="p-item">
+          <div class="p-item-ic" style="background:#EAF1FB">💰</div>
+          <div>
+            <div class="p-item-title">Personne ne t'a jamais payé pour ça</div>
+            <div class="p-item-text">Jusqu'à maintenant. Popey structure ce que tu fais déjà naturellement et te paie une commission à chaque fois que ta recommandation aboutit.</div>
+          </div>
+        </div>
+      </div>
+      <div class="p-visual reveal rd2">
+        <div class="pv-label">Ce que tes recommandations valent vraiment</div>
+        <div class="pv-bar-row">
+          <span class="pv-bar-label">Coach sportif</span>
+          <div class="pv-bar-bg"><div class="pv-bar-fill" style="width:24%;background:#2A7A4B"></div></div>
+          <span class="pv-bar-val" style="color:#2A7A4B">15€</span>
+        </div>
+        <div class="pv-bar-row">
+          <span class="pv-bar-label">Nutritionniste</span>
+          <div class="pv-bar-bg"><div class="pv-bar-fill" style="width:30%;background:#2A7A4B"></div></div>
+          <span class="pv-bar-val" style="color:#2A7A4B">20€</span>
+        </div>
+        <div class="pv-bar-row">
+          <span class="pv-bar-label">Hypnothérapeute</span>
+          <div class="pv-bar-bg"><div class="pv-bar-fill" style="width:22%;background:#2A7A4B"></div></div>
+          <span class="pv-bar-val" style="color:#2A7A4B">12€</span>
+        </div>
+        <div class="pv-bar-row">
+          <span class="pv-bar-label">Agent immobilier</span>
+          <div class="pv-bar-bg"><div class="pv-bar-fill" style="width:80%;background:#C8922A"></div></div>
+          <span class="pv-bar-val" style="color:#C8922A">500€</span>
+        </div>
+        <div class="pv-bar-row">
+          <span class="pv-bar-label">Courtier crédit</span>
+          <div class="pv-bar-bg"><div class="pv-bar-fill" style="width:60%;background:#C8922A"></div></div>
+          <span class="pv-bar-val" style="color:#C8922A">300€</span>
+        </div>
+        <div class="pv-insight">Tu recommandes en moyenne <strong>3 fois par semaine</strong>. Avec Popey, ça vaut potentiellement <strong>150 à 500€ par mois.</strong></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW -->
+<section id="comment">
+  <div class="container">
+    <div class="reveal" style="text-align:center">
+      <div class="section-tag" style="justify-content:center">Comment ça marche</div>
+      <h2 class="section-title" style="max-width:600px;margin:0 auto 12px">4 étapes.<br><span class="italic">Zéro compétence requise.</span></h2>
+      <p class="section-sub" style="margin:0 auto">Tu n'as pas besoin de savoir vendre, prospecter ou négocier. Tu as juste besoin de connaître des gens.</p>
+    </div>
+    <div class="how-steps reveal rd1">
+      <div class="how-step">
+        <div class="how-step-num">01</div>
+        <span class="how-step-icon">📱</span>
+        <div class="how-step-title">Tu t'inscris et importes tes contacts</div>
+        <div class="how-step-text">Popey analyse ton répertoire et identifie les besoins potentiels de chaque contact. Rien n'est envoyé sans ta validation.</div>
+        <div class="how-step-time">⏱ 2 minutes</div>
+      </div>
+      <div class="how-step">
+        <div class="how-step-num">02</div>
+        <span class="how-step-icon">💡</span>
+        <div class="how-step-title">Popey te suggère qui contacter</div>
+        <div class="how-step-text">L'IA propose chaque jour 2 à 3 contacts avec leur besoin probable. Tu confirmes ou corriges en 1 tap — tu connais mieux tes amis que l'algorithme.</div>
+        <div class="how-step-time">⏱ 30 secondes / jour</div>
+      </div>
+      <div class="how-step">
+        <div class="how-step-num">03</div>
+        <span class="how-step-icon">🤝</span>
+        <div class="how-step-title">Popey envoie le bon message au bon pro</div>
+        <div class="how-step-text">Un professionnel local qualifié est contacté en ton nom. Il sait qu'il vient de ta part. Toi tu ne fais rien de plus.</div>
+        <div class="how-step-time">⏱ Automatique</div>
+      </div>
+      <div class="how-step">
+        <div class="how-step-num">04</div>
+        <span class="how-step-icon">💰</span>
+        <div class="how-step-title">Tu reçois ta commission</div>
+        <div class="how-step-text">Si le contact devient client du pro, ta commission est calculée et versée automatiquement. Tu suis tout en temps réel dans l'app.</div>
+        <div class="how-step-time">⏱ Versement sous 48h</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SIMULATOR -->
+<section class="sim-section" id="simulateur">
+  <div class="container">
+    <div class="reveal" style="text-align:center">
+      <div class="section-tag" style="justify-content:center">Simulateur</div>
+      <h2 class="section-title" style="max-width:600px;margin:0 auto 12px">Combien<br><span class="italic">tu pourrais gagner ?</span></h2>
+      <p class="section-sub" style="margin:0 auto">Règle les curseurs selon ta situation. Popey calcule ton potentiel en temps réel.</p>
+    </div>
+
+    <div class="sim-box reveal rd1">
+      <div class="sim-step-block">
+        <div class="sim-step-head">
+          <div class="sim-step-n">1</div>
+          <div class="sim-step-label">Ta situation</div>
+        </div>
+        <div class="sim-sliders">
+          <div class="sl-item">
+            <div class="sl-label-row"><span class="sl-label-text">Contacts dans ton téléphone</span><span class="sl-val" id="v-contacts">200</span></div>
+            <div class="sl-track" id="sl-c"><div class="sl-fill" id="sl-cf" style="width:40%"></div><div class="sl-thumb" id="sl-ct" style="left:40%"></div></div>
+          </div>
+          <div class="sl-item">
+            <div class="sl-label-row"><span class="sl-label-text">Recommandations / semaine</span><span class="sl-val" id="v-reco">3</span></div>
+            <div class="sl-track" id="sl-r"><div class="sl-fill" id="sl-rf" style="width:30%"></div><div class="sl-thumb" id="sl-rt" style="left:30%"></div></div>
+          </div>
+          <div class="sl-item">
+            <div class="sl-label-row"><span class="sl-label-text">Temps disponible / jour</span><span class="sl-val" id="v-temps">15 min</span></div>
+            <div class="sl-track" id="sl-t"><div class="sl-fill" id="sl-tf" style="width:30%"></div><div class="sl-thumb" id="sl-tt" style="left:30%"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sim-results" id="sim-results" style="display:none">
+        <div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--gold);margin-bottom:16px">⚡ Ton potentiel mensuel</div>
+        <div class="sim-results-grid">
+          <div class="sr-card">
+            <div class="sr-num" id="sr-mises">0</div>
+            <div class="sr-label">Mises en relation / mois</div>
+          </div>
+          <div class="sr-card">
+            <div class="sr-num" id="sr-taux">0</div>
+            <div class="sr-label">Conversions estimées</div>
+          </div>
+          <div class="sr-card">
+            <div class="sr-num" id="sr-gain">0€</div>
+            <div class="sr-label">Gain mensuel estimé</div>
+          </div>
+          <div class="sr-card main">
+            <div class="sr-num" id="sr-annuel">0€</div>
+            <div class="sr-label">Potentiel annuel</div>
+          </div>
+        </div>
+        <div style="text-align:center">
+          <button onclick="openModal()" class="btn-main" style="display:inline-flex;margin:0 auto;border:none;cursor:pointer">Activer mon potentiel maintenant →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PROFILES -->
+<section>
+  <div class="container">
+    <div class="reveal" style="text-align:center">
+      <div class="section-tag" style="justify-content:center">Pour qui</div>
+      <h2 class="section-title">Tu te reconnais ?</h2>
+    </div>
+    <div class="profiles-grid">
+      <div class="profile-card reveal rd1">
+        <div class="profile-av" style="background:#E8F5EE;color:#2A7A4B">SC</div>
+        <div class="profile-name">Sophie, 34 ans</div>
+        <div class="profile-situation">Assistante RH · 2 200€/mois</div>
+        <div class="profile-tag" style="background:#E8F5EE;color:#2A7A4B">💬 Le hub social</div>
+        <p class="profile-text">Tout le monde lui demande des conseils. Elle connaît un professionnel pour tout. Avec Popey, elle structure ce qu'elle fait déjà et gagne 280 à 400€/mois supplémentaires.</p>
+        <div class="profile-result" style="background:#E8F5EE;color:#2A7A4B">✓ 340€ gagnés le mois dernier</div>
+      </div>
+      <div class="profile-card reveal rd2">
+        <div class="profile-av" style="background:#FDF3E0;color:#C8922A">MK</div>
+        <div class="profile-name">Mehdi, 27 ans</div>
+        <div class="profile-situation">Étudiant en master · Jobiste</div>
+        <div class="profile-tag" style="background:#FDF3E0;color:#C8922A">🎓 Le bien connecté</div>
+        <p class="profile-text">Énorme réseau digital, beaucoup de contacts dans des secteurs variés, besoin de revenus complémentaires. Popey s'adapte à son rythme — 10 min par jour suffisent.</p>
+        <div class="profile-result" style="background:#FDF3E0;color:#C8922A">✓ 180€ gagnés en 3 semaines</div>
+      </div>
+      <div class="profile-card reveal rd3">
+        <div class="profile-av" style="background:#EAF1FB;color:#1B4F8A">NB</div>
+        <div class="profile-name">Nadia, 42 ans</div>
+        <div class="profile-situation">Parent actif · Mi-temps</div>
+        <div class="profile-tag" style="background:#EAF1FB;color:#1B4F8A">👨‍👩‍👧 Le réseau de proximité</div>
+        <p class="profile-text">Parents d'élèves, voisins, club de sport, association — son réseau local est dense et actif. Elle identifie des besoins concrets tous les jours sans même le chercher.</p>
+        <div class="profile-result" style="background:#EAF1FB;color:#1B4F8A">✓ 220€ gagnés sans effort perçu</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TESTI -->
+<section class="testi-section">
+  <div class="container">
+    <div class="reveal" style="text-align:center">
+      <div class="section-tag" style="justify-content:center;color:rgba(255,255,255,.5)">Ils l'ont fait</div>
+      <h2 class="testi-title">Ils recommandaient<br>déjà. <span class="italic">Maintenant</span><br>ils sont payés.</h2>
+    </div>
+    <div class="testi-grid">
+      <div class="testi-card reveal rd1">
+        <div class="testi-stars">★★★★★</div>
+        <p class="testi-text">"J'ai dit à mon collègue de voir mon coach sportif. Deux jours après j'avais 40€ sur mon compte Popey. J'aurais dit la même chose sans Popey — maintenant je suis payée pour ça."</p>
+        <div class="testi-author"><div class="testi-av">CL</div><div><div class="testi-name">Clara L.</div><div class="testi-role">Infirmière · Lyon</div></div></div>
+        <div class="testi-earn">340€ gagnés ce mois</div>
+      </div>
+      <div class="testi-card reveal rd2">
+        <div class="testi-stars">★★★★★</div>
+        <p class="testi-text">"Mon ami cherchait un appartement depuis des mois. Je l'ai mis en contact avec l'agent immo de ma sœur via Popey. Quand le mandat a été signé, j'ai reçu 280€. J'en reviens pas encore."</p>
+        <div class="testi-author"><div class="testi-av">MK</div><div><div class="testi-name">Mehdi K.</div><div class="testi-role">Étudiant · Bordeaux</div></div></div>
+        <div class="testi-earn">480€ gagnés en 2 mois</div>
+      </div>
+      <div class="testi-card reveal rd3">
+        <div class="testi-stars">★★★★★</div>
+        <p class="testi-text">"Je pensais que c'était pour les pros. Mais en fait c'est exactement pour moi — quelqu'un d'ordinaire avec plein de contacts. En 30 jours j'ai gagné 220€ en 10 minutes de boulot total."</p>
+        <div class="testi-author"><div class="testi-av">NB</div><div><div class="testi-name">Nadia B.</div><div class="testi-role">Assistante maternelle · Paris</div></div></div>
+        <div class="testi-earn">220€ gagnés en 30 jours</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section class="faq-section">
+  <div class="container" style="max-width:700px;text-align:center">
+    <div class="reveal">
+      <div class="section-tag" style="justify-content:center">FAQ</div>
+      <h2 class="section-title">Les vraies<br><span class="italic">questions.</span></h2>
+    </div>
+    <div class="faq-list reveal">
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">Est-ce que je dois convaincre mes amis d'acheter quelque chose ?<div class="faq-arrow">+</div></button>
+        <div class="faq-a">Non. Tu fais juste une mise en relation — comme tu le ferais naturellement. Tu dis à ton ami "j'ai quelqu'un qui pourrait t'aider" et Popey envoie le message professionnel pour toi. Ton ami reste libre d'accepter ou non. Tu n'as rien à vendre.</div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">Est-ce légal de toucher des commissions comme ça ?<div class="faq-arrow">+</div></button>
+        <div class="faq-a">Oui, totalement. L'apport d'affaires entre particuliers est une pratique légale et courante en France. Popey génère automatiquement un bon d'apport numérique pour chaque mise en relation. Les revenus sont à déclarer comme des revenus complémentaires — Popey te fournit un récapitulatif annuel.</div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">Mes contacts sauront-ils que je touche une commission ?<div class="faq-arrow">+</div></button>
+        <div class="faq-a">C'est ton choix. Popey te laisse décider si tu mentionnes ou non la commission. La plupart des éclaireurs sont transparents — "je t'envoie vers ce coach, si ça aboutit j'ai un petit bonus" — et leurs contacts trouvent ça naturel et honnête. La transparence renforce la confiance.</div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">Comment je suis payé et quand ?<div class="faq-arrow">+</div></button>
+        <div class="faq-a">Dès qu'une recommandation aboutit (le contact devient client du professionnel), la commission est calculée automatiquement et versée sur ton compte en 48h via virement bancaire ou PayPal. Tu suis l'avancement de chaque recommandation en temps réel dans l'app.</div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">Combien de temps ça me prend par jour ?<div class="faq-arrow">+</div></button>
+        <div class="faq-a">Les éclaireurs actifs passent en moyenne 10 à 15 minutes par jour sur Popey — souvent le matin en prenant leur café. L'app te propose 2 à 3 suggestions par jour. Tu valides ou non en 1 tap. Le reste est automatique.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA FINAL -->
+<section class="cta-section" id="inscription">
+  <div class="cta-bg-text">ÉCLAIREUR</div>
+  <div class="container reveal" style="max-width:700px">
+    <h2 class="cta-title">Tu recommandes déjà.<br><span class="italic">Commence à<br>être payé pour ça.</span></h2>
+    <p class="cta-sub">Gratuit. Sans compétence requise. Depuis ton téléphone. En 2 minutes tu sais combien tu peux gagner.</p>
+    <div class="cta-btns">
+      <button onclick="openModal()" class="btn-main" style="font-size:15px;padding:18px 36px;border:none;cursor:pointer">Je m'inscris gratuitement →</button>
+      <a href="#simulateur" class="btn-ghost">Simuler mon gain d'abord</a>
+    </div>
+    <p style="font-size:12px;color:var(--text-ter);margin-top:20px;position:relative;z-index:1">Inscription gratuite · Aucune carte bancaire · Premiers gains possibles dès la 1re semaine</p>
+  </div>
+</section>
+
+<footer>
+  <div>
+    <div class="footer-logo">Popey</div>
+    <div class="footer-badge">Programme Éclaireur</div>
+  </div>
+  <div class="footer-links">
+    <a href="#">Mentions légales</a><a href="#">Confidentialité</a><a href="#">Contact</a><a href="https://popey.academy">popey.academy</a>
+  </div>
+  <div class="footer-copy">© 2026 Popey Academy. Tous droits réservés.</div>
+</footer>
+
+<script>
+// Reveal
+const obs = new IntersectionObserver(entries => {
+  entries.forEach(e => { if(e.isIntersecting){e.target.classList.add('visible');obs.unobserve(e.target);} });
+}, {threshold:.07,rootMargin:'0px 0px -40px 0px'});
+document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
+
+// FAQ
+function toggleFaq(btn) {
+  const item = btn.closest('.faq-item');
+  const isOpen = item.classList.contains('open');
+  document.querySelectorAll('.faq-item.open').forEach(i => i.classList.remove('open'));
+  if(!isOpen) item.classList.add('open');
+}
+
+// Sliders
+let simData = {contacts:200, reco:3, temps:15};
+
+function initSlider(trackId, fillId, thumbId, valId, min, max, initVal, fmt, cb) {
+  const track = document.getElementById(trackId);
+  const fill = document.getElementById(fillId);
+  const thumb = document.getElementById(thumbId);
+  const valEl = document.getElementById(valId);
+  let dragging = false;
+
+  function upd(pct) {
+    pct = Math.max(0, Math.min(1, pct));
+    const v = Math.round(min + pct*(max-min));
+    fill.style.width = (pct*100)+'%';
+    thumb.style.left = (pct*100)+'%';
+    valEl.textContent = fmt(v);
+    cb(v);
+    updateSim();
+  }
+  function getPct(e) {
+    const r = track.getBoundingClientRect();
+    return ((e.touches?e.touches[0].clientX:e.clientX) - r.left) / r.width;
+  }
+  thumb.addEventListener('mousedown', e=>{dragging=true;e.preventDefault();});
+  track.addEventListener('click', e=>{if(!dragging)upd(getPct(e));});
+  document.addEventListener('mousemove', e=>{if(dragging)upd(getPct(e));});
+  document.addEventListener('mouseup', ()=>{dragging=false;});
+  thumb.addEventListener('touchstart', e=>{dragging=true;e.preventDefault();},{passive:false});
+  document.addEventListener('touchmove', e=>{if(dragging)upd(getPct(e));},{passive:false});
+  document.addEventListener('touchend', ()=>{dragging=false;});
+
+  const initPct = (initVal - min) / (max - min);
+  setTimeout(() => upd(initPct), 100);
+}
+
+initSlider('sl-c','sl-cf','sl-ct','v-contacts', 50, 600, 200, v=>v, v=>{simData.contacts=v;});
+initSlider('sl-r','sl-rf','sl-rt','v-reco', 1, 10, 3, v=>v, v=>{simData.reco=v;});
+initSlider('sl-t','sl-tf','sl-tt','v-temps', 5, 60, 15, v=>v+' min', v=>{simData.temps=v;});
+
+function animNum(id, target, suffix='') {
+  const el = document.getElementById(id);
+  const from = parseInt(el.textContent)||0;
+  const dur = 500;
+  const t0 = performance.now();
+  (function frame(now){
+    const p = Math.min((now-t0)/dur,1);
+    const ease = 1-Math.pow(1-p,3);
+    el.textContent = Math.round(from+(target-from)*ease) + suffix;
+    if(p<1) requestAnimationFrame(frame);
+  })(performance.now());
+}
+
+function updateSim() {
+  const results = document.getElementById('sim-results');
+  results.style.display = 'block';
+
+  const mises = Math.round(simData.reco * 4 + simData.contacts * 0.04 + simData.temps * 0.3);
+  const conversions = Math.round(mises * 0.25);
+  const gainMensuel = conversions * 25 + Math.round(Math.random()*20);
+  const gainAnnuel = gainMensuel * 12;
+
+  animNum('sr-mises', mises);
+  animNum('sr-taux', conversions);
+  animNum('sr-gain', gainMensuel, '€');
+  animNum('sr-annuel', gainAnnuel, '€');
+}
+
+// Progressive reveal of bars on scroll
+const barObs = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if(e.isIntersecting) {
+      e.target.querySelectorAll('.pv-bar-fill').forEach(b => {
+        const w = b.style.width;
+        b.style.width = '0';
+        setTimeout(() => b.style.transition = 'width 1s ease', 10);
+        setTimeout(() => b.style.width = w, 20);
+      });
+      barObs.unobserve(e.target);
+    }
+  });
+}, {threshold:.3});
+document.querySelectorAll('.p-visual').forEach(el => barObs.observe(el));
+</script>
+
+<!-- MODAL ONBOARDING -->
+<div class="modal-overlay" id="modalOverlay" onclick="handleOverlayClick(event)">
+  <div class="modal" id="modal">
+
+    <!-- STEP 1 — Infos de base -->
+    <div class="modal-step active" id="step1">
+      <div class="modal-header">
+        <div class="modal-progress">
+          <div class="modal-dot done" id="dot1"></div>
+          <div class="modal-dot" id="dot2"></div>
+          <div class="modal-dot" id="dot3"></div>
+          <div class="modal-dot" id="dot4"></div>
+        </div>
+        <button class="modal-close" onclick="closeModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-tag">Étape 1 sur 3</div>
+        <div class="modal-title">Dis-nous <span class="italic">qui tu es</span></div>
+        <div class="modal-sub">30 secondes et Popey trouve les pros parfaits pour toi dans ta ville.</div>
+        <div class="modal-row">
+          <div class="modal-field">
+            <label class="modal-label">Prénom</label>
+            <input class="modal-input" id="f-prenom" type="text" placeholder="Sophie">
+          </div>
+          <div class="modal-field">
+            <label class="modal-label">Nom</label>
+            <input class="modal-input" id="f-nom" type="text" placeholder="Martin">
+          </div>
+        </div>
+        <div class="modal-row">
+          <div class="modal-field">
+            <label class="modal-label">Téléphone</label>
+            <input class="modal-input" id="f-phone" type="tel" placeholder="06 12 34 56 78">
+          </div>
+          <div class="modal-field">
+            <label class="modal-label">Âge</label>
+            <input class="modal-input" id="f-age" type="number" placeholder="34" min="18" max="80">
+          </div>
+        </div>
+        <div class="modal-field">
+          <label class="modal-label">Email (optionnel)</label>
+          <input class="modal-input" id="f-email" type="email" placeholder="ton@email.com">
+        </div>
+        <div class="modal-field">
+          <label class="modal-label">Ta ville</label>
+          <input class="modal-input" id="f-ville" type="text" placeholder="Bordeaux, Paris, Lyon...">
+        </div>
+        <div class="modal-field">
+          <label class="modal-label">Ta situation</label>
+          <select class="modal-select" id="f-situation">
+            <option value="">Sélectionne ta situation</option>
+            <option value="salarie">Salarié(e) en CDI / CDD</option>
+            <option value="etudiant">Étudiant(e)</option>
+            <option value="independant">Indépendant(e) / Freelance</option>
+            <option value="chomage">En recherche d'emploi</option>
+            <option value="retraite">Retraité(e)</option>
+            <option value="parent">Parent au foyer</option>
+          </select>
+        </div>
+        <div class="modal-field">
+          <label class="modal-label">Combien de contacts as-tu dans ton téléphone ?</label>
+          <select class="modal-select" id="f-contacts">
+            <option value="100">Moins de 100</option>
+            <option value="200" selected>100 à 300</option>
+            <option value="400">300 à 500</option>
+            <option value="600">Plus de 500</option>
+          </select>
+        </div>
+        <button class="modal-btn" onclick="goStep2()">Continuer →</button>
+        <div class="modal-skip">Inscription rapide sans profil →</div>
+      </div>
+    </div>
+
+    <!-- STEP 2 — Centres d'intérêt -->
+    <div class="modal-step" id="step2">
+      <div class="modal-header">
+        <div class="modal-progress">
+          <div class="modal-dot done"></div>
+          <div class="modal-dot done"></div>
+          <div class="modal-dot" id="dot3b"></div>
+          <div class="modal-dot"></div>
+        </div>
+        <button class="modal-close" onclick="closeModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-tag">Étape 2 sur 3</div>
+        <div class="modal-title">Dans quels domaines<br><span class="italic">connais-tu des gens ?</span></div>
+        <div class="modal-sub">Plus tu coches, plus Popey trouve de pros compatibles avec ton réseau. Sélectionne tout ce qui correspond.</div>
+        <div id="domaines-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:20px"></div>
+        <button class="modal-btn" onclick="goStep3()">Trouver mes pros →</button>
+      </div>
+    </div>
+
+    <!-- STEP 3 — Pros suggérés -->
+    <div class="modal-step" id="step3">
+      <div class="modal-header">
+        <div class="modal-progress">
+          <div class="modal-dot done"></div>
+          <div class="modal-dot done"></div>
+          <div class="modal-dot done"></div>
+          <div class="modal-dot"></div>
+        </div>
+        <button class="modal-close" onclick="closeModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-tag">Étape 3 sur 3 · Les pros parfaits pour toi</div>
+        <div class="modal-title">Popey a trouvé<br><span class="italic">3 partenaires</span> dans ta zone</div>
+        <div class="modal-sub">Sélectionne 1 professionnel. Il sera automatiquement relié à ton compte éclaireur dès validation.</div>
+        <div class="pro-cards" id="pro-cards-list"></div>
+        <div id="pros-loading" class="modal-sub" style="display:none;margin-top:-8px">Chargement des professionnels...</div>
+        <div id="pros-error" class="modal-sub" style="display:none;color:var(--red);margin-top:-8px"></div>
+        <button class="modal-btn" id="btn-confirmer" onclick="goStep4()" disabled>Confirmer et commencer →</button>
+      </div>
+    </div>
+
+    <!-- STEP 4 — Succès -->
+    <div class="modal-step" id="step4">
+      <div class="modal-header" style="justify-content:flex-end">
+        <button class="modal-close" onclick="closeModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="success-anim">
+          <span class="success-icon">🎉</span>
+          <div class="success-title">Bienvenue chez Popey !</div>
+          <div class="success-sub">Ton profil éclaireur est créé. Tes partenaires ont été notifiés et vont te contacter sous 24h pour activer votre collaboration.</div>
+          <div class="success-earn">
+            <div class="success-earn-num" id="success-potentiel">0€</div>
+            <div class="success-earn-text">de potentiel mensuel<br>avec ton profil</div>
+          </div>
+          <div class="success-pros" id="success-pros-list"></div>
+          <div id="success-link-box" style="display:none;background:var(--paper);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:14px;text-align:left">
+            <div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--gold);margin-bottom:6px">Ton lien eclaireur actif</div>
+            <div id="success-link-url" style="font-size:12px;color:var(--ink2);line-height:1.5;word-break:break-all"></div>
+          </div>
+          <button class="modal-btn" id="btn-open-dashboard" onclick="closeModal()" style="margin-bottom:10px">Accéder à mon tableau de bord →</button>
+          <div class="modal-skip" id="success-copy-link" onclick="copySuccessLink()" style="display:none">Copier le lien</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+
+<script>
+// ── MODAL ──
+const DOMAINES = [
+  {id:'sport',label:'🏋️ Sport & fitness',pros:['Coach sportif','Nutritionniste','Kiné']},
+  {id:'sante',label:'🌿 Santé & bien-être',pros:['Ostéopathe','Sophrologue','Hypno']},
+  {id:'immo',label:'🏠 Immobilier',pros:['Agent immo','Courtier crédit','Notaire']},
+  {id:'business',label:'📈 Business & conseil',pros:['Coach business','Formateur','Consultant']},
+  {id:'beaute',label:'💆 Beauté & esthétique',pros:['Esthéticienne','Coach image']},
+  {id:'famille',label:'👨‍👩‍👧 Famille & enfants',pros:['Baby-sitter','Coach parental']},
+  {id:'digital',label:'💻 Digital & tech',pros:['Développeur','Designer','SEO']},
+  {id:'evenement',label:'🎉 Événementiel',pros:['Photographe','Traiteur','DJ']},
+];
+
+let selectedDomaines = new Set();
+let selectedProIndex = null;
+let loadedPros = [];
+let onboardingResult = null;
+let currentStep = 1;
+
+const AVATAR_COLORS = [
+  { bg: "#E8F5EE", fg: "#2A7A4B" },
+  { bg: "#FDF3E0", fg: "#C8922A" },
+  { bg: "#EEEDFE", fg: "#5B21B6" },
+  { bg: "#EAF1FB", fg: "#1B4F8A" },
+];
+
+function initialsFromName(value) {
+  return String(value || "")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map(part => part[0]?.toUpperCase() || "")
+    .join("") || "PH";
+}
+
+function escapeHtml(value) {
+  return String(value || "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+function openModal() {
+  document.getElementById('modalOverlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+  onboardingResult = null;
+  // Render domaines
+  const grid = document.getElementById('domaines-grid');
+  grid.innerHTML = DOMAINES.map(d => `
+    <div onclick="toggleDomaine('${d.id}',this)" style="padding:10px 12px;background:var(--paper);border:1.5px solid var(--border);border-radius:10px;cursor:pointer;transition:all .2s;font-size:13px;font-weight:500;color:var(--ink);user-select:none" data-id="${d.id}">
+      ${d.label}
+    </div>
+  `).join('');
+}
+
+function closeModal() {
+  document.getElementById('modalOverlay').classList.remove('open');
+  document.body.style.overflow = '';
+  // Reset
+  setTimeout(() => {
+    currentStep = 1;
+    document.querySelectorAll('.modal-step').forEach(s => s.classList.remove('active'));
+    document.getElementById('step1').classList.add('active');
+    selectedDomaines.clear();
+    selectedProIndex = null;
+    loadedPros = [];
+    onboardingResult = null;
+    document.getElementById("btn-confirmer").disabled = true;
+    document.getElementById("pro-cards-list").innerHTML = "";
+    document.getElementById("pros-loading").style.display = "none";
+    document.getElementById("pros-error").style.display = "none";
+  }, 300);
+}
+
+function handleOverlayClick(e) {
+  if(e.target === document.getElementById('modalOverlay')) closeModal();
+}
+
+function toggleDomaine(id, el) {
+  if(selectedDomaines.has(id)) {
+    selectedDomaines.delete(id);
+    el.style.borderColor = 'var(--border)';
+    el.style.background = 'var(--paper)';
+    el.style.color = 'var(--ink)';
+  } else {
+    selectedDomaines.add(id);
+    el.style.borderColor = 'var(--gold)';
+    el.style.background = 'var(--gold-light)';
+    el.style.color = 'var(--gold)';
+  }
+}
+
+function goStep2() {
+  const prenom = document.getElementById('f-prenom').value.trim();
+  const nom = document.getElementById('f-nom').value.trim();
+  const phone = document.getElementById('f-phone').value.trim();
+  const age = parseInt(document.getElementById('f-age').value, 10) || 0;
+  const situation = document.getElementById('f-situation').value;
+  const contacts = document.getElementById('f-contacts').value;
+  const ville = document.getElementById('f-ville').value.trim();
+  if(!prenom || !nom || !phone || !ville || !situation || !contacts || age < 18 || age > 80) {
+    alert('Merci de renseigner tous les champs obligatoires (prenom, nom, telephone, age, ville, situation, contacts).');
+    return;
+  }
+  showStep(2);
+}
+
+async function goStep3() {
+  const ville = document.getElementById('f-ville').value.trim() || 'ta ville';
+  const query = Array.from(selectedDomaines)
+    .map(id => (DOMAINES.find(item => item.id === id)?.label || "").replace(/[^\p{L}\p{N}\s]/gu, " ").trim())
+    .filter(Boolean)
+    .slice(0, 2)
+    .join(" ");
+  const list = document.getElementById('pro-cards-list');
+  const loadingEl = document.getElementById("pros-loading");
+  const errorEl = document.getElementById("pros-error");
+  const btnConfirmer = document.getElementById("btn-confirmer");
+  loadingEl.style.display = "block";
+  errorEl.style.display = "none";
+  errorEl.textContent = "";
+  list.innerHTML = "";
+  btnConfirmer.disabled = true;
+  selectedProIndex = null;
+  loadedPros = [];
+  showStep(3);
+
+  try {
+    const url = `/api/popey-human/eclaireur-landing?ville=${encodeURIComponent(ville)}&q=${encodeURIComponent(query)}`;
+    const response = await fetch(url, { cache: "no-store" });
+    const payload = await response.json();
+    if (!response.ok) {
+      throw new Error(payload?.error || "Impossible de charger les pros.");
+    }
+    loadedPros = Array.isArray(payload?.pros) ? payload.pros : [];
+    if (!loadedPros.length) {
+      errorEl.style.display = "block";
+      errorEl.textContent = "Aucun professionnel disponible pour le moment dans cette zone.";
+      return;
+    }
+    list.innerHTML = loadedPros.map((p, i) => {
+      const color = AVATAR_COLORS[i % AVATAR_COLORS.length];
+      const match = Math.max(55, Math.min(98, Number(p.matchScore || 72)));
+      return `
+      <div class="pro-card" id="pro-${i}" onclick="togglePro(${i})">
+        <div class="pro-card-check" id="check-${i}">✓</div>
+        <div class="pro-card-top">
+          <div class="pro-card-av" style="background:${color.bg};color:${color.fg}">${initialsFromName(p.fullName)}</div>
+          <div>
+            <div class="pro-card-name">${escapeHtml(p.fullName)}</div>
+            <div class="pro-card-metier">${escapeHtml(p.metier)} · ${escapeHtml(p.ville || ville)}</div>
+          </div>
+        </div>
+        <div class="pro-card-match">
+          <div class="pro-card-bar"><div class="pro-card-fill" style="width:${match}%"></div></div>
+          <span class="pro-card-pct">${match}% compatible</span>
+          <span class="pro-card-earn">${escapeHtml(p.rewardLabel || "10%")}</span>
+        </div>
+        <div class="pro-card-why">"${escapeHtml("Selection recommandee selon ta ville et ton profil reseau.")}"</div>
+      </div>
+      `;
+    }).join('');
+  } catch (error) {
+    errorEl.style.display = "block";
+    errorEl.textContent = (error && error.message) ? error.message : "Erreur de chargement des professionnels.";
+  } finally {
+    loadingEl.style.display = "none";
+  }
+}
+
+function togglePro(i) {
+  if (!loadedPros.length) return;
+  document.querySelectorAll('.pro-card.selected').forEach(card => card.classList.remove('selected'));
+  if (selectedProIndex === i) {
+    selectedProIndex = null;
+  } else {
+    selectedProIndex = i;
+    const card = document.getElementById('pro-' + i);
+    if (card) card.classList.add('selected');
+  }
+  document.getElementById('btn-confirmer').disabled = selectedProIndex === null;
+}
+
+async function goStep4() {
+  if (selectedProIndex === null || !loadedPros[selectedProIndex]) {
+    alert("Selectionne un professionnel pour continuer.");
+    return;
+  }
+  const btn = document.getElementById("btn-confirmer");
+  btn.disabled = true;
+  btn.textContent = "Validation en cours...";
+  const selectedPro = loadedPros[selectedProIndex];
+
+  const payload = {
+    firstName: document.getElementById("f-prenom").value.trim(),
+    lastName: document.getElementById("f-nom").value.trim(),
+    age: parseInt(document.getElementById("f-age").value, 10) || 0,
+    city: document.getElementById("f-ville").value.trim(),
+    phone: document.getElementById("f-phone").value.trim(),
+    email: document.getElementById("f-email").value.trim(),
+    situation: document.getElementById("f-situation").value,
+    contactsCountRange: document.getElementById("f-contacts").value,
+    selectedProMemberId: selectedPro.memberId,
+  };
+
+  try {
+    const response = await fetch("/api/popey-human/eclaireur-landing", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data?.error || "Inscription impossible.");
+    }
+    onboardingResult = data;
+  } catch (error) {
+    alert((error && error.message) ? error.message : "Inscription impossible.");
+    btn.disabled = false;
+    btn.textContent = "Confirmer et commencer →";
+    return;
+  }
+
+  // Calculate potential
+  const contacts = parseInt(document.getElementById('f-contacts').value) || 200;
+  const potentiel = Math.round(contacts * 0.06 * 25);
+  document.getElementById('success-potentiel').textContent = potentiel + '€';
+
+  // Show selected pros chips
+  const prosList = document.getElementById('success-pros-list');
+  const color = AVATAR_COLORS[0];
+  prosList.innerHTML = `
+    <div class="success-pro-chip">
+      <span style="width:20px;height:20px;border-radius:50%;background:${color.bg};display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:${color.fg}">
+        ${initialsFromName(selectedPro.fullName)}
+      </span>
+      ${escapeHtml(selectedPro.fullName)}
+    </div>
+  `;
+
+  const linkBox = document.getElementById("success-link-box");
+  const linkUrl = document.getElementById("success-link-url");
+  const link = onboardingResult?.previewUrl || "";
+  linkUrl.textContent = link;
+  linkBox.style.display = link ? "block" : "none";
+
+  const openBtn = document.getElementById("btn-open-dashboard");
+  openBtn.textContent = "Accéder à mon lien Éclaireur →";
+  openBtn.onclick = function() {
+    if (link) {
+      window.open(link, "_blank");
+    }
+  };
+  const copyBtn = document.getElementById("success-copy-link");
+  copyBtn.style.display = link ? "block" : "none";
+
+  btn.disabled = false;
+  btn.textContent = "Confirmer et commencer →";
+  showStep(4);
+}
+
+function copySuccessLink() {
+  const link = onboardingResult?.previewUrl || "";
+  if (!link) return;
+  navigator.clipboard.writeText(link).then(() => {
+    const copyBtn = document.getElementById("success-copy-link");
+    copyBtn.textContent = "Lien copie";
+    setTimeout(() => {
+      copyBtn.textContent = "Copier le lien";
+    }, 1500);
+  });
+}
+
+function showStep(n) {
+  document.querySelectorAll('.modal-step').forEach(s => s.classList.remove('active'));
+  document.getElementById('step'+n).classList.add('active');
+  currentStep = n;
+  // Update dots
+  document.querySelectorAll('.modal-dot').forEach((d,i) => {
+    d.classList.toggle('done', i < n);
+  });
+}
+</script>
+
+</body>
+</html>
