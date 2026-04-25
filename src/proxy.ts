@@ -41,7 +41,14 @@ export default async function proxy(request: NextRequest) {
   }
 
   if (user && isHumanLogin) {
-    const appUrl = new URL("/popey-human/app", request.url);
+    const requestedNext = request.nextUrl.searchParams.get("next");
+    const nextPath =
+      requestedNext &&
+      requestedNext.startsWith("/popey-human/") &&
+      !requestedNext.startsWith("/popey-human/login")
+        ? requestedNext
+        : "/popey-human/app";
+    const appUrl = new URL(nextPath, request.url);
     return copyResponseCookies(NextResponse.redirect(appUrl), response);
   }
 

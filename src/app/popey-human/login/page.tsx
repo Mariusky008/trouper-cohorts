@@ -16,6 +16,11 @@ export default async function PopeyHumanLoginPage({
 }) {
   const params = await searchParams;
   const defaultEmail = typeof params?.email === "string" ? params.email : "";
+  const requestedNext = typeof params?.next === "string" ? params.next : "";
+  const postLoginPath =
+    requestedNext.startsWith("/popey-human/") && !requestedNext.startsWith("/popey-human/login")
+      ? requestedNext
+      : "/popey-human/app";
 
   return (
     <div className={cn("min-h-screen bg-black text-white px-4 py-8 md:py-12", poppins.variable, "font-poppins")}>
@@ -37,7 +42,7 @@ export default async function PopeyHumanLoginPage({
             <LoginForm
               defaultEmail={defaultEmail}
               isNetworkLogin
-              postLoginPath="/popey-human/app"
+              postLoginPath={postLoginPath}
             />
           </div>
         </div>
