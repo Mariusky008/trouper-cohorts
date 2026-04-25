@@ -289,18 +289,35 @@ export async function POST(request: NextRequest) {
   }
 
   const inviteToken = randomUUID().replace(/-/g, "");
-  const shortCode = generateShortCode();
+  let shortCode: string | null = generateShortCode();
   const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24 * 30).toISOString();
-  const { error: inviteError } = await supabaseAdmin.from("human_scout_invites").insert({
+  const invitePayload: Record<string, unknown> = {
     owner_member_id: selectedProMemberId,
     scout_id: scoutId,
     invite_token: inviteToken.toLowerCase(),
-    short_code: shortCode,
     expires_at: expiresAt,
     accepted_at: nowIso,
-  });
-  if (inviteError) {
-    return NextResponse.json({ error: inviteError.message || "Impossible de generer le lien." }, { status: 500 });
+  };
+  if (shortCode) {
+    invitePayload.short_code = shortCode;
+  }
+  let inviteErrorMessage = "";
+  const withShortCodeInsert = await supabaseAdmin.from("human_scout_invites").insert(invitePayload);
+  if (withShortCodeInsert.error) {
+    const rawMessage = String(withShortCodeInsert.error.message || "");
+    if (rawMessage.toLowerCase().includes("short_code")) {
+      shortCode = null;
+      delete invitePayload.short_code;
+      const withoutShortCodeInsert = await supabaseAdmin.from("human_scout_invites").insert(invitePayload);
+      if (withoutShortCodeInsert.error) {
+        inviteErrorMessage = withoutShortCodeInsert.error.message || "Impossible de generer le lien.";
+      }
+    } else {
+      inviteErrorMessage = rawMessage || "Impossible de generer le lien.";
+    }
+  }
+  if (inviteErrorMessage) {
+    return NextResponse.json({ error: inviteErrorMessage }, { status: 500 });
   }
 
   const proName =
