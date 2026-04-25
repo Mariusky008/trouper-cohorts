@@ -17,6 +17,16 @@ type ProRow = {
   onboarding_completed_at: string | null;
 };
 
+type ApiProItem = {
+  memberId: string;
+  fullName: string;
+  metier: string;
+  ville: string;
+  rewardLabel: string;
+  matchScore: number;
+  isFallback?: boolean;
+};
+
 function cleanText(value: unknown, max = 120) {
   return String(value || "").trim().slice(0, max);
 }
@@ -59,6 +69,50 @@ function generateShortCode() {
   return `${raw.slice(0, 4)}-${raw.slice(4, 8)}`;
 }
 
+async function findPopeyAcademyFallbackMember(supabaseAdmin: ReturnType<typeof createAdminClient>) {
+  const byExplicitId = cleanText(process.env.POPEY_ECLAIREUR_FALLBACK_MEMBER_ID, 120);
+  if (byExplicitId) {
+    const explicit = await supabaseAdmin
+      .from("human_members")
+      .select(
+        "id,first_name,last_name,metier_label,metier,ville,eclaireur_reward_mode,eclaireur_reward_percent,eclaireur_reward_fixed_eur,onboarding_completed_at"
+      )
+      .eq("id", byExplicitId)
+      .not("onboarding_completed_at", "is", null)
+      .maybeSingle();
+    if (explicit.data?.id) return explicit.data as ProRow;
+  }
+
+  const candidates = await supabaseAdmin
+    .from("human_members")
+    .select(
+      "id,first_name,last_name,metier_label,metier,ville,eclaireur_reward_mode,eclaireur_reward_percent,eclaireur_reward_fixed_eur,onboarding_completed_at"
+    )
+    .not("onboarding_completed_at", "is", null)
+    .limit(200);
+  const rows = (candidates.data as ProRow[] | null) || [];
+  if (!rows.length) return null;
+
+  const scoreMember = (row: ProRow) => {
+    const full = `${cleanText(row.first_name)} ${cleanText(row.last_name)}`.toLowerCase();
+    const metier = cleanText(row.metier_label || row.metier, 120).toLowerCase();
+    let score = 0;
+    if (metier.includes("coaching entreprise")) score += 100;
+    if (metier.includes("coach business")) score += 95;
+    if (metier.includes("coach")) score += 50;
+    if (metier.includes("entreprise")) score += 40;
+    if (full.includes("jean-philippe roth") || full.includes("jean philippe roth")) score += 35;
+    if (full.includes("popey")) score += 25;
+    return score;
+  };
+
+  const sorted = rows
+    .map((row) => ({ row, score: scoreMember(row) }))
+    .filter((item) => item.score > 0)
+    .sort((a, b) => b.score - a.score);
+  return sorted[0]?.row || null;
+}
+
 export async function GET(request: NextRequest) {
   const supabaseAdmin = createAdminClient();
   const q = cleanText(request.nextUrl.searchParams.get("q"), 80).toLowerCase();
@@ -92,7 +146,7 @@ export async function GET(request: NextRequest) {
         ville,
         rewardLabel: rewardLabel(row),
         matchScore,
-      };
+      } as ApiProItem;
     })
     .filter((row) => {
       if (!q) return true;
@@ -100,7 +154,24 @@ export async function GET(request: NextRequest) {
       return haystack.includes(q);
     })
     .sort((a, b) => b.matchScore - a.matchScore)
-    .slice(0, 24);
+    .slice(0, 24) as ApiProItem[];
+
+  const fallbackMember = await findPopeyAcademyFallbackMember(supabaseAdmin);
+  if (fallbackMember?.id) {
+    const fallbackVille = cityQuery ? cleanText(cityQuery, 90) : cleanText(fallbackMember.ville, 90) || "France";
+    const fallbackItem: ApiProItem = {
+      memberId: fallbackMember.id,
+      fullName: "Popey Academy",
+      metier: "Coaching entreprise",
+      ville: fallbackVille,
+      rewardLabel: rewardLabel(fallbackMember),
+      matchScore: 99,
+      isFallback: true,
+    };
+    const withoutDuplicate = pros.filter((item) => item.memberId !== fallbackItem.memberId);
+    withoutDuplicate.unshift(fallbackItem);
+    return NextResponse.json({ pros: withoutDuplicate.slice(0, 24) });
+  }
 
   return NextResponse.json({ pros });
 }
