@@ -170,6 +170,7 @@ const SMART_SCAN_ANALYTICS_ALLOWED_METADATA_KEYS: Record<SmartScanAnalyticsEvent
   trust_level_set: ["trustLevel", "contactId"],
   whatsapp_sent: ["actionType", "actionId", "contactId"],
   daily_goal_progressed: ["actionType", "opportunitiesActivated", "contactId"],
+  onboarding_completed: ["sector", "firstMessageSent", "onboardingMode", "timeToFirstMessage"],
 };
 const SMART_SCAN_ANALYTICS_SUSPECT_KEY_PATTERN = /(phone|email|mail|name|full|prenom|nom|address|adresse|token|password|secret|message|notes?)/i;
 
