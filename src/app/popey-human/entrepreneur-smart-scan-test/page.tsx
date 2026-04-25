@@ -917,6 +917,14 @@ function referralStatusLabel(status: string) {
   return status || "Inconnu";
 }
 
+function referralStatusRank(status: string) {
+  if (status === "submitted") return 0;
+  if (status === "validated") return 1;
+  if (status === "offered") return 2;
+  if (status === "converted") return 3;
+  return -1;
+}
+
 function formatDateTimeShort(value?: string | null) {
   if (!value) return "Date inconnue";
   const date = new Date(value);
@@ -1121,6 +1129,7 @@ export default function EntrepreneurSmartScanTestPage() {
   const [selectedIncomingReferralId, setSelectedIncomingReferralId] = useState<string | null>(null);
   const [incomingSignedAmount, setIncomingSignedAmount] = useState("");
   const [isIncomingReferralStatusUpdating, setIsIncomingReferralStatusUpdating] = useState(false);
+  const [showDealCelebration, setShowDealCelebration] = useState(false);
   const [showAllianceMetricsInfo, setShowAllianceMetricsInfo] = useState(false);
   const [showBoostInfo, setShowBoostInfo] = useState(false);
   const [showAddScoutTooltip, setShowAddScoutTooltip] = useState(false);
@@ -3394,12 +3403,28 @@ Ceci est une demonstration educative: aucun message n est envoye automatiquement
       if (!response.ok) {
         throw new Error(payload.error || "Impossible de mettre a jour ce statut.");
       }
+      const localUpdatedAtIso = new Date().toISOString();
+      setIncomingReferrals((prev) =>
+        prev.map((item) => (item.id === referral.id ? { ...item, status: targetStatus, updated_at: localUpdatedAtIso } : item)),
+      );
+      if (targetStatus === "converted") {
+        setShowDealCelebration(true);
+        setTimeout(() => setShowDealCelebration(false), 1800);
+      }
       setApiErrorMessage(`Statut mis a jour: ${referralStatusLabel(targetStatus)}.`);
       setTimeout(() => setApiErrorMessage(""), 1800);
       const refreshed = await fetch("/api/popey-human/smart-scan/scout-referrals", { method: "GET", cache: "no-store" });
       if (refreshed.ok) {
         const data = (await refreshed.json().catch(() => ({}))) as { referrals?: SmartScanIncomingReferral[] };
-        setIncomingReferrals(data.referrals || []);
+        const nextList = data.referrals || [];
+        setIncomingReferrals((prev) => {
+          const previousById = new Map(prev.map((item) => [item.id, item]));
+          return nextList.map((item) => {
+            const previous = previousById.get(item.id);
+            if (!previous) return item;
+            return referralStatusRank(previous.status) > referralStatusRank(item.status) ? previous : item;
+          });
+        });
       }
       await refreshSmartScanSnapshot();
     } catch (error) {
@@ -6557,16 +6582,27 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                           <p className="text-[12px] font-black text-white">{item.contact_name}</p>
                           <span
                             className={`rounded-full border px-2 py-0.5 text-[10px] font-black ${
-                              item.status === "offered"
-                                ? "border-violet-300/35 bg-violet-300/15 text-violet-100"
-                                : "border-emerald-300/35 bg-emerald-300/15 text-emerald-100"
+                              item.status === "converted"
+                                ? "border-fuchsia-300/40 bg-fuchsia-300/20 text-fuchsia-100"
+                                : item.status === "offered"
+                                  ? "border-violet-300/35 bg-violet-300/15 text-violet-100"
+                                  : item.status === "validated"
+                                    ? "border-cyan-300/35 bg-cyan-300/15 text-cyan-100"
+                                    : "border-emerald-300/35 bg-emerald-300/15 text-emerald-100"
                             }`}
                           >
-                            {item.status === "offered" ? "Offre envoyee 🟣" : "Opportunite recue 🟢"}
+                            {item.status === "converted"
+                              ? "Signature finale ✨"
+                              : item.status === "offered"
+                                ? "Offre envoyee 🟣"
+                                : item.status === "validated"
+                                  ? "RDV pris 🔵"
+                                  : "Opportunite recue 🟢"}
                           </span>
                         </div>
                         <p className="mt-1 text-[10px] text-white/75">
-                          {item.status === "offered" ? "🧾" : "📥"} {item.scout_name || "Eclaireur"} ({item.scout_type === "pro" ? "Pro" : "Perso"}) • {referralStatusLabel(item.status)}
+                          {item.status === "converted" ? "🏁" : item.status === "offered" ? "🧾" : item.status === "validated" ? "📅" : "📥"}{" "}
+                          {item.scout_name || "Eclaireur"} ({item.scout_type === "pro" ? "Pro" : "Perso"}) • {referralStatusLabel(item.status)}
                         </p>
                         <p className="text-[10px] text-white/65">{formatDateTimeShort(item.updated_at || item.created_at)}</p>
                       </button>
@@ -7074,7 +7110,14 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
 
       {selectedIncomingReferral && (
         <div className="fixed inset-0 z-[62] flex items-center justify-center bg-black/72 px-3 backdrop-blur-md sm:px-4">
-          <section className="w-full max-h-[88vh] max-w-2xl overflow-y-auto rounded-3xl border border-emerald-300/35 bg-[#0B1230] p-5 shadow-[0_30px_120px_-35px_rgba(16,185,129,0.75)] sm:p-6">
+          <section className="relative w-full max-h-[88vh] max-w-2xl overflow-y-auto rounded-3xl border border-emerald-300/35 bg-[#0B1230] p-5 shadow-[0_30px_120px_-35px_rgba(16,185,129,0.75)] sm:p-6">
+            <button
+              type="button"
+              onClick={() => setSelectedIncomingReferralId(null)}
+              className="absolute right-4 top-4 z-10 h-8 w-8 rounded-full border border-white/20 bg-white/10 text-xs"
+            >
+              ✕
+            </button>
             <div className="rounded-2xl border border-emerald-300/35 bg-[radial-gradient(circle_at_20%_0%,rgba(16,185,129,0.26),rgba(8,12,28,0.94))] p-4">
               <p className="text-[10px] font-black uppercase tracking-[0.16em] text-emerald-100">Bonne nouvelle</p>
               <p className="mt-1 text-2xl font-black text-white">Nouvelle opportunite Eclaireur</p>
@@ -7084,13 +7127,6 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
             </div>
             <div className="mt-4 flex items-center justify-between">
               <p className="text-[11px] font-black uppercase tracking-[0.12em] text-fuchsia-100">Pipeline de suivi</p>
-              <button
-                type="button"
-                onClick={() => setSelectedIncomingReferralId(null)}
-                className="h-8 w-8 rounded-full border border-white/20 bg-white/10 text-xs"
-              >
-                ✕
-              </button>
             </div>
             <div className="mt-3 grid grid-cols-2 gap-2 text-[10px] font-black uppercase tracking-[0.08em] sm:grid-cols-4">
               {[
@@ -7188,6 +7224,43 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
           </section>
         </div>
       )}
+
+      <AnimatePresence>
+        {showDealCelebration && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="pointer-events-none fixed inset-0 z-[90] flex items-center justify-center bg-black/35"
+          >
+            <motion.div
+              initial={{ scale: 0.75, y: 18, opacity: 0 }}
+              animate={{ scale: 1, y: 0, opacity: 1 }}
+              exit={{ scale: 0.9, y: -10, opacity: 0 }}
+              transition={{ duration: 0.45, ease: "easeOut" }}
+              className="relative mx-4 w-full max-w-md overflow-hidden rounded-3xl border border-fuchsia-200/45 bg-[radial-gradient(circle_at_20%_0%,rgba(244,114,182,0.35),rgba(22,15,52,0.95))] px-5 py-6 text-center shadow-[0_35px_100px_-30px_rgba(232,121,249,0.95)]"
+            >
+              <motion.div
+                aria-hidden
+                className="absolute -left-10 -top-10 h-36 w-36 rounded-full bg-cyan-300/30 blur-3xl"
+                animate={{ scale: [0.9, 1.1, 0.9], opacity: [0.35, 0.7, 0.35] }}
+                transition={{ duration: 1.2, repeat: Infinity, ease: "easeInOut" }}
+              />
+              <motion.div
+                aria-hidden
+                className="absolute -bottom-12 -right-10 h-40 w-40 rounded-full bg-fuchsia-300/35 blur-3xl"
+                animate={{ scale: [1.05, 0.9, 1.05], opacity: [0.3, 0.65, 0.3] }}
+                transition={{ duration: 1.4, repeat: Infinity, ease: "easeInOut" }}
+              />
+              <p className="relative text-5xl">🏁✨</p>
+              <p className="relative mt-2 text-3xl font-black text-white">Deal signe !</p>
+              <p className="relative mt-1 text-sm font-black uppercase tracking-[0.08em] text-fuchsia-100">
+                Signature finale validee
+              </p>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {selectedEclaireurTemplateContactId && eclaireurTemplates.length > 0 && (
         <div className="fixed inset-0 z-[44] flex items-center justify-center bg-black/65 px-3 backdrop-blur-sm sm:px-4">
