@@ -7114,7 +7114,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
             <button
               type="button"
               onClick={() => setSelectedIncomingReferralId(null)}
-              className="absolute right-4 top-4 z-10 h-8 w-8 rounded-full border border-white/20 bg-white/10 text-xs"
+              className="absolute right-3 top-3 z-10 h-9 w-9 rounded-full border border-white/25 bg-black/35 text-sm text-white"
             >
               ✕
             </button>
@@ -7252,6 +7252,19 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                 animate={{ scale: [1.05, 0.9, 1.05], opacity: [0.3, 0.65, 0.3] }}
                 transition={{ duration: 1.4, repeat: Infinity, ease: "easeInOut" }}
               />
+              {["✨", "🎉", "💸", "🏆", "🚀"].map((emoji, idx) => (
+                <motion.span
+                  key={`deal-burst-${emoji}-${idx}`}
+                  aria-hidden
+                  className="absolute text-2xl"
+                  style={{ left: `${12 + idx * 18}%`, top: `${8 + (idx % 2) * 6}%` }}
+                  initial={{ opacity: 0, y: 10, scale: 0.8 }}
+                  animate={{ opacity: [0, 1, 0], y: [10, -10, -28], scale: [0.8, 1.1, 0.95] }}
+                  transition={{ duration: 1.25, repeat: Infinity, delay: idx * 0.14, ease: "easeOut" }}
+                >
+                  {emoji}
+                </motion.span>
+              ))}
               <p className="relative text-5xl">🏁✨</p>
               <p className="relative mt-2 text-3xl font-black text-white">Deal signe !</p>
               <p className="relative mt-1 text-sm font-black uppercase tracking-[0.08em] text-fuchsia-100">
