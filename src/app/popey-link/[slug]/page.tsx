@@ -58,7 +58,7 @@ export default async function PublicPopeyProfilePage({ params }: PageProps) {
         <div className="relative border-b border-white/10 px-5 py-6 sm:px-7 sm:py-8">
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_90%_20%,rgba(16,185,129,0.18),transparent_45%),radial-gradient(circle_at_10%_0%,rgba(56,189,248,0.18),transparent_35%)]" />
           <div className="relative">
-            <p className="text-[11px] font-black uppercase tracking-[0.13em] text-cyan-200">popey.link • profil partenaire</p>
+            <p className="text-[11px] font-black uppercase tracking-[0.13em] text-cyan-200">popey.academy • profil partenaire</p>
             <div className="mt-4 flex items-center gap-3">
               <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-cyan-200/40 bg-cyan-300/20 text-lg font-black text-cyan-100">
                 {avatar}

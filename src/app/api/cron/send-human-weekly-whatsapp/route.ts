@@ -138,7 +138,7 @@ async function handleWeeklyWhatsAppCron(request: Request) {
     const phone = toDigitsPhone(member.phone);
     const firstName = String(member.first_name || "").trim() || "Membre";
     const slug = String(member.public_slug || "").trim();
-    const link = slug ? `https://popey.link/${slug}` : "https://www.popey.academy/popey-human/app";
+    const link = slug ? `https://www.popey.academy/popey-link/${slug}` : "https://www.popey.academy/popey-human/app";
     const message = `Bonjour ${firstName} - cette semaine sur Popey :
 • ${stats.newContacts} nouveaux contacts a activer
 • ${stats.pendingScouts} eclaireurs en attente

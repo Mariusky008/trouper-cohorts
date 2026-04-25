@@ -1268,7 +1268,7 @@ export default function EntrepreneurSmartScanTestPage() {
     onboardingFilteredSectors.length === 0 &&
     !onboardingHasExactSectorMatch;
   const publicProfileSlug = String(myProfile?.public_slug || profileForm.publicSlug || "").trim();
-  const publicProfileUrl = publicProfileSlug ? `https://popey.link/${publicProfileSlug}` : "";
+  const publicProfileUrl = publicProfileSlug ? `https://www.popey.academy/popey-link/${publicProfileSlug}` : "";
   const totalScanned = hasImportedContacts ? importedTotalCount : 0;
   const scanDone = hasImportedContacts && totalScanned > 0 && scanCount >= totalScanned;
   const scanProgress = totalScanned > 0 ? Math.min(1, scanCount / totalScanned) : 0;
