@@ -7254,17 +7254,22 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
               ) : null}
             </div>
 
-            <div className="mt-3 flex items-center justify-between gap-2">
-              <p className="text-[11px] text-white/65">{allianceProspects.length} prospect(s) alliance trouve(s)</p>
+            <div className="mt-5 flex items-center justify-between gap-2">
+              <div>
+                <p className="text-[28px] font-black leading-none">
+                  <span className="text-[#00D4A0]">{allianceProspects.length}</span> profils
+                </p>
+                <p className="mt-0.5 text-[11px] text-white/62">dans votre zone · tries par compatibilite</p>
+              </div>
               <select
                 value={allianceSort}
                 onChange={(event) => setAllianceSort(event.target.value as "probability" | "fit" | "distance" | "recent")}
-                className="h-8 rounded-lg border border-white/20 bg-black/25 px-2 text-[10px]"
+                className="h-9 rounded-xl border border-white/15 bg-[#0E1420] px-3 text-[11px] font-semibold text-white/80"
               >
-                <option value="probability">Tri: Probabilite</option>
-                <option value="fit">Tri: Fit score</option>
-                <option value="distance">Tri: Distance</option>
-                <option value="recent">Tri: Recents</option>
+                <option value="probability">⚡ Compatibilite</option>
+                <option value="fit">📊 Fit score</option>
+                <option value="distance">📍 Distance</option>
+                <option value="recent">🕒 Recents</option>
               </select>
             </div>
 
@@ -7275,69 +7280,85 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                   Aucun prospect pour le moment. Lance une recherche avec ville + metiers cibles.
                 </p>
               ) : null}
-              {displayedAllianceProspects.map((prospect) => (
+              {displayedAllianceProspects.map((prospect, idx) => (
                 <motion.article
                   key={`alliance-prospect-${prospect.id}`}
                   initial={{ opacity: 0, y: 18, scale: 0.985 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   transition={{ duration: 0.28, ease: "easeOut" }}
-                  className="rounded-xl border border-white/15 bg-black/25 px-3 py-2"
+                  className={`rounded-[18px] border px-4 py-3 ${
+                    idx === 0
+                      ? "border-emerald-300/30 bg-gradient-to-br from-emerald-300/8 to-[#0E1420]"
+                      : "border-white/10 bg-[#0E1420]"
+                  }`}
                 >
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0">
-                      <div className="flex flex-wrap items-center gap-1.5">
-                        <p className="truncate text-sm font-black text-white">{prospect.full_name}</p>
-                        <span className={`rounded-full border px-2 py-0.5 text-[10px] font-black ${allianceMetierTone(prospect.metier)}`}>
-                          {prospect.metier}
-                        </span>
-                        {allianceDirectoryMode === "internal" ? (
-                          <span className="rounded-full border border-emerald-300/35 bg-emerald-300/12 px-2 py-0.5 text-[10px] font-black text-emerald-100">
-                            Membre Popey
-                          </span>
-                        ) : null}
-                      </div>
-                      <p className="text-[10px] text-white/70">
-                        {prospect.city || "Ville inconnue"} {prospect.distance_km ? `• ${prospect.distance_km} km` : ""}
-                      </p>
+                  <div className="flex items-start gap-3">
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] bg-emerald-300/15 text-[13px] font-black text-emerald-200">
+                      {String(prospect.full_name || "?")
+                        .split(" ")
+                        .filter(Boolean)
+                        .slice(0, 2)
+                        .map((part) => part[0]?.toUpperCase() || "")
+                        .join("") || "?"}
                     </div>
-                    <div className="flex items-center gap-1">
-                      <button
-                        type="button"
-                        onClick={() => setShowAllianceMetricsInfo(true)}
-                        className="h-6 w-6 rounded-full border border-white/25 bg-white/10 text-[10px] font-black text-white/90"
-                        aria-label="Aide score et probabilite"
-                      >
-                        ⓘ
-                      </button>
-                      <span className="rounded-full border border-emerald-300/35 bg-emerald-300/12 px-2 py-0.5 text-[10px] font-black text-emerald-100">
-                        Score {prospect.fit_score}/100
-                      </span>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <p className="truncate text-[15px] font-bold text-white">{prospect.full_name}</p>
+                          <p className="mt-0.5 text-[12px] text-white/62">
+                            {prospect.metier}
+                            <span className="mx-1.5 inline-block h-1 w-1 rounded-full bg-white/25 align-middle" />
+                            {prospect.city || "Ville inconnue"} {prospect.distance_km ? `· ${prospect.distance_km} km` : ""}
+                          </p>
+                        </div>
+                        <div className="flex flex-col items-end gap-1">
+                          <p className="text-[22px] font-black leading-none text-[#00D4A0]">{prospect.fit_score}</p>
+                          <p className="text-[9px] uppercase tracking-[0.06em] text-white/35">Score</p>
+                        </div>
+                      </div>
                     </div>
                   </div>
-                  <div className="mt-1 flex flex-wrap items-center gap-1.5">
-                    <span className="rounded-full border border-cyan-300/30 bg-cyan-300/12 px-2 py-0.5 text-[10px] font-black text-cyan-100">
+
+                  <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                    <span className="rounded-full bg-[#00D4A0]/12 px-2 py-0.5 text-[10px] font-black text-[#00D4A0]">
                       Probabilite {prospect.partnership_probability || 0}%
                     </span>
-                    <span className="rounded-full border border-fuchsia-300/30 bg-fuchsia-300/12 px-2 py-0.5 text-[10px] font-black text-fuchsia-100">
+                    <span className="rounded-full bg-[#F5A623]/12 px-2 py-0.5 text-[10px] font-black text-[#F5A623]">
                       Invites {prospect.invite_sent_count || 0}
                     </span>
-                    <span className="rounded-full border border-amber-300/30 bg-amber-300/12 px-2 py-0.5 text-[10px] font-black text-amber-100">
+                    <span className="rounded-full bg-[#9B8FFF]/12 px-2 py-0.5 text-[10px] font-black text-[#BDB4FF]">
                       Clics {prospect.invite_clicked_count || 0}
                     </span>
+                    {allianceDirectoryMode === "internal" ? (
+                      <span className="rounded-full bg-white/8 px-2 py-0.5 text-[10px] font-black text-white/80">Membre Popey</span>
+                    ) : null}
+                    <button
+                      type="button"
+                      onClick={() => setShowAllianceMetricsInfo(true)}
+                      className="ml-auto h-6 w-6 rounded-full border border-white/15 bg-white/5 text-[10px] font-black text-white/80"
+                      aria-label="Aide score et probabilite"
+                    >
+                      ⓘ
+                    </button>
                   </div>
-                  <p className="mt-1 text-[10px] text-white/65">
-                    Score = adequation profil • Probabilite = chance de reponse estimee
+
+                  <p className="mt-2 rounded-xl bg-black/20 px-3 py-2 text-[12px] italic text-white/60">
+                    Profil recommande selon adequation metier + probabilite de reponse.
                   </p>
-                  <div className="mt-2 space-y-2">
-                    <p className="truncate text-[10px] text-white/70">{prospect.phone_e164 || "Telephone non disponible"}</p>
+
+                  <div className="mt-2 flex items-center gap-2">
+                    <div className="min-w-0 flex-1 rounded-xl border border-emerald-300/25 bg-emerald-300/8 px-3 py-2">
+                      <p className="text-[9px] uppercase tracking-[0.06em] text-white/35">Commission</p>
+                      <p className="text-[16px] font-black text-[#00D4A0]">10%</p>
+                    </div>
                     <button
                       type="button"
                       onClick={() => {
                         openAllianceMessageEditor(prospect);
                       }}
-                      className="h-11 w-full rounded-xl border border-fuchsia-300/35 bg-fuchsia-300/20 px-3 text-[11px] font-black uppercase tracking-[0.08em] text-fuchsia-100"
+                      className="h-10 rounded-xl bg-[#00D4A0] px-4 text-[12px] font-black text-[#050D0A]"
                     >
-                      Message
+                      Contacter
                     </button>
                   </div>
                 </motion.article>
