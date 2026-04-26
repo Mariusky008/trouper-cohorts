@@ -74,6 +74,7 @@ export async function POST(request: Request) {
       trade: metier,
       city: ville,
       phone,
+      whatsapp_response_delay_hours: 3,
       role: "member",
     },
     { onConflict: "id" },
