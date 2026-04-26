@@ -6890,10 +6890,10 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
       {showAlliancesPanel && (
         <div className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm flex items-start justify-center px-0 pt-0 pb-0 sm:px-4 sm:pt-16 sm:pb-0">
           <section
-            className="h-[calc(100dvh-92px)] max-h-[calc(100dvh-92px)] w-full overflow-y-auto rounded-none border-0 bg-[#0E1430] p-4 pb-28 sm:h-auto sm:max-h-[90vh] sm:max-w-lg sm:rounded-3xl sm:border sm:border-white/15"
+            className="h-[calc(100dvh-92px)] max-h-[calc(100dvh-92px)] w-full overflow-y-auto rounded-none border-0 bg-[#07090F] p-4 pb-28 sm:h-auto sm:max-h-[90vh] sm:max-w-lg sm:rounded-3xl sm:border sm:border-white/15"
             style={{ paddingTop: "calc(env(safe-area-inset-top) + 12px)" }}
           >
-            <div className="sticky top-0 z-20 -mx-4 bg-[#0E1430] px-4 pb-2">
+            <div className="sticky top-0 z-20 -mx-4 bg-[#07090F] px-4 pb-2">
               <div className="flex items-center justify-between">
                 <p className="text-xs font-black uppercase tracking-[0.12em] text-cyan-200">Alliances</p>
                 <button
@@ -6943,19 +6943,19 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
               </p>
             </div>
 
-            <div className="relative mt-3 overflow-hidden rounded-3xl border border-white/15 bg-gradient-to-br from-[#141C2E] via-[#152142] to-[#1A2438] p-4 shadow-[0_0_46px_rgba(0,0,0,0.35)]">
-              <div className="pointer-events-none absolute -right-10 -top-12 h-36 w-36 rounded-full bg-cyan-300/15 blur-3xl" />
-              <div className="pointer-events-none absolute -bottom-12 -left-10 h-32 w-32 rounded-full bg-fuchsia-300/10 blur-3xl" />
+            <div className="relative mt-3 overflow-hidden rounded-[24px] border border-white/20 bg-gradient-to-br from-[#141C2E] via-[#16203A] to-[#1A2438] p-5 shadow-[0_22px_50px_rgba(0,0,0,0.38)]">
+              <div className="pointer-events-none absolute -right-14 -top-16 h-40 w-40 rounded-full bg-cyan-300/12 blur-3xl" />
+              <div className="pointer-events-none absolute -bottom-14 -left-12 h-36 w-36 rounded-full bg-fuchsia-300/10 blur-3xl" />
               <div className="relative">
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <p className="text-[10px] font-black uppercase tracking-[0.12em] text-cyan-100/95">
                       {allianceDirectoryMode === "internal" ? "Annuaire interne Popey" : "Recrutement externe premium"}
                     </p>
-                    <h3 className="mt-1 text-3xl font-black leading-[1.06] tracking-[-0.01em] text-white">
+                    <h3 className="mt-1 max-w-[14ch] text-[52px] font-black leading-[0.9] tracking-[-0.015em] text-white">
                       Fais decoller ton business avec des alliances locales
                     </h3>
-                    <p className="mt-2 text-[13px] leading-relaxed text-white/80">
+                    <p className="mt-3 max-w-[28ch] text-[17px] leading-[1.45] text-white/82">
                       {allianceDirectoryMode === "internal"
                         ? "Trouve des membres Popey a forte synergie, puis declenche une prise de contact qualifiee en 1 clic."
                         : "Lance une recherche ciblee, contacte les bons pros, et transforme-les en apporteurs actifs."}
@@ -6964,68 +6964,68 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                   <button
                     type="button"
                     onClick={() => setShowBoostInfo(true)}
-                    className="shrink-0 rounded-full border border-amber-300/45 bg-gradient-to-br from-amber-300/35 to-amber-500/20 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.09em] text-amber-50 shadow-[0_0_18px_rgba(245,158,11,0.22)]"
+                    className="shrink-0 rounded-full border border-amber-300/40 bg-gradient-to-br from-amber-300/45 to-amber-500/25 px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.1em] text-[#1A0A00] shadow-[0_0_18px_rgba(245,158,11,0.2)]"
                   >
                     Boost • Premium
                   </button>
                 </div>
 
                 <div className="mt-4 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                  <div className="min-w-[148px] rounded-2xl border border-cyan-300/35 bg-cyan-300/12 px-3 py-3">
+                  <div className="min-w-[170px] rounded-2xl border border-cyan-300/35 bg-cyan-300/12 px-3.5 py-3.5">
                     <p className="text-[9px] font-black uppercase tracking-[0.08em] text-cyan-100">Objectif 1</p>
-                    <p className="mt-1 text-xl font-black leading-none text-white">10</p>
-                    <p className="mt-1 text-[11px] font-semibold text-white/85">Eclaireurs pro</p>
+                    <p className="mt-1 text-[44px] font-black leading-[0.9] text-white">10</p>
+                    <p className="mt-1 text-[14px] font-semibold text-white/92">Eclaireurs pro</p>
                   </div>
-                  <div className="min-w-[148px] rounded-2xl border border-blue-300/35 bg-blue-300/12 px-3 py-3">
+                  <div className="min-w-[170px] rounded-2xl border border-blue-300/35 bg-blue-300/12 px-3.5 py-3.5">
                     <p className="text-[9px] font-black uppercase tracking-[0.08em] text-blue-100">Objectif 2</p>
-                    <p className="mt-1 text-xl font-black leading-none text-white">10</p>
-                    <p className="mt-1 text-[11px] font-semibold text-white/85">Eclaireurs perso</p>
+                    <p className="mt-1 text-[44px] font-black leading-[0.9] text-white">10</p>
+                    <p className="mt-1 text-[14px] font-semibold text-white/92">Eclaireurs perso</p>
                   </div>
-                  <div className="min-w-[148px] rounded-2xl border border-fuchsia-300/35 bg-fuchsia-300/12 px-3 py-3">
+                  <div className="min-w-[170px] rounded-2xl border border-fuchsia-300/35 bg-fuchsia-300/12 px-3.5 py-3.5">
                     <p className="text-[9px] font-black uppercase tracking-[0.08em] text-fuchsia-100">Objectif final</p>
-                    <p className="mt-1 text-xl font-black leading-none text-white">20+</p>
-                    <p className="mt-1 text-[11px] font-semibold text-white/85">Reco / mois</p>
+                    <p className="mt-1 text-[44px] font-black leading-[0.9] text-white">20+</p>
+                    <p className="mt-1 text-[14px] font-semibold text-white/92">Reco / mois</p>
                   </div>
                 </div>
-                <p className="mt-2 text-[11px] text-white/70">Eclaireur = apporteur d affaires.</p>
+                <p className="mt-3 text-[13px] text-white/68">Eclaireur = apporteur d affaires.</p>
               </div>
 
               <div className="relative mt-4 grid gap-2 sm:grid-cols-2">
                 <div>
-                  <p className="mb-1.5 text-[11px] font-semibold text-white/75">Ville</p>
+                  <p className="mb-1.5 text-[13px] font-semibold text-white/78">Ville</p>
                   <input
                     value={allianceCity}
                     onChange={(event) => setAllianceCity(event.target.value)}
                     placeholder="Dax"
-                    className="h-12 w-full rounded-2xl border border-white/20 bg-black/35 px-4 text-[14px] text-white placeholder:text-white/45"
+                    className="h-14 w-full rounded-full border border-white/20 bg-black/35 px-5 text-[22px] leading-none text-white placeholder:text-white/45"
                   />
                 </div>
                 <div>
-                  <p className="mb-1.5 text-[11px] font-semibold text-white/75">Rayon (km)</p>
+                  <p className="mb-1.5 text-[13px] font-semibold text-white/78">Rayon (km)</p>
                   <input
                     value={allianceRadiusKm}
                     onChange={(event) => setAllianceRadiusKm(event.target.value)}
                     placeholder="15"
                     inputMode="numeric"
-                    className="h-12 w-full rounded-2xl border border-white/20 bg-black/35 px-4 text-[14px] text-white placeholder:text-white/45"
+                    className="h-14 w-full rounded-full border border-white/20 bg-black/35 px-5 text-[22px] leading-none text-white placeholder:text-white/45"
                   />
                 </div>
                 <div className="sm:col-span-2">
-                  <p className="mb-1.5 text-[11px] font-semibold text-white/75">Ton metier</p>
+                  <p className="mb-1.5 text-[13px] font-semibold text-white/78">Ton metier</p>
                   <input
                     value={allianceSourceMetier}
                     onChange={(event) => setAllianceSourceMetier(event.target.value)}
                     placeholder="Coach business"
-                    className="h-12 w-full rounded-2xl border border-white/20 bg-black/35 px-4 text-[14px] text-white placeholder:text-white/45"
+                    className="h-14 w-full rounded-full border border-white/20 bg-black/35 px-5 text-[22px] leading-none text-white placeholder:text-white/45"
                   />
                 </div>
                 <div className="sm:col-span-2">
-                  <p className="mb-1.5 text-[11px] font-semibold text-white/75">Metiers cibles</p>
+                  <p className="mb-1.5 text-[13px] font-semibold text-white/78">Metiers cibles</p>
                   <input
                     value={allianceTargetMetiersInput}
                     onChange={(event) => setAllianceTargetMetiersInput(event.target.value)}
                     placeholder="courtier, notaire, ..."
-                    className="h-12 w-full rounded-2xl border border-white/20 bg-black/35 px-4 text-[14px] text-white placeholder:text-white/45"
+                    className="h-14 w-full rounded-full border border-white/20 bg-black/35 px-5 text-[22px] leading-none text-white placeholder:text-white/45"
                   />
                 </div>
               </div>
@@ -7036,7 +7036,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                   void runAllianceSearch();
                 }}
                 disabled={isAlliancesSearching || !allianceCity.trim()}
-                className="relative mt-4 h-14 w-full overflow-hidden rounded-2xl border border-emerald-300/40 bg-gradient-to-r from-[#29E4D2] to-[#53F0B8] text-[15px] font-black uppercase tracking-[0.08em] text-[#0B1F2D] transition hover:brightness-105 disabled:opacity-60"
+                className="relative mt-4 h-14 w-full overflow-hidden rounded-full border border-emerald-300/40 bg-gradient-to-r from-[#29E4D2] to-[#53F0B8] text-[16px] font-black uppercase tracking-[0.08em] text-[#0B1F2D] transition hover:brightness-105 disabled:opacity-60"
               >
                 {isAlliancesSearching
                   ? "Analyse en cours..."
