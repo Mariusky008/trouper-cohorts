@@ -350,7 +350,7 @@ footer{background:var(--black);border-top:0.5px solid var(--border);padding:32px
     <a href="#tarifs">Tarifs</a>
     <a href="#faq">FAQ</a>
   </div>
-  <a href="/popey-human/login?next=/popey-human/smart-scan" class="nav-cta">Se connecter au Daily Scan →</a>
+  <a href="#simulateur" class="nav-cta">Simuler mon potentiel →</a>
 </nav>
 
 <!-- ═══ HERO ═══ -->
@@ -372,6 +372,10 @@ footer{background:var(--black);border-top:0.5px solid var(--border);padding:32px
         <div class="src-title">LE MÉTIER QUI PRÉCÈDE</div>
         <p class="src-text">Chaque client passe par un pro avant vous. Ce pro connaît son besoin en avant-première. Votre source la plus qualifiée — et la moins exploitée.</p>
         <div class="src-tag">🏠 Le courtier qui précède l'agent immo</div>
+        <div style="display:flex;align-items:center;gap:6px;margin-top:10px;padding-top:10px;border-top:0.5px solid var(--border2)">
+          <span style="font-size:11px;color:var(--teal)">💰</span>
+          <span style="font-size:11px;color:var(--text-sec)">Ces pros acceptent une <strong style="color:var(--teal)">commission définie ensemble</strong> pour vous recommander leurs clients</span>
+        </div>
       </div>
       <div class="plus-sep"><div class="plus-c">+</div></div>
       <div class="src-card cb">
@@ -380,24 +384,52 @@ footer{background:var(--black);border-top:0.5px solid var(--border);padding:32px
         <div class="src-title">VOTRE TÉLÉPHONE</div>
         <p class="src-text">Vos contacts dormants sont une mine d'or. Chacun connaît quelqu'un qui a besoin de vous — mais personne ne vous l'a encore dit.</p>
         <div class="src-tag">✨ Chaque contact = éclaireur potentiel</div>
+        <div style="display:flex;align-items:center;gap:6px;margin-top:10px;padding-top:10px;border-top:0.5px solid var(--border2)">
+          <span style="font-size:11px;color:var(--amber)">💰</span>
+          <span style="font-size:11px;color:var(--text-sec)">Motivés par une <strong style="color:var(--amber)">commission automatique</strong> versée dès que leur contact devient votre client</span>
+        </div>
       </div>
       <div class="plus-sep"><div class="plus-c">+</div></div>
       <div class="src-card cc">
         <div class="src-num">3</div>
         <span class="src-icon">🌐</span>
         <div class="src-title">LA COMMUNAUTÉ POPEY</div>
-        <p class="src-text">Des centaines de pros Popey dans votre secteur, prêts à se recommander mutuellement. Un réseau d'informateurs hors du commun déjà en place.</p>
-        <div class="src-tag">💜 Membres actifs dans votre ville</div>
+        <p class="src-text">Des centaines de particuliers et pros Popey dans votre ville, disposés à vous recommander à leur entourage — en échange d'une commission.</p>
+        <div class="src-tag">💜 Éclaireurs actifs dans votre ville</div>
+        <div style="display:flex;align-items:center;gap:6px;margin-top:10px;padding-top:10px;border-top:0.5px solid var(--border2)">
+          <span style="font-size:11px;color:var(--purple)">💰</span>
+          <span style="font-size:11px;color:var(--text-sec)">Ils cherchent <strong style="color:var(--purple)">activement des pros à recommander</strong> — si vous n'y êtes pas, ils recommandent votre concurrent</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ÉCLAIREURS LIVE COUNTER -->
+    <div style="display:flex;align-items:center;gap:16px;background:rgba(0,229,160,.06);border:0.5px solid rgba(0,229,160,.2);border-radius:12px;padding:14px 20px;margin-bottom:20px;opacity:0;animation:fadeUp .7s .5s ease forwards;flex-wrap:wrap;gap:12px">
+      <div style="display:flex;align-items:center;gap:-6px">
+        <div style="display:flex">
+          <div style="width:28px;height:28px;border-radius:50%;background:rgba(0,229,160,.15);border:2px solid var(--surface);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--teal);margin-left:0">SC</div>
+          <div style="width:28px;height:28px;border-radius:50%;background:rgba(255,181,71,.15);border:2px solid var(--surface);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--amber);margin-left:-8px">MR</div>
+          <div style="width:28px;height:28px;border-radius:50%;background:rgba(167,139,255,.15);border:2px solid var(--surface);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--purple);margin-left:-8px">AL</div>
+          <div style="width:28px;height:28px;border-radius:50%;background:var(--surface2);border:2px solid var(--surface);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:var(--text-sec);margin-left:-8px" id="eclaireurCount">+</div>
+        </div>
+      </div>
+      <div style="flex:1;min-width:200px">
+        <div style="font-size:13px;font-weight:700;color:var(--text)"><span style="color:var(--teal)" id="eclaireurNum">2 400</span> éclaireurs commissionnés prêts à vous recommander</div>
+        <div style="font-size:11px;color:var(--text-sec);margin-top:2px">Des particuliers et pros locaux motivés financièrement — <span style="color:var(--teal)">+<span id="newEclaireurs">12</span> nouveaux cette semaine dans votre zone</span></div>
+      </div>
+      <div style="background:rgba(0,229,160,.1);border:0.5px solid rgba(0,229,160,.3);border-radius:8px;padding:6px 12px;text-align:center;flex-shrink:0">
+        <div style="font-size:9px;color:var(--text-ter);text-transform:uppercase;letter-spacing:.06em;font-weight:700;margin-bottom:2px">Commission moy.</div>
+        <div style="font-family:var(--font-d);font-size:20px;color:var(--teal);font-weight:800;letter-spacing:1px">8%</div>
       </div>
     </div>
 
     <div class="promise">
       <span style="font-size:26px">⚡</span>
-      <div class="promise-txt">Popey active les trois simultanément <span class="dim">— une prévision de recommandations jamais atteinte par un entrepreneur seul.</span></div>
+      <div class="promise-txt">Popey active les trois simultanément <span class="dim">— et chaque éclaireur est motivé financièrement pour vous trouver des clients.</span></div>
     </div>
 
     <div class="hero-ctas">
-      <a href="/popey-human/login?next=/popey-human/smart-scan" class="btn-main">Se connecter au Daily Scan →</a>
+      <a href="#simulateur" class="btn-main">Simuler mon potentiel de gain immédiat →</a>
       <a href="#comment" class="btn-ghost">Voir comment ça marche</a>
     </div>
   </div>
@@ -531,7 +563,7 @@ footer{background:var(--black);border-top:0.5px solid var(--border);padding:32px
         </div>
 
         <div class="sim-cta">
-          <a href="/popey-human/login?next=/popey-human/smart-scan" class="btn-main" style="margin:0 auto;display:inline-flex">Activer ces <span id="ctaTotal" style="margin:0 5px">0</span> apporteurs d'affaires maintenant →</a>
+          <a href="#tarifs" class="btn-main" style="margin:0 auto;display:inline-flex">Activer ces <span id="ctaTotal" style="margin:0 5px">0</span> apporteurs d'affaires maintenant →</a>
         </div>
       </div>
     </div>
@@ -590,7 +622,7 @@ footer{background:var(--black);border-top:0.5px solid var(--border);padding:32px
             <div style="font-size:13px;color:#FF6B6B;font-weight:600;margin-bottom:6px">⚠️ Ce qui se passe si vous n'êtes pas sur Popey</div>
             <div style="font-size:13px;color:var(--text-sec);line-height:1.6">Un éclaireur particulier de votre ville cherche un coach sportif à recommander à son ami. Il ouvre Popey — votre nom n'apparaît pas. Il recommande le coach concurrent qui est référencé. Votre concurrent gagne un client. Vous perdez une opportunité que vous ne verrez jamais.</div>
           </div>
-          <a href="/popey-human/login?next=/popey-human/smart-scan" class="btn-main" style="display:inline-flex">Je m'inscris avant mon concurrent →</a>
+          <a href="#tarifs" class="btn-main" style="display:inline-flex">Je m'inscris avant mon concurrent →</a>
         </div>
         <div class="fomo-visual reveal rd2">
           <div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-ter);margin-bottom:12px">Éclaireurs actifs dans votre zone cette semaine</div>
@@ -722,7 +754,7 @@ footer{background:var(--black);border-top:0.5px solid var(--border);padding:32px
             </div>
             <div class="exclu-cta">
               <div class="exclu-cta-text">Exclusivité à partir de <span>49€/mois</span> — inclus dans le plan Pro</div>
-              <a href="/popey-human/login?next=/popey-human/smart-scan" class="btn-main" style="display:inline-flex;margin:0 auto;font-size:13px;padding:12px 24px">Vérifier ma ville →</a>
+              <a href="#tarifs" class="btn-main" style="display:inline-flex;margin:0 auto;font-size:13px;padding:12px 24px">Vérifier ma ville →</a>
             </div>
           </div>
         </div>
@@ -807,7 +839,7 @@ footer{background:var(--black);border-top:0.5px solid var(--border);padding:32px
           <li class="off">Analytics & insights</li>
           <li class="off">Exclusivité ville / métier</li>
         </ul>
-        <a href="/popey-human/login?next=/popey-human/smart-scan" class="price-btn price-btn-o">Commencer gratuitement</a>
+        <a href="#" class="price-btn price-btn-o">Commencer gratuitement</a>
       </div>
 
       <!-- PRO -->
@@ -827,7 +859,7 @@ footer{background:var(--black);border-top:0.5px solid var(--border);padding:32px
           <li>Profil public partageable</li>
           <li class="off">Exclusivité ville / métier</li>
         </ul>
-        <a href="/popey-human/login?next=/popey-human/smart-scan" class="price-btn price-btn-f">Essai gratuit 14 jours →</a>
+        <a href="#" class="price-btn price-btn-f">Essai gratuit 14 jours →</a>
       </div>
 
       <!-- EXCLUSIVITÉ -->
@@ -868,7 +900,7 @@ footer{background:var(--black);border-top:0.5px solid var(--border);padding:32px
           </div>
         </div>
         <div style="font-size:11px;color:var(--text-sec);text-align:center;margin-bottom:10px">Votre place est un actif revendable.<br>Sa valeur augmente avec le réseau.</div>
-        <a href="/popey-human/login?next=/popey-human/smart-scan" class="price-btn" style="background:var(--amber);color:var(--black);font-weight:700" onclick="this.textContent='Vérification en cours...'">Vérifier ma ville →</a>
+        <a href="#" class="price-btn" style="background:var(--amber);color:var(--black);font-weight:700" onclick="this.textContent='Vérification en cours...'">Vérifier ma ville →</a>
       </div>
 
     </div>
@@ -913,7 +945,7 @@ footer{background:var(--black);border-top:0.5px solid var(--border);padding:32px
   <div class="container">
     <h2 class="cta-big reveal">Votre téléphone<br>n'est pas un annuaire.<br><span class="hl">C'est une baguette magique.</span></h2>
     <p class="cta-sub reveal reveal-d1">Dites ce que vous voulez. Popey trouve qui dans vos trois réseaux peut vous aider à l'obtenir.</p>
-    <div class="cta-btns reveal reveal-d2"><a href="/popey-human/login?next=/popey-human/smart-scan" class="btn-main">Se connecter au Daily Scan →</a></div>
+    <div class="cta-btns reveal reveal-d2"><a href="#simulateur" class="btn-main">Simuler mon potentiel immédiat →</a></div>
   </div>
 </section>
 
@@ -1089,6 +1121,31 @@ function animateNum(id, target) {
   }
   requestAnimationFrame(frame);
 }
+
+// ── ÉCLAIREUR LIVE COUNTER ──
+(function(){
+  const numEl = document.getElementById('eclaireurNum');
+  const newEl = document.getElementById('newEclaireurs');
+  const cntEl = document.getElementById('eclaireurCount');
+  if(!numEl) return;
+  let base = 2400;
+  const dur = 1500, t0 = performance.now();
+  (function frame(now){
+    const p = Math.min((now-t0)/dur, 1);
+    const ease = 1 - Math.pow(1-p, 3);
+    numEl.textContent = Math.round((base-40) + 40*ease).toLocaleString('fr-FR');
+    if(p<1) requestAnimationFrame(frame);
+  })(performance.now());
+  if(cntEl) cntEl.textContent = '+' + (base - 3);
+  setInterval(() => {
+    base += Math.floor(Math.random()*3 + 1);
+    numEl.textContent = base.toLocaleString('fr-FR');
+    numEl.style.transition = 'color .3s';
+    numEl.style.color = '#fff';
+    setTimeout(() => { numEl.style.color = 'var(--teal)'; }, 400);
+    if(newEl) newEl.textContent = Math.floor(Math.random()*8 + 8);
+  }, 8000);
+})();
 
 // ── NETWORK CANVAS — FLUX DE CLIENTS ──
 let networkAnimId = null;
@@ -1363,3 +1420,4 @@ function checkVillePrice(val) {
 
 </body>
 </html>
+
