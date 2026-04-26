@@ -1466,6 +1466,31 @@ export default function EntrepreneurSmartScanTestPage() {
     return sortedAllianceProspects.filter((item) => visible.has(item.id));
   }, [isAllianceRevealRunning, revealedAllianceProspectIds, sortedAllianceProspects]);
   const activeAllianceInvites = allianceDirectoryMode === "internal" ? internalAllianceInvites : allianceInvites;
+  const allianceSelectedMetiers = useMemo(
+    () =>
+      String(allianceTargetMetiersInput || "")
+        .split(",")
+        .map((item) => item.trim())
+        .filter(Boolean),
+    [allianceTargetMetiersInput],
+  );
+  const allianceSelectedMetiersSet = useMemo(
+    () => new Set(allianceSelectedMetiers.map((item) => item.toLowerCase())),
+    [allianceSelectedMetiers],
+  );
+  const allianceSuggestedMetiers = useMemo(() => {
+    const { metier1, metier2 } = resolveAllianceMetiers(myProfile);
+    const base = [metier1, metier2, "Avocat", "Expert-comptable", "DRH", "Banquier", "Consultant RH"];
+    const seen = new Set<string>();
+    return base.filter((item) => {
+      const normalized = String(item || "").trim();
+      if (!normalized) return false;
+      const key = normalized.toLowerCase();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }, [myProfile]);
   const scopedActionContact = actionFromProfileContactId
     ? allContactsData.find((contact) => contact.id === actionFromProfileContactId) || current
     : current;
@@ -7061,14 +7086,16 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
               <div className="relative">
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <p className="text-[10px] font-black uppercase tracking-[0.12em] text-cyan-100/95">
+                    <p className="text-[10px] font-black uppercase tracking-[0.1em] text-white/35">
                       {allianceDirectoryMode === "internal" ? "Recrutement communaute Popey" : "Recrutement d eclaireurs"}
                     </p>
-                    <h3 className="mt-1 max-w-[16ch] text-[52px] font-black leading-[0.9] tracking-[-0.015em] text-white">
-                      Trouvez les pros qui voient vos clients
+                    <h3 className="mt-2 max-w-[16ch] text-[42px] font-black leading-[0.92] tracking-[-0.015em] text-white">
+                      Trouvez les pros
+                      <br />
+                      qui voient vos clients
                       <span className="block text-[#00D4A0]">avant vous.</span>
                     </h3>
-                    <p className="mt-3 max-w-[29ch] text-[17px] leading-[1.45] text-white/82">
+                    <p className="mt-3 max-w-[30ch] text-[14px] leading-[1.45] text-white/65">
                       {allianceDirectoryMode === "internal"
                         ? "Popey connecte ta communaute locale avec les membres les plus compatibles avec ton metier."
                         : "Popey scanne les professionnels locaux complementaires et met en avant ceux qui ont le plus de chances de te recommander."}
@@ -7077,85 +7104,148 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                   <button
                     type="button"
                     onClick={() => setShowBoostInfo(true)}
-                    className="shrink-0 rounded-full border border-amber-300/40 bg-gradient-to-br from-amber-300/45 to-amber-500/25 px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.1em] text-[#1A0A00] shadow-[0_0_18px_rgba(245,158,11,0.2)]"
+                    className="shrink-0 rounded-full bg-gradient-to-br from-[#F5A623] to-[#E8961A] px-3 py-1.5 text-[11px] font-black text-[#1A0A00] shadow-[0_0_18px_rgba(245,158,11,0.2)]"
                   >
-                    Boost • Premium
+                    👑 Premium
                   </button>
                 </div>
 
                 <div className="mt-4 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                  <div className="min-w-[170px] rounded-2xl border border-cyan-300/35 bg-cyan-300/12 px-3.5 py-3.5">
-                    <p className="text-[9px] font-black uppercase tracking-[0.08em] text-cyan-100">Objectif 1</p>
-                    <p className="mt-1 text-[44px] font-black leading-[0.9] text-white">10</p>
-                    <p className="mt-1 text-[14px] font-semibold text-white/92">Eclaireurs pro</p>
-                  </div>
-                  <div className="min-w-[170px] rounded-2xl border border-blue-300/35 bg-blue-300/12 px-3.5 py-3.5">
-                    <p className="text-[9px] font-black uppercase tracking-[0.08em] text-blue-100">Objectif 2</p>
-                    <p className="mt-1 text-[44px] font-black leading-[0.9] text-white">10</p>
-                    <p className="mt-1 text-[14px] font-semibold text-white/92">Eclaireurs perso</p>
-                  </div>
-                  <div className="min-w-[170px] rounded-2xl border border-fuchsia-300/35 bg-fuchsia-300/12 px-3.5 py-3.5">
-                    <p className="text-[9px] font-black uppercase tracking-[0.08em] text-fuchsia-100">Objectif final</p>
-                    <p className="mt-1 text-[44px] font-black leading-[0.9] text-white">20+</p>
-                    <p className="mt-1 text-[14px] font-semibold text-white/92">Reco / mois</p>
-                  </div>
+                  <button
+                    type="button"
+                    className="min-w-[170px] rounded-2xl border border-emerald-300/35 bg-emerald-300/12 px-3.5 py-3 text-left"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="inline-flex h-8 w-8 items-center justify-center rounded-[10px] bg-emerald-300/15 text-sm">🤝</span>
+                      <div>
+                        <p className="text-[10px] font-black uppercase tracking-[0.08em] text-emerald-200">Objectif 1</p>
+                        <p className="text-[36px] font-black leading-none text-white">10</p>
+                        <p className="text-[12px] text-white/75">Eclaireurs pros</p>
+                      </div>
+                    </div>
+                  </button>
+                  <button
+                    type="button"
+                    className="min-w-[170px] rounded-2xl border border-white/10 bg-black/25 px-3.5 py-3 text-left"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="inline-flex h-8 w-8 items-center justify-center rounded-[10px] bg-white/5 text-sm">📱</span>
+                      <div>
+                        <p className="text-[10px] font-black uppercase tracking-[0.08em] text-white/35">Objectif 2</p>
+                        <p className="text-[36px] font-black leading-none text-white/90">10</p>
+                        <p className="text-[12px] text-white/60">Eclaireurs perso</p>
+                      </div>
+                    </div>
+                  </button>
+                  <button
+                    type="button"
+                    className="min-w-[170px] rounded-2xl border border-white/10 bg-black/25 px-3.5 py-3 text-left"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="inline-flex h-8 w-8 items-center justify-center rounded-[10px] bg-white/5 text-sm">⚡</span>
+                      <div>
+                        <p className="text-[10px] font-black uppercase tracking-[0.08em] text-white/35">Resultat vise</p>
+                        <p className="text-[36px] font-black leading-none text-white/90">20+</p>
+                        <p className="text-[12px] text-white/60">Reco / mois</p>
+                      </div>
+                    </div>
+                  </button>
                 </div>
-                <p className="mt-3 text-[13px] text-white/68">Eclaireur = apporteur d affaires.</p>
               </div>
 
-              <div className="relative mt-4 grid gap-2 sm:grid-cols-2">
-                <div>
-                  <p className="mb-1.5 text-[13px] font-semibold text-white/78">Ville</p>
-                  <input
-                    value={allianceCity}
-                    onChange={(event) => setAllianceCity(event.target.value)}
-                    placeholder="Dax"
-                    className="h-14 w-full rounded-full border border-white/20 bg-black/35 px-5 text-[22px] leading-none text-white placeholder:text-white/45"
-                  />
+              <div className="relative mt-5">
+                <div className="grid grid-cols-[1.35fr_.65fr] gap-2">
+                  <div>
+                    <p className="mb-1 text-[10px] font-black uppercase tracking-[0.07em] text-white/30">Votre ville</p>
+                    <div className="relative">
+                      <input
+                        value={allianceCity}
+                        onChange={(event) => setAllianceCity(event.target.value)}
+                        placeholder="Dax"
+                        className="h-12 w-full rounded-xl border border-white/15 bg-black/30 px-4 pr-10 text-[14px] text-white placeholder:text-white/35"
+                      />
+                      <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-base">📍</span>
+                    </div>
+                  </div>
+                  <div>
+                    <p className="mb-1 text-[10px] font-black uppercase tracking-[0.07em] text-white/30">Rayon</p>
+                    <div className="relative">
+                      <input
+                        value={allianceRadiusKm}
+                        onChange={(event) => setAllianceRadiusKm(event.target.value)}
+                        placeholder="15 km"
+                        inputMode="numeric"
+                        className="h-12 w-full rounded-xl border border-white/15 bg-black/30 px-4 pr-9 text-[14px] text-white placeholder:text-white/35"
+                      />
+                      <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-base">↔</span>
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <p className="mb-1.5 text-[13px] font-semibold text-white/78">Rayon (km)</p>
-                  <input
-                    value={allianceRadiusKm}
-                    onChange={(event) => setAllianceRadiusKm(event.target.value)}
-                    placeholder="15"
-                    inputMode="numeric"
-                    className="h-14 w-full rounded-full border border-white/20 bg-black/35 px-5 text-[22px] leading-none text-white placeholder:text-white/45"
-                  />
+
+                <div className="mt-2">
+                  <p className="mb-1 text-[10px] font-black uppercase tracking-[0.07em] text-white/30">Votre metier</p>
+                  <div className="relative">
+                    <input
+                      value={allianceSourceMetier}
+                      onChange={(event) => setAllianceSourceMetier(event.target.value)}
+                      placeholder="Coach business"
+                      className="h-12 w-full rounded-xl border border-white/15 bg-black/30 px-4 pr-10 text-[14px] text-white placeholder:text-white/35"
+                    />
+                    <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-base">💼</span>
+                  </div>
                 </div>
-                <div className="sm:col-span-2">
-                  <p className="mb-1.5 text-[13px] font-semibold text-white/78">Ton metier</p>
-                  <input
-                    value={allianceSourceMetier}
-                    onChange={(event) => setAllianceSourceMetier(event.target.value)}
-                    placeholder="Coach business"
-                    className="h-14 w-full rounded-full border border-white/20 bg-black/35 px-5 text-[22px] leading-none text-white placeholder:text-white/45"
-                  />
-                </div>
-                <div className="sm:col-span-2">
-                  <p className="mb-1.5 text-[13px] font-semibold text-white/78">Metiers cibles</p>
+
+                <div className="mt-3">
+                  <p className="mb-2 text-[10px] font-black uppercase tracking-[0.07em] text-white/30">
+                    Metiers cibles <span className="text-[#00D4A0]">· Popey suggere</span>
+                  </p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {allianceSuggestedMetiers.map((metier) => {
+                      const isSelected = allianceSelectedMetiersSet.has(metier.toLowerCase());
+                      return (
+                        <button
+                          key={`alliance-metier-chip-${metier}`}
+                          type="button"
+                          onClick={() => {
+                            const normalized = metier.toLowerCase();
+                            const next = isSelected
+                              ? allianceSelectedMetiers.filter((item) => item.toLowerCase() !== normalized)
+                              : [...allianceSelectedMetiers, metier];
+                            setAllianceTargetMetiersInput(next.join(", "));
+                          }}
+                          className={`rounded-full border px-3 py-1.5 text-[12px] font-semibold transition ${
+                            isSelected
+                              ? "border-[#9B8FFF]/35 bg-[#9B8FFF]/12 text-[#BDB4FF]"
+                              : "border-white/10 bg-black/20 text-white/55"
+                          }`}
+                        >
+                          {metier}
+                        </button>
+                      );
+                    })}
+                  </div>
                   <input
                     value={allianceTargetMetiersInput}
                     onChange={(event) => setAllianceTargetMetiersInput(event.target.value)}
-                    placeholder="courtier, notaire, ..."
-                    className="h-14 w-full rounded-full border border-white/20 bg-black/35 px-5 text-[22px] leading-none text-white placeholder:text-white/45"
+                    placeholder="Ajoute tes metiers cibles (separes par des virgules)"
+                    className="mt-2 h-11 w-full rounded-xl border border-dashed border-white/15 bg-black/20 px-3 text-[12px] text-white/90 placeholder:text-white/35"
                   />
                 </div>
               </div>
-
               <button
                 type="button"
                 onClick={() => {
                   void runAllianceSearch();
                 }}
                 disabled={isAlliancesSearching || !allianceCity.trim()}
-                className="relative mt-4 h-14 w-full overflow-hidden rounded-full border border-emerald-300/40 bg-gradient-to-r from-[#29E4D2] to-[#53F0B8] text-[16px] font-black uppercase tracking-[0.08em] text-[#0B1F2D] transition hover:brightness-105 disabled:opacity-60"
+                className="relative mt-4 flex h-14 w-full items-center justify-center gap-2 overflow-hidden rounded-2xl border border-emerald-300/40 bg-gradient-to-r from-[#00D4A0] to-[#00A87E] text-[17px] font-black text-[#050D0A] transition hover:brightness-105 disabled:opacity-60"
               >
                 {isAlliancesSearching
-                  ? "Analyse en cours..."
+                  ? "Recherche en cours..."
                   : allianceDirectoryMode === "internal"
                     ? "Trouver mes alliances Popey"
                     : "Trouver mes eclaireurs"}
+                {!isAlliancesSearching ? <span className="text-xl leading-none">→</span> : null}
               </button>
               {apiErrorMessage ? (
                 <p className="mt-2 rounded-lg border border-amber-300/35 bg-amber-300/10 px-2 py-1 text-[11px] text-amber-100">
