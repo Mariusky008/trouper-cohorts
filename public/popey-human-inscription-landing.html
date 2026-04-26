@@ -185,6 +185,45 @@ body{background:var(--black);color:var(--text);font-family:var(--font-b);min-hei
   .topbar{padding:14px 20px}
   .field-row{grid-template-columns:1fr}
 }
+
+/* Transition plein ecran */
+.signup-transition{
+  position:fixed;
+  inset:0;
+  z-index:9999;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  background:radial-gradient(circle at 50% 30%, rgba(0,229,160,.26), rgba(7,9,15,.98) 58%);
+  opacity:0;
+  transform:scale(1.02);
+  transition:opacity .35s ease, transform .35s ease;
+}
+.signup-transition.show{
+  display:flex;
+  opacity:1;
+  transform:scale(1);
+}
+.signup-transition-card{
+  border:1px solid rgba(0,229,160,.35);
+  background:rgba(13,17,23,.86);
+  border-radius:16px;
+  padding:20px 22px;
+  text-align:center;
+  color:var(--text);
+  box-shadow:0 18px 64px rgba(0,229,160,.2);
+}
+.signup-transition-title{
+  font-family:var(--font-d);
+  font-size:30px;
+  letter-spacing:1px;
+  color:var(--teal);
+}
+.signup-transition-sub{
+  margin-top:6px;
+  font-size:13px;
+  color:var(--text-sec);
+}
 </style>
 </head>
 <body>
@@ -517,6 +556,13 @@ body{background:var(--black);color:var(--text);font-family:var(--font-b);min-hei
   </div>
 </div>
 
+<div id="signupTransition" class="signup-transition" aria-hidden="true">
+  <div class="signup-transition-card">
+    <div class="signup-transition-title">C'EST PARTI</div>
+    <div class="signup-transition-sub">On ouvre ton Daily Scan...</div>
+  </div>
+</div>
+
 <script>
 // ── STATE ──
 let currentStep = 1;
@@ -751,11 +797,23 @@ function socialLogin(provider) {
 
 function redirectToSmartScan(targetPath) {
   const target = String(targetPath || '/popey-human/smart-scan');
-  if (window.top && window.top !== window.self) {
-    window.top.location.href = target;
+  startSignupTransition(() => {
+    if (window.top && window.top !== window.self) {
+      window.top.location.href = target;
+      return;
+    }
+    window.location.href = target;
+  });
+}
+
+function startSignupTransition(onDone) {
+  const overlay = document.getElementById('signupTransition');
+  if (!overlay) {
+    onDone();
     return;
   }
-  window.location.href = target;
+  overlay.classList.add('show');
+  window.setTimeout(() => onDone(), 360);
 }
 
 // Init
