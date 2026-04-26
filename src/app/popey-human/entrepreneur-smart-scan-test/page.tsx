@@ -4899,6 +4899,13 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                 animate={{ scale: [1, 1.2, 1], opacity: [0.25, 0.5, 0.25] }}
                 transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
               />
+              <motion.span
+                className="absolute right-3 top-3 rounded-full border border-amber-200/45 bg-amber-300/20 px-2 py-1 text-[10px] font-black uppercase tracking-[0.11em] text-amber-50"
+                animate={{ opacity: [0.65, 1, 0.65], scale: [1, 1.04, 1] }}
+                transition={{ duration: 1.2, repeat: Infinity, ease: "easeInOut" }}
+              >
+                Exemple actif
+              </motion.span>
               <p className="text-[11px] font-black uppercase tracking-[0.1em] text-cyan-100/95">Prospect de reference</p>
               <div className="mt-2 flex items-center gap-3">
                 <div className="relative flex h-12 w-12 items-center justify-center rounded-full border border-cyan-100/60 bg-cyan-200/25 text-sm font-black text-cyan-50">
