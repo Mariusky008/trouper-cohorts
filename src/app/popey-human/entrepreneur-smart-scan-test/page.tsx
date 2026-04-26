@@ -969,6 +969,14 @@ function normalizePublicSlugInput(input: string) {
     .slice(0, 120);
 }
 
+function hasOnboardingMetierData(profile: SmartScanProfile | null): boolean {
+  if (!profile) return false;
+  const metier = String(profile.metier || "").trim();
+  const metierLabel = String(profile.metier_label || "").trim();
+  const sectorId = String(profile.sector_id || "").trim();
+  return Boolean(metier || metierLabel || sectorId);
+}
+
 function getLocalDayNumber() {
   const now = new Date();
   const localMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -2044,9 +2052,21 @@ export default function EntrepreneurSmartScanTestPage() {
     ].some((value) => String(value || "").trim().length === 0);
     const needsOnboarding = !myProfile.onboarding_completed_at || isProfileMissingCoreData;
     if (needsOnboarding) {
+      const metierLabel = String(myProfile.metier_label || myProfile.metier || "").trim();
+      const sectorId = String(myProfile.sector_id || "").trim();
+      if (metierLabel) {
+        setOnboardingSectorQuery(metierLabel);
+      }
+      if (sectorId) {
+        setOnboardingSelectedSectorId(sectorId);
+        setOnboardingCustomMetier("");
+      } else if (metierLabel) {
+        setOnboardingSelectedSectorId("other_custom");
+        setOnboardingCustomMetier(metierLabel);
+      }
       setShowOnboardingJ0(true);
       setOnboardingFlowLocked(true);
-      setOnboardingStep(1);
+      setOnboardingStep(hasOnboardingMetierData(myProfile) ? 2 : 1);
       setOnboardingStartedAtMs(Date.now());
       void loadOnboardingSectors();
     }
@@ -4371,7 +4391,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
           ville,
           phone,
           eclaireurRewardMode: "percent",
-          eclaireurRewardPercent: rewardPercent,
+          eclaireurRewardPercent: String(rewardPercent),
         }),
       });
       const body = (await response.json().catch(() => ({}))) as { error?: string; profile?: SmartScanProfile | null };
