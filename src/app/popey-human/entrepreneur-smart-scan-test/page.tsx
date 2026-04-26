@@ -4814,6 +4814,38 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                   Aucun contact importe: ajoute un fichier pour debloquer la suite.
                 </p>
               )}
+              {isImportingContacts && (
+                <div className="mt-3 rounded-xl border border-cyan-200/35 bg-cyan-300/15 px-3 py-2">
+                  <div className="flex items-center justify-between">
+                    <p className="text-[11px] font-black uppercase tracking-[0.08em] text-cyan-50">Import en cours...</p>
+                    <motion.span
+                      className="inline-flex h-2 w-2 rounded-full bg-cyan-200"
+                      animate={{ scale: [1, 1.4, 1], opacity: [0.5, 1, 0.5] }}
+                      transition={{ duration: 0.9, repeat: Infinity, ease: "easeInOut" }}
+                    />
+                  </div>
+                  <div className="relative mt-2 h-2 overflow-hidden rounded-full bg-white/15">
+                    <motion.div
+                      className="absolute inset-y-0 w-1/3 rounded-full bg-gradient-to-r from-cyan-200 via-cyan-300 to-emerald-300"
+                      animate={{ x: ["-120%", "320%"] }}
+                      transition={{ duration: 1.1, repeat: Infinity, ease: "linear" }}
+                    />
+                  </div>
+                </div>
+              )}
+              {hasImportedContacts && !isImportingContacts && (
+                <motion.div
+                  initial={{ opacity: 0, y: 8, scale: 0.98 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  transition={{ duration: 0.26, ease: "easeOut" }}
+                  className="mt-3 rounded-xl border border-emerald-200/40 bg-emerald-300/15 px-3 py-2"
+                >
+                  <p className="text-[12px] font-black text-emerald-50">✅ Import termine avec succes</p>
+                  <p className="mt-1 text-[11px] text-emerald-100/90">
+                    Contact charge. Tu peux maintenant appuyer sur Continuer.
+                  </p>
+                </motion.div>
+              )}
               {showImportHelp && (
                 <div className="mt-3 rounded-xl border border-white/15 bg-[#0B1734]/65 px-3 py-2 text-[11px] text-white/80">
                   <p className="font-black text-cyan-100">iPhone (iCloud)</p>
@@ -4830,6 +4862,16 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
             </div>
             <div className="mt-3 rounded-2xl border border-cyan-300/25 bg-cyan-300/10 px-4 py-3">
               <p className="text-base font-black text-cyan-100">{Math.min(importedContacts.length, 1)}/1 importe</p>
+              {hasImportedContacts && (
+                <div className="mt-2 h-2 overflow-hidden rounded-full bg-white/15">
+                  <motion.div
+                    className="h-full rounded-full bg-gradient-to-r from-emerald-300 to-cyan-300"
+                    initial={{ width: 0 }}
+                    animate={{ width: "100%" }}
+                    transition={{ duration: 0.35, ease: "easeOut" }}
+                  />
+                </div>
+              )}
               <p className="mt-1 text-[11px] text-cyan-100/90">Quand 1 contact est importe, tu peux continuer vers la qualification.</p>
             </div>
             <button
