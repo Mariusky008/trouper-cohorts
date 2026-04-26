@@ -7286,12 +7286,21 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                   initial={{ opacity: 0, y: 18, scale: 0.985 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   transition={{ duration: 0.28, ease: "easeOut" }}
-                  className={`rounded-[18px] border px-4 py-3 ${
+                  className={`relative overflow-hidden rounded-[18px] border px-4 py-3 ${
                     idx === 0
-                      ? "border-emerald-300/30 bg-gradient-to-br from-emerald-300/8 to-[#0E1420]"
+                      ? "border-emerald-300/35 bg-gradient-to-br from-emerald-300/12 to-[#0E1420] shadow-[0_0_28px_rgba(0,212,160,0.16)]"
                       : "border-white/10 bg-[#0E1420]"
                   }`}
                 >
+                  {idx === 0 ? (
+                    <>
+                      <div className="pointer-events-none absolute -right-8 -top-8 h-20 w-20 rounded-full bg-emerald-300/20 blur-2xl" />
+                      <div className="pointer-events-none absolute -left-10 -bottom-10 h-24 w-24 rounded-full bg-cyan-300/12 blur-2xl" />
+                      <span className="absolute right-3 top-3 rounded-full border border-emerald-300/35 bg-emerald-300/15 px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.08em] text-emerald-100">
+                        Top match
+                      </span>
+                    </>
+                  ) : null}
                   <div className="flex items-start gap-3">
                     <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] bg-emerald-300/15 text-[13px] font-black text-emerald-200">
                       {String(prospect.full_name || "?")
