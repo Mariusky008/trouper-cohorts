@@ -6943,98 +6943,106 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
               </p>
             </div>
 
-            <div className="relative mt-3 overflow-hidden rounded-3xl border border-cyan-300/45 bg-gradient-to-br from-cyan-300/20 via-[#12204A] to-fuchsia-300/20 p-4 shadow-[0_0_40px_rgba(56,189,248,0.16)]">
-              <div className="pointer-events-none absolute -right-8 -top-10 h-32 w-32 rounded-full bg-cyan-300/25 blur-2xl animate-pulse" />
-              <div className="pointer-events-none absolute -bottom-10 -left-6 h-28 w-28 rounded-full bg-fuchsia-300/25 blur-2xl animate-pulse" />
+            <div className="relative mt-3 overflow-hidden rounded-3xl border border-white/15 bg-gradient-to-br from-[#141C2E] via-[#152142] to-[#1A2438] p-4 shadow-[0_0_46px_rgba(0,0,0,0.35)]">
+              <div className="pointer-events-none absolute -right-10 -top-12 h-36 w-36 rounded-full bg-cyan-300/15 blur-3xl" />
+              <div className="pointer-events-none absolute -bottom-12 -left-10 h-32 w-32 rounded-full bg-fuchsia-300/10 blur-3xl" />
               <div className="relative">
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <p className="text-[10px] font-black uppercase tracking-[0.12em] text-cyan-100">
+                    <p className="text-[10px] font-black uppercase tracking-[0.12em] text-cyan-100/95">
                       {allianceDirectoryMode === "internal" ? "Annuaire interne Popey" : "Recrutement externe premium"}
                     </p>
-                    <h3 className="mt-1 text-lg font-black text-white sm:text-xl">Fais decoller ton business avec des alliances locales</h3>
-                    <p className="mt-1 text-[12px] text-white/85">
+                    <h3 className="mt-1 text-3xl font-black leading-[1.06] tracking-[-0.01em] text-white">
+                      Fais decoller ton business avec des alliances locales
+                    </h3>
+                    <p className="mt-2 text-[13px] leading-relaxed text-white/80">
                       {allianceDirectoryMode === "internal"
-                        ? "Trouve des membres Popey deja inscrits, en synergie avec ton metier, puis envoie ta demande WhatsApp en 1 clic."
+                        ? "Trouve des membres Popey a forte synergie, puis declenche une prise de contact qualifiee en 1 clic."
                         : "Lance une recherche ciblee, contacte les bons pros, et transforme-les en apporteurs actifs."}
                     </p>
                   </div>
                   <button
                     type="button"
                     onClick={() => setShowBoostInfo(true)}
-                    className="rounded-full border border-amber-300/45 bg-amber-300/15 px-2 py-1 text-[10px] font-black uppercase tracking-[0.08em] text-amber-100"
+                    className="shrink-0 rounded-full border border-amber-300/45 bg-gradient-to-br from-amber-300/35 to-amber-500/20 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.09em] text-amber-50 shadow-[0_0_18px_rgba(245,158,11,0.22)]"
                   >
-                    BOOST • Premium
+                    Boost • Premium
                   </button>
                 </div>
-                <div className="mt-3 grid grid-cols-3 gap-2">
-                  <div className="rounded-xl border border-white/15 bg-black/25 px-2 py-2 text-center">
-                    <p className="text-[9px] uppercase tracking-[0.08em] text-white/60">Objectif 1</p>
-                    <p className="text-[11px] font-black text-white">10 Eclaireurs Pro</p>
+
+                <div className="mt-4 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                  <div className="min-w-[148px] rounded-2xl border border-cyan-300/35 bg-cyan-300/12 px-3 py-3">
+                    <p className="text-[9px] font-black uppercase tracking-[0.08em] text-cyan-100">Objectif 1</p>
+                    <p className="mt-1 text-xl font-black leading-none text-white">10</p>
+                    <p className="mt-1 text-[11px] font-semibold text-white/85">Eclaireurs pro</p>
                   </div>
-                  <div className="rounded-xl border border-cyan-300/35 bg-cyan-300/12 px-2 py-2 text-center">
-                    <p className="text-[9px] uppercase tracking-[0.08em] text-cyan-100">Objectif 2</p>
-                    <p className="text-[11px] font-black text-cyan-100">10 Eclaireurs Perso</p>
+                  <div className="min-w-[148px] rounded-2xl border border-blue-300/35 bg-blue-300/12 px-3 py-3">
+                    <p className="text-[9px] font-black uppercase tracking-[0.08em] text-blue-100">Objectif 2</p>
+                    <p className="mt-1 text-xl font-black leading-none text-white">10</p>
+                    <p className="mt-1 text-[11px] font-semibold text-white/85">Eclaireurs perso</p>
                   </div>
-                  <div className="rounded-xl border border-fuchsia-300/35 bg-fuchsia-300/12 px-2 py-2 text-center">
-                    <p className="text-[9px] uppercase tracking-[0.08em] text-fuchsia-100">Objectif final</p>
-                    <p className="text-[11px] font-black text-fuchsia-100">20 reco / mois</p>
+                  <div className="min-w-[148px] rounded-2xl border border-fuchsia-300/35 bg-fuchsia-300/12 px-3 py-3">
+                    <p className="text-[9px] font-black uppercase tracking-[0.08em] text-fuchsia-100">Objectif final</p>
+                    <p className="mt-1 text-xl font-black leading-none text-white">20+</p>
+                    <p className="mt-1 text-[11px] font-semibold text-white/85">Reco / mois</p>
                   </div>
                 </div>
-                <p className="mt-2 text-[10px] text-white/65">Eclaireur = apporteur d affaires.</p>
+                <p className="mt-2 text-[11px] text-white/70">Eclaireur = apporteur d affaires.</p>
               </div>
+
               <div className="relative mt-4 grid gap-2 sm:grid-cols-2">
                 <div>
-                  <p className="mb-1 text-[11px] text-white/65">Ville</p>
+                  <p className="mb-1.5 text-[11px] font-semibold text-white/75">Ville</p>
                   <input
                     value={allianceCity}
                     onChange={(event) => setAllianceCity(event.target.value)}
-                    placeholder="Ville (ex: Dax)"
-                    className="h-11 w-full rounded-xl border border-white/20 bg-black/35 px-3 text-[12px] placeholder:text-white/45"
+                    placeholder="Dax"
+                    className="h-12 w-full rounded-2xl border border-white/20 bg-black/35 px-4 text-[14px] text-white placeholder:text-white/45"
                   />
                 </div>
                 <div>
-                  <p className="mb-1 text-[11px] text-white/65">Rayon (km)</p>
+                  <p className="mb-1.5 text-[11px] font-semibold text-white/75">Rayon (km)</p>
                   <input
                     value={allianceRadiusKm}
                     onChange={(event) => setAllianceRadiusKm(event.target.value)}
                     placeholder="15"
                     inputMode="numeric"
-                    className="h-11 w-full rounded-xl border border-white/20 bg-black/35 px-3 text-[12px] placeholder:text-white/45"
+                    className="h-12 w-full rounded-2xl border border-white/20 bg-black/35 px-4 text-[14px] text-white placeholder:text-white/45"
                   />
                 </div>
                 <div className="sm:col-span-2">
-                  <p className="mb-1 text-[11px] text-white/65">Ton metier</p>
+                  <p className="mb-1.5 text-[11px] font-semibold text-white/75">Ton metier</p>
                   <input
                     value={allianceSourceMetier}
                     onChange={(event) => setAllianceSourceMetier(event.target.value)}
-                    placeholder="Ton metier"
-                    className="h-11 w-full rounded-xl border border-white/20 bg-black/35 px-3 text-[12px] placeholder:text-white/45"
+                    placeholder="Coach business"
+                    className="h-12 w-full rounded-2xl border border-white/20 bg-black/35 px-4 text-[14px] text-white placeholder:text-white/45"
                   />
                 </div>
                 <div className="sm:col-span-2">
-                  <p className="mb-1 text-[11px] text-white/65">Metiers cibles</p>
+                  <p className="mb-1.5 text-[11px] font-semibold text-white/75">Metiers cibles</p>
                   <input
                     value={allianceTargetMetiersInput}
                     onChange={(event) => setAllianceTargetMetiersInput(event.target.value)}
                     placeholder="courtier, notaire, ..."
-                    className="h-11 w-full rounded-xl border border-white/20 bg-black/35 px-3 text-[12px] placeholder:text-white/45"
+                    className="h-12 w-full rounded-2xl border border-white/20 bg-black/35 px-4 text-[14px] text-white placeholder:text-white/45"
                   />
                 </div>
               </div>
+
               <button
                 type="button"
                 onClick={() => {
                   void runAllianceSearch();
                 }}
                 disabled={isAlliancesSearching || !allianceCity.trim()}
-                className="relative mt-3 h-12 w-full overflow-hidden rounded-2xl border border-emerald-300/50 bg-gradient-to-r from-emerald-300/30 to-cyan-300/30 text-[12px] font-black uppercase tracking-[0.08em] text-white transition hover:brightness-110 disabled:opacity-60"
+                className="relative mt-4 h-14 w-full overflow-hidden rounded-2xl border border-emerald-300/40 bg-gradient-to-r from-[#29E4D2] to-[#53F0B8] text-[15px] font-black uppercase tracking-[0.08em] text-[#0B1F2D] transition hover:brightness-105 disabled:opacity-60"
               >
                 {isAlliancesSearching
-                  ? "Recherche en cours..."
+                  ? "Analyse en cours..."
                   : allianceDirectoryMode === "internal"
-                    ? "Lancer recherche interne Popey"
-                    : "Lancer recherche B2B"}
+                    ? "Trouver mes alliances Popey"
+                    : "Trouver mes eclaireurs"}
               </button>
               {apiErrorMessage ? (
                 <p className="mt-2 rounded-lg border border-amber-300/35 bg-amber-300/10 px-2 py-1 text-[11px] text-amber-100">
