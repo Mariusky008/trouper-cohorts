@@ -6996,21 +6996,17 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
           >
             <div className="sticky top-0 z-20 -mx-4 bg-[#07090F] px-4 pb-2">
               <div className="flex items-center justify-between">
-                <p className="text-xs font-black uppercase tracking-[0.12em] text-cyan-200">Alliances</p>
+                <p className="text-xl font-black tracking-[-0.01em] text-white">Eclaireurs</p>
                 <button
                   type="button"
                   onClick={() => {
-                    if (allianceDirectoryMode === "internal") {
-                      setShowInternalInvitesModal(true);
-                      void loadInternalAllianceInvites();
-                    } else {
-                      setShowAllianceInvitesModal(true);
-                      void loadAllianceInvites();
-                    }
+                    setShowAlliancesPanel(false);
+                    setShowEclaireursPanel(true);
                   }}
-                  className="rounded-full border border-fuchsia-300/35 bg-fuchsia-300/15 px-3 py-1 text-[10px] font-black uppercase tracking-[0.08em] text-fuchsia-100 transition hover:scale-[1.02] hover:bg-fuchsia-300/20"
+                  className="inline-flex items-center gap-1.5 rounded-full border border-emerald-300/35 bg-emerald-300/12 px-3 py-1.5 text-[11px] font-semibold text-white/85 transition hover:scale-[1.02] hover:bg-emerald-300/18"
                 >
-                  {allianceDirectoryMode === "internal" ? "Mes demandes internes" : "Mes alliances"} ({activeAllianceInvites.length})
+                  <span className="text-base font-black leading-none text-emerald-300">{eclaireursList.length}</span>
+                  <span className="text-[11px]">actifs</span>
                 </button>
               </div>
               <div className="mt-2 inline-flex rounded-full border border-white/15 bg-black/20 p-1">
@@ -7019,22 +7015,22 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                   onClick={() => setAllianceDirectoryMode("external")}
                   className={`h-8 rounded-full px-3 text-[10px] font-black uppercase tracking-[0.08em] transition ${
                     allianceDirectoryMode === "external"
-                      ? "bg-cyan-300/30 text-cyan-100"
+                      ? "bg-[#1A2438] text-[#00D4A0]"
                       : "text-white/70 hover:text-white"
                   }`}
                 >
-                  Externe
+                  Annuaire local
                 </button>
                 <button
                   type="button"
                   onClick={() => setAllianceDirectoryMode("internal")}
                   className={`h-8 rounded-full px-3 text-[10px] font-black uppercase tracking-[0.08em] transition ${
                     allianceDirectoryMode === "internal"
-                      ? "bg-emerald-300/30 text-emerald-100"
+                      ? "bg-[#1A2438] text-[#00D4A0]"
                       : "text-white/70 hover:text-white"
                   }`}
                 >
-                  Interne Popey
+                  Communaute Popey
                 </button>
               </div>
               <p className="mt-2 text-[11px] text-white/70">
@@ -7042,6 +7038,21 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                   ? "Externes: pros locaux via annuaire public."
                   : "Interne: membres Popey actifs."}
               </p>
+              <button
+                type="button"
+                onClick={() => {
+                  if (allianceDirectoryMode === "internal") {
+                    setShowInternalInvitesModal(true);
+                    void loadInternalAllianceInvites();
+                  } else {
+                    setShowAllianceInvitesModal(true);
+                    void loadAllianceInvites();
+                  }
+                }}
+                className="mt-2 rounded-full border border-fuchsia-300/35 bg-fuchsia-300/15 px-3 py-1 text-[10px] font-black uppercase tracking-[0.08em] text-fuchsia-100 transition hover:scale-[1.02] hover:bg-fuchsia-300/20"
+              >
+                {allianceDirectoryMode === "internal" ? "Mes demandes internes" : "Mes alliances"} ({activeAllianceInvites.length})
+              </button>
             </div>
 
             <div className="relative mt-3 overflow-hidden rounded-[24px] border border-white/20 bg-gradient-to-br from-[#141C2E] via-[#16203A] to-[#1A2438] p-5 shadow-[0_22px_50px_rgba(0,0,0,0.38)]">
@@ -7051,15 +7062,16 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <p className="text-[10px] font-black uppercase tracking-[0.12em] text-cyan-100/95">
-                      {allianceDirectoryMode === "internal" ? "Annuaire interne Popey" : "Recrutement externe premium"}
+                      {allianceDirectoryMode === "internal" ? "Recrutement communaute Popey" : "Recrutement d eclaireurs"}
                     </p>
-                    <h3 className="mt-1 max-w-[14ch] text-[52px] font-black leading-[0.9] tracking-[-0.015em] text-white">
-                      Fais decoller ton business avec des alliances locales
+                    <h3 className="mt-1 max-w-[16ch] text-[52px] font-black leading-[0.9] tracking-[-0.015em] text-white">
+                      Trouvez les pros qui voient vos clients
+                      <span className="block text-[#00D4A0]">avant vous.</span>
                     </h3>
-                    <p className="mt-3 max-w-[28ch] text-[17px] leading-[1.45] text-white/82">
+                    <p className="mt-3 max-w-[29ch] text-[17px] leading-[1.45] text-white/82">
                       {allianceDirectoryMode === "internal"
-                        ? "Trouve des membres Popey a forte synergie, puis declenche une prise de contact qualifiee en 1 clic."
-                        : "Lance une recherche ciblee, contacte les bons pros, et transforme-les en apporteurs actifs."}
+                        ? "Popey connecte ta communaute locale avec les membres les plus compatibles avec ton metier."
+                        : "Popey scanne les professionnels locaux complementaires et met en avant ceux qui ont le plus de chances de te recommander."}
                     </p>
                   </div>
                   <button
