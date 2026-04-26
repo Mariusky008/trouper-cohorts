@@ -36,7 +36,6 @@ export async function POST(request: Request) {
   const sectorId = data.sectorId?.trim() || "other_custom";
 
   const supabaseAdmin = createAdminClient();
-  const createdAtIso = new Date().toISOString();
 
   const { data: createdUser, error: createUserError } = await supabaseAdmin.auth.admin.createUser({
     email,
@@ -76,7 +75,6 @@ export async function POST(request: Request) {
       city: ville,
       phone,
       role: "member",
-      updated_at: createdAtIso,
     },
     { onConflict: "id" },
   );
@@ -98,7 +96,6 @@ export async function POST(request: Request) {
       phone,
       status: "active",
       onboarding_completed_at: null,
-      updated_at: createdAtIso,
     },
     { onConflict: "user_id" },
   );
