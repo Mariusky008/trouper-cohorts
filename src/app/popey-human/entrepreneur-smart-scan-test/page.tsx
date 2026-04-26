@@ -4887,7 +4887,48 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
         {onboardingStep === 4 && (
           <div className="mt-5">
             <p className="text-2xl font-black">Qualification express du 1er contact</p>
-            <p className="mt-2 text-base text-white/80">{onboardingFirstContact?.name || "Premier contact"} • Exemple sur 1 seul contact</p>
+            <motion.div
+              initial={{ opacity: 0, y: 10, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ duration: 0.28, ease: "easeOut" }}
+              className="relative mt-3 overflow-hidden rounded-2xl border border-cyan-200/45 bg-gradient-to-r from-cyan-300/20 to-indigo-300/20 p-3"
+            >
+              <motion.div
+                aria-hidden
+                className="pointer-events-none absolute -right-10 -top-10 h-24 w-24 rounded-full bg-cyan-200/20 blur-2xl"
+                animate={{ scale: [1, 1.2, 1], opacity: [0.25, 0.5, 0.25] }}
+                transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
+              />
+              <p className="text-[11px] font-black uppercase tracking-[0.1em] text-cyan-100/95">Prospect de reference</p>
+              <div className="mt-2 flex items-center gap-3">
+                <div className="relative flex h-12 w-12 items-center justify-center rounded-full border border-cyan-100/60 bg-cyan-200/25 text-sm font-black text-cyan-50">
+                  {String(onboardingFirstContact?.name || "P")
+                    .trim()
+                    .split(/\s+/)
+                    .slice(0, 2)
+                    .map((part) => part[0]?.toUpperCase() || "")
+                    .join("")}
+                  <motion.span
+                    aria-hidden
+                    className="absolute inset-0 rounded-full border border-cyan-100/65"
+                    animate={{ scale: [1, 1.18, 1], opacity: [0.7, 0.15, 0.7] }}
+                    transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
+                  />
+                </div>
+                <div>
+                  <p className="text-lg font-black text-white">{onboardingFirstContact?.name || "Premier contact"}</p>
+                  <p className="text-sm text-cyan-100/95">
+                    {onboardingFirstContact?.companyHint || "Prospect prioritaire"} • Exemple sur 1 seul contact
+                  </p>
+                </div>
+              </div>
+              <div className="mt-3 flex flex-wrap gap-2 text-[11px] font-semibold text-white/90">
+                <span className="rounded-full border border-white/25 bg-white/10 px-2 py-1">
+                  Ville: {onboardingFirstContact?.city || "Non renseignee"}
+                </span>
+                <span className="rounded-full border border-cyan-100/35 bg-cyan-200/20 px-2 py-1">A qualifier maintenant</span>
+              </div>
+            </motion.div>
             <p className="mt-2 text-[11px] font-black uppercase tracking-[0.09em] text-cyan-100/95">
               Demonstration uniquement, sans envoi reel.
             </p>
