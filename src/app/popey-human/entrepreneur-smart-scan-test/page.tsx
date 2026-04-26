@@ -4756,20 +4756,82 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
         {onboardingStep === 3 && (
           <div className="mt-5">
             <p className="text-2xl font-black">Commencons avec 1 de tes contacts</p>
-            <p className="mt-2 text-base text-white/80">Ton premier prospect activable</p>
+            <p className="mt-2 text-base text-white/80">Ton premier prospect activable, avec mini tuto d import.</p>
             <p className="mt-2 text-[11px] font-black uppercase tracking-[0.09em] text-cyan-100/95">
               Mode demo educatif: aucun message n est envoye ici.
             </p>
-            <div className="mt-4 rounded-2xl border border-cyan-300/25 bg-cyan-300/10 px-4 py-3">
-              <p className="text-base font-black text-cyan-100">{Math.min(importedContacts.length, 1)}/1 importe</p>
+            <div className="relative mt-4 overflow-hidden rounded-2xl border border-cyan-200/25 bg-cyan-400/10 p-4">
+              <motion.div
+                aria-hidden
+                className="pointer-events-none absolute -right-12 -top-12 h-28 w-28 rounded-full bg-cyan-300/20 blur-2xl"
+                animate={{ scale: [1, 1.15, 1], opacity: [0.2, 0.4, 0.2] }}
+                transition={{ duration: 2.8, repeat: Infinity, ease: "easeInOut" }}
+              />
+              <p className="text-xs font-black uppercase tracking-[0.08em] text-cyan-100">Importer mes contacts reels</p>
+              <p className="mt-1 text-[11px] text-white/75">
+                Fichier .vcf ou .csv. On active juste 1 contact pour cette etape onboarding.
+              </p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={openContactImportPicker}
+                  disabled={isImportingContacts}
+                  className="h-10 rounded-xl border border-cyan-200/35 bg-cyan-300/20 px-3 text-[11px] font-black uppercase tracking-wide text-cyan-50 disabled:opacity-50"
+                >
+                  {isImportingContacts ? "Import en cours..." : "Importer un fichier"}
+                </button>
+                {supportsDirectContactPicker && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      void importContactsFromDirectPicker();
+                    }}
+                    disabled={isImportingContacts}
+                    className="h-10 rounded-xl border border-emerald-200/35 bg-emerald-300/20 px-3 text-[11px] font-black uppercase tracking-wide text-emerald-50 disabled:opacity-50"
+                  >
+                    Tester acces direct
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setShowImportHelp((value) => !value)}
+                  className="h-10 rounded-xl border border-white/20 bg-white/10 px-3 text-[11px] font-black uppercase tracking-wide text-white/85"
+                >
+                  {showImportHelp ? "Masquer aide" : "Comment exporter ?"}
+                </button>
+                {importedContacts.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={clearImportedContacts}
+                    className="h-10 rounded-xl border border-white/20 bg-white/10 px-3 text-[11px] font-black uppercase tracking-wide text-white/85"
+                  >
+                    Retirer l import
+                  </button>
+                )}
+              </div>
+              {!hasImportedContacts && (
+                <p className="mt-3 rounded-xl border border-amber-200/35 bg-amber-300/15 px-2 py-1 text-[11px] text-amber-100">
+                  Aucun contact importe: ajoute un fichier pour debloquer la suite.
+                </p>
+              )}
+              {showImportHelp && (
+                <div className="mt-3 rounded-xl border border-white/15 bg-[#0B1734]/65 px-3 py-2 text-[11px] text-white/80">
+                  <p className="font-black text-cyan-100">iPhone (iCloud)</p>
+                  <p className="mt-1">1) Va sur iCloud Contacts puis exporte en vCard (.vcf).</p>
+                  <p>2) Enregistre le fichier dans Fichiers.</p>
+                  <p>3) Reviens ici et clique Importer un fichier.</p>
+                  <p className="mt-2 font-black text-cyan-100">Android (Google Contacts)</p>
+                  <p className="mt-1">1) Ouvre Google Contacts puis Exporter (vCard ou CSV).</p>
+                  <p>2) Enregistre le fichier sur ton telephone.</p>
+                  <p>3) Reviens ici et importe le fichier.</p>
+                </div>
+              )}
+              {importSummary && <p className="mt-2 text-[11px] text-emerald-100">{importSummary}</p>}
             </div>
-            <button
-              type="button"
-              onClick={openContactImportPicker}
-              className="mt-4 h-12 w-full rounded-2xl border border-cyan-300/35 bg-cyan-300/18 text-base font-black text-cyan-100"
-            >
-              Importer mes contacts
-            </button>
+            <div className="mt-3 rounded-2xl border border-cyan-300/25 bg-cyan-300/10 px-4 py-3">
+              <p className="text-base font-black text-cyan-100">{Math.min(importedContacts.length, 1)}/1 importe</p>
+              <p className="mt-1 text-[11px] text-cyan-100/90">Quand 1 contact est importe, tu peux continuer vers la qualification.</p>
+            </div>
             <button
               type="button"
               onClick={() => setOnboardingStep(4)}
