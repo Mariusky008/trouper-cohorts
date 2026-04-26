@@ -1169,7 +1169,7 @@ export default function EntrepreneurSmartScanTestPage() {
   const [showInternalInvitesModal, setShowInternalInvitesModal] = useState(false);
   const [showOnboardingJ0, setShowOnboardingJ0] = useState(false);
   const [onboardingFlowLocked, setOnboardingFlowLocked] = useState(false);
-  const [onboardingStep, setOnboardingStep] = useState<1 | 2 | 3 | 4 | 5>(1);
+  const [onboardingStep, setOnboardingStep] = useState<1 | 2 | 3 | 4 | 5 | 6>(1);
   const [onboardingSectorQuery, setOnboardingSectorQuery] = useState("");
   const [onboardingSectors, setOnboardingSectors] = useState<SectorVocabularyListItem[]>([]);
   const [onboardingSelectedSectorId, setOnboardingSelectedSectorId] = useState("other_custom");
@@ -1177,6 +1177,8 @@ export default function EntrepreneurSmartScanTestPage() {
   const [onboardingQualificationType, setOnboardingQualificationType] = useState<OpportunityId | null>(null);
   const [onboardingQualificationHeat, setOnboardingQualificationHeat] = useState<HeatLevel | null>(null);
   const [onboardingMessageDraft, setOnboardingMessageDraft] = useState("");
+  const [onboardingAllianceSearched, setOnboardingAllianceSearched] = useState(false);
+  const [onboardingAllianceResultCount, setOnboardingAllianceResultCount] = useState(0);
   const [onboardingStartedAtMs, setOnboardingStartedAtMs] = useState(0);
   const [isOnboardingSaving, setIsOnboardingSaving] = useState(false);
   const [hasProfileBootstrapResolved, setHasProfileBootstrapResolved] = useState(false);
@@ -3756,14 +3758,27 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
     setAllianceProspects(payload.prospects || []);
   }
 
-  async function runAllianceSearch() {
+  async function runAllianceSearch(overrides?: {
+    provider?: AllianceDirectoryMode;
+    city?: string;
+    sourceMetier?: string;
+    targetMetiersInput?: string;
+    radiusKm?: string;
+    limit?: number;
+  }) {
+    const provider = overrides?.provider || allianceDirectoryMode;
+    const city = String(overrides?.city ?? allianceCity ?? "").trim();
+    const sourceMetier = String(overrides?.sourceMetier ?? allianceSourceMetier ?? "").trim();
+    const targetMetiersRaw = String(overrides?.targetMetiersInput ?? allianceTargetMetiersInput ?? "");
+    const radiusKmRaw = String(overrides?.radiusKm ?? allianceRadiusKm ?? "15");
+    const limit = overrides?.limit ?? 10;
     try {
       setIsAlliancesSearching(true);
       clearAllianceRevealQueue();
       setIsAllianceRevealRunning(true);
       setRevealedAllianceProspectIds([]);
       setAllianceProspects([]);
-      const targetMetiers = allianceTargetMetiersInput
+      const targetMetiers = targetMetiersRaw
         .split(",")
         .map((item) => item.trim())
         .filter(Boolean);
@@ -3771,12 +3786,12 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          provider: allianceDirectoryMode === "internal" ? "internal" : "b2b",
-          city: allianceCity,
-          sourceMetier: allianceSourceMetier || null,
+          provider: provider === "internal" ? "internal" : "b2b",
+          city,
+          sourceMetier: sourceMetier || null,
           targetMetiers,
-          radiusKm: Number.parseInt(allianceRadiusKm || "15", 10) || 15,
-          limit: 10,
+          radiusKm: Number.parseInt(radiusKmRaw || "15", 10) || 15,
+          limit,
         }),
       });
       const payload = (await response.json().catch(() => ({}))) as {
@@ -3801,19 +3816,46 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
           allianceRevealTimeoutsRef.current.push(timeoutId);
         });
       }
-      if (allianceDirectoryMode === "internal") {
+      if (provider === "internal") {
         await loadInternalAllianceInvites();
       } else {
         await loadAllianceInvites();
       }
       setApiErrorMessage("");
+      return nextProspects.length;
     } catch (error) {
       const message = error instanceof Error ? error.message : "Recherche alliances impossible.";
       setApiErrorMessage(message);
       setIsAllianceRevealRunning(false);
+      return 0;
     } finally {
       setIsAlliancesSearching(false);
     }
+  }
+
+  async function runOnboardingAllianceDemoSearch() {
+    const { metier1, metier2 } = resolveAllianceMetiers(myProfile);
+    const city = String(allianceCity || myProfile?.ville || profileForm.ville || "Dax").trim();
+    const sourceMetier = String(
+      allianceSourceMetier || resolveOwnerMetierLabel(myProfile, profileForm.metier || "professionnel"),
+    ).trim();
+    const targetMetiersInput = String(allianceTargetMetiersInput || `${metier1}, ${metier2}`).trim();
+    const radiusKm = String(allianceRadiusKm || "15").trim();
+    setAllianceDirectoryMode("external");
+    setAllianceCity(city);
+    setAllianceSourceMetier(sourceMetier);
+    setAllianceTargetMetiersInput(targetMetiersInput);
+    setAllianceRadiusKm(radiusKm);
+    const count = await runAllianceSearch({
+      provider: "external",
+      city,
+      sourceMetier,
+      targetMetiersInput,
+      radiusKm,
+      limit: 6,
+    });
+    setOnboardingAllianceSearched(true);
+    setOnboardingAllianceResultCount(count);
   }
 
   function openAllianceMessageEditor(prospect: SmartScanAllianceProspect) {
@@ -4580,7 +4622,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
   }
 
   const showAdvancedOpsInUserCockpit = false;
-  const onboardingProgress = `${onboardingStep}/5`;
+  const onboardingProgress = `${onboardingStep}/6`;
   const onboardingCanContinueSector =
     onboardingSelectedSectorId !== "other_custom" ||
     String(onboardingCustomMetier || onboardingSectorQuery || "").trim().length > 1;
@@ -4601,7 +4643,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
           <span className="rounded-full border border-white/20 bg-white/10 px-2 py-0.5 text-[10px] font-black text-white/85">{onboardingProgress}</span>
         </div>
         <div className="mt-3 grid grid-cols-5 gap-2">
-          {[1, 2, 3, 4, 5].map((stepIndex) => (
+          {[1, 2, 3, 4, 5, 6].map((stepIndex) => (
             <div
               key={`onboarding-progress-${stepIndex}`}
               className={`h-1.5 rounded-full ${stepIndex <= onboardingStep ? "bg-cyan-300" : "bg-white/15"}`}
@@ -4995,9 +5037,68 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
             <button
               type="button"
               onClick={() => {
-                void completeOnboardingWithFirstMessage();
+                setOnboardingAllianceSearched(false);
+                setOnboardingAllianceResultCount(0);
+                setOnboardingStep(6);
               }}
               disabled={!onboardingMessageDraft.trim() || isOnboardingSaving}
+              className="mt-4 h-12 w-full rounded-2xl bg-gradient-to-r from-emerald-300 to-cyan-300 text-base font-black text-[#10263A] disabled:opacity-45"
+            >
+              Continuer vers la demo Alliances
+            </button>
+          </div>
+        )}
+        {onboardingStep === 6 && (
+          <div className="mt-5">
+            <p className="text-2xl font-black">Demo Alliances (2e methode)</p>
+            <p className="mt-2 text-base text-white/80">
+              Ici tu decouvres l autre canal: trouver des apporteurs via l onglet Alliances (different du scan de ton annuaire).
+            </p>
+            <div className="mt-3 rounded-2xl border border-cyan-300/30 bg-cyan-300/12 p-3 text-[12px] text-white/85">
+              <p>
+                <span className="font-black text-cyan-100">Ville:</span> {allianceCity || myProfile?.ville || profileForm.ville || "Dax"}
+              </p>
+              <p className="mt-1">
+                <span className="font-black text-cyan-100">Metier source:</span>{" "}
+                {allianceSourceMetier || resolveOwnerMetierLabel(myProfile, profileForm.metier || "professionnel")}
+              </p>
+              <p className="mt-1">
+                <span className="font-black text-cyan-100">Rayon:</span> {allianceRadiusKm || "15"} km
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                void runOnboardingAllianceDemoSearch();
+              }}
+              disabled={isAlliancesSearching || isOnboardingSaving}
+              className="mt-4 h-12 w-full rounded-2xl border border-cyan-300/40 bg-cyan-300/20 text-base font-black text-cyan-100 disabled:opacity-45"
+            >
+              {isAlliancesSearching ? "Recherche alliances en cours..." : "Lancer la demo alliances"}
+            </button>
+            {onboardingAllianceSearched && (
+              <motion.div
+                initial={{ opacity: 0, y: 8, scale: 0.99 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                transition={{ duration: 0.24, ease: "easeOut" }}
+                className="mt-3 rounded-2xl border border-emerald-300/35 bg-emerald-300/12 p-3"
+              >
+                <p className="text-sm font-black text-emerald-100">
+                  {onboardingAllianceResultCount > 0
+                    ? `${onboardingAllianceResultCount} prospect(s) alliances trouves.`
+                    : "Recherche lancee. Ajuste ensuite ville/metiers dans l onglet Alliances si besoin."}
+                </p>
+                <p className="mt-1 text-[11px] text-emerald-100/85">
+                  Tu as maintenant vu les 2 canaux: Annuaire perso + Alliances externes.
+                </p>
+              </motion.div>
+            )}
+            <button
+              type="button"
+              onClick={() => {
+                void completeOnboardingWithFirstMessage();
+              }}
+              disabled={isOnboardingSaving}
               className="mt-4 h-12 w-full rounded-2xl bg-gradient-to-r from-emerald-300 to-cyan-300 text-base font-black text-[#10263A] disabled:opacity-45"
             >
               Terminer la demo pour voir la suite
