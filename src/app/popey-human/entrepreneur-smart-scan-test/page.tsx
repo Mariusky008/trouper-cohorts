@@ -7165,7 +7165,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                 <p className="mt-2 rounded-lg border border-amber-300/35 bg-amber-300/10 px-2 py-1 text-[11px] text-amber-100">{apiErrorMessage}</p>
               ) : null}
 
-              <div className="mt-4 flex items-center justify-between">
+              <div className="mt-5 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <p className="text-[16px] font-black tracking-[0.01em] text-white">Opportunites entrantes</p>
                   <span className="rounded-full border border-amber-300/35 bg-amber-300/10 px-2 py-0.5 text-[10px] font-black text-amber-100">
@@ -7206,12 +7206,13 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                     return (
                       <article
                         key={`incoming-${item.id}`}
-                        className={`w-full rounded-[20px] border bg-gradient-to-br px-3 py-3 ${
+                        className={`relative w-full overflow-hidden rounded-[20px] border bg-gradient-to-br px-3 py-3 ${
                           item.status === "converted"
                             ? "border-amber-300/35 from-[#1D213C] to-[#1A2438]"
                             : "border-white/15 from-[#141C2E] to-[#1A2438]"
                         }`}
                       >
+                        <div className="pointer-events-none absolute -right-8 -top-8 h-20 w-20 rounded-full bg-amber-300/10 blur-2xl" />
                         <div className="flex items-start justify-between gap-2">
                           <div className="flex min-w-0 items-center gap-2">
                             <div className="h-10 w-10 shrink-0 rounded-xl border border-amber-300/35 bg-amber-300/10 text-center text-xs font-black leading-10 text-amber-100">
@@ -7265,7 +7266,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                                   <span className="text-[8px] leading-none text-white/45">{stepLabels[idx]}</span>
                                 </div>
                                 {idx < stepIds.length - 1 ? (
-                                  <span className={`h-px w-3 ${idx < currentStepIndex ? "bg-emerald-300/35" : "bg-white/12"}`} />
+                                  <span className={`h-px w-4 ${idx < currentStepIndex ? "bg-emerald-300/35" : "bg-white/12"}`} />
                                 ) : null}
                               </Fragment>
                             );
@@ -7301,7 +7302,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                 </div>
               )}
 
-              <div className="mt-4 flex items-center justify-between">
+              <div className="mt-5 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <p className="text-[17px] font-black text-white">Mes eclaireurs actifs</p>
                   <span className="rounded-full border border-cyan-300/35 bg-cyan-300/12 px-2 py-0.5 text-[10px] font-black text-cyan-100">
@@ -7413,7 +7414,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                               : void ensureEclaireurLink(contact.id, { autoCopy: true })
                           }
                           disabled={loadingEclaireurLinkContactId === contact.id || copyingEclaireurLinkContactId === contact.id}
-                          className="flex-1 rounded-xl border border-[#00D4A0]/35 bg-[#00D4A0]/12 px-2 py-2 text-[12px] font-bold text-[#8CECD4] disabled:opacity-60"
+                          className="flex-1 rounded-xl border border-[#00D4A0]/35 bg-[#00D4A0]/12 px-2 py-2.5 text-[12px] font-bold text-[#8CECD4] disabled:opacity-60"
                         >
                           {loadingEclaireurLinkContactId === contact.id
                             ? "Generation..."
@@ -7426,7 +7427,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                         <button
                           type="button"
                           onClick={() => openEclaireurTemplates(contact.id)}
-                          className="flex-1 rounded-xl border border-white/15 bg-[#1A2438] px-2 py-2 text-[12px] font-bold text-white/80"
+                          className="flex-1 rounded-xl border border-white/15 bg-[#1A2438] px-2 py-2.5 text-[12px] font-bold text-white/80"
                         >
                           💬 Message
                         </button>
@@ -7434,7 +7435,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                           type="button"
                           onClick={() => void removeEclaireur(contact.id)}
                           disabled={isRemovingEclaireurId === contact.id}
-                          className="rounded-xl border border-white/15 bg-[#1A2438] px-2 py-2 text-[12px] font-black text-white/65 disabled:opacity-60"
+                          className="rounded-xl border border-white/15 bg-[#1A2438] px-2 py-2.5 text-[12px] font-black text-white/65 disabled:opacity-60"
                         >
                           {isRemovingEclaireurId === contact.id ? "..." : "···"}
                         </button>
