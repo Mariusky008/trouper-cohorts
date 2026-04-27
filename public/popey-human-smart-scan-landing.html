@@ -247,9 +247,12 @@ section{padding:100px 48px}
 
 footer{background:var(--black);border-top:0.5px solid var(--border);padding:32px 48px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px}
 .footer-logo{font-family:var(--font-d);font-size:20px;letter-spacing:3px;color:var(--teal)}
-.footer-links{display:flex;gap:24px}
-.footer-links a{font-size:11px;color:var(--text-ter);text-decoration:none;transition:color .2s}
-.footer-links a:hover{color:var(--text)}
+.footer-links{display:flex;gap:10px;flex-wrap:wrap}
+.footer-btn{display:inline-flex;align-items:center;justify-content:center;height:38px;padding:0 14px;border-radius:10px;border:0.5px solid var(--border2);background:var(--surface);font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--text-sec);text-decoration:none;transition:all .2s}
+.footer-btn:hover{border-color:var(--teal);color:var(--teal)}
+.footer-contact{display:flex;flex-direction:column;gap:3px;padding:10px 12px;border-radius:10px;border:0.5px solid var(--border2);background:var(--surface);text-decoration:none}
+.footer-contact-label{font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--teal)}
+.footer-contact-line{font-size:11px;color:var(--text-sec);line-height:1.35}
 .footer-copy{font-size:11px;color:var(--text-ter)}
 .legal-section{padding:64px 48px;background:var(--black);border-top:0.5px solid var(--border)}
 .legal-wrap{max-width:1100px;margin:0 auto}
@@ -264,6 +267,7 @@ footer{background:var(--black);border-top:0.5px solid var(--border);padding:32px
 .legal-article li{font-size:13px;color:var(--text-sec);line-height:1.7;margin-bottom:6px}
 .legal-article li::before{content:'— ';color:var(--teal)}
 .legal-note{font-size:12px;color:var(--text-ter);margin-top:14px}
+.legal-fulltext{margin:0;white-space:pre-wrap;font-family:var(--font-b);font-size:13px;line-height:1.75;color:var(--text-sec)}
 
 @keyframes fadeUp{from{opacity:0;transform:translateY(28px)}to{opacity:1;transform:translateY(0)}}
 @keyframes countUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
@@ -1039,105 +1043,21 @@ footer{background:var(--black);border-top:0.5px solid var(--border);padding:32px
       <p class="legal-version">Version en vigueur au 27 avril 2026</p>
     </div>
     <div class="legal-card">
-      <p class="legal-note">Résumé de la plateforme: Popey est une application web et mobile qui permet aux professionnels indépendants de développer leur clientèle via un réseau d'apporteurs d'affaires commissionnés, appelés Éclaireurs. La plateforme utilise un annuaire alimenté par Apify, un système de recommandation et un wallet de commission automatisé.</p>
-
-      <div class="legal-article">
-        <h3>Article 1 — Définitions et Parties</h3>
-        <ul>
-          <li>Popey / la Plateforme: l'application web et mobile Popey, accessible via popey.io ou toute autre URL désignée par l'Éditeur.</li>
-          <li>L'Éditeur: la société éditrice de Popey, dont les coordonnées figurent à l'Article 2.</li>
-          <li>Membre Pro: tout professionnel indépendant inscrit sur Popey pour y recruter des Éclaireurs et développer sa clientèle.</li>
-          <li>Éclaireur: tout particulier ou professionnel inscrit sur Popey afin de recommander des Membres Pro à son entourage en échange d'une commission.</li>
-          <li>Recommandation: toute mise en relation initiée par un Éclaireur entre un Contact et un Membre Pro via la Plateforme.</li>
-          <li>Contact: la personne tierce recommandée par un Éclaireur à un Membre Pro.</li>
-          <li>Client Actif: un Contact devenu client effectif d'un Membre Pro, confirmé par ce dernier via le bouton prévu à cet effet.</li>
-          <li>Commission: la rémunération versée à l'Éclaireur lorsqu'un Contact devient Client Actif.</li>
-          <li>Wallet: le portefeuille électronique Popey créé pour chaque Éclaireur, permettant la collecte et le retrait de ses commissions.</li>
-          <li>Apify: le service tiers de collecte de données utilisé par Popey pour alimenter l'annuaire de professionnels locaux.</li>
-          <li>Mode Radar: la fonctionnalité IA de Popey permettant la préparation automatisée de messages WhatsApp à destination de prospects éclaireurs.</li>
-          <li>Exclusivité Ville/Métier: l'option payante permettant à un Membre Pro d'être le seul référencé pour son métier dans une zone géographique donnée.</li>
-        </ul>
-      </div>
-
-      <div class="legal-article">
-        <h3>Article 2 — Éditeur de la Plateforme</h3>
-        <p>Popey Coffeeshop SAS — Société par Actions Simplifiée (SAS)</p>
-        <p>Siège social: 9 Rue Sully, 40100 Dax</p>
-        <p>SIRET: 995 014 388 00012 — Date de création: 01 décembre 2025</p>
-        <p>Email: contact@popey.io</p>
-        <p>Hébergement: OVH SAS (2 rue Kellermann, 59100 Roubaix) et Vercel Inc. (340 Pine Street, San Francisco, CA 94104, USA)</p>
-      </div>
-
-      <div class="legal-article">
-        <h3>Article 3 — Objet et Champ d'Application</h3>
-        <p>Les présentes CGU/CGV définissent les modalités d'accès et d'utilisation de la Plateforme Popey, ainsi que les droits et obligations des Membres Pro et des Éclaireurs. Toute inscription vaut acceptation pleine et entière des présentes CGU/CGV.</p>
-        <p>L'Éditeur peut modifier les présentes à tout moment. En cas de modification substantielle, les Utilisateurs sont informés par email avec un préavis minimum de 15 jours.</p>
-        <p>Les présentes CGU/CGV sont rédigées en français et soumises au droit français.</p>
-      </div>
-
-      <div class="legal-article">
-        <h3>Article 4 — Inscription et Accès à la Plateforme</h3>
-        <p>Inscription réservée aux personnes majeures ou personnes morales légalement constituées. L'inscription au plan de base est gratuite.</p>
-        <p>Le Membre Pro fournit notamment: identité, email pro, téléphone WhatsApp, métier, ville, moyen de paiement.</p>
-        <p>L'Éclaireur fournit notamment: identité, coordonnées, IBAN ou Stripe Express, vérification d'identité légère.</p>
-        <p>L'Utilisateur est responsable de la confidentialité de ses identifiants et doit signaler toute utilisation non autorisée à contact@popey.io.</p>
-      </div>
-
-      <div class="legal-article">
-        <h3>Article 5 — Description des Services</h3>
-        <p>Plans disponibles: Gratuit, Pro (29€/mois), Exclusif (Pro+).</p>
-        <p>Annuaire Apify: accès aux professionnels locaux complémentaires, données issues de sources publiques, sans garantie d'exhaustivité.</p>
-        <p>Mode Radar: assistance IA pour identifier des synergies métiers, préparer des messages WhatsApp personnalisés et générer des liens wa.me.</p>
-        <ul>
-          <li>Aucun envoi automatique de messages WhatsApp sans intervention de l'Utilisateur.</li>
-          <li>Chaque message doit être validé et envoyé manuellement.</li>
-          <li>L'Utilisateur doit respecter les CGU WhatsApp et la réglementation applicable (RGPD, CNIL).</li>
-        </ul>
-        <p>Exclusivité Ville/Métier: engagement minimum 6 mois renouvelable, tarif garanti pendant l'engagement en cours, niveaux d'exclusivité selon disponibilité.</p>
-        <p>Droit de revente après 6 mois: commission Popey de 15%, vendeur 85%, reprise de l'exclusivité et du réseau existant par l'acheteur.</p>
-      </div>
-
-      <div class="legal-article">
-        <h3>Article 6 — Tarifs et Paiement</h3>
-        <p>Plan Gratuit: 0€/mois. Plan Pro: 29€/mois HT. Plan Exclusif: supplément selon la ville (29€ à 149€/mois HT).</p>
-        <p>Facturation mensuelle, prélèvement le 1er de chaque mois, TVA au taux légal en vigueur.</p>
-        <p>Commissions Éclaireurs via Wallet: confirmation "Client actif", prélèvement mensuel Membre Pro, distribution sous 48h, retrait Éclaireur à partir de 10€ (délai 48h).</p>
-        <p>Niveaux de commission plateforme: Niveau 1 (Priorité Absolue) 3% ; Niveau 2 (Partenaire Certifié) 2%.</p>
-        <p>Système de paiement: Stripe Connect. Popey n'est pas un établissement de crédit ni de paiement.</p>
-        <p>Défaut de paiement: suspension possible des fonctionnalités premium sous 7 jours ; commissions dues maintenues.</p>
-      </div>
-
-      <div class="legal-article">
-        <h3>Article 7 — Obligations et Responsabilités</h3>
-        <p>Le Membre Pro s'engage à confirmer honnêtement les conversions, payer les commissions dues, ne pas contourner la plateforme et respecter la réglementation applicable.</p>
-        <p>L'Éclaireur s'engage à recommander sincèrement, obtenir le consentement du contact et déclarer ses revenus conformément au droit en vigueur.</p>
-        <p>L'Éditeur ne peut être tenu responsable des interruptions techniques, des données tierces (Apify), des litiges commerciaux entre utilisateurs, ni des conséquences des envois WhatsApp réalisés par les utilisateurs.</p>
-      </div>
-
-      <div class="legal-article">
-        <h3>Article 8 — Données Personnelles et RGPD</h3>
-        <p>Données collectées: identification, données professionnelles, données d'usage, données financières (via Stripe), données issues d'Apify.</p>
-        <p>Finalités: gestion des comptes, services, paiements, communication, amélioration, obligations légales et fiscales.</p>
-        <p>Droits RGPD: accès, rectification, effacement, portabilité, opposition, retrait du consentement via contact@popey.io.</p>
-        <p>Conservation: durée d'utilisation + 3 ans (gestion commerciale), 10 ans (données financières/fiscales).</p>
-      </div>
-
-      <div class="legal-article">
-        <h3>Article 9 à 12 — Propriété, Résiliation, Litiges, Divers</h3>
-        <p>Propriété intellectuelle: tous les éléments Popey sont protégés et restent la propriété exclusive de l'Éditeur.</p>
-        <p>Résiliation: possible à tout moment par l'Utilisateur ; possible par l'Éditeur en cas de violation grave, fraude, fausse déclaration ou défaut de paiement persistant.</p>
-        <p>Droit applicable: droit français. Recherche préalable d'une solution amiable via contact@popey.io avant saisine juridictionnelle.</p>
-        <p>Intégralité, nullité partielle, non-renonciation et mises à jour des présentes selon les modalités décrites.</p>
-      </div>
-
-      <p class="legal-note">Document établi le 27 avril 2026 — Popey · contact@popey.academy — popey.academy</p>
+      <pre id="cgv-fulltext" class="legal-fulltext">Chargement des CGV...</pre>
     </div>
   </div>
 </section>
 
 <footer>
   <div class="footer-logo">POPEY</div>
-  <div class="footer-links"><a href="#cgv">CGV</a><a href="#">Mentions légales</a><a href="#">Confidentialité</a><a href="#">Contact</a><a href="https://popey.academy">popey.academy</a></div>
+  <div class="footer-links">
+    <a href="#cgv" class="footer-btn">CGV-CGU</a>
+    <a href="mailto:contact@popey.academy?subject=Contact%20Popey" class="footer-contact">
+      <span class="footer-contact-label">Contact</span>
+      <span class="footer-contact-line">contact@popey.academy</span>
+      <span class="footer-contact-line">3 rue sully, 40100 Dax</span>
+    </a>
+  </div>
   <div class="footer-copy">© 2026 Popey Academy. Tous droits réservés.</div>
 </footer>
 
@@ -1602,6 +1522,21 @@ function checkVillePrice(val) {
     placesEl.style.color = 'var(--teal)';
   }
 }
+</script>
+
+<script>
+(async function loadCgvFullText() {
+  const target = document.getElementById('cgv-fulltext');
+  if (!target) return;
+  try {
+    const response = await fetch('/cgv-popey-2026-04-27.txt', { cache: 'no-store' });
+    const text = await response.text();
+    if (!response.ok || !text.trim()) throw new Error('missing');
+    target.textContent = text;
+  } catch {
+    target.textContent = 'CGV indisponibles temporairement. Rechargez la page.';
+  }
+})();
 </script>
 
 </body>

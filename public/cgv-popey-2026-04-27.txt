@@ -1,0 +1,306 @@
+POPEY
+Conditions Générales d'Utilisation et de Vente
+Version en vigueur au 27 avril 2026
+ℹ
+Résumé de la plateforme
+Popey est une application web et mobile qui permet aux professionnels indépendants de développer leur clientèle via un réseau d'apporteurs d'affaires commissionnés, appelés Éclaireurs. La plateforme utilise un annuaire alimenté par Apify, un système de recommandation et un wallet de commission automatisé.
+
+ARTICLE 1 — DÉFINITIONS ET PARTIES
+Aux fins des présentes Conditions Générales, les termes suivants ont le sens qui leur est attribué ci-dessous :
+
+Popey / la Plateforme
+L'application web et mobile Popey, accessible via popey.io ou toute autre URL désignée par l'Éditeur.
+L'Éditeur
+La société éditrice de Popey, dont les coordonnées figurent à l'Article 2.
+Membre Pro
+Tout professionnel indépendant inscrit sur Popey pour y recruter des Éclaireurs et développer sa clientèle.
+Éclaireur
+Tout particulier ou professionnel inscrit sur Popey afin de recommander des Membres Pro à son entourage en échange d'une commission.
+Recommandation
+Toute mise en relation initiée par un Éclaireur entre un Contact et un Membre Pro via la Plateforme.
+Contact
+La personne tierce recommandée par un Éclaireur à un Membre Pro.
+Client Actif
+Un Contact devenu client effectif d'un Membre Pro, confirmé par ce dernier via le bouton prévu à cet effet.
+Commission
+La rémunération versée à l'Éclaireur lorsqu'un Contact devient Client Actif.
+Wallet
+Le portefeuille électronique Popey créé pour chaque Éclaireur, permettant la collecte et le retrait de ses commissions.
+Apify
+Le service tiers de collecte de données utilisé par Popey pour alimenter l'annuaire de professionnels locaux.
+Mode Radar
+La fonctionnalité IA de Popey permettant la préparation automatisée de messages WhatsApp à destination de prospects éclaireurs.
+Exclusivité Ville/Métier
+L'option payante permettant à un Membre Pro d'être le seul référencé pour son métier dans une zone géographique donnée.
+
+ARTICLE 2 — ÉDITEUR DE LA PLATEFORME
+La Plateforme Popey est éditée par :
+
+Popey Coffeeshop SAS
+Forme juridique : Société par Actions Simplifiée (SAS)
+Siège social : 9 Rue Sully, 40100 Dax
+SIRET : 995 014 388 00012
+Date de création : 01 décembre 2025
+Email : contact@popey.io
+Hébergement : OVH SAS (2 rue Kellermann, 59100 Roubaix) & Vercel Inc. (340 Pine Street, San Francisco, CA 94104, USA)
+
+ARTICLE 3 — OBJET ET CHAMP D'APPLICATION
+Les présentes Conditions Générales d'Utilisation et de Vente (ci-après « CGU/CGV ») ont pour objet de définir les modalités d'accès et d'utilisation de la Plateforme Popey, ainsi que les droits et obligations des Membres Pro et des Éclaireurs (ci-après collectivement « les Utilisateurs »).
+Toute inscription sur la Plateforme vaut acceptation pleine et entière des présentes CGU/CGV. L'Éditeur se réserve le droit de modifier les présentes à tout moment. Les Utilisateurs seront informés de toute modification substantielle par email, avec un préavis minimum de 15 jours.
+Les présentes CGU/CGV sont rédigées en français et soumises au droit français.
+
+ARTICLE 4 — INSCRIPTION ET ACCÈS À LA PLATEFORME
+4.1 Conditions d'inscription
+L'accès à la Plateforme est réservé aux personnes physiques majeures ou aux personnes morales légalement constituées. L'inscription est gratuite pour le plan de base.
+L'Utilisateur s'engage à fournir des informations exactes, complètes et à jour lors de son inscription et pendant toute la durée de son utilisation.
+4.2 Compte Membre Pro
+Pour créer un compte Membre Pro, l'Utilisateur doit fournir :
+Prénom, nom et adresse email professionnelle
+Numéro de téléphone WhatsApp
+Métier exercé et ville d'activité
+Moyen de paiement (carte bancaire) pour l'abonnement et les commissions
+
+Important : Le Membre Pro est seul responsable de la véracité des informations relatives à son activité professionnelle. Toute déclaration inexacte pourra entraîner la suspension immédiate du compte.
+
+4.3 Compte Éclaireur
+Pour créer un compte Éclaireur, l'Utilisateur doit fournir :
+Prénom, nom et coordonnées de contact
+IBAN ou compte Stripe Express pour le versement des commissions
+Une vérification d'identité légère conforme aux exigences de Stripe Connect
+
+4.4 Sécurité des comptes
+L'Utilisateur est responsable de la confidentialité de ses identifiants. Il s'engage à notifier immédiatement l'Éditeur de toute utilisation non autorisée de son compte à l'adresse : contact@popey.io.
+
+ARTICLE 5 — DESCRIPTION DES SERVICES
+5.1 Services disponibles selon le plan
+
+Fonctionnalité
+GRATUIT
+PRO — 29€/mois
+EXCLUSIF — Pro+
+Contacts activés / mois
+5
+Illimités
+Illimités
+Éclaireurs maximum
+2
+Illimités
+Illimités
+Messages IA / mois
+10
+Illimités
+Illimités
+Annuaire Apify
+Non
+Oui
+Oui
+Mode Radar IA
+Non
+Oui
+Oui
+Communauté Popey
+Partiel
+Complet
+Complet
+Profil public partageable
+Non
+Oui
+Oui
+Exclusivité ville/métier
+Non
+Non
+Oui
+Wallet commissions automatisé
+Oui
+Oui
+Oui
+Badge Exclusif
+Non
+Non
+Oui
+Droit de revente de place
+Non
+Non
+Oui (après 6 mois)
+14 jours Pro offerts
+Oui
+—
+—
+
+5.2 Annuaire Apify
+La fonctionnalité Apify permet aux Membres Pro d'accéder à un annuaire de professionnels locaux complémentaires à leur métier, en vue de les recruter comme Éclaireurs. Les données sont collectées auprès de sources publiques.
+L'Éditeur ne garantit pas l'exhaustivité ni l'exactitude des données collectées par Apify. Le Membre Pro reste responsable de vérifier les informations avant tout contact.
+
+L'utilisation des données Apify est strictement limitée au recrutement d'Éclaireurs dans le cadre de la Plateforme. Toute utilisation commerciale détournée est interdite.
+
+5.3 Mode Radar et préparation de messages WhatsApp
+Le Mode Radar est une fonctionnalité d'assistance utilisant l'intelligence artificielle pour :
+Identifier automatiquement les synergies métiers les plus pertinentes
+Préparer des messages WhatsApp personnalisés à destination de prospects éclaireurs
+Générer des liens wa.me permettant l'ouverture de WhatsApp avec le message pré-rempli
+
+L'Éditeur précise expressément que :
+Popey ne procède à aucun envoi automatique de messages WhatsApp sans intervention de l'Utilisateur
+Chaque message doit être validé et envoyé manuellement par l'Utilisateur
+L'utilisation du Mode Radar doit respecter les Conditions d'Utilisation de WhatsApp et les réglementations applicables en matière de prospection commerciale (RGPD, loi CNIL)
+
+5.4 Exclusivité Ville/Métier
+Le plan Exclusif permet à un Membre Pro d'être le seul professionnel de son métier référencé dans sa ville sur la Plateforme, selon le tarif applicable à sa zone géographique.
+L'exclusivité est accordée pour une durée minimum de 6 mois renouvelables. Le prix est garanti pendant toute la durée de l'engagement en cours.
+Un seul Membre Pro par métier par ville peut détenir une exclusivité Niveau 1 (Priorité Absolue). Des places Niveau 2 (Partenaire Certifié, 3 à 5 places par ville) sont disponibles au tarif standard Pro avec commission.
+
+5.5 Droit de revente de place Exclusif
+Après 6 mois d'exclusivité, le Membre Pro peut décider de revendre sa place à un confrère du même métier dans la même ville, selon les modalités suivantes :
+Le Membre Pro fixe librement le prix de revente dans l'application Popey
+Popey notifie les confrères éligibles de la disponibilité de la place
+Popey prélève une commission de 15% sur le montant de la transaction de revente
+Le vendeur perçoit 85% du prix de revente, versé via le Wallet Popey
+L'acheteur reprend l'exclusivité avec l'ensemble du réseau d'Éclaireurs existant
+
+ARTICLE 6 — TARIFS ET CONDITIONS DE PAIEMENT
+6.1 Abonnements Membres Pro
+Les tarifs des abonnements sont les suivants, hors taxes, en euros :
+Plan Gratuit : 0€/mois — sans engagement, sans carte bancaire requise
+Plan Pro : 29€/mois HT — sans engagement, résiliable à tout moment
+Plan Exclusif : tarif Pro + supplément selon la ville (de 29€ à 149€/mois HT selon la taille de la ville)
+
+Les prix s'entendent hors TVA applicable au taux légal en vigueur. La facturation est mensuelle, le prélèvement intervenant le 1er de chaque mois.
+6.2 Tarification Exclusivité par ville
+Le supplément d'exclusivité est fixé par l'Éditeur en fonction de la population de la ville et du bassin d'activité. La grille tarifaire complète est disponible sur la Plateforme. Toute ville non répertoriée dans la grille bénéficie d'un tarif de lancement de 29€/mois.
+6.3 Commissions Éclaireurs — Système Wallet
+Le système de commission fonctionne selon les modalités suivantes :
+Le Membre Pro confirme la conversion d'un Contact en Client Actif via le bouton « ✓ Client actif » dans l'application
+La commission correspondante est mise en attente dans le Wallet de l'Éclaireur concerné
+Le 1er de chaque mois, Popey prélève automatiquement sur la carte du Membre Pro le total des commissions validées, auquel s'ajoute le montant de l'abonnement
+Les fonds sont distribués automatiquement aux Wallets des Éclaireurs dans les 48 heures suivant le prélèvement
+L'Éclaireur peut retirer son solde à tout moment via un virement bancaire (délai : 48h, minimum : 10€)
+
+Le taux de commission est défini librement entre le Membre Pro et chaque Éclaireur lors de l'établissement de la relation. Les commissions de la Plateforme sont les suivantes :
+Niveau 1 (Priorité Absolue) : 3% du montant de chaque transaction client signée
+Niveau 2 (Partenaire Certifié) : 2% du montant de chaque transaction client signée
+
+ℹ
+Système de paiement sécurisé
+Les flux financiers sont gérés par Stripe Connect, qui porte la licence de paiement. Popey n'est pas un établissement de crédit ni un établissement de paiement. Stripe Inc. est responsable de la conformité réglementaire des opérations de paiement.
+
+6.4 Fiscalité des commissions Éclaireurs
+Les commissions perçues par les Éclaireurs constituent des revenus imposables. L'Éditeur génère automatiquement un récapitulatif annuel des sommes perçues pour chaque Éclaireur. Au-delà de 500€ de commissions annuelles, l'Éclaireur est automatiquement informé de son obligation déclarative auprès de l'administration fiscale française.
+L'Éditeur procède à la déclaration automatique des revenus des Éclaireurs auprès de l'administration fiscale conformément à l'article 242 bis du Code général des impôts.
+
+6.5 Défaut de paiement
+En cas d'échec du prélèvement mensuel, l'Éditeur se réserve le droit de suspendre l'accès aux fonctionnalités premium dans un délai de 7 jours. Les commissions dues aux Éclaireurs restent dues et seront prélevées dès régularisation.
+
+ARTICLE 7 — OBLIGATIONS ET RESPONSABILITÉS DES UTILISATEURS
+7.1 Obligations des Membres Pro
+Le Membre Pro s'engage à :
+Confirmer honnêtement et sans délai la conversion d'un Contact en Client Actif
+Payer les commissions dues aux Éclaireurs via le système Wallet Popey
+Ne pas contacter directement les Contacts fournis par un Éclaireur en dehors de la Plateforme pour s'exonérer du paiement de la commission
+Respecter la réglementation en vigueur dans l'exercice de son activité professionnelle
+Ne pas utiliser les données Apify à des fins autres que le recrutement d'Éclaireurs
+Obtenir les consentements nécessaires avant tout envoi de messages commerciaux
+
+Toute tentative de contournement du système de commission (contact direct avec les prospects en dehors de la Plateforme, fausse déclaration de non-conversion) constitue une violation grave des présentes CGU et peut donner lieu à la résiliation immédiate du compte et à des poursuites judiciaires.
+
+7.2 Obligations des Éclaireurs
+L'Éclaireur s'engage à :
+Ne soumettre que des recommandations sincères et pertinentes, portant sur des personnes ayant exprimé un besoin réel
+Obtenir le consentement de la personne recommandée avant de transmettre ses coordonnées
+Ne pas soumettre de fausses recommandations dans le but de percevoir des commissions frauduleuses
+Déclarer ses revenus de commissions conformément à la législation fiscale applicable
+
+7.3 Responsabilité de l'Éditeur
+L'Éditeur met tout en œuvre pour assurer la disponibilité et la sécurité de la Plateforme. Cependant, il ne saurait être tenu responsable :
+Des interruptions de service dues à des opérations de maintenance, à des pannes techniques ou à des événements de force majeure
+De l'exactitude des données collectées par des services tiers (Apify, annuaires publics)
+Des litiges commerciaux entre Membres Pro et Éclaireurs concernant la définition ou le paiement des commissions
+De l'utilisation frauduleuse de la Plateforme par un Utilisateur
+Des conséquences de l'envoi de messages WhatsApp par les Utilisateurs
+
+ARTICLE 8 — DONNÉES PERSONNELLES ET RGPD
+8.1 Responsable du traitement
+L'Éditeur est responsable du traitement des données personnelles collectées dans le cadre de l'utilisation de la Plateforme.
+8.2 Données collectées
+Dans le cadre de l'utilisation de la Plateforme, les données suivantes sont collectées :
+Données d'identification : nom, prénom, email, numéro de téléphone
+Données professionnelles : métier, ville d'activité, données d'activité sur la Plateforme
+Données financières : coordonnées bancaires (gérées exclusivement par Stripe — Popey n'a pas accès aux données bancaires complètes)
+Données de navigation et d'utilisation de la Plateforme
+Données issues d'Apify : noms et coordonnées de professionnels issus d'annuaires publics
+
+8.3 Finalités des traitements
+Les données sont collectées pour les finalités suivantes :
+Gestion des comptes Utilisateurs et fourniture des services de la Plateforme
+Traitement des paiements et gestion du système Wallet
+Communication relative à l'utilisation de la Plateforme
+Amélioration des services et personnalisation de l'expérience
+Obligations légales, notamment fiscales (déclaration des revenus Éclaireurs)
+
+8.4 Base légale des traitements
+Les traitements reposent sur :
+L'exécution du contrat : pour la gestion des comptes et des paiements
+L'obligation légale : pour les déclarations fiscales
+L'intérêt légitime : pour l'amélioration des services et la sécurité de la Plateforme
+Le consentement : pour les communications marketing (révocable à tout moment)
+
+8.5 Durée de conservation
+Les données sont conservées pendant la durée d'utilisation de la Plateforme, augmentée de 3 ans après la clôture du compte pour les données de gestion commerciale, et de 10 ans pour les données financières et fiscales.
+8.6 Droits des Utilisateurs
+Conformément au RGPD, chaque Utilisateur dispose des droits suivants :
+Droit d'accès à ses données personnelles
+Droit de rectification des données inexactes
+Droit à l'effacement (sous réserve des obligations légales de conservation)
+Droit à la portabilité des données
+Droit d'opposition au traitement
+Droit de retrait du consentement
+
+Ces droits peuvent être exercés par email à : contact@popey.io ou par courrier à l'adresse du siège social. L'Éditeur s'engage à répondre dans un délai maximum de 30 jours.
+L'Utilisateur peut également introduire une réclamation auprès de la CNIL (www.cnil.fr).
+
+8.7 Transferts de données
+Certains prestataires techniques (notamment Stripe, dont les serveurs peuvent être localisés hors de l'Union Européenne) peuvent traiter des données. Ces transferts s'effectuent dans le cadre de garanties appropriées (clauses contractuelles types de la Commission européenne ou décision d'adéquation).
+
+ARTICLE 9 — PROPRIÉTÉ INTELLECTUELLE
+L'ensemble des éléments constituant la Plateforme Popey (marque, logo, interface, algorithmes, contenus, code source) est la propriété exclusive de l'Éditeur et est protégé par les lois applicables en matière de propriété intellectuelle.
+Toute reproduction, représentation, modification, publication, adaptation ou exploitation de tout ou partie de ces éléments, par quelque moyen ou procédé que ce soit, sans l'autorisation préalable et écrite de l'Éditeur, est strictement interdite.
+L'accès à la Plateforme ne confère à l'Utilisateur aucun droit de propriété intellectuelle sur les éléments qui la composent.
+
+ARTICLE 10 — DURÉE ET RÉSILIATION
+10.1 Durée
+Les présentes CGU/CGV sont conclues pour une durée indéterminée à compter de l'inscription de l'Utilisateur sur la Plateforme.
+10.2 Résiliation par l'Utilisateur
+L'Utilisateur peut résilier son compte à tout moment depuis les paramètres de son profil ou par email à contact@popey.io. La résiliation prend effet à la fin de la période d'abonnement en cours. Aucun remboursement prorata temporis ne sera effectué.
+En cas de résiliation, les commissions dues aux Éclaireurs sur des conversions confirmées avant la résiliation restent dues et seront versées dans les délais habituels.
+10.3 Résiliation par l'Éditeur
+L'Éditeur peut suspendre ou résilier le compte d'un Utilisateur sans préavis en cas de :
+Violation grave ou répétée des présentes CGU/CGV
+Utilisation frauduleuse de la Plateforme
+Fausse déclaration lors de l'inscription
+Comportement nuisible à l'égard d'autres Utilisateurs
+Défaut de paiement persistant au-delà de 30 jours
+
+10.4 Effets de la résiliation
+À la résiliation du compte, toutes les données de l'Utilisateur seront supprimées dans un délai de 90 jours, sous réserve des obligations légales de conservation. Le solde du Wallet de l'Éclaireur lui sera versé dans les 30 jours suivant la résiliation.
+
+ARTICLE 11 — DROIT APPLICABLE ET RÈGLEMENT DES LITIGES
+11.1 Droit applicable
+Les présentes CGU/CGV sont soumises au droit français.
+11.2 Règlement amiable
+En cas de litige, l'Utilisateur est invité à contacter en premier lieu le service client de Popey à l'adresse contact@popey.io. Les parties s'efforceront de résoudre tout différend à l'amiable dans un délai de 30 jours.
+11.3 Médiation
+Conformément aux dispositions du Code de la consommation, l'Utilisateur ayant la qualité de consommateur peut recourir gratuitement à un service de médiation de la consommation. [Nom et coordonnées du médiateur à compléter].
+11.4 Juridiction compétente
+À défaut de règlement amiable, tout litige sera soumis à la compétence exclusive des tribunaux français compétents.
+
+ARTICLE 12 — DISPOSITIONS DIVERSES
+12.1 Intégralité
+Les présentes CGU/CGV constituent l'intégralité de l'accord entre l'Éditeur et l'Utilisateur et remplacent tout accord antérieur relatif à l'utilisation de la Plateforme.
+12.2 Nullité partielle
+Si une disposition des présentes est déclarée nulle ou inapplicable, les autres dispositions demeurent en vigueur.
+12.3 Non-renonciation
+Le fait pour l'Éditeur de ne pas se prévaloir d'une disposition des présentes CGU/CGV ne constitue pas une renonciation à se prévaloir de cette disposition à l'avenir.
+12.4 Mises à jour
+L'Éditeur se réserve le droit de modifier les présentes CGU/CGV à tout moment. En cas de modification substantielle, les Utilisateurs seront notifiés par email avec un préavis de 15 jours minimum. La poursuite de l'utilisation de la Plateforme après ce délai vaut acceptation des nouvelles conditions.
+
+Document établi le 27 avril 2026 — Popey
+contact@popey.academy— popey.academy

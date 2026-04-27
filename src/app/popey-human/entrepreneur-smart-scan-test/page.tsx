@@ -460,6 +460,7 @@ const RADAR_MOCK_SEED: Array<{
   { fullName: "Lucie Darracq", metier: "Deménageuse", distanceKm: 7.5, phoneE164: "+33640887712", synergyReason: "capte les familles en transition logement", colorTone: "green" },
   { fullName: "Pierre Castets", metier: "Assureur", distanceKm: 1.9, phoneE164: "+33622997731", synergyReason: "clients acheteurs avec besoins cross-sell", colorTone: "amber" },
 ];
+const RADAR_BLOCKED_PHONE_SET = new Set(["33612345678"]);
 
 const CONTACTS: DailyContact[] = [
   {
@@ -947,6 +948,20 @@ function isLikelyWhatsAppNumber(phone?: string | null) {
   return normalized.startsWith("336") || normalized.startsWith("337");
 }
 
+function isBlockedRadarWhatsAppNumber(phone?: string | null) {
+  const normalized = normalizePhoneForWhatsApp(phone);
+  if (!normalized) return false;
+  return RADAR_BLOCKED_PHONE_SET.has(normalized);
+}
+
+function applyRadarMessageTemplate(template: string, fullName: string) {
+  const firstName = String(fullName || "").split(" ").filter(Boolean)[0] || "Bonjour";
+  return template
+    .replaceAll("{{prenom}}", firstName)
+    .replaceAll("{prenom}", firstName)
+    .replaceAll("[prenom]", firstName);
+}
+
 function referralStatusLabel(status: string) {
   if (status === "submitted") return "Opportunite recue";
   if (status === "validated") return "RDV pris";
@@ -1235,6 +1250,7 @@ export default function EntrepreneurSmartScanTestPage() {
   const [radarProspects, setRadarProspects] = useState<RadarProspect[]>([]);
   const [radarSelectedIds, setRadarSelectedIds] = useState<string[]>([]);
   const [radarSentIds, setRadarSentIds] = useState<string[]>([]);
+  const [radarBulkMessageDraft, setRadarBulkMessageDraft] = useState("");
   const [radarSynergyFilter, setRadarSynergyFilter] = useState("all");
   const [radarRunId, setRadarRunId] = useState<string | null>(null);
   const allianceRevealTimeoutsRef = useRef<number[]>([]);
@@ -1574,6 +1590,7 @@ export default function EntrepreneurSmartScanTestPage() {
   }, [radarProspects]);
   const radarSelectedCount = radarSelectedIds.length;
   const radarSentCount = radarSentIds.length;
+  const radarSelectedUnsentCount = radarSelectedIds.filter((id) => !radarSentIds.includes(id)).length;
   const filteredAllianceInvites = useMemo(() => {
     if (allianceInviteFilter === "all") return activeAllianceInvites;
     return activeAllianceInvites.filter((item) => item.status === allianceInviteFilter);
@@ -4162,7 +4179,9 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
           } satisfies RadarProspect;
         }),
       );
-      const nonEmptyPhone = prepared.filter((item) => isLikelyWhatsAppNumber(item.phoneE164));
+      const nonEmptyPhone = prepared.filter(
+        (item) => isLikelyWhatsAppNumber(item.phoneE164) && !isBlockedRadarWhatsAppNumber(item.phoneE164),
+      );
       const finalList = nonEmptyPhone.slice(0, RADAR_TARGET_COUNT);
       if (!finalList.length) {
         throw new Error("Aucun numero WhatsApp mobile exploitable trouve.");
@@ -4170,6 +4189,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
       setRadarProspects(finalList);
       setRadarSelectedIds(finalList.slice(0, Math.min(RADAR_DEFAULT_SELECTED_COUNT, finalList.length)).map((item) => item.id));
       setRadarSentIds([]);
+      setRadarBulkMessageDraft(finalList[0]?.messageDraft || "");
       setRadarSynergyFilter("all");
       setShowRadarMode(true);
       await fetch("/api/popey-human/smart-scan/radar/event", {
@@ -4193,6 +4213,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
       setRadarProspects(fallback);
       setRadarSelectedIds(fallback.slice(0, RADAR_DEFAULT_SELECTED_COUNT).map((item) => item.id));
       setRadarSentIds([]);
+      setRadarBulkMessageDraft(fallback[0]?.messageDraft || "");
       setRadarSynergyFilter("all");
       setShowRadarMode(true);
       if (radarRunIdForThisRun) {
@@ -4224,9 +4245,10 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
       setApiErrorMessage(`Numero WhatsApp non compatible pour ${prospect.fullName}.`);
       return;
     }
-    const fallbackUrl = cleanPhone
-      ? `https://wa.me/${cleanPhone.replace("+", "")}?text=${encodeURIComponent(prospect.messageDraft)}`
-      : "";
+    if (isBlockedRadarWhatsAppNumber(cleanPhone)) {
+      setApiErrorMessage(`Numero placeholder detecte pour ${prospect.fullName}. Contact exclu du batch.`);
+      return;
+    }
     const openUrl = (url: string) => {
       if (typeof window !== "undefined" && url) {
         window.open(url, "_blank", "noopener,noreferrer");
@@ -4253,39 +4275,63 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
           openUrl(result.whatsappUrl);
           return;
         }
-        if (fallbackUrl) {
-          openUrl(fallbackUrl);
-          return;
-        }
         setApiErrorMessage(result?.error || `Numero WhatsApp manquant pour ${prospect.fullName}.`);
       })
       .catch(() => {
-        if (fallbackUrl) {
-          openUrl(fallbackUrl);
-          return;
-        }
-        setApiErrorMessage(`Numero WhatsApp manquant pour ${prospect.fullName}.`);
+        setApiErrorMessage(`Verification WhatsApp impossible pour ${prospect.fullName}. Reessaie dans quelques secondes.`);
       });
   }
 
   function openSelectedRadarWhatsApp() {
     const queue = radarProspects.filter((item) => radarSelectedIds.includes(item.id) && !radarSentIds.includes(item.id));
     if (!queue.length) return;
+    const eligibleQueue = queue.filter(
+      (item) => isLikelyWhatsAppNumber(item.phoneE164) && !isBlockedRadarWhatsAppNumber(item.phoneE164),
+    );
+    const skipped = queue.filter((item) => !eligibleQueue.some((candidate) => candidate.id === item.id));
+    if (skipped.length) {
+      const skippedNames = skipped.slice(0, 3).map((item) => item.fullName.split(" ")[0] || item.fullName).join(", ");
+      setApiErrorMessage(
+        `${skipped.length} contact(s) exclus (numero invalide/placeholder): ${skippedNames}${skipped.length > 3 ? "..." : ""}.`,
+      );
+    }
+    if (!eligibleQueue.length) return;
     void postRadarEvent({
       eventType: "send_declared",
       metadata: {
         selectedCount: radarSelectedIds.length,
-        sentCount: radarSentIds.length + queue.length,
+        sentCount: radarSentIds.length + eligibleQueue.length,
       },
       clientEventId: `radar-send-batch-${Date.now()}`,
     });
-    queue.forEach((prospect, idx) => {
+    eligibleQueue.forEach((prospect, idx) => {
       if (typeof window !== "undefined") {
         window.setTimeout(() => {
           openRadarWhatsApp(prospect);
         }, idx * 380);
       }
     });
+  }
+
+  function applyBulkRadarMessageToSelection() {
+    const template = String(radarBulkMessageDraft || "").trim();
+    if (!template) {
+      setApiErrorMessage("Ajoute un message avant de l'appliquer aux selectionnes.");
+      return;
+    }
+    const selectedSet = new Set(radarSelectedIds);
+    if (!selectedSet.size) {
+      setApiErrorMessage("Selectionne au moins un contact pour appliquer le message.");
+      return;
+    }
+    setRadarProspects((currentList) =>
+      currentList.map((item) =>
+        selectedSet.has(item.id)
+          ? { ...item, messageDraft: applyRadarMessageTemplate(template, item.fullName).trim() }
+          : item,
+      ),
+    );
+    setApiErrorMessage("");
   }
 
   function openAllianceMessageEditor(prospect: SmartScanAllianceProspect) {
@@ -8316,8 +8362,8 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
       {showAlliancesPanel && showRadarMode && (
         <div className="fixed inset-0 z-[69] flex items-start justify-center bg-black/70 px-0 pb-0 pt-0 backdrop-blur-sm sm:px-4 sm:pb-0 sm:pt-16">
           <section
-            className="relative h-[calc(100dvh-92px)] max-h-[calc(100dvh-92px)] w-full overflow-y-auto rounded-none border-0 bg-[#07090F] px-4 pb-28 sm:h-auto sm:max-h-[90vh] sm:max-w-lg sm:rounded-3xl sm:border sm:border-white/15"
-            style={{ paddingTop: "calc(env(safe-area-inset-top) + 12px)" }}
+            className="relative h-[calc(100dvh-92px)] max-h-[calc(100dvh-92px)] w-full overflow-y-auto rounded-none border-0 bg-[#07090F] px-4 pb-32 sm:h-auto sm:max-h-[90vh] sm:max-w-lg sm:rounded-3xl sm:border sm:border-white/15"
+            style={{ paddingTop: "calc(env(safe-area-inset-top) + 16px)" }}
           >
             <div className="pointer-events-none absolute left-1/2 top-[36%] h-[360px] w-[360px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(circle,rgba(0,212,160,0.1)_0%,transparent_62%)]" />
 
@@ -8336,10 +8382,10 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                   {radarProspects.length} prêts
                 </span>
               </div>
-              <p className="mt-1 text-[13px] leading-[1.35] text-white/70">
+              <p className="mt-2 text-[13px] leading-[1.45] text-white/70">
                 L'IA a analysé votre profil <span className="font-bold text-white">{radarSourceContext.sourceMetier} · {radarSourceContext.city}</span> et préparé 10 WhatsApp personnalisés avec les meilleures synergies locales.
               </p>
-              <div className="mt-3 flex gap-1.5 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              <div className="mt-4 flex gap-2 overflow-x-auto pb-1.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                 <button
                   type="button"
                   onClick={() => setRadarSynergyFilter("all")}
@@ -8360,8 +8406,8 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
               </div>
             </header>
 
-            <div className="relative z-[1] mt-3 rounded-2xl border border-white/10 bg-[#141C2E] px-4 py-3">
-              <div className="grid grid-cols-4 gap-2 text-center">
+            <div className="relative z-[1] mt-4 rounded-2xl border border-white/10 bg-[#141C2E] px-4 py-4">
+              <div className="grid grid-cols-4 gap-3 text-center">
                 <div>
                   <p className="text-[26px] font-black leading-none text-[#00D4A0]">{radarSelectedCount}</p>
                   <p className="mt-1 text-[9px] font-bold uppercase tracking-[0.08em] text-white/35">Sélectionnés</p>
@@ -8381,34 +8427,56 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
               </div>
             </div>
 
+            <div className="relative z-[1] mt-4 rounded-2xl border border-[#00D4A0]/20 bg-[#0E1420] px-4 py-3.5">
+              <p className="text-[11px] font-black uppercase tracking-[0.08em] text-[#00D4A0]/80">Message commun (sélection)</p>
+              <p className="mt-1 text-[12px] text-white/55">Utilise {"{prenom}"} pour personnaliser automatiquement chaque message.</p>
+              <textarea
+                value={radarBulkMessageDraft}
+                onChange={(event) => setRadarBulkMessageDraft(event.target.value)}
+                rows={4}
+                className="mt-2.5 w-full resize-none rounded-xl border border-white/15 bg-black/25 px-3 py-2.5 text-[12px] leading-[1.45] text-white outline-none transition focus:border-[#00D4A0]/45"
+                placeholder="Ex: Bonjour {prenom}, je suis ..."
+              />
+              <button
+                type="button"
+                onClick={applyBulkRadarMessageToSelection}
+                disabled={!radarSelectedCount}
+                className="mt-2.5 inline-flex h-10 items-center justify-center rounded-xl border border-[#00D4A0]/35 bg-[#00D4A0]/12 px-4 text-[12px] font-black text-[#00D4A0] disabled:opacity-40"
+              >
+                Appliquer aux {radarSelectedCount} sélectionnés
+              </button>
+            </div>
+
             <button
               type="button"
               onClick={openSelectedRadarWhatsApp}
-              disabled={!radarSelectedIds.some((id) => !radarSentIds.includes(id))}
-              className="relative z-[1] mt-3 flex h-[70px] w-full items-center justify-center gap-3 rounded-2xl bg-gradient-to-br from-[#25D366] to-[#1AAE53] px-4 text-[19px] font-black tracking-[0.01em] text-white shadow-[0_12px_30px_rgba(37,211,102,0.35)] disabled:opacity-45"
+              disabled={!radarSelectedUnsentCount}
+              className="relative z-[1] mt-4 flex h-[70px] w-full items-center justify-center gap-3 rounded-2xl bg-gradient-to-br from-[#25D366] to-[#1AAE53] px-4 text-[19px] font-black tracking-[0.01em] text-white shadow-[0_12px_30px_rgba(37,211,102,0.35)] disabled:opacity-45"
             >
               <span className="text-[23px]">📱</span>
-              <span>Envoyer les {radarSelectedCount} sélectionnés</span>
+              <span>Envoyer les {radarSelectedUnsentCount} sélectionnés</span>
               <span>→</span>
             </button>
 
-            <div className="relative z-[1] mt-3">
+            <div className="relative z-[1] mt-4">
               <p className="text-[38px] font-black leading-[0.84] tracking-[-0.02em] text-white">File d'envoi WhatsApp</p>
               <p className="mt-0.5 text-[13px] text-white/62">Tap → ouvre WhatsApp avec le message prêt</p>
             </div>
 
-            <div className="relative z-[1] mt-2 space-y-2.5">
+            <div className="relative z-[1] mt-3.5 space-y-3.5 pb-2">
               {radarFilteredProspects.map((prospect) => {
                 const initials = prospect.fullName.split(" ").filter(Boolean).map((item) => item[0]).slice(0, 2).join("").toUpperCase() || "CT";
                 const isSelected = radarSelectedIds.includes(prospect.id);
                 const isSent = radarSentIds.includes(prospect.id);
+                const isPhoneBlocked = isBlockedRadarWhatsAppNumber(prospect.phoneE164);
+                const canOpenWhatsApp = isLikelyWhatsAppNumber(prospect.phoneE164) && !isPhoneBlocked;
                 const toneClasses = radarToneClasses(prospect.colorTone);
                 return (
                   <article
                     key={prospect.id}
-                    className={`overflow-hidden rounded-2xl border p-3 transition ${isSelected ? "border-[#00D4A0]/30 bg-[linear-gradient(145deg,rgba(0,212,160,0.05),#0E1420)]" : "border-white/10 bg-[#0E1420]"} ${isSent ? "opacity-60" : ""}`}
+                    className={`overflow-hidden rounded-2xl border p-4 transition ${isSelected ? "border-[#00D4A0]/30 bg-[linear-gradient(145deg,rgba(0,212,160,0.05),#0E1420)]" : "border-white/10 bg-[#0E1420]"} ${isSent ? "opacity-60" : ""}`}
                   >
-                    <div className="flex items-start gap-2.5">
+                    <div className="flex items-start gap-3">
                       <button
                         type="button"
                         onClick={() => toggleRadarProspectSelection(prospect.id)}
@@ -8421,24 +8489,33 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                         <div className="flex items-center justify-between gap-2">
                           <p className="truncate text-[30px] font-black leading-[0.9] tracking-[-0.02em] text-white">{prospect.fullName}</p>
                         </div>
-                        <div className="mt-0.5 flex items-center gap-1.5 text-[12px] text-white/55">
+                        <div className="mt-1.5 flex items-center gap-1.5 text-[12px] text-white/55">
                           <span className={`rounded-full border px-2 py-0.5 text-[10px] font-black ${toneClasses}`}>{prospect.metier}</span>
                           <span>{prospect.city} · {prospect.distanceKm} km</span>
+                          {!canOpenWhatsApp ? (
+                            <span className="rounded-full border border-amber-300/30 bg-amber-300/12 px-2 py-0.5 text-[10px] font-black text-amber-200">
+                              Numéro à vérifier
+                            </span>
+                          ) : null}
                         </div>
                         <p className="mt-1 text-[11px] font-semibold text-[#00D4A0]">⚡ Synergie : {prospect.synergyReason}</p>
                       </div>
                     </div>
-                    <div className="relative mt-2 rounded-xl bg-black/25 px-3 py-2.5 text-[12px] leading-[1.48] text-white/72">
+                    <div className="relative mt-3 rounded-xl bg-black/25 px-3 py-3 text-[12px] leading-[1.55] text-white/72">
                       <span className="mr-1 text-[16px] leading-none text-[#00D4A0]">"</span>
                       {prospect.messageDraft}
                     </div>
                     <button
                       type="button"
                       onClick={() => openRadarWhatsApp(prospect)}
-                      disabled={isSent}
-                      className={`mt-2.5 h-[50px] w-full rounded-xl border text-[16px] font-black tracking-[0.01em] ${isSent ? "border-[#1DB954]/35 bg-[#1DB954]/10 text-[#1DB954]" : "border-[#25D366]/45 bg-[#25D366]/15 text-[#25D366]"}`}
+                      disabled={isSent || !canOpenWhatsApp}
+                      className={`mt-2.5 h-[50px] w-full rounded-xl border text-[16px] font-black tracking-[0.01em] ${isSent ? "border-[#1DB954]/35 bg-[#1DB954]/10 text-[#1DB954]" : !canOpenWhatsApp ? "border-white/15 bg-white/5 text-white/45" : "border-[#25D366]/45 bg-[#25D366]/15 text-[#25D366]"}`}
                     >
-                      {isSent ? "✓ WhatsApp ouvert !" : `💬 Ouvrir WhatsApp → ${prospect.fullName.split(" ")[0] || prospect.fullName}`}
+                      {isSent
+                        ? "✓ WhatsApp ouvert !"
+                        : !canOpenWhatsApp
+                          ? "Numéro WhatsApp non disponible"
+                          : `💬 Ouvrir WhatsApp → ${prospect.fullName.split(" ")[0] || prospect.fullName}`}
                     </button>
                   </article>
                 );
