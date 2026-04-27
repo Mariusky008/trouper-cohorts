@@ -5567,8 +5567,20 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
             </button>
           </section>
         </div>
-        <nav className="fixed inset-x-0 bottom-4 z-30 flex justify-center px-4">
-          <div className="flex w-full max-w-md items-center justify-between rounded-[28px] border border-white/20 bg-[#0F1838]/75 px-2 py-2 shadow-[0_22px_48px_-28px_rgba(0,0,0,0.9)] backdrop-blur-2xl">
+        <nav className="fixed inset-x-0 bottom-0 z-30 flex justify-center px-3 pb-[max(env(safe-area-inset-bottom),10px)]">
+          <div className="w-full max-w-3xl rounded-t-[28px] border border-white/12 bg-gradient-to-b from-[#0B1018] to-[#090D14] px-2 py-2 shadow-[0_26px_56px_-28px_rgba(0,0,0,0.95)] backdrop-blur-2xl">
+            {(() => {
+              const activeDockId: "search" | "scan" | "alliances" | "eclaireurs" | "profile" = showAlliancesPanel
+                ? "alliances"
+                : showEclaireursPanel
+                  ? "eclaireurs"
+                  : showMyProfilePanel
+                    ? "profile"
+                    : showSearchPanel || showHistoryPanel
+                      ? "search"
+                      : "scan";
+              return (
+                <div className="flex items-center justify-between">
             {([
               { id: "search", icon: "🔍", label: "Recherche" },
               { id: "scan", icon: "⚡", label: "Scan" },
@@ -5576,7 +5588,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
               { id: "eclaireurs", icon: "📡", label: "Eclaireurs" },
               { id: "profile", icon: "👤", label: "Profil" },
             ] as const).map((item) => {
-              const isActive = item.id === "scan";
+              const isActive = item.id === activeDockId;
               return (
                 <button
                   key={`scan-dock-${item.id}`}
@@ -5584,15 +5596,19 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                   onClick={() => handleDockAction(item.id as "search" | "scan" | "eclaireurs" | "alliances" | "profile")}
                   aria-label={`Ouvrir ${item.label}`}
                   aria-pressed={isActive}
-                  className={`flex h-14 min-w-[72px] flex-col items-center justify-center rounded-2xl px-2 transition ${
-                    isActive ? "bg-cyan-300/25 text-cyan-100" : "text-white/80 hover:bg-white/10"
+                  className={`relative flex h-[70px] min-w-[66px] flex-col items-center justify-center rounded-2xl px-2 transition ${
+                    isActive ? "text-[#00E0BD]" : "text-white/32 hover:text-white/55"
                   }`}
                 >
-                  <span className="text-sm">{item.icon}</span>
-                  <span className="mt-0.5 text-[10px] font-black uppercase tracking-[0.1em]">{item.label}</span>
+                  <span className={`text-[33px] leading-none ${isActive ? "" : "opacity-55 grayscale"}`}>{item.icon}</span>
+                  <span className="mt-1 text-[11px] font-black tracking-[0.01em]">{item.label}</span>
+                  {isActive && <span className="mt-1 h-1.5 w-1.5 rounded-full bg-[#00E0BD]" />}
                 </button>
               );
             })}
+                </div>
+              );
+            })()}
           </div>
         </nav>
         {showMyProfilePanel && (
