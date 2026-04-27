@@ -1182,6 +1182,7 @@ export default function EntrepreneurSmartScanTestPage() {
   const [onboardingStartedAtMs, setOnboardingStartedAtMs] = useState(0);
   const [isOnboardingSaving, setIsOnboardingSaving] = useState(false);
   const [hasProfileBootstrapResolved, setHasProfileBootstrapResolved] = useState(false);
+  const [splashStepIndex, setSplashStepIndex] = useState(0);
   const [revealedAllianceProspectIds, setRevealedAllianceProspectIds] = useState<string[]>([]);
   const [isAllianceRevealRunning, setIsAllianceRevealRunning] = useState(false);
   const [showAllianceMessageModal, setShowAllianceMessageModal] = useState(false);
@@ -2113,6 +2114,19 @@ Je te partage un exemple simple de message Popey pour lancer une prise de contac
 Ceci est une demonstration educative: aucun message n est envoye automatiquement.`;
     setOnboardingMessageDraft(seed);
   }, [showOnboardingJ0, onboardingStep, onboardingMessageDraft, myProfile, onboardingFirstContact]);
+
+  useEffect(() => {
+    if (hasProfileBootstrapResolved || showOnboardingJ0) {
+      setSplashStepIndex(0);
+      return;
+    }
+    setSplashStepIndex(1);
+    const timers = [
+      window.setTimeout(() => setSplashStepIndex(2), 850),
+      window.setTimeout(() => setSplashStepIndex(3), 1700),
+    ];
+    return () => timers.forEach((timer) => window.clearTimeout(timer));
+  }, [hasProfileBootstrapResolved, showOnboardingJ0]);
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
@@ -5138,35 +5152,129 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
 
   const shouldBlockBeforeMain = !hasProfileBootstrapResolved && !showOnboardingJ0;
   if (shouldBlockBeforeMain) {
+    const splashSteps = [
+      "Chargement de ton profil",
+      "Detection des eclaireurs locaux",
+      "Preparation de ta Daily Card",
+    ];
     return (
-      <main className="min-h-screen bg-[radial-gradient(circle_at_10%_0%,#10193D_0%,#0C122B_45%,#090B16_100%)] text-white">
-        <div className="mx-auto flex min-h-screen max-w-xl items-center justify-center px-6">
-          <section className="relative w-full overflow-hidden rounded-3xl border border-cyan-200/20 bg-[#0B1734]/90 p-6 text-center backdrop-blur-xl">
+      <main className="relative min-h-screen overflow-hidden bg-[#07090F] text-white">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0"
+          style={{
+            backgroundImage:
+              "linear-gradient(rgba(0,212,160,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0,212,160,0.03) 1px, transparent 1px)",
+            backgroundSize: "48px 48px",
+          }}
+        />
+        <motion.div
+          aria-hidden
+          className="pointer-events-none absolute -left-20 -top-28 h-[520px] w-[520px] rounded-full bg-[radial-gradient(circle,rgba(0,212,160,0.14)_0%,transparent_65%)]"
+          animate={{ x: [0, 26, 0], y: [0, 18, 0], opacity: [0.35, 0.55, 0.35] }}
+          transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+        />
+        <motion.div
+          aria-hidden
+          className="pointer-events-none absolute -bottom-20 -right-16 h-[420px] w-[420px] rounded-full bg-[radial-gradient(circle,rgba(155,143,255,0.12)_0%,transparent_65%)]"
+          animate={{ x: [0, -22, 0], y: [0, -28, 0], opacity: [0.28, 0.5, 0.28] }}
+          transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
+        />
+        <motion.div
+          aria-hidden
+          className="pointer-events-none absolute left-1/2 top-1/2 h-[320px] w-[320px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(circle,rgba(245,166,35,0.1)_0%,transparent_68%)]"
+          animate={{ scale: [1, 1.16, 1], opacity: [0.28, 0.5, 0.28] }}
+          transition={{ duration: 4.2, repeat: Infinity, ease: "easeInOut" }}
+        />
+
+        <div className="mx-auto flex min-h-screen max-w-xl items-center justify-center px-7">
+          <section className="relative w-full text-center">
             <motion.div
-              aria-hidden
-              className="pointer-events-none absolute -left-8 -top-10 h-28 w-28 rounded-full bg-cyan-300/20 blur-2xl"
-              animate={{ opacity: [0.2, 0.45, 0.2], scale: [0.92, 1.08, 0.92] }}
-              transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
-            />
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.65, ease: "easeOut" }}
+              className="mx-auto mb-7 h-24 w-24"
+            >
+              <motion.div
+                aria-hidden
+                className="absolute inset-[-14px] rounded-full border border-cyan-300/25"
+                animate={{ rotate: 360 }}
+                transition={{ duration: 12, repeat: Infinity, ease: "linear" }}
+              />
+              <motion.div
+                aria-hidden
+                className="absolute inset-[-26px] rounded-full border border-cyan-300/10"
+                animate={{ rotate: -360 }}
+                transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+              />
+              <div className="relative flex h-24 w-24 items-center justify-center rounded-full border border-cyan-300/45 bg-gradient-to-br from-cyan-300/25 to-cyan-300/8 shadow-[0_0_44px_rgba(0,212,160,0.2)]">
+                <span className="text-[30px] font-black tracking-[0.08em] text-[#00D4A0]">P</span>
+              </div>
+            </motion.div>
+
+            <motion.h1
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.55, delay: 0.18, ease: "easeOut" }}
+              className="text-[40px] font-black leading-[0.94] tracking-[-0.02em]"
+            >
+              Votre reseau
+              <span className="block text-[#00D4A0]">s active.</span>
+            </motion.h1>
+            <motion.p
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.55, delay: 0.26, ease: "easeOut" }}
+              className="mt-3 text-[15px] leading-relaxed text-white/68"
+            >
+              Popey analyse ta zone et prepare
+              <span className="block text-white/88">tes premiers eclaireurs du jour.</span>
+            </motion.p>
+
             <motion.div
-              aria-hidden
-              className="pointer-events-none absolute -bottom-12 right-0 h-32 w-32 rounded-full bg-indigo-300/15 blur-2xl"
-              animate={{ opacity: [0.15, 0.35, 0.15], scale: [1.05, 0.9, 1.05] }}
-              transition={{ duration: 2.8, repeat: Infinity, ease: "easeInOut" }}
-            />
-            <p className="text-xs font-black uppercase tracking-[0.12em] text-cyan-200">Popey Human</p>
-            <p className="mt-2 text-xl font-black">Preparation de ton onboarding...</p>
-            <p className="mt-1 text-sm text-white/75">On charge ton profil pour demarrer directement sur le bon flow.</p>
-            <div className="mt-4 flex items-center justify-center gap-1.5">
-              {[0, 1, 2].map((dot) => (
-                <motion.span
-                  key={`bootstrap-dot-${dot}`}
-                  className="h-1.5 w-1.5 rounded-full bg-cyan-200/80"
-                  animate={{ opacity: [0.2, 1, 0.2], y: [0, -2, 0] }}
-                  transition={{ duration: 1, repeat: Infinity, delay: dot * 0.15, ease: "easeInOut" }}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.45, delay: 0.34, ease: "easeOut" }}
+              className="mx-auto mt-8 max-w-[320px]"
+            >
+              <div className="h-[3px] overflow-hidden rounded-full bg-white/10">
+                <motion.div
+                  className="h-[3px] rounded-full bg-gradient-to-r from-[#00D4A0] to-[#00A87E]"
+                  animate={{ width: ["0%", "72%", "86%", "100%"] }}
+                  transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
                 />
-              ))}
-            </div>
+              </div>
+              <div className="mt-3 space-y-1.5 text-left">
+                {splashSteps.map((stepLabel, index) => {
+                  const stepNumber = index + 1;
+                  const isDone = splashStepIndex > stepNumber;
+                  const isActive = splashStepIndex === stepNumber;
+                  return (
+                    <div
+                      key={stepLabel}
+                      className={`flex items-center gap-2 text-[12px] ${isDone ? "text-[#00D4A0]" : isActive ? "text-white/72" : "text-white/35"}`}
+                    >
+                      <span
+                        className={`h-1.5 w-1.5 rounded-full ${
+                          isDone ? "bg-[#00D4A0]" : isActive ? "bg-[#F5A623] animate-pulse" : "bg-white/30"
+                        }`}
+                      />
+                      <span>{isDone ? `✓ ${stepLabel}` : stepLabel}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </motion.div>
+
+            <motion.div
+              aria-hidden
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.45, delay: 0.4, ease: "easeOut" }}
+              className="mt-7 text-[11px] font-semibold uppercase tracking-[0.1em] text-white/40"
+            >
+              Popey · ton reseau travaille pour toi
+            </motion.div>
           </section>
         </div>
       </main>
