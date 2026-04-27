@@ -6464,7 +6464,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
       </nav>
 
       {showQualificationNeededPopup && (
-        <div className="fixed inset-0 z-[74] flex items-end justify-center bg-black/60 px-4 pb-6 pt-10 sm:items-center sm:pb-4">
+        <div className="fixed inset-0 z-[74] flex items-center justify-center bg-black/70 px-3 py-6 backdrop-blur-sm sm:px-4">
           <button
             type="button"
             aria-label="Fermer la popup qualification"
@@ -6475,20 +6475,20 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
             initial={{ opacity: 0, y: 20, scale: 0.96 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             transition={{ duration: 0.2, ease: "easeOut" }}
-            className="relative w-full max-w-sm rounded-3xl border border-amber-300/35 bg-[#0E1834]/95 p-4 shadow-[0_24px_70px_-30px_rgba(251,191,36,0.85)]"
+            className="relative w-full max-w-md rounded-3xl border border-transparent bg-[#0E1420] p-4 shadow-[0_26px_80px_-34px_rgba(0,0,0,0.95)]"
           >
             <button
               type="button"
               aria-label="Fermer"
               onClick={() => setShowQualificationNeededPopup(false)}
-              className="absolute right-3 top-3 h-8 w-8 rounded-full border border-white/20 bg-white/10 text-xs text-white/80"
+              className="absolute right-3 top-3 h-8 w-8 rounded-full border border-white/10 bg-[#111B2C] text-xs text-white/85"
             >
               ✕
             </button>
-            <div className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-amber-300/40 bg-amber-300/15 text-lg">
+            <div className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-[#F5A623]/45 bg-[#F5A623]/14 text-lg">
               ⚠️
             </div>
-            <p className="mt-3 text-[11px] font-black uppercase tracking-[0.1em] text-amber-100">Qualification requise</p>
+            <p className="mt-3 text-[11px] font-black uppercase tracking-[0.1em] text-white/70">Qualification requise</p>
             <p className="mt-2 text-sm text-white/90">
               <span className="font-black text-white">{current.name}</span> n est pas encore qualifie. Qualifie ce contact pour debloquer l envoi WhatsApp.
             </p>
@@ -6498,14 +6498,14 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                 setShowQualificationNeededPopup(false);
                 triggerAction("qualifier");
               }}
-              className="mt-4 h-11 w-full rounded-xl border border-emerald-300/40 bg-gradient-to-r from-emerald-300/25 to-cyan-300/25 text-[11px] font-black uppercase tracking-[0.08em] text-emerald-100"
+              className="mt-4 h-11 w-full rounded-xl border border-[#00E0BD]/35 bg-[#00E0BD]/14 text-[11px] font-black uppercase tracking-[0.08em] text-[#7EF4DE]"
             >
               Qualifier ce contact
             </button>
             <button
               type="button"
               onClick={() => setShowQualificationNeededPopup(false)}
-              className="mt-2 h-10 w-full rounded-xl border border-white/20 bg-white/10 text-[11px] font-black uppercase tracking-[0.08em] text-white/85"
+              className="mt-2 h-10 w-full rounded-xl border border-white/10 bg-[#111B2C] text-[11px] font-black uppercase tracking-[0.08em] text-white/82"
             >
               Continuer sans qualifier
             </button>
@@ -8488,14 +8488,14 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
       )}
 
       {showContactProfile && profileContact && (
-        <div className="fixed inset-0 z-[45] bg-black/60 backdrop-blur-sm flex items-start justify-center px-4 pt-12 pb-6">
-          <section className="w-full max-w-2xl max-h-[88vh] overflow-y-auto rounded-3xl border border-white/15 bg-[#0E1430] p-4">
+        <div className="fixed inset-0 z-[45] bg-black/70 backdrop-blur-sm flex items-center justify-center px-3 py-6 sm:px-4">
+          <section className="w-full max-w-2xl max-h-[88vh] overflow-y-auto rounded-3xl border border-transparent bg-[#0E1420] p-4 shadow-[0_30px_110px_-40px_rgba(0,0,0,0.96)]">
             <div className="flex items-center justify-between">
-              <p className="text-xs font-black uppercase tracking-[0.12em] text-cyan-200">Fiche contact • Loupe</p>
-              <button type="button" onClick={() => setShowContactProfile(false)} className="h-8 w-8 rounded-full border border-white/20 bg-white/10 text-xs">✕</button>
+              <p className="text-xs font-black uppercase tracking-[0.12em] text-white/70">Fiche contact • Loupe</p>
+              <button type="button" onClick={() => setShowContactProfile(false)} className="h-8 w-8 rounded-full border border-white/10 bg-[#111B2C] text-xs text-white/85">✕</button>
             </div>
 
-            <div className="mt-3 rounded-2xl border border-white/15 bg-black/25 p-3">
+            <div className="mt-3 rounded-2xl border border-white/10 bg-[#111B2C] p-3">
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-3">
                   <div
@@ -8518,7 +8518,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                 <button
                   type="button"
                   onClick={() => setShowProfileActions((prev) => !prev)}
-                  className="rounded-xl border border-emerald-300/40 bg-cyan-400/15 px-3 py-2 text-xs font-black text-cyan-100"
+                  className="rounded-xl border border-[#00E0BD]/35 bg-[#00E0BD]/14 px-3 py-2 text-xs font-black text-[#7EF4DE]"
                 >
                   ⚡ Demarrer une action
                 </button>
@@ -8545,7 +8545,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
               )}
             </div>
 
-            <div className="mt-3 rounded-2xl border border-white/15 bg-black/25 p-3">
+            <div className="mt-3 rounded-2xl border border-white/10 bg-[#111B2C] p-3">
               <p className="text-[11px] font-black uppercase tracking-[0.12em] text-white/70">Synthese decision</p>
               <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4">
                 <div className={`rounded-xl border px-2 py-1.5 ${profileUrgencyClass}`}>
@@ -8567,7 +8567,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
               </div>
             </div>
 
-            <div className="mt-3 rounded-2xl border border-white/15 bg-black/25 p-3">
+            <div className="mt-3 rounded-2xl border border-white/10 bg-[#111B2C] p-3">
               <div className="flex items-center justify-between">
                 <p className="text-[11px] font-black uppercase tracking-[0.12em] text-white/70">ADN & Qualification</p>
                 <button type="button" onClick={editProfileQualification} className="text-xs underline underline-offset-2 text-cyan-100">Editer</button>
@@ -8600,7 +8600,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
               </div>
             </div>
 
-            <div className="mt-3 rounded-2xl border border-white/15 bg-black/25 p-3">
+            <div className="mt-3 rounded-2xl border border-white/10 bg-[#111B2C] p-3">
               <p className="text-[11px] font-black uppercase tracking-[0.12em] text-white/70">Historique & Memoire</p>
               <div className="mt-2 space-y-2 text-sm">
                 <div className="rounded-xl bg-white/5 px-3 py-2">• Ajoute lors de &quot;{profileContact.capsule}&quot;</div>
