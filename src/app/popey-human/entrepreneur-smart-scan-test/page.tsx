@@ -8314,113 +8314,131 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
       )}
 
       {showAlliancesPanel && showRadarMode && (
-        <div className="fixed inset-0 z-[69] bg-black/65 backdrop-blur-sm flex items-start justify-center px-0 pt-0 pb-0 sm:px-4 sm:pt-16 sm:pb-0">
+        <div className="fixed inset-0 z-[69] flex items-start justify-center bg-black/70 px-0 pb-0 pt-0 backdrop-blur-sm sm:px-4 sm:pb-0 sm:pt-16">
           <section
-            className="h-[calc(100dvh-92px)] max-h-[calc(100dvh-92px)] w-full overflow-y-auto rounded-none border-0 bg-[#07090F] p-4 pb-28 sm:h-auto sm:max-h-[90vh] sm:max-w-lg sm:rounded-3xl sm:border sm:border-white/15"
+            className="relative h-[calc(100dvh-92px)] max-h-[calc(100dvh-92px)] w-full overflow-y-auto rounded-none border-0 bg-[#07090F] px-4 pb-28 sm:h-auto sm:max-h-[90vh] sm:max-w-lg sm:rounded-3xl sm:border sm:border-white/15"
             style={{ paddingTop: "calc(env(safe-area-inset-top) + 12px)" }}
           >
-            <div className="rounded-[30px] border border-transparent bg-[#0E1420] px-4 py-4 shadow-[0_20px_50px_-30px_rgba(0,0,0,0.9)]">
-              <div className="flex items-center gap-2">
+            <div className="pointer-events-none absolute left-1/2 top-[36%] h-[360px] w-[360px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(circle,rgba(0,212,160,0.1)_0%,transparent_62%)]" />
+
+            <header className="relative z-[1] px-0">
+              <div className="flex items-center gap-3">
                 <button
                   type="button"
                   onClick={() => setShowRadarMode(false)}
-                  className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-[#111B2C] text-white/80"
+                  className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/15 bg-[#141C2E] text-[16px] text-white/75"
                 >
                   ←
                 </button>
-                <p className="text-[24px] font-black tracking-[-0.01em] text-white">Mode Radar ⚡</p>
-                <span className="ml-auto inline-flex items-center gap-1 rounded-full border border-[#00D4A0]/35 bg-[#00D4A0]/10 px-2.5 py-1 text-[10px] font-black text-[#00D4A0]">
+                <p className="flex-1 text-[40px] font-black leading-[0.85] tracking-[-0.025em] text-white">Mode Radar ⚡</p>
+                <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-[#00D4A0]/35 bg-[#00D4A0]/12 px-3 py-1.5 text-[12px] font-black text-[#00D4A0]">
                   <span className="h-1.5 w-1.5 rounded-full bg-[#00D4A0]" />
-                  {radarProspects.length} prets
+                  {radarProspects.length} prêts
                 </span>
               </div>
-              <p className="mt-2 text-[12px] leading-[1.45] text-white/65">
-                L IA a analyse <span className="font-semibold text-white">{radarSourceContext.sourceMetier} · {radarSourceContext.city}</span> et prepare des WhatsApp personnalises.
+              <p className="mt-1 text-[13px] leading-[1.35] text-white/70">
+                L'IA a analysé votre profil <span className="font-bold text-white">{radarSourceContext.sourceMetier} · {radarSourceContext.city}</span> et préparé 10 WhatsApp personnalisés avec les meilleures synergies locales.
               </p>
               <div className="mt-3 flex gap-1.5 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                 <button
                   type="button"
                   onClick={() => setRadarSynergyFilter("all")}
-                  className={`shrink-0 rounded-full border px-3 py-1.5 text-[11px] font-black ${radarSynergyFilter === "all" ? "border-[#00D4A0]/45 bg-[#00D4A0]/12 text-[#00D4A0]" : "border-white/10 bg-[#111B2C] text-white/55"}`}
+                  className={`shrink-0 rounded-full border px-3 py-1.5 text-[11px] font-black ${radarSynergyFilter === "all" ? "border-[#00D4A0]/40 bg-[#00D4A0]/12 text-[#00D4A0]" : "border-white/15 bg-[#141C2E] text-white/65"}`}
                 >
-                  Tous · {radarProspects.length}
+                  • Tous · {radarProspects.length}
                 </button>
                 {radarSynergyStats.map((item) => (
                   <button
                     key={`radar-filter-${item.metier}`}
                     type="button"
                     onClick={() => setRadarSynergyFilter(item.metier)}
-                    className={`shrink-0 rounded-full border px-3 py-1.5 text-[11px] font-black ${radarSynergyFilter === item.metier ? "border-[#00D4A0]/45 bg-[#00D4A0]/12 text-[#00D4A0]" : "border-white/10 bg-[#111B2C] text-white/55"}`}
+                    className={`shrink-0 rounded-full border px-3 py-1.5 text-[11px] font-black ${radarSynergyFilter === item.metier ? "border-[#00D4A0]/40 bg-[#00D4A0]/12 text-[#00D4A0]" : "border-white/15 bg-[#141C2E] text-white/65"}`}
                   >
-                    {item.metier} · {item.count}
+                    • {item.metier} · {item.count}
                   </button>
                 ))}
               </div>
-            </div>
+            </header>
 
-            <div className="mt-3 rounded-2xl border border-white/10 bg-[#0E1420] px-3 py-3">
-              <div className="grid grid-cols-4 gap-1.5 text-center">
-                <div className="rounded-xl bg-black/25 px-2 py-2">
-                  <p className="text-[18px] font-black text-[#00D4A0]">{radarSelectedCount}</p>
-                  <p className="text-[9px] uppercase tracking-[0.07em] text-white/45">Selectionnes</p>
+            <div className="relative z-[1] mt-3 rounded-2xl border border-white/10 bg-[#141C2E] px-4 py-3">
+              <div className="grid grid-cols-4 gap-2 text-center">
+                <div>
+                  <p className="text-[26px] font-black leading-none text-[#00D4A0]">{radarSelectedCount}</p>
+                  <p className="mt-1 text-[9px] font-bold uppercase tracking-[0.08em] text-white/35">Sélectionnés</p>
                 </div>
-                <div className="rounded-xl bg-black/25 px-2 py-2">
-                  <p className="text-[18px] font-black text-[#1DB954]">{radarSentCount}</p>
-                  <p className="text-[9px] uppercase tracking-[0.07em] text-white/45">Envoyes</p>
+                <div>
+                  <p className="text-[26px] font-black leading-none text-[#1DB954]">{radarSentCount}</p>
+                  <p className="mt-1 text-[9px] font-bold uppercase tracking-[0.08em] text-white/35">Envoyés</p>
                 </div>
-                <div className="rounded-xl bg-black/25 px-2 py-2">
-                  <p className="text-[18px] font-black text-white/90">{radarProspects.length}</p>
-                  <p className="text-[9px] uppercase tracking-[0.07em] text-white/45">Prepares</p>
+                <div>
+                  <p className="text-[26px] font-black leading-none text-white/85">{radarProspects.length}</p>
+                  <p className="mt-1 text-[9px] font-bold uppercase tracking-[0.08em] text-white/35">Préparés</p>
                 </div>
-                <div className="rounded-xl bg-black/25 px-2 py-2">
-                  <p className="text-[18px] font-black text-[#F5A623]">~12h</p>
-                  <p className="text-[9px] uppercase tracking-[0.07em] text-white/45">Economise</p>
+                <div>
+                  <p className="text-[26px] font-black leading-none text-[#F5A623]">~12h</p>
+                  <p className="mt-1 text-[9px] font-bold uppercase tracking-[0.08em] text-white/35">Économisé</p>
                 </div>
               </div>
-              <button
-                type="button"
-                onClick={openSelectedRadarWhatsApp}
-                disabled={!radarSelectedIds.some((id) => !radarSentIds.includes(id))}
-                className="mt-2.5 flex h-12 w-full items-center justify-center gap-2 rounded-2xl border border-[#25D366]/50 bg-[#25D366]/20 text-[13px] font-black text-[#25D366] disabled:opacity-45"
-              >
-                💬 Envoyer les {radarSelectedCount} selectionnes →
-              </button>
             </div>
 
-            <div className="mt-2.5 space-y-2">
+            <button
+              type="button"
+              onClick={openSelectedRadarWhatsApp}
+              disabled={!radarSelectedIds.some((id) => !radarSentIds.includes(id))}
+              className="relative z-[1] mt-3 flex h-[70px] w-full items-center justify-center gap-3 rounded-2xl bg-gradient-to-br from-[#25D366] to-[#1AAE53] px-4 text-[19px] font-black tracking-[0.01em] text-white shadow-[0_12px_30px_rgba(37,211,102,0.35)] disabled:opacity-45"
+            >
+              <span className="text-[23px]">📱</span>
+              <span>Envoyer les {radarSelectedCount} sélectionnés</span>
+              <span>→</span>
+            </button>
+
+            <div className="relative z-[1] mt-3">
+              <p className="text-[38px] font-black leading-[0.84] tracking-[-0.02em] text-white">File d'envoi WhatsApp</p>
+              <p className="mt-0.5 text-[13px] text-white/62">Tap → ouvre WhatsApp avec le message prêt</p>
+            </div>
+
+            <div className="relative z-[1] mt-2 space-y-2.5">
               {radarFilteredProspects.map((prospect) => {
                 const initials = prospect.fullName.split(" ").filter(Boolean).map((item) => item[0]).slice(0, 2).join("").toUpperCase() || "CT";
                 const isSelected = radarSelectedIds.includes(prospect.id);
                 const isSent = radarSentIds.includes(prospect.id);
                 const toneClasses = radarToneClasses(prospect.colorTone);
                 return (
-                  <article key={prospect.id} className={`rounded-2xl border px-3 py-3 ${isSelected ? "border-[#00D4A0]/30 bg-[#0E1420]" : "border-white/10 bg-[#0E1420]"}`}>
+                  <article
+                    key={prospect.id}
+                    className={`overflow-hidden rounded-2xl border p-3 transition ${isSelected ? "border-[#00D4A0]/30 bg-[linear-gradient(145deg,rgba(0,212,160,0.05),#0E1420)]" : "border-white/10 bg-[#0E1420]"} ${isSent ? "opacity-60" : ""}`}
+                  >
                     <div className="flex items-start gap-2.5">
                       <button
                         type="button"
                         onClick={() => toggleRadarProspectSelection(prospect.id)}
-                        className={`mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-md border text-[10px] font-black ${isSelected ? "border-[#00D4A0] bg-[#00D4A0] text-[#04110D]" : "border-white/20 text-white/45"}`}
+                        className={`mt-0.5 inline-flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-[7px] border text-[12px] font-black ${isSelected ? "border-[#00D4A0] bg-[#00D4A0] text-[#04110D]" : "border-white/20 bg-transparent text-white/45"}`}
                       >
                         {isSelected ? "✓" : ""}
                       </button>
-                      <div className={`inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border text-[12px] font-black ${toneClasses}`}>{initials}</div>
+                      <div className={`inline-flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-xl border text-[13px] font-black ${toneClasses}`}>{initials}</div>
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center justify-between gap-2">
-                          <p className="truncate text-[14px] font-black text-white">{prospect.fullName}</p>
-                          <span className={`shrink-0 rounded-full border px-2 py-0.5 text-[9px] font-black ${toneClasses}`}>{prospect.metier}</span>
+                          <p className="truncate text-[30px] font-black leading-[0.9] tracking-[-0.02em] text-white">{prospect.fullName}</p>
                         </div>
-                        <p className="mt-0.5 text-[11px] text-white/55">{prospect.city} · {prospect.distanceKm} km</p>
-                        <p className="mt-1 text-[10px] font-semibold text-[#00D4A0]">⚡ Synergie : {prospect.synergyReason}</p>
+                        <div className="mt-0.5 flex items-center gap-1.5 text-[12px] text-white/55">
+                          <span className={`rounded-full border px-2 py-0.5 text-[10px] font-black ${toneClasses}`}>{prospect.metier}</span>
+                          <span>{prospect.city} · {prospect.distanceKm} km</span>
+                        </div>
+                        <p className="mt-1 text-[11px] font-semibold text-[#00D4A0]">⚡ Synergie : {prospect.synergyReason}</p>
                       </div>
                     </div>
-                    <p className="mt-2 rounded-lg bg-black/25 px-2.5 py-2 text-[11px] leading-[1.45] text-white/72">{prospect.messageDraft}</p>
+                    <div className="relative mt-2 rounded-xl bg-black/25 px-3 py-2.5 text-[12px] leading-[1.48] text-white/72">
+                      <span className="mr-1 text-[16px] leading-none text-[#00D4A0]">"</span>
+                      {prospect.messageDraft}
+                    </div>
                     <button
                       type="button"
                       onClick={() => openRadarWhatsApp(prospect)}
                       disabled={isSent}
-                      className={`mt-2 h-10 w-full rounded-xl border text-[11px] font-black ${isSent ? "border-[#1DB954]/35 bg-[#1DB954]/10 text-[#1DB954]" : "border-[#25D366]/45 bg-[#25D366]/15 text-[#25D366]"}`}
+                      className={`mt-2.5 h-[50px] w-full rounded-xl border text-[16px] font-black tracking-[0.01em] ${isSent ? "border-[#1DB954]/35 bg-[#1DB954]/10 text-[#1DB954]" : "border-[#25D366]/45 bg-[#25D366]/15 text-[#25D366]"}`}
                     >
-                      {isSent ? "✓ WhatsApp ouvert" : `Ouvrir WhatsApp → ${prospect.fullName.split(" ")[0] || prospect.fullName}`}
+                      {isSent ? "✓ WhatsApp ouvert !" : `💬 Ouvrir WhatsApp → ${prospect.fullName.split(" ")[0] || prospect.fullName}`}
                     </button>
                   </article>
                 );
