@@ -8489,13 +8489,13 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
 
       {showContactProfile && profileContact && (
         <div className="fixed inset-0 z-[45] bg-black/70 backdrop-blur-sm flex items-center justify-center px-3 py-6 sm:px-4">
-          <section className="w-full max-w-2xl max-h-[88vh] overflow-y-auto rounded-3xl border border-transparent bg-[#0E1420] p-4 shadow-[0_30px_110px_-40px_rgba(0,0,0,0.96)]">
+          <section className="w-full max-w-xl max-h-[88vh] overflow-y-auto rounded-[28px] border border-transparent bg-[#07090F] p-3 shadow-[0_30px_110px_-40px_rgba(0,0,0,0.96)] sm:max-w-2xl sm:p-4">
             <div className="flex items-center justify-between">
               <p className="text-xs font-black uppercase tracking-[0.12em] text-white/70">Fiche contact • Loupe</p>
               <button type="button" onClick={() => setShowContactProfile(false)} className="h-8 w-8 rounded-full border border-white/10 bg-[#111B2C] text-xs text-white/85">✕</button>
             </div>
 
-            <div className="mt-3 rounded-2xl border border-white/10 bg-[#111B2C] p-3">
+            <div className="mt-2.5 rounded-2xl border border-white/10 bg-[#0E1420] p-2.5">
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-3">
                   <div
@@ -8524,7 +8524,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                 </button>
               </div>
               {showProfileActions && (
-                <div className="mt-3 grid gap-2 sm:grid-cols-3">
+                <div className="mt-2.5 grid gap-2 sm:grid-cols-3">
                   {profileActionButtons.map((button) => (
                     <button
                       key={`profile-action-${button.action}`}
@@ -8545,7 +8545,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
               )}
             </div>
 
-            <div className="mt-3 rounded-2xl border border-white/10 bg-[#111B2C] p-3">
+            <div className="mt-2.5 rounded-2xl border border-white/10 bg-[#0E1420] p-2.5">
               <p className="text-[11px] font-black uppercase tracking-[0.12em] text-white/70">Synthese decision</p>
               <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4">
                 <div className={`rounded-xl border px-2 py-1.5 ${profileUrgencyClass}`}>
@@ -8567,7 +8567,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
               </div>
             </div>
 
-            <div className="mt-3 rounded-2xl border border-white/10 bg-[#111B2C] p-3">
+            <div className="mt-2.5 rounded-2xl border border-white/10 bg-[#0E1420] p-2.5">
               <div className="flex items-center justify-between">
                 <p className="text-[11px] font-black uppercase tracking-[0.12em] text-white/70">ADN & Qualification</p>
                 <button type="button" onClick={editProfileQualification} className="text-xs underline underline-offset-2 text-cyan-100">Editer</button>
@@ -8600,7 +8600,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
               </div>
             </div>
 
-            <div className="mt-3 rounded-2xl border border-white/10 bg-[#111B2C] p-3">
+            <div className="mt-2.5 rounded-2xl border border-white/10 bg-[#0E1420] p-2.5">
               <p className="text-[11px] font-black uppercase tracking-[0.12em] text-white/70">Historique & Memoire</p>
               <div className="mt-2 space-y-2 text-sm">
                 <div className="rounded-xl bg-white/5 px-3 py-2">• Ajoute lors de &quot;{profileContact.capsule}&quot;</div>
@@ -8625,7 +8625,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
               </div>
             </div>
 
-            <div className="mt-3 rounded-2xl border border-orange-300/30 bg-orange-400/10 p-3">
+            <div className="mt-2.5 rounded-2xl border border-orange-300/30 bg-orange-400/10 p-2.5">
               <p className="text-[11px] font-black uppercase tracking-[0.12em] text-orange-100">Statut de vigilance</p>
               <p className="mt-1 text-sm">Dernier contact: il y a {profileDaysSinceLastSent} jours</p>
               <p className="text-sm">Etat de la relation: {profileVitality < 35 ? "En train de refroidir 🧊" : profileVitality < 65 ? "A surveiller 👀" : "Active ✅"}</p>
