@@ -5882,21 +5882,21 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                 </span>
               </div>
               <h1 className="relative mt-2 text-[30px] font-black leading-[0.94] tracking-[-0.015em] text-white">
-                Radar <span className="text-[#00D4A0]">Activé</span>
+                Radar <span className="text-[#00E0BD]">Activé</span>
               </h1>
               <p className="relative mt-2 text-[13px] leading-[1.45] text-white/70">
                 {opportunitiesActivated} opportunites activees aujourd hui. Encore {remainingForGoal} sur {dailyQueueCount} pour atteindre votre objectif.
               </p>
               <div className="relative mt-3 grid grid-cols-3 gap-2">
-                <div className="rounded-2xl border border-[#00D4A0]/30 bg-[#121F33] px-3 py-2">
-                  <p className="text-[30px] font-black leading-none text-[#00D4A0]">{opportunitiesActivated}</p>
+                <div className="rounded-2xl border border-[#00D4A0]/26 bg-[#101A2C] px-3 py-2">
+                  <p className="text-[30px] font-black leading-none text-[#00E0BD]">{opportunitiesActivated}</p>
                   <p className="mt-1 text-[11px] font-bold text-white/62">Actifs aujourd hui</p>
                 </div>
-                <div className="rounded-2xl border border-[#F5A623]/35 bg-[#121F33] px-3 py-2">
+                <div className="rounded-2xl border border-[#F5A623]/42 bg-[#101A2C] px-3 py-2">
                   <p className="text-[30px] font-black leading-none text-[#F5A623]">{dailyGoal}</p>
                   <p className="mt-1 text-[11px] font-bold text-white/62">Objectif du jour</p>
                 </div>
-                <div className="rounded-2xl border border-white/15 bg-[#121F33] px-3 py-2">
+                <div className="rounded-2xl border border-white/15 bg-[#101A2C] px-3 py-2">
                   <p className="text-[30px] font-black leading-none text-white/90">{historyMonthlySentCount}</p>
                   <p className="mt-1 text-[11px] font-bold text-white/58">Ce mois</p>
                 </div>
@@ -5904,13 +5904,13 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
               <div className="relative mt-3">
                 <div className="flex items-center justify-between text-[11px] font-black uppercase tracking-[0.08em] text-white/55">
                   <span>Progression</span>
-                  <span className="text-[#00D4A0]">
+                  <span className="text-[#00E0BD]">
                     {opportunitiesActivated} / {dailyGoal}
                   </span>
                 </div>
                 <div className="mt-2 h-2 overflow-hidden rounded-full bg-white/10">
                   <motion.div
-                    className="h-full rounded-full bg-gradient-to-r from-[#00D4A0] to-emerald-300"
+                    className="h-full rounded-full bg-gradient-to-r from-[#00E0BD] to-[#00C89E]"
                     animate={{ width: `${missionProgress}%` }}
                     transition={{ duration: 0.4, ease: "easeOut" }}
                   />
@@ -5920,7 +5920,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                 <button
                   type="button"
                   onClick={() => setShowPotentialBreakdownSheet(true)}
-                  className="h-14 rounded-2xl border border-[#00D4A0]/35 bg-[rgba(0,212,160,0.12)] px-3 text-left"
+                  className="h-14 rounded-2xl border border-[#00E0BD]/40 bg-[rgba(0,212,160,0.1)] px-3 text-left"
                 >
                   <p className="text-[10px] font-black uppercase tracking-[0.08em] text-[#8CECD4]">Potentiel du jour</p>
                   <p className="mt-1 text-[34px] font-black leading-none text-white">~{latentPotential}€</p>
@@ -6274,7 +6274,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                   </p>
                   <div className="mt-1 flex items-center gap-2">
                     <p className="text-[14px] font-semibold leading-[1] text-white/75">📍 {current.city}</p>
-                    <span className="inline-flex items-center gap-1 rounded-full border border-[#F5A623]/55 bg-[#2A2E3A] px-3 py-1 text-[13px] font-black text-[#F5A623]">
+                    <span className="inline-flex items-center gap-1 rounded-full border border-[#F5A623]/72 bg-[#242B3A] px-3 py-1 text-[13px] font-black text-[#F5A623]">
                       <span className="text-[#FF4D6D]">?</span> {discoveryLabel}
                     </span>
                   </div>
@@ -6327,7 +6327,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                       onClick={() => triggerAction(button.action)}
                       className={`relative overflow-hidden rounded-2xl border transition ${
                         isPrimary
-                          ? "h-[82px] border-[#F5A623]/60 bg-gradient-to-r from-[#2A3142] to-[#243247] text-[#F5A623] shadow-[0_14px_28px_-18px_rgba(251,191,36,0.85)]"
+                          ? "h-[82px] border-[#F5A623]/78 bg-gradient-to-r from-[#202B3D] to-[#1C2A40] text-[#F5A623] shadow-[0_14px_28px_-18px_rgba(251,191,36,0.92)]"
                           : "h-[76px] border-white/20 bg-[#17253A]/88 text-white/80 opacity-95 hover:opacity-100"
                       } ${
                         shouldPulse ? theme.idlePulseClass : ""
@@ -6358,7 +6358,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                         </>
                       )}
                       <div className="flex h-full items-center gap-3 px-4 text-left">
-                        <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] border text-[18px] ${button.action === "eclaireur" ? "border-[#F5A623]/55 bg-[#2A3142] text-[#F5A623]" : actionVisual.iconClass}`}>
+                        <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] border text-[18px] ${button.action === "eclaireur" ? "border-[#F5A623]/72 bg-[#202B3D] text-[#F5A623]" : actionVisual.iconClass}`}>
                           {actionVisual.icon}
                         </div>
                         <div className="min-w-0 flex-1">
