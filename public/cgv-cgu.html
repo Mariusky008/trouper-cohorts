@@ -8,27 +8,240 @@
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Cabinet+Grotesk:wght@300;400;500;700;800&display=swap" rel="stylesheet" />
   <style>
     :root {
-      --black:#080A0E;
-      --surface:#131920;
-      --border:rgba(255,255,255,.12);
-      --teal:#00E5A0;
-      --text:#EEF2F7;
-      --text-sec:rgba(238,242,247,.76);
-      --text-ter:rgba(238,242,247,.46);
-      --font-d:'Bebas Neue',sans-serif;
-      --font-b:'Cabinet Grotesk',sans-serif;
+      --black: #080a0e;
+      --ink: #0c1218;
+      --surface: #131920;
+      --surface-2: #1a2230;
+      --border: rgba(255, 255, 255, 0.12);
+      --teal: #00e5a0;
+      --teal-dim: rgba(0, 229, 160, 0.12);
+      --text: #eef2f7;
+      --text-sec: rgba(238, 242, 247, 0.76);
+      --text-ter: rgba(238, 242, 247, 0.52);
+      --font-d: "Bebas Neue", sans-serif;
+      --font-b: "Cabinet Grotesk", sans-serif;
     }
-    *{box-sizing:border-box}
-    body{margin:0;background:var(--black);color:var(--text);font-family:var(--font-b)}
-    .wrap{max-width:1100px;margin:0 auto;padding:24px 18px 40px}
-    .top{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:14px}
-    .brand{font-family:var(--font-d);font-size:26px;letter-spacing:3px;color:var(--teal);text-decoration:none}
-    .back{display:inline-flex;align-items:center;justify-content:center;height:38px;padding:0 14px;border-radius:10px;border:.5px solid var(--border);background:var(--surface);font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--text-sec);text-decoration:none}
-    .back:hover{border-color:var(--teal);color:var(--teal)}
-    .card{background:var(--surface);border:.5px solid var(--border);border-radius:16px;padding:18px 16px}
-    h1{font-family:var(--font-d);font-size:36px;line-height:1;letter-spacing:.6px;margin:0 0 8px}
-    .v{font-size:12px;color:var(--text-ter);margin:0 0 14px}
-    pre{margin:0;white-space:pre-wrap;font-family:var(--font-b);font-size:13px;line-height:1.75;color:var(--text-sec)}
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background:
+        radial-gradient(1200px 600px at 80% -10%, rgba(0, 229, 160, 0.08), transparent),
+        var(--black);
+      color: var(--text);
+      font-family: var(--font-b);
+    }
+    .wrap { max-width: 1220px; margin: 0 auto; padding: 24px 18px 40px; }
+    .top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+    .brand {
+      font-family: var(--font-d);
+      font-size: 30px;
+      letter-spacing: 3px;
+      color: var(--teal);
+      text-decoration: none;
+    }
+    .back {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      height: 40px;
+      padding: 0 14px;
+      border-radius: 10px;
+      border: 0.5px solid var(--border);
+      background: var(--surface);
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: var(--text-sec);
+      text-decoration: none;
+      transition: all 0.2s;
+    }
+    .back:hover { border-color: var(--teal); color: var(--teal); }
+    .hero {
+      border: 0.5px solid var(--border);
+      background: linear-gradient(160deg, var(--surface), var(--ink));
+      border-radius: 18px;
+      padding: 22px 18px;
+      margin-bottom: 14px;
+    }
+    .hero-meta {
+      margin-top: 10px;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .hero-chip {
+      display: inline-flex;
+      align-items: center;
+      border: 0.5px solid var(--border);
+      border-radius: 999px;
+      padding: 5px 10px;
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--text-ter);
+      background: rgba(255, 255, 255, 0.03);
+    }
+    h1 {
+      margin: 0 0 8px;
+      font-family: var(--font-d);
+      font-size: clamp(34px, 4.4vw, 58px);
+      line-height: 0.92;
+      letter-spacing: 0.6px;
+    }
+    .v { margin: 0; font-size: 13px; color: var(--text-ter); }
+    .layout { display: grid; grid-template-columns: 300px 1fr; gap: 14px; align-items: start; }
+    .toc {
+      position: sticky;
+      top: 12px;
+      border: 0.5px solid var(--border);
+      border-radius: 16px;
+      background: var(--surface);
+      padding: 14px 12px;
+      max-height: calc(100vh - 24px);
+      overflow: auto;
+    }
+    .toc-title {
+      margin: 0 0 8px;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--teal);
+    }
+    .toc a {
+      display: block;
+      padding: 8px 10px;
+      margin-bottom: 6px;
+      border-radius: 10px;
+      border: 0.5px solid transparent;
+      text-decoration: none;
+      font-size: 12px;
+      line-height: 1.35;
+      color: var(--text-sec);
+      background: transparent;
+      transition: all 0.2s;
+    }
+    .toc a:hover {
+      color: var(--text);
+      border-color: rgba(0, 229, 160, 0.25);
+      background: var(--teal-dim);
+    }
+    .contact-card {
+      margin-top: 10px;
+      border: 0.5px solid var(--border);
+      border-radius: 12px;
+      background: var(--surface-2);
+      padding: 10px;
+      font-size: 12px;
+      line-height: 1.5;
+      color: var(--text-sec);
+    }
+    .contact-card strong {
+      display: block;
+      margin-bottom: 4px;
+      color: var(--teal);
+      font-size: 10px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .content {
+      border: 0.5px solid var(--border);
+      background: var(--surface);
+      border-radius: 16px;
+      padding: 16px;
+    }
+    .intro {
+      border: 0.5px solid var(--border);
+      border-radius: 12px;
+      background: var(--ink);
+      padding: 12px;
+      margin-bottom: 12px;
+    }
+    .intro p {
+      margin: 0 0 8px;
+      font-size: 14px;
+      line-height: 1.7;
+      color: var(--text-sec);
+    }
+    .intro p:last-child { margin-bottom: 0; }
+    .article-card {
+      border: 0.5px solid var(--border);
+      border-radius: 14px;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), transparent);
+      padding: 16px;
+      margin-bottom: 12px;
+    }
+    .article-card:last-child { margin-bottom: 0; }
+    .article-kicker {
+      display: inline-flex;
+      align-items: center;
+      margin: 0 0 8px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      border: 0.5px solid rgba(0, 229, 160, 0.25);
+      background: var(--teal-dim);
+      color: var(--teal);
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+    }
+    .article-card h2 {
+      margin: 0 0 10px;
+      font-size: 16px;
+      line-height: 1.35;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      color: var(--teal);
+    }
+    .article-card h3 {
+      margin: 12px 0 6px;
+      font-size: 13px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--text);
+    }
+    .article-card p {
+      margin: 0 0 8px;
+      font-size: 13px;
+      line-height: 1.78;
+      color: var(--text-sec);
+      max-width: 92ch;
+    }
+    .article-card ul {
+      margin: 0 0 8px;
+      padding-left: 18px;
+      color: var(--text-sec);
+    }
+    .article-card li {
+      margin-bottom: 6px;
+      font-size: 13px;
+      line-height: 1.65;
+    }
+    .loading, .error {
+      margin: 0;
+      padding: 16px;
+      border: 0.5px solid var(--border);
+      border-radius: 12px;
+      background: var(--ink);
+      color: var(--text-sec);
+      font-size: 13px;
+    }
+    .error { color: #ffb8b8; border-color: rgba(255, 107, 107, 0.35); }
+    @media (max-width: 980px) {
+      .layout { grid-template-columns: 1fr; }
+      .toc { position: static; max-height: none; }
+    }
   </style>
 </head>
 <body>
@@ -37,23 +250,121 @@
       <a class="brand" href="/popey-human/accueil-test">POPEY</a>
       <a class="back" href="/popey-human/accueil-test">Retour Accueil</a>
     </div>
-    <section class="card">
+    <section class="hero">
       <h1>POPEY — Conditions Générales d'Utilisation et de Vente</h1>
       <p class="v">Version en vigueur au 27 avril 2026</p>
-      <pre id="cgv-fulltext">Chargement des CGV-CGU...</pre>
+      <div class="hero-meta">
+        <span class="hero-chip">Version intégrale</span>
+        <span class="hero-chip">Lecture structurée</span>
+        <span class="hero-chip">Droit français</span>
+      </div>
     </section>
+    <div class="layout">
+      <aside class="toc">
+        <p class="toc-title">Sommaire</p>
+        <nav id="cgv-toc">
+          <p class="loading">Chargement du sommaire...</p>
+        </nav>
+        <div class="contact-card">
+          <strong>Contact Popey</strong>
+          <div>contact@popey.academy</div>
+          <div>3 rue sully, 40100 Dax</div>
+        </div>
+      </aside>
+      <section id="cgv-content" class="content">
+        <p class="loading">Chargement des CGV-CGU...</p>
+      </section>
+    </div>
   </main>
   <script>
     (async function loadCgvFullText() {
-      const target = document.getElementById("cgv-fulltext");
-      if (!target) return;
+      const toc = document.getElementById("cgv-toc");
+      const content = document.getElementById("cgv-content");
+      if (!toc || !content) return;
       try {
         const response = await fetch("/cgv-popey-2026-04-27.txt", { cache: "no-store" });
         const text = await response.text();
         if (!response.ok || !text.trim()) throw new Error("missing");
-        target.textContent = text;
+        const lines = text.split(/\r?\n/).map((line) => line.trim());
+        const intro = [];
+        const articles = [];
+        let current = null;
+
+        for (const rawLine of lines) {
+          const line = rawLine.trim();
+          if (!line) continue;
+          if (/^ARTICLE\s+\d+/i.test(line)) {
+            if (current) articles.push(current);
+            const number = (line.match(/^ARTICLE\s+(\d+)/i) || [])[1] || String(articles.length + 1);
+            current = { number, title: line, lines: [] };
+            continue;
+          }
+          if (current) {
+            current.lines.push(line);
+          } else {
+            intro.push(line);
+          }
+        }
+        if (current) articles.push(current);
+
+        const isUpperTitle = (line) => {
+          const stripped = line.replace(/[0-9.\-–—:()«»'’/ ]/g, "");
+          if (!stripped || stripped.length < 4) return false;
+          return stripped === stripped.toUpperCase();
+        };
+
+        const introHtml = `
+          <section class="intro">
+            ${intro.map((line) => `<p>${line}</p>`).join("")}
+          </section>
+        `;
+
+        content.innerHTML =
+          introHtml +
+          articles
+            .map((article) => {
+              const id = `article-${article.number}`;
+              let html = `<article class="article-card" id="${id}"><p class="article-kicker">Article ${article.number}</p><h2>${article.title}</h2>`;
+              let listBuffer = [];
+              const flushList = () => {
+                if (!listBuffer.length) return "";
+                const out = `<ul>${listBuffer.map((item) => `<li>${item}</li>`).join("")}</ul>`;
+                listBuffer = [];
+                return out;
+              };
+              article.lines.forEach((line) => {
+                if (/^\d+\.\d+/.test(line)) {
+                  html += flushList();
+                  html += `<h3>${line}</h3>`;
+                  return;
+                }
+                if (isUpperTitle(line) && line.length <= 80) {
+                  html += flushList();
+                  html += `<h3>${line}</h3>`;
+                  return;
+                }
+                if (line.length <= 85 && !/[.!?]$/.test(line) && !/^\d+[€%]/.test(line)) {
+                  listBuffer.push(line);
+                } else {
+                  html += flushList();
+                  html += `<p>${line}</p>`;
+                }
+              });
+              html += flushList();
+              html += `</article>`;
+              return html;
+            })
+            .join("");
+
+        toc.innerHTML = articles
+          .map((article) => {
+            const id = `article-${article.number}`;
+            return `<a href="#${id}">${article.title}</a>`;
+          })
+          .join("");
       } catch {
-        target.textContent = "CGV-CGU indisponibles temporairement. Rechargez la page.";
+        toc.innerHTML = `<p class="error">Sommaire indisponible.</p>`;
+        content.innerHTML = `<p class="error">CGV-CGU indisponibles temporairement. Rechargez la page.</p>`;
       }
     })();
   </script>
