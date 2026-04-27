@@ -5348,11 +5348,16 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
             <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
               {scanCards.map((card, idx) => (
                 scanDone || !hasImportedContacts ? (
-                  <div key={card.id} className={`rounded-2xl border bg-gradient-to-br p-3 text-center ${card.color}`}>
-                    <p className="text-xs">{card.icon}</p>
-                    <p className={`text-2xl font-black tabular-nums ${card.valueColor}`}>{card.value}</p>
-                    <p className="mt-1 text-[11px] font-black uppercase tracking-wide text-white/90">{card.title}</p>
-                    <p className="mt-1 text-[10px] text-white/70">{card.subtitle}</p>
+                  <div
+                    key={card.id}
+                    className={`rounded-[18px] border bg-gradient-to-br p-3 text-left shadow-[0_18px_40px_-30px_rgba(0,0,0,0.9)] ${card.color}`}
+                  >
+                    <div className="mb-2 inline-flex h-8 w-8 items-center justify-center rounded-[10px] bg-black/25 text-sm">
+                      {card.icon}
+                    </div>
+                    <p className={`text-[30px] font-black leading-none tabular-nums ${card.valueColor}`}>{card.value}</p>
+                    <p className="mt-1 text-[10px] font-black uppercase tracking-[0.08em] text-white/92">{card.title}</p>
+                    <p className="mt-0.5 text-[10px] text-white/65">{card.subtitle}</p>
                   </div>
                 ) : (
                   <motion.div
@@ -5360,12 +5365,14 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: [0, -2, 0] }}
                     transition={{ delay: idx * 0.05, duration: 1.6, repeat: Infinity, repeatType: "reverse", ease: "easeInOut" }}
-                    className={`rounded-2xl border bg-gradient-to-br p-3 text-center ${card.color}`}
+                    className={`rounded-[18px] border bg-gradient-to-br p-3 text-left shadow-[0_18px_40px_-30px_rgba(0,0,0,0.9)] ${card.color}`}
                   >
-                    <p className="text-xs">{card.icon}</p>
-                    <p className={`text-2xl font-black tabular-nums ${card.valueColor}`}>{card.value}</p>
-                    <p className="mt-1 text-[11px] font-black uppercase tracking-wide text-white/90">{card.title}</p>
-                    <p className="mt-1 text-[10px] text-white/70">{card.subtitle}</p>
+                    <div className="mb-2 inline-flex h-8 w-8 items-center justify-center rounded-[10px] bg-black/25 text-sm">
+                      {card.icon}
+                    </div>
+                    <p className={`text-[30px] font-black leading-none tabular-nums ${card.valueColor}`}>{card.value}</p>
+                    <p className="mt-1 text-[10px] font-black uppercase tracking-[0.08em] text-white/92">{card.title}</p>
+                    <p className="mt-0.5 text-[10px] text-white/65">{card.subtitle}</p>
                   </motion.div>
                 )
               ))}
