@@ -7319,7 +7319,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
 
               <div className="mt-2 space-y-2">
                 {eclaireursList.length === 0 ? <p className="text-sm text-white/70">Aucun eclaireur actif pour l instant.</p> : null}
-                {eclaireursList.map((contact) => {
+                {eclaireursList.map((contact, idx) => {
                   const stats = eclaireurStatsStore[contact.id] || { leadsDetected: 0, leadsSigned: 0, commissionTotalEur: 0, lastNewsAtMs: 0 };
                   const daysSinceActivation =
                     stats.lastNewsAtMs > 0 ? Math.max(0, Math.floor((Date.now() - stats.lastNewsAtMs) / (24 * 60 * 60 * 1000))) : null;
@@ -7337,7 +7337,9 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                     <div
                       key={`eclaireur-${contact.id}`}
                       className={`rounded-[20px] border bg-[#0E1420] px-4 py-4 ${
-                        daysSinceActivation !== null && daysSinceActivation <= 2 ? "border-[#00D4A0]/30" : "border-white/10"
+                        idx === 0 || (daysSinceActivation !== null && daysSinceActivation <= 2)
+                          ? "border-[#00D4A0]/30"
+                          : "border-white/10"
                       }`}
                     >
                       <div className="flex items-start justify-between gap-2">
@@ -7405,13 +7407,6 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                       <div className="mt-2 flex items-center gap-1.5">
                         <button
                           type="button"
-                          onClick={() => openEclaireurTemplates(contact.id)}
-                          className="flex-1 rounded-xl border border-white/15 bg-[#1A2438] px-2 py-2 text-[12px] font-bold text-white/80"
-                        >
-                          💬 Message
-                        </button>
-                        <button
-                          type="button"
                           onClick={() =>
                             eclaireurLinksByContactId[contact.id]
                               ? copyEclaireurLink(contact.id)
@@ -7427,6 +7422,13 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                               : eclaireurLinksByContactId[contact.id]
                                 ? "📋 Copier lien"
                                 : "🔗 Lien eclaireur"}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => openEclaireurTemplates(contact.id)}
+                          className="flex-1 rounded-xl border border-white/15 bg-[#1A2438] px-2 py-2 text-[12px] font-bold text-white/80"
+                        >
+                          💬 Message
                         </button>
                         <button
                           type="button"
