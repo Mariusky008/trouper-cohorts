@@ -663,6 +663,7 @@ export async function prepareSmartScanWhatsAppPayload(input: {
 }) {
   const currentMember = await getCurrentHumanMember();
   if (!currentMember) return { error: "Session requise." };
+  const supabaseAdmin = createAdminClient();
 
   const resolved = await resolveContactId({
     ownerMemberId: currentMember.id,
@@ -677,9 +678,20 @@ export async function prepareSmartScanWhatsAppPayload(input: {
   const message = (input.messageDraft || "").trim();
   if (!message) return { error: "Le message WhatsApp est requis." };
 
-  const normalizedPhone = (input.phoneE164 || "33600000000").replace(/\D/g, "");
+  let contactPhone = "";
+  if (input.contactId) {
+    const { data: phoneRow } = await supabaseAdmin
+      .from("human_smart_scan_contacts")
+      .select("phone_e164")
+      .eq("id", resolved.id)
+      .eq("owner_member_id", currentMember.id)
+      .maybeSingle();
+    contactPhone = String(phoneRow?.phone_e164 || "").trim();
+  }
+
+  const normalizedPhone = String(input.phoneE164 || contactPhone || "").replace(/\D/g, "");
   if (!normalizedPhone || normalizedPhone.length < 8) {
-    return { error: "Numero WhatsApp invalide." };
+    return { error: "Numero WhatsApp manquant ou invalide pour ce contact." };
   }
 
   const whatsappUrl = `https://wa.me/${normalizedPhone}?text=${encodeURIComponent(message)}`;

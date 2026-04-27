@@ -940,6 +940,13 @@ function normalizePhoneForWhatsApp(phone?: string | null) {
   return digits;
 }
 
+function isLikelyWhatsAppNumber(phone?: string | null) {
+  const normalized = normalizePhoneForWhatsApp(phone);
+  if (!normalized) return false;
+  // V1 focus FR: avoid landlines and unknown targets in Radar.
+  return normalized.startsWith("336") || normalized.startsWith("337");
+}
+
 function referralStatusLabel(status: string) {
   if (status === "submitted") return "Opportunite recue";
   if (status === "validated") return "RDV pris";
@@ -4155,10 +4162,10 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
           } satisfies RadarProspect;
         }),
       );
-      const nonEmptyPhone = prepared.filter((item) => item.phoneE164);
-      const finalList = (nonEmptyPhone.length ? nonEmptyPhone : prepared).slice(0, RADAR_TARGET_COUNT);
+      const nonEmptyPhone = prepared.filter((item) => isLikelyWhatsAppNumber(item.phoneE164));
+      const finalList = nonEmptyPhone.slice(0, RADAR_TARGET_COUNT);
       if (!finalList.length) {
-        throw new Error("Aucun contact avec numero exploitable.");
+        throw new Error("Aucun numero WhatsApp mobile exploitable trouve.");
       }
       setRadarProspects(finalList);
       setRadarSelectedIds(finalList.slice(0, Math.min(RADAR_DEFAULT_SELECTED_COUNT, finalList.length)).map((item) => item.id));
@@ -4213,6 +4220,10 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
 
   function openRadarWhatsApp(prospect: RadarProspect) {
     const cleanPhone = prospect.phoneE164.replace(/[^\d+]/g, "");
+    if (!isLikelyWhatsAppNumber(cleanPhone)) {
+      setApiErrorMessage(`Numero WhatsApp non compatible pour ${prospect.fullName}.`);
+      return;
+    }
     const fallbackUrl = cleanPhone
       ? `https://wa.me/${cleanPhone.replace("+", "")}?text=${encodeURIComponent(prospect.messageDraft)}`
       : "";
@@ -4237,8 +4248,24 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
       messageDraft: prospect.messageDraft,
       phoneE164: cleanPhone || null,
     })
-      .then((result: { whatsappUrl?: string }) => openUrl(result?.whatsappUrl || fallbackUrl))
-      .catch(() => openUrl(fallbackUrl));
+      .then((result: { whatsappUrl?: string; error?: string }) => {
+        if (result?.whatsappUrl) {
+          openUrl(result.whatsappUrl);
+          return;
+        }
+        if (fallbackUrl) {
+          openUrl(fallbackUrl);
+          return;
+        }
+        setApiErrorMessage(result?.error || `Numero WhatsApp manquant pour ${prospect.fullName}.`);
+      })
+      .catch(() => {
+        if (fallbackUrl) {
+          openUrl(fallbackUrl);
+          return;
+        }
+        setApiErrorMessage(`Numero WhatsApp manquant pour ${prospect.fullName}.`);
+      });
   }
 
   function openSelectedRadarWhatsApp() {
