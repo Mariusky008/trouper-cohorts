@@ -1381,6 +1381,13 @@ export default function EntrepreneurSmartScanTestPage() {
     if (entries.length === 0) return [{ label: "❓ A decouvrir", count: 1 }];
     return entries.slice(0, 3);
   }, [current, qualifierStore, quickLabelMap]);
+  const discoveryLabel = useMemo(() => {
+    const preferred = adnPopey.find((entry) => {
+      const lower = entry.label.toLowerCase();
+      return lower.includes("a decouvrir") || lower.includes("inconnu");
+    });
+    return (preferred?.label || "A decouvrir").replace("❓", "").trim();
+  }, [adnPopey]);
   const searchResults = allContactsData
     .filter((contact) => `${contact.name} ${contact.city} ${contact.companyHint}`.toLowerCase().includes(searchQuery.toLowerCase().trim()))
     .sort((a, b) => (priorityScoreStore[b.id] || 0) - (priorityScoreStore[a.id] || 0));
@@ -5200,7 +5207,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
           className="pointer-events-none absolute inset-0"
           style={{
             backgroundImage:
-              "linear-gradient(rgba(0,212,160,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0,212,160,0.03) 1px, transparent 1px)",
+              "linear-gradient(rgba(0,212,160,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(0,212,160,0.06) 1px, transparent 1px)",
             backgroundSize: "48px 48px",
           }}
         />
@@ -5225,6 +5232,18 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
 
         <div className="mx-auto flex min-h-screen max-w-xl items-center justify-center px-7">
           <section className="relative w-full text-center">
+            <motion.div
+              aria-hidden
+              className="pointer-events-none absolute left-1/2 top-1/2 h-[470px] w-[470px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-cyan-300/25"
+              animate={{ opacity: [0.5, 0.75, 0.5], scale: [1, 1.02, 1] }}
+              transition={{ duration: 4.8, repeat: Infinity, ease: "easeInOut" }}
+            />
+            <motion.div
+              aria-hidden
+              className="pointer-events-none absolute left-1/2 top-1/2 h-[510px] w-[510px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-cyan-300/12"
+              animate={{ opacity: [0.35, 0.6, 0.35], scale: [1, 1.015, 1] }}
+              transition={{ duration: 6.2, repeat: Infinity, ease: "easeInOut" }}
+            />
             <motion.div
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -5252,7 +5271,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.55, delay: 0.18, ease: "easeOut" }}
-              className="text-[40px] font-black leading-[0.94] tracking-[-0.02em]"
+              className="text-[62px] font-black leading-[0.9] tracking-[-0.03em]"
             >
               Votre reseau
               <span className="block text-[#00D4A0]">s active.</span>
@@ -6174,7 +6193,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
         </div>
 
         <div className={`mt-4 ${done >= dailyQueueCount ? "grid gap-4 lg:grid-cols-[1.15fr_0.85fr]" : "flex justify-center"}`}>
-          <section className={`rounded-[26px] border border-white/10 bg-gradient-to-br from-[#151D31] via-[#18223C] to-[#111A2D] p-3 sm:p-4 shadow-[0_24px_60px_-36px_rgba(0,0,0,0.95)] ${done >= dailyQueueCount ? "" : "w-full max-w-3xl"}`}>
+          <section className={`rounded-[26px] border border-white/10 bg-gradient-to-br from-[#111C31] via-[#16233D] to-[#10192E] p-3 sm:p-4 shadow-[0_24px_60px_-36px_rgba(0,0,0,0.95)] ${done >= dailyQueueCount ? "" : "w-full max-w-3xl"}`}>
             <div className="flex items-center justify-between gap-2">
               <p className="text-[20px] font-black tracking-[-0.015em] text-white">Daily Card</p>
               <div className="flex items-center gap-2">
@@ -6211,7 +6230,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
               initial={{ opacity: 0, y: 14, scale: 0.98 }}
               animate={{ opacity: 1, y: 0, scale: successPulse ? 1.01 : 1 }}
               transition={{ duration: 0.25 }}
-              className="relative mt-2 rounded-[30px] border border-white/10 bg-gradient-to-br from-[#242C41] via-[#303B54] to-[#232E45] p-4 shadow-[0_30px_70px_-40px_rgba(0,0,0,0.9)]"
+              className="relative mt-2 rounded-[30px] border border-white/10 bg-gradient-to-br from-[#27334B] via-[#2F3C57] to-[#253148] p-4 shadow-[0_30px_70px_-40px_rgba(0,0,0,0.9)]"
             >
               <div className="flex items-center gap-4">
                 <div
@@ -6229,16 +6248,11 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                   <p className="text-[22px] font-black leading-[0.95] tracking-[-0.01em] text-white">
                     {current.name.split(" ")[0] || current.name}
                   </p>
-                  <p className="text-[14px] font-semibold leading-[1] text-white/75">📍 {current.city}</p>
-                  <div className="mt-1 flex flex-wrap gap-1.5">
-                    {adnPopey.slice(0, 2).map((entry) => (
-                      <span
-                        key={entry.label}
-                        className={`rounded-full border border-amber-300/30 px-3 py-1 text-[13px] font-black ${adnBadgeClass(entry.label)}`}
-                      >
-                        {entry.label}
-                      </span>
-                    ))}
+                  <div className="mt-1 flex items-center gap-2">
+                    <p className="text-[14px] font-semibold leading-[1] text-white/75">📍 {current.city}</p>
+                    <span className="inline-flex items-center gap-1 rounded-full border border-amber-300/45 bg-[#2C2A30] px-3 py-1 text-[13px] font-black text-[#F5A623]">
+                      <span className="text-[#FF4D6D]">?</span> {discoveryLabel}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -6289,7 +6303,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                       onClick={() => triggerAction(button.action)}
                       className={`relative overflow-hidden rounded-2xl border transition ${
                         isPrimary
-                          ? "h-[82px] border-amber-300/45 bg-gradient-to-r from-amber-300/20 to-orange-300/16 text-amber-100 shadow-[0_14px_28px_-18px_rgba(251,191,36,0.7)]"
+                          ? "h-[82px] border-amber-300/60 bg-gradient-to-r from-[#3E3B34] to-[#3B352D] text-[#F5A623] shadow-[0_14px_28px_-18px_rgba(251,191,36,0.85)]"
                           : "h-[76px] border-white/20 bg-[#27324A]/35 text-white/80 opacity-95 hover:opacity-100"
                       } ${
                         shouldPulse ? theme.idlePulseClass : ""
@@ -6320,7 +6334,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                         </>
                       )}
                       <div className="flex h-full items-center gap-3 px-4 text-left">
-                        <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] border text-[18px] ${actionVisual.iconClass}`}>
+                        <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] border text-[18px] ${button.action === "eclaireur" ? "border-amber-300/45 bg-[#5A5032]/50 text-[#F5A623]" : actionVisual.iconClass}`}>
                           {actionVisual.icon}
                         </div>
                         <div className="min-w-0 flex-1">
