@@ -18,7 +18,7 @@
   --font-d:'Bebas Neue',sans-serif; --font-b:'Cabinet Grotesk',sans-serif;
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-html{scroll-behavior:smooth}
+html{scroll-behavior:smooth;overflow-x:hidden}
 body{background:var(--black);color:var(--text);font-family:var(--font-b);font-size:16px;line-height:1.6;overflow-x:hidden}
 
 /* CURSOR */
@@ -265,6 +265,8 @@ footer{background:var(--black);border-top:0.5px solid var(--border);padding:32px
 .fomo-section::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 60% 80% at 50% 0%,rgba(0,229,160,.08) 0%,transparent 65%)}
 .fomo-container{max-width:1100px;margin:0 auto;position:relative;z-index:1}
 .fomo-grid{display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:center;margin-top:56px}
+.fomo-split{display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:center}
+.fomo-split > *{min-width:0}
 .fomo-title{font-family:var(--font-d);font-size:clamp(38px,5vw,64px);font-weight:800;line-height:.95;letter-spacing:1px;margin-bottom:20px}
 .fomo-title .hl-red{color:#FF6B6B}
 .fomo-title .hl-green{color:var(--teal)}
@@ -292,6 +294,8 @@ footer{background:var(--black);border-top:0.5px solid var(--border);padding:32px
 .exclu-section{padding:100px 48px;background:var(--surface);border-top:0.5px solid var(--border);border-bottom:0.5px solid var(--border)}
 .exclu-container{max-width:1100px;margin:0 auto}
 .exclu-grid{display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:center;margin-top:56px}
+.exclu-split{display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:start}
+.exclu-split > *{min-width:0}
 .exclu-badge{display:inline-flex;align-items:center;gap:10px;background:linear-gradient(135deg,rgba(255,181,71,.15),rgba(255,181,71,.05));border:1px solid rgba(255,181,71,.4);border-radius:12px;padding:14px 20px;margin-bottom:20px}
 .exclu-badge-icon{font-size:24px}
 .exclu-badge-text{font-size:13px;font-weight:600;color:var(--amber);line-height:1.4}
@@ -331,7 +335,8 @@ footer{background:var(--black);border-top:0.5px solid var(--border);padding:32px
 .ne-card-text{font-size:12px;color:var(--text-sec);line-height:1.5}
 
 @media(max-width:900px){
-  .fomo-grid,.exclu-grid{grid-template-columns:1fr}
+  .fomo-grid,.exclu-grid,.fomo-split,.exclu-split{grid-template-columns:1fr}
+  .fomo-split,.exclu-split{gap:24px}
   .ne-cards{grid-template-columns:1fr}
   .fomo-section,.exclu-section,.network-effect-section{padding:70px 24px}
 }
@@ -350,7 +355,7 @@ footer{background:var(--black);border-top:0.5px solid var(--border);padding:32px
     <a href="#tarifs">Tarifs</a>
     <a href="#faq">FAQ</a>
   </div>
-  <a href="/popey-human/accueil-test/inscription" class="nav-cta">S'inscrire →</a>
+  <a href="#simulateur" class="nav-cta">Simuler mon potentiel →</a>
 </nav>
 
 <!-- ═══ HERO ═══ -->
@@ -434,6 +439,71 @@ footer{background:var(--black);border-top:0.5px solid var(--border);padding:32px
     </div>
   </div>
 </section>
+
+<!-- ═══ TRANSITION ÉMOTIONNELLE ═══ -->
+<section style="padding:80px 48px 0;background:var(--ink);border-top:0.5px solid var(--border)">
+  <div style="max-width:900px;margin:0 auto;text-align:center" class="reveal">
+
+    <div style="display:inline-flex;align-items:center;gap:8px;background:var(--teal-dim);border:0.5px solid rgba(0,229,160,.25);border-radius:20px;padding:7px 18px;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--teal);margin-bottom:32px">
+      <span class="pulse" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--teal)"></span>
+      La promesse Popey
+    </div>
+
+    <div style="font-family:var(--font-d);font-size:clamp(28px,4.5vw,58px);line-height:1.05;letter-spacing:.5px;margin-bottom:24px;color:var(--text)">
+      Imaginez avoir
+      <span style="color:var(--teal)"> 20, 30, 50 éclaireurs</span><br>
+      dans votre ville qui pensent<br>
+      <span style="color:var(--text-sec);font-size:clamp(22px,3.5vw,46px)">à vous recommander — constamment.</span>
+    </div>
+
+    <p style="font-size:clamp(16px,2vw,20px);color:var(--text-sec);line-height:1.7;max-width:680px;margin:0 auto 36px;font-weight:300">
+      C'est notre mission : <strong style="color:var(--text);font-weight:600">les trouver, vous les présenter, définir ensemble une commission</strong> — et vous apporter vos premiers clients <strong style="color:var(--teal);font-weight:600">sous 24h.</strong>
+    </p>
+
+    <!-- 3 étapes visuelles -->
+    <div class="promise-steps" style="display:grid;grid-template-columns:1fr auto 1fr auto 1fr;align-items:center;gap:0;max-width:700px;margin:0 auto 48px;background:var(--surface);border:0.5px solid var(--border2);border-radius:20px;padding:28px 24px">
+
+      <div style="text-align:center;padding:0 8px">
+        <div style="width:48px;height:48px;border-radius:14px;background:var(--teal-dim);border:1px solid rgba(0,229,160,.3);display:flex;align-items:center;justify-content:center;font-size:22px;margin:0 auto 10px">🔍</div>
+        <div style="font-family:var(--font-d);font-size:15px;letter-spacing:.5px;color:var(--teal);margin-bottom:4px">ON TROUVE</div>
+        <div style="font-size:12px;color:var(--text-sec);line-height:1.4">Les éclaireurs les plus compatibles de votre zone</div>
+      </div>
+
+      <div style="padding:0 6px;color:var(--text-ter);font-size:20px">→</div>
+
+      <div style="text-align:center;padding:0 8px">
+        <div style="width:48px;height:48px;border-radius:14px;background:var(--amber-dim);border:1px solid rgba(255,181,71,.3);display:flex;align-items:center;justify-content:center;font-size:22px;margin:0 auto 10px">🤝</div>
+        <div style="font-family:var(--font-d);font-size:15px;letter-spacing:.5px;color:var(--amber);margin-bottom:4px">ON PRÉSENTE</div>
+        <div style="font-size:12px;color:var(--text-sec);line-height:1.4">Vous définissez ensemble le taux de commission</div>
+      </div>
+
+      <div style="padding:0 6px;color:var(--text-ter);font-size:20px">→</div>
+
+      <div style="text-align:center;padding:0 8px">
+        <div style="width:48px;height:48px;border-radius:14px;background:var(--teal-dim);border:1px solid rgba(0,229,160,.3);display:flex;align-items:center;justify-content:center;font-size:22px;margin:0 auto 10px">⚡</div>
+        <div style="font-family:var(--font-d);font-size:15px;letter-spacing:.5px;color:var(--teal);margin-bottom:4px">SOUS 24H</div>
+        <div style="font-size:12px;color:var(--text-sec);line-height:1.4">Vos premiers clients potentiels arrivent</div>
+      </div>
+
+    </div>
+
+    <!-- Flèche vers simulateur -->
+    <div style="display:flex;flex-direction:column;align-items:center;gap:8px;color:var(--text-ter);font-size:13px;animation:bounce 2s infinite">
+      <span>Découvrez votre potentiel exact</span>
+      <span style="font-size:22px">↓</span>
+    </div>
+
+  </div>
+</section>
+
+<style>
+@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(6px)}}
+@keyframes pulseDot{0%,100%{opacity:1}50%{opacity:.3}}
+.pulse{animation:pulseDot 2s infinite}
+@media(max-width:700px){
+  .promise-steps{grid-template-columns:1fr!important;gap:12px!important;padding:20px 16px!important}
+}
+</style>
 
 <!-- ═══ SIMULATOR ═══ -->
 <section class="sim-section" id="simulateur">
@@ -609,7 +679,7 @@ footer{background:var(--black);border-top:0.5px solid var(--border);padding:32px
   <div class="fomo-container">
     <div class="reveal">
       <div class="fomo-tag">L'effet réseau</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:center">
+      <div class="fomo-split">
         <div>
           <h2 class="fomo-title">
             Pendant que vous<br>
@@ -684,7 +754,7 @@ footer{background:var(--black);border-top:0.5px solid var(--border);padding:32px
         <span class="exclu-badge-icon">👑</span>
         <span class="exclu-badge-text">Nouveau · Exclusivité ville par métier<br>disponible en édition limitée</span>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:start">
+      <div class="exclu-split">
         <div>
           <h2 class="exclu-title">Soyez le seul<br><span class="hl">coach sportif</span><br>recommandé à<br>Bordeaux.</h2>
           <p class="exclu-sub">Popey propose à chaque professionnel la possibilité de prendre l'exclusivité de son métier dans sa ville. Tous les éclaireurs Popey de cette ville qui cherchent à recommander votre type de service n'ont alors qu'une seule option : vous.</p>
