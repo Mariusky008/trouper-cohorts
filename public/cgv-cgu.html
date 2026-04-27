@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>POPEY — CGV-CGU</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Cabinet+Grotesk:wght@300;400;500;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --black:#080A0E;
+      --surface:#131920;
+      --border:rgba(255,255,255,.12);
+      --teal:#00E5A0;
+      --text:#EEF2F7;
+      --text-sec:rgba(238,242,247,.76);
+      --text-ter:rgba(238,242,247,.46);
+      --font-d:'Bebas Neue',sans-serif;
+      --font-b:'Cabinet Grotesk',sans-serif;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--black);color:var(--text);font-family:var(--font-b)}
+    .wrap{max-width:1100px;margin:0 auto;padding:24px 18px 40px}
+    .top{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+    .brand{font-family:var(--font-d);font-size:26px;letter-spacing:3px;color:var(--teal);text-decoration:none}
+    .back{display:inline-flex;align-items:center;justify-content:center;height:38px;padding:0 14px;border-radius:10px;border:.5px solid var(--border);background:var(--surface);font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--text-sec);text-decoration:none}
+    .back:hover{border-color:var(--teal);color:var(--teal)}
+    .card{background:var(--surface);border:.5px solid var(--border);border-radius:16px;padding:18px 16px}
+    h1{font-family:var(--font-d);font-size:36px;line-height:1;letter-spacing:.6px;margin:0 0 8px}
+    .v{font-size:12px;color:var(--text-ter);margin:0 0 14px}
+    pre{margin:0;white-space:pre-wrap;font-family:var(--font-b);font-size:13px;line-height:1.75;color:var(--text-sec)}
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <div class="top">
+      <a class="brand" href="/popey-human/accueil-test">POPEY</a>
+      <a class="back" href="/popey-human/accueil-test">Retour Accueil</a>
+    </div>
+    <section class="card">
+      <h1>POPEY — Conditions Générales d'Utilisation et de Vente</h1>
+      <p class="v">Version en vigueur au 27 avril 2026</p>
+      <pre id="cgv-fulltext">Chargement des CGV-CGU...</pre>
+    </section>
+  </main>
+  <script>
+    (async function loadCgvFullText() {
+      const target = document.getElementById("cgv-fulltext");
+      if (!target) return;
+      try {
+        const response = await fetch("/cgv-popey-2026-04-27.txt", { cache: "no-store" });
+        const text = await response.text();
+        if (!response.ok || !text.trim()) throw new Error("missing");
+        target.textContent = text;
+      } catch {
+        target.textContent = "CGV-CGU indisponibles temporairement. Rechargez la page.";
+      }
+    })();
+  </script>
+</body>
+</html>

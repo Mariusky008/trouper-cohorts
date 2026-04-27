@@ -690,8 +690,12 @@ export async function prepareSmartScanWhatsAppPayload(input: {
   }
 
   const normalizedPhone = String(input.phoneE164 || contactPhone || "").replace(/\D/g, "");
+  const blockedNumbers = new Set(["33612345678"]);
   if (!normalizedPhone || normalizedPhone.length < 8) {
     return { error: "Numero WhatsApp manquant ou invalide pour ce contact." };
+  }
+  if (blockedNumbers.has(normalizedPhone)) {
+    return { error: "Numero WhatsApp placeholder detecte. Merci de choisir un contact avec un numero reel." };
   }
 
   const whatsappUrl = `https://wa.me/${normalizedPhone}?text=${encodeURIComponent(message)}`;

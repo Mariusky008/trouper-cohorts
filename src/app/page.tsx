@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 
 export default function HomePage() {
-  const landingVersion = "20260427-accueil-v5";
+  const landingVersion = "20260427-accueil-v6";
 
   useEffect(() => {
     if (window.location.hash === "#hero-demo") {

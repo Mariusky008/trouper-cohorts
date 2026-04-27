@@ -1036,22 +1036,10 @@ footer{background:var(--black);border-top:0.5px solid var(--border);padding:32px
   </div>
 </section>
 
-<section id="cgv" class="legal-section">
-  <div class="legal-wrap">
-    <div class="legal-head">
-      <h2 class="legal-title">POPEY — Conditions Générales d'Utilisation et de Vente</h2>
-      <p class="legal-version">Version en vigueur au 27 avril 2026</p>
-    </div>
-    <div class="legal-card">
-      <pre id="cgv-fulltext" class="legal-fulltext">Chargement des CGV...</pre>
-    </div>
-  </div>
-</section>
-
 <footer>
   <div class="footer-logo">POPEY</div>
   <div class="footer-links">
-    <a href="#cgv" class="footer-btn">CGV-CGU</a>
+    <a href="/cgv-cgu.html" class="footer-btn">CGV-CGU</a>
     <a href="mailto:contact@popey.academy?subject=Contact%20Popey" class="footer-contact">
       <span class="footer-contact-label">Contact</span>
       <span class="footer-contact-line">contact@popey.academy</span>
@@ -1522,21 +1510,6 @@ function checkVillePrice(val) {
     placesEl.style.color = 'var(--teal)';
   }
 }
-</script>
-
-<script>
-(async function loadCgvFullText() {
-  const target = document.getElementById('cgv-fulltext');
-  if (!target) return;
-  try {
-    const response = await fetch('/cgv-popey-2026-04-27.txt', { cache: 'no-store' });
-    const text = await response.text();
-    if (!response.ok || !text.trim()) throw new Error('missing');
-    target.textContent = text;
-  } catch {
-    target.textContent = 'CGV indisponibles temporairement. Rechargez la page.';
-  }
-})();
 </script>
 
 </body>
