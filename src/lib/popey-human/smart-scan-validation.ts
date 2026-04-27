@@ -32,6 +32,8 @@ const SEND_CHANNELS = ["whatsapp", "other"] as const;
 const AI_GENERATION_SOURCES = ["ai", "fallback"] as const;
 const ALLIANCE_PROVIDERS = ["b2b", "internal"] as const;
 const ALLIANCE_INVITE_CHANNELS = ["whatsapp", "sms", "email", "other"] as const;
+const RADAR_RUN_STATUSES = ["started", "completed", "failed"] as const;
+const RADAR_EVENT_TYPES = ["run_started", "run_completed", "contact_selected", "whatsapp_opened", "send_declared"] as const;
 
 const optionalNonEmptyString = (max: number) => z.string().trim().min(1).max(max).optional();
 const optionalNullableString = (max: number) => z.string().trim().max(max).nullable().optional();
@@ -233,5 +235,27 @@ export const smartScanAllianceInviteSchema = z
     prospectId: z.string().uuid(),
     channel: z.enum(ALLIANCE_INVITE_CHANNELS).optional(),
     messageDraft: z.string().trim().min(1).max(3000),
+  })
+  .strict();
+
+export const smartScanRadarRunSchema = z
+  .object({
+    city: z.string().trim().min(1).max(120),
+    sourceMetier: z.string().trim().max(160).optional().nullable(),
+    radiusKm: z.number().int().min(1).max(100).optional(),
+    targetCount: z.number().int().min(1).max(20).optional(),
+    selectedCount: z.number().int().min(0).max(20).optional(),
+    status: z.enum(RADAR_RUN_STATUSES).optional(),
+    metadata: analyticsMetadataSchema.optional(),
+  })
+  .strict();
+
+export const smartScanRadarEventSchema = z
+  .object({
+    runId: z.string().uuid(),
+    eventType: z.enum(RADAR_EVENT_TYPES),
+    prospectId: z.string().trim().max(180).optional().nullable(),
+    metadata: analyticsMetadataSchema.optional(),
+    clientEventId: optionalNullableString(160),
   })
   .strict();

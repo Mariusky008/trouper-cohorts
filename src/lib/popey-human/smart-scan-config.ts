@@ -4,6 +4,11 @@ export const SMART_SCAN_ANALYTICS_EVENT_TYPES = [
   "whatsapp_sent",
   "daily_goal_progressed",
   "onboarding_completed",
+  "radar_run_started",
+  "radar_run_completed",
+  "radar_contact_selected",
+  "radar_whatsapp_opened",
+  "radar_send_declared",
 ] as const;
 
 export type SmartScanAnalyticsEventType = (typeof SMART_SCAN_ANALYTICS_EVENT_TYPES)[number];

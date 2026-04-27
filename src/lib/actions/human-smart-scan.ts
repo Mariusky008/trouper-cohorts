@@ -126,6 +126,22 @@ type SmartScanExternalClickStatsToday = {
   linkedin_today: number;
   whatsapp_group_today: number;
 };
+type SmartScanRadarRunStatus = "started" | "completed" | "failed";
+type SmartScanRadarEventType = "run_started" | "run_completed" | "contact_selected" | "whatsapp_opened" | "send_declared";
+type SmartScanRadarRunRecord = {
+  id: string;
+  owner_member_id: string;
+  city: string;
+  source_metier: string | null;
+  radius_km: number;
+  target_count: number;
+  selected_count: number;
+  sent_count: number;
+  status: SmartScanRadarRunStatus;
+  metadata: Record<string, unknown> | null;
+  created_at: string;
+  updated_at: string;
+};
 
 type ResultError = { error: string };
 type ContactScoreInputs = {
@@ -171,8 +187,20 @@ const SMART_SCAN_ANALYTICS_ALLOWED_METADATA_KEYS: Record<SmartScanAnalyticsEvent
   whatsapp_sent: ["actionType", "actionId", "contactId"],
   daily_goal_progressed: ["actionType", "opportunitiesActivated", "contactId"],
   onboarding_completed: ["sector", "firstMessageSent", "onboardingMode", "timeToFirstMessage"],
+  radar_run_started: ["city", "sourceMetier", "radiusKm", "targetCount"],
+  radar_run_completed: ["runId", "preparedCount", "provider", "city"],
+  radar_contact_selected: ["runId", "prospectId", "selected", "metier"],
+  radar_whatsapp_opened: ["runId", "prospectId", "metier"],
+  radar_send_declared: ["runId", "selectedCount", "sentCount"],
 };
 const SMART_SCAN_ANALYTICS_SUSPECT_KEY_PATTERN = /(phone|email|mail|name|full|prenom|nom|address|adresse|token|password|secret|message|notes?)/i;
+const SMART_SCAN_RADAR_EVENT_ALLOWED_METADATA_KEYS: Record<SmartScanRadarEventType, string[]> = {
+  run_started: ["provider", "targetCount", "radiusKm", "targetMetiersCount"],
+  run_completed: ["preparedCount", "provider", "fallback", "targetMetiersCount"],
+  contact_selected: ["prospectId", "selected", "metier", "distanceKm"],
+  whatsapp_opened: ["prospectId", "metier", "distanceKm"],
+  send_declared: ["selectedCount", "sentCount"],
+};
 
 function sanitizeSmartScanAnalyticsMetadata(
   eventType: SmartScanAnalyticsEventType,
@@ -199,6 +227,36 @@ function sanitizeSmartScanAnalyticsMetadata(
     }
   }
 
+  if (clientEventId) {
+    output.clientEventId = String(clientEventId).trim().slice(0, 160);
+  }
+  return output;
+}
+
+function sanitizeSmartScanRadarMetadata(
+  eventType: SmartScanRadarEventType,
+  metadata?: Record<string, unknown> | null,
+  clientEventId?: string | null
+): Record<string, unknown> {
+  const input = metadata || {};
+  const allowedKeys = new Set(SMART_SCAN_RADAR_EVENT_ALLOWED_METADATA_KEYS[eventType] || []);
+  const output: Record<string, unknown> = {};
+  for (const key of Object.keys(input)) {
+    if (!allowedKeys.has(key)) continue;
+    const raw = input[key];
+    if (typeof raw === "string") {
+      output[key] = raw.trim().slice(0, 220);
+      continue;
+    }
+    if (typeof raw === "number") {
+      output[key] = Number.isFinite(raw) ? raw : 0;
+      continue;
+    }
+    if (typeof raw === "boolean" || raw === null) {
+      output[key] = raw;
+      continue;
+    }
+  }
   if (clientEventId) {
     output.clientEventId = String(clientEventId).trim().slice(0, 160);
   }
@@ -1581,6 +1639,207 @@ export async function logSmartScanAnalyticsEvent(input: {
     clientEventId: input.clientEventId || null,
   });
 
+  return { success: true };
+}
+
+export async function createSmartScanRadarRun(input: {
+  city: string;
+  sourceMetier?: string | null;
+  radiusKm?: number;
+  targetCount?: number;
+  selectedCount?: number;
+  status?: SmartScanRadarRunStatus;
+  metadata?: Record<string, unknown> | null;
+}) {
+  const currentMember = await getCurrentHumanMember();
+  if (!currentMember) return { error: "Session requise." };
+
+  const city = String(input.city || "").trim();
+  if (!city) return { error: "Ville requise." };
+  const sourceMetier = String(input.sourceMetier || "").trim() || null;
+  const radiusKm = Math.max(1, Math.min(100, Math.round(input.radiusKm || 15)));
+  const targetCount = Math.max(1, Math.min(20, Math.round(input.targetCount || 10)));
+  const selectedCount = Math.max(0, Math.min(targetCount, Math.round(input.selectedCount || 0)));
+  const status: SmartScanRadarRunStatus = input.status === "started" || input.status === "failed" ? input.status : "completed";
+  const nowIso = new Date().toISOString();
+  const supabaseAdmin = createAdminClient();
+
+  const since15m = new Date(Date.now() - 15 * 60 * 1000).toISOString();
+  const since24h = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  const [{ count: runs15m }, { count: runs24h }] = await Promise.all([
+    supabaseAdmin
+      .from("human_smart_scan_radar_runs")
+      .select("id", { count: "exact", head: true })
+      .eq("owner_member_id", currentMember.id)
+      .gte("created_at", since15m),
+    supabaseAdmin
+      .from("human_smart_scan_radar_runs")
+      .select("id", { count: "exact", head: true })
+      .eq("owner_member_id", currentMember.id)
+      .gte("created_at", since24h),
+  ]);
+
+  if (Number(runs15m || 0) >= 8) {
+    return { error: "Limite atteinte: maximum 8 runs Radar en 15 minutes." };
+  }
+  if (Number(runs24h || 0) >= 60) {
+    return { error: "Limite atteinte: maximum 60 runs Radar sur 24h." };
+  }
+
+  const metadata = sanitizeSmartScanRadarMetadata("run_started", input.metadata || {}, null);
+  const { data, error } = await supabaseAdmin
+    .from("human_smart_scan_radar_runs")
+    .insert({
+      owner_member_id: currentMember.id,
+      city: city.slice(0, 120),
+      source_metier: sourceMetier ? sourceMetier.slice(0, 160) : null,
+      radius_km: radiusKm,
+      target_count: targetCount,
+      selected_count: selectedCount,
+      sent_count: 0,
+      status,
+      metadata,
+      created_at: nowIso,
+      updated_at: nowIso,
+    })
+    .select("id,owner_member_id,city,source_metier,radius_km,target_count,selected_count,sent_count,status,metadata,created_at,updated_at")
+    .single();
+  if (error || !data?.id) {
+    return { error: error?.message || "Impossible de creer le run Radar." };
+  }
+
+  await supabaseAdmin.from("human_smart_scan_radar_events").insert({
+    owner_member_id: currentMember.id,
+    run_id: String(data.id),
+    event_type: "run_started",
+    prospect_id: null,
+    metadata,
+    created_at: nowIso,
+  });
+
+  await logSmartScanAnalyticsEventInternal({
+    eventType: "radar_run_started",
+    metadata: {
+      city,
+      sourceMetier: sourceMetier || null,
+      radiusKm,
+      targetCount,
+    },
+  });
+
+  return {
+    success: true,
+    run: data as SmartScanRadarRunRecord,
+    limits: {
+      runs15m: Number(runs15m || 0) + 1,
+      runs24h: Number(runs24h || 0) + 1,
+      limit15m: 8,
+      limit24h: 60,
+    },
+  };
+}
+
+export async function logSmartScanRadarEvent(input: {
+  runId: string;
+  eventType: SmartScanRadarEventType;
+  prospectId?: string | null;
+  metadata?: Record<string, unknown> | null;
+  clientEventId?: string | null;
+}) {
+  const currentMember = await getCurrentHumanMember();
+  if (!currentMember) return { error: "Session requise." };
+  const runId = String(input.runId || "").trim();
+  if (!runId) return { error: "runId requis." };
+
+  const supabaseAdmin = createAdminClient();
+  const { data: runRow, error: runError } = await supabaseAdmin
+    .from("human_smart_scan_radar_runs")
+    .select("id,owner_member_id")
+    .eq("id", runId)
+    .eq("owner_member_id", currentMember.id)
+    .maybeSingle();
+  if (runError || !runRow?.id) {
+    return { error: runError?.message || "Run Radar introuvable." };
+  }
+
+  const metadata = sanitizeSmartScanRadarMetadata(input.eventType, input.metadata || {}, input.clientEventId || null);
+  const dedupSince = new Date(Date.now() - 2 * 60 * 1000).toISOString();
+  if (input.clientEventId) {
+    const { data: byClientEvent } = await supabaseAdmin
+      .from("human_smart_scan_radar_events")
+      .select("id")
+      .eq("owner_member_id", currentMember.id)
+      .eq("run_id", runId)
+      .eq("event_type", input.eventType)
+      .eq("metadata->>clientEventId", String(input.clientEventId))
+      .limit(1)
+      .maybeSingle();
+    if (byClientEvent?.id) return { success: true, deduped: true };
+  } else {
+    const { data: recentSame } = await supabaseAdmin
+      .from("human_smart_scan_radar_events")
+      .select("id")
+      .eq("owner_member_id", currentMember.id)
+      .eq("run_id", runId)
+      .eq("event_type", input.eventType)
+      .eq("prospect_id", input.prospectId || null)
+      .eq("metadata", metadata)
+      .gte("created_at", dedupSince)
+      .limit(1)
+      .maybeSingle();
+    if (recentSame?.id) return { success: true, deduped: true };
+  }
+
+  const nowIso = new Date().toISOString();
+  const { error } = await supabaseAdmin.from("human_smart_scan_radar_events").insert({
+    owner_member_id: currentMember.id,
+    run_id: runId,
+    event_type: input.eventType,
+    prospect_id: input.prospectId || null,
+    metadata,
+    created_at: nowIso,
+  });
+  if (error) return { error: error.message };
+
+  if (input.eventType === "whatsapp_opened" || input.eventType === "send_declared" || input.eventType === "run_completed") {
+    const updatePayload: Record<string, unknown> = { updated_at: nowIso };
+    const sentCount =
+      input.eventType === "send_declared" && typeof input.metadata?.sentCount === "number"
+        ? Math.max(0, Math.min(100, Math.round(Number(input.metadata.sentCount))))
+        : null;
+    if (input.eventType === "run_completed") {
+      updatePayload.status = "completed";
+    }
+    if (input.eventType === "send_declared" && typeof input.metadata?.selectedCount === "number") {
+      updatePayload.selected_count = Math.max(0, Math.min(100, Math.round(Number(input.metadata.selectedCount))));
+    }
+    if (sentCount !== null) {
+      updatePayload.sent_count = sentCount;
+    }
+    await supabaseAdmin
+      .from("human_smart_scan_radar_runs")
+      .update(updatePayload)
+      .eq("id", runId)
+      .eq("owner_member_id", currentMember.id);
+  }
+
+  const analyticsEventMap: Partial<Record<SmartScanRadarEventType, SmartScanAnalyticsEventType>> = {
+    run_completed: "radar_run_completed",
+    contact_selected: "radar_contact_selected",
+    whatsapp_opened: "radar_whatsapp_opened",
+    send_declared: "radar_send_declared",
+  };
+  const analyticsEventType = analyticsEventMap[input.eventType];
+  if (analyticsEventType) {
+    await logSmartScanAnalyticsEventInternal({
+      eventType: analyticsEventType,
+      metadata: {
+        runId,
+        ...(metadata || {}),
+      },
+      clientEventId: input.clientEventId || null,
+    });
+  }
   return { success: true };
 }
 

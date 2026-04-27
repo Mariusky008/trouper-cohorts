@@ -1229,6 +1229,7 @@ export default function EntrepreneurSmartScanTestPage() {
   const [radarSelectedIds, setRadarSelectedIds] = useState<string[]>([]);
   const [radarSentIds, setRadarSentIds] = useState<string[]>([]);
   const [radarSynergyFilter, setRadarSynergyFilter] = useState("all");
+  const [radarRunId, setRadarRunId] = useState<string | null>(null);
   const allianceRevealTimeoutsRef = useRef<number[]>([]);
   const contactImportInputRef = useRef<HTMLInputElement | null>(null);
   const localDayNumber = useMemo(() => getLocalDayNumber(), []);
@@ -1647,6 +1648,7 @@ export default function EntrepreneurSmartScanTestPage() {
     if (showAlliancesPanel) return;
     setShowRadarMode(false);
     setIsRadarLoading(false);
+    setRadarRunId(null);
   }, [showAlliancesPanel]);
 
   useEffect(() => {
@@ -4033,10 +4035,45 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
     });
   }
 
+  async function postRadarEvent(input: {
+    eventType: "run_started" | "run_completed" | "contact_selected" | "whatsapp_opened" | "send_declared";
+    prospectId?: string;
+    metadata?: Record<string, string | number | boolean | null>;
+    clientEventId?: string;
+  }) {
+    if (!radarRunId) return;
+    await fetch("/api/popey-human/smart-scan/radar/event", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        runId: radarRunId,
+        eventType: input.eventType,
+        prospectId: input.prospectId || null,
+        metadata: input.metadata || {},
+        clientEventId: input.clientEventId || null,
+      }),
+    }).catch(() => null);
+  }
+
   function toggleRadarProspectSelection(prospectId: string) {
-    setRadarSelectedIds((currentList) =>
-      currentList.includes(prospectId) ? currentList.filter((id) => id !== prospectId) : [...currentList, prospectId],
-    );
+    let selected = false;
+    setRadarSelectedIds((currentList) => {
+      selected = !currentList.includes(prospectId);
+      return selected ? [...currentList, prospectId] : currentList.filter((id) => id !== prospectId);
+    });
+    const picked = radarProspects.find((item) => item.id === prospectId);
+    if (picked) {
+      void postRadarEvent({
+        eventType: "contact_selected",
+        prospectId,
+        metadata: {
+          selected,
+          metier: picked.metier,
+          distanceKm: picked.distanceKm,
+        },
+        clientEventId: `radar-select-${prospectId}-${Date.now()}`,
+      });
+    }
   }
 
   async function openRadarMode() {
@@ -4045,12 +4082,37 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
     const sourceMetier = String(allianceSourceMetier || resolveOwnerMetierLabel(myProfile, profileForm.metier || "Coach business")).trim();
     setRadarSourceContext({ city, sourceMetier });
     setIsRadarLoading(true);
+    let radarRunIdForThisRun = "";
     try {
       const targetMetiers = String(allianceTargetMetiersInput || "")
         .split(",")
         .map((item) => item.trim())
         .filter(Boolean)
         .slice(0, 8);
+      const runStartResponse = await fetch("/api/popey-human/smart-scan/radar/run", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          city,
+          sourceMetier: sourceMetier || null,
+          radiusKm: Number.parseInt(allianceRadiusKm || "15", 10) || 15,
+          targetCount: RADAR_TARGET_COUNT,
+          selectedCount: 0,
+          status: "started",
+          metadata: {
+            provider: "b2b",
+            targetCount: RADAR_TARGET_COUNT,
+            radiusKm: Number.parseInt(allianceRadiusKm || "15", 10) || 15,
+            targetMetiersCount: targetMetiers.length,
+          },
+        }),
+      });
+      const runStartPayload = (await runStartResponse.json().catch(() => ({}))) as { error?: string; run?: { id?: string } };
+      if (!runStartResponse.ok || !runStartPayload.run?.id) {
+        throw new Error(runStartPayload.error || "Impossible de demarrer le run Radar.");
+      }
+      radarRunIdForThisRun = runStartPayload.run.id;
+      setRadarRunId(runStartPayload.run.id);
       const response = await fetch("/api/popey-human/smart-scan/alliances/search", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -4103,6 +4165,21 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
       setRadarSentIds([]);
       setRadarSynergyFilter("all");
       setShowRadarMode(true);
+      await fetch("/api/popey-human/smart-scan/radar/event", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          runId: runStartPayload.run.id,
+          eventType: "run_completed",
+          metadata: {
+            preparedCount: finalList.length,
+            provider: "b2b",
+            fallback: false,
+            targetMetiersCount: targetMetiers.length,
+          },
+          clientEventId: `radar-run-completed-${runStartPayload.run.id}`,
+        }),
+      }).catch(() => null);
       setApiErrorMessage("");
     } catch (error) {
       const fallback = buildRadarMockProspects(city, sourceMetier);
@@ -4111,6 +4188,23 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
       setRadarSentIds([]);
       setRadarSynergyFilter("all");
       setShowRadarMode(true);
+      if (radarRunIdForThisRun) {
+        await fetch("/api/popey-human/smart-scan/radar/event", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            runId: radarRunIdForThisRun,
+            eventType: "run_completed",
+            metadata: {
+              preparedCount: fallback.length,
+              provider: "b2b",
+              fallback: true,
+              targetMetiersCount: 0,
+            },
+            clientEventId: `radar-run-fallback-${radarRunIdForThisRun}`,
+          }),
+        }).catch(() => null);
+      }
       setApiErrorMessage(error instanceof Error ? `${error.message} (fallback mock actif)` : "Mode Radar en fallback mock.");
     } finally {
       setIsRadarLoading(false);
@@ -4127,6 +4221,12 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
         window.open(url, "_blank", "noopener,noreferrer");
       }
       setRadarSentIds((currentList) => (currentList.includes(prospect.id) ? currentList : [...currentList, prospect.id]));
+      void postRadarEvent({
+        eventType: "whatsapp_opened",
+        prospectId: prospect.id,
+        metadata: { metier: prospect.metier, distanceKm: prospect.distanceKm },
+        clientEventId: `radar-open-${prospect.id}-${Date.now()}`,
+      });
     };
     void postSmartScan("prepare-whatsapp-payload", {
       externalContactRef: prospect.id,
@@ -4144,6 +4244,14 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
   function openSelectedRadarWhatsApp() {
     const queue = radarProspects.filter((item) => radarSelectedIds.includes(item.id) && !radarSentIds.includes(item.id));
     if (!queue.length) return;
+    void postRadarEvent({
+      eventType: "send_declared",
+      metadata: {
+        selectedCount: radarSelectedIds.length,
+        sentCount: radarSentIds.length + queue.length,
+      },
+      clientEventId: `radar-send-batch-${Date.now()}`,
+    });
     queue.forEach((prospect, idx) => {
       if (typeof window !== "undefined") {
         window.setTimeout(() => {
