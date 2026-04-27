@@ -6226,7 +6226,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                   </div>
                 </div>
                 <div className="min-w-0">
-                  <p className="text-[24px] font-black leading-[0.95] tracking-[-0.01em] text-white">
+                  <p className="text-[22px] font-black leading-[0.95] tracking-[-0.01em] text-white">
                     {current.name.split(" ")[0] || current.name}
                   </p>
                   <p className="text-[14px] font-semibold leading-[1] text-white/75">📍 {current.city}</p>
@@ -6244,8 +6244,8 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
               </div>
 
               <div className="mt-5">
-                <p className="text-[28px] font-black leading-[0.95] tracking-[-0.01em] text-white">Comment activer</p>
-                <p className="text-[28px] font-black leading-[0.95] tracking-[-0.01em]">
+                <p className="text-[24px] font-black leading-[0.98] tracking-[-0.01em] text-white">Comment activer</p>
+                <p className="text-[24px] font-black leading-[0.98] tracking-[-0.01em]">
                   <span className="text-[#00D4A0]">{current.name.split(" ")[0] || current.name}</span> ?
                 </p>
                 {actionEngine.cue && (
@@ -6289,8 +6289,8 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                       onClick={() => triggerAction(button.action)}
                       className={`relative overflow-hidden rounded-2xl border transition ${
                         isPrimary
-                          ? "h-[82px] border-amber-300/45 bg-gradient-to-r from-amber-300/22 to-orange-300/18 text-amber-100 shadow-[0_14px_28px_-18px_rgba(251,191,36,0.8)]"
-                          : "h-[76px] border-white/20 bg-[#27324A]/40 text-white/80 opacity-95 hover:opacity-100"
+                          ? "h-[82px] border-amber-300/45 bg-gradient-to-r from-amber-300/20 to-orange-300/16 text-amber-100 shadow-[0_14px_28px_-18px_rgba(251,191,36,0.7)]"
+                          : "h-[76px] border-white/20 bg-[#27324A]/35 text-white/80 opacity-95 hover:opacity-100"
                       } ${
                         shouldPulse ? theme.idlePulseClass : ""
                       } ${launching ? theme.launchRingClass : ""} ${isPrimary ? "ring-1 ring-white/30" : ""}`}
@@ -6320,14 +6320,14 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                         </>
                       )}
                       <div className="flex h-full items-center gap-3 px-4 text-left">
-                        <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] border text-[20px] ${actionVisual.iconClass}`}>
+                        <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] border text-[18px] ${actionVisual.iconClass}`}>
                           {actionVisual.icon}
                         </div>
                         <div className="min-w-0 flex-1">
-                          <span className={`block ${isPrimary ? "text-[19px]" : "text-[17px]"} font-black leading-[0.95] ${isPrimary ? theme.titleClass : "text-white/90"}`}>
+                          <span className={`block ${isPrimary ? "text-[18px]" : "text-[17px]"} font-black leading-[0.95] ${isPrimary ? theme.titleClass : "text-white/90"}`}>
                             {actionVisual.title}
                           </span>
-                          <span className={`mt-0.5 block text-[12px] font-semibold leading-tight ${isPrimary ? theme.subtitleClass : "text-white/62"}`}>
+                          <span className={`mt-0.5 block text-[11px] font-semibold leading-tight ${isPrimary ? theme.subtitleClass : "text-white/60"}`}>
                             {actionVisual.subtitle}
                           </span>
                         </div>
@@ -6341,7 +6341,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                 <button
                   type="button"
                   onClick={() => triggerAction("passer")}
-                  className="h-14 rounded-full border border-cyan-300/35 bg-cyan-300/15 px-4 text-[14px] font-black uppercase tracking-[0.08em] text-cyan-100"
+                  className="h-14 rounded-full border border-white/15 bg-white/5 px-4 text-[14px] font-black tracking-[0.02em] text-white/40"
                 >
                   Passer · Contact suivant →
                 </button>
@@ -7900,9 +7900,12 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
 
       {showAlliancesPanel && (showAllianceInvitesModal || showInternalInvitesModal) && (
         <div className="fixed inset-0 z-[72] flex items-center justify-center bg-black/75 px-3 py-8 backdrop-blur-md sm:px-4">
-          <section className="relative w-full max-w-2xl overflow-hidden rounded-[28px] border border-white/15 bg-gradient-to-br from-[#141C2E] via-[#101A3D] to-[#141C2E] p-4 shadow-[0_0_48px_rgba(30,64,175,0.28)] sm:p-5">
+          <section className="relative w-full max-w-2xl overflow-hidden rounded-[28px] border border-white/15 bg-gradient-to-br from-[#0E1420] via-[#141C2E] to-[#0E1420] p-4 shadow-[0_0_48px_rgba(30,64,175,0.22)] sm:p-5">
             <div className="flex items-center justify-between gap-2">
-              <p className="text-[11px] font-black uppercase tracking-[0.12em] text-white">Mes alliances sollicitees</p>
+              <p className="text-[30px] font-black leading-[0.92] tracking-[-0.02em] text-white sm:text-[34px]">
+                Mes <br className="sm:hidden" />
+                Alliances
+              </p>
               <div className="flex items-center gap-2">
                 <button
                   type="button"
@@ -7940,12 +7943,12 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                   key={`invite-tab-${tab.id}`}
                   type="button"
                   onClick={() => setAllianceInviteFilter(tab.id)}
-                  className={`rounded-2xl border px-2 py-2 text-center transition ${tab.className} ${
+                  className={`rounded-[14px] border px-2 py-2.5 text-center transition ${tab.className} ${
                     allianceInviteFilter === tab.id ? "ring-1 ring-white/30" : "opacity-80"
                   }`}
                 >
                   <p className="text-[9px] uppercase font-black tracking-[0.08em]">{tab.label}</p>
-                  <p className="text-sm font-black">{tab.value}</p>
+                  <p className="text-[34px] font-black leading-none">{tab.value}</p>
                 </button>
               ))}
             </div>
@@ -8000,27 +8003,32 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                           .join("");
                         const statusAt = invite.clicked_at || invite.sent_at || invite.created_at;
                         const statusDateLabel = statusAt
-                          ? new Date(statusAt).toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit" })
-                          : "Date inconnue";
+                          ? (() => {
+                              const deltaHours = Math.floor((Date.now() - new Date(statusAt).getTime()) / (1000 * 60 * 60));
+                              if (deltaHours < 1) return "Il y a <1h";
+                              if (deltaHours < 24) return `Il y a ${deltaHours}h`;
+                              return `Hier ${new Date(statusAt).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}`;
+                            })()
+                          : "Il y a quelques h";
                         return (
                           <div
                             key={`alliance-modal-invite-${invite.id}`}
-                            className={`rounded-2xl border px-3 py-2 ${section.rowClass}`}
+                            className={`rounded-2xl border px-3 py-2.5 ${section.rowClass}`}
                           >
                             <div className="flex items-center gap-2">
-                              <div className="h-10 w-10 shrink-0 rounded-full border border-white/15 bg-white/5 text-center text-[12px] font-black leading-10 text-white/90">
+                              <div className="h-10 w-10 shrink-0 rounded-[13px] border border-white/12 bg-white/5 text-center text-[16px] font-black leading-10 text-white/90">
                                 {initials || "AL"}
                               </div>
                               <div className="min-w-0 flex-1">
-                                <p className="truncate text-[12px] font-black text-white">{invite.prospect_name}</p>
-                                <p className="truncate text-[10px] text-white/72">
+                                <p className="truncate text-[14px] font-black text-white">{invite.prospect_name}</p>
+                                <p className="truncate text-[11px] text-white/55">
                                   {invite.prospect_metier}
                                   {invite.prospect_city ? ` • ${invite.prospect_city}` : ""}
                                   {` • ${statusDateLabel}`}
                                 </p>
                               </div>
                               <span
-                                className={`rounded-full border px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.06em] ${section.chipClass}`}
+                                className={`rounded-full border px-3 py-1 text-[11px] font-black ${section.chipClass}`}
                               >
                                 {section.chipLabel}
                               </span>
