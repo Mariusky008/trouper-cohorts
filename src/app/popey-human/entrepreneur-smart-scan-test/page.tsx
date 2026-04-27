@@ -5847,42 +5847,59 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                 </span>
               </div>
               <h1 className="relative mt-2 text-[30px] font-black leading-[0.94] tracking-[-0.015em] text-white">
-                Trio Immo-Dax :<br />
-                Radar <span className="text-[#00D4A0]">Active</span>
+                Radar <span className="text-[#00D4A0]">Activee</span>
               </h1>
               <p className="relative mt-2 text-[13px] leading-[1.45] text-white/70">
                 {opportunitiesActivated} opportunites activees aujourd hui. Encore {remainingForGoal} sur {dailyQueueCount} pour atteindre votre objectif.
               </p>
-              <div className="relative mt-3 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                <div className="min-w-[150px] rounded-2xl border border-[#00D4A0]/35 bg-[#00D4A0]/12 px-3 py-2">
-                  <p className="text-[10px] font-black uppercase tracking-[0.08em] text-[#8CECD4]">Objectif du jour</p>
-                  <p className="text-[28px] font-black leading-none text-white">{dailyGoal}</p>
-                  <p className="text-[11px] text-white/65">contacts cibles</p>
+              <div className="relative mt-3 grid grid-cols-3 gap-2">
+                <div className="rounded-2xl border border-[#00D4A0]/35 bg-[#00D4A0]/12 px-3 py-2">
+                  <p className="text-[30px] font-black leading-none text-[#00D4A0]">{opportunitiesActivated}</p>
+                  <p className="mt-1 text-[11px] font-bold text-white/70">Actifs aujourd hui</p>
                 </div>
-                <div className="min-w-[150px] rounded-2xl border border-violet-300/30 bg-violet-300/10 px-3 py-2">
-                  <p className="text-[10px] font-black uppercase tracking-[0.08em] text-violet-100/85">Eclaireurs actifs</p>
-                  <p className="text-[28px] font-black leading-none text-violet-100">{eclaireurHeaderStats.totalCount}</p>
-                  <p className="text-[11px] text-white/65">reseau mobilisable</p>
+                <div className="rounded-2xl border border-amber-300/30 bg-amber-300/10 px-3 py-2">
+                  <p className="text-[30px] font-black leading-none text-amber-100">{dailyGoal}</p>
+                  <p className="mt-1 text-[11px] font-bold text-white/70">Objectif du jour</p>
                 </div>
+                <div className="rounded-2xl border border-white/15 bg-white/5 px-3 py-2">
+                  <p className="text-[30px] font-black leading-none text-white/90">{historyMonthlySentCount}</p>
+                  <p className="mt-1 text-[11px] font-bold text-white/55">Ce mois</p>
+                </div>
+              </div>
+              <div className="relative mt-3">
+                <div className="flex items-center justify-between text-[11px] font-black uppercase tracking-[0.08em] text-white/55">
+                  <span>Progression</span>
+                  <span className="text-[#00D4A0]">
+                    {opportunitiesActivated} / {dailyGoal}
+                  </span>
+                </div>
+                <div className="mt-2 h-2 overflow-hidden rounded-full bg-white/10">
+                  <motion.div
+                    className="h-full rounded-full bg-gradient-to-r from-[#00D4A0] to-emerald-300"
+                    animate={{ width: `${missionProgress}%` }}
+                    transition={{ duration: 0.4, ease: "easeOut" }}
+                  />
+                </div>
+              </div>
+              <div className="relative mt-3 grid grid-cols-[1.35fr_0.9fr] gap-2">
                 <button
                   type="button"
                   onClick={() => setShowPotentialBreakdownSheet(true)}
-                  className="min-w-[170px] rounded-2xl border border-emerald-300/35 bg-emerald-300/12 px-3 py-2 text-left"
+                  className="h-14 rounded-2xl border border-[#00D4A0]/30 bg-[#00D4A0]/10 px-3 text-left"
                 >
-                  <p className="text-[10px] font-black uppercase tracking-[0.08em] text-emerald-100/85">Potentiel du jour</p>
-                  <p className="text-[28px] font-black leading-none text-emerald-100">~{latentPotential}€</p>
-                  <p className="text-[11px] text-white/65">estimation commissions</p>
+                  <p className="text-[10px] font-black uppercase tracking-[0.08em] text-[#8CECD4]">Potentiel du jour</p>
+                  <p className="mt-1 text-[34px] font-black leading-none text-white">~{latentPotential}€</p>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsCockpitCollapsed((value) => !value)}
+                  className="h-14 rounded-2xl border border-white/20 bg-white/8 px-3 text-[12px] font-black text-white/85"
+                >
+                  {isCockpitCollapsed ? "▼ Cockpit" : "▲ Cockpit"}
                 </button>
               </div>
-              <button
-                type="button"
-                onClick={() => setIsCockpitCollapsed((value) => !value)}
-                className="relative mt-3 h-10 rounded-full border border-white/20 bg-white/10 px-4 text-[10px] font-black uppercase tracking-[0.1em] text-white/85"
-              >
-                {isCockpitCollapsed ? "Deplier cockpit" : "Replier cockpit"}
-              </button>
             </div>
-            <div className="flex flex-wrap items-end justify-between gap-3">
+            <div className="flex flex-wrap items-end justify-between gap-3 border-t border-white/10 pt-1">
               <div>
                 <p className="text-[11px] font-black uppercase tracking-[0.12em] text-cyan-200">Suivi cockpit</p>
                 <p className="mt-1 text-[13px] text-white/70">Pilote en mode detaille (cockpit deplié).</p>
