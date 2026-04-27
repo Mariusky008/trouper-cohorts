@@ -5568,7 +5568,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
           </section>
         </div>
         <nav className="fixed inset-x-0 bottom-0 z-30 flex justify-center px-3 pb-[max(env(safe-area-inset-bottom),10px)]">
-          <div className="w-full max-w-3xl rounded-t-[28px] border border-white/12 bg-gradient-to-b from-[#0B1018] to-[#090D14] px-2 py-2 shadow-[0_26px_56px_-28px_rgba(0,0,0,0.95)] backdrop-blur-2xl">
+          <div className="w-full max-w-3xl border-t border-white/10 bg-gradient-to-b from-[#0A0F17] to-[#090D14] px-2 py-1.5 shadow-[0_26px_56px_-28px_rgba(0,0,0,0.95)] backdrop-blur-2xl">
             {(() => {
               const activeDockId: "search" | "scan" | "alliances" | "eclaireurs" | "profile" = showAlliancesPanel
                 ? "alliances"
@@ -5596,12 +5596,12 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                   onClick={() => handleDockAction(item.id as "search" | "scan" | "eclaireurs" | "alliances" | "profile")}
                   aria-label={`Ouvrir ${item.label}`}
                   aria-pressed={isActive}
-                  className={`relative flex h-[70px] min-w-[66px] flex-col items-center justify-center rounded-2xl px-2 transition ${
-                    isActive ? "text-[#00E0BD]" : "text-white/32 hover:text-white/55"
+                  className={`relative flex h-[66px] min-w-[64px] flex-col items-center justify-center rounded-xl px-1.5 transition ${
+                    isActive ? "text-[#00E0BD]" : "text-white/35 hover:text-white/55"
                   }`}
                 >
-                  <span className={`text-[33px] leading-none ${isActive ? "" : "opacity-55 grayscale"}`}>{item.icon}</span>
-                  <span className="mt-1 text-[11px] font-black tracking-[0.01em]">{item.label}</span>
+                  <span className={`text-[29px] leading-none ${isActive ? "opacity-85" : "opacity-40 grayscale"}`}>{item.icon}</span>
+                  <span className="mt-1 text-[10px] font-bold tracking-[0.01em]">{item.label}</span>
                   {isActive && <span className="mt-1 h-1.5 w-1.5 rounded-full bg-[#00E0BD]" />}
                 </button>
               );
@@ -7586,7 +7586,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
           >
             <div className="rounded-[34px] border border-white/15 bg-gradient-to-b from-[#0C121E] to-[#0A101A] px-4 pb-3 pt-4 shadow-[0_20px_50px_-30px_rgba(0,0,0,0.9)]">
               <div className="flex items-center justify-between gap-2">
-                <p className="text-[58px] font-black leading-[0.9] tracking-[-0.03em] text-white">Eclaireurs</p>
+                <p className="text-[44px] font-black leading-[0.9] tracking-[-0.02em] text-white">Eclaireurs</p>
                 <button
                   type="button"
                   onClick={() => {
