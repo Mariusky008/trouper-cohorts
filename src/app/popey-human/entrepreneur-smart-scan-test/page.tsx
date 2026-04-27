@@ -7019,14 +7019,19 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
             className="h-[calc(100dvh-92px)] max-h-[calc(100dvh-92px)] w-full overflow-y-auto rounded-none border-0 bg-[#07090F] p-4 pb-28 sm:h-auto sm:max-h-[90vh] sm:max-w-lg sm:rounded-3xl sm:border sm:border-white/15"
             style={{ paddingTop: "calc(env(safe-area-inset-top) + 12px)" }}
           >
-            <div className="sticky top-0 z-20 -mx-4 bg-[#07090F] px-4 pb-2">
+            <div className="-mx-4 bg-[#07090F] px-4 pb-3">
               <div className="flex items-center justify-between">
                 <p className="text-xl font-black tracking-[-0.01em] text-white">Eclaireurs</p>
                 <button
                   type="button"
                   onClick={() => {
-                    setShowAlliancesPanel(false);
-                    setShowEclaireursPanel(true);
+                    if (allianceDirectoryMode === "internal") {
+                      setShowInternalInvitesModal(true);
+                      void loadInternalAllianceInvites();
+                    } else {
+                      setShowAllianceInvitesModal(true);
+                      void loadAllianceInvites();
+                    }
                   }}
                   className="inline-flex items-center gap-1.5 rounded-full border border-emerald-300/35 bg-emerald-300/12 px-3 py-1.5 text-[11px] font-semibold text-white/85 transition hover:scale-[1.02] hover:bg-emerald-300/18"
                 >
@@ -7038,7 +7043,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                 <button
                   type="button"
                   onClick={() => setAllianceDirectoryMode("external")}
-                  className={`h-8 rounded-full px-3 text-[10px] font-black uppercase tracking-[0.08em] transition ${
+                  className={`h-9 rounded-[10px] px-4 text-[11px] font-black uppercase tracking-[0.08em] transition ${
                     allianceDirectoryMode === "external"
                       ? "bg-[#1A2438] text-[#00D4A0]"
                       : "text-white/70 hover:text-white"
@@ -7049,7 +7054,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                 <button
                   type="button"
                   onClick={() => setAllianceDirectoryMode("internal")}
-                  className={`h-8 rounded-full px-3 text-[10px] font-black uppercase tracking-[0.08em] transition ${
+                  className={`h-9 rounded-[10px] px-4 text-[11px] font-black uppercase tracking-[0.08em] transition ${
                     allianceDirectoryMode === "internal"
                       ? "bg-[#1A2438] text-[#00D4A0]"
                       : "text-white/70 hover:text-white"
@@ -7058,26 +7063,6 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                   Communaute Popey
                 </button>
               </div>
-              <p className="mt-2 text-[11px] text-white/70">
-                {allianceDirectoryMode === "external"
-                  ? "Externes: pros locaux via annuaire public."
-                  : "Interne: membres Popey actifs."}
-              </p>
-              <button
-                type="button"
-                onClick={() => {
-                  if (allianceDirectoryMode === "internal") {
-                    setShowInternalInvitesModal(true);
-                    void loadInternalAllianceInvites();
-                  } else {
-                    setShowAllianceInvitesModal(true);
-                    void loadAllianceInvites();
-                  }
-                }}
-                className="mt-2 rounded-full border border-fuchsia-300/35 bg-fuchsia-300/15 px-3 py-1 text-[10px] font-black uppercase tracking-[0.08em] text-fuchsia-100 transition hover:scale-[1.02] hover:bg-fuchsia-300/20"
-              >
-                {allianceDirectoryMode === "internal" ? "Mes demandes internes" : "Mes alliances"} ({activeAllianceInvites.length})
-              </button>
             </div>
 
             <div className="relative mt-3 overflow-hidden rounded-[24px] border border-white/20 bg-gradient-to-br from-[#141C2E] via-[#16203A] to-[#1A2438] p-5 shadow-[0_22px_50px_rgba(0,0,0,0.38)]">
