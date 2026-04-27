@@ -415,6 +415,17 @@ type SmartScanAllianceInvite = {
   sent_at?: string | null;
 };
 type AllianceDirectoryMode = "external" | "internal";
+type RadarProspect = {
+  id: string;
+  fullName: string;
+  metier: string;
+  city: string;
+  distanceKm: number;
+  phoneE164: string;
+  synergyReason: string;
+  messageDraft: string;
+  colorTone: "teal" | "amber" | "violet" | "blue" | "green";
+};
 
 type HistoryVisualStatus = "sent" | "pending" | "converted";
 
@@ -428,6 +439,27 @@ const SMART_SCAN_PASSED_CONTACTS_KEY = "popey-human:smart-scan:passed-contacts";
 const DAILY_CONTACT_LIMIT = 10;
 const PROFILE_REQUEST_TIMEOUT_MS = 12000;
 const PROFILE_BOOTSTRAP_FALLBACK_MS = 14000;
+const RADAR_TARGET_COUNT = 10;
+const RADAR_DEFAULT_SELECTED_COUNT = 8;
+const RADAR_MOCK_SEED: Array<{
+  fullName: string;
+  metier: string;
+  distanceKm: number;
+  phoneE164: string;
+  synergyReason: string;
+  colorTone: RadarProspect["colorTone"];
+}> = [
+  { fullName: "Camille Petit", metier: "Avocate", distanceKm: 1.2, phoneE164: "+33612345678", synergyReason: "ses clients creent des entreprises", colorTone: "violet" },
+  { fullName: "Marc Durieux", metier: "Expert-comptable", distanceKm: 0.8, phoneE164: "+33698765432", synergyReason: "accompagne des dirigeants en decisions", colorTone: "amber" },
+  { fullName: "Sophie Hernandez", metier: "DRH", distanceKm: 14, phoneE164: "+33677889900", synergyReason: "formation managers et performance equipe", colorTone: "blue" },
+  { fullName: "Thomas Lacoste", metier: "Banquier", distanceKm: 1.4, phoneE164: "+33611223344", synergyReason: "finance des projets d entrepreneurs", colorTone: "green" },
+  { fullName: "Julie Barennes", metier: "Notaire", distanceKm: 2.6, phoneE164: "+33645127890", synergyReason: "transactions + structuration patrimoniale", colorTone: "violet" },
+  { fullName: "Romain Farge", metier: "Courtier credit", distanceKm: 3.2, phoneE164: "+33699887766", synergyReason: "cherche des prospects plus qualifies", colorTone: "amber" },
+  { fullName: "Lea Vignaux", metier: "Diagnostiqueuse", distanceKm: 4.1, phoneE164: "+33655443322", synergyReason: "voit des vendeurs avant mise en vente", colorTone: "teal" },
+  { fullName: "Antoine Cazenave", metier: "Architecte interieur", distanceKm: 5.8, phoneE164: "+33666995511", synergyReason: "intervient post-acquisition sur travaux", colorTone: "blue" },
+  { fullName: "Lucie Darracq", metier: "Deménageuse", distanceKm: 7.5, phoneE164: "+33640887712", synergyReason: "capte les familles en transition logement", colorTone: "green" },
+  { fullName: "Pierre Castets", metier: "Assureur", distanceKm: 1.9, phoneE164: "+33622997731", synergyReason: "clients acheteurs avec besoins cross-sell", colorTone: "amber" },
+];
 
 const CONTACTS: DailyContact[] = [
   {
@@ -1190,6 +1222,13 @@ export default function EntrepreneurSmartScanTestPage() {
   const [selectedAllianceProspect, setSelectedAllianceProspect] = useState<SmartScanAllianceProspect | null>(null);
   const [allianceMessageDraft, setAllianceMessageDraft] = useState("");
   const [isAllianceMessageSending, setIsAllianceMessageSending] = useState(false);
+  const [showRadarMode, setShowRadarMode] = useState(false);
+  const [isRadarLoading, setIsRadarLoading] = useState(false);
+  const [radarSourceContext, setRadarSourceContext] = useState<{ city: string; sourceMetier: string }>({ city: "Dax", sourceMetier: "Coach business" });
+  const [radarProspects, setRadarProspects] = useState<RadarProspect[]>([]);
+  const [radarSelectedIds, setRadarSelectedIds] = useState<string[]>([]);
+  const [radarSentIds, setRadarSentIds] = useState<string[]>([]);
+  const [radarSynergyFilter, setRadarSynergyFilter] = useState("all");
   const allianceRevealTimeoutsRef = useRef<number[]>([]);
   const contactImportInputRef = useRef<HTMLInputElement | null>(null);
   const localDayNumber = useMemo(() => getLocalDayNumber(), []);
@@ -1514,6 +1553,19 @@ export default function EntrepreneurSmartScanTestPage() {
     return sortedAllianceProspects.filter((item) => visible.has(item.id));
   }, [isAllianceRevealRunning, revealedAllianceProspectIds, sortedAllianceProspects]);
   const activeAllianceInvites = allianceDirectoryMode === "internal" ? internalAllianceInvites : allianceInvites;
+  const radarFilteredProspects = useMemo(
+    () => (radarSynergyFilter === "all" ? radarProspects : radarProspects.filter((item) => item.metier === radarSynergyFilter)),
+    [radarProspects, radarSynergyFilter],
+  );
+  const radarSynergyStats = useMemo(() => {
+    const map = new Map<string, number>();
+    radarProspects.forEach((item) => {
+      map.set(item.metier, (map.get(item.metier) || 0) + 1);
+    });
+    return Array.from(map.entries()).map(([metier, count]) => ({ metier, count }));
+  }, [radarProspects]);
+  const radarSelectedCount = radarSelectedIds.length;
+  const radarSentCount = radarSentIds.length;
   const filteredAllianceInvites = useMemo(() => {
     if (allianceInviteFilter === "all") return activeAllianceInvites;
     return activeAllianceInvites.filter((item) => item.status === allianceInviteFilter);
@@ -1590,6 +1642,12 @@ export default function EntrepreneurSmartScanTestPage() {
     setAllianceCity((currentCity) => currentCity || myProfile.ville || "");
     setAllianceSourceMetier((currentMetier) => currentMetier || resolveOwnerMetierLabel(myProfile, ""));
   }, [myProfile]);
+
+  useEffect(() => {
+    if (showAlliancesPanel) return;
+    setShowRadarMode(false);
+    setIsRadarLoading(false);
+  }, [showAlliancesPanel]);
 
   useEffect(() => {
     if (!showAlliancesPanel) return;
@@ -3938,6 +3996,85 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
     });
     setOnboardingAllianceSearched(true);
     setOnboardingAllianceResultCount(count);
+  }
+
+  function radarToneClasses(tone: RadarProspect["colorTone"]) {
+    if (tone === "amber") return "border-[#F5A623]/30 bg-[#F5A623]/10 text-[#F5A623]";
+    if (tone === "violet") return "border-[#9B8FFF]/30 bg-[#9B8FFF]/10 text-[#BDB4FF]";
+    if (tone === "blue") return "border-[#4FC3F7]/30 bg-[#4FC3F7]/10 text-[#7AD3FF]";
+    if (tone === "green") return "border-[#1DB954]/30 bg-[#1DB954]/10 text-[#57DB85]";
+    return "border-[#00D4A0]/30 bg-[#00D4A0]/10 text-[#00D4A0]";
+  }
+
+  function buildRadarMockProspects(city: string, sourceMetier: string): RadarProspect[] {
+    return RADAR_MOCK_SEED.slice(0, RADAR_TARGET_COUNT).map((item, idx) => {
+      const firstName = item.fullName.split(" ")[0] || item.fullName;
+      const messageDraft = `Bonjour ${firstName}, je suis ${sourceMetier} sur ${city}. Je vois une synergie concrete entre ton activite (${item.metier}) et mes clients. Partant pour un echange rapide cette semaine ?`;
+      return {
+        id: `radar-${idx + 1}`,
+        fullName: item.fullName,
+        metier: item.metier,
+        city,
+        distanceKm: item.distanceKm,
+        phoneE164: item.phoneE164,
+        synergyReason: item.synergyReason,
+        messageDraft,
+        colorTone: item.colorTone,
+      };
+    });
+  }
+
+  function toggleRadarProspectSelection(prospectId: string) {
+    setRadarSelectedIds((currentList) =>
+      currentList.includes(prospectId) ? currentList.filter((id) => id !== prospectId) : [...currentList, prospectId],
+    );
+  }
+
+  function openRadarMode() {
+    if (isRadarLoading) return;
+    const city = String(allianceCity || myProfile?.ville || profileForm.ville || "Dax").trim();
+    const sourceMetier = String(allianceSourceMetier || resolveOwnerMetierLabel(myProfile, profileForm.metier || "Coach business")).trim();
+    setRadarSourceContext({ city, sourceMetier });
+    setIsRadarLoading(true);
+    if (typeof window !== "undefined") {
+      window.setTimeout(() => {
+        const prepared = buildRadarMockProspects(city, sourceMetier);
+        setRadarProspects(prepared);
+        setRadarSelectedIds(prepared.slice(0, RADAR_DEFAULT_SELECTED_COUNT).map((item) => item.id));
+        setRadarSentIds([]);
+        setRadarSynergyFilter("all");
+        setShowRadarMode(true);
+        setIsRadarLoading(false);
+      }, 850);
+      return;
+    }
+    const prepared = buildRadarMockProspects(city, sourceMetier);
+    setRadarProspects(prepared);
+    setRadarSelectedIds(prepared.slice(0, RADAR_DEFAULT_SELECTED_COUNT).map((item) => item.id));
+    setRadarSentIds([]);
+    setRadarSynergyFilter("all");
+    setShowRadarMode(true);
+    setIsRadarLoading(false);
+  }
+
+  function openRadarWhatsApp(prospect: RadarProspect) {
+    const cleanPhone = prospect.phoneE164.replace(/[^\d+]/g, "");
+    if (typeof window !== "undefined" && cleanPhone) {
+      window.open(`https://wa.me/${cleanPhone.replace("+", "")}?text=${encodeURIComponent(prospect.messageDraft)}`, "_blank", "noopener,noreferrer");
+    }
+    setRadarSentIds((currentList) => (currentList.includes(prospect.id) ? currentList : [...currentList, prospect.id]));
+  }
+
+  function openSelectedRadarWhatsApp() {
+    const queue = radarProspects.filter((item) => radarSelectedIds.includes(item.id) && !radarSentIds.includes(item.id));
+    if (!queue.length) return;
+    queue.forEach((prospect, idx) => {
+      if (typeof window !== "undefined") {
+        window.setTimeout(() => {
+          openRadarWhatsApp(prospect);
+        }, idx * 380);
+      }
+    });
   }
 
   function openAllianceMessageEditor(prospect: SmartScanAllianceProspect) {
@@ -7644,6 +7781,33 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
               <div className="pointer-events-none absolute -right-14 -top-16 h-40 w-40 rounded-full bg-emerald-300/12 blur-3xl" />
               <div className="pointer-events-none absolute -bottom-14 -left-12 h-36 w-36 rounded-full bg-fuchsia-300/10 blur-3xl" />
               <div className="relative">
+                <button
+                  type="button"
+                  onClick={openRadarMode}
+                  disabled={isRadarLoading}
+                  className="mb-4 flex w-full items-center gap-3 rounded-[20px] border border-[#00D4A0]/40 bg-gradient-to-br from-[#0D2A20] to-[#0A1F18] px-4 py-4 text-left transition hover:border-[#00D4A0]/65 disabled:opacity-70"
+                >
+                  <span className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-[#00D4A0]/35 bg-[#00D4A0]/12 text-[22px]">
+                    ⚡
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-[10px] font-black uppercase tracking-[0.08em] text-[#00D4A0]/80">Mode Radar · IA</span>
+                    <span className="mt-1 block text-[17px] font-black leading-[1.05] text-white">
+                      {isRadarLoading ? "Analyse en cours..." : "Preparer 10 WhatsApp en 1 tap"}
+                    </span>
+                    <span className="mt-1 block text-[11px] leading-[1.35] text-white/65">
+                      L IA detecte les synergies locales et prepare les messages. Tu valides puis envoies.
+                    </span>
+                  </span>
+                  <span className="text-[22px] font-black text-[#00D4A0]">{isRadarLoading ? "…" : "→"}</span>
+                </button>
+
+                <div className="mb-4 flex items-center gap-2">
+                  <span className="h-px flex-1 bg-white/10" />
+                  <span className="text-[10px] font-semibold uppercase tracking-[0.08em] text-white/40">ou recherche manuelle</span>
+                  <span className="h-px flex-1 bg-white/10" />
+                </div>
+
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <p className="text-[10px] font-black uppercase tracking-[0.1em] text-white/35">
@@ -7933,6 +8097,123 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                   </div>
                 </motion.article>
               ))}
+            </div>
+          </section>
+        </div>
+      )}
+
+      {showAlliancesPanel && showRadarMode && (
+        <div className="fixed inset-0 z-[69] bg-black/65 backdrop-blur-sm flex items-start justify-center px-0 pt-0 pb-0 sm:px-4 sm:pt-16 sm:pb-0">
+          <section
+            className="h-[calc(100dvh-92px)] max-h-[calc(100dvh-92px)] w-full overflow-y-auto rounded-none border-0 bg-[#07090F] p-4 pb-28 sm:h-auto sm:max-h-[90vh] sm:max-w-lg sm:rounded-3xl sm:border sm:border-white/15"
+            style={{ paddingTop: "calc(env(safe-area-inset-top) + 12px)" }}
+          >
+            <div className="rounded-[30px] border border-transparent bg-[#0E1420] px-4 py-4 shadow-[0_20px_50px_-30px_rgba(0,0,0,0.9)]">
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowRadarMode(false)}
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-[#111B2C] text-white/80"
+                >
+                  ←
+                </button>
+                <p className="text-[24px] font-black tracking-[-0.01em] text-white">Mode Radar ⚡</p>
+                <span className="ml-auto inline-flex items-center gap-1 rounded-full border border-[#00D4A0]/35 bg-[#00D4A0]/10 px-2.5 py-1 text-[10px] font-black text-[#00D4A0]">
+                  <span className="h-1.5 w-1.5 rounded-full bg-[#00D4A0]" />
+                  {radarProspects.length} prets
+                </span>
+              </div>
+              <p className="mt-2 text-[12px] leading-[1.45] text-white/65">
+                L IA a analyse <span className="font-semibold text-white">{radarSourceContext.sourceMetier} · {radarSourceContext.city}</span> et prepare des WhatsApp personnalises.
+              </p>
+              <div className="mt-3 flex gap-1.5 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                <button
+                  type="button"
+                  onClick={() => setRadarSynergyFilter("all")}
+                  className={`shrink-0 rounded-full border px-3 py-1.5 text-[11px] font-black ${radarSynergyFilter === "all" ? "border-[#00D4A0]/45 bg-[#00D4A0]/12 text-[#00D4A0]" : "border-white/10 bg-[#111B2C] text-white/55"}`}
+                >
+                  Tous · {radarProspects.length}
+                </button>
+                {radarSynergyStats.map((item) => (
+                  <button
+                    key={`radar-filter-${item.metier}`}
+                    type="button"
+                    onClick={() => setRadarSynergyFilter(item.metier)}
+                    className={`shrink-0 rounded-full border px-3 py-1.5 text-[11px] font-black ${radarSynergyFilter === item.metier ? "border-[#00D4A0]/45 bg-[#00D4A0]/12 text-[#00D4A0]" : "border-white/10 bg-[#111B2C] text-white/55"}`}
+                  >
+                    {item.metier} · {item.count}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="mt-3 rounded-2xl border border-white/10 bg-[#0E1420] px-3 py-3">
+              <div className="grid grid-cols-4 gap-1.5 text-center">
+                <div className="rounded-xl bg-black/25 px-2 py-2">
+                  <p className="text-[18px] font-black text-[#00D4A0]">{radarSelectedCount}</p>
+                  <p className="text-[9px] uppercase tracking-[0.07em] text-white/45">Selectionnes</p>
+                </div>
+                <div className="rounded-xl bg-black/25 px-2 py-2">
+                  <p className="text-[18px] font-black text-[#1DB954]">{radarSentCount}</p>
+                  <p className="text-[9px] uppercase tracking-[0.07em] text-white/45">Envoyes</p>
+                </div>
+                <div className="rounded-xl bg-black/25 px-2 py-2">
+                  <p className="text-[18px] font-black text-white/90">{radarProspects.length}</p>
+                  <p className="text-[9px] uppercase tracking-[0.07em] text-white/45">Prepares</p>
+                </div>
+                <div className="rounded-xl bg-black/25 px-2 py-2">
+                  <p className="text-[18px] font-black text-[#F5A623]">~12h</p>
+                  <p className="text-[9px] uppercase tracking-[0.07em] text-white/45">Economise</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={openSelectedRadarWhatsApp}
+                disabled={!radarSelectedIds.some((id) => !radarSentIds.includes(id))}
+                className="mt-2.5 flex h-12 w-full items-center justify-center gap-2 rounded-2xl border border-[#25D366]/50 bg-[#25D366]/20 text-[13px] font-black text-[#25D366] disabled:opacity-45"
+              >
+                💬 Envoyer les {radarSelectedCount} selectionnes →
+              </button>
+            </div>
+
+            <div className="mt-2.5 space-y-2">
+              {radarFilteredProspects.map((prospect) => {
+                const initials = prospect.fullName.split(" ").filter(Boolean).map((item) => item[0]).slice(0, 2).join("").toUpperCase() || "CT";
+                const isSelected = radarSelectedIds.includes(prospect.id);
+                const isSent = radarSentIds.includes(prospect.id);
+                const toneClasses = radarToneClasses(prospect.colorTone);
+                return (
+                  <article key={prospect.id} className={`rounded-2xl border px-3 py-3 ${isSelected ? "border-[#00D4A0]/30 bg-[#0E1420]" : "border-white/10 bg-[#0E1420]"}`}>
+                    <div className="flex items-start gap-2.5">
+                      <button
+                        type="button"
+                        onClick={() => toggleRadarProspectSelection(prospect.id)}
+                        className={`mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-md border text-[10px] font-black ${isSelected ? "border-[#00D4A0] bg-[#00D4A0] text-[#04110D]" : "border-white/20 text-white/45"}`}
+                      >
+                        {isSelected ? "✓" : ""}
+                      </button>
+                      <div className={`inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border text-[12px] font-black ${toneClasses}`}>{initials}</div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="truncate text-[14px] font-black text-white">{prospect.fullName}</p>
+                          <span className={`shrink-0 rounded-full border px-2 py-0.5 text-[9px] font-black ${toneClasses}`}>{prospect.metier}</span>
+                        </div>
+                        <p className="mt-0.5 text-[11px] text-white/55">{prospect.city} · {prospect.distanceKm} km</p>
+                        <p className="mt-1 text-[10px] font-semibold text-[#00D4A0]">⚡ Synergie : {prospect.synergyReason}</p>
+                      </div>
+                    </div>
+                    <p className="mt-2 rounded-lg bg-black/25 px-2.5 py-2 text-[11px] leading-[1.45] text-white/72">{prospect.messageDraft}</p>
+                    <button
+                      type="button"
+                      onClick={() => openRadarWhatsApp(prospect)}
+                      disabled={isSent}
+                      className={`mt-2 h-10 w-full rounded-xl border text-[11px] font-black ${isSent ? "border-[#1DB954]/35 bg-[#1DB954]/10 text-[#1DB954]" : "border-[#25D366]/45 bg-[#25D366]/15 text-[#25D366]"}`}
+                    >
+                      {isSent ? "✓ WhatsApp ouvert" : `Ouvrir WhatsApp → ${prospect.fullName.split(" ")[0] || prospect.fullName}`}
+                    </button>
+                  </article>
+                );
+              })}
             </div>
           </section>
         </div>
