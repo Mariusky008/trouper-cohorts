@@ -414,22 +414,62 @@
           return `<span class="plan-badge ${variant}">${safe}</span>`;
         };
 
+        const normalizeKey = (value) =>
+          String(value || "")
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .toLowerCase()
+            .replace(/\s+/g, " ")
+            .trim();
+
+        const DEFAULT_SERVICE_PLAN = {
+          headers: ["Fonctionnalité", "GRATUIT", "PRO — 29€/mois", "EXCLUSIF — Pro+"],
+          rows: [
+            ["Contacts activés / mois", "5", "Illimités", "Illimités"],
+            ["Éclaireurs maximum", "2", "Illimités", "Illimités"],
+            ["Messages IA / mois", "10", "Illimités", "Illimités"],
+            ["Annuaire Apify", "Non", "Oui", "Oui"],
+            ["Mode Radar IA", "Non", "Oui", "Oui"],
+            ["Communauté Popey", "Partiel", "Complet", "Complet"],
+            ["Profil public partageable", "Non", "Oui", "Oui"],
+            ["Exclusivité ville/métier", "Non", "Non", "Oui"],
+            ["Wallet commissions automatisé", "Oui", "Oui", "Oui"],
+            ["Badge Exclusif", "Non", "Non", "Oui"],
+            ["Droit de revente de place", "Non", "Non", "Oui (après 6 mois)"],
+            ["14 jours Pro offerts", "Oui", "—", "—"],
+          ],
+        };
+
         const buildServicePlanTable = (linesForArticle) => {
-          const start = linesForArticle.findIndex((line) => /^Fonctionnalité$/i.test(line));
+          const start = linesForArticle.findIndex((line) => normalizeKey(line) === "fonctionnalite");
           if (start === -1 || start + 3 >= linesForArticle.length) return null;
           const headers = linesForArticle.slice(start, start + 4);
           const rows = [];
           let idx = start + 4;
           while (idx + 3 < linesForArticle.length) {
-            if (/^\d+\.\d+/.test(linesForArticle[idx])) break;
+            const firstCell = normalizeKey(linesForArticle[idx]);
+            if (/^\d+\.\d+/.test(linesForArticle[idx]) || firstCell.startsWith("5.2 ")) break;
             rows.push(linesForArticle.slice(idx, idx + 4));
             idx += 4;
+          }
+          if (!rows.length || rows.length < 4) {
+            const afterFallbackStart = linesForArticle.findIndex(
+              (line, idx) => idx > start && /^\d+\.\d+/.test(line),
+            );
+            return {
+              headers: DEFAULT_SERVICE_PLAN.headers,
+              rows: DEFAULT_SERVICE_PLAN.rows,
+              before: linesForArticle.slice(0, start),
+              after: afterFallbackStart > -1 ? linesForArticle.slice(afterFallbackStart) : [],
+              usedFallback: true,
+            };
           }
           return {
             headers,
             rows,
             before: linesForArticle.slice(0, start),
             after: linesForArticle.slice(idx),
+            usedFallback: false,
           };
         };
 
