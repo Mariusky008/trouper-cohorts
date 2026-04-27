@@ -5684,25 +5684,25 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
   }
 
   return (
-    <main className="h-screen overflow-y-auto bg-[radial-gradient(circle_at_10%_0%,#10193D_0%,#0C122B_45%,#090B16_100%)] text-white">
-      <div className="mx-auto max-w-6xl px-4 pt-14 sm:pt-5 pb-20">
+    <main className="h-screen overflow-y-auto bg-[#07090F] text-white">
+      <div className="mx-auto max-w-xl px-4 pt-14 pb-20 sm:pt-5">
         {apiErrorMessage && (
           <div className="mb-3 rounded-xl border border-orange-300/35 bg-orange-300/15 px-3 py-2 text-xs text-orange-100">
             {apiErrorMessage}
           </div>
         )}
-        <div className="rounded-3xl border border-white/10 bg-white/5 p-3 backdrop-blur-xl">
+        <div className="rounded-[26px] border border-white/10 bg-gradient-to-br from-[#141C2E] via-[#15213C] to-[#0F172A] p-3 shadow-[0_24px_60px_-36px_rgba(0,0,0,0.95)]">
           <div className="space-y-3">
             <div className="flex flex-wrap items-end justify-between gap-3">
               <div>
-                <p className="text-xs font-black uppercase tracking-[0.12em] text-cyan-200">Cockpit Mission Quotidienne</p>
-                <h1 className="mt-1 text-lg sm:text-2xl font-black">Trio Immo-Dax : Radar Active</h1>
-                <p className="mt-0.5 text-[12px] text-white/80">
+                <p className="text-[11px] font-black uppercase tracking-[0.12em] text-cyan-200">Cockpit mission quotidienne</p>
+                <h1 className="mt-1 text-[34px] font-black leading-[0.95] tracking-[-0.015em] text-white">Trio Immo-Dax : Radar Active</h1>
+                <p className="mt-1 text-[13px] text-white/75">
                   {opportunitiesActivated} opportunites activees aujourd hui. Encore {remainingForGoal} sur {dailyQueueCount} pour atteindre votre objectif.
                 </p>
               </div>
               <div className="flex flex-wrap items-center gap-2">
-                <p className="rounded-full border border-emerald-300/35 bg-emerald-300/12 px-3 py-1 text-[11px] font-black uppercase tracking-[0.08em] text-emerald-100">
+                <p className="rounded-full border border-emerald-300/35 bg-emerald-300/12 px-3 py-1.5 text-[11px] font-black uppercase tracking-[0.08em] text-emerald-100">
                   <button
                     type="button"
                     onClick={() => setShowPotentialBreakdownSheet(true)}
@@ -5714,7 +5714,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                 <button
                   type="button"
                   onClick={() => setIsCockpitCollapsed((value) => !value)}
-                  className="h-8 rounded-full border border-white/20 bg-white/10 px-3 text-[10px] font-black uppercase tracking-[0.08em] text-white/85"
+                  className="h-9 rounded-full border border-white/20 bg-white/10 px-3 text-[10px] font-black uppercase tracking-[0.08em] text-white/85"
                 >
                   {isCockpitCollapsed ? "Deplier cockpit" : "Replier cockpit"}
                 </button>
@@ -5995,9 +5995,9 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
         </div>
 
         <div className={`mt-4 ${done >= dailyQueueCount ? "grid gap-4 lg:grid-cols-[1.15fr_0.85fr]" : "flex justify-center"}`}>
-          <section className={`rounded-3xl border border-white/10 bg-white/5 p-3 sm:p-4 backdrop-blur-xl ${done >= dailyQueueCount ? "" : "w-full max-w-3xl"}`}>
+          <section className={`rounded-[26px] border border-white/10 bg-gradient-to-br from-[#151D31] via-[#18223C] to-[#111A2D] p-3 sm:p-4 shadow-[0_24px_60px_-36px_rgba(0,0,0,0.95)] ${done >= dailyQueueCount ? "" : "w-full max-w-3xl"}`}>
             <div className="flex items-center justify-between">
-              <p className="text-xs font-black uppercase tracking-[0.12em] text-cyan-200">Daily Card</p>
+              <p className="text-xs font-black uppercase tracking-[0.12em] text-cyan-200">Daily card</p>
               <span className="rounded-full border border-white/15 bg-black/25 px-2 py-1 text-[10px] font-black uppercase tracking-wide text-white/80">🔒 Anonymat communautaire garanti</span>
             </div>
             {currentCooAlert && (
@@ -6025,7 +6025,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
               initial={{ opacity: 0, y: 14, scale: 0.98 }}
               animate={{ opacity: 1, y: 0, scale: successPulse ? 1.01 : 1 }}
               transition={{ duration: 0.25 }}
-              className="relative mt-2 rounded-[30px] bg-white/10 p-3 sm:p-4 shadow-[0_30px_70px_-40px_rgba(0,0,0,0.9)] backdrop-blur-2xl"
+              className="relative mt-2 rounded-[26px] border border-white/10 bg-gradient-to-br from-[#242C41] via-[#303B54] to-[#232E45] p-3 sm:p-4 shadow-[0_30px_70px_-40px_rgba(0,0,0,0.9)]"
             >
               <div className="flex items-center gap-3">
                 <div
@@ -6053,7 +6053,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
               </div>
 
               <div className="mt-5 text-center">
-                <p className="text-xl sm:text-2xl font-black">Choisis comment activer {current.name.split(" ")[0]} :</p>
+                <p className="text-[42px] font-black leading-[0.92] tracking-[-0.015em]">Choisis comment activer {current.name.split(" ")[0]} :</p>
                 {actionEngine.cue && (
                   <p className="mt-1 text-[10px] font-semibold tracking-[0.08em] text-cyan-100/90">
                     UI dynamique • {actionEngine.cue}
@@ -6128,7 +6128,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
               )}
             </motion.article>
 
-            <p className="mt-2 text-xs text-white/70">Mode tunnel: une carte, une decision, action immediate.</p>
+            <p className="mt-2 text-[13px] text-white/70">Mode tunnel: une carte, une decision, action immediate.</p>
           </section>
 
               {showCompletionAssistant && done >= dailyQueueCount && (
