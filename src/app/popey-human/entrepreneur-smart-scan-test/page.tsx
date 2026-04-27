@@ -7911,9 +7911,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
         <div className="fixed inset-0 z-[72] flex items-center justify-center bg-black/75 px-3 py-8 backdrop-blur-md sm:px-4">
           <section className="relative w-full max-w-2xl overflow-hidden rounded-[28px] border border-white/15 bg-gradient-to-br from-[#141C2E] via-[#101A3D] to-[#141C2E] p-4 shadow-[0_0_48px_rgba(30,64,175,0.28)] sm:p-5">
             <div className="flex items-center justify-between gap-2">
-              <p className="text-[11px] font-black uppercase tracking-[0.12em] text-white">
-                {allianceDirectoryMode === "internal" ? "Mes demandes internes" : "Mes alliances sollicitees"}
-              </p>
+              <p className="text-[11px] font-black uppercase tracking-[0.12em] text-white">Mes alliances sollicitees</p>
               <div className="flex items-center gap-2">
                 <button
                   type="button"
@@ -7926,7 +7924,7 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                   }}
                   className="h-9 rounded-xl border border-white/20 bg-[#1A2438] px-4 text-[10px] font-black uppercase tracking-[0.1em] text-white/90"
                 >
-                  Refresh
+                  Actualiser
                 </button>
                 <button
                   type="button"
@@ -7969,39 +7967,78 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
                     Aucune alliance sollicitee pour le moment.
                   </p>
                 ) : null}
-                {filteredAllianceInvites.map((invite) => {
-                  const initials = String(invite.prospect_name || "AL")
-                    .split(" ")
-                    .filter(Boolean)
-                    .map((part) => part[0]?.toUpperCase() || "")
-                    .slice(0, 2)
-                    .join("");
-                  const statusMeta =
-                    invite.status === "clicked"
-                      ? { label: "👆 Clique", chipClass: "border-amber-300/35 bg-amber-300/12 text-amber-100", rowClass: "border-amber-300/20 bg-[#132248]" }
-                      : invite.status === "signed_up"
-                        ? { label: "✅ Inscrit", chipClass: "border-emerald-300/35 bg-emerald-300/12 text-emerald-100", rowClass: "border-emerald-300/20 bg-[#132248]" }
-                        : { label: "✉ Envoye", chipClass: "border-cyan-300/35 bg-cyan-300/12 text-cyan-100", rowClass: "border-cyan-300/20 bg-[#132248]" };
-                  return (
-                    <div key={`alliance-modal-invite-${invite.id}`} className={`rounded-2xl border px-3 py-2 ${statusMeta.rowClass}`}>
-                      <div className="flex items-center gap-2">
-                        <div className="h-9 w-9 shrink-0 rounded-xl border border-white/15 bg-white/5 text-center text-[11px] font-black leading-9 text-white/90">
-                          {initials || "AL"}
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate text-[12px] font-black text-white">{invite.prospect_name}</p>
-                          <p className="truncate text-[10px] text-white/72">
-                            {invite.prospect_metier}
-                            {invite.prospect_city ? ` • ${invite.prospect_city}` : ""}
-                          </p>
-                        </div>
-                        <span className={`rounded-full border px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.06em] ${statusMeta.chipClass}`}>
-                          {statusMeta.label}
-                        </span>
+                {([
+                  {
+                    key: "clicked",
+                    title: `🔥 Ont clique ton lien · ${filteredAllianceInvites.filter((item) => item.status === "clicked").length}`,
+                    items: filteredAllianceInvites.filter((item) => item.status === "clicked"),
+                    chipLabel: "👆 Clique",
+                    chipClass: "border-amber-300/35 bg-amber-300/12 text-amber-100",
+                    rowClass: "border-amber-300/20 bg-[#132248]",
+                  },
+                  {
+                    key: "sent",
+                    title: `✉ Envoyes · ${filteredAllianceInvites.filter((item) => item.status === "sent" || item.status === "drafted").length}`,
+                    items: filteredAllianceInvites.filter((item) => item.status === "sent" || item.status === "drafted"),
+                    chipLabel: "✉ Envoye",
+                    chipClass: "border-cyan-300/35 bg-cyan-300/12 text-cyan-100",
+                    rowClass: "border-cyan-300/20 bg-[#132248]",
+                  },
+                  {
+                    key: "signed-up",
+                    title: `✅ Inscrits · ${filteredAllianceInvites.filter((item) => item.status === "signed_up").length}`,
+                    items: filteredAllianceInvites.filter((item) => item.status === "signed_up"),
+                    chipLabel: "✅ Inscrit",
+                    chipClass: "border-emerald-300/35 bg-emerald-300/12 text-emerald-100",
+                    rowClass: "border-emerald-300/20 bg-[#132248]",
+                  },
+                ] as const)
+                  .filter((section) => section.items.length > 0)
+                  .map((section) => (
+                    <div key={`invite-section-${section.key}`} className="space-y-1.5">
+                      <div className="mt-2 flex items-center gap-2">
+                        <p className="text-[10px] font-black uppercase tracking-[0.08em] text-white/55">{section.title}</p>
+                        <span className="h-px flex-1 bg-white/10" />
                       </div>
+                      {section.items.map((invite) => {
+                        const initials = String(invite.prospect_name || "AL")
+                          .split(" ")
+                          .filter(Boolean)
+                          .map((part) => part[0]?.toUpperCase() || "")
+                          .slice(0, 2)
+                          .join("");
+                        const statusAt = invite.clicked_at || invite.sent_at || invite.created_at;
+                        const statusDateLabel = statusAt
+                          ? new Date(statusAt).toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit" })
+                          : "Date inconnue";
+                        return (
+                          <div
+                            key={`alliance-modal-invite-${invite.id}`}
+                            className={`rounded-2xl border px-3 py-2 ${section.rowClass}`}
+                          >
+                            <div className="flex items-center gap-2">
+                              <div className="h-10 w-10 shrink-0 rounded-full border border-white/15 bg-white/5 text-center text-[12px] font-black leading-10 text-white/90">
+                                {initials || "AL"}
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <p className="truncate text-[12px] font-black text-white">{invite.prospect_name}</p>
+                                <p className="truncate text-[10px] text-white/72">
+                                  {invite.prospect_metier}
+                                  {invite.prospect_city ? ` • ${invite.prospect_city}` : ""}
+                                  {` • ${statusDateLabel}`}
+                                </p>
+                              </div>
+                              <span
+                                className={`rounded-full border px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.06em] ${section.chipClass}`}
+                              >
+                                {section.chipLabel}
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
-                  );
-                })}
+                  ))}
               </div>
             )}
           </section>
