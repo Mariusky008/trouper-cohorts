@@ -4006,6 +4006,15 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
     return "border-[#00D4A0]/30 bg-[#00D4A0]/10 text-[#00D4A0]";
   }
 
+  function radarToneFromMetier(metier: string): RadarProspect["colorTone"] {
+    const value = String(metier || "").toLowerCase();
+    if (value.includes("avocat") || value.includes("notaire")) return "violet";
+    if (value.includes("comptable") || value.includes("courtier") || value.includes("assureur")) return "amber";
+    if (value.includes("drh") || value.includes("architecte")) return "blue";
+    if (value.includes("banquier") || value.includes("demen")) return "green";
+    return "teal";
+  }
+
   function buildRadarMockProspects(city: string, sourceMetier: string): RadarProspect[] {
     return RADAR_MOCK_SEED.slice(0, RADAR_TARGET_COUNT).map((item, idx) => {
       const firstName = item.fullName.split(" ")[0] || item.fullName;
@@ -4030,39 +4039,106 @@ Si tu es partant, je t envoie un lien Popey pour suivre simplement la recommanda
     );
   }
 
-  function openRadarMode() {
+  async function openRadarMode() {
     if (isRadarLoading) return;
     const city = String(allianceCity || myProfile?.ville || profileForm.ville || "Dax").trim();
     const sourceMetier = String(allianceSourceMetier || resolveOwnerMetierLabel(myProfile, profileForm.metier || "Coach business")).trim();
     setRadarSourceContext({ city, sourceMetier });
     setIsRadarLoading(true);
-    if (typeof window !== "undefined") {
-      window.setTimeout(() => {
-        const prepared = buildRadarMockProspects(city, sourceMetier);
-        setRadarProspects(prepared);
-        setRadarSelectedIds(prepared.slice(0, RADAR_DEFAULT_SELECTED_COUNT).map((item) => item.id));
-        setRadarSentIds([]);
-        setRadarSynergyFilter("all");
-        setShowRadarMode(true);
-        setIsRadarLoading(false);
-      }, 850);
-      return;
+    try {
+      const targetMetiers = String(allianceTargetMetiersInput || "")
+        .split(",")
+        .map((item) => item.trim())
+        .filter(Boolean)
+        .slice(0, 8);
+      const response = await fetch("/api/popey-human/smart-scan/alliances/search", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          provider: "b2b",
+          city,
+          sourceMetier: sourceMetier || null,
+          targetMetiers,
+          radiusKm: Number.parseInt(allianceRadiusKm || "15", 10) || 15,
+          limit: RADAR_TARGET_COUNT,
+        }),
+      });
+      const payload = (await response.json().catch(() => ({}))) as { error?: unknown; prospects?: SmartScanAllianceProspect[] };
+      if (!response.ok) {
+        throw new Error(toUiErrorMessage(payload.error, "Mode Radar indisponible."));
+      }
+      const prospects = (payload.prospects || []).slice(0, RADAR_TARGET_COUNT);
+      const prepared = await Promise.all(
+        prospects.map(async (prospect, idx) => {
+          const fitReasons = Array.isArray(prospect.fit_reasons) ? prospect.fit_reasons.filter(Boolean) : [];
+          const synergyReason = fitReasons[0] || "synergie locale validee par Popey";
+          const aiResult = (await postSmartScan("generate-message", {
+            contactName: prospect.full_name,
+            actionType: "eclaireur",
+            city: prospect.city || city,
+            companyHint: prospect.metier || null,
+          }).catch(() => null)) as { message?: string } | null;
+          const fallbackMsg = `Bonjour ${prospect.full_name.split(" ")[0] || prospect.full_name}, je suis ${sourceMetier} sur ${city}. Je vois une synergie concrete entre ton activite (${prospect.metier}) et mes clients. Partant pour un echange rapide cette semaine ?`;
+          const messageDraft = String(aiResult?.message || fallbackMsg).trim();
+          return {
+            id: `radar-live-${prospect.id || idx + 1}`,
+            fullName: prospect.full_name,
+            metier: prospect.metier,
+            city: prospect.city || city,
+            distanceKm: Number(prospect.distance_km || 0),
+            phoneE164: normalizePhoneForWhatsApp(prospect.phone_e164) || "",
+            synergyReason,
+            messageDraft,
+            colorTone: radarToneFromMetier(prospect.metier),
+          } satisfies RadarProspect;
+        }),
+      );
+      const nonEmptyPhone = prepared.filter((item) => item.phoneE164);
+      const finalList = (nonEmptyPhone.length ? nonEmptyPhone : prepared).slice(0, RADAR_TARGET_COUNT);
+      if (!finalList.length) {
+        throw new Error("Aucun contact avec numero exploitable.");
+      }
+      setRadarProspects(finalList);
+      setRadarSelectedIds(finalList.slice(0, Math.min(RADAR_DEFAULT_SELECTED_COUNT, finalList.length)).map((item) => item.id));
+      setRadarSentIds([]);
+      setRadarSynergyFilter("all");
+      setShowRadarMode(true);
+      setApiErrorMessage("");
+    } catch (error) {
+      const fallback = buildRadarMockProspects(city, sourceMetier);
+      setRadarProspects(fallback);
+      setRadarSelectedIds(fallback.slice(0, RADAR_DEFAULT_SELECTED_COUNT).map((item) => item.id));
+      setRadarSentIds([]);
+      setRadarSynergyFilter("all");
+      setShowRadarMode(true);
+      setApiErrorMessage(error instanceof Error ? `${error.message} (fallback mock actif)` : "Mode Radar en fallback mock.");
+    } finally {
+      setIsRadarLoading(false);
     }
-    const prepared = buildRadarMockProspects(city, sourceMetier);
-    setRadarProspects(prepared);
-    setRadarSelectedIds(prepared.slice(0, RADAR_DEFAULT_SELECTED_COUNT).map((item) => item.id));
-    setRadarSentIds([]);
-    setRadarSynergyFilter("all");
-    setShowRadarMode(true);
-    setIsRadarLoading(false);
   }
 
   function openRadarWhatsApp(prospect: RadarProspect) {
     const cleanPhone = prospect.phoneE164.replace(/[^\d+]/g, "");
-    if (typeof window !== "undefined" && cleanPhone) {
-      window.open(`https://wa.me/${cleanPhone.replace("+", "")}?text=${encodeURIComponent(prospect.messageDraft)}`, "_blank", "noopener,noreferrer");
-    }
-    setRadarSentIds((currentList) => (currentList.includes(prospect.id) ? currentList : [...currentList, prospect.id]));
+    const fallbackUrl = cleanPhone
+      ? `https://wa.me/${cleanPhone.replace("+", "")}?text=${encodeURIComponent(prospect.messageDraft)}`
+      : "";
+    const openUrl = (url: string) => {
+      if (typeof window !== "undefined" && url) {
+        window.open(url, "_blank", "noopener,noreferrer");
+      }
+      setRadarSentIds((currentList) => (currentList.includes(prospect.id) ? currentList : [...currentList, prospect.id]));
+    };
+    void postSmartScan("prepare-whatsapp-payload", {
+      externalContactRef: prospect.id,
+      fullName: prospect.fullName,
+      city: prospect.city,
+      companyHint: prospect.metier,
+      actionType: "eclaireur",
+      messageDraft: prospect.messageDraft,
+      phoneE164: cleanPhone || null,
+    })
+      .then((result: { whatsappUrl?: string }) => openUrl(result?.whatsappUrl || fallbackUrl))
+      .catch(() => openUrl(fallbackUrl));
   }
 
   function openSelectedRadarWhatsApp() {
